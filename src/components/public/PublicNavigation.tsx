@@ -24,6 +24,7 @@ export function PublicNavigation() {
         .from('pages')
         .select('id, title, slug, menu_order')
         .eq('status', 'published')
+        .eq('show_in_menu', true)
         .order('menu_order', { ascending: true })
         .order('title', { ascending: true });
 
