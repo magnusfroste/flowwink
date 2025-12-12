@@ -5,6 +5,7 @@ import { Helmet } from 'react-helmet-async';
 import { Loader2 } from 'lucide-react';
 import { BlockRenderer } from '@/components/public/BlockRenderer';
 import { PublicNavigation } from '@/components/public/PublicNavigation';
+import { PublicFooter } from '@/components/public/PublicFooter';
 import type { Page, ContentBlock } from '@/types/cms';
 
 function parseContent(data: {
@@ -107,12 +108,7 @@ export default function PublicPage() {
           )}
         </main>
 
-        {/* Footer */}
-        <footer className="py-8 border-t mt-16">
-          <div className="container mx-auto px-6 text-center text-sm text-muted-foreground">
-            © {new Date().getFullYear()} Sophiahemmet
-          </div>
-        </footer>
+        <PublicFooter />
       </div>
     </>
   );
