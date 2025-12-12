@@ -66,6 +66,8 @@ export function usePage(id: string | undefined) {
       return parsePage(data);
     },
     enabled: !!id,
+    refetchOnMount: 'always',
+    staleTime: 0,
   });
 }
 
@@ -154,11 +156,22 @@ export function useUpdatePage() {
       
       if (error) throw error;
       
+      // Create audit log for page update
+      await supabase.from('audit_logs').insert({
+        action: 'update_page',
+        entity_type: 'page',
+        entity_id: id,
+        user_id: user?.id,
+        metadata: { 
+          updated_fields: Object.keys(updates).filter(k => k !== 'updated_by'),
+        } as unknown as Json,
+      });
+      
       return parsePage(data);
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['pages'] });
-      queryClient.invalidateQueries({ queryKey: ['page', data.id] });
+      queryClient.setQueryData(['page', data.id], data);
     },
     onError: (error: Error) => {
       toast({
