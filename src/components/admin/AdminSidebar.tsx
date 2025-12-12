@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, FileText, Users, Settings, LogOut, ChevronRight } from "lucide-react";
+import { LayoutDashboard, FileText, Users, Settings, LogOut, ChevronRight, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { ROLE_LABELS } from "@/types/cms";
 const navigation = [
   { name: "Översikt", href: "/admin", icon: LayoutDashboard },
   { name: "Sidor", href: "/admin/pages", icon: FileText },
+  { name: "Menyordning", href: "/admin/menu-order", icon: Menu, adminOnly: true },
   { name: "Användare", href: "/admin/users", icon: Users, adminOnly: true },
   { name: "Inställningar", href: "/admin/settings", icon: Settings, adminOnly: true },
 ];

@@ -88,6 +88,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           id: string
+          menu_order: number
           meta_json: Json | null
           slug: string
           status: Database["public"]["Enums"]["page_status"]
@@ -100,6 +101,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          menu_order?: number
           meta_json?: Json | null
           slug: string
           status?: Database["public"]["Enums"]["page_status"]
@@ -112,6 +114,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          menu_order?: number
           meta_json?: Json | null
           slug?: string
           status?: Database["public"]["Enums"]["page_status"]

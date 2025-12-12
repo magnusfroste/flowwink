@@ -18,20 +18,15 @@ export function PublicFooter() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('pages')
-        .select('id, title, slug')
+        .select('id, title, slug, menu_order')
         .eq('status', 'published')
+        .order('menu_order', { ascending: true })
         .order('title', { ascending: true });
 
       if (error) throw error;
       return (data || []) as NavPage[];
     },
     staleTime: 1000 * 60 * 5,
-  });
-
-  const sortedPages = [...pages].sort((a, b) => {
-    if (a.slug === 'hem') return -1;
-    if (b.slug === 'hem') return 1;
-    return a.title.localeCompare(b.title, 'sv');
   });
 
   const phoneLink = settings?.phone?.replace(/[^+\d]/g, '') || '';
@@ -58,7 +53,7 @@ export function PublicFooter() {
           <div>
             <h3 className="font-serif font-bold text-lg mb-4">Snabblänkar</h3>
             <nav className="flex flex-col gap-2">
-              {sortedPages.slice(0, 6).map((page) => (
+              {pages.slice(0, 6).map((page) => (
                 <Link
                   key={page.id}
                   to={page.slug === 'hem' ? '/' : `/${page.slug}`}

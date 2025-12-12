@@ -9,6 +9,7 @@ interface NavPage {
   id: string;
   title: string;
   slug: string;
+  menu_order: number;
 }
 
 export function PublicNavigation() {
@@ -21,21 +22,15 @@ export function PublicNavigation() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('pages')
-        .select('id, title, slug')
+        .select('id, title, slug, menu_order')
         .eq('status', 'published')
+        .order('menu_order', { ascending: true })
         .order('title', { ascending: true });
 
       if (error) throw error;
       return (data || []) as NavPage[];
     },
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
-  });
-
-  // Put "hem" first if it exists
-  const sortedPages = [...pages].sort((a, b) => {
-    if (a.slug === 'hem') return -1;
-    if (b.slug === 'hem') return 1;
-    return a.title.localeCompare(b.title, 'sv');
+    staleTime: 1000 * 60 * 5,
   });
 
   return (
@@ -52,7 +47,7 @@ export function PublicNavigation() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-1">
-            {sortedPages.map((page) => (
+            {pages.map((page) => (
               <Link
                 key={page.id}
                 to={page.slug === 'hem' ? '/' : `/${page.slug}`}
@@ -87,7 +82,7 @@ export function PublicNavigation() {
         {mobileMenuOpen && (
           <nav className="md:hidden py-4 border-t animate-fade-in">
             <div className="flex flex-col gap-1">
-              {sortedPages.map((page) => (
+              {pages.map((page) => (
                 <Link
                   key={page.id}
                   to={page.slug === 'hem' ? '/' : `/${page.slug}`}
