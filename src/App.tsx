@@ -12,6 +12,7 @@ import PagesListPage from "./pages/admin/PagesListPage";
 import NewPagePage from "./pages/admin/NewPagePage";
 import PageEditorPage from "./pages/admin/PageEditorPage";
 import UsersPage from "./pages/admin/UsersPage";
+import MediaLibraryPage from "./pages/admin/MediaLibraryPage";
 import PublicPage from "./pages/PublicPage";
 import NotFound from "./pages/NotFound";
 
@@ -32,6 +33,7 @@ const App = () => (
               <Route path="/admin/pages" element={<PagesListPage />} />
               <Route path="/admin/pages/new" element={<NewPagePage />} />
               <Route path="/admin/pages/:id" element={<PageEditorPage />} />
+              <Route path="/admin/media" element={<MediaLibraryPage />} />
               <Route path="/admin/users" element={<UsersPage />} />
               <Route path="/p/:slug" element={<PublicPage />} />
               <Route path="*" element={<NotFound />} />
