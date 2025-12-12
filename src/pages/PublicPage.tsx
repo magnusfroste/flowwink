@@ -1,11 +1,11 @@
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Helmet } from 'react-helmet-async';
 import { Loader2 } from 'lucide-react';
 import { BlockRenderer } from '@/components/public/BlockRenderer';
 import { PublicNavigation } from '@/components/public/PublicNavigation';
 import { PublicFooter } from '@/components/public/PublicFooter';
+import { SeoHead } from '@/components/public/SeoHead';
 import type { Page, ContentBlock } from '@/types/cms';
 
 function parseContent(data: {
@@ -52,6 +52,7 @@ export default function PublicPage() {
   if (error || !page) {
     return (
       <div className="min-h-screen bg-background">
+        <SeoHead title="Sidan hittades inte" noIndex />
         <PublicNavigation />
         <div className="flex items-center justify-center py-32">
           <div className="text-center">
@@ -66,22 +67,11 @@ export default function PublicPage() {
 
   return (
     <>
-      <Helmet>
-        <title>{page.title} | Sophiahemmet</title>
-        {page.meta_json?.description && (
-          <meta name="description" content={page.meta_json.description} />
-        )}
-        {page.meta_json?.keywords && (
-          <meta name="keywords" content={page.meta_json.keywords.join(', ')} />
-        )}
-        <meta property="og:title" content={page.title} />
-        {page.meta_json?.description && (
-          <meta property="og:description" content={page.meta_json.description} />
-        )}
-        {page.meta_json?.og_image && (
-          <meta property="og:image" content={page.meta_json.og_image} />
-        )}
-      </Helmet>
+      <SeoHead 
+        title={page.title}
+        description={page.meta_json?.description}
+        ogImage={page.meta_json?.og_image}
+      />
 
       <div className="min-h-screen bg-background">
         <PublicNavigation />

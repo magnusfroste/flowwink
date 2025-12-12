@@ -14,6 +14,26 @@ export interface FooterSettings {
   brandTagline: string;
 }
 
+export interface SeoSettings {
+  siteTitle: string;
+  titleTemplate: string;
+  defaultDescription: string;
+  ogImage: string;
+  twitterHandle: string;
+  googleSiteVerification: string;
+  robotsIndex: boolean;
+  robotsFollow: boolean;
+}
+
+export interface PerformanceSettings {
+  lazyLoadImages: boolean;
+  prefetchLinks: boolean;
+  minifyHtml: boolean;
+  enableServiceWorker: boolean;
+  imageCacheMaxAge: number;
+  cacheStaticAssets: boolean;
+}
+
 const defaultFooterSettings: FooterSettings = {
   phone: '',
   email: '',
@@ -25,40 +45,56 @@ const defaultFooterSettings: FooterSettings = {
   brandTagline: '',
 };
 
-export function useFooterSettings() {
+const defaultSeoSettings: SeoSettings = {
+  siteTitle: '',
+  titleTemplate: '%s',
+  defaultDescription: '',
+  ogImage: '',
+  twitterHandle: '',
+  googleSiteVerification: '',
+  robotsIndex: true,
+  robotsFollow: true,
+};
+
+const defaultPerformanceSettings: PerformanceSettings = {
+  lazyLoadImages: true,
+  prefetchLinks: true,
+  minifyHtml: false,
+  enableServiceWorker: false,
+  imageCacheMaxAge: 31536000,
+  cacheStaticAssets: true,
+};
+
+// Generic hook for fetching settings
+function useSiteSettings<T>(key: string, defaultValue: T) {
   return useQuery({
-    queryKey: ['site-settings', 'footer'],
+    queryKey: ['site-settings', key],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('site_settings')
         .select('value')
-        .eq('key', 'footer')
-        .single();
+        .eq('key', key)
+        .maybeSingle();
 
-      if (error) {
-        if (error.code === 'PGRST116') {
-          return defaultFooterSettings;
-        }
-        throw error;
-      }
-
-      return (data?.value as unknown as FooterSettings) || defaultFooterSettings;
+      if (error) throw error;
+      return (data?.value as unknown as T) || defaultValue;
     },
     staleTime: 1000 * 60 * 5,
   });
 }
 
-export function useUpdateFooterSettings() {
+// Generic hook for updating settings
+function useUpdateSiteSettings<T>(key: string, successMessage: string) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (settings: FooterSettings) => {
+    mutationFn: async (settings: T) => {
       const { data: existing } = await supabase
         .from('site_settings')
         .select('id')
-        .eq('key', 'footer')
-        .single();
+        .eq('key', key)
+        .maybeSingle();
 
       const jsonValue = settings as unknown as Json;
 
@@ -69,14 +105,14 @@ export function useUpdateFooterSettings() {
             value: jsonValue,
             updated_at: new Date().toISOString()
           })
-          .eq('key', 'footer');
+          .eq('key', key);
 
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('site_settings')
           .insert({ 
-            key: 'footer', 
+            key, 
             value: jsonValue
           });
 
@@ -86,10 +122,10 @@ export function useUpdateFooterSettings() {
       return settings;
     },
     onSuccess: (settings) => {
-      queryClient.setQueryData(['site-settings', 'footer'], settings);
+      queryClient.setQueryData(['site-settings', key], settings);
       toast({
         title: 'Sparat',
-        description: 'Footer-inställningarna har uppdaterats.',
+        description: successMessage,
       });
     },
     onError: (error) => {
@@ -98,7 +134,34 @@ export function useUpdateFooterSettings() {
         description: 'Kunde inte spara inställningarna.',
         variant: 'destructive',
       });
-      console.error('Failed to update footer settings:', error);
+      console.error(`Failed to update ${key} settings:`, error);
     },
   });
+}
+
+// Footer hooks
+export function useFooterSettings() {
+  return useSiteSettings<FooterSettings>('footer', defaultFooterSettings);
+}
+
+export function useUpdateFooterSettings() {
+  return useUpdateSiteSettings<FooterSettings>('footer', 'Footer-inställningarna har uppdaterats.');
+}
+
+// SEO hooks
+export function useSeoSettings() {
+  return useSiteSettings<SeoSettings>('seo', defaultSeoSettings);
+}
+
+export function useUpdateSeoSettings() {
+  return useUpdateSiteSettings<SeoSettings>('seo', 'SEO-inställningarna har uppdaterats.');
+}
+
+// Performance hooks
+export function usePerformanceSettings() {
+  return useSiteSettings<PerformanceSettings>('performance', defaultPerformanceSettings);
+}
+
+export function useUpdatePerformanceSettings() {
+  return useUpdateSiteSettings<PerformanceSettings>('performance', 'Prestandainställningarna har uppdaterats.');
 }
