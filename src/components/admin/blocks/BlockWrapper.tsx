@@ -14,6 +14,8 @@ const BLOCK_LABELS: Record<ContentBlockType, string> = {
   'link-grid': 'Länkgrid',
   'two-column': 'Två-kolumn',
   'info-box': 'Faktaruta',
+  accordion: 'Accordion/FAQ',
+  'article-grid': 'Artikelgrid',
 };
 
 interface BlockWrapperProps {

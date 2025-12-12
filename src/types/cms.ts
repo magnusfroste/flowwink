@@ -65,7 +65,9 @@ export type ContentBlockType =
   | 'contact'
   | 'link-grid'
   | 'two-column'
-  | 'info-box';
+  | 'info-box'
+  | 'accordion'
+  | 'article-grid';
 
 export interface ContentBlock {
   id: string;
@@ -125,6 +127,17 @@ export interface InfoBoxBlockData {
   content: string;
   variant: 'info' | 'success' | 'warning' | 'highlight';
   icon?: string;
+}
+
+export interface AccordionBlockData {
+  title?: string;
+  items: { question: string; answer: string }[];
+}
+
+export interface ArticleGridBlockData {
+  title?: string;
+  articles: { title: string; excerpt: string; image?: string; url: string }[];
+  columns: 2 | 3 | 4;
 }
 
 // Workflow actions

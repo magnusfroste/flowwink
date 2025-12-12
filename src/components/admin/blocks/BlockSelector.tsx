@@ -5,7 +5,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Plus, Layout, Type, ImageIcon, MousePointerClick, Phone, Grid3X3, Columns, AlertCircle } from 'lucide-react';
+import { Plus, Layout, Type, ImageIcon, MousePointerClick, Phone, Grid3X3, Columns, AlertCircle, HelpCircle, Newspaper } from 'lucide-react';
 import { ContentBlockType } from '@/types/cms';
 
 const BLOCK_OPTIONS: { type: ContentBlockType; label: string; icon: React.ReactNode; description: string }[] = [
@@ -44,6 +44,18 @@ const BLOCK_OPTIONS: { type: ContentBlockType; label: string; icon: React.ReactN
     label: 'Faktaruta',
     icon: <AlertCircle className="h-4 w-4" />,
     description: 'Framhävd informationsruta',
+  },
+  {
+    type: 'accordion',
+    label: 'Accordion/FAQ',
+    icon: <HelpCircle className="h-4 w-4" />,
+    description: 'Expanderbara frågor och svar',
+  },
+  {
+    type: 'article-grid',
+    label: 'Artikelgrid',
+    icon: <Newspaper className="h-4 w-4" />,
+    description: 'Rutnät med artikelkort',
   },
   {
     type: 'cta',

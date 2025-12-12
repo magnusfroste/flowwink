@@ -14,7 +14,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { ContentBlock, ContentBlockType, HeroBlockData, TextBlockData, ImageBlockData, CTABlockData, ContactBlockData, LinkGridBlockData, TwoColumnBlockData, InfoBoxBlockData } from '@/types/cms';
+import { ContentBlock, ContentBlockType, HeroBlockData, TextBlockData, ImageBlockData, CTABlockData, ContactBlockData, LinkGridBlockData, TwoColumnBlockData, InfoBoxBlockData, AccordionBlockData, ArticleGridBlockData } from '@/types/cms';
 import { BlockWrapper } from './BlockWrapper';
 import { BlockSelector } from './BlockSelector';
 import { HeroBlockEditor } from './HeroBlockEditor';
@@ -25,6 +25,8 @@ import { ContactBlockEditor } from './ContactBlockEditor';
 import { LinkGridBlockEditor } from './LinkGridBlockEditor';
 import { TwoColumnBlockEditor } from './TwoColumnBlockEditor';
 import { InfoBoxBlockEditor } from './InfoBoxBlockEditor';
+import { AccordionBlockEditor } from './AccordionBlockEditor';
+import { ArticleGridBlockEditor } from './ArticleGridBlockEditor';
 
 type BlockDataMap = {
   hero: HeroBlockData;
@@ -35,6 +37,8 @@ type BlockDataMap = {
   'link-grid': LinkGridBlockData;
   'two-column': TwoColumnBlockData;
   'info-box': InfoBoxBlockData;
+  accordion: AccordionBlockData;
+  'article-grid': ArticleGridBlockData;
 };
 
 const DEFAULT_BLOCK_DATA: BlockDataMap = {
@@ -46,6 +50,8 @@ const DEFAULT_BLOCK_DATA: BlockDataMap = {
   'link-grid': { links: [], columns: 3 },
   'two-column': { content: '<p>Skriv ditt innehåll här...</p>', imageSrc: '', imageAlt: '', imagePosition: 'right' },
   'info-box': { title: 'Viktig information', content: '', variant: 'info' },
+  accordion: { items: [] },
+  'article-grid': { articles: [], columns: 3 },
 };
 
 interface BlockEditorProps {
@@ -170,6 +176,22 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
             data={block.data as unknown as InfoBoxBlockData}
             onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
             isEditing={isEditing}
+          />
+        );
+      case 'accordion':
+        return (
+          <AccordionBlockEditor
+            data={block.data as unknown as AccordionBlockData}
+            onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+            canEdit={isEditing}
+          />
+        );
+      case 'article-grid':
+        return (
+          <ArticleGridBlockEditor
+            data={block.data as unknown as ArticleGridBlockData}
+            onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+            canEdit={isEditing}
           />
         );
       default:
