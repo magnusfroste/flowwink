@@ -1,0 +1,56 @@
+import { ContentBlock } from '@/types/cms';
+import {
+  HeroBlock,
+  TextBlock,
+  ImageBlock,
+  CTABlock,
+  ContactBlock,
+  LinkGridBlock,
+  TwoColumnBlock,
+  InfoBoxBlock,
+  AccordionBlock,
+  ArticleGridBlock,
+} from './blocks';
+import type {
+  HeroBlockData,
+  TextBlockData,
+  ImageBlockData,
+  CTABlockData,
+  ContactBlockData,
+  LinkGridBlockData,
+  TwoColumnBlockData,
+  InfoBoxBlockData,
+  AccordionBlockData,
+  ArticleGridBlockData,
+} from '@/types/cms';
+
+interface BlockRendererProps {
+  block: ContentBlock;
+}
+
+export function BlockRenderer({ block }: BlockRendererProps) {
+  switch (block.type) {
+    case 'hero':
+      return <HeroBlock data={block.data as unknown as HeroBlockData} />;
+    case 'text':
+      return <TextBlock data={block.data as unknown as TextBlockData} />;
+    case 'image':
+      return <ImageBlock data={block.data as unknown as ImageBlockData} />;
+    case 'cta':
+      return <CTABlock data={block.data as unknown as CTABlockData} />;
+    case 'contact':
+      return <ContactBlock data={block.data as unknown as ContactBlockData} />;
+    case 'link-grid':
+      return <LinkGridBlock data={block.data as unknown as LinkGridBlockData} />;
+    case 'two-column':
+      return <TwoColumnBlock data={block.data as unknown as TwoColumnBlockData} />;
+    case 'info-box':
+      return <InfoBoxBlock data={block.data as unknown as InfoBoxBlockData} />;
+    case 'accordion':
+      return <AccordionBlock data={block.data as unknown as AccordionBlockData} />;
+    case 'article-grid':
+      return <ArticleGridBlock data={block.data as unknown as ArticleGridBlockData} />;
+    default:
+      return null;
+  }
+}
