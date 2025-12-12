@@ -13,6 +13,7 @@ import NewPagePage from "./pages/admin/NewPagePage";
 import PageEditorPage from "./pages/admin/PageEditorPage";
 import UsersPage from "./pages/admin/UsersPage";
 import MediaLibraryPage from "./pages/admin/MediaLibraryPage";
+import SiteSettingsPage from "./pages/admin/SiteSettingsPage";
 import PublicPage from "./pages/PublicPage";
 import NotFound from "./pages/NotFound";
 
@@ -35,6 +36,7 @@ const App = () => (
               <Route path="/admin/pages/:id" element={<PageEditorPage />} />
               <Route path="/admin/media" element={<MediaLibraryPage />} />
               <Route path="/admin/users" element={<UsersPage />} />
+              <Route path="/admin/settings" element={<SiteSettingsPage />} />
               <Route path="/p/:slug" element={<PublicPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
