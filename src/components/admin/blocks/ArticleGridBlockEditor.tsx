@@ -3,9 +3,26 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, GripVertical } from 'lucide-react';
 import { ArticleGridBlockData } from '@/types/cms';
 import { ImageUploader } from '../ImageUploader';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface ArticleGridBlockEditorProps {
   data: ArticleGridBlockData;
@@ -13,7 +30,99 @@ interface ArticleGridBlockEditorProps {
   canEdit: boolean;
 }
 
+interface SortableArticleProps {
+  id: string;
+  index: number;
+  article: ArticleGridBlockData['articles'][0];
+  onUpdate: (index: number, field: keyof ArticleGridBlockData['articles'][0], value: string) => void;
+  onRemove: (index: number) => void;
+}
+
+function SortableArticleItem({ id, index, article, onUpdate, onRemove }: SortableArticleProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="border border-border rounded-lg p-4 space-y-3 bg-background">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className="cursor-grab touch-none text-muted-foreground hover:text-foreground"
+            {...attributes}
+            {...listeners}
+          >
+            <GripVertical className="h-4 w-4" />
+          </button>
+          <span className="text-sm font-medium">Artikel {index + 1}</span>
+        </div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => onRemove(index)}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="col-span-2">
+          <Label>Titel</Label>
+          <Input
+            value={article.title}
+            onChange={(e) => onUpdate(index, 'title', e.target.value)}
+            placeholder="Artikelns titel"
+          />
+        </div>
+        <div className="col-span-2">
+          <Label>Beskrivning</Label>
+          <Textarea
+            value={article.excerpt}
+            onChange={(e) => onUpdate(index, 'excerpt', e.target.value)}
+            placeholder="Kort beskrivning..."
+            rows={2}
+          />
+        </div>
+        <div>
+          <Label>Länk (URL)</Label>
+          <Input
+            value={article.url}
+            onChange={(e) => onUpdate(index, 'url', e.target.value)}
+            placeholder="/artiklar/min-artikel"
+          />
+        </div>
+        <div>
+          <Label>Bild</Label>
+          <ImageUploader
+            value={article.image || ''}
+            onChange={(value) => onUpdate(index, 'image', value)}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function ArticleGridBlockEditor({ data, onChange, canEdit }: ArticleGridBlockEditorProps) {
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
   const updateArticle = (index: number, field: keyof ArticleGridBlockData['articles'][0], value: string) => {
     const newArticles = [...data.articles];
     newArticles[index] = { ...newArticles[index], [field]: value };
@@ -32,6 +141,15 @@ export function ArticleGridBlockEditor({ data, onChange, canEdit }: ArticleGridB
       ...data,
       articles: data.articles.filter((_, i) => i !== index)
     });
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = data.articles.findIndex((_, i) => `article-${i}` === active.id);
+      const newIndex = data.articles.findIndex((_, i) => `article-${i}` === over.id);
+      onChange({ ...data, articles: arrayMove(data.articles, oldIndex, newIndex) });
+    }
   };
 
   if (!canEdit) {
@@ -61,6 +179,8 @@ export function ArticleGridBlockEditor({ data, onChange, canEdit }: ArticleGridB
       </div>
     );
   }
+
+  const articleIds = data.articles.map((_, index) => `article-${index}`);
 
   return (
     <div className="space-y-4">
@@ -94,55 +214,24 @@ export function ArticleGridBlockEditor({ data, onChange, canEdit }: ArticleGridB
 
       <div className="space-y-4">
         <Label>Artiklar</Label>
-        {data.articles.map((article, index) => (
-          <div key={index} className="border border-border rounded-lg p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Artikel {index + 1}</span>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => removeArticle(index)}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="col-span-2">
-                <Label>Titel</Label>
-                <Input
-                  value={article.title}
-                  onChange={(e) => updateArticle(index, 'title', e.target.value)}
-                  placeholder="Artikelns titel"
-                />
-              </div>
-              <div className="col-span-2">
-                <Label>Beskrivning</Label>
-                <Textarea
-                  value={article.excerpt}
-                  onChange={(e) => updateArticle(index, 'excerpt', e.target.value)}
-                  placeholder="Kort beskrivning..."
-                  rows={2}
-                />
-              </div>
-              <div>
-                <Label>Länk (URL)</Label>
-                <Input
-                  value={article.url}
-                  onChange={(e) => updateArticle(index, 'url', e.target.value)}
-                  placeholder="/artiklar/min-artikel"
-                />
-              </div>
-              <div>
-                <Label>Bild</Label>
-                <ImageUploader
-                  value={article.image || ''}
-                  onChange={(value) => updateArticle(index, 'image', value)}
-                />
-              </div>
-            </div>
-          </div>
-        ))}
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext items={articleIds} strategy={verticalListSortingStrategy}>
+            {data.articles.map((article, index) => (
+              <SortableArticleItem
+                key={`article-${index}`}
+                id={`article-${index}`}
+                index={index}
+                article={article}
+                onUpdate={updateArticle}
+                onRemove={removeArticle}
+              />
+            ))}
+          </SortableContext>
+        </DndContext>
       </div>
 
       <Button type="button" variant="outline" onClick={addArticle} className="w-full">
