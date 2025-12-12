@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Helmet } from 'react-helmet-async';
 import { Loader2 } from 'lucide-react';
 import { BlockRenderer } from '@/components/public/BlockRenderer';
+import { PublicNavigation } from '@/components/public/PublicNavigation';
 import type { Page, ContentBlock } from '@/types/cms';
 
 function parseContent(data: {
@@ -49,11 +50,14 @@ export default function PublicPage() {
 
   if (error || !page) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <h1 className="font-serif text-4xl font-bold mb-4">404</h1>
-          <p className="text-muted-foreground mb-6">Sidan kunde inte hittas</p>
-          <a href="/" className="text-primary hover:underline">Tillbaka till startsidan</a>
+      <div className="min-h-screen bg-background">
+        <PublicNavigation />
+        <div className="flex items-center justify-center py-32">
+          <div className="text-center">
+            <h1 className="font-serif text-4xl font-bold mb-4">404</h1>
+            <p className="text-muted-foreground mb-6">Sidan kunde inte hittas</p>
+            <a href="/" className="text-primary hover:underline">Tillbaka till startsidan</a>
+          </div>
         </div>
       </div>
     );
@@ -79,17 +83,7 @@ export default function PublicPage() {
       </Helmet>
 
       <div className="min-h-screen bg-background">
-        {/* Simple Header */}
-        <header className="border-b bg-card sticky top-0 z-50">
-          <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-            <a href="/" className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
-                <span className="text-primary-foreground font-serif font-bold text-xl">S</span>
-              </div>
-              <span className="font-serif font-bold text-xl">Sophiahemmet</span>
-            </a>
-          </div>
-        </header>
+        <PublicNavigation />
 
         {/* Page Title */}
         <div className="bg-muted/30 py-12 px-6">
