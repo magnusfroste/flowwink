@@ -3,28 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Helmet } from 'react-helmet-async';
 import { Loader2 } from 'lucide-react';
+import { BlockRenderer } from '@/components/public/BlockRenderer';
 import type { Page, ContentBlock } from '@/types/cms';
-
-interface HeroBlockData {
-  title: string;
-  subtitle?: string;
-  backgroundImage?: string;
-  primaryButton?: { text: string; url: string };
-  secondaryButton?: { text: string; url: string };
-}
-
-interface TextBlockData {
-  content: string;
-  backgroundColor?: string;
-}
-
-interface CTABlockData {
-  title: string;
-  subtitle?: string;
-  buttonText: string;
-  buttonUrl: string;
-  gradient?: boolean;
-}
 
 function parseContent(data: {
   content_json: unknown;
@@ -36,70 +16,6 @@ function parseContent(data: {
     content_json: (data.content_json || []) as ContentBlock[],
     meta_json: (data.meta_json || {}) as Page['meta_json'],
   } as Page;
-}
-
-// Render different block types
-function RenderBlock({ block }: { block: ContentBlock }) {
-  switch (block.type) {
-    case 'hero': {
-      const data = block.data as unknown as HeroBlockData;
-      if (!data.title) return null;
-      return (
-        <section className="relative py-24 px-6 bg-primary text-primary-foreground">
-          {data.backgroundImage && (
-            <div 
-              className="absolute inset-0 bg-cover bg-center opacity-20"
-              style={{ backgroundImage: `url(${data.backgroundImage})` }}
-            />
-          )}
-          <div className="relative container mx-auto text-center max-w-3xl">
-            <h1 className="font-serif text-5xl font-bold mb-6">{data.title}</h1>
-            {data.subtitle && <p className="text-xl opacity-90 mb-8">{data.subtitle}</p>}
-            <div className="flex gap-4 justify-center">
-              {data.primaryButton && (
-                <a href={data.primaryButton.url} className="bg-background text-foreground px-6 py-3 rounded-lg font-medium hover:opacity-90 transition-opacity">
-                  {data.primaryButton.text}
-                </a>
-              )}
-              {data.secondaryButton && (
-                <a href={data.secondaryButton.url} className="border border-current px-6 py-3 rounded-lg font-medium hover:bg-primary-foreground/10 transition-colors">
-                  {data.secondaryButton.text}
-                </a>
-              )}
-            </div>
-          </div>
-        </section>
-      );
-    }
-    case 'text': {
-      const data = block.data as unknown as TextBlockData;
-      return (
-        <section className="py-12 px-6" style={{ backgroundColor: data.backgroundColor }}>
-          <div 
-            className="container mx-auto max-w-3xl prose prose-lg"
-            dangerouslySetInnerHTML={{ __html: data.content || '' }}
-          />
-        </section>
-      );
-    }
-    case 'cta': {
-      const data = block.data as unknown as CTABlockData;
-      if (!data.title || !data.buttonText || !data.buttonUrl) return null;
-      return (
-        <section className={`py-16 px-6 ${data.gradient ? 'bg-gradient-to-r from-primary to-primary/80' : 'bg-primary'} text-primary-foreground`}>
-          <div className="container mx-auto text-center max-w-2xl">
-            <h2 className="font-serif text-3xl font-bold mb-4">{data.title}</h2>
-            {data.subtitle && <p className="text-lg opacity-90 mb-6">{data.subtitle}</p>}
-            <a href={data.buttonUrl} className="inline-block bg-background text-foreground px-8 py-3 rounded-lg font-medium hover:opacity-90 transition-opacity">
-              {data.buttonText}
-            </a>
-          </div>
-        </section>
-      );
-    }
-    default:
-      return null;
-  }
 }
 
 export default function PublicPage() {
@@ -186,7 +102,7 @@ export default function PublicPage() {
         <main>
           {page.content_json?.length > 0 ? (
             page.content_json.map((block) => (
-              <RenderBlock key={block.id} block={block} />
+              <BlockRenderer key={block.id} block={block} />
             ))
           ) : (
             <div className="py-16 px-6">
