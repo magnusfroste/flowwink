@@ -5,7 +5,8 @@ import {
   Users, 
   Settings,
   LogOut,
-  ChevronRight
+  ChevronRight,
+  Image
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -15,6 +16,7 @@ import { ROLE_LABELS } from '@/types/cms';
 const navigation = [
   { name: 'Översikt', href: '/admin', icon: LayoutDashboard },
   { name: 'Sidor', href: '/admin/pages', icon: FileText },
+  { name: 'Media', href: '/admin/media', icon: Image },
   { name: 'Användare', href: '/admin/users', icon: Users, adminOnly: true },
   { name: 'Inställningar', href: '/admin/settings', icon: Settings, adminOnly: true },
 ];

@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Upload, Link, Loader2, X, ImageIcon } from 'lucide-react';
+import { Upload, Link, Loader2, X, ImageIcon, FolderOpen } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { MediaLibraryPicker } from './MediaLibraryPicker';
 
 interface ImageUploaderProps {
   value: string;
@@ -23,8 +24,15 @@ export function ImageUploader({
   const [isUploading, setIsUploading] = useState(false);
   const [urlInput, setUrlInput] = useState(value || '');
   const [activeTab, setActiveTab] = useState<string>(value ? 'preview' : 'upload');
+  const [showLibrary, setShowLibrary] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  const handleLibrarySelect = (url: string) => {
+    onChange(url);
+    setUrlInput(url);
+    setActiveTab('preview');
+  };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -114,10 +122,14 @@ export function ImageUploader({
       <Label>{label}</Label>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="upload" className="text-xs">
             <Upload className="h-3 w-3 mr-1" />
             Ladda upp
+          </TabsTrigger>
+          <TabsTrigger value="library" className="text-xs">
+            <FolderOpen className="h-3 w-3 mr-1" />
+            Bibliotek
           </TabsTrigger>
           <TabsTrigger value="url" className="text-xs">
             <Link className="h-3 w-3 mr-1" />
@@ -125,7 +137,7 @@ export function ImageUploader({
           </TabsTrigger>
           <TabsTrigger value="preview" className="text-xs" disabled={!value}>
             <ImageIcon className="h-3 w-3 mr-1" />
-            Förhandsvisa
+            Förhandsv.
           </TabsTrigger>
         </TabsList>
 
@@ -158,6 +170,18 @@ export function ImageUploader({
             onChange={handleFileSelect}
             className="hidden"
           />
+        </TabsContent>
+
+        <TabsContent value="library" className="mt-3">
+          <div 
+            className={`${aspectClass[aspectRatio]} border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-2 bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer`}
+            onClick={() => setShowLibrary(true)}
+          >
+            <FolderOpen className="h-8 w-8 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">
+              Klicka för att välja från biblioteket
+            </span>
+          </div>
         </TabsContent>
 
         <TabsContent value="url" className="mt-3 space-y-3">
@@ -207,6 +231,12 @@ export function ImageUploader({
           )}
         </TabsContent>
       </Tabs>
+
+      <MediaLibraryPicker
+        open={showLibrary}
+        onOpenChange={setShowLibrary}
+        onSelect={handleLibrarySelect}
+      />
     </div>
   );
 }
