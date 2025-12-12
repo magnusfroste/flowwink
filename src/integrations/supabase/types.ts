@@ -90,6 +90,7 @@ export type Database = {
           id: string
           menu_order: number
           meta_json: Json | null
+          show_in_menu: boolean
           slug: string
           status: Database["public"]["Enums"]["page_status"]
           title: string
@@ -103,6 +104,7 @@ export type Database = {
           id?: string
           menu_order?: number
           meta_json?: Json | null
+          show_in_menu?: boolean
           slug: string
           status?: Database["public"]["Enums"]["page_status"]
           title: string
@@ -116,6 +118,7 @@ export type Database = {
           id?: string
           menu_order?: number
           meta_json?: Json | null
+          show_in_menu?: boolean
           slug?: string
           status?: Database["public"]["Enums"]["page_status"]
           title?: string
