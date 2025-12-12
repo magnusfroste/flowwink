@@ -1,0 +1,99 @@
+import { useState } from 'react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Button } from '@/components/ui/button';
+import { CTABlockData } from '@/types/cms';
+import { cn } from '@/lib/utils';
+
+interface CTABlockEditorProps {
+  data: CTABlockData;
+  onChange: (data: CTABlockData) => void;
+  isEditing: boolean;
+}
+
+export function CTABlockEditor({ data, onChange, isEditing }: CTABlockEditorProps) {
+  const [localData, setLocalData] = useState<CTABlockData>(data);
+
+  const handleChange = (updates: Partial<CTABlockData>) => {
+    const newData = { ...localData, ...updates };
+    setLocalData(newData);
+    onChange(newData);
+  };
+
+  if (isEditing) {
+    return (
+      <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+        <div className="space-y-2">
+          <Label htmlFor="cta-title">Rubrik</Label>
+          <Input
+            id="cta-title"
+            value={localData.title || ''}
+            onChange={(e) => handleChange({ title: e.target.value })}
+            placeholder="Redo att ta nästa steg?"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="cta-subtitle">Underrubrik (valfritt)</Label>
+          <Input
+            id="cta-subtitle"
+            value={localData.subtitle || ''}
+            onChange={(e) => handleChange({ subtitle: e.target.value })}
+            placeholder="Kort beskrivning"
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="cta-button-text">Knapptext</Label>
+            <Input
+              id="cta-button-text"
+              value={localData.buttonText || ''}
+              onChange={(e) => handleChange({ buttonText: e.target.value })}
+              placeholder="Kontakta oss"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="cta-button-url">Länk</Label>
+            <Input
+              id="cta-button-url"
+              value={localData.buttonUrl || ''}
+              onChange={(e) => handleChange({ buttonUrl: e.target.value })}
+              placeholder="/kontakt"
+            />
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Switch
+            id="cta-gradient"
+            checked={localData.gradient ?? true}
+            onCheckedChange={(checked) => handleChange({ gradient: checked })}
+          />
+          <Label htmlFor="cta-gradient">Använd gradient-bakgrund</Label>
+        </div>
+      </div>
+    );
+  }
+
+  // Preview mode
+  return (
+    <div
+      className={cn(
+        'rounded-lg py-12 px-8 text-center',
+        localData.gradient
+          ? 'bg-gradient-to-r from-primary to-primary/80 text-primary-foreground'
+          : 'bg-secondary text-secondary-foreground'
+      )}
+    >
+      <h3 className="text-2xl font-bold mb-2">{localData.title || 'Call-to-Action rubrik'}</h3>
+      {localData.subtitle && <p className="text-lg opacity-90 mb-6">{localData.subtitle}</p>}
+      {localData.buttonText && (
+        <Button
+          variant={localData.gradient ? 'secondary' : 'default'}
+          size="lg"
+        >
+          {localData.buttonText}
+        </Button>
+      )}
+    </div>
+  );
+}

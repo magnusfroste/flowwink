@@ -1,22 +1,17 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, Send, Check, X, Loader2, ExternalLink } from 'lucide-react';
-import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import Placeholder from '@tiptap/extension-placeholder';
-import Link from '@tiptap/extension-link';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { StatusBadge } from '@/components/StatusBadge';
 import { VersionHistoryPanel } from '@/components/admin/VersionHistoryPanel';
+import { BlockEditor } from '@/components/admin/blocks/BlockEditor';
 import { usePage, useUpdatePage, useUpdatePageStatus } from '@/hooks/usePages';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Toggle } from '@/components/ui/toggle';
-import { Separator } from '@/components/ui/separator';
-import { Bold, Italic, List, ListOrdered, Quote, Heading1, Heading2 } from 'lucide-react';
+import { ContentBlock } from '@/types/cms';
 
 export default function PageEditorPage() {
   const { id } = useParams<{ id: string }>();
@@ -29,49 +24,38 @@ export default function PageEditorPage() {
   const updateStatus = useUpdatePageStatus();
   
   const [title, setTitle] = useState('');
+  const [blocks, setBlocks] = useState<ContentBlock[]>([]);
   const [hasChanges, setHasChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-
-  const editor = useEditor({
-    extensions: [
-      StarterKit,
-      Placeholder.configure({ placeholder: 'Börja skriva innehåll här...' }),
-      Link.configure({ openOnClick: false }),
-    ],
-    content: '',
-    onUpdate: () => setHasChanges(true),
-  });
 
   useEffect(() => {
     if (page) {
       setTitle(page.title);
-      const textContent = page.content_json?.find((b: { type: string }) => b.type === 'text');
-      if (textContent && editor) {
-        editor.commands.setContent((textContent.data as { content?: string })?.content || '');
-      }
+      setBlocks(page.content_json || []);
     }
-  }, [page, editor]);
+  }, [page]);
+
+  const handleBlocksChange = useCallback((newBlocks: ContentBlock[]) => {
+    setBlocks(newBlocks);
+    setHasChanges(true);
+  }, []);
 
   const handleSave = useCallback(async () => {
-    if (!id || !editor) return;
+    if (!id) return;
     
     setIsSaving(true);
     try {
       await updatePage.mutateAsync({
         id,
         title,
-        content_json: [{
-          id: 'main-text',
-          type: 'text' as const,
-          data: { content: editor.getHTML() },
-        }],
+        content_json: blocks,
       });
       setHasChanges(false);
       toast({ title: 'Sparad ✓', description: 'Ändringarna har sparats.' });
     } finally {
       setIsSaving(false);
     }
-  }, [id, title, editor, updatePage, toast]);
+  }, [id, title, blocks, updatePage, toast]);
 
   const handleSendForReview = async () => {
     await handleSave();
@@ -158,39 +142,14 @@ export default function PageEditorPage() {
           </div>
         </div>
 
-        {/* Toolbar */}
-        {editor && canEdit && (
-          <div className="border-b bg-card px-4 py-2 flex items-center gap-1 flex-wrap">
-            <Toggle size="sm" pressed={editor.isActive('bold')} onPressedChange={() => editor.chain().focus().toggleBold().run()}>
-              <Bold className="h-4 w-4" />
-            </Toggle>
-            <Toggle size="sm" pressed={editor.isActive('italic')} onPressedChange={() => editor.chain().focus().toggleItalic().run()}>
-              <Italic className="h-4 w-4" />
-            </Toggle>
-            <Separator orientation="vertical" className="h-6 mx-2" />
-            <Toggle size="sm" pressed={editor.isActive('heading', { level: 1 })} onPressedChange={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}>
-              <Heading1 className="h-4 w-4" />
-            </Toggle>
-            <Toggle size="sm" pressed={editor.isActive('heading', { level: 2 })} onPressedChange={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}>
-              <Heading2 className="h-4 w-4" />
-            </Toggle>
-            <Separator orientation="vertical" className="h-6 mx-2" />
-            <Toggle size="sm" pressed={editor.isActive('bulletList')} onPressedChange={() => editor.chain().focus().toggleBulletList().run()}>
-              <List className="h-4 w-4" />
-            </Toggle>
-            <Toggle size="sm" pressed={editor.isActive('orderedList')} onPressedChange={() => editor.chain().focus().toggleOrderedList().run()}>
-              <ListOrdered className="h-4 w-4" />
-            </Toggle>
-            <Toggle size="sm" pressed={editor.isActive('blockquote')} onPressedChange={() => editor.chain().focus().toggleBlockquote().run()}>
-              <Quote className="h-4 w-4" />
-            </Toggle>
-          </div>
-        )}
-
-        {/* Editor */}
+        {/* Block Editor */}
         <div className="flex-1 overflow-auto p-8 bg-background">
-          <div className="max-w-3xl mx-auto bg-card rounded-lg border shadow-sm min-h-[500px]">
-            <EditorContent editor={editor} className="tiptap" />
+          <div className="max-w-3xl mx-auto">
+            <BlockEditor
+              blocks={blocks}
+              onChange={handleBlocksChange}
+              canEdit={canEdit}
+            />
           </div>
         </div>
 
