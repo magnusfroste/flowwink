@@ -62,7 +62,10 @@ export type ContentBlockType =
   | 'text'
   | 'image'
   | 'cta'
-  | 'contact';
+  | 'contact'
+  | 'link-grid'
+  | 'two-column'
+  | 'info-box';
 
 export interface ContentBlock {
   id: string;
@@ -103,6 +106,25 @@ export interface ContactBlockData {
   email?: string;
   address?: string;
   hours?: { day: string; time: string }[];
+}
+
+export interface LinkGridBlockData {
+  links: { icon: string; title: string; description?: string; url: string }[];
+  columns: 2 | 3 | 4;
+}
+
+export interface TwoColumnBlockData {
+  content: string;
+  imageSrc: string;
+  imageAlt: string;
+  imagePosition: 'left' | 'right';
+}
+
+export interface InfoBoxBlockData {
+  title: string;
+  content: string;
+  variant: 'info' | 'success' | 'warning' | 'highlight';
+  icon?: string;
 }
 
 // Workflow actions

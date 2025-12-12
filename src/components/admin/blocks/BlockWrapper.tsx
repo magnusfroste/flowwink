@@ -11,6 +11,9 @@ const BLOCK_LABELS: Record<ContentBlockType, string> = {
   image: 'Bild',
   cta: 'Call-to-Action',
   contact: 'Kontakt',
+  'link-grid': 'Länkgrid',
+  'two-column': 'Två-kolumn',
+  'info-box': 'Faktaruta',
 };
 
 interface BlockWrapperProps {

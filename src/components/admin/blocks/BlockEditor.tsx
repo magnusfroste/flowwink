@@ -14,7 +14,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { ContentBlock, ContentBlockType, HeroBlockData, TextBlockData, ImageBlockData, CTABlockData, ContactBlockData } from '@/types/cms';
+import { ContentBlock, ContentBlockType, HeroBlockData, TextBlockData, ImageBlockData, CTABlockData, ContactBlockData, LinkGridBlockData, TwoColumnBlockData, InfoBoxBlockData } from '@/types/cms';
 import { BlockWrapper } from './BlockWrapper';
 import { BlockSelector } from './BlockSelector';
 import { HeroBlockEditor } from './HeroBlockEditor';
@@ -22,6 +22,9 @@ import { TextBlockEditor } from './TextBlockEditor';
 import { ImageBlockEditor } from './ImageBlockEditor';
 import { CTABlockEditor } from './CTABlockEditor';
 import { ContactBlockEditor } from './ContactBlockEditor';
+import { LinkGridBlockEditor } from './LinkGridBlockEditor';
+import { TwoColumnBlockEditor } from './TwoColumnBlockEditor';
+import { InfoBoxBlockEditor } from './InfoBoxBlockEditor';
 
 type BlockDataMap = {
   hero: HeroBlockData;
@@ -29,14 +32,20 @@ type BlockDataMap = {
   image: ImageBlockData;
   cta: CTABlockData;
   contact: ContactBlockData;
+  'link-grid': LinkGridBlockData;
+  'two-column': TwoColumnBlockData;
+  'info-box': InfoBoxBlockData;
 };
 
-const DEFAULT_BLOCK_DATA: { [K in ContentBlockType]: BlockDataMap[K] } = {
+const DEFAULT_BLOCK_DATA: BlockDataMap = {
   hero: { title: 'Ny Hero', subtitle: '' },
   text: { content: '<p>Skriv ditt innehåll här...</p>' },
   image: { src: '', alt: '' },
   cta: { title: 'Redo att ta nästa steg?', buttonText: 'Kontakta oss', buttonUrl: '/kontakt', gradient: true },
   contact: { title: 'Kontakta oss' },
+  'link-grid': { links: [], columns: 3 },
+  'two-column': { content: '<p>Skriv ditt innehåll här...</p>', imageSrc: '', imageAlt: '', imagePosition: 'right' },
+  'info-box': { title: 'Viktig information', content: '', variant: 'info' },
 };
 
 interface BlockEditorProps {
@@ -73,7 +82,7 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
     const newBlock: ContentBlock = {
       id: `block-${Date.now()}`,
       type,
-      data: { ...DEFAULT_BLOCK_DATA[type] },
+      data: { ...DEFAULT_BLOCK_DATA[type] } as Record<string, unknown>,
     };
     onChange([...blocks, newBlock]);
     setEditingBlockId(newBlock.id);
@@ -135,6 +144,30 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
         return (
           <ContactBlockEditor
             data={block.data as unknown as ContactBlockData}
+            onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+            isEditing={isEditing}
+          />
+        );
+      case 'link-grid':
+        return (
+          <LinkGridBlockEditor
+            data={block.data as unknown as LinkGridBlockData}
+            onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+            isEditing={isEditing}
+          />
+        );
+      case 'two-column':
+        return (
+          <TwoColumnBlockEditor
+            data={block.data as unknown as TwoColumnBlockData}
+            onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+            isEditing={isEditing}
+          />
+        );
+      case 'info-box':
+        return (
+          <InfoBoxBlockEditor
+            data={block.data as unknown as InfoBoxBlockData}
             onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
             isEditing={isEditing}
           />
