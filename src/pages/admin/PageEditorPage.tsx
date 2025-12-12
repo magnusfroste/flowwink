@@ -31,9 +31,11 @@ export default function PageEditorPage() {
   useEffect(() => {
     if (page) {
       setTitle(page.title);
-      setBlocks(page.content_json || []);
+      // Deep clone to ensure we have fresh data
+      setBlocks(JSON.parse(JSON.stringify(page.content_json || [])));
+      setHasChanges(false);
     }
-  }, [page]);
+  }, [page?.id, page?.updated_at]);
 
   const handleBlocksChange = useCallback((newBlocks: ContentBlock[]) => {
     setBlocks(newBlocks);
