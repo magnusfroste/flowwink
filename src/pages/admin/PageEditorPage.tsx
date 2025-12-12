@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Send, Check, X, History, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save, Send, Check, X, Loader2, ExternalLink } from 'lucide-react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -8,8 +8,8 @@ import Link from '@tiptap/extension-link';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { StatusBadge } from '@/components/StatusBadge';
+import { VersionHistoryPanel } from '@/components/admin/VersionHistoryPanel';
 import { usePage, useUpdatePage, useUpdatePageStatus } from '@/hooks/usePages';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -24,7 +24,7 @@ export default function PageEditorPage() {
   const { toast } = useToast();
   const { isApprover } = useAuth();
   
-  const { data: page, isLoading } = usePage(id);
+  const { data: page, isLoading, refetch } = usePage(id);
   const updatePage = useUpdatePage();
   const updateStatus = useUpdatePageStatus();
   
@@ -92,6 +92,11 @@ export default function PageEditorPage() {
     }
   };
 
+  const handleVersionRestore = () => {
+    refetch();
+    setHasChanges(false);
+  };
+
   if (isLoading) {
     return (
       <AdminLayout>
@@ -138,7 +143,18 @@ export default function PageEditorPage() {
                 <p className="text-sm text-muted-foreground">/{page.slug}</p>
               </div>
             </div>
-            <StatusBadge status={page.status} />
+            <div className="flex items-center gap-3">
+              {id && <VersionHistoryPanel pageId={id} onRestore={handleVersionRestore} />}
+              {page.status === 'published' && (
+                <Button variant="outline" size="sm" asChild>
+                  <a href={`/p/${page.slug}`} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Visa live
+                  </a>
+                </Button>
+              )}
+              <StatusBadge status={page.status} />
+            </div>
           </div>
         </div>
 

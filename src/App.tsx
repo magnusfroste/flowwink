@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import AuthPage from "./pages/AuthPage";
@@ -10,29 +11,35 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import PagesListPage from "./pages/admin/PagesListPage";
 import NewPagePage from "./pages/admin/NewPagePage";
 import PageEditorPage from "./pages/admin/PageEditorPage";
+import UsersPage from "./pages/admin/UsersPage";
+import PublicPage from "./pages/PublicPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<AuthPage />} />
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/admin/pages" element={<PagesListPage />} />
-            <Route path="/admin/pages/new" element={<NewPagePage />} />
-            <Route path="/admin/pages/:id" element={<PageEditorPage />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
+    <HelmetProvider>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<AuthPage />} />
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/pages" element={<PagesListPage />} />
+              <Route path="/admin/pages/new" element={<NewPagePage />} />
+              <Route path="/admin/pages/:id" element={<PageEditorPage />} />
+              <Route path="/admin/users" element={<UsersPage />} />
+              <Route path="/p/:slug" element={<PublicPage />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
+    </HelmetProvider>
   </QueryClientProvider>
 );
 
