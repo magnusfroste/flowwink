@@ -440,54 +440,164 @@ export default function BrandingSettingsPage() {
 
           {/* Identity */}
           <TabsContent value="identity">
-            <Card>
-              <CardHeader>
-                <CardTitle>Identitet</CardTitle>
-                <CardDescription>Logo och organisationsnamn som visas på webbplatsen</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-2">
-                  <Label>Organisationsnamn</Label>
-                  <Input
-                    value={settings.organizationName || ''}
-                    onChange={(e) => updateField('organizationName', e.target.value)}
-                    placeholder="T.ex. Sophiahemmet"
-                  />
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Identitet</CardTitle>
+                  <CardDescription>Logo och organisationsnamn som visas på webbplatsen</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
                   <div className="space-y-2">
-                    <Label>Logo (ljus bakgrund)</Label>
-                    <ImagePickerField
-                      value={settings.logo || ''}
-                      onChange={(url) => updateField('logo', url)}
-                      placeholder="Logo-URL"
+                    <Label>Organisationsnamn</Label>
+                    <Input
+                      value={settings.organizationName || ''}
+                      onChange={(e) => updateField('organizationName', e.target.value)}
+                      placeholder="T.ex. Sophiahemmet"
                     />
-                    <p className="text-xs text-muted-foreground">Rekommenderad storlek: 200x60px</p>
                   </div>
                   
-                  <div className="space-y-2">
-                    <Label>Logo (mörk bakgrund)</Label>
-                    <ImagePickerField
-                      value={settings.logoDark || ''}
-                      onChange={(url) => updateField('logoDark', url)}
-                      placeholder="Logo-URL (mörk)"
-                    />
-                    <p className="text-xs text-muted-foreground">Används i footer och dark mode</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label>Logo (ljus bakgrund)</Label>
+                      <ImagePickerField
+                        value={settings.logo || ''}
+                        onChange={(url) => updateField('logo', url)}
+                        placeholder="Logo-URL"
+                      />
+                      <p className="text-xs text-muted-foreground">Rekommenderad storlek: 200x60px</p>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label>Logo (mörk bakgrund)</Label>
+                      <ImagePickerField
+                        value={settings.logoDark || ''}
+                        onChange={(url) => updateField('logoDark', url)}
+                        placeholder="Logo-URL (mörk)"
+                      />
+                      <p className="text-xs text-muted-foreground">Används i footer och dark mode</p>
+                    </div>
                   </div>
-                </div>
 
-                <div className="space-y-2">
-                  <Label>Favicon</Label>
-                  <ImagePickerField
-                    value={settings.favicon || ''}
-                    onChange={(url) => updateField('favicon', url)}
-                    placeholder="Favicon-URL"
-                  />
-                  <p className="text-xs text-muted-foreground">Liten ikon som visas i webbläsarfliken (32x32px)</p>
-                </div>
-              </CardContent>
-            </Card>
+                  <div className="space-y-2">
+                    <Label>Favicon</Label>
+                    <ImagePickerField
+                      value={settings.favicon || ''}
+                      onChange={(url) => updateField('favicon', url)}
+                      placeholder="Favicon-URL"
+                    />
+                    <p className="text-xs text-muted-foreground">Liten ikon som visas i webbläsarfliken (32x32px)</p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Header Display Settings */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Header-visning</CardTitle>
+                  <CardDescription>Kontrollera hur logo och namn visas i den publika headern</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>Visa logo i header</Label>
+                        <p className="text-xs text-muted-foreground">Visar logotypen om en är uppladdad</p>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={settings.showLogoInHeader !== false}
+                        onChange={(e) => updateField('showLogoInHeader', e.target.checked)}
+                        className="h-4 w-4 rounded border-input"
+                      />
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>Visa organisationsnamn bredvid logo</Label>
+                        <p className="text-xs text-muted-foreground">Visar namnet även när logon visas</p>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={settings.showNameWithLogo === true}
+                        onChange={(e) => updateField('showNameWithLogo', e.target.checked)}
+                        className="h-4 w-4 rounded border-input"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Logostorlek</Label>
+                    <Select
+                      value={settings.headerLogoSize || 'md'}
+                      onValueChange={(value) => updateField('headerLogoSize', value as 'sm' | 'md' | 'lg')}
+                    >
+                      <SelectTrigger className="w-48">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="sm">Liten</SelectItem>
+                        <SelectItem value="md">Medium</SelectItem>
+                        <SelectItem value="lg">Stor</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Preview */}
+                  <div className="space-y-2">
+                    <Label className="text-muted-foreground">Förhandsvisning</Label>
+                    <div className="border rounded-lg p-4 bg-card">
+                      <div className="flex items-center gap-3">
+                        {(() => {
+                          const showLogo = settings.showLogoInHeader !== false;
+                          const showName = settings.showNameWithLogo === true;
+                          const logoSize = settings.headerLogoSize || 'md';
+                          const hasLogo = !!settings.logo;
+                          const orgName = settings.organizationName || 'Organisation';
+                          
+                          const sizeClasses = {
+                            sm: 'h-8 max-w-[160px]',
+                            md: 'h-10 max-w-[200px]',
+                            lg: 'h-12 max-w-[240px]',
+                          };
+                          
+                          const iconSizes = {
+                            sm: 'h-8 w-8 text-lg',
+                            md: 'h-10 w-10 text-xl',
+                            lg: 'h-12 w-12 text-2xl',
+                          };
+
+                          if (showLogo && hasLogo) {
+                            return (
+                              <>
+                                <img 
+                                  src={settings.logo} 
+                                  alt={orgName} 
+                                  className={`${sizeClasses[logoSize]} object-contain`}
+                                />
+                                {showName && (
+                                  <span className="font-serif font-bold text-xl">{orgName}</span>
+                                )}
+                              </>
+                            );
+                          }
+                          
+                          return (
+                            <>
+                              <div className={`rounded-lg bg-primary flex items-center justify-center ${iconSizes[logoSize]}`}>
+                                <span className="text-primary-foreground font-serif font-bold">
+                                  {orgName.charAt(0)}
+                                </span>
+                              </div>
+                              <span className="font-serif font-bold text-xl">{orgName}</span>
+                            </>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           {/* Colors */}

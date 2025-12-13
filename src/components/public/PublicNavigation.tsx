@@ -42,24 +42,53 @@ export function PublicNavigation() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3">
-            {branding?.logo ? (
-              <img 
-                src={branding.logo} 
-                alt={branding.organizationName || 'Logo'} 
-                className="h-10 max-w-[200px] object-contain"
-              />
-            ) : (
-              <>
-                <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
-                  <span className="text-primary-foreground font-serif font-bold text-xl">
-                    {branding?.organizationName?.charAt(0) || 'S'}
-                  </span>
-                </div>
-                <span className="font-serif font-bold text-xl">
-                  {branding?.organizationName || 'Sophiahemmet'}
-                </span>
-              </>
-            )}
+            {(() => {
+              const showLogo = branding?.showLogoInHeader !== false;
+              const showName = branding?.showNameWithLogo === true;
+              const logoSize = branding?.headerLogoSize || 'md';
+              const hasLogo = !!branding?.logo;
+              const orgName = branding?.organizationName || 'Organisation';
+              
+              const sizeClasses = {
+                sm: 'h-8 max-w-[160px]',
+                md: 'h-10 max-w-[200px]',
+                lg: 'h-12 max-w-[240px]',
+              };
+              
+              const iconSizes = {
+                sm: 'h-8 w-8 text-lg',
+                md: 'h-10 w-10 text-xl',
+                lg: 'h-12 w-12 text-2xl',
+              };
+
+              // Show logo if enabled and exists
+              if (showLogo && hasLogo) {
+                return (
+                  <>
+                    <img 
+                      src={branding.logo} 
+                      alt={orgName} 
+                      className={cn(sizeClasses[logoSize], 'object-contain')}
+                    />
+                    {showName && (
+                      <span className="font-serif font-bold text-xl">{orgName}</span>
+                    )}
+                  </>
+                );
+              }
+              
+              // No logo but show name is enabled, or fallback
+              return (
+                <>
+                  <div className={cn('rounded-lg bg-primary flex items-center justify-center', iconSizes[logoSize])}>
+                    <span className="text-primary-foreground font-serif font-bold">
+                      {orgName.charAt(0)}
+                    </span>
+                  </div>
+                  <span className="font-serif font-bold text-xl">{orgName}</span>
+                </>
+              );
+            })()}
           </Link>
 
           {/* Desktop Navigation */}

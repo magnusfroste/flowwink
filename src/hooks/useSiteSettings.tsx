@@ -54,6 +54,11 @@ export interface BrandingSettings {
   // Appearance
   borderRadius?: 'none' | 'sm' | 'md' | 'lg';
   shadowIntensity?: 'none' | 'subtle' | 'medium';
+  
+  // Header display
+  showLogoInHeader?: boolean;
+  showNameWithLogo?: boolean;
+  headerLogoSize?: 'sm' | 'md' | 'lg';
 }
 
 const defaultBrandingSettings: BrandingSettings = {
@@ -68,6 +73,9 @@ const defaultBrandingSettings: BrandingSettings = {
   bodyFont: 'Inter',
   borderRadius: 'md',
   shadowIntensity: 'subtle',
+  showLogoInHeader: true,
+  showNameWithLogo: false,
+  headerLogoSize: 'md',
 };
 
 const defaultFooterSettings: FooterSettings = {
