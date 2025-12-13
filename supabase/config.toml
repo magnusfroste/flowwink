@@ -8,3 +8,6 @@ verify_jwt = true
 
 [functions.publish-scheduled-pages]
 verify_jwt = false
+
+[functions.migrate-page]
+verify_jwt = true

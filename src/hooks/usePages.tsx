@@ -79,15 +79,25 @@ export function useCreatePage() {
   const { user } = useAuth();
   
   return useMutation({
-    mutationFn: async ({ title, slug }: { title: string; slug: string }) => {
+    mutationFn: async ({ 
+      title, 
+      slug,
+      content,
+      meta 
+    }: { 
+      title: string; 
+      slug: string;
+      content?: ContentBlock[];
+      meta?: Partial<PageMeta>;
+    }) => {
       const { data, error } = await supabase
         .from('pages')
         .insert({
           title,
           slug,
           status: 'draft' as PageStatus,
-          content_json: [] as unknown as Json,
-          meta_json: {} as unknown as Json,
+          content_json: (content || []) as unknown as Json,
+          meta_json: (meta || {}) as unknown as Json,
           created_by: user?.id,
           updated_by: user?.id,
         })

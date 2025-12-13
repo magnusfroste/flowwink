@@ -32,6 +32,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { StatusBadge } from '@/components/StatusBadge';
+import { MigratePageDialog } from '@/components/admin/MigratePageDialog';
 import { usePages, useDeletePage, useCreatePage } from '@/hooks/usePages';
 import { useAuth } from '@/hooks/useAuth';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -122,12 +123,15 @@ export default function PagesListPage() {
               Hantera och redigera dina sidor
             </p>
           </div>
-          <Button asChild>
-            <Link to="/admin/pages/new">
-              <Plus className="h-4 w-4 mr-2" />
-              Ny sida
-            </Link>
-          </Button>
+          <div className="flex gap-2">
+            <MigratePageDialog />
+            <Button asChild>
+              <Link to="/admin/pages/new">
+                <Plus className="h-4 w-4 mr-2" />
+                Ny sida
+              </Link>
+            </Button>
+          </div>
         </div>
 
         {/* Filters */}
