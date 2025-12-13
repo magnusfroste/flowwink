@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Send, Check, X, Loader2, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Save, Send, Check, X, Loader2, ExternalLink, Eye } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -87,6 +87,22 @@ export default function PageEditorPage() {
     }
   };
 
+  const handlePreview = useCallback(() => {
+    if (!id || !page) return;
+    
+    const previewData = {
+      id,
+      slug: page.slug,
+      title,
+      content_json: blocks,
+      meta_json: meta,
+      savedAt: new Date().toISOString(),
+    };
+    
+    sessionStorage.setItem(`preview-${id}`, JSON.stringify(previewData));
+    window.open(`/preview/${id}`, '_blank');
+  }, [id, page, title, blocks, meta]);
+
   const handleVersionRestore = () => {
     refetch();
     setHasChanges(false);
@@ -145,6 +161,10 @@ export default function PageEditorPage() {
                 disabled={!canEdit}
               />
               {id && <VersionHistoryPanel pageId={id} onRestore={handleVersionRestore} />}
+              <Button variant="outline" size="sm" onClick={handlePreview}>
+                <Eye className="h-4 w-4 mr-2" />
+                Förhandsgranska
+              </Button>
               {page.status === 'published' && (
                 <Button variant="outline" size="sm" asChild>
                   <a href={`/${page.slug}`} target="_blank" rel="noopener noreferrer">
