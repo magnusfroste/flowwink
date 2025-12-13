@@ -29,6 +29,7 @@ export interface Page {
   updated_by: string | null;
   created_at: string;
   updated_at: string;
+  scheduled_at: string | null;
 }
 
 export interface PageVersion {

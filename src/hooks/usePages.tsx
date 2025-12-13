@@ -17,12 +17,14 @@ function parsePage(data: {
   updated_by: string | null;
   created_at: string;
   updated_at: string;
+  scheduled_at?: string | null;
 }): Page {
   return {
     ...data,
     status: data.status as PageStatus,
     content_json: (data.content_json || []) as unknown as ContentBlock[],
     meta_json: (data.meta_json || {}) as unknown as PageMeta,
+    scheduled_at: data.scheduled_at ?? null,
   };
 }
 
@@ -192,18 +194,27 @@ export function useUpdatePageStatus() {
     mutationFn: async ({ 
       id, 
       status,
-      feedback
+      feedback,
+      scheduledAt
     }: { 
       id: string; 
       status: PageStatus;
       feedback?: string;
+      scheduledAt?: Date | null;
     }) => {
+      const updates: Record<string, unknown> = {
+        status,
+        updated_by: user?.id,
+      };
+      
+      // Handle scheduling
+      if (scheduledAt !== undefined) {
+        updates.scheduled_at = scheduledAt ? scheduledAt.toISOString() : null;
+      }
+      
       const { data, error } = await supabase
         .from('pages')
-        .update({ 
-          status,
-          updated_by: user?.id,
-        })
+        .update(updates)
         .eq('id', id)
         .select()
         .single();

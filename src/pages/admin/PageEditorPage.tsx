@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Send, Check, X, Loader2, ExternalLink, Eye } from 'lucide-react';
+import { ArrowLeft, Save, Send, Check, X, Loader2, ExternalLink, Eye, Clock } from 'lucide-react';
+import { format } from 'date-fns';
+import { sv } from 'date-fns/locale';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,6 +10,7 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { VersionHistoryPanel } from '@/components/admin/VersionHistoryPanel';
 import { BlockEditor } from '@/components/admin/blocks/BlockEditor';
 import { PageSettingsDialog } from '@/components/admin/PageSettingsDialog';
+import { SchedulePublishDialog } from '@/components/admin/SchedulePublishDialog';
 import { usePage, useUpdatePage, useUpdatePageStatus } from '@/hooks/usePages';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -68,10 +71,35 @@ export default function PageEditorPage() {
     }
   }, [id, title, blocks, meta, updatePage, toast]);
 
-  const handleSendForReview = async () => {
+  const handleSendForReview = async (scheduledAt?: Date | null) => {
     await handleSave();
     if (id) {
-      await updateStatus.mutateAsync({ id, status: 'reviewing' });
+      await updateStatus.mutateAsync({ id, status: 'reviewing', scheduledAt });
+    }
+  };
+
+  const handleSchedule = async (scheduledAt: Date | null) => {
+    if (!id) return;
+    
+    if (page?.status === 'draft') {
+      // Save first, then send for review with schedule
+      await handleSave();
+      await updateStatus.mutateAsync({ id, status: 'reviewing', scheduledAt });
+      toast({
+        title: 'Schemalagd',
+        description: scheduledAt 
+          ? `Sidan publiceras ${format(scheduledAt, "d MMMM 'kl.' HH:mm", { locale: sv })}`
+          : 'Schemaläggning borttagen',
+      });
+    } else if (page?.status === 'reviewing') {
+      // Just update the schedule
+      await updateStatus.mutateAsync({ id, status: 'reviewing', scheduledAt });
+      toast({
+        title: scheduledAt ? 'Schemalagd' : 'Schemaläggning borttagen',
+        description: scheduledAt 
+          ? `Sidan publiceras ${format(scheduledAt, "d MMMM 'kl.' HH:mm", { locale: sv })}`
+          : 'Sidan väntar nu på manuell godkännande',
+      });
     }
   };
 
@@ -204,7 +232,7 @@ export default function PageEditorPage() {
                 </Button>
               )}
               {canSendForReview && (
-                <Button onClick={handleSendForReview} disabled={updateStatus.isPending}>
+                <Button onClick={() => handleSendForReview()} disabled={updateStatus.isPending}>
                   <Send className="h-4 w-4 mr-2" />
                   SKICKA FÖR GRANSKNING
                 </Button>
@@ -215,11 +243,22 @@ export default function PageEditorPage() {
                     <X className="h-4 w-4 mr-2" />
                     ÅTERFÖRVISA
                   </Button>
+                  <SchedulePublishDialog
+                    scheduledAt={page.scheduled_at}
+                    onSchedule={handleSchedule}
+                    disabled={updateStatus.isPending}
+                  />
                   <Button onClick={handleApprove} disabled={updateStatus.isPending} className="bg-success hover:bg-success/90">
                     <Check className="h-4 w-4 mr-2" />
                     GODKÄNN & PUBLICERA
                   </Button>
                 </>
+              )}
+              {page.status === 'reviewing' && page.scheduled_at && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted px-3 py-1.5 rounded-md">
+                  <Clock className="h-4 w-4" />
+                  <span>Publiceras {format(new Date(page.scheduled_at), "d MMM 'kl.' HH:mm", { locale: sv })}</span>
+                </div>
               )}
             </div>
           </div>

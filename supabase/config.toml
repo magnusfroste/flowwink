@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.analyze-brand]
 verify_jwt = true
+
+[functions.publish-scheduled-pages]
+verify_jwt = false
