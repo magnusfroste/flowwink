@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { AdminSidebar } from './AdminSidebar';
 import { Loader2 } from 'lucide-react';
-import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { SidebarProvider } from '@/components/ui/sidebar';
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -50,13 +50,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     <SidebarProvider>
       <div className="flex h-screen w-full bg-background">
         <AdminSidebar />
-        <main className="flex-1 overflow-auto">
-          <div className="flex items-center gap-2 border-b border-border px-4 py-3">
-            <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
-          </div>
-          <div className="animate-fade-in">
-            {children}
-          </div>
+        <main className="flex-1 overflow-auto animate-fade-in">
+          {children}
         </main>
       </div>
     </SidebarProvider>

@@ -10,6 +10,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
 import {
@@ -38,16 +39,14 @@ export function AdminSidebar() {
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
       {/* Logo */}
       <SidebarHeader className="border-b border-sidebar-border px-3 py-4">
-        <div className="flex items-center gap-2">
-          <div className="h-8 w-8 shrink-0 rounded-lg bg-primary flex items-center justify-center">
-            <span className="text-primary-foreground font-serif font-bold text-lg">S</span>
-          </div>
+        <div className="flex items-center justify-between">
           {!isCollapsed && (
             <div className="overflow-hidden">
               <span className="font-serif font-bold text-lg">Sophia</span>
               <span className="block text-xs text-sidebar-foreground/60">CMS</span>
             </div>
           )}
+          <SidebarTrigger className="h-8 w-8" />
         </div>
       </SidebarHeader>
 
