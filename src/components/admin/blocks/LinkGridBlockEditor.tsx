@@ -5,7 +5,25 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { IconPicker } from '@/components/admin/IconPicker';
 import { LinkGridBlockData } from '@/types/cms';
-import { Plus, Trash2, ExternalLink, icons } from 'lucide-react';
+import { Plus, Trash2, ExternalLink, GripVertical, icons } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { cn } from '@/lib/utils';
 
 interface LinkGridBlockEditorProps {
   data: LinkGridBlockData;
@@ -13,9 +31,123 @@ interface LinkGridBlockEditorProps {
   onChange: (data: LinkGridBlockData) => void;
 }
 
+interface SortableLinkItemProps {
+  id: string;
+  index: number;
+  link: { icon: string; title: string; description?: string; url: string };
+  onRemove: () => void;
+  onLinkChange: (field: 'icon' | 'title' | 'description' | 'url', value: string) => void;
+}
+
+function SortableLinkItem({ id, index, link, onRemove, onLinkChange }: SortableLinkItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "border rounded-lg p-4 space-y-3 bg-muted/30",
+        isDragging && "opacity-50 shadow-lg"
+      )}
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className="cursor-grab touch-none text-muted-foreground hover:text-foreground"
+            {...attributes}
+            {...listeners}
+          >
+            <GripVertical className="h-4 w-4" />
+          </button>
+          <span className="text-sm font-medium">Länk {index + 1}</span>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onRemove}
+          className="text-destructive hover:text-destructive"
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+      
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <Label>Ikon</Label>
+          <IconPicker
+            value={link.icon}
+            onChange={(v) => onLinkChange('icon', v)}
+          />
+        </div>
+        <div>
+          <Label>Rubrik</Label>
+          <Input
+            value={link.title}
+            onChange={(e) => onLinkChange('title', e.target.value)}
+            placeholder="Hitta hit"
+          />
+        </div>
+      </div>
+      
+      <div>
+        <Label>Beskrivning (valfritt)</Label>
+        <Input
+          value={link.description || ''}
+          onChange={(e) => onLinkChange('description', e.target.value)}
+          placeholder="Kort beskrivning..."
+        />
+      </div>
+      
+      <div>
+        <Label>URL</Label>
+        <Input
+          value={link.url}
+          onChange={(e) => onLinkChange('url', e.target.value)}
+          placeholder="/kontakt"
+        />
+      </div>
+    </div>
+  );
+}
+
 export function LinkGridBlockEditor({ data, isEditing, onChange }: LinkGridBlockEditorProps) {
   const [links, setLinks] = useState(data.links || []);
   const [columns, setColumns] = useState(data.columns || 3);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  // Generate stable IDs for sortable items
+  const linkIds = links.map((_, index) => `link-${index}`);
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = linkIds.indexOf(active.id as string);
+      const newIndex = linkIds.indexOf(over.id as string);
+      const newLinks = arrayMove(links, oldIndex, newIndex);
+      setLinks(newLinks);
+      onChange({ ...data, links: newLinks, columns });
+    }
+  };
 
   const handleAddLink = () => {
     const newLinks = [...links, { icon: 'ArrowRight', title: '', description: '', url: '' }];
@@ -29,7 +161,7 @@ export function LinkGridBlockEditor({ data, isEditing, onChange }: LinkGridBlock
     onChange({ ...data, links: newLinks, columns });
   };
 
-  const handleLinkChange = (index: number, field: keyof typeof links[0], value: string) => {
+  const handleLinkChange = (index: number, field: 'icon' | 'title' | 'description' | 'url', value: string) => {
     const newLinks = links.map((link, i) => 
       i === index ? { ...link, [field]: value } : link
     );
@@ -70,59 +202,26 @@ export function LinkGridBlockEditor({ data, isEditing, onChange }: LinkGridBlock
           </div>
         </div>
 
-        <div className="space-y-4">
-          {links.map((link, index) => (
-            <div key={index} className="border rounded-lg p-4 space-y-3 bg-muted/30">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Länk {index + 1}</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleRemoveLink(index)}
-                  className="text-destructive hover:text-destructive"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>Ikon</Label>
-                  <IconPicker
-                    value={link.icon}
-                    onChange={(v) => handleLinkChange(index, 'icon', v)}
-                  />
-                </div>
-                <div>
-                  <Label>Rubrik</Label>
-                  <Input
-                    value={link.title}
-                    onChange={(e) => handleLinkChange(index, 'title', e.target.value)}
-                    placeholder="Hitta hit"
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <Label>Beskrivning (valfritt)</Label>
-                <Input
-                  value={link.description || ''}
-                  onChange={(e) => handleLinkChange(index, 'description', e.target.value)}
-                  placeholder="Kort beskrivning..."
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext items={linkIds} strategy={verticalListSortingStrategy}>
+            <div className="space-y-4">
+              {links.map((link, index) => (
+                <SortableLinkItem
+                  key={linkIds[index]}
+                  id={linkIds[index]}
+                  index={index}
+                  link={link}
+                  onRemove={() => handleRemoveLink(index)}
+                  onLinkChange={(field, value) => handleLinkChange(index, field, value)}
                 />
-              </div>
-              
-              <div>
-                <Label>URL</Label>
-                <Input
-                  value={link.url}
-                  onChange={(e) => handleLinkChange(index, 'url', e.target.value)}
-                  placeholder="/kontakt"
-                />
-              </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </SortableContext>
+        </DndContext>
 
         <Button variant="outline" onClick={handleAddLink} className="w-full">
           <Plus className="h-4 w-4 mr-2" />
