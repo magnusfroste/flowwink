@@ -3,6 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { Json } from '@/integrations/supabase/types';
 
+export type FooterSectionId = 'brand' | 'quickLinks' | 'contact' | 'hours';
+
 export interface FooterSettings {
   phone: string;
   email: string;
@@ -18,6 +20,8 @@ export interface FooterSettings {
   showQuickLinks?: boolean;
   showContact?: boolean;
   showHours?: boolean;
+  // Section order
+  sectionOrder?: FooterSectionId[];
 }
 
 export interface SeoSettings {
@@ -100,6 +104,7 @@ const defaultFooterSettings: FooterSettings = {
   showQuickLinks: true,
   showContact: true,
   showHours: true,
+  sectionOrder: ['brand', 'quickLinks', 'contact', 'hours'],
 };
 
 const defaultSeoSettings: SeoSettings = {

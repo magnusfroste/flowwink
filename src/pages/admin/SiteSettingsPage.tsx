@@ -16,11 +16,65 @@ import {
   useUpdatePerformanceSettings,
   FooterSettings,
   SeoSettings,
-  PerformanceSettings
+  PerformanceSettings,
+  FooterSectionId
 } from '@/hooks/useSiteSettings';
-import { Loader2, Save, Globe, Zap, Phone, ImageIcon, X, AlertTriangle } from 'lucide-react';
+import { Loader2, Save, Globe, Zap, Phone, ImageIcon, X, AlertTriangle, GripVertical } from 'lucide-react';
 import { MediaLibraryPicker } from '@/components/admin/MediaLibraryPicker';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
+const SECTION_LABELS: Record<FooterSectionId, { label: string; description: string }> = {
+  brand: { label: 'Varumärke & logo', description: 'Organisationsnamn och tagline' },
+  quickLinks: { label: 'Snabblänkar', description: 'Länkar till publicerade sidor' },
+  contact: { label: 'Kontaktuppgifter', description: 'Telefon, e-post och adress' },
+  hours: { label: 'Öppettider', description: 'Vardags- och helgtider' },
+};
+
+interface SortableSectionItemProps {
+  id: FooterSectionId;
+  isVisible: boolean;
+  onToggle: (checked: boolean) => void;
+}
+
+function SortableSectionItem({ id, isVisible, onToggle }: SortableSectionItemProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  const section = SECTION_LABELS[id];
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center justify-between p-3 rounded-lg border bg-card ${isDragging ? 'opacity-50 shadow-lg' : ''}`}
+    >
+      <div className="flex items-center gap-3">
+        <button
+          {...attributes}
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground"
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
+        <div>
+          <Label>{section.label}</Label>
+          <p className="text-xs text-muted-foreground">{section.description}</p>
+        </div>
+      </div>
+      <Switch
+        checked={isVisible}
+        onCheckedChange={onToggle}
+      />
+    </div>
+  );
+}
 
 function OgImagePicker({ value, onChange }: { value: string; onChange: (url: string) => void }) {
   const [showPicker, setShowPicker] = useState(false);
@@ -93,7 +147,13 @@ export default function SiteSettingsPage() {
     showQuickLinks: true,
     showContact: true,
     showHours: true,
+    sectionOrder: ['brand', 'quickLinks', 'contact', 'hours'],
   });
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
   const [seoData, setSeoData] = useState<SeoSettings>({
     siteTitle: '',
@@ -428,50 +488,51 @@ export default function SiteSettingsPage() {
             {/* Layout Section */}
             <Card>
               <CardHeader>
-                <CardTitle className="font-serif">Layout</CardTitle>
-                <CardDescription>Välj vilka sektioner som visas i footern</CardDescription>
+                <CardTitle className="font-serif">Layout & ordning</CardTitle>
+                <CardDescription>Dra för att ändra ordning, växla för att visa/dölja</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Varumärke & logo</Label>
-                    <p className="text-xs text-muted-foreground">Visar organisationsnamn och tagline</p>
-                  </div>
-                  <Switch
-                    checked={footerData.showBrand !== false}
-                    onCheckedChange={(checked) => setFooterData(prev => ({ ...prev, showBrand: checked }))}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Snabblänkar</Label>
-                    <p className="text-xs text-muted-foreground">Visar länkar till publicerade sidor</p>
-                  </div>
-                  <Switch
-                    checked={footerData.showQuickLinks !== false}
-                    onCheckedChange={(checked) => setFooterData(prev => ({ ...prev, showQuickLinks: checked }))}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Kontaktuppgifter</Label>
-                    <p className="text-xs text-muted-foreground">Visar telefon, e-post och adress</p>
-                  </div>
-                  <Switch
-                    checked={footerData.showContact !== false}
-                    onCheckedChange={(checked) => setFooterData(prev => ({ ...prev, showContact: checked }))}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Öppettider</Label>
-                    <p className="text-xs text-muted-foreground">Visar vardags- och helgtider</p>
-                  </div>
-                  <Switch
-                    checked={footerData.showHours !== false}
-                    onCheckedChange={(checked) => setFooterData(prev => ({ ...prev, showHours: checked }))}
-                  />
-                </div>
+              <CardContent>
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={(event: DragEndEvent) => {
+                    const { active, over } = event;
+                    if (over && active.id !== over.id) {
+                      const currentOrder = footerData.sectionOrder || ['brand', 'quickLinks', 'contact', 'hours'];
+                      const oldIndex = currentOrder.indexOf(active.id as FooterSectionId);
+                      const newIndex = currentOrder.indexOf(over.id as FooterSectionId);
+                      setFooterData(prev => ({
+                        ...prev,
+                        sectionOrder: arrayMove(currentOrder, oldIndex, newIndex),
+                      }));
+                    }
+                  }}
+                >
+                  <SortableContext
+                    items={footerData.sectionOrder || ['brand', 'quickLinks', 'contact', 'hours']}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div className="space-y-2">
+                      {(footerData.sectionOrder || ['brand', 'quickLinks', 'contact', 'hours']).map((sectionId) => {
+                        const visibilityKey = {
+                          brand: 'showBrand',
+                          quickLinks: 'showQuickLinks',
+                          contact: 'showContact',
+                          hours: 'showHours',
+                        }[sectionId] as keyof FooterSettings;
+                        
+                        return (
+                          <SortableSectionItem
+                            key={sectionId}
+                            id={sectionId}
+                            isVisible={footerData[visibilityKey] !== false}
+                            onToggle={(checked) => setFooterData(prev => ({ ...prev, [visibilityKey]: checked }))}
+                          />
+                        );
+                      })}
+                    </div>
+                  </SortableContext>
+                </DndContext>
               </CardContent>
             </Card>
 
