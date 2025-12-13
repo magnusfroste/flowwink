@@ -133,7 +133,7 @@ export default function PageEditorPage() {
               {id && <VersionHistoryPanel pageId={id} onRestore={handleVersionRestore} />}
               {page.status === 'published' && (
                 <Button variant="outline" size="sm" asChild>
-                  <a href={`/p/${page.slug}`} target="_blank" rel="noopener noreferrer">
+                  <a href={`/${page.slug}`} target="_blank" rel="noopener noreferrer">
                     <ExternalLink className="h-4 w-4 mr-2" />
                     Visa live
                   </a>

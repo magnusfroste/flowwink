@@ -29,7 +29,6 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Routes>
-              <Route path="/" element={<PublicPage />} />
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/admin/pages" element={<PagesListPage />} />
@@ -39,8 +38,7 @@ const App = () => (
               <Route path="/admin/users" element={<UsersPage />} />
               <Route path="/admin/settings" element={<SiteSettingsPage />} />
               <Route path="/admin/menu-order" element={<MenuOrderPage />} />
-              <Route path="/p/:slug" element={<PublicPage />} />
-              <Route path="*" element={<NotFound />} />
+              <Route path="/:slug" element={<PublicPage />} />
             </Routes>
           </BrowserRouter>
         </TooltipProvider>

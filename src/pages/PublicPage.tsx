@@ -21,16 +21,16 @@ function parseContent(data: {
 }
 
 export default function PublicPage() {
-  const { slug: paramSlug } = useParams<{ slug: string }>();
-  const slug = paramSlug || 'hem';
+  const { slug } = useParams<{ slug: string }>();
+  const pageSlug = slug || 'hem';
 
   const { data: page, isLoading, error } = useQuery({
-    queryKey: ['public-page', slug],
+    queryKey: ['public-page', pageSlug],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('pages')
         .select('*')
-        .eq('slug', slug)
+        .eq('slug', pageSlug)
         .eq('status', 'published')
         .maybeSingle();
 
