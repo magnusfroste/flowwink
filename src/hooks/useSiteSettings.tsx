@@ -15,6 +15,8 @@ export interface FooterSettings {
   facebook?: string;
   instagram?: string;
   linkedin?: string;
+  twitter?: string;
+  youtube?: string;
   // Section visibility
   showBrand?: boolean;
   showQuickLinks?: boolean;
@@ -100,6 +102,8 @@ const defaultFooterSettings: FooterSettings = {
   facebook: '',
   instagram: '',
   linkedin: '',
+  twitter: '',
+  youtube: '',
   showBrand: true,
   showQuickLinks: true,
   showContact: true,

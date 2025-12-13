@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
-import { Phone, Mail, MapPin, Clock, Facebook, Instagram, Linkedin } from 'lucide-react';
+import { Phone, Mail, MapPin, Clock, Facebook, Instagram, Linkedin, Twitter, Youtube } from 'lucide-react';
 import { useFooterSettings, FooterSectionId } from '@/hooks/useSiteSettings';
 import { useBranding } from '@/providers/BrandingProvider';
 
@@ -181,7 +181,7 @@ export function PublicFooter() {
           </p>
           
           {/* Social Media Links */}
-          {(settings?.facebook || settings?.instagram || settings?.linkedin) && (
+          {(settings?.facebook || settings?.instagram || settings?.linkedin || settings?.twitter || settings?.youtube) && (
             <div className="flex gap-4">
               {settings?.facebook && (
                 <a
@@ -214,6 +214,28 @@ export function PublicFooter() {
                   aria-label="LinkedIn"
                 >
                   <Linkedin className="h-5 w-5" />
+                </a>
+              )}
+              {settings?.twitter && (
+                <a
+                  href={settings.twitter}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary-foreground/60 hover:text-primary-foreground transition-colors"
+                  aria-label="Twitter / X"
+                >
+                  <Twitter className="h-5 w-5" />
+                </a>
+              )}
+              {settings?.youtube && (
+                <a
+                  href={settings.youtube}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary-foreground/60 hover:text-primary-foreground transition-colors"
+                  aria-label="YouTube"
+                >
+                  <Youtube className="h-5 w-5" />
                 </a>
               )}
             </div>

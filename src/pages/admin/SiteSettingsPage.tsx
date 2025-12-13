@@ -143,6 +143,8 @@ export default function SiteSettingsPage() {
     facebook: '',
     instagram: '',
     linkedin: '',
+    twitter: '',
+    youtube: '',
     showBrand: true,
     showQuickLinks: true,
     showContact: true,
@@ -616,32 +618,52 @@ export default function SiteSettingsPage() {
                   <CardDescription>Länkar till sociala medier-profiler</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="facebook">Facebook</Label>
-                    <Input
-                      id="facebook"
-                      value={footerData.facebook || ''}
-                      onChange={(e) => setFooterData(prev => ({ ...prev, facebook: e.target.value }))}
-                      placeholder="https://facebook.com/..."
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="instagram">Instagram</Label>
-                    <Input
-                      id="instagram"
-                      value={footerData.instagram || ''}
-                      onChange={(e) => setFooterData(prev => ({ ...prev, instagram: e.target.value }))}
-                      placeholder="https://instagram.com/..."
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="linkedin">LinkedIn</Label>
-                    <Input
-                      id="linkedin"
-                      value={footerData.linkedin || ''}
-                      onChange={(e) => setFooterData(prev => ({ ...prev, linkedin: e.target.value }))}
-                      placeholder="https://linkedin.com/company/..."
-                    />
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="facebook">Facebook</Label>
+                      <Input
+                        id="facebook"
+                        value={footerData.facebook || ''}
+                        onChange={(e) => setFooterData(prev => ({ ...prev, facebook: e.target.value }))}
+                        placeholder="https://facebook.com/..."
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="instagram">Instagram</Label>
+                      <Input
+                        id="instagram"
+                        value={footerData.instagram || ''}
+                        onChange={(e) => setFooterData(prev => ({ ...prev, instagram: e.target.value }))}
+                        placeholder="https://instagram.com/..."
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="linkedin">LinkedIn</Label>
+                      <Input
+                        id="linkedin"
+                        value={footerData.linkedin || ''}
+                        onChange={(e) => setFooterData(prev => ({ ...prev, linkedin: e.target.value }))}
+                        placeholder="https://linkedin.com/company/..."
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="twitter">Twitter / X</Label>
+                      <Input
+                        id="twitter"
+                        value={footerData.twitter || ''}
+                        onChange={(e) => setFooterData(prev => ({ ...prev, twitter: e.target.value }))}
+                        placeholder="https://x.com/..."
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="youtube">YouTube</Label>
+                      <Input
+                        id="youtube"
+                        value={footerData.youtube || ''}
+                        onChange={(e) => setFooterData(prev => ({ ...prev, youtube: e.target.value }))}
+                        placeholder="https://youtube.com/@..."
+                      />
+                    </div>
                   </div>
                 </CardContent>
               </Card>
