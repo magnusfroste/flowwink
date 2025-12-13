@@ -9,7 +9,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ImagePickerField } from '@/components/admin/ImagePickerField';
 import { useBrandingSettings, useUpdateBrandingSettings, type BrandingSettings } from '@/hooks/useSiteSettings';
 import { AVAILABLE_HEADING_FONTS, AVAILABLE_BODY_FONTS } from '@/providers/BrandingProvider';
-import { Loader2, Palette, Type, Image, LayoutGrid, Sparkles } from 'lucide-react';
+import { BrandGuideDialog } from '@/components/admin/BrandGuideDialog';
+import { Loader2, Palette, Type, Image, LayoutGrid, Sparkles, Globe, Trash2 } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import type { Json } from '@/integrations/supabase/types';
+
+interface CustomTheme {
+  id: string;
+  name: string;
+  settings: Partial<BrandingSettings>;
+}
 
 // Predefined design themes
 const DESIGN_THEMES: { id: string; name: string; description: string; settings: Partial<BrandingSettings> }[] = [
@@ -72,9 +83,56 @@ const DESIGN_THEMES: { id: string; name: string; description: string; settings: 
 ];
 
 export default function BrandingSettingsPage() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const { data: savedSettings, isLoading } = useBrandingSettings();
   const updateSettings = useUpdateBrandingSettings();
   const [settings, setSettings] = useState<BrandingSettings>({});
+  const [brandGuideOpen, setBrandGuideOpen] = useState(false);
+
+  // Fetch custom themes
+  const { data: customThemes = [] } = useQuery({
+    queryKey: ['site-settings', 'custom_themes'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('site_settings')
+        .select('value')
+        .eq('key', 'custom_themes')
+        .maybeSingle();
+      if (error) throw error;
+      return (data?.value as unknown as CustomTheme[]) || [];
+    },
+  });
+
+  // Save custom themes mutation
+  const saveCustomThemes = useMutation({
+    mutationFn: async (themes: CustomTheme[]) => {
+      const { data: existing } = await supabase
+        .from('site_settings')
+        .select('id')
+        .eq('key', 'custom_themes')
+        .maybeSingle();
+
+      const jsonValue = themes as unknown as Json;
+
+      if (existing) {
+        const { error } = await supabase
+          .from('site_settings')
+          .update({ value: jsonValue, updated_at: new Date().toISOString() })
+          .eq('key', 'custom_themes');
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('site_settings')
+          .insert({ key: 'custom_themes', value: jsonValue });
+        if (error) throw error;
+      }
+      return themes;
+    },
+    onSuccess: (themes) => {
+      queryClient.setQueryData(['site-settings', 'custom_themes'], themes);
+    },
+  });
 
   useEffect(() => {
     if (savedSettings) {
@@ -142,11 +200,43 @@ export default function BrandingSettingsPage() {
     }
   };
 
+  const applyCustomTheme = (theme: CustomTheme) => {
+    setSettings((prev) => ({
+      ...prev,
+      ...theme.settings,
+    }));
+  };
+
+  const handleApplyBranding = (brandingSettings: Partial<BrandingSettings>) => {
+    setSettings((prev) => ({
+      ...prev,
+      ...brandingSettings,
+    }));
+  };
+
+  const handleSaveAsTheme = (name: string, themeSettings: Partial<BrandingSettings>) => {
+    const newTheme: CustomTheme = {
+      id: `custom-${Date.now()}`,
+      name,
+      settings: themeSettings,
+    };
+    saveCustomThemes.mutate([...customThemes, newTheme]);
+  };
+
+  const handleDeleteCustomTheme = (themeId: string) => {
+    const updated = customThemes.filter((t) => t.id !== themeId);
+    saveCustomThemes.mutate(updated);
+    toast({
+      title: 'Tema borttaget',
+      description: 'Det egna temat har tagits bort.',
+    });
+  };
+
   // Convert HSL to hex for theme preview
-  const getThemePreviewColors = (theme: typeof DESIGN_THEMES[0]) => ({
-    primary: hslToHex(theme.settings.primaryColor || '220 100% 26%'),
-    secondary: hslToHex(theme.settings.secondaryColor || '210 40% 96%'),
-    accent: hslToHex(theme.settings.accentColor || '199 89% 48%'),
+  const getThemePreviewColors = (themeSettings: Partial<BrandingSettings>) => ({
+    primary: hslToHex(themeSettings.primaryColor || '220 100% 26%'),
+    secondary: hslToHex(themeSettings.secondaryColor || '210 40% 96%'),
+    accent: hslToHex(themeSettings.accentColor || '199 89% 48%'),
   });
 
   if (isLoading) {
@@ -201,64 +291,151 @@ export default function BrandingSettingsPage() {
 
           {/* Themes */}
           <TabsContent value="themes">
-            <Card>
-              <CardHeader>
-                <CardTitle>Designteman</CardTitle>
-                <CardDescription>Välj ett fördefinierat tema som utgångspunkt, sedan kan du finjustera i de andra flikarna</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {DESIGN_THEMES.map((theme) => {
-                    const colors = getThemePreviewColors(theme);
-                    return (
-                      <button
-                        key={theme.id}
-                        onClick={() => applyTheme(theme.id)}
-                        className="text-left p-4 rounded-lg border-2 hover:border-primary/50 transition-all group"
-                      >
-                        <div className="flex items-start gap-4">
-                          {/* Color preview */}
-                          <div className="flex flex-col gap-1">
-                            <div
-                              className="h-8 w-8 rounded-md"
-                              style={{ backgroundColor: colors.primary }}
-                            />
-                            <div className="flex gap-1">
+            <div className="space-y-6">
+              {/* Brand Guide Assistant */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Globe className="h-5 w-5" />
+                    Brand Guide Assistant
+                  </CardTitle>
+                  <CardDescription>
+                    Analysera en befintlig webbplats och extrahera dess varumärkesprofil automatiskt
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button onClick={() => setBrandGuideOpen(true)} variant="outline">
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Analysera befintlig webbplats
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Custom Themes */}
+              {customThemes.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Egna teman</CardTitle>
+                    <CardDescription>Teman du har sparat från Brand Guide Assistant</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {customThemes.map((theme) => {
+                        const colors = getThemePreviewColors(theme.settings);
+                        return (
+                          <div
+                            key={theme.id}
+                            className="relative p-4 rounded-lg border-2 hover:border-primary/50 transition-all group"
+                          >
+                            <button
+                              onClick={() => applyCustomTheme(theme)}
+                              className="text-left w-full"
+                            >
+                              <div className="flex items-start gap-4">
+                                <div className="flex flex-col gap-1">
+                                  <div
+                                    className="h-8 w-8 rounded-md"
+                                    style={{ backgroundColor: colors.primary }}
+                                  />
+                                  <div className="flex gap-1">
+                                    <div
+                                      className="h-3 w-3 rounded-sm"
+                                      style={{ backgroundColor: colors.secondary }}
+                                    />
+                                    <div
+                                      className="h-3 w-3 rounded-sm"
+                                      style={{ backgroundColor: colors.accent }}
+                                    />
+                                  </div>
+                                </div>
+                                <div className="flex-1">
+                                  <h3 className="font-semibold group-hover:text-primary transition-colors">
+                                    {theme.name}
+                                  </h3>
+                                  <div className="flex gap-2 mt-2">
+                                    {theme.settings.headingFont && (
+                                      <span className="text-xs bg-muted px-2 py-0.5 rounded">
+                                        {theme.settings.headingFont}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => handleDeleteCustomTheme(theme.id)}
+                            >
+                              <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                            </Button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Predefined Themes */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Fördefinierade teman</CardTitle>
+                  <CardDescription>Välj ett tema som utgångspunkt, sedan kan du finjustera i de andra flikarna</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {DESIGN_THEMES.map((theme) => {
+                      const colors = getThemePreviewColors(theme.settings);
+                      return (
+                        <button
+                          key={theme.id}
+                          onClick={() => applyTheme(theme.id)}
+                          className="text-left p-4 rounded-lg border-2 hover:border-primary/50 transition-all group"
+                        >
+                          <div className="flex items-start gap-4">
+                            <div className="flex flex-col gap-1">
                               <div
-                                className="h-3 w-3 rounded-sm"
-                                style={{ backgroundColor: colors.secondary }}
+                                className="h-8 w-8 rounded-md"
+                                style={{ backgroundColor: colors.primary }}
                               />
-                              <div
-                                className="h-3 w-3 rounded-sm"
-                                style={{ backgroundColor: colors.accent }}
-                              />
+                              <div className="flex gap-1">
+                                <div
+                                  className="h-3 w-3 rounded-sm"
+                                  style={{ backgroundColor: colors.secondary }}
+                                />
+                                <div
+                                  className="h-3 w-3 rounded-sm"
+                                  style={{ backgroundColor: colors.accent }}
+                                />
+                              </div>
+                            </div>
+                            <div className="flex-1">
+                              <h3 className="font-semibold group-hover:text-primary transition-colors">
+                                {theme.name}
+                              </h3>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                {theme.description}
+                              </p>
+                              <div className="flex gap-2 mt-2">
+                                <span className="text-xs bg-muted px-2 py-0.5 rounded">
+                                  {theme.settings.headingFont}
+                                </span>
+                                <span className="text-xs bg-muted px-2 py-0.5 rounded">
+                                  {theme.settings.borderRadius === 'none' ? 'Skarpa' : 
+                                   theme.settings.borderRadius === 'lg' ? 'Rundade' : 'Standard'}
+                                </span>
+                              </div>
                             </div>
                           </div>
-                          
-                          <div className="flex-1">
-                            <h3 className="font-semibold group-hover:text-primary transition-colors">
-                              {theme.name}
-                            </h3>
-                            <p className="text-sm text-muted-foreground mt-1">
-                              {theme.description}
-                            </p>
-                            <div className="flex gap-2 mt-2">
-                              <span className="text-xs bg-muted px-2 py-0.5 rounded">
-                                {theme.settings.headingFont}
-                              </span>
-                              <span className="text-xs bg-muted px-2 py-0.5 rounded">
-                                {theme.settings.borderRadius === 'none' ? 'Skarpa' : 
-                                 theme.settings.borderRadius === 'lg' ? 'Rundade' : 'Standard'}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           {/* Identity */}
@@ -545,6 +722,13 @@ export default function BrandingSettingsPage() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        <BrandGuideDialog
+          open={brandGuideOpen}
+          onOpenChange={setBrandGuideOpen}
+          onApplyBranding={handleApplyBranding}
+          onSaveAsTheme={handleSaveAsTheme}
+        />
       </div>
     </AdminLayout>
   );

@@ -2,3 +2,6 @@ project_id = "rzhjotxffjfsdlhrdkpj"
 
 [functions.create-user]
 verify_jwt = false
+
+[functions.analyze-brand]
+verify_jwt = true
