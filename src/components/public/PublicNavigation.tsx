@@ -4,6 +4,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { useBranding } from '@/providers/BrandingProvider';
 
 interface NavPage {
   id: string;
@@ -16,6 +17,7 @@ export function PublicNavigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
   const currentSlug = location.pathname === '/' ? 'hem' : location.pathname.slice(1);
+  const { branding } = useBranding();
 
   const { data: pages = [] } = useQuery({
     queryKey: ['public-nav-pages'],
@@ -40,10 +42,24 @@ export function PublicNavigation() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-serif font-bold text-xl">S</span>
-            </div>
-            <span className="font-serif font-bold text-xl">Sophiahemmet</span>
+            {branding?.logo ? (
+              <img 
+                src={branding.logo} 
+                alt={branding.organizationName || 'Logo'} 
+                className="h-10 max-w-[200px] object-contain"
+              />
+            ) : (
+              <>
+                <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
+                  <span className="text-primary-foreground font-serif font-bold text-xl">
+                    {branding?.organizationName?.charAt(0) || 'S'}
+                  </span>
+                </div>
+                <span className="font-serif font-bold text-xl">
+                  {branding?.organizationName || 'Sophiahemmet'}
+                </span>
+              </>
+            )}
           </Link>
 
           {/* Desktop Navigation */}

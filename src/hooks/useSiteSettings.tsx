@@ -35,6 +35,41 @@ export interface PerformanceSettings {
   cacheStaticAssets: boolean;
 }
 
+export interface BrandingSettings {
+  // Identity
+  logo?: string;
+  logoDark?: string;
+  favicon?: string;
+  organizationName?: string;
+  
+  // Colors (HSL format)
+  primaryColor?: string;
+  secondaryColor?: string;
+  accentColor?: string;
+  
+  // Typography
+  headingFont?: string;
+  bodyFont?: string;
+  
+  // Appearance
+  borderRadius?: 'none' | 'sm' | 'md' | 'lg';
+  shadowIntensity?: 'none' | 'subtle' | 'medium';
+}
+
+const defaultBrandingSettings: BrandingSettings = {
+  logo: '',
+  logoDark: '',
+  favicon: '',
+  organizationName: '',
+  primaryColor: '220 100% 26%',
+  secondaryColor: '210 40% 96%',
+  accentColor: '199 89% 48%',
+  headingFont: 'PT Serif',
+  bodyFont: 'Inter',
+  borderRadius: 'md',
+  shadowIntensity: 'subtle',
+};
+
 const defaultFooterSettings: FooterSettings = {
   phone: '',
   email: '',
@@ -166,4 +201,13 @@ export function usePerformanceSettings() {
 
 export function useUpdatePerformanceSettings() {
   return useUpdateSiteSettings<PerformanceSettings>('performance', 'Prestandainställningarna har uppdaterats.');
+}
+
+// Branding hooks
+export function useBrandingSettings() {
+  return useSiteSettings<BrandingSettings>('branding', defaultBrandingSettings);
+}
+
+export function useUpdateBrandingSettings() {
+  return useUpdateSiteSettings<BrandingSettings>('branding', 'Varumärkesinställningarna har uppdaterats.');
 }
