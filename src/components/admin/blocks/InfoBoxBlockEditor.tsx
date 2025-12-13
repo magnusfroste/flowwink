@@ -9,25 +9,25 @@ const VARIANT_CONFIG = {
   info: {
     label: 'Information',
     icon: Info,
-    className: 'bg-blue-50 border-blue-200 text-blue-900 dark:bg-blue-950/50 dark:border-blue-800 dark:text-blue-100',
-    iconClass: 'text-blue-600 dark:text-blue-400',
+    className: 'bg-info/10 border-info/30',
+    iconClass: 'text-info',
   },
   success: {
     label: 'Framgång',
     icon: CheckCircle,
-    className: 'bg-green-50 border-green-200 text-green-900 dark:bg-green-950/50 dark:border-green-800 dark:text-green-100',
-    iconClass: 'text-green-600 dark:text-green-400',
+    className: 'bg-success/10 border-success/30',
+    iconClass: 'text-success',
   },
   warning: {
     label: 'Varning',
     icon: AlertTriangle,
-    className: 'bg-amber-50 border-amber-200 text-amber-900 dark:bg-amber-950/50 dark:border-amber-800 dark:text-amber-100',
-    iconClass: 'text-amber-600 dark:text-amber-400',
+    className: 'bg-warning/10 border-warning/30',
+    iconClass: 'text-warning',
   },
   highlight: {
     label: 'Framhävd',
     icon: Sparkles,
-    className: 'bg-primary/5 border-primary/20 text-foreground',
+    className: 'bg-primary/5 border-primary/20',
     iconClass: 'text-primary',
   },
 };
