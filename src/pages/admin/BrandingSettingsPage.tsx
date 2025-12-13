@@ -769,77 +769,114 @@ export default function BrandingSettingsPage() {
 
           {/* Appearance */}
           <TabsContent value="appearance">
-            <Card>
-              <CardHeader>
-                <CardTitle>Utseende</CardTitle>
-                <CardDescription>Anpassa det visuella uttrycket</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label>Hörnradie</Label>
-                    <Select
-                      value={settings.borderRadius || 'md'}
-                      onValueChange={(value) => updateField('borderRadius', value as BrandingSettings['borderRadius'])}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">Inga rundade hörn</SelectItem>
-                        <SelectItem value="sm">Subtilt rundade</SelectItem>
-                        <SelectItem value="md">Medelrundade</SelectItem>
-                        <SelectItem value="lg">Kraftigt rundade</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-muted-foreground">Påverkar knappar, kort och bilder</p>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>Skuggor</Label>
-                    <Select
-                      value={settings.shadowIntensity || 'subtle'}
-                      onValueChange={(value) => updateField('shadowIntensity', value as BrandingSettings['shadowIntensity'])}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">Inga skuggor</SelectItem>
-                        <SelectItem value="subtle">Subtila skuggor</SelectItem>
-                        <SelectItem value="medium">Tydliga skuggor</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-muted-foreground">Ger djup och dimension åt element</p>
-                  </div>
-                </div>
-
-                {/* Preview */}
-                <div className="mt-8 p-6 rounded-lg border bg-muted/30">
-                  <p className="text-sm font-medium mb-4">Förhandsvisning</p>
-                  <div className="flex flex-wrap gap-4">
-                    {(['none', 'sm', 'md', 'lg'] as const).map((radius) => (
-                      <div
-                        key={radius}
-                        className={`h-20 w-20 bg-card border flex items-center justify-center text-xs ${
-                          settings.borderRadius === radius ? 'ring-2 ring-primary' : ''
-                        }`}
-                        style={{
-                          borderRadius: radius === 'none' ? 0 : radius === 'sm' ? 4 : radius === 'md' ? 8 : 12,
-                          boxShadow: settings.shadowIntensity === 'none' 
-                            ? 'none' 
-                            : settings.shadowIntensity === 'subtle' 
-                              ? '0 1px 3px rgba(0,0,0,0.1)' 
-                              : '0 4px 12px rgba(0,0,0,0.15)'
-                        }}
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Utseende</CardTitle>
+                  <CardDescription>Anpassa det visuella uttrycket</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label>Hörnradie</Label>
+                      <Select
+                        value={settings.borderRadius || 'md'}
+                        onValueChange={(value) => updateField('borderRadius', value as BrandingSettings['borderRadius'])}
                       >
-                        {radius}
-                      </div>
-                    ))}
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Inga rundade hörn</SelectItem>
+                          <SelectItem value="sm">Subtilt rundade</SelectItem>
+                          <SelectItem value="md">Medelrundade</SelectItem>
+                          <SelectItem value="lg">Kraftigt rundade</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">Påverkar knappar, kort och bilder</p>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label>Skuggor</Label>
+                      <Select
+                        value={settings.shadowIntensity || 'subtle'}
+                        onValueChange={(value) => updateField('shadowIntensity', value as BrandingSettings['shadowIntensity'])}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Inga skuggor</SelectItem>
+                          <SelectItem value="subtle">Subtila skuggor</SelectItem>
+                          <SelectItem value="medium">Tydliga skuggor</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">Ger djup och dimension åt element</p>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+
+                  {/* Preview */}
+                  <div className="mt-8 p-6 rounded-lg border bg-muted/30">
+                    <p className="text-sm font-medium mb-4">Förhandsvisning</p>
+                    <div className="flex flex-wrap gap-4">
+                      {(['none', 'sm', 'md', 'lg'] as const).map((radius) => (
+                        <div
+                          key={radius}
+                          className={`h-20 w-20 bg-card border flex items-center justify-center text-xs ${
+                            settings.borderRadius === radius ? 'ring-2 ring-primary' : ''
+                          }`}
+                          style={{
+                            borderRadius: radius === 'none' ? 0 : radius === 'sm' ? 4 : radius === 'md' ? 8 : 12,
+                            boxShadow: settings.shadowIntensity === 'none' 
+                              ? 'none' 
+                              : settings.shadowIntensity === 'subtle' 
+                                ? '0 1px 3px rgba(0,0,0,0.1)' 
+                                : '0 4px 12px rgba(0,0,0,0.15)'
+                          }}
+                        >
+                          {radius}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Theme Toggle Settings */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Tema-växling</CardTitle>
+                  <CardDescription>Låt besökare växla mellan ljust och mörkt tema</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Visa tema-toggle</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Visar en knapp i navigationen där besökare kan växla mellan ljust, mörkt och systemtema
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">
+                        {settings.allowThemeToggle !== false ? 'På' : 'Av'}
+                      </span>
+                      <Button
+                        variant={settings.allowThemeToggle !== false ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => updateField('allowThemeToggle', settings.allowThemeToggle !== false ? false : true)}
+                      >
+                        {settings.allowThemeToggle !== false ? 'Aktiverad' : 'Inaktiverad'}
+                      </Button>
+                    </div>
+                  </div>
+                  {settings.allowThemeToggle === false && (
+                    <p className="text-sm text-muted-foreground bg-muted p-3 rounded-md">
+                      När tema-toggle är inaktiverad visas webbplatsen alltid i ljust tema för besökare.
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
 
