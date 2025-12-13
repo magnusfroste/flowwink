@@ -18,6 +18,7 @@ import MediaLibraryPage from "./pages/admin/MediaLibraryPage";
 import SiteSettingsPage from "./pages/admin/SiteSettingsPage";
 import BrandingSettingsPage from "./pages/admin/BrandingSettingsPage";
 import MenuOrderPage from "./pages/admin/MenuOrderPage";
+import PreviewPage from "./pages/PreviewPage";
 import PublicPage from "./pages/PublicPage";
 import NotFound from "./pages/NotFound";
 
@@ -45,6 +46,7 @@ const App = () => (
                   <Route path="/admin/settings" element={<SiteSettingsPage />} />
                   <Route path="/admin/branding" element={<BrandingSettingsPage />} />
                   <Route path="/admin/menu-order" element={<MenuOrderPage />} />
+                  <Route path="/preview/:id" element={<PreviewPage />} />
                   <Route path="/:slug" element={<PublicPage />} />
                 </Routes>
               </BrowserRouter>
