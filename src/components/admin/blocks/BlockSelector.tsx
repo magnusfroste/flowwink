@@ -1,103 +1,160 @@
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Plus, Layout, Type, ImageIcon, MousePointerClick, Phone, Grid3X3, Columns, AlertCircle, HelpCircle, Newspaper, Youtube, Quote, Minus, Images, BarChart3 } from 'lucide-react';
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { 
+  Plus, 
+  Layout, 
+  Type, 
+  ImageIcon, 
+  MousePointerClick, 
+  Phone, 
+  Grid3X3, 
+  Columns, 
+  AlertCircle, 
+  HelpCircle, 
+  Newspaper, 
+  Youtube, 
+  Quote, 
+  Minus, 
+  Images, 
+  BarChart3 
+} from 'lucide-react';
 import { ContentBlockType } from '@/types/cms';
 
-const BLOCK_OPTIONS: { type: ContentBlockType; label: string; icon: React.ReactNode; description: string }[] = [
+interface BlockOption {
+  type: ContentBlockType;
+  label: string;
+  icon: React.ReactNode;
+  description: string;
+}
+
+interface BlockGroup {
+  name: string;
+  blocks: BlockOption[];
+}
+
+const BLOCK_GROUPS: BlockGroup[] = [
   {
-    type: 'hero',
-    label: 'Hero',
-    icon: <Layout className="h-4 w-4" />,
-    description: 'Stor rubrik med bakgrund',
+    name: 'Text & Media',
+    blocks: [
+      {
+        type: 'text',
+        label: 'Text',
+        icon: <Type className="h-5 w-5" />,
+        description: 'Rik textinnehåll med formatering',
+      },
+      {
+        type: 'image',
+        label: 'Bild',
+        icon: <ImageIcon className="h-5 w-5" />,
+        description: 'Bild med bildtext',
+      },
+      {
+        type: 'gallery',
+        label: 'Galleri',
+        icon: <Images className="h-5 w-5" />,
+        description: 'Bildgalleri med lightbox',
+      },
+      {
+        type: 'youtube',
+        label: 'YouTube',
+        icon: <Youtube className="h-5 w-5" />,
+        description: 'Inbäddad YouTube-video',
+      },
+      {
+        type: 'quote',
+        label: 'Citat',
+        icon: <Quote className="h-5 w-5" />,
+        description: 'Framhävt citat med författare',
+      },
+    ],
   },
   {
-    type: 'text',
-    label: 'Text',
-    icon: <Type className="h-4 w-4" />,
-    description: 'Rik textinnehåll',
+    name: 'Layout',
+    blocks: [
+      {
+        type: 'hero',
+        label: 'Hero',
+        icon: <Layout className="h-5 w-5" />,
+        description: 'Stor rubrik med bakgrundsbild',
+      },
+      {
+        type: 'two-column',
+        label: 'Två-kolumn',
+        icon: <Columns className="h-5 w-5" />,
+        description: 'Text och bild sida vid sida',
+      },
+      {
+        type: 'separator',
+        label: 'Avdelare',
+        icon: <Minus className="h-5 w-5" />,
+        description: 'Visuell brytning mellan sektioner',
+      },
+    ],
   },
   {
-    type: 'image',
-    label: 'Bild',
-    icon: <ImageIcon className="h-4 w-4" />,
-    description: 'Bild med bildtext',
+    name: 'Navigation & Länkar',
+    blocks: [
+      {
+        type: 'link-grid',
+        label: 'Länkgrid',
+        icon: <Grid3X3 className="h-5 w-5" />,
+        description: 'Rutnät med snabblänkar',
+      },
+      {
+        type: 'article-grid',
+        label: 'Artikelgrid',
+        icon: <Newspaper className="h-5 w-5" />,
+        description: 'Rutnät med artikelkort',
+      },
+    ],
   },
   {
-    type: 'two-column',
-    label: 'Två-kolumn',
-    icon: <Columns className="h-4 w-4" />,
-    description: 'Text och bild sida vid sida',
+    name: 'Information',
+    blocks: [
+      {
+        type: 'info-box',
+        label: 'Faktaruta',
+        icon: <AlertCircle className="h-5 w-5" />,
+        description: 'Framhävd informationsruta',
+      },
+      {
+        type: 'accordion',
+        label: 'Accordion/FAQ',
+        icon: <HelpCircle className="h-5 w-5" />,
+        description: 'Expanderbara frågor och svar',
+      },
+      {
+        type: 'stats',
+        label: 'Statistik',
+        icon: <BarChart3 className="h-5 w-5" />,
+        description: 'Visa nyckeltal visuellt',
+      },
+    ],
   },
   {
-    type: 'link-grid',
-    label: 'Länkgrid',
-    icon: <Grid3X3 className="h-4 w-4" />,
-    description: 'Rutnät med snabblänkar',
-  },
-  {
-    type: 'info-box',
-    label: 'Faktaruta',
-    icon: <AlertCircle className="h-4 w-4" />,
-    description: 'Framhävd informationsruta',
-  },
-  {
-    type: 'accordion',
-    label: 'Accordion/FAQ',
-    icon: <HelpCircle className="h-4 w-4" />,
-    description: 'Expanderbara frågor och svar',
-  },
-  {
-    type: 'article-grid',
-    label: 'Artikelgrid',
-    icon: <Newspaper className="h-4 w-4" />,
-    description: 'Rutnät med artikelkort',
-  },
-  {
-    type: 'youtube',
-    label: 'YouTube',
-    icon: <Youtube className="h-4 w-4" />,
-    description: 'Inbäddad YouTube-video',
-  },
-  {
-    type: 'quote',
-    label: 'Citat',
-    icon: <Quote className="h-4 w-4" />,
-    description: 'Framhävt citat med författare',
-  },
-  {
-    type: 'separator',
-    label: 'Avdelare',
-    icon: <Minus className="h-4 w-4" />,
-    description: 'Visuell brytning mellan sektioner',
-  },
-  {
-    type: 'gallery',
-    label: 'Galleri',
-    icon: <Images className="h-4 w-4" />,
-    description: 'Bildgalleri med lightbox',
-  },
-  {
-    type: 'stats',
-    label: 'Statistik',
-    icon: <BarChart3 className="h-4 w-4" />,
-    description: 'Visa nyckeltal visuellt',
-  },
-  {
-    type: 'cta',
-    label: 'Call-to-Action',
-    icon: <MousePointerClick className="h-4 w-4" />,
-    description: 'Uppmaning med knapp',
-  },
-  {
-    type: 'contact',
-    label: 'Kontakt',
-    icon: <Phone className="h-4 w-4" />,
-    description: 'Kontaktinformation',
+    name: 'Interaktion',
+    blocks: [
+      {
+        type: 'cta',
+        label: 'Call-to-Action',
+        icon: <MousePointerClick className="h-5 w-5" />,
+        description: 'Uppmaning med knapp',
+      },
+      {
+        type: 'contact',
+        label: 'Kontakt',
+        icon: <Phone className="h-5 w-5" />,
+        description: 'Kontaktinformation',
+      },
+    ],
   },
 ];
 
@@ -106,29 +163,56 @@ interface BlockSelectorProps {
 }
 
 export function BlockSelector({ onAdd }: BlockSelectorProps) {
+  const [open, setOpen] = useState(false);
+
+  const handleSelect = (type: ContentBlockType) => {
+    onAdd(type);
+    setOpen(false);
+  };
+
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
         <Button variant="outline" className="w-full border-dashed">
           <Plus className="h-4 w-4 mr-2" />
           Lägg till block
         </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="center" className="w-56">
-        {BLOCK_OPTIONS.map((option) => (
-          <DropdownMenuItem
-            key={option.type}
-            onClick={() => onAdd(option.type)}
-            className="flex items-start gap-3 py-3"
-          >
-            <div className="mt-0.5 text-primary">{option.icon}</div>
-            <div>
-              <div className="font-medium">{option.label}</div>
-              <div className="text-xs text-muted-foreground">{option.description}</div>
-            </div>
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+      </SheetTrigger>
+      <SheetContent side="right" className="w-[400px] sm:w-[540px] p-0">
+        <SheetHeader className="px-6 py-4 border-b bg-card">
+          <SheetTitle className="font-serif">Välj blocktyp</SheetTitle>
+        </SheetHeader>
+        <ScrollArea className="h-[calc(100vh-80px)]">
+          <div className="p-6 space-y-6">
+            {BLOCK_GROUPS.map((group) => (
+              <div key={group.name}>
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                  {group.name}
+                </h3>
+                <div className="grid grid-cols-2 gap-3">
+                  {group.blocks.map((block) => (
+                    <button
+                      key={block.type}
+                      onClick={() => handleSelect(block.type)}
+                      className="flex items-start gap-3 p-4 rounded-lg border bg-card hover:bg-accent hover:border-primary/30 transition-all text-left group"
+                    >
+                      <div className="p-2 rounded-md bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                        {block.icon}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm">{block.label}</div>
+                        <div className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                          {block.description}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </ScrollArea>
+      </SheetContent>
+    </Sheet>
   );
 }
