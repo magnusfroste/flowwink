@@ -22,7 +22,7 @@ import {
   CustomScriptsSettings,
   FooterSectionId
 } from '@/hooks/useSiteSettings';
-import { Loader2, Save, Globe, Zap, Phone, ImageIcon, X, AlertTriangle, GripVertical, Code } from 'lucide-react';
+import { Loader2, Save, Globe, Zap, Phone, ImageIcon, X, AlertTriangle, GripVertical, Code, CheckCircle2, Circle } from 'lucide-react';
 import { MediaLibraryPicker } from '@/components/admin/MediaLibraryPicker';
 import { CodeEditor } from '@/components/admin/CodeEditor';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -419,6 +419,47 @@ export default function SiteSettingsPage() {
                 Scripts som läggs till här körs på alla publika sidor. Felaktiga scripts kan påverka webbplatsens funktion och prestanda.
               </AlertDescription>
             </Alert>
+
+            {/* Active Scripts Preview */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="font-serif text-base">Aktiva scripts</CardTitle>
+                <CardDescription>Översikt över script-injektioner på publika sidor</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {[
+                    { key: 'headStart', label: 'Head (start)', value: scriptsData.headStart },
+                    { key: 'headEnd', label: 'Head (slut)', value: scriptsData.headEnd },
+                    { key: 'bodyStart', label: 'Body (start)', value: scriptsData.bodyStart },
+                    { key: 'bodyEnd', label: 'Body (slut)', value: scriptsData.bodyEnd },
+                  ].map(({ key, label, value }) => {
+                    const isActive = value && value.trim().length > 0;
+                    const charCount = value?.length || 0;
+                    return (
+                      <div 
+                        key={key}
+                        className={`p-3 rounded-lg border ${isActive ? 'bg-emerald-50 border-emerald-200 dark:bg-emerald-950/20 dark:border-emerald-800' : 'bg-muted/30 border-border'}`}
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          {isActive ? (
+                            <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                          ) : (
+                            <Circle className="h-4 w-4 text-muted-foreground" />
+                          )}
+                          <span className={`text-sm font-medium ${isActive ? 'text-emerald-800 dark:text-emerald-200' : 'text-muted-foreground'}`}>
+                            {label}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground ml-6">
+                          {isActive ? `${charCount} tecken` : 'Inga scripts'}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
 
             <div className="flex justify-end">
               <Button onClick={() => updateScripts.mutate(scriptsData)} disabled={isSaving}>
