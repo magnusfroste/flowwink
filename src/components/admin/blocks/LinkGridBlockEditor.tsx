@@ -3,28 +3,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { IconPicker } from '@/components/admin/IconPicker';
 import { LinkGridBlockData } from '@/types/cms';
 import { Plus, Trash2, ExternalLink, icons } from 'lucide-react';
-
-// Common icons for healthcare context
-const ICON_OPTIONS = [
-  // Communication
-  'Phone', 'Mail', 'MessageCircle', 'Send',
-  // Location & Time
-  'MapPin', 'Clock', 'Calendar', 'CalendarCheck',
-  // Healthcare
-  'Heart', 'HeartPulse', 'Stethoscope', 'Hospital', 'Ambulance', 'Pill', 'Syringe', 'Activity',
-  // People
-  'Users', 'User', 'UserPlus', 'Baby',
-  // Documents
-  'FileText', 'Files', 'ClipboardList', 'BookOpen',
-  // Navigation & Actions  
-  'ArrowRight', 'ExternalLink', 'Search', 'Download',
-  // Information
-  'Info', 'HelpCircle', 'AlertCircle', 'CheckCircle',
-  // Misc
-  'Star', 'Shield', 'Lock', 'Key', 'Settings', 'Home', 'Building', 'Briefcase',
-];
 
 interface LinkGridBlockEditorProps {
   data: LinkGridBlockData;
@@ -107,24 +88,10 @@ export function LinkGridBlockEditor({ data, isEditing, onChange }: LinkGridBlock
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label>Ikon</Label>
-                  <Select 
-                    value={link.icon} 
-                    onValueChange={(v) => handleLinkChange(index, 'icon', v)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {ICON_OPTIONS.map((icon) => (
-                        <SelectItem key={icon} value={icon}>
-                          <div className="flex items-center gap-2">
-                            {renderIcon(icon)}
-                            <span>{icon}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <IconPicker
+                    value={link.icon}
+                    onChange={(v) => handleLinkChange(index, 'icon', v)}
+                  />
                 </div>
                 <div>
                   <Label>Rubrik</Label>
