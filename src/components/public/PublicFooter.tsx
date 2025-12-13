@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { Phone, Mail, MapPin, Clock, Facebook, Instagram, Linkedin, Twitter, Youtube } from 'lucide-react';
 import { useFooterSettings, FooterSectionId } from '@/hooks/useSiteSettings';
 import { useBranding } from '@/providers/BrandingProvider';
+import { useTheme } from 'next-themes';
 
 interface NavPage {
   id: string;
@@ -14,6 +15,7 @@ interface NavPage {
 export function PublicFooter() {
   const { data: settings } = useFooterSettings();
   const { branding } = useBranding();
+  const { resolvedTheme } = useTheme();
   
   const { data: pages = [] } = useQuery({
     queryKey: ['public-nav-pages'],
@@ -67,12 +69,18 @@ export function PublicFooter() {
     
     switch (sectionId) {
       case 'brand':
+        // In footer (which has bg-primary), use logoDark in light mode, logo in dark mode
+        const footerLogo = resolvedTheme === 'dark' 
+          ? (branding?.logo || branding?.logoDark)
+          : (branding?.logoDark || branding?.logo);
+        const hasFooterLogo = !!footerLogo;
+        
         return (
           <div key="brand">
             <div className="flex items-center gap-3 mb-4">
-              {branding?.logoDark ? (
+              {hasFooterLogo ? (
                 <img 
-                  src={branding.logoDark} 
+                  src={footerLogo} 
                   alt={brandName} 
                   className="h-10 max-w-[200px] object-contain"
                 />

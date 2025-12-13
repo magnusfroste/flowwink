@@ -3,8 +3,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { useState } from 'react';
+import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 import { useBranding } from '@/providers/BrandingProvider';
+import { ThemeToggle } from './ThemeToggle';
 
 interface NavPage {
   id: string;
@@ -18,6 +20,7 @@ export function PublicNavigation() {
   const location = useLocation();
   const currentSlug = location.pathname === '/' ? 'hem' : location.pathname.slice(1);
   const { branding } = useBranding();
+  const { resolvedTheme } = useTheme();
 
   const { data: pages = [] } = useQuery({
     queryKey: ['public-nav-pages'],
@@ -47,7 +50,13 @@ export function PublicNavigation() {
               const showName = branding?.showNameWithLogo === true;
               const logoSize = branding?.headerLogoSize || 'md';
               const hasLogo = !!branding?.logo;
+              const hasDarkLogo = !!branding?.logoDark;
               const orgName = branding?.organizationName || 'Organisation';
+              
+              // Choose logo based on theme
+              const currentLogo = resolvedTheme === 'dark' && hasDarkLogo 
+                ? branding?.logoDark 
+                : branding?.logo;
               
               const sizeClasses = {
                 sm: 'h-8 max-w-[160px]',
@@ -66,7 +75,7 @@ export function PublicNavigation() {
                 return (
                   <>
                     <img 
-                      src={branding.logo} 
+                      src={currentLogo} 
                       alt={orgName} 
                       className={cn(sizeClasses[logoSize], 'object-contain')}
                     />
@@ -92,7 +101,7 @@ export function PublicNavigation() {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-1">
+          <nav className="hidden md:flex items-center gap-2">
             {pages.map((page) => (
               <Link
                 key={page.id}
@@ -108,20 +117,24 @@ export function PublicNavigation() {
                 {page.title}
               </Link>
             ))}
+            <ThemeToggle />
           </nav>
 
           {/* Mobile Menu Button */}
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 rounded-md hover:bg-muted transition-colors"
-            aria-label={mobileMenuOpen ? 'Stäng meny' : 'Öppna meny'}
-          >
-            {mobileMenuOpen ? (
-              <X className="h-6 w-6" />
-            ) : (
-              <Menu className="h-6 w-6" />
-            )}
-          </button>
+          <div className="flex items-center gap-2 md:hidden">
+            <ThemeToggle />
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-2 rounded-md hover:bg-muted transition-colors"
+              aria-label={mobileMenuOpen ? 'Stäng meny' : 'Öppna meny'}
+            >
+              {mobileMenuOpen ? (
+                <X className="h-6 w-6" />
+              ) : (
+                <Menu className="h-6 w-6" />
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Mobile Navigation */}
