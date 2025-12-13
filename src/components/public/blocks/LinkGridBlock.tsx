@@ -1,19 +1,17 @@
 import { LinkGridBlockData } from '@/types/cms';
-import { ArrowRight, FileText, Users, Calendar, Heart, Star, Info, HelpCircle } from 'lucide-react';
+import { ArrowRight, icons } from 'lucide-react';
 
 interface LinkGridBlockProps {
   data: LinkGridBlockData;
 }
 
-const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
-  'file-text': FileText,
-  'users': Users,
-  'calendar': Calendar,
-  'heart': Heart,
-  'star': Star,
-  'info': Info,
-  'help-circle': HelpCircle,
-};
+function renderIcon(iconName: string, className?: string) {
+  const LucideIcon = icons[iconName as keyof typeof icons];
+  if (LucideIcon && typeof LucideIcon === 'function') {
+    return <LucideIcon className={className} />;
+  }
+  return <ArrowRight className={className} />;
+}
 
 export function LinkGridBlock({ data }: LinkGridBlockProps) {
   if (!data.links || data.links.length === 0) return null;
@@ -29,7 +27,6 @@ export function LinkGridBlock({ data }: LinkGridBlockProps) {
       <div className="container mx-auto">
         <div className={`grid gap-6 ${gridCols[data.columns]}`}>
           {data.links.map((link, index) => {
-            const IconComponent = iconMap[link.icon] || FileText;
             return (
               <a
                 key={index}
@@ -38,7 +35,7 @@ export function LinkGridBlock({ data }: LinkGridBlockProps) {
               >
                 <div className="flex items-start gap-4">
                   <div className="p-2 bg-primary/10 rounded-lg shrink-0">
-                    <IconComponent className="h-6 w-6 text-primary" />
+                    {renderIcon(link.icon, "h-6 w-6 text-primary")}
                   </div>
                   <div className="flex-1">
                     <h3 className="font-semibold mb-1 group-hover:text-primary transition-colors">
