@@ -7,11 +7,12 @@ import { Input } from '@/components/ui/input';
 import { StatusBadge } from '@/components/StatusBadge';
 import { VersionHistoryPanel } from '@/components/admin/VersionHistoryPanel';
 import { BlockEditor } from '@/components/admin/blocks/BlockEditor';
+import { PageSettingsDialog } from '@/components/admin/PageSettingsDialog';
 import { usePage, useUpdatePage, useUpdatePageStatus } from '@/hooks/usePages';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ContentBlock } from '@/types/cms';
+import { ContentBlock, PageMeta } from '@/types/cms';
 
 export default function PageEditorPage() {
   const { id } = useParams<{ id: string }>();
@@ -25,6 +26,7 @@ export default function PageEditorPage() {
   
   const [title, setTitle] = useState('');
   const [blocks, setBlocks] = useState<ContentBlock[]>([]);
+  const [meta, setMeta] = useState<PageMeta>({});
   const [hasChanges, setHasChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -33,12 +35,18 @@ export default function PageEditorPage() {
       setTitle(page.title);
       // Deep clone to ensure we have fresh data
       setBlocks(JSON.parse(JSON.stringify(page.content_json || [])));
+      setMeta(JSON.parse(JSON.stringify(page.meta_json || {})));
       setHasChanges(false);
     }
   }, [page?.id, page?.updated_at]);
 
   const handleBlocksChange = useCallback((newBlocks: ContentBlock[]) => {
     setBlocks(newBlocks);
+    setHasChanges(true);
+  }, []);
+
+  const handleMetaChange = useCallback((newMeta: PageMeta) => {
+    setMeta(newMeta);
     setHasChanges(true);
   }, []);
 
@@ -51,13 +59,14 @@ export default function PageEditorPage() {
         id,
         title,
         content_json: blocks,
+        meta_json: meta,
       });
       setHasChanges(false);
       toast({ title: 'Sparad ✓', description: 'Ändringarna har sparats.' });
     } finally {
       setIsSaving(false);
     }
-  }, [id, title, blocks, updatePage, toast]);
+  }, [id, title, blocks, meta, updatePage, toast]);
 
   const handleSendForReview = async () => {
     await handleSave();
@@ -130,6 +139,11 @@ export default function PageEditorPage() {
               </div>
             </div>
             <div className="flex items-center gap-3">
+              <PageSettingsDialog 
+                meta={meta} 
+                onMetaChange={handleMetaChange}
+                disabled={!canEdit}
+              />
               {id && <VersionHistoryPanel pageId={id} onRestore={handleVersionRestore} />}
               {page.status === 'published' && (
                 <Button variant="outline" size="sm" asChild>

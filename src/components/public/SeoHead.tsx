@@ -7,6 +7,7 @@ interface SeoHeadProps {
   ogImage?: string;
   canonicalUrl?: string;
   noIndex?: boolean;
+  noFollow?: boolean;
 }
 
 export function SeoHead({ 
@@ -14,7 +15,8 @@ export function SeoHead({
   description, 
   ogImage,
   canonicalUrl,
-  noIndex = false
+  noIndex = false,
+  noFollow = false
 }: SeoHeadProps) {
   const { data: seoSettings } = useSeoSettings();
   const { data: performanceSettings } = usePerformanceSettings();
@@ -28,8 +30,9 @@ export function SeoHead({
   const finalDescription = description || seoSettings?.defaultDescription || '';
   const finalOgImage = ogImage || seoSettings?.ogImage || '';
   
+  // Per-page settings override global settings
   const robotsIndex = noIndex ? false : (seoSettings?.robotsIndex ?? true);
-  const robotsFollow = seoSettings?.robotsFollow ?? true;
+  const robotsFollow = noFollow ? false : (seoSettings?.robotsFollow ?? true);
   const robotsContent = `${robotsIndex ? 'index' : 'noindex'}, ${robotsFollow ? 'follow' : 'nofollow'}`;
 
   return (

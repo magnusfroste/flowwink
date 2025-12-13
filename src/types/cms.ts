@@ -55,6 +55,13 @@ export interface PageMeta {
   description?: string;
   keywords?: string[];
   og_image?: string;
+  // Page display settings
+  showTitle?: boolean;
+  titleAlignment?: 'left' | 'center';
+  // SEO settings
+  seoTitle?: string;
+  noIndex?: boolean;
+  noFollow?: boolean;
 }
 
 export type ContentBlockType = 

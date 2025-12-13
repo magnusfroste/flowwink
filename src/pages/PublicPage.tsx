@@ -6,6 +6,7 @@ import { BlockRenderer } from '@/components/public/BlockRenderer';
 import { PublicNavigation } from '@/components/public/PublicNavigation';
 import { PublicFooter } from '@/components/public/PublicFooter';
 import { SeoHead } from '@/components/public/SeoHead';
+import { cn } from '@/lib/utils';
 import type { Page, ContentBlock } from '@/types/cms';
 
 function parseContent(data: {
@@ -68,20 +69,27 @@ export default function PublicPage() {
   return (
     <>
       <SeoHead 
-        title={page.title}
+        title={page.meta_json?.seoTitle || page.title}
         description={page.meta_json?.description}
         ogImage={page.meta_json?.og_image}
+        noIndex={page.meta_json?.noIndex}
+        noFollow={page.meta_json?.noFollow}
       />
 
       <div className="min-h-screen bg-background">
         <PublicNavigation />
 
-        {/* Page Title */}
-        <div className="bg-muted/30 py-12 px-6">
-          <div className="container mx-auto">
-            <h1 className="font-serif text-4xl font-bold">{page.title}</h1>
+        {/* Page Title - only show if showTitle !== false */}
+        {page.meta_json?.showTitle !== false && (
+          <div className="bg-muted/30 py-12 px-6">
+            <div className={cn(
+              "container mx-auto",
+              page.meta_json?.titleAlignment === 'center' && "text-center"
+            )}>
+              <h1 className="font-serif text-4xl font-bold">{page.title}</h1>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Content Blocks */}
         <main>
