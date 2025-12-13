@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Search, Filter, MoreHorizontal, Edit, Trash2, Copy } from 'lucide-react';
+import { Plus, Search, Filter, MoreHorizontal, Edit, Trash2, Copy, ArrowUpDown } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,9 +35,21 @@ import { useAuth } from '@/hooks/useAuth';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { PageStatus } from '@/types/cms';
 
+type SortField = 'title' | 'updated_at' | 'status';
+type SortDirection = 'asc' | 'desc';
+
+const STATUS_ORDER: Record<PageStatus, number> = {
+  draft: 1,
+  reviewing: 2,
+  published: 3,
+  archived: 4,
+};
+
 export default function PagesListPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<PageStatus | 'all'>('all');
+  const [sortField, setSortField] = useState<SortField>('updated_at');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [deleteId, setDeleteId] = useState<string | null>(null);
   
   const navigate = useNavigate();
@@ -46,12 +58,41 @@ export default function PagesListPage() {
   const createPage = useCreatePage();
   const { isAdmin } = useAuth();
 
-  const filteredPages = pages?.filter(page => {
-    const matchesSearch = page.title.toLowerCase().includes(search.toLowerCase()) ||
-      page.slug.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || page.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  }) || [];
+  const filteredAndSortedPages = useMemo(() => {
+    const filtered = pages?.filter(page => {
+      const matchesSearch = page.title.toLowerCase().includes(search.toLowerCase()) ||
+        page.slug.toLowerCase().includes(search.toLowerCase());
+      const matchesStatus = statusFilter === 'all' || page.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    }) || [];
+
+    return [...filtered].sort((a, b) => {
+      let comparison = 0;
+      
+      switch (sortField) {
+        case 'title':
+          comparison = a.title.localeCompare(b.title, 'sv');
+          break;
+        case 'updated_at':
+          comparison = new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime();
+          break;
+        case 'status':
+          comparison = STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
+          break;
+      }
+      
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+  }, [pages, search, statusFilter, sortField, sortDirection]);
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection(field === 'title' ? 'asc' : 'desc');
+    }
+  };
 
   const handleDuplicate = async (page: { title: string; slug: string }) => {
     const newSlug = `${page.slug}-copy-${Date.now()}`;
@@ -116,6 +157,27 @@ export default function PagesListPage() {
                   <SelectItem value="archived">Arkiverad</SelectItem>
                 </SelectContent>
               </Select>
+              <Select 
+                value={`${sortField}-${sortDirection}`} 
+                onValueChange={(value) => {
+                  const [field, dir] = value.split('-') as [SortField, SortDirection];
+                  setSortField(field);
+                  setSortDirection(dir);
+                }}
+              >
+                <SelectTrigger className="w-full sm:w-[200px]">
+                  <ArrowUpDown className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Sortera" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="updated_at-desc">Senast uppdaterad</SelectItem>
+                  <SelectItem value="updated_at-asc">Äldst uppdaterad</SelectItem>
+                  <SelectItem value="title-asc">Titel A-Ö</SelectItem>
+                  <SelectItem value="title-desc">Titel Ö-A</SelectItem>
+                  <SelectItem value="status-asc">Status (utkast först)</SelectItem>
+                  <SelectItem value="status-desc">Status (publicerad först)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </CardContent>
         </Card>
@@ -124,7 +186,7 @@ export default function PagesListPage() {
         <Card>
           <CardHeader>
             <CardTitle className="font-serif">
-              {filteredPages.length} {filteredPages.length === 1 ? 'sida' : 'sidor'}
+              {filteredAndSortedPages.length} {filteredAndSortedPages.length === 1 ? 'sida' : 'sidor'}
             </CardTitle>
             <CardDescription>
               Klicka på en sida för att redigera den
@@ -137,7 +199,7 @@ export default function PagesListPage() {
                   <Skeleton key={i} className="h-16 w-full" />
                 ))}
               </div>
-            ) : filteredPages.length === 0 ? (
+            ) : filteredAndSortedPages.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-muted-foreground mb-4">
                   {search || statusFilter !== 'all' 
@@ -155,7 +217,7 @@ export default function PagesListPage() {
               </div>
             ) : (
               <div className="space-y-2">
-                {filteredPages.map((page) => (
+                {filteredAndSortedPages.map((page) => (
                   <div
                     key={page.id}
                     className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors group"
