@@ -16,13 +16,16 @@ import {
   useUpdatePerformanceSettings,
   useCustomScriptsSettings,
   useUpdateCustomScriptsSettings,
+  useCookieBannerSettings,
+  useUpdateCookieBannerSettings,
   FooterSettings,
   SeoSettings,
   PerformanceSettings,
   CustomScriptsSettings,
+  CookieBannerSettings,
   FooterSectionId
 } from '@/hooks/useSiteSettings';
-import { Loader2, Save, Globe, Zap, Phone, ImageIcon, X, AlertTriangle, GripVertical, Code, CheckCircle2, Circle } from 'lucide-react';
+import { Loader2, Save, Globe, Zap, Phone, ImageIcon, X, AlertTriangle, GripVertical, Code, CheckCircle2, Circle, Cookie } from 'lucide-react';
 import { MediaLibraryPicker } from '@/components/admin/MediaLibraryPicker';
 import { CodeEditor } from '@/components/admin/CodeEditor';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -133,11 +136,13 @@ export default function SiteSettingsPage() {
   const { data: seoSettings, isLoading: seoLoading } = useSeoSettings();
   const { data: performanceSettings, isLoading: performanceLoading } = usePerformanceSettings();
   const { data: customScriptsSettings, isLoading: scriptsLoading } = useCustomScriptsSettings();
+  const { data: cookieBannerSettings, isLoading: cookieLoading } = useCookieBannerSettings();
   
   const updateFooter = useUpdateFooterSettings();
   const updateSeo = useUpdateSeoSettings();
   const updatePerformance = useUpdatePerformanceSettings();
   const updateScripts = useUpdateCustomScriptsSettings();
+  const updateCookieBanner = useUpdateCookieBannerSettings();
   
   const [footerData, setFooterData] = useState<FooterSettings>({
     phone: '',
@@ -191,6 +196,16 @@ export default function SiteSettingsPage() {
     bodyEnd: '',
   });
 
+  const [cookieData, setCookieData] = useState<CookieBannerSettings>({
+    enabled: true,
+    title: 'Vi använder cookies',
+    description: 'Vi använder cookies för att förbättra din upplevelse på webbplatsen, analysera trafik och anpassa innehåll.',
+    policyLinkText: 'Läs mer om vår integritetspolicy',
+    policyLinkUrl: '/integritetspolicy',
+    acceptButtonText: 'Acceptera alla',
+    rejectButtonText: 'Endast nödvändiga',
+  });
+
   useEffect(() => {
     if (footerSettings) setFooterData(footerSettings);
   }, [footerSettings]);
@@ -207,8 +222,12 @@ export default function SiteSettingsPage() {
     if (customScriptsSettings) setScriptsData(customScriptsSettings);
   }, [customScriptsSettings]);
 
-  const isLoading = footerLoading || seoLoading || performanceLoading || scriptsLoading;
-  const isSaving = updateFooter.isPending || updateSeo.isPending || updatePerformance.isPending || updateScripts.isPending;
+  useEffect(() => {
+    if (cookieBannerSettings) setCookieData(cookieBannerSettings);
+  }, [cookieBannerSettings]);
+
+  const isLoading = footerLoading || seoLoading || performanceLoading || scriptsLoading || cookieLoading;
+  const isSaving = updateFooter.isPending || updateSeo.isPending || updatePerformance.isPending || updateScripts.isPending || updateCookieBanner.isPending;
 
   if (isLoading) {
     return (
@@ -229,22 +248,26 @@ export default function SiteSettingsPage() {
         </div>
 
         <Tabs defaultValue="seo" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 max-w-lg">
+          <TabsList className="grid w-full grid-cols-5 max-w-2xl">
             <TabsTrigger value="seo" className="flex items-center gap-2">
               <Globe className="h-4 w-4" />
-              SEO
+              <span className="hidden sm:inline">SEO</span>
             </TabsTrigger>
             <TabsTrigger value="scripts" className="flex items-center gap-2">
               <Code className="h-4 w-4" />
-              Scripts
+              <span className="hidden sm:inline">Scripts</span>
+            </TabsTrigger>
+            <TabsTrigger value="cookies" className="flex items-center gap-2">
+              <Cookie className="h-4 w-4" />
+              <span className="hidden sm:inline">Cookies</span>
             </TabsTrigger>
             <TabsTrigger value="performance" className="flex items-center gap-2">
               <Zap className="h-4 w-4" />
-              Prestanda
+              <span className="hidden sm:inline">Prestanda</span>
             </TabsTrigger>
             <TabsTrigger value="footer" className="flex items-center gap-2">
               <Phone className="h-4 w-4" />
-              Footer
+              <span className="hidden sm:inline">Footer</span>
             </TabsTrigger>
           </TabsList>
 
@@ -546,6 +569,128 @@ export default function SiteSettingsPage() {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          {/* Cookies Tab */}
+          <TabsContent value="cookies" className="space-y-6">
+            <div className="flex justify-end">
+              <Button onClick={() => updateCookieBanner.mutate(cookieData)} disabled={isSaving}>
+                {updateCookieBanner.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+                Spara cookie-inställningar
+              </Button>
+            </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="font-serif">Cookie-banner</CardTitle>
+                <CardDescription>Anpassa cookie-samtyckesbannern för GDPR-efterlevnad</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/30">
+                  <div>
+                    <Label>Visa cookie-banner</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Visar en banner för besökare att godkänna eller avvisa cookies
+                    </p>
+                  </div>
+                  <Switch
+                    checked={cookieData.enabled}
+                    onCheckedChange={(checked) => setCookieData(prev => ({ ...prev, enabled: checked }))}
+                  />
+                </div>
+
+                {cookieData.enabled && (
+                  <div className="space-y-4 pt-4 border-t">
+                    <div className="space-y-2">
+                      <Label>Rubrik</Label>
+                      <Input
+                        value={cookieData.title}
+                        onChange={(e) => setCookieData(prev => ({ ...prev, title: e.target.value }))}
+                        placeholder="Vi använder cookies"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Beskrivning</Label>
+                      <Textarea
+                        value={cookieData.description}
+                        onChange={(e) => setCookieData(prev => ({ ...prev, description: e.target.value }))}
+                        placeholder="Beskriv hur ni använder cookies..."
+                        rows={3}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Länktext (integritetspolicy)</Label>
+                        <Input
+                          value={cookieData.policyLinkText}
+                          onChange={(e) => setCookieData(prev => ({ ...prev, policyLinkText: e.target.value }))}
+                          placeholder="Läs mer om vår integritetspolicy"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Länk-URL</Label>
+                        <Input
+                          value={cookieData.policyLinkUrl}
+                          onChange={(e) => setCookieData(prev => ({ ...prev, policyLinkUrl: e.target.value }))}
+                          placeholder="/integritetspolicy"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Acceptera-knapp</Label>
+                        <Input
+                          value={cookieData.acceptButtonText}
+                          onChange={(e) => setCookieData(prev => ({ ...prev, acceptButtonText: e.target.value }))}
+                          placeholder="Acceptera alla"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Avvisa-knapp</Label>
+                        <Input
+                          value={cookieData.rejectButtonText}
+                          onChange={(e) => setCookieData(prev => ({ ...prev, rejectButtonText: e.target.value }))}
+                          placeholder="Endast nödvändiga"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Preview */}
+            {cookieData.enabled && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="font-serif text-base">Förhandsvisning</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="p-4 rounded-lg border bg-card">
+                    <div className="space-y-2">
+                      <h3 className="font-serif font-semibold">{cookieData.title || 'Vi använder cookies'}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {cookieData.description || 'Beskrivning av hur cookies används...'}
+                      </p>
+                      <a href="#" className="text-sm text-primary hover:underline inline-block">
+                        {cookieData.policyLinkText || 'Läs mer'}
+                      </a>
+                    </div>
+                    <div className="flex gap-2 mt-4">
+                      <Button variant="outline" size="sm">
+                        {cookieData.rejectButtonText || 'Endast nödvändiga'}
+                      </Button>
+                      <Button size="sm">
+                        {cookieData.acceptButtonText || 'Acceptera alla'}
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           {/* Performance Tab */}

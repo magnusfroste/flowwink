@@ -150,6 +150,26 @@ const defaultCustomScriptsSettings: CustomScriptsSettings = {
   bodyEnd: '',
 };
 
+export interface CookieBannerSettings {
+  enabled: boolean;
+  title: string;
+  description: string;
+  policyLinkText: string;
+  policyLinkUrl: string;
+  acceptButtonText: string;
+  rejectButtonText: string;
+}
+
+const defaultCookieBannerSettings: CookieBannerSettings = {
+  enabled: true,
+  title: 'Vi använder cookies',
+  description: 'Vi använder cookies för att förbättra din upplevelse på webbplatsen, analysera trafik och anpassa innehåll. Genom att klicka på "Acceptera alla" samtycker du till vår användning av cookies.',
+  policyLinkText: 'Läs mer om vår integritetspolicy',
+  policyLinkUrl: '/integritetspolicy',
+  acceptButtonText: 'Acceptera alla',
+  rejectButtonText: 'Endast nödvändiga',
+};
+
 // Generic hook for fetching settings
 function useSiteSettings<T>(key: string, defaultValue: T) {
   return useQuery({
@@ -267,4 +287,13 @@ export function useCustomScriptsSettings() {
 
 export function useUpdateCustomScriptsSettings() {
   return useUpdateSiteSettings<CustomScriptsSettings>('custom_scripts', 'Script-inställningarna har uppdaterats.');
+}
+
+// Cookie Banner hooks
+export function useCookieBannerSettings() {
+  return useSiteSettings<CookieBannerSettings>('cookie_banner', defaultCookieBannerSettings);
+}
+
+export function useUpdateCookieBannerSettings() {
+  return useUpdateSiteSettings<CookieBannerSettings>('cookie_banner', 'Cookie-inställningarna har uppdaterats.');
 }
