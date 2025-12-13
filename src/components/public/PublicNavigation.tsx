@@ -117,12 +117,12 @@ export function PublicNavigation() {
                 {page.title}
               </Link>
             ))}
-            <ThemeToggle />
+            {branding?.allowThemeToggle !== false && <ThemeToggle />}
           </nav>
 
           {/* Mobile Menu Button */}
           <div className="flex items-center gap-2 md:hidden">
-            <ThemeToggle />
+            {branding?.allowThemeToggle !== false && <ThemeToggle />}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-2 rounded-md hover:bg-muted transition-colors"

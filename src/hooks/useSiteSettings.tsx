@@ -72,6 +72,9 @@ export interface BrandingSettings {
   showLogoInHeader?: boolean;
   showNameWithLogo?: boolean;
   headerLogoSize?: 'sm' | 'md' | 'lg';
+  
+  // Theme toggle
+  allowThemeToggle?: boolean;
 }
 
 const defaultBrandingSettings: BrandingSettings = {
@@ -90,6 +93,7 @@ const defaultBrandingSettings: BrandingSettings = {
   showLogoInHeader: true,
   showNameWithLogo: false,
   headerLogoSize: 'md',
+  allowThemeToggle: true,
 };
 
 const defaultFooterSettings: FooterSettings = {
