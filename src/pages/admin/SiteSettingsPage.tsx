@@ -24,6 +24,7 @@ import {
 } from '@/hooks/useSiteSettings';
 import { Loader2, Save, Globe, Zap, Phone, ImageIcon, X, AlertTriangle, GripVertical, Code } from 'lucide-react';
 import { MediaLibraryPicker } from '@/components/admin/MediaLibraryPicker';
+import { CodeEditor } from '@/components/admin/CodeEditor';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
@@ -434,28 +435,22 @@ export default function SiteSettingsPage() {
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="space-y-2">
-                    <Label htmlFor="headStart">Head (start)</Label>
-                    <Textarea
-                      id="headStart"
+                    <Label>Head (start)</Label>
+                    <CodeEditor
                       value={scriptsData.headStart}
-                      onChange={(e) => setScriptsData(prev => ({ ...prev, headStart: e.target.value }))}
+                      onChange={(value) => setScriptsData(prev => ({ ...prev, headStart: value }))}
                       placeholder="<!-- Google Tag Manager -->&#10;<script>...</script>"
-                      rows={6}
-                      className="font-mono text-sm"
                     />
                     <p className="text-xs text-muted-foreground">
                       Läggs in direkt efter &lt;head&gt;. Använd för kritiska scripts som måste laddas först.
                     </p>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="headEnd">Head (slut)</Label>
-                    <Textarea
-                      id="headEnd"
+                    <Label>Head (slut)</Label>
+                    <CodeEditor
                       value={scriptsData.headEnd}
-                      onChange={(e) => setScriptsData(prev => ({ ...prev, headEnd: e.target.value }))}
+                      onChange={(value) => setScriptsData(prev => ({ ...prev, headEnd: value }))}
                       placeholder="<!-- Analytics, fonts -->&#10;<script>...</script>"
-                      rows={6}
-                      className="font-mono text-sm"
                     />
                     <p className="text-xs text-muted-foreground">
                       Läggs in före &lt;/head&gt;. Perfekt för analytics och externa fonts.
@@ -471,28 +466,22 @@ export default function SiteSettingsPage() {
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="space-y-2">
-                    <Label htmlFor="bodyStart">Body (start)</Label>
-                    <Textarea
-                      id="bodyStart"
+                    <Label>Body (start)</Label>
+                    <CodeEditor
                       value={scriptsData.bodyStart}
-                      onChange={(e) => setScriptsData(prev => ({ ...prev, bodyStart: e.target.value }))}
+                      onChange={(value) => setScriptsData(prev => ({ ...prev, bodyStart: value }))}
                       placeholder="<!-- GTM noscript, early loaders -->&#10;<noscript>...</noscript>"
-                      rows={6}
-                      className="font-mono text-sm"
                     />
                     <p className="text-xs text-muted-foreground">
                       Läggs in direkt efter &lt;body&gt;. Använd för noscript-fallbacks och tidiga laddare.
                     </p>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="bodyEnd">Body (slut)</Label>
-                    <Textarea
-                      id="bodyEnd"
+                    <Label>Body (slut)</Label>
+                    <CodeEditor
                       value={scriptsData.bodyEnd}
-                      onChange={(e) => setScriptsData(prev => ({ ...prev, bodyEnd: e.target.value }))}
+                      onChange={(value) => setScriptsData(prev => ({ ...prev, bodyEnd: value }))}
                       placeholder="<!-- Chat widgets, deferred scripts -->&#10;<script>...</script>"
-                      rows={6}
-                      className="font-mono text-sm"
                     />
                     <p className="text-xs text-muted-foreground">
                       Läggs in före &lt;/body&gt;. Perfekt för chat-widgets, tracking och deferred scripts.
