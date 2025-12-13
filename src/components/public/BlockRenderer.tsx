@@ -10,6 +10,7 @@ import {
   InfoBoxBlock,
   AccordionBlock,
   ArticleGridBlock,
+  YouTubeBlock,
 } from './blocks';
 import type {
   HeroBlockData,
@@ -22,6 +23,7 @@ import type {
   InfoBoxBlockData,
   AccordionBlockData,
   ArticleGridBlockData,
+  YouTubeBlockData,
 } from '@/types/cms';
 
 interface BlockRendererProps {
@@ -50,6 +52,8 @@ export function BlockRenderer({ block }: BlockRendererProps) {
       return <AccordionBlock data={block.data as unknown as AccordionBlockData} />;
     case 'article-grid':
       return <ArticleGridBlock data={block.data as unknown as ArticleGridBlockData} />;
+    case 'youtube':
+      return <YouTubeBlock data={block.data as unknown as YouTubeBlockData} />;
     default:
       return null;
   }

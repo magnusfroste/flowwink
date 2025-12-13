@@ -5,7 +5,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Plus, Layout, Type, ImageIcon, MousePointerClick, Phone, Grid3X3, Columns, AlertCircle, HelpCircle, Newspaper } from 'lucide-react';
+import { Plus, Layout, Type, ImageIcon, MousePointerClick, Phone, Grid3X3, Columns, AlertCircle, HelpCircle, Newspaper, Youtube } from 'lucide-react';
 import { ContentBlockType } from '@/types/cms';
 
 const BLOCK_OPTIONS: { type: ContentBlockType; label: string; icon: React.ReactNode; description: string }[] = [
@@ -56,6 +56,12 @@ const BLOCK_OPTIONS: { type: ContentBlockType; label: string; icon: React.ReactN
     label: 'Artikelgrid',
     icon: <Newspaper className="h-4 w-4" />,
     description: 'Rutnät med artikelkort',
+  },
+  {
+    type: 'youtube',
+    label: 'YouTube',
+    icon: <Youtube className="h-4 w-4" />,
+    description: 'Inbäddad YouTube-video',
   },
   {
     type: 'cta',

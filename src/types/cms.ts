@@ -74,7 +74,8 @@ export type ContentBlockType =
   | 'two-column'
   | 'info-box'
   | 'accordion'
-  | 'article-grid';
+  | 'article-grid'
+  | 'youtube';
 
 export interface ContentBlock {
   id: string;
@@ -145,6 +146,11 @@ export interface ArticleGridBlockData {
   title?: string;
   articles: { title: string; excerpt: string; image?: string; url: string }[];
   columns: 2 | 3 | 4;
+}
+
+export interface YouTubeBlockData {
+  url: string;
+  title?: string;
 }
 
 // Workflow actions

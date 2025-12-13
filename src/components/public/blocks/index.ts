@@ -8,3 +8,4 @@ export { TwoColumnBlock } from './TwoColumnBlock';
 export { InfoBoxBlock } from './InfoBoxBlock';
 export { AccordionBlock } from './AccordionBlock';
 export { ArticleGridBlock } from './ArticleGridBlock';
+export { YouTubeBlock } from './YouTubeBlock';
