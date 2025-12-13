@@ -7,6 +7,7 @@ import { PublicNavigation } from '@/components/public/PublicNavigation';
 import { PublicFooter } from '@/components/public/PublicFooter';
 import { SeoHead, HeadScripts } from '@/components/public/SeoHead';
 import { BodyScripts } from '@/components/public/BodyScripts';
+import { CookieBanner } from '@/components/public/CookieBanner';
 import { cn } from '@/lib/utils';
 import type { Page, ContentBlock } from '@/types/cms';
 
@@ -110,6 +111,7 @@ export default function PublicPage() {
         </main>
 
         <PublicFooter />
+        <CookieBanner />
       </div>
 
       <BodyScripts position="end" />
