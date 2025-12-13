@@ -19,13 +19,14 @@ import {
   useCookieBannerSettings,
   useUpdateCookieBannerSettings,
   FooterSettings,
+  FooterLegalLink,
   SeoSettings,
   PerformanceSettings,
   CustomScriptsSettings,
   CookieBannerSettings,
   FooterSectionId
 } from '@/hooks/useSiteSettings';
-import { Loader2, Save, Globe, Zap, Phone, ImageIcon, X, AlertTriangle, GripVertical, Code, CheckCircle2, Circle, Cookie } from 'lucide-react';
+import { Loader2, Save, Globe, Zap, Phone, ImageIcon, X, AlertTriangle, GripVertical, Code, CheckCircle2, Circle, Cookie, Plus, Trash2, Scale } from 'lucide-react';
 import { MediaLibraryPicker } from '@/components/admin/MediaLibraryPicker';
 import { CodeEditor } from '@/components/admin/CodeEditor';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -161,6 +162,10 @@ export default function SiteSettingsPage() {
     showContact: true,
     showHours: true,
     sectionOrder: ['brand', 'quickLinks', 'contact', 'hours'],
+    legalLinks: [
+      { id: 'privacy', label: 'Integritetspolicy', url: '/integritetspolicy', enabled: true },
+      { id: 'accessibility', label: 'Tillgänglighet', url: '/tillganglighet', enabled: true },
+    ],
   });
 
   const sensors = useSensors(
@@ -913,6 +918,76 @@ export default function SiteSettingsPage() {
                       placeholder="Stängt"
                     />
                   </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="font-serif flex items-center gap-2">
+                    <Scale className="h-4 w-4" />
+                    Juridiska länkar
+                  </CardTitle>
+                  <CardDescription>Länkar som visas längst ner i footern (integritetspolicy, tillgänglighet etc.)</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {(footerData.legalLinks || []).map((link, index) => (
+                    <div key={link.id} className="flex items-center gap-3 p-3 rounded-lg border bg-card">
+                      <Switch
+                        checked={link.enabled}
+                        onCheckedChange={(checked) => {
+                          const newLinks = [...(footerData.legalLinks || [])];
+                          newLinks[index] = { ...link, enabled: checked };
+                          setFooterData(prev => ({ ...prev, legalLinks: newLinks }));
+                        }}
+                      />
+                      <div className="flex-1 grid gap-2 sm:grid-cols-2">
+                        <Input
+                          value={link.label}
+                          onChange={(e) => {
+                            const newLinks = [...(footerData.legalLinks || [])];
+                            newLinks[index] = { ...link, label: e.target.value };
+                            setFooterData(prev => ({ ...prev, legalLinks: newLinks }));
+                          }}
+                          placeholder="Länktext"
+                        />
+                        <Input
+                          value={link.url}
+                          onChange={(e) => {
+                            const newLinks = [...(footerData.legalLinks || [])];
+                            newLinks[index] = { ...link, url: e.target.value };
+                            setFooterData(prev => ({ ...prev, legalLinks: newLinks }));
+                          }}
+                          placeholder="/integritetspolicy"
+                        />
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          const newLinks = (footerData.legalLinks || []).filter((_, i) => i !== index);
+                          setFooterData(prev => ({ ...prev, legalLinks: newLinks }));
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4 text-muted-foreground" />
+                      </Button>
+                    </div>
+                  ))}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const newLink: FooterLegalLink = {
+                        id: `link-${Date.now()}`,
+                        label: '',
+                        url: '',
+                        enabled: true,
+                      };
+                      setFooterData(prev => ({ ...prev, legalLinks: [...(prev.legalLinks || []), newLink] }));
+                    }}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Lägg till länk
+                  </Button>
                 </CardContent>
               </Card>
 

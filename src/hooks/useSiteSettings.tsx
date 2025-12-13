@@ -5,6 +5,13 @@ import type { Json } from '@/integrations/supabase/types';
 
 export type FooterSectionId = 'brand' | 'quickLinks' | 'contact' | 'hours';
 
+export interface FooterLegalLink {
+  id: string;
+  label: string;
+  url: string;
+  enabled: boolean;
+}
+
 export interface FooterSettings {
   phone: string;
   email: string;
@@ -24,6 +31,8 @@ export interface FooterSettings {
   showHours?: boolean;
   // Section order
   sectionOrder?: FooterSectionId[];
+  // Legal links
+  legalLinks?: FooterLegalLink[];
 }
 
 export interface SeoSettings {
@@ -113,6 +122,10 @@ const defaultFooterSettings: FooterSettings = {
   showContact: true,
   showHours: true,
   sectionOrder: ['brand', 'quickLinks', 'contact', 'hours'],
+  legalLinks: [
+    { id: 'privacy', label: 'Integritetspolicy', url: '/integritetspolicy', enabled: true },
+    { id: 'accessibility', label: 'Tillgänglighet', url: '/tillganglighet', enabled: true },
+  ],
 };
 
 const defaultSeoSettings: SeoSettings = {

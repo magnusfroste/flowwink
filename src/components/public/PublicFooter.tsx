@@ -249,14 +249,19 @@ export function PublicFooter() {
             </div>
           )}
           
-          <div className="flex gap-6 text-sm text-primary-foreground/60">
-            <Link to="/integritetspolicy" className="hover:text-primary-foreground transition-colors">
-              Integritetspolicy
-            </Link>
-            <Link to="/tillganglighet" className="hover:text-primary-foreground transition-colors">
-              Tillgänglighet
-            </Link>
-          </div>
+          {settings?.legalLinks && settings.legalLinks.filter(l => l.enabled).length > 0 && (
+            <div className="flex gap-6 text-sm text-primary-foreground/60">
+              {settings.legalLinks.filter(l => l.enabled).map((link) => (
+                <Link
+                  key={link.id}
+                  to={link.url}
+                  className="hover:text-primary-foreground transition-colors"
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </footer>
