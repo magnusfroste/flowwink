@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Search, Filter, MoreHorizontal, Edit, Trash2, Copy, ArrowUpDown } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { Plus, Search, Filter, MoreHorizontal, Edit, Trash2, Copy, ArrowUpDown, Clock } from 'lucide-react';
+import { formatDistanceToNow, format } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
@@ -239,6 +239,12 @@ export default function PagesListPage() {
                             </span>
                           </div>
                         </div>
+                        {page.scheduled_at && page.status === 'reviewing' && (
+                          <div className="hidden sm:flex items-center gap-1.5 text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-2 py-1 rounded-md">
+                            <Clock className="h-3 w-3" />
+                            <span>{format(new Date(page.scheduled_at), "d MMM HH:mm", { locale: sv })}</span>
+                          </div>
+                        )}
                         <StatusBadge status={page.status} />
                       </div>
                     </Link>
