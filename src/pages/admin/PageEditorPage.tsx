@@ -206,9 +206,9 @@ export default function PageEditorPage() {
           </div>
         </div>
 
-        {/* Block Editor */}
-        <div className="flex-1 overflow-auto p-8 bg-background">
-          <div className="max-w-3xl mx-auto">
+        {/* Block Editor - scrollable area */}
+        <div className="flex-1 min-h-0 overflow-auto p-8 bg-background">
+          <div className="max-w-3xl mx-auto pb-4">
             <BlockEditor
               blocks={blocks}
               onChange={handleBlocksChange}

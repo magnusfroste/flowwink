@@ -232,9 +232,8 @@
   animation: fadeIn 0.3s ease-out;
 }
 
-/* Sticky save bar */
+/* Save bar - part of flex layout, not fixed */
 .sticky-save-bar {
-  @apply fixed bottom-0 left-0 right-0 z-50;
-  @apply bg-card/95 backdrop-blur-sm border-t border-border;
-  @apply shadow-lg;
+  @apply shrink-0 bg-card/95 backdrop-blur-sm border-t border-border;
+  @apply shadow-[0_-4px_6px_-1px_hsl(var(--foreground)/0.05)];
 }
