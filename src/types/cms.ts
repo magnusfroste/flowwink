@@ -76,7 +76,11 @@ export type ContentBlockType =
   | 'info-box'
   | 'accordion'
   | 'article-grid'
-  | 'youtube';
+  | 'youtube'
+  | 'quote'
+  | 'separator'
+  | 'gallery'
+  | 'stats';
 
 export interface ContentBlock {
   id: string;
@@ -156,6 +160,29 @@ export interface YouTubeBlockData {
   loop?: boolean;
   mute?: boolean;
   controls?: boolean;
+}
+
+export interface QuoteBlockData {
+  text: string;
+  author?: string;
+  source?: string;
+  variant: 'simple' | 'styled';
+}
+
+export interface SeparatorBlockData {
+  style: 'line' | 'dots' | 'ornament' | 'space';
+  spacing: 'sm' | 'md' | 'lg';
+}
+
+export interface GalleryBlockData {
+  images: { src: string; alt: string; caption?: string }[];
+  layout: 'grid' | 'carousel' | 'masonry';
+  columns: 2 | 3 | 4;
+}
+
+export interface StatsBlockData {
+  title?: string;
+  stats: { value: string; label: string; icon?: string }[];
 }
 
 // Workflow actions

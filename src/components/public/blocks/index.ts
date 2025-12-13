@@ -9,3 +9,7 @@ export { InfoBoxBlock } from './InfoBoxBlock';
 export { AccordionBlock } from './AccordionBlock';
 export { ArticleGridBlock } from './ArticleGridBlock';
 export { YouTubeBlock } from './YouTubeBlock';
+export { QuoteBlock } from './QuoteBlock';
+export { SeparatorBlock } from './SeparatorBlock';
+export { GalleryBlock } from './GalleryBlock';
+export { StatsBlock } from './StatsBlock';

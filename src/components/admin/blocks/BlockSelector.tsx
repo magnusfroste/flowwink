@@ -5,7 +5,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Plus, Layout, Type, ImageIcon, MousePointerClick, Phone, Grid3X3, Columns, AlertCircle, HelpCircle, Newspaper, Youtube } from 'lucide-react';
+import { Plus, Layout, Type, ImageIcon, MousePointerClick, Phone, Grid3X3, Columns, AlertCircle, HelpCircle, Newspaper, Youtube, Quote, Minus, Images, BarChart3 } from 'lucide-react';
 import { ContentBlockType } from '@/types/cms';
 
 const BLOCK_OPTIONS: { type: ContentBlockType; label: string; icon: React.ReactNode; description: string }[] = [
@@ -62,6 +62,30 @@ const BLOCK_OPTIONS: { type: ContentBlockType; label: string; icon: React.ReactN
     label: 'YouTube',
     icon: <Youtube className="h-4 w-4" />,
     description: 'Inbäddad YouTube-video',
+  },
+  {
+    type: 'quote',
+    label: 'Citat',
+    icon: <Quote className="h-4 w-4" />,
+    description: 'Framhävt citat med författare',
+  },
+  {
+    type: 'separator',
+    label: 'Avdelare',
+    icon: <Minus className="h-4 w-4" />,
+    description: 'Visuell brytning mellan sektioner',
+  },
+  {
+    type: 'gallery',
+    label: 'Galleri',
+    icon: <Images className="h-4 w-4" />,
+    description: 'Bildgalleri med lightbox',
+  },
+  {
+    type: 'stats',
+    label: 'Statistik',
+    icon: <BarChart3 className="h-4 w-4" />,
+    description: 'Visa nyckeltal visuellt',
   },
   {
     type: 'cta',

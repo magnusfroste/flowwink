@@ -14,7 +14,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { ContentBlock, ContentBlockType, HeroBlockData, TextBlockData, ImageBlockData, CTABlockData, ContactBlockData, LinkGridBlockData, TwoColumnBlockData, InfoBoxBlockData, AccordionBlockData, ArticleGridBlockData, YouTubeBlockData } from '@/types/cms';
+import { ContentBlock, ContentBlockType, HeroBlockData, TextBlockData, ImageBlockData, CTABlockData, ContactBlockData, LinkGridBlockData, TwoColumnBlockData, InfoBoxBlockData, AccordionBlockData, ArticleGridBlockData, YouTubeBlockData, QuoteBlockData, SeparatorBlockData, GalleryBlockData, StatsBlockData } from '@/types/cms';
 import { BlockWrapper } from './BlockWrapper';
 import { BlockSelector } from './BlockSelector';
 import { HeroBlockEditor } from './HeroBlockEditor';
@@ -28,6 +28,10 @@ import { InfoBoxBlockEditor } from './InfoBoxBlockEditor';
 import { AccordionBlockEditor } from './AccordionBlockEditor';
 import { ArticleGridBlockEditor } from './ArticleGridBlockEditor';
 import { YouTubeBlockEditor } from './YouTubeBlockEditor';
+import { QuoteBlockEditor } from './QuoteBlockEditor';
+import { SeparatorBlockEditor } from './SeparatorBlockEditor';
+import { GalleryBlockEditor } from './GalleryBlockEditor';
+import { StatsBlockEditor } from './StatsBlockEditor';
 
 type BlockDataMap = {
   hero: HeroBlockData;
@@ -41,6 +45,10 @@ type BlockDataMap = {
   accordion: AccordionBlockData;
   'article-grid': ArticleGridBlockData;
   youtube: YouTubeBlockData;
+  quote: QuoteBlockData;
+  separator: SeparatorBlockData;
+  gallery: GalleryBlockData;
+  stats: StatsBlockData;
 };
 
 const DEFAULT_BLOCK_DATA: BlockDataMap = {
@@ -55,6 +63,10 @@ const DEFAULT_BLOCK_DATA: BlockDataMap = {
   accordion: { items: [] },
   'article-grid': { articles: [], columns: 3 },
   youtube: { url: '' },
+  quote: { text: '', variant: 'simple' },
+  separator: { style: 'line', spacing: 'md' },
+  gallery: { images: [], layout: 'grid', columns: 3 },
+  stats: { stats: [] },
 };
 
 interface BlockEditorProps {
@@ -203,6 +215,38 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
             data={block.data as unknown as YouTubeBlockData}
             onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
             isEditing={isEditing}
+          />
+        );
+      case 'quote':
+        return (
+          <QuoteBlockEditor
+            data={block.data as unknown as QuoteBlockData}
+            onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+            isEditing={isEditing}
+          />
+        );
+      case 'separator':
+        return (
+          <SeparatorBlockEditor
+            data={block.data as unknown as SeparatorBlockData}
+            onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+            isEditing={isEditing}
+          />
+        );
+      case 'gallery':
+        return (
+          <GalleryBlockEditor
+            data={block.data as unknown as GalleryBlockData}
+            onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+            canEdit={isEditing}
+          />
+        );
+      case 'stats':
+        return (
+          <StatsBlockEditor
+            data={block.data as unknown as StatsBlockData}
+            onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+            canEdit={isEditing}
           />
         );
       default:

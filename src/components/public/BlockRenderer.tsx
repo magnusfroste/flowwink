@@ -11,6 +11,10 @@ import {
   AccordionBlock,
   ArticleGridBlock,
   YouTubeBlock,
+  QuoteBlock,
+  SeparatorBlock,
+  GalleryBlock,
+  StatsBlock,
 } from './blocks';
 import type {
   HeroBlockData,
@@ -24,6 +28,10 @@ import type {
   AccordionBlockData,
   ArticleGridBlockData,
   YouTubeBlockData,
+  QuoteBlockData,
+  SeparatorBlockData,
+  GalleryBlockData,
+  StatsBlockData,
 } from '@/types/cms';
 
 interface BlockRendererProps {
@@ -54,6 +62,14 @@ export function BlockRenderer({ block }: BlockRendererProps) {
       return <ArticleGridBlock data={block.data as unknown as ArticleGridBlockData} />;
     case 'youtube':
       return <YouTubeBlock data={block.data as unknown as YouTubeBlockData} />;
+    case 'quote':
+      return <QuoteBlock data={block.data as unknown as QuoteBlockData} />;
+    case 'separator':
+      return <SeparatorBlock data={block.data as unknown as SeparatorBlockData} />;
+    case 'gallery':
+      return <GalleryBlock data={block.data as unknown as GalleryBlockData} />;
+    case 'stats':
+      return <StatsBlock data={block.data as unknown as StatsBlockData} />;
     default:
       return null;
   }

@@ -17,6 +17,10 @@ const BLOCK_LABELS: Record<ContentBlockType, string> = {
   accordion: 'Accordion/FAQ',
   'article-grid': 'Artikelgrid',
   youtube: 'YouTube',
+  quote: 'Citat',
+  separator: 'Avdelare',
+  gallery: 'Galleri',
+  stats: 'Statistik',
 };
 
 interface BlockWrapperProps {
