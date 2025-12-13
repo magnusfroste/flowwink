@@ -8,8 +8,22 @@ import { Plus, Trash2, ExternalLink, icons } from 'lucide-react';
 
 // Common icons for healthcare context
 const ICON_OPTIONS = [
-  'Phone', 'Mail', 'MapPin', 'Clock', 'Calendar', 'Heart', 'Stethoscope',
-  'Hospital', 'Ambulance', 'FileText', 'Users', 'Info', 'HelpCircle', 'ArrowRight'
+  // Communication
+  'Phone', 'Mail', 'MessageCircle', 'Send',
+  // Location & Time
+  'MapPin', 'Clock', 'Calendar', 'CalendarCheck',
+  // Healthcare
+  'Heart', 'HeartPulse', 'Stethoscope', 'Hospital', 'Ambulance', 'Pill', 'Syringe', 'Activity',
+  // People
+  'Users', 'User', 'UserPlus', 'Baby',
+  // Documents
+  'FileText', 'Files', 'ClipboardList', 'BookOpen',
+  // Navigation & Actions  
+  'ArrowRight', 'ExternalLink', 'Search', 'Download',
+  // Information
+  'Info', 'HelpCircle', 'AlertCircle', 'CheckCircle',
+  // Misc
+  'Star', 'Shield', 'Lock', 'Key', 'Settings', 'Home', 'Building', 'Briefcase',
 ];
 
 interface LinkGridBlockEditorProps {
