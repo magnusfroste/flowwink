@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Plus, Search, Filter, MoreHorizontal, Edit, Trash2, Copy, ArrowUpDown } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { sv } from 'date-fns/locale';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -229,9 +231,13 @@ export default function PagesListPage() {
                       <div className="flex items-center gap-4">
                         <div className="min-w-0 flex-1">
                           <p className="font-medium truncate">{page.title}</p>
-                          <p className="text-sm text-muted-foreground truncate">
-                            /{page.slug}
-                          </p>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <span className="truncate">/{page.slug}</span>
+                            <span className="hidden sm:inline">•</span>
+                            <span className="hidden sm:inline text-xs">
+                              {formatDistanceToNow(new Date(page.updated_at), { addSuffix: true, locale: sv })}
+                            </span>
+                          </div>
                         </div>
                         <StatusBadge status={page.status} />
                       </div>
