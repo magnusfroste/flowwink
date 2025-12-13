@@ -9,7 +9,67 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ImagePickerField } from '@/components/admin/ImagePickerField';
 import { useBrandingSettings, useUpdateBrandingSettings, type BrandingSettings } from '@/hooks/useSiteSettings';
 import { AVAILABLE_HEADING_FONTS, AVAILABLE_BODY_FONTS } from '@/providers/BrandingProvider';
-import { Loader2, Palette, Type, Image, LayoutGrid } from 'lucide-react';
+import { Loader2, Palette, Type, Image, LayoutGrid, Sparkles } from 'lucide-react';
+
+// Predefined design themes
+const DESIGN_THEMES: { id: string; name: string; description: string; settings: Partial<BrandingSettings> }[] = [
+  {
+    id: 'healthcare-classic',
+    name: 'Klassisk Sjukvård',
+    description: 'Traditionell medicinsk blå med serif-typsnitt',
+    settings: {
+      primaryColor: '220 100% 26%',
+      secondaryColor: '210 25% 95%',
+      accentColor: '180 45% 40%',
+      headingFont: 'PT Serif',
+      bodyFont: 'Inter',
+      borderRadius: 'md',
+      shadowIntensity: 'subtle',
+    },
+  },
+  {
+    id: 'modern-minimalist',
+    name: 'Modern Minimalist',
+    description: 'Ren, avskalad design med skarpa kanter',
+    settings: {
+      primaryColor: '220 15% 20%',
+      secondaryColor: '0 0% 98%',
+      accentColor: '220 90% 55%',
+      headingFont: 'Inter',
+      bodyFont: 'Inter',
+      borderRadius: 'none',
+      shadowIntensity: 'none',
+    },
+  },
+  {
+    id: 'warm-welcoming',
+    name: 'Varm & Välkomnande',
+    description: 'Mjuka färger och rundade former',
+    settings: {
+      primaryColor: '25 75% 47%',
+      secondaryColor: '35 30% 96%',
+      accentColor: '160 50% 45%',
+      headingFont: 'Merriweather',
+      bodyFont: 'Open Sans',
+      borderRadius: 'lg',
+      shadowIntensity: 'medium',
+    },
+  },
+  {
+    id: 'professional-trust',
+    name: 'Professionell & Pålitlig',
+    description: 'Konservativ design som signalerar förtroende',
+    settings: {
+      primaryColor: '210 70% 35%',
+      secondaryColor: '210 20% 96%',
+      accentColor: '45 90% 50%',
+      headingFont: 'Libre Baskerville',
+      bodyFont: 'Source Sans 3',
+      borderRadius: 'sm',
+      shadowIntensity: 'subtle',
+    },
+  },
+];
 
 export default function BrandingSettingsPage() {
   const { data: savedSettings, isLoading } = useBrandingSettings();
@@ -72,6 +132,23 @@ export default function BrandingSettingsPage() {
     return `${Math.round(h)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
   };
 
+  const applyTheme = (themeId: string) => {
+    const theme = DESIGN_THEMES.find((t) => t.id === themeId);
+    if (theme) {
+      setSettings((prev) => ({
+        ...prev,
+        ...theme.settings,
+      }));
+    }
+  };
+
+  // Convert HSL to hex for theme preview
+  const getThemePreviewColors = (theme: typeof DESIGN_THEMES[0]) => ({
+    primary: hslToHex(theme.settings.primaryColor || '220 100% 26%'),
+    secondary: hslToHex(theme.settings.secondaryColor || '210 40% 96%'),
+    accent: hslToHex(theme.settings.accentColor || '199 89% 48%'),
+  });
+
   if (isLoading) {
     return (
       <AdminLayout>
@@ -98,8 +175,12 @@ export default function BrandingSettingsPage() {
           </Button>
         </div>
 
-        <Tabs defaultValue="identity" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 max-w-xl">
+        <Tabs defaultValue="themes" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-5 max-w-2xl">
+            <TabsTrigger value="themes" className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4" />
+              <span className="hidden sm:inline">Teman</span>
+            </TabsTrigger>
             <TabsTrigger value="identity" className="flex items-center gap-2">
               <Image className="h-4 w-4" />
               <span className="hidden sm:inline">Identitet</span>
@@ -117,6 +198,68 @@ export default function BrandingSettingsPage() {
               <span className="hidden sm:inline">Utseende</span>
             </TabsTrigger>
           </TabsList>
+
+          {/* Themes */}
+          <TabsContent value="themes">
+            <Card>
+              <CardHeader>
+                <CardTitle>Designteman</CardTitle>
+                <CardDescription>Välj ett fördefinierat tema som utgångspunkt, sedan kan du finjustera i de andra flikarna</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {DESIGN_THEMES.map((theme) => {
+                    const colors = getThemePreviewColors(theme);
+                    return (
+                      <button
+                        key={theme.id}
+                        onClick={() => applyTheme(theme.id)}
+                        className="text-left p-4 rounded-lg border-2 hover:border-primary/50 transition-all group"
+                      >
+                        <div className="flex items-start gap-4">
+                          {/* Color preview */}
+                          <div className="flex flex-col gap-1">
+                            <div
+                              className="h-8 w-8 rounded-md"
+                              style={{ backgroundColor: colors.primary }}
+                            />
+                            <div className="flex gap-1">
+                              <div
+                                className="h-3 w-3 rounded-sm"
+                                style={{ backgroundColor: colors.secondary }}
+                              />
+                              <div
+                                className="h-3 w-3 rounded-sm"
+                                style={{ backgroundColor: colors.accent }}
+                              />
+                            </div>
+                          </div>
+                          
+                          <div className="flex-1">
+                            <h3 className="font-semibold group-hover:text-primary transition-colors">
+                              {theme.name}
+                            </h3>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {theme.description}
+                            </p>
+                            <div className="flex gap-2 mt-2">
+                              <span className="text-xs bg-muted px-2 py-0.5 rounded">
+                                {theme.settings.headingFont}
+                              </span>
+                              <span className="text-xs bg-muted px-2 py-0.5 rounded">
+                                {theme.settings.borderRadius === 'none' ? 'Skarpa' : 
+                                 theme.settings.borderRadius === 'lg' ? 'Rundade' : 'Standard'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           {/* Identity */}
           <TabsContent value="identity">
