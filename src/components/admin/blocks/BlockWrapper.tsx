@@ -16,6 +16,7 @@ const BLOCK_LABELS: Record<ContentBlockType, string> = {
   'info-box': 'Faktaruta',
   accordion: 'Accordion/FAQ',
   'article-grid': 'Artikelgrid',
+  youtube: 'YouTube',
 };
 
 interface BlockWrapperProps {

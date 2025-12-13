@@ -14,7 +14,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { ContentBlock, ContentBlockType, HeroBlockData, TextBlockData, ImageBlockData, CTABlockData, ContactBlockData, LinkGridBlockData, TwoColumnBlockData, InfoBoxBlockData, AccordionBlockData, ArticleGridBlockData } from '@/types/cms';
+import { ContentBlock, ContentBlockType, HeroBlockData, TextBlockData, ImageBlockData, CTABlockData, ContactBlockData, LinkGridBlockData, TwoColumnBlockData, InfoBoxBlockData, AccordionBlockData, ArticleGridBlockData, YouTubeBlockData } from '@/types/cms';
 import { BlockWrapper } from './BlockWrapper';
 import { BlockSelector } from './BlockSelector';
 import { HeroBlockEditor } from './HeroBlockEditor';
@@ -27,6 +27,7 @@ import { TwoColumnBlockEditor } from './TwoColumnBlockEditor';
 import { InfoBoxBlockEditor } from './InfoBoxBlockEditor';
 import { AccordionBlockEditor } from './AccordionBlockEditor';
 import { ArticleGridBlockEditor } from './ArticleGridBlockEditor';
+import { YouTubeBlockEditor } from './YouTubeBlockEditor';
 
 type BlockDataMap = {
   hero: HeroBlockData;
@@ -39,6 +40,7 @@ type BlockDataMap = {
   'info-box': InfoBoxBlockData;
   accordion: AccordionBlockData;
   'article-grid': ArticleGridBlockData;
+  youtube: YouTubeBlockData;
 };
 
 const DEFAULT_BLOCK_DATA: BlockDataMap = {
@@ -52,6 +54,7 @@ const DEFAULT_BLOCK_DATA: BlockDataMap = {
   'info-box': { title: 'Viktig information', content: '', variant: 'info' },
   accordion: { items: [] },
   'article-grid': { articles: [], columns: 3 },
+  youtube: { url: '' },
 };
 
 interface BlockEditorProps {
@@ -192,6 +195,14 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
             data={block.data as unknown as ArticleGridBlockData}
             onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
             canEdit={isEditing}
+          />
+        );
+      case 'youtube':
+        return (
+          <YouTubeBlockEditor
+            data={block.data as unknown as YouTubeBlockData}
+            onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+            isEditing={isEditing}
           />
         );
       default:
