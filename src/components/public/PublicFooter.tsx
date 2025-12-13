@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
 import { Phone, Mail, MapPin, Clock } from 'lucide-react';
 import { useFooterSettings } from '@/hooks/useSiteSettings';
+import { useBranding } from '@/providers/BrandingProvider';
 
 interface NavPage {
   id: string;
@@ -12,6 +13,7 @@ interface NavPage {
 
 export function PublicFooter() {
   const { data: settings } = useFooterSettings();
+  const { branding } = useBranding();
   
   const { data: pages = [] } = useQuery({
     queryKey: ['public-nav-pages'],
@@ -31,7 +33,8 @@ export function PublicFooter() {
   });
 
   const phoneLink = settings?.phone?.replace(/[^+\d]/g, '') || '';
-  const brandInitial = settings?.brandName?.charAt(0) || 'S';
+  const brandName = branding?.organizationName || settings?.brandName || 'Organisation';
+  const brandInitial = brandName.charAt(0);
 
   return (
     <footer className="bg-primary text-primary-foreground mt-16">
@@ -40,10 +43,20 @@ export function PublicFooter() {
           {/* Brand */}
           <div>
             <div className="flex items-center gap-3 mb-4">
-              <div className="h-10 w-10 rounded-lg bg-primary-foreground/20 flex items-center justify-center">
-                <span className="font-serif font-bold text-xl">{brandInitial}</span>
-              </div>
-              <span className="font-serif font-bold text-xl">{settings?.brandName || 'Organisation'}</span>
+              {branding?.logoDark ? (
+                <img 
+                  src={branding.logoDark} 
+                  alt={brandName} 
+                  className="h-10 max-w-[200px] object-contain"
+                />
+              ) : (
+                <>
+                  <div className="h-10 w-10 rounded-lg bg-primary-foreground/20 flex items-center justify-center">
+                    <span className="font-serif font-bold text-xl">{brandInitial}</span>
+                  </div>
+                  <span className="font-serif font-bold text-xl">{brandName}</span>
+                </>
+              )}
             </div>
             <p className="text-primary-foreground/80 text-sm leading-relaxed">
               {settings?.brandTagline || ''}
@@ -117,7 +130,7 @@ export function PublicFooter() {
         {/* Bottom bar */}
         <div className="border-t border-primary-foreground/20 mt-10 pt-6 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-sm text-primary-foreground/60">
-            © {new Date().getFullYear()} {settings?.brandName || 'Organisation'}. Alla rättigheter förbehållna.
+            © {new Date().getFullYear()} {brandName}. Alla rättigheter förbehållna.
           </p>
           <div className="flex gap-6 text-sm text-primary-foreground/60">
             <a href="#" className="hover:text-primary-foreground transition-colors">
