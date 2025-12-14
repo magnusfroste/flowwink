@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.migrate-page]
 verify_jwt = true
+
+[functions.process-image]
+verify_jwt = true
