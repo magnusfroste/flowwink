@@ -45,6 +45,7 @@ export interface SeoSettings {
   robotsIndex: boolean;
   robotsFollow: boolean;
   developmentMode: boolean;
+  requireAuthInDevMode: boolean;
 }
 
 export interface PerformanceSettings {
@@ -138,6 +139,7 @@ const defaultSeoSettings: SeoSettings = {
   robotsIndex: true,
   robotsFollow: true,
   developmentMode: false,
+  requireAuthInDevMode: false,
 };
 
 const defaultPerformanceSettings: PerformanceSettings = {

@@ -183,6 +183,7 @@ export default function SiteSettingsPage() {
     robotsIndex: true,
     robotsFollow: true,
     developmentMode: false,
+    requireAuthInDevMode: false,
   });
 
   const [performanceData, setPerformanceData] = useState<PerformanceSettings>({
@@ -385,7 +386,7 @@ export default function SiteSettingsPage() {
                     {seoData.developmentMode && <AlertTriangle className="h-4 w-4 text-destructive" />}
                     Utvecklingsläge
                   </CardTitle>
-                  <CardDescription>Blockera alla sökmotorer under utveckling</CardDescription>
+                  <CardDescription>Blockera alla sökmotorer och begränsa åtkomst under utveckling</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between">
@@ -400,6 +401,21 @@ export default function SiteSettingsPage() {
                     <Switch
                       checked={seoData.developmentMode}
                       onCheckedChange={(checked) => setSeoData(prev => ({ ...prev, developmentMode: checked }))}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label className={!seoData.developmentMode ? 'text-muted-foreground' : ''}>
+                        Kräv inloggning för att visa sidan
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        Endast inloggade användare kan se webbplatsen
+                      </p>
+                    </div>
+                    <Switch
+                      checked={seoData.requireAuthInDevMode}
+                      onCheckedChange={(checked) => setSeoData(prev => ({ ...prev, requireAuthInDevMode: checked }))}
+                      disabled={!seoData.developmentMode}
                     />
                   </div>
                 </CardContent>
