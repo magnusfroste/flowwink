@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Upload, Link, Loader2, X, ImageIcon, FolderOpen } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { MediaLibraryPicker } from './MediaLibraryPicker';
+import { convertToWebP, getWebPFileName } from '@/lib/image-utils';
 
 interface ImageUploaderProps {
   value: string;
@@ -48,11 +49,11 @@ export function ImageUploader({
       return;
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
+    // Validate file size (max 10MB for original, will be compressed)
+    if (file.size > 10 * 1024 * 1024) {
       toast({
         title: 'Filen är för stor',
-        description: 'Maximal filstorlek är 5MB',
+        description: 'Maximal filstorlek är 10MB',
         variant: 'destructive',
       });
       return;
@@ -61,13 +62,31 @@ export function ImageUploader({
     setIsUploading(true);
 
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-      const filePath = `pages/${fileName}`;
+      // Convert to WebP for better performance (skip if already WebP)
+      let uploadBlob: Blob = file;
+      let fileName = file.name;
+      let contentType = file.type;
+
+      if (file.type !== 'image/webp' && file.type !== 'image/gif') {
+        try {
+          uploadBlob = await convertToWebP(file, 0.85);
+          fileName = getWebPFileName(file.name);
+          contentType = 'image/webp';
+          console.log(`Converted to WebP: ${file.size} → ${uploadBlob.size} bytes`);
+        } catch (conversionError) {
+          console.warn('WebP conversion failed, using original:', conversionError);
+          // Fall back to original if conversion fails
+        }
+      }
+
+      const uniqueFileName = `${Date.now()}-${Math.random().toString(36).substring(7)}-${fileName}`;
+      const filePath = `pages/${uniqueFileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('cms-images')
-        .upload(filePath, file);
+        .upload(filePath, uploadBlob, {
+          contentType,
+        });
 
       if (uploadError) throw uploadError;
 
@@ -81,7 +100,9 @@ export function ImageUploader({
       
       toast({
         title: 'Bild uppladdad',
-        description: 'Bilden har laddats upp',
+        description: contentType === 'image/webp' 
+          ? 'Bilden har konverterats till WebP och laddats upp'
+          : 'Bilden har laddats upp',
       });
     } catch (error) {
       console.error('Upload error:', error);
@@ -149,7 +170,7 @@ export function ImageUploader({
             {isUploading ? (
               <>
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Laddar upp...</span>
+                <span className="text-sm text-muted-foreground">Konverterar & laddar upp...</span>
               </>
             ) : (
               <>
@@ -158,7 +179,7 @@ export function ImageUploader({
                   Klicka för att välja bild
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  JPG, PNG, GIF, WebP (max 5MB)
+                  Konverteras automatiskt till WebP
                 </span>
               </>
             )}
