@@ -153,14 +153,25 @@ VIKTIGA REGLER:
 7. Identifiera FAQ-sektioner och använd "accordion"
 8. Identifiera statistik och använd "stats" block
 9. Behåll länkar i texten
-10. Svara ENDAST med valid JSON, ingen annan text
+
+YOUTUBE-VIDEOR - MYCKET VIKTIGT:
+10. Leta efter YouTube-länkar i innehållet (youtube.com/watch?v=, youtu.be/, youtube.com/embed/)
+11. Extrahera videoId från YouTube-URL:er:
+    - youtube.com/watch?v=VIDEO_ID -> videoId = VIDEO_ID
+    - youtu.be/VIDEO_ID -> videoId = VIDEO_ID  
+    - youtube.com/embed/VIDEO_ID -> videoId = VIDEO_ID
+12. Skapa "youtube" block för varje YouTube-video du hittar
+13. Om det finns iframe-embeds med YouTube, extrahera videoId från src-attributet
+
+Svara ENDAST med valid JSON, ingen annan text
 
 Svara med ett JSON-objekt:
 {
   "title": "Sidans titel",
   "blocks": [
     { "id": "block-1", "type": "hero", "data": { ... } },
-    { "id": "block-2", "type": "text", "data": { ... } }
+    { "id": "block-2", "type": "text", "data": { ... } },
+    { "id": "block-3", "type": "youtube", "data": { "videoId": "dQw4w9WgXcQ", "title": "Video titel" } }
   ]
 }`
           },
@@ -176,6 +187,11 @@ INNEHÅLL (Markdown):
 ${markdown.substring(0, 15000)}
 
 ${markdown.length > 15000 ? '... (innehållet är trunkerat)' : ''}
+
+HTML (för att hitta YouTube-iframes och embeds):
+${html.substring(0, 5000)}
+
+VIKTIGT: Leta specifikt efter YouTube-videor (youtube.com, youtu.be) och skapa "youtube" block för dem.
 
 Skapa lämpliga CMS-block för detta innehåll. Svara endast med JSON.`
           }
