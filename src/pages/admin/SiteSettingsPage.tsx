@@ -26,7 +26,7 @@ import {
   CookieBannerSettings,
   FooterSectionId
 } from '@/hooks/useSiteSettings';
-import { Loader2, Save, Globe, Zap, Phone, ImageIcon, X, AlertTriangle, GripVertical, Code, CheckCircle2, Circle, Cookie, Plus, Trash2, Scale } from 'lucide-react';
+import { Loader2, Save, Globe, Zap, Phone, ImageIcon, X, AlertTriangle, GripVertical, Code, CheckCircle2, Circle, Cookie, Plus, Trash2, Scale, Search, Lock, Info } from 'lucide-react';
 import { MediaLibraryPicker } from '@/components/admin/MediaLibraryPicker';
 import { CodeEditor } from '@/components/admin/CodeEditor';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -386,31 +386,56 @@ export default function SiteSettingsPage() {
                     {seoData.developmentMode && <AlertTriangle className="h-4 w-4 text-destructive" />}
                     Utvecklingsläge
                   </CardTitle>
-                  <CardDescription>Blockera alla sökmotorer och begränsa åtkomst under utveckling</CardDescription>
+                  <CardDescription>Blockera sökmotorer och/eller begränsa åtkomst under utveckling</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label className={seoData.developmentMode ? 'text-destructive' : ''}>
-                        Utvecklingsläge (blockera sökmotorer)
-                      </Label>
-                      <p className="text-xs text-muted-foreground">
-                        Sätter noindex och nofollow på ALLA sidor globalt
-                      </p>
+                  {/* Informationsruta som förklarar skillnaden */}
+                  <Alert className="bg-muted/50 border-muted-foreground/20">
+                    <Info className="h-4 w-4" />
+                    <AlertDescription className="text-sm">
+                      <strong>Två nivåer av skydd:</strong>
+                      <ul className="mt-2 space-y-1 text-muted-foreground">
+                        <li className="flex items-center gap-2">
+                          <Search className="h-3 w-3 shrink-0" />
+                          <span><strong>Blockera sökmotorer</strong> – Sidan är synlig men indexeras inte</span>
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <Lock className="h-3 w-3 shrink-0" />
+                          <span><strong>Kräv inloggning</strong> – Fullständig blockering för ej inloggade</span>
+                        </li>
+                      </ul>
+                    </AlertDescription>
+                  </Alert>
+
+                  <div className="flex items-center justify-between p-3 rounded-lg border bg-card">
+                    <div className="flex items-center gap-3">
+                      <Search className={`h-5 w-5 ${seoData.developmentMode ? 'text-destructive' : 'text-muted-foreground'}`} />
+                      <div>
+                        <Label className={seoData.developmentMode ? 'text-destructive' : ''}>
+                          Blockera sökmotorer (noindex)
+                        </Label>
+                        <p className="text-xs text-muted-foreground">
+                          Sätter noindex och nofollow på alla sidor
+                        </p>
+                      </div>
                     </div>
                     <Switch
                       checked={seoData.developmentMode}
                       onCheckedChange={(checked) => setSeoData(prev => ({ ...prev, developmentMode: checked }))}
                     />
                   </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label className={!seoData.developmentMode ? 'text-muted-foreground' : ''}>
-                        Kräv inloggning för att visa sidan
-                      </Label>
-                      <p className="text-xs text-muted-foreground">
-                        Endast inloggade användare kan se webbplatsen
-                      </p>
+
+                  <div className={`flex items-center justify-between p-3 rounded-lg border ${!seoData.developmentMode ? 'opacity-50 bg-muted/30' : 'bg-card'}`}>
+                    <div className="flex items-center gap-3">
+                      <Lock className={`h-5 w-5 ${seoData.requireAuthInDevMode && seoData.developmentMode ? 'text-destructive' : 'text-muted-foreground'}`} />
+                      <div>
+                        <Label className={seoData.requireAuthInDevMode && seoData.developmentMode ? 'text-destructive' : (!seoData.developmentMode ? 'text-muted-foreground' : '')}>
+                          Kräv inloggning för att visa sidan
+                        </Label>
+                        <p className="text-xs text-muted-foreground">
+                          Endast inloggade användare kan se webbplatsen
+                        </p>
+                      </div>
                     </div>
                     <Switch
                       checked={seoData.requireAuthInDevMode}
