@@ -200,6 +200,8 @@ export default function SiteSettingsPage() {
     enableServiceWorker: false,
     imageCacheMaxAge: 31536000,
     cacheStaticAssets: true,
+    enableEdgeCaching: false,
+    edgeCacheTtlMinutes: 5,
   });
 
   const [scriptsData, setScriptsData] = useState<CustomScriptsSettings>({
@@ -954,6 +956,57 @@ export default function SiteSettingsPage() {
                       onCheckedChange={(checked) => setPerformanceData(prev => ({ ...prev, cacheStaticAssets: checked }))}
                     />
                   </div>
+                </CardContent>
+              </Card>
+
+              <Card className="md:col-span-2">
+                <CardHeader>
+                  <CardTitle className="font-serif">Edge-caching</CardTitle>
+                  <CardDescription>Cacha publicerade sidor för snabbare laddning (rekommenderas endast för produktion)</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/30">
+                    <div>
+                      <Label>Aktivera edge-caching</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Publicerade sidor cachas för snabbare leverans. Inaktivera under utveckling.
+                      </p>
+                    </div>
+                    <Switch
+                      checked={performanceData.enableEdgeCaching}
+                      onCheckedChange={(checked) => setPerformanceData(prev => ({ ...prev, enableEdgeCaching: checked }))}
+                    />
+                  </div>
+                  
+                  {performanceData.enableEdgeCaching && (
+                    <div className="space-y-2 pt-4 border-t">
+                      <Label htmlFor="edgeCacheTtl">Cache-tid (minuter)</Label>
+                      <Input
+                        id="edgeCacheTtl"
+                        type="number"
+                        min={1}
+                        max={60}
+                        value={performanceData.edgeCacheTtlMinutes}
+                        onChange={(e) => setPerformanceData(prev => ({ 
+                          ...prev, 
+                          edgeCacheTtlMinutes: Math.max(1, Math.min(60, parseInt(e.target.value) || 5)) 
+                        }))}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Hur länge sidor cachas innan de hämtas från databasen igen (1-60 minuter)
+                      </p>
+                    </div>
+                  )}
+                  
+                  {!performanceData.enableEdgeCaching && (
+                    <Alert>
+                      <Info className="h-4 w-4" />
+                      <AlertDescription>
+                        Edge-caching är inaktiverad. Alla sidvisningar hämtar data direkt från databasen.
+                        Aktivera för produktion för att minska latens med upp till 90%.
+                      </AlertDescription>
+                    </Alert>
+                  )}
                 </CardContent>
               </Card>
 

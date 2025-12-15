@@ -53,18 +53,44 @@ export default function PublicPage() {
   const { data: page, isLoading, error } = useQuery({
     queryKey: ['public-page', pageSlug],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('pages')
-        .select('*')
-        .eq('slug', pageSlug)
-        .eq('status', 'published')
-        .maybeSingle();
+      // Use edge function for fetching (handles caching internally)
+      const { data, error } = await supabase.functions.invoke('get-page', {
+        body: null,
+        method: 'GET',
+      }).catch(() => ({ data: null, error: { message: 'Function not available' } }));
 
-      if (error) throw error;
-      if (!data) return null;
+      // If edge function fails or returns error, fallback to direct DB query
+      if (error || data?.error) {
+        console.log('[PublicPage] Edge function unavailable, using direct DB query');
+        const { data: dbData, error: dbError } = await supabase
+          .from('pages')
+          .select('*')
+          .eq('slug', pageSlug)
+          .eq('status', 'published')
+          .maybeSingle();
 
-      return parseContent(data);
+        if (dbError) throw dbError;
+        if (!dbData) return null;
+
+        return parseContent(dbData);
+      }
+
+      // Edge function returned successfully - need to call with slug param
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-page?slug=${encodeURIComponent(pageSlug)}`
+      );
+      
+      if (!response.ok) {
+        if (response.status === 404) return null;
+        throw new Error('Failed to fetch page');
+      }
+
+      const pageData = await response.json();
+      if (pageData.error) return null;
+      
+      return parseContent(pageData);
     },
+    staleTime: 5 * 60 * 1000, // 5 min client-side cache
   });
 
   if (isLoading || authLoading) {

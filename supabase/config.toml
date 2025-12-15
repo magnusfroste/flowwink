@@ -17,3 +17,9 @@ verify_jwt = true
 
 [functions.chat-completion]
 verify_jwt = false
+
+[functions.get-page]
+verify_jwt = false
+
+[functions.invalidate-cache]
+verify_jwt = true

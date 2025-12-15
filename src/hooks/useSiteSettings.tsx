@@ -55,6 +55,9 @@ export interface PerformanceSettings {
   enableServiceWorker: boolean;
   imageCacheMaxAge: number;
   cacheStaticAssets: boolean;
+  // Edge caching
+  enableEdgeCaching: boolean;
+  edgeCacheTtlMinutes: number;
 }
 
 export interface BrandingSettings {
@@ -151,6 +154,8 @@ const defaultPerformanceSettings: PerformanceSettings = {
   enableServiceWorker: false,
   imageCacheMaxAge: 31536000,
   cacheStaticAssets: true,
+  enableEdgeCaching: false,
+  edgeCacheTtlMinutes: 5,
 };
 
 export interface CustomScriptsSettings {
