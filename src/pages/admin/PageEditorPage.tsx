@@ -14,6 +14,7 @@ import { SchedulePublishDialog } from '@/components/admin/SchedulePublishDialog'
 import { usePage, useUpdatePage, useUpdatePageStatus } from '@/hooks/usePages';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useUnsavedChanges, UnsavedChangesDialog } from '@/hooks/useUnsavedChanges';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ContentBlock, PageMeta } from '@/types/cms';
 
@@ -32,6 +33,8 @@ export default function PageEditorPage() {
   const [meta, setMeta] = useState<PageMeta>({});
   const [hasChanges, setHasChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  const { blocker } = useUnsavedChanges({ hasChanges });
 
   useEffect(() => {
     if (page) {
@@ -264,6 +267,8 @@ export default function PageEditorPage() {
           </div>
         </div>
       </div>
+
+      <UnsavedChangesDialog blocker={blocker} />
     </AdminLayout>
   );
 }
