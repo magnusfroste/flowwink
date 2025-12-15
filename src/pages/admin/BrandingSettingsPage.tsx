@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,6 +15,7 @@ import { Loader2, Palette, Type, Image, LayoutGrid, Sparkles, Globe, Trash2 } fr
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useUnsavedChanges, UnsavedChangesDialog } from '@/hooks/useUnsavedChanges';
 import type { Json } from '@/integrations/supabase/types';
 
 interface CustomTheme {
@@ -144,6 +145,14 @@ export default function BrandingSettingsPage() {
       setSettings(savedSettings);
     }
   }, [savedSettings]);
+
+  // Track unsaved changes
+  const hasChanges = useMemo(() => {
+    if (!savedSettings) return false;
+    return JSON.stringify(settings) !== JSON.stringify(savedSettings);
+  }, [settings, savedSettings]);
+
+  const { blocker } = useUnsavedChanges({ hasChanges });
 
   const handleSave = () => {
     updateSettings.mutate(settings);
@@ -907,6 +916,8 @@ export default function BrandingSettingsPage() {
           onApplyBranding={handleApplyBranding}
           onSaveAsTheme={handleSaveAsTheme}
         />
+
+        <UnsavedChangesDialog blocker={blocker} />
       </div>
     </AdminLayout>
   );

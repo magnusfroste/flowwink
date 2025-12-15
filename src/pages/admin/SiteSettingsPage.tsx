@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -37,6 +37,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { useUnsavedChanges, UnsavedChangesDialog } from '@/hooks/useUnsavedChanges';
 
 const SECTION_LABELS: Record<FooterSectionId, { label: string; description: string }> = {
   brand: { label: 'Varumärke & logo', description: 'Organisationsnamn och tagline' },
@@ -251,6 +252,21 @@ export default function SiteSettingsPage() {
 
   const isLoading = footerLoading || seoLoading || performanceLoading || scriptsLoading || cookieLoading || maintenanceLoading;
   const isSaving = updateFooter.isPending || updateSeo.isPending || updatePerformance.isPending || updateScripts.isPending || updateCookieBanner.isPending || updateMaintenance.isPending;
+
+  // Track unsaved changes
+  const hasChanges = useMemo(() => {
+    if (!footerSettings || !seoSettings || !performanceSettings || !customScriptsSettings || !cookieBannerSettings || !maintenanceSettings) return false;
+    return (
+      JSON.stringify(footerData) !== JSON.stringify(footerSettings) ||
+      JSON.stringify(seoData) !== JSON.stringify(seoSettings) ||
+      JSON.stringify(performanceData) !== JSON.stringify(performanceSettings) ||
+      JSON.stringify(scriptsData) !== JSON.stringify(customScriptsSettings) ||
+      JSON.stringify(cookieData) !== JSON.stringify(cookieBannerSettings) ||
+      JSON.stringify(maintenanceData) !== JSON.stringify(maintenanceSettings)
+    );
+  }, [footerData, seoData, performanceData, scriptsData, cookieData, maintenanceData, footerSettings, seoSettings, performanceSettings, customScriptsSettings, cookieBannerSettings, maintenanceSettings]);
+
+  const { blocker } = useUnsavedChanges({ hasChanges });
 
   const handleSaveAll = async () => {
     await Promise.all([
@@ -1217,6 +1233,8 @@ export default function SiteSettingsPage() {
             </div>
           </TabsContent>
         </Tabs>
+
+        <UnsavedChangesDialog blocker={blocker} />
       </div>
     </AdminLayout>
   );

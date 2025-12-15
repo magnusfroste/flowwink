@@ -7,6 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useUnsavedChanges, UnsavedChangesDialog } from '@/hooks/useUnsavedChanges';
 import { Loader2, Save, GripVertical, Eye, EyeOff } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
@@ -170,6 +171,8 @@ export default function MenuOrderPage() {
     },
   });
 
+  const { blocker } = useUnsavedChanges({ hasChanges });
+
   const handleSave = () => {
     saveMutation.mutate(orderedPages);
   };
@@ -226,6 +229,8 @@ export default function MenuOrderPage() {
           </CardContent>
         </Card>
       </div>
+
+      <UnsavedChangesDialog blocker={blocker} />
     </AdminLayout>
   );
 }

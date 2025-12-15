@@ -15,6 +15,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, Save, AlertTriangle, Cloud, Server, Webhook, Shield, Database, BookOpen, FileText } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useUnsavedChanges, UnsavedChangesDialog } from '@/hooks/useUnsavedChanges';
 
 export default function ChatSettingsPage() {
   const { data: settings, isLoading } = useChatSettings();
@@ -26,6 +27,14 @@ export default function ChatSettingsPage() {
       setFormData(settings);
     }
   }, [settings]);
+
+  // Track unsaved changes
+  const hasChanges = useMemo(() => {
+    if (!settings || !formData) return false;
+    return JSON.stringify(formData) !== JSON.stringify(settings);
+  }, [formData, settings]);
+
+  const { blocker } = useUnsavedChanges({ hasChanges });
 
   const handleSave = () => {
     if (formData) {
@@ -607,6 +616,8 @@ export default function ChatSettingsPage() {
           </Tabs>
         )}
       </div>
+
+        <UnsavedChangesDialog blocker={blocker} />
       </div>
     </AdminLayout>
   );
