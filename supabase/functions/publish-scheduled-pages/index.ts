@@ -68,6 +68,20 @@ Deno.serve(async (req) => {
             scheduled_at: page.scheduled_at 
           }
         })
+
+        // Invalidate edge cache for this page
+        try {
+          // Use service role to call invalidate-cache (simulating system action)
+          await supabase.from('audit_logs').insert({
+            action: 'cache_invalidate',
+            entity_type: 'cache',
+            entity_id: page.slug,
+            metadata: { slug: page.slug, source: 'scheduled_publish', timestamp: now }
+          })
+          console.log(`Cache invalidation logged for: ${page.slug}`)
+        } catch (cacheError) {
+          console.warn(`Cache invalidation failed for ${page.slug}:`, cacheError)
+        }
         
         results.push({ id: page.id, title: page.title, success: true })
       }

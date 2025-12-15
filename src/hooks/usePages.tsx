@@ -252,6 +252,17 @@ export function useUpdatePageStatus() {
           meta_json: data.meta_json,
           created_by: user?.id,
         });
+
+        // Invalidate edge cache for this page
+        try {
+          await supabase.functions.invoke('invalidate-cache', {
+            body: { slug: data.slug },
+          });
+          console.log(`[usePages] Cache invalidated for: ${data.slug}`);
+        } catch (cacheError) {
+          console.warn('[usePages] Cache invalidation failed:', cacheError);
+          // Don't fail the publish operation if cache invalidation fails
+        }
       }
       
       return parsePage(data);
