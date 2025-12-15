@@ -36,6 +36,7 @@ const DESIGN_THEMES: { id: string; name: string; description: string; settings: 
       bodyFont: 'Inter',
       borderRadius: 'md',
       shadowIntensity: 'subtle',
+      heroOverlayOpacity: 'medium',
     },
   },
   {
@@ -50,6 +51,7 @@ const DESIGN_THEMES: { id: string; name: string; description: string; settings: 
       bodyFont: 'Inter',
       borderRadius: 'none',
       shadowIntensity: 'none',
+      heroOverlayOpacity: 'light',
     },
   },
   {
@@ -64,6 +66,7 @@ const DESIGN_THEMES: { id: string; name: string; description: string; settings: 
       bodyFont: 'Open Sans',
       borderRadius: 'lg',
       shadowIntensity: 'medium',
+      heroOverlayOpacity: 'light',
     },
   },
   {
@@ -78,6 +81,7 @@ const DESIGN_THEMES: { id: string; name: string; description: string; settings: 
       bodyFont: 'Source Sans 3',
       borderRadius: 'sm',
       shadowIntensity: 'subtle',
+      heroOverlayOpacity: 'strong',
     },
   },
 ];
