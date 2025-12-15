@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, FileText, Users, Settings, LogOut, Menu, Palette, MessageSquare } from "lucide-react";
+import { LayoutDashboard, FileText, Users, Settings, LogOut, Menu, Palette, MessageSquare, Database } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { ROLE_LABELS } from "@/types/cms";
 import {
@@ -22,6 +22,7 @@ import {
 const navigation = [
   { name: "Översikt", href: "/admin", icon: LayoutDashboard },
   { name: "Sidor", href: "/admin/pages", icon: FileText },
+  { name: "Content Hub", href: "/admin/content-hub", icon: Database, adminOnly: true },
   { name: "Menyordning", href: "/admin/menu-order", icon: Menu, adminOnly: true },
   { name: "Användare", href: "/admin/users", icon: Users, adminOnly: true },
   { name: "Varumärke", href: "/admin/branding", icon: Palette, adminOnly: true },
