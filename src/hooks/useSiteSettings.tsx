@@ -199,6 +199,78 @@ const defaultMaintenanceSettings: MaintenanceSettings = {
   expectedEndTime: '',
 };
 
+// Chat settings
+export type ChatAiProvider = 'lovable' | 'local' | 'n8n';
+
+export interface ChatSettings {
+  // Grundläggande
+  enabled: boolean;
+  title: string;
+  placeholder: string;
+  welcomeMessage: string;
+  
+  // AI-leverantör
+  aiProvider: ChatAiProvider;
+  
+  // Lovable AI (cloud)
+  lovableModel: 'google/gemini-2.5-flash' | 'google/gemini-2.5-pro' | 'openai/gpt-5-mini';
+  
+  // Local AI (HIPAA-compliant)
+  localEndpoint: string;
+  localModel: string;
+  localApiKey: string;
+  
+  // N8N Integration
+  n8nWebhookUrl: string;
+  n8nTriggerMode: 'always' | 'keywords' | 'fallback';
+  n8nTriggerKeywords: string[];
+  
+  // System prompt
+  systemPrompt: string;
+  
+  // Widget-inställningar
+  widgetEnabled: boolean;
+  widgetPosition: 'bottom-right' | 'bottom-left';
+  widgetButtonText: string;
+  
+  // Landing page
+  landingPageEnabled: boolean;
+  
+  // Block
+  blockEnabled: boolean;
+  
+  // Privacy & Compliance
+  saveConversations: boolean;
+  anonymizeData: boolean;
+  auditLogging: boolean;
+  dataRetentionDays: number;
+}
+
+const defaultChatSettings: ChatSettings = {
+  enabled: false,
+  title: 'AI Assistent',
+  placeholder: 'Ställ en fråga...',
+  welcomeMessage: 'Hej! Hur kan jag hjälpa dig idag?',
+  aiProvider: 'lovable',
+  lovableModel: 'google/gemini-2.5-flash',
+  localEndpoint: '',
+  localModel: 'llama3',
+  localApiKey: '',
+  n8nWebhookUrl: '',
+  n8nTriggerMode: 'always',
+  n8nTriggerKeywords: [],
+  systemPrompt: 'Du är en hjälpsam AI-assistent för en svensk organisation. Svara alltid på svenska om inte användaren skriver på ett annat språk.',
+  widgetEnabled: false,
+  widgetPosition: 'bottom-right',
+  widgetButtonText: 'Chatta med oss',
+  landingPageEnabled: false,
+  blockEnabled: true,
+  saveConversations: true,
+  anonymizeData: false,
+  auditLogging: true,
+  dataRetentionDays: 90,
+};
+
 // Generic hook for fetching settings
 function useSiteSettings<T>(key: string, defaultValue: T) {
   return useQuery({
@@ -334,4 +406,13 @@ export function useMaintenanceSettings() {
 
 export function useUpdateMaintenanceSettings() {
   return useUpdateSiteSettings<MaintenanceSettings>('maintenance', 'Underhållsinställningarna har uppdaterats.');
+}
+
+// Chat hooks
+export function useChatSettings() {
+  return useSiteSettings<ChatSettings>('chat', defaultChatSettings);
+}
+
+export function useUpdateChatSettings() {
+  return useUpdateSiteSettings<ChatSettings>('chat', 'Chat-inställningarna har uppdaterats.');
 }

@@ -80,7 +80,8 @@ export type ContentBlockType =
   | 'quote'
   | 'separator'
   | 'gallery'
-  | 'stats';
+  | 'stats'
+  | 'chat';
 
 export interface ContentBlock {
   id: string;
@@ -183,6 +184,14 @@ export interface GalleryBlockData {
 export interface StatsBlockData {
   title?: string;
   stats: { value: string; label: string; icon?: string }[];
+}
+
+export interface ChatBlockData {
+  title?: string;
+  height: 'sm' | 'md' | 'lg' | 'full';
+  showSidebar: boolean;
+  initialPrompt?: string;
+  variant: 'embedded' | 'card';
 }
 
 // Workflow actions
