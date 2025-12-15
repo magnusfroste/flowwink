@@ -815,6 +815,25 @@ export default function BrandingSettingsPage() {
                     </div>
                   </div>
 
+                  <div className="space-y-2">
+                    <Label>Hero-bildernas overlay</Label>
+                    <Select
+                      value={settings.heroOverlayOpacity || 'medium'}
+                      onValueChange={(value) => updateField('heroOverlayOpacity', value as BrandingSettings['heroOverlayOpacity'])}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Ingen dämpning (full bild)</SelectItem>
+                        <SelectItem value="light">Lätt dämpning</SelectItem>
+                        <SelectItem value="medium">Medium dämpning (standard)</SelectItem>
+                        <SelectItem value="strong">Stark dämpning</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">Hur mycket bakgrundsbilden i hero-block dämpas av primary-färgen</p>
+                  </div>
+
                   {/* Preview */}
                   <div className="mt-8 p-6 rounded-lg border bg-muted/30">
                     <p className="text-sm font-medium mb-4">Förhandsvisning</p>

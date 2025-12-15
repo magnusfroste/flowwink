@@ -77,6 +77,7 @@ export interface BrandingSettings {
   // Appearance
   borderRadius?: 'none' | 'sm' | 'md' | 'lg';
   shadowIntensity?: 'none' | 'subtle' | 'medium';
+  heroOverlayOpacity?: 'none' | 'light' | 'medium' | 'strong';
   
   // Header display
   showLogoInHeader?: boolean;
@@ -100,6 +101,7 @@ const defaultBrandingSettings: BrandingSettings = {
   bodyFont: 'Inter',
   borderRadius: 'md',
   shadowIntensity: 'subtle',
+  heroOverlayOpacity: 'medium',
   showLogoInHeader: true,
   showNameWithLogo: false,
   headerLogoSize: 'md',

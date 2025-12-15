@@ -1,17 +1,29 @@
 import { HeroBlockData } from '@/types/cms';
+import { useBranding } from '@/providers/BrandingProvider';
 
 interface HeroBlockProps {
   data: HeroBlockData;
 }
 
+const opacityMap: Record<string, string> = {
+  none: 'opacity-100',
+  light: 'opacity-30',
+  medium: 'opacity-20',
+  strong: 'opacity-10',
+};
+
 export function HeroBlock({ data }: HeroBlockProps) {
+  const { branding } = useBranding();
+  
   if (!data.title) return null;
+  
+  const overlayOpacity = opacityMap[branding?.heroOverlayOpacity || 'medium'];
   
   return (
     <section className="relative py-24 px-6 bg-primary text-primary-foreground">
       {data.backgroundImage && (
         <div 
-          className="absolute inset-0 bg-cover bg-center opacity-20"
+          className={`absolute inset-0 bg-cover bg-center ${overlayOpacity}`}
           style={{ backgroundImage: `url(${data.backgroundImage})` }}
         />
       )}
