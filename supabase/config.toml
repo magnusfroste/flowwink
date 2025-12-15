@@ -14,3 +14,6 @@ verify_jwt = true
 
 [functions.process-image]
 verify_jwt = true
+
+[functions.chat-completion]
+verify_jwt = false

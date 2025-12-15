@@ -32,7 +32,7 @@ export default function ChatSettingsPage() {
 
   if (isLoading || !formData) {
     return (
-      <AdminLayout title="Chat-inställningar">
+      <AdminLayout>
         <div className="flex items-center justify-center h-64">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
@@ -41,8 +41,10 @@ export default function ChatSettingsPage() {
   }
 
   return (
-    <AdminLayout title="Chat-inställningar">
-      <div className="max-w-4xl space-y-6">
+    <AdminLayout>
+      <div className="p-6">
+        <h1 className="text-2xl font-serif font-semibold mb-6">Chat-inställningar</h1>
+        <div className="max-w-4xl space-y-6">
         {/* Master toggle */}
         <Card>
           <CardHeader>
@@ -500,6 +502,7 @@ export default function ChatSettingsPage() {
             Spara inställningar
           </Button>
         </div>
+      </div>
       </div>
     </AdminLayout>
   );
