@@ -139,7 +139,7 @@ export default function PageEditorPage() {
   if (isLoading) {
     return (
       <AdminLayout>
-        <div className="p-8">
+        <div>
           <Skeleton className="h-10 w-48 mb-6" />
           <Skeleton className="h-[500px] w-full" />
         </div>
@@ -150,7 +150,7 @@ export default function PageEditorPage() {
   if (!page) {
     return (
       <AdminLayout>
-        <div className="p-8 text-center">
+        <div className="text-center">
           <h1 className="text-2xl font-serif font-bold mb-4">Sidan hittades inte</h1>
           <Button onClick={() => navigate('/admin/pages')}>Tillbaka till sidor</Button>
         </div>
@@ -164,7 +164,7 @@ export default function PageEditorPage() {
 
   return (
     <AdminLayout>
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col h-full -m-8">
         {/* Header */}
         <div className="border-b bg-card p-4">
           <div className="flex items-center justify-between">

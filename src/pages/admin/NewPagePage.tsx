@@ -64,7 +64,7 @@ export default function NewPagePage() {
 
   return (
     <AdminLayout>
-      <div className="p-8 max-w-2xl">
+      <div className="max-w-2xl">
         <Button
           variant="ghost"
           onClick={() => navigate('/admin/pages')}

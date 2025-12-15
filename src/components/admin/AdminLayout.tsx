@@ -50,7 +50,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     <SidebarProvider>
       <div className="flex h-screen w-full bg-background">
         <AdminSidebar />
-        <main className="flex-1 overflow-auto animate-fade-in">
+        <main className="flex-1 overflow-auto animate-fade-in p-8">
           {children}
         </main>
       </div>

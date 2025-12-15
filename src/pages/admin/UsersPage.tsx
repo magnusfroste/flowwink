@@ -95,7 +95,7 @@ export default function UsersPage() {
   if (!isAdmin) {
     return (
       <AdminLayout>
-        <div className="p-8 text-center">
+        <div className="text-center">
           <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <h1 className="font-serif text-2xl font-bold mb-2">Ingen åtkomst</h1>
           <p className="text-muted-foreground">Endast administratörer kan hantera användare.</p>
@@ -112,7 +112,7 @@ export default function UsersPage() {
 
   return (
     <AdminLayout>
-      <div className="p-8">
+      <div>
         <div className="mb-8 flex items-center justify-between">
           <div>
             <h1 className="font-serif text-3xl font-bold text-foreground">Användare</h1>

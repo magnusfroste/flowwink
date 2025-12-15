@@ -44,7 +44,7 @@ export default function ChatSettingsPage() {
 
   return (
     <AdminLayout>
-      <div className="p-6">
+      <div>
         <h1 className="text-2xl font-serif font-semibold mb-6">Chat-inställningar</h1>
         <div className="max-w-4xl space-y-6">
         {/* Master toggle */}

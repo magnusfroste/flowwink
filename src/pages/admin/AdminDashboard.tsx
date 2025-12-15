@@ -24,7 +24,7 @@ export default function AdminDashboard() {
 
   return (
     <AdminLayout>
-      <div className="p-8">
+      <div>
         <div className="mb-8">
           <h1 className="font-serif text-3xl font-bold text-foreground">
             Välkommen, {profile?.full_name?.split(' ')[0] || 'användare'}
