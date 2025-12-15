@@ -270,7 +270,8 @@ export default function BrandingSettingsPage() {
           title="Varumärke & Design"
           description="Anpassa utseendet på den publika webbplatsen"
         >
-          <Button onClick={handleSave} disabled={updateSettings.isPending}>
+          <Button onClick={handleSave} disabled={updateSettings.isPending} className="relative">
+            {hasChanges && <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-destructive" />}
             {updateSettings.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             Spara ändringar
           </Button>
