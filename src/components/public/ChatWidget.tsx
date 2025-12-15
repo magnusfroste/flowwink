@@ -70,35 +70,26 @@ export function ChatWidget() {
       )}
 
       {/* Toggle button */}
-      <div className="relative">
-        {/* Pulsing indicator - only visible when closed */}
-        {!isOpen && (
-          <span className="absolute -top-0.5 -right-0.5 flex h-5 w-5 z-10">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75" />
-            <span className="relative inline-flex rounded-full h-5 w-5 bg-green-500 border-2 border-background" />
-          </span>
+      <Button
+        size="lg"
+        className={cn(
+          'h-14 w-14',
+          'transition-transform hover:scale-105',
+          radius.button,
+          shadow,
+          isOpen && 'bg-muted text-muted-foreground hover:bg-muted/90'
         )}
-        <Button
-          size="lg"
-          className={cn(
-            'h-14 w-14',
-            'transition-transform hover:scale-105',
-            radius.button,
-            shadow,
-            isOpen && 'bg-muted text-muted-foreground hover:bg-muted/90'
-          )}
-          onClick={() => setIsOpen(!isOpen)}
-        >
-          {isOpen ? (
-            <X className="h-6 w-6" />
-          ) : (
-            <MessageCircle className="h-6 w-6" />
-          )}
-          <span className="sr-only">
-            {isOpen ? 'Stäng chat' : settings.widgetButtonText || 'Öppna chat'}
-          </span>
-        </Button>
-      </div>
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        {isOpen ? (
+          <X className="h-6 w-6" />
+        ) : (
+          <MessageCircle className="h-6 w-6" />
+        )}
+        <span className="sr-only">
+          {isOpen ? 'Stäng chat' : settings.widgetButtonText || 'Öppna chat'}
+        </span>
+      </Button>
     </div>
   );
 }
