@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminLayout } from '@/components/admin/AdminLayout';
+import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
@@ -116,23 +117,17 @@ export default function MediaLibraryPage() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="font-serif text-2xl font-bold text-foreground">
-              Mediabibliotek
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Hantera uppladdade bilder
-            </p>
-          </div>
+        <AdminPageHeader 
+          title="Mediabibliotek"
+          description="Hantera uppladdade bilder"
+        >
           <Button asChild>
             <a href="/admin/pages">
               <Upload className="h-4 w-4 mr-2" />
               Ladda upp via sideditor
             </a>
           </Button>
-        </div>
+        </AdminPageHeader>
 
         {/* Search */}
         <div className="relative max-w-md">

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
+import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -186,11 +187,10 @@ export default function MenuOrderPage() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="font-serif text-2xl font-bold text-foreground">Menyordning</h1>
-            <p className="text-muted-foreground mt-1">Dra och släpp för att ändra ordningen, använd växlaren för att dölja sidor</p>
-          </div>
+        <AdminPageHeader 
+          title="Menyordning"
+          description="Dra och släpp för att ändra ordningen, använd växlaren för att dölja sidor"
+        >
           <Button onClick={handleSave} disabled={!hasChanges || saveMutation.isPending}>
             {saveMutation.isPending ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -199,7 +199,7 @@ export default function MenuOrderPage() {
             )}
             Spara ändringar
           </Button>
-        </div>
+        </AdminPageHeader>
 
         <Card>
           <CardHeader>

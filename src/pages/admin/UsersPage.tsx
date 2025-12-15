@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminLayout } from '@/components/admin/AdminLayout';
+import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { CreateUserDialog } from '@/components/admin/CreateUserDialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -113,13 +114,12 @@ export default function UsersPage() {
   return (
     <AdminLayout>
       <div>
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="font-serif text-2xl font-bold text-foreground">Användare</h1>
-            <p className="text-muted-foreground mt-1">Hantera användare och deras roller</p>
-          </div>
+        <AdminPageHeader 
+          title="Användare"
+          description="Hantera användare och deras roller"
+        >
           <CreateUserDialog />
-        </div>
+        </AdminPageHeader>
 
         <Card>
           <CardHeader>

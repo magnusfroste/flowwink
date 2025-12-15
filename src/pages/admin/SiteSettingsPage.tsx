@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
+import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -264,10 +265,10 @@ export default function SiteSettingsPage() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="font-serif text-2xl font-bold text-foreground">Webbplatsinställningar</h1>
-          <p className="text-muted-foreground mt-1">Hantera SEO, prestanda och kontaktinformation</p>
-        </div>
+        <AdminPageHeader 
+          title="Webbplatsinställningar"
+          description="Hantera SEO, prestanda och kontaktinformation"
+        />
 
         <Tabs defaultValue="seo" className="space-y-6">
           <TabsList className="grid w-full grid-cols-6 max-w-3xl">

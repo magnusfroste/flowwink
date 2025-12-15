@@ -4,6 +4,7 @@ import { Plus, Search, Filter, MoreHorizontal, Edit, Trash2, Copy, ArrowUpDown, 
 import { formatDistanceToNow, format } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import { AdminLayout } from '@/components/admin/AdminLayout';
+import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -116,23 +117,18 @@ export default function PagesListPage() {
   return (
     <AdminLayout>
       <div>
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="font-serif text-2xl font-bold text-foreground">Sidor</h1>
-            <p className="text-muted-foreground mt-1">
-              Hantera och redigera dina sidor
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <MigratePageDialog />
-            <Button asChild>
-              <Link to="/admin/pages/new">
-                <Plus className="h-4 w-4 mr-2" />
-                Ny sida
-              </Link>
-            </Button>
-          </div>
-        </div>
+        <AdminPageHeader 
+          title="Sidor"
+          description="Hantera och redigera dina sidor"
+        >
+          <MigratePageDialog />
+          <Button asChild>
+            <Link to="/admin/pages/new">
+              <Plus className="h-4 w-4 mr-2" />
+              Ny sida
+            </Link>
+          </Button>
+        </AdminPageHeader>
 
         {/* Filters */}
         <Card className="mb-6">

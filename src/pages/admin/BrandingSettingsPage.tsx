@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
+import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -256,18 +257,15 @@ export default function BrandingSettingsPage() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="font-serif text-2xl font-bold text-foreground">Varumärke & Design</h1>
-            <p className="text-muted-foreground mt-1">
-              Anpassa utseendet på den publika webbplatsen
-            </p>
-          </div>
+        <AdminPageHeader 
+          title="Varumärke & Design"
+          description="Anpassa utseendet på den publika webbplatsen"
+        >
           <Button onClick={handleSave} disabled={updateSettings.isPending}>
             {updateSettings.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             Spara ändringar
           </Button>
-        </div>
+        </AdminPageHeader>
 
         <Tabs defaultValue="themes" className="space-y-6">
           <TabsList className="grid w-full grid-cols-5 max-w-2xl">

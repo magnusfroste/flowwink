@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { FileText, Clock, CheckCircle, AlertCircle, Plus } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
+import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/StatusBadge';
@@ -25,14 +26,10 @@ export default function AdminDashboard() {
   return (
     <AdminLayout>
       <div>
-        <div className="mb-8">
-          <h1 className="font-serif text-2xl font-bold text-foreground">
-            Välkommen, {profile?.full_name?.split(' ')[0] || 'användare'}
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Här är en översikt över ditt innehåll
-          </p>
-        </div>
+        <AdminPageHeader 
+          title={`Välkommen, ${profile?.full_name?.split(' ')[0] || 'användare'}`}
+          description="Här är en översikt över ditt innehåll"
+        />
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
