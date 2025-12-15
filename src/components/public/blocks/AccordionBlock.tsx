@@ -30,7 +30,15 @@ export function AccordionBlock({ data }: AccordionBlockProps) {
                 {item.question}
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground">
-                {item.answer}
+                <p>{item.answer}</p>
+                {item.image && (
+                  <img 
+                    src={item.image} 
+                    alt={item.imageAlt || 'Illustration'} 
+                    className="mt-4 rounded-lg max-w-full h-auto"
+                    loading="lazy"
+                  />
+                )}
               </AccordionContent>
             </AccordionItem>
           ))}

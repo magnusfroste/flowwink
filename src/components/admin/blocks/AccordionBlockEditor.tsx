@@ -4,6 +4,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Plus, Trash2, GripVertical } from 'lucide-react';
 import { AccordionBlockData } from '@/types/cms';
+import { ImagePickerField } from '@/components/admin/ImagePickerField';
 import {
   DndContext,
   closestCenter,
@@ -31,8 +32,8 @@ interface AccordionBlockEditorProps {
 interface SortableItemProps {
   id: string;
   index: number;
-  item: { question: string; answer: string };
-  onUpdate: (index: number, field: 'question' | 'answer', value: string) => void;
+  item: { question: string; answer: string; image?: string; imageAlt?: string };
+  onUpdate: (index: number, field: 'question' | 'answer' | 'image' | 'imageAlt', value: string) => void;
   onRemove: (index: number) => void;
 }
 
@@ -86,6 +87,21 @@ function SortableAccordionItem({ id, index, item, onUpdate, onRemove }: Sortable
         placeholder="Skriv svaret här..."
         rows={3}
       />
+      <div className="space-y-2">
+        <Label className="text-sm">Bild (valfritt)</Label>
+        <ImagePickerField
+          value={item.image || ''}
+          onChange={(url) => onUpdate(index, 'image', url)}
+          placeholder="Välj en bild..."
+        />
+        {item.image && (
+          <Input
+            value={item.imageAlt || ''}
+            onChange={(e) => onUpdate(index, 'imageAlt', e.target.value)}
+            placeholder="Bildbeskrivning (alt-text)"
+          />
+        )}
+      </div>
     </div>
   );
 }
@@ -98,7 +114,7 @@ export function AccordionBlockEditor({ data, onChange, canEdit }: AccordionBlock
     })
   );
 
-  const updateItem = (index: number, field: 'question' | 'answer', value: string) => {
+  const updateItem = (index: number, field: 'question' | 'answer' | 'image' | 'imageAlt', value: string) => {
     const newItems = [...data.items];
     newItems[index] = { ...newItems[index], [field]: value };
     onChange({ ...data, items: newItems });

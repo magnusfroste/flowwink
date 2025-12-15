@@ -145,7 +145,7 @@ export interface InfoBoxBlockData {
 
 export interface AccordionBlockData {
   title?: string;
-  items: { question: string; answer: string }[];
+  items: { question: string; answer: string; image?: string; imageAlt?: string }[];
 }
 
 export interface ArticleGridBlockData {

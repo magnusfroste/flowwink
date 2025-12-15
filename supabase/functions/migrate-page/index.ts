@@ -29,7 +29,7 @@ Available CMS block types:
    Data: { title?: string, articles: [{ title: string, excerpt?: string, url: string, image?: string }], columns: 2 | 3 | 4 }
 
 8. accordion - FAQ/Accordion sections
-   Data: { title?: string, items: [{ question: string, answer: string }] }
+   Data: { title?: string, items: [{ question: string, answer: string, image?: string, imageAlt?: string }] }
 
 9. info-box - Highlighted info box
    Data: { title?: string, content: string, variant: 'info' | 'warning' | 'success' | 'error' }
@@ -207,6 +207,13 @@ Leta efter mönster som:
 - Blockquotes med attribution
 
 Skapa "quote" block med: quote, author, role
+
+=== ACCORDION MED BILDER ===
+- "accordion" block för FAQ-sektioner
+- Om ett FAQ-svar innehåller en bild (karta, diagram, etc.), inkludera den i accordion-item:
+  - image: bildens URL
+  - imageAlt: beskrivning av bilden
+- Sök efter bilder i texten nära varje fråga/svar
 
 === ÖVRIGA BLOCK ===
 - "text" block för löpande text och artikelinnehåll
