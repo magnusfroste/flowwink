@@ -73,9 +73,9 @@ export function ChatWidget() {
       <div className="relative">
         {/* Pulsing indicator - only visible when closed */}
         {!isOpen && (
-          <span className="absolute -top-1 -right-1 flex h-4 w-4 z-10">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
-            <span className="relative inline-flex rounded-full h-4 w-4 bg-primary" />
+          <span className="absolute -top-0.5 -right-0.5 flex h-5 w-5 z-10">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75" />
+            <span className="relative inline-flex rounded-full h-5 w-5 bg-green-500 border-2 border-background" />
           </span>
         )}
         <Button
