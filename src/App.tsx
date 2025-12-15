@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/hooks/useAuth";
@@ -26,6 +26,24 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+const router = createBrowserRouter([
+  { path: "/", element: <PublicPage /> },
+  { path: "/auth", element: <AuthPage /> },
+  { path: "/chat", element: <ChatPage /> },
+  { path: "/admin", element: <AdminDashboard /> },
+  { path: "/admin/pages", element: <PagesListPage /> },
+  { path: "/admin/pages/new", element: <NewPagePage /> },
+  { path: "/admin/pages/:id", element: <PageEditorPage /> },
+  { path: "/admin/media", element: <MediaLibraryPage /> },
+  { path: "/admin/users", element: <UsersPage /> },
+  { path: "/admin/settings", element: <SiteSettingsPage /> },
+  { path: "/admin/branding", element: <BrandingSettingsPage /> },
+  { path: "/admin/menu-order", element: <MenuOrderPage /> },
+  { path: "/admin/chat", element: <ChatSettingsPage /> },
+  { path: "/preview/:id", element: <PreviewPage /> },
+  { path: "/:slug", element: <PublicPage /> },
+]);
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <HelmetProvider>
@@ -35,25 +53,7 @@ const App = () => (
             <TooltipProvider>
               <Toaster />
               <Sonner />
-              <BrowserRouter>
-                <Routes>
-                  <Route path="/" element={<PublicPage />} />
-                  <Route path="/auth" element={<AuthPage />} />
-                  <Route path="/chat" element={<ChatPage />} />
-                  <Route path="/admin" element={<AdminDashboard />} />
-                  <Route path="/admin/pages" element={<PagesListPage />} />
-                  <Route path="/admin/pages/new" element={<NewPagePage />} />
-                  <Route path="/admin/pages/:id" element={<PageEditorPage />} />
-                  <Route path="/admin/media" element={<MediaLibraryPage />} />
-                  <Route path="/admin/users" element={<UsersPage />} />
-                  <Route path="/admin/settings" element={<SiteSettingsPage />} />
-                  <Route path="/admin/branding" element={<BrandingSettingsPage />} />
-                  <Route path="/admin/menu-order" element={<MenuOrderPage />} />
-                  <Route path="/admin/chat" element={<ChatSettingsPage />} />
-                  <Route path="/preview/:id" element={<PreviewPage />} />
-                  <Route path="/:slug" element={<PublicPage />} />
-                </Routes>
-              </BrowserRouter>
+              <RouterProvider router={router} />
             </TooltipProvider>
           </BrandingProvider>
         </AuthProvider>
