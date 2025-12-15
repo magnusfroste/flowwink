@@ -24,7 +24,8 @@ import {
   Quote, 
   Minus, 
   Images, 
-  BarChart3 
+  BarChart3,
+  MessageSquare,
 } from 'lucide-react';
 import { ContentBlockType } from '@/types/cms';
 
@@ -153,6 +154,12 @@ const BLOCK_GROUPS: BlockGroup[] = [
         label: 'Kontakt',
         icon: <Phone className="h-5 w-5" />,
         description: 'Kontaktinformation',
+      },
+      {
+        type: 'chat',
+        label: 'AI Chat',
+        icon: <MessageSquare className="h-5 w-5" />,
+        description: 'Inbäddad AI-chattfunktion',
       },
     ],
   },

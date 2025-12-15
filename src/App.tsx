@@ -18,8 +18,10 @@ import MediaLibraryPage from "./pages/admin/MediaLibraryPage";
 import SiteSettingsPage from "./pages/admin/SiteSettingsPage";
 import BrandingSettingsPage from "./pages/admin/BrandingSettingsPage";
 import MenuOrderPage from "./pages/admin/MenuOrderPage";
+import ChatSettingsPage from "./pages/admin/ChatSettingsPage";
 import PreviewPage from "./pages/PreviewPage";
 import PublicPage from "./pages/PublicPage";
+import ChatPage from "./pages/ChatPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,6 +39,7 @@ const App = () => (
                 <Routes>
                   <Route path="/" element={<PublicPage />} />
                   <Route path="/auth" element={<AuthPage />} />
+                  <Route path="/chat" element={<ChatPage />} />
                   <Route path="/admin" element={<AdminDashboard />} />
                   <Route path="/admin/pages" element={<PagesListPage />} />
                   <Route path="/admin/pages/new" element={<NewPagePage />} />
@@ -46,6 +49,7 @@ const App = () => (
                   <Route path="/admin/settings" element={<SiteSettingsPage />} />
                   <Route path="/admin/branding" element={<BrandingSettingsPage />} />
                   <Route path="/admin/menu-order" element={<MenuOrderPage />} />
+                  <Route path="/admin/chat" element={<ChatSettingsPage />} />
                   <Route path="/preview/:id" element={<PreviewPage />} />
                   <Route path="/:slug" element={<PublicPage />} />
                 </Routes>

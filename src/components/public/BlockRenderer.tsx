@@ -15,6 +15,7 @@ import {
   SeparatorBlock,
   GalleryBlock,
   StatsBlock,
+  ChatBlock,
 } from './blocks';
 import type {
   HeroBlockData,
@@ -32,6 +33,7 @@ import type {
   SeparatorBlockData,
   GalleryBlockData,
   StatsBlockData,
+  ChatBlockData,
 } from '@/types/cms';
 
 interface BlockRendererProps {
@@ -70,6 +72,8 @@ export function BlockRenderer({ block }: BlockRendererProps) {
       return <GalleryBlock data={block.data as unknown as GalleryBlockData} />;
     case 'stats':
       return <StatsBlock data={block.data as unknown as StatsBlockData} />;
+    case 'chat':
+      return <ChatBlock data={block.data as unknown as ChatBlockData} />;
     default:
       return null;
   }
