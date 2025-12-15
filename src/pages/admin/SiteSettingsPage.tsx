@@ -296,7 +296,8 @@ export default function SiteSettingsPage() {
           title="Webbplatsinställningar"
           description="Hantera SEO, prestanda och kontaktinformation"
         >
-          <Button onClick={handleSaveAll} disabled={isSaving}>
+          <Button onClick={handleSaveAll} disabled={isSaving} className="relative">
+            {hasChanges && <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-destructive" />}
             {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
             Spara ändringar
           </Button>

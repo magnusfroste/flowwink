@@ -194,7 +194,8 @@ export default function MenuOrderPage() {
           title="Menyordning"
           description="Dra och släpp för att ändra ordningen, använd växlaren för att dölja sidor"
         >
-          <Button onClick={handleSave} disabled={!hasChanges || saveMutation.isPending}>
+          <Button onClick={handleSave} disabled={!hasChanges || saveMutation.isPending} className="relative">
+            {hasChanges && <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-destructive" />}
             {saveMutation.isPending ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             ) : (
