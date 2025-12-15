@@ -154,58 +154,76 @@ FILTRERING - IGNORERA DETTA INNEHÅLL:
 - Upprepade menystrukturer
 Fokusera ENDAST på huvudinnehållet (det som normalt ligger i <main> eller artikelområdet).
 
-STRUKTURANALYS:
-1. Om sidan har en tydlig hero/banner-sektion med stor rubrik, använd "hero" block
-2. Behåll all viktig text, bilder och media från huvudinnehållet
-3. Gruppera relaterat innehåll logiskt i lämpliga block
+=== HERO-BLOCK - KRITISKT VIKTIGT ===
+- Om sidan har en tydlig hero/banner-sektion, skapa ett "hero" block
+- Använd ALLTID OG-bilden (Open Graph-bild) som backgroundImage för hero-blocket
+- OG-bilden anges separat i prompten - använd den som hero-bakgrund!
+- Hero-blocket ska ha: title (huvudrubrik), subtitle (underrubrik om finns), backgroundImage (OG-bilden)
 
-YOUTUBE-VIDEOR - KRITISKT VIKTIGT:
-- Sök igenom HELA innehållet efter YouTube-länkar i ALLA format:
-  * youtube.com/watch?v=VIDEO_ID (ta endast VIDEO_ID före eventuella &-tecken)
-  * youtube.com/watch?v=VIDEO_ID&embeds_referring_euri=... (ignorera allt efter &)
-  * youtu.be/VIDEO_ID
-  * youtube.com/embed/VIDEO_ID
-  * youtube-nocookie.com/embed/VIDEO_ID
-- För varje YouTube-video, skapa ett "youtube" block med:
-  * videoId: endast video-ID:t (11 tecken, t.ex. "dQw4w9WgXcQ")
-  * title: rubrik från omgivande kontext eller "Video"
-- Kontrollera HTML för <iframe> med YouTube-URL:er
+=== KONTAKTPERSONER - KRITISKT VIKTIGT ===
+Du MÅSTE identifiera och inkludera ALLA kontaktpersoner på sidan.
 
-CITAT OCH TESTIMONIALS:
-- Leta efter mönster som:
-  * "Citerad text" — Namn, Roll
-  * "Citerad text" - Namn
-  * Blockquotes med attribution
-  * Studentberättelser, patientberättelser, etc.
-- Skapa "quote" block med: quote, author, role
+Sök efter mönster som:
+- "Studievägledare", "Programansvarig", "Studierektor", "Administratör"
+- Person med namn + titel/roll + kontaktinfo (e-post/telefon)
+- Sektioner med rubriker som "Kontakt", "Kontakta oss", "Har du frågor?"
 
-FAKTARUTOR OCH STATISTIK:
-- Sektioner med rubrik "Fakta om...", "Om programmet", "Snabbfakta" etc.
-- Nyckelfakta som: antal poäng, längd, start, plats
-- Skapa "stats" block för siffror/nyckeltal
-- Skapa "info-box" block för faktarutor med blandad info
+För VARJE kontaktperson, skapa ett "two-column" block med:
+- content: HTML med namn (h3), titel/roll, e-post (mailto-länk), telefon
+- imageSrc: personens profilbild om tillgänglig
+- imagePosition: 'left'
 
-LÄNKGRUPPER OCH KNAPPAR:
-- Grupper av knappar eller länkar som ligger tillsammans
-- "Läs mer"-kort, relaterade sidor, utbildningskort
-- Skapa "link-grid" block för navigeringslänkar
-- Skapa "article-grid" för artikelkort med bild + rubrik + excerpt
+VIKTIGT: Gå igenom HELA innehållet och se till att INGEN kontaktperson utelämnas!
+Om det finns 4 kontaktpersoner ska du skapa 4 separata block.
 
-GENERELLT:
-- Använd "text" block för löpande text och artikelinnehåll
-- Använd "accordion" för FAQ-sektioner
-- Använd "two-column" för text + bild layouts
-- Använd "separator" mellan tydliga sektioner
+=== UTBILDNINGSFAKTA OCH STATISTIK ===
+Sök efter sektioner med:
+- "Fakta om programmet", "Om utbildningen", "Snabbfakta"
+- Nyckelfakta som: högskolepoäng (hp), studietid, terminsstart, plats
+
+Skapa "stats" block för numeriska fakta med tydliga value/label-par:
+- { value: "180", label: "Högskolepoäng" }
+- { value: "3", label: "År" }
+- { value: "6", label: "Terminer" }
+- { value: "100%", label: "Anställningsgrad efter examen" }
+
+Använd "info-box" för beskrivande faktarutor som inte passar som siffror.
+
+=== YOUTUBE-VIDEOR ===
+Sök igenom HELA innehållet efter YouTube-länkar i ALLA format:
+- youtube.com/watch?v=VIDEO_ID (ta endast VIDEO_ID före eventuella &-tecken)
+- youtube.com/watch?v=VIDEO_ID&embeds_referring_euri=... (ignorera allt efter &)
+- youtu.be/VIDEO_ID
+- youtube.com/embed/VIDEO_ID
+- youtube-nocookie.com/embed/VIDEO_ID
+
+För varje YouTube-video, skapa ett "youtube" block med:
+- videoId: endast video-ID:t (11 tecken, t.ex. "dQw4w9WgXcQ")
+- title: rubrik från omgivande kontext eller "Video"
+
+=== CITAT OCH TESTIMONIALS ===
+Leta efter mönster som:
+- "Citerad text" — Namn, Roll
+- Studentberättelser, patientberättelser
+- Blockquotes med attribution
+
+Skapa "quote" block med: quote, author, role
+
+=== ÖVRIGA BLOCK ===
+- "text" block för löpande text och artikelinnehåll
+- "link-grid" block för navigeringslänkar och knappar
+- "article-grid" för artikelkort med bild + rubrik + excerpt
+- "accordion" för FAQ-sektioner
+- "separator" mellan tydliga sektioner
 
 === SVARSFORMAT ===
 Svara ENDAST med valid JSON, ingen annan text:
 {
   "title": "Sidans huvudrubrik",
   "blocks": [
-    { "id": "block-1", "type": "hero", "data": { "title": "...", "subtitle": "..." } },
-    { "id": "block-2", "type": "youtube", "data": { "videoId": "ABC123xyz", "title": "Video om programmet" } },
-    { "id": "block-3", "type": "quote", "data": { "quote": "...", "author": "Namn", "role": "Student" } },
-    { "id": "block-4", "type": "stats", "data": { "stats": [{ "value": "180", "label": "Högskolepoäng" }] } }
+    { "id": "block-1", "type": "hero", "data": { "title": "...", "subtitle": "...", "backgroundImage": "OG-bildens URL" } },
+    { "id": "block-2", "type": "stats", "data": { "title": "Fakta om programmet", "stats": [{ "value": "180", "label": "Högskolepoäng" }] } },
+    { "id": "block-3", "type": "two-column", "data": { "content": "<h3>Namn</h3><p>Titel</p><p>E-post: ...</p>", "imageSrc": "...", "imagePosition": "left" } }
   ]
 }`
           },
@@ -217,19 +235,23 @@ URL: ${formattedUrl}
 Titel: ${metadata.title || 'Okänd'}
 Beskrivning: ${metadata.description || 'Ingen'}
 
+=== OG-BILD (ANVÄND SOM HERO-BAKGRUND) ===
+${metadata['og:image'] || metadata.ogImage || 'Ingen OG-bild tillgänglig'}
+
 === HUVUDINNEHÅLL (Markdown) ===
-${markdown.substring(0, 18000)}
-${markdown.length > 18000 ? '\n... (innehållet är trunkerat)' : ''}
+${markdown.substring(0, 25000)}
+${markdown.length > 25000 ? '\n... (innehållet är trunkerat)' : ''}
 
 === HTML FÖR YOUTUBE/IFRAME-SÖKNING ===
-${html.substring(0, 8000)}
+${html.substring(0, 12000)}
 
 === INSTRUKTIONER ===
-1. Filtrera bort navigationsinnehåll, fokusera på huvudinnehållet
-2. Hitta ALLA YouTube-videor och skapa "youtube" block för varje
-3. Identifiera citat/testimonials och skapa "quote" block
-4. Identifiera faktarutor och skapa "stats" eller "info-box" block
-5. Gruppera länksamlingar till "link-grid" eller "article-grid"
+1. Skapa HERO-block med OG-bilden som backgroundImage
+2. Identifiera och inkludera ALLA kontaktpersoner (missa ingen!)
+3. Skapa STATS-block för utbildningsfakta med numeriska värden
+4. Hitta ALLA YouTube-videor och skapa "youtube" block för varje
+5. Identifiera citat/testimonials och skapa "quote" block
+6. Gruppera länksamlingar till "link-grid" eller "article-grid"
 
 Svara endast med JSON.`
           }
