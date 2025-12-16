@@ -21,6 +21,8 @@ import {
   useUpdateCookieBannerSettings,
   useMaintenanceSettings,
   useUpdateMaintenanceSettings,
+  useGeneralSettings,
+  useUpdateGeneralSettings,
   FooterSettings,
   FooterLegalLink,
   SeoSettings,
@@ -28,9 +30,12 @@ import {
   CustomScriptsSettings,
   CookieBannerSettings,
   MaintenanceSettings,
+  GeneralSettings,
   FooterSectionId
 } from '@/hooks/useSiteSettings';
-import { Loader2, Save, Globe, Zap, Phone, ImageIcon, X, AlertTriangle, GripVertical, Code, CheckCircle2, Circle, Cookie, Plus, Trash2, Scale, Search, Lock, Info, Wrench, Clock } from 'lucide-react';
+import { usePages } from '@/hooks/usePages';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Loader2, Save, Globe, Zap, Phone, ImageIcon, X, AlertTriangle, GripVertical, Code, CheckCircle2, Circle, Cookie, Plus, Trash2, Scale, Search, Lock, Info, Wrench, Clock, Home } from 'lucide-react';
 import { MediaLibraryPicker } from '@/components/admin/MediaLibraryPicker';
 import { CodeEditor } from '@/components/admin/CodeEditor';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -144,6 +149,8 @@ export default function SiteSettingsPage() {
   const { data: customScriptsSettings, isLoading: scriptsLoading } = useCustomScriptsSettings();
   const { data: cookieBannerSettings, isLoading: cookieLoading } = useCookieBannerSettings();
   const { data: maintenanceSettings, isLoading: maintenanceLoading } = useMaintenanceSettings();
+  const { data: generalSettings, isLoading: generalLoading } = useGeneralSettings();
+  const { data: allPages } = usePages();
   
   const updateFooter = useUpdateFooterSettings();
   const updateSeo = useUpdateSeoSettings();
@@ -151,6 +158,11 @@ export default function SiteSettingsPage() {
   const updateScripts = useUpdateCustomScriptsSettings();
   const updateCookieBanner = useUpdateCookieBannerSettings();
   const updateMaintenance = useUpdateMaintenanceSettings();
+  const updateGeneral = useUpdateGeneralSettings();
+
+  const [generalData, setGeneralData] = useState<GeneralSettings>({
+    homepageSlug: 'hem',
+  });
   
   const [footerData, setFooterData] = useState<FooterSettings>({
     phone: '',
@@ -252,26 +264,32 @@ export default function SiteSettingsPage() {
     if (maintenanceSettings) setMaintenanceData(maintenanceSettings);
   }, [maintenanceSettings]);
 
-  const isLoading = footerLoading || seoLoading || performanceLoading || scriptsLoading || cookieLoading || maintenanceLoading;
-  const isSaving = updateFooter.isPending || updateSeo.isPending || updatePerformance.isPending || updateScripts.isPending || updateCookieBanner.isPending || updateMaintenance.isPending;
+  useEffect(() => {
+    if (generalSettings) setGeneralData(generalSettings);
+  }, [generalSettings]);
+
+  const isLoading = footerLoading || seoLoading || performanceLoading || scriptsLoading || cookieLoading || maintenanceLoading || generalLoading;
+  const isSaving = updateFooter.isPending || updateSeo.isPending || updatePerformance.isPending || updateScripts.isPending || updateCookieBanner.isPending || updateMaintenance.isPending || updateGeneral.isPending;
 
   // Track unsaved changes
   const hasChanges = useMemo(() => {
-    if (!footerSettings || !seoSettings || !performanceSettings || !customScriptsSettings || !cookieBannerSettings || !maintenanceSettings) return false;
+    if (!footerSettings || !seoSettings || !performanceSettings || !customScriptsSettings || !cookieBannerSettings || !maintenanceSettings || !generalSettings) return false;
     return (
       JSON.stringify(footerData) !== JSON.stringify(footerSettings) ||
       JSON.stringify(seoData) !== JSON.stringify(seoSettings) ||
       JSON.stringify(performanceData) !== JSON.stringify(performanceSettings) ||
       JSON.stringify(scriptsData) !== JSON.stringify(customScriptsSettings) ||
       JSON.stringify(cookieData) !== JSON.stringify(cookieBannerSettings) ||
-      JSON.stringify(maintenanceData) !== JSON.stringify(maintenanceSettings)
+      JSON.stringify(maintenanceData) !== JSON.stringify(maintenanceSettings) ||
+      JSON.stringify(generalData) !== JSON.stringify(generalSettings)
     );
-  }, [footerData, seoData, performanceData, scriptsData, cookieData, maintenanceData, footerSettings, seoSettings, performanceSettings, customScriptsSettings, cookieBannerSettings, maintenanceSettings]);
+  }, [footerData, seoData, performanceData, scriptsData, cookieData, maintenanceData, generalData, footerSettings, seoSettings, performanceSettings, customScriptsSettings, cookieBannerSettings, maintenanceSettings, generalSettings]);
 
   const { blocker } = useUnsavedChanges({ hasChanges });
 
   const handleSaveAll = async () => {
     await Promise.all([
+      updateGeneral.mutateAsync(generalData),
       updateSeo.mutateAsync(seoData),
       updateMaintenance.mutateAsync(maintenanceData),
       updateScripts.mutateAsync(scriptsData),
@@ -305,8 +323,12 @@ export default function SiteSettingsPage() {
           </Button>
         </AdminPageHeader>
 
-        <Tabs defaultValue="seo" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 max-w-3xl">
+        <Tabs defaultValue="general" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-7 max-w-4xl">
+            <TabsTrigger value="general" className="flex items-center gap-2">
+              <Home className="h-4 w-4" />
+              <span className="hidden sm:inline">Allmänt</span>
+            </TabsTrigger>
             <TabsTrigger value="seo" className="flex items-center gap-2">
               <Globe className="h-4 w-4" />
               <span className="hidden sm:inline">SEO</span>
@@ -332,6 +354,39 @@ export default function SiteSettingsPage() {
               <span className="hidden sm:inline">Footer</span>
             </TabsTrigger>
           </TabsList>
+
+          {/* General Tab */}
+          <TabsContent value="general" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="font-serif">Startsida</CardTitle>
+                <CardDescription>Välj vilken sida som visas när besökare går till webbplatsens rot-URL (/)</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="homepageSlug">Startsida</Label>
+                  <Select
+                    value={generalData.homepageSlug}
+                    onValueChange={(value) => setGeneralData(prev => ({ ...prev, homepageSlug: value }))}
+                  >
+                    <SelectTrigger id="homepageSlug" className="w-full max-w-md">
+                      <SelectValue placeholder="Välj startsida" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {allPages?.map((page) => (
+                        <SelectItem key={page.id} value={page.slug}>
+                          {page.title} ({page.slug})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Den valda sidan visas när besökare öppnar webbplatsen. Sidan måste vara publicerad.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           {/* SEO Tab */}
           <TabsContent value="seo" className="space-y-6">

@@ -10,7 +10,7 @@ import { BodyScripts } from '@/components/public/BodyScripts';
 import { CookieBanner } from '@/components/public/CookieBanner';
 import { ChatWidget } from '@/components/public/ChatWidget';
 import { cn } from '@/lib/utils';
-import { useSeoSettings, useMaintenanceSettings } from '@/hooks/useSiteSettings';
+import { useSeoSettings, useMaintenanceSettings, useGeneralSettings } from '@/hooks/useSiteSettings';
 import { Button } from '@/components/ui/button';
 import { useEffect, useState } from 'react';
 import type { Page, ContentBlock } from '@/types/cms';
@@ -30,11 +30,15 @@ function parseContent(data: {
 export default function PublicPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const pageSlug = slug || 'hem';
+  const { data: generalSettings } = useGeneralSettings();
   const { data: seoSettings } = useSeoSettings();
   const { data: maintenanceSettings } = useMaintenanceSettings();
   const [user, setUser] = useState<unknown>(null);
   const [authLoading, setAuthLoading] = useState(true);
+
+  // Use configured homepage slug, default to 'hem'
+  const homepageSlug = generalSettings?.homepageSlug || 'hem';
+  const pageSlug = slug || homepageSlug;
 
   // Check auth state for dev mode protection
   useEffect(() => {
