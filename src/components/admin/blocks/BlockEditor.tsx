@@ -54,7 +54,7 @@ type BlockDataMap = {
 };
 
 const DEFAULT_BLOCK_DATA: BlockDataMap = {
-  hero: { title: 'Ny Hero', subtitle: '' },
+  hero: { title: 'Ny Hero', subtitle: '', backgroundType: 'image', videoAutoplay: true, videoLoop: true, videoMuted: true },
   text: { content: '<p>Skriv ditt innehåll här...</p>' },
   image: { src: '', alt: '' },
   cta: { title: 'Redo att ta nästa steg?', buttonText: 'Kontakta oss', buttonUrl: '/kontakt', gradient: true },

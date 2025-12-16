@@ -92,7 +92,17 @@ export interface ContentBlock {
 export interface HeroBlockData {
   title: string;
   subtitle?: string;
+  // Background options
+  backgroundType?: 'image' | 'video' | 'color';
   backgroundImage?: string;
+  // Video background support
+  videoUrl?: string;
+  videoUrlWebm?: string;
+  videoPosterUrl?: string;
+  videoAutoplay?: boolean;
+  videoLoop?: boolean;
+  videoMuted?: boolean;
+  // Buttons
   primaryButton?: { text: string; url: string };
   secondaryButton?: { text: string; url: string };
 }

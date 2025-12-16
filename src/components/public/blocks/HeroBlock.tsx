@@ -18,16 +18,41 @@ export function HeroBlock({ data }: HeroBlockProps) {
   if (!data.title) return null;
   
   const overlayOpacity = opacityMap[branding?.heroOverlayOpacity || 'medium'];
+  const backgroundType = data.backgroundType || 'image';
+  const hasVideoBackground = backgroundType === 'video' && data.videoUrl;
+  const hasImageBackground = backgroundType === 'image' && data.backgroundImage;
   
   return (
-    <section className="relative py-24 px-6 bg-primary text-primary-foreground">
-      {data.backgroundImage && (
+    <section className="relative py-24 px-6 bg-primary text-primary-foreground overflow-hidden">
+      {/* Video Background */}
+      {hasVideoBackground && (
+        <video
+          autoPlay={data.videoAutoplay !== false}
+          loop={data.videoLoop !== false}
+          muted={data.videoMuted !== false}
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+          poster={data.videoPosterUrl}
+        >
+          <source src={data.videoUrl} type="video/mp4" />
+          {data.videoUrlWebm && <source src={data.videoUrlWebm} type="video/webm" />}
+        </video>
+      )}
+      
+      {/* Image Background */}
+      {hasImageBackground && (
         <div 
           className={`absolute inset-0 bg-cover bg-center ${overlayOpacity}`}
           style={{ backgroundImage: `url(${data.backgroundImage})` }}
         />
       )}
-      <div className="relative container mx-auto text-center max-w-3xl">
+      
+      {/* Overlay for video to ensure text readability */}
+      {hasVideoBackground && (
+        <div className="absolute inset-0 bg-primary/60" />
+      )}
+      
+      <div className="relative container mx-auto text-center max-w-3xl z-10">
         <h1 className="font-serif text-5xl font-bold mb-6">{data.title}</h1>
         {data.subtitle && <p className="text-xl opacity-90 mb-8">{data.subtitle}</p>}
         <div className="flex gap-4 justify-center flex-wrap">
