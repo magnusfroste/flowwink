@@ -3,9 +3,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
+import { Slider } from '@/components/ui/slider';
 import { HeroBlockData } from '@/types/cms';
 import { ImageUploader } from '../ImageUploader';
-import { Image, Video, Palette } from 'lucide-react';
+import { Image, Video, Palette, Maximize, Monitor, AlignVerticalJustifyStart, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd } from 'lucide-react';
 
 interface HeroBlockEditorProps {
   data: HeroBlockData;
@@ -160,6 +161,79 @@ export function HeroBlockEditor({ data, onChange, isEditing }: HeroBlockEditorPr
             You can customize colors in Branding Settings.
           </p>
         )}
+
+        {/* Layout Options */}
+        <div className="space-y-4 p-4 border border-border rounded-lg bg-background/50">
+          <Label className="text-sm font-medium">Layout Options</Label>
+          
+          {/* Height Mode */}
+          <div className="space-y-2">
+            <Label className="text-xs text-muted-foreground">Hero Height</Label>
+            <div className="grid grid-cols-4 gap-2">
+              {[
+                { value: 'auto', label: 'Auto', icon: null },
+                { value: 'viewport', label: 'Full', icon: Maximize },
+                { value: '80vh', label: '80%', icon: null },
+                { value: '60vh', label: '60%', icon: null },
+              ].map(({ value, label, icon: Icon }) => (
+                <Button
+                  key={value}
+                  type="button"
+                  variant={(localData.heightMode || 'auto') === value ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => handleChange({ heightMode: value as HeroBlockData['heightMode'] })}
+                  className="flex items-center gap-1"
+                >
+                  {Icon && <Icon className="h-3 w-3" />}
+                  {label}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          {/* Content Alignment - only show when not auto */}
+          {(localData.heightMode && localData.heightMode !== 'auto') && (
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground">Content Position</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { value: 'top', label: 'Top', icon: AlignVerticalJustifyStart },
+                  { value: 'center', label: 'Center', icon: AlignVerticalJustifyCenter },
+                  { value: 'bottom', label: 'Bottom', icon: AlignVerticalJustifyEnd },
+                ].map(({ value, label, icon: Icon }) => (
+                  <Button
+                    key={value}
+                    type="button"
+                    variant={(localData.contentAlignment || 'center') === value ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => handleChange({ contentAlignment: value as HeroBlockData['contentAlignment'] })}
+                    className="flex items-center gap-1"
+                  >
+                    <Icon className="h-3 w-3" />
+                    {label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Overlay Opacity - only show when image or video */}
+          {(backgroundType === 'image' || backgroundType === 'video') && (
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground">
+                Overlay Darkness: {localData.overlayOpacity ?? 60}%
+              </Label>
+              <Slider
+                value={[localData.overlayOpacity ?? 60]}
+                onValueChange={([value]) => handleChange({ overlayOpacity: value })}
+                min={0}
+                max={100}
+                step={5}
+                className="w-full"
+              />
+            </div>
+          )}
+        </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">

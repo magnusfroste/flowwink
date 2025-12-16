@@ -1,29 +1,41 @@
 import { HeroBlockData } from '@/types/cms';
-import { useBranding } from '@/providers/BrandingProvider';
+import { cn } from '@/lib/utils';
 
 interface HeroBlockProps {
   data: HeroBlockData;
 }
 
-const opacityMap: Record<string, string> = {
-  none: 'opacity-100',
-  light: 'opacity-30',
-  medium: 'opacity-20',
-  strong: 'opacity-10',
+const heightClasses: Record<string, string> = {
+  auto: 'py-24',
+  viewport: 'min-h-screen',
+  '80vh': 'min-h-[80vh]',
+  '60vh': 'min-h-[60vh]',
+};
+
+const alignmentClasses: Record<string, string> = {
+  top: 'items-start pt-32',
+  center: 'items-center',
+  bottom: 'items-end pb-32',
 };
 
 export function HeroBlock({ data }: HeroBlockProps) {
-  const { branding } = useBranding();
-  
   if (!data.title) return null;
   
-  const overlayOpacity = opacityMap[branding?.heroOverlayOpacity || 'medium'];
   const backgroundType = data.backgroundType || 'image';
   const hasVideoBackground = backgroundType === 'video' && data.videoUrl;
   const hasImageBackground = backgroundType === 'image' && data.backgroundImage;
+  const heightMode = data.heightMode || 'auto';
+  const contentAlignment = data.contentAlignment || 'center';
+  const overlayOpacity = data.overlayOpacity ?? 60;
   
   return (
-    <section className="relative py-24 px-6 bg-primary text-primary-foreground overflow-hidden">
+    <section 
+      className={cn(
+        "relative px-6 bg-primary text-primary-foreground overflow-hidden flex",
+        heightClasses[heightMode],
+        heightMode !== 'auto' && alignmentClasses[contentAlignment]
+      )}
+    >
       {/* Video Background */}
       {hasVideoBackground && (
         <video
@@ -42,17 +54,23 @@ export function HeroBlock({ data }: HeroBlockProps) {
       {/* Image Background */}
       {hasImageBackground && (
         <div 
-          className={`absolute inset-0 bg-cover bg-center ${overlayOpacity}`}
+          className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: `url(${data.backgroundImage})` }}
         />
       )}
       
-      {/* Overlay for video to ensure text readability */}
-      {hasVideoBackground && (
-        <div className="absolute inset-0 bg-primary/60" />
+      {/* Overlay with configurable opacity */}
+      {(hasVideoBackground || hasImageBackground) && (
+        <div 
+          className="absolute inset-0 bg-primary"
+          style={{ opacity: overlayOpacity / 100 }}
+        />
       )}
       
-      <div className="relative container mx-auto text-center max-w-3xl z-10">
+      <div className={cn(
+        "relative container mx-auto text-center max-w-3xl z-10",
+        heightMode === 'auto' && "py-0"
+      )}>
         <h1 className="font-serif text-5xl font-bold mb-6">{data.title}</h1>
         {data.subtitle && <p className="text-xl opacity-90 mb-8">{data.subtitle}</p>}
         <div className="flex gap-4 justify-center flex-wrap">

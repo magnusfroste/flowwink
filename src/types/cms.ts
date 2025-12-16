@@ -102,6 +102,10 @@ export interface HeroBlockData {
   videoAutoplay?: boolean;
   videoLoop?: boolean;
   videoMuted?: boolean;
+  // Layout options
+  heightMode?: 'auto' | 'viewport' | '80vh' | '60vh';
+  contentAlignment?: 'top' | 'center' | 'bottom';
+  overlayOpacity?: number;
   // Buttons
   primaryButton?: { text: string; url: string };
   secondaryButton?: { text: string; url: string };
