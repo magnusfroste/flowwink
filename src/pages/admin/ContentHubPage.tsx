@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Globe, Smartphone, MessageSquare, Mail, Code2, Copy, Check, Play, Database, FileJson, Layers } from "lucide-react";
+import { Globe, Smartphone, MessageSquare, Mail, Code2, Copy, Check, Play, Database, FileJson, Layers, Info } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 
 const CHANNELS = [
@@ -85,12 +86,20 @@ export default function ContentHubPage() {
   const runGraphQLQuery = async () => {
     setIsQuerying(true);
     try {
-      const { data, error } = await supabase.functions.invoke("content-api", {
-        body: { query: graphqlQuery },
-        method: "POST",
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/content-api/graphql`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: graphqlQuery }),
+        }
+      );
       
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
       setQueryResult(JSON.stringify(data, null, 2));
     } catch (err: any) {
       setQueryResult(JSON.stringify({ error: err.message }, null, 2));
@@ -259,6 +268,16 @@ export default async function Home() {
             <CardTitle className="flex items-center gap-2">
               <Code2 className="h-5 w-5" />
               API Explorer
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <p>Test your Content API queries directly. GraphQL queries run against the live API endpoint and return published page data.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </CardTitle>
             <CardDescription>
               Test and explore the Content API directly
