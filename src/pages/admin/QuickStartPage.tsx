@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Rocket, 
@@ -108,8 +108,21 @@ const TEMPLATE_ICONS = {
   securehealth: ShieldCheck,
 };
 
+const STORAGE_KEY = 'cms-quickstart-progress';
+
 export default function QuickStartPage() {
-  const [completedSteps, setCompletedSteps] = useState<string[]>([]);
+  const [completedSteps, setCompletedSteps] = useState<string[]>(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(completedSteps));
+  }, [completedSteps]);
 
   const toggleStep = (stepId: string) => {
     setCompletedSteps(prev => 
