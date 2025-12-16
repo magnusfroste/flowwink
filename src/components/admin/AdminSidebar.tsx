@@ -1,5 +1,16 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, FileText, Users, Settings, LogOut, Menu, Palette, MessageSquare, Database, Rocket } from "lucide-react";
+import {
+  LayoutDashboard,
+  FileText,
+  Users,
+  Settings,
+  LogOut,
+  Menu,
+  Palette,
+  MessageSquare,
+  Database,
+  Rocket,
+} from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { ROLE_LABELS } from "@/types/cms";
 import {
@@ -13,11 +24,7 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const navigation = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
@@ -46,7 +53,7 @@ export function AdminSidebar() {
         <div className="flex items-center justify-between">
           {!isCollapsed && (
             <div className="overflow-hidden">
-              <span className="font-serif font-bold text-lg">Sophia</span>
+              <span className="font-serif font-bold text-lg">PEZ</span>
               <span className="block text-xs text-sidebar-foreground/60">CMS</span>
             </div>
           )}
@@ -65,22 +72,14 @@ export function AdminSidebar() {
               <SidebarMenuItem key={item.name}>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={isActive}
-                      tooltip={item.name}
-                    >
+                    <SidebarMenuButton asChild isActive={isActive} tooltip={item.name}>
                       <Link to={item.href}>
                         <item.icon className="h-5 w-5" />
                         <span>{item.name}</span>
                       </Link>
                     </SidebarMenuButton>
                   </TooltipTrigger>
-                  {isCollapsed && (
-                    <TooltipContent side="right">
-                      {item.name}
-                    </TooltipContent>
-                  )}
+                  {isCollapsed && <TooltipContent side="right">{item.name}</TooltipContent>}
                 </Tooltip>
               </SidebarMenuItem>
             );
@@ -112,11 +111,7 @@ export function AdminSidebar() {
                   <span>Sign Out</span>
                 </SidebarMenuButton>
               </TooltipTrigger>
-              {isCollapsed && (
-                <TooltipContent side="right">
-                  Sign Out
-                </TooltipContent>
-              )}
+              {isCollapsed && <TooltipContent side="right">Sign Out</TooltipContent>}
             </Tooltip>
           </SidebarMenuItem>
         </SidebarMenu>
