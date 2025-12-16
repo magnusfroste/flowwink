@@ -35,6 +35,14 @@ export interface FooterSettings {
   legalLinks?: FooterLegalLink[];
 }
 
+export interface GeneralSettings {
+  homepageSlug: string;
+}
+
+const defaultGeneralSettings: GeneralSettings = {
+  homepageSlug: 'hem',
+};
+
 export interface SeoSettings {
   siteTitle: string;
   titleTemplate: string;
@@ -432,4 +440,13 @@ export function useChatSettings() {
 
 export function useUpdateChatSettings() {
   return useUpdateSiteSettings<ChatSettings>('chat', 'Chat-inställningarna har uppdaterats.');
+}
+
+// General settings hooks
+export function useGeneralSettings() {
+  return useSiteSettings<GeneralSettings>('general', defaultGeneralSettings);
+}
+
+export function useUpdateGeneralSettings() {
+  return useUpdateSiteSettings<GeneralSettings>('general', 'Allmänna inställningar har uppdaterats.');
 }
