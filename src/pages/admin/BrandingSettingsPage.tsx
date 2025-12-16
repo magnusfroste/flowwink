@@ -28,8 +28,8 @@ interface CustomTheme {
 const DESIGN_THEMES: { id: string; name: string; description: string; settings: Partial<BrandingSettings> }[] = [
   {
     id: 'healthcare-classic',
-    name: 'Klassisk Sjukvård',
-    description: 'Traditionell medicinsk blå med serif-typsnitt',
+    name: 'Classic Healthcare',
+    description: 'Traditional medical blue with serif fonts',
     settings: {
       primaryColor: '220 100% 26%',
       secondaryColor: '210 25% 95%',
@@ -44,7 +44,7 @@ const DESIGN_THEMES: { id: string; name: string; description: string; settings: 
   {
     id: 'modern-minimalist',
     name: 'Modern Minimalist',
-    description: 'Ren, avskalad design med skarpa kanter',
+    description: 'Clean, stripped-down design with sharp edges',
     settings: {
       primaryColor: '220 15% 20%',
       secondaryColor: '0 0% 98%',
@@ -58,8 +58,8 @@ const DESIGN_THEMES: { id: string; name: string; description: string; settings: 
   },
   {
     id: 'warm-welcoming',
-    name: 'Varm & Välkomnande',
-    description: 'Mjuka färger och rundade former',
+    name: 'Warm & Welcoming',
+    description: 'Soft colors and rounded shapes',
     settings: {
       primaryColor: '25 75% 47%',
       secondaryColor: '35 30% 96%',
@@ -73,8 +73,8 @@ const DESIGN_THEMES: { id: string; name: string; description: string; settings: 
   },
   {
     id: 'professional-trust',
-    name: 'Professionell & Pålitlig',
-    description: 'Konservativ design som signalerar förtroende',
+    name: 'Professional & Trustworthy',
+    description: 'Conservative design that signals trust',
     settings: {
       primaryColor: '210 70% 35%',
       secondaryColor: '210 20% 96%',
@@ -241,8 +241,8 @@ export default function BrandingSettingsPage() {
     const updated = customThemes.filter((t) => t.id !== themeId);
     saveCustomThemes.mutate(updated);
     toast({
-      title: 'Tema borttaget',
-      description: 'Det egna temat har tagits bort.',
+      title: 'Theme removed',
+      description: 'The custom theme has been removed.',
     });
   };
 
@@ -267,13 +267,13 @@ export default function BrandingSettingsPage() {
     <AdminLayout>
       <div className="space-y-6">
         <AdminPageHeader 
-          title="Varumärke & Design"
-          description="Anpassa utseendet på den publika webbplatsen"
+          title="Branding & Design"
+          description="Customize the appearance of the public website"
         >
           <Button onClick={handleSave} disabled={updateSettings.isPending} className="relative">
             {hasChanges && <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-destructive" />}
             {updateSettings.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            Spara ändringar
+            Save changes
           </Button>
         </AdminPageHeader>
 
@@ -281,23 +281,23 @@ export default function BrandingSettingsPage() {
           <TabsList className="grid w-full grid-cols-5 max-w-2xl">
             <TabsTrigger value="themes" className="flex items-center gap-2">
               <Sparkles className="h-4 w-4" />
-              <span className="hidden sm:inline">Teman</span>
+              <span className="hidden sm:inline">Themes</span>
             </TabsTrigger>
             <TabsTrigger value="identity" className="flex items-center gap-2">
               <Image className="h-4 w-4" />
-              <span className="hidden sm:inline">Identitet</span>
+              <span className="hidden sm:inline">Identity</span>
             </TabsTrigger>
             <TabsTrigger value="colors" className="flex items-center gap-2">
               <Palette className="h-4 w-4" />
-              <span className="hidden sm:inline">Färger</span>
+              <span className="hidden sm:inline">Colors</span>
             </TabsTrigger>
             <TabsTrigger value="typography" className="flex items-center gap-2">
               <Type className="h-4 w-4" />
-              <span className="hidden sm:inline">Typsnitt</span>
+              <span className="hidden sm:inline">Typography</span>
             </TabsTrigger>
             <TabsTrigger value="appearance" className="flex items-center gap-2">
               <LayoutGrid className="h-4 w-4" />
-              <span className="hidden sm:inline">Utseende</span>
+              <span className="hidden sm:inline">Appearance</span>
             </TabsTrigger>
           </TabsList>
 
@@ -312,13 +312,13 @@ export default function BrandingSettingsPage() {
                     Brand Guide Assistant
                   </CardTitle>
                   <CardDescription>
-                    Analysera en befintlig webbplats och extrahera dess varumärkesprofil automatiskt
+                    Analyze an existing website and extract its brand profile automatically
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Button onClick={() => setBrandGuideOpen(true)} variant="outline">
                     <Sparkles className="h-4 w-4 mr-2" />
-                    Analysera befintlig webbplats
+                    Analyze existing website
                   </Button>
                 </CardContent>
               </Card>
@@ -327,8 +327,8 @@ export default function BrandingSettingsPage() {
               {customThemes.length > 0 && (
                 <Card>
                   <CardHeader>
-                    <CardTitle>Egna teman</CardTitle>
-                    <CardDescription>Teman du har sparat från Brand Guide Assistant</CardDescription>
+                    <CardTitle>Custom Themes</CardTitle>
+                    <CardDescription>Themes you have saved from Brand Guide Assistant</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -393,8 +393,8 @@ export default function BrandingSettingsPage() {
               {/* Predefined Themes */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Fördefinierade teman</CardTitle>
-                  <CardDescription>Välj ett tema som utgångspunkt, sedan kan du finjustera i de andra flikarna</CardDescription>
+                  <CardTitle>Predefined Themes</CardTitle>
+                  <CardDescription>Choose a theme as a starting point, then fine-tune in the other tabs</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -435,8 +435,8 @@ export default function BrandingSettingsPage() {
                                   {theme.settings.headingFont}
                                 </span>
                                 <span className="text-xs bg-muted px-2 py-0.5 rounded">
-                                  {theme.settings.borderRadius === 'none' ? 'Skarpa' : 
-                                   theme.settings.borderRadius === 'lg' ? 'Rundade' : 'Standard'}
+                                  {theme.settings.borderRadius === 'none' ? 'Sharp' : 
+                                   theme.settings.borderRadius === 'lg' ? 'Rounded' : 'Standard'}
                                 </span>
                               </div>
                             </div>
@@ -455,16 +455,16 @@ export default function BrandingSettingsPage() {
             <div className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Identitet</CardTitle>
-                  <CardDescription>Logo och organisationsnamn som visas på webbplatsen</CardDescription>
+                  <CardTitle>Identity</CardTitle>
+                  <CardDescription>Logo and organization name displayed on the website</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="space-y-2">
-                    <Label>Organisationsnamn</Label>
+                    <Label>Organization name</Label>
                     <Input
                       value={settings.organizationName || ''}
                       onChange={(e) => updateField('organizationName', e.target.value)}
-                      placeholder="T.ex. Sophiahemmet"
+                      placeholder="E.g. Acme Healthcare"
                     />
                   </div>
                   
@@ -473,30 +473,30 @@ export default function BrandingSettingsPage() {
                     <Input
                       value={settings.brandTagline || ''}
                       onChange={(e) => updateField('brandTagline', e.target.value)}
-                      placeholder="T.ex. Kvalitetsvård med patienten i fokus"
+                      placeholder="E.g. Quality care with the patient in focus"
                     />
-                    <p className="text-xs text-muted-foreground">Visas i footern under organisationsnamnet</p>
+                    <p className="text-xs text-muted-foreground">Displayed in the footer below the organization name</p>
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label>Logo (ljus bakgrund)</Label>
+                      <Label>Logo (light background)</Label>
                       <ImagePickerField
                         value={settings.logo || ''}
                         onChange={(url) => updateField('logo', url)}
-                        placeholder="Logo-URL"
+                        placeholder="Logo URL"
                       />
-                      <p className="text-xs text-muted-foreground">Rekommenderad storlek: 200x60px</p>
+                      <p className="text-xs text-muted-foreground">Recommended size: 200x60px</p>
                     </div>
                     
                     <div className="space-y-2">
-                      <Label>Logo (mörk bakgrund)</Label>
+                      <Label>Logo (dark background)</Label>
                       <ImagePickerField
                         value={settings.logoDark || ''}
                         onChange={(url) => updateField('logoDark', url)}
-                        placeholder="Logo-URL (mörk)"
+                        placeholder="Logo URL (dark)"
                       />
-                      <p className="text-xs text-muted-foreground">Används i footer och dark mode</p>
+                      <p className="text-xs text-muted-foreground">Used in footer and dark mode</p>
                     </div>
                   </div>
 
@@ -505,9 +505,9 @@ export default function BrandingSettingsPage() {
                     <ImagePickerField
                       value={settings.favicon || ''}
                       onChange={(url) => updateField('favicon', url)}
-                      placeholder="Favicon-URL"
+                      placeholder="Favicon URL"
                     />
-                    <p className="text-xs text-muted-foreground">Liten ikon som visas i webbläsarfliken (32x32px)</p>
+                    <p className="text-xs text-muted-foreground">Small icon shown in browser tab (32x32px)</p>
                   </div>
                 </CardContent>
               </Card>
@@ -515,15 +515,15 @@ export default function BrandingSettingsPage() {
               {/* Header Display Settings */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Header-visning</CardTitle>
-                  <CardDescription>Kontrollera hur logo och namn visas i den publika headern</CardDescription>
+                  <CardTitle>Header Display</CardTitle>
+                  <CardDescription>Control how logo and name appear in the public header</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
-                        <Label>Visa logo i header</Label>
-                        <p className="text-xs text-muted-foreground">Visar logotypen om en är uppladdad</p>
+                        <Label>Show logo in header</Label>
+                        <p className="text-xs text-muted-foreground">Displays the logo if one is uploaded</p>
                       </div>
                       <input
                         type="checkbox"
@@ -535,8 +535,8 @@ export default function BrandingSettingsPage() {
                     
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
-                        <Label>Visa organisationsnamn bredvid logo</Label>
-                        <p className="text-xs text-muted-foreground">Visar namnet även när logon visas</p>
+                        <Label>Show organization name next to logo</Label>
+                        <p className="text-xs text-muted-foreground">Shows the name even when the logo is displayed</p>
                       </div>
                       <input
                         type="checkbox"
@@ -548,7 +548,7 @@ export default function BrandingSettingsPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Logostorlek</Label>
+                    <Label>Logo size</Label>
                     <Select
                       value={settings.headerLogoSize || 'md'}
                       onValueChange={(value) => updateField('headerLogoSize', value as 'sm' | 'md' | 'lg')}
@@ -557,16 +557,16 @@ export default function BrandingSettingsPage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="sm">Liten</SelectItem>
+                        <SelectItem value="sm">Small</SelectItem>
                         <SelectItem value="md">Medium</SelectItem>
-                        <SelectItem value="lg">Stor</SelectItem>
+                        <SelectItem value="lg">Large</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   {/* Preview */}
                   <div className="space-y-2">
-                    <Label className="text-muted-foreground">Förhandsvisning</Label>
+                    <Label className="text-muted-foreground">Preview</Label>
                     <div className="border rounded-lg p-4 bg-card">
                       <div className="flex items-center gap-3">
                         {(() => {
@@ -626,13 +626,13 @@ export default function BrandingSettingsPage() {
           <TabsContent value="colors">
             <Card>
               <CardHeader>
-                <CardTitle>Färgpalett</CardTitle>
-                <CardDescription>Välj färger som representerar ert varumärke</CardDescription>
+                <CardTitle>Color Palette</CardTitle>
+                <CardDescription>Choose colors that represent your brand</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="space-y-3">
-                    <Label>Primärfärg</Label>
+                    <Label>Primary Color</Label>
                     <div className="flex items-center gap-3">
                       <input
                         type="color"
@@ -641,14 +641,14 @@ export default function BrandingSettingsPage() {
                         className="h-12 w-12 rounded-lg border cursor-pointer"
                       />
                       <div className="flex-1">
-                        <p className="text-sm font-medium">Huvudfärg</p>
-                        <p className="text-xs text-muted-foreground">Knappar, länkar, header</p>
+                        <p className="text-sm font-medium">Main color</p>
+                        <p className="text-xs text-muted-foreground">Buttons, links, header</p>
                       </div>
                     </div>
                   </div>
                   
                   <div className="space-y-3">
-                    <Label>Sekundärfärg</Label>
+                    <Label>Secondary Color</Label>
                     <div className="flex items-center gap-3">
                       <input
                         type="color"
@@ -657,14 +657,14 @@ export default function BrandingSettingsPage() {
                         className="h-12 w-12 rounded-lg border cursor-pointer"
                       />
                       <div className="flex-1">
-                        <p className="text-sm font-medium">Bakgrundsfärg</p>
-                        <p className="text-xs text-muted-foreground">Sektioner, kort</p>
+                        <p className="text-sm font-medium">Background color</p>
+                        <p className="text-xs text-muted-foreground">Sections, cards</p>
                       </div>
                     </div>
                   </div>
                   
                   <div className="space-y-3">
-                    <Label>Accentfärg</Label>
+                    <Label>Accent Color</Label>
                     <div className="flex items-center gap-3">
                       <input
                         type="color"
@@ -673,8 +673,8 @@ export default function BrandingSettingsPage() {
                         className="h-12 w-12 rounded-lg border cursor-pointer"
                       />
                       <div className="flex-1">
-                        <p className="text-sm font-medium">Högdagrar</p>
-                        <p className="text-xs text-muted-foreground">Hover, fokus-tillstånd</p>
+                        <p className="text-sm font-medium">Highlights</p>
+                        <p className="text-xs text-muted-foreground">Hover, focus states</p>
                       </div>
                     </div>
                   </div>
@@ -682,19 +682,19 @@ export default function BrandingSettingsPage() {
 
                 {/* Preview */}
                 <div className="mt-8 p-6 rounded-lg border bg-muted/30">
-                  <p className="text-sm font-medium mb-4">Förhandsvisning</p>
+                  <p className="text-sm font-medium mb-4">Preview</p>
                   <div className="flex flex-wrap gap-3">
                     <div 
                       className="h-16 w-24 rounded-lg flex items-center justify-center text-xs font-medium text-white"
                       style={{ backgroundColor: hslToHex(settings.primaryColor || '220 100% 26%') }}
                     >
-                      Primär
+                      Primary
                     </div>
                     <div 
                       className="h-16 w-24 rounded-lg flex items-center justify-center text-xs font-medium border"
                       style={{ backgroundColor: hslToHex(settings.secondaryColor || '210 40% 96%') }}
                     >
-                      Sekundär
+                      Secondary
                     </div>
                     <div 
                       className="h-16 w-24 rounded-lg flex items-center justify-center text-xs font-medium text-white"
@@ -712,13 +712,13 @@ export default function BrandingSettingsPage() {
           <TabsContent value="typography">
             <Card>
               <CardHeader>
-                <CardTitle>Typsnitt</CardTitle>
-                <CardDescription>Välj typsnitt för rubriker och brödtext</CardDescription>
+                <CardTitle>Typography</CardTitle>
+                <CardDescription>Choose fonts for headings and body text</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label>Rubriktypsnitt</Label>
+                    <Label>Heading font</Label>
                     <Select
                       value={settings.headingFont || 'PT Serif'}
                       onValueChange={(value) => updateField('headingFont', value)}
@@ -734,11 +734,11 @@ export default function BrandingSettingsPage() {
                         ))}
                       </SelectContent>
                     </Select>
-                    <p className="text-xs text-muted-foreground">Används för H1–H6 och logotyp</p>
+                    <p className="text-xs text-muted-foreground">Used for H1–H6 and logo</p>
                   </div>
                   
                   <div className="space-y-2">
-                    <Label>Brödtypsnitt</Label>
+                    <Label>Body font</Label>
                     <Select
                       value={settings.bodyFont || 'Inter'}
                       onValueChange={(value) => updateField('bodyFont', value)}
@@ -754,25 +754,25 @@ export default function BrandingSettingsPage() {
                         ))}
                       </SelectContent>
                     </Select>
-                    <p className="text-xs text-muted-foreground">Används för brödtext och knappar</p>
+                    <p className="text-xs text-muted-foreground">Used for body text and buttons</p>
                   </div>
                 </div>
 
                 {/* Preview */}
                 <div className="mt-8 p-6 rounded-lg border bg-muted/30 space-y-4">
-                  <p className="text-sm font-medium mb-4">Förhandsvisning</p>
+                  <p className="text-sm font-medium mb-4">Preview</p>
                   <h2 
                     className="text-2xl font-bold"
                     style={{ fontFamily: `'${settings.headingFont || 'PT Serif'}', serif` }}
                   >
-                    Exempelrubrik med valt typsnitt
+                    Sample heading with selected font
                   </h2>
                   <p 
                     className="text-base text-muted-foreground"
                     style={{ fontFamily: `'${settings.bodyFont || 'Inter'}', sans-serif` }}
                   >
-                    Detta är en exempeltext som visar hur brödtexten kommer att se ut på webbplatsen. 
-                    Valet av typsnitt påverkar läsbarheten och känslan på hela sidan.
+                    This is sample text that shows how body text will appear on the website. 
+                    The choice of font affects readability and the feel of the entire page.
                   </p>
                 </div>
               </CardContent>
@@ -784,13 +784,13 @@ export default function BrandingSettingsPage() {
             <div className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Utseende</CardTitle>
-                  <CardDescription>Anpassa det visuella uttrycket</CardDescription>
+                  <CardTitle>Appearance</CardTitle>
+                  <CardDescription>Customize the visual expression</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label>Hörnradie</Label>
+                      <Label>Corner radius</Label>
                       <Select
                         value={settings.borderRadius || 'md'}
                         onValueChange={(value) => updateField('borderRadius', value as BrandingSettings['borderRadius'])}
@@ -799,17 +799,17 @@ export default function BrandingSettingsPage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="none">Inga rundade hörn</SelectItem>
-                          <SelectItem value="sm">Subtilt rundade</SelectItem>
-                          <SelectItem value="md">Medelrundade</SelectItem>
-                          <SelectItem value="lg">Kraftigt rundade</SelectItem>
+                          <SelectItem value="none">No rounded corners</SelectItem>
+                          <SelectItem value="sm">Subtly rounded</SelectItem>
+                          <SelectItem value="md">Medium rounded</SelectItem>
+                          <SelectItem value="lg">Heavily rounded</SelectItem>
                         </SelectContent>
                       </Select>
-                      <p className="text-xs text-muted-foreground">Påverkar knappar, kort och bilder</p>
+                      <p className="text-xs text-muted-foreground">Affects buttons, cards and images</p>
                     </div>
                     
                     <div className="space-y-2">
-                      <Label>Skuggor</Label>
+                      <Label>Shadows</Label>
                       <Select
                         value={settings.shadowIntensity || 'subtle'}
                         onValueChange={(value) => updateField('shadowIntensity', value as BrandingSettings['shadowIntensity'])}
@@ -818,17 +818,17 @@ export default function BrandingSettingsPage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="none">Inga skuggor</SelectItem>
-                          <SelectItem value="subtle">Subtila skuggor</SelectItem>
-                          <SelectItem value="medium">Tydliga skuggor</SelectItem>
+                          <SelectItem value="none">No shadows</SelectItem>
+                          <SelectItem value="subtle">Subtle shadows</SelectItem>
+                          <SelectItem value="medium">Visible shadows</SelectItem>
                         </SelectContent>
                       </Select>
-                      <p className="text-xs text-muted-foreground">Ger djup och dimension åt element</p>
+                      <p className="text-xs text-muted-foreground">Adds depth and dimension to elements</p>
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Hero-bildernas overlay</Label>
+                    <Label>Hero image overlay</Label>
                     <Select
                       value={settings.heroOverlayOpacity || 'medium'}
                       onValueChange={(value) => updateField('heroOverlayOpacity', value as BrandingSettings['heroOverlayOpacity'])}
@@ -837,18 +837,18 @@ export default function BrandingSettingsPage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="none">Ingen dämpning (full bild)</SelectItem>
-                        <SelectItem value="light">Lätt dämpning</SelectItem>
-                        <SelectItem value="medium">Medium dämpning (standard)</SelectItem>
-                        <SelectItem value="strong">Stark dämpning</SelectItem>
+                        <SelectItem value="none">No dimming (full image)</SelectItem>
+                        <SelectItem value="light">Light dimming</SelectItem>
+                        <SelectItem value="medium">Medium dimming (default)</SelectItem>
+                        <SelectItem value="strong">Strong dimming</SelectItem>
                       </SelectContent>
                     </Select>
-                    <p className="text-xs text-muted-foreground">Hur mycket bakgrundsbilden i hero-block dämpas av primary-färgen</p>
+                    <p className="text-xs text-muted-foreground">How much the background image in hero blocks is dimmed by the primary color</p>
                   </div>
 
                   {/* Preview */}
                   <div className="mt-8 p-6 rounded-lg border bg-muted/30">
-                    <p className="text-sm font-medium mb-4">Förhandsvisning</p>
+                    <p className="text-sm font-medium mb-4">Preview</p>
                     <div className="flex flex-wrap gap-4">
                       {(['none', 'sm', 'md', 'lg'] as const).map((radius) => (
                         <div
@@ -876,33 +876,33 @@ export default function BrandingSettingsPage() {
               {/* Theme Toggle Settings */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Tema-växling</CardTitle>
-                  <CardDescription>Låt besökare växla mellan ljust och mörkt tema</CardDescription>
+                  <CardTitle>Theme Toggle</CardTitle>
+                  <CardDescription>Let visitors switch between light and dark themes</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label>Visa tema-toggle</Label>
+                      <Label>Show theme toggle</Label>
                       <p className="text-sm text-muted-foreground">
-                        Visar en knapp i navigationen där besökare kan växla mellan ljust, mörkt och systemtema
+                        Shows a button in the navigation where visitors can switch between light, dark, and system theme
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-muted-foreground">
-                        {settings.allowThemeToggle !== false ? 'På' : 'Av'}
+                        {settings.allowThemeToggle !== false ? 'On' : 'Off'}
                       </span>
                       <Button
                         variant={settings.allowThemeToggle !== false ? 'default' : 'outline'}
                         size="sm"
                         onClick={() => updateField('allowThemeToggle', settings.allowThemeToggle !== false ? false : true)}
                       >
-                        {settings.allowThemeToggle !== false ? 'Aktiverad' : 'Inaktiverad'}
+                        {settings.allowThemeToggle !== false ? 'Enabled' : 'Disabled'}
                       </Button>
                     </div>
                   </div>
                   {settings.allowThemeToggle === false && (
                     <p className="text-sm text-muted-foreground bg-muted p-3 rounded-md">
-                      När tema-toggle är inaktiverad visas webbplatsen alltid i ljust tema för besökare.
+                      When theme toggle is disabled, the website is always shown in light theme for visitors.
                     </p>
                   )}
                 </CardContent>
