@@ -45,10 +45,10 @@ import { CSS } from '@dnd-kit/utilities';
 import { useUnsavedChanges, UnsavedChangesDialog } from '@/hooks/useUnsavedChanges';
 
 const SECTION_LABELS: Record<FooterSectionId, { label: string; description: string }> = {
-  brand: { label: 'Varumärke & logo', description: 'Organisationsnamn och tagline' },
-  quickLinks: { label: 'Snabblänkar', description: 'Länkar till publicerade sidor' },
-  contact: { label: 'Kontaktuppgifter', description: 'Telefon, e-post och adress' },
-  hours: { label: 'Öppettider', description: 'Vardags- och helgtider' },
+  brand: { label: 'Brand & Logo', description: 'Organization name and tagline' },
+  quickLinks: { label: 'Quick Links', description: 'Links to published pages' },
+  contact: { label: 'Contact Info', description: 'Phone, email and address' },
+  hours: { label: 'Opening Hours', description: 'Weekday and weekend hours' },
 };
 
 interface SortableSectionItemProps {
@@ -122,12 +122,12 @@ function OgImagePicker({ value, onChange }: { value: string; onChange: (url: str
           onClick={() => setShowPicker(true)}
         >
           <ImageIcon className="h-6 w-6" />
-          <span>Välj bild</span>
+          <span>Select image</span>
         </Button>
       )}
       {value && (
         <Button variant="outline" size="sm" onClick={() => setShowPicker(true)}>
-          Byt bild
+          Change image
         </Button>
       )}
       <MediaLibraryPicker
@@ -182,8 +182,8 @@ export default function SiteSettingsPage() {
     showHours: true,
     sectionOrder: ['brand', 'quickLinks', 'contact', 'hours'],
     legalLinks: [
-      { id: 'privacy', label: 'Integritetspolicy', url: '/integritetspolicy', enabled: true },
-      { id: 'accessibility', label: 'Tillgänglighet', url: '/tillganglighet', enabled: true },
+      { id: 'privacy', label: 'Privacy Policy', url: '/privacy-policy', enabled: true },
+      { id: 'accessibility', label: 'Accessibility', url: '/accessibility', enabled: true },
     ],
   });
 
@@ -225,18 +225,18 @@ export default function SiteSettingsPage() {
 
   const [cookieData, setCookieData] = useState<CookieBannerSettings>({
     enabled: true,
-    title: 'Vi använder cookies',
-    description: 'Vi använder cookies för att förbättra din upplevelse på webbplatsen, analysera trafik och anpassa innehåll.',
-    policyLinkText: 'Läs mer om vår integritetspolicy',
-    policyLinkUrl: '/integritetspolicy',
-    acceptButtonText: 'Acceptera alla',
-    rejectButtonText: 'Endast nödvändiga',
+    title: 'We use cookies',
+    description: 'We use cookies to improve your experience on the website, analyze traffic and personalize content.',
+    policyLinkText: 'Read more about our privacy policy',
+    policyLinkUrl: '/privacy-policy',
+    acceptButtonText: 'Accept all',
+    rejectButtonText: 'Essential only',
   });
 
   const [maintenanceData, setMaintenanceData] = useState<MaintenanceSettings>({
     enabled: false,
-    title: 'Webbplatsen är under underhåll',
-    message: 'Vi genomför planerat underhåll just nu. Webbplatsen kommer att vara tillgänglig igen inom kort.',
+    title: 'Website under maintenance',
+    message: 'We are performing scheduled maintenance. The website will be available again shortly.',
     expectedEndTime: '',
   });
 
@@ -313,13 +313,13 @@ export default function SiteSettingsPage() {
     <AdminLayout>
       <div className="space-y-6">
         <AdminPageHeader 
-          title="Webbplatsinställningar"
-          description="Hantera SEO, prestanda och kontaktinformation"
+          title="Site Settings"
+          description="Manage SEO, performance and contact information"
         >
           <Button onClick={handleSaveAll} disabled={isSaving} className="relative">
             {hasChanges && <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-destructive" />}
             {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-            Spara ändringar
+            Save changes
           </Button>
         </AdminPageHeader>
 
@@ -327,7 +327,7 @@ export default function SiteSettingsPage() {
           <TabsList className="grid w-full grid-cols-7 max-w-4xl">
             <TabsTrigger value="general" className="flex items-center gap-2">
               <Home className="h-4 w-4" />
-              <span className="hidden sm:inline">Allmänt</span>
+              <span className="hidden sm:inline">General</span>
             </TabsTrigger>
             <TabsTrigger value="seo" className="flex items-center gap-2">
               <Globe className="h-4 w-4" />
@@ -335,7 +335,7 @@ export default function SiteSettingsPage() {
             </TabsTrigger>
             <TabsTrigger value="maintenance" className="flex items-center gap-2">
               <Wrench className="h-4 w-4" />
-              <span className="hidden sm:inline">Underhåll</span>
+              <span className="hidden sm:inline">Maintenance</span>
             </TabsTrigger>
             <TabsTrigger value="scripts" className="flex items-center gap-2">
               <Code className="h-4 w-4" />
@@ -347,7 +347,7 @@ export default function SiteSettingsPage() {
             </TabsTrigger>
             <TabsTrigger value="performance" className="flex items-center gap-2">
               <Zap className="h-4 w-4" />
-              <span className="hidden sm:inline">Prestanda</span>
+              <span className="hidden sm:inline">Performance</span>
             </TabsTrigger>
             <TabsTrigger value="footer" className="flex items-center gap-2">
               <Phone className="h-4 w-4" />
@@ -359,18 +359,18 @@ export default function SiteSettingsPage() {
           <TabsContent value="general" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="font-serif">Startsida</CardTitle>
-                <CardDescription>Välj vilken sida som visas när besökare går till webbplatsens rot-URL (/)</CardDescription>
+                <CardTitle className="font-serif">Homepage</CardTitle>
+                <CardDescription>Choose which page is displayed when visitors go to the site's root URL (/)</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="homepageSlug">Startsida</Label>
+                  <Label htmlFor="homepageSlug">Homepage</Label>
                   <Select
                     value={generalData.homepageSlug}
                     onValueChange={(value) => setGeneralData(prev => ({ ...prev, homepageSlug: value }))}
                   >
                     <SelectTrigger id="homepageSlug" className="w-full max-w-md">
-                      <SelectValue placeholder="Välj startsida" />
+                      <SelectValue placeholder="Select homepage" />
                     </SelectTrigger>
                     <SelectContent>
                       {allPages?.map((page) => (
@@ -381,7 +381,7 @@ export default function SiteSettingsPage() {
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">
-                    Den valda sidan visas när besökare öppnar webbplatsen. Sidan måste vara publicerad.
+                    The selected page is displayed when visitors open the website. The page must be published.
                   </p>
                 </div>
               </CardContent>
@@ -393,9 +393,9 @@ export default function SiteSettingsPage() {
             {seoData.developmentMode && (
               <Alert variant="destructive" className="border-destructive/50 bg-destructive/10">
                 <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>Utvecklingsläge aktivt</AlertTitle>
+                <AlertTitle>Development mode active</AlertTitle>
                 <AlertDescription>
-                  Alla sidor är dolda från sökmotorer (noindex, nofollow). Kom ihåg att inaktivera detta innan lansering.
+                  All pages are hidden from search engines (noindex, nofollow). Remember to disable this before launch.
                 </AlertDescription>
               </Alert>
             )}
@@ -404,12 +404,12 @@ export default function SiteSettingsPage() {
             <div className="grid gap-6 md:grid-cols-2">
               <Card>
                 <CardHeader>
-                  <CardTitle className="font-serif">Grundläggande SEO</CardTitle>
-                  <CardDescription>Titel och beskrivning för sökmotorer</CardDescription>
+                  <CardTitle className="font-serif">Basic SEO</CardTitle>
+                  <CardDescription>Title and description for search engines</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="siteTitle">Webbplatsens namn</Label>
+                    <Label htmlFor="siteTitle">Site name</Label>
                     <Input
                       id="siteTitle"
                       value={seoData.siteTitle}
@@ -418,45 +418,45 @@ export default function SiteSettingsPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="titleTemplate">Titelmall</Label>
+                    <Label htmlFor="titleTemplate">Title template</Label>
                     <Input
                       id="titleTemplate"
                       value={seoData.titleTemplate}
                       onChange={(e) => setSeoData(prev => ({ ...prev, titleTemplate: e.target.value }))}
                       placeholder="%s | Sophiahemmet"
                     />
-                    <p className="text-xs text-muted-foreground">%s ersätts med sidans titel</p>
+                    <p className="text-xs text-muted-foreground">%s is replaced with the page title</p>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="defaultDescription">Standardbeskrivning (meta description)</Label>
+                    <Label htmlFor="defaultDescription">Default description (meta description)</Label>
                     <Textarea
                       id="defaultDescription"
                       value={seoData.defaultDescription}
                       onChange={(e) => setSeoData(prev => ({ ...prev, defaultDescription: e.target.value }))}
-                      placeholder="En kort beskrivning av webbplatsen..."
+                      placeholder="A short description of the website..."
                       rows={3}
                     />
-                    <p className="text-xs text-muted-foreground">Max 160 tecken rekommenderas</p>
+                    <p className="text-xs text-muted-foreground">Max 160 characters recommended</p>
                   </div>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="font-serif">Sociala medier</CardTitle>
-                  <CardDescription>Open Graph och Twitter Cards</CardDescription>
+                  <CardTitle className="font-serif">Social Media</CardTitle>
+                  <CardDescription>Open Graph and Twitter Cards</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <Label>Standardbild för delning (OG Image)</Label>
+                    <Label>Default sharing image (OG Image)</Label>
                     <OgImagePicker
                       value={seoData.ogImage}
                       onChange={(url) => setSeoData(prev => ({ ...prev, ogImage: url }))}
                     />
-                    <p className="text-xs text-muted-foreground">Rekommenderad storlek: 1200x630px</p>
+                    <p className="text-xs text-muted-foreground">Recommended size: 1200x630px</p>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="twitterHandle">Twitter-konto</Label>
+                    <Label htmlFor="twitterHandle">Twitter handle</Label>
                     <Input
                       id="twitterHandle"
                       value={seoData.twitterHandle}
@@ -469,8 +469,8 @@ export default function SiteSettingsPage() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="font-serif">Verifiering</CardTitle>
-                  <CardDescription>Verifieringskoder för sökmotorer</CardDescription>
+                  <CardTitle className="font-serif">Verification</CardTitle>
+                  <CardDescription>Verification codes for search engines</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
@@ -479,7 +479,7 @@ export default function SiteSettingsPage() {
                       id="googleSiteVerification"
                       value={seoData.googleSiteVerification}
                       onChange={(e) => setSeoData(prev => ({ ...prev, googleSiteVerification: e.target.value }))}
-                      placeholder="Verifieringskod"
+                      placeholder="Verification code"
                     />
                   </div>
                 </CardContent>
@@ -489,24 +489,24 @@ export default function SiteSettingsPage() {
                 <CardHeader>
                   <CardTitle className="font-serif flex items-center gap-2">
                     {seoData.developmentMode && <AlertTriangle className="h-4 w-4 text-destructive" />}
-                    Utvecklingsläge
+                    Development Mode
                   </CardTitle>
-                  <CardDescription>Blockera sökmotorer och/eller begränsa åtkomst under utveckling</CardDescription>
+                  <CardDescription>Block search engines and/or restrict access during development</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {/* Informationsruta som förklarar skillnaden */}
+                  {/* Info box explaining the difference */}
                   <Alert className="bg-muted/50 border-muted-foreground/20">
                     <Info className="h-4 w-4" />
                     <AlertDescription className="text-sm">
-                      <strong>Två nivåer av skydd:</strong>
+                      <strong>Two levels of protection:</strong>
                       <ul className="mt-2 space-y-1 text-muted-foreground">
                         <li className="flex items-center gap-2">
                           <Search className="h-3 w-3 shrink-0" />
-                          <span><strong>Blockera sökmotorer</strong> – Sidan är synlig men indexeras inte</span>
+                          <span><strong>Block search engines</strong> – Page is visible but not indexed</span>
                         </li>
                         <li className="flex items-center gap-2">
                           <Lock className="h-3 w-3 shrink-0" />
-                          <span><strong>Kräv inloggning</strong> – Fullständig blockering för ej inloggade</span>
+                          <span><strong>Require login</strong> – Complete block for non-logged in users</span>
                         </li>
                       </ul>
                     </AlertDescription>
@@ -517,10 +517,10 @@ export default function SiteSettingsPage() {
                       <Search className={`h-5 w-5 ${seoData.developmentMode ? 'text-destructive' : 'text-muted-foreground'}`} />
                       <div>
                         <Label className={seoData.developmentMode ? 'text-destructive' : ''}>
-                          Blockera sökmotorer (noindex)
+                          Block search engines (noindex)
                         </Label>
                         <p className="text-xs text-muted-foreground">
-                          Sätter noindex och nofollow på alla sidor
+                          Sets noindex and nofollow on all pages
                         </p>
                       </div>
                     </div>
@@ -535,10 +535,10 @@ export default function SiteSettingsPage() {
                       <Lock className={`h-5 w-5 ${seoData.requireAuthInDevMode && seoData.developmentMode ? 'text-destructive' : 'text-muted-foreground'}`} />
                       <div>
                         <Label className={seoData.requireAuthInDevMode && seoData.developmentMode ? 'text-destructive' : (!seoData.developmentMode ? 'text-muted-foreground' : '')}>
-                          Kräv inloggning för att visa sidan
+                          Require login to view site
                         </Label>
                         <p className="text-xs text-muted-foreground">
-                          Endast inloggade användare kan se webbplatsen
+                          Only logged in users can see the website
                         </p>
                       </div>
                     </div>
@@ -553,14 +553,14 @@ export default function SiteSettingsPage() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="font-serif">Indexering</CardTitle>
-                  <CardDescription>Styr hur sökmotorer indexerar webbplatsen (ignoreras i utvecklingsläge)</CardDescription>
+                  <CardTitle className="font-serif">Indexing</CardTitle>
+                  <CardDescription>Control how search engines index the website (ignored in development mode)</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <Label>Tillåt indexering</Label>
-                      <p className="text-xs text-muted-foreground">Låt sökmotorer indexera sidor</p>
+                      <Label>Allow indexing</Label>
+                      <p className="text-xs text-muted-foreground">Let search engines index pages</p>
                     </div>
                     <Switch
                       checked={seoData.robotsIndex}
@@ -570,8 +570,8 @@ export default function SiteSettingsPage() {
                   </div>
                   <div className="flex items-center justify-between">
                     <div>
-                      <Label>Följ länkar</Label>
-                      <p className="text-xs text-muted-foreground">Låt sökmotorer följa länkar</p>
+                      <Label>Follow links</Label>
+                      <p className="text-xs text-muted-foreground">Let search engines follow links</p>
                     </div>
                     <Switch
                       checked={seoData.robotsFollow}
@@ -589,9 +589,9 @@ export default function SiteSettingsPage() {
             {maintenanceData.enabled && (
               <Alert variant="destructive" className="border-destructive/50 bg-destructive/10">
                 <Wrench className="h-4 w-4" />
-                <AlertTitle>Underhållsläge aktivt</AlertTitle>
+                <AlertTitle>Maintenance mode active</AlertTitle>
                 <AlertDescription>
-                  Webbplatsen visar ett underhållsmeddelande för alla besökare. Inloggade administratörer kan fortfarande se webbplatsen.
+                  The website displays a maintenance message for all visitors. Logged in administrators can still see the website.
                 </AlertDescription>
               </Alert>
             )}
@@ -602,16 +602,16 @@ export default function SiteSettingsPage() {
                 <CardHeader>
                   <CardTitle className="font-serif flex items-center gap-2">
                     {maintenanceData.enabled && <Wrench className="h-4 w-4 text-destructive" />}
-                    Underhållsläge
+                    Maintenance Mode
                   </CardTitle>
-                  <CardDescription>Visa ett underhållsmeddelande för alla besökare</CardDescription>
+                  <CardDescription>Display a maintenance message for all visitors</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <Alert className="bg-muted/50 border-muted-foreground/20">
                     <Info className="h-4 w-4" />
                     <AlertDescription className="text-sm">
-                      När underhållsläget är aktivt visas ett anpassningsbart meddelande istället för webbplatsens innehåll. 
-                      Inloggade användare kan fortfarande se webbplatsen normalt.
+                      When maintenance mode is active, a customizable message is displayed instead of the website content. 
+                      Logged in users can still see the website normally.
                     </AlertDescription>
                   </Alert>
 
@@ -620,10 +620,10 @@ export default function SiteSettingsPage() {
                       <Wrench className={`h-5 w-5 ${maintenanceData.enabled ? 'text-destructive' : 'text-muted-foreground'}`} />
                       <div>
                         <Label className={maintenanceData.enabled ? 'text-destructive' : ''}>
-                          Aktivera underhållsläge
+                          Enable maintenance mode
                         </Label>
                         <p className="text-xs text-muted-foreground">
-                          Blockerar åtkomst för alla ej inloggade besökare
+                          Blocks access for all non-logged in visitors
                         </p>
                       </div>
                     </div>
@@ -637,33 +637,33 @@ export default function SiteSettingsPage() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="font-serif">Meddelande</CardTitle>
-                  <CardDescription>Anpassa texten som visas för besökare</CardDescription>
+                  <CardTitle className="font-serif">Message</CardTitle>
+                  <CardDescription>Customize the text displayed to visitors</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="maintenanceTitle">Rubrik</Label>
+                    <Label htmlFor="maintenanceTitle">Title</Label>
                     <Input
                       id="maintenanceTitle"
                       value={maintenanceData.title}
                       onChange={(e) => setMaintenanceData(prev => ({ ...prev, title: e.target.value }))}
-                      placeholder="Webbplatsen är under underhåll"
+                      placeholder="Website under maintenance"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="maintenanceMessage">Meddelande</Label>
+                    <Label htmlFor="maintenanceMessage">Message</Label>
                     <Textarea
                       id="maintenanceMessage"
                       value={maintenanceData.message}
                       onChange={(e) => setMaintenanceData(prev => ({ ...prev, message: e.target.value }))}
-                      placeholder="Vi genomför planerat underhåll just nu..."
+                      placeholder="We are performing scheduled maintenance..."
                       rows={4}
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="expectedEndTime" className="flex items-center gap-2">
                       <Clock className="h-4 w-4" />
-                      Beräknad sluttid (valfritt)
+                      Expected end time (optional)
                     </Label>
                     <Input
                       id="expectedEndTime"
@@ -672,7 +672,7 @@ export default function SiteSettingsPage() {
                       onChange={(e) => setMaintenanceData(prev => ({ ...prev, expectedEndTime: e.target.value }))}
                     />
                     <p className="text-xs text-muted-foreground">
-                      Visas för besökare om ifyllt
+                      Displayed to visitors if filled in
                     </p>
                   </div>
                 </CardContent>
@@ -681,21 +681,21 @@ export default function SiteSettingsPage() {
               {/* Preview */}
               <Card className="md:col-span-2">
                 <CardHeader>
-                  <CardTitle className="font-serif">Förhandsvisning</CardTitle>
-                  <CardDescription>Så här ser underhållssidan ut för besökare</CardDescription>
+                  <CardTitle className="font-serif">Preview</CardTitle>
+                  <CardDescription>This is how the maintenance page looks to visitors</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="bg-background border rounded-lg p-8 text-center max-w-md mx-auto">
                     <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-6">
                       <Wrench className="h-8 w-8 text-muted-foreground" />
                     </div>
-                    <h2 className="font-serif text-2xl font-bold mb-4">{maintenanceData.title || 'Webbplatsen är under underhåll'}</h2>
+                    <h2 className="font-serif text-2xl font-bold mb-4">{maintenanceData.title || 'Website under maintenance'}</h2>
                     <p className="text-muted-foreground mb-4">
-                      {maintenanceData.message || 'Vi genomför planerat underhåll just nu.'}
+                      {maintenanceData.message || 'We are performing scheduled maintenance.'}
                     </p>
                     {maintenanceData.expectedEndTime && (
                       <p className="text-sm text-muted-foreground">
-                        Beräknad sluttid: {new Date(maintenanceData.expectedEndTime).toLocaleString('sv-SE')}
+                        Expected end time: {new Date(maintenanceData.expectedEndTime).toLocaleString('en-US')}
                       </p>
                     )}
                   </div>
@@ -708,25 +708,25 @@ export default function SiteSettingsPage() {
           <TabsContent value="scripts" className="space-y-6">
             <Alert variant="default" className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/20">
               <AlertTriangle className="h-4 w-4 text-amber-600" />
-              <AlertTitle className="text-amber-800 dark:text-amber-200">Varning</AlertTitle>
+              <AlertTitle className="text-amber-800 dark:text-amber-200">Warning</AlertTitle>
               <AlertDescription className="text-amber-700 dark:text-amber-300">
-                Scripts som läggs till här körs på alla publika sidor. Felaktiga scripts kan påverka webbplatsens funktion och prestanda.
+                Scripts added here run on all public pages. Incorrect scripts can affect website functionality and performance.
               </AlertDescription>
             </Alert>
 
             {/* Active Scripts Preview */}
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="font-serif text-base">Aktiva scripts</CardTitle>
-                <CardDescription>Översikt över script-injektioner på publika sidor</CardDescription>
+                <CardTitle className="font-serif text-base">Active scripts</CardTitle>
+                <CardDescription>Overview of script injections on public pages</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {[
                     { key: 'headStart', label: 'Head (start)', value: scriptsData.headStart },
-                    { key: 'headEnd', label: 'Head (slut)', value: scriptsData.headEnd },
+                    { key: 'headEnd', label: 'Head (end)', value: scriptsData.headEnd },
                     { key: 'bodyStart', label: 'Body (start)', value: scriptsData.bodyStart },
-                    { key: 'bodyEnd', label: 'Body (slut)', value: scriptsData.bodyEnd },
+                    { key: 'bodyEnd', label: 'Body (end)', value: scriptsData.bodyEnd },
                   ].map(({ key, label, value }) => {
                     const isActive = value && value.trim().length > 0;
                     const charCount = value?.length || 0;
@@ -746,7 +746,7 @@ export default function SiteSettingsPage() {
                           </span>
                         </div>
                         <p className="text-xs text-muted-foreground ml-6">
-                          {isActive ? `${charCount} tecken` : 'Inga scripts'}
+                          {isActive ? `${charCount} characters` : 'No scripts'}
                         </p>
                       </div>
                     );
@@ -760,7 +760,7 @@ export default function SiteSettingsPage() {
               <Card>
                 <CardHeader>
                   <CardTitle className="font-serif">Head Scripts</CardTitle>
-                  <CardDescription>Scripts som läggs in i &lt;head&gt;-taggen</CardDescription>
+                  <CardDescription>Scripts inserted in the &lt;head&gt; tag</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="space-y-2">
@@ -771,18 +771,18 @@ export default function SiteSettingsPage() {
                       placeholder="<!-- Google Tag Manager -->&#10;<script>...</script>"
                     />
                     <p className="text-xs text-muted-foreground">
-                      Läggs in direkt efter &lt;head&gt;. Använd för kritiska scripts som måste laddas först.
+                      Inserted right after &lt;head&gt;. Use for critical scripts that must load first.
                     </p>
                   </div>
                   <div className="space-y-2">
-                    <Label>Head (slut)</Label>
+                    <Label>Head (end)</Label>
                     <CodeEditor
                       value={scriptsData.headEnd}
                       onChange={(value) => setScriptsData(prev => ({ ...prev, headEnd: value }))}
                       placeholder="<!-- Analytics, fonts -->&#10;<script>...</script>"
                     />
                     <p className="text-xs text-muted-foreground">
-                      Läggs in före &lt;/head&gt;. Perfekt för analytics och externa fonts.
+                      Inserted before &lt;/head&gt;. Perfect for analytics and external fonts.
                     </p>
                   </div>
                 </CardContent>
@@ -791,7 +791,7 @@ export default function SiteSettingsPage() {
               <Card>
                 <CardHeader>
                   <CardTitle className="font-serif">Body Scripts</CardTitle>
-                  <CardDescription>Scripts som läggs in i &lt;body&gt;-taggen</CardDescription>
+                  <CardDescription>Scripts inserted in the &lt;body&gt; tag</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="space-y-2">
@@ -802,18 +802,18 @@ export default function SiteSettingsPage() {
                       placeholder="<!-- GTM noscript, early loaders -->&#10;<noscript>...</noscript>"
                     />
                     <p className="text-xs text-muted-foreground">
-                      Läggs in direkt efter &lt;body&gt;. Använd för noscript-fallbacks och tidiga laddare.
+                      Inserted right after &lt;body&gt;. Use for noscript fallbacks and early loaders.
                     </p>
                   </div>
                   <div className="space-y-2">
-                    <Label>Body (slut)</Label>
+                    <Label>Body (end)</Label>
                     <CodeEditor
                       value={scriptsData.bodyEnd}
                       onChange={(value) => setScriptsData(prev => ({ ...prev, bodyEnd: value }))}
                       placeholder="<!-- Chat widgets, deferred scripts -->&#10;<script>...</script>"
                     />
                     <p className="text-xs text-muted-foreground">
-                      Läggs in före &lt;/body&gt;. Perfekt för chat-widgets, tracking och deferred scripts.
+                      Inserted before &lt;/body&gt;. Perfect for chat widgets, tracking and deferred scripts.
                     </p>
                   </div>
                 </CardContent>
@@ -821,14 +821,14 @@ export default function SiteSettingsPage() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="font-serif text-sm">Vanliga användningsfall</CardTitle>
+                  <CardTitle className="font-serif text-sm">Common use cases</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ul className="text-sm text-muted-foreground space-y-1">
                     <li>• <strong>Google Analytics / Tag Manager</strong> – Head (start)</li>
-                    <li>• <strong>Cookie-consent</strong> (CookieBot, OneTrust) – Head (start)</li>
-                    <li>• <strong>Facebook Pixel</strong> – Head (slut)</li>
-                    <li>• <strong>Chat-widgets</strong> (Intercom, Crisp, Zendesk) – Body (slut)</li>
+                    <li>• <strong>Cookie consent</strong> (CookieBot, OneTrust) – Head (start)</li>
+                    <li>• <strong>Facebook Pixel</strong> – Head (end)</li>
+                    <li>• <strong>Chat widgets</strong> (Intercom, Crisp, Zendesk) – Body (end)</li>
                     <li>• <strong>GTM noscript</strong> – Body (start)</li>
                   </ul>
                 </CardContent>
@@ -841,15 +841,15 @@ export default function SiteSettingsPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="font-serif">Cookie-banner</CardTitle>
-                <CardDescription>Anpassa cookie-samtyckesbannern för GDPR-efterlevnad</CardDescription>
+                <CardTitle className="font-serif">Cookie Banner</CardTitle>
+                <CardDescription>Customize the cookie consent banner for GDPR compliance</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/30">
                   <div>
-                    <Label>Visa cookie-banner</Label>
+                    <Label>Show cookie banner</Label>
                     <p className="text-sm text-muted-foreground">
-                      Visar en banner för besökare att godkänna eller avvisa cookies
+                      Shows a banner for visitors to accept or reject cookies
                     </p>
                   </div>
                   <Switch
@@ -861,58 +861,58 @@ export default function SiteSettingsPage() {
                 {cookieData.enabled && (
                   <div className="space-y-4 pt-4 border-t">
                     <div className="space-y-2">
-                      <Label>Rubrik</Label>
+                      <Label>Title</Label>
                       <Input
                         value={cookieData.title}
                         onChange={(e) => setCookieData(prev => ({ ...prev, title: e.target.value }))}
-                        placeholder="Vi använder cookies"
+                        placeholder="We use cookies"
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label>Beskrivning</Label>
+                      <Label>Description</Label>
                       <Textarea
                         value={cookieData.description}
                         onChange={(e) => setCookieData(prev => ({ ...prev, description: e.target.value }))}
-                        placeholder="Beskriv hur ni använder cookies..."
+                        placeholder="Describe how you use cookies..."
                         rows={3}
                       />
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label>Länktext (integritetspolicy)</Label>
+                        <Label>Link text (privacy policy)</Label>
                         <Input
                           value={cookieData.policyLinkText}
                           onChange={(e) => setCookieData(prev => ({ ...prev, policyLinkText: e.target.value }))}
-                          placeholder="Läs mer om vår integritetspolicy"
+                          placeholder="Read more about our privacy policy"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>Länk-URL</Label>
+                        <Label>Link URL</Label>
                         <Input
                           value={cookieData.policyLinkUrl}
                           onChange={(e) => setCookieData(prev => ({ ...prev, policyLinkUrl: e.target.value }))}
-                          placeholder="/integritetspolicy"
+                          placeholder="/privacy-policy"
                         />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label>Acceptera-knapp</Label>
+                        <Label>Accept button</Label>
                         <Input
                           value={cookieData.acceptButtonText}
                           onChange={(e) => setCookieData(prev => ({ ...prev, acceptButtonText: e.target.value }))}
-                          placeholder="Acceptera alla"
+                          placeholder="Accept all"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>Avvisa-knapp</Label>
+                        <Label>Reject button</Label>
                         <Input
                           value={cookieData.rejectButtonText}
                           onChange={(e) => setCookieData(prev => ({ ...prev, rejectButtonText: e.target.value }))}
-                          placeholder="Endast nödvändiga"
+                          placeholder="Essential only"
                         />
                       </div>
                     </div>
@@ -925,25 +925,25 @@ export default function SiteSettingsPage() {
             {cookieData.enabled && (
               <Card>
                 <CardHeader>
-                  <CardTitle className="font-serif text-base">Förhandsvisning</CardTitle>
+                  <CardTitle className="font-serif text-base">Preview</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="p-4 rounded-lg border bg-card">
                     <div className="space-y-2">
-                      <h3 className="font-serif font-semibold">{cookieData.title || 'Vi använder cookies'}</h3>
+                      <h3 className="font-serif font-semibold">{cookieData.title || 'We use cookies'}</h3>
                       <p className="text-sm text-muted-foreground">
-                        {cookieData.description || 'Beskrivning av hur cookies används...'}
+                        {cookieData.description || 'Description of how cookies are used...'}
                       </p>
                       <a href="#" className="text-sm text-primary hover:underline inline-block">
-                        {cookieData.policyLinkText || 'Läs mer'}
+                        {cookieData.policyLinkText || 'Read more'}
                       </a>
                     </div>
                     <div className="flex gap-2 mt-4">
                       <Button variant="outline" size="sm">
-                        {cookieData.rejectButtonText || 'Endast nödvändiga'}
+                        {cookieData.rejectButtonText || 'Essential only'}
                       </Button>
                       <Button size="sm">
-                        {cookieData.acceptButtonText || 'Acceptera alla'}
+                        {cookieData.acceptButtonText || 'Accept all'}
                       </Button>
                     </div>
                   </div>
@@ -958,14 +958,14 @@ export default function SiteSettingsPage() {
             <div className="grid gap-6 md:grid-cols-2">
               <Card>
                 <CardHeader>
-                  <CardTitle className="font-serif">Bildoptimering</CardTitle>
-                  <CardDescription>Inställningar för bildladdning och caching</CardDescription>
+                  <CardTitle className="font-serif">Image Optimization</CardTitle>
+                  <CardDescription>Settings for image loading and caching</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <Label>Lazy loading för bilder</Label>
-                      <p className="text-xs text-muted-foreground">Ladda bilder först när de syns</p>
+                      <Label>Lazy loading for images</Label>
+                      <p className="text-xs text-muted-foreground">Load images only when visible</p>
                     </div>
                     <Switch
                       checked={performanceData.lazyLoadImages}
@@ -973,28 +973,28 @@ export default function SiteSettingsPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="imageCacheMaxAge">Bildcache (sekunder)</Label>
+                    <Label htmlFor="imageCacheMaxAge">Image cache (seconds)</Label>
                     <Input
                       id="imageCacheMaxAge"
                       type="number"
                       value={performanceData.imageCacheMaxAge}
                       onChange={(e) => setPerformanceData(prev => ({ ...prev, imageCacheMaxAge: parseInt(e.target.value) || 0 }))}
                     />
-                    <p className="text-xs text-muted-foreground">31536000 = 1 år</p>
+                    <p className="text-xs text-muted-foreground">31536000 = 1 year</p>
                   </div>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="font-serif">Laddningsoptimering</CardTitle>
-                  <CardDescription>Snabbare sidladdning</CardDescription>
+                  <CardTitle className="font-serif">Loading Optimization</CardTitle>
+                  <CardDescription>Faster page loading</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <Label>Prefetch länkar</Label>
-                      <p className="text-xs text-muted-foreground">Förladda länkar vid hover</p>
+                      <Label>Prefetch links</Label>
+                      <p className="text-xs text-muted-foreground">Preload links on hover</p>
                     </div>
                     <Switch
                       checked={performanceData.prefetchLinks}
@@ -1003,8 +1003,8 @@ export default function SiteSettingsPage() {
                   </div>
                   <div className="flex items-center justify-between">
                     <div>
-                      <Label>Cache statiska resurser</Label>
-                      <p className="text-xs text-muted-foreground">Aktivera webbläsarcache</p>
+                      <Label>Cache static assets</Label>
+                      <p className="text-xs text-muted-foreground">Enable browser caching</p>
                     </div>
                     <Switch
                       checked={performanceData.cacheStaticAssets}
@@ -1016,15 +1016,15 @@ export default function SiteSettingsPage() {
 
               <Card className="md:col-span-2">
                 <CardHeader>
-                  <CardTitle className="font-serif">Edge-caching</CardTitle>
-                  <CardDescription>Cacha publicerade sidor för snabbare laddning (rekommenderas endast för produktion)</CardDescription>
+                  <CardTitle className="font-serif">Edge Caching</CardTitle>
+                  <CardDescription>Cache published pages for faster loading (recommended for production only)</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/30">
                     <div>
-                      <Label>Aktivera edge-caching</Label>
+                      <Label>Enable edge caching</Label>
                       <p className="text-xs text-muted-foreground">
-                        Publicerade sidor cachas för snabbare leverans. Inaktivera under utveckling.
+                        Published pages are cached for faster delivery. Disable during development.
                       </p>
                     </div>
                     <Switch
@@ -1035,7 +1035,7 @@ export default function SiteSettingsPage() {
                   
                   {performanceData.enableEdgeCaching && (
                     <div className="space-y-2 pt-4 border-t">
-                      <Label htmlFor="edgeCacheTtl">Cache-tid (minuter)</Label>
+                      <Label htmlFor="edgeCacheTtl">Cache duration (minutes)</Label>
                       <Input
                         id="edgeCacheTtl"
                         type="number"
@@ -1048,7 +1048,7 @@ export default function SiteSettingsPage() {
                         }))}
                       />
                       <p className="text-xs text-muted-foreground">
-                        Hur länge sidor cachas innan de hämtas från databasen igen (1-60 minuter)
+                        How long pages are cached before fetching from the database again (1-60 minutes)
                       </p>
                     </div>
                   )}
@@ -1057,8 +1057,8 @@ export default function SiteSettingsPage() {
                     <Alert>
                       <Info className="h-4 w-4" />
                       <AlertDescription>
-                        Edge-caching är inaktiverad. Alla sidvisningar hämtar data direkt från databasen.
-                        Aktivera för produktion för att minska latens med upp till 90%.
+                        Edge caching is disabled. All page views fetch data directly from the database.
+                        Enable for production to reduce latency by up to 90%.
                       </AlertDescription>
                     </Alert>
                   )}
@@ -1067,14 +1067,14 @@ export default function SiteSettingsPage() {
 
               <Card className="md:col-span-2">
                 <CardHeader>
-                  <CardTitle className="font-serif">Avancerat</CardTitle>
-                  <CardDescription>Avancerade prestandainställningar</CardDescription>
+                  <CardTitle className="font-serif">Advanced</CardTitle>
+                  <CardDescription>Advanced performance settings</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <Label>Service Worker</Label>
-                      <p className="text-xs text-muted-foreground">Möjliggör offline-funktionalitet (experimentellt)</p>
+                      <p className="text-xs text-muted-foreground">Enables offline functionality (experimental)</p>
                     </div>
                     <Switch
                       checked={performanceData.enableServiceWorker}
@@ -1092,8 +1092,8 @@ export default function SiteSettingsPage() {
             {/* Layout Section */}
             <Card>
               <CardHeader>
-                <CardTitle className="font-serif">Layout & ordning</CardTitle>
-                <CardDescription>Dra för att ändra ordning, växla för att visa/dölja</CardDescription>
+                <CardTitle className="font-serif">Layout & Order</CardTitle>
+                <CardDescription>Drag to change order, toggle to show/hide</CardDescription>
               </CardHeader>
               <CardContent>
                 <DndContext
@@ -1143,45 +1143,45 @@ export default function SiteSettingsPage() {
             <div className="grid gap-6 md:grid-cols-2">
               <Card>
                 <CardHeader>
-                  <CardTitle className="font-serif">Kontaktuppgifter</CardTitle>
-                  <CardDescription>Telefon, e-post och adress</CardDescription>
+                  <CardTitle className="font-serif">Contact Information</CardTitle>
+                  <CardDescription>Phone, email and address</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Telefonnummer</Label>
+                <div className="space-y-2">
+                    <Label htmlFor="phone">Phone number</Label>
                     <Input
                       id="phone"
                       value={footerData.phone}
                       onChange={(e) => setFooterData(prev => ({ ...prev, phone: e.target.value }))}
-                      placeholder="08-688 40 00"
+                      placeholder="+1 555-123-4567"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="email">E-postadress</Label>
+                    <Label htmlFor="email">Email address</Label>
                     <Input
                       id="email"
                       type="email"
                       value={footerData.email}
                       onChange={(e) => setFooterData(prev => ({ ...prev, email: e.target.value }))}
-                      placeholder="info@sophiahemmet.se"
+                      placeholder="info@example.com"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="address">Gatuadress</Label>
+                    <Label htmlFor="address">Street address</Label>
                     <Input
                       id="address"
                       value={footerData.address}
                       onChange={(e) => setFooterData(prev => ({ ...prev, address: e.target.value }))}
-                      placeholder="Valhallavägen 91"
+                      placeholder="123 Main Street"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="postalCode">Postnummer och ort</Label>
+                    <Label htmlFor="postalCode">Postal code and city</Label>
                     <Input
                       id="postalCode"
                       value={footerData.postalCode}
                       onChange={(e) => setFooterData(prev => ({ ...prev, postalCode: e.target.value }))}
-                      placeholder="114 28 Stockholm"
+                      placeholder="10001 New York"
                     />
                   </div>
                 </CardContent>
@@ -1189,26 +1189,26 @@ export default function SiteSettingsPage() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="font-serif">Öppettider</CardTitle>
-                  <CardDescription>Tider som visas i footern</CardDescription>
+                  <CardTitle className="font-serif">Opening Hours</CardTitle>
+                  <CardDescription>Hours displayed in the footer</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="weekdayHours">Vardagar (mån–fre)</Label>
+                    <Label htmlFor="weekdayHours">Weekdays (Mon–Fri)</Label>
                     <Input
                       id="weekdayHours"
                       value={footerData.weekdayHours}
                       onChange={(e) => setFooterData(prev => ({ ...prev, weekdayHours: e.target.value }))}
-                      placeholder="08:00–17:00"
+                      placeholder="8:00 AM – 5:00 PM"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="weekendHours">Helger (lör–sön)</Label>
+                    <Label htmlFor="weekendHours">Weekends (Sat–Sun)</Label>
                     <Input
                       id="weekendHours"
                       value={footerData.weekendHours}
                       onChange={(e) => setFooterData(prev => ({ ...prev, weekendHours: e.target.value }))}
-                      placeholder="Stängt"
+                      placeholder="Closed"
                     />
                   </div>
                 </CardContent>
@@ -1218,9 +1218,9 @@ export default function SiteSettingsPage() {
                 <CardHeader>
                   <CardTitle className="font-serif flex items-center gap-2">
                     <Scale className="h-4 w-4" />
-                    Juridiska länkar
+                    Legal Links
                   </CardTitle>
-                  <CardDescription>Länkar som visas längst ner i footern (integritetspolicy, tillgänglighet etc.)</CardDescription>
+                  <CardDescription>Links displayed at the bottom of the footer (privacy policy, accessibility, etc.)</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {(footerData.legalLinks || []).map((link, index) => (
@@ -1241,7 +1241,7 @@ export default function SiteSettingsPage() {
                             newLinks[index] = { ...link, label: e.target.value };
                             setFooterData(prev => ({ ...prev, legalLinks: newLinks }));
                           }}
-                          placeholder="Länktext"
+                          placeholder="Link text"
                         />
                         <Input
                           value={link.url}
@@ -1250,7 +1250,7 @@ export default function SiteSettingsPage() {
                             newLinks[index] = { ...link, url: e.target.value };
                             setFooterData(prev => ({ ...prev, legalLinks: newLinks }));
                           }}
-                          placeholder="/integritetspolicy"
+                          placeholder="/privacy-policy"
                         />
                       </div>
                       <Button
@@ -1279,15 +1279,15 @@ export default function SiteSettingsPage() {
                     }}
                   >
                     <Plus className="h-4 w-4 mr-2" />
-                    Lägg till länk
+                    Add link
                   </Button>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="font-serif">Sociala medier</CardTitle>
-                  <CardDescription>Länkar till sociala medier-profiler</CardDescription>
+                  <CardTitle className="font-serif">Social Media</CardTitle>
+                  <CardDescription>Links to social media profiles</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid gap-4 md:grid-cols-2">
