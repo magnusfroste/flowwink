@@ -106,6 +106,7 @@ export interface HeroBlockData {
   heightMode?: 'auto' | 'viewport' | '80vh' | '60vh';
   contentAlignment?: 'top' | 'center' | 'bottom';
   overlayOpacity?: number;
+  parallaxEffect?: boolean;
   // Buttons
   primaryButton?: { text: string; url: string };
   secondaryButton?: { text: string; url: string };
