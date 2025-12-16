@@ -1,5 +1,5 @@
 import { ContentBlock, PageMeta } from '@/types/cms';
-import { BrandingSettings, ChatSettings } from '@/hooks/useSiteSettings';
+import { BrandingSettings, ChatSettings, FooterSettings } from '@/hooks/useSiteSettings';
 
 // Page definition within a template
 export interface TemplatePage {
@@ -26,6 +26,7 @@ export interface StarterTemplate {
   // Site-wide settings
   branding: Partial<BrandingSettings>;
   chatSettings: Partial<ChatSettings>;
+  footerSettings: Partial<FooterSettings>;
   
   // General settings
   siteSettings: {
@@ -1039,6 +1040,16 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
       welcomeMessage: 'Hi! How can we help you today?',
       systemPrompt: 'You are a helpful assistant for a SaaS startup. Be friendly, concise, and help users understand the product.',
     },
+    footerSettings: {
+      email: 'hello@launchpad.io',
+      phone: '+46 8 123 456 78',
+      address: 'Birger Jarlsgatan 57',
+      postalCode: '113 56 Stockholm',
+      weekdayHours: 'Mon-Fri 9-18',
+      weekendHours: 'Closed',
+      linkedin: 'https://linkedin.com/company/launchpad',
+      twitter: 'https://twitter.com/launchpad',
+    },
     siteSettings: {
       homepageSlug: 'hem',
     },
@@ -1065,6 +1076,15 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
       blockEnabled: true,
       welcomeMessage: 'Welcome to TrustCorp. How can I assist you today?',
       systemPrompt: 'You are a professional enterprise assistant. Be formal, knowledgeable, and emphasize data security and compliance.',
+    },
+    footerSettings: {
+      email: 'contact@trustcorp.com',
+      phone: '+46 8 555 000 00',
+      address: 'Stureplan 4',
+      postalCode: '114 35 Stockholm',
+      weekdayHours: 'Mon-Fri 8-17',
+      weekendHours: 'Closed',
+      linkedin: 'https://linkedin.com/company/trustcorp',
     },
     siteSettings: {
       homepageSlug: 'hem',
@@ -1093,6 +1113,18 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
       welcomeMessage: 'Hello! I\'m your private health assistant. How can I help?',
       systemPrompt: 'You are a HIPAA-compliant healthcare assistant. Be compassionate, informative, and always emphasize patient privacy. Never provide medical diagnoses.',
       aiProvider: 'local',
+    },
+    footerSettings: {
+      email: 'info@securehealth.se',
+      phone: '+46 8 700 00 00',
+      address: 'Valhallavägen 91',
+      postalCode: '114 28 Stockholm',
+      weekdayHours: 'Mon-Fri 8-17',
+      weekendHours: 'Emergency line 24/7',
+      legalLinks: [
+        { id: 'privacy', label: 'Integritetspolicy', url: '/integritetspolicy', enabled: true },
+        { id: 'accessibility', label: 'Tillgänglighet', url: '/tillganglighet', enabled: true },
+      ],
     },
     siteSettings: {
       homepageSlug: 'hem',

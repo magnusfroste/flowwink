@@ -12,7 +12,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { StarterTemplateSelector } from '@/components/admin/StarterTemplateSelector';
 import { StarterTemplate } from '@/data/starter-templates';
 import { useCreatePage, usePages, useDeletePage } from '@/hooks/usePages';
-import { useUpdateBrandingSettings, useUpdateChatSettings, useUpdateGeneralSettings } from '@/hooks/useSiteSettings';
+import { useUpdateBrandingSettings, useUpdateChatSettings, useUpdateGeneralSettings, useUpdateFooterSettings } from '@/hooks/useSiteSettings';
 import { useToast } from '@/hooks/use-toast';
 
 type CreationStep = 'select' | 'creating' | 'done';
@@ -37,6 +37,7 @@ export default function NewSitePage() {
   const updateBranding = useUpdateBrandingSettings();
   const updateChat = useUpdateChatSettings();
   const updateGeneral = useUpdateGeneralSettings();
+  const updateFooter = useUpdateFooterSettings();
   const { toast } = useToast();
 
   const handleTemplateSelect = (template: StarterTemplate) => {
@@ -94,7 +95,11 @@ export default function NewSitePage() {
       setProgress({ currentPage: selectedTemplate.pages.length, totalPages: selectedTemplate.pages.length, currentStep: 'Configuring AI chat...' });
       await updateChat.mutateAsync(selectedTemplate.chatSettings as any);
 
-      // Step 4: Set homepage
+      // Step 4: Apply footer settings
+      setProgress({ currentPage: selectedTemplate.pages.length, totalPages: selectedTemplate.pages.length, currentStep: 'Applying footer...' });
+      await updateFooter.mutateAsync(selectedTemplate.footerSettings as any);
+
+      // Step 5: Set homepage
       setProgress({ currentPage: selectedTemplate.pages.length, totalPages: selectedTemplate.pages.length, currentStep: 'Finalizing...' });
       await updateGeneral.mutateAsync({ homepageSlug: selectedTemplate.siteSettings.homepageSlug });
 
