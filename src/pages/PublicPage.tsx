@@ -53,42 +53,37 @@ export default function PublicPage() {
   const { data: page, isLoading, error } = useQuery({
     queryKey: ['public-page', pageSlug],
     queryFn: async () => {
-      // Use edge function for fetching (handles caching internally)
-      const { data, error } = await supabase.functions.invoke('get-page', {
-        body: null,
-        method: 'GET',
-      }).catch(() => ({ data: null, error: { message: 'Function not available' } }));
-
-      // If edge function fails or returns error, fallback to direct DB query
-      if (error || data?.error) {
-        console.log('[PublicPage] Edge function unavailable, using direct DB query');
-        const { data: dbData, error: dbError } = await supabase
-          .from('pages')
-          .select('*')
-          .eq('slug', pageSlug)
-          .eq('status', 'published')
-          .maybeSingle();
-
-        if (dbError) throw dbError;
-        if (!dbData) return null;
-
-        return parseContent(dbData);
-      }
-
-      // Edge function returned successfully - need to call with slug param
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-page?slug=${encodeURIComponent(pageSlug)}`
-      );
-      
-      if (!response.ok) {
+      try {
+        // Use edge function for fetching (handles caching internally)
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-page?slug=${encodeURIComponent(pageSlug)}`
+        );
+        
+        if (response.ok) {
+          const pageData = await response.json();
+          if (!pageData.error) {
+            return parseContent(pageData);
+          }
+        }
+        
+        // If edge function fails (404 is valid), check status
         if (response.status === 404) return null;
-        throw new Error('Failed to fetch page');
+      } catch {
+        console.log('[PublicPage] Edge function unavailable, using direct DB query');
       }
 
-      const pageData = await response.json();
-      if (pageData.error) return null;
-      
-      return parseContent(pageData);
+      // Fallback to direct DB query
+      const { data: dbData, error: dbError } = await supabase
+        .from('pages')
+        .select('*')
+        .eq('slug', pageSlug)
+        .eq('status', 'published')
+        .maybeSingle();
+
+      if (dbError) throw dbError;
+      if (!dbData) return null;
+
+      return parseContent(dbData);
     },
     staleTime: 5 * 60 * 1000, // 5 min client-side cache
   });
