@@ -233,6 +233,20 @@ export function HeroBlockEditor({ data, onChange, isEditing }: HeroBlockEditorPr
               />
             </div>
           )}
+
+          {/* Parallax Effect - only for images */}
+          {backgroundType === 'image' && (
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-xs text-muted-foreground">Parallax Effect</Label>
+                <p className="text-xs text-muted-foreground/70">Background moves slower than content</p>
+              </div>
+              <Switch
+                checked={localData.parallaxEffect || false}
+                onCheckedChange={(checked) => handleChange({ parallaxEffect: checked })}
+              />
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-4">

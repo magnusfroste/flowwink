@@ -54,7 +54,10 @@ export function HeroBlock({ data }: HeroBlockProps) {
       {/* Image Background */}
       {hasImageBackground && (
         <div 
-          className="absolute inset-0 bg-cover bg-center"
+          className={cn(
+            "absolute inset-0 bg-cover bg-center",
+            data.parallaxEffect && "bg-fixed"
+          )}
           style={{ backgroundImage: `url(${data.backgroundImage})` }}
         />
       )}
