@@ -40,19 +40,19 @@ const VARIANT_CONFIG = {
     iconClass: 'text-info',
   },
   success: {
-    label: 'Framgång',
+    label: 'Success',
     icon: CheckCircle,
     className: 'bg-success/10 border-success/30',
     iconClass: 'text-success',
   },
   warning: {
-    label: 'Varning',
+    label: 'Warning',
     icon: AlertTriangle,
     className: 'bg-warning/10 border-warning/30',
     iconClass: 'text-warning',
   },
   highlight: {
-    label: 'Framhävd',
+    label: 'Highlight',
     icon: Sparkles,
     className: 'bg-primary/5 border-primary/20',
     iconClass: 'text-primary',
@@ -78,7 +78,7 @@ export function InfoBoxBlockEditor({ data, isEditing, onChange }: InfoBoxBlockEd
     extensions: [
       StarterKit,
       Link.configure({ openOnClick: false }),
-      Placeholder.configure({ placeholder: 'Skriv ditt meddelande här...' }),
+      Placeholder.configure({ placeholder: 'Write your message here...' }),
     ],
     content: getEditorContent(data.content),
     editable: isEditing,
@@ -119,16 +119,16 @@ export function InfoBoxBlockEditor({ data, isEditing, onChange }: InfoBoxBlockEd
             </Select>
           </div>
           <div>
-            <Label>Ikon (valfritt)</Label>
+            <Label>Icon (optional)</Label>
             <Select 
               value={data.icon || ''} 
               onValueChange={(v) => onChange({ ...data, icon: v || undefined })}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Standardikon" />
+                <SelectValue placeholder="Default icon" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Standardikon</SelectItem>
+                <SelectItem value="">Default icon</SelectItem>
                 {ICON_OPTIONS.map((icon) => {
                   const LucideIcon = icons[icon as keyof typeof icons];
                   return (
@@ -148,16 +148,16 @@ export function InfoBoxBlockEditor({ data, isEditing, onChange }: InfoBoxBlockEd
         </div>
 
         <div>
-          <Label>Rubrik</Label>
+          <Label>Title</Label>
           <Input
             value={data.title || ''}
             onChange={(e) => onChange({ ...data, title: e.target.value })}
-            placeholder="Viktig information"
+            placeholder="Important information"
           />
         </div>
 
         <div className="space-y-2">
-          <Label>Innehåll</Label>
+          <Label>Content</Label>
           {editor && (
             <>
               <div className="flex gap-1 border-b pb-2 mb-2">
@@ -206,10 +206,10 @@ export function InfoBoxBlockEditor({ data, isEditing, onChange }: InfoBoxBlockEd
           <div className="flex gap-3">
             {renderIcon()}
             <div>
-              <h4 className="font-semibold">{data.title || 'Rubrik'}</h4>
+              <h4 className="font-semibold">{data.title || 'Title'}</h4>
               <div 
                 className="text-sm mt-1 opacity-90 prose prose-sm max-w-none"
-                dangerouslySetInnerHTML={{ __html: renderContent(data.content) || 'Innehåll...' }}
+                dangerouslySetInnerHTML={{ __html: renderContent(data.content) || 'Content...' }}
               />
             </div>
           </div>
@@ -224,10 +224,10 @@ export function InfoBoxBlockEditor({ data, isEditing, onChange }: InfoBoxBlockEd
       <div className="flex gap-4">
         {renderIcon()}
         <div>
-          <h4 className="font-semibold text-lg">{data.title || 'Viktig information'}</h4>
+        <h4 className="font-semibold text-lg">{data.title || 'Important information'}</h4>
           <div 
             className="mt-2 opacity-90 prose prose-sm max-w-none"
-            dangerouslySetInnerHTML={{ __html: renderContent(data.content) || 'Inget innehåll' }}
+            dangerouslySetInnerHTML={{ __html: renderContent(data.content) || 'No content' }}
           />
         </div>
       </div>

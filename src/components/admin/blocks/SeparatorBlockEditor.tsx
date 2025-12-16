@@ -69,7 +69,7 @@ export function SeparatorBlockEditor({ data, onChange, isEditing }: SeparatorBlo
     <div className="space-y-4 p-4">
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label>Stil</Label>
+          <Label>Style</Label>
           <Select
             value={data.style || 'line'}
             onValueChange={(value: 'line' | 'dots' | 'ornament' | 'space') => 
@@ -83,13 +83,13 @@ export function SeparatorBlockEditor({ data, onChange, isEditing }: SeparatorBlo
               <SelectItem value="line">
                 <div className="flex items-center gap-2">
                   {STYLE_ICONS.line}
-                  <span>Linje</span>
+                  <span>Line</span>
                 </div>
               </SelectItem>
               <SelectItem value="dots">
                 <div className="flex items-center gap-2">
                   {STYLE_ICONS.dots}
-                  <span>Prickar</span>
+                  <span>Dots</span>
                 </div>
               </SelectItem>
               <SelectItem value="ornament">
@@ -101,7 +101,7 @@ export function SeparatorBlockEditor({ data, onChange, isEditing }: SeparatorBlo
               <SelectItem value="space">
                 <div className="flex items-center gap-2">
                   {STYLE_ICONS.space}
-                  <span>Mellanrum</span>
+                  <span>Space</span>
                 </div>
               </SelectItem>
             </SelectContent>
@@ -109,7 +109,7 @@ export function SeparatorBlockEditor({ data, onChange, isEditing }: SeparatorBlo
         </div>
 
         <div className="space-y-2">
-          <Label>Storlek</Label>
+          <Label>Size</Label>
           <Select
             value={data.spacing || 'md'}
             onValueChange={(value: 'sm' | 'md' | 'lg') => 
@@ -120,9 +120,9 @@ export function SeparatorBlockEditor({ data, onChange, isEditing }: SeparatorBlo
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="sm">Liten</SelectItem>
-              <SelectItem value="md">Mellan</SelectItem>
-              <SelectItem value="lg">Stor</SelectItem>
+              <SelectItem value="sm">Small</SelectItem>
+              <SelectItem value="md">Medium</SelectItem>
+              <SelectItem value="lg">Large</SelectItem>
             </SelectContent>
           </Select>
         </div>

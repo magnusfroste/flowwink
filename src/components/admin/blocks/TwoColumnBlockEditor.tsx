@@ -35,7 +35,7 @@ export function TwoColumnBlockEditor({ data, isEditing, onChange }: TwoColumnBlo
     extensions: [
       StarterKit,
       Link.configure({ openOnClick: false }),
-      Placeholder.configure({ placeholder: 'Skriv ditt innehåll här...' }),
+      Placeholder.configure({ placeholder: 'Write your content here...' }),
     ],
     content: getEditorContent(data.content),
     editable: isEditing,
@@ -51,7 +51,7 @@ export function TwoColumnBlockEditor({ data, isEditing, onChange }: TwoColumnBlo
 
   // Helper to render content as HTML for preview
   const renderContent = (): string => {
-    if (!data.content) return '<p>Inget innehåll</p>';
+    if (!data.content) return '<p>No content</p>';
     if (isTiptapDocument(data.content)) {
       return generateHTML(data.content, [StarterKit, Link]);
     }
@@ -62,10 +62,10 @@ export function TwoColumnBlockEditor({ data, isEditing, onChange }: TwoColumnBlo
     return (
       <div className="space-y-4 p-4">
         <div className="flex items-center justify-between">
-          <Label>Bildposition</Label>
+          <Label>Image position</Label>
           <Button variant="outline" size="sm" onClick={togglePosition}>
             <ArrowLeftRight className="h-4 w-4 mr-2" />
-            {data.imagePosition === 'left' ? 'Bild vänster' : 'Bild höger'}
+            {data.imagePosition === 'left' ? 'Image left' : 'Image right'}
           </Button>
         </div>
 
@@ -74,20 +74,20 @@ export function TwoColumnBlockEditor({ data, isEditing, onChange }: TwoColumnBlo
             <ImageUploader
               value={data.imageSrc || ''}
               onChange={(url) => onChange({ ...data, imageSrc: url })}
-              label="Bild"
+              label="Image"
             />
             <div>
-              <Label>Alt-text</Label>
+              <Label>Alt text</Label>
               <Input
                 value={data.imageAlt || ''}
                 onChange={(e) => onChange({ ...data, imageAlt: e.target.value })}
-                placeholder="Beskrivning av bilden"
+                placeholder="Description of the image"
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label>Textinnehåll</Label>
+            <Label>Text content</Label>
             {editor && (
               <>
                 <div className="flex gap-1 border-b pb-2 mb-2">
@@ -150,7 +150,7 @@ export function TwoColumnBlockEditor({ data, isEditing, onChange }: TwoColumnBlo
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-            Ingen bild vald
+            No image selected
           </div>
         )}
       </div>

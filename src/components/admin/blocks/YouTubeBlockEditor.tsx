@@ -54,7 +54,7 @@ export function YouTubeBlockEditor({ data, onChange, isEditing }: YouTubeBlockEd
           </div>
         ) : (
           <div className="aspect-video bg-muted rounded-lg flex items-center justify-center text-muted-foreground">
-            Ingen video-URL angiven
+            No video URL provided
           </div>
         )}
         {data.title && (
@@ -75,27 +75,27 @@ export function YouTubeBlockEditor({ data, onChange, isEditing }: YouTubeBlockEd
           placeholder="https://www.youtube.com/watch?v=..."
         />
         <p className="text-xs text-muted-foreground">
-          Stödjer youtube.com/watch, youtu.be och embed-länkar
+          Supports youtube.com/watch, youtu.be and embed links
         </p>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="youtube-title">Titel (valfritt)</Label>
+        <Label htmlFor="youtube-title">Title (optional)</Label>
         <Input
           id="youtube-title"
           value={data.title || ''}
           onChange={(e) => onChange({ ...data, title: e.target.value })}
-          placeholder="Videotitel"
+          placeholder="Video title"
         />
       </div>
 
       <div className="space-y-3 pt-2 border-t">
-        <Label className="text-sm font-medium">Videoalternativ</Label>
+        <Label className="text-sm font-medium">Video options</Label>
         
         <div className="flex items-center justify-between">
           <div>
             <Label htmlFor="autoplay" className="text-sm">Autoplay</Label>
-            <p className="text-xs text-muted-foreground">Starta videon automatiskt</p>
+            <p className="text-xs text-muted-foreground">Start the video automatically</p>
           </div>
           <Switch
             id="autoplay"
@@ -107,7 +107,7 @@ export function YouTubeBlockEditor({ data, onChange, isEditing }: YouTubeBlockEd
         <div className="flex items-center justify-between">
           <div>
             <Label htmlFor="loop" className="text-sm">Loop</Label>
-            <p className="text-xs text-muted-foreground">Upprepa videon</p>
+            <p className="text-xs text-muted-foreground">Repeat the video</p>
           </div>
           <Switch
             id="loop"
@@ -118,8 +118,8 @@ export function YouTubeBlockEditor({ data, onChange, isEditing }: YouTubeBlockEd
 
         <div className="flex items-center justify-between">
           <div>
-            <Label htmlFor="mute" className="text-sm">Ljud av</Label>
-            <p className="text-xs text-muted-foreground">Starta utan ljud (krävs för autoplay)</p>
+            <Label htmlFor="mute" className="text-sm">Mute</Label>
+            <p className="text-xs text-muted-foreground">Start without sound (required for autoplay)</p>
           </div>
           <Switch
             id="mute"
@@ -130,8 +130,8 @@ export function YouTubeBlockEditor({ data, onChange, isEditing }: YouTubeBlockEd
 
         <div className="flex items-center justify-between">
           <div>
-            <Label htmlFor="controls" className="text-sm">Visa kontroller</Label>
-            <p className="text-xs text-muted-foreground">Visa play/paus-knappar</p>
+            <Label htmlFor="controls" className="text-sm">Show controls</Label>
+            <p className="text-xs text-muted-foreground">Show play/pause buttons</p>
           </div>
           <Switch
             id="controls"
@@ -143,7 +143,7 @@ export function YouTubeBlockEditor({ data, onChange, isEditing }: YouTubeBlockEd
 
       {videoId && (
         <div className="space-y-2 pt-2 border-t">
-          <Label>Förhandsvisning</Label>
+          <Label>Preview</Label>
           <div className="aspect-video bg-muted rounded-lg overflow-hidden">
             <iframe
               src={buildEmbedUrl(videoId, data)}

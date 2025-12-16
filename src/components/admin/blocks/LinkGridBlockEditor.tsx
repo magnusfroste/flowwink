@@ -73,7 +73,7 @@ function SortableLinkItem({ id, index, link, onRemove, onLinkChange }: SortableL
           >
             <GripVertical className="h-4 w-4" />
           </button>
-          <span className="text-sm font-medium">Länk {index + 1}</span>
+          <span className="text-sm font-medium">Link {index + 1}</span>
         </div>
         <Button
           variant="ghost"
@@ -87,28 +87,28 @@ function SortableLinkItem({ id, index, link, onRemove, onLinkChange }: SortableL
       
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <Label>Ikon</Label>
+          <Label>Icon</Label>
           <IconPicker
             value={link.icon}
             onChange={(v) => onLinkChange('icon', v)}
           />
         </div>
         <div>
-          <Label>Rubrik</Label>
+          <Label>Title</Label>
           <Input
             value={link.title}
             onChange={(e) => onLinkChange('title', e.target.value)}
-            placeholder="Hitta hit"
+            placeholder="Find us"
           />
         </div>
       </div>
       
       <div>
-        <Label>Beskrivning (valfritt)</Label>
+        <Label>Description (optional)</Label>
         <Input
           value={link.description || ''}
           onChange={(e) => onLinkChange('description', e.target.value)}
-          placeholder="Kort beskrivning..."
+          placeholder="Short description..."
         />
       </div>
       
@@ -117,7 +117,7 @@ function SortableLinkItem({ id, index, link, onRemove, onLinkChange }: SortableL
         <Input
           value={link.url}
           onChange={(e) => onLinkChange('url', e.target.value)}
-          placeholder="/kontakt"
+          placeholder="/contact"
         />
       </div>
     </div>
@@ -188,15 +188,15 @@ export function LinkGridBlockEditor({ data, isEditing, onChange }: LinkGridBlock
       <div className="space-y-4 p-4">
         <div className="flex items-center gap-4">
           <div className="flex-1">
-            <Label>Antal kolumner</Label>
+            <Label>Number of columns</Label>
             <Select value={columns.toString()} onValueChange={handleColumnsChange}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="2">2 kolumner</SelectItem>
-                <SelectItem value="3">3 kolumner</SelectItem>
-                <SelectItem value="4">4 kolumner</SelectItem>
+                <SelectItem value="2">2 columns</SelectItem>
+                <SelectItem value="3">3 columns</SelectItem>
+                <SelectItem value="4">4 columns</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -225,7 +225,7 @@ export function LinkGridBlockEditor({ data, isEditing, onChange }: LinkGridBlock
 
         <Button variant="outline" onClick={handleAddLink} className="w-full">
           <Plus className="h-4 w-4 mr-2" />
-          Lägg till länk
+          Add link
         </Button>
       </div>
     );
@@ -242,7 +242,7 @@ export function LinkGridBlockEditor({ data, isEditing, onChange }: LinkGridBlock
     <div className={`grid ${gridCols[columns]} gap-4 p-6`}>
       {links.length === 0 ? (
         <div className="col-span-full text-center text-muted-foreground py-8">
-          Inga länkar tillagda
+          No links added
         </div>
       ) : (
         links.map((link, index) => (
@@ -255,7 +255,7 @@ export function LinkGridBlockEditor({ data, isEditing, onChange }: LinkGridBlock
               {renderIcon(link.icon)}
             </div>
             <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
-              {link.title || 'Rubrik'}
+              {link.title || 'Title'}
             </h3>
             {link.description && (
               <p className="text-sm text-muted-foreground mt-1">

@@ -66,7 +66,7 @@ function SortableArticleItem({ id, index, article, onUpdate, onRemove }: Sortabl
           >
             <GripVertical className="h-4 w-4" />
           </button>
-          <span className="text-sm font-medium">Artikel {index + 1}</span>
+          <span className="text-sm font-medium">Article {index + 1}</span>
         </div>
         <Button
           type="button"
@@ -79,24 +79,24 @@ function SortableArticleItem({ id, index, article, onUpdate, onRemove }: Sortabl
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="col-span-2">
-          <Label>Titel</Label>
+          <Label>Title</Label>
           <Input
             value={article.title}
             onChange={(e) => onUpdate(index, 'title', e.target.value)}
-            placeholder="Artikelns titel"
+            placeholder="Article title"
           />
         </div>
         <div className="col-span-2">
-          <Label>Beskrivning</Label>
+          <Label>Description</Label>
           <Textarea
             value={article.excerpt}
             onChange={(e) => onUpdate(index, 'excerpt', e.target.value)}
-            placeholder="Kort beskrivning..."
+            placeholder="Short description..."
             rows={2}
           />
         </div>
         <div>
-          <Label>Länk (URL)</Label>
+          <Label>Link (URL)</Label>
           <Input
             value={article.url}
             onChange={(e) => onUpdate(index, 'url', e.target.value)}
@@ -104,7 +104,7 @@ function SortableArticleItem({ id, index, article, onUpdate, onRemove }: Sortabl
           />
         </div>
         <div>
-          <Label>Bild</Label>
+          <Label>Image</Label>
           <ImageUploader
             value={article.image || ''}
             onChange={(value) => onUpdate(index, 'image', value)}
@@ -165,16 +165,16 @@ export function ArticleGridBlockEditor({ data, onChange, canEdit }: ArticleGridB
                 </div>
               )}
               <div className="p-3">
-                <p className="font-medium">{article.title || 'Ingen titel'}</p>
+                <p className="font-medium">{article.title || 'No title'}</p>
                 <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                  {article.excerpt || 'Ingen beskrivning'}
+                  {article.excerpt || 'No description'}
                 </p>
               </div>
             </div>
           ))}
         </div>
         {data.articles.length === 0 && (
-          <p className="text-muted-foreground text-sm">Inga artiklar tillagda</p>
+          <p className="text-muted-foreground text-sm">No articles added</p>
         )}
       </div>
     );
@@ -186,16 +186,16 @@ export function ArticleGridBlockEditor({ data, onChange, canEdit }: ArticleGridB
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="grid-title">Rubrik (valfritt)</Label>
+          <Label htmlFor="grid-title">Title (optional)</Label>
           <Input
             id="grid-title"
             value={data.title || ''}
             onChange={(e) => onChange({ ...data, title: e.target.value })}
-            placeholder="T.ex. Aktuella artiklar"
+            placeholder="e.g. Latest Articles"
           />
         </div>
         <div>
-          <Label htmlFor="grid-columns">Antal kolumner</Label>
+          <Label htmlFor="grid-columns">Number of columns</Label>
           <Select
             value={data.columns.toString()}
             onValueChange={(value) => onChange({ ...data, columns: parseInt(value) as 2 | 3 | 4 })}
@@ -204,9 +204,9 @@ export function ArticleGridBlockEditor({ data, onChange, canEdit }: ArticleGridB
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="2">2 kolumner</SelectItem>
-              <SelectItem value="3">3 kolumner</SelectItem>
-              <SelectItem value="4">4 kolumner</SelectItem>
+              <SelectItem value="2">2 columns</SelectItem>
+              <SelectItem value="3">3 columns</SelectItem>
+              <SelectItem value="4">4 columns</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -236,7 +236,7 @@ export function ArticleGridBlockEditor({ data, onChange, canEdit }: ArticleGridB
 
       <Button type="button" variant="outline" onClick={addArticle} className="w-full">
         <Plus className="h-4 w-4 mr-2" />
-        Lägg till artikel
+        Add article
       </Button>
     </div>
   );

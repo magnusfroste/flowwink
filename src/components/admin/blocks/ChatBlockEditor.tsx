@@ -14,18 +14,18 @@ export function ChatBlockEditor({ data, onChange }: ChatBlockEditorProps) {
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="chat-title">Rubrik (valfri)</Label>
+        <Label htmlFor="chat-title">Title (optional)</Label>
         <Input
           id="chat-title"
           value={data.title || ''}
           onChange={(e) => onChange({ ...data, title: e.target.value })}
-          placeholder="t.ex. Fråga vår AI-assistent"
+          placeholder="e.g. Ask our AI assistant"
         />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="chat-height">Höjd</Label>
+          <Label htmlFor="chat-height">Height</Label>
           <Select
             value={data.height || 'md'}
             onValueChange={(value: 'sm' | 'md' | 'lg' | 'full') => 
@@ -36,16 +36,16 @@ export function ChatBlockEditor({ data, onChange }: ChatBlockEditorProps) {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="sm">Liten (300px)</SelectItem>
+              <SelectItem value="sm">Small (300px)</SelectItem>
               <SelectItem value="md">Medium (450px)</SelectItem>
-              <SelectItem value="lg">Stor (600px)</SelectItem>
-              <SelectItem value="full">Fullhöjd</SelectItem>
+              <SelectItem value="lg">Large (600px)</SelectItem>
+              <SelectItem value="full">Full height</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="chat-variant">Utseende</Label>
+          <Label htmlFor="chat-variant">Appearance</Label>
           <Select
             value={data.variant || 'embedded'}
             onValueChange={(value: 'embedded' | 'card') => 
@@ -56,8 +56,8 @@ export function ChatBlockEditor({ data, onChange }: ChatBlockEditorProps) {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="embedded">Inbäddad</SelectItem>
-              <SelectItem value="card">Kort med skugga</SelectItem>
+              <SelectItem value="embedded">Embedded</SelectItem>
+              <SelectItem value="card">Card with shadow</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -69,20 +69,20 @@ export function ChatBlockEditor({ data, onChange }: ChatBlockEditorProps) {
           checked={data.showSidebar || false}
           onCheckedChange={(checked) => onChange({ ...data, showSidebar: checked })}
         />
-        <Label htmlFor="chat-sidebar">Visa konversationshistorik</Label>
+        <Label htmlFor="chat-sidebar">Show conversation history</Label>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="chat-initial-prompt">Startmeddelande (valfri)</Label>
+        <Label htmlFor="chat-initial-prompt">Initial message (optional)</Label>
         <Textarea
           id="chat-initial-prompt"
           value={data.initialPrompt || ''}
           onChange={(e) => onChange({ ...data, initialPrompt: e.target.value })}
-          placeholder="En fördefinierad fråga som visas som förslag..."
+          placeholder="A predefined question shown as a suggestion..."
           rows={2}
         />
         <p className="text-xs text-muted-foreground">
-          Om angivet visas detta som ett förslag innan användaren börjar chatta.
+          If provided, this will be shown as a suggestion before the user starts chatting.
         </p>
       </div>
     </div>

@@ -116,14 +116,14 @@ function SortableImage({ image, index, onUpdate, onDelete, isEditing, onOpenMedi
         <Input
           value={image.src}
           onChange={(e) => onUpdate(index, { src: e.target.value })}
-          placeholder="Bild-URL"
+          placeholder="Image URL"
           className="flex-1"
         />
         <Button
           variant="outline"
           size="icon"
           onClick={() => onOpenMediaLibrary(index)}
-          title="Välj från bibliotek"
+          title="Choose from library"
         >
           <FolderOpen className="h-4 w-4" />
         </Button>
@@ -132,13 +132,13 @@ function SortableImage({ image, index, onUpdate, onDelete, isEditing, onOpenMedi
       <Input
         value={image.alt}
         onChange={(e) => onUpdate(index, { alt: e.target.value })}
-        placeholder="Alternativtext"
+        placeholder="Alt text"
       />
 
       <Input
         value={image.caption || ''}
         onChange={(e) => onUpdate(index, { caption: e.target.value })}
-        placeholder="Bildtext (valfritt)"
+        placeholder="Caption (optional)"
       />
     </div>
   );
@@ -226,15 +226,15 @@ export function GalleryBlockEditor({ data, onChange, canEdit }: GalleryBlockEdit
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="grid">Rutnät</SelectItem>
-              <SelectItem value="carousel">Karusell</SelectItem>
+              <SelectItem value="grid">Grid</SelectItem>
+              <SelectItem value="carousel">Carousel</SelectItem>
               <SelectItem value="masonry">Masonry</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         <div className="space-y-2">
-          <Label>Kolumner</Label>
+          <Label>Columns</Label>
           <Select
             value={String(data.columns || 3)}
             onValueChange={(value) =>
@@ -245,9 +245,9 @@ export function GalleryBlockEditor({ data, onChange, canEdit }: GalleryBlockEdit
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="2">2 kolumner</SelectItem>
-              <SelectItem value="3">3 kolumner</SelectItem>
-              <SelectItem value="4">4 kolumner</SelectItem>
+              <SelectItem value="2">2 columns</SelectItem>
+              <SelectItem value="3">3 columns</SelectItem>
+              <SelectItem value="4">4 columns</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -280,7 +280,7 @@ export function GalleryBlockEditor({ data, onChange, canEdit }: GalleryBlockEdit
 
       <Button variant="outline" onClick={handleAddImage} className="w-full">
         <Plus className="h-4 w-4 mr-2" />
-        Lägg till bild
+        Add image
       </Button>
 
       <MediaLibraryPicker

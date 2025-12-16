@@ -26,24 +26,24 @@ export function ImageBlockEditor({ data, onChange, isEditing }: ImageBlockEditor
         <ImageUploader
           value={localData.src || ''}
           onChange={(url) => handleChange({ src: url })}
-          label="Bild"
+          label="Image"
         />
         <div className="space-y-2">
-          <Label htmlFor="image-alt">Alt-text (tillgänglighet)</Label>
+          <Label htmlFor="image-alt">Alt text (accessibility)</Label>
           <Input
             id="image-alt"
             value={localData.alt || ''}
             onChange={(e) => handleChange({ alt: e.target.value })}
-            placeholder="Beskrivning av bilden"
+            placeholder="Description of the image"
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="image-caption">Bildtext (valfritt)</Label>
+          <Label htmlFor="image-caption">Caption (optional)</Label>
           <Input
             id="image-caption"
             value={localData.caption || ''}
             onChange={(e) => handleChange({ caption: e.target.value })}
-            placeholder="Bildtext under bilden"
+            placeholder="Caption below the image"
           />
         </div>
       </div>
@@ -55,7 +55,7 @@ export function ImageBlockEditor({ data, onChange, isEditing }: ImageBlockEditor
     return (
       <div className="flex flex-col items-center justify-center h-48 bg-muted/50 rounded-lg border-2 border-dashed border-muted-foreground/30">
         <ImageIcon className="h-12 w-12 text-muted-foreground/50 mb-2" />
-        <p className="text-sm text-muted-foreground">Ingen bild vald</p>
+        <p className="text-sm text-muted-foreground">No image selected</p>
       </div>
     );
   }

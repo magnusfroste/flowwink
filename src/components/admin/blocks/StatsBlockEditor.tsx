@@ -78,7 +78,7 @@ function SortableStat({ stat, index, onUpdate, onDelete }: SortableStatProps) {
         <Input
           value={stat.label}
           onChange={(e) => onUpdate(index, { label: e.target.value })}
-          placeholder="Etikett"
+          placeholder="Label"
         />
         <IconPicker
           value={stat.icon || ''}
@@ -153,16 +153,16 @@ export function StatsBlockEditor({ data, onChange, canEdit }: StatsBlockEditorPr
   return (
     <div className="space-y-4 p-4">
       <div className="space-y-2">
-        <Label>Titel (valfritt)</Label>
+        <Label>Title (optional)</Label>
         <Input
           value={data.title || ''}
           onChange={(e) => onChange({ ...data, title: e.target.value })}
-          placeholder="Statistik"
+          placeholder="Statistics"
         />
       </div>
 
       <div className="space-y-2">
-        <Label>Nyckeltal</Label>
+        <Label>Key metrics</Label>
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
@@ -189,7 +189,7 @@ export function StatsBlockEditor({ data, onChange, canEdit }: StatsBlockEditorPr
 
       <Button variant="outline" onClick={handleAddStat} className="w-full">
         <Plus className="h-4 w-4 mr-2" />
-        Lägg till nyckeltal
+        Add metric
       </Button>
     </div>
   );

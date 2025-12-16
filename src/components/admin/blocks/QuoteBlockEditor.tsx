@@ -25,7 +25,7 @@ export function QuoteBlockEditor({ data, onChange, isEditing }: QuoteBlockEditor
           <Quote className="h-8 w-8 text-primary/40 flex-shrink-0" />
           <div>
             <p className="text-lg italic text-foreground/80">
-              {data.text || 'Skriv ett citat...'}
+              {data.text || 'Write a quote...'}
             </p>
             {data.author && (
               <p className="mt-2 text-sm text-muted-foreground">
@@ -42,37 +42,37 @@ export function QuoteBlockEditor({ data, onChange, isEditing }: QuoteBlockEditor
   return (
     <div className="space-y-4 p-4">
       <div className="space-y-2">
-        <Label>Citat</Label>
+        <Label>Quote</Label>
         <Textarea
           value={data.text || ''}
           onChange={(e) => onChange({ ...data, text: e.target.value })}
-          placeholder="Skriv citatet här..."
+          placeholder="Write the quote here..."
           rows={3}
         />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label>Författare</Label>
+          <Label>Author</Label>
           <Input
             value={data.author || ''}
             onChange={(e) => onChange({ ...data, author: e.target.value })}
-            placeholder="Namn"
+            placeholder="Name"
           />
         </div>
 
         <div className="space-y-2">
-          <Label>Källa</Label>
+          <Label>Source</Label>
           <Input
             value={data.source || ''}
             onChange={(e) => onChange({ ...data, source: e.target.value })}
-            placeholder="Bok, artikel, etc."
+            placeholder="Book, article, etc."
           />
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label>Stil</Label>
+        <Label>Style</Label>
         <Select
           value={data.variant || 'simple'}
           onValueChange={(value: 'simple' | 'styled') => onChange({ ...data, variant: value })}
@@ -81,8 +81,8 @@ export function QuoteBlockEditor({ data, onChange, isEditing }: QuoteBlockEditor
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="simple">Enkel</SelectItem>
-            <SelectItem value="styled">Dekorativ</SelectItem>
+            <SelectItem value="simple">Simple</SelectItem>
+            <SelectItem value="styled">Decorative</SelectItem>
           </SelectContent>
         </Select>
       </div>

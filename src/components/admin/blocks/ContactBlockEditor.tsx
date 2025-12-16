@@ -42,49 +42,49 @@ export function ContactBlockEditor({ data, onChange, isEditing }: ContactBlockEd
     return (
       <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
         <div className="space-y-2">
-          <Label htmlFor="contact-title">Rubrik</Label>
+          <Label htmlFor="contact-title">Title</Label>
           <Input
             id="contact-title"
             value={localData.title || ''}
             onChange={(e) => handleChange({ title: e.target.value })}
-            placeholder="Kontakta oss"
+            placeholder="Contact us"
           />
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="contact-phone">Telefon</Label>
+            <Label htmlFor="contact-phone">Phone</Label>
             <Input
               id="contact-phone"
               value={localData.phone || ''}
               onChange={(e) => handleChange({ phone: e.target.value })}
-              placeholder="08-123 456 78"
+              placeholder="+1 234 567 890"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="contact-email">E-post</Label>
+            <Label htmlFor="contact-email">Email</Label>
             <Input
               id="contact-email"
               value={localData.email || ''}
               onChange={(e) => handleChange({ email: e.target.value })}
-              placeholder="info@example.se"
+              placeholder="info@example.com"
             />
           </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="contact-address">Adress</Label>
+          <Label htmlFor="contact-address">Address</Label>
           <Input
             id="contact-address"
             value={localData.address || ''}
             onChange={(e) => handleChange({ address: e.target.value })}
-            placeholder="Exempelgatan 1, 123 45 Stockholm"
+            placeholder="123 Main Street, City, Country"
           />
         </div>
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label>Öppettider</Label>
+            <Label>Opening hours</Label>
             <Button type="button" variant="outline" size="sm" onClick={addHours}>
               <Plus className="h-3 w-3 mr-1" />
-              Lägg till
+              Add
             </Button>
           </div>
           {(localData.hours || []).map((hour, index) => (
@@ -92,7 +92,7 @@ export function ContactBlockEditor({ data, onChange, isEditing }: ContactBlockEd
               <Input
                 value={hour.day}
                 onChange={(e) => updateHours(index, 'day', e.target.value)}
-                placeholder="Måndag-Fredag"
+                placeholder="Monday-Friday"
                 className="flex-1"
               />
               <Input
@@ -152,7 +152,7 @@ export function ContactBlockEditor({ data, onChange, isEditing }: ContactBlockEd
           </div>
         )}
         {!localData.phone && !localData.email && !localData.address && (
-          <p className="text-muted-foreground">Lägg till kontaktuppgifter</p>
+          <p className="text-muted-foreground">Add contact information</p>
         )}
       </div>
     </div>

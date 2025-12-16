@@ -83,7 +83,7 @@ function SortableAccordionItem({ id, index, item, onUpdate, onRemove }: Sortable
     extensions: [
       StarterKit,
       Link.configure({ openOnClick: false }),
-      Placeholder.configure({ placeholder: 'Skriv svaret här...' }),
+      Placeholder.configure({ placeholder: 'Write the answer here...' }),
     ],
     content: getEditorContent(item.answer),
     onUpdate: ({ editor }) => {
@@ -103,7 +103,7 @@ function SortableAccordionItem({ id, index, item, onUpdate, onRemove }: Sortable
           >
             <GripVertical className="h-4 w-4" />
           </button>
-          <span className="text-sm font-medium">Fråga {index + 1}</span>
+          <span className="text-sm font-medium">Question {index + 1}</span>
         </div>
         <Button
           type="button"
@@ -117,10 +117,10 @@ function SortableAccordionItem({ id, index, item, onUpdate, onRemove }: Sortable
       <Input
         value={item.question}
         onChange={(e) => onUpdate(index, 'question', e.target.value)}
-        placeholder="Skriv frågan här..."
+        placeholder="Write the question here..."
       />
       <div className="space-y-2">
-        <Label className="text-sm">Svar</Label>
+        <Label className="text-sm">Answer</Label>
         {editor && (
           <>
             <div className="flex gap-1 border-b pb-2 mb-2">
@@ -165,17 +165,17 @@ function SortableAccordionItem({ id, index, item, onUpdate, onRemove }: Sortable
         )}
       </div>
       <div className="space-y-2">
-        <Label className="text-sm">Bild (valfritt)</Label>
+        <Label className="text-sm">Image (optional)</Label>
         <ImagePickerField
           value={item.image || ''}
           onChange={(url) => onUpdate(index, 'image', url)}
-          placeholder="Välj en bild..."
+          placeholder="Choose an image..."
         />
         {item.image && (
           <Input
             value={item.imageAlt || ''}
             onChange={(e) => onUpdate(index, 'imageAlt', e.target.value)}
-            placeholder="Bildbeskrivning (alt-text)"
+            placeholder="Image description (alt text)"
           />
         )}
       </div>
@@ -226,15 +226,15 @@ export function AccordionBlockEditor({ data, onChange, canEdit }: AccordionBlock
         {data.title && <h3 className="font-semibold text-lg">{data.title}</h3>}
         {data.items.map((item, index) => (
           <div key={index} className="border border-border rounded-lg p-4">
-            <p className="font-medium">{item.question || 'Ingen fråga'}</p>
+            <p className="font-medium">{item.question || 'No question'}</p>
             <div 
               className="text-sm text-muted-foreground mt-1 prose prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: renderAnswer(item.answer) || 'Inget svar' }}
+              dangerouslySetInnerHTML={{ __html: renderAnswer(item.answer) || 'No answer' }}
             />
           </div>
         ))}
         {data.items.length === 0 && (
-          <p className="text-muted-foreground text-sm">Inga frågor tillagda</p>
+          <p className="text-muted-foreground text-sm">No questions added</p>
         )}
       </div>
     );
@@ -245,17 +245,17 @@ export function AccordionBlockEditor({ data, onChange, canEdit }: AccordionBlock
   return (
     <div className="space-y-4">
       <div>
-        <Label htmlFor="accordion-title">Rubrik (valfritt)</Label>
+        <Label htmlFor="accordion-title">Title (optional)</Label>
         <Input
           id="accordion-title"
           value={data.title || ''}
           onChange={(e) => onChange({ ...data, title: e.target.value })}
-          placeholder="T.ex. Vanliga frågor"
+          placeholder="e.g. Frequently Asked Questions"
         />
       </div>
 
       <div className="space-y-3">
-        <Label>Frågor & Svar</Label>
+        <Label>Questions & Answers</Label>
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
@@ -278,7 +278,7 @@ export function AccordionBlockEditor({ data, onChange, canEdit }: AccordionBlock
 
       <Button type="button" variant="outline" onClick={addItem} className="w-full">
         <Plus className="h-4 w-4 mr-2" />
-        Lägg till fråga
+        Add question
       </Button>
     </div>
   );

@@ -25,40 +25,40 @@ export function CTABlockEditor({ data, onChange, isEditing }: CTABlockEditorProp
     return (
       <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
         <div className="space-y-2">
-          <Label htmlFor="cta-title">Rubrik</Label>
+          <Label htmlFor="cta-title">Title</Label>
           <Input
             id="cta-title"
             value={localData.title || ''}
             onChange={(e) => handleChange({ title: e.target.value })}
-            placeholder="Redo att ta nästa steg?"
+            placeholder="Ready to take the next step?"
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="cta-subtitle">Underrubrik (valfritt)</Label>
+          <Label htmlFor="cta-subtitle">Subtitle (optional)</Label>
           <Input
             id="cta-subtitle"
             value={localData.subtitle || ''}
             onChange={(e) => handleChange({ subtitle: e.target.value })}
-            placeholder="Kort beskrivning"
+            placeholder="Short description"
           />
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="cta-button-text">Knapptext</Label>
+            <Label htmlFor="cta-button-text">Button text</Label>
             <Input
               id="cta-button-text"
               value={localData.buttonText || ''}
               onChange={(e) => handleChange({ buttonText: e.target.value })}
-              placeholder="Kontakta oss"
+              placeholder="Contact us"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="cta-button-url">Länk</Label>
+            <Label htmlFor="cta-button-url">Link</Label>
             <Input
               id="cta-button-url"
               value={localData.buttonUrl || ''}
               onChange={(e) => handleChange({ buttonUrl: e.target.value })}
-              placeholder="/kontakt"
+              placeholder="/contact"
             />
           </div>
         </div>
@@ -68,7 +68,7 @@ export function CTABlockEditor({ data, onChange, isEditing }: CTABlockEditorProp
             checked={localData.gradient ?? true}
             onCheckedChange={(checked) => handleChange({ gradient: checked })}
           />
-          <Label htmlFor="cta-gradient">Använd gradient-bakgrund</Label>
+          <Label htmlFor="cta-gradient">Use gradient background</Label>
         </div>
       </div>
     );
@@ -84,7 +84,7 @@ export function CTABlockEditor({ data, onChange, isEditing }: CTABlockEditorProp
           : 'bg-secondary text-secondary-foreground'
       )}
     >
-      <h3 className="text-2xl font-bold mb-2">{localData.title || 'Call-to-Action rubrik'}</h3>
+      <h3 className="text-2xl font-bold mb-2">{localData.title || 'Call-to-Action title'}</h3>
       {localData.subtitle && <p className="text-lg opacity-90 mb-6">{localData.subtitle}</p>}
       {localData.buttonText && (
         <Button
