@@ -108,6 +108,7 @@ export interface HeroBlockData {
   overlayOpacity?: number;
   parallaxEffect?: boolean;
   titleAnimation?: 'none' | 'fade-in' | 'slide-up' | 'typewriter';
+  showScrollIndicator?: boolean;
   // Buttons
   primaryButton?: { text: string; url: string };
   secondaryButton?: { text: string; url: string };

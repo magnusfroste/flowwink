@@ -108,6 +108,10 @@ export default {
           "0%, 100%": { borderColor: "transparent" },
           "50%": { borderColor: "currentColor" },
         },
+        "bounce-down": {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(8px)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -117,6 +121,7 @@ export default {
         "slide-up": "slide-up 0.6s ease-out",
         "typewriter": "typewriter 2s steps(40) forwards",
         "blink": "blink 1s step-end infinite",
+        "bounce-down": "bounce-down 1.5s ease-in-out infinite",
       },
     },
   },
