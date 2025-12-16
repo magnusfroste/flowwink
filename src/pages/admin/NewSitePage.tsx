@@ -1,14 +1,17 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Loader2, Sparkles, Check, FileText, Palette, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Loader2, Sparkles, Check, FileText, Palette, MessageSquare, Trash2, AlertTriangle } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { StarterTemplateSelector } from '@/components/admin/StarterTemplateSelector';
 import { StarterTemplate } from '@/data/starter-templates';
-import { useCreatePage } from '@/hooks/usePages';
+import { useCreatePage, usePages, useDeletePage } from '@/hooks/usePages';
 import { useUpdateBrandingSettings, useUpdateChatSettings, useUpdateGeneralSettings } from '@/hooks/useSiteSettings';
 import { useToast } from '@/hooks/use-toast';
 
@@ -25,9 +28,12 @@ export default function NewSitePage() {
   const [step, setStep] = useState<CreationStep>('select');
   const [progress, setProgress] = useState<CreationProgress>({ currentPage: 0, totalPages: 0, currentStep: '' });
   const [createdPageIds, setCreatedPageIds] = useState<string[]>([]);
+  const [clearExistingPages, setClearExistingPages] = useState(false);
   
   const navigate = useNavigate();
+  const { data: existingPages } = usePages();
   const createPage = useCreatePage();
+  const deletePage = useDeletePage();
   const updateBranding = useUpdateBrandingSettings();
   const updateChat = useUpdateChatSettings();
   const updateGeneral = useUpdateGeneralSettings();
@@ -44,6 +50,20 @@ export default function NewSitePage() {
     const pageIds: string[] = [];
 
     try {
+      // Step 0: Delete existing pages if option is selected
+      if (clearExistingPages && existingPages && existingPages.length > 0) {
+        setProgress({ currentPage: 0, totalPages: existingPages.length, currentStep: 'Clearing existing pages...' });
+        
+        for (let i = 0; i < existingPages.length; i++) {
+          setProgress({ 
+            currentPage: i + 1, 
+            totalPages: existingPages.length, 
+            currentStep: `Removing "${existingPages[i].title}"...` 
+          });
+          await deletePage.mutateAsync(existingPages[i].id);
+        }
+      }
+
       // Step 1: Create all pages
       setProgress({ currentPage: 0, totalPages: selectedTemplate.pages.length, currentStep: 'Creating pages...' });
       
@@ -66,6 +86,7 @@ export default function NewSitePage() {
       }
 
       // Step 2: Apply branding
+      setProgress({ currentPage: selectedTemplate.pages.length, totalPages: selectedTemplate.pages.length, currentStep: 'Applying branding...' });
       setProgress({ currentPage: selectedTemplate.pages.length, totalPages: selectedTemplate.pages.length, currentStep: 'Applying branding...' });
       await updateBranding.mutateAsync(selectedTemplate.branding);
 
@@ -183,13 +204,44 @@ export default function NewSitePage() {
                     </div>
                   </div>
 
+                  {/* Clear existing pages option */}
+                  {existingPages && existingPages.length > 0 && (
+                    <div className="space-y-3 pt-2 border-t">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <Label htmlFor="clear-pages" className="text-sm font-medium flex items-center gap-2">
+                            <Trash2 className="h-4 w-4" />
+                            Clear existing pages
+                          </Label>
+                          <p className="text-xs text-muted-foreground">
+                            Remove all {existingPages.length} existing pages before creating new ones
+                          </p>
+                        </div>
+                        <Switch
+                          id="clear-pages"
+                          checked={clearExistingPages}
+                          onCheckedChange={setClearExistingPages}
+                        />
+                      </div>
+                      
+                      {clearExistingPages && (
+                        <Alert variant="destructive" className="py-2">
+                          <AlertTriangle className="h-4 w-4" />
+                          <AlertDescription className="text-xs">
+                            This will permanently delete all existing pages including their content.
+                          </AlertDescription>
+                        </Alert>
+                      )}
+                    </div>
+                  )}
+
                   <div className="flex gap-3 pt-4">
                     <Button variant="outline" onClick={() => navigate('/admin/pages')}>
                       Cancel
                     </Button>
                     <Button onClick={handleCreateSite} className="gap-2">
                       <Sparkles className="h-4 w-4" />
-                      Create Site
+                      {clearExistingPages ? 'Replace Site' : 'Create Site'}
                     </Button>
                   </div>
                 </CardContent>
