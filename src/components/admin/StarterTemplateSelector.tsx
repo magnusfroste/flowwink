@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, forwardRef } from 'react';
 import { Rocket, Building2, ShieldCheck, Sparkles, MessageSquare, Check, FileText, Settings, Palette } from 'lucide-react';
 import { STARTER_TEMPLATES, StarterTemplate } from '@/data/starter-templates';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
@@ -30,7 +30,8 @@ interface StarterTemplateSelectorProps {
   trigger?: React.ReactNode;
 }
 
-export function StarterTemplateSelector({ onSelectTemplate, trigger }: StarterTemplateSelectorProps) {
+export const StarterTemplateSelector = forwardRef<HTMLButtonElement, StarterTemplateSelectorProps>(
+  function StarterTemplateSelector({ onSelectTemplate, trigger }, ref) {
   const [open, setOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -47,7 +48,7 @@ export function StarterTemplateSelector({ onSelectTemplate, trigger }: StarterTe
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
+      <SheetTrigger asChild ref={ref}>
         {trigger || (
           <Button variant="outline" className="gap-2">
             <Sparkles className="h-4 w-4" />
@@ -169,7 +170,7 @@ export function StarterTemplateSelector({ onSelectTemplate, trigger }: StarterTe
       </SheetContent>
     </Sheet>
   );
-}
+});
 
 interface TemplateEmptyStateProps {
   onSelectTemplate: (template: StarterTemplate) => void;
