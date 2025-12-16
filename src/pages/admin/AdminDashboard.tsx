@@ -5,6 +5,7 @@ import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/StatusBadge';
+import { WelcomeModal } from '@/components/admin/WelcomeModal';
 import { usePages } from '@/hooks/usePages';
 import { useAuth } from '@/hooks/useAuth';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -25,6 +26,7 @@ export default function AdminDashboard() {
 
   return (
     <AdminLayout>
+      <WelcomeModal />
       <div>
         <AdminPageHeader 
           title={`Welcome, ${profile?.full_name?.split(' ')[0] || 'user'}`}
