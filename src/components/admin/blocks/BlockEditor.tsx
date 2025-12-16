@@ -33,6 +33,8 @@ import { SeparatorBlockEditor } from './SeparatorBlockEditor';
 import { GalleryBlockEditor } from './GalleryBlockEditor';
 import { StatsBlockEditor } from './StatsBlockEditor';
 import { ChatBlockEditor } from './ChatBlockEditor';
+import { TemplateEmptyState } from '@/components/admin/StarterTemplateSelector';
+import { StarterTemplate } from '@/data/starter-templates';
 
 type BlockDataMap = {
   hero: HeroBlockData;
@@ -298,9 +300,21 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
         </div>
       )}
 
+      {blocks.length === 0 && canEdit && (
+        <TemplateEmptyState 
+          onSelectTemplate={(template: StarterTemplate) => {
+            // Apply template blocks to the page
+            onChange(template.blocks.map(block => ({
+              ...block,
+              id: `block-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            })));
+          }}
+        />
+      )}
+
       {blocks.length === 0 && !canEdit && (
         <div className="text-center py-12 text-muted-foreground">
-          Denna sida har inget innehåll ännu.
+          This page has no content yet.
         </div>
       )}
     </div>
