@@ -41,18 +41,18 @@ interface Step {
 
 const ONBOARDING_STEPS: Step[] = [
   {
-    id: 'create-page',
-    title: 'Create Your First Page',
-    description: 'Start with a professionally designed template or build from scratch. Templates include pre-configured blocks optimized for different use cases.',
+    id: 'create-site',
+    title: 'Create Your Site',
+    description: 'Start with a complete site template that includes multiple pages, branding, and AI chat configuration. Perfect for getting started quickly.',
     icon: FileText,
     action: {
-      label: 'Create New Page',
-      href: '/admin/pages/new',
+      label: 'Create Site from Template',
+      href: '/admin/new-site',
     },
     tips: [
-      'Choose a template that matches your organization type',
+      'Each template creates multiple pre-configured pages',
+      'Branding and chat settings are automatically applied',
       'Templates can be fully customized after creation',
-      'The AI Chat block is pre-configured with privacy messaging',
     ],
   },
   {
@@ -247,18 +247,19 @@ export default function QuickStartPage() {
           <div>
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-primary" />
-              Starter Templates
+              Site Templates
             </h2>
             <div className="space-y-3">
               {STARTER_TEMPLATES.map((template) => {
                 const TemplateIcon = TEMPLATE_ICONS[template.id as keyof typeof TEMPLATE_ICONS] || Rocket;
+                const pageCount = template.pages?.length || 1;
                 
                 return (
                   <Card 
                     key={template.id}
                     className="hover:border-primary/50 transition-colors cursor-pointer"
                   >
-                    <Link to="/admin/pages/new">
+                    <Link to="/admin/new-site">
                       <CardContent className="p-4">
                         <div className="flex items-start gap-3">
                           <div className={cn(
@@ -275,7 +276,12 @@ export default function QuickStartPage() {
                             )} />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm">{template.name}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium text-sm">{template.name}</p>
+                              <Badge variant="secondary" className="text-xs">
+                                {pageCount} pages
+                              </Badge>
+                            </div>
                             <p className="text-xs text-muted-foreground line-clamp-2">
                               {template.tagline}
                             </p>
