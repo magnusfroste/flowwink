@@ -1,5 +1,6 @@
 import { HeroBlockData } from '@/types/cms';
 import { cn } from '@/lib/utils';
+import { ChevronDown } from 'lucide-react';
 
 interface HeroBlockProps {
   data: HeroBlockData;
@@ -111,6 +112,17 @@ export function HeroBlock({ data }: HeroBlockProps) {
           )}
         </div>
       </div>
+      
+      {/* Scroll indicator */}
+      {data.showScrollIndicator && heightMode !== 'auto' && (
+        <button
+          onClick={() => window.scrollTo({ top: window.innerHeight, behavior: 'smooth' })}
+          className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 text-primary-foreground/80 hover:text-primary-foreground transition-colors"
+          aria-label="Scroll down"
+        >
+          <ChevronDown className="h-8 w-8 animate-bounce-down" />
+        </button>
+      )}
     </section>
   );
 }

@@ -7,7 +7,7 @@ import { Slider } from '@/components/ui/slider';
 import { HeroBlockData } from '@/types/cms';
 import { ImageUploader } from '../ImageUploader';
 import { AITextAssistant } from '../AITextAssistant';
-import { Image, Video, Palette, Maximize, AlignVerticalJustifyStart, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd, Type, MoveUp, Sparkles } from 'lucide-react';
+import { Image, Video, Palette, Maximize, AlignVerticalJustifyStart, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd, Type, MoveUp, Sparkles, ChevronDown } from 'lucide-react';
 
 interface HeroBlockEditorProps {
   data: HeroBlockData;
@@ -291,6 +291,23 @@ export function HeroBlockEditor({ data, onChange, isEditing }: HeroBlockEditorPr
               ))}
             </div>
           </div>
+
+          {/* Scroll Indicator - only for tall heroes */}
+          {(localData.heightMode && localData.heightMode !== 'auto') && (
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                  <ChevronDown className="h-3 w-3" />
+                  Scroll Indicator
+                </Label>
+                <p className="text-xs text-muted-foreground/70">Show animated arrow at bottom</p>
+              </div>
+              <Switch
+                checked={localData.showScrollIndicator || false}
+                onCheckedChange={(checked) => handleChange({ showScrollIndicator: checked })}
+              />
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-4">
