@@ -35,19 +35,19 @@ const BLOCK_TYPE_ICONS: Record<string, React.ReactNode> = {
 const BLOCK_TYPE_LABELS: Record<string, string> = {
   hero: 'Hero',
   text: 'Text',
-  image: 'Bild',
-  'two-column': 'Två kolumner',
-  'article-grid': 'Artikelrutnät',
-  'link-grid': 'Länkrutnät',
+  image: 'Image',
+  'two-column': 'Two Columns',
+  'article-grid': 'Article Grid',
+  'link-grid': 'Link Grid',
   accordion: 'Accordion',
   cta: 'Call to Action',
-  quote: 'Citat',
-  stats: 'Statistik',
-  contact: 'Kontakt',
+  quote: 'Quote',
+  stats: 'Stats',
+  contact: 'Contact',
   separator: 'Separator',
   youtube: 'YouTube',
-  gallery: 'Galleri',
-  'info-box': 'Infobox',
+  gallery: 'Gallery',
+  'info-box': 'Info Box',
 };
 
 type MigrationStep = 'input' | 'analyzing' | 'processing-images' | 'preview' | 'saving' | 'done';
@@ -235,7 +235,7 @@ export function MigratePageDialog() {
       if (fnError) throw fnError;
 
       if (!data.success) {
-        throw new Error(data.error || 'Analysen misslyckades');
+        throw new Error(data.error || 'Analysis failed');
       }
 
       let processedBlocks = data.blocks;
@@ -253,7 +253,7 @@ export function MigratePageDialog() {
 
     } catch (err) {
       console.error('Migration error:', err);
-      setError(err instanceof Error ? err.message : 'Ett fel uppstod');
+      setError(err instanceof Error ? err.message : 'An error occurred');
       setStep('input');
     }
   };
@@ -286,8 +286,8 @@ export function MigratePageDialog() {
       setStep('done');
       
       toast({
-        title: publish ? 'Sida publicerad!' : 'Sida sparad som utkast!',
-        description: `"${title}" har ${publish ? 'publicerats' : 'skapats'}`,
+        title: publish ? 'Page published!' : 'Page saved as draft!',
+        description: `"${title}" has been ${publish ? 'published' : 'created'}`,
       });
 
       setTimeout(() => {
@@ -297,7 +297,7 @@ export function MigratePageDialog() {
 
     } catch (err) {
       console.error('Save error:', err);
-      setError(err instanceof Error ? err.message : 'Kunde inte spara sidan');
+      setError(err instanceof Error ? err.message : 'Could not save the page');
       setStep('preview');
     }
   };
@@ -320,14 +320,14 @@ export function MigratePageDialog() {
       <DialogTrigger asChild>
         <Button variant="outline" className="gap-2">
           <Download className="h-4 w-4" />
-          Importera sida
+          Import Page
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" />
-            AI-driven sidimport
+            AI-Powered Page Import
           </DialogTitle>
         </DialogHeader>
 
@@ -335,11 +335,11 @@ export function MigratePageDialog() {
         {step === 'input' && (
           <div className="space-y-4 py-4">
             <p className="text-sm text-muted-foreground">
-              Ange URL till en extern sida så analyserar AI:n innehållet och mappar det till CMS-block automatiskt.
+              Enter a URL to an external page and the AI will analyze the content and map it to CMS blocks automatically.
             </p>
             
             <div className="space-y-2">
-              <Label htmlFor="url">Webbadress</Label>
+              <Label htmlFor="url">Web Address</Label>
               <div className="flex gap-2">
                 <div className="relative flex-1">
                   <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -353,7 +353,7 @@ export function MigratePageDialog() {
                   />
                 </div>
                 <Button onClick={handleAnalyze} disabled={!url.trim()}>
-                  Analysera
+                  Analyze
                 </Button>
               </div>
             </div>
@@ -364,10 +364,10 @@ export function MigratePageDialog() {
                 <HardDrive className="h-5 w-5 text-muted-foreground" />
                 <div>
                   <Label htmlFor="save-images" className="text-sm font-medium cursor-pointer">
-                    Spara bilder lokalt
+                    Save images locally
                   </Label>
                   <p className="text-xs text-muted-foreground">
-                    Laddar ner och sparar alla bilder i bildbanken
+                    Downloads and saves all images to the media library
                   </p>
                 </div>
               </div>
@@ -395,9 +395,9 @@ export function MigratePageDialog() {
               <Sparkles className="h-5 w-5 text-primary absolute -top-1 -right-1 animate-pulse" />
             </div>
             <div className="text-center">
-              <p className="font-medium">Analyserar sidan...</p>
+              <p className="font-medium">Analyzing page...</p>
               <p className="text-sm text-muted-foreground">
-                AI:n scrapar och mappar innehållet till CMS-block
+                AI is scraping and mapping content to CMS blocks
               </p>
             </div>
           </div>
@@ -411,9 +411,9 @@ export function MigratePageDialog() {
               <HardDrive className="h-5 w-5 text-primary absolute -top-1 -right-1 animate-pulse" />
             </div>
             <div className="text-center space-y-2">
-              <p className="font-medium">Laddar ner bilder...</p>
+              <p className="font-medium">Downloading images...</p>
               <p className="text-sm text-muted-foreground">
-                {imageStatus.processed} av {imageStatus.total} bilder
+                {imageStatus.processed} of {imageStatus.total} images
               </p>
               {imageStatus.current && (
                 <p className="text-xs text-muted-foreground font-mono truncate max-w-md">
@@ -429,7 +429,7 @@ export function MigratePageDialog() {
           <div className="flex flex-col flex-1 min-h-0 space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="title">Sidtitel</Label>
+                <Label htmlFor="title">Page Title</Label>
                 <Input
                   id="title"
                   value={title}
@@ -440,7 +440,7 @@ export function MigratePageDialog() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="slug">URL-slug</Label>
+                <Label htmlFor="slug">URL Slug</Label>
                 <Input
                   id="slug"
                   value={slug}
@@ -451,17 +451,17 @@ export function MigratePageDialog() {
 
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Globe className="h-4 w-4" />
-              Importerad från: {result.sourceUrl}
+              Imported from: {result.sourceUrl}
               {saveImagesLocally && (
                 <Badge variant="secondary" className="ml-2">
                   <HardDrive className="h-3 w-3 mr-1" />
-                  Lokala bilder
+                  Local images
                 </Badge>
               )}
             </div>
 
             <div className="flex-1 min-h-0">
-              <Label className="mb-2 block">Mappade block ({result.blocks.length})</Label>
+              <Label className="mb-2 block">Mapped blocks ({result.blocks.length})</Label>
               <ScrollArea className="h-[300px] border rounded-md">
                 <div className="p-4 space-y-2">
                   {result.blocks.map((block, index) => (
@@ -495,14 +495,14 @@ export function MigratePageDialog() {
 
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" onClick={handleReset}>
-                Börja om
+                Start Over
               </Button>
               <Button variant="secondary" onClick={() => handleSave(false)}>
-                Spara som utkast
+                Save as Draft
               </Button>
               <Button onClick={() => handleSave(true)}>
                 <CheckCircle2 className="h-4 w-4 mr-2" />
-                Publicera
+                Publish
               </Button>
             </div>
           </div>
@@ -512,7 +512,7 @@ export function MigratePageDialog() {
         {step === 'saving' && (
           <div className="flex flex-col items-center justify-center py-12 space-y-4">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
-            <p className="font-medium">Sparar sidan...</p>
+            <p className="font-medium">Saving page...</p>
           </div>
         )}
 
@@ -523,9 +523,9 @@ export function MigratePageDialog() {
               <CheckCircle2 className="h-6 w-6 text-green-600 dark:text-green-400" />
             </div>
             <div className="text-center">
-              <p className="font-medium">Import klar!</p>
+              <p className="font-medium">Import complete!</p>
               <p className="text-sm text-muted-foreground">
-                Omdirigerar till redigeraren...
+                Redirecting to editor...
               </p>
             </div>
           </div>
