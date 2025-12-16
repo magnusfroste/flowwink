@@ -49,21 +49,21 @@ export function BrandGuideDialog({
       if (error) throw error;
 
       if (!data.success) {
-        throw new Error(data.error || 'Kunde inte analysera webbplatsen');
+        throw new Error(data.error || 'Could not analyze the website');
       }
 
       const analyzed = analyzeBranding(data.branding);
       setResult(analyzed);
       
       toast({
-        title: 'Analys klar',
-        description: 'Varumärkesprofilen har extraherats från webbplatsen.',
+        title: 'Analysis complete',
+        description: 'The brand profile has been extracted from the website.',
       });
     } catch (error) {
       console.error('Brand analysis error:', error);
       toast({
-        title: 'Fel vid analys',
-        description: error instanceof Error ? error.message : 'Kunde inte analysera webbplatsen',
+        title: 'Analysis error',
+        description: error instanceof Error ? error.message : 'Could not analyze the website',
         variant: 'destructive',
       });
     } finally {
@@ -75,8 +75,8 @@ export function BrandGuideDialog({
     if (result?.mapped) {
       onApplyBranding(result.mapped);
       toast({
-        title: 'Varumärkesprofil applicerad',
-        description: 'De extraherade inställningarna har applicerats.',
+        title: 'Brand profile applied',
+        description: 'The extracted settings have been applied.',
       });
     }
   };
@@ -88,8 +88,8 @@ export function BrandGuideDialog({
       setThemeName('');
       onOpenChange(false);
       toast({
-        title: 'Tema sparat',
-        description: `"${themeName}" har sparats som ett eget tema.`,
+        title: 'Theme saved',
+        description: `"${themeName}" has been saved as a custom theme.`,
       });
     }
   };
@@ -131,14 +131,14 @@ export function BrandGuideDialog({
             Brand Guide Assistant
           </DialogTitle>
           <DialogDescription>
-            Analysera en befintlig webbplats och extrahera dess varumärkesprofil
+            Analyze an existing website and extract its brand profile
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
           {/* URL Input */}
           <div className="space-y-2">
-            <Label>Webbplatsens URL</Label>
+            <Label>Website URL</Label>
             <div className="flex gap-2">
               <div className="relative flex-1">
                 <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -154,26 +154,26 @@ export function BrandGuideDialog({
                 {isAnalyzing ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Analyserar...
+                    Analyzing...
                   </>
                 ) : (
-                  'Analysera'
+                  'Analyze'
                 )}
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Ange URL:en till webbplatsen vars varumärkesprofil du vill extrahera
+              Enter the URL of the website whose brand profile you want to extract
             </p>
           </div>
 
           {/* Results */}
           {result && (
             <div className="space-y-6 pt-4 border-t">
-              <h3 className="font-medium">Extraherat resultat</h3>
+              <h3 className="font-medium">Extracted Results</h3>
               
               {/* Colors */}
               <div className="space-y-3">
-                <Label className="text-sm text-muted-foreground">Färger</Label>
+                <Label className="text-sm text-muted-foreground">Colors</Label>
                 <div className="grid grid-cols-3 gap-4">
                   {result.mapped.primaryColor && (
                     <div className="space-y-1">
@@ -181,7 +181,7 @@ export function BrandGuideDialog({
                         className="h-12 rounded-lg border"
                         style={{ backgroundColor: hslToHex(result.mapped.primaryColor) }}
                       />
-                      <p className="text-xs text-center">Primär</p>
+                      <p className="text-xs text-center">Primary</p>
                     </div>
                   )}
                   {result.mapped.secondaryColor && (
@@ -190,7 +190,7 @@ export function BrandGuideDialog({
                         className="h-12 rounded-lg border"
                         style={{ backgroundColor: hslToHex(result.mapped.secondaryColor) }}
                       />
-                      <p className="text-xs text-center">Sekundär</p>
+                      <p className="text-xs text-center">Secondary</p>
                     </div>
                   )}
                   {result.mapped.accentColor && (
@@ -207,11 +207,11 @@ export function BrandGuideDialog({
 
               {/* Typography */}
               <div className="space-y-3">
-                <Label className="text-sm text-muted-foreground">Typsnitt</Label>
+                <Label className="text-sm text-muted-foreground">Typography</Label>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-3 rounded-lg border bg-muted/30">
-                    <p className="text-xs text-muted-foreground mb-1">Rubriker</p>
-                    <p className="font-medium">{result.mapped.headingFont || 'Ej identifierat'}</p>
+                    <p className="text-xs text-muted-foreground mb-1">Headings</p>
+                    <p className="font-medium">{result.mapped.headingFont || 'Not identified'}</p>
                     {result.extracted.headingFont && result.extracted.headingFont !== result.mapped.headingFont && (
                       <p className="text-xs text-muted-foreground mt-1">
                         Original: {result.extracted.headingFont}
@@ -219,8 +219,8 @@ export function BrandGuideDialog({
                     )}
                   </div>
                   <div className="p-3 rounded-lg border bg-muted/30">
-                    <p className="text-xs text-muted-foreground mb-1">Brödtext</p>
-                    <p className="font-medium">{result.mapped.bodyFont || 'Ej identifierat'}</p>
+                    <p className="text-xs text-muted-foreground mb-1">Body Text</p>
+                    <p className="font-medium">{result.mapped.bodyFont || 'Not identified'}</p>
                     {result.extracted.bodyFont && result.extracted.bodyFont !== result.mapped.bodyFont && (
                       <p className="text-xs text-muted-foreground mt-1">
                         Original: {result.extracted.bodyFont}
@@ -233,7 +233,7 @@ export function BrandGuideDialog({
               {/* Logo & Favicon */}
               {(result.mapped.logo || result.mapped.favicon) && (
                 <div className="space-y-3">
-                  <Label className="text-sm text-muted-foreground">Bilder</Label>
+                  <Label className="text-sm text-muted-foreground">Images</Label>
                   <div className="flex gap-4">
                     {result.mapped.logo && (
                       <div className="p-3 rounded-lg border bg-muted/30">
@@ -261,16 +261,16 @@ export function BrandGuideDialog({
 
               {/* Appearance */}
               <div className="space-y-3">
-                <Label className="text-sm text-muted-foreground">Utseende</Label>
+                <Label className="text-sm text-muted-foreground">Appearance</Label>
                 <div className="flex gap-2">
                   {result.mapped.borderRadius && (
                     <span className="text-xs bg-muted px-2 py-1 rounded">
-                      Hörnradie: {result.mapped.borderRadius}
+                      Border radius: {result.mapped.borderRadius}
                     </span>
                   )}
                   {result.mapped.shadowIntensity && (
                     <span className="text-xs bg-muted px-2 py-1 rounded">
-                      Skuggor: {result.mapped.shadowIntensity}
+                      Shadows: {result.mapped.shadowIntensity}
                     </span>
                   )}
                 </div>
@@ -280,7 +280,7 @@ export function BrandGuideDialog({
               <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t">
                 <Button onClick={handleApply} className="flex-1">
                   <Check className="h-4 w-4 mr-2" />
-                  Applicera på nuvarande tema
+                  Apply to current theme
                 </Button>
                 <Button 
                   variant="outline" 
@@ -288,22 +288,22 @@ export function BrandGuideDialog({
                   className="flex-1"
                 >
                   <Save className="h-4 w-4 mr-2" />
-                  Spara som eget tema
+                  Save as custom theme
                 </Button>
               </div>
 
               {/* Save as theme */}
               {showSaveTheme && (
                 <div className="p-4 rounded-lg border bg-muted/30 space-y-3">
-                  <Label>Temanamn</Label>
+                  <Label>Theme Name</Label>
                   <div className="flex gap-2">
                     <Input
                       value={themeName}
                       onChange={(e) => setThemeName(e.target.value)}
-                      placeholder="T.ex. Sophiahemmet Original"
+                      placeholder="e.g. Company Original"
                     />
                     <Button onClick={handleSaveTheme} disabled={!themeName.trim()}>
-                      Spara
+                      Save
                     </Button>
                   </div>
                 </div>

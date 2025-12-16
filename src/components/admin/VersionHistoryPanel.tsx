@@ -32,15 +32,15 @@ export function VersionHistoryPanel({ pageId, onRestore }: VersionHistoryPanelPr
         content_json: version.content_json as ContentBlock[],
       });
       toast({
-        title: 'Version återställd',
-        description: 'Sidan har återställts till den valda versionen.',
+        title: 'Version restored',
+        description: 'The page has been restored to the selected version.',
       });
       setOpen(false);
       onRestore?.();
     } catch (error) {
       toast({
-        title: 'Fel',
-        description: 'Kunde inte återställa versionen.',
+        title: 'Error',
+        description: 'Could not restore the version.',
         variant: 'destructive',
       });
     } finally {
@@ -53,14 +53,14 @@ export function VersionHistoryPanel({ pageId, onRestore }: VersionHistoryPanelPr
       <SheetTrigger asChild>
         <Button variant="outline" size="sm">
           <History className="h-4 w-4 mr-2" />
-          Historik
+          History
         </Button>
       </SheetTrigger>
       <SheetContent>
         <SheetHeader>
-          <SheetTitle className="font-serif">Versionshistorik</SheetTitle>
+          <SheetTitle className="font-serif">Version History</SheetTitle>
           <SheetDescription>
-            Återställ till en tidigare publicerad version
+            Restore to a previously published version
           </SheetDescription>
         </SheetHeader>
         <ScrollArea className="h-[calc(100vh-150px)] mt-6">
@@ -71,9 +71,9 @@ export function VersionHistoryPanel({ pageId, onRestore }: VersionHistoryPanelPr
           ) : !versions?.length ? (
             <div className="text-center py-8 text-muted-foreground">
               <History className="h-12 w-12 mx-auto mb-3 opacity-50" />
-              <p>Inga publicerade versioner ännu</p>
+              <p>No published versions yet</p>
               <p className="text-sm mt-1">
-                Versioner skapas när en sida publiceras
+                Versions are created when a page is published
               </p>
             </div>
           ) : (
@@ -87,7 +87,7 @@ export function VersionHistoryPanel({ pageId, onRestore }: VersionHistoryPanelPr
                     <div className="min-w-0 flex-1">
                       <p className="font-medium truncate">{version.title}</p>
                       <p className="text-sm text-muted-foreground">
-                        {new Date(version.created_at).toLocaleDateString('sv-SE', {
+                        {new Date(version.created_at).toLocaleDateString('en-US', {
                           year: 'numeric',
                           month: 'long',
                           day: 'numeric',
@@ -97,7 +97,7 @@ export function VersionHistoryPanel({ pageId, onRestore }: VersionHistoryPanelPr
                       </p>
                       {index === 0 && (
                         <span className="inline-block mt-2 text-xs bg-success/20 text-success px-2 py-0.5 rounded">
-                          Senaste publicering
+                          Latest publication
                         </span>
                       )}
                     </div>

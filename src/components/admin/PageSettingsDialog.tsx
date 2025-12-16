@@ -37,12 +37,12 @@ export function PageSettingsDialog({ meta, onMetaChange, disabled }: PageSetting
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" disabled={disabled}>
           <Settings className="h-4 w-4 mr-2" />
-          Sidinställningar
+          Page Settings
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="font-serif">Sidinställningar</DialogTitle>
+          <DialogTitle className="font-serif">Page Settings</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-6 py-4">
@@ -50,9 +50,9 @@ export function PageSettingsDialog({ meta, onMetaChange, disabled }: PageSetting
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor="showTitle">Visa sidtitel</Label>
+                <Label htmlFor="showTitle">Show Page Title</Label>
                 <p className="text-sm text-muted-foreground">
-                  Visa titeln ovanför sidinnehållet
+                  Display the title above the page content
                 </p>
               </div>
               <Switch
@@ -64,7 +64,7 @@ export function PageSettingsDialog({ meta, onMetaChange, disabled }: PageSetting
             
             {showTitle && (
               <div className="space-y-2 pl-4 border-l-2 border-muted">
-                <Label>Rubrikjustering</Label>
+                <Label>Title Alignment</Label>
                 <RadioGroup
                   value={titleAlignment}
                   onValueChange={(value: 'left' | 'center') => 
@@ -75,13 +75,13 @@ export function PageSettingsDialog({ meta, onMetaChange, disabled }: PageSetting
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="left" id="align-left" />
                     <Label htmlFor="align-left" className="font-normal cursor-pointer">
-                      Vänster
+                      Left
                     </Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="center" id="align-center" />
                     <Label htmlFor="align-center" className="font-normal cursor-pointer">
-                      Centrerad
+                      Center
                     </Label>
                   </div>
                 </RadioGroup>
@@ -94,15 +94,15 @@ export function PageSettingsDialog({ meta, onMetaChange, disabled }: PageSetting
           {/* SEO Settings */}
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="seoTitle">Anpassad SEO-titel</Label>
+              <Label htmlFor="seoTitle">Custom SEO Title</Label>
               <Input
                 id="seoTitle"
                 value={seoTitle}
                 onChange={(e) => updateMeta({ seoTitle: e.target.value })}
-                placeholder="Lämna tomt för att använda sidtiteln"
+                placeholder="Leave empty to use the page title"
               />
               <p className="text-xs text-muted-foreground">
-                Visas i sökresultat och webbläsarflik
+                Displayed in search results and browser tab
               </p>
             </div>
           </div>
@@ -111,7 +111,7 @@ export function PageSettingsDialog({ meta, onMetaChange, disabled }: PageSetting
 
           {/* Search Engine Indexing */}
           <div className="space-y-4">
-            <Label>Sökmotor-indexering</Label>
+            <Label>Search Engine Indexing</Label>
             <div className="space-y-3">
               <div className="flex items-center space-x-3">
                 <Checkbox
@@ -123,10 +123,10 @@ export function PageSettingsDialog({ meta, onMetaChange, disabled }: PageSetting
                 />
                 <div className="space-y-0.5">
                   <Label htmlFor="noIndex" className="font-normal cursor-pointer">
-                    Dölj från sökmotorer (noindex)
+                    Hide from search engines (noindex)
                   </Label>
                   <p className="text-xs text-muted-foreground">
-                    Sidan visas inte i sökresultat
+                    The page will not appear in search results
                   </p>
                 </div>
               </div>
@@ -140,10 +140,10 @@ export function PageSettingsDialog({ meta, onMetaChange, disabled }: PageSetting
                 />
                 <div className="space-y-0.5">
                   <Label htmlFor="noFollow" className="font-normal cursor-pointer">
-                    Följ inte länkar (nofollow)
+                    Don't follow links (nofollow)
                   </Label>
                   <p className="text-xs text-muted-foreground">
-                    Sökmotorer följer inte länkar på sidan
+                    Search engines won't follow links on this page
                   </p>
                 </div>
               </div>

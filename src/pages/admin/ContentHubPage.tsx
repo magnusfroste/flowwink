@@ -12,28 +12,28 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
 const CHANNELS = [
-  { id: "web", name: "Webbplats", icon: Globe, status: "active", description: "Inbyggd responsiv webbplats" },
-  { id: "chat", name: "AI Chat", icon: MessageSquare, status: "active", description: "Intelligent chatbot med CAG" },
-  { id: "app", name: "Mobilapp", icon: Smartphone, status: "coming", description: "iOS & Android via API" },
-  { id: "newsletter", name: "Nyhetsbrev", icon: Mail, status: "coming", description: "E-postintegration" },
+  { id: "web", name: "Website", icon: Globe, status: "active", description: "Built-in responsive website" },
+  { id: "chat", name: "AI Chat", icon: MessageSquare, status: "active", description: "Intelligent chatbot with CAG" },
+  { id: "app", name: "Mobile App", icon: Smartphone, status: "coming", description: "iOS & Android via API" },
+  { id: "newsletter", name: "Newsletter", icon: Mail, status: "coming", description: "Email integration" },
 ];
 
 const BLOCK_TYPES = [
   { type: "hero", name: "Hero", category: "Layout" },
-  { type: "text", name: "Text", category: "Innehåll" },
-  { type: "image", name: "Bild", category: "Media" },
-  { type: "two-column", name: "Två kolumner", category: "Layout" },
-  { type: "cta", name: "Call to Action", category: "Interaktion" },
-  { type: "contact", name: "Kontakt", category: "Interaktion" },
-  { type: "accordion", name: "Accordion", category: "Innehåll" },
-  { type: "link-grid", name: "Länkrutnät", category: "Navigation" },
-  { type: "info-box", name: "Faktaruta", category: "Innehåll" },
-  { type: "quote", name: "Citat", category: "Innehåll" },
-  { type: "stats", name: "Statistik", category: "Data" },
-  { type: "gallery", name: "Galleri", category: "Media" },
+  { type: "text", name: "Text", category: "Content" },
+  { type: "image", name: "Image", category: "Media" },
+  { type: "two-column", name: "Two Column", category: "Layout" },
+  { type: "cta", name: "Call to Action", category: "Interaction" },
+  { type: "contact", name: "Contact", category: "Interaction" },
+  { type: "accordion", name: "Accordion", category: "Content" },
+  { type: "link-grid", name: "Link Grid", category: "Navigation" },
+  { type: "info-box", name: "Fact Box", category: "Content" },
+  { type: "quote", name: "Quote", category: "Content" },
+  { type: "stats", name: "Statistics", category: "Data" },
+  { type: "gallery", name: "Gallery", category: "Media" },
   { type: "youtube", name: "YouTube", category: "Media" },
   { type: "separator", name: "Separator", category: "Layout" },
-  { type: "article-grid", name: "Artikelrutnät", category: "Innehåll" },
+  { type: "article-grid", name: "Article Grid", category: "Content" },
 ];
 
 const DEFAULT_GRAPHQL_QUERY = `query {
@@ -79,7 +79,7 @@ export default function ContentHubPage() {
     navigator.clipboard.writeText(code);
     setCopiedCode(id);
     setTimeout(() => setCopiedCode(null), 2000);
-    toast.success("Kopierat till urklipp");
+    toast.success("Copied to clipboard");
   };
 
   const runGraphQLQuery = async () => {
@@ -99,7 +99,7 @@ export default function ContentHubPage() {
     }
   };
 
-  const restExample = `// Hämta alla publicerade sidor
+  const restExample = `// Fetch all published pages
 const response = await fetch(
   '${import.meta.env.VITE_SUPABASE_URL}/functions/v1/content-api/pages'
 );
@@ -138,7 +138,7 @@ export default async function Home() {
       <div className="space-y-8">
         <AdminPageHeader
           title="Content Hub"
-          description="Ditt innehåll, överallt. Både head och headless."
+          description="Your content, everywhere. Both head and headless."
         />
 
         {/* Hero Section */}
@@ -152,17 +152,17 @@ export default async function Home() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-lg">Head</h3>
-                  <p className="text-sm text-muted-foreground">Komplett webbplats</p>
+                  <p className="text-sm text-muted-foreground">Complete website</p>
                 </div>
               </div>
               <p className="text-muted-foreground mb-4">
-                Inbyggd responsiv webbplats med svensk sjukvårdsdesign, SEO-optimering och tillgänglighet enligt WCAG 2.1 AA.
+                Built-in responsive website with professional design, SEO optimization and accessibility according to WCAG 2.1 AA.
               </p>
               <div className="flex flex-wrap gap-2">
-                <Badge variant="secondary">Responsiv</Badge>
+                <Badge variant="secondary">Responsive</Badge>
                 <Badge variant="secondary">SEO</Badge>
                 <Badge variant="secondary">WCAG 2.1 AA</Badge>
-                <Badge variant="secondary">Mörkt läge</Badge>
+                <Badge variant="secondary">Dark Mode</Badge>
               </div>
             </div>
 
@@ -178,7 +178,7 @@ export default async function Home() {
                 </div>
               </div>
               <p className="text-muted-foreground mb-4">
-                Fullt strukturerat innehåll via REST och GraphQL. Bygg appar, integrationer eller använd med valfritt ramverk.
+                Fully structured content via REST and GraphQL. Build apps, integrations or use with any framework.
               </p>
               <div className="flex flex-wrap gap-2">
                 <Badge variant="outline">REST API</Badge>
@@ -198,7 +198,7 @@ export default async function Home() {
               Multi-Channel Delivery
             </CardTitle>
             <CardDescription>
-              Ditt innehåll kan levereras till flera kanaler samtidigt
+              Your content can be delivered to multiple channels simultaneously
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -213,10 +213,10 @@ export default async function Home() {
                   }`}
                 >
                   {channel.status === "active" && (
-                    <Badge className="absolute -top-2 -right-2 bg-green-500">Aktiv</Badge>
+                    <Badge className="absolute -top-2 -right-2 bg-green-500">Active</Badge>
                   )}
                   {channel.status === "coming" && (
-                    <Badge variant="secondary" className="absolute -top-2 -right-2">Kommer</Badge>
+                    <Badge variant="secondary" className="absolute -top-2 -right-2">Coming</Badge>
                   )}
                   <channel.icon className={`h-8 w-8 mb-3 ${
                     channel.status === "active" ? "text-primary" : "text-muted-foreground"
@@ -261,7 +261,7 @@ export default async function Home() {
               API Explorer
             </CardTitle>
             <CardDescription>
-              Testa och utforska Content API:et direkt
+              Test and explore the Content API directly
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -284,13 +284,13 @@ export default async function Home() {
                     />
                     <Button onClick={runGraphQLQuery} disabled={isQuerying}>
                       <Play className="h-4 w-4 mr-2" />
-                      {isQuerying ? "Kör..." : "Kör Query"}
+                      {isQuerying ? "Running..." : "Run Query"}
                     </Button>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Resultat</label>
+                    <label className="text-sm font-medium">Result</label>
                     <pre className="p-4 bg-muted rounded-lg text-sm overflow-auto min-h-[200px] max-h-[300px]">
-                      {queryResult || "// Kör en query för att se resultatet"}
+                      {queryResult || "// Run a query to see the result"}
                     </pre>
                   </div>
                 </div>
@@ -355,7 +355,7 @@ export default async function Home() {
               Content Model
             </CardTitle>
             <CardDescription>
-              {totalBlocks} block-instanser över {pages?.length || 0} publicerade sidor
+              {totalBlocks} block instances across {pages?.length || 0} published pages
             </CardDescription>
           </CardHeader>
           <CardContent>

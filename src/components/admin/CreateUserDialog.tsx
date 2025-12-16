@@ -48,7 +48,7 @@ export function CreateUserDialog() {
   const createUser = useMutation({
     mutationFn: async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Inte inloggad');
+      if (!session) throw new Error('Not logged in');
 
       const response = await supabase.functions.invoke('create-user', {
         body: { email, password, full_name: fullName, role }
@@ -68,13 +68,13 @@ export function CreateUserDialog() {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
       setCreatedPassword(password);
       toast({ 
-        title: 'Användare skapad', 
-        description: `${email} har lagts till med rollen ${role === 'writer' ? 'Skribent' : role === 'approver' ? 'Granskare' : 'Administratör'}.`
+        title: 'User created', 
+        description: `${email} has been added with the role ${role === 'writer' ? 'Writer' : role === 'approver' ? 'Approver' : 'Administrator'}.`
       });
     },
     onError: (error: Error) => {
       toast({ 
-        title: 'Fel', 
+        title: 'Error', 
         description: error.message, 
         variant: 'destructive' 
       });
@@ -117,23 +117,23 @@ export function CreateUserDialog() {
       <DialogTrigger asChild>
         <Button>
           <UserPlus className="h-4 w-4 mr-2" />
-          Lägg till användare
+          Add User
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="font-serif">Skapa ny användare</DialogTitle>
+          <DialogTitle className="font-serif">Create New User</DialogTitle>
           <DialogDescription>
-            Skapa en ny användare för CMS:et. Användaren kan logga in direkt.
+            Create a new user for the CMS. The user can log in immediately.
           </DialogDescription>
         </DialogHeader>
 
         {createdPassword ? (
           <div className="space-y-4 py-4">
             <div className="rounded-lg bg-muted p-4 space-y-2">
-              <p className="text-sm font-medium">Användare skapad!</p>
+              <p className="text-sm font-medium">User created!</p>
               <p className="text-sm text-muted-foreground">
-                Spara lösenordet nedan – det visas endast en gång.
+                Save the password below – it will only be shown once.
               </p>
               <div className="flex items-center gap-2 mt-3">
                 <code className="flex-1 bg-background px-3 py-2 rounded text-sm font-mono">
@@ -145,18 +145,18 @@ export function CreateUserDialog() {
               </div>
             </div>
             <DialogFooter>
-              <Button onClick={handleClose}>Stäng</Button>
+              <Button onClick={handleClose}>Close</Button>
             </DialogFooter>
           </div>
         ) : (
           <form onSubmit={handleSubmit}>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                <Label htmlFor="email">E-post</Label>
+                <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="namn@example.se"
+                  placeholder="name@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -164,17 +164,17 @@ export function CreateUserDialog() {
               </div>
               
               <div className="grid gap-2">
-                <Label htmlFor="fullName">Namn</Label>
+                <Label htmlFor="fullName">Name</Label>
                 <Input
                   id="fullName"
-                  placeholder="Förnamn Efternamn"
+                  placeholder="First Last"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                 />
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="password">Lösenord (minst 8 tecken)</Label>
+                <Label htmlFor="password">Password (minimum 8 characters)</Label>
                 <div className="flex gap-2">
                   <Input
                     id="password"
@@ -193,15 +193,15 @@ export function CreateUserDialog() {
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="role">Roll</Label>
+                <Label htmlFor="role">Role</Label>
                 <Select value={role} onValueChange={(v: AppRole) => setRole(v)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="writer">Skribent</SelectItem>
-                    <SelectItem value="approver">Granskare</SelectItem>
-                    <SelectItem value="admin">Administratör</SelectItem>
+                    <SelectItem value="writer">Writer</SelectItem>
+                    <SelectItem value="approver">Approver</SelectItem>
+                    <SelectItem value="admin">Administrator</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -209,10 +209,10 @@ export function CreateUserDialog() {
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={handleClose}>
-                Avbryt
+                Cancel
               </Button>
               <Button type="submit" disabled={!isValid || createUser.isPending}>
-                {createUser.isPending ? 'Skapar...' : 'Skapa användare'}
+                {createUser.isPending ? 'Creating...' : 'Create User'}
               </Button>
             </DialogFooter>
           </form>

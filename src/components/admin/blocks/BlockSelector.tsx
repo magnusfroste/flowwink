@@ -49,31 +49,31 @@ const BLOCK_GROUPS: BlockGroup[] = [
         type: 'text',
         label: 'Text',
         icon: <Type className="h-5 w-5" />,
-        description: 'Rik textinnehåll med formatering',
+        description: 'Rich text content with formatting',
       },
       {
         type: 'image',
-        label: 'Bild',
+        label: 'Image',
         icon: <ImageIcon className="h-5 w-5" />,
-        description: 'Bild med bildtext',
+        description: 'Image with caption',
       },
       {
         type: 'gallery',
-        label: 'Galleri',
+        label: 'Gallery',
         icon: <Images className="h-5 w-5" />,
-        description: 'Bildgalleri med lightbox',
+        description: 'Image gallery with lightbox',
       },
       {
         type: 'youtube',
         label: 'YouTube',
         icon: <Youtube className="h-5 w-5" />,
-        description: 'Inbäddad YouTube-video',
+        description: 'Embedded YouTube video',
       },
       {
         type: 'quote',
-        label: 'Citat',
+        label: 'Quote',
         icon: <Quote className="h-5 w-5" />,
-        description: 'Framhävt citat med författare',
+        description: 'Featured quote with author',
       },
     ],
   },
@@ -84,36 +84,36 @@ const BLOCK_GROUPS: BlockGroup[] = [
         type: 'hero',
         label: 'Hero',
         icon: <Layout className="h-5 w-5" />,
-        description: 'Stor rubrik med bakgrundsbild',
+        description: 'Large heading with background image',
       },
       {
         type: 'two-column',
-        label: 'Två-kolumn',
+        label: 'Two Column',
         icon: <Columns className="h-5 w-5" />,
-        description: 'Text och bild sida vid sida',
+        description: 'Text and image side by side',
       },
       {
         type: 'separator',
-        label: 'Avdelare',
+        label: 'Separator',
         icon: <Minus className="h-5 w-5" />,
-        description: 'Visuell brytning mellan sektioner',
+        description: 'Visual break between sections',
       },
     ],
   },
   {
-    name: 'Navigation & Länkar',
+    name: 'Navigation & Links',
     blocks: [
       {
         type: 'link-grid',
-        label: 'Länkgrid',
+        label: 'Link Grid',
         icon: <Grid3X3 className="h-5 w-5" />,
-        description: 'Rutnät med snabblänkar',
+        description: 'Grid of quick links',
       },
       {
         type: 'article-grid',
-        label: 'Artikelgrid',
+        label: 'Article Grid',
         icon: <Newspaper className="h-5 w-5" />,
-        description: 'Rutnät med artikelkort',
+        description: 'Grid of article cards',
       },
     ],
   },
@@ -122,44 +122,44 @@ const BLOCK_GROUPS: BlockGroup[] = [
     blocks: [
       {
         type: 'info-box',
-        label: 'Faktaruta',
+        label: 'Fact Box',
         icon: <AlertCircle className="h-5 w-5" />,
-        description: 'Framhävd informationsruta',
+        description: 'Highlighted information box',
       },
       {
         type: 'accordion',
         label: 'Accordion/FAQ',
         icon: <HelpCircle className="h-5 w-5" />,
-        description: 'Expanderbara frågor och svar',
+        description: 'Expandable questions and answers',
       },
       {
         type: 'stats',
-        label: 'Statistik',
+        label: 'Statistics',
         icon: <BarChart3 className="h-5 w-5" />,
-        description: 'Visa nyckeltal visuellt',
+        description: 'Display key figures visually',
       },
     ],
   },
   {
-    name: 'Interaktion',
+    name: 'Interaction',
     blocks: [
       {
         type: 'cta',
         label: 'Call-to-Action',
         icon: <MousePointerClick className="h-5 w-5" />,
-        description: 'Uppmaning med knapp',
+        description: 'Prompt with button',
       },
       {
         type: 'contact',
-        label: 'Kontakt',
+        label: 'Contact',
         icon: <Phone className="h-5 w-5" />,
-        description: 'Kontaktinformation',
+        description: 'Contact information',
       },
       {
         type: 'chat',
         label: 'AI Chat',
         icon: <MessageSquare className="h-5 w-5" />,
-        description: 'Inbäddad AI-chattfunktion',
+        description: 'Embedded AI chat feature',
       },
     ],
   },
@@ -182,12 +182,12 @@ export function BlockSelector({ onAdd }: BlockSelectorProps) {
       <SheetTrigger asChild>
         <Button variant="outline" className="w-full border-dashed">
           <Plus className="h-4 w-4 mr-2" />
-          Lägg till block
+          Add Block
         </Button>
       </SheetTrigger>
       <SheetContent side="right" className="w-[400px] sm:w-[540px] p-0">
         <SheetHeader className="px-6 py-4 border-b bg-card">
-          <SheetTitle className="font-serif">Välj blocktyp</SheetTitle>
+          <SheetTitle className="font-serif">Select Block Type</SheetTitle>
         </SheetHeader>
         <ScrollArea className="h-[calc(100vh-80px)]">
           <div className="p-6 space-y-6">

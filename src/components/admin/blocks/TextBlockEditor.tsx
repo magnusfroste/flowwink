@@ -30,7 +30,7 @@ export function TextBlockEditor({ data, onChange, isEditing }: TextBlockEditorPr
   const editor = useEditor({
     extensions: [
       StarterKit,
-      Placeholder.configure({ placeholder: 'Skriv ditt innehåll här...' }),
+      Placeholder.configure({ placeholder: 'Write your content here...' }),
       Link.configure({ openOnClick: false }),
     ],
     content: getEditorContent(data.content),

@@ -24,31 +24,31 @@ export function HeroBlockEditor({ data, onChange, isEditing }: HeroBlockEditorPr
     return (
       <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
         <div className="space-y-2">
-          <Label htmlFor="hero-title">Rubrik</Label>
+          <Label htmlFor="hero-title">Title</Label>
           <Input
             id="hero-title"
             value={localData.title || ''}
             onChange={(e) => handleChange({ title: e.target.value })}
-            placeholder="Huvudrubrik"
+            placeholder="Main Heading"
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="hero-subtitle">Underrubrik</Label>
+          <Label htmlFor="hero-subtitle">Subtitle</Label>
           <Input
             id="hero-subtitle"
             value={localData.subtitle || ''}
             onChange={(e) => handleChange({ subtitle: e.target.value })}
-            placeholder="Kort beskrivning"
+            placeholder="Short description"
           />
         </div>
         <ImageUploader
           value={localData.backgroundImage || ''}
           onChange={(url) => handleChange({ backgroundImage: url })}
-          label="Bakgrundsbild"
+          label="Background Image"
         />
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label>Primär knapp</Label>
+            <Label>Primary Button</Label>
             <Input
               value={localData.primaryButton?.text || ''}
               onChange={(e) =>
@@ -56,7 +56,7 @@ export function HeroBlockEditor({ data, onChange, isEditing }: HeroBlockEditorPr
                   primaryButton: { ...localData.primaryButton, text: e.target.value, url: localData.primaryButton?.url || '' },
                 })
               }
-              placeholder="Knapptext"
+              placeholder="Button text"
             />
             <Input
               value={localData.primaryButton?.url || ''}
@@ -65,11 +65,11 @@ export function HeroBlockEditor({ data, onChange, isEditing }: HeroBlockEditorPr
                   primaryButton: { ...localData.primaryButton, text: localData.primaryButton?.text || '', url: e.target.value },
                 })
               }
-              placeholder="Länk"
+              placeholder="Link"
             />
           </div>
           <div className="space-y-2">
-            <Label>Sekundär knapp</Label>
+            <Label>Secondary Button</Label>
             <Input
               value={localData.secondaryButton?.text || ''}
               onChange={(e) =>
@@ -77,7 +77,7 @@ export function HeroBlockEditor({ data, onChange, isEditing }: HeroBlockEditorPr
                   secondaryButton: { ...localData.secondaryButton, text: e.target.value, url: localData.secondaryButton?.url || '' },
                 })
               }
-              placeholder="Knapptext"
+              placeholder="Button text"
             />
             <Input
               value={localData.secondaryButton?.url || ''}
@@ -86,7 +86,7 @@ export function HeroBlockEditor({ data, onChange, isEditing }: HeroBlockEditorPr
                   secondaryButton: { ...localData.secondaryButton, text: localData.secondaryButton?.text || '', url: e.target.value },
                 })
               }
-              placeholder="Länk"
+              placeholder="Link"
             />
           </div>
         </div>
@@ -106,7 +106,7 @@ export function HeroBlockEditor({ data, onChange, isEditing }: HeroBlockEditorPr
     >
       <div className="absolute inset-0 bg-primary/70" />
       <div className="relative z-10 px-8 py-16 text-center">
-        <h1 className="text-3xl font-bold mb-3">{localData.title || 'Hero-rubrik'}</h1>
+        <h1 className="text-3xl font-bold mb-3">{localData.title || 'Hero Heading'}</h1>
         {localData.subtitle && <p className="text-lg opacity-90 mb-6">{localData.subtitle}</p>}
         <div className="flex justify-center gap-3">
           {localData.primaryButton?.text && (

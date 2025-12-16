@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { sv } from 'date-fns/locale';
+import { enUS } from 'date-fns/locale';
 import { Calendar as CalendarIcon, Clock, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -73,22 +73,22 @@ export function SchedulePublishDialog({
         <Button variant="outline" size="sm" disabled={disabled}>
           <Clock className="h-4 w-4 mr-2" />
           {scheduledAt 
-            ? format(new Date(scheduledAt), 'd MMM HH:mm', { locale: sv })
-            : 'Schemalägg'
+            ? format(new Date(scheduledAt), 'd MMM HH:mm', { locale: enUS })
+            : 'Schedule'
           }
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="font-serif">Schemalägg publicering</DialogTitle>
+          <DialogTitle className="font-serif">Schedule Publication</DialogTitle>
           <DialogDescription>
-            Välj datum och tid för automatisk publicering. Sidan måste skickas för granskning först.
+            Select the date and time for automatic publication. The page must be sent for review first.
           </DialogDescription>
         </DialogHeader>
         
         <div className="py-4 space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Datum</label>
+            <label className="text-sm font-medium">Date</label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -99,7 +99,7 @@ export function SchedulePublishDialog({
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {date ? format(date, 'PPP', { locale: sv }) : 'Välj datum'}
+                  {date ? format(date, 'PPP', { locale: enUS }) : 'Select date'}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
@@ -110,18 +110,18 @@ export function SchedulePublishDialog({
                   disabled={(d) => d < new Date()}
                   initialFocus
                   className="p-3 pointer-events-auto"
-                  locale={sv}
+                  locale={enUS}
                 />
               </PopoverContent>
             </Popover>
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">Tid</label>
+            <label className="text-sm font-medium">Time</label>
             <div className="flex gap-2">
               <Select value={hour} onValueChange={setHour}>
                 <SelectTrigger className="w-[100px]">
-                  <SelectValue placeholder="Timme" />
+                  <SelectValue placeholder="Hour" />
                 </SelectTrigger>
                 <SelectContent>
                   {hours.map((h) => (
@@ -132,7 +132,7 @@ export function SchedulePublishDialog({
               <span className="flex items-center text-lg">:</span>
               <Select value={minute} onValueChange={setMinute}>
                 <SelectTrigger className="w-[100px]">
-                  <SelectValue placeholder="Minut" />
+                  <SelectValue placeholder="Minute" />
                 </SelectTrigger>
                 <SelectContent>
                   {minutes.map((m) => (
@@ -151,17 +151,17 @@ export function SchedulePublishDialog({
               className="text-muted-foreground"
             >
               <X className="h-4 w-4 mr-2" />
-              Ta bort schemaläggning
+              Remove Schedule
             </Button>
           )}
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>
-            Avbryt
+            Cancel
           </Button>
           <Button onClick={handleSchedule} disabled={!date}>
-            {scheduledAt ? 'Uppdatera' : 'Schemalägg'}
+            {scheduledAt ? 'Update' : 'Schedule'}
           </Button>
         </DialogFooter>
       </DialogContent>
