@@ -20,6 +20,7 @@ import BrandingSettingsPage from "./pages/admin/BrandingSettingsPage";
 import MenuOrderPage from "./pages/admin/MenuOrderPage";
 import ChatSettingsPage from "./pages/admin/ChatSettingsPage";
 import ContentHubPage from "./pages/admin/ContentHubPage";
+import QuickStartPage from "./pages/admin/QuickStartPage";
 import PreviewPage from "./pages/PreviewPage";
 import PublicPage from "./pages/PublicPage";
 import ChatPage from "./pages/ChatPage";
@@ -42,7 +43,9 @@ const router = createBrowserRouter([
   { path: "/admin/menu-order", element: <MenuOrderPage /> },
   { path: "/admin/chat", element: <ChatSettingsPage /> },
   { path: "/admin/content-hub", element: <ContentHubPage /> },
+  { path: "/admin/quick-start", element: <QuickStartPage /> },
   { path: "/preview/:id", element: <PreviewPage /> },
+  { path: "/:slug", element: <PublicPage /> },
   { path: "/:slug", element: <PublicPage /> },
 ]);
 
