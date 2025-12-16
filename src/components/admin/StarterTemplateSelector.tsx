@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Rocket, Building2, ShieldCheck, Sparkles, MessageSquare, Check } from 'lucide-react';
+import { Rocket, Building2, ShieldCheck, Sparkles, MessageSquare, Check, FileText, Settings, Palette } from 'lucide-react';
 import { STARTER_TEMPLATES, StarterTemplate } from '@/data/starter-templates';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
@@ -40,6 +40,11 @@ export function StarterTemplateSelector({ onSelectTemplate, trigger }: StarterTe
     setOpen(false);
   };
 
+  // Calculate total blocks across all pages
+  const getTotalBlocks = (template: StarterTemplate) => {
+    return template.pages.reduce((total, page) => total + page.blocks.length, 0);
+  };
+
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
@@ -54,10 +59,10 @@ export function StarterTemplateSelector({ onSelectTemplate, trigger }: StarterTe
         <SheetHeader className="mb-6">
           <SheetTitle className="flex items-center gap-2 text-xl">
             <Sparkles className="h-5 w-5 text-primary" />
-            Starter Templates
+            Site Templates
           </SheetTitle>
           <SheetDescription>
-            Choose a professionally designed template to jumpstart your page. Each template includes pre-configured blocks and optimal settings.
+            Choose a professionally designed template to create your complete website. Each template includes multiple pages, branding, and AI chat configuration.
           </SheetDescription>
         </SheetHeader>
 
@@ -109,23 +114,46 @@ export function StarterTemplateSelector({ onSelectTemplate, trigger }: StarterTe
                     {template.description}
                   </CardDescription>
                   
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <MessageSquare className="h-3.5 w-3.5" />
-                    <span className="font-medium">AI Chat:</span>
-                    <span>{template.aiChatPosition}</span>
+                  {/* What's included */}
+                  <div className="grid grid-cols-3 gap-2 pt-2">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <FileText className="h-3.5 w-3.5" />
+                      <span className="font-medium">{template.pages.length} pages</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Palette className="h-3.5 w-3.5" />
+                      <span className="font-medium">Branding</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <MessageSquare className="h-3.5 w-3.5" />
+                      <span className="font-medium">AI Chat</span>
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className="text-xs">
-                      {template.blocks.length} blocks
-                    </Badge>
-                    {template.suggestedBranding && (
-                      <div 
-                        className="w-4 h-4 rounded-full border border-border"
-                        style={{ backgroundColor: `hsl(${template.suggestedBranding.primaryColor})` }}
-                        title="Suggested primary color"
-                      />
-                    )}
+                  {/* Pages preview */}
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {template.pages.map((page) => (
+                      <Badge 
+                        key={page.slug} 
+                        variant="secondary" 
+                        className="text-xs"
+                      >
+                        {page.title}
+                        {page.isHomePage && <span className="ml-1 opacity-60">(Home)</span>}
+                      </Badge>
+                    ))}
+                  </div>
+
+                  {/* Branding preview */}
+                  <div className="flex items-center gap-2 pt-1">
+                    <div 
+                      className="w-4 h-4 rounded-full border border-border"
+                      style={{ backgroundColor: `hsl(${template.branding.primaryColor})` }}
+                      title="Primary color"
+                    />
+                    <span className="text-xs text-muted-foreground">
+                      {template.branding.headingFont} / {template.branding.bodyFont}
+                    </span>
                   </div>
                 </CardContent>
               </Card>
@@ -135,7 +163,7 @@ export function StarterTemplateSelector({ onSelectTemplate, trigger }: StarterTe
 
         <div className="mt-6 p-4 bg-muted/50 rounded-lg">
           <p className="text-sm text-muted-foreground text-center">
-            Templates provide a starting point — you can customize every block after creation.
+            Templates create a complete site with multiple pages, applied branding, and configured AI chat. You can customize everything after creation.
           </p>
         </div>
       </SheetContent>

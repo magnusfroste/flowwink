@@ -303,11 +303,14 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
       {blocks.length === 0 && canEdit && (
         <TemplateEmptyState 
           onSelectTemplate={(template: StarterTemplate) => {
-            // Apply template blocks to the page
-            onChange(template.blocks.map(block => ({
-              ...block,
-              id: `block-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-            })));
+            // Apply first page's blocks to the current page
+            const homePage = template.pages.find(p => p.isHomePage) || template.pages[0];
+            if (homePage) {
+              onChange(homePage.blocks.map(block => ({
+                ...block,
+                id: `block-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              })));
+            }
           }}
         />
       )}

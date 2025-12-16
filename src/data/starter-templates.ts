@@ -1,5 +1,16 @@
 import { ContentBlock, PageMeta } from '@/types/cms';
+import { BrandingSettings, ChatSettings } from '@/hooks/useSiteSettings';
 
+// Page definition within a template
+export interface TemplatePage {
+  title: string;
+  slug: string;
+  isHomePage?: boolean;
+  blocks: ContentBlock[];
+  meta: PageMeta;
+}
+
+// Full site template
 export interface StarterTemplate {
   id: string;
   name: string;
@@ -8,29 +19,28 @@ export interface StarterTemplate {
   icon: string;
   tagline: string;
   aiChatPosition: string;
-  blocks: ContentBlock[];
-  meta: PageMeta;
-  suggestedBranding?: {
-    primaryColor: string;
-    headingFont: string;
-    bodyFont: string;
+  
+  // Multi-page support
+  pages: TemplatePage[];
+  
+  // Site-wide settings
+  branding: Partial<BrandingSettings>;
+  chatSettings: Partial<ChatSettings>;
+  
+  // General settings
+  siteSettings: {
+    homepageSlug: string;
   };
 }
 
-export const STARTER_TEMPLATES: StarterTemplate[] = [
+// =====================================================
+// LAUNCHPAD - Startup Template (4 pages)
+// =====================================================
+const launchpadPages: TemplatePage[] = [
   {
-    id: 'launchpad',
-    name: 'LaunchPad',
-    description: 'Modern, conversion-focused template for SaaS and tech startups. Features bold hero with video support, social proof stats, and a helpful AI chat widget.',
-    category: 'startup',
-    icon: 'Rocket',
-    tagline: 'Perfect for startups & SaaS',
-    aiChatPosition: 'Small card widget for quick support',
-    suggestedBranding: {
-      primaryColor: '250 84% 54%',
-      headingFont: 'Space Grotesk',
-      bodyFont: 'Inter',
-    },
+    title: 'Home',
+    slug: 'hem',
+    isHomePage: true,
     meta: {
       description: 'Launch your vision with our cutting-edge platform',
       showTitle: false,
@@ -75,7 +85,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
             type: 'doc',
             content: [
               { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Built for Speed' }] },
-              { type: 'paragraph', content: [{ type: 'text', text: 'Deploy in seconds, not hours. Our streamlined infrastructure means your ideas go live the moment they\'re ready. No complex setup, no waiting around.' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'Deploy in seconds, not hours. Our streamlined infrastructure means your ideas go live the moment they\'re ready.' }] },
               { type: 'bulletList', content: [
                 { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'One-click deployments' }] }] },
                 { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Auto-scaling infrastructure' }] }] },
@@ -89,36 +99,10 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
         },
       },
       {
-        id: 'two-col-2',
-        type: 'two-column',
-        data: {
-          content: {
-            type: 'doc',
-            content: [
-              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Scale Without Limits' }] },
-              { type: 'paragraph', content: [{ type: 'text', text: 'From your first 100 users to your first million. Our platform grows with you, automatically handling traffic spikes and optimizing performance.' }] },
-              { type: 'bulletList', content: [
-                { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Automatic load balancing' }] }] },
-                { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Real-time analytics' }] }] },
-                { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Zero downtime upgrades' }] }] },
-              ]},
-            ],
-          },
-          imageSrc: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800',
-          imageAlt: 'Dashboard analytics',
-          imagePosition: 'left',
-        },
-      },
-      {
-        id: 'separator-1',
-        type: 'separator',
-        data: { style: 'space', spacing: 'lg' },
-      },
-      {
         id: 'quote-1',
         type: 'quote',
         data: {
-          text: 'We went from idea to production in just 2 weeks. LaunchPad eliminated all the infrastructure headaches so we could focus on what matters — building a great product.',
+          text: 'We went from idea to production in just 2 weeks. LaunchPad eliminated all the infrastructure headaches.',
           author: 'Sarah Chen',
           source: 'CTO, TechFlow',
           variant: 'styled',
@@ -135,6 +119,171 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
           gradient: true,
         },
       },
+    ],
+  },
+  {
+    title: 'Product',
+    slug: 'produkt',
+    meta: {
+      description: 'Explore our powerful features designed for modern teams',
+      showTitle: true,
+      titleAlignment: 'center',
+    },
+    blocks: [
+      {
+        id: 'hero-1',
+        type: 'hero',
+        data: {
+          title: 'Everything You Need to Ship Fast',
+          subtitle: 'A complete toolkit for modern development teams. From idea to production in record time.',
+          backgroundType: 'color',
+          heightMode: '60vh',
+          contentAlignment: 'center',
+          overlayOpacity: 0,
+          titleAnimation: 'fade-in',
+        },
+      },
+      {
+        id: 'link-grid-1',
+        type: 'link-grid',
+        data: {
+          columns: 3,
+          links: [
+            { icon: 'Zap', title: 'Instant Deploy', description: 'Push to production in seconds', url: '#deploy' },
+            { icon: 'Shield', title: 'Enterprise Security', description: 'SOC 2 compliant from day one', url: '#security' },
+            { icon: 'BarChart3', title: 'Analytics', description: 'Real-time insights and metrics', url: '#analytics' },
+            { icon: 'Puzzle', title: 'Integrations', description: '50+ pre-built connectors', url: '#integrations' },
+            { icon: 'Users', title: 'Team Management', description: 'Collaborate seamlessly', url: '#teams' },
+            { icon: 'Cpu', title: 'AI-Powered', description: 'Smart automation built-in', url: '#ai' },
+          ],
+        },
+      },
+      {
+        id: 'two-col-1',
+        type: 'two-column',
+        data: {
+          content: {
+            type: 'doc',
+            content: [
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Developer Experience First' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'We obsess over the details so you can focus on building. Every feature is designed to reduce friction and increase velocity.' }] },
+            ],
+          },
+          imageSrc: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800',
+          imageAlt: 'Dashboard analytics',
+          imagePosition: 'left',
+        },
+      },
+      {
+        id: 'two-col-2',
+        type: 'two-column',
+        data: {
+          content: {
+            type: 'doc',
+            content: [
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Scale Without Limits' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'From your first 100 users to your first million. Our platform grows with you, automatically handling traffic spikes.' }] },
+            ],
+          },
+          imageSrc: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800',
+          imageAlt: 'Growth chart',
+          imagePosition: 'right',
+        },
+      },
+      {
+        id: 'cta-1',
+        type: 'cta',
+        data: {
+          title: 'See It in Action',
+          subtitle: 'Schedule a personalized demo with our team.',
+          buttonText: 'Book Demo',
+          buttonUrl: '/kontakt',
+          gradient: true,
+        },
+      },
+    ],
+  },
+  {
+    title: 'Pricing',
+    slug: 'priser',
+    meta: {
+      description: 'Simple, transparent pricing that scales with you',
+      showTitle: true,
+      titleAlignment: 'center',
+    },
+    blocks: [
+      {
+        id: 'hero-1',
+        type: 'hero',
+        data: {
+          title: 'Simple, Transparent Pricing',
+          subtitle: 'Start free, scale as you grow. No hidden fees, no surprises.',
+          backgroundType: 'color',
+          heightMode: 'auto',
+          contentAlignment: 'center',
+          overlayOpacity: 0,
+        },
+      },
+      {
+        id: 'stats-1',
+        type: 'stats',
+        data: {
+          title: 'Choose Your Plan',
+          stats: [
+            { value: 'Free', label: 'Starter Plan', icon: 'Rocket' },
+            { value: '$49/mo', label: 'Pro Plan', icon: 'Zap' },
+            { value: '$199/mo', label: 'Team Plan', icon: 'Users' },
+            { value: 'Custom', label: 'Enterprise', icon: 'Building' },
+          ],
+        },
+      },
+      {
+        id: 'accordion-1',
+        type: 'accordion',
+        data: {
+          title: 'Pricing FAQ',
+          items: [
+            { question: 'Can I try before I buy?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Absolutely! Our free tier includes everything you need to get started. No credit card required.' }] }] } },
+            { question: 'What happens if I exceed my limits?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'We\'ll notify you before you hit any limits. You can upgrade anytime, and we\'ll never shut off your service unexpectedly.' }] }] } },
+            { question: 'Do you offer discounts for startups?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Yes! We offer 50% off for the first year for qualifying startups. Contact us for details.' }] }] } },
+            { question: 'Can I cancel anytime?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Yes, you can cancel your subscription at any time. We don\'t believe in lock-ins.' }] }] } },
+          ],
+        },
+      },
+      {
+        id: 'cta-1',
+        type: 'cta',
+        data: {
+          title: 'Ready to Get Started?',
+          subtitle: 'Join thousands of teams already building with us.',
+          buttonText: 'Start Free Trial',
+          buttonUrl: '/signup',
+          gradient: true,
+        },
+      },
+    ],
+  },
+  {
+    title: 'Contact',
+    slug: 'kontakt',
+    meta: {
+      description: 'Get in touch with our team',
+      showTitle: true,
+      titleAlignment: 'center',
+    },
+    blocks: [
+      {
+        id: 'hero-1',
+        type: 'hero',
+        data: {
+          title: 'Let\'s Talk',
+          subtitle: 'Have questions? We\'d love to hear from you.',
+          backgroundType: 'color',
+          heightMode: 'auto',
+          contentAlignment: 'center',
+          overlayOpacity: 0,
+        },
+      },
       {
         id: 'chat-1',
         type: 'chat',
@@ -147,43 +296,31 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
         },
       },
       {
-        id: 'accordion-1',
-        type: 'accordion',
-        data: {
-          title: 'Frequently Asked Questions',
-          items: [
-            { question: 'How do I get started?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Sign up for a free account and you can start building immediately. No credit card required for the starter plan.' }] }] } },
-            { question: 'What integrations do you support?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'We support 50+ integrations including Slack, GitHub, Jira, Salesforce, and more. Our API allows custom integrations as well.' }] }] } },
-            { question: 'Is there a free tier?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Yes! Our free tier includes everything you need to get started. Upgrade when you\'re ready to scale.' }] }] } },
-            { question: 'How does pricing work?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'We offer simple, usage-based pricing. Pay only for what you use, with no hidden fees or long-term contracts.' }] }] } },
-            { question: 'Do you offer enterprise plans?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Yes, we offer custom enterprise plans with dedicated support, SLAs, and additional security features. Contact our sales team for details.' }] }] } },
-          ],
-        },
-      },
-      {
         id: 'contact-1',
         type: 'contact',
         data: {
           title: 'Get in Touch',
           email: 'hello@launchpad.io',
           phone: '+1 (555) 123-4567',
+          address: 'San Francisco, CA',
+          hours: [
+            { day: 'Sales', time: 'Mon-Fri 9AM-6PM' },
+            { day: 'Support', time: '24/7 Available' },
+          ],
         },
       },
     ],
   },
+];
+
+// =====================================================
+// TRUSTCORP - Enterprise Template (5 pages)
+// =====================================================
+const trustcorpPages: TemplatePage[] = [
   {
-    id: 'trustcorp',
-    name: 'TrustCorp',
-    description: 'Professional template for established enterprises. Emphasizes trust, scale, and data sovereignty with a prominent private AI assistant.',
-    category: 'enterprise',
-    icon: 'Building2',
-    tagline: 'For enterprises that demand excellence',
-    aiChatPosition: 'Large embedded assistant with data sovereignty messaging',
-    suggestedBranding: {
-      primaryColor: '220 70% 35%',
-      headingFont: 'Playfair Display',
-      bodyFont: 'Source Sans Pro',
-    },
+    title: 'Home',
+    slug: 'hem',
+    isHomePage: true,
     meta: {
       description: 'Enterprise solutions you can trust',
       showTitle: false,
@@ -203,8 +340,8 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
           overlayOpacity: 65,
           parallaxEffect: true,
           titleAnimation: 'fade-in',
-          primaryButton: { text: 'Request Demo', url: '/demo' },
-          secondaryButton: { text: 'Contact Sales', url: '/contact' },
+          primaryButton: { text: 'Request Demo', url: '/kontakt' },
+          secondaryButton: { text: 'Our Services', url: '/tjanster' },
         },
       },
       {
@@ -213,10 +350,10 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
         data: {
           columns: 4,
           links: [
-            { icon: 'Briefcase', title: 'Consulting', description: 'Strategic advisory services', url: '/services/consulting' },
-            { icon: 'Server', title: 'Technology', description: 'Enterprise infrastructure', url: '/services/technology' },
-            { icon: 'BarChart3', title: 'Analytics', description: 'Data-driven insights', url: '/services/analytics' },
-            { icon: 'HeadphonesIcon', title: 'Support', description: '24/7 dedicated assistance', url: '/services/support' },
+            { icon: 'Briefcase', title: 'Consulting', description: 'Strategic advisory services', url: '/tjanster' },
+            { icon: 'Server', title: 'Technology', description: 'Enterprise infrastructure', url: '/tjanster' },
+            { icon: 'BarChart3', title: 'Analytics', description: 'Data-driven insights', url: '/tjanster' },
+            { icon: 'HeadphonesIcon', title: 'Support', description: '24/7 dedicated assistance', url: '/kontakt' },
           ],
         },
       },
@@ -234,9 +371,48 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
         },
       },
       {
-        id: 'separator-1',
-        type: 'separator',
-        data: { style: 'ornament', spacing: 'md' },
+        id: 'quote-1',
+        type: 'quote',
+        data: {
+          text: 'TrustCorp transformed our operations completely. Their private AI solution gave us the capabilities we needed without compromising on data governance.',
+          author: 'Michael Torres',
+          source: 'CIO, Fortune 500 Manufacturer',
+          variant: 'styled',
+        },
+      },
+      {
+        id: 'cta-1',
+        type: 'cta',
+        data: {
+          title: 'Ready to Transform?',
+          subtitle: 'Let\'s discuss how we can help your organization.',
+          buttonText: 'Schedule Consultation',
+          buttonUrl: '/kontakt',
+          gradient: false,
+        },
+      },
+    ],
+  },
+  {
+    title: 'Services',
+    slug: 'tjanster',
+    meta: {
+      description: 'Comprehensive enterprise services tailored to your needs',
+      showTitle: true,
+      titleAlignment: 'center',
+    },
+    blocks: [
+      {
+        id: 'hero-1',
+        type: 'hero',
+        data: {
+          title: 'Our Services',
+          subtitle: 'Comprehensive solutions for enterprise challenges',
+          backgroundType: 'color',
+          heightMode: 'auto',
+          contentAlignment: 'center',
+          overlayOpacity: 0,
+        },
       },
       {
         id: 'two-col-1',
@@ -245,67 +421,39 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
           content: {
             type: 'doc',
             content: [
-              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Case Study: GlobalBank' }] },
-              { type: 'paragraph', content: [{ type: 'text', text: 'How we helped GlobalBank reduce operational costs by 40% while improving customer satisfaction scores by 25%.' }] },
-              { type: 'paragraph', content: [{ type: 'text', text: 'Through our comprehensive digital transformation program, GlobalBank modernized their legacy systems, implemented AI-driven customer service, and achieved regulatory compliance across 30 markets.' }] },
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Strategic Consulting' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'Our experienced consultants work closely with your leadership team to develop strategies that drive growth, efficiency, and competitive advantage.' }] },
+              { type: 'bulletList', content: [
+                { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Digital transformation roadmaps' }] }] },
+                { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Operational excellence programs' }] }] },
+                { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Technology strategy development' }] }] },
+              ]},
             ],
           },
-          imageSrc: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=800',
-          imageAlt: 'Business analysis dashboard',
+          imageSrc: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=800',
+          imageAlt: 'Team strategy meeting',
           imagePosition: 'right',
         },
       },
       {
-        id: 'gallery-1',
-        type: 'gallery',
+        id: 'two-col-2',
+        type: 'two-column',
         data: {
-          images: [
-            { src: 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=400', alt: 'Client logo placeholder', caption: 'Fortune 500 Client' },
-            { src: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400', alt: 'Enterprise building', caption: 'Global Enterprise' },
-            { src: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=400', alt: 'Modern office', caption: 'Tech Leader' },
-            { src: 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=400', alt: 'Corporate office', caption: 'Financial Institution' },
-          ],
-          layout: 'grid',
-          columns: 4,
-        },
-      },
-      {
-        id: 'article-grid-1',
-        type: 'article-grid',
-        data: {
-          title: 'Thought Leadership',
-          columns: 3,
-          articles: [
-            { title: 'The Future of Enterprise AI', excerpt: 'How private AI models are transforming enterprise operations while maintaining data sovereignty.', image: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=600', url: '/blog/future-of-ai' },
-            { title: 'Data Security Best Practices', excerpt: 'Essential strategies for protecting sensitive data in an increasingly connected world.', image: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=600', url: '/blog/data-security' },
-            { title: 'Digital Transformation Guide', excerpt: 'A comprehensive roadmap for enterprises embarking on their digital transformation journey.', image: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=600', url: '/blog/digital-transformation' },
-          ],
-        },
-      },
-      {
-        id: 'separator-2',
-        type: 'separator',
-        data: { style: 'line', spacing: 'md' },
-      },
-      {
-        id: 'quote-1',
-        type: 'quote',
-        data: {
-          text: 'TrustCorp transformed our operations completely. Their private AI solution gave us the capabilities we needed without compromising on our strict data governance requirements.',
-          author: 'Michael Torres',
-          source: 'CIO, Fortune 500 Manufacturer',
-          variant: 'styled',
-        },
-      },
-      {
-        id: 'chat-1',
-        type: 'chat',
-        data: {
-          title: 'Private Enterprise Assistant',
-          height: 'lg',
-          showSidebar: false,
-          variant: 'card',
-          initialPrompt: 'Welcome to TrustCorp. I\'m your private AI assistant — all conversations are processed on your infrastructure. How can I help you today?',
+          content: {
+            type: 'doc',
+            content: [
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Enterprise Technology' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'We design, build, and maintain the technology infrastructure that powers the world\'s leading organizations.' }] },
+              { type: 'bulletList', content: [
+                { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Cloud architecture & migration' }] }] },
+                { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Private AI deployment' }] }] },
+                { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Legacy system modernization' }] }] },
+              ]},
+            ],
+          },
+          imageSrc: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800',
+          imageAlt: 'Technology infrastructure',
+          imagePosition: 'left',
         },
       },
       {
@@ -318,18 +466,176 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
         },
       },
       {
-        id: 'accordion-1',
-        type: 'accordion',
+        id: 'cta-1',
+        type: 'cta',
         data: {
-          title: 'Enterprise FAQ',
-          items: [
-            { question: 'How do you ensure data security?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'We employ multiple layers of security including end-to-end encryption, SOC 2 Type II compliance, and optional on-premise deployment for maximum control.' }] }] } },
-            { question: 'What compliance certifications do you have?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'We maintain SOC 2 Type II, ISO 27001, GDPR compliance, and can support industry-specific requirements like HIPAA and PCI-DSS.' }] }] } },
-            { question: 'Can we deploy on our own infrastructure?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Yes, we offer full on-premise deployment options as well as private cloud solutions. Your data never has to leave your infrastructure.' }] }] } },
-            { question: 'What SLAs do you offer?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Enterprise clients receive 99.99% uptime SLA with 24/7 dedicated support, guaranteed response times, and named account managers.' }] }] } },
-            { question: 'How does your AI maintain privacy?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Our Private AI models can be deployed entirely within your infrastructure. No data is sent to external servers, ensuring complete confidentiality.' }] }] } },
-            { question: 'Do you offer custom integrations?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Yes, our professional services team can build custom integrations with your existing enterprise systems, including legacy applications.' }] }] } },
+          title: 'Explore Our Full Capabilities',
+          subtitle: 'Every engagement is tailored to your unique needs.',
+          buttonText: 'Contact Us',
+          buttonUrl: '/kontakt',
+          gradient: false,
+        },
+      },
+    ],
+  },
+  {
+    title: 'Case Studies',
+    slug: 'case-studies',
+    meta: {
+      description: 'Real results from real clients',
+      showTitle: true,
+      titleAlignment: 'center',
+    },
+    blocks: [
+      {
+        id: 'hero-1',
+        type: 'hero',
+        data: {
+          title: 'Client Success Stories',
+          subtitle: 'Real results from industry leaders',
+          backgroundType: 'color',
+          heightMode: 'auto',
+          contentAlignment: 'center',
+          overlayOpacity: 0,
+        },
+      },
+      {
+        id: 'article-grid-1',
+        type: 'article-grid',
+        data: {
+          title: 'Featured Case Studies',
+          columns: 3,
+          articles: [
+            { title: 'GlobalBank: 40% Cost Reduction', excerpt: 'How we helped GlobalBank reduce operational costs while improving customer satisfaction.', image: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600', url: '#globalbank' },
+            { title: 'TechCorp: AI Transformation', excerpt: 'Deploying private AI across 30 global locations while maintaining data sovereignty.', image: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=600', url: '#techcorp' },
+            { title: 'HealthNet: HIPAA Compliance', excerpt: 'Modernizing healthcare IT infrastructure with full regulatory compliance.', image: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=600', url: '#healthnet' },
           ],
+        },
+      },
+      {
+        id: 'two-col-1',
+        type: 'two-column',
+        data: {
+          content: {
+            type: 'doc',
+            content: [
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'GlobalBank Case Study' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'GlobalBank faced mounting operational costs and declining customer satisfaction. Through our comprehensive digital transformation program, we helped them modernize legacy systems, implement AI-driven customer service, and achieve regulatory compliance across 30 markets.' }] },
+              { type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Results: ' }, { type: 'text', text: '40% cost reduction, 25% improvement in customer satisfaction, 99.99% system uptime.' }] },
+            ],
+          },
+          imageSrc: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=800',
+          imageAlt: 'Business analysis',
+          imagePosition: 'right',
+        },
+      },
+      {
+        id: 'quote-1',
+        type: 'quote',
+        data: {
+          text: 'The TrustCorp team delivered beyond our expectations. They understood our unique challenges and built solutions that work.',
+          author: 'Jennifer Walsh',
+          source: 'COO, GlobalBank',
+          variant: 'styled',
+        },
+      },
+    ],
+  },
+  {
+    title: 'About',
+    slug: 'om-oss',
+    meta: {
+      description: 'Learn about our company and mission',
+      showTitle: true,
+      titleAlignment: 'center',
+    },
+    blocks: [
+      {
+        id: 'hero-1',
+        type: 'hero',
+        data: {
+          title: 'About TrustCorp',
+          subtitle: '25 years of delivering excellence',
+          backgroundType: 'image',
+          backgroundImage: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=1920',
+          heightMode: '60vh',
+          contentAlignment: 'center',
+          overlayOpacity: 60,
+        },
+      },
+      {
+        id: 'two-col-1',
+        type: 'two-column',
+        data: {
+          content: {
+            type: 'doc',
+            content: [
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Our Mission' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'We exist to help enterprises navigate complexity with confidence. For over 25 years, we\'ve been the trusted partner for organizations that demand excellence, security, and results.' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'Our commitment to data sovereignty and privacy isn\'t just a feature — it\'s our foundation. In an era of cloud dependency, we give organizations control over their most sensitive operations.' }] },
+            ],
+          },
+          imageSrc: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800',
+          imageAlt: 'Team collaboration',
+          imagePosition: 'right',
+        },
+      },
+      {
+        id: 'stats-1',
+        type: 'stats',
+        data: {
+          title: 'Our Impact',
+          stats: [
+            { value: '3,000+', label: 'Projects Delivered', icon: 'CheckCircle' },
+            { value: '25K+', label: 'Professionals Trained', icon: 'GraduationCap' },
+            { value: '12', label: 'Global Offices', icon: 'Globe' },
+            { value: '98%', label: 'Client Retention', icon: 'Heart' },
+          ],
+        },
+      },
+      {
+        id: 'cta-1',
+        type: 'cta',
+        data: {
+          title: 'Join Our Team',
+          subtitle: 'We\'re always looking for exceptional talent.',
+          buttonText: 'View Careers',
+          buttonUrl: '/kontakt',
+          gradient: false,
+        },
+      },
+    ],
+  },
+  {
+    title: 'Contact',
+    slug: 'kontakt',
+    meta: {
+      description: 'Connect with our enterprise team',
+      showTitle: true,
+      titleAlignment: 'center',
+    },
+    blocks: [
+      {
+        id: 'hero-1',
+        type: 'hero',
+        data: {
+          title: 'Contact Our Team',
+          subtitle: 'Let\'s discuss how we can help your organization',
+          backgroundType: 'color',
+          heightMode: 'auto',
+          contentAlignment: 'center',
+          overlayOpacity: 0,
+        },
+      },
+      {
+        id: 'chat-1',
+        type: 'chat',
+        data: {
+          title: 'Private Enterprise Assistant',
+          height: 'lg',
+          showSidebar: false,
+          variant: 'card',
+          initialPrompt: 'Welcome to TrustCorp. I\'m your private AI assistant — all conversations are processed on your infrastructure. How can I help you today?',
         },
       },
       {
@@ -347,21 +653,30 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
           ],
         },
       },
+      {
+        id: 'accordion-1',
+        type: 'accordion',
+        data: {
+          title: 'Enterprise FAQ',
+          items: [
+            { question: 'How do you ensure data security?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'We employ multiple layers of security including end-to-end encryption, SOC 2 Type II compliance, and optional on-premise deployment.' }] }] } },
+            { question: 'Can we deploy on our own infrastructure?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Yes, we offer full on-premise deployment options as well as private cloud solutions. Your data never has to leave your infrastructure.' }] }] } },
+            { question: 'What SLAs do you offer?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Enterprise clients receive 99.99% uptime SLA with 24/7 dedicated support and named account managers.' }] }] } },
+          ],
+        },
+      },
     ],
   },
+];
+
+// =====================================================
+// SECUREHEALTH - Compliance Template (5 pages)
+// =====================================================
+const securehealthPages: TemplatePage[] = [
   {
-    id: 'securehealth',
-    name: 'SecureHealth',
-    description: 'Compliance-first template for healthcare, legal, and finance. Features a prominent Private AI assistant with HIPAA-compliant messaging.',
-    category: 'compliance',
-    icon: 'ShieldCheck',
-    tagline: 'For organizations where cloud AI is not an option',
-    aiChatPosition: 'Full-height featured AI with explicit privacy messaging',
-    suggestedBranding: {
-      primaryColor: '199 89% 35%',
-      headingFont: 'Merriweather',
-      bodyFont: 'Open Sans',
-    },
+    title: 'Home',
+    slug: 'hem',
+    isHomePage: true,
     meta: {
       description: 'Your health, your privacy — trusted care with complete data security',
       showTitle: false,
@@ -380,8 +695,8 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
           contentAlignment: 'center',
           overlayOpacity: 55,
           titleAnimation: 'fade-in',
-          primaryButton: { text: 'Book Appointment', url: '/booking' },
-          secondaryButton: { text: 'Patient Portal', url: '/portal' },
+          primaryButton: { text: 'Book Appointment', url: '/kontakt' },
+          secondaryButton: { text: 'Our Services', url: '/tjanster' },
         },
       },
       {
@@ -389,7 +704,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
         type: 'info-box',
         data: {
           title: 'Now Accepting New Patients',
-          content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Same-day appointments available. Call us or use our AI assistant to find the next available slot that works for you.' }] }] },
+          content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Same-day appointments available. Call us or use our AI assistant to find the next available slot.' }] }] },
           variant: 'highlight',
         },
       },
@@ -399,36 +714,11 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
         data: {
           columns: 3,
           links: [
-            { icon: 'Calendar', title: 'Book Appointment', description: 'Schedule your visit online', url: '/booking' },
-            { icon: 'MapPin', title: 'Find Us', description: 'Locations & directions', url: '/locations' },
-            { icon: 'Phone', title: 'Urgent Care', description: '24/7 medical helpline', url: '/urgent' },
+            { icon: 'Calendar', title: 'Book Appointment', description: 'Schedule your visit online', url: '/kontakt' },
+            { icon: 'MapPin', title: 'Find Us', description: 'Locations & directions', url: '/om-oss' },
+            { icon: 'Phone', title: 'Urgent Care', description: '24/7 medical helpline', url: '/kontakt' },
           ],
         },
-      },
-      {
-        id: 'chat-1',
-        type: 'chat',
-        data: {
-          title: 'Private AI Health Assistant',
-          height: 'full',
-          showSidebar: false,
-          variant: 'card',
-          initialPrompt: 'Hello! I\'m your private health assistant. I can help you book appointments, answer questions about our services, or provide general health information. All conversations are HIPAA-compliant and your data stays on our secure servers. How can I help you today?',
-        },
-      },
-      {
-        id: 'info-box-2',
-        type: 'info-box',
-        data: {
-          title: 'HIPAA Compliant • Your Data Stays Here',
-          content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Our Private AI runs entirely on our secure, HIPAA-compliant infrastructure. Your health information is never sent to external cloud services or third parties. Complete privacy, complete peace of mind.' }] }] },
-          variant: 'success',
-        },
-      },
-      {
-        id: 'separator-1',
-        type: 'separator',
-        data: { style: 'space', spacing: 'md' },
       },
       {
         id: 'stats-1',
@@ -444,15 +734,129 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
         },
       },
       {
+        id: 'cta-1',
+        type: 'cta',
+        data: {
+          title: 'Your Health Journey Starts Here',
+          subtitle: 'Experience healthcare that puts your privacy first.',
+          buttonText: 'Book Appointment',
+          buttonUrl: '/kontakt',
+          gradient: false,
+        },
+      },
+    ],
+  },
+  {
+    title: 'Services',
+    slug: 'tjanster',
+    meta: {
+      description: 'Comprehensive healthcare services for you and your family',
+      showTitle: true,
+      titleAlignment: 'center',
+    },
+    blocks: [
+      {
+        id: 'hero-1',
+        type: 'hero',
+        data: {
+          title: 'Our Medical Services',
+          subtitle: 'Comprehensive care for every stage of life',
+          backgroundType: 'color',
+          heightMode: 'auto',
+          contentAlignment: 'center',
+          overlayOpacity: 0,
+        },
+      },
+      {
+        id: 'link-grid-1',
+        type: 'link-grid',
+        data: {
+          columns: 3,
+          links: [
+            { icon: 'HeartPulse', title: 'Primary Care', description: 'General health checkups and preventive care', url: '#primary' },
+            { icon: 'Stethoscope', title: 'Specialists', description: 'Expert care across all medical fields', url: '#specialists' },
+            { icon: 'Baby', title: 'Pediatrics', description: 'Caring for children of all ages', url: '#pediatrics' },
+            { icon: 'Brain', title: 'Mental Health', description: 'Private counseling and therapy', url: '#mental' },
+            { icon: 'Activity', title: 'Diagnostics', description: 'Advanced testing and imaging', url: '#diagnostics' },
+            { icon: 'Pill', title: 'Pharmacy', description: 'On-site prescription services', url: '#pharmacy' },
+          ],
+        },
+      },
+      {
         id: 'two-col-1',
         type: 'two-column',
         data: {
           content: {
             type: 'doc',
             content: [
-              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'About Our Practice' }] },
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Primary Care' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'Our primary care physicians provide comprehensive health management for patients of all ages. From annual wellness visits to managing chronic conditions, we\'re your first point of contact for all health concerns.' }] },
+              { type: 'bulletList', content: [
+                { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Annual wellness exams' }] }] },
+                { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Chronic disease management' }] }] },
+                { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Preventive screenings' }] }] },
+              ]},
+            ],
+          },
+          imageSrc: 'https://images.unsplash.com/photo-1631217868264-e5b90bb7e133?w=800',
+          imageAlt: 'Doctor with patient',
+          imagePosition: 'right',
+        },
+      },
+      {
+        id: 'info-box-1',
+        type: 'info-box',
+        data: {
+          title: 'HIPAA Compliant • Your Data Stays Here',
+          content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Our Private AI runs entirely on our secure, HIPAA-compliant infrastructure. Your health information is never sent to external cloud services.' }] }] },
+          variant: 'success',
+        },
+      },
+      {
+        id: 'cta-1',
+        type: 'cta',
+        data: {
+          title: 'Ready to Schedule?',
+          subtitle: 'Book your appointment today.',
+          buttonText: 'Book Now',
+          buttonUrl: '/kontakt',
+          gradient: false,
+        },
+      },
+    ],
+  },
+  {
+    title: 'About Us',
+    slug: 'om-oss',
+    meta: {
+      description: 'Learn about our practice and our commitment to privacy',
+      showTitle: true,
+      titleAlignment: 'center',
+    },
+    blocks: [
+      {
+        id: 'hero-1',
+        type: 'hero',
+        data: {
+          title: 'About Our Practice',
+          subtitle: '20+ years of compassionate, patient-centered care',
+          backgroundType: 'image',
+          backgroundImage: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=1920',
+          heightMode: '60vh',
+          contentAlignment: 'center',
+          overlayOpacity: 60,
+        },
+      },
+      {
+        id: 'two-col-1',
+        type: 'two-column',
+        data: {
+          content: {
+            type: 'doc',
+            content: [
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Our Story' }] },
               { type: 'paragraph', content: [{ type: 'text', text: 'For over 20 years, we\'ve been providing compassionate, patient-centered care to our community. Our team of board-certified specialists is committed to your health and well-being.' }] },
-              { type: 'paragraph', content: [{ type: 'text', text: 'We believe that quality healthcare should come with complete privacy. That\'s why we\'ve invested in state-of-the-art, on-premise technology that keeps your data exactly where it belongs — under our care and yours.' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'We believe that quality healthcare should come with complete privacy. That\'s why we\'ve invested in state-of-the-art, on-premise technology that keeps your data exactly where it belongs.' }] },
             ],
           },
           imageSrc: 'https://images.unsplash.com/photo-1631217868264-e5b90bb7e133?w=800',
@@ -461,13 +865,60 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
         },
       },
       {
+        id: 'stats-1',
+        type: 'stats',
+        data: {
+          title: 'Our Credentials',
+          stats: [
+            { value: '20+', label: 'Years of Experience', icon: 'Award' },
+            { value: 'Board', label: 'Certified Physicians', icon: 'ShieldCheck' },
+            { value: 'HIPAA', label: 'Full Compliance', icon: 'Lock' },
+            { value: '5-Star', label: 'Patient Rating', icon: 'Star' },
+          ],
+        },
+      },
+      {
         id: 'quote-1',
         type: 'quote',
         data: {
-          text: 'I was hesitant about using an AI for health questions, but knowing that my data stays private made all the difference. The assistant helped me find the right specialist and book an appointment in minutes.',
+          text: 'I was hesitant about using an AI for health questions, but knowing that my data stays private made all the difference.',
           author: 'Rebecca M.',
           source: 'Patient',
           variant: 'styled',
+        },
+      },
+    ],
+  },
+  {
+    title: 'Patient Resources',
+    slug: 'resurser',
+    meta: {
+      description: 'Helpful resources and frequently asked questions',
+      showTitle: true,
+      titleAlignment: 'center',
+    },
+    blocks: [
+      {
+        id: 'hero-1',
+        type: 'hero',
+        data: {
+          title: 'Patient Resources',
+          subtitle: 'Everything you need to know about your care',
+          backgroundType: 'color',
+          heightMode: 'auto',
+          contentAlignment: 'center',
+          overlayOpacity: 0,
+        },
+      },
+      {
+        id: 'chat-1',
+        type: 'chat',
+        data: {
+          title: 'Private AI Health Assistant',
+          height: 'lg',
+          showSidebar: false,
+          variant: 'card',
+          initialPrompt: 'Hello! I\'m your private health assistant. I can help you book appointments, answer questions about our services, or provide general health information. All conversations are HIPAA-compliant. How can I help you today?',
         },
       },
       {
@@ -476,13 +927,13 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
         data: {
           title: 'Common Questions',
           items: [
-            { question: 'Is the AI assistant really private?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Yes. Unlike cloud-based AI services, our Private AI runs entirely on our own HIPAA-compliant servers. Your conversations and health information never leave our secure infrastructure.' }] }] } },
-            { question: 'What insurance do you accept?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'We accept most major insurance plans including Medicare, Blue Cross Blue Shield, Aetna, Cigna, and United Healthcare. Contact us to verify your specific coverage.' }] }] } },
-            { question: 'How do I access my medical records?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'You can access your medical records through our secure patient portal. For privacy reasons, we use two-factor authentication and encrypted connections.' }] }] } },
-            { question: 'Can I book appointments online?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Yes! Use our AI assistant above or the booking button to schedule appointments 24/7. You\'ll receive confirmation via your preferred contact method.' }] }] } },
+            { question: 'Is the AI assistant really private?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Yes. Unlike cloud-based AI services, our Private AI runs entirely on our own HIPAA-compliant servers. Your conversations never leave our secure infrastructure.' }] }] } },
+            { question: 'What insurance do you accept?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'We accept most major insurance plans including Medicare, Blue Cross Blue Shield, Aetna, Cigna, and United Healthcare. Contact us to verify your coverage.' }] }] } },
+            { question: 'How do I access my medical records?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'You can access your medical records through our secure patient portal. We use two-factor authentication and encrypted connections for privacy.' }] }] } },
+            { question: 'Can I book appointments online?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Yes! Use our AI assistant or the booking button to schedule appointments 24/7.' }] }] } },
             { 
               question: 'Where are you located?', 
-              answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'We have multiple locations throughout the region. Each facility features free parking and full accessibility. See our locations page for addresses and directions.' }] }] },
+              answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'We have multiple locations throughout the region. Each facility features free parking and full accessibility.' }] }] },
               image: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=600',
               imageAlt: 'Modern medical facility',
             },
@@ -490,19 +941,53 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
         },
       },
       {
-        id: 'youtube-1',
-        type: 'youtube',
+        id: 'info-box-1',
+        type: 'info-box',
         data: {
-          url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-          title: 'Take a Virtual Tour of Our Facility',
-          controls: true,
+          title: 'Patient Portal',
+          content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Access your medical records, test results, and appointment history securely online. All data is encrypted and stored on our HIPAA-compliant servers.' }] }] },
+          variant: 'default',
+        },
+      },
+    ],
+  },
+  {
+    title: 'Contact',
+    slug: 'kontakt',
+    meta: {
+      description: 'Book an appointment or reach our care team',
+      showTitle: true,
+      titleAlignment: 'center',
+    },
+    blocks: [
+      {
+        id: 'hero-1',
+        type: 'hero',
+        data: {
+          title: 'Contact Us',
+          subtitle: 'We\'re here to help with your healthcare needs',
+          backgroundType: 'color',
+          heightMode: 'auto',
+          contentAlignment: 'center',
+          overlayOpacity: 0,
+        },
+      },
+      {
+        id: 'chat-1',
+        type: 'chat',
+        data: {
+          title: 'Book with AI Assistant',
+          height: 'md',
+          showSidebar: false,
+          variant: 'card',
+          initialPrompt: 'Hi! I can help you book an appointment or answer questions about our services. All conversations are private and HIPAA-compliant. How can I help?',
         },
       },
       {
         id: 'contact-1',
         type: 'contact',
         data: {
-          title: 'Contact Us',
+          title: 'Contact Information',
           phone: '+1 (555) 234-5678',
           email: 'care@securehealth.com',
           address: '200 Medical Center Drive, Suite 100, Boston, MA 02115',
@@ -514,7 +999,104 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
           ],
         },
       },
+      {
+        id: 'info-box-1',
+        type: 'info-box',
+        data: {
+          title: 'Emergency Care',
+          content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'For medical emergencies, please call 911 immediately. For urgent but non-emergency concerns outside of office hours, call our 24/7 nurse line.' }] }] },
+          variant: 'warning',
+        },
+      },
     ],
+  },
+];
+
+// =====================================================
+// MAIN EXPORT
+// =====================================================
+export const STARTER_TEMPLATES: StarterTemplate[] = [
+  {
+    id: 'launchpad',
+    name: 'LaunchPad',
+    description: 'Modern, conversion-focused template for SaaS and tech startups. Features bold hero with video support, social proof stats, and a helpful AI chat widget.',
+    category: 'startup',
+    icon: 'Rocket',
+    tagline: 'Perfect for startups & SaaS',
+    aiChatPosition: 'Small card widget for quick support',
+    pages: launchpadPages,
+    branding: {
+      primaryColor: '250 84% 54%',
+      headingFont: 'Space Grotesk',
+      bodyFont: 'Inter',
+      borderRadius: 'md',
+      shadowIntensity: 'medium',
+    },
+    chatSettings: {
+      enabled: true,
+      widgetEnabled: true,
+      widgetPosition: 'bottom-right',
+      welcomeMessage: 'Hi! How can we help you today?',
+      systemPrompt: 'You are a helpful assistant for a SaaS startup. Be friendly, concise, and help users understand the product.',
+    },
+    siteSettings: {
+      homepageSlug: 'hem',
+    },
+  },
+  {
+    id: 'trustcorp',
+    name: 'TrustCorp',
+    description: 'Professional template for established enterprises. Emphasizes trust, scale, and data sovereignty with a prominent private AI assistant.',
+    category: 'enterprise',
+    icon: 'Building2',
+    tagline: 'For enterprises that demand excellence',
+    aiChatPosition: 'Large embedded assistant with data sovereignty messaging',
+    pages: trustcorpPages,
+    branding: {
+      primaryColor: '220 70% 35%',
+      headingFont: 'Playfair Display',
+      bodyFont: 'Source Sans Pro',
+      borderRadius: 'sm',
+      shadowIntensity: 'subtle',
+    },
+    chatSettings: {
+      enabled: true,
+      widgetEnabled: false,
+      blockEnabled: true,
+      welcomeMessage: 'Welcome to TrustCorp. How can I assist you today?',
+      systemPrompt: 'You are a professional enterprise assistant. Be formal, knowledgeable, and emphasize data security and compliance.',
+    },
+    siteSettings: {
+      homepageSlug: 'hem',
+    },
+  },
+  {
+    id: 'securehealth',
+    name: 'SecureHealth',
+    description: 'Compliance-first template for healthcare, legal, and finance. Features a prominent Private AI assistant with HIPAA-compliant messaging.',
+    category: 'compliance',
+    icon: 'ShieldCheck',
+    tagline: 'For organizations where cloud AI is not an option',
+    aiChatPosition: 'Full-height featured AI with explicit privacy messaging',
+    pages: securehealthPages,
+    branding: {
+      primaryColor: '199 89% 35%',
+      headingFont: 'Merriweather',
+      bodyFont: 'Open Sans',
+      borderRadius: 'md',
+      shadowIntensity: 'subtle',
+    },
+    chatSettings: {
+      enabled: true,
+      widgetEnabled: true,
+      widgetPosition: 'bottom-right',
+      welcomeMessage: 'Hello! I\'m your private health assistant. How can I help?',
+      systemPrompt: 'You are a HIPAA-compliant healthcare assistant. Be compassionate, informative, and always emphasize patient privacy. Never provide medical diagnoses.',
+      aiProvider: 'local',
+    },
+    siteSettings: {
+      homepageSlug: 'hem',
+    },
   },
 ];
 
