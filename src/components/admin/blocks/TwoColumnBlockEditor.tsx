@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { TwoColumnBlockData, TiptapDocument } from '@/types/cms';
 import { Bold, Italic, List, ListOrdered, ArrowLeftRight } from 'lucide-react';
 import { ImageUploader } from '../ImageUploader';
+import { AITiptapToolbar } from '../AITiptapToolbar';
 import { generateHTML } from '@tiptap/react';
 
 // Helper to check if content is Tiptap JSON
@@ -123,6 +124,8 @@ export function TwoColumnBlockEditor({ data, isEditing, onChange }: TwoColumnBlo
                   >
                     <ListOrdered className="h-4 w-4" />
                   </Button>
+                  <div className="flex-1" />
+                  <AITiptapToolbar editor={editor} />
                 </div>
                 <EditorContent 
                   editor={editor} 

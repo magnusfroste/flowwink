@@ -7,6 +7,7 @@ import { Toggle } from '@/components/ui/toggle';
 import { Separator } from '@/components/ui/separator';
 import { Bold, Italic, List, ListOrdered, Quote, Heading1, Heading2 } from 'lucide-react';
 import { TextBlockData, TiptapDocument } from '@/types/cms';
+import { AITiptapToolbar } from '@/components/admin/AITiptapToolbar';
 
 // Helper to check if content is Tiptap JSON
 function isTiptapDocument(content: string | TiptapDocument): content is TiptapDocument {
@@ -114,6 +115,8 @@ export function TextBlockEditor({ data, onChange, isEditing }: TextBlockEditorPr
           >
             <Quote className="h-4 w-4" />
           </Toggle>
+          <Separator orientation="vertical" className="h-6 mx-2" />
+          <AITiptapToolbar editor={editor} />
         </div>
       )}
       <EditorContent editor={editor} className="tiptap min-h-[100px]" />

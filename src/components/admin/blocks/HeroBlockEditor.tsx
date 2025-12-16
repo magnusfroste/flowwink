@@ -6,6 +6,7 @@ import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { HeroBlockData } from '@/types/cms';
 import { ImageUploader } from '../ImageUploader';
+import { AITextAssistant } from '../AITextAssistant';
 import { Image, Video, Palette, Maximize, AlignVerticalJustifyStart, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd, Type, MoveUp, Sparkles } from 'lucide-react';
 
 interface HeroBlockEditorProps {
@@ -30,21 +31,39 @@ export function HeroBlockEditor({ data, onChange, isEditing }: HeroBlockEditorPr
       <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
         <div className="space-y-2">
           <Label htmlFor="hero-title">Title</Label>
-          <Input
-            id="hero-title"
-            value={localData.title || ''}
-            onChange={(e) => handleChange({ title: e.target.value })}
-            placeholder="Main Heading"
-          />
+          <div className="flex gap-2">
+            <Input
+              id="hero-title"
+              value={localData.title || ''}
+              onChange={(e) => handleChange({ title: e.target.value })}
+              placeholder="Main Heading"
+              className="flex-1"
+            />
+            <AITextAssistant
+              value={localData.title || ''}
+              onChange={(text) => handleChange({ title: text })}
+              actions={['expand', 'improve']}
+              compact
+            />
+          </div>
         </div>
         <div className="space-y-2">
           <Label htmlFor="hero-subtitle">Subtitle</Label>
-          <Input
-            id="hero-subtitle"
-            value={localData.subtitle || ''}
-            onChange={(e) => handleChange({ subtitle: e.target.value })}
-            placeholder="Short description"
-          />
+          <div className="flex gap-2">
+            <Input
+              id="hero-subtitle"
+              value={localData.subtitle || ''}
+              onChange={(e) => handleChange({ subtitle: e.target.value })}
+              placeholder="Short description"
+              className="flex-1"
+            />
+            <AITextAssistant
+              value={localData.subtitle || ''}
+              onChange={(text) => handleChange({ subtitle: text })}
+              actions={['expand', 'improve']}
+              compact
+            />
+          </div>
         </div>
 
         {/* Background Type Selector */}

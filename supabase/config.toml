@@ -26,3 +26,6 @@ verify_jwt = true
 
 [functions.content-api]
 verify_jwt = false
+
+[functions.generate-text]
+verify_jwt = true

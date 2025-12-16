@@ -4,6 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { CTABlockData } from '@/types/cms';
+import { AITextAssistant } from '../AITextAssistant';
 import { cn } from '@/lib/utils';
 
 interface CTABlockEditorProps {
@@ -26,21 +27,39 @@ export function CTABlockEditor({ data, onChange, isEditing }: CTABlockEditorProp
       <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
         <div className="space-y-2">
           <Label htmlFor="cta-title">Title</Label>
-          <Input
-            id="cta-title"
-            value={localData.title || ''}
-            onChange={(e) => handleChange({ title: e.target.value })}
-            placeholder="Ready to take the next step?"
-          />
+          <div className="flex gap-2">
+            <Input
+              id="cta-title"
+              value={localData.title || ''}
+              onChange={(e) => handleChange({ title: e.target.value })}
+              placeholder="Ready to take the next step?"
+              className="flex-1"
+            />
+            <AITextAssistant
+              value={localData.title || ''}
+              onChange={(text) => handleChange({ title: text })}
+              actions={['expand', 'improve']}
+              compact
+            />
+          </div>
         </div>
         <div className="space-y-2">
           <Label htmlFor="cta-subtitle">Subtitle (optional)</Label>
-          <Input
-            id="cta-subtitle"
-            value={localData.subtitle || ''}
-            onChange={(e) => handleChange({ subtitle: e.target.value })}
-            placeholder="Short description"
-          />
+          <div className="flex gap-2">
+            <Input
+              id="cta-subtitle"
+              value={localData.subtitle || ''}
+              onChange={(e) => handleChange({ subtitle: e.target.value })}
+              placeholder="Short description"
+              className="flex-1"
+            />
+            <AITextAssistant
+              value={localData.subtitle || ''}
+              onChange={(text) => handleChange({ subtitle: text })}
+              actions={['expand', 'improve']}
+              compact
+            />
+          </div>
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">

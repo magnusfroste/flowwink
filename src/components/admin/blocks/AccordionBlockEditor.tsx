@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Plus, Trash2, GripVertical, Bold, Italic, List, ListOrdered } from 'lucide-react';
 import { AccordionBlockData, TiptapDocument } from '@/types/cms';
 import { ImagePickerField } from '@/components/admin/ImagePickerField';
+import { AITextAssistant } from '@/components/admin/AITextAssistant';
+import { AITiptapToolbar } from '@/components/admin/AITiptapToolbar';
 import {
   DndContext,
   closestCenter,
@@ -114,11 +116,20 @@ function SortableAccordionItem({ id, index, item, onUpdate, onRemove }: Sortable
           <Trash2 className="h-4 w-4" />
         </Button>
       </div>
-      <Input
-        value={item.question}
-        onChange={(e) => onUpdate(index, 'question', e.target.value)}
-        placeholder="Write the question here..."
-      />
+      <div className="flex gap-2">
+        <Input
+          value={item.question}
+          onChange={(e) => onUpdate(index, 'question', e.target.value)}
+          placeholder="Write the question here..."
+          className="flex-1"
+        />
+        <AITextAssistant
+          value={item.question}
+          onChange={(text) => onUpdate(index, 'question', text)}
+          actions={['expand', 'improve']}
+          compact
+        />
+      </div>
       <div className="space-y-2">
         <Label className="text-sm">Answer</Label>
         {editor && (
@@ -156,6 +167,8 @@ function SortableAccordionItem({ id, index, item, onUpdate, onRemove }: Sortable
               >
                 <ListOrdered className="h-4 w-4" />
               </Button>
+              <div className="flex-1" />
+              <AITiptapToolbar editor={editor} />
             </div>
             <EditorContent 
               editor={editor} 

@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Quote } from 'lucide-react';
+import { AITextAssistant } from '../AITextAssistant';
 
 interface QuoteBlockEditorProps {
   data: QuoteBlockData;
@@ -42,7 +43,15 @@ export function QuoteBlockEditor({ data, onChange, isEditing }: QuoteBlockEditor
   return (
     <div className="space-y-4 p-4">
       <div className="space-y-2">
-        <Label>Quote</Label>
+        <div className="flex items-center justify-between">
+          <Label>Quote</Label>
+          <AITextAssistant
+            value={data.text || ''}
+            onChange={(text) => onChange({ ...data, text })}
+            actions={['improve', 'expand']}
+            compact
+          />
+        </div>
         <Textarea
           value={data.text || ''}
           onChange={(e) => onChange({ ...data, text: e.target.value })}

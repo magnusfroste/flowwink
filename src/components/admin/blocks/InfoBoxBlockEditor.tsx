@@ -8,6 +8,8 @@ import { useEditor, EditorContent, generateHTML } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
+import { AITextAssistant } from '../AITextAssistant';
+import { AITiptapToolbar } from '../AITiptapToolbar';
 
 // Helper to check if content is Tiptap JSON
 function isTiptapDocument(content: unknown): content is TiptapDocument {
@@ -149,11 +151,20 @@ export function InfoBoxBlockEditor({ data, isEditing, onChange }: InfoBoxBlockEd
 
         <div>
           <Label>Title</Label>
-          <Input
-            value={data.title || ''}
-            onChange={(e) => onChange({ ...data, title: e.target.value })}
-            placeholder="Important information"
-          />
+          <div className="flex gap-2">
+            <Input
+              value={data.title || ''}
+              onChange={(e) => onChange({ ...data, title: e.target.value })}
+              placeholder="Important information"
+              className="flex-1"
+            />
+            <AITextAssistant
+              value={data.title || ''}
+              onChange={(text) => onChange({ ...data, title: text })}
+              actions={['expand', 'improve']}
+              compact
+            />
+          </div>
         </div>
 
         <div className="space-y-2">
@@ -193,6 +204,8 @@ export function InfoBoxBlockEditor({ data, isEditing, onChange }: InfoBoxBlockEd
                 >
                   <ListOrdered className="h-4 w-4" />
                 </Button>
+                <div className="flex-1" />
+                <AITiptapToolbar editor={editor} />
               </div>
               <EditorContent 
                 editor={editor} 
