@@ -901,9 +901,26 @@ export default function BrandingSettingsPage() {
                     </div>
                   </div>
                   {settings.allowThemeToggle === false && (
-                    <p className="text-sm text-muted-foreground bg-muted p-3 rounded-md">
-                      When theme toggle is disabled, the website is always shown in light theme for visitors.
-                    </p>
+                    <div className="space-y-4 bg-muted p-4 rounded-md">
+                      <div className="space-y-2">
+                        <Label>Default Theme</Label>
+                        <Select
+                          value={settings.defaultTheme || 'light'}
+                          onValueChange={(value) => updateField('defaultTheme', value as BrandingSettings['defaultTheme'])}
+                        >
+                          <SelectTrigger className="w-48">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="light">Light</SelectItem>
+                            <SelectItem value="dark">Dark</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <p className="text-sm text-muted-foreground">
+                          Visitors will always see this theme when the toggle is disabled.
+                        </p>
+                      </div>
+                    </div>
                   )}
                 </CardContent>
               </Card>
