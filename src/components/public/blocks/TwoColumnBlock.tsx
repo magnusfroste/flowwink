@@ -37,7 +37,7 @@ export function TwoColumnBlock({ data }: TwoColumnBlockProps) {
               />
             </div>
           )}
-          <div className={`prose prose-lg max-w-none ${imageFirst ? '' : 'md:[direction:ltr]'}`}>
+          <div className={`prose prose-lg dark:prose-invert max-w-none ${imageFirst ? '' : 'md:[direction:ltr]'}`}>
             <div dangerouslySetInnerHTML={{ __html: renderContent(data.content) }} />
           </div>
         </div>
