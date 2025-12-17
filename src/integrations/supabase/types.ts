@@ -106,6 +106,42 @@ export type Database = {
           },
         ]
       }
+      global_blocks: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          data: Json
+          id: string
+          is_active: boolean
+          slot: string
+          type: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          data?: Json
+          id?: string
+          is_active?: boolean
+          slot: string
+          type: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          data?: Json
+          id?: string
+          is_active?: boolean
+          slot?: string
+          type?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       page_versions: {
         Row: {
           content_json: Json

@@ -2,9 +2,10 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
 import { Phone, Mail, MapPin, Clock, Facebook, Instagram, Linkedin, Twitter, Youtube } from 'lucide-react';
-import { useFooterSettings, FooterSectionId } from '@/hooks/useSiteSettings';
+import { useFooterBlock, defaultFooterData } from '@/hooks/useGlobalBlocks';
 import { useBranding } from '@/providers/BrandingProvider';
 import { useTheme } from 'next-themes';
+import { FooterSectionId } from '@/types/cms';
 
 interface NavPage {
   id: string;
@@ -13,7 +14,8 @@ interface NavPage {
 }
 
 export function PublicFooter() {
-  const { data: settings } = useFooterSettings();
+  const { data: footerBlock } = useFooterBlock();
+  const settings = footerBlock?.data || defaultFooterData;
   const { branding } = useBranding();
   const { resolvedTheme } = useTheme();
   

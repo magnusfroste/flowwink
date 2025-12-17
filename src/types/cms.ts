@@ -81,7 +81,58 @@ export type ContentBlockType =
   | 'separator'
   | 'gallery'
   | 'stats'
-  | 'chat';
+  | 'chat'
+  | 'footer';
+
+// Global block slot types
+export type GlobalBlockSlot = 'footer' | 'header' | 'sidebar';
+
+// Global block record
+export interface GlobalBlock {
+  id: string;
+  slot: GlobalBlockSlot;
+  type: ContentBlockType;
+  data: Record<string, unknown>;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+  updated_by: string | null;
+}
+
+// Footer block data (stored in global_blocks.data)
+export interface FooterBlockData {
+  phone: string;
+  email: string;
+  address: string;
+  postalCode: string;
+  weekdayHours: string;
+  weekendHours: string;
+  // Social media
+  facebook?: string;
+  instagram?: string;
+  linkedin?: string;
+  twitter?: string;
+  youtube?: string;
+  // Section visibility
+  showBrand?: boolean;
+  showQuickLinks?: boolean;
+  showContact?: boolean;
+  showHours?: boolean;
+  // Section order
+  sectionOrder?: FooterSectionId[];
+  // Legal links
+  legalLinks?: FooterLegalLink[];
+}
+
+export type FooterSectionId = 'brand' | 'quickLinks' | 'contact' | 'hours';
+
+export interface FooterLegalLink {
+  id: string;
+  label: string;
+  url: string;
+  enabled: boolean;
+}
 
 export interface ContentBlock {
   id: string;
