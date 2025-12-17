@@ -30,6 +30,36 @@ interface ChatRequest {
   };
 }
 
+// Extract text from Tiptap JSON content
+function extractTextFromTiptap(content: any): string {
+  if (!content) return '';
+  
+  // If it's a string (HTML or plain text), strip tags
+  if (typeof content === 'string') {
+    return content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+  
+  // If it's Tiptap JSON, recursively extract text
+  if (typeof content === 'object') {
+    const texts: string[] = [];
+    
+    if (content.text) {
+      texts.push(content.text);
+    }
+    
+    if (content.content && Array.isArray(content.content)) {
+      for (const node of content.content) {
+        const nodeText = extractTextFromTiptap(node);
+        if (nodeText) texts.push(nodeText);
+      }
+    }
+    
+    return texts.join(' ').replace(/\s+/g, ' ').trim();
+  }
+  
+  return '';
+}
+
 // Extract text from block content
 function extractTextFromBlock(block: any): string {
   if (!block) return '';
@@ -40,9 +70,9 @@ function extractTextFromBlock(block: any): string {
 
   switch (type) {
     case 'text':
-      // Strip HTML tags from rich text
+      // Handle both HTML strings and Tiptap JSON
       if (data.content) {
-        texts.push(data.content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim());
+        texts.push(extractTextFromTiptap(data.content));
       }
       break;
     case 'hero':
@@ -59,7 +89,7 @@ function extractTextFromBlock(block: any): string {
       if (data.items && Array.isArray(data.items)) {
         data.items.forEach((item: any) => {
           if (item.question) texts.push(item.question);
-          if (item.answer) texts.push(item.answer.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim());
+          if (item.answer) texts.push(extractTextFromTiptap(item.answer));
         });
       }
       break;
@@ -75,7 +105,12 @@ function extractTextFromBlock(block: any): string {
     case 'info-box':
     case 'infoBox':
       if (data.title) texts.push(data.title);
-      if (data.content) texts.push(data.content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim());
+      if (data.content) texts.push(extractTextFromTiptap(data.content));
+      break;
+    case 'two-column':
+    case 'twoColumn':
+      if (data.leftContent) texts.push(extractTextFromTiptap(data.leftContent));
+      if (data.rightContent) texts.push(extractTextFromTiptap(data.rightContent));
       break;
     case 'stats':
       if (data.items && Array.isArray(data.items)) {
