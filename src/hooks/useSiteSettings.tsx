@@ -265,6 +265,9 @@ export interface ChatSettings {
   includeContentAsContext: boolean;
   contentContextMaxTokens: number;
   includedPageSlugs: string[];
+  
+  // Suggested prompts (shown in empty state)
+  suggestedPrompts: string[];
 }
 
 const defaultChatSettings: ChatSettings = {
@@ -294,6 +297,11 @@ const defaultChatSettings: ChatSettings = {
   includeContentAsContext: false,
   contentContextMaxTokens: 50000,
   includedPageSlugs: [],
+  suggestedPrompts: [
+    'Vad kan du hjälpa mig med?',
+    'Berätta mer om era tjänster',
+    'Hur bokar jag en tid?',
+  ],
 };
 
 // Generic hook for fetching settings

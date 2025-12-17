@@ -57,6 +57,7 @@ export function ChatConversation({
           <ChatEmptyState
             title={settings?.title}
             welcomeMessage={settings?.welcomeMessage}
+            suggestedPrompts={settings?.suggestedPrompts}
             onPromptClick={handlePromptClick}
           />
         ) : (

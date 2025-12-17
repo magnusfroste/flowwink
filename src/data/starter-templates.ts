@@ -1162,6 +1162,11 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
       widgetPosition: 'bottom-right',
       welcomeMessage: 'Hi! How can we help you today?',
       systemPrompt: 'You are a helpful assistant for a SaaS startup. Be friendly, concise, and help users understand the product.',
+      suggestedPrompts: [
+        'What does your product do?',
+        'How much does it cost?',
+        'Can I get a demo?',
+      ],
     },
     footerSettings: {
       email: 'hello@launchpad.io',
@@ -1202,6 +1207,11 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
       blockEnabled: true,
       welcomeMessage: 'Welcome to TrustCorp. How can I assist you today?',
       systemPrompt: 'You are a professional enterprise assistant. Be formal, knowledgeable, and emphasize data security and compliance.',
+      suggestedPrompts: [
+        'Tell me about your enterprise solutions',
+        'How do you ensure data security?',
+        'I need to speak with a consultant',
+      ],
     },
     footerSettings: {
       email: 'contact@trustcorp.com',
@@ -1242,6 +1252,11 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
       welcomeMessage: 'Hello! I\'m your private health assistant. How can I help?',
       systemPrompt: 'You are a HIPAA-compliant healthcare assistant. Be compassionate, informative, and always emphasize patient privacy. Never provide medical diagnoses.',
       aiProvider: 'local',
+      suggestedPrompts: [
+        'What services do you offer?',
+        'How do I book an appointment?',
+        'Is my data kept private?',
+      ],
     },
     footerSettings: {
       email: 'info@securehealth.se',

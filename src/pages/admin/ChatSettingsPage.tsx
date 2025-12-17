@@ -149,6 +149,53 @@ export default function ChatSettingsPage() {
                       Instructions for the AI on how to behave and respond.
                     </p>
                   </div>
+
+                  <div className="space-y-3">
+                    <div>
+                      <Label>Suggested Prompts</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Quick questions shown to users before they start chatting (max 5)
+                      </p>
+                    </div>
+                    {(formData.suggestedPrompts || []).map((prompt, index) => (
+                      <div key={index} className="flex gap-2">
+                        <Input
+                          value={prompt}
+                          onChange={(e) => {
+                            const newPrompts = [...(formData.suggestedPrompts || [])];
+                            newPrompts[index] = e.target.value;
+                            setFormData({ ...formData, suggestedPrompts: newPrompts });
+                          }}
+                          placeholder={`Suggested question ${index + 1}...`}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            const newPrompts = (formData.suggestedPrompts || []).filter((_, i) => i !== index);
+                            setFormData({ ...formData, suggestedPrompts: newPrompts });
+                          }}
+                        >
+                          <span className="sr-only">Remove</span>
+                          ×
+                        </Button>
+                      </div>
+                    ))}
+                    {(formData.suggestedPrompts || []).length < 5 && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const newPrompts = [...(formData.suggestedPrompts || []), ''];
+                          setFormData({ ...formData, suggestedPrompts: newPrompts });
+                        }}
+                      >
+                        + Add prompt
+                      </Button>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
