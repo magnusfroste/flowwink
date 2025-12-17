@@ -914,6 +914,7 @@ export default function BrandingSettingsPage() {
                           <SelectContent>
                             <SelectItem value="light">Light</SelectItem>
                             <SelectItem value="dark">Dark</SelectItem>
+                            <SelectItem value="system">System (follows visitor's OS)</SelectItem>
                           </SelectContent>
                         </Select>
                         <p className="text-sm text-muted-foreground">
