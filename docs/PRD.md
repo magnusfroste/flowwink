@@ -279,11 +279,70 @@ Request → Edge Cache Hit?
 
 #### Multi-Provider Arkitektur
 
-| Provider | Användning |
-|----------|------------|
-| **Lovable AI** | Standard, ingen API-nyckel krävs |
-| **Local OpenAI** | HIPAA-kompatibel, självhostad |
-| **N8N Webhook** | Agentic workflows, integrationer |
+Pezcms stödjer tre olika AI-providers för maximal flexibilitet:
+
+| Provider | Användning | Data Location |
+|----------|------------|---------------|
+| **Lovable AI** | Standard molntjänst, ingen setup krävs | Moln (EU) |
+| **Private LLM** | Självhostad OpenAI-kompatibel endpoint | On-premise/Privat |
+| **N8N Webhook** | Agentic workflows med AI-agent | Konfigurerbart |
+
+#### Private/Local LLM (HIPAA-kompatibel)
+
+För organisationer med strikta datakrav (HIPAA, GDPR, interna policies):
+
+```
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│   CMS Chat UI   │ ──► │  Edge Function  │ ──► │  Private LLM    │
+│   (Frontend)    │     │ (chat-completion)│     │ (OpenAI API)    │
+└─────────────────┘     └─────────────────┘     └─────────────────┘
+                                                        │
+                                                        ▼
+                                              ┌─────────────────┐
+                                              │ Your Infrastructure │
+                                              │ - Ollama         │
+                                              │ - LM Studio      │
+                                              │ - vLLM           │
+                                              │ - Custom API     │
+                                              └─────────────────┘
+```
+
+**Konfiguration**:
+- **Endpoint**: OpenAI-kompatibel URL (t.ex. `https://api.autoversio.ai/v1`)
+- **Model**: Modellnamn (t.ex. `llama3`, `mistral`, custom)
+- **API Key**: Valfri autentisering
+
+**Fördelar**:
+- ✅ Data lämnar aldrig din infrastruktur
+- ✅ Full kontroll över modell och inferens
+- ✅ HIPAA/GDPR-kompatibel by design
+- ✅ Ingen vendor lock-in
+
+#### N8N AI Agent Integration
+
+Koppla chatten till N8N för avancerade AI-agenter med verktyg:
+
+```
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│   User Chat     │ ──► │  Edge Function  │ ──► │  N8N Workflow   │
+│   "Boka tid"    │     │ + sessionId     │     │  AI Agent Node  │
+└─────────────────┘     └─────────────────┘     └─────────────────┘
+                                                        │
+                                                        ▼
+                                              ┌─────────────────┐
+                                              │   Agent Tools   │
+                                              │ - Cal.com       │
+                                              │ - Google Sheets │
+                                              │ - Email         │
+                                              │ - Custom APIs   │
+                                              └─────────────────┘
+```
+
+**Webhook Types**:
+- **Chat Webhook**: N8N Chat node med session memory (rekommenderad)
+- **Generic Webhook**: OpenAI-kompatibelt format med full historik
+
+**Session Memory**: SessionId skickas automatiskt för konversationsminne i N8N.
 
 #### Leveranslägen
 
@@ -295,43 +354,10 @@ Request → Edge Cache Hit?
 
 - **Kunskapsbas**: Publicerade sidor som kontext
 - **Selektiv**: Välj vilka sidor som inkluderas
+- **Token-limit**: Konfigurerbar maxgräns
 - **Per-sida toggle**: Inkludera/exkludera specifika sidor
 
 ### 6.2 AI-driven Sidimport
-
-**Funktion**: Migrerar innehåll från externa webbplatser automatiskt.
-
-**Process**:
-1. Ange URL till extern sida
-2. Firecrawl hämtar innehållet
-3. AI analyserar och mappar till block-typer
-4. Granska och justera i förhandsvisning
-5. Spara som utkast eller publicera
-
-**Stödda block-typer vid import**:
-- Hero, Text, Image, Two-Column
-- CTA, Link Grid, Article Grid
-- Accordion, Info Box, Quote
-- Stats, Contact, Separator
-- YouTube, Gallery
-
-**Bildhantering**:
-- Valfri lokal lagring av bilder
-- Automatisk WebP-konvertering
-- Ersätter externa URL:er
-
-### 6.3 N8N Agentic Workflows
-
-**Möjligheter**:
-- Boka möten via chatt
-- Hämta data från externa API:er
-- Skicka e-post
-- Integrera med CRM/EHR
-
-**Konfiguration**:
-- Webhook URL
-- Nyckelord som triggar workflow
-- Strukturerade svar med åtgärder
 
 ---
 
