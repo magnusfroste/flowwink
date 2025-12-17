@@ -39,7 +39,7 @@ export function TextBlock({ data }: TextBlockProps) {
   return (
     <section className="py-12 px-6" style={{ backgroundColor: data.backgroundColor }}>
       <div 
-        className="container mx-auto max-w-3xl prose prose-lg"
+        className="container mx-auto max-w-3xl prose prose-lg dark:prose-invert"
         dangerouslySetInnerHTML={{ __html: html }}
       />
     </section>

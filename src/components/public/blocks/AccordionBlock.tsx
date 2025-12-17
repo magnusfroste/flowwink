@@ -49,7 +49,7 @@ export function AccordionBlock({ data }: AccordionBlockProps) {
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground">
                 <div 
-                  className="prose prose-sm max-w-none"
+                  className="prose prose-sm dark:prose-invert max-w-none"
                   dangerouslySetInnerHTML={{ __html: renderAnswer(item.answer) }}
                 />
                 {item.image && (

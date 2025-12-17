@@ -65,7 +65,7 @@ export function InfoBoxBlock({ data }: InfoBoxBlockProps) {
                 <h3 className="font-semibold mb-2">{data.title}</h3>
               )}
               <div 
-                className="prose prose-sm max-w-none"
+                className="prose prose-sm dark:prose-invert max-w-none"
                 dangerouslySetInnerHTML={{ __html: renderContent(data.content) }}
               />
             </div>
