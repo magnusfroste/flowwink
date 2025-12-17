@@ -81,6 +81,8 @@ export default function NewSitePage() {
           slug: templatePage.slug,
           content: templatePage.blocks,
           meta: templatePage.meta,
+          menu_order: templatePage.menu_order,
+          show_in_menu: templatePage.showInMenu,
         });
         
         pageIds.push(page.id);

@@ -83,12 +83,16 @@ export function useCreatePage() {
       title, 
       slug,
       content,
-      meta 
+      meta,
+      menu_order,
+      show_in_menu
     }: { 
       title: string; 
       slug: string;
       content?: ContentBlock[];
       meta?: Partial<PageMeta>;
+      menu_order?: number;
+      show_in_menu?: boolean;
     }) => {
       const { data, error } = await supabase
         .from('pages')
@@ -100,6 +104,8 @@ export function useCreatePage() {
           meta_json: (meta || {}) as unknown as Json,
           created_by: user?.id,
           updated_by: user?.id,
+          ...(menu_order !== undefined && { menu_order }),
+          ...(show_in_menu !== undefined && { show_in_menu }),
         })
         .select()
         .single();

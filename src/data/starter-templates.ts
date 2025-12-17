@@ -8,6 +8,8 @@ export interface TemplatePage {
   isHomePage?: boolean;
   blocks: ContentBlock[];
   meta: PageMeta;
+  menu_order?: number;
+  showInMenu?: boolean;
 }
 
 // Full site template
@@ -42,6 +44,8 @@ const launchpadPages: TemplatePage[] = [
     title: 'Home',
     slug: 'hem',
     isHomePage: true,
+    menu_order: 1,
+    showInMenu: true,
     meta: {
       description: 'Launch your vision with our cutting-edge platform',
       showTitle: false,
@@ -61,8 +65,8 @@ const launchpadPages: TemplatePage[] = [
           overlayOpacity: 70,
           titleAnimation: 'slide-up',
           showScrollIndicator: true,
-          primaryButton: { text: 'Get Started Free', url: '/signup' },
-          secondaryButton: { text: 'Watch Demo', url: '#demo' },
+          primaryButton: { text: 'Get Started Free', url: '/kontakt' },
+          secondaryButton: { text: 'Learn More', url: '/produkt' },
         },
       },
       {
@@ -116,7 +120,7 @@ const launchpadPages: TemplatePage[] = [
           title: 'Ready to Launch?',
           subtitle: 'Join thousands of teams shipping faster with our platform.',
           buttonText: 'Start Building Today',
-          buttonUrl: '/signup',
+          buttonUrl: '/kontakt',
           gradient: true,
         },
       },
@@ -125,6 +129,8 @@ const launchpadPages: TemplatePage[] = [
   {
     title: 'Product',
     slug: 'produkt',
+    menu_order: 2,
+    showInMenu: true,
     meta: {
       description: 'Explore our powerful features designed for modern teams',
       showTitle: true,
@@ -150,12 +156,12 @@ const launchpadPages: TemplatePage[] = [
         data: {
           columns: 3,
           links: [
-            { icon: 'Zap', title: 'Instant Deploy', description: 'Push to production in seconds', url: '#deploy' },
-            { icon: 'Shield', title: 'Enterprise Security', description: 'SOC 2 compliant from day one', url: '#security' },
-            { icon: 'BarChart3', title: 'Analytics', description: 'Real-time insights and metrics', url: '#analytics' },
-            { icon: 'Puzzle', title: 'Integrations', description: '50+ pre-built connectors', url: '#integrations' },
-            { icon: 'Users', title: 'Team Management', description: 'Collaborate seamlessly', url: '#teams' },
-            { icon: 'Cpu', title: 'AI-Powered', description: 'Smart automation built-in', url: '#ai' },
+            { icon: 'Zap', title: 'Instant Deploy', description: 'Push to production in seconds', url: '/produkt' },
+            { icon: 'Shield', title: 'Enterprise Security', description: 'SOC 2 compliant from day one', url: '/produkt' },
+            { icon: 'BarChart3', title: 'Analytics', description: 'Real-time insights and metrics', url: '/produkt' },
+            { icon: 'Puzzle', title: 'Integrations', description: '50+ pre-built connectors', url: '/produkt' },
+            { icon: 'Users', title: 'Team Management', description: 'Collaborate seamlessly', url: '/produkt' },
+            { icon: 'Cpu', title: 'AI-Powered', description: 'Smart automation built-in', url: '/produkt' },
           ],
         },
       },
@@ -207,6 +213,8 @@ const launchpadPages: TemplatePage[] = [
   {
     title: 'Pricing',
     slug: 'priser',
+    menu_order: 3,
+    showInMenu: true,
     meta: {
       description: 'Simple, transparent pricing that scales with you',
       showTitle: true,
@@ -258,7 +266,7 @@ const launchpadPages: TemplatePage[] = [
           title: 'Ready to Get Started?',
           subtitle: 'Join thousands of teams already building with us.',
           buttonText: 'Start Free Trial',
-          buttonUrl: '/signup',
+          buttonUrl: '/kontakt',
           gradient: true,
         },
       },
@@ -267,6 +275,8 @@ const launchpadPages: TemplatePage[] = [
   {
     title: 'Contact',
     slug: 'kontakt',
+    menu_order: 4,
+    showInMenu: true,
     meta: {
       description: 'Get in touch with our team',
       showTitle: true,
@@ -315,6 +325,8 @@ const launchpadPages: TemplatePage[] = [
   {
     title: 'Integritetspolicy',
     slug: 'integritetspolicy',
+    menu_order: 99,
+    showInMenu: false,
     meta: {
       description: 'Information om hur vi hanterar dina personuppgifter enligt GDPR',
       showTitle: true,
@@ -363,6 +375,8 @@ const trustcorpPages: TemplatePage[] = [
     title: 'Home',
     slug: 'hem',
     isHomePage: true,
+    menu_order: 1,
+    showInMenu: true,
     meta: {
       description: 'Enterprise solutions you can trust',
       showTitle: false,
@@ -438,6 +452,8 @@ const trustcorpPages: TemplatePage[] = [
   {
     title: 'Services',
     slug: 'tjanster',
+    menu_order: 2,
+    showInMenu: true,
     meta: {
       description: 'Comprehensive enterprise services tailored to your needs',
       showTitle: true,
@@ -523,6 +539,8 @@ const trustcorpPages: TemplatePage[] = [
   {
     title: 'Case Studies',
     slug: 'case-studies',
+    menu_order: 3,
+    showInMenu: true,
     meta: {
       description: 'Real results from real clients',
       showTitle: true,
@@ -548,9 +566,9 @@ const trustcorpPages: TemplatePage[] = [
           title: 'Featured Case Studies',
           columns: 3,
           articles: [
-            { title: 'GlobalBank: 40% Cost Reduction', excerpt: 'How we helped GlobalBank reduce operational costs while improving customer satisfaction.', image: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600', url: '#globalbank' },
-            { title: 'TechCorp: AI Transformation', excerpt: 'Deploying private AI across 30 global locations while maintaining data sovereignty.', image: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=600', url: '#techcorp' },
-            { title: 'HealthNet: HIPAA Compliance', excerpt: 'Modernizing healthcare IT infrastructure with full regulatory compliance.', image: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=600', url: '#healthnet' },
+            { title: 'GlobalBank: 40% Cost Reduction', excerpt: 'How we helped GlobalBank reduce operational costs while improving customer satisfaction.', image: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600', url: '/kontakt' },
+            { title: 'TechCorp: AI Transformation', excerpt: 'Deploying private AI across 30 global locations while maintaining data sovereignty.', image: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=600', url: '/kontakt' },
+            { title: 'HealthNet: HIPAA Compliance', excerpt: 'Modernizing healthcare IT infrastructure with full regulatory compliance.', image: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=600', url: '/kontakt' },
           ],
         },
       },
@@ -586,6 +604,8 @@ const trustcorpPages: TemplatePage[] = [
   {
     title: 'About',
     slug: 'om-oss',
+    menu_order: 4,
+    showInMenu: true,
     meta: {
       description: 'Learn about our company and mission',
       showTitle: true,
@@ -651,6 +671,8 @@ const trustcorpPages: TemplatePage[] = [
   {
     title: 'Contact',
     slug: 'kontakt',
+    menu_order: 5,
+    showInMenu: true,
     meta: {
       description: 'Connect with our enterprise team',
       showTitle: true,
@@ -712,6 +734,8 @@ const trustcorpPages: TemplatePage[] = [
   {
     title: 'Integritetspolicy',
     slug: 'integritetspolicy',
+    menu_order: 99,
+    showInMenu: false,
     meta: {
       description: 'Information om hur vi hanterar dina personuppgifter enligt GDPR',
       showTitle: true,
@@ -760,6 +784,8 @@ const securehealthPages: TemplatePage[] = [
     title: 'Home',
     slug: 'hem',
     isHomePage: true,
+    menu_order: 1,
+    showInMenu: true,
     meta: {
       description: 'Your health, your privacy — trusted care with complete data security',
       showTitle: false,
@@ -832,6 +858,8 @@ const securehealthPages: TemplatePage[] = [
   {
     title: 'Services',
     slug: 'tjanster',
+    menu_order: 2,
+    showInMenu: true,
     meta: {
       description: 'Comprehensive healthcare services for you and your family',
       showTitle: true,
@@ -856,12 +884,12 @@ const securehealthPages: TemplatePage[] = [
         data: {
           columns: 3,
           links: [
-            { icon: 'HeartPulse', title: 'Primary Care', description: 'General health checkups and preventive care', url: '#primary' },
-            { icon: 'Stethoscope', title: 'Specialists', description: 'Expert care across all medical fields', url: '#specialists' },
-            { icon: 'Baby', title: 'Pediatrics', description: 'Caring for children of all ages', url: '#pediatrics' },
-            { icon: 'Brain', title: 'Mental Health', description: 'Private counseling and therapy', url: '#mental' },
-            { icon: 'Activity', title: 'Diagnostics', description: 'Advanced testing and imaging', url: '#diagnostics' },
-            { icon: 'Pill', title: 'Pharmacy', description: 'On-site prescription services', url: '#pharmacy' },
+            { icon: 'HeartPulse', title: 'Primary Care', description: 'General health checkups and preventive care', url: '/tjanster' },
+            { icon: 'Stethoscope', title: 'Specialists', description: 'Expert care across all medical fields', url: '/tjanster' },
+            { icon: 'Baby', title: 'Pediatrics', description: 'Caring for children of all ages', url: '/tjanster' },
+            { icon: 'Brain', title: 'Mental Health', description: 'Private counseling and therapy', url: '/tjanster' },
+            { icon: 'Activity', title: 'Diagnostics', description: 'Advanced testing and imaging', url: '/tjanster' },
+            { icon: 'Pill', title: 'Pharmacy', description: 'On-site prescription services', url: '/kontakt' },
           ],
         },
       },
@@ -911,6 +939,8 @@ const securehealthPages: TemplatePage[] = [
   {
     title: 'About Us',
     slug: 'om-oss',
+    menu_order: 3,
+    showInMenu: true,
     meta: {
       description: 'Learn about our practice and our commitment to privacy',
       showTitle: true,
@@ -975,6 +1005,8 @@ const securehealthPages: TemplatePage[] = [
   {
     title: 'Patient Resources',
     slug: 'resurser',
+    menu_order: 4,
+    showInMenu: true,
     meta: {
       description: 'Helpful resources and frequently asked questions',
       showTitle: true,
@@ -1037,6 +1069,8 @@ const securehealthPages: TemplatePage[] = [
   {
     title: 'Contact',
     slug: 'kontakt',
+    menu_order: 5,
+    showInMenu: true,
     meta: {
       description: 'Book an appointment or reach our care team',
       showTitle: true,
@@ -1096,6 +1130,8 @@ const securehealthPages: TemplatePage[] = [
   {
     title: 'Integritetspolicy',
     slug: 'integritetspolicy',
+    menu_order: 99,
+    showInMenu: false,
     meta: {
       description: 'Information om hur vi hanterar dina personuppgifter och patientdata enligt GDPR',
       showTitle: true,
