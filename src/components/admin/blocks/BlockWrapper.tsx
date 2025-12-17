@@ -23,6 +23,7 @@ const BLOCK_LABELS: Record<ContentBlockType, string> = {
   stats: 'Statistik',
   chat: 'AI Chat',
   footer: 'Footer',
+  header: 'Header',
 };
 
 interface BlockWrapperProps {

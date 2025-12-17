@@ -82,7 +82,8 @@ export type ContentBlockType =
   | 'gallery'
   | 'stats'
   | 'chat'
-  | 'footer';
+  | 'footer'
+  | 'header';
 
 // Global block slot types
 export type GlobalBlockSlot = 'footer' | 'header' | 'sidebar';
@@ -98,6 +99,25 @@ export interface GlobalBlock {
   updated_at: string;
   created_by: string | null;
   updated_by: string | null;
+}
+
+// Header block data (stored in global_blocks.data)
+export interface HeaderBlockData {
+  showLogo?: boolean;
+  showNameWithLogo?: boolean;
+  logoSize?: 'sm' | 'md' | 'lg';
+  stickyHeader?: boolean;
+  showThemeToggle?: boolean;
+  // Custom nav items (external links beyond CMS pages)
+  customNavItems?: HeaderNavItem[];
+}
+
+export interface HeaderNavItem {
+  id: string;
+  label: string;
+  url: string;
+  openInNewTab?: boolean;
+  enabled: boolean;
 }
 
 // Footer block data (stored in global_blocks.data)

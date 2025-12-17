@@ -7,6 +7,7 @@ import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 import { useBranding } from '@/providers/BrandingProvider';
 import { ThemeToggle } from './ThemeToggle';
+import { useHeaderBlock, defaultHeaderData } from '@/hooks/useGlobalBlocks';
 
 interface NavPage {
   id: string;
@@ -21,6 +22,10 @@ export function PublicNavigation() {
   const currentSlug = location.pathname === '/' ? 'hem' : location.pathname.slice(1);
   const { branding } = useBranding();
   const { resolvedTheme } = useTheme();
+  
+  // Use header global block settings
+  const { data: headerBlock } = useHeaderBlock();
+  const headerSettings = headerBlock?.data ?? defaultHeaderData;
 
   const { data: pages = [] } = useQuery({
     queryKey: ['public-nav-pages'],
@@ -39,16 +44,22 @@ export function PublicNavigation() {
     staleTime: 1000 * 60 * 5,
   });
 
+  // Custom nav items from header settings
+  const customNavItems = (headerSettings.customNavItems || []).filter(item => item.enabled);
+
   return (
-    <header className="border-b bg-card sticky top-0 z-50">
+    <header className={cn(
+      "border-b bg-card z-50",
+      headerSettings.stickyHeader !== false && "sticky top-0"
+    )}>
       <div className="container mx-auto px-6">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3">
             {(() => {
-              const showLogo = branding?.showLogoInHeader !== false;
-              const showName = branding?.showNameWithLogo === true;
-              const logoSize = branding?.headerLogoSize || 'md';
+              const showLogo = headerSettings.showLogo !== false;
+              const showName = headerSettings.showNameWithLogo === true;
+              const logoSize = headerSettings.logoSize || 'md';
               const hasLogo = !!branding?.logo;
               const hasDarkLogo = !!branding?.logoDark;
               const orgName = branding?.organizationName || 'Organisation';
@@ -117,12 +128,24 @@ export function PublicNavigation() {
                 {page.title}
               </Link>
             ))}
-            {branding?.allowThemeToggle !== false && <ThemeToggle />}
+            {/* Custom nav items */}
+            {customNavItems.map((item) => (
+              <a
+                key={item.id}
+                href={item.url}
+                target={item.openInNewTab ? '_blank' : undefined}
+                rel={item.openInNewTab ? 'noopener noreferrer' : undefined}
+                className="px-4 py-2 rounded-md text-sm font-medium transition-colors hover:bg-muted hover:text-foreground text-muted-foreground"
+              >
+                {item.label}
+              </a>
+            ))}
+            {headerSettings.showThemeToggle !== false && <ThemeToggle />}
           </nav>
 
           {/* Mobile Menu Button */}
           <div className="flex items-center gap-2 md:hidden">
-            {branding?.allowThemeToggle !== false && <ThemeToggle />}
+            {headerSettings.showThemeToggle !== false && <ThemeToggle />}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-2 rounded-md hover:bg-muted transition-colors"
@@ -157,6 +180,19 @@ export function PublicNavigation() {
                   {page.title}
                 </Link>
               ))}
+              {/* Custom nav items in mobile */}
+              {customNavItems.map((item) => (
+                <a
+                  key={item.id}
+                  href={item.url}
+                  target={item.openInNewTab ? '_blank' : undefined}
+                  rel={item.openInNewTab ? 'noopener noreferrer' : undefined}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="px-4 py-3 rounded-md text-base font-medium transition-colors hover:bg-muted text-muted-foreground"
+                >
+                  {item.label}
+                </a>
+              ))}
             </div>
           </nav>
         )}
@@ -164,3 +200,4 @@ export function PublicNavigation() {
     </header>
   );
 }
+

@@ -1,8 +1,18 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import type { GlobalBlock, GlobalBlockSlot, FooterBlockData, FooterLegalLink } from '@/types/cms';
+import type { GlobalBlock, GlobalBlockSlot, FooterBlockData, FooterLegalLink, HeaderBlockData } from '@/types/cms';
 import type { Json } from '@/integrations/supabase/types';
+
+// Default header data
+export const defaultHeaderData: HeaderBlockData = {
+  showLogo: true,
+  showNameWithLogo: false,
+  logoSize: 'md',
+  stickyHeader: true,
+  showThemeToggle: true,
+  customNavItems: [],
+};
 
 // Default footer data
 export const defaultFooterData: FooterBlockData = {
@@ -55,6 +65,11 @@ export function useGlobalBlock<T = Record<string, unknown>>(slot: GlobalBlockSlo
 // Hook to fetch footer block specifically
 export function useFooterBlock() {
   return useGlobalBlock<FooterBlockData>('footer');
+}
+
+// Hook to fetch header block specifically
+export function useHeaderBlock() {
+  return useGlobalBlock<HeaderBlockData>('header');
 }
 
 // Hook to update a global block
@@ -122,4 +137,9 @@ export function useUpdateGlobalBlock<T = Record<string, unknown>>(slot: GlobalBl
 // Hook to update footer block specifically
 export function useUpdateFooterBlock() {
   return useUpdateGlobalBlock<FooterBlockData>('footer');
+}
+
+// Hook to update header block specifically
+export function useUpdateHeaderBlock() {
+  return useUpdateGlobalBlock<HeaderBlockData>('header');
 }
