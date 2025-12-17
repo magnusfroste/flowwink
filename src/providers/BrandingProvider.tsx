@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useTheme } from 'next-themes';
 import { supabase } from '@/integrations/supabase/client';
 import type { BrandingSettings } from '@/hooks/useSiteSettings';
 
@@ -39,6 +40,7 @@ const GOOGLE_FONTS_MAP: Record<string, string> = {
   'Roboto': 'Roboto:wght@400;500;700',
   'Source Sans 3': 'Source+Sans+3:wght@400;500;600;700',
   'Lato': 'Lato:wght@400;700',
+  'Plus Jakarta Sans': 'Plus+Jakarta+Sans:wght@400;500;600;700',
 };
 
 function loadGoogleFont(fontName: string) {
@@ -109,6 +111,8 @@ interface BrandingProviderProps {
 }
 
 export function BrandingProvider({ children }: BrandingProviderProps) {
+  const { setTheme } = useTheme();
+  
   const { data: branding, isLoading } = useQuery({
     queryKey: ['site-settings', 'branding'],
     queryFn: async () => {
@@ -127,8 +131,13 @@ export function BrandingProvider({ children }: BrandingProviderProps) {
   useEffect(() => {
     if (branding) {
       applyBrandingToDocument(branding);
+      
+      // Force theme when toggle is disabled
+      if (branding.allowThemeToggle === false && branding.defaultTheme) {
+        setTheme(branding.defaultTheme);
+      }
     }
-  }, [branding]);
+  }, [branding, setTheme]);
 
   return (
     <BrandingContext.Provider value={{ branding: branding || null, isLoading }}>

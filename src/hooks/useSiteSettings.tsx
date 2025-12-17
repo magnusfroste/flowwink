@@ -97,6 +97,7 @@ export interface BrandingSettings {
   
   // Theme toggle
   allowThemeToggle?: boolean;
+  defaultTheme?: 'light' | 'dark' | 'system';
 }
 
 const defaultBrandingSettings: BrandingSettings = {
@@ -117,6 +118,7 @@ const defaultBrandingSettings: BrandingSettings = {
   showNameWithLogo: false,
   headerLogoSize: 'md',
   allowThemeToggle: true,
+  defaultTheme: 'light',
 };
 
 const defaultFooterSettings: FooterSettings = {

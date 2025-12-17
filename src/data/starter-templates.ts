@@ -1421,6 +1421,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
       borderRadius: 'lg',
       shadowIntensity: 'medium',
       allowThemeToggle: false,           // Dark mode only for consistency
+      defaultTheme: 'dark',              // Force dark mode for this template
     },
     chatSettings: {
       enabled: false,                    // Clean single-page feel
