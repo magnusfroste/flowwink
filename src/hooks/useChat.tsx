@@ -123,7 +123,7 @@ export function useChat(options?: UseChatOptions) {
               content: m.content,
             })),
             conversationId: convId,
-            sessionId: user?.id ? null : getSessionId(),
+            sessionId: getSessionId(),
             settings: {
               aiProvider: settings?.aiProvider || 'lovable',
               lovableModel: settings?.lovableModel,
