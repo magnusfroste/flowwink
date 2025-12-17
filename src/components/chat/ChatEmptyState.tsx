@@ -9,9 +9,9 @@ interface ChatEmptyStateProps {
 }
 
 const defaultPrompts = [
-  'Vad kan du hjälpa mig med?',
-  'Berätta mer om era tjänster',
-  'Hur bokar jag en tid?',
+  'What can you help me with?',
+  'Tell me about your services',
+  'How do I book an appointment?',
 ];
 
 export function ChatEmptyState({ 
