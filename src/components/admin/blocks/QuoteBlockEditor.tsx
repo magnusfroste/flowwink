@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/select';
 import { Quote } from 'lucide-react';
 import { AITextAssistant } from '../AITextAssistant';
+import { useBlockEditor } from '@/hooks/useBlockEditor';
 
 interface QuoteBlockEditorProps {
   data: QuoteBlockData;
@@ -19,6 +20,11 @@ interface QuoteBlockEditorProps {
 }
 
 export function QuoteBlockEditor({ data, onChange, isEditing }: QuoteBlockEditorProps) {
+  const { data: blockData, updateField } = useBlockEditor({
+    initialData: data,
+    onChange,
+  });
+
   if (!isEditing) {
     return (
       <div className="p-6 bg-muted/30 rounded-lg">
@@ -26,12 +32,12 @@ export function QuoteBlockEditor({ data, onChange, isEditing }: QuoteBlockEditor
           <Quote className="h-8 w-8 text-primary/40 flex-shrink-0" />
           <div>
             <p className="text-lg italic text-foreground/80">
-              {data.text || 'Write a quote...'}
+              {blockData.text || 'Write a quote...'}
             </p>
-            {data.author && (
+            {blockData.author && (
               <p className="mt-2 text-sm text-muted-foreground">
-                — {data.author}
-                {data.source && <span className="text-muted-foreground/70">, {data.source}</span>}
+                — {blockData.author}
+                {blockData.source && <span className="text-muted-foreground/70">, {blockData.source}</span>}
               </p>
             )}
           </div>
@@ -46,15 +52,15 @@ export function QuoteBlockEditor({ data, onChange, isEditing }: QuoteBlockEditor
         <div className="flex items-center justify-between">
           <Label>Quote</Label>
           <AITextAssistant
-            value={data.text || ''}
-            onChange={(text) => onChange({ ...data, text })}
+            value={blockData.text || ''}
+            onChange={(text) => updateField('text', text)}
             actions={['improve', 'expand']}
             compact
           />
         </div>
         <Textarea
-          value={data.text || ''}
-          onChange={(e) => onChange({ ...data, text: e.target.value })}
+          value={blockData.text || ''}
+          onChange={(e) => updateField('text', e.target.value)}
           placeholder="Write the quote here..."
           rows={3}
         />
@@ -64,8 +70,8 @@ export function QuoteBlockEditor({ data, onChange, isEditing }: QuoteBlockEditor
         <div className="space-y-2">
           <Label>Author</Label>
           <Input
-            value={data.author || ''}
-            onChange={(e) => onChange({ ...data, author: e.target.value })}
+            value={blockData.author || ''}
+            onChange={(e) => updateField('author', e.target.value)}
             placeholder="Name"
           />
         </div>
@@ -73,8 +79,8 @@ export function QuoteBlockEditor({ data, onChange, isEditing }: QuoteBlockEditor
         <div className="space-y-2">
           <Label>Source</Label>
           <Input
-            value={data.source || ''}
-            onChange={(e) => onChange({ ...data, source: e.target.value })}
+            value={blockData.source || ''}
+            onChange={(e) => updateField('source', e.target.value)}
             placeholder="Book, article, etc."
           />
         </div>
@@ -83,8 +89,8 @@ export function QuoteBlockEditor({ data, onChange, isEditing }: QuoteBlockEditor
       <div className="space-y-2">
         <Label>Style</Label>
         <Select
-          value={data.variant || 'simple'}
-          onValueChange={(value: 'simple' | 'styled') => onChange({ ...data, variant: value })}
+          value={blockData.variant || 'simple'}
+          onValueChange={(value: 'simple' | 'styled') => updateField('variant', value)}
         >
           <SelectTrigger>
             <SelectValue />
