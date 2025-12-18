@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { useBranding } from '@/providers/BrandingProvider';
 import { ThemeToggle } from './ThemeToggle';
 import { useHeaderBlock, defaultHeaderData } from '@/hooks/useGlobalBlocks';
+import { useBlogSettings } from '@/hooks/useSiteSettings';
 
 interface NavPage {
   id: string;
@@ -26,6 +27,9 @@ export function PublicNavigation() {
   // Use header global block settings
   const { data: headerBlock } = useHeaderBlock();
   const headerSettings = headerBlock?.data ?? defaultHeaderData;
+  
+  // Blog settings
+  const { data: blogSettings } = useBlogSettings();
 
   const { data: pages = [] } = useQuery({
     queryKey: ['public-nav-pages'],
@@ -128,6 +132,21 @@ export function PublicNavigation() {
                 {page.title}
               </Link>
             ))}
+            {/* Blog link */}
+            {blogSettings?.enabled && (
+              <Link
+                to={`/${blogSettings.archiveSlug || 'blogg'}`}
+                className={cn(
+                  'px-4 py-2 rounded-md text-sm font-medium transition-colors',
+                  'hover:bg-muted hover:text-foreground',
+                  location.pathname.startsWith(`/${blogSettings.archiveSlug || 'blogg'}`)
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-muted-foreground'
+                )}
+              >
+                {blogSettings.archiveTitle || 'Blogg'}
+              </Link>
+            )}
             {/* Custom nav items */}
             {customNavItems.map((item) => (
               <a
@@ -180,6 +199,22 @@ export function PublicNavigation() {
                   {page.title}
                 </Link>
               ))}
+              {/* Blog link in mobile */}
+              {blogSettings?.enabled && (
+                <Link
+                  to={`/${blogSettings.archiveSlug || 'blogg'}`}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={cn(
+                    'px-4 py-3 rounded-md text-base font-medium transition-colors',
+                    'hover:bg-muted',
+                    location.pathname.startsWith(`/${blogSettings.archiveSlug || 'blogg'}`)
+                      ? 'bg-primary/10 text-primary'
+                      : 'text-muted-foreground'
+                  )}
+                >
+                  {blogSettings.archiveTitle || 'Blogg'}
+                </Link>
+              )}
               {/* Custom nav items in mobile */}
               {customNavItems.map((item) => (
                 <a
