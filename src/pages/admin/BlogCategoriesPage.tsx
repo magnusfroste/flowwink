@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Plus, Trash2, Edit2, GripVertical } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Plus, Trash2, Edit2, GripVertical, ArrowLeft } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { Button } from "@/components/ui/button";
@@ -112,10 +113,18 @@ export default function BlogCategoriesPage() {
           title="Blog Categories"
           description="Organize your blog posts with categories"
         >
-          <Button onClick={() => setIsCreateOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            New Category
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" asChild>
+              <Link to="/admin/blog">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Posts
+              </Link>
+            </Button>
+            <Button onClick={() => setIsCreateOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              New Category
+            </Button>
+          </div>
         </AdminPageHeader>
         
         {isLoading ? (
