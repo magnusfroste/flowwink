@@ -460,3 +460,38 @@ export function useGeneralSettings() {
 export function useUpdateGeneralSettings() {
   return useUpdateSiteSettings<GeneralSettings>('general', 'Allmänna inställningar har uppdaterats.');
 }
+
+// Blog settings
+export interface BlogSettings {
+  enabled: boolean;
+  postsPerPage: number;
+  showAuthorBio: boolean;
+  showReadingTime: boolean;
+  showReviewer: boolean;
+  archiveTitle: string;
+  archiveSlug: string;
+  rssEnabled: boolean;
+  rssTitle: string;
+  rssDescription: string;
+}
+
+const defaultBlogSettings: BlogSettings = {
+  enabled: true,
+  postsPerPage: 10,
+  showAuthorBio: true,
+  showReadingTime: true,
+  showReviewer: false,
+  archiveTitle: 'Blogg',
+  archiveSlug: 'blogg',
+  rssEnabled: true,
+  rssTitle: 'RSS Feed',
+  rssDescription: 'Senaste inläggen från vår blogg',
+};
+
+export function useBlogSettings() {
+  return useSiteSettings<BlogSettings>('blog', defaultBlogSettings);
+}
+
+export function useUpdateBlogSettings() {
+  return useUpdateSiteSettings<BlogSettings>('blog', 'Blog settings have been updated.');
+}

@@ -12,6 +12,7 @@ import {
   Rocket,
   LayoutGrid,
   Inbox,
+  BookOpen,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { ROLE_LABELS } from "@/types/cms";
@@ -32,6 +33,7 @@ const navigation = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { name: "Quick Start", href: "/admin/quick-start", icon: Rocket },
   { name: "Pages", href: "/admin/pages", icon: FileText },
+  { name: "Blog", href: "/admin/blog", icon: BookOpen },
   { name: "Form Submissions", href: "/admin/forms", icon: Inbox, adminOnly: true },
   { name: "Global Elements", href: "/admin/global-blocks", icon: LayoutGrid, adminOnly: true },
   { name: "Content Hub", href: "/admin/content-hub", icon: Database, adminOnly: true },

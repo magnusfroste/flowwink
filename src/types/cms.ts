@@ -370,3 +370,92 @@ export const ROLE_LABELS: Record<AppRole, string> = {
   approver: 'Approver',
   admin: 'Administrator',
 };
+
+// ==================== BLOG TYPES ====================
+
+export interface AuthorProfile {
+  id: string;
+  email: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  bio: string | null;
+  title: string | null;
+  show_as_author: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BlogCategory {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  parent_id: string | null;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface BlogTag {
+  id: string;
+  name: string;
+  slug: string;
+  created_at: string;
+}
+
+export interface BlogPostMeta extends PageMeta {
+  canonical_url?: string;
+}
+
+export interface BlogPost {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string | null;
+  content_json: ContentBlock[];
+  featured_image: string | null;
+  featured_image_alt: string | null;
+  
+  // Author
+  author_id: string | null;
+  author?: AuthorProfile;
+  
+  // Optional Reviewer (generic)
+  reviewer_id: string | null;
+  reviewer?: AuthorProfile;
+  reviewed_at: string | null;
+  
+  // Publishing
+  status: PageStatus;
+  published_at: string | null;
+  scheduled_at: string | null;
+  
+  // Meta
+  meta_json: BlogPostMeta;
+  
+  // Blog-specific
+  is_featured: boolean;
+  reading_time_minutes: number | null;
+  
+  // Relations
+  categories?: BlogCategory[];
+  tags?: BlogTag[];
+  
+  // Tracking
+  created_by: string | null;
+  updated_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BlogSettings {
+  enabled: boolean;
+  postsPerPage: number;
+  showAuthorBio: boolean;
+  showReadingTime: boolean;
+  showReviewer: boolean;
+  archiveTitle: string;
+  archiveSlug: string;
+  rssEnabled: boolean;
+  rssTitle: string;
+  rssDescription: string;
+}
