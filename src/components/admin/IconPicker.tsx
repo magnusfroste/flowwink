@@ -16,16 +16,16 @@ import {
 } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 
-// Grouped icons for healthcare context
+// Grouped icons for various contexts
 const ICON_GROUPS = {
-  'Kommunikation': ['Phone', 'Mail', 'MessageCircle', 'Send'],
-  'Plats & Tid': ['MapPin', 'Clock', 'Calendar', 'CalendarCheck'],
-  'Sjukvård': ['Heart', 'HeartPulse', 'Stethoscope', 'Hospital', 'Ambulance', 'Pill', 'Syringe', 'Activity', 'Thermometer', 'Bandage'],
-  'Personer': ['Users', 'User', 'UserPlus', 'Baby', 'Accessibility'],
-  'Dokument': ['FileText', 'Files', 'ClipboardList', 'BookOpen', 'Newspaper'],
+  'Communication': ['Phone', 'Mail', 'MessageCircle', 'Send'],
+  'Location & Time': ['MapPin', 'Clock', 'Calendar', 'CalendarCheck'],
+  'Healthcare': ['Heart', 'HeartPulse', 'Stethoscope', 'Hospital', 'Ambulance', 'Pill', 'Syringe', 'Activity', 'Thermometer', 'Bandage'],
+  'People': ['Users', 'User', 'UserPlus', 'Baby', 'Accessibility'],
+  'Documents': ['FileText', 'Files', 'ClipboardList', 'BookOpen', 'Newspaper'],
   'Navigation': ['ArrowRight', 'ExternalLink', 'Search', 'Download', 'Link', 'ChevronRight'],
   'Information': ['Info', 'HelpCircle', 'AlertCircle', 'CheckCircle', 'CircleAlert'],
-  'Övrigt': ['Star', 'Shield', 'Lock', 'Key', 'Settings', 'Home', 'Building', 'Briefcase', 'CreditCard', 'Globe'],
+  'Other': ['Star', 'Shield', 'Lock', 'Key', 'Settings', 'Home', 'Building', 'Briefcase', 'CreditCard', 'Globe'],
 };
 
 function renderIcon(iconName: string, className?: string) {
@@ -59,16 +59,16 @@ export function IconPicker({ value, onChange }: IconPickerProps) {
         >
           <div className="flex items-center gap-2">
             {renderIcon(value, "h-4 w-4")}
-            <span>{value || 'Välj ikon...'}</span>
+            <span>{value || 'Select icon...'}</span>
           </div>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[280px] p-0" align="start">
         <Command>
-          <CommandInput placeholder="Sök ikon..." />
+          <CommandInput placeholder="Search icon..." />
           <CommandList>
-            <CommandEmpty>Ingen ikon hittades.</CommandEmpty>
+            <CommandEmpty>No icon found.</CommandEmpty>
             {Object.entries(ICON_GROUPS).map(([group, iconNames]) => (
               <CommandGroup key={group} heading={group}>
                 {iconNames.map((iconName) => (

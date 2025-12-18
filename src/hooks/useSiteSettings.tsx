@@ -365,14 +365,14 @@ function useUpdateSiteSettings<T>(key: string, successMessage: string) {
     onSuccess: (settings) => {
       queryClient.setQueryData(['site-settings', key], settings);
       toast({
-        title: 'Sparat',
+        title: 'Saved',
         description: successMessage,
       });
     },
     onError: (error) => {
       toast({
-        title: 'Fel',
-        description: 'Kunde inte spara inställningarna.',
+        title: 'Error',
+        description: 'Could not save settings.',
         variant: 'destructive',
       });
       console.error(`Failed to update ${key} settings:`, error);
@@ -386,7 +386,7 @@ export function useFooterSettings() {
 }
 
 export function useUpdateFooterSettings() {
-  return useUpdateSiteSettings<FooterSettings>('footer', 'Footer-inställningarna har uppdaterats.');
+  return useUpdateSiteSettings<FooterSettings>('footer', 'Footer settings have been updated.');
 }
 
 // SEO hooks
@@ -395,7 +395,7 @@ export function useSeoSettings() {
 }
 
 export function useUpdateSeoSettings() {
-  return useUpdateSiteSettings<SeoSettings>('seo', 'SEO-inställningarna har uppdaterats.');
+  return useUpdateSiteSettings<SeoSettings>('seo', 'SEO settings have been updated.');
 }
 
 // Performance hooks
@@ -404,7 +404,7 @@ export function usePerformanceSettings() {
 }
 
 export function useUpdatePerformanceSettings() {
-  return useUpdateSiteSettings<PerformanceSettings>('performance', 'Prestandainställningarna har uppdaterats.');
+  return useUpdateSiteSettings<PerformanceSettings>('performance', 'Performance settings have been updated.');
 }
 
 // Branding hooks
@@ -413,7 +413,7 @@ export function useBrandingSettings() {
 }
 
 export function useUpdateBrandingSettings() {
-  return useUpdateSiteSettings<BrandingSettings>('branding', 'Varumärkesinställningarna har uppdaterats.');
+  return useUpdateSiteSettings<BrandingSettings>('branding', 'Branding settings have been updated.');
 }
 
 // Custom Scripts hooks
@@ -422,7 +422,7 @@ export function useCustomScriptsSettings() {
 }
 
 export function useUpdateCustomScriptsSettings() {
-  return useUpdateSiteSettings<CustomScriptsSettings>('custom_scripts', 'Script-inställningarna har uppdaterats.');
+  return useUpdateSiteSettings<CustomScriptsSettings>('custom_scripts', 'Script settings have been updated.');
 }
 
 // Cookie Banner hooks
@@ -431,7 +431,7 @@ export function useCookieBannerSettings() {
 }
 
 export function useUpdateCookieBannerSettings() {
-  return useUpdateSiteSettings<CookieBannerSettings>('cookie_banner', 'Cookie-inställningarna har uppdaterats.');
+  return useUpdateSiteSettings<CookieBannerSettings>('cookie_banner', 'Cookie settings have been updated.');
 }
 
 // Maintenance hooks
@@ -440,7 +440,7 @@ export function useMaintenanceSettings() {
 }
 
 export function useUpdateMaintenanceSettings() {
-  return useUpdateSiteSettings<MaintenanceSettings>('maintenance', 'Underhållsinställningarna har uppdaterats.');
+  return useUpdateSiteSettings<MaintenanceSettings>('maintenance', 'Maintenance settings have been updated.');
 }
 
 // Chat hooks
@@ -449,7 +449,7 @@ export function useChatSettings() {
 }
 
 export function useUpdateChatSettings() {
-  return useUpdateSiteSettings<ChatSettings>('chat', 'Chat-inställningarna har uppdaterats.');
+  return useUpdateSiteSettings<ChatSettings>('chat', 'Chat settings have been updated.');
 }
 
 // General settings hooks
@@ -458,7 +458,7 @@ export function useGeneralSettings() {
 }
 
 export function useUpdateGeneralSettings() {
-  return useUpdateSiteSettings<GeneralSettings>('general', 'Allmänna inställningar har uppdaterats.');
+  return useUpdateSiteSettings<GeneralSettings>('general', 'General settings have been updated.');
 }
 
 // Blog settings

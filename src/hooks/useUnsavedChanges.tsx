@@ -16,7 +16,7 @@ interface UseUnsavedChangesOptions {
   message?: string;
 }
 
-export function useUnsavedChanges({ hasChanges, message = 'Du har osparade ändringar. Vill du verkligen lämna sidan?' }: UseUnsavedChangesOptions) {
+export function useUnsavedChanges({ hasChanges, message = 'You have unsaved changes. Are you sure you want to leave?' }: UseUnsavedChangesOptions) {
   // Block browser refresh/close
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -53,20 +53,20 @@ export function UnsavedChangesDialog({ blocker }: UnsavedChangesDialogProps) {
     <AlertDialog open={true}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Osparade ändringar</AlertDialogTitle>
+          <AlertDialogTitle>Unsaved Changes</AlertDialogTitle>
           <AlertDialogDescription>
-            Du har osparade ändringar som kommer att förloras om du lämnar sidan. Vill du fortsätta utan att spara?
+            You have unsaved changes that will be lost if you leave. Continue without saving?
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel onClick={() => blocker.reset?.()}>
-            Stanna kvar
+            Stay
           </AlertDialogCancel>
           <AlertDialogAction 
             onClick={() => blocker.proceed?.()}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
-            Lämna utan att spara
+            Leave without saving
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

@@ -10,7 +10,7 @@ interface ImagePickerFieldProps {
   placeholder?: string;
 }
 
-export function ImagePickerField({ value, onChange, placeholder = 'Bild-URL' }: ImagePickerFieldProps) {
+export function ImagePickerField({ value, onChange, placeholder = 'Image URL' }: ImagePickerFieldProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
 
   return (
@@ -27,7 +27,7 @@ export function ImagePickerField({ value, onChange, placeholder = 'Bild-URL' }: 
           variant="outline"
           size="icon"
           onClick={() => setPickerOpen(true)}
-          title="Välj från bibliotek"
+          title="Select from library"
         >
           <ImageIcon className="h-4 w-4" />
         </Button>
@@ -37,7 +37,7 @@ export function ImagePickerField({ value, onChange, placeholder = 'Bild-URL' }: 
             variant="outline"
             size="icon"
             onClick={() => onChange('')}
-            title="Ta bort"
+            title="Remove"
           >
             <Trash2 className="h-4 w-4" />
           </Button>

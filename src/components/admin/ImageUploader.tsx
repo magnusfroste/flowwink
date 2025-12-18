@@ -19,7 +19,7 @@ interface ImageUploaderProps {
 export function ImageUploader({ 
   value, 
   onChange, 
-  label = 'Bild',
+  label = 'Image',
   aspectRatio = 'video'
 }: ImageUploaderProps) {
   const [isUploading, setIsUploading] = useState(false);
@@ -42,8 +42,8 @@ export function ImageUploader({
     // Validate file type
     if (!file.type.startsWith('image/')) {
       toast({
-        title: 'Ogiltig filtyp',
-        description: 'Välj en bildfil (JPG, PNG, GIF, WebP)',
+        title: 'Invalid file type',
+        description: 'Please select an image file (JPG, PNG, GIF, WebP)',
         variant: 'destructive',
       });
       return;
@@ -52,8 +52,8 @@ export function ImageUploader({
     // Validate file size (max 10MB for original, will be compressed)
     if (file.size > 10 * 1024 * 1024) {
       toast({
-        title: 'Filen är för stor',
-        description: 'Maximal filstorlek är 10MB',
+        title: 'File too large',
+        description: 'Maximum file size is 10MB',
         variant: 'destructive',
       });
       return;
@@ -99,16 +99,16 @@ export function ImageUploader({
       setActiveTab('preview');
       
       toast({
-        title: 'Bild uppladdad',
+        title: 'Image uploaded',
         description: contentType === 'image/webp' 
-          ? 'Bilden har konverterats till WebP och laddats upp'
-          : 'Bilden har laddats upp',
+          ? 'Image has been converted to WebP and uploaded'
+          : 'Image has been uploaded',
       });
     } catch (error) {
       console.error('Upload error:', error);
       toast({
-        title: 'Uppladdning misslyckades',
-        description: 'Kunde inte ladda upp bilden. Försök igen.',
+        title: 'Upload failed',
+        description: 'Could not upload image. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -146,11 +146,11 @@ export function ImageUploader({
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="upload" className="text-xs">
             <Upload className="h-3 w-3 mr-1" />
-            Ladda upp
+            Upload
           </TabsTrigger>
           <TabsTrigger value="library" className="text-xs">
             <FolderOpen className="h-3 w-3 mr-1" />
-            Bibliotek
+            Library
           </TabsTrigger>
           <TabsTrigger value="url" className="text-xs">
             <Link className="h-3 w-3 mr-1" />
@@ -158,7 +158,7 @@ export function ImageUploader({
           </TabsTrigger>
           <TabsTrigger value="preview" className="text-xs" disabled={!value}>
             <ImageIcon className="h-3 w-3 mr-1" />
-            Förhandsv.
+            Preview
           </TabsTrigger>
         </TabsList>
 
@@ -170,16 +170,16 @@ export function ImageUploader({
             {isUploading ? (
               <>
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Konverterar & laddar upp...</span>
+                <span className="text-sm text-muted-foreground">Converting & uploading...</span>
               </>
             ) : (
               <>
                 <Upload className="h-8 w-8 text-muted-foreground" />
                 <span className="text-sm text-muted-foreground">
-                  Klicka för att välja bild
+                  Click to select image
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  Konverteras automatiskt till WebP
+                  Automatically converted to WebP
                 </span>
               </>
             )}
@@ -200,7 +200,7 @@ export function ImageUploader({
           >
             <FolderOpen className="h-8 w-8 text-muted-foreground" />
             <span className="text-sm text-muted-foreground">
-              Klicka för att välja från biblioteket
+              Click to select from library
             </span>
           </div>
         </TabsContent>
@@ -218,7 +218,7 @@ export function ImageUploader({
             disabled={!urlInput.trim()}
             className="w-full"
           >
-            Använd URL
+            Use URL
           </Button>
         </TabsContent>
 
@@ -226,13 +226,13 @@ export function ImageUploader({
           {value ? (
             <div className="relative group">
               <div className={`${aspectClass[aspectRatio]} rounded-lg overflow-hidden bg-muted`}>
-                <img 
+              <img 
                   src={value} 
-                  alt="Förhandsgranskning" 
+                  alt="Preview" 
                   className="w-full h-full object-cover"
                   onError={(e) => {
                     e.currentTarget.src = '';
-                    e.currentTarget.alt = 'Kunde inte ladda bilden';
+                    e.currentTarget.alt = 'Could not load image';
                   }}
                 />
               </div>
@@ -247,7 +247,7 @@ export function ImageUploader({
             </div>
           ) : (
             <div className={`${aspectClass[aspectRatio]} rounded-lg bg-muted flex items-center justify-center`}>
-              <span className="text-sm text-muted-foreground">Ingen bild vald</span>
+              <span className="text-sm text-muted-foreground">No image selected</span>
             </div>
           )}
         </TabsContent>
