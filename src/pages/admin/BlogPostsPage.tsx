@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Plus, Search, Filter, MoreHorizontal, Clock, Star, Trash2, Edit, Eye, FolderOpen, Settings } from "lucide-react";
+import { Plus, Search, Filter, MoreHorizontal, Clock, Star, Trash2, Edit, Eye, FolderOpen, Settings, Tag } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { sv } from "date-fns/locale";
 import { AdminLayout } from "@/components/admin/AdminLayout";
@@ -81,6 +81,12 @@ export default function BlogPostsPage() {
               <Link to="/admin/blog/categories">
                 <FolderOpen className="mr-2 h-4 w-4" />
                 Categories
+              </Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link to="/admin/blog/tags">
+                <Tag className="mr-2 h-4 w-4" />
+                Tags
               </Link>
             </Button>
             <Button variant="outline" asChild>
