@@ -11,6 +11,7 @@ import {
   Database,
   Rocket,
   LayoutGrid,
+  Inbox,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { ROLE_LABELS } from "@/types/cms";
@@ -31,6 +32,7 @@ const navigation = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { name: "Quick Start", href: "/admin/quick-start", icon: Rocket },
   { name: "Pages", href: "/admin/pages", icon: FileText },
+  { name: "Form Submissions", href: "/admin/forms", icon: Inbox, adminOnly: true },
   { name: "Global Elements", href: "/admin/global-blocks", icon: LayoutGrid, adminOnly: true },
   { name: "Content Hub", href: "/admin/content-hub", icon: Database, adminOnly: true },
   { name: "Menu Order", href: "/admin/menu-order", icon: Menu, adminOnly: true },

@@ -23,6 +23,7 @@ import ContentHubPage from "./pages/admin/ContentHubPage";
 import QuickStartPage from "./pages/admin/QuickStartPage";
 import NewSitePage from "./pages/admin/NewSitePage";
 import GlobalBlocksPage from "./pages/admin/GlobalBlocksPage";
+import FormSubmissionsPage from "./pages/admin/FormSubmissionsPage";
 import PreviewPage from "./pages/PreviewPage";
 import PublicPage from "./pages/PublicPage";
 import ChatPage from "./pages/ChatPage";
@@ -48,8 +49,8 @@ const router = createBrowserRouter([
   { path: "/admin/quick-start", element: <QuickStartPage /> },
   { path: "/admin/new-site", element: <NewSitePage /> },
   { path: "/admin/global-blocks", element: <GlobalBlocksPage /> },
+  { path: "/admin/forms", element: <FormSubmissionsPage /> },
   { path: "/preview/:id", element: <PreviewPage /> },
-  { path: "/:slug", element: <PublicPage /> },
   { path: "/:slug", element: <PublicPage /> },
 ]);
 
