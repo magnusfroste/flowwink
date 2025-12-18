@@ -82,6 +82,7 @@ export type ContentBlockType =
   | 'gallery'
   | 'stats'
   | 'chat'
+  | 'map'
   | 'footer'
   | 'header';
 
@@ -299,6 +300,24 @@ export interface ChatBlockData {
   showSidebar: boolean;
   initialPrompt?: string;
   variant: 'embedded' | 'card';
+}
+
+export interface MapBlockData {
+  // Location
+  address: string;
+  locationName?: string;
+  // Display options
+  title?: string;
+  description?: string;
+  // Map settings
+  zoom: number;
+  mapType: 'roadmap' | 'satellite';
+  height: 'sm' | 'md' | 'lg' | 'xl';
+  // Styling
+  showBorder: boolean;
+  rounded: boolean;
+  // Privacy
+  loadOnConsent?: boolean;
 }
 
 // Workflow actions

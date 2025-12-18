@@ -26,6 +26,7 @@ import {
   Images, 
   BarChart3,
   MessageSquare,
+  MapPin,
 } from 'lucide-react';
 import { ContentBlockType } from '@/types/cms';
 
@@ -137,6 +138,12 @@ const BLOCK_GROUPS: BlockGroup[] = [
         label: 'Statistics',
         icon: <BarChart3 className="h-5 w-5" />,
         description: 'Display key figures visually',
+      },
+      {
+        type: 'map',
+        label: 'Map',
+        icon: <MapPin className="h-5 w-5" />,
+        description: 'Google Maps location for clinic',
       },
     ],
   },
