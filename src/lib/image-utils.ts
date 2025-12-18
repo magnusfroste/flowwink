@@ -8,7 +8,7 @@ export const loadImage = (source: File | Blob): Promise<HTMLImageElement> => {
       URL.revokeObjectURL(img.src);
       resolve(img);
     };
-    img.onerror = () => reject(new Error('Kunde inte ladda bilden'));
+    img.onerror = () => reject(new Error('Could not load image'));
     img.src = URL.createObjectURL(source);
   });
 };
@@ -28,7 +28,7 @@ export const convertToWebP = async (file: File, quality = 0.85): Promise<Blob> =
   
   const ctx = canvas.getContext('2d');
   if (!ctx) {
-    throw new Error('Kunde inte skapa canvas context');
+    throw new Error('Could not create canvas context');
   }
   
   ctx.drawImage(img, 0, 0);
@@ -39,7 +39,7 @@ export const convertToWebP = async (file: File, quality = 0.85): Promise<Blob> =
         if (blob) {
           resolve(blob);
         } else {
-          reject(new Error('Kunde inte konvertera till WebP'));
+          reject(new Error('Could not convert to WebP'));
         }
       },
       'image/webp',

@@ -60,7 +60,7 @@ export function useChat(options?: UseChatOptions) {
       .insert({
         user_id: user?.id || null,
         session_id: user?.id ? null : sessionId,
-        title: 'Ny konversation',
+        title: 'New conversation',
       })
       .select('id')
       .single();
@@ -144,11 +144,11 @@ export function useChat(options?: UseChatOptions) {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Kunde inte skicka meddelande');
+        throw new Error(errorData.error || 'Could not send message');
       }
 
       if (!response.body) {
-        throw new Error('Inget svar från servern');
+        throw new Error('No response from server');
       }
 
       // Stream the response
@@ -215,7 +215,7 @@ export function useChat(options?: UseChatOptions) {
         return;
       }
       console.error('Chat error:', err);
-      setError(err instanceof Error ? err.message : 'Ett fel uppstod');
+      setError(err instanceof Error ? err.message : 'An error occurred');
       // Remove empty assistant message on error
       setMessages(prev => prev.filter(m => m.id !== assistantMessageId));
     } finally {

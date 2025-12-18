@@ -69,14 +69,14 @@ export function MediaLibraryPicker({ open, onOpenChange, onSelect }: MediaLibrar
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[80vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>Välj bild från biblioteket</DialogTitle>
+          <DialogTitle>Select image from library</DialogTitle>
         </DialogHeader>
 
         {/* Search */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Sök bilder..."
+            placeholder="Search images..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9"
@@ -93,12 +93,12 @@ export function MediaLibraryPicker({ open, onOpenChange, onSelect }: MediaLibrar
             <div className="text-center py-12">
               <ImageIcon className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <h3 className="text-lg font-medium text-foreground mb-1">
-                {searchQuery ? 'Inga bilder hittades' : 'Inga bilder uppladdade'}
+                {searchQuery ? 'No images found' : 'No images uploaded'}
               </h3>
               <p className="text-muted-foreground text-sm">
                 {searchQuery 
-                  ? 'Försök med en annan sökning'
-                  : 'Ladda upp bilder via "Ladda upp"-fliken'
+                  ? 'Try a different search'
+                  : 'Upload images via the "Upload" tab'
                 }
               </p>
             </div>
@@ -136,10 +136,10 @@ export function MediaLibraryPicker({ open, onOpenChange, onSelect }: MediaLibrar
         {/* Footer */}
         <div className="flex justify-end gap-2 pt-4 border-t">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Avbryt
+            Cancel
           </Button>
           <Button onClick={handleSelect} disabled={!selectedFile}>
-            Välj bild
+            Select image
           </Button>
         </div>
       </DialogContent>

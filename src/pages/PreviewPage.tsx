@@ -28,7 +28,7 @@ export default function PreviewPage() {
 
   useEffect(() => {
     if (!id) {
-      setError('Inget sid-ID angivet');
+      setError('No page ID specified');
       setIsLoading(false);
       return;
     }
@@ -37,7 +37,7 @@ export default function PreviewPage() {
     const stored = sessionStorage.getItem(storageKey);
 
     if (!stored) {
-      setError('Ingen förhandsgranskningsdata hittades. Öppna förhandsgranskning från editorn.');
+      setError('No preview data found. Open preview from the editor.');
       setIsLoading(false);
       return;
     }
@@ -49,14 +49,14 @@ export default function PreviewPage() {
 
       if (now - savedAt > PREVIEW_EXPIRY_MS) {
         sessionStorage.removeItem(storageKey);
-        setError('Förhandsgranskningsdata har gått ut. Öppna förhandsgranskning från editorn igen.');
+        setError('Preview data has expired. Open preview from the editor again.');
         setIsLoading(false);
         return;
       }
 
       setPreviewData(data);
     } catch {
-      setError('Kunde inte läsa förhandsgranskningsdata');
+      setError('Could not read preview data');
     } finally {
       setIsLoading(false);
     }
@@ -73,13 +73,13 @@ export default function PreviewPage() {
   if (error || !previewData) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background p-8">
-        <div className="text-center max-w-md">
+      <div className="text-center max-w-md">
           <Eye className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <h1 className="text-2xl font-serif font-bold mb-2">Förhandsgranskning ej tillgänglig</h1>
+          <h1 className="text-2xl font-serif font-bold mb-2">Preview unavailable</h1>
           <p className="text-muted-foreground mb-6">{error}</p>
           <Button onClick={() => navigate(`/admin/pages/${id}`)}>
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Tillbaka till editorn
+            Back to editor
           </Button>
         </div>
       </div>
@@ -102,8 +102,8 @@ export default function PreviewPage() {
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Eye className="h-4 w-4" />
-            <span className="font-medium text-sm">FÖRHANDSGRANSKNING</span>
-            <span className="text-sm opacity-80">– Denna sida är inte publicerad</span>
+            <span className="font-medium text-sm">PREVIEW</span>
+            <span className="text-sm opacity-80">– This page is not published</span>
           </div>
           <Button 
             variant="ghost" 
@@ -112,7 +112,7 @@ export default function PreviewPage() {
             className="text-amber-950 hover:bg-amber-600 hover:text-amber-950"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Tillbaka till editor
+            Back to editor
           </Button>
         </div>
       </div>
