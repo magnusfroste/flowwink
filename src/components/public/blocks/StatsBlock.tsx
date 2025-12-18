@@ -1,5 +1,5 @@
 import { StatsBlockData } from '@/types/cms';
-import { icons } from 'lucide-react';
+import { icons, LucideIcon } from 'lucide-react';
 
 interface StatsBlockProps {
   data: StatsBlockData;
@@ -12,7 +12,7 @@ export function StatsBlock({ data }: StatsBlockProps) {
 
   const getIcon = (iconName?: string) => {
     if (!iconName) return null;
-    const Icon = icons[iconName as keyof typeof icons];
+    const Icon = icons[iconName as keyof typeof icons] as LucideIcon | undefined;
     return Icon ? <Icon className="h-6 w-6" /> : null;
   };
 

@@ -3,7 +3,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { InfoBoxBlockData, TiptapDocument } from '@/types/cms';
-import { Info, CheckCircle, AlertTriangle, Sparkles, icons, Bold, Italic, List, ListOrdered } from 'lucide-react';
+import { Info, CheckCircle, AlertTriangle, Sparkles, icons, Bold, Italic, List, ListOrdered, LucideIcon } from 'lucide-react';
 import { useEditor, EditorContent, generateHTML } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
@@ -91,9 +91,9 @@ export function InfoBoxBlockEditor({ data, isEditing, onChange }: InfoBoxBlockEd
 
   const renderIcon = () => {
     if (data.icon) {
-      const LucideIcon = icons[data.icon as keyof typeof icons];
-      if (LucideIcon && typeof LucideIcon === 'function') {
-        return <LucideIcon className={`h-6 w-6 ${config.iconClass}`} />;
+      const IconComponent = icons[data.icon as keyof typeof icons] as LucideIcon | undefined;
+      if (IconComponent) {
+        return <IconComponent className={`h-6 w-6 ${config.iconClass}`} />;
       }
     }
     const DefaultIcon = config.icon;
@@ -131,15 +131,13 @@ export function InfoBoxBlockEditor({ data, isEditing, onChange }: InfoBoxBlockEd
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="">Default icon</SelectItem>
-                {ICON_OPTIONS.map((icon) => {
-                  const LucideIcon = icons[icon as keyof typeof icons];
+                {ICON_OPTIONS.map((iconName) => {
+                  const IconComponent = icons[iconName as keyof typeof icons] as LucideIcon | undefined;
                   return (
-                    <SelectItem key={icon} value={icon}>
+                    <SelectItem key={iconName} value={iconName}>
                       <div className="flex items-center gap-2">
-                        {LucideIcon && typeof LucideIcon === 'function' && (
-                          <LucideIcon className="h-4 w-4" />
-                        )}
-                        <span>{icon}</span>
+                        {IconComponent && <IconComponent className="h-4 w-4" />}
+                        <span>{iconName}</span>
                       </div>
                     </SelectItem>
                   );

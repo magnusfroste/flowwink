@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, ChevronsUpDown, icons } from 'lucide-react';
+import { Check, ChevronsUpDown, icons, LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Command,
@@ -29,10 +29,14 @@ const ICON_GROUPS = {
 };
 
 function renderIcon(iconName: string, className?: string) {
-  const LucideIcon = icons[iconName as keyof typeof icons];
-  if (LucideIcon && typeof LucideIcon === 'function') {
-    return <LucideIcon className={className} />;
+  if (!iconName) return null;
+  
+  const LucideIconComponent = icons[iconName as keyof typeof icons] as LucideIcon | undefined;
+  
+  if (LucideIconComponent) {
+    return <LucideIconComponent className={className} />;
   }
+  
   return null;
 }
 

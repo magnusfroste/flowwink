@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { IconPicker } from '@/components/admin/IconPicker';
 import { LinkGridBlockData } from '@/types/cms';
-import { Plus, Trash2, ExternalLink, GripVertical, icons } from 'lucide-react';
+import { Plus, Trash2, ExternalLink, GripVertical, icons, LucideIcon } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -176,9 +176,9 @@ export function LinkGridBlockEditor({ data, isEditing, onChange }: LinkGridBlock
   };
 
   const renderIcon = (iconName: string) => {
-    const LucideIcon = icons[iconName as keyof typeof icons];
-    if (LucideIcon && typeof LucideIcon === 'function') {
-      return <LucideIcon className="h-6 w-6" />;
+    const IconComponent = icons[iconName as keyof typeof icons] as LucideIcon | undefined;
+    if (IconComponent) {
+      return <IconComponent className="h-6 w-6" />;
     }
     return <ExternalLink className="h-6 w-6" />;
   };
