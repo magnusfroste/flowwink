@@ -14,7 +14,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { ContentBlock, ContentBlockType, HeroBlockData, TextBlockData, ImageBlockData, CTABlockData, ContactBlockData, LinkGridBlockData, TwoColumnBlockData, InfoBoxBlockData, AccordionBlockData, ArticleGridBlockData, YouTubeBlockData, QuoteBlockData, SeparatorBlockData, GalleryBlockData, StatsBlockData, ChatBlockData } from '@/types/cms';
+import { ContentBlock, ContentBlockType, HeroBlockData, TextBlockData, ImageBlockData, CTABlockData, ContactBlockData, LinkGridBlockData, TwoColumnBlockData, InfoBoxBlockData, AccordionBlockData, ArticleGridBlockData, YouTubeBlockData, QuoteBlockData, SeparatorBlockData, GalleryBlockData, StatsBlockData, ChatBlockData, MapBlockData } from '@/types/cms';
 import { BlockWrapper } from './BlockWrapper';
 import { BlockSelector } from './BlockSelector';
 import { HeroBlockEditor } from './HeroBlockEditor';
@@ -33,6 +33,7 @@ import { SeparatorBlockEditor } from './SeparatorBlockEditor';
 import { GalleryBlockEditor } from './GalleryBlockEditor';
 import { StatsBlockEditor } from './StatsBlockEditor';
 import { ChatBlockEditor } from './ChatBlockEditor';
+import { MapBlockEditor } from './MapBlockEditor';
 import { TemplateEmptyState } from '@/components/admin/StarterTemplateSelector';
 import { StarterTemplate } from '@/data/starter-templates';
 
@@ -53,6 +54,7 @@ type BlockDataMap = {
   gallery: GalleryBlockData;
   stats: StatsBlockData;
   chat: ChatBlockData;
+  map: MapBlockData;
 };
 
 const DEFAULT_BLOCK_DATA: BlockDataMap = {
@@ -72,6 +74,7 @@ const DEFAULT_BLOCK_DATA: BlockDataMap = {
   gallery: { images: [], layout: 'grid', columns: 3 },
   stats: { stats: [] },
   chat: { height: 'md', showSidebar: false, variant: 'card' },
+  map: { address: '', zoom: 15, mapType: 'roadmap', height: 'md', showBorder: true, rounded: true, loadOnConsent: false },
 };
 
 interface BlockEditorProps {
@@ -259,6 +262,14 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
           <ChatBlockEditor
             data={block.data as unknown as ChatBlockData}
             onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+          />
+        );
+      case 'map':
+        return (
+          <MapBlockEditor
+            data={block.data as unknown as MapBlockData}
+            onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+            isEditing={isEditing}
           />
         );
       default:

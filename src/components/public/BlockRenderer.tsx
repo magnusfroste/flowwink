@@ -16,6 +16,7 @@ import {
   GalleryBlock,
   StatsBlock,
   ChatBlock,
+  MapBlock,
 } from './blocks';
 import type {
   HeroBlockData,
@@ -34,6 +35,7 @@ import type {
   GalleryBlockData,
   StatsBlockData,
   ChatBlockData,
+  MapBlockData,
 } from '@/types/cms';
 
 interface BlockRendererProps {
@@ -74,6 +76,8 @@ export function BlockRenderer({ block }: BlockRendererProps) {
       return <StatsBlock data={block.data as unknown as StatsBlockData} />;
     case 'chat':
       return <ChatBlock data={block.data as unknown as ChatBlockData} />;
+    case 'map':
+      return <MapBlock data={block.data as unknown as MapBlockData} />;
     default:
       return null;
   }
