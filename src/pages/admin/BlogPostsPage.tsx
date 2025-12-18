@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Plus, Search, Filter, MoreHorizontal, Clock, Star, Trash2, Edit, Eye } from "lucide-react";
+import { Plus, Search, Filter, MoreHorizontal, Clock, Star, Trash2, Edit, Eye, FolderOpen, Settings } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { sv } from "date-fns/locale";
 import { AdminLayout } from "@/components/admin/AdminLayout";
@@ -76,10 +76,24 @@ export default function BlogPostsPage() {
           title="Blog Posts"
           description="Manage your blog posts and articles"
         >
-          <Button onClick={() => navigate("/admin/blog/new")}>
-            <Plus className="mr-2 h-4 w-4" />
-            New Post
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" asChild>
+              <Link to="/admin/blog/categories">
+                <FolderOpen className="mr-2 h-4 w-4" />
+                Categories
+              </Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link to="/admin/blog/settings">
+                <Settings className="mr-2 h-4 w-4" />
+                Settings
+              </Link>
+            </Button>
+            <Button onClick={() => navigate("/admin/blog/new")}>
+              <Plus className="mr-2 h-4 w-4" />
+              New Post
+            </Button>
+          </div>
         </AdminPageHeader>
         
         {/* Filters */}
