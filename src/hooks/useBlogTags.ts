@@ -75,6 +75,39 @@ export function useCreateBlogTag() {
   });
 }
 
+export function useUpdateBlogTag() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  
+  return useMutation({
+    mutationFn: async ({ id, name, slug }: { id: string; name: string; slug: string }) => {
+      const { data, error } = await supabase
+        .from('blog_tags')
+        .update({ name, slug })
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data as BlogTag;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['blog-tags'] });
+      toast({
+        title: 'Tag updated',
+        description: 'Tag has been updated.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+}
+
 export function useDeleteBlogTag() {
   const queryClient = useQueryClient();
   const { toast } = useToast();

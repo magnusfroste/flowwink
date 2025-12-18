@@ -29,6 +29,7 @@ import {
 import {
   useBlogTags,
   useCreateBlogTag,
+  useUpdateBlogTag,
   useDeleteBlogTag,
 } from "@/hooks/useBlogTags";
 import type { BlogTag } from "@/types/cms";
@@ -45,9 +46,11 @@ function generateSlug(name: string): string {
 export default function BlogTagsPage() {
   const { data: tags, isLoading } = useBlogTags();
   const createMutation = useCreateBlogTag();
+  const updateMutation = useUpdateBlogTag();
   const deleteMutation = useDeleteBlogTag();
   
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [editTag, setEditTag] = useState<BlogTag | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   
   // Form state
@@ -71,12 +74,36 @@ export default function BlogTagsPage() {
     resetForm();
   };
   
+  const handleEdit = (tag: BlogTag) => {
+    setEditTag(tag);
+    setName(tag.name);
+    setSlug(tag.slug);
+  };
+  
+  const handleUpdate = async () => {
+    if (!editTag || !name.trim()) return;
+    
+    await updateMutation.mutateAsync({
+      id: editTag.id,
+      name,
+      slug: slug || generateSlug(name),
+    });
+    
+    setEditTag(null);
+    resetForm();
+  };
+  
   const handleDelete = () => {
     if (deleteId) {
       deleteMutation.mutate(deleteId, {
         onSuccess: () => setDeleteId(null),
       });
     }
+  };
+  
+  const closeEditDialog = () => {
+    setEditTag(null);
+    resetForm();
   };
   
   return (
@@ -121,6 +148,14 @@ export default function BlogTagsPage() {
                   {tag.name}
                 </Badge>
                 <span className="text-xs text-muted-foreground">/{tag.slug}</span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => handleEdit(tag)}
+                >
+                  <Edit2 className="h-3.5 w-3.5" />
+                </Button>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -174,6 +209,47 @@ export default function BlogTagsPage() {
             </Button>
             <Button onClick={handleCreate} disabled={!name.trim() || createMutation.isPending}>
               Create
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Edit Dialog */}
+      <Dialog open={!!editTag} onOpenChange={() => closeEditDialog()}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Tag</DialogTitle>
+            <DialogDescription>
+              Update the tag name and slug
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Name</Label>
+              <Input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Tag name"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Slug</Label>
+              <Input
+                value={slug}
+                onChange={(e) => setSlug(e.target.value)}
+                placeholder="url-slug"
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={closeEditDialog}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdate} disabled={!name.trim() || updateMutation.isPending}>
+              Save
             </Button>
           </DialogFooter>
         </DialogContent>
