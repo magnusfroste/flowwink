@@ -14,7 +14,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { ContentBlock, ContentBlockType, HeroBlockData, TextBlockData, ImageBlockData, CTABlockData, ContactBlockData, LinkGridBlockData, TwoColumnBlockData, InfoBoxBlockData, AccordionBlockData, ArticleGridBlockData, YouTubeBlockData, QuoteBlockData, SeparatorBlockData, GalleryBlockData, StatsBlockData, ChatBlockData, MapBlockData } from '@/types/cms';
+import { ContentBlock, ContentBlockType, HeroBlockData, TextBlockData, ImageBlockData, CTABlockData, ContactBlockData, LinkGridBlockData, TwoColumnBlockData, InfoBoxBlockData, AccordionBlockData, ArticleGridBlockData, YouTubeBlockData, QuoteBlockData, SeparatorBlockData, GalleryBlockData, StatsBlockData, ChatBlockData, MapBlockData, FormBlockData } from '@/types/cms';
 import { BlockWrapper } from './BlockWrapper';
 import { BlockSelector } from './BlockSelector';
 import { HeroBlockEditor } from './HeroBlockEditor';
@@ -34,6 +34,7 @@ import { GalleryBlockEditor } from './GalleryBlockEditor';
 import { StatsBlockEditor } from './StatsBlockEditor';
 import { ChatBlockEditor } from './ChatBlockEditor';
 import { MapBlockEditor } from './MapBlockEditor';
+import { FormBlockEditor } from './FormBlockEditor';
 import { TemplateEmptyState } from '@/components/admin/StarterTemplateSelector';
 import { StarterTemplate } from '@/data/starter-templates';
 
@@ -55,6 +56,7 @@ type BlockDataMap = {
   stats: StatsBlockData;
   chat: ChatBlockData;
   map: MapBlockData;
+  form: FormBlockData;
 };
 
 const DEFAULT_BLOCK_DATA: BlockDataMap = {
@@ -75,6 +77,18 @@ const DEFAULT_BLOCK_DATA: BlockDataMap = {
   stats: { stats: [] },
   chat: { height: 'md', showSidebar: false, variant: 'card' },
   map: { address: '', zoom: 15, mapType: 'roadmap', height: 'md', showBorder: true, rounded: true, loadOnConsent: false },
+  form: { 
+    title: 'Contact Us', 
+    description: 'Fill out the form below and we\'ll get back to you.',
+    fields: [
+      { id: 'field-name', type: 'text', label: 'Name', placeholder: 'Your name', required: true, width: 'half' },
+      { id: 'field-email', type: 'email', label: 'Email', placeholder: 'email@example.com', required: true, width: 'half' },
+      { id: 'field-message', type: 'textarea', label: 'Message', placeholder: 'How can we help you?', required: true, width: 'full' },
+    ],
+    submitButtonText: 'Send Message',
+    successMessage: 'Thank you! We\'ll be in touch soon.',
+    variant: 'default',
+  },
 };
 
 interface BlockEditorProps {
@@ -268,6 +282,14 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
         return (
           <MapBlockEditor
             data={block.data as unknown as MapBlockData}
+            onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+            isEditing={isEditing}
+          />
+        );
+      case 'form':
+        return (
+          <FormBlockEditor
+            data={block.data as unknown as FormBlockData}
             onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
             isEditing={isEditing}
           />

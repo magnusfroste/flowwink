@@ -83,8 +83,31 @@ export type ContentBlockType =
   | 'stats'
   | 'chat'
   | 'map'
+  | 'form'
   | 'footer'
   | 'header';
+
+// Form field types
+export type FormFieldType = 'text' | 'email' | 'phone' | 'textarea' | 'checkbox';
+
+export interface FormField {
+  id: string;
+  type: FormFieldType;
+  label: string;
+  placeholder?: string;
+  required: boolean;
+  width: 'full' | 'half';
+}
+
+export interface FormBlockData {
+  title?: string;
+  description?: string;
+  fields: FormField[];
+  submitButtonText: string;
+  successMessage: string;
+  // Styling
+  variant: 'default' | 'card' | 'minimal';
+}
 
 // Global block slot types
 export type GlobalBlockSlot = 'footer' | 'header' | 'sidebar';

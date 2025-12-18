@@ -196,7 +196,7 @@ export default function PublicPage() {
         <main>
           {page.content_json?.length > 0 ? (
             page.content_json.map((block) => (
-              <BlockRenderer key={block.id} block={block} />
+              <BlockRenderer key={block.id} block={block} pageId={page.id} />
             ))
           ) : (
             <div className="py-16 px-6">

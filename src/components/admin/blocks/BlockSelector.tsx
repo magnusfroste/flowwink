@@ -27,6 +27,7 @@ import {
   BarChart3,
   MessageSquare,
   MapPin,
+  FileText,
 } from 'lucide-react';
 import { ContentBlockType } from '@/types/cms';
 
@@ -167,6 +168,12 @@ const BLOCK_GROUPS: BlockGroup[] = [
         label: 'AI Chat',
         icon: <MessageSquare className="h-5 w-5" />,
         description: 'Embedded AI chat feature',
+      },
+      {
+        type: 'form',
+        label: 'Form',
+        icon: <FileText className="h-5 w-5" />,
+        description: 'Custom contact or lead form',
       },
     ],
   },

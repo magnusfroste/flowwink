@@ -133,7 +133,7 @@ export default function PreviewPage() {
         )}
         
         {(previewData.content_json || []).map((block) => (
-          <BlockRenderer key={block.id} block={block} />
+          <BlockRenderer key={block.id} block={block} pageId={previewData.id} />
         ))}
       </main>
 

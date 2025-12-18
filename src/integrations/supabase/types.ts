@@ -106,6 +106,44 @@ export type Database = {
           },
         ]
       }
+      form_submissions: {
+        Row: {
+          block_id: string
+          created_at: string
+          data: Json
+          form_name: string | null
+          id: string
+          metadata: Json | null
+          page_id: string | null
+        }
+        Insert: {
+          block_id: string
+          created_at?: string
+          data?: Json
+          form_name?: string | null
+          id?: string
+          metadata?: Json | null
+          page_id?: string | null
+        }
+        Update: {
+          block_id?: string
+          created_at?: string
+          data?: Json
+          form_name?: string | null
+          id?: string
+          metadata?: Json | null
+          page_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_submissions_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "pages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       global_blocks: {
         Row: {
           created_at: string

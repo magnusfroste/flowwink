@@ -17,6 +17,7 @@ import {
   StatsBlock,
   ChatBlock,
   MapBlock,
+  FormBlock,
 } from './blocks';
 import type {
   HeroBlockData,
@@ -36,13 +37,15 @@ import type {
   StatsBlockData,
   ChatBlockData,
   MapBlockData,
+  FormBlockData,
 } from '@/types/cms';
 
 interface BlockRendererProps {
   block: ContentBlock;
+  pageId?: string;
 }
 
-export function BlockRenderer({ block }: BlockRendererProps) {
+export function BlockRenderer({ block, pageId }: BlockRendererProps) {
   switch (block.type) {
     case 'hero':
       return <HeroBlock data={block.data as unknown as HeroBlockData} />;
@@ -78,6 +81,8 @@ export function BlockRenderer({ block }: BlockRendererProps) {
       return <ChatBlock data={block.data as unknown as ChatBlockData} />;
     case 'map':
       return <MapBlock data={block.data as unknown as MapBlockData} />;
+    case 'form':
+      return <FormBlock data={block.data as unknown as FormBlockData} blockId={block.id} pageId={pageId} />;
     default:
       return null;
   }

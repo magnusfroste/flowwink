@@ -23,6 +23,7 @@ const BLOCK_LABELS: Record<ContentBlockType, string> = {
   stats: 'Statistik',
   chat: 'AI Chat',
   map: 'Karta',
+  form: 'Formulär',
   footer: 'Footer',
   header: 'Header',
 };

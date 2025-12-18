@@ -15,3 +15,4 @@ export { GalleryBlock } from './GalleryBlock';
 export { StatsBlock } from './StatsBlock';
 export { ChatBlock } from './ChatBlock';
 export { MapBlock } from './MapBlock';
+export { FormBlock } from './FormBlock';
