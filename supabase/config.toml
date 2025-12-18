@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.generate-text]
 verify_jwt = true
+
+[functions.blog-rss]
+verify_jwt = false

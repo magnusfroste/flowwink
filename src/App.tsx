@@ -29,6 +29,10 @@ import BlogPostEditorPage from "./pages/admin/BlogPostEditorPage";
 import BlogCategoriesPage from "./pages/admin/BlogCategoriesPage";
 import PreviewPage from "./pages/PreviewPage";
 import PublicPage from "./pages/PublicPage";
+import BlogArchivePage from "./pages/BlogArchivePage";
+import BlogPostPage from "./pages/BlogPostPage";
+import BlogCategoryPage from "./pages/BlogCategoryPage";
+import BlogTagPage from "./pages/BlogTagPage";
 import ChatPage from "./pages/ChatPage";
 import NotFound from "./pages/NotFound";
 
@@ -38,10 +42,20 @@ const router = createBrowserRouter([
   { path: "/", element: <PublicPage /> },
   { path: "/auth", element: <AuthPage /> },
   { path: "/chat", element: <ChatPage /> },
+  // Blog routes
+  { path: "/blogg", element: <BlogArchivePage /> },
+  { path: "/blogg/kategori/:slug", element: <BlogCategoryPage /> },
+  { path: "/blogg/tagg/:slug", element: <BlogTagPage /> },
+  { path: "/blogg/:slug", element: <BlogPostPage /> },
+  // Admin routes
   { path: "/admin", element: <AdminDashboard /> },
   { path: "/admin/pages", element: <PagesListPage /> },
   { path: "/admin/pages/new", element: <NewPagePage /> },
   { path: "/admin/pages/:id", element: <PageEditorPage /> },
+  { path: "/admin/blog", element: <BlogPostsPage /> },
+  { path: "/admin/blog/new", element: <BlogPostEditorPage /> },
+  { path: "/admin/blog/categories", element: <BlogCategoriesPage /> },
+  { path: "/admin/blog/:id", element: <BlogPostEditorPage /> },
   { path: "/admin/media", element: <MediaLibraryPage /> },
   { path: "/admin/users", element: <UsersPage /> },
   { path: "/admin/settings", element: <SiteSettingsPage /> },
