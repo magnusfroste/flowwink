@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
-import { Loader2, Save, Rss, FileText, User, Clock } from 'lucide-react';
+import { Loader2, Save, Rss, FileText, User, Clock, ArrowLeft } from 'lucide-react';
 import { useBlogSettings, useUpdateBlogSettings, BlogSettings } from '@/hooks/useSiteSettings';
 import { toast } from 'sonner';
 
@@ -54,14 +55,22 @@ export default function BlogSettingsPage() {
             title="Blog Settings"
             description="Configure blog display and features"
           />
-          <Button onClick={handleSave} disabled={updateSettings.isPending}>
-            {updateSettings.isPending ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <Save className="h-4 w-4 mr-2" />
-            )}
-            Save Changes
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" asChild>
+              <Link to="/admin/blog">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Posts
+              </Link>
+            </Button>
+            <Button onClick={handleSave} disabled={updateSettings.isPending}>
+              {updateSettings.isPending ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4 mr-2" />
+              )}
+              Save Changes
+            </Button>
+          </div>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
