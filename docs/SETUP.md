@@ -84,27 +84,33 @@ These are automatically available to all Edge Functions — Supabase sets them f
 | `SUPABASE_ANON_KEY` | Public/anon key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Service role key (admin access) |
 
-### Manual Secrets (Set these for AI features)
-
-Set via **Supabase CLI** or **Dashboard → Project Settings → Edge Functions → Secrets**:
+### Manual Secrets
 
 | Secret | Required For | How to Get |
 |--------|--------------|------------|
-| `LOVABLE_API_KEY` | AI Chat (Lovable provider), AI Text Generation, AI Page Migration | [Lovable Dashboard](https://lovable.dev) |
 | `FIRECRAWL_API_KEY` | AI Brand Analysis, AI Page Migration (web scraping) | [firecrawl.dev](https://firecrawl.dev) |
 
 ```bash
-# Set secrets via CLI
-supabase secrets set LOVABLE_API_KEY=your-lovable-api-key
+# Set secrets via CLI (optional)
 supabase secrets set FIRECRAWL_API_KEY=your-firecrawl-api-key
 
 # List current secrets
 supabase secrets list
 ```
 
-### Alternative: Private LLM (No secrets needed)
+### AI Chat Configuration
 
-If you don't want to use Lovable AI, you can configure a **Private LLM** in the CMS:
+#### Option A: Lovable AI Gateway (Lovable Cloud only)
+
+The `LOVABLE_API_KEY` is **automatically provided** when you remix the project on Lovable:
+
+[![Remix on Lovable](https://img.shields.io/badge/Remix%20on-Lovable-ff69b4)](https://lovable.dev/projects/fac5f9b2-2dc8-4cce-be0a-4266a826f893)
+
+This key is injected by Lovable Cloud and is **not available for full self-hosting**.
+
+#### Option B: Private LLM (Self-Hosting)
+
+For full self-hosting, configure a **Private LLM** in the CMS:
 
 1. Go to **Admin → Settings → AI Chat**
 2. Select **Private LLM** as provider

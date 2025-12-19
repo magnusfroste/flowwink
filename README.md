@@ -113,11 +113,31 @@ A complete SQL schema is available at **[supabase/schema.sql](supabase/schema.sq
 
 ## Deployment Options
 
-| Option | Description |
-|--------|-------------|
-| **Self-Hosted** | Free forever. Full control. Deploy on your own Supabase. |
-| **Managed** | We host it for you. Dedicated instance. Enterprise support. |
-| **Cloud** | Multi-tenant SaaS (coming soon). |
+### Option 1: Remix on Lovable (Easiest)
+
+The fastest way to get started — remix the project on Lovable and get AI features included:
+
+[![Remix on Lovable](https://img.shields.io/badge/Remix%20on-Lovable-ff69b4)](https://lovable.dev/projects/fac5f9b2-2dc8-4cce-be0a-4266a826f893)
+
+**What you get:**
+- ✅ One-click deployment
+- ✅ Lovable AI Gateway included (Gemini-powered AI chat)
+- ✅ Managed Supabase backend
+- ✅ Automatic updates
+
+### Option 2: Full Self-Hosting (Complete Control)
+
+Deploy on your own infrastructure with full control over your data:
+
+| Component | Your Choice |
+|-----------|-------------|
+| **Frontend** | Vercel, Netlify, Cloudflare Pages, or any static host |
+| **Backend** | Your own Supabase project |
+| **AI** | Private LLM (OpenAI, Gemini, Ollama, LM Studio, etc.) |
+
+See **[docs/SETUP.md](docs/SETUP.md)** for complete self-hosting instructions.
+
+**Note:** When self-hosting, AI features require configuring a Private LLM endpoint in the CMS admin panel. The Lovable AI Gateway is only available when using Lovable Cloud.
 
 ## Documentation
 
