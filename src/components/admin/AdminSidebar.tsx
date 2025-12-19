@@ -13,7 +13,6 @@ import {
   LayoutGrid,
   Inbox,
   BookOpen,
-  ChevronRight,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { ROLE_LABELS } from "@/types/cms";
@@ -29,16 +28,15 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarGroupContent,
+  SidebarSeparator,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 type NavItem = {
   name: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
-  adminOnly?: boolean;
 };
 
 type NavGroup = {
@@ -93,9 +91,6 @@ export function AdminSidebar() {
   const isItemActive = (href: string) =>
     location.pathname === href || (href !== "/admin" && location.pathname.startsWith(href));
 
-  const isGroupActive = (items: NavItem[]) =>
-    items.some((item) => isItemActive(item.href));
-
   const filteredGroups = navigationGroups.filter((group) => !group.adminOnly || isAdmin);
 
   return (
@@ -115,43 +110,39 @@ export function AdminSidebar() {
 
       {/* Navigation */}
       <SidebarContent className="px-2 py-2">
-        {filteredGroups.map((group) => (
-          <Collapsible key={group.label} defaultOpen={isGroupActive(group.items)} className="group/collapsible">
+        {filteredGroups.map((group, index) => (
+          <div key={group.label}>
+            {index > 0 && <SidebarSeparator className="my-2" />}
             <SidebarGroup>
               {!isCollapsed && (
-                <CollapsibleTrigger asChild>
-                  <SidebarGroupLabel className="cursor-pointer hover:bg-sidebar-accent/50 rounded-md transition-colors flex items-center justify-between pr-2">
-                    {group.label}
-                    <ChevronRight className="h-3.5 w-3.5 transition-transform group-data-[state=open]/collapsible:rotate-90" />
-                  </SidebarGroupLabel>
-                </CollapsibleTrigger>
+                <SidebarGroupLabel className="text-xs text-sidebar-foreground/50 uppercase tracking-wider">
+                  {group.label}
+                </SidebarGroupLabel>
               )}
-              <CollapsibleContent>
-                <SidebarGroupContent>
+              <SidebarGroupContent>
                 <SidebarMenu>
-                    {group.items.map((item) => {
-                      const isActive = isItemActive(item.href);
-                      return (
-                        <SidebarMenuItem key={item.name}>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <SidebarMenuButton asChild isActive={isActive} tooltip={item.name}>
-                                <Link to={item.href}>
-                                  <item.icon className="h-4 w-4" />
-                                  <span>{item.name}</span>
-                                </Link>
-                              </SidebarMenuButton>
-                            </TooltipTrigger>
-                            {isCollapsed && <TooltipContent side="right">{item.name}</TooltipContent>}
-                          </Tooltip>
-                        </SidebarMenuItem>
-                      );
-                    })}
-                  </SidebarMenu>
-                </SidebarGroupContent>
-              </CollapsibleContent>
+                  {group.items.map((item) => {
+                    const isActive = isItemActive(item.href);
+                    return (
+                      <SidebarMenuItem key={item.name}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <SidebarMenuButton asChild isActive={isActive} tooltip={item.name}>
+                              <Link to={item.href}>
+                                <item.icon className="h-4 w-4" />
+                                <span>{item.name}</span>
+                              </Link>
+                            </SidebarMenuButton>
+                          </TooltipTrigger>
+                          {isCollapsed && <TooltipContent side="right">{item.name}</TooltipContent>}
+                        </Tooltip>
+                      </SidebarMenuItem>
+                    );
+                  })}
+                </SidebarMenu>
+              </SidebarGroupContent>
             </SidebarGroup>
-          </Collapsible>
+          </div>
         ))}
       </SidebarContent>
 
