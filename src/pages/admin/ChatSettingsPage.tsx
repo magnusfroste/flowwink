@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+Geminiimport { useState, useEffect, useMemo } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { useChatSettings, useUpdateChatSettings, ChatSettings, ChatAiProvider } from '@/hooks/useSiteSettings';
@@ -215,7 +215,7 @@ export default function ChatSettingsPage() {
                     <div className="grid grid-cols-3 gap-4">
                       <ProviderCard
                         provider="lovable"
-                        title="Lovable AI"
+                        title="Gemini 2.5 Flash AI"
                         description="Cloud-based AI"
                         icon={<Cloud className="h-5 w-5" />}
                         badge="Recommended"
