@@ -1,73 +1,137 @@
-# Welcome to your Lovable project
+# Pezcms
 
-## Project info
+**Head + Headless CMS** — The complete CMS that gives you a beautiful website AND a powerful API.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-## How can I edit this code?
+## What is Pezcms?
 
-There are several ways of editing your application.
+Pezcms is a modern, open-source Content Management System built for organizations that need:
 
-**Use Lovable**
+- ✅ A complete website without developers
+- ✅ Headless API for multi-channel delivery
+- ✅ AI-powered content tools
+- ✅ GDPR and WCAG compliance built-in
+- ✅ Full control with self-hosting
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+### Head + Headless
 
-Changes made via Lovable will be committed automatically to this repo.
+Unlike traditional CMS (website only) or pure headless solutions (API only, requires separate frontend), Pezcms delivers **both**:
 
-**Use your preferred IDE**
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      PEZCMS CONTENT                         │
+│                    (Single Source of Truth)                 │
+└─────────────────────────────────────────────────────────────┘
+                              │
+          ┌───────────────────┼───────────────────┐
+          │                   │                   │
+          ▼                   ▼                   ▼
+    ┌──────────┐       ┌──────────┐       ┌──────────┐
+    │   HEAD   │       │ HEADLESS │       │  FUTURE  │
+    │ Website  │       │   API    │       │ Channels │
+    │(Built-in)│       │(REST/GQL)│       │          │
+    └──────────┘       └──────────┘       └──────────┘
+```
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## Features
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Content Management
+- **16 block types** — Text, images, galleries, accordions, CTAs, and more
+- **Drag & drop** — Reorder blocks visually
+- **Rich text editor** — Powered by Tiptap
+- **Media library** — With automatic WebP optimization
 
-Follow these steps:
+### Editorial Workflow
+- **Roles** — Writer, Approver, Admin
+- **Approval flow** — Draft → Review → Published
+- **Version history** — Track and restore changes
+- **Scheduled publishing** — Set it and forget it
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### AI Features
+- **AI Chat** — Multi-provider support (OpenAI, Local LLM, N8N)
+- **AI Migration** — Import existing websites automatically
+- **AI Brand Analysis** — Extract colors and fonts from any URL
+- **Knowledge Base** — Your content becomes AI context
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### Compliance & Security
+- **GDPR** — Audit logging, cookie consent, privacy by design
+- **WCAG 2.1 AA** — Accessibility built into every component
+- **Row Level Security** — Powered by Supabase RLS
 
-# Step 3: Install the necessary dependencies.
-npm i
+### Headless API
+- **REST API** — `/content-api/pages`, `/content-api/page/:slug`
+- **GraphQL** — Full schema for flexible queries
+- **Edge caching** — Fast responses worldwide
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+## Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Frontend | React 18, Vite, TypeScript, Tailwind CSS |
+| UI Components | shadcn/ui, Radix UI |
+| Backend | Supabase (PostgreSQL, Auth, Storage, Edge Functions) |
+| Editor | Tiptap |
+| State | TanStack Query |
+
+## Self-Hosting
+
+Pezcms is **free to self-host**. Deploy on your own Supabase instance with full control over your data.
+
+### Quick Start
+
+```bash
+# Clone the repository
+git clone https://github.com/magnusfroste/pezcms.git
+cd pezcms
+
+# Install dependencies
+npm install
+
+# Set up environment variables
+cp .env.example .env
+# Edit .env with your Supabase credentials
+
+# Run database migrations (see docs/SETUP.md)
+
+# Start development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+### Detailed Setup
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+See **[docs/SETUP.md](docs/SETUP.md)** for complete self-hosting instructions including:
 
-**Use GitHub Codespaces**
+- Supabase project setup
+- Database migrations
+- Edge Functions deployment
+- Production deployment
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### Database Schema
 
-## What technologies are used for this project?
+A complete SQL schema is available at **[supabase/schema.sql](supabase/schema.sql)** — run it in your Supabase SQL Editor to set up a new instance.
 
-This project is built with:
+## Deployment Options
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+| Option | Description |
+|--------|-------------|
+| **Self-Hosted** | Free forever. Full control. Deploy on your own Supabase. |
+| **Managed** | We host it for you. Dedicated instance. Enterprise support. |
+| **Cloud** | Multi-tenant SaaS (coming soon). |
 
-## How can I deploy this project?
+## Documentation
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+- **[docs/SETUP.md](docs/SETUP.md)** — Self-hosting guide
+- **[docs/PRD.md](docs/PRD.md)** — Full product documentation
 
-## Can I connect a custom domain to my Lovable project?
+## Contributing
 
-Yes, you can!
+Contributions are welcome! Please open an issue or submit a pull request.
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## License
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+MIT License — see [LICENSE](LICENSE) for details.
+
+---
+
+**Made in Sweden 🇸🇪**
