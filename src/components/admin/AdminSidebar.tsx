@@ -13,6 +13,7 @@ import {
   LayoutGrid,
   Inbox,
   BookOpen,
+  Image,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { ROLE_LABELS } from "@/types/cms";
@@ -65,6 +66,7 @@ const navigationGroups: NavGroup[] = [
     adminOnly: true,
     items: [
       { name: "Form Submissions", href: "/admin/forms", icon: Inbox },
+      { name: "Media Library", href: "/admin/media", icon: Image },
       { name: "Content Hub", href: "/admin/content-hub", icon: Database },
       { name: "Global Elements", href: "/admin/global-blocks", icon: LayoutGrid },
     ],
