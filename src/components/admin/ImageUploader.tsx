@@ -4,9 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Upload, Link, Loader2, X, ImageIcon, FolderOpen } from 'lucide-react';
+import { Upload, Link, Loader2, X, ImageIcon, FolderOpen, Camera } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { MediaLibraryPicker } from './MediaLibraryPicker';
+import { UnsplashPicker } from './UnsplashPicker';
 import { convertToWebP, getWebPFileName } from '@/lib/image-utils';
 
 interface ImageUploaderProps {
@@ -26,6 +27,7 @@ export function ImageUploader({
   const [urlInput, setUrlInput] = useState(value || '');
   const [activeTab, setActiveTab] = useState<string>(value ? 'preview' : 'upload');
   const [showLibrary, setShowLibrary] = useState(false);
+  const [showUnsplash, setShowUnsplash] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -143,14 +145,18 @@ export function ImageUploader({
       <Label>{label}</Label>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="upload" className="text-xs">
             <Upload className="h-3 w-3 mr-1" />
-            Upload
+            Ladda upp
           </TabsTrigger>
           <TabsTrigger value="library" className="text-xs">
             <FolderOpen className="h-3 w-3 mr-1" />
-            Library
+            Bibliotek
+          </TabsTrigger>
+          <TabsTrigger value="unsplash" className="text-xs">
+            <Camera className="h-3 w-3 mr-1" />
+            Stock
           </TabsTrigger>
           <TabsTrigger value="url" className="text-xs">
             <Link className="h-3 w-3 mr-1" />
@@ -158,7 +164,7 @@ export function ImageUploader({
           </TabsTrigger>
           <TabsTrigger value="preview" className="text-xs" disabled={!value}>
             <ImageIcon className="h-3 w-3 mr-1" />
-            Preview
+            Förhandsvisning
           </TabsTrigger>
         </TabsList>
 
@@ -170,16 +176,16 @@ export function ImageUploader({
             {isUploading ? (
               <>
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Converting & uploading...</span>
+                <span className="text-sm text-muted-foreground">Konverterar & laddar upp...</span>
               </>
             ) : (
               <>
                 <Upload className="h-8 w-8 text-muted-foreground" />
                 <span className="text-sm text-muted-foreground">
-                  Click to select image
+                  Klicka för att välja bild
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  Automatically converted to WebP
+                  Konverteras automatiskt till WebP
                 </span>
               </>
             )}
@@ -200,7 +206,22 @@ export function ImageUploader({
           >
             <FolderOpen className="h-8 w-8 text-muted-foreground" />
             <span className="text-sm text-muted-foreground">
-              Click to select from library
+              Klicka för att välja från biblioteket
+            </span>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="unsplash" className="mt-3">
+          <div 
+            className={`${aspectClass[aspectRatio]} border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-2 bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer`}
+            onClick={() => setShowUnsplash(true)}
+          >
+            <Camera className="h-8 w-8 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">
+              Klicka för att söka stockbilder
+            </span>
+            <span className="text-xs text-muted-foreground">
+              Gratis bilder från Unsplash
             </span>
           </div>
         </TabsContent>
@@ -218,7 +239,7 @@ export function ImageUploader({
             disabled={!urlInput.trim()}
             className="w-full"
           >
-            Use URL
+            Använd URL
           </Button>
         </TabsContent>
 
@@ -247,7 +268,7 @@ export function ImageUploader({
             </div>
           ) : (
             <div className={`${aspectClass[aspectRatio]} rounded-lg bg-muted flex items-center justify-center`}>
-              <span className="text-sm text-muted-foreground">No image selected</span>
+              <span className="text-sm text-muted-foreground">Ingen bild vald</span>
             </div>
           )}
         </TabsContent>
@@ -256,6 +277,12 @@ export function ImageUploader({
       <MediaLibraryPicker
         open={showLibrary}
         onOpenChange={setShowLibrary}
+        onSelect={handleLibrarySelect}
+      />
+
+      <UnsplashPicker
+        open={showUnsplash}
+        onOpenChange={setShowUnsplash}
         onSelect={handleLibrarySelect}
       />
     </div>

@@ -32,3 +32,6 @@ verify_jwt = true
 
 [functions.blog-rss]
 verify_jwt = false
+
+[functions.unsplash-search]
+verify_jwt = true
