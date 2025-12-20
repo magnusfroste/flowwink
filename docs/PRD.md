@@ -1,8 +1,8 @@
 # Pezcms - Product Requirements Document (PRD)
 
-> **Version:** 1.0  
+> **Version:** 2.0  
 > **Last Updated:** December 2024  
-> **Status:** MVP Complete
+> **Status:** Core Modules Complete
 
 ---
 
@@ -462,8 +462,9 @@ Visuellt diagram som demonstrerar innehållsflöde från CMS till olika kanaler:
 
 - ✅ **Website** (Live)
 - ✅ **AI Chat** (Live)
+- ✅ **Newsletter** (Live)
+- ✅ **Webhooks/N8N** (Live)
 - 🔮 **Mobile App** (Framtida)
-- 🔮 **Newsletter** (Framtida)
 - 🔮 **Digital Signage** (Framtida)
 
 ### 8.2 API Explorer
@@ -659,26 +660,32 @@ För vårdorganisationer som kräver HIPAA:
 
 ## Appendix A: Roadmap
 
-### Fas 1: MVP ✅
-- Block-baserad sidbyggare
-- Editorial workflow
+### Fas 1: MVP ✅ (Complete)
+- Block-baserad sidbyggare (16 block types)
+- Editorial workflow (Draft → Review → Published)
 - Branding & SEO
 - AI Chat & Import
-- Headless API
+- Headless API (REST + GraphQL)
 
-### Fas 2: Expansion (Planerad)
-- Multi-site support
-- Advanced analytics
-- A/B testing
-- Newsletter integration
-- Mobile app SDK
+### Fas 2: Core Modules ✅ (Complete)
+- **Blog Module** — Posts, categories, tags, author profiles, RSS feed
+- **Newsletter Module** — Subscribers, campaigns, open/click tracking, GDPR export
+- **Integration Module** — Webhooks, N8N templates, event system
 
-### Fas 3: Enterprise (Framtida)
+### Fas 3: Process Automation (Backlog - Committed)
+
+| Module | Priority | Synergy | Status |
+|--------|----------|---------|--------|
+| **Booking/Scheduling** | High | Newsletter (reminders), Webhooks (calendar sync) | Planned |
+| **Lead CRM** | Medium | Forms → Pipeline, Newsletter nurturing | Planned |
+| **Knowledge Base** | Medium | AI Chat context, structured FAQ | Planned |
+
+### Fas 4: Enterprise (Future)
 - SSO/SAML
-- Custom workflows
+- Multi-site support
+- Advanced analytics & A/B testing
 - API rate limiting
-- Advanced audit logging
-- Dedicated support
+- Dedicated support SLA
 
 ---
 
