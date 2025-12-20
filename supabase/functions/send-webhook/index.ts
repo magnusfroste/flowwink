@@ -36,81 +36,124 @@ async function generateSignature(payload: string, secret: string): Promise<strin
     .join('')
 }
 
-// Send webhook to a single endpoint
-async function sendWebhook(
+// Retry configuration
+const MAX_RETRIES = 3
+const BASE_DELAY_MS = 1000 // 1 second
+
+// Calculate delay with exponential backoff: 1s, 2s, 4s
+function getRetryDelay(attempt: number): number {
+  return BASE_DELAY_MS * Math.pow(2, attempt)
+}
+
+// Sleep utility
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+// Send webhook with retry logic
+async function sendWebhookWithRetry(
   webhook: Webhook, 
   payload: WebhookPayload,
   supabase: any
-): Promise<{ success: boolean; status?: number; error?: string; duration: number }> {
-  const startTime = Date.now()
+): Promise<{ success: boolean; status?: number; error?: string; duration: number; attempts: number }> {
   const payloadString = JSON.stringify(payload)
+  let lastError: string | undefined
+  let lastStatus: number | undefined
+  let totalDuration = 0
   
-  try {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      'User-Agent': 'PezCMS-Webhook/1.0',
-      'X-Webhook-Event': payload.event,
-      'X-Webhook-Timestamp': payload.timestamp,
-      ...webhook.headers
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    const startTime = Date.now()
+    
+    // Wait before retry (not on first attempt)
+    if (attempt > 0) {
+      const delay = getRetryDelay(attempt - 1)
+      console.log(`[send-webhook] Retry ${attempt}/${MAX_RETRIES} for ${webhook.name} after ${delay}ms`)
+      await sleep(delay)
     }
     
-    // Add signature if secret is configured
-    if (webhook.secret) {
-      const signature = await generateSignature(payloadString, webhook.secret)
-      headers['X-Webhook-Signature'] = `sha256=${signature}`
+    try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'User-Agent': 'PezCMS-Webhook/1.0',
+        'X-Webhook-Event': payload.event,
+        'X-Webhook-Timestamp': payload.timestamp,
+        'X-Webhook-Attempt': String(attempt + 1),
+        ...webhook.headers
+      }
+      
+      // Add signature if secret is configured
+      if (webhook.secret) {
+        const signature = await generateSignature(payloadString, webhook.secret)
+        headers['X-Webhook-Signature'] = `sha256=${signature}`
+      }
+      
+      const response = await fetch(webhook.url, {
+        method: 'POST',
+        headers,
+        body: payloadString,
+      })
+      
+      const duration = Date.now() - startTime
+      totalDuration += duration
+      
+      // Success - log and return
+      if (response.ok) {
+        const responseBody = await response.text().catch(() => '')
+        
+        await supabase.from('webhook_logs').insert({
+          webhook_id: webhook.id,
+          event: payload.event,
+          payload,
+          response_status: response.status,
+          response_body: responseBody.substring(0, 1000),
+          success: true,
+          duration_ms: totalDuration,
+          error_message: attempt > 0 ? `Succeeded after ${attempt + 1} attempts` : null
+        })
+        
+        await supabase.from('webhooks').update({ 
+          last_triggered_at: new Date().toISOString(),
+          failure_count: 0
+        }).eq('id', webhook.id)
+        
+        return { success: true, status: response.status, duration: totalDuration, attempts: attempt + 1 }
+      }
+      
+      // Failed - store for potential retry
+      lastStatus = response.status
+      lastError = `HTTP ${response.status}`
+      
+      // Don't retry on client errors (4xx) except 429 (rate limit)
+      if (response.status >= 400 && response.status < 500 && response.status !== 429) {
+        console.log(`[send-webhook] Client error ${response.status}, not retrying`)
+        break
+      }
+      
+    } catch (error) {
+      const duration = Date.now() - startTime
+      totalDuration += duration
+      lastError = error instanceof Error ? error.message : 'Unknown error'
+      console.log(`[send-webhook] Attempt ${attempt + 1} failed: ${lastError}`)
     }
-    
-    const response = await fetch(webhook.url, {
-      method: 'POST',
-      headers,
-      body: payloadString,
-    })
-    
-    const duration = Date.now() - startTime
-    const responseBody = await response.text().catch(() => '')
-    
-    // Log the delivery
-    await supabase.from('webhook_logs').insert({
-      webhook_id: webhook.id,
-      event: payload.event,
-      payload,
-      response_status: response.status,
-      response_body: responseBody.substring(0, 1000),
-      success: response.ok,
-      duration_ms: duration,
-      error_message: response.ok ? null : `HTTP ${response.status}`
-    })
-    
-    // Update webhook last_triggered_at and reset/increment failure count
-    if (response.ok) {
-      await supabase.from('webhooks').update({ 
-        last_triggered_at: new Date().toISOString(),
-        failure_count: 0
-      }).eq('id', webhook.id)
-    } else {
-      await supabase.from('webhooks').update({ 
-        last_triggered_at: new Date().toISOString(),
-        failure_count: (webhook.failure_count || 0) + 1
-      }).eq('id', webhook.id)
-    }
-    
-    return { success: response.ok, status: response.status, duration }
-  } catch (error) {
-    const duration = Date.now() - startTime
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    
-    // Log the failed delivery
-    await supabase.from('webhook_logs').insert({
-      webhook_id: webhook.id,
-      event: payload.event,
-      payload,
-      success: false,
-      error_message: errorMessage,
-      duration_ms: duration
-    })
-    
-    return { success: false, error: errorMessage, duration }
   }
+  
+  // All retries exhausted - log failure
+  await supabase.from('webhook_logs').insert({
+    webhook_id: webhook.id,
+    event: payload.event,
+    payload,
+    response_status: lastStatus || null,
+    success: false,
+    error_message: `Failed after ${MAX_RETRIES + 1} attempts: ${lastError}`,
+    duration_ms: totalDuration
+  })
+  
+  await supabase.from('webhooks').update({ 
+    last_triggered_at: new Date().toISOString(),
+    failure_count: (webhook.failure_count || 0) + 1
+  }).eq('id', webhook.id)
+  
+  return { success: false, status: lastStatus, error: lastError, duration: totalDuration, attempts: MAX_RETRIES + 1 }
 }
 
 Deno.serve(async (req) => {
@@ -162,13 +205,13 @@ Deno.serve(async (req) => {
       timestamp: new Date().toISOString()
     }
 
-    // Send to all webhooks in parallel
+    // Send to all webhooks in parallel with retry
     const results = await Promise.all(
-      webhooks.map((webhook: Webhook) => sendWebhook(webhook, payload, supabase))
+      webhooks.map((webhook: Webhook) => sendWebhookWithRetry(webhook, payload, supabase))
     )
 
-    const successful = results.filter(r => r.success).length
-    const failed = results.filter(r => !r.success).length
+    const successful = results.filter((r: { success: boolean }) => r.success).length
+    const failed = results.filter((r: { success: boolean }) => !r.success).length
 
     console.log(`[send-webhook] Completed: ${successful} successful, ${failed} failed`)
 
@@ -178,7 +221,7 @@ Deno.serve(async (req) => {
         webhooks_triggered: webhooks.length,
         successful,
         failed,
-        results: results.map((r, i) => ({
+        results: results.map((r: { success: boolean; status?: number; error?: string; duration: number; attempts: number }, i: number) => ({
           webhook: webhooks[i].name,
           ...r
         }))
