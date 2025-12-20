@@ -133,6 +133,9 @@ export interface HeaderBlockData {
   logoSize?: 'sm' | 'md' | 'lg';
   stickyHeader?: boolean;
   showThemeToggle?: boolean;
+  // Background styling
+  backgroundStyle?: 'solid' | 'transparent' | 'blur';
+  showBorder?: boolean;
   // Custom nav items (external links beyond CMS pages)
   customNavItems?: HeaderNavItem[];
 }

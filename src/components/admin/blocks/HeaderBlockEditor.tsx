@@ -185,6 +185,48 @@ export function HeaderBlockEditor({ data, onChange }: HeaderBlockEditorProps) {
         </CardContent>
       </Card>
 
+      {/* Appearance */}
+      <Card>
+        <CardContent className="pt-6 space-y-4">
+          <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
+            Appearance
+          </h3>
+
+          <div className="space-y-2">
+            <Label>Background Style</Label>
+            <Select
+              value={data.backgroundStyle || 'solid'}
+              onValueChange={(value: 'solid' | 'transparent' | 'blur') => onChange({ ...data, backgroundStyle: value })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="solid">Solid Background</SelectItem>
+                <SelectItem value="transparent">Transparent</SelectItem>
+                <SelectItem value="blur">Blur (Glass Effect)</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              {data.backgroundStyle === 'blur' && 'Creates a frosted glass effect when scrolling over content'}
+              {data.backgroundStyle === 'transparent' && 'Header has no background, content shows through'}
+              {(!data.backgroundStyle || data.backgroundStyle === 'solid') && 'Standard opaque background'}
+            </p>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <Label>Show Border</Label>
+              <p className="text-sm text-muted-foreground">Display a bottom border on the header</p>
+            </div>
+            <Switch
+              checked={data.showBorder !== false}
+              onCheckedChange={(checked) => onChange({ ...data, showBorder: checked })}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Behavior */}
       <Card>
         <CardContent className="pt-6 space-y-4">

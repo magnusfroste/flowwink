@@ -51,11 +51,29 @@ export function PublicNavigation() {
   // Custom nav items from header settings
   const customNavItems = (headerSettings.customNavItems || []).filter(item => item.enabled);
 
+  // Background style classes
+  const getBackgroundClasses = () => {
+    const style = headerSettings.backgroundStyle || 'solid';
+    const showBorder = headerSettings.showBorder !== false;
+    
+    const baseClasses = cn(
+      "z-50",
+      headerSettings.stickyHeader !== false && "sticky top-0",
+      showBorder && "border-b"
+    );
+    
+    switch (style) {
+      case 'transparent':
+        return cn(baseClasses, "bg-transparent");
+      case 'blur':
+        return cn(baseClasses, "bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60");
+      default:
+        return cn(baseClasses, "bg-card");
+    }
+  };
+
   return (
-    <header className={cn(
-      "border-b bg-card z-50",
-      headerSettings.stickyHeader !== false && "sticky top-0"
-    )}>
+    <header className={getBackgroundClasses()}>
       <div className="container mx-auto px-6">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
