@@ -66,6 +66,22 @@ serve(async (req) => {
 
       console.log(`[newsletter-subscribe] Email confirmed: ${data.email}`);
       
+      // Trigger webhook for newsletter subscribed
+      try {
+        await supabase.functions.invoke('send-webhook', {
+          body: { 
+            event: 'newsletter.subscribed', 
+            data: { 
+              email: data.email, 
+              name: data.name,
+              subscribed_at: new Date().toISOString(),
+            } 
+          },
+        });
+      } catch (webhookError) {
+        console.warn('[newsletter-subscribe] Webhook error:', webhookError);
+      }
+      
       // Redirect to success page or return success
       return new Response(JSON.stringify({ success: true, message: "Subscription confirmed" }), {
         status: 200,
@@ -97,6 +113,21 @@ serve(async (req) => {
       }
 
       console.log(`[newsletter-subscribe] Unsubscribed: ${email}`);
+      
+      // Trigger webhook for newsletter unsubscribed
+      try {
+        await supabase.functions.invoke('send-webhook', {
+          body: { 
+            event: 'newsletter.unsubscribed', 
+            data: { 
+              email,
+              unsubscribed_at: new Date().toISOString(),
+            } 
+          },
+        });
+      } catch (webhookError) {
+        console.warn('[newsletter-subscribe] Webhook error:', webhookError);
+      }
       
       return new Response(JSON.stringify({ success: true, message: "Unsubscribed successfully" }), {
         status: 200,

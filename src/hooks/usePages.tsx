@@ -4,6 +4,7 @@ import type { Page, PageStatus, ContentBlock, PageMeta } from '@/types/cms';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from './useAuth';
 import type { Json } from '@/integrations/supabase/types';
+import { webhookEvents } from '@/lib/webhook-utils';
 
 // Helper to safely cast database JSON to our types
 function parsePage(data: {
@@ -268,6 +269,9 @@ export function useUpdatePageStatus() {
         } catch (cacheError) {
           console.warn('[usePages] Cache invalidation failed:', cacheError);
         }
+        
+        // Trigger webhook for page published
+        webhookEvents.pagePublished({ id, slug: data.slug, title: data.title });
       }
       
       return parsePage(data);
@@ -320,6 +324,9 @@ export function useDeletePage() {
         user_id: user?.id,
         metadata: {} as unknown as Json,
       });
+      
+      // Trigger webhook for page deleted
+      webhookEvents.pageDeleted(id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pages'] });

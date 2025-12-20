@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Json } from '@/integrations/supabase/types';
+import { webhookEvents } from '@/lib/webhook-utils';
 
 interface FormBlockProps {
   data: FormBlockData;
@@ -95,6 +96,14 @@ export function FormBlock({ data, blockId, pageId }: FormBlockProps) {
         }]);
 
       if (error) throw error;
+
+      // Trigger webhook for form submission
+      webhookEvents.formSubmitted({
+        form_name: data.title || 'Contact Form',
+        block_id: blockId,
+        page_id: pageId,
+        data: submissionData as Record<string, unknown>,
+      });
 
       setIsSubmitted(true);
       setFormData({});

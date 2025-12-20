@@ -4,6 +4,7 @@ import type { BlogPost, PageStatus, ContentBlock, BlogPostMeta, BlogCategory, Bl
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from './useAuth';
 import type { Json } from '@/integrations/supabase/types';
+import { webhookEvents } from '@/lib/webhook-utils';
 
 // Parse blog post from database
 function parseBlogPost(data: Record<string, unknown>): BlogPost {
@@ -487,6 +488,16 @@ export function useUpdateBlogPostStatus() {
         metadata: { new_status: status } as unknown as Json,
       });
       
+      // Trigger webhook for blog post published
+      if (status === 'published') {
+        webhookEvents.blogPostPublished({ 
+          id, 
+          slug: data.slug, 
+          title: data.title,
+          excerpt: data.excerpt,
+        });
+      }
+      
       return parseBlogPost(data as Record<string, unknown>);
     },
     onSuccess: (data, variables) => {
@@ -537,6 +548,9 @@ export function useDeleteBlogPost() {
         user_id: user?.id,
         metadata: {} as unknown as Json,
       });
+      
+      // Trigger webhook for blog post deleted
+      webhookEvents.blogPostDeleted(id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['blog-posts'] });
