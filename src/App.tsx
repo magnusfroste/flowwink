@@ -24,6 +24,7 @@ import QuickStartPage from "./pages/admin/QuickStartPage";
 import NewSitePage from "./pages/admin/NewSitePage";
 import GlobalBlocksPage from "./pages/admin/GlobalBlocksPage";
 import FormSubmissionsPage from "./pages/admin/FormSubmissionsPage";
+import NewsletterPage from "./pages/admin/NewsletterPage";
 import BlogPostsPage from "./pages/admin/BlogPostsPage";
 import BlogPostEditorPage from "./pages/admin/BlogPostEditorPage";
 import BlogCategoriesPage from "./pages/admin/BlogCategoriesPage";
@@ -71,6 +72,7 @@ const router = createBrowserRouter([
   { path: "/admin/new-site", element: <NewSitePage /> },
   { path: "/admin/global-blocks", element: <GlobalBlocksPage /> },
   { path: "/admin/forms", element: <FormSubmissionsPage /> },
+  { path: "/admin/newsletter", element: <NewsletterPage /> },
   { path: "/preview/:id", element: <PreviewPage /> },
   { path: "/:slug", element: <PublicPage /> },
 ]);

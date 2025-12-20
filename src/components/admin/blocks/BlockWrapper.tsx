@@ -24,6 +24,7 @@ const BLOCK_LABELS: Record<ContentBlockType, string> = {
   chat: 'AI Chat',
   map: 'Map',
   form: 'Form',
+  newsletter: 'Newsletter',
   footer: 'Footer',
   header: 'Header',
 };

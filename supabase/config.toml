@@ -35,3 +35,9 @@ verify_jwt = false
 
 [functions.unsplash-search]
 verify_jwt = true
+
+[functions.newsletter-subscribe]
+verify_jwt = false
+
+[functions.newsletter-send]
+verify_jwt = true

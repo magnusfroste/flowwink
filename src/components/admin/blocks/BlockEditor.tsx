@@ -35,8 +35,18 @@ import { StatsBlockEditor } from './StatsBlockEditor';
 import { ChatBlockEditor } from './ChatBlockEditor';
 import { MapBlockEditor } from './MapBlockEditor';
 import { FormBlockEditor } from './FormBlockEditor';
+import { NewsletterBlockEditor } from './NewsletterBlockEditor';
 import { TemplateEmptyState } from '@/components/admin/StarterTemplateSelector';
 import { StarterTemplate } from '@/data/starter-templates';
+
+interface NewsletterBlockData {
+  title?: string;
+  description?: string;
+  buttonText?: string;
+  successMessage?: string;
+  variant?: 'default' | 'card' | 'minimal';
+  showNameField?: boolean;
+}
 
 type BlockDataMap = {
   hero: HeroBlockData;
@@ -57,6 +67,7 @@ type BlockDataMap = {
   chat: ChatBlockData;
   map: MapBlockData;
   form: FormBlockData;
+  newsletter: NewsletterBlockData;
 };
 
 const DEFAULT_BLOCK_DATA: BlockDataMap = {

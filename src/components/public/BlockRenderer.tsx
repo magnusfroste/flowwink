@@ -19,6 +19,7 @@ import {
   ChatBlock,
   MapBlock,
   FormBlock,
+  NewsletterBlock,
 } from './blocks';
 import type {
   HeroBlockData,
@@ -89,6 +90,8 @@ export function BlockRenderer({ block, pageId, index = 0 }: BlockRendererProps) 
         return <MapBlock data={block.data as unknown as MapBlockData} />;
       case 'form':
         return <FormBlock data={block.data as unknown as FormBlockData} blockId={block.id} pageId={pageId} />;
+      case 'newsletter':
+        return <NewsletterBlock data={block.data as Record<string, unknown>} />;
       default:
         return null;
     }

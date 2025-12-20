@@ -16,3 +16,4 @@ export { StatsBlock } from './StatsBlock';
 export { ChatBlock } from './ChatBlock';
 export { MapBlock } from './MapBlock';
 export { FormBlock } from './FormBlock';
+export { NewsletterBlock } from './NewsletterBlock';

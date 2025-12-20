@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Globe, Smartphone, MessageSquare, Mail, Code2, Copy, Check, Play, Database, FileJson, Layers, Info } from "lucide-react";
+import { Globe, Smartphone, MessageSquare, Mail, Code2, Copy, Check, Play, Database, FileJson, Layers, Info, FileText, Rss } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
@@ -14,9 +14,10 @@ import { toast } from "sonner";
 
 const CHANNELS = [
   { id: "web", name: "Website", icon: Globe, status: "active", description: "Built-in responsive website" },
+  { id: "blog", name: "Blog", icon: FileText, status: "active", description: "Blog with RSS feed", extra: Rss },
   { id: "chat", name: "AI Chat", icon: MessageSquare, status: "active", description: "Intelligent chatbot with CAG" },
+  { id: "newsletter", name: "Newsletter", icon: Mail, status: "active", description: "Email campaigns via Resend" },
   { id: "app", name: "Mobile App", icon: Smartphone, status: "coming", description: "iOS & Android via API" },
-  { id: "newsletter", name: "Newsletter", icon: Mail, status: "coming", description: "Email integration" },
 ];
 
 const BLOCK_TYPES = [

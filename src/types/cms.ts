@@ -84,6 +84,7 @@ export type ContentBlockType =
   | 'chat'
   | 'map'
   | 'form'
+  | 'newsletter'
   | 'footer'
   | 'header';
 
