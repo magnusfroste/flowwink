@@ -23,7 +23,8 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import { Loader2, Crop as CropIcon, SlidersHorizontal, RotateCcw, ChevronDown } from 'lucide-react';
+import { Loader2, Crop as CropIcon, SlidersHorizontal, RotateCcw, ChevronDown, Sparkles } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface ImageCropperProps {
   open: boolean;
@@ -39,13 +40,101 @@ interface ImageAdjustments {
   brightness: number;
   contrast: number;
   saturation: number;
+  sepia: number;
+  grayscale: number;
+  hueRotate: number;
+}
+
+interface FilterPreset {
+  id: string;
+  name: string;
+  adjustments: Partial<ImageAdjustments>;
+  description: string;
 }
 
 const defaultAdjustments: ImageAdjustments = {
   brightness: 100,
   contrast: 100,
   saturation: 100,
+  sepia: 0,
+  grayscale: 0,
+  hueRotate: 0,
 };
+
+const filterPresets: FilterPreset[] = [
+  {
+    id: 'original',
+    name: 'Original',
+    adjustments: {},
+    description: 'Ingen justering',
+  },
+  {
+    id: 'vivid',
+    name: 'Livfull',
+    adjustments: { saturation: 140, contrast: 110 },
+    description: 'Starka färger',
+  },
+  {
+    id: 'warm',
+    name: 'Varm',
+    adjustments: { sepia: 20, saturation: 110, brightness: 105 },
+    description: 'Gyllene toner',
+  },
+  {
+    id: 'cool',
+    name: 'Kall',
+    adjustments: { hueRotate: 10, saturation: 90, brightness: 105 },
+    description: 'Blåa toner',
+  },
+  {
+    id: 'vintage',
+    name: 'Vintage',
+    adjustments: { sepia: 30, contrast: 90, saturation: 80, brightness: 105 },
+    description: 'Retro-känsla',
+  },
+  {
+    id: 'dramatic',
+    name: 'Dramatisk',
+    adjustments: { contrast: 130, saturation: 120, brightness: 95 },
+    description: 'Hög kontrast',
+  },
+  {
+    id: 'soft',
+    name: 'Mjuk',
+    adjustments: { contrast: 85, saturation: 90, brightness: 110 },
+    description: 'Dämpade toner',
+  },
+  {
+    id: 'bw',
+    name: 'Svartvit',
+    adjustments: { grayscale: 100, contrast: 110 },
+    description: 'Klassisk monokrom',
+  },
+  {
+    id: 'bw-high',
+    name: 'Svartvit dramatisk',
+    adjustments: { grayscale: 100, contrast: 140, brightness: 105 },
+    description: 'Hög kontrast B/W',
+  },
+  {
+    id: 'sepia',
+    name: 'Sepia',
+    adjustments: { sepia: 60, contrast: 95 },
+    description: 'Antik look',
+  },
+  {
+    id: 'fade',
+    name: 'Blekt',
+    adjustments: { contrast: 80, saturation: 70, brightness: 115 },
+    description: 'Urtvättad effekt',
+  },
+  {
+    id: 'punch',
+    name: 'Punch',
+    adjustments: { contrast: 120, saturation: 130, brightness: 100 },
+    description: 'Extra kraft',
+  },
+];
 
 const aspectRatios: Record<AspectRatioOption, number | undefined> = {
   free: undefined,
@@ -88,6 +177,7 @@ export function ImageCropper({
   const [aspectRatio, setAspectRatio] = useState<AspectRatioOption>('free');
   const [isProcessing, setIsProcessing] = useState(false);
   const [adjustments, setAdjustments] = useState<ImageAdjustments>(defaultAdjustments);
+  const [activePreset, setActivePreset] = useState<string>('original');
   const [showAdjustments, setShowAdjustments] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
 
@@ -132,20 +222,44 @@ export function ImageCropper({
     }
   };
 
+  const handlePresetChange = (presetId: string) => {
+    const preset = filterPresets.find(p => p.id === presetId);
+    if (preset) {
+      setActivePreset(presetId);
+      setAdjustments({
+        ...defaultAdjustments,
+        ...preset.adjustments,
+      });
+    }
+  };
+
   const handleResetAdjustments = () => {
     setAdjustments(defaultAdjustments);
+    setActivePreset('original');
+  };
+
+  const handleAdjustmentChange = (key: keyof ImageAdjustments, value: number) => {
+    setAdjustments(prev => ({ ...prev, [key]: value }));
+    setActivePreset(''); // Clear preset when manually adjusting
   };
 
   const getFilterStyle = () => {
     return {
-      filter: `brightness(${adjustments.brightness}%) contrast(${adjustments.contrast}%) saturate(${adjustments.saturation}%)`,
+      filter: `brightness(${adjustments.brightness}%) contrast(${adjustments.contrast}%) saturate(${adjustments.saturation}%) sepia(${adjustments.sepia}%) grayscale(${adjustments.grayscale}%) hue-rotate(${adjustments.hueRotate}deg)`,
     };
+  };
+
+  const getFilterString = () => {
+    return `brightness(${adjustments.brightness}%) contrast(${adjustments.contrast}%) saturate(${adjustments.saturation}%) sepia(${adjustments.sepia}%) grayscale(${adjustments.grayscale}%) hue-rotate(${adjustments.hueRotate}deg)`;
   };
 
   const hasAdjustments = 
     adjustments.brightness !== 100 || 
     adjustments.contrast !== 100 || 
-    adjustments.saturation !== 100;
+    adjustments.saturation !== 100 ||
+    adjustments.sepia !== 0 ||
+    adjustments.grayscale !== 0 ||
+    adjustments.hueRotate !== 0;
 
   const getCroppedImage = useCallback(async (): Promise<Blob | null> => {
     if (!completedCrop || !imgRef.current) return null;
@@ -156,7 +270,6 @@ export function ImageCropper({
 
     if (!ctx) return null;
 
-    // Calculate the actual pixel values
     const scaleX = image.naturalWidth / image.width;
     const scaleY = image.naturalHeight / image.height;
 
@@ -167,14 +280,11 @@ export function ImageCropper({
       height: completedCrop.height * scaleY,
     };
 
-    // Set canvas size to the cropped dimensions
     canvas.width = pixelCrop.width;
     canvas.height = pixelCrop.height;
 
-    // Apply CSS filters to canvas
-    ctx.filter = `brightness(${adjustments.brightness}%) contrast(${adjustments.contrast}%) saturate(${adjustments.saturation}%)`;
+    ctx.filter = getFilterString();
 
-    // Draw the cropped image with filters applied
     ctx.drawImage(
       image,
       pixelCrop.x,
@@ -187,7 +297,6 @@ export function ImageCropper({
       pixelCrop.height
     );
 
-    // Convert to WebP for better compression
     return new Promise((resolve) => {
       canvas.toBlob(
         (blob) => resolve(blob),
@@ -219,7 +328,7 @@ export function ImageCropper({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
+      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CropIcon className="h-5 w-5" />
@@ -233,7 +342,7 @@ export function ImageCropper({
             <div className="flex items-center gap-2">
               <Label className="text-sm whitespace-nowrap">Format:</Label>
               <Select value={aspectRatio} onValueChange={handleAspectRatioChange}>
-                <SelectTrigger className="w-28">
+                <SelectTrigger className="w-24">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -248,16 +357,42 @@ export function ImageCropper({
             </div>
           </div>
 
+          {/* Filter presets */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-muted-foreground" />
+              <Label className="text-sm">Snabbfilter</Label>
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
+              {filterPresets.map((preset) => (
+                <button
+                  key={preset.id}
+                  onClick={() => handlePresetChange(preset.id)}
+                  className={cn(
+                    "flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all",
+                    "border hover:bg-muted/50",
+                    activePreset === preset.id
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-background border-border text-foreground"
+                  )}
+                  title={preset.description}
+                >
+                  {preset.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Adjustments panel */}
           <Collapsible open={showAdjustments} onOpenChange={setShowAdjustments}>
             <CollapsibleTrigger asChild>
               <Button variant="outline" size="sm" className="w-full justify-between">
                 <span className="flex items-center gap-2">
                   <SlidersHorizontal className="h-4 w-4" />
-                  Bildjusteringar
-                  {hasAdjustments && (
+                  Finjusteringar
+                  {hasAdjustments && activePreset !== 'original' && (
                     <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded">
-                      Ändrad
+                      Aktiv
                     </span>
                   )}
                 </span>
@@ -267,7 +402,7 @@ export function ImageCropper({
             <CollapsibleContent className="pt-4">
               <div className="space-y-4 p-4 bg-muted/30 rounded-lg">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Justeringar</span>
+                  <span className="text-sm font-medium">Manuella justeringar</span>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -280,9 +415,9 @@ export function ImageCropper({
                   </Button>
                 </div>
 
-                <div className="grid gap-4">
+                <div className="grid gap-3 sm:grid-cols-2">
                   {/* Brightness */}
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
                       <Label className="text-xs text-muted-foreground">Ljusstyrka</Label>
                       <span className="text-xs text-muted-foreground w-10 text-right">
@@ -291,7 +426,7 @@ export function ImageCropper({
                     </div>
                     <Slider
                       value={[adjustments.brightness]}
-                      onValueChange={([value]) => setAdjustments(prev => ({ ...prev, brightness: value }))}
+                      onValueChange={([value]) => handleAdjustmentChange('brightness', value)}
                       min={50}
                       max={150}
                       step={1}
@@ -300,7 +435,7 @@ export function ImageCropper({
                   </div>
 
                   {/* Contrast */}
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
                       <Label className="text-xs text-muted-foreground">Kontrast</Label>
                       <span className="text-xs text-muted-foreground w-10 text-right">
@@ -309,7 +444,7 @@ export function ImageCropper({
                     </div>
                     <Slider
                       value={[adjustments.contrast]}
-                      onValueChange={([value]) => setAdjustments(prev => ({ ...prev, contrast: value }))}
+                      onValueChange={([value]) => handleAdjustmentChange('contrast', value)}
                       min={50}
                       max={150}
                       step={1}
@@ -318,7 +453,7 @@ export function ImageCropper({
                   </div>
 
                   {/* Saturation */}
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
                       <Label className="text-xs text-muted-foreground">Mättnad</Label>
                       <span className="text-xs text-muted-foreground w-10 text-right">
@@ -327,9 +462,63 @@ export function ImageCropper({
                     </div>
                     <Slider
                       value={[adjustments.saturation]}
-                      onValueChange={([value]) => setAdjustments(prev => ({ ...prev, saturation: value }))}
+                      onValueChange={([value]) => handleAdjustmentChange('saturation', value)}
                       min={0}
                       max={200}
+                      step={1}
+                      className="w-full"
+                    />
+                  </div>
+
+                  {/* Sepia */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs text-muted-foreground">Sepia</Label>
+                      <span className="text-xs text-muted-foreground w-10 text-right">
+                        {adjustments.sepia}%
+                      </span>
+                    </div>
+                    <Slider
+                      value={[adjustments.sepia]}
+                      onValueChange={([value]) => handleAdjustmentChange('sepia', value)}
+                      min={0}
+                      max={100}
+                      step={1}
+                      className="w-full"
+                    />
+                  </div>
+
+                  {/* Grayscale */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs text-muted-foreground">Gråskala</Label>
+                      <span className="text-xs text-muted-foreground w-10 text-right">
+                        {adjustments.grayscale}%
+                      </span>
+                    </div>
+                    <Slider
+                      value={[adjustments.grayscale]}
+                      onValueChange={([value]) => handleAdjustmentChange('grayscale', value)}
+                      min={0}
+                      max={100}
+                      step={1}
+                      className="w-full"
+                    />
+                  </div>
+
+                  {/* Hue Rotate */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs text-muted-foreground">Färgton</Label>
+                      <span className="text-xs text-muted-foreground w-10 text-right">
+                        {adjustments.hueRotate}°
+                      </span>
+                    </div>
+                    <Slider
+                      value={[adjustments.hueRotate]}
+                      onValueChange={([value]) => handleAdjustmentChange('hueRotate', value)}
+                      min={-180}
+                      max={180}
                       step={1}
                       className="w-full"
                     />
@@ -340,7 +529,7 @@ export function ImageCropper({
           </Collapsible>
 
           {/* Crop area */}
-          <div className="flex-1 overflow-auto bg-muted/30 rounded-lg p-4 flex items-center justify-center min-h-[250px] max-h-[40vh]">
+          <div className="flex-1 overflow-auto bg-muted/30 rounded-lg p-4 flex items-center justify-center min-h-[200px] max-h-[35vh]">
             <ReactCrop
               crop={crop}
               onChange={(_, percentCrop) => setCrop(percentCrop)}
@@ -353,7 +542,7 @@ export function ImageCropper({
                 src={imageUrl}
                 alt="Crop preview"
                 onLoad={onImageLoad}
-                className="max-h-[38vh] max-w-full object-contain"
+                className="max-h-[33vh] max-w-full object-contain"
                 crossOrigin="anonymous"
                 style={getFilterStyle()}
               />
@@ -361,7 +550,7 @@ export function ImageCropper({
           </div>
 
           <p className="text-xs text-muted-foreground text-center">
-            Dra i hörnen för att beskära. Bilden konverteras automatiskt till WebP.
+            Välj ett snabbfilter eller finjustera manuellt. Bilden konverteras till WebP.
           </p>
         </div>
 
