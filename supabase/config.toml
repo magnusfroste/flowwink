@@ -53,3 +53,6 @@ verify_jwt = false
 
 [functions.newsletter-export]
 verify_jwt = true
+
+[functions.newsletter-gdpr]
+verify_jwt = false

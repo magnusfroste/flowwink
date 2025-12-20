@@ -39,6 +39,7 @@ import BlogPostPage from "./pages/BlogPostPage";
 import BlogCategoryPage from "./pages/BlogCategoryPage";
 import BlogTagPage from "./pages/BlogTagPage";
 import ChatPage from "./pages/ChatPage";
+import NewsletterManagePage from "./pages/NewsletterManagePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -47,6 +48,7 @@ const router = createBrowserRouter([
   { path: "/", element: <PublicPage /> },
   { path: "/auth", element: <AuthPage /> },
   { path: "/chat", element: <ChatPage /> },
+  { path: "/newsletter/manage", element: <NewsletterManagePage /> },
   // Blog routes
   { path: "/blogg", element: <BlogArchivePage /> },
   { path: "/blogg/kategori/:slug", element: <BlogCategoryPage /> },
