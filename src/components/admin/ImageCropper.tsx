@@ -61,6 +61,13 @@ const defaultAdjustments: ImageAdjustments = {
   hueRotate: 0,
 };
 
+const getPresetFilterStyle = (preset: FilterPreset): React.CSSProperties => {
+  const adj = { ...defaultAdjustments, ...preset.adjustments };
+  return {
+    filter: `brightness(${adj.brightness}%) contrast(${adj.contrast}%) saturate(${adj.saturation}%) sepia(${adj.sepia}%) grayscale(${adj.grayscale}%) hue-rotate(${adj.hueRotate}deg)`,
+  };
+};
+
 const filterPresets: FilterPreset[] = [
   {
     id: 'original',
@@ -357,27 +364,45 @@ export function ImageCropper({
             </div>
           </div>
 
-          {/* Filter presets */}
+          {/* Filter presets with thumbnails */}
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-muted-foreground" />
               <Label className="text-sm">Snabbfilter</Label>
             </div>
-            <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
+            <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
               {filterPresets.map((preset) => (
                 <button
                   key={preset.id}
                   onClick={() => handlePresetChange(preset.id)}
                   className={cn(
-                    "flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all",
-                    "border hover:bg-muted/50",
+                    "flex-shrink-0 flex flex-col items-center gap-1.5 p-1.5 rounded-lg transition-all",
+                    "border-2 hover:bg-muted/30",
                     activePreset === preset.id
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "bg-background border-border text-foreground"
+                      ? "border-primary bg-primary/5"
+                      : "border-transparent hover:border-muted-foreground/20"
                   )}
                   title={preset.description}
                 >
-                  {preset.name}
+                  {/* Thumbnail preview */}
+                  <div className="relative w-14 h-10 rounded overflow-hidden bg-muted">
+                    <img
+                      src={imageUrl}
+                      alt={preset.name}
+                      className="w-full h-full object-cover"
+                      style={getPresetFilterStyle(preset)}
+                      crossOrigin="anonymous"
+                    />
+                    {activePreset === preset.id && (
+                      <div className="absolute inset-0 ring-2 ring-primary ring-inset rounded" />
+                    )}
+                  </div>
+                  <span className={cn(
+                    "text-[10px] font-medium leading-tight",
+                    activePreset === preset.id ? "text-primary" : "text-muted-foreground"
+                  )}>
+                    {preset.name}
+                  </span>
                 </button>
               ))}
             </div>
