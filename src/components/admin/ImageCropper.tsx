@@ -3,6 +3,7 @@ import ReactCrop, { type Crop, type PixelCrop, centerCrop, makeAspectCrop } from
 import 'react-image-crop/dist/ReactCrop.css';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Slider } from '@/components/ui/slider';
 import {
   Dialog,
   DialogContent,
@@ -17,7 +18,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2, Crop as CropIcon } from 'lucide-react';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+import { Loader2, Crop as CropIcon, SlidersHorizontal, RotateCcw, ChevronDown } from 'lucide-react';
 
 interface ImageCropperProps {
   open: boolean;
@@ -28,6 +34,18 @@ interface ImageCropperProps {
 }
 
 type AspectRatioOption = 'free' | '16:9' | '4:3' | '1:1' | '3:2' | '2:3';
+
+interface ImageAdjustments {
+  brightness: number;
+  contrast: number;
+  saturation: number;
+}
+
+const defaultAdjustments: ImageAdjustments = {
+  brightness: 100,
+  contrast: 100,
+  saturation: 100,
+};
 
 const aspectRatios: Record<AspectRatioOption, number | undefined> = {
   free: undefined,
@@ -69,6 +87,8 @@ export function ImageCropper({
   const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
   const [aspectRatio, setAspectRatio] = useState<AspectRatioOption>('free');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [adjustments, setAdjustments] = useState<ImageAdjustments>(defaultAdjustments);
+  const [showAdjustments, setShowAdjustments] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
 
   const onImageLoad = useCallback(
@@ -79,7 +99,6 @@ export function ImageCropper({
       if (aspect) {
         setCrop(centerAspectCrop(width, height, aspect));
       } else {
-        // Default to a centered 80% crop for free aspect
         setCrop({
           unit: '%',
           x: 10,
@@ -113,6 +132,21 @@ export function ImageCropper({
     }
   };
 
+  const handleResetAdjustments = () => {
+    setAdjustments(defaultAdjustments);
+  };
+
+  const getFilterStyle = () => {
+    return {
+      filter: `brightness(${adjustments.brightness}%) contrast(${adjustments.contrast}%) saturate(${adjustments.saturation}%)`,
+    };
+  };
+
+  const hasAdjustments = 
+    adjustments.brightness !== 100 || 
+    adjustments.contrast !== 100 || 
+    adjustments.saturation !== 100;
+
   const getCroppedImage = useCallback(async (): Promise<Blob | null> => {
     if (!completedCrop || !imgRef.current) return null;
 
@@ -137,7 +171,10 @@ export function ImageCropper({
     canvas.width = pixelCrop.width;
     canvas.height = pixelCrop.height;
 
-    // Draw the cropped image
+    // Apply CSS filters to canvas
+    ctx.filter = `brightness(${adjustments.brightness}%) contrast(${adjustments.contrast}%) saturate(${adjustments.saturation}%)`;
+
+    // Draw the cropped image with filters applied
     ctx.drawImage(
       image,
       pixelCrop.x,
@@ -158,7 +195,7 @@ export function ImageCropper({
         0.85
       );
     });
-  }, [completedCrop]);
+  }, [completedCrop, adjustments]);
 
   const handleCrop = async () => {
     setIsProcessing(true);
@@ -186,31 +223,124 @@ export function ImageCropper({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CropIcon className="h-5 w-5" />
-            Beskär bild
+            Beskär & justera bild
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 flex-1 overflow-hidden">
-          {/* Aspect ratio selector */}
-          <div className="flex items-center gap-3">
-            <Label className="text-sm">Bildformat:</Label>
-            <Select value={aspectRatio} onValueChange={handleAspectRatioChange}>
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="free">Fritt</SelectItem>
-                <SelectItem value="16:9">16:9</SelectItem>
-                <SelectItem value="4:3">4:3</SelectItem>
-                <SelectItem value="1:1">1:1 (Kvadrat)</SelectItem>
-                <SelectItem value="3:2">3:2</SelectItem>
-                <SelectItem value="2:3">2:3 (Porträtt)</SelectItem>
-              </SelectContent>
-            </Select>
+          {/* Controls row */}
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-2">
+              <Label className="text-sm whitespace-nowrap">Format:</Label>
+              <Select value={aspectRatio} onValueChange={handleAspectRatioChange}>
+                <SelectTrigger className="w-28">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="free">Fritt</SelectItem>
+                  <SelectItem value="16:9">16:9</SelectItem>
+                  <SelectItem value="4:3">4:3</SelectItem>
+                  <SelectItem value="1:1">1:1</SelectItem>
+                  <SelectItem value="3:2">3:2</SelectItem>
+                  <SelectItem value="2:3">2:3</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
+          {/* Adjustments panel */}
+          <Collapsible open={showAdjustments} onOpenChange={setShowAdjustments}>
+            <CollapsibleTrigger asChild>
+              <Button variant="outline" size="sm" className="w-full justify-between">
+                <span className="flex items-center gap-2">
+                  <SlidersHorizontal className="h-4 w-4" />
+                  Bildjusteringar
+                  {hasAdjustments && (
+                    <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded">
+                      Ändrad
+                    </span>
+                  )}
+                </span>
+                <ChevronDown className={`h-4 w-4 transition-transform ${showAdjustments ? 'rotate-180' : ''}`} />
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-4">
+              <div className="space-y-4 p-4 bg-muted/30 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Justeringar</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleResetAdjustments}
+                    disabled={!hasAdjustments}
+                    className="h-7 text-xs"
+                  >
+                    <RotateCcw className="h-3 w-3 mr-1" />
+                    Återställ
+                  </Button>
+                </div>
+
+                <div className="grid gap-4">
+                  {/* Brightness */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs text-muted-foreground">Ljusstyrka</Label>
+                      <span className="text-xs text-muted-foreground w-10 text-right">
+                        {adjustments.brightness}%
+                      </span>
+                    </div>
+                    <Slider
+                      value={[adjustments.brightness]}
+                      onValueChange={([value]) => setAdjustments(prev => ({ ...prev, brightness: value }))}
+                      min={50}
+                      max={150}
+                      step={1}
+                      className="w-full"
+                    />
+                  </div>
+
+                  {/* Contrast */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs text-muted-foreground">Kontrast</Label>
+                      <span className="text-xs text-muted-foreground w-10 text-right">
+                        {adjustments.contrast}%
+                      </span>
+                    </div>
+                    <Slider
+                      value={[adjustments.contrast]}
+                      onValueChange={([value]) => setAdjustments(prev => ({ ...prev, contrast: value }))}
+                      min={50}
+                      max={150}
+                      step={1}
+                      className="w-full"
+                    />
+                  </div>
+
+                  {/* Saturation */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs text-muted-foreground">Mättnad</Label>
+                      <span className="text-xs text-muted-foreground w-10 text-right">
+                        {adjustments.saturation}%
+                      </span>
+                    </div>
+                    <Slider
+                      value={[adjustments.saturation]}
+                      onValueChange={([value]) => setAdjustments(prev => ({ ...prev, saturation: value }))}
+                      min={0}
+                      max={200}
+                      step={1}
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+
           {/* Crop area */}
-          <div className="flex-1 overflow-auto bg-muted/30 rounded-lg p-4 flex items-center justify-center min-h-[300px] max-h-[50vh]">
+          <div className="flex-1 overflow-auto bg-muted/30 rounded-lg p-4 flex items-center justify-center min-h-[250px] max-h-[40vh]">
             <ReactCrop
               crop={crop}
               onChange={(_, percentCrop) => setCrop(percentCrop)}
@@ -223,14 +353,15 @@ export function ImageCropper({
                 src={imageUrl}
                 alt="Crop preview"
                 onLoad={onImageLoad}
-                className="max-h-[45vh] max-w-full object-contain"
+                className="max-h-[38vh] max-w-full object-contain"
                 crossOrigin="anonymous"
+                style={getFilterStyle()}
               />
             </ReactCrop>
           </div>
 
           <p className="text-xs text-muted-foreground text-center">
-            Dra i hörnen eller kanterna för att justera beskärningen. Bilden konverteras automatiskt till WebP.
+            Dra i hörnen för att beskära. Bilden konverteras automatiskt till WebP.
           </p>
         </div>
 
