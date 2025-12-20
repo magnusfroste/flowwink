@@ -28,7 +28,8 @@ import {
   Loader2,
   ChevronDown,
   Code,
-  Zap
+  Zap,
+  AlertTriangle
 } from 'lucide-react';
 import { N8NTemplates } from '@/components/admin/N8NTemplates';
 import { 
@@ -167,8 +168,20 @@ export default function WebhooksPage() {
             </Card>
           ) : (
             <div className="grid gap-4">
-              {webhooks.map(webhook => (
+              {webhooks.map(webhook => {
+                const isAutoDisabled = !webhook.is_active && webhook.failure_count >= 5;
+                
+                return (
                 <Card key={webhook.id} className={!webhook.is_active ? 'opacity-60' : ''}>
+                  {isAutoDisabled && (
+                    <div className="bg-destructive/10 border-b border-destructive/20 px-4 py-2 flex items-center gap-2 text-sm text-destructive">
+                      <AlertTriangle className="h-4 w-4" />
+                      <span>
+                        <strong>Auto-inaktiverad</strong> efter {webhook.failure_count} misslyckade leveranser. 
+                        Aktivera igen när problemet är åtgärdat.
+                      </span>
+                    </div>
+                  )}
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -271,7 +284,8 @@ export default function WebhooksPage() {
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+              );
+              })}
             </div>
           )}
         </TabsContent>
