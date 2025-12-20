@@ -39,6 +39,7 @@ async function generateSignature(payload: string, secret: string): Promise<strin
 // Retry configuration
 const MAX_RETRIES = 3
 const BASE_DELAY_MS = 1000 // 1 second
+const MAX_FAILURES_BEFORE_DISABLE = 5 // Auto-disable after this many consecutive failures
 
 // Calculate delay with exponential backoff: 1s, 2s, 4s
 function getRetryDelay(attempt: number): number {
@@ -55,7 +56,7 @@ async function sendWebhookWithRetry(
   webhook: Webhook, 
   payload: WebhookPayload,
   supabase: any
-): Promise<{ success: boolean; status?: number; error?: string; duration: number; attempts: number }> {
+): Promise<{ success: boolean; status?: number; error?: string; duration: number; attempts: number; disabled?: boolean }> {
   const payloadString = JSON.stringify(payload)
   let lastError: string | undefined
   let lastStatus: number | undefined
@@ -138,22 +139,42 @@ async function sendWebhookWithRetry(
   }
   
   // All retries exhausted - log failure
+  const newFailureCount = (webhook.failure_count || 0) + 1
+  const shouldDisable = newFailureCount >= MAX_FAILURES_BEFORE_DISABLE
+  
   await supabase.from('webhook_logs').insert({
     webhook_id: webhook.id,
     event: payload.event,
     payload,
     response_status: lastStatus || null,
     success: false,
-    error_message: `Failed after ${MAX_RETRIES + 1} attempts: ${lastError}`,
+    error_message: shouldDisable 
+      ? `Failed after ${MAX_RETRIES + 1} attempts: ${lastError}. Webhook auto-disabled after ${newFailureCount} consecutive failures.`
+      : `Failed after ${MAX_RETRIES + 1} attempts: ${lastError}`,
     duration_ms: totalDuration
   })
   
-  await supabase.from('webhooks').update({ 
+  // Update failure count and potentially disable the webhook
+  const updateData: Record<string, unknown> = { 
     last_triggered_at: new Date().toISOString(),
-    failure_count: (webhook.failure_count || 0) + 1
-  }).eq('id', webhook.id)
+    failure_count: newFailureCount
+  }
   
-  return { success: false, status: lastStatus, error: lastError, duration: totalDuration, attempts: MAX_RETRIES + 1 }
+  if (shouldDisable) {
+    updateData.is_active = false
+    console.log(`[send-webhook] Auto-disabling webhook "${webhook.name}" after ${newFailureCount} consecutive failures`)
+  }
+  
+  await supabase.from('webhooks').update(updateData).eq('id', webhook.id)
+  
+  return { 
+    success: false, 
+    status: lastStatus, 
+    error: shouldDisable ? `${lastError} (webhook disabled)` : lastError, 
+    duration: totalDuration, 
+    attempts: MAX_RETRIES + 1,
+    disabled: shouldDisable
+  }
 }
 
 Deno.serve(async (req) => {
