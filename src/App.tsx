@@ -31,6 +31,7 @@ import BlogCategoriesPage from "./pages/admin/BlogCategoriesPage";
 import BlogTagsPage from "./pages/admin/BlogTagsPage";
 import BlogSettingsPage from "./pages/admin/BlogSettingsPage";
 import ModulesPage from "./pages/admin/ModulesPage";
+import WebhooksPage from "./pages/admin/WebhooksPage";
 import PreviewPage from "./pages/PreviewPage";
 import PublicPage from "./pages/PublicPage";
 import BlogArchivePage from "./pages/BlogArchivePage";
@@ -75,6 +76,7 @@ const router = createBrowserRouter([
   { path: "/admin/forms", element: <FormSubmissionsPage /> },
   { path: "/admin/newsletter", element: <NewsletterPage /> },
   { path: "/admin/modules", element: <ModulesPage /> },
+  { path: "/admin/webhooks", element: <WebhooksPage /> },
   { path: "/preview/:id", element: <PreviewPage /> },
   { path: "/:slug", element: <PublicPage /> },
 ]);

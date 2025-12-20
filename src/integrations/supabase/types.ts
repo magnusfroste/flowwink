@@ -651,6 +651,98 @@ export type Database = {
         }
         Relationships: []
       }
+      webhook_logs: {
+        Row: {
+          created_at: string
+          duration_ms: number | null
+          error_message: string | null
+          event: Database["public"]["Enums"]["webhook_event"]
+          id: string
+          payload: Json
+          response_body: string | null
+          response_status: number | null
+          success: boolean
+          webhook_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          event: Database["public"]["Enums"]["webhook_event"]
+          id?: string
+          payload: Json
+          response_body?: string | null
+          response_status?: number | null
+          success?: boolean
+          webhook_id: string
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          event?: Database["public"]["Enums"]["webhook_event"]
+          id?: string
+          payload?: Json
+          response_body?: string | null
+          response_status?: number | null
+          success?: boolean
+          webhook_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_logs_webhook_id_fkey"
+            columns: ["webhook_id"]
+            isOneToOne: false
+            referencedRelation: "webhooks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      webhooks: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          events: Database["public"]["Enums"]["webhook_event"][]
+          failure_count: number | null
+          headers: Json | null
+          id: string
+          is_active: boolean
+          last_triggered_at: string | null
+          name: string
+          secret: string | null
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          events?: Database["public"]["Enums"]["webhook_event"][]
+          failure_count?: number | null
+          headers?: Json | null
+          id?: string
+          is_active?: boolean
+          last_triggered_at?: string | null
+          name: string
+          secret?: string | null
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          events?: Database["public"]["Enums"]["webhook_event"][]
+          failure_count?: number | null
+          headers?: Json | null
+          id?: string
+          is_active?: boolean
+          last_triggered_at?: string | null
+          name?: string
+          secret?: string | null
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -671,6 +763,16 @@ export type Database = {
     Enums: {
       app_role: "writer" | "approver" | "admin"
       page_status: "draft" | "reviewing" | "published" | "archived"
+      webhook_event:
+        | "page.published"
+        | "page.updated"
+        | "page.deleted"
+        | "blog_post.published"
+        | "blog_post.updated"
+        | "blog_post.deleted"
+        | "form.submitted"
+        | "newsletter.subscribed"
+        | "newsletter.unsubscribed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -800,6 +902,17 @@ export const Constants = {
     Enums: {
       app_role: ["writer", "approver", "admin"],
       page_status: ["draft", "reviewing", "published", "archived"],
+      webhook_event: [
+        "page.published",
+        "page.updated",
+        "page.deleted",
+        "blog_post.published",
+        "blog_post.updated",
+        "blog_post.deleted",
+        "form.submitted",
+        "newsletter.subscribed",
+        "newsletter.unsubscribed",
+      ],
     },
   },
 } as const
