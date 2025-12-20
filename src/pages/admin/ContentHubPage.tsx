@@ -463,31 +463,50 @@ export default async function Home() {
               {totalBlocks} block instances across {pages?.length || 0} published pages
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {BLOCK_TYPES.map((block) => {
-                const count = blockCounts[block.type] || 0;
+          <CardContent className="space-y-6">
+            {(() => {
+              const categories = ["Layout", "Content", "Media", "Navigation", "Interaction", "Data"];
+              return categories.map(category => {
+                const blocksInCategory = BLOCK_TYPES.filter(b => b.category === category);
+                if (blocksInCategory.length === 0) return null;
+                
+                const categoryCount = blocksInCategory.reduce((sum, b) => sum + (blockCounts[b.type] || 0), 0);
+                
                 return (
-                  <div
-                    key={block.type}
-                    className={`p-3 rounded-lg border transition-colors ${
-                      count > 0 ? "bg-primary/5 border-primary/20" : "bg-muted/30 border-transparent"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-medium">{block.name}</span>
-                      <Badge variant={count > 0 ? "default" : "secondary"}>
-                        {count}
+                  <div key={category}>
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                        {category}
+                      </h3>
+                      <Badge variant="outline" className="text-xs">
+                        {categoryCount} used
                       </Badge>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground">{block.category}</span>
-                      <code className="text-xs text-muted-foreground">{block.type}</code>
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {blocksInCategory.map((block) => {
+                        const count = blockCounts[block.type] || 0;
+                        return (
+                          <div
+                            key={block.type}
+                            className={`p-3 rounded-lg border transition-colors ${
+                              count > 0 ? "bg-primary/5 border-primary/20" : "bg-muted/30 border-transparent"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="font-medium">{block.name}</span>
+                              <Badge variant={count > 0 ? "default" : "secondary"}>
+                                {count}
+                              </Badge>
+                            </div>
+                            <code className="text-xs text-muted-foreground">{block.type}</code>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 );
-              })}
-            </div>
+              });
+            })()}
           </CardContent>
         </Card>
       </div>
