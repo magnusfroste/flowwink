@@ -144,6 +144,58 @@ serve(async (req) => {
     let sentCount = 0;
     const unsubscribeUrl = `${supabaseUrl}/functions/v1/newsletter-subscribe?action=unsubscribe`;
     const trackingBaseUrl = `${supabaseUrl}/functions/v1/newsletter-track`;
+    const linkTrackingBaseUrl = `${supabaseUrl}/functions/v1/newsletter-link`;
+
+    // Helper function to rewrite links for tracking
+    const rewriteLinksForTracking = async (
+      html: string, 
+      newsletterId: string, 
+      recipientEmail: string
+    ): Promise<string> => {
+      // Match all href attributes with http/https links
+      const linkRegex = /href=["'](https?:\/\/[^"']+)["']/gi;
+      const matches = [...html.matchAll(linkRegex)];
+      
+      let processedHtml = html;
+      
+      for (const match of matches) {
+        const originalUrl = match[1];
+        
+        // Skip unsubscribe links
+        if (originalUrl.includes('newsletter-subscribe')) {
+          continue;
+        }
+        
+        // Create link tracking record
+        const { data: linkRecord, error: linkError } = await supabase
+          .from("newsletter_link_clicks")
+          .insert({
+            newsletter_id: newsletterId,
+            recipient_email: recipientEmail,
+            original_url: originalUrl,
+          })
+          .select("link_id")
+          .single();
+        
+        if (linkError) {
+          console.error(`[newsletter-send] Failed to create link tracking:`, linkError);
+          continue;
+        }
+        
+        // Replace original URL with tracking URL
+        const trackingUrl = `${linkTrackingBaseUrl}?l=${linkRecord.link_id}`;
+        processedHtml = processedHtml.replace(
+          `href="${originalUrl}"`,
+          `href="${trackingUrl}"`
+        );
+        processedHtml = processedHtml.replace(
+          `href='${originalUrl}'`,
+          `href='${trackingUrl}'`
+        );
+      }
+      
+      return processedHtml;
+    };
 
     // Send emails in batches
     for (const subscriber of subscribers) {
@@ -164,6 +216,14 @@ serve(async (req) => {
 
         const personalUnsubscribe = `${unsubscribeUrl}&email=${encodeURIComponent(subscriber.email)}`;
         
+        // Process content with link tracking
+        const contentHtml = newsletter.content_html || "<p>No content</p>";
+        const processedContent = await rewriteLinksForTracking(
+          contentHtml, 
+          newsletter_id, 
+          subscriber.email
+        );
+        
         // Build tracking pixel HTML
         const trackingPixel = trackingRecord 
           ? `<img src="${trackingBaseUrl}?t=${trackingRecord.tracking_id}" width="1" height="1" alt="" style="display:none;" />`
@@ -174,7 +234,7 @@ serve(async (req) => {
           to: [subscriber.email],
           subject: newsletter.subject,
           html: `
-            ${newsletter.content_html || "<p>No content</p>"}
+            ${processedContent}
             <hr style="margin-top: 40px; border: none; border-top: 1px solid #eee;" />
             <p style="font-size: 12px; color: #666; text-align: center;">
               <a href="${personalUnsubscribe}" style="color: #666;">Unsubscribe</a>
@@ -199,6 +259,8 @@ serve(async (req) => {
         sent_count: sentCount,
         unique_opens: 0,
         open_count: 0,
+        unique_clicks: 0,
+        click_count: 0,
       })
       .eq("id", newsletter_id);
 

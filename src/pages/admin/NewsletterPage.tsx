@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Mail, Users, Send, Plus, Trash2, Eye, Edit2, Calendar, BarChart3 } from "lucide-react";
+import { Mail, Users, Send, Plus, Trash2, Eye, Edit2, Calendar, BarChart3, Link2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
@@ -35,6 +35,8 @@ interface Newsletter {
   sent_count: number;
   unique_opens: number | null;
   open_count: number | null;
+  unique_clicks: number | null;
+  click_count: number | null;
   created_at: string;
 }
 
@@ -44,6 +46,14 @@ interface EmailOpen {
   opened_at: string | null;
   opens_count: number;
   user_agent: string | null;
+}
+
+interface LinkClick {
+  id: string;
+  recipient_email: string;
+  original_url: string;
+  clicked_at: string | null;
+  click_count: number;
 }
 
 export default function NewsletterPage() {
@@ -91,6 +101,22 @@ export default function NewsletterPage() {
         .order("opened_at", { ascending: false, nullsFirst: false });
       if (error) throw error;
       return data as EmailOpen[];
+    },
+    enabled: !!selectedNewsletterForStats,
+  });
+
+  // Fetch link clicks for selected newsletter
+  const { data: linkClicks = [] } = useQuery({
+    queryKey: ["newsletter-clicks", selectedNewsletterForStats?.id],
+    queryFn: async () => {
+      if (!selectedNewsletterForStats) return [];
+      const { data, error } = await supabase
+        .from("newsletter_link_clicks")
+        .select("*")
+        .eq("newsletter_id", selectedNewsletterForStats.id)
+        .order("clicked_at", { ascending: false, nullsFirst: false });
+      if (error) throw error;
+      return data as LinkClick[];
     },
     enabled: !!selectedNewsletterForStats,
   });
@@ -323,6 +349,7 @@ export default function NewsletterPage() {
                     <TableHead>Status</TableHead>
                     <TableHead>Sent</TableHead>
                     <TableHead>Open Rate</TableHead>
+                    <TableHead>CTR</TableHead>
                     <TableHead>Created</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -330,13 +357,13 @@ export default function NewsletterPage() {
                 <TableBody>
                   {loadingNewsletters ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8">
+                      <TableCell colSpan={7} className="text-center py-8">
                         Loading...
                       </TableCell>
                     </TableRow>
                   ) : newsletters.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                         No newsletters yet
                       </TableCell>
                     </TableRow>
@@ -344,6 +371,9 @@ export default function NewsletterPage() {
                     newsletters.map((newsletter) => {
                       const openRate = newsletter.sent_count > 0 && newsletter.unique_opens
                         ? Math.round((newsletter.unique_opens / newsletter.sent_count) * 100)
+                        : 0;
+                      const clickRate = newsletter.sent_count > 0 && newsletter.unique_clicks
+                        ? Math.round((newsletter.unique_clicks / newsletter.sent_count) * 100)
                         : 0;
                       return (
                       <TableRow key={newsletter.id}>
@@ -358,10 +388,22 @@ export default function NewsletterPage() {
                         </TableCell>
                         <TableCell>
                           {newsletter.status === "sent" && newsletter.sent_count > 0 ? (
-                            <div className="flex items-center gap-2 min-w-[120px]">
-                              <Progress value={openRate} className="h-2 w-16" />
+                            <div className="flex items-center gap-2 min-w-[100px]">
+                              <Progress value={openRate} className="h-2 w-12" />
                               <span className="text-sm text-muted-foreground">
-                                {openRate}% ({newsletter.unique_opens || 0})
+                                {openRate}%
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {newsletter.status === "sent" && newsletter.sent_count > 0 ? (
+                            <div className="flex items-center gap-2 min-w-[100px]">
+                              <Progress value={clickRate} className="h-2 w-12" />
+                              <span className="text-sm text-muted-foreground">
+                                {clickRate}%
                               </span>
                             </div>
                           ) : (
@@ -581,20 +623,21 @@ export default function NewsletterPage() {
           </TabsContent>
         </Tabs>
 
-        {/* Open Stats Dialog */}
+        {/* Stats Dialog */}
         <Dialog 
           open={!!selectedNewsletterForStats} 
           onOpenChange={(open) => !open && setSelectedNewsletterForStats(null)}
         >
-          <DialogContent className="sm:max-w-2xl">
+          <DialogContent className="sm:max-w-3xl max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
-                Open Statistics: {selectedNewsletterForStats?.subject}
+                Statistics: {selectedNewsletterForStats?.subject}
               </DialogTitle>
             </DialogHeader>
             {selectedNewsletterForStats && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-6">
+                {/* Stats cards */}
+                <div className="grid grid-cols-4 gap-4">
                   <Card>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -610,78 +653,173 @@ export default function NewsletterPage() {
                   <Card>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm font-medium text-muted-foreground">
-                        Unique Opens
+                        Opens
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
                       <span className="text-2xl font-bold text-green-600">
                         {selectedNewsletterForStats.unique_opens || 0}
                       </span>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-medium text-muted-foreground">
-                        Open Rate
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <span className="text-2xl font-bold">
-                        {selectedNewsletterForStats.sent_count > 0
+                      <span className="text-sm text-muted-foreground ml-1">
+                        ({selectedNewsletterForStats.sent_count > 0
                           ? Math.round(
                               ((selectedNewsletterForStats.unique_opens || 0) /
                                 selectedNewsletterForStats.sent_count) *
                                 100
                             )
-                          : 0}
-                        %
+                          : 0}%)
+                      </span>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">
+                        Clicks
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <span className="text-2xl font-bold text-blue-600">
+                        {selectedNewsletterForStats.unique_clicks || 0}
+                      </span>
+                      <span className="text-sm text-muted-foreground ml-1">
+                        ({selectedNewsletterForStats.sent_count > 0
+                          ? Math.round(
+                              ((selectedNewsletterForStats.unique_clicks || 0) /
+                                selectedNewsletterForStats.sent_count) *
+                                100
+                            )
+                          : 0}%)
+                      </span>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">
+                        Total Clicks
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <span className="text-2xl font-bold">
+                        {selectedNewsletterForStats.click_count || 0}
                       </span>
                     </CardContent>
                   </Card>
                 </div>
 
-                <div className="max-h-[300px] overflow-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Opened</TableHead>
-                        <TableHead>Opens</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {emailOpens.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={3} className="text-center py-4 text-muted-foreground">
-                            No opens recorded yet
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        emailOpens.map((open) => (
-                          <TableRow key={open.id}>
-                            <TableCell className="font-medium">{open.recipient_email}</TableCell>
-                            <TableCell>
-                              {open.opened_at ? (
-                                <span className="text-green-600">
-                                  {format(new Date(open.opened_at), "MMM d, HH:mm")}
-                                </span>
-                              ) : (
-                                <span className="text-muted-foreground">Not opened</span>
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              {open.opens_count > 0 ? (
-                                <Badge variant="secondary">{open.opens_count}x</Badge>
-                              ) : (
-                                "-"
-                              )}
-                            </TableCell>
+                <Tabs defaultValue="opens" className="w-full">
+                  <TabsList>
+                    <TabsTrigger value="opens" className="flex items-center gap-1">
+                      <Eye className="h-4 w-4" />
+                      Opens ({emailOpens.filter(o => o.opened_at).length})
+                    </TabsTrigger>
+                    <TabsTrigger value="clicks" className="flex items-center gap-1">
+                      <Link2 className="h-4 w-4" />
+                      Link Clicks ({linkClicks.filter(c => c.clicked_at).length})
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="opens" className="mt-4">
+                    <div className="max-h-[250px] overflow-auto border rounded-md">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Email</TableHead>
+                            <TableHead>Opened</TableHead>
+                            <TableHead>Opens</TableHead>
                           </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
+                        </TableHeader>
+                        <TableBody>
+                          {emailOpens.length === 0 ? (
+                            <TableRow>
+                              <TableCell colSpan={3} className="text-center py-4 text-muted-foreground">
+                                No opens recorded yet
+                              </TableCell>
+                            </TableRow>
+                          ) : (
+                            emailOpens.map((open) => (
+                              <TableRow key={open.id}>
+                                <TableCell className="font-medium">{open.recipient_email}</TableCell>
+                                <TableCell>
+                                  {open.opened_at ? (
+                                    <span className="text-green-600">
+                                      {format(new Date(open.opened_at), "MMM d, HH:mm")}
+                                    </span>
+                                  ) : (
+                                    <span className="text-muted-foreground">Not opened</span>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  {open.opens_count > 0 ? (
+                                    <Badge variant="secondary">{open.opens_count}x</Badge>
+                                  ) : (
+                                    "-"
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="clicks" className="mt-4">
+                    <div className="max-h-[250px] overflow-auto border rounded-md">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Email</TableHead>
+                            <TableHead>Link</TableHead>
+                            <TableHead>Clicked</TableHead>
+                            <TableHead>Clicks</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {linkClicks.length === 0 ? (
+                            <TableRow>
+                              <TableCell colSpan={4} className="text-center py-4 text-muted-foreground">
+                                No link clicks recorded yet
+                              </TableCell>
+                            </TableRow>
+                          ) : (
+                            linkClicks.map((click) => (
+                              <TableRow key={click.id}>
+                                <TableCell className="font-medium">{click.recipient_email}</TableCell>
+                                <TableCell>
+                                  <a 
+                                    href={click.original_url} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="text-blue-600 hover:underline max-w-[200px] truncate block"
+                                    title={click.original_url}
+                                  >
+                                    {new URL(click.original_url).pathname || click.original_url}
+                                  </a>
+                                </TableCell>
+                                <TableCell>
+                                  {click.clicked_at ? (
+                                    <span className="text-green-600">
+                                      {format(new Date(click.clicked_at), "MMM d, HH:mm")}
+                                    </span>
+                                  ) : (
+                                    <span className="text-muted-foreground">-</span>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  {click.click_count > 0 ? (
+                                    <Badge variant="secondary">{click.click_count}x</Badge>
+                                  ) : (
+                                    "-"
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </TabsContent>
+                </Tabs>
               </div>
             )}
           </DialogContent>

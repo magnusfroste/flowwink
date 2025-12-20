@@ -441,6 +441,53 @@ export type Database = {
           },
         ]
       }
+      newsletter_link_clicks: {
+        Row: {
+          click_count: number
+          clicked_at: string | null
+          created_at: string
+          id: string
+          ip_address: string | null
+          link_id: string
+          newsletter_id: string
+          original_url: string
+          recipient_email: string
+          user_agent: string | null
+        }
+        Insert: {
+          click_count?: number
+          clicked_at?: string | null
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          link_id?: string
+          newsletter_id: string
+          original_url: string
+          recipient_email: string
+          user_agent?: string | null
+        }
+        Update: {
+          click_count?: number
+          clicked_at?: string | null
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          link_id?: string
+          newsletter_id?: string
+          original_url?: string
+          recipient_email?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "newsletter_link_clicks_newsletter_id_fkey"
+            columns: ["newsletter_id"]
+            isOneToOne: false
+            referencedRelation: "newsletters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       newsletter_subscribers: {
         Row: {
           confirmation_token: string | null
@@ -485,6 +532,7 @@ export type Database = {
       }
       newsletters: {
         Row: {
+          click_count: number | null
           content_html: string | null
           content_json: Json | null
           created_at: string
@@ -496,10 +544,12 @@ export type Database = {
           sent_count: number | null
           status: string
           subject: string
+          unique_clicks: number | null
           unique_opens: number | null
           updated_at: string
         }
         Insert: {
+          click_count?: number | null
           content_html?: string | null
           content_json?: Json | null
           created_at?: string
@@ -511,10 +561,12 @@ export type Database = {
           sent_count?: number | null
           status?: string
           subject: string
+          unique_clicks?: number | null
           unique_opens?: number | null
           updated_at?: string
         }
         Update: {
+          click_count?: number | null
           content_html?: string | null
           content_json?: Json | null
           created_at?: string
@@ -526,6 +578,7 @@ export type Database = {
           sent_count?: number | null
           status?: string
           subject?: string
+          unique_clicks?: number | null
           unique_opens?: number | null
           updated_at?: string
         }
