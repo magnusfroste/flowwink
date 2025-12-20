@@ -1,7 +1,16 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Globe, Smartphone, MessageSquare, Mail, Code2, Copy, Check, Play, Database, FileJson, Layers, Info, FileText, Rss, Settings2, Plus } from "lucide-react";
+import { 
+  Globe, Smartphone, MessageSquare, Mail, Code2, Copy, Check, Play, Database, 
+  FileJson, Layers, Info, FileText, Rss, Settings2, Plus,
+  // Block icons
+  LayoutTemplate, PanelTop, PanelBottom, Columns2, Minus, Type, 
+  ChevronDown, AlertCircle, Quote, LayoutGrid, Image, Images, 
+  Youtube, Grid3X3, MousePointerClick, Phone, ClipboardList, 
+  Bot, MailPlus, MapPin, BarChart3,
+  type LucideIcon
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
@@ -26,34 +35,41 @@ interface Channel {
   extra?: React.ComponentType<{ className?: string }>;
 }
 
-const BLOCK_TYPES = [
+interface BlockType {
+  type: string;
+  name: string;
+  category: string;
+  icon: LucideIcon;
+}
+
+const BLOCK_TYPES: BlockType[] = [
   // Layout
-  { type: "hero", name: "Hero", category: "Layout" },
-  { type: "header", name: "Header", category: "Layout" },
-  { type: "footer", name: "Footer", category: "Layout" },
-  { type: "two-column", name: "Two Column", category: "Layout" },
-  { type: "separator", name: "Separator", category: "Layout" },
+  { type: "hero", name: "Hero", category: "Layout", icon: LayoutTemplate },
+  { type: "header", name: "Header", category: "Layout", icon: PanelTop },
+  { type: "footer", name: "Footer", category: "Layout", icon: PanelBottom },
+  { type: "two-column", name: "Two Column", category: "Layout", icon: Columns2 },
+  { type: "separator", name: "Separator", category: "Layout", icon: Minus },
   // Content
-  { type: "text", name: "Text", category: "Content" },
-  { type: "accordion", name: "Accordion", category: "Content" },
-  { type: "info-box", name: "Fact Box", category: "Content" },
-  { type: "quote", name: "Quote", category: "Content" },
-  { type: "article-grid", name: "Article Grid", category: "Content" },
+  { type: "text", name: "Text", category: "Content", icon: Type },
+  { type: "accordion", name: "Accordion", category: "Content", icon: ChevronDown },
+  { type: "info-box", name: "Fact Box", category: "Content", icon: AlertCircle },
+  { type: "quote", name: "Quote", category: "Content", icon: Quote },
+  { type: "article-grid", name: "Article Grid", category: "Content", icon: LayoutGrid },
   // Media
-  { type: "image", name: "Image", category: "Media" },
-  { type: "gallery", name: "Gallery", category: "Media" },
-  { type: "youtube", name: "YouTube", category: "Media" },
+  { type: "image", name: "Image", category: "Media", icon: Image },
+  { type: "gallery", name: "Gallery", category: "Media", icon: Images },
+  { type: "youtube", name: "YouTube", category: "Media", icon: Youtube },
   // Navigation
-  { type: "link-grid", name: "Link Grid", category: "Navigation" },
+  { type: "link-grid", name: "Link Grid", category: "Navigation", icon: Grid3X3 },
   // Interaction
-  { type: "cta", name: "Call to Action", category: "Interaction" },
-  { type: "contact", name: "Contact", category: "Interaction" },
-  { type: "form", name: "Form", category: "Interaction" },
-  { type: "chat", name: "AI Chat", category: "Interaction" },
-  { type: "newsletter", name: "Newsletter", category: "Interaction" },
-  { type: "map", name: "Map", category: "Interaction" },
+  { type: "cta", name: "Call to Action", category: "Interaction", icon: MousePointerClick },
+  { type: "contact", name: "Contact", category: "Interaction", icon: Phone },
+  { type: "form", name: "Form", category: "Interaction", icon: ClipboardList },
+  { type: "chat", name: "AI Chat", category: "Interaction", icon: Bot },
+  { type: "newsletter", name: "Newsletter", category: "Interaction", icon: MailPlus },
+  { type: "map", name: "Map", category: "Interaction", icon: MapPin },
   // Data
-  { type: "stats", name: "Statistics", category: "Data" },
+  { type: "stats", name: "Statistics", category: "Data", icon: BarChart3 },
 ];
 
 const DEFAULT_GRAPHQL_QUERY = `query {
@@ -493,12 +509,15 @@ export default async function Home() {
                             }`}
                           >
                             <div className="flex items-center justify-between mb-1">
-                              <span className="font-medium">{block.name}</span>
+                              <div className="flex items-center gap-2">
+                                <block.icon className={`h-4 w-4 ${count > 0 ? "text-primary" : "text-muted-foreground"}`} />
+                                <span className="font-medium">{block.name}</span>
+                              </div>
                               <Badge variant={count > 0 ? "default" : "secondary"}>
                                 {count}
                               </Badge>
                             </div>
-                            <code className="text-xs text-muted-foreground">{block.type}</code>
+                            <code className="text-xs text-muted-foreground ml-6">{block.type}</code>
                           </div>
                         );
                       })}
