@@ -143,11 +143,31 @@ serve(async (req) => {
 
     let sentCount = 0;
     const unsubscribeUrl = `${supabaseUrl}/functions/v1/newsletter-subscribe?action=unsubscribe`;
+    const trackingBaseUrl = `${supabaseUrl}/functions/v1/newsletter-track`;
 
     // Send emails in batches
     for (const subscriber of subscribers) {
       try {
+        // Create tracking record for this subscriber
+        const { data: trackingRecord, error: trackingError } = await supabase
+          .from("newsletter_email_opens")
+          .insert({
+            newsletter_id: newsletter_id,
+            recipient_email: subscriber.email,
+          })
+          .select("tracking_id")
+          .single();
+
+        if (trackingError) {
+          console.error(`[newsletter-send] Failed to create tracking for ${subscriber.email}:`, trackingError);
+        }
+
         const personalUnsubscribe = `${unsubscribeUrl}&email=${encodeURIComponent(subscriber.email)}`;
+        
+        // Build tracking pixel HTML
+        const trackingPixel = trackingRecord 
+          ? `<img src="${trackingBaseUrl}?t=${trackingRecord.tracking_id}" width="1" height="1" alt="" style="display:none;" />`
+          : "";
         
         await resend.emails.send({
           from: "Newsletter <onboarding@resend.dev>",
@@ -159,6 +179,7 @@ serve(async (req) => {
             <p style="font-size: 12px; color: #666; text-align: center;">
               <a href="${personalUnsubscribe}" style="color: #666;">Unsubscribe</a>
             </p>
+            ${trackingPixel}
           `,
         });
         
@@ -176,6 +197,8 @@ serve(async (req) => {
         status: "sent",
         sent_at: new Date().toISOString(),
         sent_count: sentCount,
+        unique_opens: 0,
+        open_count: 0,
       })
       .eq("id", newsletter_id);
 

@@ -44,3 +44,6 @@ verify_jwt = true
 
 [functions.send-webhook]
 verify_jwt = true
+
+[functions.newsletter-track]
+verify_jwt = false

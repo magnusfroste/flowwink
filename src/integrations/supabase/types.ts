@@ -397,6 +397,50 @@ export type Database = {
         }
         Relationships: []
       }
+      newsletter_email_opens: {
+        Row: {
+          created_at: string
+          id: string
+          ip_address: string | null
+          newsletter_id: string
+          opened_at: string | null
+          opens_count: number
+          recipient_email: string
+          tracking_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          newsletter_id: string
+          opened_at?: string | null
+          opens_count?: number
+          recipient_email: string
+          tracking_id?: string
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          newsletter_id?: string
+          opened_at?: string | null
+          opens_count?: number
+          recipient_email?: string
+          tracking_id?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "newsletter_email_opens_newsletter_id_fkey"
+            columns: ["newsletter_id"]
+            isOneToOne: false
+            referencedRelation: "newsletters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       newsletter_subscribers: {
         Row: {
           confirmation_token: string | null
@@ -446,11 +490,13 @@ export type Database = {
           created_at: string
           created_by: string | null
           id: string
+          open_count: number | null
           scheduled_at: string | null
           sent_at: string | null
           sent_count: number | null
           status: string
           subject: string
+          unique_opens: number | null
           updated_at: string
         }
         Insert: {
@@ -459,11 +505,13 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          open_count?: number | null
           scheduled_at?: string | null
           sent_at?: string | null
           sent_count?: number | null
           status?: string
           subject: string
+          unique_opens?: number | null
           updated_at?: string
         }
         Update: {
@@ -472,11 +520,13 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          open_count?: number | null
           scheduled_at?: string | null
           sent_at?: string | null
           sent_count?: number | null
           status?: string
           subject?: string
+          unique_opens?: number | null
           updated_at?: string
         }
         Relationships: []
