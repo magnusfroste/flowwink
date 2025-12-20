@@ -76,7 +76,10 @@ export function PublicNavigation() {
     <header className={getBackgroundClasses()}>
       <div className="container mx-auto px-6">
         <div className={cn(
-          "flex items-center h-16 relative",
+          "flex items-center relative",
+          headerSettings.headerHeight === 'compact' && "h-12",
+          headerSettings.headerHeight === 'tall' && "h-20",
+          (!headerSettings.headerHeight || headerSettings.headerHeight === 'default') && "h-16",
           headerSettings.navAlignment === 'left' && "justify-start gap-8",
           headerSettings.navAlignment === 'center' && "justify-between",
           (!headerSettings.navAlignment || headerSettings.navAlignment === 'right') && "justify-between"

@@ -198,6 +198,23 @@ export function HeaderBlockEditor({ data, onChange }: HeaderBlockEditorProps) {
               </SelectContent>
             </Select>
           </div>
+
+          <div className="space-y-2">
+            <Label>Header Height</Label>
+            <Select
+              value={data.headerHeight || 'default'}
+              onValueChange={(value: 'compact' | 'default' | 'tall') => onChange({ ...data, headerHeight: value })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="compact">Compact (48px)</SelectItem>
+                <SelectItem value="default">Default (64px)</SelectItem>
+                <SelectItem value="tall">Tall (80px)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </CardContent>
       </Card>
 
