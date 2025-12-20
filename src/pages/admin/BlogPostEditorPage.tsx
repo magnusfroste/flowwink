@@ -134,6 +134,8 @@ export default function BlogPostEditorPage() {
   };
   
   const handleSave = useCallback(async () => {
+    console.log("[BlogPostEditor] handleSave called", { title, slug, isNew, authorId });
+    
     if (!title.trim()) {
       toast({ title: "Error", description: "Title is required", variant: "destructive" });
       return;
