@@ -29,7 +29,8 @@ import {
   ChevronDown,
   Code,
   Zap,
-  AlertTriangle
+  AlertTriangle,
+  RotateCcw
 } from 'lucide-react';
 import { N8NTemplates } from '@/components/admin/N8NTemplates';
 import { 
@@ -45,7 +46,7 @@ import { sv } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 
 export default function WebhooksPage() {
-  const { webhooks, isLoading, createWebhook, updateWebhook, deleteWebhook, toggleWebhook, testWebhook } = useWebhooks();
+  const { webhooks, isLoading, createWebhook, updateWebhook, deleteWebhook, toggleWebhook, testWebhook, resendWebhook } = useWebhooks();
   const { toast } = useToast();
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -377,6 +378,30 @@ export default function WebhooksPage() {
                                       {log.response_body}
                                     </pre>
                                   </>
+                                )}
+                                
+                                {!log.success && (
+                                  <div className="mt-3 pt-3 border-t">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        resendWebhook.mutate({ 
+                                          webhookId: log.webhook_id, 
+                                          payload: log.payload as Record<string, unknown>
+                                        });
+                                      }}
+                                      disabled={resendWebhook.isPending}
+                                    >
+                                      {resendWebhook.isPending ? (
+                                        <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                      ) : (
+                                        <RotateCcw className="h-3 w-3 mr-1" />
+                                      )}
+                                      Skicka igen
+                                    </Button>
+                                  </div>
                                 )}
                               </div>
                             </CollapsibleContent>

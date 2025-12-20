@@ -212,6 +212,30 @@ export function useWebhooks() {
     },
   });
 
+  const resendWebhook = useMutation({
+    mutationFn: async ({ webhookId, payload }: { webhookId: string; payload: Record<string, unknown> }) => {
+      // payload already contains event and data from the log
+      const response = await supabase.functions.invoke('send-webhook', {
+        body: payload,
+      });
+
+      if (response.error) throw response.error;
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['webhooks'] });
+      queryClient.invalidateQueries({ queryKey: ['webhook-logs'] });
+      toast({ title: 'Webhook återskickad', description: 'Kontrollera loggarna för resultat' });
+    },
+    onError: (error) => {
+      toast({ 
+        title: 'Återskickning misslyckades', 
+        description: error.message,
+        variant: 'destructive' 
+      });
+    },
+  });
+
   return {
     webhooks: webhooksQuery.data || [],
     isLoading: webhooksQuery.isLoading,
@@ -221,6 +245,7 @@ export function useWebhooks() {
     deleteWebhook,
     toggleWebhook,
     testWebhook,
+    resendWebhook,
   };
 }
 
