@@ -27,21 +27,33 @@ interface Channel {
 }
 
 const BLOCK_TYPES = [
+  // Layout
   { type: "hero", name: "Hero", category: "Layout" },
-  { type: "text", name: "Text", category: "Content" },
-  { type: "image", name: "Image", category: "Media" },
+  { type: "header", name: "Header", category: "Layout" },
+  { type: "footer", name: "Footer", category: "Layout" },
   { type: "two-column", name: "Two Column", category: "Layout" },
-  { type: "cta", name: "Call to Action", category: "Interaction" },
-  { type: "contact", name: "Contact", category: "Interaction" },
+  { type: "separator", name: "Separator", category: "Layout" },
+  // Content
+  { type: "text", name: "Text", category: "Content" },
   { type: "accordion", name: "Accordion", category: "Content" },
-  { type: "link-grid", name: "Link Grid", category: "Navigation" },
   { type: "info-box", name: "Fact Box", category: "Content" },
   { type: "quote", name: "Quote", category: "Content" },
-  { type: "stats", name: "Statistics", category: "Data" },
+  { type: "article-grid", name: "Article Grid", category: "Content" },
+  // Media
+  { type: "image", name: "Image", category: "Media" },
   { type: "gallery", name: "Gallery", category: "Media" },
   { type: "youtube", name: "YouTube", category: "Media" },
-  { type: "separator", name: "Separator", category: "Layout" },
-  { type: "article-grid", name: "Article Grid", category: "Content" },
+  // Navigation
+  { type: "link-grid", name: "Link Grid", category: "Navigation" },
+  // Interaction
+  { type: "cta", name: "Call to Action", category: "Interaction" },
+  { type: "contact", name: "Contact", category: "Interaction" },
+  { type: "form", name: "Form", category: "Interaction" },
+  { type: "chat", name: "AI Chat", category: "Interaction" },
+  { type: "newsletter", name: "Newsletter", category: "Interaction" },
+  { type: "map", name: "Map", category: "Interaction" },
+  // Data
+  { type: "stats", name: "Statistics", category: "Data" },
 ];
 
 const DEFAULT_GRAPHQL_QUERY = `query {
