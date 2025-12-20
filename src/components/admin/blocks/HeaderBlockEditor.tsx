@@ -247,6 +247,24 @@ export function HeaderBlockEditor({ data, onChange }: HeaderBlockEditorProps) {
             </p>
           </div>
 
+          <div className="space-y-2">
+            <Label>Shadow</Label>
+            <Select
+              value={data.headerShadow || 'none'}
+              onValueChange={(value: 'none' | 'sm' | 'md' | 'lg') => onChange({ ...data, headerShadow: value })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                <SelectItem value="sm">Small</SelectItem>
+                <SelectItem value="md">Medium</SelectItem>
+                <SelectItem value="lg">Large</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="flex items-center justify-between">
             <div>
               <Label>Show Border</Label>

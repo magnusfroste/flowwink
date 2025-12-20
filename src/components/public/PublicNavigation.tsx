@@ -55,11 +55,20 @@ export function PublicNavigation() {
   const getBackgroundClasses = () => {
     const style = headerSettings.backgroundStyle || 'solid';
     const showBorder = headerSettings.showBorder !== false;
+    const shadow = headerSettings.headerShadow || 'none';
+    
+    const shadowClasses = {
+      none: '',
+      sm: 'shadow-sm',
+      md: 'shadow-md',
+      lg: 'shadow-lg',
+    };
     
     const baseClasses = cn(
       "z-50",
       headerSettings.stickyHeader !== false && "sticky top-0",
-      showBorder && "border-b"
+      showBorder && "border-b",
+      shadowClasses[shadow]
     );
     
     switch (style) {

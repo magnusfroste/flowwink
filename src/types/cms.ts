@@ -135,6 +135,7 @@ export interface HeaderBlockData {
   showThemeToggle?: boolean;
   // Background styling
   backgroundStyle?: 'solid' | 'transparent' | 'blur';
+  headerShadow?: 'none' | 'sm' | 'md' | 'lg';
   // Layout
   navAlignment?: 'left' | 'center' | 'right';
   headerHeight?: 'compact' | 'default' | 'tall';
