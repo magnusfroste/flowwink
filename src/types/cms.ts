@@ -136,6 +136,8 @@ export interface HeaderBlockData {
   // Background styling
   backgroundStyle?: 'solid' | 'transparent' | 'blur';
   headerShadow?: 'none' | 'sm' | 'md' | 'lg';
+  // Colors
+  linkColorScheme?: 'default' | 'primary' | 'muted' | 'contrast';
   // Layout
   navAlignment?: 'left' | 'center' | 'right';
   headerHeight?: 'compact' | 'default' | 'tall';

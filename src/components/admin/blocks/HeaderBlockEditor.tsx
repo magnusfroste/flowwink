@@ -265,6 +265,27 @@ export function HeaderBlockEditor({ data, onChange }: HeaderBlockEditorProps) {
             </Select>
           </div>
 
+          <div className="space-y-2">
+            <Label>Link Color Scheme</Label>
+            <Select
+              value={data.linkColorScheme || 'default'}
+              onValueChange={(value: 'default' | 'primary' | 'muted' | 'contrast') => onChange({ ...data, linkColorScheme: value })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="default">Default (Muted → Foreground)</SelectItem>
+                <SelectItem value="primary">Primary Accent</SelectItem>
+                <SelectItem value="muted">Subtle Muted</SelectItem>
+                <SelectItem value="contrast">High Contrast</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Affects navigation link colors and hover states
+            </p>
+          </div>
+
           <div className="flex items-center justify-between">
             <div>
               <Label>Show Border</Label>

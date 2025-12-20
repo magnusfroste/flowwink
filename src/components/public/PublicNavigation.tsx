@@ -81,6 +81,27 @@ export function PublicNavigation() {
     }
   };
 
+  // Link color scheme classes
+  const getLinkClasses = (isActive: boolean) => {
+    const scheme = headerSettings.linkColorScheme || 'default';
+    const base = 'px-4 py-2 rounded-md text-sm font-medium transition-colors';
+    
+    if (isActive) {
+      return cn(base, 'bg-primary/10 text-primary');
+    }
+    
+    switch (scheme) {
+      case 'primary':
+        return cn(base, 'text-primary/80 hover:text-primary hover:bg-primary/5');
+      case 'muted':
+        return cn(base, 'text-muted-foreground/70 hover:text-muted-foreground hover:bg-muted/50');
+      case 'contrast':
+        return cn(base, 'text-foreground hover:text-primary hover:bg-muted');
+      default:
+        return cn(base, 'text-muted-foreground hover:bg-muted hover:text-foreground');
+    }
+  };
+
   return (
     <header className={getBackgroundClasses()}>
       <div className="container mx-auto px-6">
@@ -159,13 +180,7 @@ export function PublicNavigation() {
               <Link
                 key={page.id}
                 to={page.slug === 'hem' ? '/' : `/${page.slug}`}
-                className={cn(
-                  'px-4 py-2 rounded-md text-sm font-medium transition-colors',
-                  'hover:bg-muted hover:text-foreground',
-                  currentSlug === page.slug
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-muted-foreground'
-                )}
+                className={getLinkClasses(currentSlug === page.slug)}
               >
                 {page.title}
               </Link>
@@ -174,13 +189,7 @@ export function PublicNavigation() {
             {blogSettings?.enabled && (
               <Link
                 to={`/${blogSettings.archiveSlug || 'blogg'}`}
-                className={cn(
-                  'px-4 py-2 rounded-md text-sm font-medium transition-colors',
-                  'hover:bg-muted hover:text-foreground',
-                  location.pathname.startsWith(`/${blogSettings.archiveSlug || 'blogg'}`)
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-muted-foreground'
-                )}
+                className={getLinkClasses(location.pathname.startsWith(`/${blogSettings.archiveSlug || 'blogg'}`))}
               >
                 {blogSettings.archiveTitle || 'Blogg'}
               </Link>
@@ -192,7 +201,7 @@ export function PublicNavigation() {
                 href={item.url}
                 target={item.openInNewTab ? '_blank' : undefined}
                 rel={item.openInNewTab ? 'noopener noreferrer' : undefined}
-                className="px-4 py-2 rounded-md text-sm font-medium transition-colors hover:bg-muted hover:text-foreground text-muted-foreground"
+                className={getLinkClasses(false)}
               >
                 {item.label}
               </a>
