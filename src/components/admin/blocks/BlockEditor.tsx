@@ -295,7 +295,7 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
           />
         );
       default:
-        return <div className="p-4 text-muted-foreground">Okänd blocktyp</div>;
+        return <div className="p-4 text-muted-foreground">Unknown block type</div>;
     }
   };
 

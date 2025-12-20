@@ -36,10 +36,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       <div className="flex h-screen items-center justify-center bg-background">
         <div className="text-center">
           <h1 className="font-serif text-2xl font-bold text-foreground mb-2">
-            Ingen åtkomst
+            Access Denied
           </h1>
           <p className="text-muted-foreground">
-            Du har inte behörighet att komma åt denna sida.
+            You do not have permission to access this page.
           </p>
         </div>
       </div>

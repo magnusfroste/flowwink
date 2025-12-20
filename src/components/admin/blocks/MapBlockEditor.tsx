@@ -121,7 +121,7 @@ export function MapBlockEditor({ data, onChange, isEditing }: MapBlockEditorProp
             id="locationName"
             value={data.locationName || ''}
             onChange={(e) => updateField('locationName', e.target.value)}
-            placeholder="Vårdcentralen City"
+            placeholder="Main Office"
           />
           <p className="text-xs text-muted-foreground">
             Display name shown below the map

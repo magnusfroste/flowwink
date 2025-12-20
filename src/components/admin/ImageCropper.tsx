@@ -73,73 +73,73 @@ const filterPresets: FilterPreset[] = [
     id: 'original',
     name: 'Original',
     adjustments: {},
-    description: 'Ingen justering',
+    description: 'No adjustment',
   },
   {
     id: 'vivid',
-    name: 'Livfull',
+    name: 'Vivid',
     adjustments: { saturation: 140, contrast: 110 },
-    description: 'Starka färger',
+    description: 'Strong colors',
   },
   {
     id: 'warm',
-    name: 'Varm',
+    name: 'Warm',
     adjustments: { sepia: 20, saturation: 110, brightness: 105 },
-    description: 'Gyllene toner',
+    description: 'Golden tones',
   },
   {
     id: 'cool',
-    name: 'Kall',
+    name: 'Cool',
     adjustments: { hueRotate: 10, saturation: 90, brightness: 105 },
-    description: 'Blåa toner',
+    description: 'Blue tones',
   },
   {
     id: 'vintage',
     name: 'Vintage',
     adjustments: { sepia: 30, contrast: 90, saturation: 80, brightness: 105 },
-    description: 'Retro-känsla',
+    description: 'Retro feel',
   },
   {
     id: 'dramatic',
-    name: 'Dramatisk',
+    name: 'Dramatic',
     adjustments: { contrast: 130, saturation: 120, brightness: 95 },
-    description: 'Hög kontrast',
+    description: 'High contrast',
   },
   {
     id: 'soft',
-    name: 'Mjuk',
+    name: 'Soft',
     adjustments: { contrast: 85, saturation: 90, brightness: 110 },
-    description: 'Dämpade toner',
+    description: 'Muted tones',
   },
   {
     id: 'bw',
-    name: 'Svartvit',
+    name: 'B&W',
     adjustments: { grayscale: 100, contrast: 110 },
-    description: 'Klassisk monokrom',
+    description: 'Classic monochrome',
   },
   {
     id: 'bw-high',
-    name: 'Svartvit dramatisk',
+    name: 'B&W Dramatic',
     adjustments: { grayscale: 100, contrast: 140, brightness: 105 },
-    description: 'Hög kontrast B/W',
+    description: 'High contrast B/W',
   },
   {
     id: 'sepia',
     name: 'Sepia',
     adjustments: { sepia: 60, contrast: 95 },
-    description: 'Antik look',
+    description: 'Antique look',
   },
   {
     id: 'fade',
-    name: 'Blekt',
+    name: 'Fade',
     adjustments: { contrast: 80, saturation: 70, brightness: 115 },
-    description: 'Urtvättad effekt',
+    description: 'Washed out effect',
   },
   {
     id: 'punch',
     name: 'Punch',
     adjustments: { contrast: 120, saturation: 130, brightness: 100 },
-    description: 'Extra kraft',
+    description: 'Extra power',
   },
 ];
 
@@ -339,7 +339,7 @@ export function ImageCropper({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CropIcon className="h-5 w-5" />
-            Beskär & justera bild
+            Crop & adjust image
           </DialogTitle>
         </DialogHeader>
 
@@ -426,8 +426,8 @@ export function ImageCropper({
             </CollapsibleTrigger>
             <CollapsibleContent className="pt-4">
               <div className="space-y-4 p-4 bg-muted/30 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Manuella justeringar</span>
+              <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Manual adjustments</span>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -436,15 +436,14 @@ export function ImageCropper({
                     className="h-7 text-xs"
                   >
                     <RotateCcw className="h-3 w-3 mr-1" />
-                    Återställ
+                    Reset
                   </Button>
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2">
-                  {/* Brightness */}
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <Label className="text-xs text-muted-foreground">Ljusstyrka</Label>
+                      <Label className="text-xs text-muted-foreground">Brightness</Label>
                       <span className="text-xs text-muted-foreground w-10 text-right">
                         {adjustments.brightness}%
                       </span>
@@ -477,10 +476,9 @@ export function ImageCropper({
                     />
                   </div>
 
-                  {/* Saturation */}
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <Label className="text-xs text-muted-foreground">Mättnad</Label>
+                      <Label className="text-xs text-muted-foreground">Saturation</Label>
                       <span className="text-xs text-muted-foreground w-10 text-right">
                         {adjustments.saturation}%
                       </span>
@@ -513,10 +511,9 @@ export function ImageCropper({
                     />
                   </div>
 
-                  {/* Grayscale */}
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <Label className="text-xs text-muted-foreground">Gråskala</Label>
+                      <Label className="text-xs text-muted-foreground">Grayscale</Label>
                       <span className="text-xs text-muted-foreground w-10 text-right">
                         {adjustments.grayscale}%
                       </span>
@@ -531,10 +528,9 @@ export function ImageCropper({
                     />
                   </div>
 
-                  {/* Hue Rotate */}
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <Label className="text-xs text-muted-foreground">Färgton</Label>
+                      <Label className="text-xs text-muted-foreground">Hue</Label>
                       <span className="text-xs text-muted-foreground w-10 text-right">
                         {adjustments.hueRotate}°
                       </span>
@@ -575,27 +571,27 @@ export function ImageCropper({
           </div>
 
           <p className="text-xs text-muted-foreground text-center">
-            Välj ett snabbfilter eller finjustera manuellt. Bilden konverteras till WebP.
+            Select a quick filter or fine-tune manually. Image will be converted to WebP.
           </p>
         </div>
 
         <DialogFooter className="flex-row gap-2 sm:gap-2">
           {onSkip && (
             <Button variant="ghost" onClick={handleSkip} disabled={isProcessing}>
-              Använd original
+              Use original
             </Button>
           )}
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isProcessing}>
-            Avbryt
+            Cancel
           </Button>
           <Button onClick={handleCrop} disabled={!completedCrop || isProcessing}>
             {isProcessing ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Bearbetar...
+                Processing...
               </>
             ) : (
-              'Beskär & använd'
+              'Crop & use'
             )}
           </Button>
         </DialogFooter>
