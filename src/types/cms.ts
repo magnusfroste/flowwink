@@ -135,6 +135,8 @@ export interface HeaderBlockData {
   showThemeToggle?: boolean;
   // Background styling
   backgroundStyle?: 'solid' | 'transparent' | 'blur';
+  // Layout
+  navAlignment?: 'left' | 'center' | 'right';
   showBorder?: boolean;
   // Custom nav items (external links beyond CMS pages)
   customNavItems?: HeaderNavItem[];

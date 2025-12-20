@@ -75,7 +75,12 @@ export function PublicNavigation() {
   return (
     <header className={getBackgroundClasses()}>
       <div className="container mx-auto px-6">
-        <div className="flex items-center justify-between h-16">
+        <div className={cn(
+          "flex items-center h-16 relative",
+          headerSettings.navAlignment === 'left' && "justify-start gap-8",
+          headerSettings.navAlignment === 'center' && "justify-between",
+          (!headerSettings.navAlignment || headerSettings.navAlignment === 'right') && "justify-between"
+        )}>
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3">
             {(() => {
@@ -134,7 +139,10 @@ export function PublicNavigation() {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-2">
+          <nav className={cn(
+            "hidden md:flex items-center gap-2",
+            headerSettings.navAlignment === 'center' && "absolute left-1/2 -translate-x-1/2"
+          )}>
             {pages.map((page) => (
               <Link
                 key={page.id}
