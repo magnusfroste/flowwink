@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Plus, 
@@ -24,7 +25,9 @@ import {
   Eye,
   EyeOff,
   Play,
-  Loader2
+  Loader2,
+  ChevronDown,
+  Code
 } from 'lucide-react';
 import { 
   useWebhooks, 
@@ -294,41 +297,67 @@ export default function WebhooksPage() {
                   <ScrollArea className="h-[400px]">
                     <div className="space-y-2">
                       {logs.map(log => (
-                        <div 
-                          key={log.id} 
-                          className="flex items-center gap-3 p-3 border rounded-lg text-sm"
-                        >
-                          {log.success ? (
-                            <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0" />
-                          ) : (
-                            <XCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <Badge variant="outline" className="text-xs">
-                                {WEBHOOK_EVENT_LABELS[log.event]}
-                              </Badge>
-                              {log.response_status && (
-                                <span className={log.success ? 'text-green-600' : 'text-red-600'}>
-                                  HTTP {log.response_status}
+                        <Collapsible key={log.id}>
+                          <div className="border rounded-lg text-sm">
+                            <CollapsibleTrigger className="w-full">
+                              <div className="flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors">
+                                {log.success ? (
+                                  <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0" />
+                                ) : (
+                                  <XCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
+                                )}
+                                <div className="flex-1 min-w-0 text-left">
+                                  <div className="flex items-center gap-2">
+                                    <Badge variant="outline" className="text-xs">
+                                      {WEBHOOK_EVENT_LABELS[log.event]}
+                                    </Badge>
+                                    {log.response_status && (
+                                      <span className={log.success ? 'text-green-600' : 'text-red-600'}>
+                                        HTTP {log.response_status}
+                                      </span>
+                                    )}
+                                    {log.duration_ms && (
+                                      <span className="text-muted-foreground">
+                                        {log.duration_ms}ms
+                                      </span>
+                                    )}
+                                  </div>
+                                  {log.error_message && (
+                                    <p className="text-red-500 text-xs mt-1 truncate">
+                                      {log.error_message}
+                                    </p>
+                                  )}
+                                </div>
+                                <span className="text-muted-foreground text-xs flex-shrink-0">
+                                  {format(new Date(log.created_at), 'dd MMM HH:mm:ss', { locale: sv })}
                                 </span>
-                              )}
-                              {log.duration_ms && (
-                                <span className="text-muted-foreground">
-                                  {log.duration_ms}ms
-                                </span>
-                              )}
-                            </div>
-                            {log.error_message && (
-                              <p className="text-red-500 text-xs mt-1 truncate">
-                                {log.error_message}
-                              </p>
-                            )}
+                                <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform [[data-state=open]>&]:rotate-180" />
+                              </div>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent>
+                              <div className="px-3 pb-3 pt-1 border-t bg-muted/30">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Code className="h-3 w-3 text-muted-foreground" />
+                                  <span className="text-xs font-medium text-muted-foreground">Payload</span>
+                                </div>
+                                <pre className="text-xs bg-background p-3 rounded border overflow-x-auto max-h-48">
+                                  {JSON.stringify(log.payload, null, 2)}
+                                </pre>
+                                {log.response_body && (
+                                  <>
+                                    <div className="flex items-center gap-2 mt-3 mb-2">
+                                      <Code className="h-3 w-3 text-muted-foreground" />
+                                      <span className="text-xs font-medium text-muted-foreground">Response</span>
+                                    </div>
+                                    <pre className="text-xs bg-background p-3 rounded border overflow-x-auto max-h-32">
+                                      {log.response_body}
+                                    </pre>
+                                  </>
+                                )}
+                              </div>
+                            </CollapsibleContent>
                           </div>
-                          <span className="text-muted-foreground text-xs flex-shrink-0">
-                            {format(new Date(log.created_at), 'dd MMM HH:mm:ss', { locale: sv })}
-                          </span>
-                        </div>
+                        </Collapsible>
                       ))}
                     </div>
                   </ScrollArea>
