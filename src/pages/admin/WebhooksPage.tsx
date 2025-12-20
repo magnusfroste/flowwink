@@ -30,7 +30,8 @@ import {
   Code,
   Zap,
   AlertTriangle,
-  RotateCcw
+  RotateCcw,
+  TrendingUp
 } from 'lucide-react';
 import { N8NTemplates } from '@/components/admin/N8NTemplates';
 import { 
@@ -44,6 +45,7 @@ import {
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
+import { WebhookStats } from '@/components/admin/WebhookStats';
 
 export default function WebhooksPage() {
   const { webhooks, isLoading, createWebhook, updateWebhook, deleteWebhook, toggleWebhook, testWebhook, resendWebhook } = useWebhooks();
@@ -137,6 +139,10 @@ export default function WebhooksPage() {
       <Tabs defaultValue="webhooks" className="space-y-4">
         <TabsList>
           <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
+          <TabsTrigger value="stats">
+            <TrendingUp className="h-4 w-4 mr-1" />
+            Statistik
+          </TabsTrigger>
           <TabsTrigger value="templates">
             <Zap className="h-4 w-4 mr-1" />
             N8N Mallar
@@ -289,6 +295,10 @@ export default function WebhooksPage() {
               })}
             </div>
           )}
+        </TabsContent>
+
+        <TabsContent value="stats">
+          <WebhookStats />
         </TabsContent>
 
         <TabsContent value="templates">
