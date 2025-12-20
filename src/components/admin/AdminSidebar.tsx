@@ -16,6 +16,7 @@ import {
   Image,
   Mail,
   Puzzle,
+  Webhook,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { ROLE_LABELS } from "@/types/cms";
@@ -81,6 +82,7 @@ const navigationGroups: NavGroup[] = [
     adminOnly: true,
     items: [
       { name: "Modules", href: "/admin/modules", icon: Puzzle },
+      { name: "Webhooks", href: "/admin/webhooks", icon: Webhook },
       { name: "Menu Order", href: "/admin/menu-order", icon: Menu },
       { name: "Users", href: "/admin/users", icon: Users },
       { name: "Branding", href: "/admin/branding", icon: Palette },
