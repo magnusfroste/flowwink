@@ -177,6 +177,41 @@ export function useWebhooks() {
     },
   });
 
+  const testWebhook = useMutation({
+    mutationFn: async (webhook: Webhook) => {
+      const testPayload = {
+        event: webhook.events[0] || 'page.published',
+        data: {
+          id: 'test-id-123',
+          title: 'Test Webhook',
+          slug: 'test-webhook',
+          status: 'published',
+          timestamp: new Date().toISOString(),
+          _test: true,
+        },
+      };
+
+      const response = await supabase.functions.invoke('send-webhook', {
+        body: testPayload,
+      });
+
+      if (response.error) throw response.error;
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['webhooks'] });
+      queryClient.invalidateQueries({ queryKey: ['webhook-logs'] });
+      toast({ title: 'Test skickat', description: 'Kontrollera loggarna för resultat' });
+    },
+    onError: (error) => {
+      toast({ 
+        title: 'Test misslyckades', 
+        description: error.message,
+        variant: 'destructive' 
+      });
+    },
+  });
+
   return {
     webhooks: webhooksQuery.data || [],
     isLoading: webhooksQuery.isLoading,
@@ -185,6 +220,7 @@ export function useWebhooks() {
     updateWebhook,
     deleteWebhook,
     toggleWebhook,
+    testWebhook,
   };
 }
 

@@ -20,10 +20,11 @@ import {
   CheckCircle2, 
   XCircle, 
   Clock,
-  ExternalLink,
   Copy,
   Eye,
-  EyeOff
+  EyeOff,
+  Play,
+  Loader2
 } from 'lucide-react';
 import { 
   useWebhooks, 
@@ -38,7 +39,7 @@ import { sv } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 
 export default function WebhooksPage() {
-  const { webhooks, isLoading, createWebhook, updateWebhook, deleteWebhook, toggleWebhook } = useWebhooks();
+  const { webhooks, isLoading, createWebhook, updateWebhook, deleteWebhook, toggleWebhook, testWebhook } = useWebhooks();
   const { toast } = useToast();
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -220,6 +221,19 @@ export default function WebhooksPage() {
                       </div>
                       
                       <div className="flex items-center gap-1">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => testWebhook.mutate(webhook)}
+                          disabled={testWebhook.isPending || !webhook.is_active}
+                        >
+                          {testWebhook.isPending ? (
+                            <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                          ) : (
+                            <Play className="h-4 w-4 mr-1" />
+                          )}
+                          Test
+                        </Button>
                         <Button 
                           variant="ghost" 
                           size="sm"
