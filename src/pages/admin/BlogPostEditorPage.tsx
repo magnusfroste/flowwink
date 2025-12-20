@@ -56,7 +56,7 @@ export default function BlogPostEditorPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, role, isAdmin, isApprover } = useAuth();
-  const isNew = id === "new";
+  const isNew = !id || id === "new";
   
   const { data: post, isLoading } = useBlogPost(isNew ? undefined : id);
   const { data: blogSettings } = useBlogSettings();
@@ -109,7 +109,11 @@ export default function BlogPostEditorPage() {
   
   // Track changes
   useEffect(() => {
-    if (!isNew && post) {
+    if (isNew) {
+      // For new posts, any title means there are changes to save
+      setHasChanges(title.trim().length > 0);
+    } else if (post) {
+      // For existing posts, compare against saved values
       const changed =
         title !== post.title ||
         slug !== post.slug ||
@@ -121,8 +125,6 @@ export default function BlogPostEditorPage() {
         JSON.stringify(selectedCategories) !== JSON.stringify(post.categories?.map(c => c.id) || []) ||
         JSON.stringify(selectedTags) !== JSON.stringify(post.tags?.map(t => t.id) || []);
       setHasChanges(changed);
-    } else if (isNew) {
-      setHasChanges(title.length > 0);
     }
   }, [title, slug, excerpt, content, featuredImage, isFeatured, authorId, selectedCategories, selectedTags, post, isNew]);
   
