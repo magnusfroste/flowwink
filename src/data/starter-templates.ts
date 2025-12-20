@@ -367,6 +367,46 @@ const launchpadPages: TemplatePage[] = [
       },
     ],
   },
+  {
+    title: 'Terms of Service',
+    slug: 'terms-of-service',
+    menu_order: 100,
+    showInMenu: false,
+    meta: {
+      description: 'Terms and conditions for using our services',
+      showTitle: true,
+      titleAlignment: 'left',
+    },
+    blocks: [
+      {
+        id: 'text-1',
+        type: 'text',
+        data: {
+          content: {
+            type: 'doc',
+            content: [
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Agreement to Terms' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'By accessing or using LaunchPad services, you agree to be bound by these Terms of Service. If you disagree with any part of these terms, you may not access our services.' }] },
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Use of Service' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'You may use our services only for lawful purposes and in accordance with these Terms. You agree not to use our services in any way that violates applicable laws or regulations.' }] },
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Account Registration' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'To access certain features, you must register for an account. You are responsible for maintaining the confidentiality of your account credentials and for all activities under your account.' }] },
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Intellectual Property' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'The service and its original content, features, and functionality are owned by LaunchPad and are protected by international copyright, trademark, and other intellectual property laws.' }] },
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Limitation of Liability' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'LaunchPad shall not be liable for any indirect, incidental, special, consequential, or punitive damages resulting from your use of the service.' }] },
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Termination' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'We may terminate or suspend your account and access to the service immediately, without prior notice, for conduct that we believe violates these Terms or is harmful to other users, us, or third parties.' }] },
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Changes to Terms' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'We reserve the right to modify these terms at any time. We will notify users of any material changes by posting the new Terms on this page.' }] },
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Contact' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'Questions about these Terms? Contact us at hello@launchpad.io.' }] },
+            ],
+          },
+        },
+      },
+    ],
+  },
 ];
 
 // =====================================================
@@ -776,6 +816,46 @@ const trustcorpPages: TemplatePage[] = [
       },
     ],
   },
+  {
+    title: 'Terms of Service',
+    slug: 'terms-of-service',
+    menu_order: 100,
+    showInMenu: false,
+    meta: {
+      description: 'Terms and conditions for using our enterprise services',
+      showTitle: true,
+      titleAlignment: 'left',
+    },
+    blocks: [
+      {
+        id: 'text-1',
+        type: 'text',
+        data: {
+          content: {
+            type: 'doc',
+            content: [
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Agreement to Terms' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'By engaging TrustCorp services, you agree to be bound by these Terms of Service and our Master Service Agreement. These terms govern all business relationships with TrustCorp.' }] },
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Scope of Services' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'TrustCorp provides enterprise consulting, technology, and advisory services as described in individual Statements of Work. All services are performed in accordance with industry best practices.' }] },
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Confidentiality' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'Both parties agree to maintain strict confidentiality of all proprietary information exchanged during the engagement. This obligation survives the termination of any agreement.' }] },
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Intellectual Property' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'Unless otherwise specified in a Statement of Work, all pre-existing intellectual property remains with its original owner. Work product ownership is defined in individual project agreements.' }] },
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Data Security' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'TrustCorp maintains SOC 2 Type II certification and implements enterprise-grade security measures. All data processing complies with applicable data protection regulations including GDPR.' }] },
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Limitation of Liability' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'Liability is limited to the fees paid under the applicable Statement of Work. Neither party shall be liable for indirect, incidental, or consequential damages.' }] },
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Governing Law' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'These terms are governed by the laws of the jurisdiction specified in the Master Service Agreement, without regard to conflict of law principles.' }] },
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Contact' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'For questions about these Terms, contact our legal team at legal@trustcorp.com.' }] },
+            ],
+          },
+        },
+      },
+    ],
+  },
 ];
 
 // =====================================================
@@ -1172,6 +1252,46 @@ const securehealthPages: TemplatePage[] = [
       },
     ],
   },
+  {
+    title: 'Terms of Service',
+    slug: 'terms-of-service',
+    menu_order: 100,
+    showInMenu: false,
+    meta: {
+      description: 'Terms and conditions for using our healthcare services',
+      showTitle: true,
+      titleAlignment: 'left',
+    },
+    blocks: [
+      {
+        id: 'text-1',
+        type: 'text',
+        data: {
+          content: {
+            type: 'doc',
+            content: [
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Agreement to Terms' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'By using SecureHealth services, including our patient portal and AI health assistant, you agree to these Terms of Service. These terms are in addition to any consent forms signed during your care.' }] },
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Healthcare Services' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'SecureHealth provides medical services through licensed healthcare professionals. Our AI assistant provides general health information only and does not replace professional medical advice, diagnosis, or treatment.' }] },
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Patient Responsibilities' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'Patients are responsible for providing accurate health information, following prescribed treatment plans, and keeping scheduled appointments. Missed appointments may be subject to cancellation fees.' }] },
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Privacy and Confidentiality' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'Your health information is protected under HIPAA and applicable privacy laws. Our AI assistant processes all data locally on HIPAA-compliant servers. See our Privacy Policy for full details.' }] },
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Emergency Services' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'Our services are not intended for medical emergencies. If you experience a medical emergency, call 911 immediately or go to the nearest emergency room.' }] },
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Insurance and Payment' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'We accept most major insurance plans. Patients are responsible for co-pays, deductibles, and any services not covered by insurance. Payment is due at time of service unless other arrangements are made.' }] },
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Medical Records' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'Patients have the right to access their medical records through our secure patient portal. Records are retained in accordance with applicable laws and regulations.' }] },
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Contact' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'Questions about these Terms? Contact our patient services team at care@securehealth.com or call our main office.' }] },
+            ],
+          },
+        },
+      },
+    ],
+  },
 ];
 
 // =====================================================
@@ -1384,6 +1504,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
       twitter: 'https://twitter.com/launchpad',
       legalLinks: [
         { id: 'privacy', label: 'Privacy Policy', url: '/privacy-policy', enabled: true },
+        { id: 'terms', label: 'Terms of Service', url: '/terms-of-service', enabled: true },
       ],
     },
     seoSettings: {
@@ -1497,6 +1618,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
       linkedin: 'https://linkedin.com/company/trustcorp',
       legalLinks: [
         { id: 'privacy', label: 'Privacy Policy', url: '/privacy-policy', enabled: true },
+        { id: 'terms', label: 'Terms of Service', url: '/terms-of-service', enabled: true },
       ],
     },
     seoSettings: {
@@ -1556,6 +1678,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
       weekendHours: 'Emergency line 24/7',
       legalLinks: [
         { id: 'privacy', label: 'Privacy Policy', url: '/privacy-policy', enabled: true },
+        { id: 'terms', label: 'Terms of Service', url: '/terms-of-service', enabled: true },
         { id: 'accessibility', label: 'Accessibility', url: '/accessibility', enabled: true },
       ],
     },
