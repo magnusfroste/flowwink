@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Mail, Users, Send, Plus, Trash2, Eye, Edit2, Calendar, BarChart3, Link2 } from "lucide-react";
+import { Mail, Users, Send, Plus, Trash2, Eye, Edit2, Calendar, BarChart3, Link2, Download, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
@@ -208,6 +208,56 @@ export default function NewsletterPage() {
       toast.error(error.message);
     },
   });
+
+  // Delete all subscribers (GDPR)
+  const deleteAllSubscribersMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("newsletter_subscribers").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["newsletter-subscribers"] });
+      toast.success("All subscriber data deleted");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
+  // Export subscribers
+  const handleExportSubscribers = async (format: "csv" | "json") => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("Not authenticated");
+        return;
+      }
+
+      const response = await supabase.functions.invoke("newsletter-export", {
+        method: "GET",
+      });
+
+      if (response.error) throw response.error;
+
+      // Create and download file
+      const blob = format === "json" 
+        ? new Blob([JSON.stringify(response.data, null, 2)], { type: "application/json" })
+        : new Blob([response.data], { type: "text/csv" });
+      
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `subscribers_${new Date().toISOString().split('T')[0]}.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      toast.success(`Exported ${subscribers.length} subscribers`);
+    } catch (error: any) {
+      toast.error(error.message || "Export failed");
+    }
+  };
 
   const confirmedCount = subscribers.filter((s) => s.status === "confirmed").length;
   const pendingCount = subscribers.filter((s) => s.status === "pending").length;
@@ -556,6 +606,68 @@ export default function NewsletterPage() {
 
           {/* Subscribers Tab */}
           <TabsContent value="subscribers" className="space-y-4">
+            {/* GDPR Actions */}
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-2">
+                  <Shield className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-base">GDPR Data Management</CardTitle>
+                </div>
+                <CardDescription>
+                  Export or delete subscriber data to comply with GDPR requirements
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => handleExportSubscribers("csv")}
+                    disabled={subscribers.length === 0}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Export CSV
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => handleExportSubscribers("json")}
+                    disabled={subscribers.length === 0}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Export JSON
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="destructive"
+                        disabled={subscribers.length === 0}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete All Data
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete All Subscriber Data?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will permanently delete all {subscribers.length} subscribers and their data.
+                          This action cannot be undone and is typically used for GDPR compliance.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => deleteAllSubscribersMutation.mutate()}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          Delete All
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </CardContent>
+            </Card>
+
             <Card>
               <Table>
                 <TableHeader>

@@ -50,3 +50,6 @@ verify_jwt = false
 
 [functions.newsletter-link]
 verify_jwt = false
+
+[functions.newsletter-export]
+verify_jwt = true
