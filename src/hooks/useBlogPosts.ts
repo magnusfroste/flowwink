@@ -425,6 +425,11 @@ export function useUpdateBlogPost() {
         } as unknown as Json,
       });
       
+      // Trigger webhook for blog post updated (only if published)
+      if (data.status === 'published') {
+        webhookEvents.blogPostUpdated({ id, slug: data.slug, title: data.title });
+      }
+      
       return parseBlogPost(data as Record<string, unknown>);
     },
     onSuccess: (data) => {
