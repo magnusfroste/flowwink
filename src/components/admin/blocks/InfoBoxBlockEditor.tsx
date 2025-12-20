@@ -35,6 +35,12 @@ function renderContent(content: string | TiptapDocument | undefined): string {
 }
 
 const VARIANT_CONFIG = {
+  default: {
+    label: 'Default',
+    icon: Info,
+    className: 'bg-muted/50 border-border',
+    iconClass: 'text-muted-foreground',
+  },
   info: {
     label: 'Information',
     icon: Info,
