@@ -7,13 +7,16 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { useLead, useLeadActivities, useUpdateLead, useAddLeadNote, useQualifyLead } from '@/hooks/useLeads';
+import { useCompanies } from '@/hooks/useCompanies';
 import { useAddLeadActivity, type ActivityType } from '@/hooks/useActivities';
 import { getLeadStatusInfo, type LeadStatus } from '@/lib/lead-utils';
 import { DealSection } from '@/components/admin/DealSection';
 import { ActivityTimeline } from '@/components/admin/ActivityTimeline';
 import { 
-  ArrowLeft, Mail, Phone, Building, Calendar, Sparkles, AlertCircle
+  ArrowLeft, Mail, Phone, Building, Calendar, Sparkles, AlertCircle, Check, ChevronsUpDown, X
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -23,11 +26,13 @@ export default function LeadDetailPage() {
   const navigate = useNavigate();
   const { data: lead, isLoading } = useLead(id);
   const { data: activities, isLoading: activitiesLoading } = useLeadActivities(id);
+  const { data: companies } = useCompanies();
   const updateLead = useUpdateLead();
   const addNote = useAddLeadNote();
   const qualifyLead = useQualifyLead();
   const addActivity = useAddLeadActivity();
   const [note, setNote] = useState('');
+  const [companyOpen, setCompanyOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -53,8 +58,15 @@ export default function LeadDetailPage() {
   }
 
   const statusInfo = getLeadStatusInfo(lead.status);
-  // Display company name from linked company, fallback to text field
-  const companyName = lead.companies?.name || lead.company;
+  const companyName = lead.companies?.name;
+
+  const handleCompanyChange = (companyId: string | null) => {
+    updateLead.mutate({ 
+      id: lead.id, 
+      company_id: companyId,
+    });
+    setCompanyOpen(false);
+  };
 
   const handleStatusChange = (newStatus: LeadStatus) => {
     updateLead.mutate({ 
@@ -228,21 +240,77 @@ export default function LeadDetailPage() {
                 </div>
               )}
               
-              {(lead.companies || lead.company) && (
-                <div className="flex items-center gap-3">
-                  <Building className="h-4 w-4 text-muted-foreground" />
-                  {lead.companies ? (
-                    <Link 
-                      to={`/admin/companies/${lead.companies.id}`}
-                      className="text-sm hover:underline text-primary"
-                    >
-                      {lead.companies.name}
-                    </Link>
-                  ) : (
-                    <span className="text-sm">{lead.company}</span>
+              <div className="flex items-start gap-3">
+                <Building className="h-4 w-4 text-muted-foreground mt-2" />
+                <div className="flex-1">
+                  <Popover open={companyOpen} onOpenChange={setCompanyOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={companyOpen}
+                        className="w-full justify-between h-auto min-h-9 py-2"
+                      >
+                        {lead.companies ? (
+                          <span className="truncate">{lead.companies.name}</span>
+                        ) : (
+                          <span className="text-muted-foreground">Select company...</span>
+                        )}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-64 p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Search companies..." />
+                        <CommandList>
+                          <CommandEmpty>No company found.</CommandEmpty>
+                          <CommandGroup>
+                            {companies?.map((company) => (
+                              <CommandItem
+                                key={company.id}
+                                value={company.name}
+                                onSelect={() => handleCompanyChange(company.id)}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    lead.company_id === company.id ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                <div className="flex flex-col">
+                                  <span>{company.name}</span>
+                                  {company.domain && (
+                                    <span className="text-xs text-muted-foreground">{company.domain}</span>
+                                  )}
+                                </div>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  {lead.companies && (
+                    <div className="flex items-center gap-2 mt-2">
+                      <Link 
+                        to={`/admin/companies/${lead.companies.id}`}
+                        className="text-xs hover:underline text-primary"
+                      >
+                        View company
+                      </Link>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 px-2 text-xs text-muted-foreground hover:text-destructive"
+                        onClick={() => handleCompanyChange(null)}
+                      >
+                        <X className="h-3 w-3 mr-1" />
+                        Unlink
+                      </Button>
+                    </div>
                   )}
                 </div>
-              )}
+              </div>
               
               <div className="flex items-center gap-3">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
