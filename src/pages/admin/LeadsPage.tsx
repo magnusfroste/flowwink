@@ -11,7 +11,6 @@ import { formatPrice } from '@/hooks/useProducts';
 import { getLeadStatusInfo, type LeadStatus } from '@/lib/lead-utils';
 import { Users, TrendingUp, UserCheck, AlertCircle, Sparkles, Plus, Briefcase, Target, Trophy, XCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { sv } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { CreateLeadDialog } from '@/components/admin/CreateLeadDialog';
@@ -26,10 +25,10 @@ export default function LeadsPage() {
   const navigate = useNavigate();
 
   const statCards = [
-    { label: 'Totalt', value: stats?.total || 0, icon: Users, color: 'text-foreground' },
+    { label: 'Total', value: stats?.total || 0, icon: Users, color: 'text-foreground' },
     { label: 'Leads', value: stats?.leads || 0, icon: TrendingUp, color: 'text-blue-500' },
     { label: 'Opportunities', value: stats?.opportunities || 0, icon: Sparkles, color: 'text-amber-500' },
-    { label: 'Kunder', value: stats?.customers || 0, icon: UserCheck, color: 'text-green-500' },
+    { label: 'Customers', value: stats?.customers || 0, icon: UserCheck, color: 'text-green-500' },
   ];
 
   const pipelineStages: LeadStatus[] = ['lead', 'opportunity', 'customer'];
@@ -42,11 +41,11 @@ export default function LeadsPage() {
     <AdminLayout>
       <AdminPageHeader
         title="Leads"
-        description="Hantera leads och se pipeline"
+        description="Manage leads and view pipeline"
       >
         <Button onClick={() => setShowCreateDialog(true)}>
           <Plus className="h-4 w-4 mr-2" />
-          Ny lead
+          New Lead
         </Button>
       </AdminPageHeader>
 
@@ -88,7 +87,7 @@ export default function LeadsPage() {
               <div className="flex items-center gap-2">
                 <Target className="h-4 w-4 text-blue-500" />
                 <div>
-                  <p className="text-xs text-muted-foreground">Offert</p>
+                  <p className="text-xs text-muted-foreground">Proposal</p>
                   <p className="font-medium">{formatPrice(dealStats.proposal.value)}</p>
                   <p className="text-xs text-muted-foreground">{dealStats.proposal.count} deals</p>
                 </div>
@@ -96,7 +95,7 @@ export default function LeadsPage() {
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-yellow-500" />
                 <div>
-                  <p className="text-xs text-muted-foreground">Förhandling</p>
+                  <p className="text-xs text-muted-foreground">Negotiation</p>
                   <p className="font-medium">{formatPrice(dealStats.negotiation.value)}</p>
                   <p className="text-xs text-muted-foreground">{dealStats.negotiation.count} deals</p>
                 </div>
@@ -104,7 +103,7 @@ export default function LeadsPage() {
               <div className="flex items-center gap-2">
                 <Trophy className="h-4 w-4 text-green-500" />
                 <div>
-                  <p className="text-xs text-muted-foreground">Vunna</p>
+                  <p className="text-xs text-muted-foreground">Won</p>
                   <p className="font-medium">{formatPrice(dealStats.closed_won.value)}</p>
                   <p className="text-xs text-muted-foreground">{dealStats.closed_won.count} deals</p>
                 </div>
@@ -112,7 +111,7 @@ export default function LeadsPage() {
               <div className="flex items-center gap-2">
                 <XCircle className="h-4 w-4 text-red-500" />
                 <div>
-                  <p className="text-xs text-muted-foreground">Förlorade</p>
+                  <p className="text-xs text-muted-foreground">Lost</p>
                   <p className="font-medium">{formatPrice(dealStats.closed_lost.value)}</p>
                   <p className="text-xs text-muted-foreground">{dealStats.closed_lost.count} deals</p>
                 </div>
@@ -130,10 +129,10 @@ export default function LeadsPage() {
               <AlertCircle className="h-5 w-5 text-amber-500" />
               <div className="flex-1">
                 <p className="font-medium">
-                  {reviewLeads?.length} lead{reviewLeads?.length !== 1 ? 's' : ''} behöver granskas
+                  {reviewLeads?.length} lead{reviewLeads?.length !== 1 ? 's' : ''} need{reviewLeads?.length === 1 ? 's' : ''} review
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  AI kunde inte avgöra status med tillräcklig säkerhet
+                  AI could not determine status with sufficient confidence
                 </p>
               </div>
               <Button 
@@ -141,7 +140,7 @@ export default function LeadsPage() {
                 size="sm"
                 onClick={() => setActiveTab('review')}
               >
-                Granska
+                Review
               </Button>
             </div>
           </CardContent>
@@ -151,9 +150,9 @@ export default function LeadsPage() {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
-          <TabsTrigger value="all">Alla leads</TabsTrigger>
+          <TabsTrigger value="all">All Leads</TabsTrigger>
           <TabsTrigger value="review" className="relative">
-            Behöver granskning
+            Needs Review
             {(reviewLeads?.length || 0) > 0 && (
               <Badge variant="destructive" className="ml-2 h-5 w-5 p-0 text-xs">
                 {reviewLeads?.length}
@@ -180,9 +179,9 @@ export default function LeadsPage() {
                   
                   <div className="space-y-2 min-h-[200px]">
                     {leadsLoading ? (
-                      <p className="text-sm text-muted-foreground">Laddar...</p>
+                      <p className="text-sm text-muted-foreground">Loading...</p>
                     ) : stageLeads.length === 0 ? (
-                      <p className="text-sm text-muted-foreground italic">Inga leads</p>
+                      <p className="text-sm text-muted-foreground italic">No leads</p>
                     ) : (
                       stageLeads.map((lead) => (
                         <LeadCard
@@ -202,14 +201,14 @@ export default function LeadsPage() {
         <TabsContent value="all" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Alla leads</CardTitle>
-              <CardDescription>Sorterat efter poäng</CardDescription>
+              <CardTitle>All Leads</CardTitle>
+              <CardDescription>Sorted by score</CardDescription>
             </CardHeader>
             <CardContent>
               {leadsLoading ? (
-                <p>Laddar...</p>
+                <p>Loading...</p>
               ) : !leads?.length ? (
-                <p className="text-muted-foreground">Inga leads ännu</p>
+                <p className="text-muted-foreground">No leads yet</p>
               ) : (
                 <div className="space-y-2">
                   {leads.map((lead) => (
@@ -229,12 +228,12 @@ export default function LeadsPage() {
         <TabsContent value="review" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Behöver granskning</CardTitle>
-              <CardDescription>AI kunde inte avgöra status automatiskt</CardDescription>
+              <CardTitle>Needs Review</CardTitle>
+              <CardDescription>AI could not determine status automatically</CardDescription>
             </CardHeader>
             <CardContent>
               {!reviewLeads?.length ? (
-                <p className="text-muted-foreground">Inga leads behöver granskas</p>
+                <p className="text-muted-foreground">No leads need review</p>
               ) : (
                 <div className="space-y-2">
                   {reviewLeads.map((lead) => (
@@ -315,7 +314,7 @@ function LeadCard({ lead, showStatus, onClick }: LeadCardProps) {
               </Badge>
             )}
             <span className="text-xs text-muted-foreground">
-              {formatDistanceToNow(new Date(lead.created_at), { addSuffix: true, locale: sv })}
+              {formatDistanceToNow(new Date(lead.created_at), { addSuffix: true })}
             </span>
           </div>
         </div>

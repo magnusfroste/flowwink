@@ -27,65 +27,65 @@ export interface ModulesSettings {
 export const defaultModulesSettings: ModulesSettings = {
   pages: {
     enabled: true,
-    name: 'Sidor',
-    description: 'Skapa och hantera webbsidor med blockeditor',
+    name: 'Pages',
+    description: 'Create and manage web pages with block editor',
     icon: 'FileText',
     category: 'content',
     core: true,
   },
   blog: {
     enabled: true,
-    name: 'Blogg',
-    description: 'Blogginlägg med kategorier, taggar och RSS-flöde',
+    name: 'Blog',
+    description: 'Blog posts with categories, tags and RSS feed',
     icon: 'BookOpen',
     category: 'content',
   },
   chat: {
     enabled: false,
-    name: 'AI-chatt',
-    description: 'Intelligent chatbot med Context-Augmented Generation',
+    name: 'AI Chat',
+    description: 'Intelligent chatbot with Context-Augmented Generation',
     icon: 'MessageSquare',
     category: 'communication',
   },
   newsletter: {
     enabled: false,
-    name: 'Nyhetsbrev',
-    description: 'E-postutskick och prenumeranthantering via Resend',
+    name: 'Newsletter',
+    description: 'Email campaigns and subscriber management via Resend',
     icon: 'Mail',
     category: 'communication',
   },
   forms: {
     enabled: true,
-    name: 'Formulär',
-    description: 'Formulärinlämningar och kontaktförfrågningar',
+    name: 'Forms',
+    description: 'Form submissions and contact requests',
     icon: 'Inbox',
     category: 'data',
   },
   leads: {
     enabled: true,
     name: 'Leads',
-    description: 'AI-driven lead-hantering med automatisk kvalificering',
+    description: 'AI-driven lead management with automatic qualification',
     icon: 'UserCheck',
     category: 'data',
   },
   contentApi: {
     enabled: false,
     name: 'Content Hub',
-    description: 'REST och GraphQL API för headless CMS',
+    description: 'REST and GraphQL API for headless CMS',
     icon: 'Database',
     category: 'system',
   },
   globalElements: {
     enabled: true,
-    name: 'Globala element',
-    description: 'Header, footer och andra återanvändbara komponenter',
+    name: 'Global Elements',
+    description: 'Header, footer and other reusable components',
     icon: 'LayoutGrid',
     category: 'system',
   },
   mediaLibrary: {
     enabled: true,
-    name: 'Mediabibliotek',
-    description: 'Hantera bilder och filer',
+    name: 'Media Library',
+    description: 'Manage images and files',
     icon: 'Image',
     category: 'data',
     core: true,
@@ -173,14 +173,14 @@ export function useUpdateModules() {
     onSuccess: (modules) => {
       queryClient.setQueryData(['site-settings', 'modules'], modules);
       toast({
-        title: 'Sparad',
-        description: 'Modulinställningarna har uppdaterats.',
+        title: 'Saved',
+        description: 'Module settings have been updated.',
       });
     },
     onError: (error) => {
       toast({
-        title: 'Fel',
-        description: 'Kunde inte spara modulinställningar.',
+        title: 'Error',
+        description: 'Could not save module settings.',
         variant: 'destructive',
       });
       console.error('Failed to update modules:', error);
