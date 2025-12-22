@@ -6,13 +6,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/StatusBadge';
 import { WelcomeModal } from '@/components/admin/WelcomeModal';
+import { LeadsDashboardWidget } from '@/components/admin/LeadsDashboardWidget';
 import { usePages } from '@/hooks/usePages';
 import { useAuth } from '@/hooks/useAuth';
+import { useIsModuleEnabled } from '@/hooks/useModules';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function AdminDashboard() {
   const { data: pages, isLoading } = usePages();
   const { profile, isApprover } = useAuth();
+  const leadsEnabled = useIsModuleEnabled('leads');
 
   const stats = {
     total: pages?.length || 0,
@@ -91,6 +94,13 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Leads Widget (if enabled) */}
+        {leadsEnabled && (
+          <div className="mb-8">
+            <LeadsDashboardWidget />
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Recent Pages */}
