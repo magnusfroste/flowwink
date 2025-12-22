@@ -36,6 +36,7 @@ import LeadsPage from "./pages/admin/LeadsPage";
 import LeadDetailPage from "./pages/admin/LeadDetailPage";
 import DealsPage from "./pages/admin/DealsPage";
 import CompaniesPage from "./pages/admin/CompaniesPage";
+import CompanyDetailPage from "./pages/admin/CompanyDetailPage";
 import ProductsPage from "./pages/admin/ProductsPage";
 import PreviewPage from "./pages/PreviewPage";
 import PublicPage from "./pages/PublicPage";
@@ -86,6 +87,7 @@ const router = createBrowserRouter([
   { path: "/admin/leads/:id", element: <LeadDetailPage /> },
   { path: "/admin/deals", element: <DealsPage /> },
   { path: "/admin/companies", element: <CompaniesPage /> },
+  { path: "/admin/companies/:id", element: <CompanyDetailPage /> },
   { path: "/admin/products", element: <ProductsPage /> },
   { path: "/admin/modules", element: <ModulesPage /> },
   { path: "/admin/webhooks", element: <WebhooksPage /> },

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,9 +12,16 @@ import type { LeadStatus } from '@/lib/lead-utils';
 interface CreateLeadDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  defaultCompanyId?: string;
+  defaultCompanyName?: string;
 }
 
-export function CreateLeadDialog({ open, onOpenChange }: CreateLeadDialogProps) {
+export function CreateLeadDialog({ 
+  open, 
+  onOpenChange, 
+  defaultCompanyId,
+  defaultCompanyName 
+}: CreateLeadDialogProps) {
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [company, setCompany] = useState('');
@@ -22,6 +29,21 @@ export function CreateLeadDialog({ open, onOpenChange }: CreateLeadDialogProps) 
   const [status, setStatus] = useState<LeadStatus>('lead');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
+
+  // Set default company name when dialog opens with a company context
+  useEffect(() => {
+    if (open && defaultCompanyName) {
+      setCompany(defaultCompanyName);
+    }
+  }, [open, defaultCompanyName]);
+
+  const resetForm = () => {
+    setEmail('');
+    setName('');
+    setCompany(defaultCompanyName || '');
+    setPhone('');
+    setStatus('lead');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,13 +69,14 @@ export function CreateLeadDialog({ open, onOpenChange }: CreateLeadDialogProps) 
         return;
       }
 
-      // Create lead
+      // Create lead with company_id if provided
       const { data: newLead, error } = await supabase
         .from('leads')
         .insert({
           email: email.toLowerCase(),
           name: name || null,
           company: company || null,
+          company_id: defaultCompanyId || null,
           phone: phone || null,
           source: 'manual',
           status,
@@ -70,19 +93,17 @@ export function CreateLeadDialog({ open, onOpenChange }: CreateLeadDialogProps) 
         lead_id: newLead.id,
         type: 'note',
         points: 0,
-        metadata: { text: 'Lead created manually' },
+        metadata: { text: defaultCompanyId ? `Lead created for company` : 'Lead created manually' },
       });
 
       toast.success('Lead created');
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['lead-stats'] });
+      if (defaultCompanyId) {
+        queryClient.invalidateQueries({ queryKey: ['companies', defaultCompanyId, 'leads'] });
+      }
       
-      // Reset form
-      setEmail('');
-      setName('');
-      setCompany('');
-      setPhone('');
-      setStatus('lead');
+      resetForm();
       onOpenChange(false);
     } catch (error) {
       console.error('Failed to create lead:', error);
