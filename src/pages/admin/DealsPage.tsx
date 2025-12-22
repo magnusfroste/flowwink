@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
@@ -20,19 +20,35 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Plus, Briefcase, TrendingUp, Trophy, XCircle } from 'lucide-react';
-import { useDeals, useUpdateDeal, useDealStats, getDealStageInfo, type DealStage } from '@/hooks/useDeals';
-import { formatPrice } from '@/hooks/useProducts';
-import { CreateDealDialog } from '@/components/admin/CreateDealDialog';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Plus, Briefcase, TrendingUp, Trophy, LayoutGrid, List } from 'lucide-react';
+import { useDeals, useUpdateDeal, useCreateDeal, useDealStats, getDealStageInfo, type DealStage } from '@/hooks/useDeals';
+import { useProducts, formatPrice } from '@/hooks/useProducts';
+import { useLeads } from '@/hooks/useLeads';
+import { DealKanban } from '@/components/admin/DealKanban';
+import { useForm } from 'react-hook-form';
 import { format } from 'date-fns';
+
+type ViewMode = 'kanban' | 'table';
 
 export default function DealsPage() {
   const { data: deals = [], isLoading } = useDeals();
   const { data: stats } = useDealStats();
   const updateDeal = useUpdateDeal();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>('kanban');
 
   const handleStageChange = (dealId: string, stage: DealStage) => {
     updateDeal.mutate({ id: dealId, stage });
@@ -48,13 +64,25 @@ export default function DealsPage() {
           title="Deals"
           description="Manage your sales pipeline and opportunities"
         >
-          <Button onClick={() => {
-            setSelectedLeadId(null);
-            setDialogOpen(true);
-          }}>
-            <Plus className="h-4 w-4 mr-2" />
-            New Deal
-          </Button>
+          <div className="flex items-center gap-2">
+            <ToggleGroup 
+              type="single" 
+              value={viewMode} 
+              onValueChange={(v) => v && setViewMode(v as ViewMode)}
+              className="border rounded-md"
+            >
+              <ToggleGroupItem value="kanban" aria-label="Kanban view" className="px-3">
+                <LayoutGrid className="h-4 w-4" />
+              </ToggleGroupItem>
+              <ToggleGroupItem value="table" aria-label="Table view" className="px-3">
+                <List className="h-4 w-4" />
+              </ToggleGroupItem>
+            </ToggleGroup>
+            <Button onClick={() => setDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              New Deal
+            </Button>
+          </div>
         </AdminPageHeader>
 
         {/* Stats Cards */}
@@ -120,148 +148,154 @@ export default function DealsPage() {
           </Card>
         </div>
 
-        {/* Active Deals */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              Active Deals
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="space-y-3">
-                {[1, 2, 3].map(i => (
-                  <Skeleton key={i} className="h-12 w-full" />
-                ))}
-              </div>
-            ) : activeDeals.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Briefcase className="h-10 w-10 mx-auto mb-3 opacity-50" />
-                <p>No active deals</p>
-                <p className="text-sm">Create a deal to start tracking opportunities</p>
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Deal</TableHead>
-                    <TableHead>Lead</TableHead>
-                    <TableHead>Value</TableHead>
-                    <TableHead>Stage</TableHead>
-                    <TableHead>Expected Close</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {activeDeals.map(deal => {
-                    const stageInfo = getDealStageInfo(deal.stage);
-                    return (
-                      <TableRow key={deal.id}>
-                        <TableCell className="font-medium">
-                          {deal.product?.name || 'Custom deal'}
-                        </TableCell>
-                        <TableCell>
-                          <Link 
-                            to={`/admin/leads/${deal.lead_id}`}
-                            className="text-primary hover:underline"
-                          >
-                            View Lead
-                          </Link>
-                        </TableCell>
-                        <TableCell className="font-semibold">
-                          {formatPrice(deal.value_cents, deal.currency)}
-                        </TableCell>
-                        <TableCell>
-                          <Select
-                            value={deal.stage}
-                            onValueChange={(value: DealStage) => handleStageChange(deal.id, value)}
-                          >
-                            <SelectTrigger className="w-[130px]">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="proposal">Proposal</SelectItem>
-                              <SelectItem value="negotiation">Negotiation</SelectItem>
-                              <SelectItem value="closed_won">Won</SelectItem>
-                              <SelectItem value="closed_lost">Lost</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {deal.expected_close 
-                            ? format(new Date(deal.expected_close), 'MMM d, yyyy')
-                            : '—'
-                          }
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+        {/* Kanban View */}
+        {viewMode === 'kanban' && (
+          <DealKanban deals={deals} isLoading={isLoading} />
+        )}
 
-        {/* Closed Deals */}
-        {closedDeals.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-muted-foreground">
-                Closed Deals
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Deal</TableHead>
-                    <TableHead>Lead</TableHead>
-                    <TableHead>Value</TableHead>
-                    <TableHead>Result</TableHead>
-                    <TableHead>Closed At</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {closedDeals.map(deal => {
-                    const stageInfo = getDealStageInfo(deal.stage);
-                    return (
-                      <TableRow key={deal.id} className="opacity-70">
-                        <TableCell className="font-medium">
-                          {deal.product?.name || 'Custom deal'}
-                        </TableCell>
-                        <TableCell>
-                          <Link 
-                            to={`/admin/leads/${deal.lead_id}`}
-                            className="text-primary hover:underline"
-                          >
-                            View Lead
-                          </Link>
-                        </TableCell>
-                        <TableCell className="font-semibold">
-                          {formatPrice(deal.value_cents, deal.currency)}
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={stageInfo.color}>
-                            {stageInfo.label}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {deal.closed_at 
-                            ? format(new Date(deal.closed_at), 'MMM d, yyyy')
-                            : '—'
-                          }
-                        </TableCell>
+        {/* Table View */}
+        {viewMode === 'table' && (
+          <>
+            {/* Active Deals */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5" />
+                  Active Deals
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3].map(i => (
+                      <Skeleton key={i} className="h-12 w-full" />
+                    ))}
+                  </div>
+                ) : activeDeals.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Briefcase className="h-10 w-10 mx-auto mb-3 opacity-50" />
+                    <p>No active deals</p>
+                    <p className="text-sm">Create a deal to start tracking opportunities</p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Deal</TableHead>
+                        <TableHead>Lead</TableHead>
+                        <TableHead>Value</TableHead>
+                        <TableHead>Stage</TableHead>
+                        <TableHead>Expected Close</TableHead>
                       </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+                    </TableHeader>
+                    <TableBody>
+                      {activeDeals.map(deal => (
+                        <TableRow key={deal.id}>
+                          <TableCell className="font-medium">
+                            {deal.product?.name || 'Custom deal'}
+                          </TableCell>
+                          <TableCell>
+                            <Link 
+                              to={`/admin/leads/${deal.lead_id}`}
+                              className="text-primary hover:underline"
+                            >
+                              View Lead
+                            </Link>
+                          </TableCell>
+                          <TableCell className="font-semibold">
+                            {formatPrice(deal.value_cents, deal.currency)}
+                          </TableCell>
+                          <TableCell>
+                            <Select
+                              value={deal.stage}
+                              onValueChange={(value: DealStage) => handleStageChange(deal.id, value)}
+                            >
+                              <SelectTrigger className="w-[130px]">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="proposal">Proposal</SelectItem>
+                                <SelectItem value="negotiation">Negotiation</SelectItem>
+                                <SelectItem value="closed_won">Won</SelectItem>
+                                <SelectItem value="closed_lost">Lost</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {deal.expected_close 
+                              ? format(new Date(deal.expected_close), 'MMM d, yyyy')
+                              : '—'
+                            }
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Closed Deals */}
+            {closedDeals.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-muted-foreground">
+                    Closed Deals
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Deal</TableHead>
+                        <TableHead>Lead</TableHead>
+                        <TableHead>Value</TableHead>
+                        <TableHead>Result</TableHead>
+                        <TableHead>Closed At</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {closedDeals.map(deal => {
+                        const stageInfo = getDealStageInfo(deal.stage);
+                        return (
+                          <TableRow key={deal.id} className="opacity-70">
+                            <TableCell className="font-medium">
+                              {deal.product?.name || 'Custom deal'}
+                            </TableCell>
+                            <TableCell>
+                              <Link 
+                                to={`/admin/leads/${deal.lead_id}`}
+                                className="text-primary hover:underline"
+                              >
+                                View Lead
+                              </Link>
+                            </TableCell>
+                            <TableCell className="font-semibold">
+                              {formatPrice(deal.value_cents, deal.currency)}
+                            </TableCell>
+                            <TableCell>
+                              <Badge className={stageInfo.color}>
+                                {stageInfo.label}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-muted-foreground">
+                              {deal.closed_at 
+                                ? format(new Date(deal.closed_at), 'MMM d, yyyy')
+                                : '—'
+                              }
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            )}
+          </>
         )}
       </div>
 
-      {/* Create Deal Dialog - needs a lead picker */}
       <CreateDealDialogWithLeadPicker
         open={dialogOpen}
         onOpenChange={setDialogOpen}
@@ -270,24 +304,7 @@ export default function DealsPage() {
   );
 }
 
-// Extended dialog that includes a lead picker
-import { useLeads } from '@/hooks/useLeads';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { useProducts } from '@/hooks/useProducts';
-import { useCreateDeal } from '@/hooks/useDeals';
-import { useForm } from 'react-hook-form';
-import { useEffect } from 'react';
-
+// Dialog with lead picker for creating deals from the Deals page
 interface CreateDealDialogWithLeadPickerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -306,7 +323,7 @@ function CreateDealDialogWithLeadPicker({ open, onOpenChange }: CreateDealDialog
   const { data: products = [] } = useProducts();
   const createDeal = useCreateDeal();
 
-  const { register, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, watch, setValue, reset } = useForm<FormData>({
     defaultValues: {
       lead_id: '',
       product_id: '',
@@ -347,7 +364,6 @@ function CreateDealDialogWithLeadPicker({ open, onOpenChange }: CreateDealDialog
     });
   };
 
-  // Filter leads that are active (not lost/customer)
   const availableLeads = leads.filter(l => l.status === 'lead' || l.status === 'opportunity');
 
   return (
