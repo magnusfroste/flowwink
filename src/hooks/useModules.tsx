@@ -19,6 +19,7 @@ export interface ModulesSettings {
   newsletter: ModuleConfig;
   forms: ModuleConfig;
   leads: ModuleConfig;
+  deals: ModuleConfig;
   products: ModuleConfig;
   contentApi: ModuleConfig;
   globalElements: ModuleConfig;
@@ -69,6 +70,13 @@ export const defaultModulesSettings: ModulesSettings = {
     icon: 'UserCheck',
     category: 'data',
   },
+  deals: {
+    enabled: true,
+    name: 'Deals',
+    description: 'Pipeline management for sales opportunities',
+    icon: 'Briefcase',
+    category: 'data',
+  },
   products: {
     enabled: true,
     name: 'Products',
@@ -108,6 +116,7 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/newsletter': 'newsletter',
   '/admin/forms': 'forms',
   '/admin/leads': 'leads',
+  '/admin/deals': 'deals',
   '/admin/products': 'products',
   '/admin/content-hub': 'contentApi',
   '/admin/global-blocks': 'globalElements',

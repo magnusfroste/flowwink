@@ -13,6 +13,7 @@ import { Plus, Briefcase, Calendar, TrendingUp } from 'lucide-react';
 import { useDeals, useUpdateDeal, getDealStageInfo, type DealStage } from '@/hooks/useDeals';
 import { formatPrice } from '@/hooks/useProducts';
 import { CreateDealDialog } from './CreateDealDialog';
+import { useIsModuleEnabled } from '@/hooks/useModules';
 import { format } from 'date-fns';
 
 interface DealSectionProps {
@@ -20,6 +21,13 @@ interface DealSectionProps {
 }
 
 export function DealSection({ leadId }: DealSectionProps) {
+  const isDealsEnabled = useIsModuleEnabled('deals');
+  
+  // Early return if deals module is disabled
+  if (!isDealsEnabled) {
+    return null;
+  }
+  
   const { data: deals = [], isLoading } = useDeals(leadId);
   const updateDeal = useUpdateDeal();
   const [dialogOpen, setDialogOpen] = useState(false);
