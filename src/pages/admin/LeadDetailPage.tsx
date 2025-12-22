@@ -2,41 +2,31 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useLead, useLeadActivities, useUpdateLead, useAddLeadNote, useQualifyLead } from '@/hooks/useLeads';
+import { useAddLeadActivity, type ActivityType } from '@/hooks/useActivities';
 import { getLeadStatusInfo, type LeadStatus } from '@/lib/lead-utils';
 import { DealSection } from '@/components/admin/DealSection';
+import { ActivityTimeline } from '@/components/admin/ActivityTimeline';
 import { 
-  ArrowLeft, Mail, Phone, Building, Calendar, Sparkles, 
-  AlertCircle, MessageSquare, MousePointer, FileText, 
-  RefreshCw, User, Briefcase
+  ArrowLeft, Mail, Phone, Building, Calendar, Sparkles, AlertCircle
 } from 'lucide-react';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-
-const ACTIVITY_ICONS: Record<string, typeof Mail> = {
-  form_submit: FileText,
-  email_open: Mail,
-  link_click: MousePointer,
-  status_change: RefreshCw,
-  note: MessageSquare,
-  call: Phone,
-  deal_closed_won: Briefcase,
-  deal_closed_lost: Briefcase,
-};
 
 export default function LeadDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: lead, isLoading } = useLead(id);
-  const { data: activities } = useLeadActivities(id);
+  const { data: activities, isLoading: activitiesLoading } = useLeadActivities(id);
   const updateLead = useUpdateLead();
   const addNote = useAddLeadNote();
   const qualifyLead = useQualifyLead();
+  const addActivity = useAddLeadActivity();
   const [note, setNote] = useState('');
 
   if (isLoading) {
@@ -80,6 +70,18 @@ export default function LeadDetailPage() {
 
   const handleQualify = () => {
     qualifyLead.mutate(lead.id);
+  };
+
+  const handleAddActivity = (activity: { type: ActivityType; title?: string; description?: string }) => {
+    addActivity.mutate({
+      leadId: lead.id,
+      type: activity.type,
+      metadata: {
+        title: activity.title,
+        description: activity.description,
+      },
+      points: activity.type === 'call' ? 10 : activity.type === 'meeting' ? 15 : activity.type === 'email' ? 5 : 0,
+    });
   };
 
   return (
@@ -191,73 +193,13 @@ export default function LeadDetailPage() {
           </Card>
 
           {/* Activity Timeline */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Activity History</CardTitle>
-              <CardDescription>All interactions with this lead</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {!activities?.length ? (
-                <p className="text-muted-foreground">No activity yet</p>
-              ) : (
-                <div className="space-y-4">
-                  {activities.map((activity) => {
-                    const Icon = ACTIVITY_ICONS[activity.type] || FileText;
-                    const metadata = activity.metadata as Record<string, unknown>;
-                    
-                    return (
-                      <div key={activity.id} className="flex gap-3">
-                        <div className="flex-shrink-0 mt-1">
-                          <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
-                            <Icon className="h-4 w-4" />
-                          </div>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className="font-medium text-sm">
-                              {getActivityLabel(activity.type)}
-                            </p>
-                            {activity.points > 0 && (
-                              <Badge variant="secondary" className="text-xs">
-                                +{activity.points}p
-                              </Badge>
-                            )}
-                          </div>
-                          
-                          {/* Activity details */}
-                          {activity.type === 'note' && metadata.note && (
-                            <p className="text-sm text-muted-foreground mt-1">
-                              {metadata.note as string}
-                            </p>
-                          )}
-                          {activity.type === 'form_submit' && metadata.form_name && (
-                            <p className="text-sm text-muted-foreground">
-                              Formulär: {metadata.form_name as string}
-                            </p>
-                          )}
-                          {activity.type === 'status_change' && (
-                            <p className="text-sm text-muted-foreground">
-                              {metadata.from as string} → {metadata.to as string}
-                              {metadata.automated && ' (automatiskt)'}
-                            </p>
-                          )}
-                          {activity.type === 'link_click' && metadata.url && (
-                            <p className="text-sm text-muted-foreground truncate">
-                              {metadata.url as string}
-                            </p>
-                          )}
-                          
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {formatDistanceToNow(new Date(activity.created_at), { addSuffix: true })}
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <ActivityTimeline
+            activities={activities || []}
+            onAddActivity={handleAddActivity}
+            isLoading={activitiesLoading}
+            title="Activity History"
+            description="All interactions with this lead"
+          />
         </div>
 
         {/* Sidebar */}
@@ -318,20 +260,4 @@ export default function LeadDetailPage() {
       </div>
     </AdminLayout>
   );
-}
-
-function getActivityLabel(type: string): string {
-  const labels: Record<string, string> = {
-    form_submit: 'Form submitted',
-    email_open: 'Email opened',
-    link_click: 'Link clicked',
-    status_change: 'Status changed',
-    note: 'Note',
-    call: 'Call',
-    page_visit: 'Page visit',
-    newsletter_subscribe: 'Newsletter subscribed',
-    deal_closed_won: 'Deal won',
-    deal_closed_lost: 'Deal lost',
-  };
-  return labels[type] || type;
 }
