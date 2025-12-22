@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
+import { Building } from 'lucide-react';
 import type { LeadStatus } from '@/lib/lead-utils';
 
 interface CreateLeadDialogProps {
@@ -24,23 +25,14 @@ export function CreateLeadDialog({
 }: CreateLeadDialogProps) {
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
-  const [company, setCompany] = useState('');
   const [phone, setPhone] = useState('');
   const [status, setStatus] = useState<LeadStatus>('lead');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
 
-  // Set default company name when dialog opens with a company context
-  useEffect(() => {
-    if (open && defaultCompanyName) {
-      setCompany(defaultCompanyName);
-    }
-  }, [open, defaultCompanyName]);
-
   const resetForm = () => {
     setEmail('');
     setName('');
-    setCompany(defaultCompanyName || '');
     setPhone('');
     setStatus('lead');
   };
@@ -75,7 +67,6 @@ export function CreateLeadDialog({
         .insert({
           email: email.toLowerCase(),
           name: name || null,
-          company: company || null,
           company_id: defaultCompanyId || null,
           phone: phone || null,
           source: 'manual',
@@ -93,7 +84,7 @@ export function CreateLeadDialog({
         lead_id: newLead.id,
         type: 'note',
         points: 0,
-        metadata: { text: defaultCompanyId ? `Lead created for company` : 'Lead created manually' },
+        metadata: { text: defaultCompanyId ? `Contact added to company` : 'Contact created manually' },
       });
 
       toast.success('Contact created');
@@ -117,10 +108,19 @@ export function CreateLeadDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Create New Contact</DialogTitle>
+          <DialogTitle>
+            {defaultCompanyName ? `Add Contact to ${defaultCompanyName}` : 'Create New Contact'}
+          </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {defaultCompanyName && (
+            <div className="flex items-center gap-2 p-3 rounded-md bg-muted/50 text-sm">
+              <Building className="h-4 w-4 text-muted-foreground" />
+              <span>Adding to: <strong>{defaultCompanyName}</strong></span>
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label htmlFor="email">Email *</Label>
             <Input
@@ -130,6 +130,7 @@ export function CreateLeadDialog({
               onChange={(e) => setEmail(e.target.value)}
               placeholder="name@company.com"
               required
+              autoFocus
             />
           </div>
 
@@ -140,16 +141,6 @@ export function CreateLeadDialog({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="John Doe"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="company">Company</Label>
-            <Input
-              id="company"
-              value={company}
-              onChange={(e) => setCompany(e.target.value)}
-              placeholder="Acme Inc"
             />
           </div>
 
