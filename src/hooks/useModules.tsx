@@ -20,6 +20,7 @@ export interface ModulesSettings {
   forms: ModuleConfig;
   leads: ModuleConfig;
   deals: ModuleConfig;
+  companies: ModuleConfig;
   products: ModuleConfig;
   contentApi: ModuleConfig;
   globalElements: ModuleConfig;
@@ -77,6 +78,13 @@ export const defaultModulesSettings: ModulesSettings = {
     icon: 'Briefcase',
     category: 'data',
   },
+  companies: {
+    enabled: true,
+    name: 'Companies',
+    description: 'Organization management with multiple contacts',
+    icon: 'Building2',
+    category: 'data',
+  },
   products: {
     enabled: true,
     name: 'Products',
@@ -117,6 +125,7 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/forms': 'forms',
   '/admin/leads': 'leads',
   '/admin/deals': 'deals',
+  '/admin/companies': 'companies',
   '/admin/products': 'products',
   '/admin/content-hub': 'contentApi',
   '/admin/global-blocks': 'globalElements',

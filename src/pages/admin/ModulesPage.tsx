@@ -13,6 +13,7 @@ import {
   Lock,
   UserCheck,
   Briefcase,
+  Building2,
   Package,
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
@@ -34,6 +35,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   Image,
   UserCheck,
   Briefcase,
+  Building2,
   Package,
 };
 

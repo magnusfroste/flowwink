@@ -323,6 +323,51 @@ export type Database = {
           },
         ]
       }
+      companies: {
+        Row: {
+          address: string | null
+          created_at: string
+          created_by: string | null
+          domain: string | null
+          id: string
+          industry: string | null
+          name: string
+          notes: string | null
+          phone: string | null
+          size: string | null
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          created_by?: string | null
+          domain?: string | null
+          id?: string
+          industry?: string | null
+          name: string
+          notes?: string | null
+          phone?: string | null
+          size?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          created_by?: string | null
+          domain?: string | null
+          id?: string
+          industry?: string | null
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          size?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
       deals: {
         Row: {
           closed_at: string | null
@@ -498,6 +543,7 @@ export type Database = {
           ai_summary: string | null
           assigned_to: string | null
           company: string | null
+          company_id: string | null
           converted_at: string | null
           created_at: string
           created_by: string | null
@@ -517,6 +563,7 @@ export type Database = {
           ai_summary?: string | null
           assigned_to?: string | null
           company?: string | null
+          company_id?: string | null
           converted_at?: string | null
           created_at?: string
           created_by?: string | null
@@ -536,6 +583,7 @@ export type Database = {
           ai_summary?: string | null
           assigned_to?: string | null
           company?: string | null
+          company_id?: string | null
           converted_at?: string | null
           created_at?: string
           created_by?: string | null
@@ -556,6 +604,13 @@ export type Database = {
             columns: ["assigned_to"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]

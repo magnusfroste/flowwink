@@ -19,6 +19,7 @@ import {
   Webhook,
   UserCheck,
   Briefcase,
+  Building2,
   Package,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -75,6 +76,7 @@ const navigationGroups: NavGroup[] = [
     items: [
       { name: "Leads", href: "/admin/leads", icon: UserCheck, moduleId: "leads" },
       { name: "Deals", href: "/admin/deals", icon: Briefcase, moduleId: "deals" },
+      { name: "Companies", href: "/admin/companies", icon: Building2, moduleId: "companies" },
       { name: "Products", href: "/admin/products", icon: Package, moduleId: "products" },
       { name: "Form Submissions", href: "/admin/forms", icon: Inbox, moduleId: "forms" },
       { name: "Newsletter", href: "/admin/newsletter", icon: Mail, moduleId: "newsletter" },
