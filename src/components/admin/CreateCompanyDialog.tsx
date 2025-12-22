@@ -5,8 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus } from 'lucide-react';
+import { Plus, Sparkles, Loader2 } from 'lucide-react';
 import { useCreateCompany } from '@/hooks/useCompanies';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const COMPANY_SIZES = [
   { value: '1-10', label: '1-10 anställda' },
@@ -46,8 +48,46 @@ export function CreateCompanyDialog({ trigger, onCreated }: CreateCompanyDialogP
   const [website, setWebsite] = useState('');
   const [address, setAddress] = useState('');
   const [notes, setNotes] = useState('');
+  const [isEnriching, setIsEnriching] = useState(false);
 
   const createCompany = useCreateCompany();
+
+  const handleEnrich = async () => {
+    if (!domain) {
+      toast.error('Ange en domän först');
+      return;
+    }
+
+    setIsEnriching(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('enrich-company', {
+        body: { domain }
+      });
+
+      if (error) throw error;
+
+      if (data?.success && data?.data) {
+        const enrichment = data.data;
+        
+        // Update fields with enriched data (only if currently empty)
+        if (enrichment.industry && !industry) setIndustry(enrichment.industry);
+        if (enrichment.size && !size) setSize(enrichment.size);
+        if (enrichment.phone && !phone) setPhone(enrichment.phone);
+        if (enrichment.website && !website) setWebsite(enrichment.website);
+        if (enrichment.address && !address) setAddress(enrichment.address);
+        if (enrichment.description && !notes) setNotes(enrichment.description);
+
+        toast.success('Företagsinformation hämtad');
+      } else {
+        toast.error('Kunde inte hämta företagsinformation');
+      }
+    } catch (error) {
+      console.error('Enrichment error:', error);
+      toast.error('Kunde inte hämta företagsinformation');
+    } finally {
+      setIsEnriching(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,25 +148,46 @@ export function CreateCompanyDialog({ trigger, onCreated }: CreateCompanyDialogP
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="domain">Domän</Label>
+          <div className="space-y-2">
+            <Label htmlFor="domain">Domän</Label>
+            <div className="flex gap-2">
               <Input
                 id="domain"
                 value={domain}
                 onChange={(e) => setDomain(e.target.value)}
                 placeholder="acme.se"
+                className="flex-1"
               />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleEnrich}
+                disabled={!domain || isEnriching}
+                className="shrink-0"
+              >
+                {isEnriching ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4 mr-1" />
+                    Berika
+                  </>
+                )}
+              </Button>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="website">Webbplats</Label>
-              <Input
-                id="website"
-                value={website}
-                onChange={(e) => setWebsite(e.target.value)}
-                placeholder="https://acme.se"
-              />
-            </div>
+            <p className="text-xs text-muted-foreground">
+              Ange domän och klicka "Berika" för att automatiskt hämta företagsinformation
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="website">Webbplats</Label>
+            <Input
+              id="website"
+              value={website}
+              onChange={(e) => setWebsite(e.target.value)}
+              placeholder="https://acme.se"
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">

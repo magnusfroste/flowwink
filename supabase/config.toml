@@ -59,3 +59,6 @@ verify_jwt = false
 
 [functions.qualify-lead]
 verify_jwt = true
+
+[functions.enrich-company]
+verify_jwt = true
