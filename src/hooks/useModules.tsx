@@ -18,6 +18,7 @@ export interface ModulesSettings {
   chat: ModuleConfig;
   newsletter: ModuleConfig;
   forms: ModuleConfig;
+  leads: ModuleConfig;
   contentApi: ModuleConfig;
   globalElements: ModuleConfig;
   mediaLibrary: ModuleConfig;
@@ -60,6 +61,13 @@ export const defaultModulesSettings: ModulesSettings = {
     icon: 'Inbox',
     category: 'data',
   },
+  leads: {
+    enabled: true,
+    name: 'Leads',
+    description: 'AI-driven lead-hantering med automatisk kvalificering',
+    icon: 'UserCheck',
+    category: 'data',
+  },
   contentApi: {
     enabled: false,
     name: 'Content Hub',
@@ -91,6 +99,7 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/chat': 'chat',
   '/admin/newsletter': 'newsletter',
   '/admin/forms': 'forms',
+  '/admin/leads': 'leads',
   '/admin/content-hub': 'contentApi',
   '/admin/global-blocks': 'globalElements',
   '/admin/media': 'mediaLibrary',
