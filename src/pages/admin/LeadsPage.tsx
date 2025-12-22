@@ -6,8 +6,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useLeads, useLeadStats } from '@/hooks/useLeads';
+import { useDealStats } from '@/hooks/useDeals';
+import { formatPrice } from '@/hooks/useProducts';
 import { getLeadStatusInfo, type LeadStatus } from '@/lib/lead-utils';
-import { Users, TrendingUp, UserCheck, AlertCircle, Sparkles, Plus } from 'lucide-react';
+import { Users, TrendingUp, UserCheck, AlertCircle, Sparkles, Plus, Briefcase, Target, Trophy, XCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
@@ -18,6 +20,7 @@ export default function LeadsPage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('pipeline');
   const { data: stats, isLoading: statsLoading } = useLeadStats();
+  const { data: dealStats, isLoading: dealStatsLoading } = useDealStats();
   const { data: leads, isLoading: leadsLoading } = useLeads();
   const { data: reviewLeads } = useLeads({ needsReview: true });
   const navigate = useNavigate();
@@ -67,6 +70,57 @@ export default function LeadsPage() {
           </Card>
         ))}
       </div>
+
+      {/* Deal Pipeline Stats */}
+      {dealStats && dealStats.totalPipeline > 0 && (
+        <Card className="mb-6 border-primary/20 bg-primary/5">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3 mb-4">
+              <Briefcase className="h-5 w-5 text-primary" />
+              <div>
+                <p className="font-medium">Deal Pipeline</p>
+                <p className="text-2xl font-bold text-primary">
+                  {dealStatsLoading ? '...' : formatPrice(dealStats.totalPipeline)}
+                </p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="flex items-center gap-2">
+                <Target className="h-4 w-4 text-blue-500" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Offert</p>
+                  <p className="font-medium">{formatPrice(dealStats.proposal.value)}</p>
+                  <p className="text-xs text-muted-foreground">{dealStats.proposal.count} deals</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-yellow-500" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Förhandling</p>
+                  <p className="font-medium">{formatPrice(dealStats.negotiation.value)}</p>
+                  <p className="text-xs text-muted-foreground">{dealStats.negotiation.count} deals</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Trophy className="h-4 w-4 text-green-500" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Vunna</p>
+                  <p className="font-medium">{formatPrice(dealStats.closed_won.value)}</p>
+                  <p className="text-xs text-muted-foreground">{dealStats.closed_won.count} deals</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <XCircle className="h-4 w-4 text-red-500" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Förlorade</p>
+                  <p className="font-medium">{formatPrice(dealStats.closed_lost.value)}</p>
+                  <p className="text-xs text-muted-foreground">{dealStats.closed_lost.count} deals</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Needs Review Alert */}
       {(reviewLeads?.length || 0) > 0 && (
