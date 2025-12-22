@@ -10,7 +10,9 @@ import {
   Image,
   Sparkles,
   Check,
-  Lock
+  Lock,
+  UserCheck,
+  Package,
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
@@ -29,12 +31,14 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   Database,
   LayoutGrid,
   Image,
+  UserCheck,
+  Package,
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
-  content: "Innehåll",
+  content: "Content",
   data: "Data",
-  communication: "Kommunikation",
+  communication: "Communication",
   system: "System",
 };
 
@@ -86,8 +90,8 @@ export default function ModulesPage() {
     <AdminLayout>
       <div className="space-y-8">
         <AdminPageHeader
-          title="Moduler"
-          description="Aktivera och inaktivera funktioner efter behov. Inaktiverade moduler döljs från sidofältet."
+          title="Modules"
+          description="Enable and disable features as needed. Disabled modules are hidden from the sidebar."
         />
 
         {/* Summary Card */}
@@ -99,7 +103,7 @@ export default function ModulesPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{enabledCount} / {totalCount}</p>
-                <p className="text-sm text-muted-foreground">moduler aktiva</p>
+                <p className="text-sm text-muted-foreground">modules active</p>
               </div>
             </div>
           </CardContent>
@@ -140,7 +144,7 @@ export default function ModulesPage() {
                             className="absolute -top-2 right-3 text-xs"
                           >
                             <Lock className="h-3 w-3 mr-1" />
-                            Kärna
+                            Core
                           </Badge>
                         )}
                         
@@ -180,7 +184,7 @@ export default function ModulesPage() {
                           {isEnabled && (
                             <div className="mt-3 flex items-center gap-1.5 text-xs text-primary">
                               <Check className="h-3.5 w-3.5" />
-                              <span>Aktiv</span>
+                              <span>Active</span>
                             </div>
                           )}
                         </CardContent>

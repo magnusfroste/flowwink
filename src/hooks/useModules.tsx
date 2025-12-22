@@ -19,6 +19,7 @@ export interface ModulesSettings {
   newsletter: ModuleConfig;
   forms: ModuleConfig;
   leads: ModuleConfig;
+  products: ModuleConfig;
   contentApi: ModuleConfig;
   globalElements: ModuleConfig;
   mediaLibrary: ModuleConfig;
@@ -68,6 +69,13 @@ export const defaultModulesSettings: ModulesSettings = {
     icon: 'UserCheck',
     category: 'data',
   },
+  products: {
+    enabled: true,
+    name: 'Products',
+    description: 'Product catalog for deals and services',
+    icon: 'Package',
+    category: 'data',
+  },
   contentApi: {
     enabled: false,
     name: 'Content Hub',
@@ -100,6 +108,7 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/newsletter': 'newsletter',
   '/admin/forms': 'forms',
   '/admin/leads': 'leads',
+  '/admin/products': 'products',
   '/admin/content-hub': 'contentApi',
   '/admin/global-blocks': 'globalElements',
   '/admin/media': 'mediaLibrary',
