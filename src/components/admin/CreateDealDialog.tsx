@@ -84,21 +84,21 @@ export function CreateDealDialog({ open, onOpenChange, leadId }: CreateDealDialo
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Skapa ny deal</DialogTitle>
+          <DialogTitle>Create New Deal</DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
-            <Label>Produkt</Label>
+            <Label>Product</Label>
             <Select
               value={selectedProductId}
               onValueChange={(value) => setValue('product_id', value)}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Välj produkt..." />
+                <SelectValue placeholder="Select product..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="custom">Custom deal (ingen produkt)</SelectItem>
+                <SelectItem value="custom">Custom deal (no product)</SelectItem>
                 {products.map((product) => (
                   <SelectItem key={product.id} value={product.id}>
                     {product.name} - {formatPrice(product.price_cents, product.currency)}
@@ -109,14 +109,14 @@ export function CreateDealDialog({ open, onOpenChange, leadId }: CreateDealDialo
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="value">Värde (SEK) *</Label>
+            <Label htmlFor="value">Value *</Label>
             <Input
               id="value"
               type="number"
               step="1"
               {...register('value', { 
-                required: 'Värde krävs',
-                min: { value: 0, message: 'Värde måste vara positivt' }
+                required: 'Value is required',
+                min: { value: 0, message: 'Value must be positive' }
               })}
               placeholder="9900"
             />
@@ -126,7 +126,7 @@ export function CreateDealDialog({ open, onOpenChange, leadId }: CreateDealDialo
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="expected_close">Förväntat close-datum</Label>
+            <Label htmlFor="expected_close">Expected Close Date</Label>
             <Input
               id="expected_close"
               type="date"
@@ -135,21 +135,21 @@ export function CreateDealDialog({ open, onOpenChange, leadId }: CreateDealDialo
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="notes">Anteckningar</Label>
+            <Label htmlFor="notes">Notes</Label>
             <Textarea
               id="notes"
               {...register('notes')}
-              placeholder="Detaljer om dealen..."
+              placeholder="Details about the deal..."
               rows={2}
             />
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Avbryt
+              Cancel
             </Button>
             <Button type="submit" disabled={createDeal.isPending}>
-              Skapa deal
+              Create Deal
             </Button>
           </div>
         </form>

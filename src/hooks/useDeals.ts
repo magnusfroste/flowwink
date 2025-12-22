@@ -90,11 +90,11 @@ export function useCreateDeal() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['deals'] });
       queryClient.invalidateQueries({ queryKey: ['deals', data.lead_id] });
-      toast.success('Deal skapad');
+      toast.success('Deal created');
     },
     onError: (error) => {
       console.error('Create deal error:', error);
-      toast.error('Kunde inte skapa deal');
+      toast.error('Could not create deal');
     },
   });
 }
@@ -160,11 +160,11 @@ export function useUpdateDeal() {
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['lead', data.lead_id] });
       queryClient.invalidateQueries({ queryKey: ['lead-activities', data.lead_id] });
-      toast.success('Deal uppdaterad');
+      toast.success('Deal updated');
     },
     onError: (error) => {
       console.error('Update deal error:', error);
-      toast.error('Kunde inte uppdatera deal');
+      toast.error('Could not update deal');
     },
   });
 }
@@ -204,10 +204,10 @@ export function useDealStats() {
 
 export function getDealStageInfo(stage: DealStage): { label: string; color: string } {
   const stages: Record<DealStage, { label: string; color: string }> = {
-    proposal: { label: 'Offert', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' },
-    negotiation: { label: 'Förhandling', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' },
-    closed_won: { label: 'Vunnen', color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' },
-    closed_lost: { label: 'Förlorad', color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' },
+    proposal: { label: 'Proposal', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' },
+    negotiation: { label: 'Negotiation', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' },
+    closed_won: { label: 'Won', color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' },
+    closed_lost: { label: 'Lost', color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' },
   };
   return stages[stage];
 }

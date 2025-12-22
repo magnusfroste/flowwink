@@ -53,14 +53,14 @@ export default function ProductsPage() {
   return (
     <AdminLayout>
       <AdminPageHeader
-        title="Produkter"
-        description="Hantera produkter och tjänster för dina deals"
+        title="Products"
+        description="Manage products and services for your deals"
       />
 
       <div className="flex justify-end mb-6">
         <Button onClick={() => { setEditingProduct(null); setDialogOpen(true); }}>
           <Plus className="h-4 w-4 mr-2" />
-          Ny produkt
+          New Product
         </Button>
       </div>
 
@@ -72,11 +72,11 @@ export default function ProductsPage() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Package className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium mb-2">Inga produkter ännu</h3>
-            <p className="text-muted-foreground mb-4">Skapa din första produkt för att börja</p>
+            <h3 className="text-lg font-medium mb-2">No products yet</h3>
+            <p className="text-muted-foreground mb-4">Create your first product to get started</p>
             <Button onClick={() => setDialogOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
-              Ny produkt
+              New Product
             </Button>
           </CardContent>
         </Card>
@@ -86,13 +86,13 @@ export default function ProductsPage() {
             <Card key={product.id} className={!product.is_active ? 'opacity-60' : ''}>
               <CardContent className="flex items-center justify-between py-4">
                 <div className="flex-1">
-                  <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3">
                     <h3 className="font-medium">{product.name}</h3>
                     <Badge variant={product.type === 'recurring' ? 'secondary' : 'outline'}>
-                      {product.type === 'recurring' ? 'Löpande' : 'Engång'}
+                      {product.type === 'recurring' ? 'Recurring' : 'One-time'}
                     </Badge>
                     {!product.is_active && (
-                      <Badge variant="outline" className="text-muted-foreground">Inaktiv</Badge>
+                      <Badge variant="outline" className="text-muted-foreground">Inactive</Badge>
                     )}
                   </div>
                   {product.description && (
@@ -101,10 +101,10 @@ export default function ProductsPage() {
                 </div>
                 
                 <div className="flex items-center gap-6">
-                  <div className="text-right">
+                <div className="text-right">
                     <p className="font-semibold">{formatPrice(product.price_cents, product.currency)}</p>
                     {product.type === 'recurring' && (
-                      <p className="text-xs text-muted-foreground">/månad</p>
+                      <p className="text-xs text-muted-foreground">/month</p>
                     )}
                   </div>
                   
@@ -136,15 +136,15 @@ export default function ProductsPage() {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Ta bort produkt?</AlertDialogTitle>
+            <AlertDialogTitle>Delete product?</AlertDialogTitle>
             <AlertDialogDescription>
-              Är du säker på att du vill ta bort "{productToDelete?.name}"? 
-              Befintliga deals behåller sitt värde men tappar produktkopplingen.
+              Are you sure you want to delete "{productToDelete?.name}"? 
+              Existing deals will keep their value but lose the product link.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Avbryt</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>Ta bort</AlertDialogAction>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

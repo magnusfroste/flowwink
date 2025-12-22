@@ -16,7 +16,6 @@ import {
   RefreshCw, User, Briefcase
 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
-import { sv } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
 const ACTIVITY_ICONS: Record<string, typeof Mail> = {
@@ -44,7 +43,7 @@ export default function LeadDetailPage() {
     return (
       <AdminLayout>
         <div className="flex items-center justify-center h-64">
-          <p>Laddar...</p>
+          <p>Loading...</p>
         </div>
       </AdminLayout>
     );
@@ -54,9 +53,9 @@ export default function LeadDetailPage() {
     return (
       <AdminLayout>
         <div className="flex flex-col items-center justify-center h-64 gap-4">
-          <p>Lead hittades inte</p>
+          <p>Lead not found</p>
           <Button onClick={() => navigate('/admin/leads')}>
-            Tillbaka till leads
+            Back to leads
           </Button>
         </div>
       </AdminLayout>
@@ -88,13 +87,13 @@ export default function LeadDetailPage() {
       <div className="mb-6">
         <Button variant="ghost" size="sm" onClick={() => navigate('/admin/leads')}>
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Tillbaka till leads
+          Back to leads
         </Button>
       </div>
       
       <AdminPageHeader
         title={lead.name || lead.email}
-        description={lead.company || 'Lead detaljer'}
+        description={lead.company || 'Lead details'}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -113,20 +112,20 @@ export default function LeadDetailPage() {
                     <SelectContent>
                       <SelectItem value="lead">Lead</SelectItem>
                       <SelectItem value="opportunity">Opportunity</SelectItem>
-                      <SelectItem value="customer">Kund</SelectItem>
-                      <SelectItem value="lost">Förlorad</SelectItem>
+                      <SelectItem value="customer">Customer</SelectItem>
+                      <SelectItem value="lost">Lost</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <Badge variant="outline" className="font-mono text-lg">
-                  {lead.score} poäng
+                  {lead.score} points
                 </Badge>
 
                 {lead.needs_review && (
                   <Badge variant="destructive" className="flex items-center gap-1">
                     <AlertCircle className="h-3 w-3" />
-                    Behöver granskning
+                    Needs Review
                   </Badge>
                 )}
 
@@ -138,7 +137,7 @@ export default function LeadDetailPage() {
                   className="ml-auto"
                 >
                   <Sparkles className="h-4 w-4 mr-2" />
-                  {qualifyLead.isPending ? 'Kvalificerar...' : 'AI-kvalificera'}
+                  {qualifyLead.isPending ? 'Qualifying...' : 'AI Qualify'}
                 </Button>
               </div>
             </CardContent>
@@ -150,14 +149,14 @@ export default function LeadDetailPage() {
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm flex items-center gap-2">
                   <Sparkles className="h-4 w-4" />
-                  AI-sammanfattning
+                  AI Summary
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-sm">{lead.ai_summary}</p>
                 {lead.ai_qualified_at && (
                   <p className="text-xs text-muted-foreground mt-2">
-                    Senast kvalificerad: {format(new Date(lead.ai_qualified_at), 'PPp', { locale: sv })}
+                    Last qualified: {format(new Date(lead.ai_qualified_at), 'PPp')}
                   </p>
                 )}
               </CardContent>
@@ -170,14 +169,14 @@ export default function LeadDetailPage() {
           {/* Add Note */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm">Lägg till anteckning</CardTitle>
+              <CardTitle className="text-sm">Add Note</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex gap-2">
                 <Textarea
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
-                  placeholder="Skriv en anteckning..."
+                  placeholder="Write a note..."
                   rows={2}
                   className="flex-1"
                 />
@@ -185,7 +184,7 @@ export default function LeadDetailPage() {
                   onClick={handleAddNote}
                   disabled={!note.trim() || addNote.isPending}
                 >
-                  Spara
+                  Save
                 </Button>
               </div>
             </CardContent>
@@ -194,12 +193,12 @@ export default function LeadDetailPage() {
           {/* Activity Timeline */}
           <Card>
             <CardHeader>
-              <CardTitle>Aktivitetshistorik</CardTitle>
-              <CardDescription>Alla interaktioner med denna lead</CardDescription>
+              <CardTitle>Activity History</CardTitle>
+              <CardDescription>All interactions with this lead</CardDescription>
             </CardHeader>
             <CardContent>
               {!activities?.length ? (
-                <p className="text-muted-foreground">Ingen aktivitet ännu</p>
+                <p className="text-muted-foreground">No activity yet</p>
               ) : (
                 <div className="space-y-4">
                   {activities.map((activity) => {
@@ -249,7 +248,7 @@ export default function LeadDetailPage() {
                           )}
                           
                           <p className="text-xs text-muted-foreground mt-1">
-                            {formatDistanceToNow(new Date(activity.created_at), { addSuffix: true, locale: sv })}
+                            {formatDistanceToNow(new Date(activity.created_at), { addSuffix: true })}
                           </p>
                         </div>
                       </div>
@@ -266,7 +265,7 @@ export default function LeadDetailPage() {
           {/* Contact Info */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm">Kontaktuppgifter</CardTitle>
+              <CardTitle className="text-sm">Contact Information</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex items-center gap-3">
@@ -295,7 +294,7 @@ export default function LeadDetailPage() {
               <div className="flex items-center gap-3">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm">
-                  Skapad {format(new Date(lead.created_at), 'PPP', { locale: sv })}
+                  Created {format(new Date(lead.created_at), 'PPP')}
                 </span>
               </div>
             </CardContent>
@@ -304,7 +303,7 @@ export default function LeadDetailPage() {
           {/* Source Info */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm">Källa</CardTitle>
+              <CardTitle className="text-sm">Source</CardTitle>
             </CardHeader>
             <CardContent>
               <Badge variant="secondary">{lead.source}</Badge>
@@ -323,16 +322,16 @@ export default function LeadDetailPage() {
 
 function getActivityLabel(type: string): string {
   const labels: Record<string, string> = {
-    form_submit: 'Formulär inskickat',
-    email_open: 'E-post öppnad',
-    link_click: 'Länk klickad',
-    status_change: 'Status ändrad',
-    note: 'Anteckning',
-    call: 'Samtal',
-    page_visit: 'Sidvisning',
-    newsletter_subscribe: 'Prenumererade på nyhetsbrev',
-    deal_closed_won: 'Deal vunnen',
-    deal_closed_lost: 'Deal förlorad',
+    form_submit: 'Form submitted',
+    email_open: 'Email opened',
+    link_click: 'Link clicked',
+    status_change: 'Status changed',
+    note: 'Note',
+    call: 'Call',
+    page_visit: 'Page visit',
+    newsletter_subscribe: 'Newsletter subscribed',
+    deal_closed_won: 'Deal won',
+    deal_closed_lost: 'Deal lost',
   };
   return labels[type] || type;
 }

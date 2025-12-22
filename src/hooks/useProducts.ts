@@ -73,11 +73,11 @@ export function useCreateProduct() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
-      toast.success('Produkt skapad');
+      toast.success('Product created');
     },
     onError: (error) => {
       console.error('Create product error:', error);
-      toast.error('Kunde inte skapa produkt');
+      toast.error('Could not create product');
     },
   });
 }
@@ -100,11 +100,11 @@ export function useUpdateProduct() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
       queryClient.invalidateQueries({ queryKey: ['product', data.id] });
-      toast.success('Produkt uppdaterad');
+      toast.success('Product updated');
     },
     onError: (error) => {
       console.error('Update product error:', error);
-      toast.error('Kunde inte uppdatera produkt');
+      toast.error('Could not update product');
     },
   });
 }
@@ -123,17 +123,17 @@ export function useDeleteProduct() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
-      toast.success('Produkt borttagen');
+      toast.success('Product deleted');
     },
     onError: (error) => {
       console.error('Delete product error:', error);
-      toast.error('Kunde inte ta bort produkt');
+      toast.error('Could not delete product');
     },
   });
 }
 
 export function formatPrice(cents: number, currency: string = 'SEK'): string {
-  return new Intl.NumberFormat('sv-SE', {
+  return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency,
     minimumFractionDigits: 0,

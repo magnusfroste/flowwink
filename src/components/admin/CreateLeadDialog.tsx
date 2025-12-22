@@ -27,7 +27,7 @@ export function CreateLeadDialog({ open, onOpenChange }: CreateLeadDialogProps) 
     e.preventDefault();
 
     if (!email || !email.includes('@')) {
-      toast.error('Ange en giltig e-postadress');
+      toast.error('Please enter a valid email address');
       return;
     }
 
@@ -42,7 +42,7 @@ export function CreateLeadDialog({ open, onOpenChange }: CreateLeadDialogProps) 
         .maybeSingle();
 
       if (existing) {
-        toast.error('En lead med denna e-postadress finns redan');
+        toast.error('A lead with this email already exists');
         setIsSubmitting(false);
         return;
       }
@@ -70,10 +70,10 @@ export function CreateLeadDialog({ open, onOpenChange }: CreateLeadDialogProps) 
         lead_id: newLead.id,
         type: 'note',
         points: 0,
-        metadata: { text: 'Lead skapad manuellt' },
+        metadata: { text: 'Lead created manually' },
       });
 
-      toast.success('Lead skapad');
+      toast.success('Lead created');
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['lead-stats'] });
       
@@ -86,7 +86,7 @@ export function CreateLeadDialog({ open, onOpenChange }: CreateLeadDialogProps) 
       onOpenChange(false);
     } catch (error) {
       console.error('Failed to create lead:', error);
-      toast.error('Kunde inte skapa lead');
+      toast.error('Could not create lead');
     } finally {
       setIsSubmitting(false);
     }
@@ -96,50 +96,50 @@ export function CreateLeadDialog({ open, onOpenChange }: CreateLeadDialogProps) 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Skapa ny lead</DialogTitle>
+          <DialogTitle>Create New Lead</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">E-post *</Label>
+            <Label htmlFor="email">Email *</Label>
             <Input
               id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="namn@foretag.se"
+              placeholder="name@company.com"
               required
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="name">Namn</Label>
+            <Label htmlFor="name">Name</Label>
             <Input
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Anna Andersson"
+              placeholder="John Doe"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="company">Företag</Label>
+            <Label htmlFor="company">Company</Label>
             <Input
               id="company"
               value={company}
               onChange={(e) => setCompany(e.target.value)}
-              placeholder="Företag AB"
+              placeholder="Acme Inc"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="phone">Telefon</Label>
+            <Label htmlFor="phone">Phone</Label>
             <Input
               id="phone"
               type="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              placeholder="070-123 45 67"
+              placeholder="+1 234 567 8900"
             />
           </div>
 
@@ -152,18 +152,18 @@ export function CreateLeadDialog({ open, onOpenChange }: CreateLeadDialogProps) 
               <SelectContent>
                 <SelectItem value="lead">Lead</SelectItem>
                 <SelectItem value="opportunity">Opportunity</SelectItem>
-                <SelectItem value="customer">Kund</SelectItem>
-                <SelectItem value="lost">Förlorad</SelectItem>
+                <SelectItem value="customer">Customer</SelectItem>
+                <SelectItem value="lost">Lost</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Avbryt
+              Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Skapar...' : 'Skapa lead'}
+              {isSubmitting ? 'Creating...' : 'Create Lead'}
             </Button>
           </DialogFooter>
         </form>

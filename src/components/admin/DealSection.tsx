@@ -14,7 +14,6 @@ import { useDeals, useUpdateDeal, getDealStageInfo, type DealStage } from '@/hoo
 import { formatPrice } from '@/hooks/useProducts';
 import { CreateDealDialog } from './CreateDealDialog';
 import { format } from 'date-fns';
-import { sv } from 'date-fns/locale';
 
 interface DealSectionProps {
   leadId: string;
@@ -61,15 +60,15 @@ export function DealSection({ leadId }: DealSectionProps) {
           </div>
           <Button size="sm" onClick={() => setDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-1" />
-            Ny deal
+            New Deal
           </Button>
         </CardHeader>
         <CardContent>
           {deals.length === 0 ? (
             <div className="text-center py-6 text-muted-foreground">
               <Briefcase className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p>Inga deals ännu</p>
-              <p className="text-sm">Skapa en deal för att börja följa affärsmöjligheten</p>
+              <p>No deals yet</p>
+              <p className="text-sm">Create a deal to start tracking the opportunity</p>
             </div>
           ) : (
             <div className="space-y-6">
@@ -77,7 +76,7 @@ export function DealSection({ leadId }: DealSectionProps) {
                 <div className="space-y-3">
                   <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                     <TrendingUp className="h-4 w-4" />
-                    Aktiva deals
+                    Active Deals
                   </h4>
                   {activeDeals.map((deal) => {
                     const stageInfo = getDealStageInfo(deal.stage);
@@ -100,10 +99,10 @@ export function DealSection({ leadId }: DealSectionProps) {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="proposal">Offert</SelectItem>
-                              <SelectItem value="negotiation">Förhandling</SelectItem>
-                              <SelectItem value="closed_won">Vunnen</SelectItem>
-                              <SelectItem value="closed_lost">Förlorad</SelectItem>
+                              <SelectItem value="proposal">Proposal</SelectItem>
+                              <SelectItem value="negotiation">Negotiation</SelectItem>
+                              <SelectItem value="closed_won">Won</SelectItem>
+                              <SelectItem value="closed_lost">Lost</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -111,7 +110,7 @@ export function DealSection({ leadId }: DealSectionProps) {
                         {deal.expected_close && (
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <Calendar className="h-4 w-4" />
-                            Förväntas stänga: {format(new Date(deal.expected_close), 'd MMM yyyy', { locale: sv })}
+                            Expected close: {format(new Date(deal.expected_close), 'MMM d, yyyy')}
                           </div>
                         )}
                         
@@ -126,7 +125,7 @@ export function DealSection({ leadId }: DealSectionProps) {
               
               {closedDeals.length > 0 && (
                 <div className="space-y-3">
-                  <h4 className="text-sm font-medium text-muted-foreground">Stängda deals</h4>
+                  <h4 className="text-sm font-medium text-muted-foreground">Closed Deals</h4>
                   {closedDeals.map((deal) => {
                     const stageInfo = getDealStageInfo(deal.stage);
                     return (
@@ -144,7 +143,7 @@ export function DealSection({ leadId }: DealSectionProps) {
                         </div>
                         {deal.closed_at && (
                           <p className="text-sm text-muted-foreground mt-2">
-                            Stängd {format(new Date(deal.closed_at), 'd MMM yyyy', { locale: sv })}
+                            Closed {format(new Date(deal.closed_at), 'MMM d, yyyy')}
                           </p>
                         )}
                       </div>
