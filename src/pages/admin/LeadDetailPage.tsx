@@ -6,17 +6,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from '@/components/ui/command';
 import { useLead, useLeadActivities, useUpdateLead, useAddLeadNote, useQualifyLead } from '@/hooks/useLeads';
-import { useCompanies } from '@/hooks/useCompanies';
+import { useCompanies, useCreateCompany } from '@/hooks/useCompanies';
 import { useAddLeadActivity, type ActivityType } from '@/hooks/useActivities';
 import { getLeadStatusInfo, type LeadStatus } from '@/lib/lead-utils';
 import { DealSection } from '@/components/admin/DealSection';
 import { ActivityTimeline } from '@/components/admin/ActivityTimeline';
 import { 
-  ArrowLeft, Mail, Phone, Building, Calendar, Sparkles, AlertCircle, Check, ChevronsUpDown, X
+  ArrowLeft, Mail, Phone, Building, Calendar, Sparkles, AlertCircle, Check, ChevronsUpDown, X, Plus
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -27,12 +28,16 @@ export default function LeadDetailPage() {
   const { data: lead, isLoading } = useLead(id);
   const { data: activities, isLoading: activitiesLoading } = useLeadActivities(id);
   const { data: companies } = useCompanies();
+  const createCompany = useCreateCompany();
   const updateLead = useUpdateLead();
   const addNote = useAddLeadNote();
   const qualifyLead = useQualifyLead();
   const addActivity = useAddLeadActivity();
   const [note, setNote] = useState('');
   const [companyOpen, setCompanyOpen] = useState(false);
+  const [showNewCompanyForm, setShowNewCompanyForm] = useState(false);
+  const [newCompanyName, setNewCompanyName] = useState('');
+  const [newCompanyDomain, setNewCompanyDomain] = useState('');
 
   if (isLoading) {
     return (
@@ -66,6 +71,33 @@ export default function LeadDetailPage() {
       company_id: companyId,
     });
     setCompanyOpen(false);
+    setShowNewCompanyForm(false);
+  };
+
+  const handleCreateCompany = async () => {
+    if (!newCompanyName.trim()) return;
+    
+    createCompany.mutate(
+      {
+        name: newCompanyName.trim(),
+        domain: newCompanyDomain.trim() || null,
+        industry: null,
+        size: null,
+        address: null,
+        phone: null,
+        website: null,
+        notes: null,
+        created_by: null,
+      },
+      {
+        onSuccess: (newCompany) => {
+          handleCompanyChange(newCompany.id);
+          setNewCompanyName('');
+          setNewCompanyDomain('');
+          setShowNewCompanyForm(false);
+        },
+      }
+    );
   };
 
   const handleStatusChange = (newStatus: LeadStatus) => {
@@ -259,35 +291,80 @@ export default function LeadDetailPage() {
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-64 p-0" align="start">
-                      <Command>
-                        <CommandInput placeholder="Search companies..." />
-                        <CommandList>
-                          <CommandEmpty>No company found.</CommandEmpty>
-                          <CommandGroup>
-                            {companies?.map((company) => (
+                    <PopoverContent className="w-72 p-0" align="start">
+                      {showNewCompanyForm ? (
+                        <div className="p-3 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium">New Company</span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0"
+                              onClick={() => setShowNewCompanyForm(false)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <Input
+                            placeholder="Company name *"
+                            value={newCompanyName}
+                            onChange={(e) => setNewCompanyName(e.target.value)}
+                            autoFocus
+                          />
+                          <Input
+                            placeholder="Domain (e.g. acme.com)"
+                            value={newCompanyDomain}
+                            onChange={(e) => setNewCompanyDomain(e.target.value)}
+                          />
+                          <Button
+                            className="w-full"
+                            size="sm"
+                            onClick={handleCreateCompany}
+                            disabled={!newCompanyName.trim() || createCompany.isPending}
+                          >
+                            {createCompany.isPending ? 'Creating...' : 'Create & Link'}
+                          </Button>
+                        </div>
+                      ) : (
+                        <Command>
+                          <CommandInput placeholder="Search companies..." />
+                          <CommandList>
+                            <CommandEmpty>No company found.</CommandEmpty>
+                            <CommandGroup>
+                              {companies?.map((company) => (
+                                <CommandItem
+                                  key={company.id}
+                                  value={company.name}
+                                  onSelect={() => handleCompanyChange(company.id)}
+                                >
+                                  <Check
+                                    className={cn(
+                                      "mr-2 h-4 w-4",
+                                      lead.company_id === company.id ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                  <div className="flex flex-col">
+                                    <span>{company.name}</span>
+                                    {company.domain && (
+                                      <span className="text-xs text-muted-foreground">{company.domain}</span>
+                                    )}
+                                  </div>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                            <CommandSeparator />
+                            <CommandGroup>
                               <CommandItem
-                                key={company.id}
-                                value={company.name}
-                                onSelect={() => handleCompanyChange(company.id)}
+                                onSelect={() => setShowNewCompanyForm(true)}
+                                className="text-primary"
                               >
-                                <Check
-                                  className={cn(
-                                    "mr-2 h-4 w-4",
-                                    lead.company_id === company.id ? "opacity-100" : "opacity-0"
-                                  )}
-                                />
-                                <div className="flex flex-col">
-                                  <span>{company.name}</span>
-                                  {company.domain && (
-                                    <span className="text-xs text-muted-foreground">{company.domain}</span>
-                                  )}
-                                </div>
+                                <Plus className="mr-2 h-4 w-4" />
+                                Create new company
                               </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      )}
                     </PopoverContent>
                   </Popover>
                   {lead.companies && (
