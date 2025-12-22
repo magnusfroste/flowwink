@@ -589,7 +589,6 @@ export type Database = {
           ai_qualified_at: string | null
           ai_summary: string | null
           assigned_to: string | null
-          company: string | null
           company_id: string | null
           converted_at: string | null
           created_at: string
@@ -609,7 +608,6 @@ export type Database = {
           ai_qualified_at?: string | null
           ai_summary?: string | null
           assigned_to?: string | null
-          company?: string | null
           company_id?: string | null
           converted_at?: string | null
           created_at?: string
@@ -629,7 +627,6 @@ export type Database = {
           ai_qualified_at?: string | null
           ai_summary?: string | null
           assigned_to?: string | null
-          company?: string | null
           company_id?: string | null
           converted_at?: string | null
           created_at?: string
