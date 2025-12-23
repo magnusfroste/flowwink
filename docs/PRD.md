@@ -677,7 +677,7 @@ För vårdorganisationer som kräver HIPAA:
 | Module | Priority | Synergy | Status |
 |--------|----------|---------|--------|
 | **Booking/Scheduling** | High | Newsletter (reminders), Webhooks (calendar sync) | Planned |
-| **Lead CRM** | Medium | Forms → Pipeline, Newsletter nurturing | Planned |
+| **Lead CRM** | Medium | Forms → Pipeline, Newsletter nurturing | Completed |
 | **Knowledge Base** | Medium | AI Chat context, structured FAQ | Planned |
 
 ### Fas 4: Enterprise (Future)
