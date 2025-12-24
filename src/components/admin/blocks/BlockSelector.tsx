@@ -35,6 +35,7 @@ import {
   MessageSquareQuote,
   Users,
   Building2,
+  TableProperties,
 } from 'lucide-react';
 import { ContentBlockType } from '@/types/cms';
 
@@ -164,6 +165,12 @@ const BLOCK_GROUPS: BlockGroup[] = [
         label: 'Logo Cloud',
         icon: <Building2 className="h-5 w-5" />,
         description: 'Partner or client logos in grid or carousel',
+      },
+      {
+        type: 'comparison',
+        label: 'Comparison',
+        icon: <TableProperties className="h-5 w-5" />,
+        description: 'Feature comparison table for plans',
       },
       {
         type: 'map',

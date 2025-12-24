@@ -14,7 +14,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { ContentBlock, ContentBlockType, HeroBlockData, TextBlockData, ImageBlockData, CTABlockData, ContactBlockData, LinkGridBlockData, TwoColumnBlockData, InfoBoxBlockData, AccordionBlockData, ArticleGridBlockData, YouTubeBlockData, QuoteBlockData, SeparatorBlockData, GalleryBlockData, StatsBlockData, ChatBlockData, MapBlockData, FormBlockData, PopupBlockData, BookingBlockData, PricingBlockData, TestimonialsBlockData, TeamBlockData, LogosBlockData, BlockSpacing, BlockAnimation } from '@/types/cms';
+import { ContentBlock, ContentBlockType, HeroBlockData, TextBlockData, ImageBlockData, CTABlockData, ContactBlockData, LinkGridBlockData, TwoColumnBlockData, InfoBoxBlockData, AccordionBlockData, ArticleGridBlockData, YouTubeBlockData, QuoteBlockData, SeparatorBlockData, GalleryBlockData, StatsBlockData, ChatBlockData, MapBlockData, FormBlockData, PopupBlockData, BookingBlockData, PricingBlockData, TestimonialsBlockData, TeamBlockData, LogosBlockData, ComparisonBlockData, BlockSpacing, BlockAnimation } from '@/types/cms';
 import { BlockWrapper } from './BlockWrapper';
 import { BlockSelector } from './BlockSelector';
 import { HeroBlockEditor } from './HeroBlockEditor';
@@ -42,6 +42,7 @@ import { PricingBlockEditor } from './PricingBlockEditor';
 import { TestimonialsBlockEditor } from './TestimonialsBlockEditor';
 import { TeamBlockEditor } from './TeamBlockEditor';
 import { LogosBlockEditor } from './LogosBlockEditor';
+import { ComparisonBlockEditor } from './ComparisonBlockEditor';
 import { TemplateEmptyState } from '@/components/admin/StarterTemplateSelector';
 import { StarterTemplate } from '@/data/starter-templates';
 
@@ -80,6 +81,7 @@ type BlockDataMap = {
   testimonials: TestimonialsBlockData;
   team: TeamBlockData;
   logos: LogosBlockData;
+  comparison: ComparisonBlockData;
 };
 
 const DEFAULT_BLOCK_DATA: BlockDataMap = {
@@ -184,6 +186,16 @@ const DEFAULT_BLOCK_DATA: BlockDataMap = {
     logoSize: 'md',
     autoplay: true,
     autoplaySpeed: 3,
+  },
+  comparison: {
+    title: 'Compare Plans',
+    subtitle: 'Find the perfect plan for your needs',
+    products: [],
+    features: [],
+    variant: 'default',
+    showPrices: true,
+    showButtons: true,
+    stickyHeader: false,
   },
 };
 
@@ -463,6 +475,14 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
         return (
           <LogosBlockEditor
             data={block.data as unknown as LogosBlockData}
+            onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+            isEditing={isEditing}
+          />
+        );
+      case 'comparison':
+        return (
+          <ComparisonBlockEditor
+            data={block.data as unknown as ComparisonBlockData}
             onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
             isEditing={isEditing}
           />
