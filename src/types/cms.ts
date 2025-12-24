@@ -91,6 +91,7 @@ export type ContentBlockType =
   | 'testimonials'
   | 'team'
   | 'logos'
+  | 'comparison'
   | 'footer'
   | 'header';
 
@@ -525,6 +526,37 @@ export interface LogosBlockData {
   logoSize?: 'sm' | 'md' | 'lg';
   autoplay?: boolean;
   autoplaySpeed?: number;
+}
+
+// Comparison table block data
+export type ComparisonCellValue = boolean | string;
+
+export interface ComparisonFeature {
+  id: string;
+  name: string;
+  values: ComparisonCellValue[]; // One value per product/plan
+}
+
+export interface ComparisonProduct {
+  id: string;
+  name: string;
+  price?: string;
+  period?: string;
+  description?: string;
+  highlighted?: boolean;
+  buttonText?: string;
+  buttonUrl?: string;
+}
+
+export interface ComparisonBlockData {
+  title?: string;
+  subtitle?: string;
+  products: ComparisonProduct[];
+  features: ComparisonFeature[];
+  variant?: 'default' | 'striped' | 'bordered';
+  showPrices?: boolean;
+  showButtons?: boolean;
+  stickyHeader?: boolean;
 }
 
 // Workflow actions
