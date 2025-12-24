@@ -19,3 +19,4 @@ export { FormBlock } from './FormBlock';
 export { NewsletterBlock } from './NewsletterBlock';
 export { PopupBlock } from './PopupBlock';
 export { BookingBlock } from './BookingBlock';
+export { PricingBlock } from './PricingBlock';

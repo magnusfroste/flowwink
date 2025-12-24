@@ -31,6 +31,7 @@ import {
   Mail,
   Megaphone,
   CalendarCheck,
+  CreditCard,
 } from 'lucide-react';
 import { ContentBlockType } from '@/types/cms';
 
@@ -195,6 +196,12 @@ const BLOCK_GROUPS: BlockGroup[] = [
         label: 'Booking',
         icon: <CalendarCheck className="h-5 w-5" />,
         description: 'Calendar embed or booking form',
+      },
+      {
+        type: 'pricing',
+        label: 'Pricing',
+        icon: <CreditCard className="h-5 w-5" />,
+        description: 'Pricing tiers and packages',
       },
     ],
   },

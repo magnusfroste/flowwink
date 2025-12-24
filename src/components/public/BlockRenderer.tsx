@@ -1,4 +1,4 @@
-import { ContentBlock, BlockSpacing, SpacingSize, AnimationType, PopupBlockData, BookingBlockData } from '@/types/cms';
+import { ContentBlock, BlockSpacing, SpacingSize, AnimationType, PopupBlockData, BookingBlockData, PricingBlockData } from '@/types/cms';
 import { AnimatedBlock } from './AnimatedBlock';
 import { cn } from '@/lib/utils';
 import {
@@ -23,6 +23,7 @@ import {
   NewsletterBlock,
   PopupBlock,
   BookingBlock,
+  PricingBlock,
 } from './blocks';
 import type {
   HeroBlockData,
@@ -137,6 +138,8 @@ export function BlockRenderer({ block, pageId, index = 0 }: BlockRendererProps) 
         return <PopupBlock data={block.data as unknown as PopupBlockData} />;
       case 'booking':
         return <BookingBlock data={block.data as unknown as BookingBlockData} blockId={block.id} pageId={pageId} />;
+      case 'pricing':
+        return <PricingBlock data={block.data as unknown as PricingBlockData} />;
       default:
         return null;
     }
