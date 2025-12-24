@@ -329,6 +329,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           domain: string | null
+          enriched_at: string | null
           id: string
           industry: string | null
           name: string
@@ -343,6 +344,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           domain?: string | null
+          enriched_at?: string | null
           id?: string
           industry?: string | null
           name: string
@@ -357,6 +359,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           domain?: string | null
+          enriched_at?: string | null
           id?: string
           industry?: string | null
           name?: string

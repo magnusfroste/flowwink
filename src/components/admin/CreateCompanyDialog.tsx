@@ -102,6 +102,7 @@ export function CreateCompanyDialog({ trigger, onCreated }: CreateCompanyDialogP
       address: address || null,
       notes: notes || null,
       created_by: null,
+      enriched_at: industry || size || phone || address ? new Date().toISOString() : null,
     });
 
     if (result) {

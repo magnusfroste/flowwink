@@ -15,6 +15,7 @@ export interface Company {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+  enriched_at: string | null;
 }
 
 export function useCompanies() {

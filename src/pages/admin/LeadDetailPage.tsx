@@ -136,6 +136,9 @@ export default function LeadDetailPage() {
   const handleCreateCompany = async () => {
     if (!newCompanyName.trim()) return;
     
+    // Check if we have enriched data
+    const hasEnrichedData = newCompanyIndustry || newCompanySize || newCompanyPhone || newCompanyAddress || newCompanyWebsite;
+    
     createCompany.mutate(
       {
         name: newCompanyName.trim(),
@@ -147,6 +150,7 @@ export default function LeadDetailPage() {
         website: newCompanyWebsite.trim() || null,
         notes: newCompanyNotes.trim() || null,
         created_by: null,
+        enriched_at: hasEnrichedData ? new Date().toISOString() : null,
       },
       {
         onSuccess: (newCompany) => {

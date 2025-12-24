@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Building2, Users, Search, ExternalLink, Globe, Phone } from 'lucide-react';
+import { Building2, Users, Search, ExternalLink, Globe, Phone, Sparkles } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useCompanies, useCompanyStats, useDeleteCompany } from '@/hooks/useCompanies';
 import { CreateCompanyDialog } from '@/components/admin/CreateCompanyDialog';
 import { format } from 'date-fns';
@@ -118,17 +119,31 @@ export default function CompaniesPage() {
                 {filteredCompanies?.map((company) => (
                   <TableRow key={company.id}>
                     <TableCell>
-                      <div className="flex flex-col">
-                        <Link 
-                          to={`/admin/companies/${company.id}`}
-                          className="font-medium hover:underline"
-                        >
-                          {company.name}
-                        </Link>
-                        {company.domain && (
-                          <span className="text-sm text-muted-foreground">
-                            {company.domain}
-                          </span>
+                      <div className="flex items-center gap-2">
+                        <div className="flex flex-col">
+                          <Link 
+                            to={`/admin/companies/${company.id}`}
+                            className="font-medium hover:underline"
+                          >
+                            {company.name}
+                          </Link>
+                          {company.domain && (
+                            <span className="text-sm text-muted-foreground">
+                              {company.domain}
+                            </span>
+                          )}
+                        </div>
+                        {company.enriched_at && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Sparkles className="h-4 w-4 text-primary/70" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Berikad {format(new Date(company.enriched_at), 'd MMM yyyy', { locale: sv })}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         )}
                       </div>
                     </TableCell>

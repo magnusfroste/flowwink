@@ -130,6 +130,7 @@ export default function CompanyDetailPage() {
           notes: enrichedData.description 
             ? `${company.notes ? company.notes + '\n\n' : ''}AI-beskrivning: ${enrichedData.description}`
             : company.notes,
+          enriched_at: new Date().toISOString(),
         });
         toast.success('Företagsinformation uppdaterad');
       } else {
@@ -367,9 +368,15 @@ export default function CompanyDetailPage() {
                     </div>
                   )}
                   
-                  <div className="pt-4 border-t text-xs text-muted-foreground">
+                  <div className="pt-4 border-t text-xs text-muted-foreground space-y-1">
                     <p>Skapat: {format(new Date(company.created_at), 'd MMMM yyyy', { locale: sv })}</p>
                     <p>Uppdaterat: {format(new Date(company.updated_at), 'd MMMM yyyy', { locale: sv })}</p>
+                    {company.enriched_at && (
+                      <p className="flex items-center gap-1 text-primary">
+                        <Sparkles className="h-3 w-3" />
+                        Berikad: {format(new Date(company.enriched_at), 'd MMMM yyyy', { locale: sv })}
+                      </p>
+                    )}
                   </div>
                 </>
               )}
