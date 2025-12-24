@@ -29,6 +29,7 @@ import {
   MapPin,
   FileText,
   Mail,
+  Megaphone,
 } from 'lucide-react';
 import { ContentBlockType } from '@/types/cms';
 
@@ -181,6 +182,12 @@ const BLOCK_GROUPS: BlockGroup[] = [
         label: 'Newsletter',
         icon: <Mail className="h-5 w-5" />,
         description: 'Email subscription form',
+      },
+      {
+        type: 'popup',
+        label: 'Popup',
+        icon: <Megaphone className="h-5 w-5" />,
+        description: 'Promotional popup with triggers',
       },
     ],
   },

@@ -1,4 +1,4 @@
-import { ContentBlock, BlockSpacing, SpacingSize, AnimationType } from '@/types/cms';
+import { ContentBlock, BlockSpacing, SpacingSize, AnimationType, PopupBlockData } from '@/types/cms';
 import { AnimatedBlock } from './AnimatedBlock';
 import { cn } from '@/lib/utils';
 import {
@@ -21,6 +21,7 @@ import {
   MapBlock,
   FormBlock,
   NewsletterBlock,
+  PopupBlock,
 } from './blocks';
 import type {
   HeroBlockData,
@@ -131,6 +132,8 @@ export function BlockRenderer({ block, pageId, index = 0 }: BlockRendererProps) 
         return <FormBlock data={block.data as unknown as FormBlockData} blockId={block.id} pageId={pageId} />;
       case 'newsletter':
         return <NewsletterBlock data={block.data as Record<string, unknown>} />;
+      case 'popup':
+        return <PopupBlock data={block.data as unknown as PopupBlockData} />;
       default:
         return null;
     }

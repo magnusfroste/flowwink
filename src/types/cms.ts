@@ -85,6 +85,7 @@ export type ContentBlockType =
   | 'map'
   | 'form'
   | 'newsletter'
+  | 'popup'
   | 'footer'
   | 'header';
 
@@ -376,6 +377,30 @@ export interface MapBlockData {
   rounded: boolean;
   // Privacy
   loadOnConsent?: boolean;
+}
+
+// Popup block data
+export type PopupTrigger = 'scroll' | 'time' | 'exit-intent';
+
+export interface PopupBlockData {
+  // Content
+  title: string;
+  content: string;
+  image?: string;
+  buttonText?: string;
+  buttonUrl?: string;
+  secondaryButtonText?: string;
+  // Trigger settings
+  trigger: PopupTrigger;
+  scrollPercentage?: number; // 0-100, for scroll trigger
+  delaySeconds?: number; // for time trigger
+  // Display settings
+  showOnce?: boolean; // Only show once per session
+  cookieDays?: number; // Days to remember dismissal
+  // Styling
+  size: 'sm' | 'md' | 'lg';
+  position: 'center' | 'bottom-right' | 'bottom-left';
+  overlayDark?: boolean;
 }
 
 // Workflow actions

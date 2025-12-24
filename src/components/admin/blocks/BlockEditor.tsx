@@ -14,7 +14,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { ContentBlock, ContentBlockType, HeroBlockData, TextBlockData, ImageBlockData, CTABlockData, ContactBlockData, LinkGridBlockData, TwoColumnBlockData, InfoBoxBlockData, AccordionBlockData, ArticleGridBlockData, YouTubeBlockData, QuoteBlockData, SeparatorBlockData, GalleryBlockData, StatsBlockData, ChatBlockData, MapBlockData, FormBlockData, BlockSpacing, BlockAnimation } from '@/types/cms';
+import { ContentBlock, ContentBlockType, HeroBlockData, TextBlockData, ImageBlockData, CTABlockData, ContactBlockData, LinkGridBlockData, TwoColumnBlockData, InfoBoxBlockData, AccordionBlockData, ArticleGridBlockData, YouTubeBlockData, QuoteBlockData, SeparatorBlockData, GalleryBlockData, StatsBlockData, ChatBlockData, MapBlockData, FormBlockData, PopupBlockData, BlockSpacing, BlockAnimation } from '@/types/cms';
 import { BlockWrapper } from './BlockWrapper';
 import { BlockSelector } from './BlockSelector';
 import { HeroBlockEditor } from './HeroBlockEditor';
@@ -36,6 +36,7 @@ import { ChatBlockEditor } from './ChatBlockEditor';
 import { MapBlockEditor } from './MapBlockEditor';
 import { FormBlockEditor } from './FormBlockEditor';
 import { NewsletterBlockEditor } from './NewsletterBlockEditor';
+import { PopupBlockEditor } from './PopupBlockEditor';
 import { TemplateEmptyState } from '@/components/admin/StarterTemplateSelector';
 import { StarterTemplate } from '@/data/starter-templates';
 
@@ -68,6 +69,7 @@ type BlockDataMap = {
   map: MapBlockData;
   form: FormBlockData;
   newsletter: NewsletterBlockData;
+  popup: PopupBlockData;
 };
 
 const DEFAULT_BLOCK_DATA: BlockDataMap = {
@@ -107,6 +109,18 @@ const DEFAULT_BLOCK_DATA: BlockDataMap = {
     successMessage: 'Thanks for subscribing! Please check your email to confirm.',
     variant: 'default',
     showNameField: false,
+  },
+  popup: {
+    title: 'Special Offer!',
+    content: 'Sign up today and get 20% off your first order.',
+    trigger: 'time',
+    delaySeconds: 5,
+    scrollPercentage: 50,
+    showOnce: true,
+    cookieDays: 7,
+    size: 'md',
+    position: 'center',
+    overlayDark: true,
   },
 };
 
@@ -340,6 +354,14 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
           <NewsletterBlockEditor
             data={block.data as unknown as NewsletterBlockData}
             onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+          />
+        );
+      case 'popup':
+        return (
+          <PopupBlockEditor
+            data={block.data as unknown as PopupBlockData}
+            onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+            isEditing={isEditing}
           />
         );
       default:
