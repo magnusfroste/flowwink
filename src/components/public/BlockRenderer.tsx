@@ -1,4 +1,4 @@
-import { ContentBlock, BlockSpacing, SpacingSize } from '@/types/cms';
+import { ContentBlock, BlockSpacing, SpacingSize, AnimationType } from '@/types/cms';
 import { AnimatedBlock } from './AnimatedBlock';
 import { cn } from '@/lib/utils';
 import {
@@ -81,9 +81,15 @@ function getSpacingClasses(spacing?: BlockSpacing): string {
 }
 
 export function BlockRenderer({ block, pageId, index = 0 }: BlockRendererProps) {
-  // Hero blocks don't get animated - they're above the fold
-  const skipAnimation = block.type === 'hero' || block.type === 'separator';
   const spacingClasses = getSpacingClasses(block.spacing);
+  
+  // Get animation settings from block or use defaults
+  const animationType: AnimationType = block.animation?.type || 'fade-up';
+  const animationSpeed = block.animation?.speed || 'normal';
+  const animationDelay = block.animation?.delay ?? (index * 100);
+  
+  // Hero and separator blocks skip animation by default unless explicitly set
+  const skipAnimation = (block.type === 'hero' || block.type === 'separator') && !block.animation?.type;
   
   const renderBlock = () => {
     switch (block.type) {
@@ -137,12 +143,17 @@ export function BlockRenderer({ block, pageId, index = 0 }: BlockRendererProps) 
     <div className={spacingClasses}>{content}</div>
   ) : content;
 
-  if (skipAnimation) {
+  // Skip animation for hero/separator unless explicitly configured
+  if (skipAnimation || animationType === 'none') {
     return wrappedContent;
   }
 
   return (
-    <AnimatedBlock animation="fade-up" delay={index * 100}>
+    <AnimatedBlock 
+      animation={animationType} 
+      speed={animationSpeed}
+      delay={animationDelay}
+    >
       {wrappedContent}
     </AnimatedBlock>
   );

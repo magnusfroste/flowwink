@@ -14,7 +14,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { ContentBlock, ContentBlockType, HeroBlockData, TextBlockData, ImageBlockData, CTABlockData, ContactBlockData, LinkGridBlockData, TwoColumnBlockData, InfoBoxBlockData, AccordionBlockData, ArticleGridBlockData, YouTubeBlockData, QuoteBlockData, SeparatorBlockData, GalleryBlockData, StatsBlockData, ChatBlockData, MapBlockData, FormBlockData, BlockSpacing } from '@/types/cms';
+import { ContentBlock, ContentBlockType, HeroBlockData, TextBlockData, ImageBlockData, CTABlockData, ContactBlockData, LinkGridBlockData, TwoColumnBlockData, InfoBoxBlockData, AccordionBlockData, ArticleGridBlockData, YouTubeBlockData, QuoteBlockData, SeparatorBlockData, GalleryBlockData, StatsBlockData, ChatBlockData, MapBlockData, FormBlockData, BlockSpacing, BlockAnimation } from '@/types/cms';
 import { BlockWrapper } from './BlockWrapper';
 import { BlockSelector } from './BlockSelector';
 import { HeroBlockEditor } from './HeroBlockEditor';
@@ -166,6 +166,17 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
       onChange(
         blocks.map((block) =>
           block.id === blockId ? { ...block, spacing } : block
+        )
+      );
+    },
+    [blocks, onChange]
+  );
+
+  const handleUpdateBlockAnimation = useCallback(
+    (blockId: string, animation: BlockAnimation) => {
+      onChange(
+        blocks.map((block) =>
+          block.id === blockId ? { ...block, animation } : block
         )
       );
     },
@@ -357,6 +368,7 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
               }
               onDelete={() => handleDeleteBlock(block.id)}
               onSpacingChange={(spacing) => handleUpdateBlockSpacing(block.id, spacing)}
+              onAnimationChange={(animation) => handleUpdateBlockAnimation(block.id, animation)}
               canEdit={canEdit}
             >
               {renderBlockContent(block, editingBlockId === block.id)}

@@ -2,9 +2,10 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Trash2, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ContentBlock, ContentBlockType, BlockSpacing } from '@/types/cms';
+import { ContentBlock, ContentBlockType, BlockSpacing, BlockAnimation } from '@/types/cms';
 import { cn } from '@/lib/utils';
 import { BlockSpacingControl, getSpacingClasses } from './BlockSpacingControl';
+import { BlockAnimationControl } from './BlockAnimationControl';
 
 const BLOCK_LABELS: Record<ContentBlockType, string> = {
   hero: 'Hero',
@@ -37,6 +38,7 @@ interface BlockWrapperProps {
   onEdit: () => void;
   onDelete: () => void;
   onSpacingChange?: (spacing: BlockSpacing) => void;
+  onAnimationChange?: (animation: BlockAnimation) => void;
   canEdit: boolean;
 }
 
@@ -47,6 +49,7 @@ export function BlockWrapper({
   onEdit,
   onDelete,
   onSpacingChange,
+  onAnimationChange,
   canEdit,
 }: BlockWrapperProps) {
   const {
@@ -107,6 +110,12 @@ export function BlockWrapper({
             <BlockSpacingControl
               spacing={block.spacing}
               onChange={onSpacingChange}
+            />
+          )}
+          {onAnimationChange && (
+            <BlockAnimationControl
+              animation={block.animation}
+              onChange={onAnimationChange}
             />
           )}
           <Button

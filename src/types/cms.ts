@@ -201,11 +201,22 @@ export interface BlockSpacing {
   marginBottom?: SpacingSize;
 }
 
+// Block animation configuration
+export type AnimationType = 'none' | 'fade-up' | 'fade-in' | 'slide-up' | 'scale-in' | 'slide-left' | 'slide-right';
+export type AnimationSpeed = 'fast' | 'normal' | 'slow';
+
+export interface BlockAnimation {
+  type: AnimationType;
+  speed?: AnimationSpeed;
+  delay?: number; // in ms
+}
+
 export interface ContentBlock {
   id: string;
   type: ContentBlockType;
   data: Record<string, unknown>;
   spacing?: BlockSpacing;
+  animation?: BlockAnimation;
 }
 
 export interface HeroBlockData {
