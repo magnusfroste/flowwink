@@ -20,13 +20,17 @@ import {
   Pencil,
   Save,
   X,
-  Plus
+  Plus,
+  Sparkles,
+  Loader2
 } from 'lucide-react';
 import { useCompany, useCompanyLeads, useUpdateCompany, useDeleteCompany } from '@/hooks/useCompanies';
 import { CreateLeadDialog } from '@/components/admin/CreateLeadDialog';
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import { getLeadStatusInfo } from '@/lib/lead-utils';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -48,6 +52,7 @@ export default function CompanyDetailPage() {
   const deleteCompany = useDeleteCompany();
   
   const [isEditing, setIsEditing] = useState(false);
+  const [isEnriching, setIsEnriching] = useState(false);
   const [createLeadOpen, setCreateLeadOpen] = useState(false);
   const [editForm, setEditForm] = useState({
     name: '',
@@ -96,6 +101,46 @@ export default function CompanyDetailPage() {
     if (!id) return;
     await deleteCompany.mutateAsync(id);
     navigate('/admin/companies');
+  };
+
+  const handleEnrich = async () => {
+    if (!company?.domain) {
+      toast.error('Ingen domän angiven för detta företag');
+      return;
+    }
+    
+    setIsEnriching(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('enrich-company', {
+        body: { domain: company.domain }
+      });
+      
+      if (error) throw error;
+      
+      if (data?.success && data?.data) {
+        const enrichedData = data.data;
+        
+        await updateCompany.mutateAsync({
+          id: company.id,
+          industry: enrichedData.industry || company.industry,
+          size: enrichedData.size || company.size,
+          phone: enrichedData.phone || company.phone,
+          address: enrichedData.address || company.address,
+          website: enrichedData.website || company.website,
+          notes: enrichedData.description 
+            ? `${company.notes ? company.notes + '\n\n' : ''}AI-beskrivning: ${enrichedData.description}`
+            : company.notes,
+        });
+        toast.success('Företagsinformation uppdaterad');
+      } else {
+        toast.error('Kunde inte hämta företagsinformation');
+      }
+    } catch (error) {
+      console.error('Enrichment failed:', error);
+      toast.error('Kunde inte hämta företagsinformation');
+    } finally {
+      setIsEnriching(false);
+    }
   };
 
   if (companyLoading) {
@@ -155,6 +200,19 @@ export default function CompanyDetailPage() {
               </>
             ) : (
               <>
+                <Button 
+                  variant="outline" 
+                  onClick={handleEnrich}
+                  disabled={isEnriching || !company.domain}
+                  title={!company.domain ? 'Lägg till en domän för att kunna berika' : undefined}
+                >
+                  {isEnriching ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4 mr-2" />
+                  )}
+                  Berika
+                </Button>
                 <Button variant="outline" onClick={handleEdit}>
                   <Pencil className="h-4 w-4 mr-2" />
                   Redigera
