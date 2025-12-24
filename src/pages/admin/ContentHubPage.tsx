@@ -8,7 +8,8 @@ import {
   LayoutTemplate, PanelTop, PanelBottom, Columns2, Minus, Type, 
   ChevronDown, AlertCircle, Quote, LayoutGrid, Image, Images, 
   Youtube, Grid3X3, MousePointerClick, Phone, ClipboardList, 
-  Bot, MailPlus, MapPin, BarChart3,
+  Bot, MailPlus, MapPin, BarChart3, CalendarCheck, CreditCard,
+  MessageCircle, Users, Building, Columns3, BellRing,
   type LucideIcon
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -68,6 +69,14 @@ const BLOCK_TYPES: BlockType[] = [
   { type: "chat", name: "AI Chat", category: "Interaction", icon: Bot },
   { type: "newsletter", name: "Newsletter", category: "Interaction", icon: MailPlus },
   { type: "map", name: "Map", category: "Interaction", icon: MapPin },
+  { type: "booking", name: "Booking", category: "Interaction", icon: CalendarCheck },
+  { type: "popup", name: "Popup", category: "Interaction", icon: BellRing },
+  // Marketing
+  { type: "pricing", name: "Pricing", category: "Marketing", icon: CreditCard },
+  { type: "testimonials", name: "Testimonials", category: "Marketing", icon: MessageCircle },
+  { type: "team", name: "Team", category: "Marketing", icon: Users },
+  { type: "logos", name: "Logo Cloud", category: "Marketing", icon: Building },
+  { type: "comparison", name: "Comparison", category: "Marketing", icon: Columns3 },
   // Data
   { type: "stats", name: "Statistics", category: "Data", icon: BarChart3 },
 ];
@@ -481,7 +490,7 @@ export default async function Home() {
           </CardHeader>
           <CardContent className="space-y-6">
             {(() => {
-              const categories = ["Layout", "Content", "Media", "Navigation", "Interaction", "Data"];
+              const categories = ["Layout", "Content", "Media", "Navigation", "Interaction", "Marketing", "Data"];
               return categories.map(category => {
                 const blocksInCategory = BLOCK_TYPES.filter(b => b.category === category);
                 if (blocksInCategory.length === 0) return null;
