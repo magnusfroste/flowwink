@@ -2,8 +2,9 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Trash2, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ContentBlock, ContentBlockType } from '@/types/cms';
+import { ContentBlock, ContentBlockType, BlockSpacing } from '@/types/cms';
 import { cn } from '@/lib/utils';
+import { BlockSpacingControl, getSpacingClasses } from './BlockSpacingControl';
 
 const BLOCK_LABELS: Record<ContentBlockType, string> = {
   hero: 'Hero',
@@ -35,6 +36,7 @@ interface BlockWrapperProps {
   isEditing: boolean;
   onEdit: () => void;
   onDelete: () => void;
+  onSpacingChange?: (spacing: BlockSpacing) => void;
   canEdit: boolean;
 }
 
@@ -44,6 +46,7 @@ export function BlockWrapper({
   isEditing,
   onEdit,
   onDelete,
+  onSpacingChange,
   canEdit,
 }: BlockWrapperProps) {
   const {
@@ -59,6 +62,8 @@ export function BlockWrapper({
     transform: CSS.Transform.toString(transform),
     transition,
   };
+
+  const spacingClasses = getSpacingClasses(block.spacing);
 
   return (
     <div
@@ -98,6 +103,12 @@ export function BlockWrapper({
           >
             <Settings className="h-3.5 w-3.5" />
           </Button>
+          {onSpacingChange && (
+            <BlockSpacingControl
+              spacing={block.spacing}
+              onChange={onSpacingChange}
+            />
+          )}
           <Button
             variant="outline"
             size="icon"
@@ -109,8 +120,8 @@ export function BlockWrapper({
         </div>
       )}
 
-      {/* Block Content */}
-      <div className="p-2">{children}</div>
+      {/* Block Content with spacing applied */}
+      <div className={cn('p-2', spacingClasses)}>{children}</div>
     </div>
   );
 }

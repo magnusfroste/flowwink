@@ -191,10 +191,21 @@ export interface FooterLegalLink {
   enabled: boolean;
 }
 
+// Block spacing configuration
+export type SpacingSize = 'none' | 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+
+export interface BlockSpacing {
+  paddingTop?: SpacingSize;
+  paddingBottom?: SpacingSize;
+  marginTop?: SpacingSize;
+  marginBottom?: SpacingSize;
+}
+
 export interface ContentBlock {
   id: string;
   type: ContentBlockType;
   data: Record<string, unknown>;
+  spacing?: BlockSpacing;
 }
 
 export interface HeroBlockData {

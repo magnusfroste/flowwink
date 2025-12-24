@@ -14,7 +14,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { ContentBlock, ContentBlockType, HeroBlockData, TextBlockData, ImageBlockData, CTABlockData, ContactBlockData, LinkGridBlockData, TwoColumnBlockData, InfoBoxBlockData, AccordionBlockData, ArticleGridBlockData, YouTubeBlockData, QuoteBlockData, SeparatorBlockData, GalleryBlockData, StatsBlockData, ChatBlockData, MapBlockData, FormBlockData } from '@/types/cms';
+import { ContentBlock, ContentBlockType, HeroBlockData, TextBlockData, ImageBlockData, CTABlockData, ContactBlockData, LinkGridBlockData, TwoColumnBlockData, InfoBoxBlockData, AccordionBlockData, ArticleGridBlockData, YouTubeBlockData, QuoteBlockData, SeparatorBlockData, GalleryBlockData, StatsBlockData, ChatBlockData, MapBlockData, FormBlockData, BlockSpacing } from '@/types/cms';
 import { BlockWrapper } from './BlockWrapper';
 import { BlockSelector } from './BlockSelector';
 import { HeroBlockEditor } from './HeroBlockEditor';
@@ -155,6 +155,17 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
       onChange(
         blocks.map((block) =>
           block.id === blockId ? { ...block, data } : block
+        )
+      );
+    },
+    [blocks, onChange]
+  );
+
+  const handleUpdateBlockSpacing = useCallback(
+    (blockId: string, spacing: BlockSpacing) => {
+      onChange(
+        blocks.map((block) =>
+          block.id === blockId ? { ...block, spacing } : block
         )
       );
     },
@@ -345,6 +356,7 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
                 setEditingBlockId(editingBlockId === block.id ? null : block.id)
               }
               onDelete={() => handleDeleteBlock(block.id)}
+              onSpacingChange={(spacing) => handleUpdateBlockSpacing(block.id, spacing)}
               canEdit={canEdit}
             >
               {renderBlockContent(block, editingBlockId === block.id)}

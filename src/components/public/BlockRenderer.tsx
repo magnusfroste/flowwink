@@ -1,5 +1,6 @@
-import { ContentBlock } from '@/types/cms';
+import { ContentBlock, BlockSpacing, SpacingSize } from '@/types/cms';
 import { AnimatedBlock } from './AnimatedBlock';
+import { cn } from '@/lib/utils';
 import {
   HeroBlock,
   TextBlock,
@@ -48,9 +49,41 @@ interface BlockRendererProps {
   index?: number;
 }
 
+// Utility function to convert spacing to Tailwind classes for public rendering
+function getSpacingClasses(spacing?: BlockSpacing): string {
+  if (!spacing) return '';
+  
+  const classes: string[] = [];
+  
+  const spacingMap: Record<SpacingSize, string> = {
+    none: '0',
+    xs: '2',
+    sm: '4',
+    md: '8',
+    lg: '12',
+    xl: '16',
+  };
+  
+  if (spacing.paddingTop && spacing.paddingTop !== 'none') {
+    classes.push(`pt-${spacingMap[spacing.paddingTop]}`);
+  }
+  if (spacing.paddingBottom && spacing.paddingBottom !== 'none') {
+    classes.push(`pb-${spacingMap[spacing.paddingBottom]}`);
+  }
+  if (spacing.marginTop && spacing.marginTop !== 'none') {
+    classes.push(`mt-${spacingMap[spacing.marginTop]}`);
+  }
+  if (spacing.marginBottom && spacing.marginBottom !== 'none') {
+    classes.push(`mb-${spacingMap[spacing.marginBottom]}`);
+  }
+  
+  return classes.join(' ');
+}
+
 export function BlockRenderer({ block, pageId, index = 0 }: BlockRendererProps) {
   // Hero blocks don't get animated - they're above the fold
   const skipAnimation = block.type === 'hero' || block.type === 'separator';
+  const spacingClasses = getSpacingClasses(block.spacing);
   
   const renderBlock = () => {
     switch (block.type) {
@@ -97,13 +130,20 @@ export function BlockRenderer({ block, pageId, index = 0 }: BlockRendererProps) 
     }
   };
 
+  const content = renderBlock();
+  
+  // Wrap with spacing if any is applied
+  const wrappedContent = spacingClasses ? (
+    <div className={spacingClasses}>{content}</div>
+  ) : content;
+
   if (skipAnimation) {
-    return renderBlock();
+    return wrappedContent;
   }
 
   return (
     <AnimatedBlock animation="fade-up" delay={index * 100}>
-      {renderBlock()}
+      {wrappedContent}
     </AnimatedBlock>
   );
 }
