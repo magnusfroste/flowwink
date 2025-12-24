@@ -87,6 +87,7 @@ export type ContentBlockType =
   | 'newsletter'
   | 'popup'
   | 'booking'
+  | 'pricing'
   | 'footer'
   | 'header';
 
@@ -424,6 +425,31 @@ export interface BookingBlockData {
   showDatePicker?: boolean;
   // Styling
   variant?: 'default' | 'card' | 'minimal';
+}
+
+// Pricing block data
+export interface PricingTier {
+  id: string;
+  name: string;
+  price: string;
+  period?: string; // e.g., "/month", "/year"
+  description?: string;
+  features: string[];
+  buttonText?: string;
+  buttonUrl?: string;
+  highlighted?: boolean;
+  badge?: string; // e.g., "Popular", "Best Value"
+}
+
+export interface PricingBlockData {
+  title?: string;
+  subtitle?: string;
+  tiers: PricingTier[];
+  columns?: 2 | 3 | 4;
+  variant?: 'default' | 'cards' | 'compact';
+  showToggle?: boolean;
+  monthlyLabel?: string;
+  yearlyLabel?: string;
 }
 
 // Workflow actions
