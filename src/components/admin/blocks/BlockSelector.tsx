@@ -34,6 +34,7 @@ import {
   CreditCard,
   MessageSquareQuote,
   Users,
+  Building2,
 } from 'lucide-react';
 import { ContentBlockType } from '@/types/cms';
 
@@ -157,6 +158,12 @@ const BLOCK_GROUPS: BlockGroup[] = [
         label: 'Team',
         icon: <Users className="h-5 w-5" />,
         description: 'Staff profiles with roles and social links',
+      },
+      {
+        type: 'logos',
+        label: 'Logo Cloud',
+        icon: <Building2 className="h-5 w-5" />,
+        description: 'Partner or client logos in grid or carousel',
       },
       {
         type: 'map',

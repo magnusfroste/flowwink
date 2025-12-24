@@ -90,6 +90,7 @@ export type ContentBlockType =
   | 'pricing'
   | 'testimonials'
   | 'team'
+  | 'logos'
   | 'footer'
   | 'header';
 
@@ -504,6 +505,26 @@ export interface TeamBlockData {
   variant?: 'default' | 'cards' | 'compact';
   showBio?: boolean;
   showSocial?: boolean;
+}
+
+// Logo cloud block data
+export interface LogoItem {
+  id: string;
+  name: string;
+  logo: string;
+  url?: string;
+}
+
+export interface LogosBlockData {
+  title?: string;
+  subtitle?: string;
+  logos: LogoItem[];
+  columns?: 3 | 4 | 5 | 6;
+  layout?: 'grid' | 'carousel' | 'scroll';
+  variant?: 'default' | 'grayscale' | 'bordered';
+  logoSize?: 'sm' | 'md' | 'lg';
+  autoplay?: boolean;
+  autoplaySpeed?: number;
 }
 
 // Workflow actions
