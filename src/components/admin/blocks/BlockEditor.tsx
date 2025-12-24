@@ -14,7 +14,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { ContentBlock, ContentBlockType, HeroBlockData, TextBlockData, ImageBlockData, CTABlockData, ContactBlockData, LinkGridBlockData, TwoColumnBlockData, InfoBoxBlockData, AccordionBlockData, ArticleGridBlockData, YouTubeBlockData, QuoteBlockData, SeparatorBlockData, GalleryBlockData, StatsBlockData, ChatBlockData, MapBlockData, FormBlockData, PopupBlockData, BookingBlockData, PricingBlockData, TestimonialsBlockData, TeamBlockData, BlockSpacing, BlockAnimation } from '@/types/cms';
+import { ContentBlock, ContentBlockType, HeroBlockData, TextBlockData, ImageBlockData, CTABlockData, ContactBlockData, LinkGridBlockData, TwoColumnBlockData, InfoBoxBlockData, AccordionBlockData, ArticleGridBlockData, YouTubeBlockData, QuoteBlockData, SeparatorBlockData, GalleryBlockData, StatsBlockData, ChatBlockData, MapBlockData, FormBlockData, PopupBlockData, BookingBlockData, PricingBlockData, TestimonialsBlockData, TeamBlockData, LogosBlockData, BlockSpacing, BlockAnimation } from '@/types/cms';
 import { BlockWrapper } from './BlockWrapper';
 import { BlockSelector } from './BlockSelector';
 import { HeroBlockEditor } from './HeroBlockEditor';
@@ -41,6 +41,7 @@ import { BookingBlockEditor } from './BookingBlockEditor';
 import { PricingBlockEditor } from './PricingBlockEditor';
 import { TestimonialsBlockEditor } from './TestimonialsBlockEditor';
 import { TeamBlockEditor } from './TeamBlockEditor';
+import { LogosBlockEditor } from './LogosBlockEditor';
 import { TemplateEmptyState } from '@/components/admin/StarterTemplateSelector';
 import { StarterTemplate } from '@/data/starter-templates';
 
@@ -78,6 +79,7 @@ type BlockDataMap = {
   pricing: PricingBlockData;
   testimonials: TestimonialsBlockData;
   team: TeamBlockData;
+  logos: LogosBlockData;
 };
 
 const DEFAULT_BLOCK_DATA: BlockDataMap = {
@@ -171,6 +173,17 @@ const DEFAULT_BLOCK_DATA: BlockDataMap = {
     variant: 'cards',
     showBio: true,
     showSocial: true,
+  },
+  logos: {
+    title: 'Trusted By',
+    subtitle: '',
+    logos: [],
+    columns: 5,
+    layout: 'grid',
+    variant: 'grayscale',
+    logoSize: 'md',
+    autoplay: true,
+    autoplaySpeed: 3,
   },
 };
 
@@ -442,6 +455,14 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
         return (
           <TeamBlockEditor
             data={block.data as unknown as TeamBlockData}
+            onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+            isEditing={isEditing}
+          />
+        );
+      case 'logos':
+        return (
+          <LogosBlockEditor
+            data={block.data as unknown as LogosBlockData}
             onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
             isEditing={isEditing}
           />
