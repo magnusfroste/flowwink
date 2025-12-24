@@ -33,6 +33,7 @@ import {
   CalendarCheck,
   CreditCard,
   MessageSquareQuote,
+  Users,
 } from 'lucide-react';
 import { ContentBlockType } from '@/types/cms';
 
@@ -150,6 +151,12 @@ const BLOCK_GROUPS: BlockGroup[] = [
         label: 'Testimonials',
         icon: <MessageSquareQuote className="h-5 w-5" />,
         description: 'Customer reviews with ratings',
+      },
+      {
+        type: 'team',
+        label: 'Team',
+        icon: <Users className="h-5 w-5" />,
+        description: 'Staff profiles with roles and social links',
       },
       {
         type: 'map',

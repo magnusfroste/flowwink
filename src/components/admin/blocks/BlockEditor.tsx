@@ -14,7 +14,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { ContentBlock, ContentBlockType, HeroBlockData, TextBlockData, ImageBlockData, CTABlockData, ContactBlockData, LinkGridBlockData, TwoColumnBlockData, InfoBoxBlockData, AccordionBlockData, ArticleGridBlockData, YouTubeBlockData, QuoteBlockData, SeparatorBlockData, GalleryBlockData, StatsBlockData, ChatBlockData, MapBlockData, FormBlockData, PopupBlockData, BookingBlockData, PricingBlockData, TestimonialsBlockData, BlockSpacing, BlockAnimation } from '@/types/cms';
+import { ContentBlock, ContentBlockType, HeroBlockData, TextBlockData, ImageBlockData, CTABlockData, ContactBlockData, LinkGridBlockData, TwoColumnBlockData, InfoBoxBlockData, AccordionBlockData, ArticleGridBlockData, YouTubeBlockData, QuoteBlockData, SeparatorBlockData, GalleryBlockData, StatsBlockData, ChatBlockData, MapBlockData, FormBlockData, PopupBlockData, BookingBlockData, PricingBlockData, TestimonialsBlockData, TeamBlockData, BlockSpacing, BlockAnimation } from '@/types/cms';
 import { BlockWrapper } from './BlockWrapper';
 import { BlockSelector } from './BlockSelector';
 import { HeroBlockEditor } from './HeroBlockEditor';
@@ -40,6 +40,7 @@ import { PopupBlockEditor } from './PopupBlockEditor';
 import { BookingBlockEditor } from './BookingBlockEditor';
 import { PricingBlockEditor } from './PricingBlockEditor';
 import { TestimonialsBlockEditor } from './TestimonialsBlockEditor';
+import { TeamBlockEditor } from './TeamBlockEditor';
 import { TemplateEmptyState } from '@/components/admin/StarterTemplateSelector';
 import { StarterTemplate } from '@/data/starter-templates';
 
@@ -76,6 +77,7 @@ type BlockDataMap = {
   booking: BookingBlockData;
   pricing: PricingBlockData;
   testimonials: TestimonialsBlockData;
+  team: TeamBlockData;
 };
 
 const DEFAULT_BLOCK_DATA: BlockDataMap = {
@@ -159,6 +161,16 @@ const DEFAULT_BLOCK_DATA: BlockDataMap = {
     variant: 'cards',
     autoplay: true,
     autoplaySpeed: 5,
+  },
+  team: {
+    title: 'Meet Our Team',
+    subtitle: 'The people behind our success',
+    members: [],
+    columns: 3,
+    layout: 'grid',
+    variant: 'cards',
+    showBio: true,
+    showSocial: true,
   },
 };
 
@@ -422,6 +434,14 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
         return (
           <TestimonialsBlockEditor
             data={block.data as unknown as TestimonialsBlockData}
+            onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+            isEditing={isEditing}
+          />
+        );
+      case 'team':
+        return (
+          <TeamBlockEditor
+            data={block.data as unknown as TeamBlockData}
             onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
             isEditing={isEditing}
           />

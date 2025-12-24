@@ -89,6 +89,7 @@ export type ContentBlockType =
   | 'booking'
   | 'pricing'
   | 'testimonials'
+  | 'team'
   | 'footer'
   | 'header';
 
@@ -475,6 +476,34 @@ export interface TestimonialsBlockData {
   variant?: 'default' | 'cards' | 'minimal';
   autoplay?: boolean;
   autoplaySpeed?: number; // in seconds
+}
+
+// Team members block data
+export interface TeamMemberSocial {
+  linkedin?: string;
+  twitter?: string;
+  email?: string;
+  website?: string;
+}
+
+export interface TeamMember {
+  id: string;
+  name: string;
+  role: string;
+  bio?: string;
+  photo?: string;
+  social?: TeamMemberSocial;
+}
+
+export interface TeamBlockData {
+  title?: string;
+  subtitle?: string;
+  members: TeamMember[];
+  columns?: 2 | 3 | 4;
+  layout?: 'grid' | 'carousel';
+  variant?: 'default' | 'cards' | 'compact';
+  showBio?: boolean;
+  showSocial?: boolean;
 }
 
 // Workflow actions
