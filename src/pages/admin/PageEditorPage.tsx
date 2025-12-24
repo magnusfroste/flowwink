@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Send, Check, X, Loader2, ExternalLink, Eye, Clock, Undo2, Redo2 } from 'lucide-react';
+import { ArrowLeft, Save, Send, Check, X, Loader2, ExternalLink, Eye, Clock, Undo2, Redo2, Monitor, Smartphone, Tablet } from 'lucide-react';
 import { format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 import { AdminLayout } from '@/components/admin/AdminLayout';
@@ -19,7 +19,10 @@ import { useUndoRedo } from '@/hooks/useUndoRedo';
 import { useUndoRedoKeyboard } from '@/hooks/useUndoRedoKeyboard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { ContentBlock, PageMeta } from '@/types/cms';
+
+type PreviewMode = 'desktop' | 'tablet' | 'mobile';
 
 export default function PageEditorPage() {
   const { id } = useParams<{ id: string }>();
@@ -35,7 +38,7 @@ export default function PageEditorPage() {
   const [meta, setMeta] = useState<PageMeta>({});
   const [hasChanges, setHasChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-
+  const [previewMode, setPreviewMode] = useState<PreviewMode>('desktop');
   // Undo/Redo for blocks
   const {
     present: blocks,
@@ -202,6 +205,39 @@ export default function PageEditorPage() {
               </div>
             </div>
             <div className="flex items-center gap-3">
+              {/* Preview mode toggle */}
+              <ToggleGroup 
+                type="single" 
+                value={previewMode} 
+                onValueChange={(value) => value && setPreviewMode(value as PreviewMode)}
+                className="border rounded-md p-0.5"
+              >
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <ToggleGroupItem value="desktop" size="sm" className="h-7 w-7 p-0">
+                      <Monitor className="h-3.5 w-3.5" />
+                    </ToggleGroupItem>
+                  </TooltipTrigger>
+                  <TooltipContent>Desktop</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <ToggleGroupItem value="tablet" size="sm" className="h-7 w-7 p-0">
+                      <Tablet className="h-3.5 w-3.5" />
+                    </ToggleGroupItem>
+                  </TooltipTrigger>
+                  <TooltipContent>Tablet</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <ToggleGroupItem value="mobile" size="sm" className="h-7 w-7 p-0">
+                      <Smartphone className="h-3.5 w-3.5" />
+                    </ToggleGroupItem>
+                  </TooltipTrigger>
+                  <TooltipContent>Mobile</TooltipContent>
+                </Tooltip>
+              </ToggleGroup>
+
               <PageSettingsDialog 
                 meta={meta} 
                 onMetaChange={handleMetaChange}
@@ -227,7 +263,15 @@ export default function PageEditorPage() {
 
         {/* Block Editor - scrollable area */}
         <div className="flex-1 min-h-0 overflow-auto p-8 bg-background">
-          <div className="max-w-3xl mx-auto pb-4">
+          <div 
+            className={`mx-auto pb-4 transition-all duration-300 ${
+              previewMode === 'mobile' 
+                ? 'max-w-[375px] border-x border-dashed border-border' 
+                : previewMode === 'tablet' 
+                  ? 'max-w-[768px] border-x border-dashed border-border' 
+                  : 'max-w-3xl'
+            }`}
+          >
             <BlockEditor
               blocks={blocks}
               onChange={handleBlocksChange}
