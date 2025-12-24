@@ -14,7 +14,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { ContentBlock, ContentBlockType, HeroBlockData, TextBlockData, ImageBlockData, CTABlockData, ContactBlockData, LinkGridBlockData, TwoColumnBlockData, InfoBoxBlockData, AccordionBlockData, ArticleGridBlockData, YouTubeBlockData, QuoteBlockData, SeparatorBlockData, GalleryBlockData, StatsBlockData, ChatBlockData, MapBlockData, FormBlockData, PopupBlockData, BlockSpacing, BlockAnimation } from '@/types/cms';
+import { ContentBlock, ContentBlockType, HeroBlockData, TextBlockData, ImageBlockData, CTABlockData, ContactBlockData, LinkGridBlockData, TwoColumnBlockData, InfoBoxBlockData, AccordionBlockData, ArticleGridBlockData, YouTubeBlockData, QuoteBlockData, SeparatorBlockData, GalleryBlockData, StatsBlockData, ChatBlockData, MapBlockData, FormBlockData, PopupBlockData, BookingBlockData, BlockSpacing, BlockAnimation } from '@/types/cms';
 import { BlockWrapper } from './BlockWrapper';
 import { BlockSelector } from './BlockSelector';
 import { HeroBlockEditor } from './HeroBlockEditor';
@@ -37,6 +37,7 @@ import { MapBlockEditor } from './MapBlockEditor';
 import { FormBlockEditor } from './FormBlockEditor';
 import { NewsletterBlockEditor } from './NewsletterBlockEditor';
 import { PopupBlockEditor } from './PopupBlockEditor';
+import { BookingBlockEditor } from './BookingBlockEditor';
 import { TemplateEmptyState } from '@/components/admin/StarterTemplateSelector';
 import { StarterTemplate } from '@/data/starter-templates';
 
@@ -70,6 +71,7 @@ type BlockDataMap = {
   form: FormBlockData;
   newsletter: NewsletterBlockData;
   popup: PopupBlockData;
+  booking: BookingBlockData;
 };
 
 const DEFAULT_BLOCK_DATA: BlockDataMap = {
@@ -121,6 +123,19 @@ const DEFAULT_BLOCK_DATA: BlockDataMap = {
     size: 'md',
     position: 'center',
     overlayDark: true,
+  },
+  booking: {
+    title: 'Book an Appointment',
+    description: 'Schedule a time that works for you.',
+    mode: 'embed',
+    provider: 'calendly',
+    embedUrl: '',
+    height: 'md',
+    submitButtonText: 'Request Appointment',
+    successMessage: "Thank you! We'll contact you to confirm your appointment.",
+    showPhoneField: true,
+    showDatePicker: true,
+    variant: 'card',
   },
 };
 
@@ -360,6 +375,14 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
         return (
           <PopupBlockEditor
             data={block.data as unknown as PopupBlockData}
+            onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+            isEditing={isEditing}
+          />
+        );
+      case 'booking':
+        return (
+          <BookingBlockEditor
+            data={block.data as unknown as BookingBlockData}
             onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
             isEditing={isEditing}
           />

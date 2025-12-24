@@ -18,3 +18,4 @@ export { MapBlock } from './MapBlock';
 export { FormBlock } from './FormBlock';
 export { NewsletterBlock } from './NewsletterBlock';
 export { PopupBlock } from './PopupBlock';
+export { BookingBlock } from './BookingBlock';

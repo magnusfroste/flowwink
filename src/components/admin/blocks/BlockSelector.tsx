@@ -30,6 +30,7 @@ import {
   FileText,
   Mail,
   Megaphone,
+  CalendarCheck,
 } from 'lucide-react';
 import { ContentBlockType } from '@/types/cms';
 
@@ -188,6 +189,12 @@ const BLOCK_GROUPS: BlockGroup[] = [
         label: 'Popup',
         icon: <Megaphone className="h-5 w-5" />,
         description: 'Promotional popup with triggers',
+      },
+      {
+        type: 'booking',
+        label: 'Booking',
+        icon: <CalendarCheck className="h-5 w-5" />,
+        description: 'Calendar embed or booking form',
       },
     ],
   },

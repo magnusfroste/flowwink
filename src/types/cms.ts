@@ -86,6 +86,7 @@ export type ContentBlockType =
   | 'form'
   | 'newsletter'
   | 'popup'
+  | 'booking'
   | 'footer'
   | 'header';
 
@@ -401,6 +402,28 @@ export interface PopupBlockData {
   size: 'sm' | 'md' | 'lg';
   position: 'center' | 'bottom-right' | 'bottom-left';
   overlayDark?: boolean;
+}
+
+// Booking block data
+export type BookingProvider = 'calendly' | 'cal' | 'hubspot' | 'custom';
+
+export interface BookingBlockData {
+  // Content
+  title?: string;
+  description?: string;
+  // Mode
+  mode: 'embed' | 'form';
+  // Embed settings
+  provider?: BookingProvider;
+  embedUrl?: string;
+  height?: 'sm' | 'md' | 'lg' | 'xl';
+  // Form mode settings
+  submitButtonText?: string;
+  successMessage?: string;
+  showPhoneField?: boolean;
+  showDatePicker?: boolean;
+  // Styling
+  variant?: 'default' | 'card' | 'minimal';
 }
 
 // Workflow actions
