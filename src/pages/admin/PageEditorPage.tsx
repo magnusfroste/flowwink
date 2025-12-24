@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Send, Check, X, Loader2, ExternalLink, Eye, Clock } from 'lucide-react';
+import { ArrowLeft, Save, Send, Check, X, Loader2, ExternalLink, Eye, Clock, Undo2, Redo2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 import { AdminLayout } from '@/components/admin/AdminLayout';
@@ -15,7 +15,10 @@ import { usePage, useUpdatePage, useUpdatePageStatus } from '@/hooks/usePages';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { useUnsavedChanges, UnsavedChangesDialog } from '@/hooks/useUnsavedChanges';
+import { useUndoRedo } from '@/hooks/useUndoRedo';
+import { useUndoRedoKeyboard } from '@/hooks/useUndoRedoKeyboard';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ContentBlock, PageMeta } from '@/types/cms';
 
 export default function PageEditorPage() {
@@ -29,22 +32,35 @@ export default function PageEditorPage() {
   const updateStatus = useUpdatePageStatus();
   
   const [title, setTitle] = useState('');
-  const [blocks, setBlocks] = useState<ContentBlock[]>([]);
   const [meta, setMeta] = useState<PageMeta>({});
   const [hasChanges, setHasChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Undo/Redo for blocks
+  const {
+    present: blocks,
+    set: setBlocks,
+    undo,
+    redo,
+    reset: resetBlocks,
+    canUndo,
+    canRedo,
+  } = useUndoRedo<ContentBlock[]>({ initialValue: [], maxHistory: 50 });
+
+  // Keyboard shortcuts for undo/redo
+  useUndoRedoKeyboard({ undo, redo, canUndo, canRedo });
 
   const { blocker } = useUnsavedChanges({ hasChanges });
 
   useEffect(() => {
     if (page) {
       setTitle(page.title);
-      // Deep clone to ensure we have fresh data
-      setBlocks(JSON.parse(JSON.stringify(page.content_json || [])));
+      // Reset undo/redo history with fresh data
+      resetBlocks(JSON.parse(JSON.stringify(page.content_json || [])));
       setMeta(JSON.parse(JSON.stringify(page.meta_json || {})));
       setHasChanges(false);
     }
-  }, [page?.id, page?.updated_at]);
+  }, [page?.id, page?.updated_at, resetBlocks]);
 
   const handleBlocksChange = useCallback((newBlocks: ContentBlock[]) => {
     setBlocks(newBlocks);
@@ -228,6 +244,39 @@ export default function PageEditorPage() {
               {hasChanges && <span className="text-sm text-muted-foreground">Unsaved changes</span>}
             </div>
             <div className="flex items-center gap-3">
+              {/* Undo/Redo buttons */}
+              {canEdit && (
+                <div className="flex items-center gap-1 mr-2">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={undo}
+                        disabled={!canUndo}
+                        className="h-8 w-8"
+                      >
+                        <Undo2 className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Undo (Ctrl+Z)</TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={redo}
+                        disabled={!canRedo}
+                        className="h-8 w-8"
+                      >
+                        <Redo2 className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Redo (Ctrl+Shift+Z)</TooltipContent>
+                  </Tooltip>
+                </div>
+              )}
               {canEdit && (
                 <Button variant="outline" onClick={handleSave} disabled={isSaving || !hasChanges}>
                   {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}

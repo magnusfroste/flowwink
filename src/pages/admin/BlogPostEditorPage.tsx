@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Save, ArrowLeft, Send, Check, Star, StarOff, Eye, Settings2 } from "lucide-react";
+import { Save, ArrowLeft, Send, Check, Star, StarOff, Eye, Settings2, Undo2, Redo2 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { Button } from "@/components/ui/button";
@@ -26,10 +26,13 @@ import {
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { BlockEditor } from "@/components/admin/blocks/BlockEditor";
 import { ImagePickerField } from "@/components/admin/ImagePickerField";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { useUndoRedo } from "@/hooks/useUndoRedo";
+import { useUndoRedoKeyboard } from "@/hooks/useUndoRedoKeyboard";
 import {
   useBlogPost,
   useCreateBlogPost,
@@ -73,7 +76,6 @@ export default function BlogPostEditorPage() {
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
   const [excerpt, setExcerpt] = useState("");
-  const [content, setContent] = useState<ContentBlock[]>([]);
   const [featuredImage, setFeaturedImage] = useState("");
   const [featuredImageAlt, setFeaturedImageAlt] = useState("");
   const [authorId, setAuthorId] = useState<string>("");
@@ -86,6 +88,20 @@ export default function BlogPostEditorPage() {
   
   const [hasChanges, setHasChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Undo/Redo for content blocks
+  const {
+    present: content,
+    set: setContent,
+    undo,
+    redo,
+    reset: resetContent,
+    canUndo,
+    canRedo,
+  } = useUndoRedo<ContentBlock[]>({ initialValue: [], maxHistory: 50 });
+
+  // Keyboard shortcuts for undo/redo
+  useUndoRedoKeyboard({ undo, redo, canUndo, canRedo });
   
   // Load post data
   useEffect(() => {
@@ -93,7 +109,7 @@ export default function BlogPostEditorPage() {
       setTitle(post.title);
       setSlug(post.slug);
       setExcerpt(post.excerpt || "");
-      setContent(structuredClone(post.content_json));
+      resetContent(structuredClone(post.content_json));
       setFeaturedImage(post.featured_image || "");
       setFeaturedImageAlt(post.featured_image_alt || "");
       setAuthorId(post.author_id || "");
@@ -262,6 +278,40 @@ export default function BlogPostEditorPage() {
                 </Button>
               )}
               
+              {/* Undo/Redo buttons */}
+              {canEdit && (
+                <div className="flex items-center gap-1">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={undo}
+                        disabled={!canUndo}
+                        className="h-8 w-8"
+                      >
+                        <Undo2 className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Undo (Ctrl+Z)</TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={redo}
+                        disabled={!canRedo}
+                        className="h-8 w-8"
+                      >
+                        <Redo2 className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Redo (Ctrl+Shift+Z)</TooltipContent>
+                  </Tooltip>
+                </div>
+              )}
+
               <Sheet>
                 <SheetTrigger asChild>
                   <Button variant="outline">
