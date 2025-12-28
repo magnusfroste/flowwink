@@ -8,9 +8,12 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Building2, Users, Search, ExternalLink, Globe, Phone, Sparkles } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Building2, Users, Search, Globe, Phone, Sparkles, Download, Upload, MoreVertical } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useCompanies, useCompanyStats, useDeleteCompany } from '@/hooks/useCompanies';
+import { useExportCompanies, useImportCompanies } from '@/hooks/useCsvImportExport';
+import { CsvImportDialog } from '@/components/admin/CsvImportDialog';
 import { CreateCompanyDialog } from '@/components/admin/CreateCompanyDialog';
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
@@ -28,9 +31,12 @@ import {
 
 export default function CompaniesPage() {
   const [search, setSearch] = useState('');
+  const [showImportDialog, setShowImportDialog] = useState(false);
   const { data: companies, isLoading } = useCompanies();
   const { data: stats } = useCompanyStats();
   const deleteCompany = useDeleteCompany();
+  const exportCompanies = useExportCompanies();
+  const importCompanies = useImportCompanies();
 
   const filteredCompanies = companies?.filter((company) =>
     company.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -38,14 +44,52 @@ export default function CompaniesPage() {
     company.industry?.toLowerCase().includes(search.toLowerCase())
   );
 
+  const handleExport = () => {
+    if (companies && companies.length > 0) {
+      exportCompanies(companies);
+    }
+  };
+
+  const handleImport = async (file: File) => {
+    return await importCompanies.mutateAsync(file);
+  };
+
   return (
     <AdminLayout>
       <AdminPageHeader
         title="Företag"
         description="Hantera företag och organisationer i ditt CRM"
       >
-        <CreateCompanyDialog />
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleExport} disabled={!companies?.length}>
+                <Download className="h-4 w-4 mr-2" />
+                Exportera CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShowImportDialog(true)}>
+                <Upload className="h-4 w-4 mr-2" />
+                Importera CSV
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <CreateCompanyDialog />
+        </div>
       </AdminPageHeader>
+
+      <CsvImportDialog
+        open={showImportDialog}
+        onOpenChange={setShowImportDialog}
+        title="Importera Företag"
+        description="Ladda upp en CSV-fil för att importera företag."
+        expectedColumns={['Namn (obligatoriskt)', 'Domän', 'Bransch', 'Storlek', 'Webbplats', 'Telefon', 'Adress']}
+        onImport={handleImport}
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <Card>
