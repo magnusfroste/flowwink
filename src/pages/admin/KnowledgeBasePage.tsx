@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Folder, FileText, MessageSquare, Search, MoreHorizontal, Pencil, Trash2, Eye, EyeOff } from "lucide-react";
+import { Plus, Folder, FileText, MessageSquare, Search, MoreHorizontal, Pencil, Trash2, Check, X } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,13 +26,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   useKbCategories,
   useKbArticles,
   useDeleteKbCategory,
   useDeleteKbArticle,
   useKbStats,
+  useBulkUpdateKbArticlesChatStatus,
 } from "@/hooks/useKnowledgeBase";
 import { KbCategoryDialog } from "@/components/admin/kb/KbCategoryDialog";
 
@@ -41,17 +42,51 @@ export default function KnowledgeBasePage() {
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
   const [deleteDialog, setDeleteDialog] = useState<{ type: 'category' | 'article'; id: string } | null>(null);
+  const [selectedArticles, setSelectedArticles] = useState<Set<string>>(new Set());
 
   const { data: categories, isLoading: categoriesLoading } = useKbCategories();
   const { data: articles, isLoading: articlesLoading } = useKbArticles(selectedCategory || undefined);
   const { data: stats } = useKbStats();
   const deleteCategory = useDeleteKbCategory();
   const deleteArticle = useDeleteKbArticle();
+  const bulkUpdateChat = useBulkUpdateKbArticlesChatStatus();
 
   const filteredArticles = articles?.filter(article =>
     article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     article.question.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const allSelected = useMemo(() => {
+    if (!filteredArticles || filteredArticles.length === 0) return false;
+    return filteredArticles.every(a => selectedArticles.has(a.id));
+  }, [filteredArticles, selectedArticles]);
+
+  const toggleSelectAll = () => {
+    if (!filteredArticles) return;
+    if (allSelected) {
+      setSelectedArticles(new Set());
+    } else {
+      setSelectedArticles(new Set(filteredArticles.map(a => a.id)));
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    const next = new Set(selectedArticles);
+    if (next.has(id)) {
+      next.delete(id);
+    } else {
+      next.add(id);
+    }
+    setSelectedArticles(next);
+  };
+
+  const handleBulkChatToggle = (includeInChat: boolean) => {
+    if (selectedArticles.size === 0) return;
+    bulkUpdateChat.mutate(
+      { ids: Array.from(selectedArticles), include_in_chat: includeInChat },
+      { onSuccess: () => setSelectedArticles(new Set()) }
+    );
+  };
 
   const handleDelete = () => {
     if (!deleteDialog) return;
@@ -169,15 +204,53 @@ export default function KnowledgeBasePage() {
 
           {/* Articles list */}
           <div className="lg:col-span-3 space-y-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search articles..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
-              />
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search articles..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
             </div>
+
+            {/* Bulk actions bar */}
+            {selectedArticles.size > 0 && (
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border">
+                <span className="text-sm font-medium">
+                  {selectedArticles.size} selected
+                </span>
+                <div className="flex gap-2 ml-auto">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleBulkChatToggle(true)}
+                    disabled={bulkUpdateChat.isPending}
+                  >
+                    <Check className="h-4 w-4 mr-1" />
+                    Add to AI Chat
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleBulkChatToggle(false)}
+                    disabled={bulkUpdateChat.isPending}
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    Remove from AI Chat
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setSelectedArticles(new Set())}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
 
             {articlesLoading ? (
               <div className="space-y-3">
@@ -195,10 +268,26 @@ export default function KnowledgeBasePage() {
               </Card>
             ) : (
               <div className="space-y-2">
+                {/* Select all header */}
+                {filteredArticles && filteredArticles.length > 0 && (
+                  <div className="flex items-center gap-3 px-4 py-2 text-sm text-muted-foreground">
+                    <Checkbox
+                      checked={allSelected}
+                      onCheckedChange={toggleSelectAll}
+                    />
+                    <span>Select all ({filteredArticles.length})</span>
+                  </div>
+                )}
+
                 {filteredArticles?.map(article => (
                   <Card key={article.id} className="hover:bg-accent/50 transition-colors">
                     <CardContent className="p-4">
-                      <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-start gap-3">
+                        <Checkbox
+                          checked={selectedArticles.has(article.id)}
+                          onCheckedChange={() => toggleSelect(article.id)}
+                          className="mt-1"
+                        />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             <Link
