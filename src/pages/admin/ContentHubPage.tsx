@@ -78,6 +78,7 @@ const BLOCK_TYPES: BlockType[] = [
   { type: "logos", name: "Logo Cloud", category: "Marketing", icon: Building },
   { type: "comparison", name: "Comparison", category: "Marketing", icon: Columns3 },
   { type: "features", name: "Features", category: "Marketing", icon: Sparkles },
+  { type: "timeline", name: "Timeline", category: "Marketing", icon: LayoutGrid },
   // Data
   { type: "stats", name: "Statistics", category: "Data", icon: BarChart3 },
 ];

@@ -44,6 +44,7 @@ import { TeamBlockEditor } from './TeamBlockEditor';
 import { LogosBlockEditor } from './LogosBlockEditor';
 import { ComparisonBlockEditor } from './ComparisonBlockEditor';
 import { FeaturesBlockEditor } from './FeaturesBlockEditor';
+import { TimelineBlockEditor } from './TimelineBlockEditor';
 import { TemplateEmptyState } from '@/components/admin/StarterTemplateSelector';
 import { StarterTemplate } from '@/data/starter-templates';
 
@@ -84,6 +85,7 @@ type BlockDataMap = {
   logos: LogosBlockData;
   comparison: ComparisonBlockData;
   features: FeaturesBlockData;
+  timeline: Record<string, unknown>;
 };
 
 const DEFAULT_BLOCK_DATA: BlockDataMap = {
@@ -208,6 +210,13 @@ const DEFAULT_BLOCK_DATA: BlockDataMap = {
     variant: 'cards',
     iconStyle: 'circle',
     showLinks: true,
+  },
+  timeline: {
+    title: 'Our Process',
+    subtitle: 'How we work',
+    steps: [],
+    variant: 'vertical',
+    showDates: false,
   },
 };
 
@@ -503,6 +512,13 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
         return (
           <FeaturesBlockEditor
             data={block.data as unknown as FeaturesBlockData}
+            onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+          />
+        );
+      case 'timeline':
+        return (
+          <TimelineBlockEditor
+            data={block.data as Record<string, unknown>}
             onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
           />
         );
