@@ -36,7 +36,29 @@ Look for the ⚠️ **BREAKING** label in the changelog. These require manual ac
 
 ## Upgrade Process
 
-### Standard Upgrade (Recommended)
+### Quick Upgrade (Automated Script)
+
+The easiest way to upgrade is using the included upgrade script:
+
+```bash
+# Make the script executable (first time only)
+chmod +x scripts/upgrade.sh
+
+# Run the upgrade
+./scripts/upgrade.sh
+```
+
+The script will:
+1. ✓ Remind you to backup
+2. ✓ Stash any local changes
+3. ✓ Pull latest code from GitHub
+4. ✓ Install new dependencies
+5. ✓ Run database migrations
+6. ✓ Deploy edge functions
+
+### Manual Upgrade
+
+If you prefer manual control:
 
 ```bash
 # 1. Navigate to your project directory
@@ -64,20 +86,117 @@ supabase functions deploy --all
 npm run build
 ```
 
-### If You Have Local Modifications
+---
+
+## Common Upgrade Scenarios
+
+### Scenario 1: Regular Update (No Local Changes)
+
+You're running a clean installation and want the latest features.
 
 ```bash
-# 1. Stash your changes
-git stash
+./scripts/upgrade.sh
+```
 
-# 2. Pull updates
-git pull origin main
+That's it! The script handles everything.
 
-# 3. Re-apply your changes
+### Scenario 2: Update with Local Modifications
+
+You've customized some components or styles.
+
+```bash
+# Option A: Let the script stash your changes
+./scripts/upgrade.sh
+# When prompted, choose 'y' to stash changes
+# After upgrade completes:
 git stash pop
+# Resolve any conflicts if needed
 
-# 4. Resolve any conflicts manually
-# Then continue with steps 5-8 above
+# Option B: Manual approach
+git stash
+git pull origin main
+npm install
+supabase db push
+git stash pop
+# Fix conflicts, then rebuild
+npm run build
+```
+
+### Scenario 3: Skip Database Migrations
+
+You're not using Supabase CLI or want to run migrations separately.
+
+```bash
+# Pull code only
+git pull origin main
+npm install
+
+# Run migrations later through Supabase Dashboard
+# Go to SQL Editor and run contents of new migration files
+```
+
+### Scenario 4: Upgrade After Long Time (Multiple Versions)
+
+You haven't updated in a while and are several versions behind.
+
+```bash
+# 1. Check the changelog for ALL versions you're skipping
+cat CHANGELOG.md
+
+# 2. Look for any BREAKING changes and note required actions
+
+# 3. Create a full backup
+supabase db dump -f backup-full-$(date +%Y%m%d).sql
+cp .env .env.backup
+
+# 4. Run the upgrade
+./scripts/upgrade.sh
+
+# 5. Apply any breaking change migrations manually if needed
+
+# 6. Test thoroughly before going to production
+npm run dev
+```
+
+### Scenario 5: Rollback After Failed Upgrade
+
+Something went wrong and you need to go back.
+
+```bash
+# 1. Find the last working commit
+git log --oneline
+
+# 2. Reset to that commit
+git reset --hard abc1234  # Replace with your commit hash
+
+# 3. Restore dependencies
+npm install
+
+# 4. Restore database if needed
+psql $DATABASE_URL < backup-YYYYMMDD.sql
+
+# 5. Rebuild
+npm run build
+```
+
+### Scenario 6: Preview Changes Before Upgrading
+
+You want to test the new version before committing.
+
+```bash
+# 1. Create a new branch
+git fetch origin
+git checkout -b test-upgrade origin/main
+
+# 2. Install dependencies
+npm install
+
+# 3. Run locally (don't push migrations yet!)
+npm run dev
+
+# 4. If everything looks good, switch back and do the real upgrade
+git checkout main
+./scripts/upgrade.sh
 ```
 
 ---
