@@ -21,6 +21,7 @@ import {
   Briefcase,
   Building2,
   Package,
+  Library,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { ROLE_LABELS } from "@/types/cms";
@@ -68,6 +69,7 @@ const navigationGroups: NavGroup[] = [
     items: [
       { name: "Pages", href: "/admin/pages", icon: FileText, moduleId: "pages" },
       { name: "Blog", href: "/admin/blog", icon: BookOpen, moduleId: "blog" },
+      { name: "Knowledge Base", href: "/admin/knowledge-base", icon: Library, moduleId: "knowledgeBase" },
     ],
   },
   {
