@@ -194,6 +194,13 @@ export function PublicNavigation() {
                 {blogSettings.archiveTitle || 'Blogg'}
               </Link>
             )}
+            {/* Knowledge Base link */}
+            <Link
+              to="/hjalp"
+              className={getLinkClasses(location.pathname === '/hjalp')}
+            >
+              Hjälp
+            </Link>
             {/* Custom nav items */}
             {customNavItems.map((item) => (
               <a
@@ -266,6 +273,19 @@ export function PublicNavigation() {
                   {blogSettings.archiveTitle || 'Blogg'}
                 </Link>
               )}
+              <Link
+                to="/hjalp"
+                onClick={() => setMobileMenuOpen(false)}
+                className={cn(
+                  'px-4 py-3 rounded-md text-base font-medium transition-colors',
+                  'hover:bg-muted',
+                  location.pathname === '/hjalp'
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-muted-foreground'
+                )}
+              >
+                Hjälp
+              </Link>
               {customNavItems.map((item) => (
                 <a
                   key={item.id}
@@ -332,6 +352,18 @@ export function PublicNavigation() {
                   {blogSettings.archiveTitle || 'Blogg'}
                 </Link>
               )}
+              <Link
+                to="/hjalp"
+                onClick={() => setMobileMenuOpen(false)}
+                className={cn(
+                  'text-2xl font-medium transition-colors',
+                  location.pathname === '/hjalp'
+                    ? 'text-primary'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                Hjälp
+              </Link>
               {customNavItems.map((item) => (
                 <a
                   key={item.id}
@@ -395,6 +427,19 @@ export function PublicNavigation() {
                   {blogSettings.archiveTitle || 'Blogg'}
                 </Link>
               )}
+              <Link
+                to="/hjalp"
+                onClick={() => setMobileMenuOpen(false)}
+                className={cn(
+                  'px-4 py-3 rounded-md text-base font-medium transition-colors',
+                  'hover:bg-muted',
+                  location.pathname === '/hjalp'
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-muted-foreground'
+                )}
+              >
+                Hjälp
+              </Link>
               {customNavItems.map((item) => (
                 <a
                   key={item.id}
