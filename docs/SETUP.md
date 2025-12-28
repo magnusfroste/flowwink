@@ -2,6 +2,10 @@
 
 This guide walks you through setting up Pezcms on your own Supabase instance.
 
+> **Already running Pezcms?** See [UPGRADING.md](./UPGRADING.md) for upgrade instructions.
+> 
+> **Want to contribute?** See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
+
 ## Prerequisites
 
 - [Node.js](https://nodejs.org/) 18+ and npm
