@@ -93,6 +93,7 @@ export type ContentBlockType =
   | 'logos'
   | 'comparison'
   | 'features'
+  | 'timeline'
   | 'footer'
   | 'header';
 

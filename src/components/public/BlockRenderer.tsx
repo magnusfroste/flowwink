@@ -29,6 +29,7 @@ import {
   LogosBlock,
   ComparisonBlock,
   FeaturesBlock,
+  TimelineBlock,
 } from './blocks';
 import type {
   HeroBlockData,
@@ -155,6 +156,8 @@ export function BlockRenderer({ block, pageId, index = 0 }: BlockRendererProps) 
         return <ComparisonBlock data={block.data as unknown as ComparisonBlockData} />;
       case 'features':
         return <FeaturesBlock data={block.data as unknown as FeaturesBlockData} />;
+      case 'timeline':
+        return <TimelineBlock data={block.data as Record<string, unknown>} />;
       default:
         return null;
     }
