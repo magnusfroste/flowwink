@@ -4,11 +4,14 @@ import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useUnsavedChanges, UnsavedChangesDialog } from '@/hooks/useUnsavedChanges';
-import { Loader2, Save, GripVertical, Eye, EyeOff } from 'lucide-react';
+import { useBlogSettings, useUpdateBlogSettings, useKbSettings, useUpdateKbSettings } from '@/hooks/useSiteSettings';
+import { Loader2, Save, GripVertical, Eye, EyeOff, FileText, BookOpen, HelpCircle } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -21,6 +24,16 @@ interface PageItem {
   status: string;
   menu_order: number;
   show_in_menu: boolean;
+}
+
+interface ModuleItem {
+  id: string;
+  type: 'blog' | 'kb';
+  title: string;
+  slug: string;
+  enabled: boolean;
+  showInMenu: boolean;
+  menuOrder: number;
 }
 
 interface SortablePageItemProps {
@@ -53,6 +66,7 @@ function SortablePageItem({ page, onToggleVisibility }: SortablePageItemProps) {
       >
         <GripVertical className="h-5 w-5" />
       </button>
+      <FileText className="h-4 w-4 text-muted-foreground" />
       <div className="flex-1">
         <div className="flex items-center gap-2">
           <p className="font-medium">{page.title}</p>
@@ -76,9 +90,83 @@ function SortablePageItem({ page, onToggleVisibility }: SortablePageItemProps) {
         </div>
         <span className={cn(
           "text-xs px-2 py-1 rounded-full",
-          page.status === 'published' ? "bg-green-100 text-green-800" : "bg-muted text-muted-foreground"
+          page.status === 'published' ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" : "bg-muted text-muted-foreground"
         )}>
           {page.status === 'published' ? 'Published' : page.status}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+interface SortableModuleItemProps {
+  module: ModuleItem;
+  onToggleVisibility: (id: string, visible: boolean) => void;
+  onTitleChange: (id: string, title: string) => void;
+  onSlugChange: (id: string, slug: string) => void;
+}
+
+function SortableModuleItem({ module, onToggleVisibility, onTitleChange, onSlugChange }: SortableModuleItemProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: module.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  const Icon = module.type === 'blog' ? BookOpen : HelpCircle;
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "flex items-center gap-3 p-4 bg-card border border-border rounded-lg",
+        isDragging && "opacity-50 shadow-lg",
+        (!module.enabled || !module.showInMenu) && "opacity-60"
+      )}
+    >
+      <button
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground"
+      >
+        <GripVertical className="h-5 w-5" />
+      </button>
+      <Icon className="h-4 w-4 text-muted-foreground" />
+      <div className="flex-1 grid grid-cols-2 gap-3">
+        <div>
+          <Label className="text-xs text-muted-foreground">Menu Title</Label>
+          <Input
+            value={module.title}
+            onChange={(e) => onTitleChange(module.id, e.target.value)}
+            className="h-8 text-sm"
+          />
+        </div>
+        <div>
+          <Label className="text-xs text-muted-foreground">Slug</Label>
+          <Input
+            value={module.slug}
+            onChange={(e) => onSlugChange(module.id, e.target.value)}
+            className="h-8 text-sm"
+          />
+        </div>
+      </div>
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <Eye className="h-4 w-4 text-muted-foreground" />
+          <Switch
+            checked={module.showInMenu}
+            onCheckedChange={(checked) => onToggleVisibility(module.id, checked)}
+            aria-label={module.showInMenu ? 'Hide from menu' : 'Show in menu'}
+            disabled={!module.enabled}
+          />
+        </div>
+        <span className={cn(
+          "text-xs px-2 py-1 rounded-full min-w-[60px] text-center",
+          module.enabled ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" : "bg-muted text-muted-foreground"
+        )}>
+          {module.enabled ? 'Enabled' : 'Disabled'}
         </span>
       </div>
     </div>
@@ -89,7 +177,7 @@ export default function MenuOrderPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  const { data: pages = [], isLoading } = useQuery({
+  const { data: pages = [], isLoading: pagesLoading } = useQuery({
     queryKey: ['pages-menu-order'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -103,21 +191,57 @@ export default function MenuOrderPage() {
     },
   });
 
+  const { data: blogSettings, isLoading: blogLoading } = useBlogSettings();
+  const { data: kbSettings, isLoading: kbLoading } = useKbSettings();
+  const updateBlogSettings = useUpdateBlogSettings();
+  const updateKbSettings = useUpdateKbSettings();
+
   const [orderedPages, setOrderedPages] = useState<PageItem[]>([]);
+  const [orderedModules, setOrderedModules] = useState<ModuleItem[]>([]);
   const [hasChanges, setHasChanges] = useState(false);
 
+  // Initialize pages
   useEffect(() => {
     if (pages.length > 0) {
       setOrderedPages(pages);
     }
   }, [pages]);
 
+  // Initialize modules
+  useEffect(() => {
+    if (blogSettings && kbSettings) {
+      const modules: ModuleItem[] = [
+        {
+          id: 'module-blog',
+          type: 'blog',
+          title: blogSettings.archiveTitle || 'Blogg',
+          slug: blogSettings.archiveSlug || 'blogg',
+          enabled: blogSettings.enabled,
+          showInMenu: blogSettings.enabled, // Blog shows if enabled
+          menuOrder: 0,
+        },
+        {
+          id: 'module-kb',
+          type: 'kb',
+          title: kbSettings.menuTitle || 'Hjälp',
+          slug: kbSettings.menuSlug || 'hjalp',
+          enabled: kbSettings.enabled,
+          showInMenu: kbSettings.showInMenu,
+          menuOrder: kbSettings.menuOrder || 1,
+        },
+      ];
+      // Sort by menuOrder
+      modules.sort((a, b) => a.menuOrder - b.menuOrder);
+      setOrderedModules(modules);
+    }
+  }, [blogSettings, kbSettings]);
+
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handlePageDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (over && active.id !== over.id) {
       setOrderedPages((items) => {
@@ -129,7 +253,19 @@ export default function MenuOrderPage() {
     }
   };
 
-  const handleToggleVisibility = (id: string, visible: boolean) => {
+  const handleModuleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setOrderedModules((items) => {
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+      setHasChanges(true);
+    }
+  };
+
+  const handleTogglePageVisibility = (id: string, visible: boolean) => {
     setOrderedPages((items) =>
       items.map((item) =>
         item.id === id ? { ...item, show_in_menu: visible } : item
@@ -138,24 +274,76 @@ export default function MenuOrderPage() {
     setHasChanges(true);
   };
 
+  const handleToggleModuleVisibility = (id: string, visible: boolean) => {
+    setOrderedModules((items) =>
+      items.map((item) =>
+        item.id === id ? { ...item, showInMenu: visible } : item
+      )
+    );
+    setHasChanges(true);
+  };
+
+  const handleModuleTitleChange = (id: string, title: string) => {
+    setOrderedModules((items) =>
+      items.map((item) =>
+        item.id === id ? { ...item, title } : item
+      )
+    );
+    setHasChanges(true);
+  };
+
+  const handleModuleSlugChange = (id: string, slug: string) => {
+    setOrderedModules((items) =>
+      items.map((item) =>
+        item.id === id ? { ...item, slug } : item
+      )
+    );
+    setHasChanges(true);
+  };
+
   const saveMutation = useMutation({
-    mutationFn: async (orderedItems: PageItem[]) => {
-      const updates = orderedItems.map((page, index) => 
+    mutationFn: async () => {
+      // Save page order
+      const pageUpdates = orderedPages.map((page, index) => 
         supabase
           .from('pages')
           .update({ menu_order: index, show_in_menu: page.show_in_menu })
           .eq('id', page.id)
       );
       
-      const results = await Promise.all(updates);
+      const results = await Promise.all(pageUpdates);
       const errors = results.filter(r => r.error);
       if (errors.length > 0) {
         throw new Error('Failed to update some pages');
+      }
+
+      // Save module settings
+      const blogModule = orderedModules.find(m => m.type === 'blog');
+      const kbModule = orderedModules.find(m => m.type === 'kb');
+
+      if (blogModule && blogSettings) {
+        await updateBlogSettings.mutateAsync({
+          ...blogSettings,
+          archiveTitle: blogModule.title,
+          archiveSlug: blogModule.slug,
+        });
+      }
+
+      if (kbModule && kbSettings) {
+        await updateKbSettings.mutateAsync({
+          ...kbSettings,
+          menuTitle: kbModule.title,
+          menuSlug: kbModule.slug,
+          showInMenu: kbModule.showInMenu,
+          menuOrder: orderedModules.findIndex(m => m.id === kbModule.id),
+        });
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pages-menu-order'] });
       queryClient.invalidateQueries({ queryKey: ['public-nav-pages'] });
+      queryClient.invalidateQueries({ queryKey: ['site-settings', 'blog'] });
+      queryClient.invalidateQueries({ queryKey: ['site-settings', 'kb'] });
       setHasChanges(false);
       toast({
         title: 'Saved',
@@ -174,8 +362,10 @@ export default function MenuOrderPage() {
   const { blocker } = useUnsavedChanges({ hasChanges });
 
   const handleSave = () => {
-    saveMutation.mutate(orderedPages);
+    saveMutation.mutate();
   };
+
+  const isLoading = pagesLoading || blogLoading || kbLoading;
 
   if (isLoading) {
     return (
@@ -192,7 +382,7 @@ export default function MenuOrderPage() {
       <div className="space-y-6">
         <AdminPageHeader 
           title="Menu Order"
-          description="Drag and drop to change the order, use the toggle to hide pages"
+          description="Drag and drop to change the order, use the toggle to hide items from navigation"
         >
           <Button onClick={handleSave} disabled={!hasChanges || saveMutation.isPending} className="relative">
             {hasChanges && <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-destructive" />}
@@ -205,20 +395,23 @@ export default function MenuOrderPage() {
           </Button>
         </AdminPageHeader>
 
+        {/* Pages Section */}
         <Card>
           <CardHeader>
             <CardTitle className="font-serif">Pages</CardTitle>
-            <CardDescription>The order and visibility determines how pages appear in the navigation menu. Hidden pages are still accessible via direct link.</CardDescription>
+            <CardDescription>
+              The order and visibility determines how pages appear in the navigation menu. Hidden pages are still accessible via direct link.
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handlePageDragEnd}>
               <SortableContext items={orderedPages.map(p => p.id)} strategy={verticalListSortingStrategy}>
                 <div className="space-y-2">
                   {orderedPages.map((page) => (
                     <SortablePageItem 
                       key={page.id} 
                       page={page} 
-                      onToggleVisibility={handleToggleVisibility}
+                      onToggleVisibility={handleTogglePageVisibility}
                     />
                   ))}
                 </div>
@@ -227,6 +420,33 @@ export default function MenuOrderPage() {
             {orderedPages.length === 0 && (
               <p className="text-center text-muted-foreground py-8">No pages created yet</p>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Modules Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-serif">Modules</CardTitle>
+            <CardDescription>
+              Configure how Blog and Knowledge Base appear in the navigation. Disabled modules can be enabled in their respective settings.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleModuleDragEnd}>
+              <SortableContext items={orderedModules.map(m => m.id)} strategy={verticalListSortingStrategy}>
+                <div className="space-y-2">
+                  {orderedModules.map((module) => (
+                    <SortableModuleItem 
+                      key={module.id} 
+                      module={module}
+                      onToggleVisibility={handleToggleModuleVisibility}
+                      onTitleChange={handleModuleTitleChange}
+                      onSlugChange={handleModuleSlugChange}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
           </CardContent>
         </Card>
       </div>
