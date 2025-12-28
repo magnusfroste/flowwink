@@ -30,6 +30,9 @@ jobs:
       - name: Run TypeScript type check
         run: npx tsc --noEmit
 
+      - name: Run tests
+        run: npx vitest run
+
   build:
     name: Build
     runs-on: ubuntu-latest
