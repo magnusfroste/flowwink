@@ -41,6 +41,7 @@ import CompanyDetailPage from "./pages/admin/CompanyDetailPage";
 import ProductsPage from "./pages/admin/ProductsPage";
 import KnowledgeBasePage from "./pages/admin/KnowledgeBasePage";
 import KbArticleEditorPage from "./pages/admin/KbArticleEditorPage";
+import PublicKnowledgeBasePage from "./pages/KnowledgeBasePage";
 import PreviewPage from "./pages/PreviewPage";
 import PublicPage from "./pages/PublicPage";
 import BlogArchivePage from "./pages/BlogArchivePage";
@@ -57,6 +58,7 @@ const router = createBrowserRouter([
   { path: "/", element: <PublicPage /> },
   { path: "/auth", element: <AuthPage /> },
   { path: "/chat", element: <ChatPage /> },
+  { path: "/hjalp", element: <PublicKnowledgeBasePage /> },
   { path: "/newsletter/manage", element: <NewsletterManagePage /> },
   // Blog routes
   { path: "/blogg", element: <BlogArchivePage /> },
