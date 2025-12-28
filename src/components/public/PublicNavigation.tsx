@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import { useBranding } from '@/providers/BrandingProvider';
 import { ThemeToggle } from './ThemeToggle';
 import { useHeaderBlock, defaultHeaderData } from '@/hooks/useGlobalBlocks';
-import { useBlogSettings } from '@/hooks/useSiteSettings';
+import { useBlogSettings, useKbSettings } from '@/hooks/useSiteSettings';
 
 interface NavPage {
   id: string;
@@ -30,6 +30,9 @@ export function PublicNavigation() {
   
   // Blog settings
   const { data: blogSettings } = useBlogSettings();
+  
+  // Knowledge Base settings
+  const { data: kbSettings } = useKbSettings();
 
   const { data: pages = [] } = useQuery({
     queryKey: ['public-nav-pages'],
@@ -195,12 +198,14 @@ export function PublicNavigation() {
               </Link>
             )}
             {/* Knowledge Base link */}
-            <Link
-              to="/hjalp"
-              className={getLinkClasses(location.pathname === '/hjalp')}
-            >
-              Hjälp
-            </Link>
+            {kbSettings?.enabled && kbSettings?.showInMenu && (
+              <Link
+                to={`/${kbSettings.menuSlug || 'hjalp'}`}
+                className={getLinkClasses(location.pathname === `/${kbSettings.menuSlug || 'hjalp'}`)}
+              >
+                {kbSettings.menuTitle || 'Hjälp'}
+              </Link>
+            )}
             {/* Custom nav items */}
             {customNavItems.map((item) => (
               <a
@@ -273,19 +278,21 @@ export function PublicNavigation() {
                   {blogSettings.archiveTitle || 'Blogg'}
                 </Link>
               )}
-              <Link
-                to="/hjalp"
-                onClick={() => setMobileMenuOpen(false)}
-                className={cn(
-                  'px-4 py-3 rounded-md text-base font-medium transition-colors',
-                  'hover:bg-muted',
-                  location.pathname === '/hjalp'
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-muted-foreground'
-                )}
-              >
-                Hjälp
-              </Link>
+              {kbSettings?.enabled && kbSettings?.showInMenu && (
+                <Link
+                  to={`/${kbSettings.menuSlug || 'hjalp'}`}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={cn(
+                    'px-4 py-3 rounded-md text-base font-medium transition-colors',
+                    'hover:bg-muted',
+                    location.pathname === `/${kbSettings.menuSlug || 'hjalp'}`
+                      ? 'bg-primary/10 text-primary'
+                      : 'text-muted-foreground'
+                  )}
+                >
+                  {kbSettings.menuTitle || 'Hjälp'}
+                </Link>
+              )}
               {customNavItems.map((item) => (
                 <a
                   key={item.id}
@@ -352,18 +359,20 @@ export function PublicNavigation() {
                   {blogSettings.archiveTitle || 'Blogg'}
                 </Link>
               )}
-              <Link
-                to="/hjalp"
-                onClick={() => setMobileMenuOpen(false)}
-                className={cn(
-                  'text-2xl font-medium transition-colors',
-                  location.pathname === '/hjalp'
-                    ? 'text-primary'
-                    : 'text-muted-foreground hover:text-foreground'
-                )}
-              >
-                Hjälp
-              </Link>
+              {kbSettings?.enabled && kbSettings?.showInMenu && (
+                <Link
+                  to={`/${kbSettings.menuSlug || 'hjalp'}`}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={cn(
+                    'text-2xl font-medium transition-colors',
+                    location.pathname === `/${kbSettings.menuSlug || 'hjalp'}`
+                      ? 'text-primary'
+                      : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  {kbSettings.menuTitle || 'Hjälp'}
+                </Link>
+              )}
               {customNavItems.map((item) => (
                 <a
                   key={item.id}
@@ -427,19 +436,21 @@ export function PublicNavigation() {
                   {blogSettings.archiveTitle || 'Blogg'}
                 </Link>
               )}
-              <Link
-                to="/hjalp"
-                onClick={() => setMobileMenuOpen(false)}
-                className={cn(
-                  'px-4 py-3 rounded-md text-base font-medium transition-colors',
-                  'hover:bg-muted',
-                  location.pathname === '/hjalp'
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-muted-foreground'
-                )}
-              >
-                Hjälp
-              </Link>
+              {kbSettings?.enabled && kbSettings?.showInMenu && (
+                <Link
+                  to={`/${kbSettings.menuSlug || 'hjalp'}`}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={cn(
+                    'px-4 py-3 rounded-md text-base font-medium transition-colors',
+                    'hover:bg-muted',
+                    location.pathname === `/${kbSettings.menuSlug || 'hjalp'}`
+                      ? 'bg-primary/10 text-primary'
+                      : 'text-muted-foreground'
+                  )}
+                >
+                  {kbSettings.menuTitle || 'Hjälp'}
+                </Link>
+              )}
               {customNavItems.map((item) => (
                 <a
                   key={item.id}

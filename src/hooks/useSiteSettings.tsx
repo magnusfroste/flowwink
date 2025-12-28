@@ -435,6 +435,31 @@ export function useUpdateBlogSettings() {
   return useUpdateSiteSettings<BlogSettings>('blog', 'Blog settings have been updated.');
 }
 
+// Knowledge Base settings
+export interface KbSettings {
+  enabled: boolean;
+  menuTitle: string;
+  menuSlug: string;
+  showInMenu: boolean;
+  menuOrder: number;
+}
+
+const defaultKbSettings: KbSettings = {
+  enabled: true,
+  menuTitle: 'Hjälp',
+  menuSlug: 'hjalp',
+  showInMenu: true,
+  menuOrder: 1,
+};
+
+export function useKbSettings() {
+  return useSiteSettings<KbSettings>('kb', defaultKbSettings);
+}
+
+export function useUpdateKbSettings() {
+  return useUpdateSiteSettings<KbSettings>('kb', 'Knowledge Base settings have been updated.');
+}
+
 // Re-export modules hooks for convenience
 export { useModules, useUpdateModules, useIsModuleEnabled, useEnabledModules } from './useModules';
 export type { ModulesSettings, ModuleConfig } from './useModules';
