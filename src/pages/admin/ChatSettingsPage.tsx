@@ -3,6 +3,7 @@ import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { useChatSettings, useUpdateChatSettings, ChatSettings, ChatAiProvider } from '@/hooks/useSiteSettings';
 import { usePages } from '@/hooks/usePages';
+import { useKbArticles, useKbStats } from '@/hooks/useKnowledgeBase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,10 +13,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, Save, AlertTriangle, Cloud, Server, Webhook, Shield, Database, BookOpen, FileText } from 'lucide-react';
+import { Loader2, Save, AlertTriangle, Cloud, Server, Webhook, Shield, Database, BookOpen, FileText, HelpCircle, ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useUnsavedChanges, UnsavedChangesDialog } from '@/hooks/useUnsavedChanges';
+import { Link } from 'react-router-dom';
 
 export default function ChatSettingsPage() {
   const { data: settings, isLoading } = useChatSettings();
@@ -417,77 +419,121 @@ export default function ChatSettingsPage() {
 
             {/* Knowledge Base settings */}
             <TabsContent value="knowledge">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <BookOpen className="h-5 w-5" />
-                    Knowledge Base (CAG)
-                  </CardTitle>
-                  <CardDescription>
-                    Include website content as context for the AI
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="flex items-center justify-between p-4 rounded-lg border">
-                    <div>
-                      <h4 className="font-medium">Include CMS Content</h4>
-                      <p className="text-sm text-muted-foreground">
-                        AI gets access to all published content on the website
-                      </p>
+              <div className="space-y-6">
+                {/* CMS Pages Card */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="h-5 w-5" />
+                      CMS Pages
+                    </CardTitle>
+                    <CardDescription>
+                      Include website page content as context for the AI
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="flex items-center justify-between p-4 rounded-lg border">
+                      <div>
+                        <h4 className="font-medium">Include CMS Content</h4>
+                        <p className="text-sm text-muted-foreground">
+                          AI gets access to all published content on the website
+                        </p>
+                      </div>
+                      <Switch
+                        checked={formData.includeContentAsContext ?? false}
+                        onCheckedChange={(includeContentAsContext) => 
+                          setFormData({ ...formData, includeContentAsContext })
+                        }
+                      />
                     </div>
-                    <Switch
-                      checked={formData.includeContentAsContext ?? false}
-                      onCheckedChange={(includeContentAsContext) => 
-                        setFormData({ ...formData, includeContentAsContext })
-                      }
-                    />
-                  </div>
 
-                  {formData.includeContentAsContext && (
-                    <Alert className="bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-900">
-                      <Database className="h-4 w-4 text-blue-600" />
-                      <AlertTitle className="text-blue-800 dark:text-blue-200">Context Augmented Generation</AlertTitle>
-                      <AlertDescription className="text-blue-700 dark:text-blue-300">
-                        Selected pages are sent as context to the AI with each message. 
-                        Choose which pages to include below.
-                      </AlertDescription>
-                    </Alert>
-                  )}
+                    {formData.includeContentAsContext && (
+                      <PageSelector 
+                        selectedSlugs={formData.includedPageSlugs || []}
+                        onSelectionChange={(slugs) => setFormData({ ...formData, includedPageSlugs: slugs })}
+                      />
+                    )}
+                  </CardContent>
+                </Card>
 
-                  {formData.includeContentAsContext && (
-                    <PageSelector 
-                      selectedSlugs={formData.includedPageSlugs || []}
-                      onSelectionChange={(slugs) => setFormData({ ...formData, includedPageSlugs: slugs })}
-                    />
-                  )}
-
-                  {formData.includeContentAsContext && (
-                    <div className="space-y-2">
-                      <Label htmlFor="maxTokens">Max Number of Tokens</Label>
-                      <Select
-                        value={String(formData.contentContextMaxTokens ?? 50000)}
-                        onValueChange={(value) => setFormData({ 
-                          ...formData, 
-                          contentContextMaxTokens: parseInt(value)
-                        })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="25000">25,000 (Small website)</SelectItem>
-                          <SelectItem value="50000">50,000 (Medium)</SelectItem>
-                          <SelectItem value="100000">100,000 (Large website)</SelectItem>
-                          <SelectItem value="200000">200,000 (Very large)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <p className="text-xs text-muted-foreground">
-                        Gemini 2.5 Flash supports up to 1 million tokens. A typical page is about 500-1000 tokens.
-                      </p>
+                {/* KB Articles Card */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <HelpCircle className="h-5 w-5" />
+                      Knowledge Base Articles
+                    </CardTitle>
+                    <CardDescription>
+                      Include FAQ articles from Knowledge Base in AI context
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="flex items-center justify-between p-4 rounded-lg border">
+                      <div>
+                        <h4 className="font-medium">Include KB Articles</h4>
+                        <p className="text-sm text-muted-foreground">
+                          AI gets access to KB articles marked for chat context
+                        </p>
+                      </div>
+                      <Switch
+                        checked={formData.includeKbArticles ?? false}
+                        onCheckedChange={(includeKbArticles) => 
+                          setFormData({ ...formData, includeKbArticles })
+                        }
+                      />
                     </div>
-                  )}
-                </CardContent>
-              </Card>
+
+                    {formData.includeKbArticles && (
+                      <KbArticlesInfo />
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Token settings */}
+                {(formData.includeContentAsContext || formData.includeKbArticles) && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Database className="h-5 w-5" />
+                        Context Settings
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <Alert className="bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-900">
+                        <Database className="h-4 w-4 text-blue-600" />
+                        <AlertTitle className="text-blue-800 dark:text-blue-200">Context Augmented Generation</AlertTitle>
+                        <AlertDescription className="text-blue-700 dark:text-blue-300">
+                          Selected content is sent as context to the AI with each message.
+                        </AlertDescription>
+                      </Alert>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="maxTokens">Max Number of Tokens</Label>
+                        <Select
+                          value={String(formData.contentContextMaxTokens ?? 50000)}
+                          onValueChange={(value) => setFormData({ 
+                            ...formData, 
+                            contentContextMaxTokens: parseInt(value)
+                          })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="25000">25,000 (Small website)</SelectItem>
+                            <SelectItem value="50000">50,000 (Medium)</SelectItem>
+                            <SelectItem value="100000">100,000 (Large website)</SelectItem>
+                            <SelectItem value="200000">200,000 (Very large)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground">
+                          Gemini 2.5 Flash supports up to 1 million tokens. A typical page is about 500-1000 tokens.
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
             </TabsContent>
 
             {/* Display settings */}
@@ -799,6 +845,53 @@ function PageSelector({
       <p className="text-xs text-muted-foreground">
         {selectedSlugs.length} of {pages.length} pages selected
       </p>
+    </div>
+  );
+}
+
+// KB Articles info component
+function KbArticlesInfo() {
+  const { data: stats, isLoading } = useKbStats();
+  
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-4 border rounded-lg">
+        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  const includedCount = stats?.chatArticles ?? 0;
+  const totalPublished = stats?.articles ?? 0;
+
+  return (
+    <div className="space-y-4">
+      <div className="p-4 rounded-lg border bg-muted/30">
+        <div className="flex items-center justify-between">
+          <div>
+            <span className="text-2xl font-semibold">{includedCount}</span>
+            <span className="text-muted-foreground ml-1">of {totalPublished} articles</span>
+          </div>
+          <Badge variant={includedCount > 0 ? "default" : "secondary"}>
+            {includedCount > 0 ? "Active" : "None selected"}
+          </Badge>
+        </div>
+        <p className="text-sm text-muted-foreground mt-2">
+          Articles marked with "Include in AI Chat" will be used as context
+        </p>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">
+          Toggle individual articles in the Knowledge Base editor
+        </p>
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/admin/knowledge-base">
+            Manage Articles
+            <ExternalLink className="h-3 w-3 ml-1" />
+          </Link>
+        </Button>
+      </div>
     </div>
   );
 }

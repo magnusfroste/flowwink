@@ -215,6 +215,9 @@ export interface ChatSettings {
   contentContextMaxTokens: number;
   includedPageSlugs: string[];
   
+  // KB Articles in context
+  includeKbArticles: boolean;
+  
   // Suggested prompts (shown in empty state)
   suggestedPrompts: string[];
 }
@@ -246,6 +249,7 @@ const defaultChatSettings: ChatSettings = {
   includeContentAsContext: false,
   contentContextMaxTokens: 50000,
   includedPageSlugs: [],
+  includeKbArticles: false,
   suggestedPrompts: [
     'What can you help me with?',
     'Tell me about your services',
