@@ -238,6 +238,35 @@ export function useUpdateKbArticle() {
   });
 }
 
+// Bulk update include_in_chat for multiple articles
+export function useBulkUpdateKbArticlesChatStatus() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ ids, include_in_chat }: { ids: string[]; include_in_chat: boolean }) => {
+      const { error } = await supabase
+        .from('kb_articles')
+        .update({ include_in_chat })
+        .in('id', ids);
+      
+      if (error) throw error;
+      return { ids, include_in_chat };
+    },
+    onSuccess: ({ ids, include_in_chat }) => {
+      queryClient.invalidateQueries({ queryKey: ['kb-articles'] });
+      queryClient.invalidateQueries({ queryKey: ['kb-stats'] });
+      toast({ 
+        title: `${ids.length} articles updated`,
+        description: include_in_chat ? 'Added to AI chat context' : 'Removed from AI chat context'
+      });
+    },
+    onError: (error) => {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    },
+  });
+}
+
 export function useDeleteKbArticle() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
