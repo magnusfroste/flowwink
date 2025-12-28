@@ -17,7 +17,7 @@ export interface StarterTemplate {
   id: string;
   name: string;
   description: string;
-  category: 'startup' | 'enterprise' | 'compliance';
+  category: 'startup' | 'enterprise' | 'compliance' | 'platform';
   icon: string;
   tagline: string;
   aiChatPosition: string;
@@ -1814,6 +1814,790 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
       siteTitle: 'SecureHealth',
       titleTemplate: '%s | SecureHealth',
       defaultDescription: 'HIPAA-compliant healthcare services with complete privacy. Your data stays on our servers.',
+      robotsIndex: true,
+      robotsFollow: true,
+      developmentMode: false,
+    },
+    cookieBannerSettings: {
+      enabled: true,
+    },
+    siteSettings: {
+      homepageSlug: 'hem',
+    },
+  },
+  // =====================================================
+  // PEZCMS PLATFORM - SaaS Template (Dogfooding)
+  // =====================================================
+  {
+    id: 'pezcms-platform',
+    name: 'PezCMS Platform',
+    description: 'Complete SaaS landing page template showcasing all CMS features. Built for platform businesses with pricing, comparisons, and feature highlights.',
+    category: 'platform',
+    icon: 'Blocks',
+    tagline: 'The ultimate dogfood - built with PezCMS, for PezCMS',
+    aiChatPosition: 'Embedded assistant for product questions',
+    pages: [
+      // ===== HOME PAGE =====
+      {
+        title: 'Home',
+        slug: 'hem',
+        isHomePage: true,
+        menu_order: 1,
+        showInMenu: true,
+        meta: {
+          description: 'Keep Your Head While Going Headless - The complete CMS that gives you a beautiful website AND a powerful API',
+          showTitle: false,
+          titleAlignment: 'center',
+        },
+        blocks: [
+          // HERO - Main value proposition
+          {
+            id: 'hero-main',
+            type: 'hero',
+            data: {
+              title: 'Keep Your Head While Going Headless',
+              subtitle: 'The complete CMS that gives you a beautiful website AND a powerful API. No compromises. No complexity. Just results.',
+              backgroundType: 'color',
+              heightMode: 'viewport',
+              contentAlignment: 'center',
+              overlayOpacity: 0,
+              titleAnimation: 'slide-up',
+              showScrollIndicator: true,
+              primaryButton: { text: 'Try the Demo', url: '/demo' },
+              secondaryButton: { text: 'Self-Host Free', url: 'https://github.com/pezcms/pezcms' },
+            },
+          },
+          // FEATURES - Three pillars (Head + PezCMS + Headless)
+          {
+            id: 'features-pillars',
+            type: 'features',
+            data: {
+              title: 'Best of Both Worlds',
+              features: [
+                {
+                  id: 'pillar-head',
+                  icon: 'Monitor',
+                  title: 'HEAD',
+                  description: 'Built-in website with visual editor, responsive design, and beautiful templates. No coding required.',
+                },
+                {
+                  id: 'pillar-core',
+                  icon: 'Blocks',
+                  title: 'PEZCMS',
+                  description: 'Single source of truth for all your content. Structured data, version control, and collaboration tools.',
+                },
+                {
+                  id: 'pillar-headless',
+                  icon: 'Code',
+                  title: 'HEADLESS',
+                  description: 'Powerful REST API for any frontend. React, Vue, mobile apps - deliver content anywhere.',
+                },
+              ],
+              columns: 3,
+              layout: 'grid',
+              variant: 'centered',
+              iconStyle: 'circle',
+            },
+          },
+          // LOGOS - Trusted by
+          {
+            id: 'logos-trusted',
+            type: 'logos',
+            data: {
+              title: 'Trusted by Modern Teams',
+              logos: [
+                { id: 'logo-1', name: 'TechCorp', logo: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=120&h=40&fit=crop' },
+                { id: 'logo-2', name: 'StartupX', logo: 'https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?w=120&h=40&fit=crop' },
+                { id: 'logo-3', name: 'DigitalCo', logo: 'https://images.unsplash.com/photo-1611162618071-b39a2ec055fb?w=120&h=40&fit=crop' },
+                { id: 'logo-4', name: 'InnovateLab', logo: 'https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=120&h=40&fit=crop' },
+                { id: 'logo-5', name: 'FutureTech', logo: 'https://images.unsplash.com/photo-1611162616475-46b635cb6868?w=120&h=40&fit=crop' },
+              ],
+              columns: 5,
+              layout: 'grid',
+              variant: 'grayscale',
+              logoSize: 'md',
+            },
+          },
+          // FEATURES - Complete CMS modules
+          {
+            id: 'features-modules',
+            type: 'features',
+            data: {
+              title: 'Everything You Need',
+              subtitle: 'A complete content platform with built-in modules that just work.',
+              features: [
+                {
+                  id: 'mod-blog',
+                  icon: 'FileText',
+                  title: 'Blog Module',
+                  description: 'Full-featured blog with categories, tags, authors, and SEO optimization. RSS feeds included.',
+                },
+                {
+                  id: 'mod-newsletter',
+                  icon: 'Mail',
+                  title: 'Newsletter Module',
+                  description: 'Built-in subscriber management, GDPR compliance, and email campaigns. No third-party needed.',
+                },
+                {
+                  id: 'mod-crm',
+                  icon: 'Users',
+                  title: 'CRM Module',
+                  description: 'Lead management, company tracking, and deal pipeline. Convert visitors to customers.',
+                },
+                {
+                  id: 'mod-forms',
+                  icon: 'ClipboardList',
+                  title: 'Form Builder',
+                  description: 'Drag-and-drop forms with validation, submissions tracking, and webhook integration.',
+                },
+                {
+                  id: 'mod-media',
+                  icon: 'Image',
+                  title: 'Media Library',
+                  description: 'Centralized asset management with image optimization, cropping, and Unsplash integration.',
+                },
+                {
+                  id: 'mod-webhooks',
+                  icon: 'Webhook',
+                  title: 'Webhooks & API',
+                  description: 'Connect to any service with webhooks. N8N templates included for common automations.',
+                },
+              ],
+              columns: 3,
+              layout: 'grid',
+              variant: 'cards',
+              iconStyle: 'square',
+            },
+          },
+          // FEATURES - AI-First Platform
+          {
+            id: 'features-ai',
+            type: 'features',
+            data: {
+              title: 'AI-First Platform',
+              subtitle: 'Leverage AI throughout your content workflow - with full control over your data.',
+              features: [
+                {
+                  id: 'ai-chat',
+                  icon: 'MessageSquare',
+                  title: 'AI Chat Assistant',
+                  description: 'Embed an AI chatbot on your site that knows your content. Answer questions 24/7.',
+                },
+                {
+                  id: 'ai-private',
+                  icon: 'Shield',
+                  title: 'Private LLM Support',
+                  description: 'Connect your own local LLM for complete data sovereignty. Your data never leaves your infrastructure.',
+                },
+                {
+                  id: 'ai-content',
+                  icon: 'Sparkles',
+                  title: 'AI Content Tools',
+                  description: 'Generate, improve, and translate content with AI. Maintain your brand voice automatically.',
+                },
+                {
+                  id: 'ai-migration',
+                  icon: 'ArrowRightLeft',
+                  title: 'AI Migration',
+                  description: 'Migrate from WordPress, Webflow, or any site. AI converts your content to structured blocks.',
+                },
+              ],
+              columns: 4,
+              layout: 'grid',
+              variant: 'minimal',
+              iconStyle: 'circle',
+            },
+          },
+          // TESTIMONIALS - Social proof
+          {
+            id: 'testimonials-main',
+            type: 'testimonials',
+            data: {
+              title: 'What Our Users Say',
+              testimonials: [
+                {
+                  id: 'test-1',
+                  content: 'Finally a CMS that gives us both a beautiful website AND the API flexibility we need. The AI chat feature has reduced our support tickets by 40%.',
+                  author: 'Emma Lindqvist',
+                  role: 'CTO',
+                  company: 'TechStart AB',
+                  rating: 5,
+                },
+                {
+                  id: 'test-2',
+                  content: 'We migrated from WordPress in an afternoon. The visual editor is intuitive, and the headless API lets us build our mobile app with the same content.',
+                  author: 'Marcus Andersson',
+                  role: 'Product Lead',
+                  company: 'DigitalFlow',
+                  rating: 5,
+                },
+                {
+                  id: 'test-3',
+                  content: 'The private LLM support was the dealbreaker for us. We needed AI features but couldn\'t send patient data to external services. PezCMS delivered.',
+                  author: 'Dr. Sofia Berg',
+                  role: 'Medical Director',
+                  company: 'HealthTech Nordic',
+                  rating: 5,
+                },
+              ],
+              layout: 'carousel',
+              columns: 3,
+              showRating: true,
+              showAvatar: false,
+              variant: 'cards',
+              autoplay: true,
+              autoplaySpeed: 5,
+            },
+          },
+          // COMPARISON - How we compare
+          {
+            id: 'comparison-competitors',
+            type: 'comparison',
+            data: {
+              title: 'How We Compare',
+              subtitle: 'See why teams choose PezCMS over traditional solutions.',
+              products: [
+                { id: 'pez', name: 'PezCMS', highlighted: true },
+                { id: 'webflow', name: 'Webflow' },
+                { id: 'contentful', name: 'Contentful' },
+                { id: 'wordpress', name: 'WordPress' },
+              ],
+              features: [
+                { id: 'f1', name: 'Visual Builder', values: [true, true, false, true] },
+                { id: 'f2', name: 'Headless API', values: [true, false, true, false] },
+                { id: 'f3', name: 'AI Chat Assistant', values: [true, false, false, false] },
+                { id: 'f4', name: 'Private LLM Support', values: [true, false, false, false] },
+                { id: 'f5', name: 'Built-in Blog', values: [true, true, false, true] },
+                { id: 'f6', name: 'Newsletter Module', values: [true, false, false, false] },
+                { id: 'f7', name: 'CRM Integration', values: [true, false, false, false] },
+                { id: 'f8', name: 'Self-Hostable', values: [true, false, false, true] },
+                { id: 'f9', name: 'GDPR Compliant', values: [true, true, true, 'Depends'] },
+                { id: 'f10', name: 'Open Source', values: [true, false, false, true] },
+              ],
+              variant: 'striped',
+              showPrices: false,
+              showButtons: false,
+              stickyHeader: true,
+            },
+          },
+          // PRICING - Deployment options
+          {
+            id: 'pricing-main',
+            type: 'pricing',
+            data: {
+              title: 'Your Infrastructure, Your Rules',
+              subtitle: 'Choose how you want to run PezCMS. Same features, your choice of control.',
+              tiers: [
+                {
+                  id: 'tier-self',
+                  name: 'Self-Hosted',
+                  price: 'Free',
+                  period: 'forever',
+                  description: 'Full control. Run on your own servers with Docker or directly on any VPS.',
+                  features: [
+                    'All features included',
+                    'Unlimited pages & content',
+                    'Your own database',
+                    'Private LLM support',
+                    'Community support',
+                    'GitHub issues & discussions',
+                  ],
+                  buttonText: 'Get Started',
+                  buttonUrl: 'https://github.com/pezcms/pezcms',
+                },
+                {
+                  id: 'tier-managed',
+                  name: 'Managed Cloud',
+                  price: '€49',
+                  period: '/month',
+                  description: 'We handle the infrastructure. You focus on content.',
+                  features: [
+                    'All features included',
+                    'Automatic updates',
+                    'Daily backups',
+                    'SSL & CDN included',
+                    'Priority support',
+                    '99.9% uptime SLA',
+                  ],
+                  buttonText: 'Start Free Trial',
+                  buttonUrl: '/kontakt',
+                  highlighted: true,
+                  badge: 'Recommended',
+                },
+                {
+                  id: 'tier-enterprise',
+                  name: 'Enterprise',
+                  price: 'Custom',
+                  description: 'For organizations with specific requirements.',
+                  features: [
+                    'Everything in Managed',
+                    'Dedicated infrastructure',
+                    'Custom SLA',
+                    'SSO & SAML',
+                    'Dedicated support manager',
+                    'Training & onboarding',
+                  ],
+                  buttonText: 'Contact Sales',
+                  buttonUrl: '/kontakt',
+                },
+              ],
+              columns: 3,
+              variant: 'cards',
+            },
+          },
+          // TIMELINE - How fast you can launch
+          {
+            id: 'timeline-launch',
+            type: 'timeline',
+            data: {
+              title: 'Zero to Launch',
+              subtitle: 'See how fast you can go live with PezCMS compared to alternatives.',
+              steps: [
+                {
+                  id: 'tl-1',
+                  title: 'PezCMS',
+                  description: 'Pick a template, customize content, and publish. Done in minutes.',
+                  date: '5 minutes',
+                  icon: 'Rocket',
+                },
+                {
+                  id: 'tl-2',
+                  title: 'Traditional CMS',
+                  description: 'Setup hosting, install CMS, configure plugins, customize theme, create content.',
+                  date: '2-3 weeks',
+                  icon: 'Clock',
+                },
+                {
+                  id: 'tl-3',
+                  title: 'Custom Build',
+                  description: 'Design, develop, test, deploy, maintain. Ongoing development costs.',
+                  date: '2-6 months',
+                  icon: 'Calendar',
+                },
+              ],
+              variant: 'vertical',
+              showDates: true,
+            },
+          },
+          // FEATURES - Who it's for
+          {
+            id: 'features-audience',
+            type: 'features',
+            data: {
+              title: 'Built For',
+              features: [
+                {
+                  id: 'aud-startup',
+                  icon: 'Rocket',
+                  title: 'Startups',
+                  description: 'Launch fast, iterate faster. Start free and scale as you grow.',
+                },
+                {
+                  id: 'aud-growing',
+                  icon: 'TrendingUp',
+                  title: 'Growing Businesses',
+                  description: 'Need a blog, newsletter, and CRM? Get them all in one platform.',
+                },
+                {
+                  id: 'aud-enterprise',
+                  icon: 'Building2',
+                  title: 'Enterprise',
+                  description: 'Data sovereignty, compliance, and self-hosting. Your rules.',
+                },
+              ],
+              columns: 3,
+              layout: 'grid',
+              variant: 'cards',
+              iconStyle: 'circle',
+            },
+          },
+          // CTA - Final call to action
+          {
+            id: 'cta-final',
+            type: 'cta',
+            data: {
+              title: 'Ready to See It in Action?',
+              subtitle: 'Try the live demo or self-host for free. No credit card required.',
+              buttonText: 'Launch Demo',
+              buttonUrl: '/demo',
+              gradient: true,
+            },
+          },
+        ],
+      },
+      // ===== FEATURES PAGE =====
+      {
+        title: 'Features',
+        slug: 'funktioner',
+        menu_order: 2,
+        showInMenu: true,
+        meta: {
+          description: 'Explore all PezCMS features - from visual editing to headless API, AI tools to CRM integration.',
+          showTitle: true,
+          titleAlignment: 'center',
+        },
+        blocks: [
+          {
+            id: 'hero-features',
+            type: 'hero',
+            data: {
+              title: 'Features That Matter',
+              subtitle: 'Everything you need to manage content, engage visitors, and grow your business.',
+              backgroundType: 'color',
+              heightMode: 'auto',
+              contentAlignment: 'center',
+              overlayOpacity: 0,
+            },
+          },
+          {
+            id: 'features-content',
+            type: 'features',
+            data: {
+              title: 'Content Management',
+              features: [
+                { id: 'f1', icon: 'Palette', title: 'Visual Editor', description: 'Drag-and-drop blocks, real-time preview, no code required.' },
+                { id: 'f2', icon: 'FileStack', title: 'Version History', description: 'Track every change, compare versions, restore with one click.' },
+                { id: 'f3', icon: 'Users2', title: 'Workflow', description: 'Writer, Approver, Admin roles. Review and publish processes.' },
+                { id: 'f4', icon: 'Languages', title: 'Multi-language', description: 'Built for localization. Translate content with AI assistance.' },
+              ],
+              columns: 4,
+              variant: 'minimal',
+              iconStyle: 'circle',
+            },
+          },
+          {
+            id: 'features-publish',
+            type: 'features',
+            data: {
+              title: 'Publishing & Distribution',
+              features: [
+                { id: 'p1', icon: 'Globe', title: 'Beautiful Websites', description: 'Responsive templates that look great on any device.' },
+                { id: 'p2', icon: 'Code', title: 'Headless API', description: 'RESTful API for React, Vue, mobile apps, or any frontend.' },
+                { id: 'p3', icon: 'Rss', title: 'RSS Feeds', description: 'Automatic RSS generation for blog posts and content updates.' },
+                { id: 'p4', icon: 'Webhook', title: 'Webhooks', description: 'Trigger external services on publish, update, or delete.' },
+              ],
+              columns: 4,
+              variant: 'minimal',
+              iconStyle: 'circle',
+            },
+          },
+          {
+            id: 'cta-features',
+            type: 'cta',
+            data: {
+              title: 'See All Features in Action',
+              subtitle: 'Try the live demo - no signup required.',
+              buttonText: 'Launch Demo',
+              buttonUrl: '/demo',
+              gradient: true,
+            },
+          },
+        ],
+      },
+      // ===== PRICING PAGE =====
+      {
+        title: 'Pricing',
+        slug: 'priser',
+        menu_order: 3,
+        showInMenu: true,
+        meta: {
+          description: 'PezCMS pricing - Self-hosted free forever, or managed cloud starting at €49/month.',
+          showTitle: true,
+          titleAlignment: 'center',
+        },
+        blocks: [
+          {
+            id: 'hero-pricing',
+            type: 'hero',
+            data: {
+              title: 'Simple, Transparent Pricing',
+              subtitle: 'No hidden fees, no per-seat charges. Self-host for free or let us manage everything.',
+              backgroundType: 'color',
+              heightMode: 'auto',
+              contentAlignment: 'center',
+              overlayOpacity: 0,
+            },
+          },
+          {
+            id: 'pricing-detailed',
+            type: 'pricing',
+            data: {
+              title: '',
+              tiers: [
+                {
+                  id: 'tier-self',
+                  name: 'Self-Hosted',
+                  price: 'Free',
+                  period: 'forever',
+                  description: 'Perfect for developers and organizations with DevOps capabilities.',
+                  features: [
+                    'All CMS features',
+                    'Unlimited pages & users',
+                    'Private LLM support',
+                    'Full API access',
+                    'Community support',
+                    'GitHub issues',
+                  ],
+                  buttonText: 'View on GitHub',
+                  buttonUrl: 'https://github.com/pezcms/pezcms',
+                },
+                {
+                  id: 'tier-managed',
+                  name: 'Managed Cloud',
+                  price: '€49',
+                  period: '/month',
+                  description: 'Everything included. We handle infrastructure, you focus on content.',
+                  features: [
+                    'Everything in Self-Hosted',
+                    'Automatic updates',
+                    'Daily backups',
+                    'SSL certificates',
+                    'Global CDN',
+                    'Priority email support',
+                    '99.9% uptime SLA',
+                  ],
+                  buttonText: 'Start Free Trial',
+                  buttonUrl: '/kontakt',
+                  highlighted: true,
+                  badge: 'Most Popular',
+                },
+                {
+                  id: 'tier-enterprise',
+                  name: 'Enterprise',
+                  price: 'Custom',
+                  description: 'For large organizations with specific requirements.',
+                  features: [
+                    'Everything in Managed',
+                    'Dedicated infrastructure',
+                    'Custom SLA',
+                    'SSO (SAML/OIDC)',
+                    'Dedicated success manager',
+                    'Custom integrations',
+                    'Training sessions',
+                  ],
+                  buttonText: 'Contact Sales',
+                  buttonUrl: '/kontakt',
+                },
+              ],
+              columns: 3,
+              variant: 'cards',
+            },
+          },
+          {
+            id: 'accordion-faq',
+            type: 'accordion',
+            data: {
+              title: 'Frequently Asked Questions',
+              items: [
+                {
+                  question: 'Is self-hosted really free forever?',
+                  answer: {
+                    type: 'doc',
+                    content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Yes! PezCMS is open source under the MIT license. You can run it on your own servers indefinitely without any licensing fees. The only costs are your own hosting and infrastructure.' }] }],
+                  },
+                },
+                {
+                  question: 'What\'s included in managed cloud?',
+                  answer: {
+                    type: 'doc',
+                    content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Everything. We handle server management, updates, security patches, backups, SSL certificates, and CDN distribution. You get a fully managed PezCMS instance that\'s always up-to-date.' }] }],
+                  },
+                },
+                {
+                  question: 'Can I migrate from self-hosted to managed?',
+                  answer: {
+                    type: 'doc',
+                    content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Absolutely. We provide migration tools to move your content and settings to our managed infrastructure. The process is seamless and we\'ll assist you through it.' }] }],
+                  },
+                },
+                {
+                  question: 'Do you offer discounts for startups or nonprofits?',
+                  answer: {
+                    type: 'doc',
+                    content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Yes! We offer 50% off managed plans for qualifying startups and registered nonprofits. Contact us with your details and we\'ll set you up.' }] }],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+      // ===== CONTACT PAGE =====
+      {
+        title: 'Contact',
+        slug: 'kontakt',
+        menu_order: 4,
+        showInMenu: true,
+        meta: {
+          description: 'Get in touch with the PezCMS team - we\'re here to help with questions, demos, and enterprise inquiries.',
+          showTitle: true,
+          titleAlignment: 'center',
+        },
+        blocks: [
+          {
+            id: 'hero-contact',
+            type: 'hero',
+            data: {
+              title: 'Let\'s Talk',
+              subtitle: 'Questions about PezCMS? Want a personalized demo? We\'re here to help.',
+              backgroundType: 'color',
+              heightMode: 'auto',
+              contentAlignment: 'center',
+              overlayOpacity: 0,
+            },
+          },
+          {
+            id: 'booking-demo',
+            type: 'booking',
+            data: {
+              title: 'Book a Demo',
+              description: 'See PezCMS in action with a personalized walkthrough tailored to your needs.',
+              mode: 'form',
+              submitButtonText: 'Request Demo',
+              successMessage: 'Thank you! We\'ll be in touch within 24 hours to schedule your demo.',
+              showPhoneField: true,
+              showDatePicker: false,
+              variant: 'card',
+            },
+          },
+          {
+            id: 'chat-support',
+            type: 'chat',
+            data: {
+              title: 'Quick Questions? Ask AI',
+              height: 'sm',
+              showSidebar: false,
+              variant: 'card',
+              initialPrompt: 'Hi! I can answer questions about PezCMS features, pricing, and deployment options. What would you like to know?',
+            },
+          },
+          {
+            id: 'contact-info',
+            type: 'contact',
+            data: {
+              title: 'Other Ways to Reach Us',
+              email: 'hello@pezcms.com',
+              phone: '+46 70 123 45 67',
+              hours: [
+                { day: 'Sales & Demos', time: 'Mon-Fri 9-17 CET' },
+                { day: 'Community Support', time: 'GitHub 24/7' },
+              ],
+            },
+          },
+        ],
+      },
+      // ===== PRIVACY POLICY =====
+      {
+        title: 'Privacy Policy',
+        slug: 'privacy-policy',
+        menu_order: 99,
+        showInMenu: false,
+        meta: {
+          description: 'PezCMS Privacy Policy - How we collect, use, and protect your personal data.',
+          showTitle: true,
+          titleAlignment: 'left',
+        },
+        blocks: [
+          {
+            id: 'text-privacy',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Introduction' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'PezCMS AB ("we", "us", or "our") is committed to protecting your privacy. This policy describes how we collect, use, and protect your personal information when you use our website and services.' }] },
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Data Controller' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'PezCMS AB is the data controller for the processing of your personal data. Contact us at privacy@pezcms.com for any questions.' }] },
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'What Data We Collect' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'We collect information you provide when creating an account, contacting us, or subscribing to our newsletter. This includes name, email, company name, and any other information you choose to provide.' }] },
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Your Rights' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Under GDPR, you have the right to access, rectify, erase, and port your personal data. You can also object to processing or request restriction. Contact us to exercise these rights.' }] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      // ===== TERMS OF SERVICE =====
+      {
+        title: 'Terms of Service',
+        slug: 'terms-of-service',
+        menu_order: 100,
+        showInMenu: false,
+        meta: {
+          description: 'PezCMS Terms of Service - Terms and conditions for using our platform.',
+          showTitle: true,
+          titleAlignment: 'left',
+        },
+        blocks: [
+          {
+            id: 'text-terms',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Agreement to Terms' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'By accessing or using PezCMS, you agree to be bound by these Terms of Service. If you disagree with any part of these terms, you may not access our services.' }] },
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Use of Service' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'You may use our services only for lawful purposes and in accordance with these Terms. You agree not to use our services in any way that violates applicable laws or regulations.' }] },
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Open Source License' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'PezCMS is open source software licensed under the MIT License. You are free to use, modify, and distribute the software according to the license terms.' }] },
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Managed Services' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Our managed cloud services are provided as-is. We strive for 99.9% uptime but are not liable for service interruptions beyond our control.' }] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+    ],
+    branding: {
+      organizationName: 'PezCMS',
+      brandTagline: 'Head + Headless CMS',
+      primaryColor: '162 63% 41%',
+      headingFont: 'Inter',
+      bodyFont: 'Inter',
+      borderRadius: 'lg',
+      shadowIntensity: 'medium',
+    },
+    chatSettings: {
+      enabled: true,
+      aiProvider: 'lovable',
+      widgetEnabled: true,
+      widgetPosition: 'bottom-right',
+      blockEnabled: true,
+      welcomeMessage: 'Hi! I can answer questions about PezCMS. What would you like to know?',
+      systemPrompt: 'You are the PezCMS assistant. Help users understand the product, features, and pricing. Be helpful, concise, and friendly. PezCMS is a complete CMS with both traditional website features and headless API capabilities.',
+      suggestedPrompts: [
+        'What is PezCMS?',
+        'How much does it cost?',
+        'Can I self-host PezCMS?',
+        'Does it support headless API?',
+      ],
+    },
+    footerSettings: {
+      email: 'hello@pezcms.com',
+      phone: '+46 70 123 45 67',
+      address: 'Stockholm, Sweden',
+      postalCode: '',
+      weekdayHours: 'Mon-Fri 9-17',
+      weekendHours: 'Community support 24/7',
+      linkedin: 'https://linkedin.com/company/pezcms',
+      twitter: 'https://twitter.com/pezcms',
+      facebook: '',
+      instagram: '',
+      youtube: '',
+      legalLinks: [
+        { id: 'privacy', label: 'Privacy Policy', url: '/privacy-policy', enabled: true },
+        { id: 'terms', label: 'Terms of Service', url: '/terms-of-service', enabled: true },
+      ],
+    },
+    seoSettings: {
+      siteTitle: 'PezCMS',
+      titleTemplate: '%s | PezCMS - Head + Headless CMS',
+      defaultDescription: 'Keep Your Head While Going Headless. The complete CMS with beautiful websites AND powerful APIs. Self-host free or use our managed cloud.',
       robotsIndex: true,
       robotsFollow: true,
       developmentMode: false,
