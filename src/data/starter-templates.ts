@@ -1,5 +1,12 @@
 import { ContentBlock, PageMeta, FooterBlockData } from '@/types/cms';
 import { BrandingSettings, ChatSettings, SeoSettings, CookieBannerSettings } from '@/hooks/useSiteSettings';
+import { 
+  launchpadBlogPosts, 
+  trustcorpBlogPosts, 
+  securehealthBlogPosts, 
+  momentumBlogPosts, 
+  pezcmsBlogPosts 
+} from './template-blog-posts';
 
 // Page definition within a template
 export interface TemplatePage {
@@ -10,6 +17,20 @@ export interface TemplatePage {
   meta: PageMeta;
   menu_order?: number;
   showInMenu?: boolean;
+}
+
+// Blog post definition within a template
+export interface TemplateBlogPost {
+  title: string;
+  slug: string;
+  excerpt: string;
+  featured_image?: string;
+  featured_image_alt?: string;
+  content: ContentBlock[];
+  meta?: {
+    description?: string;
+  };
+  is_featured?: boolean;
 }
 
 // Full site template
@@ -24,6 +45,9 @@ export interface StarterTemplate {
   
   // Multi-page support
   pages: TemplatePage[];
+  
+  // Blog posts (optional)
+  blogPosts?: TemplateBlogPost[];
   
   // Site-wide settings
   branding: Partial<BrandingSettings>;
@@ -2023,6 +2047,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
     tagline: 'Perfect for startups & SaaS',
     aiChatPosition: 'Small card widget for quick support',
     pages: launchpadPages,
+    blogPosts: launchpadBlogPosts,
     branding: {
       organizationName: 'LaunchPad',
       brandTagline: 'Launch Your Vision',
@@ -2085,6 +2110,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
     tagline: 'One page. Maximum impact.',
     aiChatPosition: 'Disabled for clean single-page experience',
     pages: momentumPages,
+    blogPosts: momentumBlogPosts,
     branding: {
       organizationName: 'Momentum',
       brandTagline: 'Build the Future',
@@ -2139,6 +2165,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
     tagline: 'For enterprises that demand excellence',
     aiChatPosition: 'Large embedded assistant with data sovereignty messaging',
     pages: trustcorpPages,
+    blogPosts: trustcorpBlogPosts,
     branding: {
       organizationName: 'TrustCorp',
       brandTagline: 'Enterprise Excellence',
@@ -2200,6 +2227,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
     tagline: 'For organizations where cloud AI is not an option',
     aiChatPosition: 'Full-height featured AI with explicit privacy messaging',
     pages: securehealthPages,
+    blogPosts: securehealthBlogPosts,
     branding: {
       organizationName: 'SecureHealth',
       brandTagline: 'Your Health, Your Privacy',
@@ -2264,6 +2292,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
     icon: 'Blocks',
     tagline: 'The ultimate dogfood - built with PezCMS, for PezCMS',
     aiChatPosition: 'Embedded assistant for product questions',
+    blogPosts: pezcmsBlogPosts,
     pages: [
       // ===== HOME PAGE =====
       {
