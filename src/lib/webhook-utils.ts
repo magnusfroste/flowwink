@@ -8,6 +8,7 @@ export type WebhookEventType =
   | 'blog_post.updated'
   | 'blog_post.deleted'
   | 'form.submitted'
+  | 'booking.submitted'
   | 'newsletter.subscribed'
   | 'newsletter.unsubscribed';
 
@@ -137,6 +138,29 @@ export const webhookEvents = {
       data: { 
         email,
         unsubscribed_at: new Date().toISOString(),
+      } 
+    }),
+    
+  bookingSubmitted: (booking: { 
+    block_id: string;
+    page_id?: string | null;
+    service?: { id: string; name: string } | null;
+    customer: { name: string; email: string; phone?: string };
+    preferred_date?: string;
+    preferred_time?: string;
+    message?: string;
+  }) => 
+    triggerWebhook({ 
+      event: 'booking.submitted', 
+      data: { 
+        block_id: booking.block_id,
+        page_id: booking.page_id,
+        service: booking.service,
+        customer: booking.customer,
+        preferred_date: booking.preferred_date,
+        preferred_time: booking.preferred_time,
+        message: booking.message,
+        submitted_at: new Date().toISOString(),
       } 
     }),
 };

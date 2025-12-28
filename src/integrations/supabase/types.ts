@@ -1183,6 +1183,7 @@ export type Database = {
         | "form.submitted"
         | "newsletter.subscribed"
         | "newsletter.unsubscribed"
+        | "booking.submitted"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1325,6 +1326,7 @@ export const Constants = {
         "form.submitted",
         "newsletter.subscribed",
         "newsletter.unsubscribed",
+        "booking.submitted",
       ],
     },
   },
