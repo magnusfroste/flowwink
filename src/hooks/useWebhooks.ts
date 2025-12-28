@@ -10,6 +10,7 @@ export type WebhookEvent =
   | 'blog_post.updated'
   | 'blog_post.deleted'
   | 'form.submitted'
+  | 'booking.submitted'
   | 'newsletter.subscribed'
   | 'newsletter.unsubscribed';
 
@@ -278,6 +279,7 @@ export const WEBHOOK_EVENT_LABELS: Record<WebhookEvent, string> = {
   'blog_post.updated': 'Blogginlägg uppdaterat',
   'blog_post.deleted': 'Blogginlägg borttaget',
   'form.submitted': 'Formulär inskickat',
+  'booking.submitted': 'Bokning inskickad',
   'newsletter.subscribed': 'Newsletter-prenumeration',
   'newsletter.unsubscribed': 'Newsletter-avprenumeration',
 };
@@ -285,6 +287,6 @@ export const WEBHOOK_EVENT_LABELS: Record<WebhookEvent, string> = {
 export const WEBHOOK_EVENT_CATEGORIES = {
   'Sidor': ['page.published', 'page.updated', 'page.deleted'] as WebhookEvent[],
   'Blogg': ['blog_post.published', 'blog_post.updated', 'blog_post.deleted'] as WebhookEvent[],
-  'Formulär': ['form.submitted'] as WebhookEvent[],
+  'Formulär & Bokningar': ['form.submitted', 'booking.submitted'] as WebhookEvent[],
   'Newsletter': ['newsletter.subscribed', 'newsletter.unsubscribed'] as WebhookEvent[],
 };

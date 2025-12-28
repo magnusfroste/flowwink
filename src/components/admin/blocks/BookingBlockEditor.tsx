@@ -1,10 +1,11 @@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { BookingBlockData } from '@/types/cms';
-import { Calendar, ExternalLink, Code } from 'lucide-react';
+import { BookingBlockData, BookingService } from '@/types/cms';
+import { Calendar, ExternalLink, Code, Plus, Trash2, Webhook } from 'lucide-react';
 
 interface BookingBlockEditorProps {
   data: BookingBlockData;
@@ -15,6 +16,27 @@ interface BookingBlockEditorProps {
 export function BookingBlockEditor({ data, onChange, isEditing }: BookingBlockEditorProps) {
   const updateData = (updates: Partial<BookingBlockData>) => {
     onChange({ ...data, ...updates });
+  };
+
+  const addService = () => {
+    const newService: BookingService = {
+      id: `service-${Date.now()}`,
+      name: '',
+      duration: '30 min',
+      description: '',
+    };
+    updateData({ services: [...(data.services || []), newService] });
+  };
+
+  const updateService = (id: string, updates: Partial<BookingService>) => {
+    const updated = (data.services || []).map((s) =>
+      s.id === id ? { ...s, ...updates } : s
+    );
+    updateData({ services: updated });
+  };
+
+  const removeService = (id: string) => {
+    updateData({ services: (data.services || []).filter((s) => s.id !== id) });
   };
 
   // Preview for non-editing mode
@@ -32,7 +54,19 @@ export function BookingBlockEditor({ data, onChange, isEditing }: BookingBlockEd
               {data.provider === 'custom' && 'Custom iframe embed'}
             </>
           ) : (
-            'Contact form for booking'
+            <>
+              Booking form
+              {data.services && data.services.length > 0 && (
+                <span className="block text-xs mt-1">
+                  {data.services.length} service{data.services.length > 1 ? 's' : ''} configured
+                </span>
+              )}
+              {data.triggerWebhook && (
+                <span className="flex items-center justify-center gap-1 text-xs text-primary mt-1">
+                  <Webhook className="h-3 w-3" /> Webhook enabled
+                </span>
+              )}
+            </>
           )}
         </p>
       </div>
@@ -168,10 +202,66 @@ export function BookingBlockEditor({ data, onChange, isEditing }: BookingBlockEd
 
       {/* Form Mode Options */}
       {data.mode === 'form' && (
-        <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+        <div className="space-y-6 p-4 border rounded-lg bg-muted/30">
           <p className="text-sm text-muted-foreground">
-            A simple contact form will be displayed. Submissions are saved to form submissions.
+            A booking form will be displayed. Submissions are saved and can trigger webhooks.
           </p>
+
+          {/* Services */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Service Selection</Label>
+                <p className="text-xs text-muted-foreground">Let users choose a service type</p>
+              </div>
+              <Switch
+                checked={data.showServiceSelector ?? false}
+                onCheckedChange={(checked) => updateData({ showServiceSelector: checked })}
+              />
+            </div>
+
+            {data.showServiceSelector && (
+              <div className="space-y-3 pl-4 border-l-2 border-muted">
+                {(data.services || []).map((service, index) => (
+                  <div key={service.id} className="flex gap-2 items-start">
+                    <div className="flex-1 space-y-2">
+                      <Input
+                        value={service.name}
+                        onChange={(e) => updateService(service.id, { name: e.target.value })}
+                        placeholder={`Service ${index + 1} name`}
+                      />
+                      <div className="flex gap-2">
+                        <Input
+                          value={service.duration || ''}
+                          onChange={(e) => updateService(service.id, { duration: e.target.value })}
+                          placeholder="Duration (e.g., 30 min)"
+                          className="w-32"
+                        />
+                        <Input
+                          value={service.description || ''}
+                          onChange={(e) => updateService(service.id, { description: e.target.value })}
+                          placeholder="Optional description"
+                          className="flex-1"
+                        />
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeService(service.id)}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                <Button variant="outline" size="sm" onClick={addService}>
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add Service
+                </Button>
+              </div>
+            )}
+          </div>
           
           <div className="space-y-2">
             <Label>Submit Button Text</Label>
@@ -212,6 +302,30 @@ export function BookingBlockEditor({ data, onChange, isEditing }: BookingBlockEd
               checked={data.showDatePicker ?? true}
               onCheckedChange={(checked) => updateData({ showDatePicker: checked })}
             />
+          </div>
+
+          {/* Webhook Integration */}
+          <div className="border-t pt-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label className="flex items-center gap-2">
+                  <Webhook className="h-4 w-4" />
+                  Trigger Webhook
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Send booking data to n8n or other automation tools
+                </p>
+              </div>
+              <Switch
+                checked={data.triggerWebhook ?? false}
+                onCheckedChange={(checked) => updateData({ triggerWebhook: checked })}
+              />
+            </div>
+            {data.triggerWebhook && (
+              <p className="text-xs text-muted-foreground mt-2 pl-6">
+                Configure webhooks in Settings → Webhooks. Subscribe to "booking.submitted" event.
+              </p>
+            )}
           </div>
         </div>
       )}

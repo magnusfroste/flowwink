@@ -3,11 +3,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar, Clock, Loader2, CheckCircle2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { BookingBlockData } from '@/types/cms';
+import { webhookEvents } from '@/lib/webhook-utils';
 
 interface BookingBlockProps {
   data: BookingBlockData;
@@ -25,6 +27,7 @@ const HEIGHT_MAP = {
 export function BookingBlock({ data, blockId, pageId }: BookingBlockProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [selectedService, setSelectedService] = useState<string>('');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -46,21 +49,52 @@ export function BookingBlock({ data, blockId, pageId }: BookingBlockProps) {
       return;
     }
 
+    // Check if service selection is required but not selected
+    if (data.showServiceSelector && data.services && data.services.length > 0 && !selectedService) {
+      toast.error('Please select a service');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
+      const service = data.services?.find(s => s.id === selectedService);
+      
+      const submissionData = {
+        ...formData,
+        service: service ? { id: service.id, name: service.name } : null,
+      };
+
       const { error } = await supabase.from('form_submissions').insert({
         block_id: blockId || 'booking-block',
         page_id: pageId || null,
         form_name: data.title || 'Booking Request',
-        data: formData,
+        data: submissionData,
         metadata: {
           type: 'booking',
+          service_id: selectedService || null,
           submitted_at: new Date().toISOString(),
         },
       });
 
       if (error) throw error;
+
+      // Trigger webhook if enabled
+      if (data.triggerWebhook) {
+        await webhookEvents.bookingSubmitted({
+          block_id: blockId || 'booking-block',
+          page_id: pageId,
+          service: service ? { id: service.id, name: service.name } : null,
+          customer: {
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phone || undefined,
+          },
+          preferred_date: formData.preferredDate || undefined,
+          preferred_time: formData.preferredTime || undefined,
+          message: formData.message || undefined,
+        });
+      }
 
       setSubmitted(true);
       toast.success(data.successMessage || 'Booking request submitted!');
@@ -186,6 +220,35 @@ export function BookingBlock({ data, blockId, pageId }: BookingBlockProps) {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Service selector */}
+          {data.showServiceSelector && data.services && data.services.length > 0 && (
+            <div className="space-y-2">
+              <Label htmlFor="booking-service">Service *</Label>
+              <Select value={selectedService} onValueChange={setSelectedService}>
+                <SelectTrigger id="booking-service">
+                  <SelectValue placeholder="Select a service" />
+                </SelectTrigger>
+                <SelectContent>
+                  {data.services.map((service) => (
+                    <SelectItem key={service.id} value={service.id}>
+                      <div className="flex items-center gap-2">
+                        <span>{service.name}</span>
+                        {service.duration && (
+                          <span className="text-muted-foreground text-xs">({service.duration})</span>
+                        )}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {data.services.find(s => s.id === selectedService)?.description && (
+                <p className="text-sm text-muted-foreground">
+                  {data.services.find(s => s.id === selectedService)?.description}
+                </p>
+              )}
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="booking-name">Name *</Label>

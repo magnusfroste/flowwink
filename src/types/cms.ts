@@ -414,6 +414,14 @@ export interface PopupBlockData {
 // Booking block data
 export type BookingProvider = 'calendly' | 'cal' | 'hubspot' | 'custom';
 
+// Service type for booking form
+export interface BookingService {
+  id: string;
+  name: string;
+  duration?: string; // e.g., "30 min"
+  description?: string;
+}
+
 export interface BookingBlockData {
   // Content
   title?: string;
@@ -429,6 +437,11 @@ export interface BookingBlockData {
   successMessage?: string;
   showPhoneField?: boolean;
   showDatePicker?: boolean;
+  // Service selection
+  services?: BookingService[];
+  showServiceSelector?: boolean;
+  // Webhook integration
+  triggerWebhook?: boolean;
   // Styling
   variant?: 'default' | 'card' | 'minimal';
 }
