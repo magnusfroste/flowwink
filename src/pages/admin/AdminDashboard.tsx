@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { FileText, Clock, CheckCircle, AlertCircle, Plus } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
+import { VersionBadge } from '@/components/admin/VersionBadge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/StatusBadge';
@@ -217,6 +218,11 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
           )}
+        </div>
+
+        {/* Version Badge */}
+        <div className="mt-12 pt-6 border-t flex justify-end">
+          <VersionBadge />
         </div>
       </div>
     </AdminLayout>
