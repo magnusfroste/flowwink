@@ -50,7 +50,7 @@ Till skillnad från traditionella CMS (som bara levererar webbplats) eller rena 
 
 Pezcms använder en modulär block-arkitektur för flexibel innehållshantering:
 
-#### Tillgängliga Block (16 typer)
+#### Tillgängliga Block (27 typer)
 
 | Kategori | Block | Beskrivning |
 |----------|-------|-------------|
@@ -58,24 +58,37 @@ Pezcms använder en modulär block-arkitektur för flexibel innehållshantering:
 | | Image | Bild med alt-text och bildtext |
 | | Gallery | Galleri med grid/carousel/masonry + lightbox |
 | | Quote | Citat med författare och källa |
-| **Layout** | Two-Column | Tvåkolumnslayout med anpassningsbar bredd |
+| | YouTube | Inbäddad YouTube-video med autoplay-inställningar |
+| **Layout** | Two-Column | Tvåkolumnslayout med text och bild |
 | | Separator | Visuell avdelare (linje/punkter/ornament/mellanrum) |
-| **Navigation** | Link Grid | Rutnät med länkkort |
-| | Hero | Sidhuvud med bakgrund, titel och CTA |
-| **Information** | Fact Box | Fakta-/informationsruta |
-| | Info Box | Informationsblock med ikon |
-| | Stats | Nyckeltal och statistik |
-| | Accordion | Expanderbar FAQ/innehåll |
+| **Navigation** | Link Grid | Rutnät med länkkort och ikoner |
+| | Hero | Sidhuvud med bakgrund (bild/video/färg), titel och CTA |
+| **Information** | Info Box | Informationsblock med variant (info/success/warning/highlight) |
+| | Stats | Nyckeltal och statistik med ikoner |
+| | Accordion | Expanderbar FAQ/innehåll med bilder |
 | | Article Grid | Rutnät med artikelkort |
-| **Interaktion** | CTA | Call-to-action med knappar |
-| | Contact | Kontaktinformation |
-| | YouTube | Inbäddad YouTube-video |
-| | Chat | Inbäddad AI-chatt |
+| | Features | Funktioner/tjänster med ikoner och beskrivningar |
+| | Timeline | Stegvis process eller historik |
+| **Social Proof** | Testimonials | Kundrecensioner med stjärnbetyg, carousel/grid-layout |
+| | Logos | Kundlogotyper/partners med gråskale-/scroll-variant |
+| | Team | Teammedlemmar med bio, foto och sociala länkar |
+| **Konvertering** | CTA | Call-to-action med knappar och gradient |
+| | Pricing | Pristabell med tiers, features och badges |
+| | Comparison | Jämförelsetabell för produkter/planer |
+| | Booking | Bokningsformulär eller embed (Calendly/Cal.com/HubSpot) |
+| | Form | Anpassningsbart formulär med fältvalidering |
+| | Newsletter | Nyhetsbrev-anmälan med GDPR-samtycke |
+| **Kontakt** | Contact | Kontaktinformation med adress och öppettider |
+| | Map | Google Maps-embed med adress |
+| **Interaktivt** | Chat | Inbäddad AI-chatt med kontextmedvetenhet |
+| | Popup | Triggade popups (scroll/tid/exit-intent) |
 
 #### Block-funktioner
 
-- **Drag & Drop**: Omordna block fritt
+- **Drag & Drop**: Omordna block fritt med @dnd-kit
 - **Duplicera/Ta bort**: Snabb hantering
+- **Animationer**: Per-block animeringar (fade, slide, scale)
+- **Spacing**: Konfigurerbar padding och margin
 - **Förhandsgranskning**: Se ändringar i realtid
 - **Responsivt**: Alla block anpassas automatiskt
 
@@ -83,6 +96,7 @@ Pezcms använder en modulär block-arkitektur för flexibel innehållshantering:
 
 - **Uppladdning**: Drag & drop eller filväljare
 - **WebP-konvertering**: Automatisk optimering
+- **Unsplash-integration**: Sök och använd stockbilder
 - **Sök & Filter**: Hitta bilder snabbt
 - **Återanvändning**: Välj från biblioteket i alla block
 - **Alt-text**: WCAG-kompatibel bildhantering
@@ -464,6 +478,7 @@ Visuellt diagram som demonstrerar innehållsflöde från CMS till olika kanaler:
 - ✅ **AI Chat** (Live)
 - ✅ **Newsletter** (Live)
 - ✅ **Webhooks/N8N** (Live)
+- ✅ **Booking System** (Live)
 - 🔮 **Mobile App** (Framtida)
 - 🔮 **Digital Signage** (Framtida)
 
@@ -475,10 +490,192 @@ Visuellt diagram som demonstrerar innehållsflöde från CMS till olika kanaler:
 
 ### 8.3 Content Model Overview
 
-Översikt av alla block-typer med:
+Översikt av alla 27 block-typer med:
 - Antal instanser i publicerade sidor
 - JSON-preview av block-struktur
 - Dokumentation av data-format
+
+### 8.4 Block Data Structures
+
+#### Konverteringsblock
+
+**Testimonials Block**
+```typescript
+interface TestimonialsBlockData {
+  title?: string;
+  subtitle?: string;
+  testimonials: {
+    id: string;
+    content: string;
+    author: string;
+    role?: string;
+    company?: string;
+    avatar?: string;
+    rating?: number; // 1-5 stars
+  }[];
+  layout: 'grid' | 'carousel' | 'single';
+  columns?: 2 | 3;
+  showRating?: boolean;
+  showAvatar?: boolean;
+  variant?: 'default' | 'cards' | 'minimal';
+  autoplay?: boolean;
+  autoplaySpeed?: number;
+}
+```
+
+**Pricing Block**
+```typescript
+interface PricingBlockData {
+  title?: string;
+  subtitle?: string;
+  tiers: {
+    id: string;
+    name: string;
+    price: string;
+    period?: string;
+    description?: string;
+    features: string[];
+    buttonText?: string;
+    buttonUrl?: string;
+    highlighted?: boolean;
+    badge?: string;
+  }[];
+  columns?: 2 | 3 | 4;
+  variant?: 'default' | 'cards' | 'compact';
+}
+```
+
+**Comparison Block**
+```typescript
+interface ComparisonBlockData {
+  title?: string;
+  subtitle?: string;
+  products: {
+    id: string;
+    name: string;
+    price?: string;
+    highlighted?: boolean;
+    buttonText?: string;
+    buttonUrl?: string;
+  }[];
+  features: {
+    id: string;
+    name: string;
+    values: (boolean | string)[]; // One value per product
+  }[];
+  variant?: 'default' | 'striped' | 'bordered';
+}
+```
+
+**Booking Block (Enhanced)**
+```typescript
+interface BookingBlockData {
+  title?: string;
+  description?: string;
+  mode: 'embed' | 'form';
+  // Embed mode
+  provider?: 'calendly' | 'cal' | 'hubspot' | 'custom';
+  embedUrl?: string;
+  height?: 'sm' | 'md' | 'lg' | 'xl';
+  // Form mode
+  submitButtonText?: string;
+  successMessage?: string;
+  showPhoneField?: boolean;
+  showDatePicker?: boolean;
+  // Service selection
+  services?: {
+    id: string;
+    name: string;
+    duration?: string;
+    description?: string;
+  }[];
+  showServiceSelector?: boolean;
+  // Webhook integration
+  triggerWebhook?: boolean;
+  variant?: 'default' | 'card' | 'minimal';
+}
+```
+
+#### Social Proof Block
+
+**Team Block**
+```typescript
+interface TeamBlockData {
+  title?: string;
+  subtitle?: string;
+  members: {
+    id: string;
+    name: string;
+    role: string;
+    bio?: string;
+    photo?: string;
+    social?: {
+      linkedin?: string;
+      twitter?: string;
+      email?: string;
+    };
+  }[];
+  columns?: 2 | 3 | 4;
+  layout?: 'grid' | 'carousel';
+  variant?: 'default' | 'cards' | 'compact';
+  showBio?: boolean;
+  showSocial?: boolean;
+}
+```
+
+**Logos Block**
+```typescript
+interface LogosBlockData {
+  title?: string;
+  subtitle?: string;
+  logos: {
+    id: string;
+    name: string;
+    logo: string;
+    url?: string;
+  }[];
+  columns?: 3 | 4 | 5 | 6;
+  layout?: 'grid' | 'carousel' | 'scroll';
+  variant?: 'default' | 'grayscale' | 'bordered';
+  logoSize?: 'sm' | 'md' | 'lg';
+}
+```
+
+**Features Block**
+```typescript
+interface FeaturesBlockData {
+  title?: string;
+  subtitle?: string;
+  features: {
+    id: string;
+    icon: string;
+    title: string;
+    description: string;
+    url?: string;
+  }[];
+  columns?: 2 | 3 | 4;
+  layout?: 'grid' | 'list';
+  variant?: 'default' | 'cards' | 'minimal' | 'centered';
+  iconStyle?: 'circle' | 'square' | 'none';
+}
+```
+
+**Timeline Block**
+```typescript
+interface TimelineBlockData {
+  title?: string;
+  subtitle?: string;
+  steps: {
+    id: string;
+    icon?: string;
+    title: string;
+    description: string;
+    date?: string;
+  }[];
+  variant?: 'vertical' | 'horizontal';
+  showDates?: boolean;
+  showIcons?: boolean;
+}
 
 ---
 
@@ -672,13 +869,29 @@ För vårdorganisationer som kräver HIPAA:
 - **Newsletter Module** — Subscribers, campaigns, open/click tracking, GDPR export
 - **Integration Module** — Webhooks, N8N templates, event system
 
-### Fas 3: Process Automation (Backlog - Committed)
+### Fas 3: Process Automation ✅ (Complete)
 
 | Module | Priority | Synergy | Status |
 |--------|----------|---------|--------|
-| **Booking/Scheduling** | High | Newsletter (reminders), Webhooks (calendar sync) | Planned |
-| **Lead CRM** | Medium | Forms → Pipeline, Newsletter nurturing | Completed |
-| **Knowledge Base** | Medium | AI Chat context, structured FAQ | Planned |
+| **Booking/Scheduling** | High | Newsletter (reminders), Webhooks (calendar sync) | ✅ Complete |
+| **Lead CRM** | Medium | Forms → Pipeline, Newsletter nurturing | ✅ Complete |
+| **Conversion Blocks** | High | Social proof, pricing tables | ✅ Complete |
+
+#### Booking Module Features
+- **Service Selection**: Configurable services with duration and description
+- **Form Mode**: Built-in appointment request form
+- **Embed Mode**: Calendly, Cal.com, HubSpot integration
+- **Webhook Trigger**: Automatic `booking.submitted` event for n8n workflows
+- **Dedicated Page**: SecureHealth template includes `/boka` appointments page
+
+#### Conversion Blocks Added
+- **Testimonials**: Customer reviews with star ratings, carousel/grid layouts
+- **Pricing**: Tiered pricing tables with features and CTA buttons
+- **Comparison**: Feature comparison tables for plans/products
+- **Team**: Staff profiles with photos, bio, and social links
+- **Logos**: Client/partner logos with grayscale and scroll variants
+- **Features**: Service/feature grids with icons
+- **Timeline**: Step-by-step process visualization
 
 ### Fas 4: Enterprise (Future)
 - SSO/SAML
@@ -686,10 +899,37 @@ För vårdorganisationer som kräver HIPAA:
 - Advanced analytics & A/B testing
 - API rate limiting
 - Dedicated support SLA
+- Knowledge Base with structured FAQ
 
 ---
 
-## Appendix B: API Reference
+## Appendix B: Webhook Events
+
+### Available Events
+
+| Event | Description | Payload |
+|-------|-------------|---------|
+| `page.published` | Page published | id, slug, title, published_at |
+| `page.updated` | Page updated | id, slug, title, updated_at |
+| `page.deleted` | Page deleted | id, deleted_at |
+| `blog_post.published` | Blog post published | id, slug, title, excerpt, published_at |
+| `blog_post.updated` | Blog post updated | id, slug, title, updated_at |
+| `blog_post.deleted` | Blog post deleted | id, deleted_at |
+| `form.submitted` | Form submitted | form_name, block_id, page_id, submission_data |
+| `booking.submitted` | Booking request | service, customer, preferred_date/time, message |
+| `newsletter.subscribed` | Newsletter signup | email, name, subscribed_at |
+| `newsletter.unsubscribed` | Newsletter unsubscribe | email, unsubscribed_at |
+
+### Webhook Configuration
+- HMAC-SHA256 signature validation
+- Custom headers support
+- Retry with exponential backoff
+- Auto-disable after 5 consecutive failures
+- Test and resend from admin UI
+
+---
+
+## Appendix C: API Reference
 
 Se separat API-dokumentation för fullständig referens av:
 - REST endpoints
@@ -697,6 +937,28 @@ Se separat API-dokumentation för fullständig referens av:
 - Authentication
 - Rate limits
 - Error codes
+
+---
+
+## Appendix D: Starter Templates
+
+### Available Templates
+
+| Template | Category | Pages | Target |
+|----------|----------|-------|--------|
+| **Launchpad** | Startup | 5 | SaaS/Tech startups |
+| **TrustCorp** | Enterprise | 5 | B2B companies |
+| **SecureHealth** | Compliance | 7 | Healthcare providers |
+| **PezCMS Platform** | Platform | 5 | CMS showcase |
+
+### SecureHealth Template Highlights
+- HIPAA-compliant messaging
+- Dedicated Appointments page (`/boka`)
+- Service-based booking with 5 pre-configured medical services
+- Webhook integration for n8n calendar sync
+- Patient resources and FAQ
+- Team profiles for medical staff
+- Emergency contact information
 
 ---
 
