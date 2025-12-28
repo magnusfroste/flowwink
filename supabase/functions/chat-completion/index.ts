@@ -27,6 +27,7 @@ interface ChatRequest {
     includeContentAsContext?: boolean;
     contentContextMaxTokens?: number;
     includedPageSlugs?: string[];
+    includeKbArticles?: boolean;
   };
 }
 
@@ -143,58 +144,107 @@ function extractTextFromBlock(block: any): string {
 }
 
 // Build knowledge base from pages
-async function buildKnowledgeBase(maxTokens: number, includedSlugs: string[] = []): Promise<string> {
+async function buildKnowledgeBase(
+  maxTokens: number, 
+  includedSlugs: string[] = [],
+  includeKbArticles: boolean = false
+): Promise<string> {
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
   const supabase = createClient(supabaseUrl, supabaseKey);
 
+  const sections: string[] = [];
+  let estimatedTokens = 0;
+
+  // Fetch CMS pages
   let query = supabase
     .from('pages')
     .select('title, slug, content_json')
     .eq('status', 'published');
 
-  // Filter by included slugs if specified
   if (includedSlugs.length > 0) {
     query = query.in('slug', includedSlugs);
   }
 
-  const { data: pages, error } = await query;
+  const { data: pages, error: pagesError } = await query;
 
-  if (error || !pages) {
-    console.error('Failed to fetch pages for knowledge base:', error);
-    return '';
+  if (pagesError) {
+    console.error('Failed to fetch pages for knowledge base:', pagesError);
   }
 
-  const sections: string[] = [];
-  let estimatedTokens = 0;
+  // Process pages
+  if (pages) {
+    for (const page of pages) {
+      const pageTexts: string[] = [];
+      
+      if (page.content_json && Array.isArray(page.content_json)) {
+        for (const block of page.content_json) {
+          const text = extractTextFromBlock(block);
+          if (text) pageTexts.push(text);
+        }
+      }
 
-  for (const page of pages) {
-    const pageTexts: string[] = [];
-    
-    if (page.content_json && Array.isArray(page.content_json)) {
-      for (const block of page.content_json) {
-        const text = extractTextFromBlock(block);
-        if (text) pageTexts.push(text);
+      if (pageTexts.length > 0) {
+        const pageContent = `### ${page.title} (/${page.slug})\n${pageTexts.join('\n')}`;
+        const contentTokens = Math.ceil(pageContent.length / 4);
+        
+        if (estimatedTokens + contentTokens > maxTokens) {
+          console.log(`Knowledge base truncated at ${estimatedTokens} tokens (max: ${maxTokens})`);
+          break;
+        }
+        
+        sections.push(pageContent);
+        estimatedTokens += contentTokens;
       }
     }
+  }
 
-    if (pageTexts.length > 0) {
-      const pageContent = `### ${page.title} (/${page.slug})\n${pageTexts.join('\n')}`;
-      const contentTokens = Math.ceil(pageContent.length / 4); // Rough estimate: 4 chars per token
+  // Fetch KB articles if enabled
+  if (includeKbArticles) {
+    const { data: kbArticles, error: kbError } = await supabase
+      .from('kb_articles')
+      .select('title, question, answer_json, answer_text')
+      .eq('include_in_chat', true)
+      .eq('is_published', true);
+
+    if (kbError) {
+      console.error('Failed to fetch KB articles:', kbError);
+    }
+
+    if (kbArticles && kbArticles.length > 0) {
+      const faqSection: string[] = [];
       
-      if (estimatedTokens + contentTokens > maxTokens) {
-        console.log(`Knowledge base truncated at ${estimatedTokens} tokens (max: ${maxTokens})`);
-        break;
+      for (const article of kbArticles) {
+        // Extract answer text
+        let answerText = article.answer_text || '';
+        if (!answerText && article.answer_json) {
+          answerText = extractTextFromTiptap(article.answer_json);
+        }
+        
+        if (answerText) {
+          const faqEntry = `Q: ${article.question}\nA: ${answerText}`;
+          const entryTokens = Math.ceil(faqEntry.length / 4);
+          
+          if (estimatedTokens + entryTokens > maxTokens) {
+            console.log(`KB articles truncated at ${estimatedTokens} tokens`);
+            break;
+          }
+          
+          faqSection.push(faqEntry);
+          estimatedTokens += entryTokens;
+        }
       }
-      
-      sections.push(pageContent);
-      estimatedTokens += contentTokens;
+
+      if (faqSection.length > 0) {
+        sections.push(`\n## Vanliga frågor (FAQ)\n${faqSection.join('\n\n')}`);
+        console.log(`Added ${faqSection.length} KB articles to knowledge base`);
+      }
     }
   }
 
   if (sections.length === 0) return '';
 
-  console.log(`Built knowledge base: ${pages.length} pages, ~${estimatedTokens} tokens`);
+  console.log(`Built knowledge base: ~${estimatedTokens} tokens`);
   
   return `\n\n## Webbplatsens innehåll (kunskapsbas)\nAnvänd följande information för att svara på frågor om verksamheten:\n\n${sections.join('\n\n')}`;
 }
@@ -219,10 +269,15 @@ serve(async (req) => {
     let systemPrompt = settings?.systemPrompt || 'Du är en hjälpsam AI-assistent.';
 
     // Add knowledge base if enabled
-    if (settings?.includeContentAsContext) {
+    if (settings?.includeContentAsContext || settings?.includeKbArticles) {
       const maxTokens = settings?.contentContextMaxTokens || 50000;
       const includedSlugs = settings?.includedPageSlugs || [];
-      const knowledgeBase = await buildKnowledgeBase(maxTokens, includedSlugs);
+      const includeKb = settings?.includeKbArticles || false;
+      const knowledgeBase = await buildKnowledgeBase(
+        maxTokens, 
+        settings?.includeContentAsContext ? includedSlugs : [],
+        includeKb
+      );
       if (knowledgeBase) {
         systemPrompt += knowledgeBase;
       }
