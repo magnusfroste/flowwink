@@ -15,6 +15,7 @@ export interface ModuleConfig {
 export interface ModulesSettings {
   pages: ModuleConfig;
   blog: ModuleConfig;
+  knowledgeBase: ModuleConfig;
   chat: ModuleConfig;
   newsletter: ModuleConfig;
   forms: ModuleConfig;
@@ -41,6 +42,13 @@ export const defaultModulesSettings: ModulesSettings = {
     name: 'Blog',
     description: 'Blog posts with categories, tags and RSS feed',
     icon: 'BookOpen',
+    category: 'content',
+  },
+  knowledgeBase: {
+    enabled: false,
+    name: 'Knowledge Base',
+    description: 'Structured FAQ with categories and AI Chat integration',
+    icon: 'Library',
     category: 'content',
   },
   chat: {
@@ -120,6 +128,7 @@ export const defaultModulesSettings: ModulesSettings = {
 export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/pages': 'pages',
   '/admin/blog': 'blog',
+  '/admin/knowledge-base': 'knowledgeBase',
   '/admin/chat': 'chat',
   '/admin/newsletter': 'newsletter',
   '/admin/forms': 'forms',

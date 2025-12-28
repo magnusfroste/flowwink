@@ -89,3 +89,32 @@ export function isDocumentEmpty(content: string | TiptapDocument | undefined): b
   
   return false;
 }
+
+/**
+ * Extract plain text from Tiptap JSON document
+ */
+export function extractPlainText(content: unknown): string {
+  if (!content) return '';
+  
+  if (typeof content === 'string') {
+    return content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+  
+  if (typeof content === 'object' && content !== null) {
+    const texts: string[] = [];
+    
+    const extract = (node: any) => {
+      if (node.text) {
+        texts.push(node.text);
+      }
+      if (node.content && Array.isArray(node.content)) {
+        node.content.forEach(extract);
+      }
+    };
+    
+    extract(content);
+    return texts.join(' ').replace(/\s+/g, ' ').trim();
+  }
+  
+  return '';
+}

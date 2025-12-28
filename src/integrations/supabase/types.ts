@@ -552,6 +552,133 @@ export type Database = {
         }
         Relationships: []
       }
+      kb_articles: {
+        Row: {
+          answer_json: Json | null
+          answer_text: string | null
+          category_id: string
+          created_at: string
+          created_by: string | null
+          helpful_count: number | null
+          id: string
+          include_in_chat: boolean | null
+          is_featured: boolean | null
+          is_published: boolean | null
+          meta_json: Json | null
+          not_helpful_count: number | null
+          question: string
+          slug: string
+          sort_order: number | null
+          title: string
+          updated_at: string
+          updated_by: string | null
+          views_count: number | null
+        }
+        Insert: {
+          answer_json?: Json | null
+          answer_text?: string | null
+          category_id: string
+          created_at?: string
+          created_by?: string | null
+          helpful_count?: number | null
+          id?: string
+          include_in_chat?: boolean | null
+          is_featured?: boolean | null
+          is_published?: boolean | null
+          meta_json?: Json | null
+          not_helpful_count?: number | null
+          question: string
+          slug: string
+          sort_order?: number | null
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+          views_count?: number | null
+        }
+        Update: {
+          answer_json?: Json | null
+          answer_text?: string | null
+          category_id?: string
+          created_at?: string
+          created_by?: string | null
+          helpful_count?: number | null
+          id?: string
+          include_in_chat?: boolean | null
+          is_featured?: boolean | null
+          is_published?: boolean | null
+          meta_json?: Json | null
+          not_helpful_count?: number | null
+          question?: string
+          slug?: string
+          sort_order?: number | null
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+          views_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kb_articles_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "kb_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kb_categories: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          parent_id: string | null
+          slug: string
+          sort_order: number | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          parent_id?: string | null
+          slug: string
+          sort_order?: number | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          parent_id?: string | null
+          slug?: string
+          sort_order?: number | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kb_categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "kb_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lead_activities: {
         Row: {
           created_at: string
