@@ -5,11 +5,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useLeads, useLeadStats } from '@/hooks/useLeads';
 import { useDealStats } from '@/hooks/useDeals';
 import { formatPrice } from '@/hooks/useProducts';
 import { getLeadStatusInfo, type LeadStatus } from '@/lib/lead-utils';
-import { Users, TrendingUp, UserCheck, AlertCircle, Sparkles, Plus, Briefcase, Target, Trophy, XCircle } from 'lucide-react';
+import { useExportLeads, useImportLeads } from '@/hooks/useCsvImportExport';
+import { CsvImportDialog } from '@/components/admin/CsvImportDialog';
+import { Users, TrendingUp, UserCheck, AlertCircle, Sparkles, Plus, Briefcase, Target, Trophy, XCircle, Download, Upload, MoreVertical } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -17,12 +20,25 @@ import { CreateLeadDialog } from '@/components/admin/CreateLeadDialog';
 
 export default function LeadsPage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('pipeline');
   const { data: stats, isLoading: statsLoading } = useLeadStats();
   const { data: dealStats, isLoading: dealStatsLoading } = useDealStats();
   const { data: leads, isLoading: leadsLoading } = useLeads();
   const { data: reviewLeads } = useLeads({ needsReview: true });
   const navigate = useNavigate();
+  const exportLeads = useExportLeads();
+  const importLeads = useImportLeads();
+
+  const handleExport = () => {
+    if (leads && leads.length > 0) {
+      exportLeads(leads);
+    }
+  };
+
+  const handleImport = async (file: File) => {
+    return await importLeads.mutateAsync(file);
+  };
 
   const statCards = [
     { label: 'Total', value: stats?.total || 0, icon: Users, color: 'text-foreground' },
@@ -43,13 +59,40 @@ export default function LeadsPage() {
         title="Contacts"
         description="Manage contacts and view pipeline"
       >
-        <Button onClick={() => setShowCreateDialog(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          New Contact
-        </Button>
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleExport} disabled={!leads?.length}>
+                <Download className="h-4 w-4 mr-2" />
+                Export CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShowImportDialog(true)}>
+                <Upload className="h-4 w-4 mr-2" />
+                Import CSV
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button onClick={() => setShowCreateDialog(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            New Contact
+          </Button>
+        </div>
       </AdminPageHeader>
 
       <CreateLeadDialog open={showCreateDialog} onOpenChange={setShowCreateDialog} />
+      <CsvImportDialog
+        open={showImportDialog}
+        onOpenChange={setShowImportDialog}
+        title="Import Leads"
+        description="Upload a CSV file to import leads. Existing leads with the same email will be updated."
+        expectedColumns={['Email (required)', 'Name', 'Phone', 'Source', 'Status']}
+        onImport={handleImport}
+      />
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
