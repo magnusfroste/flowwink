@@ -14,6 +14,7 @@ import { StarterTemplate } from '@/data/starter-templates';
 import { useCreatePage, usePages, useDeletePage } from '@/hooks/usePages';
 import { useUpdateBrandingSettings, useUpdateChatSettings, useUpdateGeneralSettings, useUpdateSeoSettings, useUpdateCookieBannerSettings } from '@/hooks/useSiteSettings';
 import { useUpdateFooterBlock } from '@/hooks/useGlobalBlocks';
+import { useCreateBlogPost } from '@/hooks/useBlogPosts';
 import { useToast } from '@/hooks/use-toast';
 
 type CreationStep = 'select' | 'creating' | 'done';
@@ -41,6 +42,7 @@ export default function NewSitePage() {
   const updateFooter = useUpdateFooterBlock();
   const updateSeo = useUpdateSeoSettings();
   const updateCookieBanner = useUpdateCookieBannerSettings();
+  const createBlogPost = useCreateBlogPost();
   const { toast } = useToast();
 
   const handleTemplateSelect = (template: StarterTemplate) => {
@@ -116,12 +118,35 @@ export default function NewSitePage() {
       setProgress({ currentPage: selectedTemplate.pages.length, totalPages: selectedTemplate.pages.length, currentStep: 'Finalizing...' });
       await updateGeneral.mutateAsync({ homepageSlug: selectedTemplate.siteSettings.homepageSlug });
 
+      // Step 8: Create blog posts if template has them
+      const blogPosts = selectedTemplate.blogPosts || [];
+      if (blogPosts.length > 0) {
+        for (let i = 0; i < blogPosts.length; i++) {
+          const post = blogPosts[i];
+          setProgress({ 
+            currentPage: i + 1, 
+            totalPages: blogPosts.length, 
+            currentStep: `Creating blog post "${post.title}"...` 
+          });
+          
+          await createBlogPost.mutateAsync({
+            title: post.title,
+            slug: post.slug,
+            excerpt: post.excerpt,
+            featured_image: post.featured_image,
+            content: post.content,
+            meta: post.meta,
+          });
+        }
+      }
+
       setCreatedPageIds(pageIds);
       setStep('done');
       
+      const blogCount = blogPosts.length;
       toast({
         title: 'Site created!',
-        description: `Created ${selectedTemplate.pages.length} pages with branding and chat configured.`,
+        description: `Created ${selectedTemplate.pages.length} pages${blogCount > 0 ? ` and ${blogCount} blog posts` : ''} with branding and chat configured.`,
       });
     } catch (error) {
       toast({
