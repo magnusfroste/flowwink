@@ -240,6 +240,7 @@ export function useCreateBlogPost() {
       meta,
       categories,
       tags,
+      status,
     }: { 
       title: string; 
       slug: string;
@@ -251,9 +252,11 @@ export function useCreateBlogPost() {
       meta?: Partial<BlogPostMeta>;
       categories?: string[];
       tags?: string[];
+      status?: PageStatus;
     }) => {
       const contentBlocks = content || [];
       const readingTime = calculateReadingTime(contentBlocks);
+      const postStatus = status || 'draft';
       
       const { data, error } = await supabase
         .from('blog_posts')
@@ -269,6 +272,8 @@ export function useCreateBlogPost() {
           reading_time_minutes: readingTime,
           created_by: user?.id,
           updated_by: user?.id,
+          status: postStatus,
+          published_at: postStatus === 'published' ? new Date().toISOString() : null,
         })
         .select()
         .single();

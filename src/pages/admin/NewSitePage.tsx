@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Loader2, Sparkles, Check, FileText, Palette, MessageSquare, Trash2, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Loader2, Sparkles, Check, FileText, Palette, MessageSquare, Trash2, AlertTriangle, Send } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -31,6 +31,7 @@ export default function NewSitePage() {
   const [progress, setProgress] = useState<CreationProgress>({ currentPage: 0, totalPages: 0, currentStep: '' });
   const [createdPageIds, setCreatedPageIds] = useState<string[]>([]);
   const [clearExistingPages, setClearExistingPages] = useState(false);
+  const [publishBlogPosts, setPublishBlogPosts] = useState(true);
   
   const navigate = useNavigate();
   const { data: existingPages } = usePages();
@@ -136,6 +137,7 @@ export default function NewSitePage() {
             featured_image: post.featured_image,
             content: post.content,
             meta: post.meta,
+            status: publishBlogPosts ? 'published' : 'draft',
           });
         }
       }
@@ -275,6 +277,26 @@ export default function NewSitePage() {
                           </AlertDescription>
                         </Alert>
                       )}
+                    </div>
+                  )}
+
+                  {/* Publish blog posts option */}
+                  {selectedTemplate.blogPosts && selectedTemplate.blogPosts.length > 0 && (
+                    <div className="flex items-center justify-between pt-2 border-t">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="publish-blogs" className="text-sm font-medium flex items-center gap-2">
+                          <Send className="h-4 w-4" />
+                          Publish blog posts immediately
+                        </Label>
+                        <p className="text-xs text-muted-foreground">
+                          Publish all {selectedTemplate.blogPosts.length} blog posts when creating the site
+                        </p>
+                      </div>
+                      <Switch
+                        id="publish-blogs"
+                        checked={publishBlogPosts}
+                        onCheckedChange={setPublishBlogPosts}
+                      />
                     </div>
                   )}
 
