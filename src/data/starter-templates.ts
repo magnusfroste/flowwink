@@ -3445,6 +3445,16 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
               showButtons: false,
             },
           },
+          // Separator - E-commerce & Forms
+          {
+            id: 'sep-ecommerce',
+            type: 'separator',
+            data: {
+              variant: 'text',
+              text: 'E-commerce & Forms',
+              icon: 'ShoppingCart',
+            },
+          },
           // Pricing Block Example
           {
             id: 'demo-pricing',
