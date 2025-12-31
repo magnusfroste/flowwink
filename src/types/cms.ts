@@ -98,7 +98,9 @@ export type ContentBlockType =
   | 'features'
   | 'timeline'
   | 'footer'
-  | 'header';
+  | 'header'
+  | 'products'
+  | 'cart';
 
 // Form field types
 export type FormFieldType = 'text' | 'email' | 'phone' | 'textarea' | 'checkbox';

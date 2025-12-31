@@ -45,8 +45,12 @@ import { LogosBlockEditor } from './LogosBlockEditor';
 import { ComparisonBlockEditor } from './ComparisonBlockEditor';
 import { FeaturesBlockEditor } from './FeaturesBlockEditor';
 import { TimelineBlockEditor } from './TimelineBlockEditor';
+import { ProductsBlockEditor } from './ProductsBlockEditor';
+import { CartBlockEditor } from './CartBlockEditor';
 import { TemplateEmptyState } from '@/components/admin/StarterTemplateSelector';
 import { StarterTemplate } from '@/data/starter-templates';
+import type { ProductsBlockData } from '@/components/public/blocks/ProductsBlock';
+import type { CartBlockData } from '@/components/public/blocks/CartBlock';
 
 interface NewsletterBlockData {
   title?: string;
@@ -86,6 +90,8 @@ type BlockDataMap = {
   comparison: ComparisonBlockData;
   features: FeaturesBlockData;
   timeline: Record<string, unknown>;
+  products: ProductsBlockData;
+  cart: CartBlockData;
 };
 
 const DEFAULT_BLOCK_DATA: BlockDataMap = {
@@ -217,6 +223,23 @@ const DEFAULT_BLOCK_DATA: BlockDataMap = {
     steps: [],
     variant: 'vertical',
     showDates: false,
+  },
+  products: {
+    title: 'Our Products',
+    subtitle: '',
+    columns: 3,
+    productType: 'all',
+    showDescription: true,
+    buttonText: 'Lägg i varukorg',
+  },
+  cart: {
+    title: 'Din varukorg',
+    emptyMessage: 'Din varukorg är tom',
+    checkoutButtonText: 'Gå till kassan',
+    checkoutUrl: '/checkout',
+    showContinueShopping: true,
+    continueShoppingUrl: '/',
+    variant: 'default',
   },
 };
 
@@ -520,6 +543,22 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
           <TimelineBlockEditor
             data={block.data as Record<string, unknown>}
             onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+          />
+        );
+      case 'products':
+        return (
+          <ProductsBlockEditor
+            data={block.data as unknown as ProductsBlockData}
+            onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+            isEditing={isEditing}
+          />
+        );
+      case 'cart':
+        return (
+          <CartBlockEditor
+            data={block.data as unknown as CartBlockData}
+            onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+            isEditing={isEditing}
           />
         );
       default:

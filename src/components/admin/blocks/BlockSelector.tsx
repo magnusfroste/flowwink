@@ -38,6 +38,8 @@ import {
   TableProperties,
   Sparkles,
   GitBranch,
+  ShoppingBag,
+  ShoppingCart,
 } from 'lucide-react';
 import { ContentBlockType } from '@/types/cms';
 
@@ -244,6 +246,18 @@ const BLOCK_GROUPS: BlockGroup[] = [
         label: 'Pricing',
         icon: <CreditCard className="h-5 w-5" />,
         description: 'Pricing tiers and packages',
+      },
+      {
+        type: 'products',
+        label: 'Products',
+        icon: <ShoppingBag className="h-5 w-5" />,
+        description: 'Display products with add-to-cart',
+      },
+      {
+        type: 'cart',
+        label: 'Cart',
+        icon: <ShoppingCart className="h-5 w-5" />,
+        description: 'Shopping cart with checkout link',
       },
     ],
   },
