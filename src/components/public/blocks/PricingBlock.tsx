@@ -15,11 +15,10 @@ interface PricingBlockProps {
 export function PricingBlock({ data }: PricingBlockProps) {
   const navigate = useNavigate();
   const { addItem, items } = useCart();
-  const { data: products } = useProducts({ activeOnly: true });
+  const { data: products, isLoading: productsLoading } = useProducts({ activeOnly: true });
   
   const tiers = data.tiers || [];
   const columns = data.columns || 3;
-  const shouldUseProducts = data.useProducts ?? false;
 
   // Filter products based on productType setting
   const filteredProducts = products?.filter(p => {
@@ -43,7 +42,7 @@ export function PricingBlock({ data }: PricingBlockProps) {
       productName: product.name,
       priceCents: product.price_cents,
       currency: product.currency,
-      imageUrl: product.image_url,
+      imageUrl: product.image_url || undefined,
     });
     toast.success(`${product.name} har lagts till i varukorgen`);
     navigate('/checkout');
@@ -52,14 +51,20 @@ export function PricingBlock({ data }: PricingBlockProps) {
   const handleTierAddToCart = (tier: typeof tiers[0]) => {
     // If tier has productId, find the product and add to cart
     if (tier.productId) {
+      // Wait for products to load
+      if (productsLoading) {
+        toast.info('Laddar produkter...');
+        return;
+      }
+      
       const product = products?.find(p => p.id === tier.productId);
       if (product) {
         handleAddToCart(product);
         return;
       } else {
-        // Product not found but productId exists - still go to checkout
-        console.warn('Product not found for productId:', tier.productId);
-        navigate('/checkout');
+        // Product not found - show error
+        toast.error('Produkten kunde inte hittas');
+        console.error('Product not found for productId:', tier.productId, 'Available products:', products);
         return;
       }
     }
