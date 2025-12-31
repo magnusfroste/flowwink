@@ -39,35 +39,46 @@ interface StorageFile {
 export default function MediaLibraryPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
-  const [deleteFile, setDeleteFile] = useState<StorageFile | null>(null);
+  const [deleteFile, setDeleteFile] = useState<(StorageFile & { folder: string }) | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
 
   const { data: files, isLoading, refetch } = useQuery({
     queryKey: ['media-library'],
     queryFn: async () => {
-      const { data, error } = await supabase.storage
-        .from('cms-images')
-        .list('pages', {
+      // Fetch from both pages/ and imports/ folders
+      const [pagesResult, importsResult] = await Promise.all([
+        supabase.storage.from('cms-images').list('pages', {
           sortBy: { column: 'created_at', order: 'desc' },
-        });
+        }),
+        supabase.storage.from('cms-images').list('imports', {
+          sortBy: { column: 'created_at', order: 'desc' },
+        }),
+      ]);
 
-      if (error) throw error;
-      return data as StorageFile[];
+      const pagesFiles = (pagesResult.data || []).map(f => ({ ...f, folder: 'pages' }));
+      const importsFiles = (importsResult.data || []).map(f => ({ ...f, folder: 'imports' }));
+      
+      // Combine and sort by created_at
+      const allFiles = [...pagesFiles, ...importsFiles].sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+
+      return allFiles as (StorageFile & { folder: string })[];
     },
   });
 
-  const getPublicUrl = (fileName: string) => {
+  const getPublicUrl = (file: StorageFile & { folder: string }) => {
     const { data } = supabase.storage
       .from('cms-images')
-      .getPublicUrl(`pages/${fileName}`);
+      .getPublicUrl(`${file.folder}/${file.name}`);
     return data.publicUrl;
   };
 
-  const handleCopyUrl = async (fileName: string) => {
-    const url = getPublicUrl(fileName);
+  const handleCopyUrl = async (file: StorageFile & { folder: string }) => {
+    const url = getPublicUrl(file);
     await navigator.clipboard.writeText(url);
-    setCopiedUrl(fileName);
+    setCopiedUrl(file.name);
     setTimeout(() => setCopiedUrl(null), 2000);
     toast({
       title: 'URL Copied',
@@ -80,9 +91,10 @@ export default function MediaLibraryPage() {
     
     setIsDeleting(true);
     try {
+      const folder = (deleteFile as StorageFile & { folder: string }).folder || 'pages';
       const { error } = await supabase.storage
         .from('cms-images')
-        .remove([`pages/${deleteFile.name}`]);
+        .remove([`${folder}/${deleteFile.name}`]);
 
       if (error) throw error;
 
@@ -167,7 +179,7 @@ export default function MediaLibraryPage() {
               >
                 <div className="aspect-square bg-muted">
                   <img
-                    src={getPublicUrl(file.name)}
+                    src={getPublicUrl(file)}
                     alt={file.name}
                     className="w-full h-full object-cover"
                     loading="lazy"
@@ -180,7 +192,7 @@ export default function MediaLibraryPage() {
                     size="sm"
                     variant="secondary"
                     className="w-full"
-                    onClick={() => handleCopyUrl(file.name)}
+                    onClick={() => handleCopyUrl(file)}
                   >
                     {copiedUrl === file.name ? (
                       <Check className="h-3 w-3 mr-1" />
