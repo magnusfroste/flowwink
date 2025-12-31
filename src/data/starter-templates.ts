@@ -2314,10 +2314,11 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
             data: {
               title: 'Keep Your Head While Going Headless',
               subtitle: 'The complete CMS that gives you a beautiful website AND a powerful API. No compromises. No complexity. Just results.',
-              backgroundType: 'color',
+              backgroundType: 'video',
+              videoUrl: 'https://cdn.prod.website-files.com/673761996d53e695f4ec8cb6%2F67b84e27497ac9c515a29519_wassching%20opening-transcode.mp4',
               heightMode: 'viewport',
               contentAlignment: 'center',
-              overlayOpacity: 0,
+              overlayOpacity: 50,
               titleAnimation: 'slide-up',
               showScrollIndicator: true,
               primaryButton: { text: 'Try the Demo', url: '/demo' },
