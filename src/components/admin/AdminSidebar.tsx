@@ -24,6 +24,7 @@ import {
   Package,
   Library,
   Search,
+  ChevronsUpDown,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { ROLE_LABELS } from "@/types/cms";
@@ -52,6 +53,14 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 type NavItem = {
   name: string;
@@ -271,33 +280,51 @@ export function AdminSidebar() {
         </SidebarContent>
 
         {/* User section */}
-        <SidebarFooter className="border-t border-sidebar-border p-3">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="h-9 w-9 shrink-0 rounded-full bg-sidebar-accent flex items-center justify-center">
-              <span className="text-sidebar-accent-foreground font-medium text-sm">
-                {profile?.full_name?.charAt(0) || profile?.email?.charAt(0) || "?"}
-              </span>
-            </div>
-            {!isCollapsed && (
-              <div className="flex-1 min-w-0 overflow-hidden">
-                <p className="text-sm font-medium truncate">{profile?.full_name || profile?.email}</p>
-                <p className="text-xs text-sidebar-foreground/60">{role ? ROLE_LABELS[role] : "Loading..."}</p>
-              </div>
-            )}
-          </div>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <SidebarMenuButton onClick={signOut} tooltip="Sign Out">
-                    <LogOut className="h-4 w-4" />
-                    <span>Sign Out</span>
-                  </SidebarMenuButton>
-                </TooltipTrigger>
-                {isCollapsed && <TooltipContent side="right">Sign Out</TooltipContent>}
-              </Tooltip>
-            </SidebarMenuItem>
-          </SidebarMenu>
+        <SidebarFooter className="border-t border-sidebar-border p-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center gap-3 w-full p-2 rounded-md hover:bg-sidebar-accent transition-colors text-left">
+                <div className="h-8 w-8 shrink-0 rounded-full bg-sidebar-accent flex items-center justify-center">
+                  <span className="text-sidebar-accent-foreground font-medium text-sm">
+                    {profile?.full_name?.charAt(0) || profile?.email?.charAt(0) || "?"}
+                  </span>
+                </div>
+                {!isCollapsed && (
+                  <>
+                    <div className="flex-1 min-w-0 overflow-hidden">
+                      <p className="text-sm font-medium truncate">{profile?.full_name || profile?.email}</p>
+                      <p className="text-xs text-sidebar-foreground/60">{role ? ROLE_LABELS[role] : "Loading..."}</p>
+                    </div>
+                    <ChevronsUpDown className="h-4 w-4 text-sidebar-foreground/40" />
+                  </>
+                )}
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent 
+              side={isCollapsed ? "right" : "top"} 
+              align="start"
+              className="w-56"
+            >
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium">{profile?.full_name || "User"}</p>
+                  <p className="text-xs text-muted-foreground truncate">{profile?.email}</p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link to="/admin/settings" className="cursor-pointer">
+                  <Settings className="mr-2 h-4 w-4" />
+                  Settings
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={signOut} className="text-destructive focus:text-destructive cursor-pointer">
+                <LogOut className="mr-2 h-4 w-4" />
+                Sign out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </SidebarFooter>
       </Sidebar>
     </>
