@@ -4083,6 +4083,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
                 { id: 'f-crm', name: 'CRM / Leads', values: [true, 'Plugins', false, false] },
                 { id: 'f-forms', name: 'Form Builder', values: [true, 'Plugins', true, false] },
                 { id: 'f-kb', name: 'Knowledge Base', values: [true, 'Plugins', false, false] },
+                { id: 'f-ecommerce', name: 'E-commerce / Products', values: [true, 'Plugins', true, false] },
                 { id: 'f-ai-chat', name: 'AI Chat Widget', values: [true, false, false, false] },
                 { id: 'f-ai-content', name: 'AI Content Tools', values: [true, false, false, false] },
                 { id: 'f-private-llm', name: 'Private LLM Support', values: [true, false, false, false] },
@@ -4217,8 +4218,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
                 { id: 'plan-2', icon: 'BarChart3', title: 'Built-in Analytics', description: 'Page views, engagement metrics, and content performance. No external tools needed.' },
                 { id: 'plan-3', icon: 'Workflow', title: 'Advanced Workflows', description: 'Custom approval chains with multiple reviewers. Conditional logic and notifications.' },
                 { id: 'plan-4', icon: 'Blocks', title: 'Custom Block Builder', description: 'Create your own block types visually. Define fields, styling, and behavior.' },
-                { id: 'plan-5', icon: 'ShoppingCart', title: 'E-commerce Module', description: 'Products, carts, and checkout. Integrate with Stripe, Klarna, or custom payment providers.' },
-                { id: 'plan-6', icon: 'Bot', title: 'AI Content Assistant', description: 'Proactive suggestions while you write. SEO recommendations and readability analysis.' },
+                { id: 'plan-5', icon: 'Bot', title: 'AI Content Assistant', description: 'Proactive suggestions while you write. SEO recommendations and readability analysis.' },
               ],
               columns: 3,
               variant: 'minimal',
@@ -4242,6 +4242,13 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
             data: {
               title: 'Milestones',
               items: [
+                {
+                  id: 'mile-0',
+                  title: 'v2.1 - E-commerce & Pricing',
+                  description: 'Products, orders, Stripe checkout, pricing blocks with product linking, and cart functionality.',
+                  icon: 'ShoppingCart',
+                  date: 'January 2025',
+                },
                 {
                   id: 'mile-1',
                   title: 'v2.0 - Knowledge Base Module',
