@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import Stripe from "https://esm.sh/stripe@18.5.0?target=deno";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -23,8 +23,23 @@ interface CheckoutRequest {
   cancelUrl: string;
 }
 
+interface Product {
+  id: string;
+  name: string;
+  description: string | null;
+  type: "one_time" | "recurring";
+  price_cents: number;
+  currency: string;
+  image_url: string | null;
+  stripe_price_id: string | null;
+}
+
+const logStep = (step: string, details?: unknown) => {
+  const detailsStr = details ? ` - ${JSON.stringify(details)}` : "";
+  console.log(`[create-checkout] ${step}${detailsStr}`);
+};
+
 serve(async (req: Request) => {
-  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -48,9 +63,8 @@ serve(async (req: Request) => {
       cancelUrl,
     }: CheckoutRequest = await req.json();
 
-    console.log("Creating checkout for:", { customerEmail, itemCount: items.length });
+    logStep("Starting checkout", { customerEmail, itemCount: items.length });
 
-    // Validate input
     if (!items || items.length === 0) {
       throw new Error("No items in cart");
     }
@@ -59,10 +73,116 @@ serve(async (req: Request) => {
     }
 
     const stripe = new Stripe(stripeKey, {
-      apiVersion: "2023-10-16",
+      apiVersion: "2025-08-27.basil",
     });
 
-    // Calculate total
+    // Fetch all products from database to get their types and stripe_price_ids
+    const productIds = items.map((item) => item.productId);
+    const { data: products, error: productsError } = await supabase
+      .from("products")
+      .select("id, name, description, type, price_cents, currency, image_url, stripe_price_id")
+      .in("id", productIds);
+
+    if (productsError) {
+      logStep("Error fetching products", productsError);
+      throw new Error("Could not fetch product details");
+    }
+
+    logStep("Fetched products", { count: products?.length });
+
+    // Create a map for quick lookup
+    const productMap = new Map<string, Product>();
+    for (const product of products || []) {
+      productMap.set(product.id, product as Product);
+    }
+
+    // Determine checkout mode based on products
+    // If ANY product is recurring, we use subscription mode
+    const hasRecurring = items.some((item) => {
+      const product = productMap.get(item.productId);
+      return product?.type === "recurring";
+    });
+    const hasOneTime = items.some((item) => {
+      const product = productMap.get(item.productId);
+      return product?.type === "one_time";
+    });
+
+    logStep("Product types", { hasRecurring, hasOneTime });
+
+    // For mixed carts, we need to handle this differently
+    // Stripe subscription mode can include one-time items via price_data
+    const mode = hasRecurring ? "subscription" : "payment";
+
+    // Ensure all products have Stripe price IDs (create if missing)
+    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
+    const productsToUpdate: { id: string; stripe_price_id: string }[] = [];
+
+    for (const item of items) {
+      const product = productMap.get(item.productId);
+      if (!product) {
+        logStep("Product not found", { productId: item.productId });
+        throw new Error(`Product ${item.productId} not found`);
+      }
+
+      let stripePriceId = product.stripe_price_id;
+
+      // If no Stripe price ID, create product and price in Stripe
+      if (!stripePriceId) {
+        logStep("Creating Stripe product", { productName: product.name });
+
+        // Create Stripe product
+        const stripeProduct = await stripe.products.create({
+          name: product.name,
+          description: product.description || undefined,
+          images: product.image_url ? [product.image_url] : undefined,
+          metadata: {
+            pezcms_product_id: product.id,
+          },
+        });
+
+        logStep("Created Stripe product", { stripeProductId: stripeProduct.id });
+
+        // Create Stripe price
+        const priceData: Stripe.PriceCreateParams = {
+          product: stripeProduct.id,
+          unit_amount: product.price_cents,
+          currency: product.currency.toLowerCase(),
+        };
+
+        if (product.type === "recurring") {
+          priceData.recurring = { interval: "month" };
+        }
+
+        const stripePrice = await stripe.prices.create(priceData);
+        stripePriceId = stripePrice.id;
+
+        logStep("Created Stripe price", { stripePriceId });
+
+        // Queue update to save back to database
+        productsToUpdate.push({ id: product.id, stripe_price_id: stripePriceId! });
+      }
+
+      lineItems.push({
+        price: stripePriceId,
+        quantity: item.quantity,
+      });
+    }
+
+    // Update products with new Stripe price IDs
+    for (const update of productsToUpdate) {
+      const { error: updateError } = await supabase
+        .from("products")
+        .update({ stripe_price_id: update.stripe_price_id })
+        .eq("id", update.id);
+
+      if (updateError) {
+        logStep("Error updating product with stripe_price_id", updateError);
+      } else {
+        logStep("Updated product with stripe_price_id", update);
+      }
+    }
+
+    // Calculate total for order
     const totalCents = items.reduce(
       (sum, item) => sum + item.priceCents * item.quantity,
       0
@@ -77,16 +197,17 @@ serve(async (req: Request) => {
         total_cents: totalCents,
         currency: currency.toUpperCase(),
         status: "pending",
+        metadata: { mode, hasRecurring, hasOneTime },
       })
       .select()
       .single();
 
     if (orderError) {
-      console.error("Error creating order:", orderError);
+      logStep("Error creating order", orderError);
       throw new Error("Could not create order");
     }
 
-    console.log("Created order:", order.id);
+    logStep("Created order", { orderId: order.id });
 
     // Create order items
     const orderItems = items.map((item) => ({
@@ -102,35 +223,43 @@ serve(async (req: Request) => {
       .insert(orderItems);
 
     if (itemsError) {
-      console.error("Error creating order items:", itemsError);
+      logStep("Error creating order items", itemsError);
     }
 
-    // Create line items for Stripe
-    const lineItems = items.map((item) => ({
-      price_data: {
-        currency: currency.toLowerCase(),
-        product_data: {
-          name: item.productName,
-        },
-        unit_amount: item.priceCents,
-      },
-      quantity: item.quantity,
-    }));
+    // Check for existing Stripe customer
+    const customers = await stripe.customers.list({
+      email: customerEmail,
+      limit: 1,
+    });
+
+    let customerId: string | undefined;
+    if (customers.data.length > 0) {
+      customerId = customers.data[0].id;
+      logStep("Found existing Stripe customer", { customerId });
+    }
 
     // Create Stripe Checkout Session
-    const session = await stripe.checkout.sessions.create({
+    const sessionParams: Stripe.Checkout.SessionCreateParams = {
       payment_method_types: ["card"],
       line_items: lineItems,
-      mode: "payment",
+      mode: mode,
       success_url: `${successUrl}?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: cancelUrl,
-      customer_email: customerEmail,
       metadata: {
         order_id: order.id,
       },
-    });
+    };
 
-    console.log("Created Stripe session:", session.id);
+    // Add customer info
+    if (customerId) {
+      sessionParams.customer = customerId;
+    } else {
+      sessionParams.customer_email = customerEmail;
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams);
+
+    logStep("Created Stripe session", { sessionId: session.id, mode });
 
     // Update order with Stripe checkout ID
     await supabase
@@ -145,10 +274,11 @@ serve(async (req: Request) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );
-  } catch (error: any) {
-    console.error("Checkout error:", error);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    logStep("Checkout error", { error: message });
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: message }),
       {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
