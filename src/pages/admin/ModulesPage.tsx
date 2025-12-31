@@ -15,6 +15,7 @@ import {
   Briefcase,
   Building2,
   Package,
+  ShoppingCart,
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
@@ -37,6 +38,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   Briefcase,
   Building2,
   Package,
+  ShoppingCart,
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -65,10 +67,26 @@ export default function ModulesPage() {
     const module = localModules[moduleId];
     if (module.core) return; // Cannot toggle core modules
     
-    const updated = {
+    let updated = {
       ...localModules,
       [moduleId]: { ...module, enabled },
     };
+    
+    // If toggling Products, also toggle Orders
+    if (moduleId === 'products') {
+      updated = {
+        ...updated,
+        orders: { ...updated.orders, enabled },
+      };
+    }
+    
+    // If enabling Orders, also enable Products
+    if (moduleId === 'orders' && enabled && !localModules.products.enabled) {
+      updated = {
+        ...updated,
+        products: { ...updated.products, enabled: true },
+      };
+    }
     
     setLocalModules(updated);
     await updateModules.mutateAsync(updated);
