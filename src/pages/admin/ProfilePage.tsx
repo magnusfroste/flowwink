@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/useAuth';
@@ -21,13 +22,14 @@ export default function ProfilePage() {
   const [title, setTitle] = useState('');
   const [bio, setBio] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
-
+  const [showAsAuthor, setShowAsAuthor] = useState(false);
   useEffect(() => {
     if (profile) {
       setFullName(profile.full_name || '');
       setTitle(profile.title || '');
       setBio(profile.bio || '');
       setAvatarUrl(profile.avatar_url || '');
+      setShowAsAuthor(profile.show_as_author || false);
     }
   }, [profile]);
 
@@ -87,6 +89,7 @@ export default function ProfilePage() {
           title: title.trim() || null,
           bio: bio.trim() || null,
           avatar_url: avatarUrl || null,
+          show_as_author: showAsAuthor,
           updated_at: new Date().toISOString(),
         })
         .eq('id', user.id);
@@ -215,8 +218,23 @@ export default function ProfilePage() {
                   rows={4}
                 />
                 <p className="text-xs text-muted-foreground">
-                  This may be displayed on blog posts if you're set as an author.
+                  This will be displayed on blog posts where you are the author.
                 </p>
+              </div>
+
+              {/* Show as Author Toggle */}
+              <div className="flex items-center justify-between rounded-lg border p-4">
+                <div className="space-y-0.5">
+                  <Label htmlFor="show-author" className="text-base">Show as Author</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Display your name and bio on blog posts you author
+                  </p>
+                </div>
+                <Switch
+                  id="show-author"
+                  checked={showAsAuthor}
+                  onCheckedChange={setShowAsAuthor}
+                />
               </div>
 
               <div className="space-y-2">
