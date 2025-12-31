@@ -7,8 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Card } from '@/components/ui/card';
 import { PricingBlockData, PricingTier } from '@/types/cms';
-import { CreditCard, Plus, Trash2, GripVertical, Star, X } from 'lucide-react';
+import { CreditCard, Plus, Trash2, GripVertical, Star, X, Package } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useProducts, formatPrice } from '@/hooks/useProducts';
 
 interface PricingBlockEditorProps {
   data: PricingBlockData;
@@ -18,6 +19,7 @@ interface PricingBlockEditorProps {
 
 export function PricingBlockEditor({ data, onChange, isEditing }: PricingBlockEditorProps) {
   const [expandedTier, setExpandedTier] = useState<string | null>(null);
+  const { data: products } = useProducts({ activeOnly: true });
 
   const updateData = (updates: Partial<PricingBlockData>) => {
     onChange({ ...data, ...updates });
@@ -86,7 +88,10 @@ export function PricingBlockEditor({ data, onChange, isEditing }: PricingBlockEd
         <CreditCard className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
         <h3 className="font-medium text-lg">{data.title || 'Pricing'}</h3>
         <p className="text-sm text-muted-foreground mt-1">
-          {tiers.length} pricing tier{tiers.length !== 1 ? 's' : ''}
+          {data.useProducts 
+            ? `Visar produkter från databasen${data.productType && data.productType !== 'all' ? ` (${data.productType === 'recurring' ? 'prenumerationer' : 'engångskostnader'})` : ''}`
+            : `${tiers.length} prisplan${tiers.length !== 1 ? 'er' : ''}`
+          }
         </p>
       </div>
     );
@@ -118,7 +123,65 @@ export function PricingBlockEditor({ data, onChange, isEditing }: PricingBlockEd
             placeholder="Select the perfect plan for your needs"
             rows={2}
           />
+      </div>
+
+      {/* Use Products Mode */}
+      <Card className="p-4 bg-muted/30">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Package className="h-4 w-4 text-muted-foreground" />
+            <div>
+              <Label>Använd produkter från databasen</Label>
+              <p className="text-xs text-muted-foreground">
+                Hämtar produkter automatiskt och kopplar till varukorgen
+              </p>
+            </div>
+          </div>
+          <Switch
+            checked={data.useProducts || false}
+            onCheckedChange={(checked) => updateData({ useProducts: checked })}
+          />
         </div>
+
+        {data.useProducts && (
+          <div className="space-y-2 pt-2 border-t">
+            <Label>Produkttyp</Label>
+            <Select
+              value={data.productType || 'all'}
+              onValueChange={(value: 'all' | 'one_time' | 'recurring') => updateData({ productType: value })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Alla produkter</SelectItem>
+                <SelectItem value="recurring">Endast prenumerationer</SelectItem>
+                <SelectItem value="one_time">Endast engångskostnader</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            {products && products.length > 0 && (
+              <div className="mt-3 p-3 bg-background rounded border">
+                <p className="text-xs text-muted-foreground mb-2">Produkter som kommer visas:</p>
+                <div className="space-y-1">
+                  {products
+                    .filter(p => !data.productType || data.productType === 'all' || p.type === data.productType)
+                    .map(p => (
+                      <div key={p.id} className="flex items-center justify-between text-sm">
+                        <span>{p.name}</span>
+                        <span className="text-muted-foreground">
+                          {formatPrice(p.price_cents, p.currency)}
+                          {p.type === 'recurring' ? '/mån' : ''}
+                        </span>
+                      </div>
+                    ))
+                  }
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </Card>
       </div>
 
       {/* Layout Settings */}
@@ -283,21 +346,49 @@ export function PricingBlockEditor({ data, onChange, isEditing }: PricingBlockEd
                     </div>
                   </div>
 
+                  {/* Product Link */}
+                  <div className="space-y-2 p-3 bg-muted/50 rounded-lg">
+                    <Label className="flex items-center gap-2">
+                      <Package className="h-4 w-4" />
+                      Koppla till produkt (för varukorg)
+                    </Label>
+                    <Select
+                      value={tier.productId || 'none'}
+                      onValueChange={(value) => updateTier(tier.id, { productId: value === 'none' ? undefined : value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Välj produkt..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Ingen koppling (använd URL)</SelectItem>
+                        {products?.map(p => (
+                          <SelectItem key={p.id} value={p.id}>
+                            {p.name} - {formatPrice(p.price_cents, p.currency)}{p.type === 'recurring' ? '/mån' : ''}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Om en produkt är kopplad läggs den till i varukorgen vid klick
+                    </p>
+                  </div>
+
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Button Text</Label>
+                      <Label>Knapptext</Label>
                       <Input
                         value={tier.buttonText || ''}
                         onChange={(e) => updateTier(tier.id, { buttonText: e.target.value })}
-                        placeholder="Get Started"
+                        placeholder="Beställ"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Button URL</Label>
+                      <Label>URL (om ingen produkt)</Label>
                       <Input
                         value={tier.buttonUrl || ''}
                         onChange={(e) => updateTier(tier.id, { buttonUrl: e.target.value })}
-                        placeholder="/contact"
+                        placeholder="/checkout"
+                        disabled={!!tier.productId}
                       />
                     </div>
                   </div>
