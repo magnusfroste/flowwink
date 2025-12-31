@@ -2694,58 +2694,452 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
           titleAlignment: 'center',
         },
         blocks: [
+          // Hero
           {
             id: 'hero-features',
             type: 'hero',
             data: {
               title: 'Features That Matter',
-              subtitle: 'Everything you need to manage content, engage visitors, and grow your business.',
+              subtitle: 'Everything you need to manage content, engage visitors, and grow your business – with 27+ content blocks, editorial workflow, and AI-powered tools.',
               backgroundType: 'color',
               heightMode: 'auto',
               contentAlignment: 'center',
               overlayOpacity: 0,
+              showScrollIndicator: true,
             },
           },
+          // Stats - Block count highlight
           {
-            id: 'features-content',
+            id: 'stats-blocks',
+            type: 'stats',
+            data: {
+              title: '',
+              items: [
+                { id: 'stat-blocks', value: '27+', label: 'Content Blocks' },
+                { id: 'stat-roles', value: '3', label: 'Editorial Roles' },
+                { id: 'stat-modules', value: '8', label: 'Built-in Modules' },
+                { id: 'stat-api', value: '100%', label: 'API Coverage' },
+              ],
+              columns: 4,
+              variant: 'cards',
+            },
+          },
+          // Separator - Editorial Workflow
+          {
+            id: 'sep-workflow',
+            type: 'separator',
+            data: {
+              variant: 'text',
+              text: 'Editorial Workflow',
+              icon: 'Users',
+            },
+          },
+          // Timeline - Content Publishing Flow
+          {
+            id: 'timeline-workflow',
+            type: 'timeline',
+            data: {
+              title: 'From Draft to Published',
+              subtitle: 'A structured workflow that ensures quality and accountability.',
+              items: [
+                {
+                  id: 'tw-1',
+                  title: 'Draft',
+                  description: 'Writer creates content using the visual editor. Every change is automatically saved and versioned.',
+                  icon: 'PenLine',
+                },
+                {
+                  id: 'tw-2',
+                  title: 'Submit for Review',
+                  description: 'When ready, the writer submits the content for approval. Reviewers are notified automatically.',
+                  icon: 'Send',
+                },
+                {
+                  id: 'tw-3',
+                  title: 'Review & Approve',
+                  description: 'Approvers review content, leave feedback, or approve for publishing. All feedback is tracked.',
+                  icon: 'CheckCircle',
+                },
+                {
+                  id: 'tw-4',
+                  title: 'Publish',
+                  description: 'Content goes live immediately or at a scheduled time. Previous versions remain accessible.',
+                  icon: 'Globe',
+                },
+              ],
+              layout: 'vertical',
+            },
+          },
+          // Features - Roles
+          {
+            id: 'features-roles',
             type: 'features',
             data: {
-              title: 'Content Management',
+              title: 'Role-Based Permissions',
+              subtitle: 'Three distinct roles with clear responsibilities.',
               features: [
-                { id: 'f1', icon: 'Palette', title: 'Visual Editor', description: 'Drag-and-drop blocks, real-time preview, no code required.' },
-                { id: 'f2', icon: 'FileStack', title: 'Version History', description: 'Track every change, compare versions, restore with one click.' },
-                { id: 'f3', icon: 'Users2', title: 'Workflow', description: 'Writer, Approver, Admin roles. Review and publish processes.' },
-                { id: 'f4', icon: 'Languages', title: 'Multi-language', description: 'Built for localization. Translate content with AI assistance.' },
+                { id: 'role-writer', icon: 'PenLine', title: 'Writer', description: 'Create and edit content. Submit for review. Cannot publish without approval.' },
+                { id: 'role-approver', icon: 'CheckCircle', title: 'Approver', description: 'Review submitted content. Approve or request changes. Publish approved content.' },
+                { id: 'role-admin', icon: 'Shield', title: 'Admin', description: 'Full access to all features. Manage users, settings, and site configuration.' },
+              ],
+              columns: 3,
+              variant: 'cards',
+              iconStyle: 'circle',
+            },
+          },
+          // Two-Column - Version History
+          {
+            id: 'twocol-versions',
+            type: 'two-column',
+            data: {
+              leftColumn: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Version History & Rollback' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Every save creates a version. Every version is accessible forever.' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Compare any two versions side-by-side' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Restore previous versions with one click' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'See who made each change and when' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Full audit trail for compliance' }] }] },
+                  ] },
+                ],
+              },
+              rightColumn: {
+                type: 'doc',
+                content: [
+                  { type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'italic' }], text: '📋 Version panel showing all previous saves with timestamps, authors, and one-click restore buttons.' }] },
+                ],
+              },
+              layout: '60-40',
+            },
+          },
+          // Info Box - Scheduled Publishing
+          {
+            id: 'info-scheduling',
+            type: 'info-box',
+            data: {
+              variant: 'highlight',
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: '⏰ Scheduled Publishing' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Set a future publish date and time. Content goes live automatically – perfect for product launches, announcements, and coordinated campaigns. Timezone-aware scheduling ensures accuracy across regions.' }] },
+                ],
+              },
+            },
+          },
+          // Separator - Knowledge Base
+          {
+            id: 'sep-kb',
+            type: 'separator',
+            data: {
+              variant: 'text',
+              text: 'Knowledge Base',
+              icon: 'BookOpen',
+            },
+          },
+          // Features - Knowledge Base
+          {
+            id: 'features-kb',
+            type: 'features',
+            data: {
+              title: 'Built-in Help Center',
+              subtitle: 'Create a searchable knowledge base that reduces support tickets.',
+              features: [
+                { id: 'kb-cat', icon: 'FolderTree', title: 'Hierarchical Categories', description: 'Organize articles into nested categories. Visitors find answers fast.' },
+                { id: 'kb-search', icon: 'Search', title: 'Full-Text Search', description: 'Instant search across all articles. Results ranked by relevance.' },
+                { id: 'kb-ai', icon: 'MessageCircle', title: 'AI Chat Integration', description: 'Chat widget automatically references KB content to answer visitor questions.' },
+                { id: 'kb-visibility', icon: 'Eye', title: 'Public or Private', description: 'Control visibility per article. Internal docs stay internal.' },
               ],
               columns: 4,
               variant: 'minimal',
               iconStyle: 'circle',
             },
           },
+          // Quote - KB benefit
           {
-            id: 'features-publish',
+            id: 'quote-kb',
+            type: 'quote',
+            data: {
+              quote: 'Our support tickets dropped 40% after launching the knowledge base. The AI chat answers most questions before they reach our inbox.',
+              author: 'Content Manager',
+              role: 'SaaS Company',
+              variant: 'centered',
+            },
+          },
+          // Separator - Visual Editor
+          {
+            id: 'sep-blocks',
+            type: 'separator',
+            data: {
+              variant: 'text',
+              text: '27+ Content Blocks',
+              icon: 'LayoutGrid',
+            },
+          },
+          // Accordion - All Block Types
+          {
+            id: 'accordion-blocks',
+            type: 'accordion',
+            data: {
+              title: 'Explore All Block Types',
+              items: [
+                {
+                  question: 'Text & Media (6 blocks)',
+                  answer: {
+                    type: 'doc',
+                    content: [
+                      { type: 'paragraph', content: [
+                        { type: 'text', marks: [{ type: 'bold' }], text: 'Text' },
+                        { type: 'text', text: ' – Rich text with formatting, links, and embedded media.' },
+                      ] },
+                      { type: 'paragraph', content: [
+                        { type: 'text', marks: [{ type: 'bold' }], text: 'Image' },
+                        { type: 'text', text: ' – Single images with captions, alt text, and responsive sizing.' },
+                      ] },
+                      { type: 'paragraph', content: [
+                        { type: 'text', marks: [{ type: 'bold' }], text: 'Gallery' },
+                        { type: 'text', text: ' – Grid, masonry, or carousel layouts for image collections.' },
+                      ] },
+                      { type: 'paragraph', content: [
+                        { type: 'text', marks: [{ type: 'bold' }], text: 'YouTube' },
+                        { type: 'text', text: ' – Embedded videos with lazy loading for performance.' },
+                      ] },
+                      { type: 'paragraph', content: [
+                        { type: 'text', marks: [{ type: 'bold' }], text: 'Quote' },
+                        { type: 'text', text: ' – Testimonials, pull quotes, or highlighted statements.' },
+                      ] },
+                      { type: 'paragraph', content: [
+                        { type: 'text', marks: [{ type: 'bold' }], text: 'Logos' },
+                        { type: 'text', text: ' – Client logos, partner badges, or trust indicators.' },
+                      ] },
+                    ],
+                  },
+                },
+                {
+                  question: 'Layout & Structure (5 blocks)',
+                  answer: {
+                    type: 'doc',
+                    content: [
+                      { type: 'paragraph', content: [
+                        { type: 'text', marks: [{ type: 'bold' }], text: 'Hero' },
+                        { type: 'text', text: ' – Full-width headers with backgrounds, CTAs, and animations.' },
+                      ] },
+                      { type: 'paragraph', content: [
+                        { type: 'text', marks: [{ type: 'bold' }], text: 'Two-Column' },
+                        { type: 'text', text: ' – Side-by-side content with flexible width ratios.' },
+                      ] },
+                      { type: 'paragraph', content: [
+                        { type: 'text', marks: [{ type: 'bold' }], text: 'Separator' },
+                        { type: 'text', text: ' – Visual dividers with lines, icons, or text labels.' },
+                      ] },
+                      { type: 'paragraph', content: [
+                        { type: 'text', marks: [{ type: 'bold' }], text: 'Header' },
+                        { type: 'text', text: ' – Site navigation with logo, menu, and optional CTA.' },
+                      ] },
+                      { type: 'paragraph', content: [
+                        { type: 'text', marks: [{ type: 'bold' }], text: 'Footer' },
+                        { type: 'text', text: ' – Site footer with links, social icons, and copyright.' },
+                      ] },
+                    ],
+                  },
+                },
+                {
+                  question: 'Navigation & Content (4 blocks)',
+                  answer: {
+                    type: 'doc',
+                    content: [
+                      { type: 'paragraph', content: [
+                        { type: 'text', marks: [{ type: 'bold' }], text: 'Link Grid' },
+                        { type: 'text', text: ' – Icon cards linking to internal or external pages.' },
+                      ] },
+                      { type: 'paragraph', content: [
+                        { type: 'text', marks: [{ type: 'bold' }], text: 'Article Grid' },
+                        { type: 'text', text: ' – Blog post previews in grid or list format.' },
+                      ] },
+                      { type: 'paragraph', content: [
+                        { type: 'text', marks: [{ type: 'bold' }], text: 'Accordion' },
+                        { type: 'text', text: ' – Collapsible FAQ sections or detailed content.' },
+                      ] },
+                      { type: 'paragraph', content: [
+                        { type: 'text', marks: [{ type: 'bold' }], text: 'Timeline' },
+                        { type: 'text', text: ' – Chronological events, process steps, or history.' },
+                      ] },
+                    ],
+                  },
+                },
+                {
+                  question: 'Information & Trust (6 blocks)',
+                  answer: {
+                    type: 'doc',
+                    content: [
+                      { type: 'paragraph', content: [
+                        { type: 'text', marks: [{ type: 'bold' }], text: 'Features' },
+                        { type: 'text', text: ' – Feature cards with icons, in grid or list layout.' },
+                      ] },
+                      { type: 'paragraph', content: [
+                        { type: 'text', marks: [{ type: 'bold' }], text: 'Stats' },
+                        { type: 'text', text: ' – Key metrics, numbers, and achievements.' },
+                      ] },
+                      { type: 'paragraph', content: [
+                        { type: 'text', marks: [{ type: 'bold' }], text: 'Testimonials' },
+                        { type: 'text', text: ' – Customer reviews with photos and ratings.' },
+                      ] },
+                      { type: 'paragraph', content: [
+                        { type: 'text', marks: [{ type: 'bold' }], text: 'Team' },
+                        { type: 'text', text: ' – Team member profiles with photos and social links.' },
+                      ] },
+                      { type: 'paragraph', content: [
+                        { type: 'text', marks: [{ type: 'bold' }], text: 'Comparison' },
+                        { type: 'text', text: ' – Feature comparison tables for products or plans.' },
+                      ] },
+                      { type: 'paragraph', content: [
+                        { type: 'text', marks: [{ type: 'bold' }], text: 'Info Box' },
+                        { type: 'text', text: ' – Highlighted tips, warnings, or callouts.' },
+                      ] },
+                    ],
+                  },
+                },
+                {
+                  question: 'Interaction & Conversion (6 blocks)',
+                  answer: {
+                    type: 'doc',
+                    content: [
+                      { type: 'paragraph', content: [
+                        { type: 'text', marks: [{ type: 'bold' }], text: 'CTA' },
+                        { type: 'text', text: ' – Call-to-action sections with buttons and gradient backgrounds.' },
+                      ] },
+                      { type: 'paragraph', content: [
+                        { type: 'text', marks: [{ type: 'bold' }], text: 'Contact' },
+                        { type: 'text', text: ' – Contact information with phone, email, and hours.' },
+                      ] },
+                      { type: 'paragraph', content: [
+                        { type: 'text', marks: [{ type: 'bold' }], text: 'Form' },
+                        { type: 'text', text: ' – Custom forms with validation and submission handling.' },
+                      ] },
+                      { type: 'paragraph', content: [
+                        { type: 'text', marks: [{ type: 'bold' }], text: 'Newsletter' },
+                        { type: 'text', text: ' – Email signup with GDPR-compliant double opt-in.' },
+                      ] },
+                      { type: 'paragraph', content: [
+                        { type: 'text', marks: [{ type: 'bold' }], text: 'Booking' },
+                        { type: 'text', text: ' – Appointment scheduling with calendar integration.' },
+                      ] },
+                      { type: 'paragraph', content: [
+                        { type: 'text', marks: [{ type: 'bold' }], text: 'Pricing' },
+                        { type: 'text', text: ' – Pricing tables with tiers, features, and CTAs.' },
+                      ] },
+                    ],
+                  },
+                },
+                {
+                  question: 'Utility (3 blocks)',
+                  answer: {
+                    type: 'doc',
+                    content: [
+                      { type: 'paragraph', content: [
+                        { type: 'text', marks: [{ type: 'bold' }], text: 'Chat' },
+                        { type: 'text', text: ' – Embedded AI chat widget that knows your content.' },
+                      ] },
+                      { type: 'paragraph', content: [
+                        { type: 'text', marks: [{ type: 'bold' }], text: 'Map' },
+                        { type: 'text', text: ' – Interactive maps with location markers.' },
+                      ] },
+                      { type: 'paragraph', content: [
+                        { type: 'text', marks: [{ type: 'bold' }], text: 'Popup' },
+                        { type: 'text', text: ' – Modal dialogs for announcements or forms.' },
+                      ] },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+          // Separator - AI Tools
+          {
+            id: 'sep-ai',
+            type: 'separator',
+            data: {
+              variant: 'text',
+              text: 'AI-Powered Tools',
+              icon: 'Sparkles',
+            },
+          },
+          // Features - AI
+          {
+            id: 'features-ai',
             type: 'features',
             data: {
-              title: 'Publishing & Distribution',
+              title: 'AI That Actually Helps',
+              subtitle: 'Built-in AI tools that save time without compromising quality.',
               features: [
-                { id: 'p1', icon: 'Globe', title: 'Beautiful Websites', description: 'Responsive templates that look great on any device.' },
-                { id: 'p2', icon: 'Code', title: 'Headless API', description: 'RESTful API for React, Vue, mobile apps, or any frontend.' },
-                { id: 'p3', icon: 'Rss', title: 'RSS Feeds', description: 'Automatic RSS generation for blog posts and content updates.' },
-                { id: 'p4', icon: 'Webhook', title: 'Webhooks', description: 'Trigger external services on publish, update, or delete.' },
+                { id: 'ai-text', icon: 'PenLine', title: 'Text Generation', description: 'Generate drafts, expand ideas, or rewrite content in different tones.' },
+                { id: 'ai-translate', icon: 'Languages', title: 'Translation', description: 'Translate content to any language while preserving formatting and links.' },
+                { id: 'ai-brand', icon: 'Palette', title: 'Brand Guide', description: 'Analyze any URL and extract colors, fonts, and style recommendations.' },
+                { id: 'ai-migrate', icon: 'FileInput', title: 'Content Migration', description: 'Import from WordPress, Webflow, or any HTML with structure preserved.' },
+                { id: 'ai-chat', icon: 'MessageCircle', title: 'Chat Widget', description: 'Embedded chat that answers questions using your KB and page content.' },
+                { id: 'ai-private', icon: 'Lock', title: 'Private LLM', description: 'Connect your own LLM for data sovereignty. OpenAI, Anthropic, or local.' },
+              ],
+              columns: 3,
+              variant: 'cards',
+              iconStyle: 'circle',
+            },
+          },
+          // Separator - Developer
+          {
+            id: 'sep-dev',
+            type: 'separator',
+            data: {
+              variant: 'text',
+              text: 'Developer Friendly',
+              icon: 'Code',
+            },
+          },
+          // Features - API & Integrations
+          {
+            id: 'features-api',
+            type: 'features',
+            data: {
+              title: 'Head + Headless',
+              subtitle: 'Beautiful website included – or use the API for your own frontend.',
+              features: [
+                { id: 'api-rest', icon: 'Globe', title: 'REST API', description: 'Full API access to all content. Pages, posts, media, settings – everything.' },
+                { id: 'api-webhooks', icon: 'Webhook', title: 'Webhooks', description: 'Trigger external services on publish, update, delete. Build automations.' },
+                { id: 'api-n8n', icon: 'GitBranch', title: 'N8N Templates', description: 'Pre-built automation flows for common integrations. One-click setup.' },
+                { id: 'api-rss', icon: 'Rss', title: 'RSS Feeds', description: 'Automatic RSS generation for blogs. Integrates with any feed reader.' },
               ],
               columns: 4,
               variant: 'minimal',
               iconStyle: 'circle',
             },
           },
+          // Link Grid - Resources
+          {
+            id: 'links-dev',
+            type: 'link-grid',
+            data: {
+              title: 'Resources',
+              links: [
+                { id: 'link-docs', icon: 'BookOpen', title: 'Documentation', description: 'API reference and guides', url: '/docs' },
+                { id: 'link-github', icon: 'Github', title: 'GitHub', description: 'Source code and issues', url: 'https://github.com/pezcms/pezcms' },
+                { id: 'link-discord', icon: 'MessageCircle', title: 'Community', description: 'Discord support', url: 'https://discord.gg/pezcms' },
+                { id: 'link-selfhost', icon: 'Server', title: 'Self-Hosting', description: 'Deployment guide', url: '/docs/self-hosting' },
+              ],
+              columns: 4,
+            },
+          },
+          // CTA - Final
           {
             id: 'cta-features',
             type: 'cta',
             data: {
               title: 'See All Features in Action',
-              subtitle: 'Try the live demo - no signup required.',
+              subtitle: 'Try the live demo – no signup required.',
               buttonText: 'Launch Demo',
               buttonUrl: '/demo',
+              secondaryButtonText: 'View Pricing',
+              secondaryButtonUrl: '/priser',
               gradient: true,
             },
           },
