@@ -31,7 +31,7 @@ import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
-import { Package, Eye, RefreshCw, ShoppingBag, TrendingUp, Clock, CheckCircle } from 'lucide-react';
+import { Package, Eye, RefreshCw, ShoppingBag, TrendingUp, Clock, CheckCircle, Mail, Loader2 } from 'lucide-react';
 import type { Tables } from '@/integrations/supabase/types';
 
 type Order = Tables<'orders'>;
@@ -108,6 +108,22 @@ export default function OrdersPage() {
     },
     onError: () => {
       toast.error('Kunde inte uppdatera status');
+    },
+  });
+
+  const sendConfirmationMutation = useMutation({
+    mutationFn: async (orderId: string) => {
+      const { error } = await supabase.functions.invoke('send-order-confirmation', {
+        body: { orderId },
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Orderbekräftelse skickad');
+    },
+    onError: (error) => {
+      console.error('Failed to send confirmation:', error);
+      toast.error('Kunde inte skicka orderbekräftelse');
     },
   });
 
@@ -347,6 +363,22 @@ export default function OrdersPage() {
               <div className="flex justify-between items-center text-lg font-bold">
                 <span>Totalt</span>
                 <span>{formatPrice(selectedOrder.total_cents, selectedOrder.currency)}</span>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => sendConfirmationMutation.mutate(selectedOrder.id)}
+                  disabled={sendConfirmationMutation.isPending}
+                >
+                  {sendConfirmationMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Mail className="h-4 w-4 mr-2" />
+                  )}
+                  Skicka orderbekräftelse
+                </Button>
               </div>
 
               {/* Stripe Info */}
