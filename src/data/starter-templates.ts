@@ -3337,6 +3337,462 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
           },
         ],
       },
+      // ===== DOCUMENTATION PAGE =====
+      {
+        title: 'Documentation',
+        slug: 'docs',
+        menu_order: 5,
+        showInMenu: true,
+        meta: {
+          description: 'PezCMS developer documentation - API reference, self-hosting guide, webhooks, and integration resources.',
+          showTitle: true,
+          titleAlignment: 'center',
+        },
+        blocks: [
+          // Hero
+          {
+            id: 'hero-docs',
+            type: 'hero',
+            data: {
+              title: 'Documentation',
+              subtitle: 'Everything you need to integrate, customize, and deploy PezCMS.',
+              backgroundType: 'color',
+              heightMode: 'auto',
+              contentAlignment: 'center',
+              overlayOpacity: 0,
+            },
+          },
+          // Link Grid - Quick Navigation
+          {
+            id: 'links-quicknav',
+            type: 'link-grid',
+            data: {
+              title: 'Quick Links',
+              links: [
+                { id: 'nav-api', icon: 'Code', title: 'API Reference', description: 'REST endpoints for all content', url: '#api-reference' },
+                { id: 'nav-selfhost', icon: 'Server', title: 'Self-Hosting', description: 'Deploy on your infrastructure', url: '#self-hosting' },
+                { id: 'nav-webhooks', icon: 'Webhook', title: 'Webhooks', description: 'Event-driven integrations', url: '#webhooks' },
+                { id: 'nav-migration', icon: 'FileInput', title: 'Migration', description: 'Import from other platforms', url: '#migration' },
+              ],
+              columns: 4,
+            },
+          },
+          // Separator - API Reference
+          {
+            id: 'sep-api',
+            type: 'separator',
+            data: {
+              variant: 'text',
+              text: 'API Reference',
+              icon: 'Code',
+            },
+          },
+          // Text - API Overview
+          {
+            id: 'text-api-overview',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'REST API' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'PezCMS provides a complete REST API for accessing all content programmatically. Use it to build custom frontends, mobile apps, or integrate with other services.' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Base URL' }] },
+                  { type: 'codeBlock', attrs: { language: 'text' }, content: [{ type: 'text', text: 'https://your-instance.com/api/v1' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Authentication' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'All API requests require authentication via Bearer token. Generate API keys in the Admin panel under Settings.' }] },
+                  { type: 'codeBlock', attrs: { language: 'bash' }, content: [{ type: 'text', text: 'curl -H "Authorization: Bearer YOUR_API_KEY" \\\n  https://your-instance.com/api/v1/pages' }] },
+                ],
+              },
+            },
+          },
+          // Accordion - API Endpoints
+          {
+            id: 'accordion-endpoints',
+            type: 'accordion',
+            data: {
+              title: 'Endpoints',
+              items: [
+                {
+                  question: 'Pages',
+                  answer: {
+                    type: 'doc',
+                    content: [
+                      { type: 'paragraph', content: [
+                        { type: 'text', marks: [{ type: 'code' }], text: 'GET /pages' },
+                        { type: 'text', text: ' – List all published pages' },
+                      ] },
+                      { type: 'paragraph', content: [
+                        { type: 'text', marks: [{ type: 'code' }], text: 'GET /pages/:slug' },
+                        { type: 'text', text: ' – Get page by slug with all blocks' },
+                      ] },
+                      { type: 'paragraph', content: [
+                        { type: 'text', marks: [{ type: 'code' }], text: 'GET /pages/:id/versions' },
+                        { type: 'text', text: ' – Get version history for a page' },
+                      ] },
+                    ],
+                  },
+                },
+                {
+                  question: 'Blog Posts',
+                  answer: {
+                    type: 'doc',
+                    content: [
+                      { type: 'paragraph', content: [
+                        { type: 'text', marks: [{ type: 'code' }], text: 'GET /blog/posts' },
+                        { type: 'text', text: ' – List published posts (paginated)' },
+                      ] },
+                      { type: 'paragraph', content: [
+                        { type: 'text', marks: [{ type: 'code' }], text: 'GET /blog/posts/:slug' },
+                        { type: 'text', text: ' – Get post by slug with content' },
+                      ] },
+                      { type: 'paragraph', content: [
+                        { type: 'text', marks: [{ type: 'code' }], text: 'GET /blog/categories' },
+                        { type: 'text', text: ' – List all categories' },
+                      ] },
+                      { type: 'paragraph', content: [
+                        { type: 'text', marks: [{ type: 'code' }], text: 'GET /blog/tags' },
+                        { type: 'text', text: ' – List all tags' },
+                      ] },
+                    ],
+                  },
+                },
+                {
+                  question: 'Knowledge Base',
+                  answer: {
+                    type: 'doc',
+                    content: [
+                      { type: 'paragraph', content: [
+                        { type: 'text', marks: [{ type: 'code' }], text: 'GET /kb/categories' },
+                        { type: 'text', text: ' – List KB categories' },
+                      ] },
+                      { type: 'paragraph', content: [
+                        { type: 'text', marks: [{ type: 'code' }], text: 'GET /kb/articles' },
+                        { type: 'text', text: ' – List published articles' },
+                      ] },
+                      { type: 'paragraph', content: [
+                        { type: 'text', marks: [{ type: 'code' }], text: 'GET /kb/articles/:slug' },
+                        { type: 'text', text: ' – Get article by slug' },
+                      ] },
+                      { type: 'paragraph', content: [
+                        { type: 'text', marks: [{ type: 'code' }], text: 'GET /kb/search?q=query' },
+                        { type: 'text', text: ' – Full-text search across articles' },
+                      ] },
+                    ],
+                  },
+                },
+                {
+                  question: 'Media',
+                  answer: {
+                    type: 'doc',
+                    content: [
+                      { type: 'paragraph', content: [
+                        { type: 'text', marks: [{ type: 'code' }], text: 'GET /media' },
+                        { type: 'text', text: ' – List all media files' },
+                      ] },
+                      { type: 'paragraph', content: [
+                        { type: 'text', marks: [{ type: 'code' }], text: 'GET /media/:id' },
+                        { type: 'text', text: ' – Get media file metadata and URL' },
+                      ] },
+                      { type: 'paragraph', content: [
+                        { type: 'text', marks: [{ type: 'code' }], text: 'POST /media' },
+                        { type: 'text', text: ' – Upload new media file (multipart/form-data)' },
+                      ] },
+                    ],
+                  },
+                },
+                {
+                  question: 'Settings',
+                  answer: {
+                    type: 'doc',
+                    content: [
+                      { type: 'paragraph', content: [
+                        { type: 'text', marks: [{ type: 'code' }], text: 'GET /settings/site' },
+                        { type: 'text', text: ' – Get site settings (name, logo, etc.)' },
+                      ] },
+                      { type: 'paragraph', content: [
+                        { type: 'text', marks: [{ type: 'code' }], text: 'GET /settings/navigation' },
+                        { type: 'text', text: ' – Get navigation menu structure' },
+                      ] },
+                      { type: 'paragraph', content: [
+                        { type: 'text', marks: [{ type: 'code' }], text: 'GET /settings/branding' },
+                        { type: 'text', text: ' – Get branding (colors, fonts, etc.)' },
+                      ] },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+          // Separator - Self-Hosting
+          {
+            id: 'sep-selfhost',
+            type: 'separator',
+            data: {
+              variant: 'text',
+              text: 'Self-Hosting',
+              icon: 'Server',
+            },
+          },
+          // Two-Column - Self-Hosting Overview
+          {
+            id: 'twocol-selfhost',
+            type: 'two-column',
+            data: {
+              leftColumn: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Deploy on Your Infrastructure' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'PezCMS is fully self-hostable. Run it on your own servers for complete control over your data and infrastructure.' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Requirements' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Node.js 18+ or Bun' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'PostgreSQL 14+ (or Supabase)' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: '1GB RAM minimum, 2GB recommended' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: '10GB disk space for media storage' }] }] },
+                  ] },
+                ],
+              },
+              rightColumn: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Quick Start' }] },
+                  { type: 'codeBlock', attrs: { language: 'bash' }, content: [{ type: 'text', text: '# Clone the repository\ngit clone https://github.com/pezcms/pezcms\ncd pezcms\n\n# Install dependencies\nnpm install\n\n# Configure environment\ncp .env.example .env\n# Edit .env with your database URL\n\n# Run migrations\nnpm run db:migrate\n\n# Start the server\nnpm run start' }] },
+                ],
+              },
+              layout: '50-50',
+            },
+          },
+          // Features - Deployment Options
+          {
+            id: 'features-deploy',
+            type: 'features',
+            data: {
+              title: 'Deployment Options',
+              features: [
+                { id: 'deploy-docker', icon: 'Container', title: 'Docker', description: 'Official Docker image for containerized deployments. Works with Docker Compose, Kubernetes, or any container platform.', url: 'https://hub.docker.com/r/pezcms/pezcms' },
+                { id: 'deploy-vercel', icon: 'Triangle', title: 'Vercel', description: 'One-click deploy to Vercel. Connect your GitHub repo and deploy automatically on every push.' },
+                { id: 'deploy-railway', icon: 'Train', title: 'Railway', description: 'Deploy with Railway for managed PostgreSQL and automatic scaling. Template available.' },
+                { id: 'deploy-vps', icon: 'Server', title: 'VPS / Bare Metal', description: 'Run on any Linux server with Node.js. Use PM2 or systemd for process management.' },
+              ],
+              columns: 4,
+              variant: 'cards',
+              iconStyle: 'circle',
+              showLinks: true,
+            },
+          },
+          // Accordion - Self-Hosting FAQ
+          {
+            id: 'accordion-selfhost',
+            type: 'accordion',
+            data: {
+              title: 'Self-Hosting FAQ',
+              items: [
+                {
+                  question: 'Can I use my own database?',
+                  answer: {
+                    type: 'doc',
+                    content: [
+                      { type: 'paragraph', content: [{ type: 'text', text: 'Yes! PezCMS works with any PostgreSQL 14+ database. You can use a managed service like Supabase, Neon, or AWS RDS, or run your own PostgreSQL instance.' }] },
+                    ],
+                  },
+                },
+                {
+                  question: 'How do I configure a private LLM?',
+                  answer: {
+                    type: 'doc',
+                    content: [
+                      { type: 'paragraph', content: [{ type: 'text', text: 'Set the AI_PROVIDER environment variable to your preferred provider (openai, anthropic, ollama, or custom). For local LLMs, point AI_BASE_URL to your Ollama or LM Studio endpoint.' }] },
+                    ],
+                  },
+                },
+                {
+                  question: 'Is there an update mechanism?',
+                  answer: {
+                    type: 'doc',
+                    content: [
+                      { type: 'paragraph', content: [{ type: 'text', text: 'Pull the latest code from GitHub and run migrations. We recommend testing updates in a staging environment first. Database migrations are backward-compatible.' }] },
+                    ],
+                  },
+                },
+                {
+                  question: 'How do I set up SSL?',
+                  answer: {
+                    type: 'doc',
+                    content: [
+                      { type: 'paragraph', content: [{ type: 'text', text: 'Use a reverse proxy like Nginx or Caddy with automatic SSL via Let\'s Encrypt. Caddy is recommended for simplicity. Most cloud platforms handle SSL automatically.' }] },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+          // Separator - Webhooks
+          {
+            id: 'sep-webhooks',
+            type: 'separator',
+            data: {
+              variant: 'text',
+              text: 'Webhooks',
+              icon: 'Webhook',
+            },
+          },
+          // Text - Webhooks
+          {
+            id: 'text-webhooks',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Event-Driven Integrations' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Webhooks notify external services when content changes. Use them to trigger builds, sync data, or automate workflows.' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Supported Events' }] },
+                ],
+              },
+            },
+          },
+          // Features - Webhook Events
+          {
+            id: 'features-events',
+            type: 'features',
+            data: {
+              title: '',
+              features: [
+                { id: 'ev-publish', icon: 'Globe', title: 'page.published', description: 'Fired when a page is published' },
+                { id: 'ev-update', icon: 'RefreshCw', title: 'page.updated', description: 'Fired when a published page is updated' },
+                { id: 'ev-delete', icon: 'Trash2', title: 'page.deleted', description: 'Fired when a page is deleted' },
+                { id: 'ev-blog-pub', icon: 'FileText', title: 'blog_post.published', description: 'Fired when a blog post is published' },
+                { id: 'ev-blog-upd', icon: 'Edit', title: 'blog_post.updated', description: 'Fired when a blog post is updated' },
+                { id: 'ev-form', icon: 'ClipboardList', title: 'form.submitted', description: 'Fired when a form is submitted' },
+                { id: 'ev-newsletter', icon: 'Mail', title: 'newsletter.subscribed', description: 'Fired when someone subscribes' },
+                { id: 'ev-booking', icon: 'Calendar', title: 'booking.submitted', description: 'Fired when a booking is made' },
+              ],
+              columns: 4,
+              variant: 'minimal',
+              iconStyle: 'none',
+            },
+          },
+          // Text - Webhook Payload
+          {
+            id: 'text-webhook-payload',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Payload Format' }] },
+                  { type: 'codeBlock', attrs: { language: 'json' }, content: [{ type: 'text', text: '{\n  "event": "page.published",\n  "timestamp": "2024-01-15T10:30:00Z",\n  "data": {\n    "id": "uuid",\n    "title": "Page Title",\n    "slug": "page-slug",\n    "status": "published"\n  }\n}' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Security' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Webhooks include an HMAC signature in the X-Webhook-Signature header. Verify this signature against your webhook secret to ensure authenticity.' }] },
+                ],
+              },
+            },
+          },
+          // Info Box - N8N
+          {
+            id: 'info-n8n',
+            type: 'info-box',
+            data: {
+              variant: 'info',
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'N8N Integration Templates' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'We provide pre-built N8N workflow templates for common integrations: Slack notifications, email alerts, CRM sync, and static site rebuilds. Import them from the Admin panel under Webhooks.' }] },
+                ],
+              },
+            },
+          },
+          // Separator - Migration
+          {
+            id: 'sep-migration',
+            type: 'separator',
+            data: {
+              variant: 'text',
+              text: 'Migration',
+              icon: 'FileInput',
+            },
+          },
+          // Features - Migration Sources
+          {
+            id: 'features-migration',
+            type: 'features',
+            data: {
+              title: 'Import from Anywhere',
+              subtitle: 'AI-powered migration converts your content to structured blocks automatically.',
+              features: [
+                { id: 'mig-wp', icon: 'FileCode', title: 'WordPress', description: 'Import posts, pages, and media. Categories and tags are preserved. Featured images are downloaded.' },
+                { id: 'mig-webflow', icon: 'Layout', title: 'Webflow', description: 'Convert Webflow pages to PezCMS blocks. Styles are mapped to our design system.' },
+                { id: 'mig-html', icon: 'Code', title: 'Any HTML', description: 'Paste any URL and AI converts the content to structured blocks. Works with any website.' },
+                { id: 'mig-json', icon: 'Braces', title: 'JSON Import', description: 'Import content from any source using our JSON schema. Full control over mapping.' },
+              ],
+              columns: 4,
+              variant: 'cards',
+              iconStyle: 'circle',
+            },
+          },
+          // Text - Migration Steps
+          {
+            id: 'text-migration',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Migration Process' }] },
+                  { type: 'orderedList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Go to Admin → Pages → Import' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Enter the URL of the page to import' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'AI analyzes and converts the content to blocks' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Review and adjust the imported content' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Publish when ready' }] }] },
+                  ] },
+                ],
+              },
+            },
+          },
+          // Separator - Resources
+          {
+            id: 'sep-resources',
+            type: 'separator',
+            data: {
+              variant: 'text',
+              text: 'Resources',
+              icon: 'BookOpen',
+            },
+          },
+          // Link Grid - Resources
+          {
+            id: 'links-resources',
+            type: 'link-grid',
+            data: {
+              title: '',
+              links: [
+                { id: 'res-github', icon: 'Github', title: 'GitHub Repository', description: 'Source code, issues, and discussions', url: 'https://github.com/pezcms/pezcms' },
+                { id: 'res-discord', icon: 'MessageCircle', title: 'Discord Community', description: 'Get help from the community', url: 'https://discord.gg/pezcms' },
+                { id: 'res-changelog', icon: 'History', title: 'Changelog', description: 'See what is new in each release', url: 'https://github.com/pezcms/pezcms/releases' },
+                { id: 'res-roadmap', icon: 'Map', title: 'Roadmap', description: 'Upcoming features and priorities', url: 'https://github.com/pezcms/pezcms/projects' },
+              ],
+              columns: 4,
+            },
+          },
+          // CTA
+          {
+            id: 'cta-docs',
+            type: 'cta',
+            data: {
+              title: 'Ready to Get Started?',
+              subtitle: 'Try the demo or deploy your own instance today.',
+              buttonText: 'Launch Demo',
+              buttonUrl: '/demo',
+              secondaryButtonText: 'View on GitHub',
+              secondaryButtonUrl: 'https://github.com/pezcms/pezcms',
+              gradient: true,
+            },
+          },
+        ],
+      },
       // ===== PRIVACY POLICY =====
       {
         title: 'Privacy Policy',
