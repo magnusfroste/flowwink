@@ -3723,11 +3723,260 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
           },
         ],
       },
+      // ===== ROADMAP PAGE =====
+      {
+        title: 'Roadmap',
+        slug: 'roadmap',
+        menu_order: 5,
+        showInMenu: true,
+        meta: {
+          description: 'PezCMS product roadmap - See upcoming features, completed milestones, and vote on what we build next.',
+          showTitle: true,
+          titleAlignment: 'center',
+        },
+        blocks: [
+          // Hero
+          {
+            id: 'hero-roadmap',
+            type: 'hero',
+            data: {
+              title: 'Product Roadmap',
+              subtitle: 'See where we are headed, what we have shipped, and help shape the future of PezCMS.',
+              backgroundType: 'color',
+              heightMode: 'auto',
+              contentAlignment: 'center',
+              overlayOpacity: 0,
+            },
+          },
+          // Stats - Progress
+          {
+            id: 'stats-roadmap',
+            type: 'stats',
+            data: {
+              title: '',
+              items: [
+                { id: 'stat-shipped', value: '47', label: 'Features Shipped' },
+                { id: 'stat-progress', value: '8', label: 'In Progress' },
+                { id: 'stat-planned', value: '12', label: 'Planned' },
+                { id: 'stat-votes', value: '1.2k', label: 'Community Votes' },
+              ],
+              columns: 4,
+              variant: 'cards',
+            },
+          },
+          // Separator - In Progress
+          {
+            id: 'sep-progress',
+            type: 'separator',
+            data: {
+              variant: 'text',
+              text: 'In Progress',
+              icon: 'Loader',
+            },
+          },
+          // Features - Currently Building
+          {
+            id: 'features-progress',
+            type: 'features',
+            data: {
+              title: 'Currently Building',
+              subtitle: 'Features actively in development. Expected in the next 1-2 releases.',
+              features: [
+                { id: 'prog-1', icon: 'Globe', title: 'Multi-language Content', description: 'Native localization with AI translation. Manage content in multiple languages from one place.' },
+                { id: 'prog-2', icon: 'GitBranch', title: 'Content Staging', description: 'Preview changes before publishing. Share staging links with stakeholders for review.' },
+                { id: 'prog-3', icon: 'Smartphone', title: 'Mobile App Preview', description: 'See how content looks on mobile devices. Real-time preview in the editor.' },
+                { id: 'prog-4', icon: 'Plug', title: 'Plugin System', description: 'Extend PezCMS with custom blocks and integrations. Community plugin marketplace.' },
+              ],
+              columns: 2,
+              variant: 'cards',
+              iconStyle: 'circle',
+            },
+          },
+          // Separator - Planned
+          {
+            id: 'sep-planned',
+            type: 'separator',
+            data: {
+              variant: 'text',
+              text: 'Planned',
+              icon: 'Calendar',
+            },
+          },
+          // Features - Planned
+          {
+            id: 'features-planned',
+            type: 'features',
+            data: {
+              title: 'Coming Soon',
+              subtitle: 'Confirmed for future releases. Priorities may shift based on community feedback.',
+              features: [
+                { id: 'plan-1', icon: 'Users', title: 'Team Workspaces', description: 'Separate workspaces for different teams or projects. Role-based access per workspace.' },
+                { id: 'plan-2', icon: 'BarChart3', title: 'Built-in Analytics', description: 'Page views, engagement metrics, and content performance. No external tools needed.' },
+                { id: 'plan-3', icon: 'Workflow', title: 'Advanced Workflows', description: 'Custom approval chains with multiple reviewers. Conditional logic and notifications.' },
+                { id: 'plan-4', icon: 'Blocks', title: 'Custom Block Builder', description: 'Create your own block types visually. Define fields, styling, and behavior.' },
+                { id: 'plan-5', icon: 'ShoppingCart', title: 'E-commerce Module', description: 'Products, carts, and checkout. Integrate with Stripe, Klarna, or custom payment providers.' },
+                { id: 'plan-6', icon: 'Bot', title: 'AI Content Assistant', description: 'Proactive suggestions while you write. SEO recommendations and readability analysis.' },
+              ],
+              columns: 3,
+              variant: 'minimal',
+              iconStyle: 'circle',
+            },
+          },
+          // Separator - Completed
+          {
+            id: 'sep-completed',
+            type: 'separator',
+            data: {
+              variant: 'text',
+              text: 'Recently Shipped',
+              icon: 'CheckCircle',
+            },
+          },
+          // Timeline - Completed Milestones
+          {
+            id: 'timeline-shipped',
+            type: 'timeline',
+            data: {
+              title: 'Milestones',
+              items: [
+                {
+                  id: 'mile-1',
+                  title: 'v2.0 - Knowledge Base Module',
+                  description: 'Hierarchical categories, full-text search, AI chat integration, and public/private visibility controls.',
+                  icon: 'BookOpen',
+                  date: 'December 2024',
+                },
+                {
+                  id: 'mile-2',
+                  title: 'v1.9 - Editorial Workflow',
+                  description: 'Writer/Approver/Admin roles, version history, scheduled publishing, and audit trails.',
+                  icon: 'Users',
+                  date: 'November 2024',
+                },
+                {
+                  id: 'mile-3',
+                  title: 'v1.8 - CRM Module',
+                  description: 'Lead management, company tracking, deal pipeline, and activity history.',
+                  icon: 'Briefcase',
+                  date: 'October 2024',
+                },
+                {
+                  id: 'mile-4',
+                  title: 'v1.7 - AI Chat Widget',
+                  description: 'Embedded chat that answers questions using KB and page content. Private LLM support.',
+                  icon: 'MessageCircle',
+                  date: 'September 2024',
+                },
+                {
+                  id: 'mile-5',
+                  title: 'v1.6 - Newsletter Module',
+                  description: 'Subscriber management, campaign editor, open/click tracking, and GDPR-compliant double opt-in.',
+                  icon: 'Mail',
+                  date: 'August 2024',
+                },
+                {
+                  id: 'mile-6',
+                  title: 'v1.5 - Headless API',
+                  description: 'Full REST API for all content. Pages, posts, media, settings – everything accessible programmatically.',
+                  icon: 'Code',
+                  date: 'July 2024',
+                },
+              ],
+              layout: 'vertical',
+            },
+          },
+          // Separator - Vote
+          {
+            id: 'sep-vote',
+            type: 'separator',
+            data: {
+              variant: 'text',
+              text: 'Community Voting',
+              icon: 'Vote',
+            },
+          },
+          // Text - Voting Intro
+          {
+            id: 'text-vote-intro',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Help Shape the Future' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'PezCMS is built in the open. Your votes directly influence what we build next. The most-requested features move up the priority list.' }] },
+                ],
+              },
+            },
+          },
+          // Features - Vote Items
+          {
+            id: 'features-vote',
+            type: 'features',
+            data: {
+              title: 'Top Requested Features',
+              subtitle: 'Vote on GitHub Discussions to show your support.',
+              features: [
+                { id: 'vote-1', icon: 'Star', title: 'GraphQL API', description: 'Alternative to REST for flexible queries. Popular with React/Next.js teams.', url: 'https://github.com/pezcms/pezcms/discussions/123' },
+                { id: 'vote-2', icon: 'Star', title: 'Real-time Collaboration', description: 'Multiple editors working on the same page simultaneously. Google Docs-style.', url: 'https://github.com/pezcms/pezcms/discussions/124' },
+                { id: 'vote-3', icon: 'Star', title: 'A/B Testing', description: 'Test different versions of content. Automatic winner selection based on metrics.', url: 'https://github.com/pezcms/pezcms/discussions/125' },
+                { id: 'vote-4', icon: 'Star', title: 'Content Scheduling Calendar', description: 'Visual calendar for scheduled content. Drag-and-drop rescheduling.', url: 'https://github.com/pezcms/pezcms/discussions/126' },
+                { id: 'vote-5', icon: 'Star', title: 'White-label Admin', description: 'Customize the admin panel with your own branding. Remove all PezCMS references.', url: 'https://github.com/pezcms/pezcms/discussions/127' },
+                { id: 'vote-6', icon: 'Star', title: 'Import from Notion', description: 'One-click import from Notion pages and databases. Preserve structure and formatting.', url: 'https://github.com/pezcms/pezcms/discussions/128' },
+              ],
+              columns: 3,
+              variant: 'cards',
+              iconStyle: 'none',
+              showLinks: true,
+            },
+          },
+          // Link Grid - Participate
+          {
+            id: 'links-participate',
+            type: 'link-grid',
+            data: {
+              title: 'Get Involved',
+              links: [
+                { id: 'part-1', icon: 'Github', title: 'GitHub Discussions', description: 'Vote and propose features', url: 'https://github.com/pezcms/pezcms/discussions' },
+                { id: 'part-2', icon: 'MessageCircle', title: 'Discord Community', description: 'Chat with the team', url: 'https://discord.gg/pezcms' },
+                { id: 'part-3', icon: 'History', title: 'Changelog', description: 'Detailed release notes', url: 'https://github.com/pezcms/pezcms/releases' },
+                { id: 'part-4', icon: 'GitPullRequest', title: 'Contribute', description: 'Submit a PR', url: 'https://github.com/pezcms/pezcms/contribute' },
+              ],
+              columns: 4,
+            },
+          },
+          // Quote - Community
+          {
+            id: 'quote-community',
+            type: 'quote',
+            data: {
+              quote: 'I suggested the Knowledge Base module on Discord. Three months later, it shipped. This team actually listens.',
+              author: 'Community Member',
+              role: 'GitHub Contributor',
+              variant: 'centered',
+            },
+          },
+          // CTA
+          {
+            id: 'cta-roadmap',
+            type: 'cta',
+            data: {
+              title: 'Have a Feature Request?',
+              subtitle: 'Open a discussion on GitHub or join our Discord to share your ideas.',
+              buttonText: 'Open Discussion',
+              buttonUrl: 'https://github.com/pezcms/pezcms/discussions/new',
+              secondaryButtonText: 'Join Discord',
+              secondaryButtonUrl: 'https://discord.gg/pezcms',
+              gradient: true,
+            },
+          },
+        ],
+      },
       // ===== CONTACT PAGE =====
       {
         title: 'Contact',
         slug: 'kontakt',
-        menu_order: 5,
+        menu_order: 6,
         showInMenu: true,
         meta: {
           description: 'Get in touch with the PezCMS team - we\'re here to help with questions, demos, and enterprise inquiries.',
