@@ -53,6 +53,8 @@ import BlogTagPage from "./pages/BlogTagPage";
 import ChatPage from "./pages/ChatPage";
 import NewsletterManagePage from "./pages/NewsletterManagePage";
 import NotFound from "./pages/NotFound";
+import CheckoutPage from "./pages/CheckoutPage";
+import CheckoutSuccessPage from "./pages/CheckoutSuccessPage";
 
 const queryClient = new QueryClient();
 
@@ -62,6 +64,9 @@ const router = createBrowserRouter([
   { path: "/chat", element: <ChatPage /> },
   { path: "/hjalp", element: <PublicKnowledgeBasePage /> },
   { path: "/newsletter/manage", element: <NewsletterManagePage /> },
+  // Checkout routes
+  { path: "/checkout", element: <CheckoutPage /> },
+  { path: "/checkout/success", element: <CheckoutSuccessPage /> },
   // Blog routes
   { path: "/blogg", element: <BlogArchivePage /> },
   { path: "/blogg/kategori/:slug", element: <BlogCategoryPage /> },
