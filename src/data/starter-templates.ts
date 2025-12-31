@@ -3274,11 +3274,460 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
           },
         ],
       },
+      // ===== WHY PEZCMS PAGE =====
+      {
+        title: 'Why PezCMS',
+        slug: 'varfor-pezcms',
+        menu_order: 4,
+        showInMenu: true,
+        meta: {
+          description: 'Compare PezCMS to WordPress, Webflow, and Contentful. See why teams switch and how to migrate.',
+          showTitle: true,
+          titleAlignment: 'center',
+        },
+        blocks: [
+          // Hero
+          {
+            id: 'hero-why',
+            type: 'hero',
+            data: {
+              title: 'Why Teams Switch to PezCMS',
+              subtitle: 'Compare features, understand tradeoffs, and see detailed migration paths from your current platform.',
+              backgroundType: 'color',
+              heightMode: 'auto',
+              contentAlignment: 'center',
+              overlayOpacity: 0,
+            },
+          },
+          // Stats - Social Proof
+          {
+            id: 'stats-switch',
+            type: 'stats',
+            data: {
+              title: '',
+              items: [
+                { id: 'stat-migrate', value: '2hrs', label: 'Average Migration Time' },
+                { id: 'stat-cost', value: '60%', label: 'Cost Reduction' },
+                { id: 'stat-dev', value: '3x', label: 'Faster Development' },
+                { id: 'stat-sat', value: '98%', label: 'Would Recommend' },
+              ],
+              columns: 4,
+              variant: 'cards',
+            },
+          },
+          // Separator - vs WordPress
+          {
+            id: 'sep-wordpress',
+            type: 'separator',
+            data: {
+              variant: 'text',
+              text: 'vs WordPress',
+              icon: 'FileCode',
+            },
+          },
+          // Two-Column - WordPress Comparison
+          {
+            id: 'twocol-wordpress',
+            type: 'two-column',
+            data: {
+              leftColumn: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'WordPress Limitations' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Security vulnerabilities' }, { type: 'text', text: ' – Plugins and themes are common attack vectors. Constant patching required.' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'No real headless' }, { type: 'text', text: ' – REST API exists but was bolted on. Not designed for omnichannel.' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Plugin dependency' }, { type: 'text', text: ' – Need 10+ plugins for basics. Each adds complexity and risk.' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Performance issues' }, { type: 'text', text: ' – Database-heavy architecture. Caching plugins are band-aids.' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'No built-in workflow' }, { type: 'text', text: ' – Editorial review requires additional plugins.' }] }] },
+                  ] },
+                ],
+              },
+              rightColumn: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'PezCMS Advantages' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Modern security' }, { type: 'text', text: ' – Built on Supabase with Row Level Security. No plugin vulnerabilities.' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'API-first design' }, { type: 'text', text: ' – Full REST API from day one. Use the website OR the API OR both.' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'All-in-one' }, { type: 'text', text: ' – Blog, newsletter, CRM, forms, KB – all built in. No plugins needed.' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Fast by default' }, { type: 'text', text: ' – Modern React frontend. Edge functions. No optimization needed.' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Editorial workflow' }, { type: 'text', text: ' – Writer/Approver/Admin roles, version history, scheduled publishing.' }] }] },
+                  ] },
+                ],
+              },
+              layout: '50-50',
+            },
+          },
+          // Accordion - WordPress Migration Guide
+          {
+            id: 'accordion-wp-migrate',
+            type: 'accordion',
+            data: {
+              title: 'WordPress Migration Guide',
+              items: [
+                {
+                  question: 'Step 1: Export WordPress Content',
+                  answer: {
+                    type: 'doc',
+                    content: [
+                      { type: 'paragraph', content: [{ type: 'text', text: 'Go to WordPress Admin → Tools → Export. Select "All content" and download the XML file. This includes posts, pages, comments, custom fields, categories, tags, and media references.' }] },
+                    ],
+                  },
+                },
+                {
+                  question: 'Step 2: Import to PezCMS',
+                  answer: {
+                    type: 'doc',
+                    content: [
+                      { type: 'paragraph', content: [{ type: 'text', text: 'In PezCMS Admin, go to Pages → Import → WordPress. Upload your XML file. AI will analyze the content and convert it to structured blocks. Posts become blog posts, pages become pages, categories and tags are preserved.' }] },
+                    ],
+                  },
+                },
+                {
+                  question: 'Step 3: Review and Adjust',
+                  answer: {
+                    type: 'doc',
+                    content: [
+                      { type: 'paragraph', content: [{ type: 'text', text: 'Review each imported page in the visual editor. AI does most of the heavy lifting, but you may want to adjust block types, update images, and refine formatting. Media files are automatically downloaded and stored.' }] },
+                    ],
+                  },
+                },
+                {
+                  question: 'Step 4: Set Up Redirects',
+                  answer: {
+                    type: 'doc',
+                    content: [
+                      { type: 'paragraph', content: [{ type: 'text', text: 'PezCMS generates a redirect map from your old WordPress URLs to new slugs. Configure your web server or CDN to redirect traffic. We provide Nginx and Cloudflare configuration examples.' }] },
+                    ],
+                  },
+                },
+                {
+                  question: 'Step 5: DNS Cutover',
+                  answer: {
+                    type: 'doc',
+                    content: [
+                      { type: 'paragraph', content: [{ type: 'text', text: 'Update your DNS to point to PezCMS. If self-hosting, point to your server. If using managed cloud, we provide the destination. TTL should be set low before cutover for fast propagation.' }] },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+          // Quote - WordPress switcher
+          {
+            id: 'quote-wordpress',
+            type: 'quote',
+            data: {
+              quote: 'We spent more time updating plugins than creating content. PezCMS migration took a weekend, and we have not looked back.',
+              author: 'Marcus Andersson',
+              role: 'Digital Director, TechStart AB',
+              variant: 'centered',
+            },
+          },
+          // Separator - vs Webflow
+          {
+            id: 'sep-webflow',
+            type: 'separator',
+            data: {
+              variant: 'text',
+              text: 'vs Webflow',
+              icon: 'Layout',
+            },
+          },
+          // Two-Column - Webflow Comparison
+          {
+            id: 'twocol-webflow',
+            type: 'two-column',
+            data: {
+              leftColumn: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Webflow Limitations' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'No headless option' }, { type: 'text', text: ' – Content locked to Webflow. Cannot power mobile apps or custom frontends.' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Expensive at scale' }, { type: 'text', text: ' – CMS plans start at $23/mo, but add forms, e-commerce, and costs multiply.' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Vendor lock-in' }, { type: 'text', text: ' – Cannot export and self-host. Your site lives on their servers only.' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Limited CRM' }, { type: 'text', text: ' – Form submissions only. No lead scoring, pipelines, or automation.' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'No AI features' }, { type: 'text', text: ' – No built-in AI chat, content generation, or translation.' }] }] },
+                  ] },
+                ],
+              },
+              rightColumn: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'PezCMS Advantages' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Head + Headless' }, { type: 'text', text: ' – Beautiful website included AND full API. Power any frontend from one source.' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Self-host free' }, { type: 'text', text: ' – Open source. No per-seat charges. Managed cloud available if preferred.' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Full ownership' }, { type: 'text', text: ' – Your data, your servers, your rules. Export anytime, host anywhere.' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Built-in CRM' }, { type: 'text', text: ' – Lead management, company tracking, deal pipeline, activity history.' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'AI everywhere' }, { type: 'text', text: ' – Chat widget, content generation, translation, brand analysis, migration.' }] }] },
+                  ] },
+                ],
+              },
+              layout: '50-50',
+            },
+          },
+          // Accordion - Webflow Migration Guide
+          {
+            id: 'accordion-webflow-migrate',
+            type: 'accordion',
+            data: {
+              title: 'Webflow Migration Guide',
+              items: [
+                {
+                  question: 'Step 1: Export Webflow Content',
+                  answer: {
+                    type: 'doc',
+                    content: [
+                      { type: 'paragraph', content: [{ type: 'text', text: 'Webflow CMS content can be exported as CSV. Go to your Collection, click the three dots, and export. For pages, you will need to copy content manually or use our AI import.' }] },
+                    ],
+                  },
+                },
+                {
+                  question: 'Step 2: AI Page Import',
+                  answer: {
+                    type: 'doc',
+                    content: [
+                      { type: 'paragraph', content: [{ type: 'text', text: 'For each Webflow page, use PezCMS Import → URL. Paste the live Webflow URL. AI analyzes the page structure and converts it to PezCMS blocks. Hero sections, feature grids, testimonials – all converted automatically.' }] },
+                    ],
+                  },
+                },
+                {
+                  question: 'Step 3: Import CMS Collections',
+                  answer: {
+                    type: 'doc',
+                    content: [
+                      { type: 'paragraph', content: [{ type: 'text', text: 'Upload your exported CSVs to PezCMS. Blog posts go to the Blog module, team members to Team blocks, testimonials to Testimonials blocks. Field mapping is automatic with manual override options.' }] },
+                    ],
+                  },
+                },
+                {
+                  question: 'Step 4: Recreate Interactions',
+                  answer: {
+                    type: 'doc',
+                    content: [
+                      { type: 'paragraph', content: [{ type: 'text', text: 'PezCMS supports common animations: fade-in, slide-up, scale. For complex Webflow interactions, you may need to simplify or use custom CSS. Most marketing sites work perfectly with our built-in options.' }] },
+                    ],
+                  },
+                },
+                {
+                  question: 'Step 5: Form Setup',
+                  answer: {
+                    type: 'doc',
+                    content: [
+                      { type: 'paragraph', content: [{ type: 'text', text: 'Recreate your forms in PezCMS Form Builder. All submissions are stored and can trigger webhooks, feed into the CRM, or send emails. No per-submission fees like Webflow charges.' }] },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+          // Quote - Webflow switcher
+          {
+            id: 'quote-webflow',
+            type: 'quote',
+            data: {
+              quote: 'Webflow was great for design, but we needed an API for our mobile app. PezCMS gives us both – the visual builder AND the headless flexibility.',
+              author: 'Emma Lindqvist',
+              role: 'CTO, DigitalFlow',
+              variant: 'centered',
+            },
+          },
+          // Separator - vs Contentful
+          {
+            id: 'sep-contentful',
+            type: 'separator',
+            data: {
+              variant: 'text',
+              text: 'vs Contentful',
+              icon: 'Database',
+            },
+          },
+          // Two-Column - Contentful Comparison
+          {
+            id: 'twocol-contentful',
+            type: 'two-column',
+            data: {
+              leftColumn: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Contentful Limitations' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'No website included' }, { type: 'text', text: ' – Pure headless. You must build every frontend from scratch.' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Expensive pricing' }, { type: 'text', text: ' – Free tier is limited. Team plans start at $300/month. Enterprise is custom.' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Complex content modeling' }, { type: 'text', text: ' – Powerful but steep learning curve. Non-technical users struggle.' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'No built-in modules' }, { type: 'text', text: ' – No blog, newsletter, CRM, or forms. Everything must be built custom.' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Cannot self-host' }, { type: 'text', text: ' – SaaS only. No option to run on your infrastructure.' }] }] },
+                  ] },
+                ],
+              },
+              rightColumn: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'PezCMS Advantages' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Website included' }, { type: 'text', text: ' – Beautiful, responsive site out of the box. API available when you need it.' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Self-host free' }, { type: 'text', text: ' – Open source forever. Managed cloud at €49/mo if you prefer.' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Visual block editor' }, { type: 'text', text: ' – No learning curve. Drag blocks, edit content, publish. Anyone can use it.' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Modules included' }, { type: 'text', text: ' – Blog, newsletter, CRM, forms, KB – ready to use immediately.' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Full data control' }, { type: 'text', text: ' – Run on your servers. Connect your own database. Private LLM support.' }] }] },
+                  ] },
+                ],
+              },
+              layout: '50-50',
+            },
+          },
+          // Accordion - Contentful Migration Guide
+          {
+            id: 'accordion-contentful-migrate',
+            type: 'accordion',
+            data: {
+              title: 'Contentful Migration Guide',
+              items: [
+                {
+                  question: 'Step 1: Export Content Types',
+                  answer: {
+                    type: 'doc',
+                    content: [
+                      { type: 'paragraph', content: [{ type: 'text', text: 'Use Contentful CLI to export your content types and entries: contentful space export --space-id YOUR_SPACE. This creates a JSON file with all your content models and data.' }] },
+                    ],
+                  },
+                },
+                {
+                  question: 'Step 2: Map Content Types to Blocks',
+                  answer: {
+                    type: 'doc',
+                    content: [
+                      { type: 'paragraph', content: [{ type: 'text', text: 'Review your Contentful content types. Most map directly to PezCMS blocks: Rich Text → Text Block, Media → Image/Gallery, References → Article Grid. Custom types may need manual mapping.' }] },
+                    ],
+                  },
+                },
+                {
+                  question: 'Step 3: Import via JSON',
+                  answer: {
+                    type: 'doc',
+                    content: [
+                      { type: 'paragraph', content: [{ type: 'text', text: 'In PezCMS Admin → Import → JSON. Upload your Contentful export. The importer transforms Contentful structure to PezCMS blocks. Blog entries become blog posts, page entries become pages.' }] },
+                    ],
+                  },
+                },
+                {
+                  question: 'Step 4: Rebuild Frontend (or Use Built-in)',
+                  answer: {
+                    type: 'doc',
+                    content: [
+                      { type: 'paragraph', content: [{ type: 'text', text: 'If you had a custom frontend with Contentful, you can keep using it – just point API calls to PezCMS instead. Or use our built-in website and skip frontend maintenance entirely.' }] },
+                    ],
+                  },
+                },
+                {
+                  question: 'Step 5: Update Integrations',
+                  answer: {
+                    type: 'doc',
+                    content: [
+                      { type: 'paragraph', content: [{ type: 'text', text: 'Replace Contentful webhooks with PezCMS webhooks. Same events, similar payload structure. Update any external services that were calling Contentful APIs to use PezCMS endpoints.' }] },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+          // Quote - Contentful switcher
+          {
+            id: 'quote-contentful',
+            type: 'quote',
+            data: {
+              quote: 'Contentful was overkill for our needs. We were paying $300/month and still had to build a frontend. PezCMS does everything for €49.',
+              author: 'Dr. Sofia Berg',
+              role: 'Director, HealthTech Nordic',
+              variant: 'centered',
+            },
+          },
+          // Separator - Full Comparison
+          {
+            id: 'sep-compare',
+            type: 'separator',
+            data: {
+              variant: 'text',
+              text: 'Feature Comparison',
+              icon: 'Table',
+            },
+          },
+          // Comparison Table
+          {
+            id: 'comparison-full',
+            type: 'comparison',
+            data: {
+              title: '',
+              products: [
+                { id: 'pez', name: 'PezCMS', highlighted: true },
+                { id: 'wordpress', name: 'WordPress' },
+                { id: 'webflow', name: 'Webflow' },
+                { id: 'contentful', name: 'Contentful' },
+              ],
+              features: [
+                { id: 'f-website', name: 'Built-in Website', values: [true, true, true, false] },
+                { id: 'f-api', name: 'Headless API', values: [true, 'Limited', false, true] },
+                { id: 'f-selfhost', name: 'Self-Hostable', values: [true, true, false, false] },
+                { id: 'f-opensource', name: 'Open Source', values: [true, true, false, false] },
+                { id: 'f-visual', name: 'Visual Block Editor', values: [true, 'Plugins', true, false] },
+                { id: 'f-workflow', name: 'Editorial Workflow', values: [true, 'Plugins', false, true] },
+                { id: 'f-versions', name: 'Version History', values: [true, 'Plugins', true, true] },
+                { id: 'f-blog', name: 'Built-in Blog', values: [true, true, true, false] },
+                { id: 'f-newsletter', name: 'Newsletter Module', values: [true, 'Plugins', false, false] },
+                { id: 'f-crm', name: 'CRM / Leads', values: [true, 'Plugins', false, false] },
+                { id: 'f-forms', name: 'Form Builder', values: [true, 'Plugins', true, false] },
+                { id: 'f-kb', name: 'Knowledge Base', values: [true, 'Plugins', false, false] },
+                { id: 'f-ai-chat', name: 'AI Chat Widget', values: [true, false, false, false] },
+                { id: 'f-ai-content', name: 'AI Content Tools', values: [true, false, false, false] },
+                { id: 'f-private-llm', name: 'Private LLM Support', values: [true, false, false, false] },
+                { id: 'f-webhooks', name: 'Webhooks', values: [true, 'Plugins', true, true] },
+                { id: 'f-price', name: 'Starting Price', values: ['Free', 'Free', '$23/mo', '$300/mo'] },
+              ],
+              variant: 'striped',
+              showPrices: false,
+              showButtons: false,
+              stickyHeader: true,
+            },
+          },
+          // Info Box - Migration Help
+          {
+            id: 'info-help',
+            type: 'info-box',
+            data: {
+              variant: 'info',
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Need Help Migrating?' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Our team offers free migration consultations for teams considering the switch. We will review your current setup, create a migration plan, and answer any technical questions. Book a call or reach out on Discord.' }] },
+                ],
+              },
+            },
+          },
+          // CTA
+          {
+            id: 'cta-why',
+            type: 'cta',
+            data: {
+              title: 'Ready to Make the Switch?',
+              subtitle: 'Try the demo, explore the code, or book a personalized walkthrough.',
+              buttonText: 'Launch Demo',
+              buttonUrl: '/demo',
+              secondaryButtonText: 'Book a Call',
+              secondaryButtonUrl: '/kontakt',
+              gradient: true,
+            },
+          },
+        ],
+      },
       // ===== CONTACT PAGE =====
       {
         title: 'Contact',
         slug: 'kontakt',
-        menu_order: 4,
+        menu_order: 5,
         showInMenu: true,
         meta: {
           description: 'Get in touch with the PezCMS team - we\'re here to help with questions, demos, and enterprise inquiries.',
