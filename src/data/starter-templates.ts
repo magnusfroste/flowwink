@@ -3146,11 +3146,414 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
           },
         ],
       },
+      // ===== DEMO PAGE =====
+      {
+        title: 'Demo',
+        slug: 'demo',
+        menu_order: 3,
+        showInMenu: true,
+        meta: {
+          description: 'Try PezCMS live - Explore the visual editor, content blocks, and publishing workflow. No signup required.',
+          showTitle: true,
+          titleAlignment: 'center',
+        },
+        blocks: [
+          // Hero
+          {
+            id: 'hero-demo',
+            type: 'hero',
+            data: {
+              title: 'See PezCMS in Action',
+              subtitle: 'Explore every feature below. This entire page was built with PezCMS – what you see is what you get.',
+              backgroundType: 'color',
+              heightMode: 'auto',
+              contentAlignment: 'center',
+              overlayOpacity: 0,
+              primaryButton: { text: 'Try the Admin', url: '/admin' },
+              secondaryButton: { text: 'View Source', url: 'https://github.com/pezcms/pezcms' },
+            },
+          },
+          // Info Box - How This Works
+          {
+            id: 'info-demo-intro',
+            type: 'info-box',
+            data: {
+              variant: 'highlight',
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: '👋 Welcome to the Interactive Demo' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'This page showcases every block type available in PezCMS. Scroll through to see how each block looks and behaves. Then click "Try the Admin" above to create your own pages.' }] },
+                ],
+              },
+            },
+          },
+          // Separator - Visual Editor
+          {
+            id: 'sep-editor',
+            type: 'separator',
+            data: {
+              variant: 'text',
+              text: 'Visual Editor',
+              icon: 'Palette',
+            },
+          },
+          // Two-Column - Editor Overview
+          {
+            id: 'twocol-editor',
+            type: 'two-column',
+            data: {
+              leftColumn: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Drag, Drop, Done' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'The visual editor is the heart of PezCMS. Add blocks, arrange them, edit content – all in real-time with instant preview.' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'How It Works' }] },
+                  { type: 'orderedList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Add a Block' }, { type: 'text', text: ' – Click the + button and choose from 27+ block types' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Edit Content' }, { type: 'text', text: ' – Click any text to edit. Upload images. Configure settings.' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Rearrange' }, { type: 'text', text: ' – Drag blocks to reorder. Move sections around freely.' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Preview' }, { type: 'text', text: ' – See exactly how it looks on desktop, tablet, and mobile.' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Publish' }, { type: 'text', text: ' – One click to go live. Or schedule for later.' }] }] },
+                  ] },
+                ],
+              },
+              rightColumn: {
+                type: 'doc',
+                content: [
+                  { type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'italic' }], text: '🖼️ The editor panel shows a live preview on the right and block controls on the left. Every change is auto-saved.' }] },
+                ],
+              },
+              layout: '60-40',
+            },
+          },
+          // Separator - Block Showcase
+          {
+            id: 'sep-blocks-demo',
+            type: 'separator',
+            data: {
+              variant: 'text',
+              text: 'Block Showcase',
+              icon: 'LayoutGrid',
+            },
+          },
+          // Text - Block Intro
+          {
+            id: 'text-blocks-intro',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Every Block Type, Live' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Below you will find examples of the most popular block types. Each one is fully customizable – colors, layouts, content, and behavior.' }] },
+                ],
+              },
+            },
+          },
+          // Features Block Example
+          {
+            id: 'demo-features',
+            type: 'features',
+            data: {
+              title: 'Features Block',
+              subtitle: 'Showcase capabilities with icon cards. Grid or list layout.',
+              features: [
+                { id: 'demo-f1', icon: 'Zap', title: 'Fast', description: 'Optimized for speed. No bloat, no lag.' },
+                { id: 'demo-f2', icon: 'Shield', title: 'Secure', description: 'Row-level security. GDPR compliant.' },
+                { id: 'demo-f3', icon: 'Sparkles', title: 'AI-Powered', description: 'Generate, translate, optimize content.' },
+                { id: 'demo-f4', icon: 'Code', title: 'Developer Friendly', description: 'Full API access. Webhooks. Open source.' },
+              ],
+              columns: 4,
+              variant: 'cards',
+              iconStyle: 'circle',
+            },
+          },
+          // Stats Block Example
+          {
+            id: 'demo-stats',
+            type: 'stats',
+            data: {
+              title: 'Stats Block',
+              items: [
+                { id: 'demo-s1', value: '99.9%', label: 'Uptime' },
+                { id: 'demo-s2', value: '< 100ms', label: 'Response Time' },
+                { id: 'demo-s3', value: '50k+', label: 'Pages Served' },
+                { id: 'demo-s4', value: '24/7', label: 'Support' },
+              ],
+              columns: 4,
+              variant: 'minimal',
+            },
+          },
+          // Testimonials Block Example
+          {
+            id: 'demo-testimonials',
+            type: 'testimonials',
+            data: {
+              title: 'Testimonials Block',
+              testimonials: [
+                {
+                  id: 'demo-t1',
+                  content: 'The visual editor is incredibly intuitive. Our marketing team creates landing pages without any developer help.',
+                  author: 'Anna Svensson',
+                  role: 'Marketing Director',
+                  company: 'TechCorp',
+                  rating: 5,
+                },
+                {
+                  id: 'demo-t2',
+                  content: 'We switched from WordPress and never looked back. The API is exactly what we needed for our mobile app.',
+                  author: 'Erik Johansson',
+                  role: 'Lead Developer',
+                  company: 'AppStudio',
+                  rating: 5,
+                },
+                {
+                  id: 'demo-t3',
+                  content: 'Self-hosting was a breeze. The documentation is excellent and the community is incredibly helpful.',
+                  author: 'Maria Lindgren',
+                  role: 'DevOps Engineer',
+                  company: 'CloudNative',
+                  rating: 5,
+                },
+              ],
+              layout: 'grid',
+              columns: 3,
+              showRating: true,
+              showAvatar: false,
+              variant: 'cards',
+            },
+          },
+          // Accordion Block Example
+          {
+            id: 'demo-accordion',
+            type: 'accordion',
+            data: {
+              title: 'Accordion Block',
+              items: [
+                {
+                  question: 'How does the FAQ block work?',
+                  answer: {
+                    type: 'doc',
+                    content: [
+                      { type: 'paragraph', content: [{ type: 'text', text: 'Add questions and answers. Visitors click to expand. Great for reducing support tickets and improving SEO with structured FAQ markup.' }] },
+                    ],
+                  },
+                },
+                {
+                  question: 'Can I add images and links inside answers?',
+                  answer: {
+                    type: 'doc',
+                    content: [
+                      { type: 'paragraph', content: [{ type: 'text', text: 'Yes! Answers support rich text formatting including bold, italic, links, images, and even code blocks. Full flexibility.' }] },
+                    ],
+                  },
+                },
+                {
+                  question: 'Is this good for SEO?',
+                  answer: {
+                    type: 'doc',
+                    content: [
+                      { type: 'paragraph', content: [{ type: 'text', text: 'Absolutely. PezCMS automatically generates FAQ structured data (JSON-LD) for accordion blocks, helping your content appear in Google rich results.' }] },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+          // Gallery Block Example
+          {
+            id: 'demo-gallery',
+            type: 'gallery',
+            data: {
+              title: 'Gallery Block',
+              images: [
+                { id: 'gal-1', url: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=600', alt: 'Code on laptop', caption: 'Developer workspace' },
+                { id: 'gal-2', url: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600', alt: 'Analytics dashboard', caption: 'Data visualization' },
+                { id: 'gal-3', url: 'https://images.unsplash.com/photo-1551434678-e076c223a692?w=600', alt: 'Team collaboration', caption: 'Team meeting' },
+                { id: 'gal-4', url: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=600', alt: 'Office space', caption: 'Modern office' },
+              ],
+              layout: 'grid',
+              columns: 4,
+              showCaptions: true,
+              lightbox: true,
+            },
+          },
+          // Timeline Block Example
+          {
+            id: 'demo-timeline',
+            type: 'timeline',
+            data: {
+              title: 'Timeline Block',
+              subtitle: 'Perfect for showing processes, history, or roadmaps.',
+              items: [
+                { id: 'tl-1', title: 'Step 1: Plan', description: 'Define your content structure and goals.', icon: 'Lightbulb' },
+                { id: 'tl-2', title: 'Step 2: Build', description: 'Create pages with the visual editor.', icon: 'Hammer' },
+                { id: 'tl-3', title: 'Step 3: Review', description: 'Submit for approval and get feedback.', icon: 'CheckCircle' },
+                { id: 'tl-4', title: 'Step 4: Launch', description: 'Publish to the world with one click.', icon: 'Rocket' },
+              ],
+              layout: 'horizontal',
+            },
+          },
+          // Comparison Block Example
+          {
+            id: 'demo-comparison',
+            type: 'comparison',
+            data: {
+              title: 'Comparison Block',
+              products: [
+                { id: 'c-basic', name: 'Basic', price: 'Free' },
+                { id: 'c-pro', name: 'Pro', price: '$49/mo', highlighted: true },
+                { id: 'c-ent', name: 'Enterprise', price: 'Custom' },
+              ],
+              features: [
+                { id: 'cf-1', name: 'Pages', values: ['10', 'Unlimited', 'Unlimited'] },
+                { id: 'cf-2', name: 'Users', values: ['1', '5', 'Unlimited'] },
+                { id: 'cf-3', name: 'API Access', values: [false, true, true] },
+                { id: 'cf-4', name: 'Priority Support', values: [false, true, true] },
+                { id: 'cf-5', name: 'Custom Domain', values: [false, true, true] },
+              ],
+              variant: 'bordered',
+              showPrices: true,
+              showButtons: false,
+            },
+          },
+          // Logos Block Example
+          {
+            id: 'demo-logos',
+            type: 'logos',
+            data: {
+              title: 'Logos Block',
+              subtitle: 'Show client logos, partners, or integrations.',
+              logos: [
+                { id: 'logo-1', name: 'Company A', url: 'https://via.placeholder.com/150x50?text=Logo+1' },
+                { id: 'logo-2', name: 'Company B', url: 'https://via.placeholder.com/150x50?text=Logo+2' },
+                { id: 'logo-3', name: 'Company C', url: 'https://via.placeholder.com/150x50?text=Logo+3' },
+                { id: 'logo-4', name: 'Company D', url: 'https://via.placeholder.com/150x50?text=Logo+4' },
+                { id: 'logo-5', name: 'Company E', url: 'https://via.placeholder.com/150x50?text=Logo+5' },
+              ],
+              layout: 'grid',
+              columns: 5,
+              grayscale: true,
+            },
+          },
+          // Quote Block Example
+          {
+            id: 'demo-quote',
+            type: 'quote',
+            data: {
+              quote: 'The best CMS is the one your team actually uses. PezCMS is simple enough for marketers and powerful enough for developers.',
+              author: 'Product Team',
+              role: 'PezCMS',
+              variant: 'centered',
+            },
+          },
+          // Separator - Workflow
+          {
+            id: 'sep-workflow-demo',
+            type: 'separator',
+            data: {
+              variant: 'text',
+              text: 'Publishing Workflow',
+              icon: 'GitBranch',
+            },
+          },
+          // Features - Workflow Steps
+          {
+            id: 'demo-workflow',
+            type: 'features',
+            data: {
+              title: 'From Draft to Published',
+              subtitle: 'Every piece of content goes through a structured workflow.',
+              features: [
+                { id: 'wf-1', icon: 'PenLine', title: '1. Create', description: 'Writers create content using the visual editor. Auto-save ensures nothing is lost.' },
+                { id: 'wf-2', icon: 'Send', title: '2. Submit', description: 'When ready, submit for review. Approvers are notified automatically.' },
+                { id: 'wf-3', icon: 'MessageSquare', title: '3. Review', description: 'Approvers provide feedback or approve. Comments are tracked.' },
+                { id: 'wf-4', icon: 'Globe', title: '4. Publish', description: 'Approved content goes live immediately or at a scheduled time.' },
+              ],
+              columns: 4,
+              variant: 'minimal',
+              iconStyle: 'circle',
+            },
+          },
+          // Info Box - Version Control
+          {
+            id: 'info-versions',
+            type: 'info-box',
+            data: {
+              variant: 'info',
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: '💾 Every Save is a Version' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Made a mistake? No problem. Every save creates a version you can restore with one click. Compare any two versions side-by-side to see exactly what changed.' }] },
+                ],
+              },
+            },
+          },
+          // Separator - Try It
+          {
+            id: 'sep-try',
+            type: 'separator',
+            data: {
+              variant: 'text',
+              text: 'Try It Yourself',
+              icon: 'MousePointer',
+            },
+          },
+          // Two-Column - CTA
+          {
+            id: 'twocol-try',
+            type: 'two-column',
+            data: {
+              leftColumn: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Ready to Build?' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'The best way to understand PezCMS is to use it. Click the button to access the admin panel and start creating.' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'No signup required for the demo' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Full access to all features' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Your changes are saved locally' }] }] },
+                  ] },
+                ],
+              },
+              rightColumn: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Quick Links' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: '→ Admin Dashboard: /admin' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: '→ Page Editor: /admin/pages' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: '→ Blog Manager: /admin/blog' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: '→ Media Library: /admin/media' }] }] },
+                  ] },
+                ],
+              },
+              layout: '50-50',
+            },
+          },
+          // CTA
+          {
+            id: 'cta-demo',
+            type: 'cta',
+            data: {
+              title: 'Start Building Now',
+              subtitle: 'Access the full admin panel and create your first page in minutes.',
+              buttonText: 'Open Admin Panel',
+              buttonUrl: '/admin',
+              secondaryButtonText: 'Self-Host Free',
+              secondaryButtonUrl: 'https://github.com/pezcms/pezcms',
+              gradient: true,
+            },
+          },
+        ],
+      },
       // ===== PRICING PAGE =====
       {
         title: 'Pricing',
         slug: 'priser',
-        menu_order: 3,
+        menu_order: 4,
         showInMenu: true,
         meta: {
           description: 'PezCMS pricing - Self-hosted free forever, or managed cloud starting at €49/month.',
@@ -3278,7 +3681,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
       {
         title: 'Why PezCMS',
         slug: 'varfor-pezcms',
-        menu_order: 4,
+        menu_order: 5,
         showInMenu: true,
         meta: {
           description: 'Compare PezCMS to WordPress, Webflow, and Contentful. See why teams switch and how to migrate.',
@@ -3727,7 +4130,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
       {
         title: 'Roadmap',
         slug: 'roadmap',
-        menu_order: 5,
+        menu_order: 6,
         showInMenu: true,
         meta: {
           description: 'PezCMS product roadmap - See upcoming features, completed milestones, and vote on what we build next.',
@@ -3976,7 +4379,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
       {
         title: 'Contact',
         slug: 'kontakt',
-        menu_order: 6,
+        menu_order: 7,
         showInMenu: true,
         meta: {
           description: 'Get in touch with the PezCMS team - we\'re here to help with questions, demos, and enterprise inquiries.',
