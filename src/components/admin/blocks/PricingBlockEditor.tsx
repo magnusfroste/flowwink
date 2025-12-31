@@ -28,13 +28,13 @@ export function PricingBlockEditor({ data, onChange, isEditing }: PricingBlockEd
   const addTier = () => {
     const newTier: PricingTier = {
       id: `tier-${Date.now()}`,
-      name: 'New Plan',
-      price: '$99',
-      period: '/month',
-      description: 'Perfect for getting started',
-      features: ['Feature 1', 'Feature 2', 'Feature 3'],
-      buttonText: 'Get Started',
-      buttonUrl: '/contact',
+      name: 'Ny plan',
+      price: '999 kr',
+      period: '/månad',
+      description: 'Perfekt för att komma igång',
+      features: ['Funktion 1', 'Funktion 2', 'Funktion 3'],
+      buttonText: 'Beställ',
+      buttonUrl: '/checkout',
       highlighted: false,
     };
     updateData({ tiers: [...(data.tiers || []), newTier] });
