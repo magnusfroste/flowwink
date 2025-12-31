@@ -103,7 +103,7 @@ const navigationGroups: NavGroup[] = [
       { name: "Companies", href: "/admin/companies", icon: Building2, moduleId: "companies" },
       { name: "Deals", href: "/admin/deals", icon: Briefcase, moduleId: "deals" },
       { name: "Products", href: "/admin/products", icon: Package, moduleId: "products" },
-      { name: "Orders", href: "/admin/orders", icon: ShoppingCart, moduleId: "products" },
+      { name: "Orders", href: "/admin/orders", icon: ShoppingCart, moduleId: "orders" },
     ],
   },
   {

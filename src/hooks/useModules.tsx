@@ -23,6 +23,7 @@ export interface ModulesSettings {
   deals: ModuleConfig;
   companies: ModuleConfig;
   products: ModuleConfig;
+  orders: ModuleConfig;
   contentApi: ModuleConfig;
   globalElements: ModuleConfig;
   mediaLibrary: ModuleConfig;
@@ -100,6 +101,13 @@ export const defaultModulesSettings: ModulesSettings = {
     icon: 'Package',
     category: 'data',
   },
+  orders: {
+    enabled: true,
+    name: 'Orders',
+    description: 'Order management and e-commerce transactions',
+    icon: 'ShoppingCart',
+    category: 'data',
+  },
   contentApi: {
     enabled: false,
     name: 'Content Hub',
@@ -136,6 +144,7 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/deals': 'deals',
   '/admin/companies': 'companies',
   '/admin/products': 'products',
+  '/admin/orders': 'orders',
   '/admin/content-hub': 'contentApi',
   '/admin/global-blocks': 'globalElements',
   '/admin/media': 'mediaLibrary',
