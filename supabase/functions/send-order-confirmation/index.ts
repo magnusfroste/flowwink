@@ -154,6 +154,16 @@ serve(async (req: Request) => {
 
     console.log("[send-order-confirmation] Email sent:", emailResponse);
 
+    // Update order with confirmation timestamp
+    const { error: updateError } = await supabase
+      .from("orders")
+      .update({ confirmation_sent_at: new Date().toISOString() })
+      .eq("id", orderId);
+
+    if (updateError) {
+      console.error("[send-order-confirmation] Failed to update timestamp:", updateError);
+    }
+
     return new Response(JSON.stringify({ success: true, emailResponse }), {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
