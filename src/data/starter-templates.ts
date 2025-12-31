@@ -3513,6 +3513,24 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
               emptyCartMessage: 'Your cart is empty. Add products above to see the cart in action.',
             },
           },
+          // Booking Block Example
+          {
+            id: 'demo-booking',
+            type: 'booking',
+            data: {
+              title: 'Booking Block',
+              subtitle: 'Let visitors book meetings, appointments, or consultations directly from your site.',
+              nameLabel: 'Your Name',
+              emailLabel: 'Email Address',
+              phoneLabel: 'Phone Number',
+              messageLabel: 'Additional Information',
+              submitButtonText: 'Request Booking',
+              successMessage: 'Thank you! We will confirm your booking shortly.',
+              showPhone: true,
+              showMessage: true,
+              requirePhone: false,
+            },
+          },
           // Logos Block Example
           {
             id: 'demo-logos',
