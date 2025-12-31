@@ -10,7 +10,11 @@ export type WebhookEventType =
   | 'form.submitted'
   | 'booking.submitted'
   | 'newsletter.subscribed'
-  | 'newsletter.unsubscribed';
+  | 'newsletter.unsubscribed'
+  | 'order.created'
+  | 'order.paid'
+  | 'order.cancelled'
+  | 'order.refunded';
 
 interface TriggerWebhookOptions {
   event: WebhookEventType;
@@ -161,6 +165,71 @@ export const webhookEvents = {
         preferred_time: booking.preferred_time,
         message: booking.message,
         submitted_at: new Date().toISOString(),
+      } 
+    }),
+    
+  orderCreated: (order: { 
+    id: string; 
+    customer_email: string;
+    customer_name?: string | null;
+    total_cents: number;
+    currency: string;
+    items: Array<{ product_name: string; quantity: number; price_cents: number }>;
+  }) => 
+    triggerWebhook({ 
+      event: 'order.created', 
+      data: { 
+        id: order.id,
+        customer_email: order.customer_email,
+        customer_name: order.customer_name,
+        total_cents: order.total_cents,
+        currency: order.currency,
+        items: order.items,
+        created_at: new Date().toISOString(),
+      } 
+    }),
+    
+  orderPaid: (order: { 
+    id: string; 
+    customer_email: string;
+    customer_name?: string | null;
+    total_cents: number;
+    currency: string;
+    stripe_payment_intent?: string | null;
+    items: Array<{ product_name: string; quantity: number; price_cents: number }>;
+  }) => 
+    triggerWebhook({ 
+      event: 'order.paid', 
+      data: { 
+        id: order.id,
+        customer_email: order.customer_email,
+        customer_name: order.customer_name,
+        total_cents: order.total_cents,
+        currency: order.currency,
+        stripe_payment_intent: order.stripe_payment_intent,
+        items: order.items,
+        paid_at: new Date().toISOString(),
+      } 
+    }),
+    
+  orderCancelled: (orderId: string, reason?: string) => 
+    triggerWebhook({ 
+      event: 'order.cancelled', 
+      data: { 
+        id: orderId,
+        reason,
+        cancelled_at: new Date().toISOString(),
+      } 
+    }),
+    
+  orderRefunded: (orderId: string, amount_cents: number, currency: string) => 
+    triggerWebhook({ 
+      event: 'order.refunded', 
+      data: { 
+        id: orderId,
+        amount_cents,
+        currency,
+        refunded_at: new Date().toISOString(),
       } 
     }),
 };
