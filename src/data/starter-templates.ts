@@ -3531,6 +3531,39 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
               requirePhone: false,
             },
           },
+          // Form Block Example
+          {
+            id: 'demo-form',
+            type: 'form',
+            data: {
+              title: 'Form Block',
+              subtitle: 'Build custom forms with any fields. Submissions saved to database and trigger webhooks.',
+              formName: 'Demo Contact Form',
+              fields: [
+                { id: 'field-name', type: 'text', label: 'Full Name', placeholder: 'Enter your name', required: true },
+                { id: 'field-email', type: 'email', label: 'Email', placeholder: 'your@email.com', required: true },
+                { id: 'field-company', type: 'text', label: 'Company', placeholder: 'Company name', required: false },
+                { id: 'field-subject', type: 'select', label: 'Subject', options: ['General Inquiry', 'Support', 'Sales', 'Partnership'], required: true },
+                { id: 'field-message', type: 'textarea', label: 'Message', placeholder: 'How can we help?', required: true },
+              ],
+              submitButtonText: 'Send Message',
+              successMessage: 'Thank you for your message! We will respond within 24 hours.',
+            },
+          },
+          // Newsletter Block Example
+          {
+            id: 'demo-newsletter',
+            type: 'newsletter',
+            data: {
+              title: 'Newsletter Block',
+              subtitle: 'Grow your audience with email signups. Double opt-in, GDPR compliant.',
+              placeholder: 'Enter your email address',
+              buttonText: 'Subscribe',
+              successMessage: 'Check your inbox to confirm your subscription!',
+              showNameField: true,
+              namePlaceholder: 'Your name (optional)',
+            },
+          },
           // Logos Block Example
           {
             id: 'demo-logos',
