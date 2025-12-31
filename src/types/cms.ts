@@ -463,6 +463,7 @@ export interface PricingTier {
   buttonUrl?: string;
   highlighted?: boolean;
   badge?: string; // e.g., "Popular", "Best Value"
+  productId?: string; // Link to a product in the database for cart integration
 }
 
 export interface PricingBlockData {
@@ -474,6 +475,8 @@ export interface PricingBlockData {
   showToggle?: boolean;
   monthlyLabel?: string;
   yearlyLabel?: string;
+  useProducts?: boolean; // If true, fetch products from database instead of using tiers
+  productType?: 'all' | 'one_time' | 'recurring'; // Filter products by type
 }
 
 // Testimonials block data
