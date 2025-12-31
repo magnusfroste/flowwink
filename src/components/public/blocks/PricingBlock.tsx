@@ -73,90 +73,8 @@ export function PricingBlock({ data }: PricingBlockProps) {
     }
   };
 
-  // If useProducts is enabled, render products from database
-  if (shouldUseProducts && filteredProducts.length > 0) {
-    const gridCols = {
-      2: 'md:grid-cols-2',
-      3: 'lg:grid-cols-3',
-      4: 'lg:grid-cols-4',
-    };
-
-    return (
-      <section className="py-12 md:py-16">
-        <div className="max-w-6xl mx-auto px-4">
-          {(data.title || data.subtitle) && (
-            <div className="text-center mb-10">
-              {data.title && (
-                <h2 className="font-serif text-3xl md:text-4xl font-semibold mb-3">
-                  {data.title}
-                </h2>
-              )}
-              {data.subtitle && (
-                <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                  {data.subtitle}
-                </p>
-              )}
-            </div>
-          )}
-
-          <div className={cn(
-            'grid gap-6',
-            gridCols[columns],
-            filteredProducts.length === 1 && 'max-w-md mx-auto',
-            filteredProducts.length === 2 && 'max-w-2xl mx-auto'
-          )}>
-            {filteredProducts.map((product, index) => (
-              <Card
-                key={product.id}
-                className={cn(
-                  'relative flex flex-col p-6 transition-all duration-300',
-                  data.variant === 'cards' && 'shadow-lg hover:shadow-xl',
-                  data.variant === 'compact' && 'p-4',
-                  index === 0 && filteredProducts.length > 1 && 'ring-2 ring-primary scale-[1.02] shadow-xl z-10'
-                )}
-              >
-                {product.type === 'recurring' && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-primary text-primary-foreground">
-                      Populärast
-                    </span>
-                  </div>
-                )}
-
-                <div className={cn('text-center', product.type === 'recurring' && 'mt-2')}>
-                  <h3 className="text-xl font-semibold mb-2">{product.name}</h3>
-                  {product.description && (
-                    <p className="text-sm text-muted-foreground mb-4">
-                      {product.description}
-                    </p>
-                  )}
-                  <div className="mb-6">
-                    <span className="text-4xl font-bold">
-                      {formatPrice(product.price_cents, product.currency)}
-                    </span>
-                    <span className="text-muted-foreground">
-                      {product.type === 'recurring' ? '/månad' : ' engång'}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="mt-auto pt-4">
-                  <Button
-                    className="w-full"
-                    variant={index === 0 && filteredProducts.length > 1 ? 'default' : 'outline'}
-                    onClick={() => handleAddToCart(product)}
-                  >
-                    <ShoppingCart className="w-4 h-4 mr-2" />
-                    {isInCart(product.id) ? 'Gå till kassan' : 'Beställ'}
-                  </Button>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-    );
-  }
+  // Always use tiers-based rendering (manual tiers with optional product links)
+  // The useProducts flag now only affects whether we show product data in tiers
 
   // Original tiers-based rendering
   if (tiers.length === 0) {
@@ -249,7 +167,7 @@ export function PricingBlock({ data }: PricingBlockProps) {
                 {/* CTA Button */}
                 {tier.buttonText && (
                   <div className="mt-auto pt-4">
-                    {hasProductLink && linkedProduct ? (
+                    {hasProductLink ? (
                       <Button
                         className="w-full"
                         variant={tier.highlighted ? 'default' : 'outline'}
