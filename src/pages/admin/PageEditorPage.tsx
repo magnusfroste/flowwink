@@ -11,6 +11,7 @@ import { VersionHistoryPanel } from '@/components/admin/VersionHistoryPanel';
 import { BlockEditor } from '@/components/admin/blocks/BlockEditor';
 import { PageSettingsDialog } from '@/components/admin/PageSettingsDialog';
 import { SchedulePublishDialog } from '@/components/admin/SchedulePublishDialog';
+import { AeoAnalyzer } from '@/components/admin/AeoAnalyzer';
 import { usePage, useUpdatePage, useUpdatePageStatus } from '@/hooks/usePages';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -237,6 +238,15 @@ export default function PageEditorPage() {
                   <TooltipContent>Mobile</TooltipContent>
                 </Tooltip>
               </ToggleGroup>
+
+              <div className="relative">
+                <AeoAnalyzer
+                  title={title}
+                  blocks={blocks}
+                  meta={meta}
+                  slug={page.slug}
+                />
+              </div>
 
               <PageSettingsDialog 
                 meta={meta} 
