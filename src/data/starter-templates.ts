@@ -3574,6 +3574,45 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
               namePlaceholder: 'Your name (optional)',
             },
           },
+          // Separator - Contact & Location
+          {
+            id: 'sep-contact',
+            type: 'separator',
+            data: {
+              variant: 'text',
+              text: 'Contact & Location',
+              icon: 'MapPin',
+            },
+          },
+          // Contact Block Example
+          {
+            id: 'demo-contact',
+            type: 'contact',
+            data: {
+              title: 'Contact Block',
+              subtitle: 'Display contact information with icons. Email, phone, address, and social links.',
+              email: 'hello@example.com',
+              phone: '+46 70 123 45 67',
+              address: 'Storgatan 1, 111 22 Stockholm',
+              showIcons: true,
+              layout: 'horizontal',
+            },
+          },
+          // Map Block Example
+          {
+            id: 'demo-map',
+            type: 'map',
+            data: {
+              title: 'Map Block',
+              subtitle: 'Embed Google Maps or Mapbox to show your location.',
+              latitude: 59.3293,
+              longitude: 18.0686,
+              zoom: 14,
+              height: 300,
+              showMarker: true,
+              markerTitle: 'Our Office',
+            },
+          },
           // Logos Block Example
           {
             id: 'demo-logos',
