@@ -169,6 +169,24 @@ serve(async (req: Request) => {
             console.log("Order marked as paid:", orderId);
             // Trigger order.paid webhook
             await triggerOrderWebhook(supabase, "order.paid", order);
+            
+            // Send order confirmation email
+            try {
+              const emailResponse = await fetch(
+                `${supabaseUrl}/functions/v1/send-order-confirmation`,
+                {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${supabaseServiceKey}`,
+                  },
+                  body: JSON.stringify({ orderId }),
+                }
+              );
+              console.log("Order confirmation email triggered:", emailResponse.status);
+            } catch (emailError) {
+              console.error("Failed to send order confirmation email:", emailError);
+            }
           }
         }
         break;
