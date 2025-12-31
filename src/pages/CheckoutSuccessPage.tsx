@@ -4,31 +4,56 @@ import { useCart } from '@/contexts/CartContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import { CheckCircle, Clock, XCircle, RefreshCw, Loader2 } from 'lucide-react';
 
 type OrderStatus = 'pending' | 'paid' | 'failed' | 'refunded';
 
+interface OrderItem {
+  id: string;
+  product_name: string;
+  quantity: number;
+  price_cents: number;
+}
+
+interface Order {
+  id: string;
+  status: OrderStatus;
+  total_cents: number;
+  currency: string;
+  customer_email: string;
+  customer_name: string | null;
+  created_at: string;
+}
+
 const statusConfig: Record<OrderStatus, { icon: React.ReactNode; label: string; color: string }> = {
   pending: {
-    icon: <Clock className="h-16 w-16 mx-auto text-yellow-500" />,
+    icon: <Clock className="h-12 w-12 mx-auto text-yellow-500" />,
     label: 'Väntar på betalning...',
     color: 'text-yellow-500',
   },
   paid: {
-    icon: <CheckCircle className="h-16 w-16 mx-auto text-green-500" />,
+    icon: <CheckCircle className="h-12 w-12 mx-auto text-green-500" />,
     label: 'Betalning genomförd!',
     color: 'text-green-500',
   },
   failed: {
-    icon: <XCircle className="h-16 w-16 mx-auto text-destructive" />,
+    icon: <XCircle className="h-12 w-12 mx-auto text-destructive" />,
     label: 'Betalningen misslyckades',
     color: 'text-destructive',
   },
   refunded: {
-    icon: <RefreshCw className="h-16 w-16 mx-auto text-blue-500" />,
+    icon: <RefreshCw className="h-12 w-12 mx-auto text-blue-500" />,
     label: 'Återbetalad',
     color: 'text-blue-500',
   },
+};
+
+const formatPrice = (cents: number, currency: string) => {
+  return new Intl.NumberFormat('sv-SE', {
+    style: 'currency',
+    currency: currency,
+  }).format(cents / 100);
 };
 
 export default function CheckoutSuccessPage() {
@@ -36,7 +61,8 @@ export default function CheckoutSuccessPage() {
   const [searchParams] = useSearchParams();
   const { clearCart } = useCart();
   const sessionId = searchParams.get('session_id');
-  const [orderStatus, setOrderStatus] = useState<OrderStatus>('pending');
+  const [order, setOrder] = useState<Order | null>(null);
+  const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -49,23 +75,30 @@ export default function CheckoutSuccessPage() {
       return;
     }
 
-    // Fetch initial order status
     const fetchOrder = async () => {
-      const { data } = await supabase
+      const { data: orderData } = await supabase
         .from('orders')
-        .select('status')
+        .select('id, status, total_cents, currency, customer_email, customer_name, created_at')
         .eq('stripe_checkout_id', sessionId)
         .maybeSingle();
 
-      if (data?.status) {
-        setOrderStatus(data.status as OrderStatus);
+      if (orderData) {
+        setOrder(orderData as Order);
+
+        const { data: items } = await supabase
+          .from('order_items')
+          .select('id, product_name, quantity, price_cents')
+          .eq('order_id', orderData.id);
+
+        if (items) {
+          setOrderItems(items);
+        }
       }
       setIsLoading(false);
     };
 
     fetchOrder();
 
-    // Subscribe to realtime updates
     const channel = supabase
       .channel('order-status')
       .on(
@@ -77,8 +110,8 @@ export default function CheckoutSuccessPage() {
           filter: `stripe_checkout_id=eq.${sessionId}`,
         },
         (payload) => {
-          if (payload.new?.status) {
-            setOrderStatus(payload.new.status as OrderStatus);
+          if (payload.new) {
+            setOrder((prev) => prev ? { ...prev, status: payload.new.status as OrderStatus } : null);
           }
         }
       )
@@ -89,46 +122,73 @@ export default function CheckoutSuccessPage() {
     };
   }, [sessionId]);
 
-  const config = statusConfig[orderStatus];
+  const config = statusConfig[order?.status || 'pending'];
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="w-full max-w-md text-center">
-        <CardHeader>
+      <Card className="w-full max-w-lg">
+        <CardHeader className="text-center">
           {isLoading ? (
-            <Loader2 className="h-16 w-16 mx-auto text-muted-foreground animate-spin" />
+            <Loader2 className="h-12 w-12 mx-auto text-muted-foreground animate-spin" />
           ) : (
             config.icon
           )}
           <CardTitle className="text-2xl">
-            {isLoading ? 'Laddar...' : orderStatus === 'paid' ? 'Tack för din beställning!' : config.label}
+            {isLoading ? 'Laddar...' : order?.status === 'paid' ? 'Tack för din beställning!' : config.label}
           </CardTitle>
+          <p className={`text-sm font-medium ${config.color}`}>
+            {!isLoading && config.label}
+          </p>
         </CardHeader>
+
         <CardContent className="space-y-4">
-          {orderStatus === 'paid' && (
-            <p className="text-muted-foreground">
-              Din betalning har genomförts och du kommer snart få en bekräftelse via e-post.
-            </p>
-          )}
-          {orderStatus === 'pending' && !isLoading && (
-            <p className="text-muted-foreground">
+          {order?.status === 'pending' && !isLoading && (
+            <p className="text-center text-muted-foreground text-sm">
               Vi väntar på bekräftelse från Stripe. Sidan uppdateras automatiskt.
             </p>
           )}
-          {orderStatus === 'failed' && (
-            <p className="text-muted-foreground">
-              Något gick fel med betalningen. Försök igen eller kontakta support.
-            </p>
+
+          {orderItems.length > 0 && (
+            <>
+              <Separator />
+              <div className="space-y-3">
+                <h3 className="font-medium text-sm text-muted-foreground">Orderdetaljer</h3>
+                {orderItems.map((item) => (
+                  <div key={item.id} className="flex justify-between items-center text-sm">
+                    <span>
+                      {item.product_name} × {item.quantity}
+                    </span>
+                    <span className="font-medium">
+                      {formatPrice(item.price_cents * item.quantity, order?.currency || 'SEK')}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <Separator />
+              <div className="flex justify-between items-center font-semibold">
+                <span>Totalt</span>
+                <span className="text-lg">
+                  {order && formatPrice(order.total_cents, order.currency)}
+                </span>
+              </div>
+            </>
           )}
+
+          {order && (
+            <div className="text-xs text-muted-foreground space-y-1 pt-2">
+              <p>E-post: {order.customer_email}</p>
+              {order.customer_name && <p>Namn: {order.customer_name}</p>}
+              <p>Orderdatum: {new Date(order.created_at).toLocaleString('sv-SE')}</p>
+            </div>
+          )}
+
           {sessionId && (
             <p className="text-xs text-muted-foreground">
               Referens: {sessionId.slice(0, 20)}...
             </p>
           )}
-          <div className={`text-sm font-medium ${config.color}`}>
-            Status: {config.label}
-          </div>
         </CardContent>
+
         <CardFooter>
           <Button onClick={() => navigate('/')} className="w-full">
             Tillbaka till startsidan
