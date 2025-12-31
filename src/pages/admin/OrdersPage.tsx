@@ -119,6 +119,7 @@ export default function OrdersPage() {
       if (error) throw error;
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
       toast.success('Orderbekräftelse skickad');
     },
     onError: (error) => {
@@ -243,8 +244,9 @@ export default function OrdersPage() {
                   <TableHead>Kund</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Summa</TableHead>
-                  <TableHead>Datum</TableHead>
-                  <TableHead className="w-20"></TableHead>
+                    <TableHead>Datum</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead className="w-20"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -269,6 +271,18 @@ export default function OrdersPage() {
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {format(new Date(order.created_at), 'PPp', { locale: sv })}
+                    </TableCell>
+                    <TableCell>
+                      {order.confirmation_sent_at ? (
+                        <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50 dark:bg-green-900/20 dark:border-green-800">
+                          <Mail className="h-3 w-3 mr-1" />
+                          Skickad
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-muted-foreground">
+                          Ej skickad
+                        </Badge>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Button
