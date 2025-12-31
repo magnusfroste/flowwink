@@ -1,0 +1,232 @@
+import { useProducts, formatPrice } from '@/hooks/useProducts';
+import { useCart } from '@/contexts/CartContext';
+import { PublicNavigation } from '@/components/public/PublicNavigation';
+import { PublicFooter } from '@/components/public/PublicFooter';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Check, ShoppingCart, Zap, Shield, Headphones } from 'lucide-react';
+import { toast } from 'sonner';
+import { Helmet } from 'react-helmet-async';
+import { cn } from '@/lib/utils';
+
+const features = {
+  hosting: [
+    'Molnbaserad hosting',
+    'Automatiska backups',
+    'SSL-certifikat inkluderat',
+    'CDN för snabb laddning',
+    'Support via email',
+    'Månadsvis betalning',
+  ],
+  setup: [
+    'Professionell installation',
+    'Konfiguration av domän',
+    'Grundläggande SEO-setup',
+    'Innehållsmigrering',
+    'Utbildning (1 timme)',
+    'Engångskostnad',
+  ],
+};
+
+export default function PricingPage() {
+  const { data: products, isLoading } = useProducts({ activeOnly: true });
+  const { addItem, items } = useCart();
+
+  const hostingProduct = products?.find(p => p.type === 'recurring');
+  const setupProduct = products?.find(p => p.type === 'one_time');
+
+  const handleAddToCart = (product: typeof hostingProduct) => {
+    if (!product) return;
+    
+    const alreadyInCart = items.some(item => item.productId === product.id);
+    if (alreadyInCart) {
+      toast.info('Produkten finns redan i varukorgen');
+      return;
+    }
+
+    addItem({
+      productId: product.id,
+      productName: product.name,
+      priceCents: product.price_cents,
+      currency: product.currency,
+      imageUrl: product.image_url,
+    });
+    toast.success(`${product.name} har lagts till i varukorgen`);
+  };
+
+  const isInCart = (productId: string) => items.some(item => item.productId === productId);
+
+  return (
+    <>
+      <Helmet>
+        <title>Priser | PezCMS</title>
+        <meta name="description" content="Enkla och transparenta priser för PezCMS-plattformen. Välj mellan månatlig hosting eller kom igång med professionell setup." />
+      </Helmet>
+      
+      <PublicNavigation />
+      
+      <main className="min-h-screen bg-gradient-to-b from-background to-muted/30">
+        {/* Hero Section */}
+        <section className="container mx-auto px-6 pt-20 pb-16 text-center">
+          <Badge variant="secondary" className="mb-4">
+            <Zap className="w-3 h-3 mr-1" />
+            Enkla priser
+          </Badge>
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold mb-6 tracking-tight">
+            Välj rätt paket för dig
+          </h1>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            Transparenta priser utan dolda avgifter. Börja med hosting och lägg till setup om du vill ha hjälp att komma igång.
+          </p>
+        </section>
+
+        {/* Pricing Cards */}
+        <section className="container mx-auto px-6 pb-20">
+          {isLoading ? (
+            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+              {[1, 2].map((i) => (
+                <Card key={i} className="animate-pulse">
+                  <CardHeader className="space-y-4">
+                    <div className="h-6 bg-muted rounded w-1/3" />
+                    <div className="h-10 bg-muted rounded w-1/2" />
+                    <div className="h-4 bg-muted rounded w-2/3" />
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {[1, 2, 3, 4].map((j) => (
+                      <div key={j} className="h-4 bg-muted rounded" />
+                    ))}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+              {/* Hosting Card - Recurring */}
+              {hostingProduct && (
+                <Card className={cn(
+                  "relative overflow-hidden transition-all duration-300 hover:shadow-xl",
+                  "border-2 border-primary/20 bg-card"
+                )}>
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+                  <CardHeader>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Shield className="w-5 h-5 text-primary" />
+                      <Badge variant="outline">Prenumeration</Badge>
+                    </div>
+                    <CardTitle className="text-2xl font-serif">{hostingProduct.name}</CardTitle>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-4xl font-bold">{formatPrice(hostingProduct.price_cents, hostingProduct.currency)}</span>
+                      <span className="text-muted-foreground">/månad</span>
+                    </div>
+                    <CardDescription className="text-base">
+                      {hostingProduct.description || 'Allt du behöver för att driva din webbplats'}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-3">
+                      {features.hosting.map((feature) => (
+                        <li key={feature} className="flex items-center gap-3">
+                          <div className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center">
+                            <Check className="w-3 h-3 text-primary" />
+                          </div>
+                          <span className="text-sm">{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                  <CardFooter>
+                    <Button 
+                      className="w-full" 
+                      size="lg"
+                      onClick={() => handleAddToCart(hostingProduct)}
+                      disabled={isInCart(hostingProduct.id)}
+                    >
+                      <ShoppingCart className="w-4 h-4 mr-2" />
+                      {isInCart(hostingProduct.id) ? 'Finns i varukorgen' : 'Lägg till i varukorg'}
+                    </Button>
+                  </CardFooter>
+                </Card>
+              )}
+
+              {/* Setup Card - One Time */}
+              {setupProduct && (
+                <Card className={cn(
+                  "relative overflow-hidden transition-all duration-300 hover:shadow-xl",
+                  "border bg-card/50"
+                )}>
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-muted/50 rounded-full -translate-y-1/2 translate-x-1/2" />
+                  <CardHeader>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Headphones className="w-5 h-5 text-muted-foreground" />
+                      <Badge variant="secondary">Engångskostnad</Badge>
+                    </div>
+                    <CardTitle className="text-2xl font-serif">{setupProduct.name}</CardTitle>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-4xl font-bold">{formatPrice(setupProduct.price_cents, setupProduct.currency)}</span>
+                      <span className="text-muted-foreground">engång</span>
+                    </div>
+                    <CardDescription className="text-base">
+                      {setupProduct.description || 'Vi hjälper dig komma igång snabbt och enkelt'}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-3">
+                      {features.setup.map((feature) => (
+                        <li key={feature} className="flex items-center gap-3">
+                          <div className="flex-shrink-0 w-5 h-5 rounded-full bg-muted flex items-center justify-center">
+                            <Check className="w-3 h-3 text-muted-foreground" />
+                          </div>
+                          <span className="text-sm">{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                  <CardFooter>
+                    <Button 
+                      variant="outline"
+                      className="w-full" 
+                      size="lg"
+                      onClick={() => handleAddToCart(setupProduct)}
+                      disabled={isInCart(setupProduct.id)}
+                    >
+                      <ShoppingCart className="w-4 h-4 mr-2" />
+                      {isInCart(setupProduct.id) ? 'Finns i varukorgen' : 'Lägg till i varukorg'}
+                    </Button>
+                  </CardFooter>
+                </Card>
+              )}
+            </div>
+          )}
+
+          {/* FAQ / Additional Info */}
+          <div className="mt-16 text-center max-w-2xl mx-auto">
+            <h2 className="text-2xl font-serif font-bold mb-4">Vanliga frågor</h2>
+            <div className="space-y-4 text-left">
+              <div className="p-4 rounded-lg bg-muted/50">
+                <h3 className="font-medium mb-1">Kan jag avbryta när som helst?</h3>
+                <p className="text-sm text-muted-foreground">
+                  Ja, du kan avbryta din prenumeration när som helst. Du behåller tillgång till tjänsten till slutet av din betalningsperiod.
+                </p>
+              </div>
+              <div className="p-4 rounded-lg bg-muted/50">
+                <h3 className="font-medium mb-1">Behöver jag köpa setup?</h3>
+                <p className="text-sm text-muted-foreground">
+                  Nej, setup är valfritt. Det är för dig som vill ha hjälp att komma igång snabbt med professionell installation och utbildning.
+                </p>
+              </div>
+              <div className="p-4 rounded-lg bg-muted/50">
+                <h3 className="font-medium mb-1">Vilka betalningsmetoder accepteras?</h3>
+                <p className="text-sm text-muted-foreground">
+                  Vi accepterar alla vanliga kort (Visa, Mastercard, etc.) via vår säkra betalningslösning Stripe.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+      
+      <PublicFooter />
+    </>
+  );
+}
