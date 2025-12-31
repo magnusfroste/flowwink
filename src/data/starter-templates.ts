@@ -3632,6 +3632,28 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
               grayscale: true,
             },
           },
+          // Separator - AI Features
+          {
+            id: 'sep-ai-demo',
+            type: 'separator',
+            data: {
+              variant: 'text',
+              text: 'AI Features',
+              icon: 'Sparkles',
+            },
+          },
+          // Chat Block Example
+          {
+            id: 'demo-chat',
+            type: 'chat',
+            data: {
+              title: 'Chat Block',
+              subtitle: 'Embed an AI chatbot that answers questions using your content and knowledge base.',
+              placeholder: 'Ask me anything about PezCMS...',
+              welcomeMessage: 'Hi! I am the PezCMS assistant. Ask me about features, pricing, or how to get started.',
+              showHistory: true,
+            },
+          },
           // Quote Block Example
           {
             id: 'demo-quote',
