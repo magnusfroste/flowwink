@@ -50,10 +50,16 @@ export function PricingBlock({ data }: PricingBlockProps) {
   };
 
   const handleTierAddToCart = (tier: typeof tiers[0]) => {
+    // If tier has productId, find the product and add to cart
     if (tier.productId) {
       const product = products?.find(p => p.id === tier.productId);
       if (product) {
         handleAddToCart(product);
+        return;
+      } else {
+        // Product not found but productId exists - still go to checkout
+        console.warn('Product not found for productId:', tier.productId);
+        navigate('/checkout');
         return;
       }
     }
