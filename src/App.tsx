@@ -40,6 +40,7 @@ import DealDetailPage from "./pages/admin/DealDetailPage";
 import CompaniesPage from "./pages/admin/CompaniesPage";
 import CompanyDetailPage from "./pages/admin/CompanyDetailPage";
 import ProductsPage from "./pages/admin/ProductsPage";
+import OrdersPage from "./pages/admin/OrdersPage";
 import KnowledgeBasePage from "./pages/admin/KnowledgeBasePage";
 import ProfilePage from "./pages/admin/ProfilePage";
 import KbArticleEditorPage from "./pages/admin/KbArticleEditorPage";
@@ -103,6 +104,7 @@ const router = createBrowserRouter([
   { path: "/admin/companies", element: <CompaniesPage /> },
   { path: "/admin/companies/:id", element: <CompanyDetailPage /> },
   { path: "/admin/products", element: <ProductsPage /> },
+  { path: "/admin/orders", element: <OrdersPage /> },
   { path: "/admin/modules", element: <ModulesPage /> },
   { path: "/admin/webhooks", element: <WebhooksPage /> },
   { path: "/admin/knowledge-base", element: <KnowledgeBasePage /> },
