@@ -458,4 +458,122 @@ export const pezcmsBlogPosts: TemplateBlogPost[] = [
     ],
     meta: { description: 'Explore the role of AI in content creation. Learn why human-AI collaboration produces better results than pure automation.' },
   },
+  {
+    title: 'Editorial Workflow Best Practices: From Chaos to Control',
+    slug: 'editorial-workflow-best-practices',
+    excerpt: 'Transform your content process with structured roles, clear handoffs, and version control that prevents costly mistakes.',
+    featured_image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=1200',
+    featured_image_alt: 'Team collaborating on content workflow',
+    content: [
+      createTextBlock({
+        type: 'doc',
+        content: [
+          p('Content chaos is expensive. Missed deadlines, publishing mistakes, and unclear ownership cost organizations time, money, and reputation. A structured editorial workflow fixes this.'),
+          h2('The Three Pillars of Editorial Workflow'),
+          p('Every effective content process rests on three foundations: clear roles, defined stages, and complete visibility.'),
+          h2('1. Define Clear Roles'),
+          p('Ambiguity kills productivity. Each team member should know exactly what they can and cannot do:'),
+          ul(
+            'Writers create and edit content, then submit for review',
+            'Approvers review submissions, provide feedback, and authorize publishing',
+            'Admins manage users, settings, and have full system access'
+          ),
+          p('This separation is not about bureaucracy—it is about preventing the 3 AM "who approved this?" panic.'),
+          h2('2. Establish Content Stages'),
+          p('Content should move through clear stages, each with specific entry and exit criteria:'),
+          ul(
+            'Draft: Content is being created. Only the author can edit.',
+            'In Review: Submitted for approval. Approvers are notified.',
+            'Approved: Ready for publishing. Can be scheduled or published immediately.',
+            'Published: Live on the site. Changes create new versions.'
+          ),
+          h2('3. Maintain Complete Visibility'),
+          p('Every action should be logged. Who changed what, when, and why. This audit trail is not just for compliance—it is for learning and improvement.'),
+          h2('Version Control: Your Safety Net'),
+          p('Mistakes happen. The question is how quickly you can recover. With proper version control:'),
+          ul(
+            'Every save creates a recoverable version',
+            'Compare any two versions side-by-side',
+            'Restore previous versions with one click',
+            'Never lose work, even after major changes'
+          ),
+          h2('Scheduled Publishing: Precision Timing'),
+          p('Not all content should go live immediately. Scheduled publishing lets you:'),
+          ul(
+            'Coordinate launches across time zones',
+            'Prepare holiday content in advance',
+            'Align with marketing campaigns',
+            'Maintain work-life balance (write now, publish later)'
+          ),
+          h2('Getting Started'),
+          p('Start simple. Define your roles, agree on your stages, and enforce version control. The rest will follow naturally as your process matures.'),
+        ],
+      }),
+    ],
+    meta: { description: 'Learn editorial workflow best practices including role definitions, content stages, version control, and scheduled publishing for better content management.' },
+  },
+  {
+    title: 'Knowledge Base Setup Guide: Reduce Support Tickets by 40%',
+    slug: 'knowledge-base-setup-guide',
+    excerpt: 'A well-structured knowledge base deflects support tickets before they are created. Here is how to build one that actually works.',
+    featured_image: 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=1200',
+    featured_image_alt: 'Organized library representing knowledge base structure',
+    content: [
+      createTextBlock({
+        type: 'doc',
+        content: [
+          p('Support teams are expensive. But most support questions are repetitive—the same issues, asked in slightly different ways. A knowledge base captures these answers once and delivers them infinitely.'),
+          h2('The 40% Promise'),
+          p('Organizations with well-structured knowledge bases typically see 30-50% reduction in support tickets. The key word is "well-structured." A chaotic FAQ page does not count.'),
+          h2('Step 1: Audit Your Support Tickets'),
+          p('Before writing anything, analyze your last 100 support tickets. Look for:'),
+          ul(
+            'The top 10 most common questions',
+            'Questions that take the longest to answer',
+            'Questions that require specialized knowledge',
+            'Questions that customers ask before purchasing'
+          ),
+          p('This analysis becomes your content priority list.'),
+          h2('Step 2: Design Your Category Structure'),
+          p('Categories are the backbone of your knowledge base. Design them from the user perspective:'),
+          ul(
+            'Getting Started: First steps for new users',
+            'Common Tasks: How-to guides for everyday actions',
+            'Troubleshooting: Solutions to common problems',
+            'Account & Billing: Self-service for administrative questions',
+            'Advanced Topics: Deep dives for power users'
+          ),
+          p('Aim for 4-7 top-level categories. Too few and articles pile up; too many and navigation becomes confusing.'),
+          h2('Step 3: Write Articles That Answer Questions'),
+          p('Each article should answer one specific question. The title IS the question:'),
+          ul(
+            'Good: "How do I reset my password?"',
+            'Bad: "Password Management Overview"'
+          ),
+          p('Write in plain language. Avoid jargon. Include screenshots for visual learners.'),
+          h2('Step 4: Implement Search'),
+          p('Users rarely browse—they search. Ensure your knowledge base has:'),
+          ul(
+            'Full-text search across all articles',
+            'Search suggestions as users type',
+            'Relevant results ranked by usefulness',
+            'No-results pages that offer alternatives'
+          ),
+          h2('Step 5: Connect to AI Chat'),
+          p('Modern knowledge bases integrate with AI chat widgets. When a visitor asks a question:'),
+          ul(
+            'AI searches your knowledge base automatically',
+            'Relevant articles are cited in responses',
+            'Users get instant answers without waiting',
+            'Complex questions are escalated to humans'
+          ),
+          h2('Step 6: Measure and Improve'),
+          p('Track which articles get the most views. Track which searches return no results. These metrics tell you what to write next and what to improve.'),
+          h2('The Maintenance Mindset'),
+          p('A knowledge base is never "done." Products change, processes evolve, and user needs shift. Schedule regular reviews—monthly at minimum—to keep content accurate and relevant.'),
+        ],
+      }),
+    ],
+    meta: { description: 'Complete guide to setting up a knowledge base that reduces support tickets. Learn category structure, article writing, search optimization, and AI chat integration.' },
+  },
 ];
