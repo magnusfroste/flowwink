@@ -3445,6 +3445,61 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
               showButtons: false,
             },
           },
+          // Pricing Block Example
+          {
+            id: 'demo-pricing',
+            type: 'pricing',
+            data: {
+              title: 'Pricing Block',
+              subtitle: 'Show pricing tiers with features and CTAs. Can link directly to products for checkout.',
+              tiers: [
+                {
+                  id: 'price-starter',
+                  name: 'Starter',
+                  price: '0 kr',
+                  description: 'Perfect for testing and small projects.',
+                  features: ['1 site', 'Community support', 'All core features'],
+                  buttonText: 'Get Started',
+                  buttonUrl: '/kontakt',
+                },
+                {
+                  id: 'price-pro',
+                  name: 'Pro',
+                  price: '490 kr/mån',
+                  description: 'For growing businesses.',
+                  features: ['Unlimited sites', 'Priority support', 'API access', 'Custom domain'],
+                  buttonText: 'Start Free Trial',
+                  buttonUrl: '/kontakt',
+                  highlighted: true,
+                  badge: 'Popular',
+                },
+                {
+                  id: 'price-enterprise',
+                  name: 'Enterprise',
+                  price: 'Offert',
+                  description: 'For organizations with specific requirements.',
+                  features: ['Dedicated infrastructure', 'SLA', 'SSO', 'Onboarding'],
+                  buttonText: 'Contact Sales',
+                  buttonUrl: '/kontakt',
+                },
+              ],
+              columns: 3,
+              variant: 'cards',
+            },
+          },
+          // Products Block Example
+          {
+            id: 'demo-products',
+            type: 'products',
+            data: {
+              title: 'Products Block',
+              subtitle: 'Display products from your database with prices and add-to-cart functionality.',
+              columns: 3,
+              productType: 'all',
+              showDescription: true,
+              buttonText: 'Add to Cart',
+            },
+          },
           // Logos Block Example
           {
             id: 'demo-logos',
