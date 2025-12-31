@@ -3500,6 +3500,19 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
               buttonText: 'Add to Cart',
             },
           },
+          // Cart Block Example
+          {
+            id: 'demo-cart',
+            type: 'cart',
+            data: {
+              title: 'Cart Block',
+              subtitle: 'Display shopping cart with items, quantities, and checkout button.',
+              showImage: true,
+              showQuantity: true,
+              checkoutButtonText: 'Proceed to Checkout',
+              emptyCartMessage: 'Your cart is empty. Add products above to see the cart in action.',
+            },
+          },
           // Logos Block Example
           {
             id: 'demo-logos',
