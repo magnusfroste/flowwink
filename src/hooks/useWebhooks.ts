@@ -12,7 +12,11 @@ export type WebhookEvent =
   | 'form.submitted'
   | 'booking.submitted'
   | 'newsletter.subscribed'
-  | 'newsletter.unsubscribed';
+  | 'newsletter.unsubscribed'
+  | 'order.created'
+  | 'order.paid'
+  | 'order.cancelled'
+  | 'order.refunded';
 
 export interface Webhook {
   id: string;
@@ -282,6 +286,10 @@ export const WEBHOOK_EVENT_LABELS: Record<WebhookEvent, string> = {
   'booking.submitted': 'Bokning inskickad',
   'newsletter.subscribed': 'Newsletter-prenumeration',
   'newsletter.unsubscribed': 'Newsletter-avprenumeration',
+  'order.created': 'Order skapad',
+  'order.paid': 'Order betald',
+  'order.cancelled': 'Order avbruten',
+  'order.refunded': 'Order återbetald',
 };
 
 export const WEBHOOK_EVENT_CATEGORIES = {
@@ -289,4 +297,5 @@ export const WEBHOOK_EVENT_CATEGORIES = {
   'Blogg': ['blog_post.published', 'blog_post.updated', 'blog_post.deleted'] as WebhookEvent[],
   'Formulär & Bokningar': ['form.submitted', 'booking.submitted'] as WebhookEvent[],
   'Newsletter': ['newsletter.subscribed', 'newsletter.unsubscribed'] as WebhookEvent[],
+  'Ordrar': ['order.created', 'order.paid', 'order.cancelled', 'order.refunded'] as WebhookEvent[],
 };

@@ -1311,6 +1311,10 @@ export type Database = {
         | "newsletter.subscribed"
         | "newsletter.unsubscribed"
         | "booking.submitted"
+        | "order.created"
+        | "order.paid"
+        | "order.cancelled"
+        | "order.refunded"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1454,6 +1458,10 @@ export const Constants = {
         "newsletter.subscribed",
         "newsletter.unsubscribed",
         "booking.submitted",
+        "order.created",
+        "order.paid",
+        "order.cancelled",
+        "order.refunded",
       ],
     },
   },

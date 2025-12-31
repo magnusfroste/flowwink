@@ -9,7 +9,9 @@ import {
   Mail, 
   Database,
   Bell,
-  FileText
+  FileText,
+  ShoppingCart,
+  Package
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -124,6 +126,40 @@ const templates: N8NTemplate[] = [
         { type: 'HTTP Request', name: 'OneSignal API', description: 'Anropar OneSignal för push-notis' },
       ],
       webhookPath: '/webhook/push-notify',
+    },
+  },
+  {
+    id: 'order-automation',
+    title: 'Orderbekräftelse & CRM',
+    description: 'Automatisera orderbekräftelser, logga till kalkylblad och notifiera teamet vid nya beställningar.',
+    events: ['order.created', 'order.paid'],
+    icon: <ShoppingCart className="h-5 w-5" />,
+    workflow: {
+      name: 'Order to Automation',
+      nodes: [
+        { type: 'Webhook', name: 'Webhook Trigger', description: 'Tar emot order.paid event' },
+        { type: 'Gmail/SMTP', name: 'Send Confirmation', description: 'Skickar orderbekräftelse till kund' },
+        { type: 'Google Sheets', name: 'Log Order', description: 'Loggar order till kalkylblad' },
+        { type: 'Slack', name: 'Notify Team', description: 'Notifierar teamet om ny order' },
+      ],
+      webhookPath: '/webhook/order-automation',
+    },
+  },
+  {
+    id: 'order-fulfillment',
+    title: 'Orderfullfilment',
+    description: 'Integrera med lager- och fraktsystem vid betalda ordrar för automatisk leverans.',
+    events: ['order.paid'],
+    icon: <Package className="h-5 w-5" />,
+    workflow: {
+      name: 'Order Fulfillment',
+      nodes: [
+        { type: 'Webhook', name: 'Webhook Trigger', description: 'Tar emot order.paid event' },
+        { type: 'HTTP Request', name: 'Update Inventory', description: 'Uppdaterar lagersaldo i externt system' },
+        { type: 'Shippo/Sendcloud', name: 'Create Shipment', description: 'Skapar fraktsedel' },
+        { type: 'Email', name: 'Track Notification', description: 'Skickar spårningslänk till kund' },
+      ],
+      webhookPath: '/webhook/order-fulfillment',
     },
   },
 ];
