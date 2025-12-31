@@ -25,6 +25,7 @@ import {
   Library,
   Search,
   ChevronsUpDown,
+  UserCircle,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { ROLE_LABELS } from "@/types/cms";
@@ -312,6 +313,12 @@ export function AdminSidebar() {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link to="/admin/profile" className="cursor-pointer">
+                  <UserCircle className="mr-2 h-4 w-4" />
+                  Profile
+                </Link>
+              </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link to="/admin/settings" className="cursor-pointer">
                   <Settings className="mr-2 h-4 w-4" />

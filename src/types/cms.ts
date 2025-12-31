@@ -7,6 +7,9 @@ export interface Profile {
   email: string;
   full_name: string | null;
   avatar_url: string | null;
+  title: string | null;
+  bio: string | null;
+  show_as_author: boolean | null;
   created_at: string;
   updated_at: string;
 }

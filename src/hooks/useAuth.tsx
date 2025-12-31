@@ -12,6 +12,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
   isWriter: boolean;
   isApprover: boolean;
   isAdmin: boolean;
@@ -116,6 +117,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setRole(null);
   };
 
+  const refreshProfile = async () => {
+    if (user) {
+      await fetchUserData(user.id);
+    }
+  };
+
   const isWriter = role === 'writer' || role === 'approver' || role === 'admin';
   const isApprover = role === 'approver' || role === 'admin';
   const isAdmin = role === 'admin';
@@ -130,6 +137,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signIn,
       signUp,
       signOut,
+      refreshProfile,
       isWriter,
       isApprover,
       isAdmin,

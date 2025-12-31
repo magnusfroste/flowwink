@@ -40,6 +40,7 @@ import CompaniesPage from "./pages/admin/CompaniesPage";
 import CompanyDetailPage from "./pages/admin/CompanyDetailPage";
 import ProductsPage from "./pages/admin/ProductsPage";
 import KnowledgeBasePage from "./pages/admin/KnowledgeBasePage";
+import ProfilePage from "./pages/admin/ProfilePage";
 import KbArticleEditorPage from "./pages/admin/KbArticleEditorPage";
 import PublicKnowledgeBasePage from "./pages/KnowledgeBasePage";
 import PreviewPage from "./pages/PreviewPage";
@@ -79,6 +80,7 @@ const router = createBrowserRouter([
   { path: "/admin/media", element: <MediaLibraryPage /> },
   { path: "/admin/users", element: <UsersPage /> },
   { path: "/admin/settings", element: <SiteSettingsPage /> },
+  { path: "/admin/profile", element: <ProfilePage /> },
   { path: "/admin/branding", element: <BrandingSettingsPage /> },
   { path: "/admin/menu-order", element: <MenuOrderPage /> },
   { path: "/admin/chat", element: <ChatSettingsPage /> },
