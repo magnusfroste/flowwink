@@ -1,4 +1,5 @@
-import { Link, useLocation } from "react-router-dom";
+import { useState, useMemo, useEffect } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   FileText,
@@ -22,6 +23,7 @@ import {
   Building2,
   Package,
   Library,
+  Search,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { ROLE_LABELS } from "@/types/cms";
@@ -42,6 +44,14 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 
 type NavItem = {
   name: string;
@@ -104,10 +114,12 @@ const navigationGroups: NavGroup[] = [
 
 export function AdminSidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { profile, role, signOut, isAdmin } = useAuth();
   const { state } = useSidebar();
   const { data: modules } = useModules();
   const isCollapsed = state === "collapsed";
+  const [searchOpen, setSearchOpen] = useState(false);
 
   const isItemActive = (href: string) =>
     location.pathname === href || (href !== "/admin" && location.pathname.startsWith(href));
@@ -116,7 +128,7 @@ export function AdminSidebar() {
   const roleFilteredGroups = navigationGroups.filter((group) => !group.adminOnly || isAdmin);
   
   // Filter by enabled modules
-  const filteredGroups = roleFilteredGroups
+  const filteredGroups = useMemo(() => roleFilteredGroups
     .map(group => ({
       ...group,
       items: group.items.filter(item => {
@@ -128,26 +140,95 @@ export function AdminSidebar() {
         return modules[item.moduleId]?.enabled ?? true;
       }),
     }))
-    .filter(group => group.items.length > 0);
+    .filter(group => group.items.length > 0), [roleFilteredGroups, modules]);
+
+  // Flatten all items for search
+  const allSearchItems = useMemo(() => 
+    filteredGroups.flatMap(group => 
+      group.items.map(item => ({ ...item, group: group.label }))
+    ), [filteredGroups]);
+
+  const handleSearchSelect = (href: string) => {
+    setSearchOpen(false);
+    navigate(href);
+  };
+
+  // Keyboard shortcut for search
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setSearchOpen((open) => !open);
+      }
+    };
+    document.addEventListener("keydown", down);
+    return () => document.removeEventListener("keydown", down);
+  }, []);
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-sidebar-border">
-      {/* Logo */}
-      <SidebarHeader className="border-b border-sidebar-border px-3 py-4">
-        <div className="flex items-center justify-between">
-          {!isCollapsed && (
-            <div className="overflow-hidden">
-              <span className="font-serif font-bold text-lg">PEZ</span>
-              <span className="block text-xs text-sidebar-foreground/60">CMS</span>
-            </div>
-          )}
-          <SidebarTrigger className="h-8 w-8" />
-        </div>
-      </SidebarHeader>
+    <>
+      {/* Search Command Dialog */}
+      <CommandDialog open={searchOpen} onOpenChange={setSearchOpen}>
+        <CommandInput placeholder="Search pages..." />
+        <CommandList>
+          <CommandEmpty>No results found.</CommandEmpty>
+          {filteredGroups.map((group) => (
+            <CommandGroup key={group.label} heading={group.label}>
+              {group.items.map((item) => (
+                <CommandItem
+                  key={item.href}
+                  onSelect={() => handleSearchSelect(item.href)}
+                  className="cursor-pointer"
+                >
+                  <item.icon className="mr-2 h-4 w-4" />
+                  <span>{item.name}</span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          ))}
+        </CommandList>
+      </CommandDialog>
 
-      {/* Navigation */}
-      <SidebarContent className="px-2 py-2">
-        {filteredGroups.map((group, index) => (
+      <Sidebar collapsible="icon" className="border-r border-sidebar-border">
+        {/* Logo */}
+        <SidebarHeader className="border-b border-sidebar-border px-3 py-4">
+          <div className="flex items-center justify-between">
+            {!isCollapsed && (
+              <div className="overflow-hidden">
+                <span className="font-serif font-bold text-lg">PEZ</span>
+                <span className="block text-xs text-sidebar-foreground/60">CMS</span>
+              </div>
+            )}
+            <SidebarTrigger className="h-8 w-8" />
+          </div>
+        </SidebarHeader>
+
+        {/* Search Button */}
+        <div className="px-2 py-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => setSearchOpen(true)}
+                className="flex items-center gap-2 w-full px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent rounded-md transition-colors"
+              >
+                <Search className="h-4 w-4" />
+                {!isCollapsed && (
+                  <>
+                    <span className="flex-1 text-left">Search...</span>
+                    <kbd className="hidden lg:inline-flex h-5 items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+                      ⌘K
+                    </kbd>
+                  </>
+                )}
+              </button>
+            </TooltipTrigger>
+            {isCollapsed && <TooltipContent side="right">Search (⌘K)</TooltipContent>}
+          </Tooltip>
+        </div>
+
+        {/* Navigation */}
+        <SidebarContent className="px-2 py-2">
+          {filteredGroups.map((group, index) => (
           <div key={group.label}>
             {index > 0 && <SidebarSeparator className="my-2" />}
             <SidebarGroup>
@@ -179,39 +260,40 @@ export function AdminSidebar() {
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
-          </div>
-        ))}
-      </SidebarContent>
-
-      {/* User section */}
-      <SidebarFooter className="border-t border-sidebar-border p-3">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="h-9 w-9 shrink-0 rounded-full bg-sidebar-accent flex items-center justify-center">
-            <span className="text-sidebar-accent-foreground font-medium text-sm">
-              {profile?.full_name?.charAt(0) || profile?.email?.charAt(0) || "?"}
-            </span>
-          </div>
-          {!isCollapsed && (
-            <div className="flex-1 min-w-0 overflow-hidden">
-              <p className="text-sm font-medium truncate">{profile?.full_name || profile?.email}</p>
-              <p className="text-xs text-sidebar-foreground/60">{role ? ROLE_LABELS[role] : "Loading..."}</p>
             </div>
-          )}
-        </div>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <SidebarMenuButton onClick={signOut} tooltip="Sign Out">
-                  <LogOut className="h-4 w-4" />
-                  <span>Sign Out</span>
-                </SidebarMenuButton>
-              </TooltipTrigger>
-              {isCollapsed && <TooltipContent side="right">Sign Out</TooltipContent>}
-            </Tooltip>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
-    </Sidebar>
+          ))}
+        </SidebarContent>
+
+        {/* User section */}
+        <SidebarFooter className="border-t border-sidebar-border p-3">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="h-9 w-9 shrink-0 rounded-full bg-sidebar-accent flex items-center justify-center">
+              <span className="text-sidebar-accent-foreground font-medium text-sm">
+                {profile?.full_name?.charAt(0) || profile?.email?.charAt(0) || "?"}
+              </span>
+            </div>
+            {!isCollapsed && (
+              <div className="flex-1 min-w-0 overflow-hidden">
+                <p className="text-sm font-medium truncate">{profile?.full_name || profile?.email}</p>
+                <p className="text-xs text-sidebar-foreground/60">{role ? ROLE_LABELS[role] : "Loading..."}</p>
+              </div>
+            )}
+          </div>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <SidebarMenuButton onClick={signOut} tooltip="Sign Out">
+                    <LogOut className="h-4 w-4" />
+                    <span>Sign Out</span>
+                  </SidebarMenuButton>
+                </TooltipTrigger>
+                {isCollapsed && <TooltipContent side="right">Sign Out</TooltipContent>}
+              </Tooltip>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarFooter>
+      </Sidebar>
+    </>
   );
 }
