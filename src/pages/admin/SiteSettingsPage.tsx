@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 import { 
   useSeoSettings, 
   useUpdateSeoSettings,
@@ -21,16 +22,20 @@ import {
   useUpdateMaintenanceSettings,
   useGeneralSettings,
   useUpdateGeneralSettings,
+  useAeoSettings,
+  useUpdateAeoSettings,
   SeoSettings,
   PerformanceSettings,
   CustomScriptsSettings,
   CookieBannerSettings,
   MaintenanceSettings,
   GeneralSettings,
+  AeoSettings,
+  SchemaOrgType,
 } from '@/hooks/useSiteSettings';
 import { usePages } from '@/hooks/usePages';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Save, Globe, Zap, ImageIcon, X, AlertTriangle, Code, Cookie, Info, Wrench, Home, Search, Lock, Clock, CheckCircle2, Circle } from 'lucide-react';
+import { Loader2, Save, Globe, Zap, ImageIcon, X, AlertTriangle, Code, Cookie, Info, Wrench, Home, Search, Lock, Clock, CheckCircle2, Circle, Bot, FileText, Building2, ExternalLink } from 'lucide-react';
 import { MediaLibraryPicker } from '@/components/admin/MediaLibraryPicker';
 import { CodeEditor } from '@/components/admin/CodeEditor';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -92,6 +97,7 @@ export default function SiteSettingsPage() {
   const { data: cookieBannerSettings, isLoading: cookieLoading } = useCookieBannerSettings();
   const { data: maintenanceSettings, isLoading: maintenanceLoading } = useMaintenanceSettings();
   const { data: generalSettings, isLoading: generalLoading } = useGeneralSettings();
+  const { data: aeoSettings, isLoading: aeoLoading } = useAeoSettings();
   const { data: allPages } = usePages();
   
   const updateSeo = useUpdateSeoSettings();
@@ -100,6 +106,7 @@ export default function SiteSettingsPage() {
   const updateCookieBanner = useUpdateCookieBannerSettings();
   const updateMaintenance = useUpdateMaintenanceSettings();
   const updateGeneral = useUpdateGeneralSettings();
+  const updateAeo = useUpdateAeoSettings();
 
   const [generalData, setGeneralData] = useState<GeneralSettings>({
     homepageSlug: 'hem',
@@ -153,6 +160,29 @@ export default function SiteSettingsPage() {
     expectedEndTime: '',
   });
 
+  const [aeoData, setAeoData] = useState<AeoSettings>({
+    enabled: false,
+    organizationName: '',
+    shortDescription: '',
+    contactEmail: '',
+    primaryLanguage: 'sv',
+    llmsTxtEnabled: true,
+    llmsTxtExcludedSlugs: [],
+    llmsFullTxtEnabled: true,
+    maxWordsPerPage: 2000,
+    schemaOrgEnabled: true,
+    schemaOrgType: 'Organization',
+    schemaOrgLogo: '',
+    socialProfiles: [],
+    businessHours: [],
+    priceRange: '',
+    faqSchemaEnabled: true,
+    articleSchemaEnabled: true,
+    sitemapEnabled: true,
+    sitemapChangefreq: 'weekly',
+    sitemapPriority: 0.5,
+  });
+
   useEffect(() => {
     if (seoSettings) setSeoData(seoSettings);
   }, [seoSettings]);
@@ -177,21 +207,26 @@ export default function SiteSettingsPage() {
     if (generalSettings) setGeneralData(generalSettings);
   }, [generalSettings]);
 
-  const isLoading = seoLoading || performanceLoading || scriptsLoading || cookieLoading || maintenanceLoading || generalLoading;
-  const isSaving = updateSeo.isPending || updatePerformance.isPending || updateScripts.isPending || updateCookieBanner.isPending || updateMaintenance.isPending || updateGeneral.isPending;
+  useEffect(() => {
+    if (aeoSettings) setAeoData(aeoSettings);
+  }, [aeoSettings]);
+
+  const isLoading = seoLoading || performanceLoading || scriptsLoading || cookieLoading || maintenanceLoading || generalLoading || aeoLoading;
+  const isSaving = updateSeo.isPending || updatePerformance.isPending || updateScripts.isPending || updateCookieBanner.isPending || updateMaintenance.isPending || updateGeneral.isPending || updateAeo.isPending;
 
   // Track unsaved changes
   const hasChanges = useMemo(() => {
-    if (!seoSettings || !performanceSettings || !customScriptsSettings || !cookieBannerSettings || !maintenanceSettings || !generalSettings) return false;
+    if (!seoSettings || !performanceSettings || !customScriptsSettings || !cookieBannerSettings || !maintenanceSettings || !generalSettings || !aeoSettings) return false;
     return (
       JSON.stringify(seoData) !== JSON.stringify(seoSettings) ||
       JSON.stringify(performanceData) !== JSON.stringify(performanceSettings) ||
       JSON.stringify(scriptsData) !== JSON.stringify(customScriptsSettings) ||
       JSON.stringify(cookieData) !== JSON.stringify(cookieBannerSettings) ||
       JSON.stringify(maintenanceData) !== JSON.stringify(maintenanceSettings) ||
-      JSON.stringify(generalData) !== JSON.stringify(generalSettings)
+      JSON.stringify(generalData) !== JSON.stringify(generalSettings) ||
+      JSON.stringify(aeoData) !== JSON.stringify(aeoSettings)
     );
-  }, [seoData, performanceData, scriptsData, cookieData, maintenanceData, generalData, seoSettings, performanceSettings, customScriptsSettings, cookieBannerSettings, maintenanceSettings, generalSettings]);
+  }, [seoData, performanceData, scriptsData, cookieData, maintenanceData, generalData, aeoData, seoSettings, performanceSettings, customScriptsSettings, cookieBannerSettings, maintenanceSettings, generalSettings, aeoSettings]);
 
   const { blocker } = useUnsavedChanges({ hasChanges });
 
@@ -203,6 +238,7 @@ export default function SiteSettingsPage() {
       updateScripts.mutateAsync(scriptsData),
       updateCookieBanner.mutateAsync(cookieData),
       updatePerformance.mutateAsync(performanceData),
+      updateAeo.mutateAsync(aeoData),
     ]);
   };
 
@@ -231,7 +267,7 @@ export default function SiteSettingsPage() {
         </AdminPageHeader>
 
         <Tabs defaultValue="general" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 max-w-4xl">
+          <TabsList className="grid w-full grid-cols-7 max-w-5xl">
             <TabsTrigger value="general" className="flex items-center gap-2">
               <Home className="h-4 w-4" />
               <span className="hidden sm:inline">General</span>
@@ -239,6 +275,10 @@ export default function SiteSettingsPage() {
             <TabsTrigger value="seo" className="flex items-center gap-2">
               <Globe className="h-4 w-4" />
               <span className="hidden sm:inline">SEO</span>
+            </TabsTrigger>
+            <TabsTrigger value="aeo" className="flex items-center gap-2">
+              <Bot className="h-4 w-4" />
+              <span className="hidden sm:inline">AEO</span>
             </TabsTrigger>
             <TabsTrigger value="maintenance" className="flex items-center gap-2">
               <Wrench className="h-4 w-4" />
@@ -484,6 +524,352 @@ export default function SiteSettingsPage() {
                   </div>
                 </CardContent>
               </Card>
+            </div>
+          </TabsContent>
+
+          {/* AEO Tab */}
+          <TabsContent value="aeo" className="space-y-6">
+            {!aeoData.enabled && (
+              <Alert className="border-muted-foreground/20 bg-muted/50">
+                <Bot className="h-4 w-4" />
+                <AlertTitle>Answer Engine Optimization</AlertTitle>
+                <AlertDescription>
+                  AEO optimerar ditt innehåll för AI-drivna sökmotorer som Perplexity, ChatGPT, Google AI Overviews och Bing Copilot.
+                  Aktivera AEO för att generera llms.txt, Schema.org/JSON-LD och sitemap.xml.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {aeoData.enabled && (
+              <Alert className="border-emerald-500/50 bg-emerald-50 dark:bg-emerald-950/20">
+                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                <AlertTitle className="text-emerald-800 dark:text-emerald-200">AEO är aktiverat</AlertTitle>
+                <AlertDescription className="text-emerald-700 dark:text-emerald-300">
+                  Din webbplats är nu optimerad för AI-sökmotorer. Följande endpoints är tillgängliga:
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {aeoData.llmsTxtEnabled && (
+                      <Badge variant="secondary" className="gap-1">
+                        <FileText className="h-3 w-3" />
+                        /llms.txt
+                      </Badge>
+                    )}
+                    {aeoData.llmsFullTxtEnabled && (
+                      <Badge variant="secondary" className="gap-1">
+                        <FileText className="h-3 w-3" />
+                        /llms-full.txt
+                      </Badge>
+                    )}
+                    {aeoData.sitemapEnabled && (
+                      <Badge variant="secondary" className="gap-1">
+                        <Globe className="h-3 w-3" />
+                        /sitemap.xml
+                      </Badge>
+                    )}
+                  </div>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <div className="grid gap-6 md:grid-cols-2">
+              <Card className={aeoData.enabled ? 'border-emerald-500/30' : ''}>
+                <CardHeader>
+                  <CardTitle className="font-serif flex items-center gap-2">
+                    <Bot className="h-5 w-5" />
+                    AEO-inställningar
+                  </CardTitle>
+                  <CardDescription>Grundläggande inställningar för AI-optimering</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between p-3 rounded-lg border bg-card">
+                    <div className="flex items-center gap-3">
+                      <Bot className={`h-5 w-5 ${aeoData.enabled ? 'text-emerald-600' : 'text-muted-foreground'}`} />
+                      <div>
+                        <Label className={aeoData.enabled ? 'text-emerald-700 dark:text-emerald-300' : ''}>
+                          Aktivera AEO
+                        </Label>
+                        <p className="text-xs text-muted-foreground">
+                          Generera llms.txt och strukturerad data
+                        </p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={aeoData.enabled}
+                      onCheckedChange={(checked) => setAeoData(prev => ({ ...prev, enabled: checked }))}
+                    />
+                  </div>
+
+                  {aeoData.enabled && (
+                    <>
+                      <div className="space-y-2">
+                        <Label htmlFor="aeoOrgName">Organisationsnamn</Label>
+                        <Input
+                          id="aeoOrgName"
+                          value={aeoData.organizationName}
+                          onChange={(e) => setAeoData(prev => ({ ...prev, organizationName: e.target.value }))}
+                          placeholder="Min Organisation AB"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="aeoDescription">Kort beskrivning (för AI-agenter)</Label>
+                        <Textarea
+                          id="aeoDescription"
+                          value={aeoData.shortDescription}
+                          onChange={(e) => setAeoData(prev => ({ ...prev, shortDescription: e.target.value }))}
+                          placeholder="En kort beskrivning av verksamheten som AI-agenter kan använda..."
+                          rows={3}
+                        />
+                        <p className="text-xs text-muted-foreground">Max 200 tecken rekommenderas</p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="aeoEmail">Kontakt-email</Label>
+                        <Input
+                          id="aeoEmail"
+                          type="email"
+                          value={aeoData.contactEmail}
+                          onChange={(e) => setAeoData(prev => ({ ...prev, contactEmail: e.target.value }))}
+                          placeholder="info@example.com"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="aeoLang">Primärt språk</Label>
+                        <Select
+                          value={aeoData.primaryLanguage}
+                          onValueChange={(value) => setAeoData(prev => ({ ...prev, primaryLanguage: value }))}
+                        >
+                          <SelectTrigger id="aeoLang">
+                            <SelectValue placeholder="Välj språk" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="sv">Svenska</SelectItem>
+                            <SelectItem value="en">Engelska</SelectItem>
+                            <SelectItem value="no">Norska</SelectItem>
+                            <SelectItem value="da">Danska</SelectItem>
+                            <SelectItem value="fi">Finska</SelectItem>
+                            <SelectItem value="de">Tyska</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+
+              {aeoData.enabled && (
+                <>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="font-serif flex items-center gap-2">
+                        <FileText className="h-5 w-5" />
+                        llms.txt
+                      </CardTitle>
+                      <CardDescription>
+                        Standard för AI-agenter att förstå din webbplats
+                        <a 
+                          href="https://llmstxt.org" 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 ml-2 text-primary hover:underline"
+                        >
+                          Läs mer <ExternalLink className="h-3 w-3" />
+                        </a>
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Generera /llms.txt</Label>
+                          <p className="text-xs text-muted-foreground">Kortfattad översikt för AI-agenter</p>
+                        </div>
+                        <Switch
+                          checked={aeoData.llmsTxtEnabled}
+                          onCheckedChange={(checked) => setAeoData(prev => ({ ...prev, llmsTxtEnabled: checked }))}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Generera /llms-full.txt</Label>
+                          <p className="text-xs text-muted-foreground">Fullständigt innehåll i markdown</p>
+                        </div>
+                        <Switch
+                          checked={aeoData.llmsFullTxtEnabled}
+                          onCheckedChange={(checked) => setAeoData(prev => ({ ...prev, llmsFullTxtEnabled: checked }))}
+                        />
+                      </div>
+                      {aeoData.llmsFullTxtEnabled && (
+                        <div className="space-y-2 pt-2 border-t">
+                          <Label htmlFor="maxWords">Max ord per sida</Label>
+                          <Input
+                            id="maxWords"
+                            type="number"
+                            min={500}
+                            max={10000}
+                            value={aeoData.maxWordsPerPage}
+                            onChange={(e) => setAeoData(prev => ({ 
+                              ...prev, 
+                              maxWordsPerPage: Math.max(500, parseInt(e.target.value) || 2000) 
+                            }))}
+                          />
+                          <p className="text-xs text-muted-foreground">Begränsar innehållsmängden per sida i llms-full.txt</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="font-serif flex items-center gap-2">
+                        <Building2 className="h-5 w-5" />
+                        Schema.org / JSON-LD
+                      </CardTitle>
+                      <CardDescription>Strukturerad data för rich snippets och AI</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Aktivera Schema.org</Label>
+                          <p className="text-xs text-muted-foreground">Lägg till JSON-LD på alla sidor</p>
+                        </div>
+                        <Switch
+                          checked={aeoData.schemaOrgEnabled}
+                          onCheckedChange={(checked) => setAeoData(prev => ({ ...prev, schemaOrgEnabled: checked }))}
+                        />
+                      </div>
+                      
+                      {aeoData.schemaOrgEnabled && (
+                        <>
+                          <div className="space-y-2">
+                            <Label htmlFor="schemaType">Organisationstyp</Label>
+                            <Select
+                              value={aeoData.schemaOrgType}
+                              onValueChange={(value: SchemaOrgType) => setAeoData(prev => ({ ...prev, schemaOrgType: value }))}
+                            >
+                              <SelectTrigger id="schemaType">
+                                <SelectValue placeholder="Välj typ" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Organization">Organisation</SelectItem>
+                                <SelectItem value="LocalBusiness">Lokalt företag</SelectItem>
+                                <SelectItem value="MedicalOrganization">Vårdorganisation</SelectItem>
+                                <SelectItem value="EducationalOrganization">Utbildningsorganisation</SelectItem>
+                                <SelectItem value="GovernmentOrganization">Myndighet</SelectItem>
+                                <SelectItem value="Corporation">Aktiebolag</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <Label>FAQ Schema</Label>
+                              <p className="text-xs text-muted-foreground">Auto-generera från accordion-block</p>
+                            </div>
+                            <Switch
+                              checked={aeoData.faqSchemaEnabled}
+                              onCheckedChange={(checked) => setAeoData(prev => ({ ...prev, faqSchemaEnabled: checked }))}
+                            />
+                          </div>
+                          
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <Label>Article Schema</Label>
+                              <p className="text-xs text-muted-foreground">För bloggposter</p>
+                            </div>
+                            <Switch
+                              checked={aeoData.articleSchemaEnabled}
+                              onCheckedChange={(checked) => setAeoData(prev => ({ ...prev, articleSchemaEnabled: checked }))}
+                            />
+                          </div>
+                        </>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="font-serif flex items-center gap-2">
+                        <Globe className="h-5 w-5" />
+                        Sitemap
+                      </CardTitle>
+                      <CardDescription>Dynamisk sitemap.xml för sökmotorer</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label>Generera /sitemap.xml</Label>
+                          <p className="text-xs text-muted-foreground">Automatisk sitemap från publicerade sidor</p>
+                        </div>
+                        <Switch
+                          checked={aeoData.sitemapEnabled}
+                          onCheckedChange={(checked) => setAeoData(prev => ({ ...prev, sitemapEnabled: checked }))}
+                        />
+                      </div>
+                      
+                      {aeoData.sitemapEnabled && (
+                        <>
+                          <div className="space-y-2">
+                            <Label htmlFor="changefreq">Ändringsfrekvens</Label>
+                            <Select
+                              value={aeoData.sitemapChangefreq}
+                              onValueChange={(value: AeoSettings['sitemapChangefreq']) => setAeoData(prev => ({ ...prev, sitemapChangefreq: value }))}
+                            >
+                              <SelectTrigger id="changefreq">
+                                <SelectValue placeholder="Välj frekvens" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="daily">Dagligen</SelectItem>
+                                <SelectItem value="weekly">Veckovis</SelectItem>
+                                <SelectItem value="monthly">Månadsvis</SelectItem>
+                                <SelectItem value="yearly">Årligen</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="priority">Standardprioritet</Label>
+                            <Input
+                              id="priority"
+                              type="number"
+                              min={0}
+                              max={1}
+                              step={0.1}
+                              value={aeoData.sitemapPriority}
+                              onChange={(e) => setAeoData(prev => ({ 
+                                ...prev, 
+                                sitemapPriority: Math.max(0, Math.min(1, parseFloat(e.target.value) || 0.5)) 
+                              }))}
+                            />
+                            <p className="text-xs text-muted-foreground">0.0-1.0, startsidan får alltid 1.0</p>
+                          </div>
+                        </>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  <Card className="md:col-span-2">
+                    <CardHeader>
+                      <CardTitle className="font-serif text-base">Vad är AEO?</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid md:grid-cols-2 gap-6">
+                        <div>
+                          <h4 className="font-medium mb-2">SEO vs AEO</h4>
+                          <ul className="text-sm text-muted-foreground space-y-1">
+                            <li>• <strong>SEO:</strong> Ranking i sökresultat</li>
+                            <li>• <strong>AEO:</strong> Bli citerad som källa av AI</li>
+                          </ul>
+                        </div>
+                        <div>
+                          <h4 className="font-medium mb-2">AI-sökmotorer som stöds</h4>
+                          <ul className="text-sm text-muted-foreground space-y-1">
+                            <li>• Perplexity AI</li>
+                            <li>• ChatGPT (med Browse)</li>
+                            <li>• Google AI Overviews</li>
+                            <li>• Bing Copilot</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </>
+              )}
             </div>
           </TabsContent>
 
