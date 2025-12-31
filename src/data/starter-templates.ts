@@ -3278,6 +3278,28 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
               },
             },
           },
+          // Block Types Overview
+          {
+            id: 'demo-block-overview',
+            type: 'features',
+            data: {
+              title: '27+ Block Types Available',
+              subtitle: 'From simple text to complex e-commerce – build any page with drag-and-drop blocks.',
+              features: [
+                { id: 'cat-content', icon: 'FileText', title: 'Content', description: 'Hero, Text, Image, Quote, Separator, Two-Column, Info Box' },
+                { id: 'cat-showcase', icon: 'LayoutGrid', title: 'Showcase', description: 'Features, Stats, Timeline, Gallery, Logos, Team, Testimonials' },
+                { id: 'cat-commerce', icon: 'ShoppingCart', title: 'E-commerce', description: 'Pricing, Products, Cart, Comparison' },
+                { id: 'cat-forms', icon: 'ClipboardList', title: 'Forms', description: 'Contact, Form Builder, Newsletter, Booking' },
+                { id: 'cat-navigation', icon: 'Navigation', title: 'Navigation', description: 'Header, Footer, Link Grid, Accordion' },
+                { id: 'cat-media', icon: 'Play', title: 'Media', description: 'YouTube, Map, Article Grid' },
+                { id: 'cat-ai', icon: 'Sparkles', title: 'AI', description: 'Chat Widget, AI Text Assistant' },
+                { id: 'cat-interactive', icon: 'MousePointer', title: 'Interactive', description: 'Popup, CTA Buttons' },
+              ],
+              columns: 4,
+              variant: 'minimal',
+              iconStyle: 'square',
+            },
+          },
           // Features Block Example
           {
             id: 'demo-features',
