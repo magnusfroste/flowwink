@@ -901,6 +901,38 @@ För vårdorganisationer som kräver HIPAA:
 - Dedicated support SLA
 - Knowledge Base with structured FAQ
 
+### Backlog: Account & Data Management
+
+#### Account Deletion with Data Preservation
+**Priority**: Medium  
+**Complexity**: High  
+**GDPR Relevance**: Critical
+
+**Problem**: Users need the ability to delete their accounts while preserving content integrity and complying with GDPR "right to erasure".
+
+**Affected Tables**:
+- `blog_posts` (author_id, created_by, updated_by, reviewer_id)
+- `pages` (created_by, updated_by)
+- `leads` (assigned_to, created_by)
+- `kb_articles` (created_by, updated_by)
+- `newsletters` (created_by)
+- `companies` (created_by)
+- `deals` (created_by)
+- `global_blocks` (created_by, updated_by)
+
+**Proposed Strategies** (to be decided):
+1. **Soft Delete**: Add `deleted_at` and `is_deleted` to profiles. Hide from UI, preserve content with original author. Account restorable by admin.
+2. **Anonymize Author**: Delete account but keep content with author shown as "Deleted User". Irreversible.
+3. **Transfer then Delete**: Require transferring content to another user before allowing deletion. Clean handover.
+4. **Full Cascade Delete**: Delete user AND all their content. Simple but destructive.
+
+**Implementation Considerations**:
+- Add `deleted_at TIMESTAMP` and `is_deleted BOOLEAN DEFAULT false` to profiles table
+- Create edge function for cascading soft-delete/anonymization
+- Update all queries to filter out deleted users
+- Admin UI for viewing/restoring deleted accounts
+- GDPR export before deletion
+
 ---
 
 ## Appendix B: Webhook Events
