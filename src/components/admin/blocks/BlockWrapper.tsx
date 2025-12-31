@@ -38,6 +38,8 @@ const BLOCK_LABELS: Record<ContentBlockType, string> = {
   timeline: 'Timeline',
   footer: 'Footer',
   header: 'Header',
+  products: 'Products',
+  cart: 'Cart',
 };
 
 interface BlockWrapperProps {

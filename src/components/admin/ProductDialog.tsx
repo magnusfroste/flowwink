@@ -78,6 +78,8 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
       currency: data.currency,
       is_active: true,
       sort_order: 0,
+      image_url: product?.image_url ?? null,
+      stripe_price_id: product?.stripe_price_id ?? null,
     };
 
     if (product) {

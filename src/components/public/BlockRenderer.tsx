@@ -30,6 +30,8 @@ import {
   ComparisonBlock,
   FeaturesBlock,
   TimelineBlock,
+  ProductsBlock,
+  CartBlock,
 } from './blocks';
 import type {
   HeroBlockData,
@@ -51,6 +53,8 @@ import type {
   MapBlockData,
   FormBlockData,
 } from '@/types/cms';
+import type { ProductsBlockData } from './blocks/ProductsBlock';
+import type { CartBlockData } from './blocks/CartBlock';
 
 interface BlockRendererProps {
   block: ContentBlock;
@@ -158,6 +162,10 @@ export function BlockRenderer({ block, pageId, index = 0 }: BlockRendererProps) 
         return <FeaturesBlock data={block.data as unknown as FeaturesBlockData} />;
       case 'timeline':
         return <TimelineBlock data={block.data as Record<string, unknown>} />;
+      case 'products':
+        return <ProductsBlock data={block.data as unknown as ProductsBlockData} />;
+      case 'cart':
+        return <CartBlock data={block.data as unknown as CartBlockData} />;
       default:
         return null;
     }

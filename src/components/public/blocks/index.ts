@@ -26,3 +26,5 @@ export { LogosBlock } from './LogosBlock';
 export { ComparisonBlock } from './ComparisonBlock';
 export { FeaturesBlock } from './FeaturesBlock';
 export { TimelineBlock } from './TimelineBlock';
+export { ProductsBlock } from './ProductsBlock';
+export { CartBlock } from './CartBlock';
