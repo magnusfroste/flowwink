@@ -165,14 +165,30 @@ export default function PublicPage() {
     );
   }
 
+  // Build canonical URL
+  const baseUrl = window.location.origin;
+  const canonicalUrl = `${baseUrl}/${pageSlug === homepageSlug ? '' : pageSlug}`;
+  
+  // Build breadcrumbs for structured data
+  const breadcrumbs = [
+    { name: 'Hem', url: baseUrl }
+  ];
+  if (pageSlug !== homepageSlug) {
+    breadcrumbs.push({ name: page.title, url: canonicalUrl });
+  }
+
   return (
     <>
       <SeoHead 
         title={page.meta_json?.seoTitle || page.title}
         description={page.meta_json?.description}
         ogImage={page.meta_json?.og_image}
+        canonicalUrl={canonicalUrl}
         noIndex={page.meta_json?.noIndex}
         noFollow={page.meta_json?.noFollow}
+        pageType="page"
+        contentBlocks={page.content_json}
+        breadcrumbs={breadcrumbs}
       />
       <HeadScripts />
       <BodyScripts position="start" />

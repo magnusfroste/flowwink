@@ -1,6 +1,5 @@
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Calendar, Clock, User, Share2, CheckCircle } from "lucide-react";
-import { Helmet } from "react-helmet-async";
+import { ArrowLeft, Calendar, Clock, User, CheckCircle } from "lucide-react";
 import { format } from "date-fns";
 import { sv } from "date-fns/locale";
 import { PublicNavigation } from "@/components/public/PublicNavigation";
@@ -8,18 +7,17 @@ import { PublicFooter } from "@/components/public/PublicFooter";
 import { BlockRenderer } from "@/components/public/BlockRenderer";
 import { AuthorCard } from "@/components/public/AuthorCard";
 import { BlogPostCard } from "@/components/public/BlogPostCard";
+import { SeoHead } from "@/components/public/SeoHead";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useBlogPost, useBlogPosts } from "@/hooks/useBlogPosts";
-import { useBlogSettings, useSeoSettings } from "@/hooks/useSiteSettings";
+import { useBlogSettings } from "@/hooks/useSiteSettings";
 import NotFound from "./NotFound";
 
 export default function BlogPostPage() {
   const { slug } = useParams();
   const { data: post, isLoading, error } = useBlogPost(slug);
   const { data: blogSettings } = useBlogSettings();
-  const { data: seoSettings } = useSeoSettings();
   
   // Related posts (same category)
   const { data: relatedData } = useBlogPosts({
@@ -54,38 +52,34 @@ export default function BlogPostPage() {
   
   const metaDescription = post.meta_json?.description || post.excerpt || "";
   const seoTitle = post.meta_json?.seoTitle || post.title;
+  
+  // Build canonical URL and breadcrumbs
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+  const canonicalUrl = `${baseUrl}/blogg/${slug}`;
+  const breadcrumbs = [
+    { name: 'Hem', url: baseUrl },
+    { name: 'Blogg', url: `${baseUrl}/blogg` },
+    { name: post.title, url: canonicalUrl }
+  ];
+  
+  // Extract tags for article schema
+  const articleTags = post.tags?.map(t => t.name) || [];
 
   return (
     <>
-      <Helmet>
-        <title>{seoTitle} | {seoSettings?.siteTitle || "CMS"}</title>
-        <meta name="description" content={metaDescription} />
-        
-        {/* Open Graph */}
-        <meta property="og:type" content="article" />
-        <meta property="og:title" content={seoTitle} />
-        <meta property="og:description" content={metaDescription} />
-        {post.featured_image && <meta property="og:image" content={post.featured_image} />}
-        <meta property="article:published_time" content={publishedDate.toISOString()} />
-        {post.author?.full_name && <meta property="article:author" content={post.author.full_name} />}
-        
-        {/* Article schema.org */}
-        <script type="application/ld+json">
-          {JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "Article",
-            headline: post.title,
-            description: metaDescription,
-            image: post.featured_image,
-            datePublished: publishedDate.toISOString(),
-            dateModified: post.updated_at,
-            author: post.author ? {
-              "@type": "Person",
-              name: post.author.full_name,
-            } : undefined,
-          })}
-        </script>
-      </Helmet>
+      <SeoHead
+        title={seoTitle}
+        description={metaDescription}
+        ogImage={post.featured_image || undefined}
+        canonicalUrl={canonicalUrl}
+        pageType="article"
+        contentBlocks={post.content_json}
+        breadcrumbs={breadcrumbs}
+        articleAuthor={post.author?.full_name || undefined}
+        articlePublishedTime={publishedDate.toISOString()}
+        articleModifiedTime={post.updated_at}
+        articleTags={articleTags}
+      />
       
       <PublicNavigation />
       
