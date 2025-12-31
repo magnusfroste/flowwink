@@ -11,6 +11,7 @@ import {
   Sparkles,
   Check,
   Lock,
+  Link2,
   UserCheck,
   Briefcase,
   Building2,
@@ -49,6 +50,11 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 const CATEGORY_ORDER = ["content", "communication", "data", "system"];
+
+// Module dependencies - key depends on value
+const MODULE_DEPENDENCIES: Partial<Record<keyof ModulesSettings, keyof ModulesSettings>> = {
+  orders: 'products',
+};
 
 export default function ModulesPage() {
   const { data: modules, isLoading } = useModules();
@@ -167,6 +173,16 @@ export default function ModulesPage() {
                           >
                             <Lock className="h-3 w-3 mr-1" />
                             Core
+                          </Badge>
+                        )}
+                        
+                        {MODULE_DEPENDENCIES[module.id] && (
+                          <Badge 
+                            variant="outline" 
+                            className="absolute -top-2 right-3 text-xs bg-background"
+                          >
+                            <Link2 className="h-3 w-3 mr-1" />
+                            {localModules?.[MODULE_DEPENDENCIES[module.id]!]?.name}
                           </Badge>
                         )}
                         
