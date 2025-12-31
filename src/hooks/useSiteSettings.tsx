@@ -464,6 +464,88 @@ export function useUpdateKbSettings() {
   return useUpdateSiteSettings<KbSettings>('kb', 'Knowledge Base settings have been updated.');
 }
 
+// AEO (Answer Engine Optimization) settings
+export type SchemaOrgType = 
+  | 'Organization'
+  | 'LocalBusiness'
+  | 'MedicalOrganization'
+  | 'EducationalOrganization'
+  | 'GovernmentOrganization'
+  | 'Corporation';
+
+export interface BusinessHours {
+  dayOfWeek: string[];
+  opens: string;
+  closes: string;
+}
+
+export interface AeoSettings {
+  // General
+  enabled: boolean;
+  organizationName: string;
+  shortDescription: string;
+  contactEmail: string;
+  primaryLanguage: string;
+  
+  // llms.txt configuration
+  llmsTxtEnabled: boolean;
+  llmsTxtExcludedSlugs: string[];
+  llmsFullTxtEnabled: boolean;
+  maxWordsPerPage: number;
+  
+  // Schema.org / JSON-LD
+  schemaOrgEnabled: boolean;
+  schemaOrgType: SchemaOrgType;
+  schemaOrgLogo: string;
+  socialProfiles: string[];
+  
+  // LocalBusiness specific
+  businessHours: BusinessHours[];
+  priceRange: string;
+  
+  // FAQ Schema (auto-generated from accordion blocks)
+  faqSchemaEnabled: boolean;
+  
+  // Article Schema for blog posts
+  articleSchemaEnabled: boolean;
+  
+  // Sitemap
+  sitemapEnabled: boolean;
+  sitemapChangefreq: 'always' | 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'never';
+  sitemapPriority: number;
+}
+
+const defaultAeoSettings: AeoSettings = {
+  enabled: false,
+  organizationName: '',
+  shortDescription: '',
+  contactEmail: '',
+  primaryLanguage: 'sv',
+  llmsTxtEnabled: true,
+  llmsTxtExcludedSlugs: [],
+  llmsFullTxtEnabled: true,
+  maxWordsPerPage: 2000,
+  schemaOrgEnabled: true,
+  schemaOrgType: 'Organization',
+  schemaOrgLogo: '',
+  socialProfiles: [],
+  businessHours: [],
+  priceRange: '',
+  faqSchemaEnabled: true,
+  articleSchemaEnabled: true,
+  sitemapEnabled: true,
+  sitemapChangefreq: 'weekly',
+  sitemapPriority: 0.5,
+};
+
+export function useAeoSettings() {
+  return useSiteSettings<AeoSettings>('aeo', defaultAeoSettings);
+}
+
+export function useUpdateAeoSettings() {
+  return useUpdateSiteSettings<AeoSettings>('aeo', 'AEO settings have been updated.');
+}
+
 // Re-export modules hooks for convenience
 export { useModules, useUpdateModules, useIsModuleEnabled, useEnabledModules } from './useModules';
 export type { ModulesSettings, ModuleConfig } from './useModules';

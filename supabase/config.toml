@@ -62,3 +62,9 @@ verify_jwt = true
 
 [functions.enrich-company]
 verify_jwt = true
+
+[functions.llms-txt]
+verify_jwt = false
+
+[functions.sitemap-xml]
+verify_jwt = false
