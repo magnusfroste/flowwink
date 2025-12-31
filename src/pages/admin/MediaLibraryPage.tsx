@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminLayout } from '@/components/admin/AdminLayout';
@@ -6,6 +6,8 @@ import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { convertToWebP } from '@/lib/image-utils';
+import { cn } from '@/lib/utils';
 import { 
   Loader2, 
   Search, 
@@ -13,7 +15,8 @@ import {
   Copy, 
   Check,
   ImageIcon,
-  Upload
+  Upload,
+  X
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -41,12 +44,15 @@ export default function MediaLibraryPage() {
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
   const [deleteFile, setDeleteFile] = useState<(StorageFile & { folder: string }) | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const { data: files, isLoading, refetch } = useQuery({
     queryKey: ['media-library'],
     queryFn: async () => {
-      // Fetch from both pages/ and imports/ folders
       const [pagesResult, importsResult] = await Promise.all([
         supabase.storage.from('cms-images').list('pages', {
           sortBy: { column: 'created_at', order: 'desc' },
@@ -59,7 +65,6 @@ export default function MediaLibraryPage() {
       const pagesFiles = (pagesResult.data || []).map(f => ({ ...f, folder: 'pages' }));
       const importsFiles = (importsResult.data || []).map(f => ({ ...f, folder: 'imports' }));
       
-      // Combine and sort by created_at
       const allFiles = [...pagesFiles, ...importsFiles].sort(
         (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
@@ -74,6 +79,94 @@ export default function MediaLibraryPage() {
       .getPublicUrl(`${file.folder}/${file.name}`);
     return data.publicUrl;
   };
+
+  const handleUpload = useCallback(async (filesToUpload: FileList | File[]) => {
+    const imageFiles = Array.from(filesToUpload).filter(f => f.type.startsWith('image/'));
+    
+    if (imageFiles.length === 0) {
+      toast({
+        title: 'No images selected',
+        description: 'Please select image files to upload',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadProgress({ current: 0, total: imageFiles.length });
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for (let i = 0; i < imageFiles.length; i++) {
+      const file = imageFiles[i];
+      setUploadProgress({ current: i + 1, total: imageFiles.length });
+
+      try {
+        // Convert to WebP for optimization
+        const webpBlob = await convertToWebP(file);
+        const fileName = `${Date.now()}-${file.name.replace(/\.[^/.]+$/, '')}.webp`;
+
+        const { error } = await supabase.storage
+          .from('cms-images')
+          .upload(`pages/${fileName}`, webpBlob, {
+            contentType: 'image/webp',
+            cacheControl: '31536000',
+          });
+
+        if (error) throw error;
+        successCount++;
+      } catch (error) {
+        console.error('Upload error:', error);
+        failCount++;
+      }
+    }
+
+    setIsUploading(false);
+    setUploadProgress(null);
+
+    if (successCount > 0) {
+      toast({
+        title: `${successCount} image${successCount > 1 ? 's' : ''} uploaded`,
+        description: failCount > 0 ? `${failCount} failed` : 'Images are now available in your library',
+      });
+      refetch();
+    } else {
+      toast({
+        title: 'Upload failed',
+        description: 'Could not upload images. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  }, [toast, refetch]);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    
+    if (e.dataTransfer.files?.length) {
+      handleUpload(e.dataTransfer.files);
+    }
+  }, [handleUpload]);
+
+  const handleFileInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files?.length) {
+      handleUpload(e.target.files);
+    }
+  }, [handleUpload]);
 
   const handleCopyUrl = async (file: StorageFile & { folder: string }) => {
     const url = getPublicUrl(file);
@@ -91,7 +184,7 @@ export default function MediaLibraryPage() {
     
     setIsDeleting(true);
     try {
-      const folder = (deleteFile as StorageFile & { folder: string }).folder || 'pages';
+      const folder = deleteFile.folder || 'pages';
       const { error } = await supabase.storage
         .from('cms-images')
         .remove([`${folder}/${deleteFile.name}`]);
@@ -128,18 +221,47 @@ export default function MediaLibraryPage() {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div 
+        className="space-y-6"
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
         <AdminPageHeader 
           title="Media Library"
           description="Manage uploaded images"
         >
-          <Button asChild>
-            <a href="/admin/pages">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={handleFileInput}
+            className="hidden"
+          />
+          <Button onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
+            {isUploading ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
               <Upload className="h-4 w-4 mr-2" />
-              Upload via page editor
-            </a>
+            )}
+            {isUploading && uploadProgress 
+              ? `Uploading ${uploadProgress.current}/${uploadProgress.total}...`
+              : 'Upload Images'
+            }
           </Button>
         </AdminPageHeader>
+
+        {/* Drag overlay */}
+        {isDragging && (
+          <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center">
+            <div className="bg-card border-2 border-dashed border-primary rounded-xl p-12 text-center">
+              <Upload className="h-16 w-16 mx-auto text-primary mb-4" />
+              <h3 className="text-xl font-semibold mb-2">Drop images here</h3>
+              <p className="text-muted-foreground">Release to upload your images</p>
+            </div>
+          </div>
+        )}
 
         {/* Search */}
         <div className="relative max-w-md">
@@ -152,26 +274,44 @@ export default function MediaLibraryPage() {
           />
         </div>
 
-        {/* Content */}
+        {/* Drop zone when empty */}
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         ) : filteredFiles.length === 0 ? (
-          <div className="text-center py-12 bg-muted/30 rounded-lg border border-dashed">
-            <ImageIcon className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+          <div 
+            className={cn(
+              "text-center py-16 bg-muted/30 rounded-lg border-2 border-dashed cursor-pointer transition-colors",
+              "hover:border-primary/50 hover:bg-muted/50"
+            )}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <Upload className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
             <h3 className="text-lg font-medium text-foreground mb-1">
-              {searchQuery ? 'No images found' : 'No images uploaded'}
+              {searchQuery ? 'No images found' : 'Drop images here or click to upload'}
             </h3>
             <p className="text-muted-foreground text-sm">
               {searchQuery 
                 ? 'Try a different search'
-                : 'Upload images via the page editor to see them here'
+                : 'Supports JPG, PNG, GIF, WebP • Automatically optimized'
               }
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {/* Upload tile */}
+            <div 
+              className={cn(
+                "aspect-square bg-muted/30 rounded-lg border-2 border-dashed cursor-pointer transition-colors",
+                "hover:border-primary/50 hover:bg-muted/50 flex flex-col items-center justify-center"
+              )}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+              <span className="text-sm text-muted-foreground">Upload</span>
+            </div>
+
             {filteredFiles.map((file) => (
               <div 
                 key={file.id} 
