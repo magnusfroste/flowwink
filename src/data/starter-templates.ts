@@ -3676,6 +3676,39 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
               showHistory: true,
             },
           },
+          // Separator - Media
+          {
+            id: 'sep-media-demo',
+            type: 'separator',
+            data: {
+              variant: 'text',
+              text: 'Media',
+              icon: 'Play',
+            },
+          },
+          // YouTube Block Example
+          {
+            id: 'demo-youtube',
+            type: 'youtube',
+            data: {
+              url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+              title: 'YouTube Block',
+              autoplay: false,
+              loop: false,
+              mute: false,
+              controls: true,
+            },
+          },
+          // Image Block Example
+          {
+            id: 'demo-image',
+            type: 'image',
+            data: {
+              src: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=1200',
+              alt: 'Developer working on code with multiple monitors',
+              caption: 'Image Block – Display images with optional captions. Supports alt text for accessibility and SEO.',
+            },
+          },
           // Quote Block Example
           {
             id: 'demo-quote',
