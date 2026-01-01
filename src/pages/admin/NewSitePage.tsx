@@ -12,9 +12,10 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { StarterTemplateSelector } from '@/components/admin/StarterTemplateSelector';
 import { StarterTemplate } from '@/data/starter-templates';
 import { useCreatePage, usePages, useDeletePage } from '@/hooks/usePages';
-import { useUpdateBrandingSettings, useUpdateChatSettings, useUpdateGeneralSettings, useUpdateSeoSettings, useUpdateCookieBannerSettings } from '@/hooks/useSiteSettings';
+import { useUpdateBrandingSettings, useUpdateChatSettings, useUpdateGeneralSettings, useUpdateSeoSettings, useUpdateCookieBannerSettings, useUpdateKbSettings } from '@/hooks/useSiteSettings';
 import { useUpdateFooterBlock } from '@/hooks/useGlobalBlocks';
 import { useCreateBlogPost } from '@/hooks/useBlogPosts';
+import { useCreateKbCategory, useCreateKbArticle } from '@/hooks/useKnowledgeBase';
 import { useToast } from '@/hooks/use-toast';
 
 type CreationStep = 'select' | 'creating' | 'done';
@@ -43,7 +44,10 @@ export default function NewSitePage() {
   const updateFooter = useUpdateFooterBlock();
   const updateSeo = useUpdateSeoSettings();
   const updateCookieBanner = useUpdateCookieBannerSettings();
+  const updateKbSettings = useUpdateKbSettings();
   const createBlogPost = useCreateBlogPost();
+  const createKbCategory = useCreateKbCategory();
+  const createKbArticle = useCreateKbArticle();
   const { toast } = useToast();
 
   const handleTemplateSelect = (template: StarterTemplate) => {
@@ -115,7 +119,13 @@ export default function NewSitePage() {
       setProgress({ currentPage: selectedTemplate.pages.length, totalPages: selectedTemplate.pages.length, currentStep: 'Configuring cookies...' });
       await updateCookieBanner.mutateAsync(selectedTemplate.cookieBannerSettings as any);
 
-      // Step 7: Set homepage
+      // Step 7: Apply Knowledge Base settings if present
+      if (selectedTemplate.kbSettings) {
+        setProgress({ currentPage: selectedTemplate.pages.length, totalPages: selectedTemplate.pages.length, currentStep: 'Configuring Knowledge Base...' });
+        await updateKbSettings.mutateAsync(selectedTemplate.kbSettings as any);
+      }
+
+      // Step 8: Set homepage
       setProgress({ currentPage: selectedTemplate.pages.length, totalPages: selectedTemplate.pages.length, currentStep: 'Finalizing...' });
       await updateGeneral.mutateAsync({ homepageSlug: selectedTemplate.siteSettings.homepageSlug });
 
@@ -142,13 +152,58 @@ export default function NewSitePage() {
         }
       }
 
+      // Step 10: Create Knowledge Base categories and articles if template has them
+      const kbCategories = selectedTemplate.kbCategories || [];
+      let totalKbArticles = 0;
+      if (kbCategories.length > 0) {
+        for (let i = 0; i < kbCategories.length; i++) {
+          const category = kbCategories[i];
+          setProgress({ 
+            currentPage: i + 1, 
+            totalPages: kbCategories.length, 
+            currentStep: `Creating KB category "${category.name}"...` 
+          });
+          
+          // Create the category
+          const createdCategory = await createKbCategory.mutateAsync({
+            name: category.name,
+            slug: category.slug,
+            description: category.description,
+            icon: category.icon,
+            is_active: true,
+          });
+
+          // Create articles for this category
+          for (const article of category.articles) {
+            await createKbArticle.mutateAsync({
+              category_id: createdCategory.id,
+              title: article.title,
+              slug: article.slug,
+              question: article.question,
+              answer_json: article.answer_json as any,
+              answer_text: article.answer_text,
+              is_published: true,
+              is_featured: article.is_featured,
+              include_in_chat: article.include_in_chat,
+            });
+            totalKbArticles++;
+          }
+        }
+      }
+
       setCreatedPageIds(pageIds);
       setStep('done');
       
       const blogCount = blogPosts.length;
+      const kbCount = totalKbArticles;
+      let description = `Created ${selectedTemplate.pages.length} pages`;
+      if (blogCount > 0) description += `, ${blogCount} blog posts`;
+      if (kbCount > 0) description += `, ${kbCount} KB articles`;
+      description += ' with branding and chat configured.';
+      
       toast({
         title: 'Site created!',
-        description: `Created ${selectedTemplate.pages.length} pages${blogCount > 0 ? ` and ${blogCount} blog posts` : ''} with branding and chat configured.`,
+        description,
       });
     } catch (error) {
       toast({

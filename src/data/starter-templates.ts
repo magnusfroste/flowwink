@@ -1,5 +1,5 @@
 import { ContentBlock, PageMeta, FooterBlockData } from '@/types/cms';
-import { BrandingSettings, ChatSettings, SeoSettings, CookieBannerSettings } from '@/hooks/useSiteSettings';
+import { BrandingSettings, ChatSettings, SeoSettings, CookieBannerSettings, KbSettings } from '@/hooks/useSiteSettings';
 import { 
   launchpadBlogPosts, 
   trustcorpBlogPosts, 
@@ -59,6 +59,7 @@ export interface StarterTemplate {
   footerSettings: Partial<FooterBlockData>;
   seoSettings: Partial<SeoSettings>;
   cookieBannerSettings: Partial<CookieBannerSettings>;
+  kbSettings?: Partial<KbSettings>;
   
   // General settings
   siteSettings: {
@@ -5334,9 +5335,17 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
       instagram: '',
       youtube: '',
       legalLinks: [
+        { id: 'kb', label: 'Help Center', url: '/help', enabled: true },
         { id: 'privacy', label: 'Privacy Policy', url: '/privacy-policy', enabled: true },
         { id: 'terms', label: 'Terms of Service', url: '/terms-of-service', enabled: true },
       ],
+    },
+    kbSettings: {
+      enabled: true,
+      menuTitle: 'Help',
+      menuSlug: 'help',
+      showInMenu: true,
+      menuOrder: 5,
     },
     seoSettings: {
       siteTitle: 'PezCMS',
