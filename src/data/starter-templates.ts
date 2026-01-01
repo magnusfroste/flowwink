@@ -7,6 +7,7 @@ import {
   momentumBlogPosts, 
   pezcmsBlogPosts 
 } from './template-blog-posts';
+import { pezcmsKbCategories, TemplateKbCategory } from './template-kb-articles';
 
 // Page definition within a template
 export interface TemplatePage {
@@ -48,6 +49,9 @@ export interface StarterTemplate {
   
   // Blog posts (optional)
   blogPosts?: TemplateBlogPost[];
+  
+  // Knowledge Base (optional)
+  kbCategories?: TemplateKbCategory[];
   
   // Site-wide settings
   branding: Partial<BrandingSettings>;
@@ -2293,6 +2297,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
     tagline: 'The ultimate dogfood - built with PezCMS, for PezCMS',
     aiChatPosition: 'Embedded assistant for product questions',
     blogPosts: pezcmsBlogPosts,
+    kbCategories: pezcmsKbCategories,
     pages: [
       // ===== HOME PAGE =====
       {
