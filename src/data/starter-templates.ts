@@ -3373,6 +3373,57 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
               variant: 'cards',
             },
           },
+          // Team Block Example
+          {
+            id: 'demo-team',
+            type: 'team',
+            data: {
+              title: 'Team Block',
+              subtitle: 'Showcase your team members with photos, roles, and social links.',
+              members: [
+                {
+                  id: 'team-1',
+                  name: 'Anna Eriksson',
+                  role: 'CEO & Founder',
+                  image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400',
+                  bio: 'Visionary leader with 15 years in tech.',
+                  linkedin: 'https://linkedin.com',
+                  twitter: 'https://twitter.com',
+                },
+                {
+                  id: 'team-2',
+                  name: 'Erik Lindberg',
+                  role: 'CTO',
+                  image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
+                  bio: 'Full-stack developer and architecture expert.',
+                  linkedin: 'https://linkedin.com',
+                  github: 'https://github.com',
+                },
+                {
+                  id: 'team-3',
+                  name: 'Sofia Bergström',
+                  role: 'Head of Design',
+                  image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400',
+                  bio: 'Award-winning UX designer.',
+                  linkedin: 'https://linkedin.com',
+                  twitter: 'https://twitter.com',
+                },
+                {
+                  id: 'team-4',
+                  name: 'Marcus Johansson',
+                  role: 'Lead Developer',
+                  image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400',
+                  bio: 'Open source contributor and mentor.',
+                  linkedin: 'https://linkedin.com',
+                  github: 'https://github.com',
+                },
+              ],
+              columns: 4,
+              layout: 'grid',
+              showBio: true,
+              showSocial: true,
+            },
+          },
           // Accordion Block Example
           {
             id: 'demo-accordion',
