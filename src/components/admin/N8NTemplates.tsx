@@ -36,128 +36,128 @@ const templates: N8NTemplate[] = [
   {
     id: 'social-media',
     title: 'Social Media Autoposter',
-    description: 'Publicera automatiskt till Twitter/X och LinkedIn när ett blogginlägg publiceras.',
+    description: 'Automatically publish to Twitter/X and LinkedIn when a blog post is published.',
     events: ['blog_post.published'],
     icon: <Share2 className="h-5 w-5" />,
     workflow: {
       name: 'Blog to Social Media',
       nodes: [
-        { type: 'Webhook', name: 'Webhook Trigger', description: 'Tar emot blog_post.published event' },
-        { type: 'Set', name: 'Format Content', description: 'Formaterar titel och excerpt för social media' },
-        { type: 'Twitter', name: 'Post to Twitter', description: 'Postar till Twitter/X' },
-        { type: 'LinkedIn', name: 'Post to LinkedIn', description: 'Postar till LinkedIn' },
+        { type: 'Webhook', name: 'Webhook Trigger', description: 'Receives blog_post.published event' },
+        { type: 'Set', name: 'Format Content', description: 'Formats title and excerpt for social media' },
+        { type: 'Twitter', name: 'Post to Twitter', description: 'Posts to Twitter/X' },
+        { type: 'LinkedIn', name: 'Post to LinkedIn', description: 'Posts to LinkedIn' },
       ],
       webhookPath: '/webhook/blog-social',
     },
   },
   {
     id: 'slack-notify',
-    title: 'Slack/Discord Notifieringar',
-    description: 'Skicka notifieringar till Slack eller Discord när innehåll ändras.',
+    title: 'Slack/Discord Notifications',
+    description: 'Send notifications to Slack or Discord when content changes.',
     events: ['page.published', 'blog_post.published', 'form.submitted'],
     icon: <MessageSquare className="h-5 w-5" />,
     workflow: {
       name: 'CMS to Slack',
       nodes: [
-        { type: 'Webhook', name: 'Webhook Trigger', description: 'Tar emot CMS events' },
-        { type: 'Switch', name: 'Route by Event', description: 'Dirigerar baserat på event-typ' },
-        { type: 'Slack', name: 'Send to Slack', description: 'Skickar formaterat meddelande till kanal' },
+        { type: 'Webhook', name: 'Webhook Trigger', description: 'Receives CMS events' },
+        { type: 'Switch', name: 'Route by Event', description: 'Routes based on event type' },
+        { type: 'Slack', name: 'Send to Slack', description: 'Sends formatted message to channel' },
       ],
       webhookPath: '/webhook/slack-notify',
     },
   },
   {
     id: 'crm-sync',
-    title: 'CRM-integration',
-    description: 'Synka formulärinlämningar till CRM-system som HubSpot eller Pipedrive.',
+    title: 'CRM Integration',
+    description: 'Sync form submissions to CRM systems like HubSpot or Pipedrive.',
     events: ['form.submitted'],
     icon: <Database className="h-5 w-5" />,
     workflow: {
       name: 'Form to CRM',
       nodes: [
-        { type: 'Webhook', name: 'Webhook Trigger', description: 'Tar emot form.submitted event' },
-        { type: 'Set', name: 'Map Fields', description: 'Mappar formulärfält till CRM-fält' },
-        { type: 'HubSpot', name: 'Create Contact', description: 'Skapar eller uppdaterar kontakt i CRM' },
+        { type: 'Webhook', name: 'Webhook Trigger', description: 'Receives form.submitted event' },
+        { type: 'Set', name: 'Map Fields', description: 'Maps form fields to CRM fields' },
+        { type: 'HubSpot', name: 'Create Contact', description: 'Creates or updates contact in CRM' },
       ],
       webhookPath: '/webhook/form-crm',
     },
   },
   {
     id: 'email-notify',
-    title: 'E-postnotifieringar',
-    description: 'Skicka e-post när nya prenumeranter anmäler sig eller formulär skickas in.',
+    title: 'Email Notifications',
+    description: 'Send emails when new subscribers sign up or forms are submitted.',
     events: ['newsletter.subscribed', 'form.submitted'],
     icon: <Mail className="h-5 w-5" />,
     workflow: {
       name: 'CMS to Email',
       nodes: [
-        { type: 'Webhook', name: 'Webhook Trigger', description: 'Tar emot subscription/form events' },
-        { type: 'Gmail/SMTP', name: 'Send Email', description: 'Skickar e-post till admin' },
+        { type: 'Webhook', name: 'Webhook Trigger', description: 'Receives subscription/form events' },
+        { type: 'Gmail/SMTP', name: 'Send Email', description: 'Sends email to admin' },
       ],
       webhookPath: '/webhook/email-notify',
     },
   },
   {
     id: 'content-backup',
-    title: 'Innehållsbackup',
-    description: 'Spara publicerat innehåll till Google Drive eller Notion automatiskt.',
+    title: 'Content Backup',
+    description: 'Save published content to Google Drive or Notion automatically.',
     events: ['page.published', 'blog_post.published'],
     icon: <FileText className="h-5 w-5" />,
     workflow: {
       name: 'Content Backup',
       nodes: [
-        { type: 'Webhook', name: 'Webhook Trigger', description: 'Tar emot publish events' },
-        { type: 'Google Drive', name: 'Save to Drive', description: 'Sparar innehåll som dokument' },
-        { type: 'Notion', name: 'Create Page', description: 'Alternativ: Skapa sida i Notion' },
+        { type: 'Webhook', name: 'Webhook Trigger', description: 'Receives publish events' },
+        { type: 'Google Drive', name: 'Save to Drive', description: 'Saves content as document' },
+        { type: 'Notion', name: 'Create Page', description: 'Alternative: Create page in Notion' },
       ],
       webhookPath: '/webhook/content-backup',
     },
   },
   {
     id: 'push-notify',
-    title: 'Push-notifieringar',
-    description: 'Skicka push-notifieringar via OneSignal när nytt innehåll publiceras.',
+    title: 'Push Notifications',
+    description: 'Send push notifications via OneSignal when new content is published.',
     events: ['blog_post.published'],
     icon: <Bell className="h-5 w-5" />,
     workflow: {
       name: 'Blog to Push',
       nodes: [
-        { type: 'Webhook', name: 'Webhook Trigger', description: 'Tar emot blog_post.published event' },
-        { type: 'HTTP Request', name: 'OneSignal API', description: 'Anropar OneSignal för push-notis' },
+        { type: 'Webhook', name: 'Webhook Trigger', description: 'Receives blog_post.published event' },
+        { type: 'HTTP Request', name: 'OneSignal API', description: 'Calls OneSignal for push notification' },
       ],
       webhookPath: '/webhook/push-notify',
     },
   },
   {
     id: 'order-automation',
-    title: 'Orderbekräftelse & CRM',
-    description: 'Automatisera orderbekräftelser, logga till kalkylblad och notifiera teamet vid nya beställningar.',
+    title: 'Order Confirmation & CRM',
+    description: 'Automate order confirmations, log to spreadsheet, and notify the team on new orders.',
     events: ['order.created', 'order.paid'],
     icon: <ShoppingCart className="h-5 w-5" />,
     workflow: {
       name: 'Order to Automation',
       nodes: [
-        { type: 'Webhook', name: 'Webhook Trigger', description: 'Tar emot order.paid event' },
-        { type: 'Gmail/SMTP', name: 'Send Confirmation', description: 'Skickar orderbekräftelse till kund' },
-        { type: 'Google Sheets', name: 'Log Order', description: 'Loggar order till kalkylblad' },
-        { type: 'Slack', name: 'Notify Team', description: 'Notifierar teamet om ny order' },
+        { type: 'Webhook', name: 'Webhook Trigger', description: 'Receives order.paid event' },
+        { type: 'Gmail/SMTP', name: 'Send Confirmation', description: 'Sends order confirmation to customer' },
+        { type: 'Google Sheets', name: 'Log Order', description: 'Logs order to spreadsheet' },
+        { type: 'Slack', name: 'Notify Team', description: 'Notifies team of new order' },
       ],
       webhookPath: '/webhook/order-automation',
     },
   },
   {
     id: 'order-fulfillment',
-    title: 'Orderfullfilment',
-    description: 'Integrera med lager- och fraktsystem vid betalda ordrar för automatisk leverans.',
+    title: 'Order Fulfillment',
+    description: 'Integrate with inventory and shipping systems for automatic delivery on paid orders.',
     events: ['order.paid'],
     icon: <Package className="h-5 w-5" />,
     workflow: {
       name: 'Order Fulfillment',
       nodes: [
-        { type: 'Webhook', name: 'Webhook Trigger', description: 'Tar emot order.paid event' },
-        { type: 'HTTP Request', name: 'Update Inventory', description: 'Uppdaterar lagersaldo i externt system' },
-        { type: 'Shippo/Sendcloud', name: 'Create Shipment', description: 'Skapar fraktsedel' },
-        { type: 'Email', name: 'Track Notification', description: 'Skickar spårningslänk till kund' },
+        { type: 'Webhook', name: 'Webhook Trigger', description: 'Receives order.paid event' },
+        { type: 'HTTP Request', name: 'Update Inventory', description: 'Updates stock in external system' },
+        { type: 'Shippo/Sendcloud', name: 'Create Shipment', description: 'Creates shipping label' },
+        { type: 'Email', name: 'Track Notification', description: 'Sends tracking link to customer' },
       ],
       webhookPath: '/webhook/order-fulfillment',
     },
@@ -180,16 +180,16 @@ export function N8NTemplates() {
     };
     
     navigator.clipboard.writeText(JSON.stringify(example, null, 2));
-    toast({ title: 'Kopierat till urklipp', description: 'Webhook-konfiguration kopierad' });
+    toast({ title: 'Copied to clipboard', description: 'Webhook configuration copied' });
   };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold">N8N Workflow-mallar</h3>
+          <h3 className="text-lg font-semibold">N8N Workflow Templates</h3>
           <p className="text-sm text-muted-foreground">
-            Färdiga mallar för vanliga automationer med N8N
+            Ready-made templates for common automations with N8N
           </p>
         </div>
         <Button variant="outline" asChild>
@@ -199,7 +199,7 @@ export function N8NTemplates() {
             rel="noopener noreferrer"
           >
             <ExternalLink className="h-4 w-4 mr-2" />
-            N8N Dokumentation
+            N8N Documentation
           </a>
         </Button>
       </div>
@@ -230,7 +230,7 @@ export function N8NTemplates() {
               </div>
               
               <div className="space-y-2 mb-4 flex-1">
-                <p className="text-xs font-medium text-muted-foreground">Workflow-steg:</p>
+                <p className="text-xs font-medium text-muted-foreground">Workflow steps:</p>
                 <ol className="text-xs space-y-1">
                   {template.workflow.nodes.map((node, i) => (
                     <li key={i} className="flex items-start gap-2">
@@ -254,7 +254,7 @@ export function N8NTemplates() {
                   onClick={() => copyWebhookExample(template)}
                 >
                   <Copy className="h-3 w-3 mr-1" />
-                  Kopiera config
+                  Copy config
                 </Button>
                 <Button 
                   variant="outline" 
@@ -267,7 +267,7 @@ export function N8NTemplates() {
                     rel="noopener noreferrer"
                   >
                     <ExternalLink className="h-3 w-3 mr-1" />
-                    Hitta liknande
+                    Find similar
                   </a>
                 </Button>
               </div>
@@ -278,19 +278,19 @@ export function N8NTemplates() {
 
       <Card className="bg-muted/50">
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm">Så här använder du mallarna</CardTitle>
+          <CardTitle className="text-sm">How to use the templates</CardTitle>
         </CardHeader>
         <CardContent className="text-sm space-y-3">
           <ol className="list-decimal list-inside space-y-2">
-            <li>Skapa ett nytt workflow i N8N</li>
-            <li>Lägg till en <strong>Webhook</strong>-nod som trigger</li>
-            <li>Kopiera webhook-URL:en från N8N</li>
-            <li>Skapa en ny webhook här i admin med den URL:en</li>
-            <li>Välj rätt events (t.ex. <code>blog_post.published</code>)</li>
-            <li>Bygg ut ditt N8N-workflow med önskade noder</li>
+            <li>Create a new workflow in N8N</li>
+            <li>Add a <strong>Webhook</strong> node as trigger</li>
+            <li>Copy the webhook URL from N8N</li>
+            <li>Create a new webhook here in admin with that URL</li>
+            <li>Select the appropriate events (e.g. <code>blog_post.published</code>)</li>
+            <li>Build out your N8N workflow with the desired nodes</li>
           </ol>
           <p className="text-muted-foreground">
-            Tips: Använd "Test"-knappen för att verifiera att kopplingen fungerar innan du går live.
+            Tip: Use the "Test" button to verify the connection works before going live.
           </p>
         </CardContent>
       </Card>

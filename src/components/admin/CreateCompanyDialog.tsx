@@ -11,26 +11,26 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 const COMPANY_SIZES = [
-  { value: '1-10', label: '1-10 anställda' },
-  { value: '11-50', label: '11-50 anställda' },
-  { value: '51-200', label: '51-200 anställda' },
-  { value: '201-500', label: '201-500 anställda' },
-  { value: '501-1000', label: '501-1000 anställda' },
-  { value: '1000+', label: '1000+ anställda' },
+  { value: '1-10', label: '1-10 employees' },
+  { value: '11-50', label: '11-50 employees' },
+  { value: '51-200', label: '51-200 employees' },
+  { value: '201-500', label: '201-500 employees' },
+  { value: '501-1000', label: '501-1000 employees' },
+  { value: '1000+', label: '1000+ employees' },
 ];
 
 const INDUSTRIES = [
-  'Teknik',
-  'Finans',
-  'Hälsovård',
-  'Tillverkning',
-  'Detaljhandel',
-  'Konsulting',
-  'Utbildning',
+  'Technology',
+  'Finance',
+  'Healthcare',
+  'Manufacturing',
+  'Retail',
+  'Consulting',
+  'Education',
   'Media',
-  'Fastigheter',
-  'Transport',
-  'Övrigt',
+  'Real Estate',
+  'Transportation',
+  'Other',
 ];
 
 interface CreateCompanyDialogProps {
@@ -54,7 +54,7 @@ export function CreateCompanyDialog({ trigger, onCreated }: CreateCompanyDialogP
 
   const handleEnrich = async () => {
     if (!domain) {
-      toast.error('Ange en domän först');
+      toast.error('Enter a domain first');
       return;
     }
 
@@ -77,13 +77,13 @@ export function CreateCompanyDialog({ trigger, onCreated }: CreateCompanyDialogP
         if (enrichment.address && !address) setAddress(enrichment.address);
         if (enrichment.description && !notes) setNotes(enrichment.description);
 
-        toast.success('Företagsinformation hämtad');
+        toast.success('Company information fetched');
       } else {
-        toast.error('Kunde inte hämta företagsinformation');
+        toast.error('Could not fetch company information');
       }
     } catch (error) {
       console.error('Enrichment error:', error);
-      toast.error('Kunde inte hämta företagsinformation');
+      toast.error('Could not fetch company information');
     } finally {
       setIsEnriching(false);
     }
@@ -129,34 +129,34 @@ export function CreateCompanyDialog({ trigger, onCreated }: CreateCompanyDialogP
         {trigger || (
           <Button>
             <Plus className="h-4 w-4 mr-2" />
-            Nytt företag
+            New company
           </Button>
         )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Skapa nytt företag</DialogTitle>
+          <DialogTitle>Create new company</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Företagsnamn *</Label>
+            <Label htmlFor="name">Company name *</Label>
             <Input
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Acme AB"
+              placeholder="Acme Inc"
               required
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="domain">Domän</Label>
+            <Label htmlFor="domain">Domain</Label>
             <div className="flex gap-2">
               <Input
                 id="domain"
                 value={domain}
                 onChange={(e) => setDomain(e.target.value)}
-                placeholder="acme.se"
+                placeholder="acme.com"
                 className="flex-1"
               />
               <Button
@@ -171,32 +171,32 @@ export function CreateCompanyDialog({ trigger, onCreated }: CreateCompanyDialogP
                 ) : (
                   <>
                     <Sparkles className="h-4 w-4 mr-1" />
-                    Berika
+                    Enrich
                   </>
                 )}
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Ange domän och klicka "Berika" för att automatiskt hämta företagsinformation
+              Enter a domain and click "Enrich" to automatically fetch company information
             </p>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="website">Webbplats</Label>
+            <Label htmlFor="website">Website</Label>
             <Input
               id="website"
               value={website}
               onChange={(e) => setWebsite(e.target.value)}
-              placeholder="https://acme.se"
+              placeholder="https://acme.com"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="industry">Bransch</Label>
+              <Label htmlFor="industry">Industry</Label>
               <Select value={industry} onValueChange={setIndustry}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Välj bransch" />
+                  <SelectValue placeholder="Select industry" />
                 </SelectTrigger>
                 <SelectContent>
                   {INDUSTRIES.map((ind) => (
@@ -208,10 +208,10 @@ export function CreateCompanyDialog({ trigger, onCreated }: CreateCompanyDialogP
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="size">Storlek</Label>
+              <Label htmlFor="size">Size</Label>
               <Select value={size} onValueChange={setSize}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Välj storlek" />
+                  <SelectValue placeholder="Select size" />
                 </SelectTrigger>
                 <SelectContent>
                   {COMPANY_SIZES.map((s) => (
@@ -226,42 +226,42 @@ export function CreateCompanyDialog({ trigger, onCreated }: CreateCompanyDialogP
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="phone">Telefon</Label>
+              <Label htmlFor="phone">Phone</Label>
               <Input
                 id="phone"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                placeholder="+46 8 123 456"
+                placeholder="+1 555 123 4567"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="address">Adress</Label>
+              <Label htmlFor="address">Address</Label>
               <Input
                 id="address"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
-                placeholder="Stockholm, Sverige"
+                placeholder="New York, USA"
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="notes">Anteckningar</Label>
+            <Label htmlFor="notes">Notes</Label>
             <Textarea
               id="notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Övrig information..."
+              placeholder="Additional information..."
               rows={3}
             />
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-              Avbryt
+              Cancel
             </Button>
             <Button type="submit" disabled={createCompany.isPending || !name}>
-              {createCompany.isPending ? 'Skapar...' : 'Skapa företag'}
+              {createCompany.isPending ? 'Creating...' : 'Create company'}
             </Button>
           </div>
         </form>
