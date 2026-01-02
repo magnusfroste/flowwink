@@ -411,7 +411,7 @@ export const pezcmsBlogPosts: TemplateBlogPost[] = [
             'Vendor goes out of business or gets acquired',
             'Pricing increases unexpectedly',
             'Data residency requirements change',
-            'You need features the vendor won not build'
+            'You need features the vendor will not build'
           ),
           h2('The Self-Hosted Advantage'),
           p('With self-hosted software, you own your infrastructure, your data, and your destiny. You can customize freely, comply with any regulation, and never worry about vendor lock-in.'),
