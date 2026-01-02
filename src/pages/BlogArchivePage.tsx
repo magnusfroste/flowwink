@@ -44,16 +44,16 @@ export default function BlogArchivePage() {
     ? posts.filter(p => !featuredPosts.some(fp => fp.id === p.id))
     : posts;
   
-  const archiveTitle = blogSettings?.archiveTitle || "Blogg";
+  const archiveTitle = blogSettings?.archiveTitle || 'Blog';
   const pageTitle = currentPage > 1 
-    ? `${archiveTitle} - Sida ${currentPage}` 
+    ? `${archiveTitle} - Page ${currentPage}` 
     : archiveTitle;
 
   return (
     <>
       <Helmet>
         <title>{pageTitle} | {seoSettings?.siteTitle || "CMS"}</title>
-        <meta name="description" content={`Läs våra senaste artiklar och nyheter.`} />
+        <meta name="description" content={`Read our latest articles and news.`} />
         {blogSettings?.rssEnabled && (
           <link
             rel="alternate"
@@ -86,18 +86,18 @@ export default function BlogArchivePage() {
             <div className="flex-1">
               {isLoading ? (
                 <div className="text-center py-12 text-muted-foreground">
-                  Laddar inlägg...
+                  Loading posts...
                 </div>
               ) : posts.length === 0 ? (
                 <div className="text-center py-12">
-                  <p className="text-muted-foreground mb-4">Inga inlägg ännu.</p>
+                  <p className="text-muted-foreground mb-4">No posts yet.</p>
                 </div>
               ) : (
                 <>
                   {/* Featured posts */}
                   {featuredPosts.length > 0 && (
                     <div className="mb-10">
-                      <h2 className="text-lg font-semibold mb-4 text-muted-foreground">Utvalda</h2>
+                      <h2 className="text-lg font-semibold mb-4 text-muted-foreground">Featured</h2>
                       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
                         {featuredPosts.slice(0, 2).map((post) => (
                           <BlogPostCard

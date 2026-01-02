@@ -194,16 +194,16 @@ export function PublicNavigation() {
                 to={`/${blogSettings.archiveSlug || 'blogg'}`}
                 className={getLinkClasses(location.pathname.startsWith(`/${blogSettings.archiveSlug || 'blogg'}`))}
               >
-                {blogSettings.archiveTitle || 'Blogg'}
+                {blogSettings.archiveTitle || 'Blog'}
               </Link>
             )}
             {/* Knowledge Base link */}
             {kbSettings?.enabled && kbSettings?.showInMenu && (
               <Link
-                to={`/${kbSettings.menuSlug || 'hjalp'}`}
-                className={getLinkClasses(location.pathname === `/${kbSettings.menuSlug || 'hjalp'}`)}
+                to={`/${kbSettings.menuSlug || 'help'}`}
+                className={getLinkClasses(location.pathname === `/${kbSettings.menuSlug || 'help'}`)}
               >
-                {kbSettings.menuTitle || 'Hjälp'}
+                {kbSettings.menuTitle || 'Help'}
               </Link>
             )}
             {/* Custom nav items */}
@@ -275,22 +275,22 @@ export function PublicNavigation() {
                       : 'text-muted-foreground'
                   )}
                 >
-                  {blogSettings.archiveTitle || 'Blogg'}
+                  {blogSettings.archiveTitle || 'Blog'}
                 </Link>
               )}
               {kbSettings?.enabled && kbSettings?.showInMenu && (
                 <Link
-                  to={`/${kbSettings.menuSlug || 'hjalp'}`}
+                  to={`/${kbSettings.menuSlug || 'help'}`}
                   onClick={() => setMobileMenuOpen(false)}
                   className={cn(
                     'px-4 py-3 rounded-md text-base font-medium transition-colors',
                     'hover:bg-muted',
-                    location.pathname === `/${kbSettings.menuSlug || 'hjalp'}`
+                    location.pathname === `/${kbSettings.menuSlug || 'help'}`
                       ? 'bg-primary/10 text-primary'
                       : 'text-muted-foreground'
                   )}
                 >
-                  {kbSettings.menuTitle || 'Hjälp'}
+                  {kbSettings.menuTitle || 'Help'}
                 </Link>
               )}
               {customNavItems.map((item) => (
@@ -356,21 +356,21 @@ export function PublicNavigation() {
                       : 'text-muted-foreground hover:text-foreground'
                   )}
                 >
-                  {blogSettings.archiveTitle || 'Blogg'}
+                  {blogSettings.archiveTitle || 'Blog'}
                 </Link>
               )}
               {kbSettings?.enabled && kbSettings?.showInMenu && (
                 <Link
-                  to={`/${kbSettings.menuSlug || 'hjalp'}`}
+                  to={`/${kbSettings.menuSlug || 'help'}`}
                   onClick={() => setMobileMenuOpen(false)}
                   className={cn(
                     'text-2xl font-medium transition-colors',
-                    location.pathname === `/${kbSettings.menuSlug || 'hjalp'}`
+                    location.pathname === `/${kbSettings.menuSlug || 'help'}`
                       ? 'text-primary'
                       : 'text-muted-foreground hover:text-foreground'
                   )}
                 >
-                  {kbSettings.menuTitle || 'Hjälp'}
+                  {kbSettings.menuTitle || 'Help'}
                 </Link>
               )}
               {customNavItems.map((item) => (
@@ -433,22 +433,22 @@ export function PublicNavigation() {
                       : 'text-muted-foreground'
                   )}
                 >
-                  {blogSettings.archiveTitle || 'Blogg'}
+                  {blogSettings.archiveTitle || 'Blog'}
                 </Link>
               )}
               {kbSettings?.enabled && kbSettings?.showInMenu && (
                 <Link
-                  to={`/${kbSettings.menuSlug || 'hjalp'}`}
+                  to={`/${kbSettings.menuSlug || 'help'}`}
                   onClick={() => setMobileMenuOpen(false)}
                   className={cn(
                     'px-4 py-3 rounded-md text-base font-medium transition-colors',
                     'hover:bg-muted',
-                    location.pathname === `/${kbSettings.menuSlug || 'hjalp'}`
+                    location.pathname === `/${kbSettings.menuSlug || 'help'}`
                       ? 'bg-primary/10 text-primary'
                       : 'text-muted-foreground'
                   )}
                 >
-                  {kbSettings.menuTitle || 'Hjälp'}
+                  {kbSettings.menuTitle || 'Help'}
                 </Link>
               )}
               {customNavItems.map((item) => (
