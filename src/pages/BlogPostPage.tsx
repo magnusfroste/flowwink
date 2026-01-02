@@ -1,7 +1,6 @@
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, Calendar, Clock, User, CheckCircle } from "lucide-react";
 import { format } from "date-fns";
-import { sv } from "date-fns/locale";
 import { PublicNavigation } from "@/components/public/PublicNavigation";
 import { PublicFooter } from "@/components/public/PublicFooter";
 import { BlockRenderer } from "@/components/public/BlockRenderer";
@@ -34,7 +33,7 @@ export default function BlogPostPage() {
         <PublicNavigation />
         <main className="min-h-screen bg-background">
           <div className="container mx-auto px-4 py-12">
-            <p className="text-center text-muted-foreground">Laddar artikel...</p>
+            <p className="text-center text-muted-foreground">Loading article...</p>
           </div>
         </main>
         <PublicFooter />
@@ -125,13 +124,13 @@ export default function BlogPostPage() {
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4" />
               <time dateTime={publishedDate.toISOString()}>
-                {format(publishedDate, "d MMMM yyyy", { locale: sv })}
+                {format(publishedDate, "d MMMM yyyy")}
               </time>
             </div>
             {blogSettings?.showReadingTime && post.reading_time_minutes && (
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4" />
-                <span>{post.reading_time_minutes} min läsning</span>
+                <span>{post.reading_time_minutes} min read</span>
               </div>
             )}
           </div>
@@ -153,12 +152,12 @@ export default function BlogPostPage() {
               <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400 shrink-0" />
               <div className="text-sm">
                 <span className="text-green-800 dark:text-green-200">
-                  Granskat av {post.reviewer.full_name || post.reviewer.email}
+                  Reviewed by {post.reviewer.full_name || post.reviewer.email}
                   {post.reviewer.title && `, ${post.reviewer.title}`}
                 </span>
                 {post.reviewed_at && (
                   <span className="text-green-600 dark:text-green-400 ml-2">
-                    ({format(new Date(post.reviewed_at), "d MMM yyyy", { locale: sv })})
+                    ({format(new Date(post.reviewed_at), "d MMM yyyy")})
                   </span>
                 )}
               </div>

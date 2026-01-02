@@ -30,7 +30,6 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { sv } from 'date-fns/locale';
 import { Package, Eye, RefreshCw, ShoppingBag, TrendingUp, Clock, CheckCircle, Mail, Loader2 } from 'lucide-react';
 import type { Tables } from '@/integrations/supabase/types';
 
@@ -38,13 +37,13 @@ type Order = Tables<'orders'>;
 type OrderItem = Tables<'order_items'>;
 
 const STATUS_LABELS: Record<string, string> = {
-  pending: 'Väntar',
-  paid: 'Betald',
-  shipped: 'Skickad',
-  completed: 'Slutförd',
-  cancelled: 'Avbruten',
-  refunded: 'Återbetald',
-  failed: 'Misslyckad',
+  pending: 'Pending',
+  paid: 'Paid',
+  shipped: 'Shipped',
+  completed: 'Completed',
+  cancelled: 'Cancelled',
+  refunded: 'Refunded',
+  failed: 'Failed',
 };
 
 const STATUS_COLORS: Record<string, string> = {
@@ -104,10 +103,10 @@ export default function OrdersPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
-      toast.success('Orderstatus uppdaterad');
+      toast.success('Order status updated');
     },
     onError: () => {
-      toast.error('Kunde inte uppdatera status');
+      toast.error('Could not update status');
     },
   });
 
@@ -120,16 +119,16 @@ export default function OrdersPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
-      toast.success('Orderbekräftelse skickad');
+      toast.success('Order confirmation sent');
     },
     onError: (error) => {
       console.error('Failed to send confirmation:', error);
-      toast.error('Kunde inte skicka orderbekräftelse');
+      toast.error('Could not send order confirmation');
     },
   });
 
   const formatPrice = (cents: number, currency: string) => {
-    return new Intl.NumberFormat('sv-SE', {
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: currency,
     }).format(cents / 100);
@@ -148,15 +147,15 @@ export default function OrdersPage() {
   return (
     <AdminLayout>
       <AdminPageHeader
-        title="Ordrar"
-        description="Hantera och följ upp kundordrar"
+        title="Orders"
+        description="Manage and track customer orders"
       />
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-4 mb-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Totalt ordrar</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
             <ShoppingBag className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -165,7 +164,7 @@ export default function OrdersPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Väntar</CardTitle>
+            <CardTitle className="text-sm font-medium">Pending</CardTitle>
             <Clock className="h-4 w-4 text-yellow-500" />
           </CardHeader>
           <CardContent>
@@ -174,7 +173,7 @@ export default function OrdersPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Betalda</CardTitle>
+            <CardTitle className="text-sm font-medium">Paid</CardTitle>
             <CheckCircle className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
@@ -183,12 +182,12 @@ export default function OrdersPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total intäkt</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {formatPrice(stats.totalRevenue, 'SEK')}
+              {formatPrice(stats.totalRevenue, 'USD')}
             </div>
           </CardContent>
         </Card>
@@ -200,16 +199,16 @@ export default function OrdersPage() {
           <div className="flex items-center gap-4">
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-48">
-                <SelectValue placeholder="Filtrera status" />
+                <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Alla ordrar</SelectItem>
-                <SelectItem value="pending">Väntar</SelectItem>
-                <SelectItem value="paid">Betalda</SelectItem>
-                <SelectItem value="shipped">Skickade</SelectItem>
-                <SelectItem value="completed">Slutförda</SelectItem>
-                <SelectItem value="cancelled">Avbrutna</SelectItem>
-                <SelectItem value="refunded">Återbetalda</SelectItem>
+                <SelectItem value="all">All Orders</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="paid">Paid</SelectItem>
+                <SelectItem value="shipped">Shipped</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+                <SelectItem value="refunded">Refunded</SelectItem>
               </SelectContent>
             </Select>
             <Button
@@ -218,7 +217,7 @@ export default function OrdersPage() {
               onClick={() => queryClient.invalidateQueries({ queryKey: ['orders'] })}
             >
               <RefreshCw className="h-4 w-4 mr-2" />
-              Uppdatera
+              Refresh
             </Button>
           </div>
         </CardContent>
@@ -234,19 +233,19 @@ export default function OrdersPage() {
           ) : orders?.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Inga ordrar hittades</p>
+              <p>No orders found</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Order</TableHead>
-                  <TableHead>Kund</TableHead>
+                  <TableHead>Customer</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Summa</TableHead>
-                    <TableHead>Datum</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead className="w-20"></TableHead>
+                  <TableHead>Total</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead className="w-20"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -257,7 +256,7 @@ export default function OrdersPage() {
                     </TableCell>
                     <TableCell>
                       <div>
-                        <p className="font-medium">{order.customer_name || 'Okänd'}</p>
+                        <p className="font-medium">{order.customer_name || 'Unknown'}</p>
                         <p className="text-sm text-muted-foreground">{order.customer_email}</p>
                       </div>
                     </TableCell>
@@ -270,17 +269,17 @@ export default function OrdersPage() {
                       {formatPrice(order.total_cents, order.currency)}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {format(new Date(order.created_at), 'PPp', { locale: sv })}
+                      {format(new Date(order.created_at), 'PPp')}
                     </TableCell>
                     <TableCell>
                       {order.confirmation_sent_at ? (
                         <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50 dark:bg-green-900/20 dark:border-green-800">
                           <Mail className="h-3 w-3 mr-1" />
-                          Skickad
+                          Sent
                         </Badge>
                       ) : (
                         <Badge variant="outline" className="text-muted-foreground">
-                          Ej skickad
+                          Not Sent
                         </Badge>
                       )}
                     </TableCell>
@@ -305,7 +304,7 @@ export default function OrdersPage() {
       <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Orderdetaljer</DialogTitle>
+            <DialogTitle>Order Details</DialogTitle>
           </DialogHeader>
 
           {selectedOrder && (
@@ -313,16 +312,16 @@ export default function OrdersPage() {
               {/* Order Info */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-muted-foreground">Order-ID</p>
+                  <p className="text-sm text-muted-foreground">Order ID</p>
                   <p className="font-mono text-sm">{selectedOrder.id}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Datum</p>
-                  <p>{format(new Date(selectedOrder.created_at), 'PPp', { locale: sv })}</p>
+                  <p className="text-sm text-muted-foreground">Date</p>
+                  <p>{format(new Date(selectedOrder.created_at), 'PPp')}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Kund</p>
-                  <p className="font-medium">{selectedOrder.customer_name || 'Okänd'}</p>
+                  <p className="text-sm text-muted-foreground">Customer</p>
+                  <p className="font-medium">{selectedOrder.customer_name || 'Unknown'}</p>
                   <p className="text-sm text-muted-foreground">{selectedOrder.customer_email}</p>
                 </div>
                 <div>
@@ -338,12 +337,12 @@ export default function OrdersPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="pending">Väntar</SelectItem>
-                      <SelectItem value="paid">Betald</SelectItem>
-                      <SelectItem value="shipped">Skickad</SelectItem>
-                      <SelectItem value="completed">Slutförd</SelectItem>
-                      <SelectItem value="cancelled">Avbruten</SelectItem>
-                      <SelectItem value="refunded">Återbetald</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="paid">Paid</SelectItem>
+                      <SelectItem value="shipped">Shipped</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                      <SelectItem value="refunded">Refunded</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -353,7 +352,7 @@ export default function OrdersPage() {
 
               {/* Order Items */}
               <div>
-                <h3 className="font-semibold mb-3">Produkter</h3>
+                <h3 className="font-semibold mb-3">Products</h3>
                 <div className="space-y-2">
                   {orderItems?.map((item) => (
                     <div key={item.id} className="flex justify-between items-center py-2 border-b last:border-0">
@@ -375,7 +374,7 @@ export default function OrdersPage() {
 
               {/* Total */}
               <div className="flex justify-between items-center text-lg font-bold">
-                <span>Totalt</span>
+                <span>Total</span>
                 <span>{formatPrice(selectedOrder.total_cents, selectedOrder.currency)}</span>
               </div>
 
@@ -391,7 +390,7 @@ export default function OrdersPage() {
                   ) : (
                     <Mail className="h-4 w-4 mr-2" />
                   )}
-                  Skicka orderbekräftelse
+                  Send Order Confirmation
                 </Button>
               </div>
 

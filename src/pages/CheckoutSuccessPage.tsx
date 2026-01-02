@@ -29,28 +29,28 @@ interface Order {
 const statusConfig: Record<OrderStatus, { icon: React.ReactNode; label: string; color: string }> = {
   pending: {
     icon: <Clock className="h-12 w-12 mx-auto text-yellow-500" />,
-    label: 'Väntar på betalning...',
+    label: 'Awaiting payment...',
     color: 'text-yellow-500',
   },
   paid: {
     icon: <CheckCircle className="h-12 w-12 mx-auto text-green-500" />,
-    label: 'Betalning genomförd!',
+    label: 'Payment successful!',
     color: 'text-green-500',
   },
   failed: {
     icon: <XCircle className="h-12 w-12 mx-auto text-destructive" />,
-    label: 'Betalningen misslyckades',
+    label: 'Payment failed',
     color: 'text-destructive',
   },
   refunded: {
     icon: <RefreshCw className="h-12 w-12 mx-auto text-blue-500" />,
-    label: 'Återbetalad',
+    label: 'Refunded',
     color: 'text-blue-500',
   },
 };
 
 const formatPrice = (cents: number, currency: string) => {
-  return new Intl.NumberFormat('sv-SE', {
+  return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: currency,
   }).format(cents / 100);
@@ -134,7 +134,7 @@ export default function CheckoutSuccessPage() {
             config.icon
           )}
           <CardTitle className="text-2xl">
-            {isLoading ? 'Laddar...' : order?.status === 'paid' ? 'Tack för din beställning!' : config.label}
+            {isLoading ? 'Loading...' : order?.status === 'paid' ? 'Thank you for your order!' : config.label}
           </CardTitle>
           <p className={`text-sm font-medium ${config.color}`}>
             {!isLoading && config.label}
@@ -144,7 +144,7 @@ export default function CheckoutSuccessPage() {
         <CardContent className="space-y-4">
           {order?.status === 'pending' && !isLoading && (
             <p className="text-center text-muted-foreground text-sm">
-              Vi väntar på bekräftelse från Stripe. Sidan uppdateras automatiskt.
+              We are awaiting confirmation from Stripe. The page will update automatically.
             </p>
           )}
 
@@ -152,7 +152,7 @@ export default function CheckoutSuccessPage() {
             <>
               <Separator />
               <div className="space-y-3">
-                <h3 className="font-medium text-sm text-muted-foreground">Orderdetaljer</h3>
+                <h3 className="font-medium text-sm text-muted-foreground">Order Details</h3>
                 {orderItems.map((item) => (
                   <div key={item.id} className="flex justify-between items-center text-sm">
                     <span>
@@ -166,7 +166,7 @@ export default function CheckoutSuccessPage() {
               </div>
               <Separator />
               <div className="flex justify-between items-center font-semibold">
-                <span>Totalt</span>
+                <span>Total</span>
                 <span className="text-lg">
                   {order && formatPrice(order.total_cents, order.currency)}
                 </span>
@@ -176,9 +176,9 @@ export default function CheckoutSuccessPage() {
 
           {order && (
             <div className="text-xs text-muted-foreground space-y-1 pt-2">
-              <p>E-post: {order.customer_email}</p>
-              {order.customer_name && <p>Namn: {order.customer_name}</p>}
-              <p>Orderdatum: {new Date(order.created_at).toLocaleString('sv-SE')}</p>
+              <p>Email: {order.customer_email}</p>
+              {order.customer_name && <p>Name: {order.customer_name}</p>}
+              <p>Order date: {new Date(order.created_at).toLocaleString('en-US')}</p>
             </div>
           )}
 
@@ -191,7 +191,7 @@ export default function CheckoutSuccessPage() {
 
         <CardFooter>
           <Button onClick={() => navigate('/')} className="w-full">
-            Tillbaka till startsidan
+            Back to Home
           </Button>
         </CardFooter>
       </Card>

@@ -47,7 +47,7 @@ export default function DealDetailPage() {
   }
 
   const stageInfo = getDealStageInfo(deal.stage);
-  const formattedValue = new Intl.NumberFormat('sv-SE', {
+  const formattedValue = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: deal.currency,
     minimumFractionDigits: 0,

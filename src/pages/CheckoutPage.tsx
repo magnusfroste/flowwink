@@ -20,7 +20,7 @@ export default function CheckoutPage() {
   });
 
   const formatPrice = (cents: number) => {
-    return new Intl.NumberFormat('sv-SE', {
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: currency,
     }).format(cents / 100);
@@ -37,12 +37,12 @@ export default function CheckoutPage() {
     e.preventDefault();
     
     if (items.length === 0) {
-      toast.error('Din varukorg är tom');
+      toast.error('Your cart is empty');
       return;
     }
 
     if (!formData.name.trim() || !formData.email.trim()) {
-      toast.error('Fyll i namn och e-post');
+      toast.error('Please enter name and email');
       return;
     }
 
