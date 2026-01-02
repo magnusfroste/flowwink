@@ -32,6 +32,7 @@ export default function NewSitePage() {
   const [progress, setProgress] = useState<CreationProgress>({ currentPage: 0, totalPages: 0, currentStep: '' });
   const [createdPageIds, setCreatedPageIds] = useState<string[]>([]);
   const [clearExistingPages, setClearExistingPages] = useState(false);
+  const [publishPages, setPublishPages] = useState(true);
   const [publishBlogPosts, setPublishBlogPosts] = useState(true);
   
   const navigate = useNavigate();
@@ -93,7 +94,7 @@ export default function NewSitePage() {
           meta: templatePage.meta,
           menu_order: templatePage.menu_order,
           show_in_menu: templatePage.showInMenu,
-          status: 'published',
+          status: publishPages ? 'published' : 'draft',
         });
         
         pageIds.push(page.id);
@@ -336,9 +337,27 @@ export default function NewSitePage() {
                     </div>
                   )}
 
+                  {/* Publish pages option */}
+                  <div className="flex items-center justify-between pt-2 border-t">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="publish-pages" className="text-sm font-medium flex items-center gap-2">
+                        <Send className="h-4 w-4" />
+                        Publish pages immediately
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        Publish all {selectedTemplate.pages.length} pages when creating the site
+                      </p>
+                    </div>
+                    <Switch
+                      id="publish-pages"
+                      checked={publishPages}
+                      onCheckedChange={setPublishPages}
+                    />
+                  </div>
+
                   {/* Publish blog posts option */}
                   {selectedTemplate.blogPosts && selectedTemplate.blogPosts.length > 0 && (
-                    <div className="flex items-center justify-between pt-2 border-t">
+                    <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
                         <Label htmlFor="publish-blogs" className="text-sm font-medium flex items-center gap-2">
                           <Send className="h-4 w-4" />
