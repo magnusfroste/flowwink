@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Loader2, Sparkles, Check, FileText, Palette, MessageSquare, Trash2, AlertTriangle, Send } from 'lucide-react';
+import { ArrowLeft, Loader2, Sparkles, Check, FileText, Palette, MessageSquare, Trash2, AlertTriangle, Send, Newspaper, BookOpen } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -287,13 +287,13 @@ export default function NewSitePage() {
                     </div>
                     {selectedTemplate.blogPosts && selectedTemplate.blogPosts.length > 0 && (
                       <div className="flex items-center gap-2">
-                        <FileText className="h-4 w-4 text-muted-foreground" />
+                        <Newspaper className="h-4 w-4 text-muted-foreground" />
                         <span>{selectedTemplate.blogPosts.length} blog posts</span>
                       </div>
                     )}
                     {selectedTemplate.kbCategories && selectedTemplate.kbCategories.length > 0 && (
                       <div className="flex items-center gap-2">
-                        <FileText className="h-4 w-4 text-muted-foreground" />
+                        <BookOpen className="h-4 w-4 text-muted-foreground" />
                         <span>{selectedTemplate.kbCategories.reduce((acc, cat) => acc + cat.articles.length, 0)} KB articles</span>
                       </div>
                     )}
