@@ -39,7 +39,6 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Search, Download, Trash2, Eye, FileText } from 'lucide-react';
 import { format } from 'date-fns';
-import { sv } from 'date-fns/locale';
 import { toast } from 'sonner';
 
 interface FormSubmission {
@@ -269,7 +268,7 @@ export default function FormSubmissionsPage() {
                 {filteredSubmissions.map((submission) => (
                   <TableRow key={submission.id}>
                     <TableCell className="whitespace-nowrap">
-                      {format(new Date(submission.created_at), 'dd MMM yyyy HH:mm', { locale: sv })}
+                      {format(new Date(submission.created_at), 'dd MMM yyyy HH:mm')}
                     </TableCell>
                     <TableCell>
                       <Badge variant="secondary">{submission.form_name || 'Unnamed'}</Badge>
@@ -318,7 +317,7 @@ export default function FormSubmissionsPage() {
                 <div>
                   <div className="text-muted-foreground">Date</div>
                   <div className="font-medium">
-                    {format(new Date(selectedSubmission.created_at), 'PPpp', { locale: sv })}
+                    {format(new Date(selectedSubmission.created_at), 'PPpp')}
                   </div>
                 </div>
                 <div>

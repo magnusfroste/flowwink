@@ -19,7 +19,6 @@ import {
 } from 'recharts';
 import { CheckCircle2, XCircle, Clock, Activity, TrendingUp, Zap } from 'lucide-react';
 import { format, subDays, startOfDay, eachDayOfInterval } from 'date-fns';
-import { sv } from 'date-fns/locale';
 import { WEBHOOK_EVENT_LABELS } from '@/hooks/useWebhooks';
 import type { WebhookEvent } from '@/hooks/useWebhooks';
 
@@ -89,8 +88,8 @@ export function WebhookStats() {
       });
 
       return {
-        date: format(day, 'EEE', { locale: sv }),
-        fullDate: format(day, 'd MMM', { locale: sv }),
+        date: format(day, 'EEE'),
+        fullDate: format(day, 'd MMM'),
         success: dayLogs.filter(l => l.success).length,
         failed: dayLogs.filter(l => !l.success).length,
         total: dayLogs.length,
@@ -120,8 +119,8 @@ export function WebhookStats() {
 
     // Pie chart data
     const pieData = [
-      { name: 'Lyckade', value: successful, color: COLORS.success },
-      { name: 'Misslyckade', value: failed, color: COLORS.failure },
+      { name: 'Successful', value: successful, color: COLORS.success },
+      { name: 'Failed', value: failed, color: COLORS.failure },
     ].filter(d => d.value > 0);
 
     return {
@@ -170,47 +169,47 @@ export function WebhookStats() {
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Totalt leveranser</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Deliveries</CardTitle>
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats?.total || 0}</div>
-            <p className="text-xs text-muted-foreground">Senaste 7 dagarna</p>
+            <p className="text-xs text-muted-foreground">Last 7 days</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Lyckade</CardTitle>
+            <CardTitle className="text-sm font-medium">Successful</CardTitle>
             <CheckCircle2 className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">{stats?.successful || 0}</div>
-            <p className="text-xs text-muted-foreground">{stats?.successRate || 0}% framgång</p>
+            <p className="text-xs text-muted-foreground">{stats?.successRate || 0}% success rate</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Misslyckade</CardTitle>
+            <CardTitle className="text-sm font-medium">Failed</CardTitle>
             <XCircle className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">{stats?.failed || 0}</div>
             <p className="text-xs text-muted-foreground">
-              {webhookSummary.autoDisabled > 0 && `${webhookSummary.autoDisabled} auto-inaktiverade`}
+              {webhookSummary.autoDisabled > 0 && `${webhookSummary.autoDisabled} auto-disabled`}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Svarstid</CardTitle>
+            <CardTitle className="text-sm font-medium">Response Time</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats?.avgDuration || 0}ms</div>
-            <p className="text-xs text-muted-foreground">Genomsnitt</p>
+            <p className="text-xs text-muted-foreground">Average</p>
           </CardContent>
         </Card>
       </div>
@@ -220,8 +219,8 @@ export function WebhookStats() {
         {/* Daily Deliveries Chart */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Leveranser per dag</CardTitle>
-            <CardDescription>Senaste 7 dagarna</CardDescription>
+            <CardTitle className="text-base">Deliveries per Day</CardTitle>
+            <CardDescription>Last 7 days</CardDescription>
           </CardHeader>
           <CardContent>
             {stats && stats.dailyData.some(d => d.total > 0) ? (
@@ -244,13 +243,13 @@ export function WebhookStats() {
                     }}
                   />
                   <Legend />
-                  <Bar dataKey="success" name="Lyckade" fill={COLORS.success} radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="failed" name="Misslyckade" fill={COLORS.failure} radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="success" name="Successful" fill={COLORS.success} radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="failed" name="Failed" fill={COLORS.failure} radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
               <div className="h-[200px] flex items-center justify-center text-muted-foreground">
-                Ingen data att visa
+                No data to display
               </div>
             )}
           </CardContent>
@@ -259,8 +258,8 @@ export function WebhookStats() {
         {/* Success Rate Pie Chart */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Framgångsgrad</CardTitle>
-            <CardDescription>Fördelning lyckade/misslyckade</CardDescription>
+            <CardTitle className="text-base">Success Rate</CardTitle>
+            <CardDescription>Distribution of successful/failed</CardDescription>
           </CardHeader>
           <CardContent>
             {stats && stats.pieData.length > 0 ? (
@@ -291,7 +290,7 @@ export function WebhookStats() {
               </ResponsiveContainer>
             ) : (
               <div className="h-[200px] flex items-center justify-center text-muted-foreground">
-                Ingen data att visa
+                No data to display
               </div>
             )}
           </CardContent>
@@ -302,8 +301,8 @@ export function WebhookStats() {
       {stats && stats.eventData.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Leveranser per event-typ</CardTitle>
-            <CardDescription>Fördelning av webhook-händelser</CardDescription>
+            <CardTitle className="text-base">Deliveries per Event Type</CardTitle>
+            <CardDescription>Distribution of webhook events</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={Math.max(200, stats.eventData.length * 40)}>
@@ -319,8 +318,8 @@ export function WebhookStats() {
                   }}
                 />
                 <Legend />
-                <Bar dataKey="success" name="Lyckade" fill={COLORS.success} radius={[0, 4, 4, 0]} />
-                <Bar dataKey="failed" name="Misslyckade" fill={COLORS.failure} radius={[0, 4, 4, 0]} />
+                <Bar dataKey="success" name="Successful" fill={COLORS.success} radius={[0, 4, 4, 0]} />
+                <Bar dataKey="failed" name="Failed" fill={COLORS.failure} radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -332,26 +331,26 @@ export function WebhookStats() {
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <Zap className="h-4 w-4" />
-            Webhook-översikt
+            Webhook Overview
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
             <div>
               <div className="text-2xl font-bold">{webhookSummary.total}</div>
-              <div className="text-xs text-muted-foreground">Totalt</div>
+              <div className="text-xs text-muted-foreground">Total</div>
             </div>
             <div>
               <div className="text-2xl font-bold text-green-600">{webhookSummary.active}</div>
-              <div className="text-xs text-muted-foreground">Aktiva</div>
+              <div className="text-xs text-muted-foreground">Active</div>
             </div>
             <div>
               <div className="text-2xl font-bold text-muted-foreground">{webhookSummary.disabled}</div>
-              <div className="text-xs text-muted-foreground">Inaktiva</div>
+              <div className="text-xs text-muted-foreground">Disabled</div>
             </div>
             <div>
               <div className="text-2xl font-bold text-red-600">{webhookSummary.autoDisabled}</div>
-              <div className="text-xs text-muted-foreground">Auto-inaktiverade</div>
+              <div className="text-xs text-muted-foreground">Auto-Disabled</div>
             </div>
           </div>
         </CardContent>
