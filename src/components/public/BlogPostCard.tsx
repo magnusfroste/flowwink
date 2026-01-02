@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import { Calendar, User, Clock } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
-import { sv } from "date-fns/locale";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { BlogPost } from "@/types/cms";
@@ -39,7 +38,7 @@ export function BlogPostCard({
               {post.title}
             </h3>
             <p className="text-sm text-muted-foreground mt-1">
-              {format(publishedDate, "d MMM yyyy", { locale: sv })}
+              {format(publishedDate, "d MMM yyyy")}
             </p>
           </div>
         </div>
@@ -90,7 +89,7 @@ export function BlogPostCard({
               )}
               <div className="flex items-center gap-1.5">
                 <Calendar className="h-4 w-4" />
-                <span>{format(publishedDate, "d MMM yyyy", { locale: sv })}</span>
+                <span>{format(publishedDate, "d MMM yyyy")}</span>
               </div>
               {showReadingTime && post.reading_time_minutes && (
                 <div className="flex items-center gap-1.5">
@@ -145,7 +144,7 @@ export function BlogPostCard({
                 <span>{post.author.full_name || "Unknown"}</span>
               )}
               <span>•</span>
-              <span>{format(publishedDate, "d MMM yyyy", { locale: sv })}</span>
+              <span>{format(publishedDate, "d MMM yyyy")}</span>
               {showReadingTime && post.reading_time_minutes && (
                 <>
                   <span>•</span>

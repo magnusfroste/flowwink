@@ -27,7 +27,6 @@ import {
 import { useCompany, useCompanyLeads, useUpdateCompany, useDeleteCompany } from '@/hooks/useCompanies';
 import { CreateLeadDialog } from '@/components/admin/CreateLeadDialog';
 import { format } from 'date-fns';
-import { sv } from 'date-fns/locale';
 import { getLeadStatusInfo } from '@/lib/lead-utils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -369,12 +368,12 @@ export default function CompanyDetailPage() {
                   )}
                   
                   <div className="pt-4 border-t text-xs text-muted-foreground space-y-1">
-                    <p>Skapat: {format(new Date(company.created_at), 'd MMMM yyyy', { locale: sv })}</p>
-                    <p>Uppdaterat: {format(new Date(company.updated_at), 'd MMMM yyyy', { locale: sv })}</p>
+                    <p>Created: {format(new Date(company.created_at), 'd MMMM yyyy')}</p>
+                    <p>Updated: {format(new Date(company.updated_at), 'd MMMM yyyy')}</p>
                     {company.enriched_at && (
                       <p className="flex items-center gap-1 text-primary">
                         <Sparkles className="h-3 w-3" />
-                        Berikad: {format(new Date(company.enriched_at), 'd MMMM yyyy', { locale: sv })}
+                        Enriched: {format(new Date(company.enriched_at), 'd MMMM yyyy')}
                       </p>
                     )}
                   </div>
@@ -388,11 +387,11 @@ export default function CompanyDetailPage() {
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5" />
-                Kontakter ({leads?.length ?? 0})
+                Contacts ({leads?.length ?? 0})
               </CardTitle>
               <Button size="sm" onClick={() => setCreateLeadOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
-                Lägg till kontakt
+                Add Contact
               </Button>
             </CardHeader>
             <CardContent>
@@ -405,7 +404,7 @@ export default function CompanyDetailPage() {
               ) : !leads?.length ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <Users className="h-10 w-10 mx-auto mb-3 opacity-50" />
-                  <p>Inga kontakter kopplade till detta företag</p>
+                  <p>No contacts linked to this company</p>
                   <Button 
                     variant="outline" 
                     size="sm" 
@@ -413,17 +412,17 @@ export default function CompanyDetailPage() {
                     onClick={() => setCreateLeadOpen(true)}
                   >
                     <Plus className="h-4 w-4 mr-2" />
-                    Lägg till första kontakten
+                    Add First Contact
                   </Button>
                 </div>
               ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Kontakt</TableHead>
+                      <TableHead>Contact</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Källa</TableHead>
-                      <TableHead>Skapad</TableHead>
+                      <TableHead>Source</TableHead>
+                      <TableHead>Created</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -434,7 +433,7 @@ export default function CompanyDetailPage() {
                             to={`/admin/contacts/${lead.id}`}
                             className="flex flex-col hover:underline"
                           >
-                            <span className="font-medium">{lead.name || 'Namnlös'}</span>
+                            <span className="font-medium">{lead.name || 'Unnamed'}</span>
                             <span className="text-sm text-muted-foreground flex items-center gap-1">
                               <Mail className="h-3 w-3" />
                               {lead.email}
@@ -450,7 +449,7 @@ export default function CompanyDetailPage() {
                           {lead.source}
                         </TableCell>
                         <TableCell className="text-muted-foreground">
-                          {format(new Date(lead.created_at), 'd MMM yyyy', { locale: sv })}
+                          {format(new Date(lead.created_at), 'd MMM yyyy')}
                         </TableCell>
                       </TableRow>
                     ))}

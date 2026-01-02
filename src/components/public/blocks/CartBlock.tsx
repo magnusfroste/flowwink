@@ -23,16 +23,16 @@ export function CartBlock({ data }: CartBlockProps) {
   const { items, removeItem, updateQuantity, totalPriceCents, currency, totalItems } = useCart();
 
   const formatPrice = (cents: number, curr: string) => {
-    return new Intl.NumberFormat('sv-SE', {
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: curr,
       minimumFractionDigits: 0,
     }).format(cents / 100);
   };
 
-  const title = data.title || 'Din varukorg';
-  const emptyMessage = data.emptyMessage || 'Din varukorg är tom';
-  const checkoutButtonText = data.checkoutButtonText || 'Gå till kassan';
+  const title = data.title || 'Your Cart';
+  const emptyMessage = data.emptyMessage || 'Your cart is empty';
+  const checkoutButtonText = data.checkoutButtonText || 'Proceed to Checkout';
   const checkoutUrl = data.checkoutUrl || '/checkout';
   const variant = data.variant || 'default';
 
@@ -46,7 +46,7 @@ export function CartBlock({ data }: CartBlockProps) {
             {data.showContinueShopping !== false && (
               <Link to={data.continueShoppingUrl || '/'}>
                 <Button variant="outline" className="mt-4">
-                  Fortsätt handla
+                  Continue Shopping
                 </Button>
               </Link>
             )}

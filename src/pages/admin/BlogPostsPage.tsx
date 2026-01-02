@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Plus, Search, Filter, MoreHorizontal, Clock, Star, Trash2, Edit, Eye, FolderOpen, Settings, Tag } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { sv } from "date-fns/locale";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { Button } from "@/components/ui/button";
@@ -180,9 +179,9 @@ export default function BlogPostsPage() {
                       <span>
                         {formatDistanceToNow(new Date(post.updated_at), {
                           addSuffix: true,
-                          locale: sv,
                         })}
                       </span>
+                      
                       
                       {post.reading_time_minutes && (
                         <>

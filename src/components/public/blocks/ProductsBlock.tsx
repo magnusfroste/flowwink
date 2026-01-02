@@ -47,7 +47,7 @@ export function ProductsBlock({ data }: ProductsBlockProps) {
   };
 
   const formatPrice = (cents: number, currency: string) => {
-    return new Intl.NumberFormat('sv-SE', {
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: currency,
       minimumFractionDigits: 0,

@@ -7,7 +7,6 @@ import { useLeadStats, useLeads } from '@/hooks/useLeads';
 import { getLeadStatusInfo } from '@/lib/lead-utils';
 import { UserCheck, TrendingUp, Sparkles, AlertCircle, ArrowRight } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { sv } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
 export function LeadsDashboardWidget() {
@@ -25,11 +24,11 @@ export function LeadsDashboardWidget() {
             <UserCheck className="h-5 w-5" />
             Leads
           </CardTitle>
-          <CardDescription>AI-driven leadhantering</CardDescription>
+          <CardDescription>AI-driven lead management</CardDescription>
         </div>
         <Button asChild size="sm" variant="ghost">
-          <Link to="/admin/leads">
-            Visa alla
+          <Link to="/admin/contacts">
+            View All
             <ArrowRight className="h-4 w-4 ml-1" />
           </Link>
         </Button>
@@ -96,7 +95,7 @@ export function LeadsDashboardWidget() {
                       {lead.name || lead.email}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {formatDistanceToNow(new Date(lead.created_at), { addSuffix: true, locale: sv })}
+                      {formatDistanceToNow(new Date(lead.created_at), { addSuffix: true })}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">

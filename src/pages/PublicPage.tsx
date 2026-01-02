@@ -117,7 +117,7 @@ export default function PublicPage() {
           </p>
           {maintenanceSettings.expectedEndTime && (
             <p className="text-sm text-muted-foreground mb-8">
-              Beräknad sluttid: {new Date(maintenanceSettings.expectedEndTime).toLocaleString('sv-SE')}
+              Expected end time: {new Date(maintenanceSettings.expectedEndTime).toLocaleString('en-US')}
             </p>
           )}
           <Button variant="outline" onClick={() => navigate('/auth')} size="sm">
