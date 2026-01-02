@@ -97,11 +97,11 @@ export function useWebhooks() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['webhooks'] });
-      toast({ title: 'Webhook skapad' });
+      toast({ title: 'Webhook created' });
     },
     onError: (error) => {
       toast({ 
-        title: 'Fel vid skapande', 
+        title: 'Error creating webhook', 
         description: error.message,
         variant: 'destructive' 
       });
@@ -122,11 +122,11 @@ export function useWebhooks() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['webhooks'] });
-      toast({ title: 'Webhook uppdaterad' });
+      toast({ title: 'Webhook updated' });
     },
     onError: (error) => {
       toast({ 
-        title: 'Fel vid uppdatering', 
+        title: 'Error updating webhook', 
         description: error.message,
         variant: 'destructive' 
       });
@@ -144,11 +144,11 @@ export function useWebhooks() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['webhooks'] });
-      toast({ title: 'Webhook borttagen' });
+      toast({ title: 'Webhook deleted' });
     },
     onError: (error) => {
       toast({ 
-        title: 'Fel vid borttagning', 
+        title: 'Error deleting webhook', 
         description: error.message,
         variant: 'destructive' 
       });
@@ -170,12 +170,12 @@ export function useWebhooks() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['webhooks'] });
       toast({ 
-        title: data.is_active ? 'Webhook aktiverad' : 'Webhook inaktiverad' 
+        title: data.is_active ? 'Webhook enabled' : 'Webhook disabled' 
       });
     },
     onError: (error) => {
       toast({ 
-        title: 'Fel', 
+        title: 'Error', 
         description: error.message,
         variant: 'destructive' 
       });
@@ -206,11 +206,11 @@ export function useWebhooks() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['webhooks'] });
       queryClient.invalidateQueries({ queryKey: ['webhook-logs'] });
-      toast({ title: 'Test skickat', description: 'Kontrollera loggarna för resultat' });
+      toast({ title: 'Test sent', description: 'Check the logs for results' });
     },
     onError: (error) => {
       toast({ 
-        title: 'Test misslyckades', 
+        title: 'Test failed', 
         description: error.message,
         variant: 'destructive' 
       });
@@ -230,11 +230,11 @@ export function useWebhooks() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['webhooks'] });
       queryClient.invalidateQueries({ queryKey: ['webhook-logs'] });
-      toast({ title: 'Webhook återskickad', description: 'Kontrollera loggarna för resultat' });
+      toast({ title: 'Webhook resent', description: 'Check the logs for results' });
     },
     onError: (error) => {
       toast({ 
-        title: 'Återskickning misslyckades', 
+        title: 'Resend failed', 
         description: error.message,
         variant: 'destructive' 
       });
@@ -276,26 +276,26 @@ export function useWebhookLogs(webhookId: string | null) {
 
 // Event labels for UI
 export const WEBHOOK_EVENT_LABELS: Record<WebhookEvent, string> = {
-  'page.published': 'Sida publicerad',
-  'page.updated': 'Sida uppdaterad',
-  'page.deleted': 'Sida borttagen',
-  'blog_post.published': 'Blogginlägg publicerat',
-  'blog_post.updated': 'Blogginlägg uppdaterat',
-  'blog_post.deleted': 'Blogginlägg borttaget',
-  'form.submitted': 'Formulär inskickat',
-  'booking.submitted': 'Bokning inskickad',
-  'newsletter.subscribed': 'Newsletter-prenumeration',
-  'newsletter.unsubscribed': 'Newsletter-avprenumeration',
-  'order.created': 'Order skapad',
-  'order.paid': 'Order betald',
-  'order.cancelled': 'Order avbruten',
-  'order.refunded': 'Order återbetald',
+  'page.published': 'Page published',
+  'page.updated': 'Page updated',
+  'page.deleted': 'Page deleted',
+  'blog_post.published': 'Blog post published',
+  'blog_post.updated': 'Blog post updated',
+  'blog_post.deleted': 'Blog post deleted',
+  'form.submitted': 'Form submitted',
+  'booking.submitted': 'Booking submitted',
+  'newsletter.subscribed': 'Newsletter subscription',
+  'newsletter.unsubscribed': 'Newsletter unsubscription',
+  'order.created': 'Order created',
+  'order.paid': 'Order paid',
+  'order.cancelled': 'Order cancelled',
+  'order.refunded': 'Order refunded',
 };
 
 export const WEBHOOK_EVENT_CATEGORIES = {
-  'Sidor': ['page.published', 'page.updated', 'page.deleted'] as WebhookEvent[],
-  'Blogg': ['blog_post.published', 'blog_post.updated', 'blog_post.deleted'] as WebhookEvent[],
-  'Formulär & Bokningar': ['form.submitted', 'booking.submitted'] as WebhookEvent[],
+  'Pages': ['page.published', 'page.updated', 'page.deleted'] as WebhookEvent[],
+  'Blog': ['blog_post.published', 'blog_post.updated', 'blog_post.deleted'] as WebhookEvent[],
+  'Forms & Bookings': ['form.submitted', 'booking.submitted'] as WebhookEvent[],
   'Newsletter': ['newsletter.subscribed', 'newsletter.unsubscribed'] as WebhookEvent[],
-  'Ordrar': ['order.created', 'order.paid', 'order.cancelled', 'order.refunded'] as WebhookEvent[],
+  'Orders': ['order.created', 'order.paid', 'order.cancelled', 'order.refunded'] as WebhookEvent[],
 };
