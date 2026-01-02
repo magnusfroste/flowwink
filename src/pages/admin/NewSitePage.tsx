@@ -280,18 +280,30 @@ export default function NewSitePage() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-3 gap-4 text-sm">
+                  <div className="flex flex-wrap gap-4 text-sm">
                     <div className="flex items-center gap-2">
                       <FileText className="h-4 w-4 text-muted-foreground" />
                       <span>{selectedTemplate.pages.length} pages</span>
                     </div>
+                    {selectedTemplate.blogPosts && selectedTemplate.blogPosts.length > 0 && (
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-muted-foreground" />
+                        <span>{selectedTemplate.blogPosts.length} blog posts</span>
+                      </div>
+                    )}
+                    {selectedTemplate.kbCategories && selectedTemplate.kbCategories.length > 0 && (
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-muted-foreground" />
+                        <span>{selectedTemplate.kbCategories.reduce((acc, cat) => acc + cat.articles.length, 0)} KB articles</span>
+                      </div>
+                    )}
                     <div className="flex items-center gap-2">
                       <Palette className="h-4 w-4 text-muted-foreground" />
-                      <span>Branding included</span>
+                      <span>Branding</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <MessageSquare className="h-4 w-4 text-muted-foreground" />
-                      <span>AI Chat configured</span>
+                      <span>AI Chat</span>
                     </div>
                   </div>
 
