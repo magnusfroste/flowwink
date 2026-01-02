@@ -692,4 +692,307 @@ export const pezcmsKbCategories: TemplateKbCategory[] = [
       },
     ],
   },
+
+  // ===== CRM MODULE =====
+  {
+    name: 'CRM Module',
+    slug: 'crm-module',
+    description: 'Manage leads, deals, and companies with the built-in CRM.',
+    icon: 'Users',
+    articles: [
+      {
+        title: 'CRM Overview',
+        slug: 'crm-overview',
+        question: 'What is the CRM module in PezCMS?',
+        answer_text: 'The CRM module helps you manage your sales pipeline with leads, deals, and companies. Track interactions, qualify prospects with AI, and convert leads into customers – all from within your CMS.',
+        is_featured: true,
+        include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-crm-overview',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'CRM Module Overview' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'PezCMS includes a built-in CRM (Customer Relationship Management) system that integrates directly with your content and forms.' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Key Components' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Leads' }, { type: 'text', text: ' – Potential customers collected from forms, chat, or manual entry' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Deals' }, { type: 'text', text: ' – Sales opportunities with value, stage, and expected close date' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Companies' }, { type: 'text', text: ' – Organizations linked to leads for B2B tracking' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Activities' }, { type: 'text', text: ' – Notes, calls, meetings, and tasks tracked per deal' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'AI-Powered Features' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Automatic lead qualification and scoring' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'AI-generated lead summaries' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Company data enrichment' }] }] },
+                  ] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      {
+        title: 'Managing Leads',
+        slug: 'managing-leads',
+        question: 'How do I manage leads in PezCMS?',
+        answer_text: 'Go to Admin → Leads to see all leads. Leads are automatically created from form submissions. You can filter by status (Lead, Opportunity, Customer, Lost), assign leads to team members, and view lead scores.',
+        is_featured: true,
+        include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-leads',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Managing Leads' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Leads are the starting point of your sales pipeline. Here\'s how to work with them effectively.' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Lead Sources' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Form submissions' }, { type: 'text', text: ' – Automatically captured from contact and booking forms' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Chat conversations' }, { type: 'text', text: ' – Captured when visitors provide their email in chat' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Newsletter signups' }, { type: 'text', text: ' – Optionally converted to leads' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Manual entry' }, { type: 'text', text: ' – Create leads directly in the CRM' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'CSV import' }, { type: 'text', text: ' – Bulk import leads from spreadsheets' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Lead Statuses' }] },
+                  { type: 'orderedList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Lead' }, { type: 'text', text: ' – New, unqualified contact' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Opportunity' }, { type: 'text', text: ' – Qualified and showing interest' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Customer' }, { type: 'text', text: ' – Converted to paying customer' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Lost' }, { type: 'text', text: ' – Did not convert' }] }] },
+                  ] },
+                  { type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'italic' }], text: 'Tip: Use AI qualification to automatically score and prioritize leads based on their activity and profile.' }] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      {
+        title: 'Lead Scoring',
+        slug: 'lead-scoring',
+        question: 'How does lead scoring work?',
+        answer_text: 'Leads are scored 0-100 based on activities like page views, form submissions, email opens, and chat engagement. Higher scores indicate more engaged prospects. AI qualification can automatically analyze and summarize lead potential.',
+        include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-lead-scoring',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Lead Scoring' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Lead scores help you prioritize which prospects to focus on. Scores are calculated based on engagement.' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Scoring Activities' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Form submission' }, { type: 'text', text: ' – +20 points' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Chat conversation' }, { type: 'text', text: ' – +15 points' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Email opened' }, { type: 'text', text: ' – +5 points' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Link clicked' }, { type: 'text', text: ' – +10 points' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Pricing page viewed' }, { type: 'text', text: ' – +25 points' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Booking made' }, { type: 'text', text: ' – +30 points' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'AI Qualification' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Click "Qualify with AI" on any lead to get an AI-generated analysis including:' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Summary of lead activities and interests' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Recommended next actions' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Potential value assessment' }] }] },
+                  ] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      {
+        title: 'Creating Deals',
+        slug: 'creating-deals',
+        question: 'How do I create and manage deals?',
+        answer_text: 'Deals represent sales opportunities. Create a deal from a lead by clicking "Create Deal" on the lead detail page. Set the value, expected close date, and product. Track deals through stages: Proposal → Negotiation → Closed Won/Lost.',
+        is_featured: true,
+        include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-deals',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Managing Deals' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Deals track your sales pipeline from initial interest to closed revenue.' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Creating a Deal' }] },
+                  { type: 'orderedList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Go to a lead detail page or Admin → Deals' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Click "Create Deal" or "New Deal"' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Enter the deal value and currency' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Set the expected close date' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Optionally link to a product' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Add notes about the opportunity' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Deal Stages' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Proposal' }, { type: 'text', text: ' – Initial offer sent to the prospect' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Negotiation' }, { type: 'text', text: ' – Active discussions on terms' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Closed Won' }, { type: 'text', text: ' – Deal completed successfully' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Closed Lost' }, { type: 'text', text: ' – Deal did not close' }] }] },
+                  ] },
+                  { type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'italic' }], text: 'Tip: Use the Kanban view to drag deals between stages visually.' }] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      {
+        title: 'Deal Kanban Board',
+        slug: 'deal-kanban',
+        question: 'How do I use the deal Kanban board?',
+        answer_text: 'The Kanban board shows deals organized by stage in columns. Drag deals between columns to update their stage. Click a deal card to view details. The board shows total pipeline value and expected revenue per stage.',
+        include_in_chat: true,
+      },
+      {
+        title: 'Deal Activities',
+        slug: 'deal-activities',
+        question: 'How do I track activities on deals?',
+        answer_text: 'Each deal has an activity timeline. Add notes, log calls, schedule meetings, or create tasks. Activities are timestamped and linked to the user who created them. Use activities to track all interactions with the prospect.',
+        include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-deal-activities',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Tracking Deal Activities' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Keep a complete history of interactions on each deal with the activity timeline.' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Activity Types' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Note' }, { type: 'text', text: ' – Free-form text notes about the deal' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Call' }, { type: 'text', text: ' – Log phone calls with outcomes' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Meeting' }, { type: 'text', text: ' – Schedule and track meetings' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Email' }, { type: 'text', text: ' – Record email correspondence' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Task' }, { type: 'text', text: ' – Create follow-up tasks with due dates' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Adding Activities' }] },
+                  { type: 'orderedList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Open a deal detail page' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Click "Add Activity"' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Select the activity type' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Enter details and save' }] }] },
+                  ] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      {
+        title: 'Managing Companies',
+        slug: 'managing-companies',
+        question: 'How do I manage companies in the CRM?',
+        answer_text: 'Companies group leads from the same organization. Go to Admin → Companies to view all companies. Link leads to companies for B2B tracking. Companies can be enriched with AI to pull industry, size, and other data.',
+        is_featured: true,
+        include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-companies',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Managing Companies' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Companies help you organize leads by organization for B2B sales tracking.' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Company Information' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Name' }, { type: 'text', text: ' – Company name' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Domain' }, { type: 'text', text: ' – Website domain for matching leads' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Industry' }, { type: 'text', text: ' – Business sector' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Size' }, { type: 'text', text: ' – Number of employees' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Website' }, { type: 'text', text: ' – Full website URL' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Address' }, { type: 'text', text: ' – Physical location' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Phone' }, { type: 'text', text: ' – Contact number' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Notes' }, { type: 'text', text: ' – Internal notes about the company' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'AI Enrichment' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Click "Enrich with AI" to automatically populate company data based on the domain. This uses web scraping to find public information about the company.' }] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      {
+        title: 'Linking Leads to Companies',
+        slug: 'linking-leads-companies',
+        question: 'How do I link leads to companies?',
+        answer_text: 'On a lead detail page, use the Company dropdown to select or create a company. Leads are automatically matched to companies based on email domain when possible. View all leads from a company on the company detail page.',
+        include_in_chat: true,
+      },
+      {
+        title: 'Importing Leads',
+        slug: 'importing-leads',
+        question: 'How do I import leads from a CSV file?',
+        answer_text: 'Go to Admin → Leads and click "Import CSV". Upload a CSV file with columns for email, name, phone, and source. Map your columns to the correct fields and import. Duplicate emails are detected and skipped.',
+        include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-csv-import',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Importing Leads from CSV' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Bulk import leads from spreadsheets or other CRM systems.' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'CSV Format' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Your CSV should include these columns:' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'code' }], text: 'email' }, { type: 'text', text: ' (required) – Contact email address' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'code' }], text: 'name' }, { type: 'text', text: ' – Full name' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'code' }], text: 'phone' }, { type: 'text', text: ' – Phone number' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'code' }], text: 'source' }, { type: 'text', text: ' – Where the lead came from' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Import Steps' }] },
+                  { type: 'orderedList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Go to Admin → Leads' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Click "Import CSV"' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Upload your CSV file' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Map columns to lead fields' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Review and confirm import' }] }] },
+                  ] },
+                  { type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'italic' }], text: 'Note: Duplicate emails are automatically detected and skipped to prevent duplicates.' }] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      {
+        title: 'Exporting CRM Data',
+        slug: 'exporting-crm',
+        question: 'How do I export leads, deals, or companies?',
+        answer_text: 'Each CRM section has an "Export CSV" button. Click it to download all records as a CSV file. You can filter the view first to export only matching records. Use exports for backups or analysis.',
+        include_in_chat: true,
+      },
+      {
+        title: 'CRM Dashboard',
+        slug: 'crm-dashboard',
+        question: 'What insights does the CRM dashboard show?',
+        answer_text: 'The admin dashboard shows key CRM metrics: total leads, leads needing review, pipeline value, deals by stage, and recent activities. Use it to get a quick overview of your sales pipeline health.',
+        include_in_chat: true,
+      },
+    ],
+  },
 ];
