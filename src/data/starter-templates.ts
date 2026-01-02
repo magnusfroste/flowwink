@@ -73,7 +73,7 @@ export interface StarterTemplate {
 const launchpadPages: TemplatePage[] = [
   {
     title: 'Home',
-    slug: 'hem',
+    slug: 'home',
     isHomePage: true,
     menu_order: 1,
     showInMenu: true,
@@ -96,8 +96,8 @@ const launchpadPages: TemplatePage[] = [
           overlayOpacity: 70,
           titleAnimation: 'slide-up',
           showScrollIndicator: true,
-          primaryButton: { text: 'Get Started Free', url: '/kontakt' },
-          secondaryButton: { text: 'Learn More', url: '/produkt' },
+          primaryButton: { text: 'Get Started Free', url: '/contact' },
+          secondaryButton: { text: 'Learn More', url: '/product' },
         },
       },
       {
@@ -201,7 +201,7 @@ const launchpadPages: TemplatePage[] = [
           title: 'Ready to Launch?',
           subtitle: 'Join thousands of teams shipping faster with our platform.',
           buttonText: 'Start Building Today',
-          buttonUrl: '/kontakt',
+          buttonUrl: '/contact',
           gradient: true,
         },
       },
@@ -209,7 +209,7 @@ const launchpadPages: TemplatePage[] = [
   },
   {
     title: 'Product',
-    slug: 'produkt',
+    slug: 'product',
     menu_order: 2,
     showInMenu: true,
     meta: {
@@ -307,7 +307,7 @@ const launchpadPages: TemplatePage[] = [
           title: 'See It in Action',
           subtitle: 'Schedule a personalized demo with our team.',
           buttonText: 'Book Demo',
-          buttonUrl: '/kontakt',
+          buttonUrl: '/contact',
           gradient: true,
         },
       },
@@ -315,7 +315,7 @@ const launchpadPages: TemplatePage[] = [
   },
   {
     title: 'Pricing',
-    slug: 'priser',
+    slug: 'pricing',
     menu_order: 3,
     showInMenu: true,
     meta: {
@@ -350,7 +350,7 @@ const launchpadPages: TemplatePage[] = [
               description: 'Perfect for getting started and testing ideas.',
               features: ['1 project', '1,000 API calls/month', 'Community support', 'Basic analytics'],
               buttonText: 'Get Started',
-              buttonUrl: '/kontakt',
+              buttonUrl: '/contact',
             },
             {
               id: 'tier-pro',
@@ -360,7 +360,7 @@ const launchpadPages: TemplatePage[] = [
               description: 'For growing teams who need more power.',
               features: ['Unlimited projects', '100,000 API calls/month', 'Priority support', 'Advanced analytics', 'Team collaboration', 'Custom domains'],
               buttonText: 'Start Free Trial',
-              buttonUrl: '/kontakt',
+              buttonUrl: '/contact',
               highlighted: true,
               badge: 'Most Popular',
             },
@@ -372,7 +372,7 @@ const launchpadPages: TemplatePage[] = [
               description: 'For organizations that need enterprise features.',
               features: ['Everything in Pro', 'Unlimited API calls', 'SSO & SAML', 'Dedicated support', 'SLA guarantee', 'Audit logs'],
               buttonText: 'Contact Sales',
-              buttonUrl: '/kontakt',
+              buttonUrl: '/contact',
             },
           ],
           columns: 3,
@@ -425,7 +425,7 @@ const launchpadPages: TemplatePage[] = [
           title: 'Ready to Get Started?',
           subtitle: 'Join thousands of teams already building with us.',
           buttonText: 'Start Free Trial',
-          buttonUrl: '/kontakt',
+          buttonUrl: '/contact',
           gradient: true,
         },
       },
@@ -433,7 +433,7 @@ const launchpadPages: TemplatePage[] = [
   },
   {
     title: 'Contact',
-    slug: 'kontakt',
+    slug: 'contact',
     menu_order: 4,
     showInMenu: true,
     meta: {
@@ -630,7 +630,7 @@ const launchpadPages: TemplatePage[] = [
 const trustcorpPages: TemplatePage[] = [
   {
     title: 'Home',
-    slug: 'hem',
+    slug: 'home',
     isHomePage: true,
     menu_order: 1,
     showInMenu: true,
@@ -653,8 +653,8 @@ const trustcorpPages: TemplatePage[] = [
           overlayOpacity: 65,
           parallaxEffect: true,
           titleAnimation: 'fade-in',
-          primaryButton: { text: 'Request Demo', url: '/kontakt' },
-          secondaryButton: { text: 'Our Services', url: '/tjanster' },
+          primaryButton: { text: 'Request Demo', url: '/contact' },
+          secondaryButton: { text: 'Our Services', url: '/services' },
         },
       },
       // LOGOS - Enterprise clients
@@ -683,10 +683,10 @@ const trustcorpPages: TemplatePage[] = [
         data: {
           columns: 4,
           links: [
-            { icon: 'Briefcase', title: 'Consulting', description: 'Strategic advisory services', url: '/tjanster' },
-            { icon: 'Server', title: 'Technology', description: 'Enterprise infrastructure', url: '/tjanster' },
-            { icon: 'BarChart3', title: 'Analytics', description: 'Data-driven insights', url: '/tjanster' },
-            { icon: 'HeadphonesIcon', title: 'Support', description: '24/7 dedicated assistance', url: '/kontakt' },
+            { icon: 'Briefcase', title: 'Consulting', description: 'Strategic advisory services', url: '/services' },
+            { icon: 'Server', title: 'Technology', description: 'Enterprise infrastructure', url: '/services' },
+            { icon: 'BarChart3', title: 'Analytics', description: 'Data-driven insights', url: '/services' },
+            { icon: 'HeadphonesIcon', title: 'Support', description: '24/7 dedicated assistance', url: '/contact' },
           ],
         },
       },
@@ -749,7 +749,7 @@ const trustcorpPages: TemplatePage[] = [
           title: 'Ready to Transform?',
           subtitle: 'Let\'s discuss how we can help your organization.',
           buttonText: 'Schedule Consultation',
-          buttonUrl: '/kontakt',
+          buttonUrl: '/contact',
           gradient: false,
         },
       },
@@ -757,7 +757,7 @@ const trustcorpPages: TemplatePage[] = [
   },
   {
     title: 'Services',
-    slug: 'tjanster',
+    slug: 'services',
     menu_order: 2,
     showInMenu: true,
     meta: {
@@ -836,7 +836,7 @@ const trustcorpPages: TemplatePage[] = [
           title: 'Explore Our Full Capabilities',
           subtitle: 'Every engagement is tailored to your unique needs.',
           buttonText: 'Contact Us',
-          buttonUrl: '/kontakt',
+          buttonUrl: '/contact',
           gradient: false,
         },
       },
@@ -872,9 +872,9 @@ const trustcorpPages: TemplatePage[] = [
           title: 'Featured Case Studies',
           columns: 3,
           articles: [
-            { title: 'GlobalBank: 40% Cost Reduction', excerpt: 'How we helped GlobalBank reduce operational costs while improving customer satisfaction.', image: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600', url: '/kontakt' },
-            { title: 'TechCorp: AI Transformation', excerpt: 'Deploying private AI across 30 global locations while maintaining data sovereignty.', image: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=600', url: '/kontakt' },
-            { title: 'HealthNet: HIPAA Compliance', excerpt: 'Modernizing healthcare IT infrastructure with full regulatory compliance.', image: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=600', url: '/kontakt' },
+            { title: 'GlobalBank: 40% Cost Reduction', excerpt: 'How we helped GlobalBank reduce operational costs while improving customer satisfaction.', image: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600', url: '/contact' },
+            { title: 'TechCorp: AI Transformation', excerpt: 'Deploying private AI across 30 global locations while maintaining data sovereignty.', image: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=600', url: '/contact' },
+            { title: 'HealthNet: HIPAA Compliance', excerpt: 'Modernizing healthcare IT infrastructure with full regulatory compliance.', image: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=600', url: '/contact' },
           ],
         },
       },
@@ -909,7 +909,7 @@ const trustcorpPages: TemplatePage[] = [
   },
   {
     title: 'About',
-    slug: 'om-oss',
+    slug: 'about',
     menu_order: 4,
     showInMenu: true,
     meta: {
@@ -1016,7 +1016,7 @@ const trustcorpPages: TemplatePage[] = [
           title: 'Join Our Team',
           subtitle: 'We\'re always looking for exceptional talent.',
           buttonText: 'View Careers',
-          buttonUrl: '/kontakt',
+          buttonUrl: '/contact',
           gradient: false,
         },
       },
@@ -1024,7 +1024,7 @@ const trustcorpPages: TemplatePage[] = [
   },
   {
     title: 'Contact',
-    slug: 'kontakt',
+    slug: 'contact',
     menu_order: 5,
     showInMenu: true,
     meta: {
@@ -1217,7 +1217,7 @@ const trustcorpPages: TemplatePage[] = [
 const securehealthPages: TemplatePage[] = [
   {
     title: 'Home',
-    slug: 'hem',
+    slug: 'home',
     isHomePage: true,
     menu_order: 1,
     showInMenu: true,
@@ -1239,8 +1239,8 @@ const securehealthPages: TemplatePage[] = [
           contentAlignment: 'center',
           overlayOpacity: 55,
           titleAnimation: 'fade-in',
-          primaryButton: { text: 'Book Appointment', url: '/boka' },
-          secondaryButton: { text: 'Our Services', url: '/tjanster' },
+          primaryButton: { text: 'Book Appointment', url: '/book' },
+          secondaryButton: { text: 'Our Services', url: '/services' },
         },
       },
       {
@@ -1258,9 +1258,9 @@ const securehealthPages: TemplatePage[] = [
         data: {
           columns: 3,
           links: [
-            { icon: 'Calendar', title: 'Book Appointment', description: 'Schedule your visit online', url: '/boka' },
-            { icon: 'MapPin', title: 'Find Us', description: 'Locations & directions', url: '/om-oss' },
-            { icon: 'Phone', title: 'Urgent Care', description: '24/7 medical helpline', url: '/kontakt' },
+            { icon: 'Calendar', title: 'Book Appointment', description: 'Schedule your visit online', url: '/book' },
+            { icon: 'MapPin', title: 'Find Us', description: 'Locations & directions', url: '/about' },
+            { icon: 'Phone', title: 'Urgent Care', description: '24/7 medical helpline', url: '/contact' },
           ],
         },
       },
@@ -1322,7 +1322,7 @@ const securehealthPages: TemplatePage[] = [
           title: 'Your Health Journey Starts Here',
           subtitle: 'Experience healthcare that puts your privacy first.',
           buttonText: 'Book Appointment',
-          buttonUrl: '/boka',
+          buttonUrl: '/book',
           gradient: false,
         },
       },
@@ -1330,7 +1330,7 @@ const securehealthPages: TemplatePage[] = [
   },
   {
     title: 'Services',
-    slug: 'tjanster',
+    slug: 'services',
     menu_order: 2,
     showInMenu: true,
     meta: {
@@ -1357,12 +1357,12 @@ const securehealthPages: TemplatePage[] = [
         data: {
           columns: 3,
           links: [
-            { icon: 'HeartPulse', title: 'Primary Care', description: 'General health checkups and preventive care', url: '/tjanster' },
-            { icon: 'Stethoscope', title: 'Specialists', description: 'Expert care across all medical fields', url: '/tjanster' },
-            { icon: 'Baby', title: 'Pediatrics', description: 'Caring for children of all ages', url: '/tjanster' },
-            { icon: 'Brain', title: 'Mental Health', description: 'Private counseling and therapy', url: '/tjanster' },
-            { icon: 'Activity', title: 'Diagnostics', description: 'Advanced testing and imaging', url: '/tjanster' },
-            { icon: 'Pill', title: 'Pharmacy', description: 'On-site prescription services', url: '/kontakt' },
+            { icon: 'HeartPulse', title: 'Primary Care', description: 'General health checkups and preventive care', url: '/services' },
+            { icon: 'Stethoscope', title: 'Specialists', description: 'Expert care across all medical fields', url: '/services' },
+            { icon: 'Baby', title: 'Pediatrics', description: 'Caring for children of all ages', url: '/services' },
+            { icon: 'Brain', title: 'Mental Health', description: 'Private counseling and therapy', url: '/services' },
+            { icon: 'Activity', title: 'Diagnostics', description: 'Advanced testing and imaging', url: '/services' },
+            { icon: 'Pill', title: 'Pharmacy', description: 'On-site prescription services', url: '/contact' },
           ],
         },
       },
@@ -1403,7 +1403,7 @@ const securehealthPages: TemplatePage[] = [
           title: 'Ready to Schedule?',
           subtitle: 'Book your appointment today.',
           buttonText: 'Book Now',
-          buttonUrl: '/boka',
+          buttonUrl: '/book',
           gradient: false,
         },
       },
@@ -1411,7 +1411,7 @@ const securehealthPages: TemplatePage[] = [
   },
   {
     title: 'About Us',
-    slug: 'om-oss',
+    slug: 'about',
     menu_order: 3,
     showInMenu: true,
     meta: {
@@ -1575,7 +1575,7 @@ const securehealthPages: TemplatePage[] = [
   },
   {
     title: 'Book Appointment',
-    slug: 'boka',
+    slug: 'book',
     menu_order: 5,
     showInMenu: true,
     meta: {
@@ -1676,7 +1676,7 @@ const securehealthPages: TemplatePage[] = [
   },
   {
     title: 'Contact',
-    slug: 'kontakt',
+    slug: 'contact',
     menu_order: 6,
     showInMenu: true,
     meta: {
@@ -1882,7 +1882,7 @@ const securehealthPages: TemplatePage[] = [
 const momentumPages: TemplatePage[] = [
   {
     title: 'Home',
-    slug: 'hem',
+    slug: 'home',
     isHomePage: true,
     menu_order: 1,
     showInMenu: true,
@@ -2103,7 +2103,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
       enabled: true,
     },
     siteSettings: {
-      homepageSlug: 'hem',
+      homepageSlug: 'home',
     },
   },
   {
@@ -2158,7 +2158,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
       enabled: true,
     },
     siteSettings: {
-      homepageSlug: 'hem',
+      homepageSlug: 'home',
     },
   },
   {
@@ -2220,7 +2220,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
       enabled: true,
     },
     siteSettings: {
-      homepageSlug: 'hem',
+      homepageSlug: 'home',
     },
   },
   {
@@ -2283,7 +2283,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
       enabled: true,
     },
     siteSettings: {
-      homepageSlug: 'hem',
+      homepageSlug: 'home',
     },
   },
   // =====================================================
@@ -2303,7 +2303,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
       // ===== HOME PAGE =====
       {
         title: 'Home',
-        slug: 'hem',
+        slug: 'home',
         isHomePage: true,
         menu_order: 1,
         showInMenu: true,
@@ -2611,7 +2611,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
                     '99.9% uptime SLA',
                   ],
                   buttonText: 'Start Free Trial',
-                  buttonUrl: '/kontakt',
+                  buttonUrl: '/contact',
                   highlighted: true,
                   badge: 'Recommended',
                 },
@@ -2629,7 +2629,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
                     'Training & onboarding',
                   ],
                   buttonText: 'Contact Sales',
-                  buttonUrl: '/kontakt',
+                  buttonUrl: '/contact',
                 },
               ],
               columns: 3,
@@ -2719,7 +2719,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
       // ===== FEATURES PAGE =====
       {
         title: 'Features',
-        slug: 'funktioner',
+        slug: 'features',
         menu_order: 2,
         showInMenu: true,
         meta: {
@@ -3173,7 +3173,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
               buttonText: 'Launch Demo',
               buttonUrl: '/demo',
               secondaryButtonText: 'View Pricing',
-              secondaryButtonUrl: '/priser',
+              secondaryButtonUrl: '/pricing',
               gradient: true,
             },
           },
@@ -3545,31 +3545,31 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
                 {
                   id: 'price-starter',
                   name: 'Starter',
-                  price: '0 kr',
+                  price: 'Free',
                   description: 'Perfect for testing and small projects.',
                   features: ['1 site', 'Community support', 'All core features'],
                   buttonText: 'Get Started',
-                  buttonUrl: '/kontakt',
+                  buttonUrl: '/contact',
                 },
                 {
                   id: 'price-pro',
                   name: 'Pro',
-                  price: '490 kr/mån',
+                  price: '$49/mo',
                   description: 'For growing businesses.',
                   features: ['Unlimited sites', 'Priority support', 'API access', 'Custom domain'],
                   buttonText: 'Start Free Trial',
-                  buttonUrl: '/kontakt',
+                  buttonUrl: '/contact',
                   highlighted: true,
                   badge: 'Popular',
                 },
                 {
                   id: 'price-enterprise',
                   name: 'Enterprise',
-                  price: 'Offert',
+                  price: 'Custom',
                   description: 'For organizations with specific requirements.',
                   features: ['Dedicated infrastructure', 'SLA', 'SSO', 'Onboarding'],
                   buttonText: 'Contact Sales',
-                  buttonUrl: '/kontakt',
+                  buttonUrl: '/contact',
                 },
               ],
               columns: 3,
@@ -3881,7 +3881,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
       // ===== PRICING PAGE =====
       {
         title: 'Pricing',
-        slug: 'priser',
+        slug: 'pricing',
         menu_order: 4,
         showInMenu: true,
         meta: {
@@ -3941,7 +3941,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
                     '99.9% uptime SLA',
                   ],
                   buttonText: 'Start Free Trial',
-                  buttonUrl: '/kontakt',
+                  buttonUrl: '/contact',
                   highlighted: true,
                   badge: 'Most Popular',
                 },
@@ -3960,7 +3960,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
                     'Training sessions',
                   ],
                   buttonText: 'Contact Sales',
-                  buttonUrl: '/kontakt',
+                  buttonUrl: '/contact',
                 },
               ],
               columns: 3,
@@ -4009,7 +4009,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
       // ===== WHY PEZCMS PAGE =====
       {
         title: 'Why PezCMS',
-        slug: 'varfor-pezcms',
+        slug: 'why-pezcms',
         menu_order: 5,
         showInMenu: true,
         meta: {
@@ -4450,7 +4450,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
               buttonText: 'Launch Demo',
               buttonUrl: '/demo',
               secondaryButtonText: 'Book a Call',
-              secondaryButtonUrl: '/kontakt',
+              secondaryButtonUrl: '/contact',
               gradient: true,
             },
           },
@@ -4714,7 +4714,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
       // ===== CONTACT PAGE =====
       {
         title: 'Contact',
-        slug: 'kontakt',
+        slug: 'contact',
         menu_order: 7,
         showInMenu: true,
         meta: {
@@ -5359,7 +5359,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
       enabled: true,
     },
     siteSettings: {
-      homepageSlug: 'hem',
+      homepageSlug: 'home',
     },
   },
 ];
