@@ -175,19 +175,19 @@ export function AeoDashboardWidget() {
         <CardHeader>
           <div className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" />
-            <CardTitle className="font-serif">AEO-optimering</CardTitle>
+            <CardTitle className="font-serif">AEO Optimization</CardTitle>
           </div>
-          <CardDescription>Answer Engine Optimization för AI-sökmotorer</CardDescription>
+          <CardDescription>Answer Engine Optimization for AI search engines</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="text-center py-6">
             <Sparkles className="h-12 w-12 text-muted-foreground/50 mx-auto mb-3" />
             <p className="text-muted-foreground mb-4">
-              AEO är inte aktiverat. Aktivera för att optimera dina sidor för AI-sökmotorer.
+              AEO is not enabled. Enable to optimize your pages for AI search engines.
             </p>
             <Button asChild variant="outline">
               <Link to="/admin/settings">
-                Aktivera AEO
+                Enable AEO
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Link>
             </Button>
@@ -204,13 +204,13 @@ export function AeoDashboardWidget() {
           <div>
             <div className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-primary" />
-              <CardTitle className="font-serif">AEO-optimering</CardTitle>
+              <CardTitle className="font-serif">AEO Optimization</CardTitle>
             </div>
-            <CardDescription>Answer Engine Optimization för AI-sökmotorer</CardDescription>
+            <CardDescription>Answer Engine Optimization for AI search engines</CardDescription>
           </div>
           <Button asChild variant="outline" size="sm">
             <Link to="/admin/settings">
-              Inställningar
+              Settings
               <ArrowRight className="h-4 w-4 ml-2" />
             </Link>
           </Button>
@@ -225,7 +225,7 @@ export function AeoDashboardWidget() {
         ) : !analysis || analysis.totalPages === 0 ? (
           <div className="text-center py-6">
             <p className="text-muted-foreground">
-              Inga publicerade sidor att analysera.
+              No published pages to analyze.
             </p>
           </div>
         ) : (
@@ -235,14 +235,14 @@ export function AeoDashboardWidget() {
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
                   {getTrendIcon(analysis.averageScore)}
-                  <span className="text-sm font-medium">Genomsnittlig AEO-poäng</span>
+                  <span className="text-sm font-medium">Average AEO Score</span>
                 </div>
                 <div className="flex items-baseline gap-2">
                   <span className={`text-3xl font-bold ${getScoreColor(analysis.averageScore)}`}>
                     {analysis.averageScore}%
                   </span>
                   <span className="text-sm text-muted-foreground">
-                    av {analysis.totalPages} publicerade sidor
+                    of {analysis.totalPages} published pages
                   </span>
                 </div>
                 <Progress value={analysis.averageScore} className="mt-2 h-2" />
@@ -253,26 +253,26 @@ export function AeoDashboardWidget() {
             <div className="grid grid-cols-4 gap-2 text-center">
               <div className="p-2 rounded-lg bg-green-500/10">
                 <p className="text-lg font-bold text-green-600 dark:text-green-400">{analysis.excellent}</p>
-                <p className="text-xs text-muted-foreground">Utmärkt</p>
+                <p className="text-xs text-muted-foreground">Excellent</p>
               </div>
               <div className="p-2 rounded-lg bg-yellow-500/10">
                 <p className="text-lg font-bold text-yellow-600 dark:text-yellow-400">{analysis.good}</p>
-                <p className="text-xs text-muted-foreground">Bra</p>
+                <p className="text-xs text-muted-foreground">Good</p>
               </div>
               <div className="p-2 rounded-lg bg-orange-500/10">
                 <p className="text-lg font-bold text-orange-600 dark:text-orange-400">{analysis.needsWork}</p>
-                <p className="text-xs text-muted-foreground">Förbättra</p>
+                <p className="text-xs text-muted-foreground">Improve</p>
               </div>
               <div className="p-2 rounded-lg bg-red-500/10">
                 <p className="text-lg font-bold text-red-600 dark:text-red-400">{analysis.weak}</p>
-                <p className="text-xs text-muted-foreground">Svag</p>
+                <p className="text-xs text-muted-foreground">Weak</p>
               </div>
             </div>
             
             {/* Pages needing attention */}
             {analysis.pageScores.filter(p => p.score < 60).length > 0 && (
               <div>
-                <h4 className="text-sm font-medium mb-2">Behöver uppmärksamhet</h4>
+                <h4 className="text-sm font-medium mb-2">Needs attention</h4>
                 <div className="space-y-2">
                   {analysis.pageScores
                     .filter(p => p.score < 60)

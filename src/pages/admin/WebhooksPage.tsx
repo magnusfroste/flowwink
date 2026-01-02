@@ -43,7 +43,6 @@ import {
   WEBHOOK_EVENT_CATEGORIES
 } from '@/hooks/useWebhooks';
 import { format } from 'date-fns';
-import { sv } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { WebhookStats } from '@/components/admin/WebhookStats';
 
@@ -88,7 +87,7 @@ export default function WebhooksPage() {
     
     if (formData.events.length === 0) {
       toast({ 
-        title: 'Välj minst en händelse', 
+        title: 'Select at least one event', 
         variant: 'destructive' 
       });
       return;
@@ -105,7 +104,7 @@ export default function WebhooksPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Är du säker på att du vill ta bort denna webhook?')) {
+    if (confirm('Are you sure you want to delete this webhook?')) {
       await deleteWebhook.mutateAsync(id);
     }
   };
@@ -121,18 +120,18 @@ export default function WebhooksPage() {
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    toast({ title: 'Kopierat till urklipp' });
+    toast({ title: 'Copied to clipboard' });
   };
 
   return (
     <AdminLayout>
       <AdminPageHeader
         title="Webhooks"
-        description="Automatisera med webhooks som triggas vid olika händelser"
+        description="Automate with webhooks that trigger on various events"
       >
         <Button onClick={() => { resetForm(); setIsDialogOpen(true); }}>
           <Plus className="h-4 w-4 mr-2" />
-          Ny Webhook
+          New Webhook
         </Button>
       </AdminPageHeader>
 
@@ -141,14 +140,14 @@ export default function WebhooksPage() {
           <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
           <TabsTrigger value="stats">
             <TrendingUp className="h-4 w-4 mr-1" />
-            Statistik
+            Statistics
           </TabsTrigger>
           <TabsTrigger value="templates">
             <Zap className="h-4 w-4 mr-1" />
-            N8N Mallar
+            N8N Templates
           </TabsTrigger>
           <TabsTrigger value="logs" disabled={!viewingLogsFor}>
-            Loggar {viewingLogsFor && '(vald)'}
+            Logs {viewingLogsFor && '(selected)'}
           </TabsTrigger>
         </TabsList>
 
@@ -156,20 +155,20 @@ export default function WebhooksPage() {
           {isLoading ? (
             <Card>
               <CardContent className="py-8 text-center text-muted-foreground">
-                Laddar webhooks...
+                Loading webhooks...
               </CardContent>
             </Card>
           ) : webhooks.length === 0 ? (
             <Card>
               <CardContent className="py-12 text-center">
                 <Webhook className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium mb-2">Inga webhooks ännu</h3>
+                <h3 className="text-lg font-medium mb-2">No webhooks yet</h3>
                 <p className="text-muted-foreground mb-4">
-                  Skapa din första webhook för att automatisera händelser
+                  Create your first webhook to automate events
                 </p>
                 <Button onClick={() => { resetForm(); setIsDialogOpen(true); }}>
                   <Plus className="h-4 w-4 mr-2" />
-                  Skapa Webhook
+                  Create Webhook
                 </Button>
               </CardContent>
             </Card>
@@ -184,8 +183,8 @@ export default function WebhooksPage() {
                     <div className="bg-destructive/10 border-b border-destructive/20 px-4 py-2 flex items-center gap-2 text-sm text-destructive">
                       <AlertTriangle className="h-4 w-4" />
                       <span>
-                        <strong>Auto-inaktiverad</strong> efter {webhook.failure_count} misslyckade leveranser. 
-                        Aktivera igen när problemet är åtgärdat.
+                        <strong>Auto-disabled</strong> after {webhook.failure_count} failed deliveries. 
+                        Re-enable when the issue is fixed.
                       </span>
                     </div>
                   )}
@@ -234,12 +233,12 @@ export default function WebhooksPage() {
                         {webhook.last_triggered_at && (
                           <span className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
-                            Senast: {format(new Date(webhook.last_triggered_at), 'dd MMM HH:mm', { locale: sv })}
+                            Last: {format(new Date(webhook.last_triggered_at), 'dd MMM HH:mm')}
                           </span>
                         )}
                         {webhook.failure_count > 0 && (
                           <Badge variant="destructive" className="text-xs">
-                            {webhook.failure_count} fel
+                            {webhook.failure_count} errors
                           </Badge>
                         )}
                         {webhook.secret && (
@@ -269,7 +268,7 @@ export default function WebhooksPage() {
                           onClick={() => setViewingLogsFor(webhook.id)}
                         >
                           <History className="h-4 w-4 mr-1" />
-                          Loggar
+                          Logs
                         </Button>
                         <Button 
                           variant="ghost" 
@@ -277,7 +276,7 @@ export default function WebhooksPage() {
                           onClick={() => openEditDialog(webhook)}
                         >
                           <Edit className="h-4 w-4 mr-1" />
-                          Redigera
+                          Edit
                         </Button>
                         <Button 
                           variant="ghost" 
@@ -311,22 +310,22 @@ export default function WebhooksPage() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle>Leveransloggar</CardTitle>
+                    <CardTitle>Delivery Logs</CardTitle>
                     <CardDescription>
-                      Senaste 50 leveranser för denna webhook
+                      Last 50 deliveries for this webhook
                     </CardDescription>
                   </div>
                   <Button variant="outline" onClick={() => setViewingLogsFor(null)}>
-                    Stäng
+                    Close
                   </Button>
                 </div>
               </CardHeader>
               <CardContent>
                 {logsLoading ? (
-                  <p className="text-muted-foreground">Laddar loggar...</p>
+                  <p className="text-muted-foreground">Loading logs...</p>
                 ) : !logs || logs.length === 0 ? (
                   <p className="text-muted-foreground text-center py-8">
-                    Inga leveranser loggade ännu
+                    No deliveries logged yet
                   </p>
                 ) : (
                   <ScrollArea className="h-[400px]">
@@ -364,7 +363,7 @@ export default function WebhooksPage() {
                                   )}
                                 </div>
                                 <span className="text-muted-foreground text-xs flex-shrink-0">
-                                  {format(new Date(log.created_at), 'dd MMM HH:mm:ss', { locale: sv })}
+                                  {format(new Date(log.created_at), 'dd MMM HH:mm:ss')}
                                 </span>
                                 <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform [[data-state=open]>&]:rotate-180" />
                               </div>
@@ -409,7 +408,7 @@ export default function WebhooksPage() {
                                       ) : (
                                         <RotateCcw className="h-3 w-3 mr-1" />
                                       )}
-                                      Skicka igen
+                                      Resend
                                     </Button>
                                   </div>
                                 )}
@@ -432,21 +431,21 @@ export default function WebhooksPage() {
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>
-              {editingWebhook ? 'Redigera Webhook' : 'Ny Webhook'}
+              {editingWebhook ? 'Edit Webhook' : 'New Webhook'}
             </DialogTitle>
             <DialogDescription>
-              Konfigurera webhook-endpoint och vilka händelser den ska lyssna på
+              Configure webhook endpoint and the events it should listen to
             </DialogDescription>
           </DialogHeader>
           
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Namn</Label>
+              <Label htmlFor="name">Name</Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="Min webhook"
+                placeholder="My webhook"
                 required
               />
             </div>
@@ -465,7 +464,7 @@ export default function WebhooksPage() {
             
             <div className="space-y-2">
               <Label htmlFor="secret">
-                Hemlighet (valfritt)
+                Secret (optional)
                 <Button
                   type="button"
                   variant="ghost"
@@ -481,15 +480,15 @@ export default function WebhooksPage() {
                 type={showSecret ? 'text' : 'password'}
                 value={formData.secret}
                 onChange={(e) => setFormData(prev => ({ ...prev, secret: e.target.value }))}
-                placeholder="Används för HMAC-signering"
+                placeholder="Used for HMAC signing"
               />
               <p className="text-xs text-muted-foreground">
-                Om angiven, signeras varje request med X-Webhook-Signature header
+                If provided, each request is signed with X-Webhook-Signature header
               </p>
             </div>
             
             <div className="space-y-3">
-              <Label>Händelser</Label>
+              <Label>Events</Label>
               <ScrollArea className="h-[200px] border rounded-lg p-3">
                 {Object.entries(WEBHOOK_EVENT_CATEGORIES).map(([category, events]) => (
                   <div key={category} className="mb-4 last:mb-0">
@@ -518,13 +517,13 @@ export default function WebhooksPage() {
             
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                Avbryt
+                Cancel
               </Button>
               <Button 
                 type="submit" 
                 disabled={createWebhook.isPending || updateWebhook.isPending}
               >
-                {editingWebhook ? 'Spara' : 'Skapa'}
+                {editingWebhook ? 'Save' : 'Create'}
               </Button>
             </DialogFooter>
           </form>

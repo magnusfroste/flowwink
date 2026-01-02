@@ -97,10 +97,10 @@ export function AeoAnalyzer({ title, blocks, meta, slug }: AeoAnalyzerProps) {
     const aeoEnabled = aeoSettings?.enabled ?? false;
     items.push({
       id: 'aeo-enabled',
-      label: 'AEO aktiverat',
+      label: 'AEO enabled',
       description: aeoEnabled 
-        ? 'Strukturerad data genereras automatiskt' 
-        : 'Aktivera AEO i webbplatsinställningar',
+        ? 'Structured data is generated automatically' 
+        : 'Enable AEO in site settings',
       status: aeoEnabled ? 'pass' : 'fail',
       points: aeoEnabled ? 20 : 0,
       maxPoints: 20,
@@ -113,10 +113,10 @@ export function AeoAnalyzer({ title, blocks, meta, slug }: AeoAnalyzerProps) {
     const hasOrg = !!(aeoSettings?.organizationName && aeoSettings?.shortDescription);
     items.push({
       id: 'organization',
-      label: 'Organisation konfigurerad',
+      label: 'Organization configured',
       description: hasOrg 
         ? `${aeoSettings?.organizationName}` 
-        : 'Lägg till organisationsinfo i AEO-inställningar',
+        : 'Add organization info in AEO settings',
       status: hasOrg ? 'pass' : 'warn',
       points: hasOrg ? 15 : 0,
       maxPoints: 15,
@@ -130,10 +130,10 @@ export function AeoAnalyzer({ title, blocks, meta, slug }: AeoAnalyzerProps) {
     const descLength = meta.description?.length || 0;
     items.push({
       id: 'meta-description',
-      label: 'Meta-beskrivning',
+      label: 'Meta description',
       description: hasDescription 
-        ? `${descLength} tecken (rekommenderat: 120-160)` 
-        : 'Lägg till en beskrivande meta-text (minst 50 tecken)',
+        ? `${descLength} characters (recommended: 120-160)` 
+        : 'Add a descriptive meta text (at least 50 characters)',
       status: hasDescription 
         ? (descLength >= 120 && descLength <= 160 ? 'pass' : 'warn') 
         : 'fail',
@@ -149,10 +149,10 @@ export function AeoAnalyzer({ title, blocks, meta, slug }: AeoAnalyzerProps) {
     const hasFaq = faqCount >= 3;
     items.push({
       id: 'faq-content',
-      label: 'FAQ-innehåll',
+      label: 'FAQ content',
       description: faqCount > 0 
-        ? `${faqCount} frågor hittade (rekommenderat: minst 3)` 
-        : 'Lägg till accordion-block med vanliga frågor',
+        ? `${faqCount} questions found (recommended: at least 3)` 
+        : 'Add accordion block with frequently asked questions',
       status: hasFaq ? 'pass' : (faqCount > 0 ? 'warn' : 'fail'),
       points: hasFaq ? 20 : (faqCount > 0 ? faqCount * 5 : 0),
       maxPoints: 20,
@@ -166,8 +166,8 @@ export function AeoAnalyzer({ title, blocks, meta, slug }: AeoAnalyzerProps) {
     const hasGoodContent = wordCount >= 300;
     items.push({
       id: 'content-depth',
-      label: 'Innehållsdjup',
-      description: `${wordCount} ord (rekommenderat: minst 300)`,
+      label: 'Content depth',
+      description: `${wordCount} words (recommended: at least 300)`,
       status: hasGoodContent ? 'pass' : (wordCount >= 100 ? 'warn' : 'fail'),
       points: hasGoodContent ? 15 : (wordCount >= 100 ? 8 : 0),
       maxPoints: 15,
@@ -180,10 +180,10 @@ export function AeoAnalyzer({ title, blocks, meta, slug }: AeoAnalyzerProps) {
     const hasHeadingStructure = hasHeadings(blocks);
     items.push({
       id: 'headings',
-      label: 'Rubrikstruktur',
+      label: 'Heading structure',
       description: hasHeadingStructure 
-        ? 'Rubriker hittade för bättre struktur' 
-        : 'Lägg till rubriker (H1-H6) för tydlig struktur',
+        ? 'Headings found for better structure' 
+        : 'Add headings (H1-H6) for clear structure',
       status: hasHeadingStructure ? 'pass' : 'warn',
       points: hasHeadingStructure ? 10 : 0,
       maxPoints: 10,
@@ -199,8 +199,8 @@ export function AeoAnalyzer({ title, blocks, meta, slug }: AeoAnalyzerProps) {
       id: 'llms-txt',
       label: 'llms.txt',
       description: inLlmsTxt
-        ? 'Sidan inkluderas i llms.txt' 
-        : 'Sidan exkluderas eller llms.txt är inaktiverat',
+        ? 'Page is included in llms.txt' 
+        : 'Page is excluded or llms.txt is disabled',
       status: inLlmsTxt ? 'pass' : 'warn',
       points: inLlmsTxt ? 5 : 0,
       maxPoints: 5,
@@ -221,10 +221,10 @@ export function AeoAnalyzer({ title, blocks, meta, slug }: AeoAnalyzerProps) {
   };
   
   const getScoreLabel = (score: number) => {
-    if (score >= 80) return 'Utmärkt';
-    if (score >= 60) return 'Bra';
-    if (score >= 40) return 'Behöver förbättras';
-    return 'Svag';
+    if (score >= 80) return 'Excellent';
+    if (score >= 60) return 'Good';
+    if (score >= 40) return 'Needs improvement';
+    return 'Weak';
   };
   
   const getStatusIcon = (status: 'pass' | 'warn' | 'fail') => {
@@ -252,10 +252,10 @@ export function AeoAnalyzer({ title, blocks, meta, slug }: AeoAnalyzerProps) {
       </CollapsibleTrigger>
       <CollapsibleContent className="absolute right-0 top-full mt-2 z-50">
         <div className="bg-popover border rounded-lg shadow-lg p-4 w-80">
-          <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-primary" />
-              <span className="font-medium">AEO-analys</span>
+              <span className="font-medium">AEO Analysis</span>
             </div>
             <div className={`text-lg font-bold ${getScoreColor(analysis.score)}`}>
               {analysis.score}% - {getScoreLabel(analysis.score)}
@@ -289,7 +289,7 @@ export function AeoAnalyzer({ title, blocks, meta, slug }: AeoAnalyzerProps) {
           </div>
           
           <div className="mt-3 pt-3 border-t text-xs text-muted-foreground">
-            <p>Optimera för AI-sökmotorer som Perplexity, ChatGPT och Google AI Overviews.</p>
+            <p>Optimize for AI search engines like Perplexity, ChatGPT, and Google AI Overviews.</p>
           </div>
         </div>
       </CollapsibleContent>
