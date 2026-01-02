@@ -93,6 +93,7 @@ export default function NewSitePage() {
           meta: templatePage.meta,
           menu_order: templatePage.menu_order,
           show_in_menu: templatePage.showInMenu,
+          status: 'published',
         });
         
         pageIds.push(page.id);

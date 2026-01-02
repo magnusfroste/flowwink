@@ -86,7 +86,8 @@ export function useCreatePage() {
       content,
       meta,
       menu_order,
-      show_in_menu
+      show_in_menu,
+      status
     }: { 
       title: string; 
       slug: string;
@@ -94,13 +95,14 @@ export function useCreatePage() {
       meta?: Partial<PageMeta>;
       menu_order?: number;
       show_in_menu?: boolean;
+      status?: PageStatus;
     }) => {
       const { data, error } = await supabase
         .from('pages')
         .insert({
           title,
           slug,
-          status: 'draft' as PageStatus,
+          status: status || ('draft' as PageStatus),
           content_json: (content || []) as unknown as Json,
           meta_json: (meta || {}) as unknown as Json,
           created_by: user?.id,
