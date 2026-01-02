@@ -34,6 +34,7 @@ export default function NewSitePage() {
   const [clearExistingPages, setClearExistingPages] = useState(false);
   const [publishPages, setPublishPages] = useState(true);
   const [publishBlogPosts, setPublishBlogPosts] = useState(true);
+  const [publishKbArticles, setPublishKbArticles] = useState(true);
   
   const navigate = useNavigate();
   const { data: existingPages } = usePages();
@@ -184,7 +185,7 @@ export default function NewSitePage() {
               question: article.question,
               answer_json: article.answer_json as any,
               answer_text: article.answer_text,
-              is_published: true,
+              is_published: publishKbArticles,
               is_featured: article.is_featured,
               include_in_chat: article.include_in_chat,
             });
@@ -371,6 +372,26 @@ export default function NewSitePage() {
                         id="publish-blogs"
                         checked={publishBlogPosts}
                         onCheckedChange={setPublishBlogPosts}
+                      />
+                    </div>
+                  )}
+
+                  {/* Publish KB articles option */}
+                  {selectedTemplate.kbCategories && selectedTemplate.kbCategories.length > 0 && (
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="publish-kb" className="text-sm font-medium flex items-center gap-2">
+                          <Send className="h-4 w-4" />
+                          Publish KB articles immediately
+                        </Label>
+                        <p className="text-xs text-muted-foreground">
+                          Publish all {selectedTemplate.kbCategories.reduce((acc, cat) => acc + cat.articles.length, 0)} knowledge base articles when creating the site
+                        </p>
+                      </div>
+                      <Switch
+                        id="publish-kb"
+                        checked={publishKbArticles}
+                        onCheckedChange={setPublishKbArticles}
                       />
                     </div>
                   )}
