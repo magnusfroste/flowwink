@@ -83,8 +83,8 @@ export default function KnowledgeBasePage() {
   return (
     <>
       <SeoHead 
-        title="Kunskapsbas"
-        description="Hitta svar på vanliga frågor och lär dig mer om våra tjänster."
+        title="Knowledge Base"
+        description="Find answers to common questions and learn more about our services."
       />
       <PublicNavigation />
       
@@ -93,10 +93,10 @@ export default function KnowledgeBasePage() {
         <section className="bg-gradient-to-b from-primary/5 to-background py-16 md:py-24">
           <div className="container max-w-4xl mx-auto px-4 text-center">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">
-              Hur kan vi hjälpa dig?
+              How can we help you?
             </h1>
             <p className="text-lg text-muted-foreground mb-8">
-              Sök i vår kunskapsbas eller bläddra bland kategorier
+              Search our knowledge base or browse by category
             </p>
             
             {/* Search */}
@@ -104,7 +104,7 @@ export default function KnowledgeBasePage() {
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
               <Input
                 type="search"
-                placeholder="Sök efter frågor eller svar..."
+                placeholder="Search for questions or answers..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-12 h-14 text-lg rounded-xl shadow-lg"
@@ -122,7 +122,7 @@ export default function KnowledgeBasePage() {
               onClick={() => setSelectedCategory(null)}
               className="rounded-full"
             >
-              Alla
+              All
             </Button>
             {categoriesLoading ? (
               Array.from({ length: 4 }).map((_, i) => (
@@ -147,9 +147,9 @@ export default function KnowledgeBasePage() {
           {(searchQuery || selectedCategory) && (
             <div className="text-center mb-6">
               <p className="text-muted-foreground">
-                {filteredArticles.length} {filteredArticles.length === 1 ? 'artikel' : 'artiklar'}
-                {selectedCategoryName && ` i "${selectedCategoryName}"`}
-                {searchQuery && ` för "${searchQuery}"`}
+                {filteredArticles.length} {filteredArticles.length === 1 ? 'article' : 'articles'}
+                {selectedCategoryName && ` in "${selectedCategoryName}"`}
+                {searchQuery && ` for "${searchQuery}"`}
               </p>
             </div>
           )}
@@ -164,13 +164,13 @@ export default function KnowledgeBasePage() {
           ) : filteredArticles.length === 0 ? (
             <div className="text-center py-16">
               <Search className="h-16 w-16 mx-auto text-muted-foreground/30 mb-4" />
-              <h2 className="text-xl font-semibold mb-2">Inga resultat hittades</h2>
+              <h2 className="text-xl font-semibold mb-2">No results found</h2>
               <p className="text-muted-foreground mb-6">
-                Försök med andra sökord eller bläddra bland alla kategorier
+                Try different search terms or browse all categories
               </p>
               {searchQuery && (
                 <Button variant="outline" onClick={() => setSearchQuery("")}>
-                  Rensa sökning
+                  Clear search
                 </Button>
               )}
             </div>
@@ -218,7 +218,7 @@ export default function KnowledgeBasePage() {
                                 <h3 className="font-medium">{article.question}</h3>
                                 {article.is_featured && (
                                   <Badge variant="outline" className="mt-1 text-xs">
-                                    Populär
+                                    Popular
                                   </Badge>
                                 )}
                               </div>
@@ -236,16 +236,16 @@ export default function KnowledgeBasePage() {
                                 {/* Feedback */}
                                 <div className="flex items-center gap-4 mt-6 pt-4 border-t">
                                   <span className="text-sm text-muted-foreground">
-                                    Var detta hjälpsamt?
+                                    Was this helpful?
                                   </span>
                                   <div className="flex gap-2">
                                     <Button variant="ghost" size="sm" className="h-8">
                                       <ThumbsUp className="h-4 w-4 mr-1" />
-                                      Ja
+                                      Yes
                                     </Button>
                                     <Button variant="ghost" size="sm" className="h-8">
                                       <ThumbsDown className="h-4 w-4 mr-1" />
-                                      Nej
+                                      No
                                     </Button>
                                   </div>
                                 </div>
@@ -266,23 +266,23 @@ export default function KnowledgeBasePage() {
         <section className="bg-muted/50 py-16 mt-16">
           <div className="container max-w-2xl mx-auto px-4 text-center">
             <h2 className="text-2xl font-bold mb-4">
-              Hittar du inte svaret?
+              Can't find the answer?
             </h2>
             <p className="text-muted-foreground mb-6">
-              Vårt team hjälper dig gärna med dina frågor
+              Our team is happy to help you with your questions
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               {chatEnabled && (
                 <Button asChild size="lg">
                   <Link to="/chat">
                     <MessageSquare className="h-5 w-5 mr-2" />
-                    Chatta med oss
+                    Chat with us
                   </Link>
                 </Button>
               )}
               <Button variant="outline" size="lg" asChild>
-                <Link to="/kontakt">
-                  Kontakta oss
+                <Link to="/contact">
+                  Contact us
                 </Link>
               </Button>
             </div>

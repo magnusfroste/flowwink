@@ -51,7 +51,7 @@ export function ChatWidget() {
         )}>
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b bg-primary/5">
-            <h3 className="font-medium font-serif">{settings.title || 'AI Assistent'}</h3>
+            <h3 className="font-medium font-serif">{settings.title || 'AI Assistant'}</h3>
             <Button
               variant="ghost"
               size="icon"

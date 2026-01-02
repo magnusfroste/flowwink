@@ -12,20 +12,20 @@ import { cn } from '@/lib/utils';
 
 const features = {
   hosting: [
-    'Molnbaserad hosting',
-    'Automatiska backups',
-    'SSL-certifikat inkluderat',
-    'CDN för snabb laddning',
-    'Support via email',
-    'Månadsvis betalning',
+    'Cloud-based hosting',
+    'Automatic backups',
+    'SSL certificate included',
+    'CDN for fast loading',
+    'Email support',
+    'Monthly billing',
   ],
   setup: [
-    'Professionell installation',
-    'Konfiguration av domän',
-    'Grundläggande SEO-setup',
-    'Innehållsmigrering',
-    'Utbildning (1 timme)',
-    'Engångskostnad',
+    'Professional installation',
+    'Domain configuration',
+    'Basic SEO setup',
+    'Content migration',
+    'Training (1 hour)',
+    'One-time cost',
   ],
 };
 
@@ -41,7 +41,7 @@ export default function PricingPage() {
     
     const alreadyInCart = items.some(item => item.productId === product.id);
     if (alreadyInCart) {
-      toast.info('Produkten finns redan i varukorgen');
+      toast.info('Product is already in your cart');
       return;
     }
 
@@ -52,7 +52,7 @@ export default function PricingPage() {
       currency: product.currency,
       imageUrl: product.image_url,
     });
-    toast.success(`${product.name} har lagts till i varukorgen`);
+    toast.success(`${product.name} has been added to your cart`);
   };
 
   const isInCart = (productId: string) => items.some(item => item.productId === productId);
@@ -60,8 +60,8 @@ export default function PricingPage() {
   return (
     <>
       <Helmet>
-        <title>Priser | PezCMS</title>
-        <meta name="description" content="Enkla och transparenta priser för PezCMS-plattformen. Välj mellan månatlig hosting eller kom igång med professionell setup." />
+        <title>Pricing | PezCMS</title>
+        <meta name="description" content="Simple and transparent pricing for the PezCMS platform. Choose between monthly hosting or get started with professional setup." />
       </Helmet>
       
       <PublicNavigation />
@@ -71,13 +71,13 @@ export default function PricingPage() {
         <section className="container mx-auto px-6 pt-20 pb-16 text-center">
           <Badge variant="secondary" className="mb-4">
             <Zap className="w-3 h-3 mr-1" />
-            Enkla priser
+            Simple pricing
           </Badge>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold mb-6 tracking-tight">
-            Välj rätt paket för dig
+            Choose the right plan for you
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Transparenta priser utan dolda avgifter. Börja med hosting och lägg till setup om du vill ha hjälp att komma igång.
+            Transparent pricing with no hidden fees. Start with hosting and add setup if you want help getting started.
           </p>
         </section>
 
@@ -112,15 +112,15 @@ export default function PricingPage() {
                   <CardHeader>
                     <div className="flex items-center gap-2 mb-2">
                       <Shield className="w-5 h-5 text-primary" />
-                      <Badge variant="outline">Prenumeration</Badge>
+                      <Badge variant="outline">Subscription</Badge>
                     </div>
                     <CardTitle className="text-2xl font-serif">{hostingProduct.name}</CardTitle>
                     <div className="flex items-baseline gap-1">
                       <span className="text-4xl font-bold">{formatPrice(hostingProduct.price_cents, hostingProduct.currency)}</span>
-                      <span className="text-muted-foreground">/månad</span>
+                      <span className="text-muted-foreground">/month</span>
                     </div>
                     <CardDescription className="text-base">
-                      {hostingProduct.description || 'Allt du behöver för att driva din webbplats'}
+                      {hostingProduct.description || 'Everything you need to run your website'}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -143,7 +143,7 @@ export default function PricingPage() {
                       disabled={isInCart(hostingProduct.id)}
                     >
                       <ShoppingCart className="w-4 h-4 mr-2" />
-                      {isInCart(hostingProduct.id) ? 'Finns i varukorgen' : 'Lägg till i varukorg'}
+                      {isInCart(hostingProduct.id) ? 'Already in cart' : 'Add to cart'}
                     </Button>
                   </CardFooter>
                 </Card>
@@ -159,15 +159,15 @@ export default function PricingPage() {
                   <CardHeader>
                     <div className="flex items-center gap-2 mb-2">
                       <Headphones className="w-5 h-5 text-muted-foreground" />
-                      <Badge variant="secondary">Engångskostnad</Badge>
+                      <Badge variant="secondary">One-time cost</Badge>
                     </div>
                     <CardTitle className="text-2xl font-serif">{setupProduct.name}</CardTitle>
                     <div className="flex items-baseline gap-1">
                       <span className="text-4xl font-bold">{formatPrice(setupProduct.price_cents, setupProduct.currency)}</span>
-                      <span className="text-muted-foreground">engång</span>
+                      <span className="text-muted-foreground">one-time</span>
                     </div>
                     <CardDescription className="text-base">
-                      {setupProduct.description || 'Vi hjälper dig komma igång snabbt och enkelt'}
+                      {setupProduct.description || 'We help you get started quickly and easily'}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -191,7 +191,7 @@ export default function PricingPage() {
                       disabled={isInCart(setupProduct.id)}
                     >
                       <ShoppingCart className="w-4 h-4 mr-2" />
-                      {isInCart(setupProduct.id) ? 'Finns i varukorgen' : 'Lägg till i varukorg'}
+                      {isInCart(setupProduct.id) ? 'Already in cart' : 'Add to cart'}
                     </Button>
                   </CardFooter>
                 </Card>
@@ -201,24 +201,24 @@ export default function PricingPage() {
 
           {/* FAQ / Additional Info */}
           <div className="mt-16 text-center max-w-2xl mx-auto">
-            <h2 className="text-2xl font-serif font-bold mb-4">Vanliga frågor</h2>
+            <h2 className="text-2xl font-serif font-bold mb-4">Frequently Asked Questions</h2>
             <div className="space-y-4 text-left">
               <div className="p-4 rounded-lg bg-muted/50">
-                <h3 className="font-medium mb-1">Kan jag avbryta när som helst?</h3>
+                <h3 className="font-medium mb-1">Can I cancel at any time?</h3>
                 <p className="text-sm text-muted-foreground">
-                  Ja, du kan avbryta din prenumeration när som helst. Du behåller tillgång till tjänsten till slutet av din betalningsperiod.
+                  Yes, you can cancel your subscription at any time. You will retain access to the service until the end of your billing period.
                 </p>
               </div>
               <div className="p-4 rounded-lg bg-muted/50">
-                <h3 className="font-medium mb-1">Behöver jag köpa setup?</h3>
+                <h3 className="font-medium mb-1">Do I need to purchase setup?</h3>
                 <p className="text-sm text-muted-foreground">
-                  Nej, setup är valfritt. Det är för dig som vill ha hjälp att komma igång snabbt med professionell installation och utbildning.
+                  No, setup is optional. It's for those who want help getting started quickly with professional installation and training.
                 </p>
               </div>
               <div className="p-4 rounded-lg bg-muted/50">
-                <h3 className="font-medium mb-1">Vilka betalningsmetoder accepteras?</h3>
+                <h3 className="font-medium mb-1">What payment methods are accepted?</h3>
                 <p className="text-sm text-muted-foreground">
-                  Vi accepterar alla vanliga kort (Visa, Mastercard, etc.) via vår säkra betalningslösning Stripe.
+                  We accept all major cards (Visa, Mastercard, etc.) through our secure payment solution Stripe.
                 </p>
               </div>
             </div>
