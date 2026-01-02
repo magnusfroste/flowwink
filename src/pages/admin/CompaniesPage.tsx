@@ -16,7 +16,6 @@ import { useExportCompanies, useImportCompanies } from '@/hooks/useCsvImportExpo
 import { CsvImportDialog } from '@/components/admin/CsvImportDialog';
 import { CreateCompanyDialog } from '@/components/admin/CreateCompanyDialog';
 import { format } from 'date-fns';
-import { sv } from 'date-fns/locale';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -57,8 +56,8 @@ export default function CompaniesPage() {
   return (
     <AdminLayout>
       <AdminPageHeader
-        title="Företag"
-        description="Hantera företag och organisationer i ditt CRM"
+        title="Companies"
+        description="Manage companies and organizations in your CRM"
       >
         <div className="flex items-center gap-2">
           <DropdownMenu>
@@ -70,11 +69,11 @@ export default function CompaniesPage() {
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={handleExport} disabled={!companies?.length}>
                 <Download className="h-4 w-4 mr-2" />
-                Exportera CSV
+                Export CSV
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setShowImportDialog(true)}>
                 <Upload className="h-4 w-4 mr-2" />
-                Importera CSV
+                Import CSV
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -85,16 +84,16 @@ export default function CompaniesPage() {
       <CsvImportDialog
         open={showImportDialog}
         onOpenChange={setShowImportDialog}
-        title="Importera Företag"
-        description="Ladda upp en CSV-fil för att importera företag."
-        expectedColumns={['Namn (obligatoriskt)', 'Domän', 'Bransch', 'Storlek', 'Webbplats', 'Telefon', 'Adress']}
+        title="Import Companies"
+        description="Upload a CSV file to import companies."
+        expectedColumns={['Name (required)', 'Domain', 'Industry', 'Size', 'Website', 'Phone', 'Address']}
         onImport={handleImport}
       />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Totalt antal</CardTitle>
+            <CardTitle className="text-sm font-medium">Total</CardTitle>
             <Building2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -103,7 +102,7 @@ export default function CompaniesPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Med kontakter</CardTitle>
+            <CardTitle className="text-sm font-medium">With Contacts</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -112,7 +111,7 @@ export default function CompaniesPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Utan kontakter</CardTitle>
+            <CardTitle className="text-sm font-medium">Without Contacts</CardTitle>
             <Building2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -127,7 +126,7 @@ export default function CompaniesPage() {
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Sök företag..."
+                placeholder="Search companies..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-9"
@@ -145,17 +144,17 @@ export default function CompaniesPage() {
           ) : filteredCompanies?.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Building2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Inga företag hittades</p>
+              <p>No companies found</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Företag</TableHead>
-                  <TableHead>Bransch</TableHead>
-                  <TableHead>Storlek</TableHead>
-                  <TableHead>Kontakt</TableHead>
-                  <TableHead>Skapad</TableHead>
+                  <TableHead>Company</TableHead>
+                  <TableHead>Industry</TableHead>
+                  <TableHead>Size</TableHead>
+                  <TableHead>Contact</TableHead>
+                  <TableHead>Created</TableHead>
                   <TableHead className="w-[100px]"></TableHead>
                 </TableRow>
               </TableHeader>
@@ -184,7 +183,7 @@ export default function CompaniesPage() {
                                 <Sparkles className="h-4 w-4 text-primary/70" />
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>Berikad {format(new Date(company.enriched_at), 'd MMM yyyy', { locale: sv })}</p>
+                                <p>Enriched {format(new Date(company.enriched_at), 'd MMM yyyy')}</p>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
@@ -226,29 +225,29 @@ export default function CompaniesPage() {
                       </div>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {format(new Date(company.created_at), 'd MMM yyyy', { locale: sv })}
+                      {format(new Date(company.created_at), 'd MMM yyyy')}
                     </TableCell>
                     <TableCell>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button variant="ghost" size="sm" className="text-destructive">
-                            Ta bort
+                            Delete
                           </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Ta bort företag?</AlertDialogTitle>
+                            <AlertDialogTitle>Delete company?</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Detta kommer ta bort företaget permanent. Kontakter kopplade till företaget behålls men förlorar sin koppling.
+                              This will permanently delete the company. Contacts linked to the company will be kept but will lose their association.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel>Avbryt</AlertDialogCancel>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
                             <AlertDialogAction
                               onClick={() => deleteCompany.mutate(company.id)}
                               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                             >
-                              Ta bort
+                              Delete
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
