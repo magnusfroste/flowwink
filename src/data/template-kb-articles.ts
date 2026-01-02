@@ -995,4 +995,280 @@ export const pezcmsKbCategories: TemplateKbCategory[] = [
       },
     ],
   },
+  
+  // ===== BEST PRACTICES =====
+  {
+    name: 'Best Practices',
+    slug: 'best-practices',
+    description: 'Expert guidance on content strategy, SEO, and performance optimization.',
+    icon: 'Award',
+    articles: [
+      {
+        title: 'Content Strategy Fundamentals',
+        slug: 'content-strategy-fundamentals',
+        question: 'How do I develop an effective content strategy?',
+        answer_text: 'Start by defining your audience and goals. Create a content calendar, maintain consistent publishing schedules, and measure what works. Focus on quality over quantity.',
+        is_featured: true,
+        include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-content-strategy',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Building Your Content Strategy' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'A solid content strategy aligns your publishing efforts with business goals and audience needs.' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Step 1: Define Your Audience' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Who are you writing for? Create 2-3 audience personas' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'What problems do they need solved?' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Where do they consume content? (Search, social, email)' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Step 2: Set Measurable Goals' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Traffic' }, { type: 'text', text: ' – Organic visits, page views, time on site' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Engagement' }, { type: 'text', text: ' – Comments, shares, newsletter signups' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Conversion' }, { type: 'text', text: ' – Leads generated, demos booked, sales' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Step 3: Create a Content Calendar' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Consistency matters more than volume. Start with a sustainable schedule:' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Blog posts: 1-2 per week' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Landing pages: Monthly updates' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Knowledge base: Continuous improvement based on support tickets' }] }] },
+                  ] },
+                  { type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'italic' }], text: 'Tip: Use the scheduled publishing feature to maintain consistency even during busy periods.' }] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      {
+        title: 'SEO Optimization Guide',
+        slug: 'seo-optimization-guide',
+        question: 'How do I optimize my content for search engines?',
+        answer_text: 'Focus on keyword research, compelling meta descriptions, proper heading structure, and quality content. Use the built-in SEO settings for each page and leverage the automatic sitemap generation.',
+        is_featured: true,
+        include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-seo-guide',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'SEO Optimization in PezCMS' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Search engine optimization helps your content get discovered. Here are the key practices.' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'On-Page SEO Essentials' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Title Tags' }, { type: 'text', text: ' – Include your primary keyword, keep under 60 characters' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Meta Descriptions' }, { type: 'text', text: ' – Compelling summary under 160 characters with a call to action' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Heading Structure' }, { type: 'text', text: ' – Use H1 for title, H2 for sections, H3 for subsections' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Image Alt Text' }, { type: 'text', text: ' – Describe images for accessibility and search engines' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'URL Best Practices' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Keep URLs short and descriptive' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Use hyphens, not underscores' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Include your target keyword' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Avoid unnecessary words (the, a, and)' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Technical SEO (Automatic)' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'PezCMS handles these automatically:' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'XML sitemap at /functions/v1/sitemap-xml' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'RSS feed for blog posts' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Canonical URLs to prevent duplicate content' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Mobile-responsive design' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'LLMs.txt for AI search engines' }] }] },
+                  ] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      {
+        title: 'AEO: Optimizing for AI Search',
+        slug: 'aeo-ai-search-optimization',
+        question: 'What is Answer Engine Optimization (AEO)?',
+        answer_text: 'AEO optimizes content for AI-powered search engines that provide direct answers. Write clear, question-based content, use structured data, and ensure your knowledge base is comprehensive.',
+        is_featured: true,
+        include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-aeo',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Answer Engine Optimization (AEO)' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'AI search engines like ChatGPT, Perplexity, and Google SGE provide direct answers instead of links. AEO ensures your content gets cited.' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Why AEO Matters' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Traditional SEO optimizes for rankings. AEO optimizes for being the answer. When AI cites your content, you get qualified traffic from users who already trust you.' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'AEO Best Practices' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Question-Based Content' }, { type: 'text', text: ' – Structure articles around specific questions' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Clear, Concise Answers' }, { type: 'text', text: ' – Provide direct answers in the first paragraph' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Authoritative Depth' }, { type: 'text', text: ' – Follow with detailed explanations and examples' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Structured Data' }, { type: 'text', text: ' – Use proper headings, lists, and formatting' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'PezCMS AEO Features' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'AEO Analyzer reviews your content and suggests improvements' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'LLMs.txt endpoint provides AI-friendly content summaries' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Knowledge Base structure is already AEO-optimized' }] }] },
+                  ] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      {
+        title: 'Performance Optimization',
+        slug: 'performance-optimization',
+        question: 'How do I make my website faster?',
+        answer_text: 'Optimize images before uploading, use lazy loading for below-the-fold content, minimize the number of blocks per page, and leverage browser caching. PezCMS automatically optimizes images on upload.',
+        include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-performance',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Performance Optimization Tips' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Fast websites rank better, convert more, and provide better user experiences.' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Image Optimization' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Right Size' }, { type: 'text', text: ' – Upload images at the size they will be displayed' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Format' }, { type: 'text', text: ' – Use WebP or JPEG for photos, PNG for graphics with transparency' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Compression' }, { type: 'text', text: ' – PezCMS automatically compresses uploads' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Alt Text' }, { type: 'text', text: ' – Always add descriptive alt text for accessibility' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Page Structure' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Keep pages focused – avoid cramming everything onto one page' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Use pagination for long lists (blog, products)' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Lazy load images and videos below the fold' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Monitoring Performance' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Use these free tools to measure your site speed:' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Google PageSpeed Insights' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'GTmetrix' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'WebPageTest' }] }] },
+                  ] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      {
+        title: 'Writing for the Web',
+        slug: 'writing-for-web',
+        question: 'How should I write content for my website?',
+        answer_text: 'Use short paragraphs, clear headings, and scannable formatting. Write at an 8th-grade reading level. Front-load important information and break up text with lists, images, and white space.',
+        include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-web-writing',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Writing Effective Web Content' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'People read differently online. They scan, skip, and skim. Write accordingly.' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'The Inverted Pyramid' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Put the most important information first. Many readers only see the first paragraph – make it count.' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Formatting for Scanners' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Short Paragraphs' }, { type: 'text', text: ' – 2-3 sentences maximum' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Descriptive Headings' }, { type: 'text', text: ' – Tell readers what the section contains' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Bullet Lists' }, { type: 'text', text: ' – Break up complex information' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Bold Key Points' }, { type: 'text', text: ' – Help scanners find important information' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'White Space' }, { type: 'text', text: ' – Give content room to breathe' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Voice and Tone' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Write like you speak – conversational, not formal' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Use "you" to address the reader directly' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Avoid jargon unless your audience expects it' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Be specific – "5 minutes" beats "quick"' }] }] },
+                  ] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      {
+        title: 'Conversion Optimization',
+        slug: 'conversion-optimization',
+        question: 'How do I get more visitors to take action?',
+        answer_text: 'Use clear calls-to-action, reduce friction in forms, build trust with testimonials, and ensure fast page loads. Test different headlines, button text, and layouts to see what works best.',
+        include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-conversion',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Conversion Rate Optimization' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Getting traffic is only half the battle. Converting visitors into leads and customers requires intentional design.' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Clear Calls-to-Action' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'One primary CTA per page – make the desired action obvious' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Use action words: "Get Started," "Book Demo," "Download Guide"' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Make buttons stand out with contrasting colors' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Repeat CTAs on long pages' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Reduce Form Friction' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Ask only for essential information' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Use smart defaults and autofill when possible' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Show progress for multi-step forms' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Explain why you need each field' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Build Trust' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Display testimonials and case studies' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Show logos of customers or media mentions' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Include team photos and bios' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Be transparent about pricing' }] }] },
+                  ] },
+                  { type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'italic' }], text: 'Tip: Use the Stats and Testimonials blocks to build social proof throughout your pages.' }] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      {
+        title: 'Content Maintenance',
+        slug: 'content-maintenance',
+        question: 'How often should I update my content?',
+        answer_text: 'Review cornerstone content quarterly. Update blog posts with new information annually. Remove or redirect outdated pages. Fresh content signals relevance to search engines and builds trust with visitors.',
+        include_in_chat: true,
+      },
+      {
+        title: 'Accessibility Guidelines',
+        slug: 'accessibility-guidelines',
+        question: 'How do I make my content accessible?',
+        answer_text: 'Use descriptive alt text for images, ensure sufficient color contrast, write clear link text, and use proper heading hierarchy. Accessible content reaches more people and improves SEO.',
+        include_in_chat: true,
+      },
+    ],
+  },
 ];
