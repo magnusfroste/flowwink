@@ -42,6 +42,7 @@ import CompanyDetailPage from "./pages/admin/CompanyDetailPage";
 import ProductsPage from "./pages/admin/ProductsPage";
 import OrdersPage from "./pages/admin/OrdersPage";
 import KnowledgeBasePage from "./pages/admin/KnowledgeBasePage";
+import AnalyticsDashboardPage from "./pages/admin/AnalyticsDashboardPage";
 import ProfilePage from "./pages/admin/ProfilePage";
 import KbArticleEditorPage from "./pages/admin/KbArticleEditorPage";
 import PublicKnowledgeBasePage from "./pages/KnowledgeBasePage";
@@ -77,6 +78,7 @@ const router = createBrowserRouter([
   { path: "/blogg/:slug", element: <BlogPostPage /> },
   // Admin routes
   { path: "/admin", element: <AdminDashboard /> },
+  { path: "/admin/analytics", element: <AnalyticsDashboardPage /> },
   { path: "/admin/pages", element: <PagesListPage /> },
   { path: "/admin/pages/new", element: <NewPagePage /> },
   { path: "/admin/pages/:id", element: <PageEditorPage /> },

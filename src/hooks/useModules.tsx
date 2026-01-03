@@ -8,11 +8,12 @@ export interface ModuleConfig {
   name: string;
   description: string;
   icon: string;
-  category: 'content' | 'data' | 'communication' | 'system';
+  category: 'content' | 'data' | 'communication' | 'system' | 'insights';
   core?: boolean; // Core modules cannot be disabled
 }
 
 export interface ModulesSettings {
+  analytics: ModuleConfig;
   pages: ModuleConfig;
   blog: ModuleConfig;
   knowledgeBase: ModuleConfig;
@@ -30,6 +31,13 @@ export interface ModulesSettings {
 }
 
 export const defaultModulesSettings: ModulesSettings = {
+  analytics: {
+    enabled: true,
+    name: 'Analytics',
+    description: 'Dashboard with insights on leads, deals, and newsletter performance',
+    icon: 'BarChart3',
+    category: 'insights',
+  },
   pages: {
     enabled: true,
     name: 'Pages',
@@ -134,6 +142,7 @@ export const defaultModulesSettings: ModulesSettings = {
 
 // Map sidebar items to module IDs
 export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
+  '/admin/analytics': 'analytics',
   '/admin/pages': 'pages',
   '/admin/blog': 'blog',
   '/admin/knowledge-base': 'knowledgeBase',
