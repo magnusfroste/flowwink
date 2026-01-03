@@ -13,6 +13,8 @@ import {
   useNewsletterPerformance,
   useTimeSeriesData,
   useMonthlyComparison,
+  usePageViewsByPage,
+  usePageViewsTimeSeries,
 } from '@/hooks/useAnalytics';
 import { useBookingStats } from '@/hooks/useBookings';
 import { useIsModuleEnabled } from '@/hooks/useModules';
@@ -28,6 +30,8 @@ import {
   CalendarDays,
   Settings,
   BarChart3,
+  Eye,
+  TrendingUp,
 } from 'lucide-react';
 import {
   AreaChart,
@@ -183,6 +187,8 @@ export default function AnalyticsDashboardPage() {
   const { data: timeSeries, isLoading: timeSeriesLoading } = useTimeSeriesData(30);
   const { data: comparison } = useMonthlyComparison();
   const { data: bookingStats, isLoading: bookingsLoading } = useBookingStats();
+  const { data: topPages, isLoading: topPagesLoading } = usePageViewsByPage(10);
+  const { data: pageViewsTimeSeries, isLoading: pageViewsTimeSeriesLoading } = usePageViewsTimeSeries(30);
 
   // Build dynamic summary cards
   const summaryCards = [
@@ -251,8 +257,8 @@ export default function AnalyticsDashboardPage() {
           </div>
         )}
 
-        {/* Content Stats - always show if pages module is enabled */}
-        <div className="grid gap-4 md:grid-cols-2">
+        {/* Content & Page Views Stats */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <SummaryCard
             title="Publicerade sidor"
             value={summary?.publishedPages || 0}
@@ -267,6 +273,119 @@ export default function AnalyticsDashboardPage() {
               isLoading={summaryLoading}
             />
           )}
+          <SummaryCard
+            title="Sidvisningar"
+            value={summary?.totalPageViews || 0}
+            icon={Eye}
+            description={`${summary?.uniqueVisitors || 0} unika besökare`}
+            isLoading={summaryLoading}
+          />
+        </div>
+
+        {/* Page Views Section */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          {/* Page Views Time Series */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
+                Sidvisningar (30 dagar)
+              </CardTitle>
+              <CardDescription>Daglig trafik och unika besökare</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {pageViewsTimeSeriesLoading ? (
+                <Skeleton className="h-[250px] w-full" />
+              ) : pageViewsTimeSeries && pageViewsTimeSeries.some(d => d.views > 0) ? (
+                <ResponsiveContainer width="100%" height={250}>
+                  <AreaChart data={pageViewsTimeSeries}>
+                    <defs>
+                      <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(var(--chart-3))" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="hsl(var(--chart-3))" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis dataKey="date" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                    <YAxis className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'hsl(var(--card))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px',
+                      }}
+                    />
+                    <Legend />
+                    <Area
+                      type="monotone"
+                      dataKey="views"
+                      name="Visningar"
+                      stroke="hsl(var(--chart-3))"
+                      fillOpacity={1}
+                      fill="url(#colorViews)"
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="unique_visitors"
+                      name="Unika besökare"
+                      stroke="hsl(var(--chart-4))"
+                      fillOpacity={0.5}
+                      fill="hsl(var(--chart-4))"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-[250px] flex items-center justify-center text-muted-foreground">
+                  <div className="text-center">
+                    <Eye className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p>Ingen trafikdata ännu</p>
+                    <p className="text-xs mt-1">Sidvisningar registreras när besökare ser dina publicerade sidor</p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Top Pages */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Eye className="h-5 w-5" />
+                Populäraste sidor
+              </CardTitle>
+              <CardDescription>Topp 10 mest besökta sidor</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {topPagesLoading ? (
+                <Skeleton className="h-[250px] w-full" />
+              ) : topPages && topPages.length > 0 ? (
+                <div className="space-y-3 max-h-[250px] overflow-y-auto">
+                  {topPages.map((page, index) => (
+                    <div key={page.page_slug} className="flex items-center gap-3">
+                      <span className="text-sm font-medium text-muted-foreground w-6">{index + 1}.</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">
+                          {page.page_title || page.page_slug}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">/{page.page_slug}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-medium">{page.views.toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground">{page.unique_visitors} unika</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="h-[250px] flex items-center justify-center text-muted-foreground">
+                  <div className="text-center">
+                    <Eye className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p>Inga sidvisningar ännu</p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
         {/* Charts Row - Only show if leads or forms enabled */}
