@@ -1,5 +1,4 @@
 import { useEffect, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 
 interface PageViewData {
   pageId?: string;
@@ -65,16 +64,24 @@ export function usePageViewTracker({ pageId, pageSlug, pageTitle }: PageViewData
       try {
         tracked.current = true;
 
-        await supabase.from('page_views').insert({
-          page_id: pageId || null,
-          page_slug: pageSlug,
-          page_title: pageTitle || null,
-          visitor_id: getVisitorId(),
-          session_id: getSessionId(),
-          referrer: document.referrer || null,
-          user_agent: navigator.userAgent,
-          device_type: getDeviceType(),
-          browser: getBrowser(),
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        
+        await fetch(`${supabaseUrl}/functions/v1/track-page-view`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            pageId: pageId || null,
+            pageSlug: pageSlug,
+            pageTitle: pageTitle || null,
+            visitorId: getVisitorId(),
+            sessionId: getSessionId(),
+            referrer: document.referrer || null,
+            userAgent: navigator.userAgent,
+            deviceType: getDeviceType(),
+            browser: getBrowser(),
+          }),
         });
       } catch (error) {
         // Silently fail - don't disrupt user experience
