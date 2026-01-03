@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useBlogPost, useBlogPosts } from "@/hooks/useBlogPosts";
 import { useBlogSettings } from "@/hooks/useSiteSettings";
+import { usePageViewTracker } from "@/hooks/usePageViewTracker";
 import NotFound from "./NotFound";
 
 export default function BlogPostPage() {
@@ -26,6 +27,13 @@ export default function BlogPostPage() {
   });
   
   const relatedPosts = (relatedData?.posts || []).filter(p => p.id !== post?.id).slice(0, 2);
+
+  // Track page view
+  usePageViewTracker({
+    pageId: post?.id,
+    pageSlug: slug ? `blogg/${slug}` : 'blogg',
+    pageTitle: post?.title,
+  });
   
   if (isLoading) {
     return (

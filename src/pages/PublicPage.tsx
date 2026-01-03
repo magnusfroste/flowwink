@@ -14,6 +14,7 @@ import { useSeoSettings, useMaintenanceSettings, useGeneralSettings } from '@/ho
 import { Button } from '@/components/ui/button';
 import { useEffect, useState } from 'react';
 import type { Page, ContentBlock } from '@/types/cms';
+import { usePageViewTracker } from '@/hooks/usePageViewTracker';
 
 function parseContent(data: {
   content_json: unknown;
@@ -90,6 +91,13 @@ export default function PublicPage() {
       return parseContent(dbData);
     },
     staleTime: 5 * 60 * 1000, // 5 min client-side cache
+  });
+
+  // Track page view
+  usePageViewTracker({
+    pageId: page?.id,
+    pageSlug: pageSlug,
+    pageTitle: page?.title,
   });
 
   if (isLoading || authLoading) {
