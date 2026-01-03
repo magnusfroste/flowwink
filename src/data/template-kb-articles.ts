@@ -1271,4 +1271,264 @@ export const pezcmsKbCategories: TemplateKbCategory[] = [
       },
     ],
   },
+
+  // ===== NEWSLETTER MODULE =====
+  {
+    name: 'Newsletter',
+    slug: 'newsletter',
+    description: 'Create email campaigns, manage subscribers, and track engagement.',
+    icon: 'Mail',
+    articles: [
+      {
+        title: 'Newsletter Overview',
+        slug: 'newsletter-overview',
+        question: 'What can I do with the Newsletter module?',
+        answer_text: 'The Newsletter module lets you build and send email campaigns, manage subscriber lists, and track opens, clicks, and engagement. It includes GDPR-compliant subscription management and detailed analytics.',
+        is_featured: true,
+        include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-newsletter-overview',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Newsletter Module Overview' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'The Newsletter module provides a complete email marketing solution built into PezCMS:' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Key Features' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Visual Campaign Builder' }, { type: 'text', text: ' – Create beautiful emails using the same block editor as pages' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Subscriber Management' }, { type: 'text', text: ' – Import, segment, and manage your email list' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Analytics Dashboard' }, { type: 'text', text: ' – Track opens, clicks, and engagement in real-time' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'GDPR Compliance' }, { type: 'text', text: ' – Double opt-in, unsubscribe links, and data export' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Scheduling' }, { type: 'text', text: ' – Send immediately or schedule for optimal delivery times' }] }] },
+                  ] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Access the Newsletter module via ' }, { type: 'text', marks: [{ type: 'bold' }], text: 'Admin → Newsletter' }, { type: 'text', text: '.' }] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      {
+        title: 'Creating a Campaign',
+        slug: 'creating-campaign',
+        question: 'How do I create and send a newsletter campaign?',
+        answer_text: 'Go to Admin → Newsletter → New Campaign. Enter a subject line, compose your content using the visual editor, preview your email, then send immediately or schedule for later. The system tracks delivery and engagement automatically.',
+        is_featured: true,
+        include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-creating-campaign',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Creating a Newsletter Campaign' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Follow these steps to create and send your email campaign:' }] },
+                  { type: 'orderedList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Navigate to ' }, { type: 'text', marks: [{ type: 'bold' }], text: 'Admin → Newsletter' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Click ' }, { type: 'text', marks: [{ type: 'bold' }], text: 'New Campaign' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Enter a compelling ' }, { type: 'text', marks: [{ type: 'bold' }], text: 'subject line' }, { type: 'text', text: ' (keep it under 50 characters)' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Compose your email content using the visual editor' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Preview your email to check formatting' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Choose to ' }, { type: 'text', marks: [{ type: 'bold' }], text: 'Send Now' }, { type: 'text', text: ' or ' }, { type: 'text', marks: [{ type: 'bold' }], text: 'Schedule' }, { type: 'text', text: ' for later' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Best Practices' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Keep subject lines concise and action-oriented' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Use a clear call-to-action in every email' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Test on mobile – most emails are read on phones' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Send at optimal times (Tuesday-Thursday, 10am-2pm)' }] }] },
+                  ] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      {
+        title: 'Managing Subscribers',
+        slug: 'managing-subscribers',
+        question: 'How do I manage my newsletter subscribers?',
+        answer_text: 'View and manage subscribers in Admin → Newsletter → Subscribers. You can see subscriber status, export lists, delete subscribers, and view their subscription history. Subscribers can self-manage via the GDPR management page.',
+        include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-managing-subscribers',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Managing Newsletter Subscribers' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'The subscriber management dashboard gives you full control over your email list:' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Subscriber Statuses' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Pending' }, { type: 'text', text: ' – Signed up but hasn\'t confirmed email (double opt-in)' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Confirmed' }, { type: 'text', text: ' – Active subscriber who can receive emails' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Unsubscribed' }, { type: 'text', text: ' – Opted out and won\'t receive future emails' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Management Actions' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Export' }, { type: 'text', text: ' – Download subscriber list as CSV' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Delete' }, { type: 'text', text: ' – Remove subscriber permanently (GDPR compliant)' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'View History' }, { type: 'text', text: ' – See when they subscribed and their preferences' }] }] },
+                  ] },
+                  { type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'italic' }], text: 'Subscribers can manage their own data via the /newsletter/manage page with email verification.' }] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      {
+        title: 'Collecting Subscribers',
+        slug: 'collecting-subscribers',
+        question: 'How do I add a newsletter signup form to my site?',
+        answer_text: 'Use the Newsletter block in any page to add a signup form. Choose from default, card, or minimal styles. Optionally collect names alongside emails. All signups go through double opt-in confirmation.',
+        include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-collecting-subscribers',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Adding Newsletter Signup Forms' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'The Newsletter block makes it easy to grow your email list:' }] },
+                  { type: 'orderedList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Edit any page and click the ' }, { type: 'text', marks: [{ type: 'bold' }], text: '+ button' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Select ' }, { type: 'text', marks: [{ type: 'bold' }], text: 'Newsletter' }, { type: 'text', text: ' from the block types' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Choose a style variant: Default (with background), Card, or Minimal' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Customize the title, description, and button text' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Optionally enable the Name field' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Placement Tips' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Add to footer for site-wide visibility' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Place after valuable content (blog posts, resources)' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Use in popups for higher conversion rates' }] }] },
+                  ] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      {
+        title: 'Tracking Analytics',
+        slug: 'tracking-analytics',
+        question: 'How do I track newsletter performance and analytics?',
+        answer_text: 'Each campaign shows detailed analytics including sent count, open rate, click rate, and unique opens/clicks. View aggregate stats on the Newsletter dashboard. Link clicks are tracked to show which content resonates.',
+        include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-tracking-analytics',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Newsletter Analytics' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Understanding your email performance helps you improve engagement over time:' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Key Metrics' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Sent Count' }, { type: 'text', text: ' – Number of emails successfully delivered' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Open Rate' }, { type: 'text', text: ' – Percentage of recipients who opened the email' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Unique Opens' }, { type: 'text', text: ' – Number of individual recipients who opened' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Click Rate' }, { type: 'text', text: ' – Percentage who clicked any link in the email' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Unique Clicks' }, { type: 'text', text: ' – Number of individuals who clicked' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Benchmarks' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Average open rate: 20-25%' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Average click rate: 2-5%' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Good performers exceed 30% opens and 5% clicks' }] }] },
+                  ] },
+                  { type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'italic' }], text: 'Tip: Test different subject lines and send times to improve your metrics.' }] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      {
+        title: 'GDPR Compliance',
+        slug: 'gdpr-compliance',
+        question: 'Is the newsletter module GDPR compliant?',
+        answer_text: 'Yes. PezCMS includes double opt-in confirmation, automatic unsubscribe links, data export functionality, and complete data deletion. Subscribers can manage their preferences via a secure self-service page.',
+        include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-gdpr-compliance',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'GDPR Compliance' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'The Newsletter module is designed with privacy regulations in mind:' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Built-in Compliance Features' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Double Opt-in' }, { type: 'text', text: ' – Subscribers must confirm their email before receiving newsletters' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Unsubscribe Links' }, { type: 'text', text: ' – Every email includes a one-click unsubscribe option' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Data Export' }, { type: 'text', text: ' – Subscribers can download all their stored data' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Right to Erasure' }, { type: 'text', text: ' – Complete data deletion on request' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Self-Service Portal' }, { type: 'text', text: ' – Secure page at /newsletter/manage for subscriber control' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Subscriber Rights' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Subscribers can visit /newsletter/manage, enter their email, and receive a secure link to:' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'View their subscription status and history' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Export their personal data as JSON' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Permanently delete all their data' }] }] },
+                  ] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      {
+        title: 'Email Delivery Setup',
+        slug: 'email-delivery-setup',
+        question: 'How do I configure email delivery for newsletters?',
+        answer_text: 'Newsletter sending requires a Resend API key configured in your environment. Go to Settings → Integrations to add your RESEND_API_KEY. Resend handles email delivery with high deliverability and real-time tracking.',
+        include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-email-delivery',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Email Delivery Configuration' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'PezCMS uses Resend for reliable email delivery with high inbox placement rates.' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Setup Steps' }] },
+                  { type: 'orderedList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Create an account at ' }, { type: 'text', marks: [{ type: 'bold' }], text: 'resend.com' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Verify your sending domain for better deliverability' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Generate an API key in the Resend dashboard' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Add the ' }, { type: 'text', marks: [{ type: 'bold' }], text: 'RESEND_API_KEY' }, { type: 'text', text: ' to your environment secrets' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Deliverability Tips' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Set up SPF, DKIM, and DMARC records for your domain' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Use a consistent "from" address' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Avoid spam trigger words in subject lines' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Keep your subscriber list clean by removing bounces' }] }] },
+                  ] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+    ],
+  },
 ];
