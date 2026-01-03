@@ -2181,4 +2181,511 @@ export const pezcmsKbCategories: TemplateKbCategory[] = [
       },
     ],
   },
+
+  // ===== MODULES OVERVIEW =====
+  {
+    name: 'Modules Overview',
+    slug: 'modules-overview',
+    description: 'Comprehensive guide to all available PezCMS modules and their features.',
+    icon: 'LayoutGrid',
+    articles: [
+      {
+        title: 'Modules System',
+        slug: 'modules-system',
+        question: 'What is the PezCMS modules system?',
+        answer_text: 'PezCMS uses a modular architecture where features can be enabled or disabled based on your needs. This keeps the admin interface clean and focused while allowing you to expand functionality as required.',
+        is_featured: true,
+        include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-modules-system',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'PezCMS Modules System' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'PezCMS is built on a modular architecture that lets you enable only the features you need:' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Module Categories' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Content' }, { type: 'text', text: ' – Pages, Blog, Knowledge Base' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Communication' }, { type: 'text', text: ' – AI Chat, Newsletter' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Data' }, { type: 'text', text: ' – Forms, Leads, Deals, Companies, Products, Orders, Media Library' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'System' }, { type: 'text', text: ' – Content Hub, Global Elements' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Managing Modules' }] },
+                  { type: 'orderedList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Go to ' }, { type: 'text', marks: [{ type: 'bold' }], text: 'Admin → Modules' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Toggle modules on/off as needed' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Core modules (Pages, Media Library) cannot be disabled' }] }] },
+                  ] },
+                  { type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'italic' }], text: 'Tip: Start with core modules and enable additional ones as your needs grow.' }] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      {
+        title: 'Pages Module',
+        slug: 'pages-module',
+        question: 'What is the Pages module?',
+        answer_text: 'The Pages module is the core content creation system in PezCMS. It provides a visual block editor for creating web pages with 27+ block types, version history, scheduled publishing, and SEO settings.',
+        is_featured: true,
+        include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-pages-module',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Pages Module' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'The Pages module is the foundation of PezCMS, enabling visual content creation:' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Key Features' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Block Editor' }, { type: 'text', text: ' – Drag-and-drop interface with 27+ block types' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Version History' }, { type: 'text', text: ' – Every save creates a restorable version' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Scheduled Publishing' }, { type: 'text', text: ' – Set pages to go live at specific times' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'SEO Settings' }, { type: 'text', text: ' – Meta titles, descriptions, and Open Graph images' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Preview Mode' }, { type: 'text', text: ' – See changes before publishing' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Page Status Flow' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Draft → Reviewing → Published → Archived' }] },
+                  { type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'italic' }], text: 'This is a core module and cannot be disabled.' }] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      {
+        title: 'Blog Module',
+        slug: 'blog-module',
+        question: 'What is the Blog module?',
+        answer_text: 'The Blog module provides full blogging capabilities with categories, tags, author profiles, RSS feed, and featured posts. It uses the same block editor as pages for creating rich blog content.',
+        include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-blog-module',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Blog Module' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'A complete blogging platform built into PezCMS:' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Features' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Categories & Tags' }, { type: 'text', text: ' – Organize posts with hierarchical categories and flexible tags' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Author Profiles' }, { type: 'text', text: ' – Show author bio, photo, and other posts' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Featured Posts' }, { type: 'text', text: ' – Highlight important articles' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'RSS Feed' }, { type: 'text', text: ' – Auto-generated feed for subscribers' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Reading Time' }, { type: 'text', text: ' – Automatic reading time calculation' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'SEO Optimized' }, { type: 'text', text: ' – Built-in SEO settings per post' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Access' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Navigate to Admin → Blog to manage posts, categories, and tags.' }] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      {
+        title: 'Knowledge Base Module',
+        slug: 'knowledge-base-module',
+        question: 'What is the Knowledge Base module?',
+        answer_text: 'The Knowledge Base module creates a structured FAQ or help center with categorized articles, search functionality, and optional AI Chat integration for intelligent article retrieval.',
+        include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-knowledge-base-module',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Knowledge Base Module' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Build a searchable FAQ or help center for your users:' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Features' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Categories' }, { type: 'text', text: ' – Organize articles by topic with custom icons' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Rich Content' }, { type: 'text', text: ' – Full block editor for article content' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Search' }, { type: 'text', text: ' – Built-in search across all articles' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Feedback' }, { type: 'text', text: ' – Users can rate articles as helpful or not' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'AI Integration' }, { type: 'text', text: ' – Articles can power the AI Chat for automatic answers' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'AI Chat Integration' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Toggle "Include in Chat" on articles to use them as context for the AI Chat widget. This enables intelligent, contextual responses based on your knowledge base.' }] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      {
+        title: 'AI Chat Module',
+        slug: 'ai-chat-module',
+        question: 'What is the AI Chat module?',
+        answer_text: 'The AI Chat module adds an intelligent chatbot to your site. It uses Context Augmented Generation (CAG) to answer questions based on your Knowledge Base articles, blog posts, and page content.',
+        include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-ai-chat-module',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'AI Chat Module' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Add an intelligent chatbot that understands your content:' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Features' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Context Augmented Generation' }, { type: 'text', text: ' – Answers based on your actual content' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Multiple Providers' }, { type: 'text', text: ' – Lovable AI, Private LLM, or N8N Webhook' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Conversation History' }, { type: 'text', text: ' – Maintains context across messages' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Widget or Page' }, { type: 'text', text: ' – Deploy as floating widget or dedicated page' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Customizable' }, { type: 'text', text: ' – Brand colors, welcome message, and suggested questions' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'AI Providers' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Lovable AI' }, { type: 'text', text: ' – No API key required, built-in models' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Private LLM' }, { type: 'text', text: ' – Self-hosted for HIPAA compliance' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'N8N Webhook' }, { type: 'text', text: ' – Connect to external AI agents' }] }] },
+                  ] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      {
+        title: 'Newsletter Module',
+        slug: 'newsletter-module',
+        question: 'What is the Newsletter module?',
+        answer_text: 'The Newsletter module enables email marketing with subscriber management, campaign creation, open/click tracking, and GDPR-compliant features like double opt-in and easy unsubscription.',
+        include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-newsletter-module',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Newsletter Module' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Full-featured email marketing built into PezCMS:' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Features' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Subscriber Management' }, { type: 'text', text: ' – Import, export, and segment subscribers' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Campaign Editor' }, { type: 'text', text: ' – Visual editor for creating emails' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Tracking' }, { type: 'text', text: ' – Open rates, click rates, and link analytics' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Scheduling' }, { type: 'text', text: ' – Send immediately or schedule for later' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'GDPR Compliant' }, { type: 'text', text: ' – Double opt-in, easy unsubscribe, data export' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Integration' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Uses Resend for email delivery. Add the Newsletter block to any page to collect subscribers.' }] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      {
+        title: 'Forms Module',
+        slug: 'forms-module',
+        question: 'What is the Forms module?',
+        answer_text: 'The Forms module collects and manages form submissions from Contact blocks and Form Builder blocks on your pages. View submissions, export data, and optionally convert them to leads.',
+        include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-forms-module',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Forms Module' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Collect and manage form submissions from your website:' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Features' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Submission Inbox' }, { type: 'text', text: ' – View all form submissions in one place' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Form Builder' }, { type: 'text', text: ' – Create custom forms with various field types' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Contact Forms' }, { type: 'text', text: ' – Pre-built contact form block' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Export' }, { type: 'text', text: ' – Download submissions as CSV' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Lead Conversion' }, { type: 'text', text: ' – Optionally create leads from submissions' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Form Blocks' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Use the Contact block for quick contact forms, or the Form Builder block for custom forms with multiple field types.' }] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      {
+        title: 'Leads Module',
+        slug: 'leads-module',
+        question: 'What is the Leads module?',
+        answer_text: 'The Leads module provides AI-driven lead management with automatic scoring, qualification summaries, status tracking, and conversion to deals. Leads can come from forms, newsletter signups, or manual entry.',
+        include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-leads-module',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Leads Module' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'AI-powered lead management for sales teams:' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Features' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'AI Qualification' }, { type: 'text', text: ' – Automatic lead scoring and summary generation' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Status Pipeline' }, { type: 'text', text: ' – Lead → Opportunity → Customer/Lost' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Activity Tracking' }, { type: 'text', text: ' – Log calls, emails, and meetings' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Company Linking' }, { type: 'text', text: ' – Associate leads with companies' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Deal Conversion' }, { type: 'text', text: ' – Convert qualified leads to deals' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Lead Sources' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Leads can be created from form submissions, newsletter signups, chat conversations, CSV import, or manual entry.' }] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      {
+        title: 'Deals Module',
+        slug: 'deals-module',
+        question: 'What is the Deals module?',
+        answer_text: 'The Deals module provides pipeline management for sales opportunities. Track deal value, stage, expected close date, and associated products. View deals in a Kanban board or list view.',
+        include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-deals-module',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Deals Module' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Visual pipeline management for sales opportunities:' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Features' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Kanban Board' }, { type: 'text', text: ' – Drag-and-drop deal management' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Deal Stages' }, { type: 'text', text: ' – Proposal → Negotiation → Won/Lost' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Value Tracking' }, { type: 'text', text: ' – Track deal value in any currency' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Activity Timeline' }, { type: 'text', text: ' – Log activities and schedule follow-ups' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Product Linking' }, { type: 'text', text: ' – Associate deals with products' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Pipeline Stages' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Proposal → Negotiation → Closed Won / Closed Lost' }] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      {
+        title: 'Companies Module',
+        slug: 'companies-module',
+        question: 'What is the Companies module?',
+        answer_text: 'The Companies module manages organization records with contact information, industry, size, and associated leads. It includes AI-powered company enrichment to automatically populate company details.',
+        include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-companies-module',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Companies Module' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Manage organization records and contacts:' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Features' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Company Profiles' }, { type: 'text', text: ' – Store name, website, industry, size, and address' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'AI Enrichment' }, { type: 'text', text: ' – Automatically populate company details from domain' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Lead Association' }, { type: 'text', text: ' – Link multiple leads to one company' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Notes' }, { type: 'text', text: ' – Add internal notes about each company' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Search & Filter' }, { type: 'text', text: ' – Find companies by name, industry, or domain' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'AI Company Enrichment' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Enter a company domain and PezCMS will automatically look up industry, size, and other public information.' }] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      {
+        title: 'Products Module',
+        slug: 'products-module',
+        question: 'What is the Products module?',
+        answer_text: 'The Products module manages your product catalog with pricing, descriptions, and images. Products can be one-time or recurring (subscriptions) and integrate with Stripe for payments.',
+        include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-products-module',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Products Module' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Manage your product catalog for deals and e-commerce:' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Features' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Product Catalog' }, { type: 'text', text: ' – Name, description, price, and images' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Pricing Types' }, { type: 'text', text: ' – One-time purchases or recurring subscriptions' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Stripe Integration' }, { type: 'text', text: ' – Sync products with Stripe for checkout' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Sort Order' }, { type: 'text', text: ' – Control display order on the frontend' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Active/Inactive' }, { type: 'text', text: ' – Toggle product visibility' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Display Options' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Use the Products block or Pricing block to display products on your pages. Add the Cart block for a complete e-commerce experience.' }] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      {
+        title: 'Orders Module',
+        slug: 'orders-module',
+        question: 'What is the Orders module?',
+        answer_text: 'The Orders module tracks e-commerce transactions processed through Stripe. View order details, customer information, payment status, and order items. Requires the Products module.',
+        include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-orders-module',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Orders Module' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Track and manage e-commerce transactions:' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Features' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Order Dashboard' }, { type: 'text', text: ' – View all orders with status and totals' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Order Details' }, { type: 'text', text: ' – Customer info, line items, and payment details' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Status Tracking' }, { type: 'text', text: ' – Pending, Paid, Cancelled, Refunded' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Email Confirmations' }, { type: 'text', text: ' – Automatic order confirmation emails' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Webhooks' }, { type: 'text', text: ' – Trigger actions on order events' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Dependencies' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'The Orders module requires the Products module to be enabled. Orders are created automatically when customers complete Stripe checkout.' }] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      {
+        title: 'Content Hub Module',
+        slug: 'content-hub-module',
+        question: 'What is the Content Hub module?',
+        answer_text: 'The Content Hub module provides a headless CMS API for accessing your content programmatically. It includes REST endpoints for pages, blog posts, and other content types.',
+        include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-content-hub-module',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Content Hub Module' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Headless CMS capabilities for developers:' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Features' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'REST API' }, { type: 'text', text: ' – Access all content via REST endpoints' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Content Types' }, { type: 'text', text: ' – Pages, blog posts, products, KB articles' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Block JSON' }, { type: 'text', text: ' – Raw block data for custom rendering' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'API Explorer' }, { type: 'text', text: ' – Interactive documentation in the admin' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Edge Caching' }, { type: 'text', text: ' – Fast response times via CDN caching' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Use Cases' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Build mobile apps, custom frontends, or integrate PezCMS content into existing applications.' }] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      {
+        title: 'Global Elements Module',
+        slug: 'global-elements-module',
+        question: 'What is the Global Elements module?',
+        answer_text: 'The Global Elements module manages reusable components like headers and footers that appear on all pages. Edit once, update everywhere. Supports multiple variants for different page types.',
+        include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-global-elements-module',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Global Elements Module' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Manage reusable components that appear site-wide:' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Available Elements' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Header' }, { type: 'text', text: ' – Site navigation and logo' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Footer' }, { type: 'text', text: ' – Links, copyright, and contact info' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Popup' }, { type: 'text', text: ' – Promotional overlays and modals' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Benefits' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Edit once, update everywhere' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Ensures consistent branding' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Reduces maintenance time' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Supports multiple variants' }] }] },
+                  ] },
+                  { type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'italic' }], text: 'Access via Admin → Global Elements' }] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      {
+        title: 'Media Library Module',
+        slug: 'media-library-module',
+        question: 'What is the Media Library module?',
+        answer_text: 'The Media Library module provides centralized management for all images and files. Upload, organize, and reuse media across pages. Includes automatic image optimization and Unsplash integration.',
+        include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-media-library-module',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Media Library Module' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Central hub for all your media assets:' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Features' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Upload & Organize' }, { type: 'text', text: ' – Drag-and-drop uploads with folder organization' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Image Optimization' }, { type: 'text', text: ' – Automatic compression and format conversion' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Unsplash Integration' }, { type: 'text', text: ' – Search and use royalty-free stock photos' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Image Cropping' }, { type: 'text', text: ' – Crop images to specific dimensions' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Reuse Anywhere' }, { type: 'text', text: ' – Pick from library in any image block' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Supported Formats' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'JPEG, PNG, GIF, WebP, SVG, and PDF files.' }] },
+                  { type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'italic' }], text: 'This is a core module and cannot be disabled.' }] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+    ],
+  },
 ];
