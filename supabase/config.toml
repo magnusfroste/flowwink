@@ -77,3 +77,6 @@ verify_jwt = false
 
 [functions.send-order-confirmation]
 verify_jwt = true
+
+[functions.track-page-view]
+verify_jwt = false
