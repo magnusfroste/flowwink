@@ -1758,4 +1758,270 @@ export const pezcmsKbCategories: TemplateKbCategory[] = [
       },
     ],
   },
+
+  // ===== BRANDING & THEMING =====
+  {
+    name: 'Branding & Theming',
+    slug: 'branding-theming',
+    description: 'Customize colors, fonts, logos, and visual identity across your site.',
+    icon: 'Palette',
+    articles: [
+      {
+        title: 'Branding Overview',
+        slug: 'branding-overview',
+        question: 'How do I customize the look and feel of my site?',
+        answer_text: 'Go to Admin → Branding to configure your site name, logo, colors, and fonts. Changes apply site-wide instantly, ensuring consistent branding across all pages.',
+        is_featured: true,
+        include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-branding-overview',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Branding Overview' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'The Branding settings let you define your visual identity:' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Branding Elements' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Site Name' }, { type: 'text', text: ' – Your brand or company name' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Logo' }, { type: 'text', text: ' – Primary logo for header and branding' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Favicon' }, { type: 'text', text: ' – Small icon shown in browser tabs' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Color Palette' }, { type: 'text', text: ' – Primary, secondary, and accent colors' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Typography' }, { type: 'text', text: ' – Heading and body font families' }] }] },
+                  ] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Access branding settings via ' }, { type: 'text', marks: [{ type: 'bold' }], text: 'Admin → Branding' }, { type: 'text', text: '.' }] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      {
+        title: 'Setting Up Your Logo',
+        slug: 'setting-up-logo',
+        question: 'How do I add my logo to the site?',
+        answer_text: 'Go to Admin → Branding and upload your logo image. For best results, use a PNG with transparent background. The logo appears in the header, footer, and anywhere branding is displayed.',
+        is_featured: true,
+        include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-setting-up-logo',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Setting Up Your Logo' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Your logo is central to your brand identity:' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Logo Requirements' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Format' }, { type: 'text', text: ' – PNG (preferred for transparency) or SVG' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Size' }, { type: 'text', text: ' – Recommended 200-400px wide, auto height' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Background' }, { type: 'text', text: ' – Transparent for flexibility on different backgrounds' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Upload Steps' }] },
+                  { type: 'orderedList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Navigate to ' }, { type: 'text', marks: [{ type: 'bold' }], text: 'Admin → Branding' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Click on the logo upload area' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Select your logo file from your computer' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Click ' }, { type: 'text', marks: [{ type: 'bold' }], text: 'Save' }, { type: 'text', text: ' to apply changes' }] }] },
+                  ] },
+                  { type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'italic' }], text: 'Tip: Also upload a favicon (small square icon) for browser tabs.' }] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      {
+        title: 'Configuring Colors',
+        slug: 'configuring-colors',
+        question: 'How do I change the color scheme of my site?',
+        answer_text: 'In Admin → Branding, set your primary color (main brand color), secondary color (accents), and background colors. PezCMS automatically generates complementary shades for buttons, links, and UI elements.',
+        include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-configuring-colors',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Configuring Colors' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Define your color palette for consistent branding:' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Color Settings' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Primary Color' }, { type: 'text', text: ' – Main brand color used for buttons, links, and accents' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Secondary Color' }, { type: 'text', text: ' – Supporting color for secondary actions and highlights' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Accent Color' }, { type: 'text', text: ' – Used for special elements and call-to-action emphasis' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Background' }, { type: 'text', text: ' – Page background color' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Text Color' }, { type: 'text', text: ' – Default text color for readability' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Best Practices' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Ensure sufficient contrast between text and background' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Use your primary color sparingly for maximum impact' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Test colors in both light and dark modes' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Consider accessibility – aim for WCAG AA compliance' }] }] },
+                  ] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      {
+        title: 'Typography and Fonts',
+        slug: 'typography-fonts',
+        question: 'How do I change the fonts on my site?',
+        answer_text: 'Go to Admin → Branding and select fonts for headings and body text. Choose from Google Fonts or system fonts. Different fonts for headings and body create visual hierarchy and interest.',
+        include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-typography-fonts',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Typography and Fonts' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Typography shapes your brand personality:' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Font Settings' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Heading Font' }, { type: 'text', text: ' – Used for H1-H6 headings, often more distinctive' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Body Font' }, { type: 'text', text: ' – Used for paragraphs and general text, prioritize readability' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Font Pairing Tips' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Pair a decorative heading font with a clean body font' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Limit to 2-3 fonts maximum for cohesion' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Consider font loading speed – fewer weights load faster' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Test on mobile – some fonts are less readable on small screens' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Popular Combinations' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Playfair Display (headings) + Inter (body) – Classic elegance' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Montserrat (headings) + Open Sans (body) – Modern professional' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Poppins (both) – Clean and versatile' }] }] },
+                  ] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      {
+        title: 'Dark Mode Support',
+        slug: 'dark-mode-support',
+        question: 'Does PezCMS support dark mode?',
+        answer_text: 'Yes, PezCMS includes built-in dark mode. Visitors can toggle between light and dark themes using the theme switcher. Colors automatically adapt to maintain readability and visual appeal.',
+        include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-dark-mode',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Dark Mode Support' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'PezCMS provides seamless dark mode for better user experience:' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'How It Works' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Visitors can toggle themes via the theme switcher' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'System preference detection automatically applies preferred theme' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Theme preference is saved for return visits' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'All blocks and components adapt automatically' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Design Considerations' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Use logos with transparent backgrounds that work on both themes' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Avoid pure white (#fff) or pure black (#000) for softer contrast' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Test images and graphics in both modes' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Consider providing alternate logo versions if needed' }] }] },
+                  ] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      {
+        title: 'Brand Consistency',
+        slug: 'brand-consistency',
+        question: 'How do I maintain consistent branding across all pages?',
+        answer_text: 'Use Global Blocks for headers and footers, set brand colors and fonts in Branding settings, and use the same image styles throughout. PezCMS applies your branding automatically to all components.',
+        include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-brand-consistency',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Maintaining Brand Consistency' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Consistent branding builds trust and recognition:' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Consistency Checklist' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Logo Usage' }, { type: 'text', text: ' – Same logo placement and size across pages' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Color Palette' }, { type: 'text', text: ' – Stick to defined brand colors' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Typography' }, { type: 'text', text: ' – Use the same fonts consistently' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Image Style' }, { type: 'text', text: ' – Similar photography style and treatments' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Voice and Tone' }, { type: 'text', text: ' – Consistent writing style across content' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'PezCMS Features That Help' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Global Blocks ensure headers and footers are identical everywhere' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Branding settings apply colors and fonts site-wide' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Media Library keeps all assets organized in one place' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'AI writing assistant can match your brand voice' }] }] },
+                  ] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      {
+        title: 'Favicon Setup',
+        slug: 'favicon-setup',
+        question: 'How do I add a favicon to my site?',
+        answer_text: 'Upload a favicon in Admin → Branding. Use a square image (recommended 512x512px) in PNG format. The favicon appears in browser tabs, bookmarks, and mobile home screens.',
+        include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-favicon-setup',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Favicon Setup' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'A favicon is the small icon that represents your site:' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Favicon Requirements' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Size' }, { type: 'text', text: ' – 512x512px recommended (auto-scaled for different uses)' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Format' }, { type: 'text', text: ' – PNG or ICO format' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Shape' }, { type: 'text', text: ' – Square aspect ratio' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Design' }, { type: 'text', text: ' – Simple, recognizable at small sizes' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Where Favicons Appear' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Browser tabs' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Bookmark lists' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Mobile home screen shortcuts' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Search engine results (sometimes)' }] }] },
+                  ] },
+                  { type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'italic' }], text: 'Tip: Use a simplified version of your logo or a single iconic element.' }] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+    ],
+  },
 ];
