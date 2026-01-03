@@ -10,6 +10,8 @@ export interface AnalyticsSummary {
   formSubmissions: number;
   publishedPages: number;
   publishedPosts: number;
+  totalPageViews: number;
+  uniqueVisitors: number;
 }
 
 export interface LeadsBySource {
@@ -43,6 +45,20 @@ export interface TimeSeriesData {
   date: string;
   leads: number;
   formSubmissions: number;
+  pageViews: number;
+}
+
+export interface PageViewsByPage {
+  page_slug: string;
+  page_title: string | null;
+  views: number;
+  unique_visitors: number;
+}
+
+export interface PageViewsTimeSeries {
+  date: string;
+  views: number;
+  unique_visitors: number;
 }
 
 export function useAnalyticsSummary() {
@@ -56,6 +72,8 @@ export function useAnalyticsSummary() {
         formsResult,
         pagesResult,
         postsResult,
+        pageViewsResult,
+        uniqueVisitorsResult,
       ] = await Promise.all([
         supabase.from('leads').select('id', { count: 'exact', head: true }),
         supabase.from('deals').select('value_cents, stage'),
@@ -63,12 +81,17 @@ export function useAnalyticsSummary() {
         supabase.from('form_submissions').select('id', { count: 'exact', head: true }),
         supabase.from('pages').select('id', { count: 'exact', head: true }).eq('status', 'published'),
         supabase.from('blog_posts').select('id', { count: 'exact', head: true }).eq('status', 'published'),
+        supabase.from('page_views').select('id', { count: 'exact', head: true }),
+        supabase.from('page_views').select('visitor_id'),
       ]);
 
       // Calculate pipeline value (exclude closed_lost)
       const pipelineValue = (dealsResult.data || [])
         .filter(d => d.stage !== 'closed_lost')
         .reduce((sum, d) => sum + (d.value_cents || 0), 0);
+
+      // Calculate unique visitors
+      const uniqueVisitors = new Set((uniqueVisitorsResult.data || []).map(v => v.visitor_id).filter(Boolean)).size;
 
       return {
         totalLeads: leadsResult.count || 0,
@@ -78,6 +101,8 @@ export function useAnalyticsSummary() {
         formSubmissions: formsResult.count || 0,
         publishedPages: pagesResult.count || 0,
         publishedPosts: postsResult.count || 0,
+        totalPageViews: pageViewsResult.count || 0,
+        uniqueVisitors,
       };
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
@@ -190,7 +215,7 @@ export function useTimeSeriesData(days: number = 30) {
       const endDate = new Date();
       const startDate = subDays(endDate, days);
 
-      const [leadsResult, formsResult] = await Promise.all([
+      const [leadsResult, formsResult, pageViewsResult] = await Promise.all([
         supabase
           .from('leads')
           .select('created_at')
@@ -198,6 +223,11 @@ export function useTimeSeriesData(days: number = 30) {
           .lte('created_at', endDate.toISOString()),
         supabase
           .from('form_submissions')
+          .select('created_at')
+          .gte('created_at', startDate.toISOString())
+          .lte('created_at', endDate.toISOString()),
+        supabase
+          .from('page_views')
           .select('created_at')
           .gte('created_at', startDate.toISOString())
           .lte('created_at', endDate.toISOString()),
@@ -220,12 +250,105 @@ export function useTimeSeriesData(days: number = 30) {
         return acc;
       }, {} as Record<string, number>);
 
+      // Group page views by date
+      const pageViewsByDate = (pageViewsResult.data || []).reduce((acc, view) => {
+        const date = format(new Date(view.created_at), 'yyyy-MM-dd');
+        acc[date] = (acc[date] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
       return dates.map(date => {
         const dateStr = format(date, 'yyyy-MM-dd');
         return {
           date: format(date, 'dd MMM'),
           leads: leadsByDate[dateStr] || 0,
           formSubmissions: formsByDate[dateStr] || 0,
+          pageViews: pageViewsByDate[dateStr] || 0,
+        };
+      });
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
+export function usePageViewsByPage(limit: number = 10) {
+  return useQuery({
+    queryKey: ['analytics', 'page-views-by-page', limit],
+    queryFn: async (): Promise<PageViewsByPage[]> => {
+      const { data, error } = await supabase
+        .from('page_views')
+        .select('page_slug, page_title, visitor_id');
+
+      if (error) throw error;
+
+      // Group by page_slug
+      const grouped = (data || []).reduce((acc, view) => {
+        const slug = view.page_slug;
+        if (!acc[slug]) {
+          acc[slug] = { 
+            page_slug: slug, 
+            page_title: view.page_title, 
+            views: 0, 
+            visitors: new Set<string>() 
+          };
+        }
+        acc[slug].views += 1;
+        if (view.visitor_id) {
+          acc[slug].visitors.add(view.visitor_id);
+        }
+        return acc;
+      }, {} as Record<string, { page_slug: string; page_title: string | null; views: number; visitors: Set<string> }>);
+
+      return Object.values(grouped)
+        .map(item => ({
+          page_slug: item.page_slug,
+          page_title: item.page_title,
+          views: item.views,
+          unique_visitors: item.visitors.size,
+        }))
+        .sort((a, b) => b.views - a.views)
+        .slice(0, limit);
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
+export function usePageViewsTimeSeries(days: number = 30) {
+  return useQuery({
+    queryKey: ['analytics', 'page-views-time-series', days],
+    queryFn: async (): Promise<PageViewsTimeSeries[]> => {
+      const endDate = new Date();
+      const startDate = subDays(endDate, days);
+
+      const { data, error } = await supabase
+        .from('page_views')
+        .select('created_at, visitor_id')
+        .gte('created_at', startDate.toISOString())
+        .lte('created_at', endDate.toISOString());
+
+      if (error) throw error;
+
+      const dates = eachDayOfInterval({ start: startDate, end: endDate });
+      
+      // Group by date
+      const byDate = (data || []).reduce((acc, view) => {
+        const date = format(new Date(view.created_at), 'yyyy-MM-dd');
+        if (!acc[date]) {
+          acc[date] = { views: 0, visitors: new Set<string>() };
+        }
+        acc[date].views += 1;
+        if (view.visitor_id) {
+          acc[date].visitors.add(view.visitor_id);
+        }
+        return acc;
+      }, {} as Record<string, { views: number; visitors: Set<string> }>);
+
+      return dates.map(date => {
+        const dateStr = format(date, 'yyyy-MM-dd');
+        return {
+          date: format(date, 'dd MMM'),
+          views: byDate[dateStr]?.views || 0,
+          unique_visitors: byDate[dateStr]?.visitors.size || 0,
         };
       });
     },

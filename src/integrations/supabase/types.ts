@@ -1291,6 +1291,65 @@ export type Database = {
           },
         ]
       }
+      page_views: {
+        Row: {
+          browser: string | null
+          city: string | null
+          country: string | null
+          created_at: string
+          device_type: string | null
+          id: string
+          ip_address: string | null
+          page_id: string | null
+          page_slug: string
+          page_title: string | null
+          referrer: string | null
+          session_id: string | null
+          user_agent: string | null
+          visitor_id: string | null
+        }
+        Insert: {
+          browser?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          device_type?: string | null
+          id?: string
+          ip_address?: string | null
+          page_id?: string | null
+          page_slug: string
+          page_title?: string | null
+          referrer?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+          visitor_id?: string | null
+        }
+        Update: {
+          browser?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          device_type?: string | null
+          id?: string
+          ip_address?: string | null
+          page_id?: string | null
+          page_slug?: string
+          page_title?: string | null
+          referrer?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+          visitor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "page_views_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "pages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pages: {
         Row: {
           content_json: Json | null
