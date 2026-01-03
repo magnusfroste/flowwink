@@ -1511,7 +1511,7 @@ const securehealthPages: TemplatePage[] = [
   },
   {
     title: 'Patient Resources',
-    slug: 'resurser',
+    slug: 'resources',
     menu_order: 4,
     showInMenu: true,
     meta: {
