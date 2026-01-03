@@ -18,6 +18,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { useIsStripeConfigured } from '@/hooks/useIntegrationStatus';
+import { IntegrationWarning } from '@/components/admin/IntegrationWarning';
 
 export default function ProductsPage() {
   const { data: products = [], isLoading } = useProducts();
@@ -27,6 +29,7 @@ export default function ProductsPage() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+  const isStripeConfigured = useIsStripeConfigured();
 
   const handleEdit = (product: Product) => {
     setEditingProduct(product);
@@ -56,6 +59,10 @@ export default function ProductsPage() {
         title="Products"
         description="Manage products and services for your deals"
       />
+
+      {isStripeConfigured === false && (
+        <IntegrationWarning integration="stripe" />
+      )}
 
       <div className="flex justify-end mb-6">
         <Button onClick={() => { setEditingProduct(null); setDialogOpen(true); }}>
