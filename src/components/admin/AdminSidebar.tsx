@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
+  BarChart3,
   FileText,
   Users,
   Settings,
@@ -82,6 +83,7 @@ const navigationGroups: NavGroup[] = [
     label: "Main",
     items: [
       { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
+      { name: "Analytics", href: "/admin/analytics", icon: BarChart3, moduleId: "analytics" },
       { name: "Quick Start", href: "/admin/quick-start", icon: Rocket },
     ],
   },
