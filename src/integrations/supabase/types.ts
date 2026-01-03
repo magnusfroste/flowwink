@@ -261,6 +261,193 @@ export type Database = {
         }
         Relationships: []
       }
+      booking_availability: {
+        Row: {
+          created_at: string
+          day_of_week: number
+          end_time: string
+          id: string
+          is_active: boolean
+          service_id: string | null
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: number
+          end_time: string
+          id?: string
+          is_active?: boolean
+          service_id?: string | null
+          start_time: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: number
+          end_time?: string
+          id?: string
+          is_active?: boolean
+          service_id?: string | null
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_availability_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "booking_services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      booking_blocked_dates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          date: string
+          end_time: string | null
+          id: string
+          is_all_day: boolean
+          reason: string | null
+          start_time: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          date: string
+          end_time?: string | null
+          id?: string
+          is_all_day?: boolean
+          reason?: string | null
+          start_time?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          date?: string
+          end_time?: string | null
+          id?: string
+          is_all_day?: boolean
+          reason?: string | null
+          start_time?: string | null
+        }
+        Relationships: []
+      }
+      booking_services: {
+        Row: {
+          color: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          description: string | null
+          duration_minutes: number
+          id: string
+          is_active: boolean
+          name: string
+          price_cents: number | null
+          sort_order: number | null
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          duration_minutes?: number
+          id?: string
+          is_active?: boolean
+          name: string
+          price_cents?: number | null
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          duration_minutes?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          price_cents?: number | null
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      bookings: {
+        Row: {
+          cancelled_at: string | null
+          cancelled_reason: string | null
+          confirmation_sent_at: string | null
+          created_at: string
+          customer_email: string
+          customer_name: string
+          customer_phone: string | null
+          end_time: string
+          id: string
+          internal_notes: string | null
+          metadata: Json | null
+          notes: string | null
+          reminder_sent_at: string | null
+          service_id: string | null
+          start_time: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          cancelled_at?: string | null
+          cancelled_reason?: string | null
+          confirmation_sent_at?: string | null
+          created_at?: string
+          customer_email: string
+          customer_name: string
+          customer_phone?: string | null
+          end_time: string
+          id?: string
+          internal_notes?: string | null
+          metadata?: Json | null
+          notes?: string | null
+          reminder_sent_at?: string | null
+          service_id?: string | null
+          start_time: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          cancelled_at?: string | null
+          cancelled_reason?: string | null
+          confirmation_sent_at?: string | null
+          created_at?: string
+          customer_email?: string
+          customer_name?: string
+          customer_phone?: string | null
+          end_time?: string
+          id?: string
+          internal_notes?: string | null
+          metadata?: Json | null
+          notes?: string | null
+          reminder_sent_at?: string | null
+          service_id?: string | null
+          start_time?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "booking_services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_conversations: {
         Row: {
           created_at: string

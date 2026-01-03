@@ -43,6 +43,9 @@ import ProductsPage from "./pages/admin/ProductsPage";
 import OrdersPage from "./pages/admin/OrdersPage";
 import KnowledgeBasePage from "./pages/admin/KnowledgeBasePage";
 import AnalyticsDashboardPage from "./pages/admin/AnalyticsDashboardPage";
+import BookingsPage from "./pages/admin/BookingsPage";
+import BookingServicesPage from "./pages/admin/BookingServicesPage";
+import BookingAvailabilityPage from "./pages/admin/BookingAvailabilityPage";
 import ProfilePage from "./pages/admin/ProfilePage";
 import KbArticleEditorPage from "./pages/admin/KbArticleEditorPage";
 import PublicKnowledgeBasePage from "./pages/KnowledgeBasePage";
@@ -109,6 +112,9 @@ const router = createBrowserRouter([
   { path: "/admin/companies/:id", element: <CompanyDetailPage /> },
   { path: "/admin/products", element: <ProductsPage /> },
   { path: "/admin/orders", element: <OrdersPage /> },
+  { path: "/admin/bookings", element: <BookingsPage /> },
+  { path: "/admin/bookings/services", element: <BookingServicesPage /> },
+  { path: "/admin/bookings/availability", element: <BookingAvailabilityPage /> },
   { path: "/admin/modules", element: <ModulesPage /> },
   { path: "/admin/webhooks", element: <WebhooksPage /> },
   { path: "/admin/knowledge-base", element: <KnowledgeBasePage /> },

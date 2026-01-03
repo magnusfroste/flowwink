@@ -28,6 +28,7 @@ import {
   ChevronsUpDown,
   UserCircle,
   ShoppingCart,
+  CalendarDays,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { ROLE_LABELS } from "@/types/cms";
@@ -104,6 +105,7 @@ const navigationGroups: NavGroup[] = [
       { name: "Contacts", href: "/admin/contacts", icon: UserCheck, moduleId: "leads" },
       { name: "Companies", href: "/admin/companies", icon: Building2, moduleId: "companies" },
       { name: "Deals", href: "/admin/deals", icon: Briefcase, moduleId: "deals" },
+      { name: "Bookings", href: "/admin/bookings", icon: CalendarDays, moduleId: "bookings" },
       { name: "Products", href: "/admin/products", icon: Package, moduleId: "products" },
       { name: "Orders", href: "/admin/orders", icon: ShoppingCart, moduleId: "orders" },
     ],
