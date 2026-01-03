@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { useSearchParams, Link } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { Rss } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { PublicNavigation } from "@/components/public/PublicNavigation";
@@ -10,10 +9,17 @@ import { BlogPagination } from "@/components/public/BlogPagination";
 import { Button } from "@/components/ui/button";
 import { useBlogPosts } from "@/hooks/useBlogPosts";
 import { useBlogSettings, useSeoSettings } from "@/hooks/useSiteSettings";
+import { usePageViewTracker } from "@/hooks/usePageViewTracker";
 
 export default function BlogArchivePage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const currentPage = parseInt(searchParams.get("page") || "1", 10);
+  
+  // Track page view
+  usePageViewTracker({
+    pageSlug: 'blogg',
+    pageTitle: 'Blogg',
+  });
   
   const { data: blogSettings } = useBlogSettings();
   const { data: seoSettings } = useSeoSettings();
