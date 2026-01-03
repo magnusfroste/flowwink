@@ -14,6 +14,7 @@ export interface ModuleConfig {
 
 export interface ModulesSettings {
   analytics: ModuleConfig;
+  bookings: ModuleConfig;
   pages: ModuleConfig;
   blog: ModuleConfig;
   knowledgeBase: ModuleConfig;
@@ -37,6 +38,13 @@ export const defaultModulesSettings: ModulesSettings = {
     description: 'Dashboard with insights on leads, deals, and newsletter performance',
     icon: 'BarChart3',
     category: 'insights',
+  },
+  bookings: {
+    enabled: true,
+    name: 'Bookings',
+    description: 'Appointment scheduling with calendar view and email confirmations',
+    icon: 'CalendarDays',
+    category: 'data',
   },
   pages: {
     enabled: true,
@@ -143,6 +151,7 @@ export const defaultModulesSettings: ModulesSettings = {
 // Map sidebar items to module IDs
 export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/analytics': 'analytics',
+  '/admin/bookings': 'bookings',
   '/admin/pages': 'pages',
   '/admin/blog': 'blog',
   '/admin/knowledge-base': 'knowledgeBase',
