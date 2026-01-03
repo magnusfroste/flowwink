@@ -80,3 +80,9 @@ verify_jwt = true
 
 [functions.track-page-view]
 verify_jwt = false
+
+[functions.check-secrets]
+verify_jwt = true
+
+[functions.send-booking-confirmation]
+verify_jwt = true

@@ -48,6 +48,7 @@ import BookingServicesPage from "./pages/admin/BookingServicesPage";
 import BookingAvailabilityPage from "./pages/admin/BookingAvailabilityPage";
 import ProfilePage from "./pages/admin/ProfilePage";
 import KbArticleEditorPage from "./pages/admin/KbArticleEditorPage";
+import IntegrationsStatusPage from "./pages/admin/IntegrationsStatusPage";
 import PublicKnowledgeBasePage from "./pages/KnowledgeBasePage";
 import PreviewPage from "./pages/PreviewPage";
 import PublicPage from "./pages/PublicPage";
@@ -116,6 +117,7 @@ const router = createBrowserRouter([
   { path: "/admin/bookings/services", element: <BookingServicesPage /> },
   { path: "/admin/bookings/availability", element: <BookingAvailabilityPage /> },
   { path: "/admin/modules", element: <ModulesPage /> },
+  { path: "/admin/integrations", element: <IntegrationsStatusPage /> },
   { path: "/admin/webhooks", element: <WebhooksPage /> },
   { path: "/admin/knowledge-base", element: <KnowledgeBasePage /> },
   { path: "/admin/knowledge-base/new", element: <KbArticleEditorPage /> },

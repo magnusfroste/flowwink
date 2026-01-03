@@ -29,6 +29,7 @@ import {
   UserCircle,
   ShoppingCart,
   CalendarDays,
+  Plug,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { ROLE_LABELS } from "@/types/cms";
@@ -124,6 +125,7 @@ const navigationGroups: NavGroup[] = [
     adminOnly: true,
     items: [
       { name: "Modules", href: "/admin/modules", icon: Puzzle },
+      { name: "Integrations", href: "/admin/integrations", icon: Plug },
       { name: "Content Hub", href: "/admin/content-hub", icon: Database, moduleId: "contentApi" },
       { name: "Webhooks", href: "/admin/webhooks", icon: Webhook },
       { name: "Menu Order", href: "/admin/menu-order", icon: Menu },
