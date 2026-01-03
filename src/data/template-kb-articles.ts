@@ -144,6 +144,34 @@ export const pezcmsKbCategories: TemplateKbCategory[] = [
         question: 'How do I manage the navigation menu?',
         answer_text: 'Go to Admin → Menu Order to drag and reorder menu items. Pages are automatically added to the menu when created. Toggle "Show in Menu" in page settings to hide pages from navigation.',
         include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-navigation',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Managing Your Navigation Menu' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'The navigation menu is automatically generated from your pages. Here\'s how to customize it:' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Reordering Menu Items' }] },
+                  { type: 'orderedList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Navigate to ' }, { type: 'text', marks: [{ type: 'bold' }], text: 'Admin → Menu Order' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Drag pages up or down to change their order' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Changes are saved automatically' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Hiding Pages from Menu' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Open the page in the editor' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Click ' }, { type: 'text', marks: [{ type: 'bold' }], text: 'Page Settings' }, { type: 'text', text: ' (gear icon)' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Toggle ' }, { type: 'text', marks: [{ type: 'bold' }], text: '"Show in Menu"' }, { type: 'text', text: ' off' }] }] },
+                  ] },
+                  { type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'italic' }], text: 'Tip: Hidden pages are still accessible via direct URL – useful for landing pages or thank-you pages.' }] },
+                ],
+              },
+            },
+          },
+        ],
       },
     ],
   },
@@ -227,6 +255,35 @@ export const pezcmsKbCategories: TemplateKbCategory[] = [
         question: 'How does version history work?',
         answer_text: 'Every time you save a page, a new version is created automatically. Go to the Version History panel to see all versions, compare changes, and restore any previous version with one click.',
         include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-version-history',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Version History' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'PezCMS automatically tracks every save, giving you complete revision control.' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'How It Works' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Automatic Saves' }, { type: 'text', text: ' – Every save creates a new version' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Timestamps' }, { type: 'text', text: ' – Each version shows when it was saved and by whom' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Full Content' }, { type: 'text', text: ' – Versions include all blocks, text, and settings' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Viewing History' }] },
+                  { type: 'orderedList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Open a page in the editor' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Click the ' }, { type: 'text', marks: [{ type: 'bold' }], text: 'Version History' }, { type: 'text', text: ' button (clock icon)' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Browse through previous versions' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Click ' }, { type: 'text', marks: [{ type: 'bold' }], text: 'Restore' }, { type: 'text', text: ' to revert to any version' }] }] },
+                  ] },
+                  { type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'italic' }], text: 'Note: Restoring a version creates a new version, so you never lose any history.' }] },
+                ],
+              },
+            },
+          },
+        ],
       },
       {
         title: 'Media Library',
@@ -234,6 +291,37 @@ export const pezcmsKbCategories: TemplateKbCategory[] = [
         question: 'How do I manage images and files?',
         answer_text: 'The Media Library stores all uploaded images and files. Access it via Admin → Media. You can upload files, organize them, and reuse them across multiple pages. Images are automatically optimized for web.',
         include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-media-library',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Media Library' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'The Media Library is your central hub for all images and files.' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Features' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Upload' }, { type: 'text', text: ' – Drag and drop or click to upload images and files' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Search' }, { type: 'text', text: ' – Find files quickly by name' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Reuse' }, { type: 'text', text: ' – Use the same image across multiple pages' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Optimization' }, { type: 'text', text: ' – Images are automatically optimized for web performance' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Uploading Files' }] },
+                  { type: 'orderedList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Navigate to ' }, { type: 'text', marks: [{ type: 'bold' }], text: 'Admin → Media' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Click ' }, { type: 'text', marks: [{ type: 'bold' }], text: 'Upload' }, { type: 'text', text: ' or drag files onto the page' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Files are uploaded and ready to use immediately' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Supported Formats' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Images: JPG, PNG, GIF, WebP, SVG. Documents: PDF, DOC, DOCX, XLS, XLSX.' }] },
+                  { type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'italic' }], text: 'Tip: Use descriptive file names for better organization and SEO.' }] },
+                ],
+              },
+            },
+          },
+        ],
       },
       {
         title: 'SEO Settings',
@@ -241,6 +329,41 @@ export const pezcmsKbCategories: TemplateKbCategory[] = [
         question: 'How do I configure SEO for my pages?',
         answer_text: 'Each page has SEO settings in the Page Settings dialog. Set the meta title, description, and Open Graph image. PezCMS automatically generates structured data and sitemaps for better search engine visibility.',
         include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-seo-settings',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'SEO Settings' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Optimize your pages for search engines with built-in SEO tools.' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Page SEO Options' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Meta Title' }, { type: 'text', text: ' – The title shown in search results (keep under 60 characters)' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Meta Description' }, { type: 'text', text: ' – Summary shown in search results (keep under 160 characters)' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Open Graph Image' }, { type: 'text', text: ' – Image shown when sharing on social media' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Canonical URL' }, { type: 'text', text: ' – Specify the preferred URL for duplicate content' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Configuring SEO' }] },
+                  { type: 'orderedList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Open a page in the editor' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Click ' }, { type: 'text', marks: [{ type: 'bold' }], text: 'Page Settings' }, { type: 'text', text: ' (gear icon)' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Fill in the SEO fields' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Save your changes' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Automatic Features' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Sitemap generation at /sitemap.xml' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Structured data for rich snippets' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Semantic HTML for better crawling' }] }] },
+                  ] },
+                ],
+              },
+            },
+          },
+        ],
       },
       {
         title: 'Blog Management',
@@ -248,6 +371,40 @@ export const pezcmsKbCategories: TemplateKbCategory[] = [
         question: 'How do I manage blog posts?',
         answer_text: 'Go to Admin → Blog to manage posts, categories, and tags. Create posts with the same block editor as pages. Set featured images, excerpts, and author information. Schedule posts for future publication.',
         include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-blog-management',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Blog Management' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'PezCMS includes a full-featured blog with categories, tags, and scheduling.' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Creating a Blog Post' }] },
+                  { type: 'orderedList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Navigate to ' }, { type: 'text', marks: [{ type: 'bold' }], text: 'Admin → Blog → Posts' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Click ' }, { type: 'text', marks: [{ type: 'bold' }], text: 'New Post' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Enter a title and write your content using the block editor' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Add a featured image and excerpt' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Assign categories and tags' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Save as draft or publish' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Blog Features' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Categories' }, { type: 'text', text: ' – Organize posts by topic' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Tags' }, { type: 'text', text: ' – Add keywords for filtering' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Authors' }, { type: 'text', text: ' – Assign authors with bios and avatars' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Scheduling' }, { type: 'text', text: ' – Schedule posts for future publication' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Featured Posts' }, { type: 'text', text: ' – Highlight important posts' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'RSS Feed' }, { type: 'text', text: ' – Automatic RSS feed at /blog/rss.xml' }] }] },
+                  ] },
+                  { type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'italic' }], text: 'Tip: Use the Article Grid block to display blog posts on any page.' }] },
+                ],
+              },
+            },
+          },
+        ],
       },
     ],
   },
