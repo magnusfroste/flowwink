@@ -18,11 +18,14 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useUnsavedChanges, UnsavedChangesDialog } from '@/hooks/useUnsavedChanges';
 import { Link } from 'react-router-dom';
+import { useIsLovableAIConfigured } from '@/hooks/useIntegrationStatus';
+import { IntegrationWarning } from '@/components/admin/IntegrationWarning';
 
 export default function ChatSettingsPage() {
   const { data: settings, isLoading } = useChatSettings();
   const updateSettings = useUpdateChatSettings();
   const [formData, setFormData] = useState<ChatSettings | null>(null);
+  const isLovableAIConfigured = useIsLovableAIConfigured();
 
   useEffect(() => {
     if (settings) {
@@ -71,6 +74,11 @@ export default function ChatSettingsPage() {
             Save changes
           </Button>
         </AdminPageHeader>
+
+        {formData.aiProvider === 'lovable' && isLovableAIConfigured === false && (
+          <IntegrationWarning integration="lovable_ai" />
+        )}
+
         <div className="max-w-4xl space-y-6">
         {/* Master toggle */}
         <Card>

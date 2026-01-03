@@ -16,6 +16,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { useIsResendConfigured } from "@/hooks/useIntegrationStatus";
+import { IntegrationWarning } from "@/components/admin/IntegrationWarning";
 
 interface Subscriber {
   id: string;
@@ -62,7 +64,7 @@ export default function NewsletterPage() {
   const [editingNewsletter, setEditingNewsletter] = useState<Newsletter | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedNewsletterForStats, setSelectedNewsletterForStats] = useState<Newsletter | null>(null);
-
+  const isResendConfigured = useIsResendConfigured();
   // Fetch subscribers
   const { data: subscribers = [], isLoading: loadingSubscribers } = useQuery({
     queryKey: ["newsletter-subscribers"],
@@ -290,6 +292,10 @@ export default function NewsletterPage() {
           title="Newsletter"
           description="Manage subscribers and send email campaigns"
         />
+
+        {isResendConfigured === false && (
+          <IntegrationWarning integration="resend" />
+        )}
 
         {/* Stats */}
         <div className="grid sm:grid-cols-3 gap-4">
