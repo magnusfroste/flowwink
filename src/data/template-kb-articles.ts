@@ -1531,4 +1531,231 @@ export const pezcmsKbCategories: TemplateKbCategory[] = [
       },
     ],
   },
+
+  // ===== GLOBAL BLOCKS =====
+  {
+    name: 'Global Blocks',
+    slug: 'global-blocks',
+    description: 'Manage reusable header, footer, and popup components across your site.',
+    icon: 'LayoutTemplate',
+    articles: [
+      {
+        title: 'Global Blocks Overview',
+        slug: 'global-blocks-overview',
+        question: 'What are Global Blocks and how do they work?',
+        answer_text: 'Global Blocks are reusable components that appear across multiple pages. Headers and footers are the most common examples. Edit once, update everywhere – saving time and ensuring consistency.',
+        is_featured: true,
+        include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-global-overview',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Global Blocks Overview' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Global Blocks let you create components that appear consistently across your entire site:' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Available Slots' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Header' }, { type: 'text', text: ' – Navigation bar at the top of every page' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Footer' }, { type: 'text', text: ' – Site footer with links, contact info, and branding' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Popup' }, { type: 'text', text: ' – Modal overlays for announcements, promotions, or lead capture' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Key Benefits' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Edit once, update everywhere' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Maintain consistent branding across all pages' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Enable/disable blocks without deleting them' }] }] },
+                  ] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Access Global Blocks via ' }, { type: 'text', marks: [{ type: 'bold' }], text: 'Admin → Global Blocks' }, { type: 'text', text: '.' }] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      {
+        title: 'Managing Headers',
+        slug: 'managing-headers',
+        question: 'How do I create and customize the site header?',
+        answer_text: 'Go to Admin → Global Blocks and create a Header block. Add your logo, navigation links, and optional CTA button. The header automatically appears on all public pages and includes mobile-responsive navigation.',
+        is_featured: true,
+        include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-managing-headers',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Managing Site Headers' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Create a professional header that appears on every page:' }] },
+                  { type: 'orderedList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Go to ' }, { type: 'text', marks: [{ type: 'bold' }], text: 'Admin → Global Blocks' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Click ' }, { type: 'text', marks: [{ type: 'bold' }], text: 'New Block' }, { type: 'text', text: ' and select Header as the slot' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Upload your logo or enter your site name' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Navigation links are pulled from your published pages automatically' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Add an optional CTA button (e.g., "Contact Us", "Get Started")' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Header Options' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Logo' }, { type: 'text', text: ' – Upload an image or use text-based branding' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Navigation Style' }, { type: 'text', text: ' – Horizontal links with mobile hamburger menu' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'CTA Button' }, { type: 'text', text: ' – Prominent action button with custom text and link' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Theme Toggle' }, { type: 'text', text: ' – Optional dark/light mode switcher' }] }] },
+                  ] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      {
+        title: 'Managing Footers',
+        slug: 'managing-footers',
+        question: 'How do I create and customize the site footer?',
+        answer_text: 'Create a Footer block in Global Blocks. Add columns for navigation, contact information, social links, and copyright text. Choose from multiple layout variants to match your design.',
+        include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-managing-footers',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Managing Site Footers' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Build a comprehensive footer with all essential information:' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Footer Elements' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Company Info' }, { type: 'text', text: ' – Logo, description, and tagline' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Navigation Columns' }, { type: 'text', text: ' – Grouped links (Products, Company, Resources, etc.)' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Contact Details' }, { type: 'text', text: ' – Address, phone, and email' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Social Links' }, { type: 'text', text: ' – Icons linking to your social profiles' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Copyright' }, { type: 'text', text: ' – Legal text with auto-updating year' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Layout Variants' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Standard' }, { type: 'text', text: ' – Multi-column layout with all sections' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Minimal' }, { type: 'text', text: ' – Simple copyright and essential links only' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Centered' }, { type: 'text', text: ' – Logo-focused design with centered content' }] }] },
+                  ] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      {
+        title: 'Creating Popups',
+        slug: 'creating-popups',
+        question: 'How do I create popup announcements or modals?',
+        answer_text: 'Add a Popup block in Global Blocks. Configure trigger timing (delay, exit intent), display rules (once per session, always), and content. Great for promotions, cookie notices, or newsletter signups.',
+        include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-creating-popups',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Creating Popup Modals' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Popups capture attention for important announcements or conversions:' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Popup Configuration' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Title & Content' }, { type: 'text', text: ' – Headline and body text for your message' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Image' }, { type: 'text', text: ' – Optional visual to grab attention' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'CTA Button' }, { type: 'text', text: ' – Action button with custom text and link' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Delay' }, { type: 'text', text: ' – Seconds to wait before showing' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Frequency' }, { type: 'text', text: ' – Show once per session or every page load' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Common Use Cases' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Newsletter signup incentives' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Limited-time promotions or sales' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Important announcements or updates' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Exit-intent offers' }] }] },
+                  ] },
+                  { type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'italic' }], text: 'Tip: Use sparingly – too many popups frustrate visitors.' }] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      {
+        title: 'Enabling and Disabling Blocks',
+        slug: 'enabling-disabling-blocks',
+        question: 'How do I temporarily hide a global block?',
+        answer_text: 'Toggle the Active switch on any global block to enable or disable it. Disabled blocks are preserved but not rendered on the site. Useful for seasonal content or testing new designs.',
+        include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-enabling-disabling',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Enabling and Disabling Blocks' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Control which global blocks appear on your site without deleting them:' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'How to Toggle' }] },
+                  { type: 'orderedList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Go to ' }, { type: 'text', marks: [{ type: 'bold' }], text: 'Admin → Global Blocks' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Find the block you want to toggle' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Click the ' }, { type: 'text', marks: [{ type: 'bold' }], text: 'Active toggle' }, { type: 'text', text: ' to enable/disable' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'When to Use' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Seasonal Content' }, { type: 'text', text: ' – Holiday promotions, event announcements' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'A/B Testing' }, { type: 'text', text: ' – Compare different header or footer designs' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Maintenance' }, { type: 'text', text: ' – Hide elements while making updates' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Troubleshooting' }, { type: 'text', text: ' – Isolate issues by disabling blocks' }] }] },
+                  ] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      {
+        title: 'Multiple Blocks Per Slot',
+        slug: 'multiple-blocks-per-slot',
+        question: 'Can I have multiple headers or footers?',
+        answer_text: 'Yes, you can create multiple blocks for each slot, but only one can be active at a time. This lets you prepare alternative designs and switch between them instantly without rebuilding.',
+        include_in_chat: true,
+        answer_json: [
+          {
+            id: 'kb-multiple-blocks',
+            type: 'text',
+            data: {
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Multiple Blocks Per Slot' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Create variations for different scenarios:' }] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'How It Works' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Create multiple blocks for the same slot (e.g., two headers)' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Only one block per slot can be active' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Activating one automatically deactivates others in that slot' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Switch instantly without rebuilding content' }] }] },
+                  ] },
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Example Use Cases' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Campaign Headers' }, { type: 'text', text: ' – Special header for product launches' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Holiday Footers' }, { type: 'text', text: ' – Seasonal footer with festive branding' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Event Popups' }, { type: 'text', text: ' – Different popups for different promotions' }] }] },
+                  ] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+    ],
+  },
 ];
