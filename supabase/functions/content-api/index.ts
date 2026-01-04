@@ -5,6 +5,262 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// ============= Markdown Rendering Utilities =============
+
+interface TiptapNode {
+  type: string;
+  content?: TiptapNode[];
+  text?: string;
+  marks?: Array<{ type: string; attrs?: Record<string, unknown> }>;
+  attrs?: Record<string, unknown>;
+}
+
+interface TiptapDocument {
+  type: 'doc';
+  content: TiptapNode[];
+}
+
+/**
+ * Render a TiptapDocument to Markdown
+ */
+function renderTiptapToMarkdown(doc: TiptapDocument | null | undefined): string {
+  if (!doc?.content) return '';
+  return doc.content.map(node => renderNodeToMarkdown(node)).join('\n\n');
+}
+
+function renderNodeToMarkdown(node: TiptapNode): string {
+  switch (node.type) {
+    case 'paragraph':
+      return renderInlineContent(node.content || []);
+    case 'heading': {
+      const level = (node.attrs?.level as number) || 1;
+      const prefix = '#'.repeat(level);
+      return `${prefix} ${renderInlineContent(node.content || [])}`;
+    }
+    case 'bulletList':
+      return (node.content || []).map(item => `- ${renderNodeToMarkdown(item)}`).join('\n');
+    case 'orderedList':
+      return (node.content || []).map((item, i) => `${i + 1}. ${renderNodeToMarkdown(item)}`).join('\n');
+    case 'listItem':
+      return (node.content || []).map(n => renderNodeToMarkdown(n)).join('\n');
+    case 'blockquote':
+      return (node.content || []).map(n => `> ${renderNodeToMarkdown(n)}`).join('\n');
+    case 'codeBlock': {
+      const lang = (node.attrs?.language as string) || '';
+      const code = (node.content || []).map(n => n.text || '').join('');
+      return `\`\`\`${lang}\n${code}\n\`\`\``;
+    }
+    case 'horizontalRule':
+      return '---';
+    case 'image': {
+      const src = node.attrs?.src as string || '';
+      const alt = node.attrs?.alt as string || '';
+      return `![${alt}](${src})`;
+    }
+    case 'hardBreak':
+      return '\n';
+    default:
+      if (node.content) {
+        return node.content.map(n => renderNodeToMarkdown(n)).join('');
+      }
+      return node.text || '';
+  }
+}
+
+function renderInlineContent(nodes: TiptapNode[]): string {
+  return nodes.map(node => {
+    let text = node.text || '';
+    if (node.content) {
+      text = renderInlineContent(node.content);
+    }
+    if (node.marks) {
+      for (const mark of node.marks) {
+        switch (mark.type) {
+          case 'bold':
+          case 'strong':
+            text = `**${text}**`;
+            break;
+          case 'italic':
+          case 'em':
+            text = `*${text}*`;
+            break;
+          case 'code':
+            text = `\`${text}\``;
+            break;
+          case 'strike':
+            text = `~~${text}~~`;
+            break;
+          case 'link': {
+            const href = mark.attrs?.href as string || '';
+            text = `[${text}](${href})`;
+            break;
+          }
+        }
+      }
+    }
+    return text;
+  }).join('');
+}
+
+/**
+ * Render a content block to Markdown
+ */
+// deno-lint-ignore no-explicit-any
+function renderBlockToMarkdown(block: any): string {
+  const type = block.type;
+  const data = block.data || {};
+
+  switch (type) {
+    case 'hero': {
+      const lines: string[] = [];
+      if (data.title) lines.push(`# ${data.title}`);
+      if (data.subtitle) lines.push(data.subtitle);
+      if (data.buttonText && data.buttonLink) {
+        lines.push(`\n[${data.buttonText}](${data.buttonLink})`);
+      }
+      return lines.join('\n\n');
+    }
+    case 'text': {
+      if (data.content?.type === 'doc') {
+        return renderTiptapToMarkdown(data.content);
+      }
+      return typeof data.content === 'string' ? data.content : '';
+    }
+    case 'image': {
+      const alt = data.alt || '';
+      const src = data.src || '';
+      const caption = data.caption ? `\n*${data.caption}*` : '';
+      return `![${alt}](${src})${caption}`;
+    }
+    case 'features': {
+      const lines: string[] = [];
+      if (data.title) lines.push(`## ${data.title}`);
+      if (data.subtitle) lines.push(data.subtitle);
+      if (data.features?.length) {
+        lines.push('');
+        // deno-lint-ignore no-explicit-any
+        for (const feature of data.features as any[]) {
+          lines.push(`### ${feature.title || ''}`);
+          if (feature.description) lines.push(feature.description);
+        }
+      }
+      return lines.join('\n\n');
+    }
+    case 'cta': {
+      const lines: string[] = [];
+      if (data.title) lines.push(`## ${data.title}`);
+      if (data.description) lines.push(data.description);
+      if (data.buttonText && data.buttonLink) {
+        lines.push(`\n[${data.buttonText}](${data.buttonLink})`);
+      }
+      return lines.join('\n\n');
+    }
+    case 'quote': {
+      const lines: string[] = [];
+      if (data.quote) lines.push(`> ${data.quote}`);
+      if (data.author) lines.push(`> — ${data.author}`);
+      return lines.join('\n');
+    }
+    case 'accordion': {
+      const lines: string[] = [];
+      if (data.title) lines.push(`## ${data.title}`);
+      if (data.items?.length) {
+        // deno-lint-ignore no-explicit-any
+        for (const item of data.items as any[]) {
+          lines.push(`### ${item.question || ''}`);
+          if (item.answer?.type === 'doc') {
+            lines.push(renderTiptapToMarkdown(item.answer));
+          } else if (typeof item.answer === 'string') {
+            lines.push(item.answer);
+          }
+        }
+      }
+      return lines.join('\n\n');
+    }
+    case 'testimonials': {
+      const lines: string[] = [];
+      if (data.title) lines.push(`## ${data.title}`);
+      if (data.items?.length) {
+        // deno-lint-ignore no-explicit-any
+        for (const item of data.items as any[]) {
+          lines.push(`> ${item.quote || ''}`);
+          lines.push(`> — ${item.author || ''}${item.role ? `, ${item.role}` : ''}`);
+          lines.push('');
+        }
+      }
+      return lines.join('\n');
+    }
+    case 'twoColumn': {
+      const lines: string[] = [];
+      if (data.leftContent?.type === 'doc') {
+        lines.push(renderTiptapToMarkdown(data.leftContent));
+      }
+      if (data.rightContent?.type === 'doc') {
+        lines.push(renderTiptapToMarkdown(data.rightContent));
+      }
+      return lines.join('\n\n---\n\n');
+    }
+    case 'stats': {
+      const lines: string[] = [];
+      if (data.title) lines.push(`## ${data.title}`);
+      if (data.stats?.length) {
+        // deno-lint-ignore no-explicit-any
+        for (const stat of data.stats as any[]) {
+          lines.push(`- **${stat.value || ''}** ${stat.label || ''}`);
+        }
+      }
+      return lines.join('\n');
+    }
+    case 'contact': {
+      const lines: string[] = [];
+      if (data.title) lines.push(`## ${data.title}`);
+      if (data.subtitle) lines.push(data.subtitle);
+      if (data.email) lines.push(`📧 ${data.email}`);
+      if (data.phone) lines.push(`📞 ${data.phone}`);
+      if (data.address) lines.push(`📍 ${data.address}`);
+      return lines.join('\n\n');
+    }
+    default:
+      // Fallback: output data as YAML-like format
+      return `<!-- Block: ${type} -->\n`;
+  }
+}
+
+/**
+ * Render a full page to Markdown
+ */
+// deno-lint-ignore no-explicit-any
+function renderPageToMarkdown(page: any): string {
+  const lines: string[] = [];
+  
+  // YAML frontmatter
+  lines.push('---');
+  lines.push(`title: "${page.title || ''}"`);
+  lines.push(`slug: "${page.slug || ''}"`);
+  if (page.meta_json?.description) {
+    lines.push(`description: "${page.meta_json.description}"`);
+  }
+  if (page.meta_json?.seoTitle) {
+    lines.push(`seoTitle: "${page.meta_json.seoTitle}"`);
+  }
+  lines.push(`updatedAt: "${page.updated_at || ''}"`);
+  lines.push('---');
+  lines.push('');
+
+  // Render each block
+  const blocks = page.content_json || [];
+  // deno-lint-ignore no-explicit-any
+  for (const block of blocks as any[]) {
+    const md = renderBlockToMarkdown(block);
+    if (md) {
+      lines.push(md);
+      lines.push('');
+    }
+  }
+
+  return lines.join('\n');
+}
+
 // ============= GraphQL Schema =============
 
 const GRAPHQL_SCHEMA = `
@@ -856,6 +1112,41 @@ Deno.serve(async (req) => {
         total: pageList.length,
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // ============= REST: GET /page/:slug.md (Markdown export) =============
+    if (pathParts.length === 2 && pathParts[0] === 'page' && pathParts[1].endsWith('.md')) {
+      const slug = pathParts[1].replace(/\.md$/, '');
+      console.log('[Content API] REST: Fetching page as Markdown:', slug);
+
+      const { data: page, error } = await supabase
+        .from('pages')
+        .select('*')
+        .eq('slug', slug)
+        .eq('status', 'published')
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (!page) {
+        return new Response(
+          `# 404 - Page Not Found\n\nThe page "${slug}" could not be found.`,
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'text/markdown; charset=utf-8' } }
+        );
+      }
+
+      // deno-lint-ignore no-explicit-any
+      const pageData = page as any;
+      const markdown = renderPageToMarkdown(pageData);
+
+      return new Response(markdown, {
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'text/markdown; charset=utf-8',
+          'Content-Disposition': `inline; filename="${slug}.md"`,
+          'Cache-Control': 'public, max-age=60, stale-while-revalidate=300',
+        },
       });
     }
 

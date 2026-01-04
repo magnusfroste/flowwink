@@ -49,6 +49,36 @@ GET /content-api/page/:slug
 GET /content-api/page/about
 ```
 
+#### Get a page as Markdown
+```http
+GET /content-api/page/:slug.md
+```
+
+Returns the page content rendered as Markdown with YAML frontmatter. Useful for static site generators, documentation systems, or any system that consumes Markdown.
+
+**Example:**
+```http
+GET /content-api/page/about.md
+```
+
+**Response:**
+```markdown
+---
+title: "About Us"
+slug: "about"
+description: "Learn more about our company"
+updatedAt: "2024-01-15T10:30:00Z"
+---
+
+# Welcome to Our Company
+
+We are passionate about building great products...
+
+## Our Mission
+
+To deliver exceptional value to our customers.
+```
+
 ---
 
 ### Blog
