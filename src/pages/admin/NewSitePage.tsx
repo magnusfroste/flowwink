@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Loader2, Sparkles, Check, FileText, Palette, MessageSquare, Trash2, AlertTriangle, Send, Newspaper, BookOpen } from 'lucide-react';
+import { ArrowLeft, Loader2, Sparkles, Check, FileText, Palette, MessageSquare, Trash2, AlertTriangle, Send, Newspaper, BookOpen, ShieldCheck, AlertCircle } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,8 +9,11 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { StarterTemplateSelector } from '@/components/admin/StarterTemplateSelector';
 import { StarterTemplate } from '@/data/starter-templates';
+import { validateTemplate, ValidationResult } from '@/lib/template-validator';
 import { useCreatePage, usePages, useDeletePage } from '@/hooks/usePages';
 import { useUpdateBrandingSettings, useUpdateChatSettings, useUpdateGeneralSettings, useUpdateSeoSettings, useUpdateCookieBannerSettings, useUpdateKbSettings } from '@/hooks/useSiteSettings';
 import { useUpdateFooterBlock } from '@/hooks/useGlobalBlocks';
@@ -39,6 +42,8 @@ export default function NewSitePage() {
   const [publishPages, setPublishPages] = useState(true);
   const [publishBlogPosts, setPublishBlogPosts] = useState(true);
   const [publishKbArticles, setPublishKbArticles] = useState(true);
+  const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
+  const [showValidationDialog, setShowValidationDialog] = useState(false);
   
   const navigate = useNavigate();
   const { data: existingPages } = usePages();
@@ -63,6 +68,14 @@ export default function NewSitePage() {
 
   const handleTemplateSelect = (template: StarterTemplate) => {
     setSelectedTemplate(template);
+    setValidationResult(null);
+  };
+
+  const handleValidateTemplate = () => {
+    if (!selectedTemplate) return;
+    const result = validateTemplate(selectedTemplate);
+    setValidationResult(result);
+    setShowValidationDialog(true);
   };
 
   const handleCreateSite = async () => {
@@ -483,6 +496,10 @@ export default function NewSitePage() {
                     <Button variant="outline" onClick={() => navigate('/admin/pages')}>
                       Cancel
                     </Button>
+                    <Button variant="outline" onClick={handleValidateTemplate} className="gap-2">
+                      <ShieldCheck className="h-4 w-4" />
+                      Validate
+                    </Button>
                     <Button onClick={handleCreateSite} className="gap-2">
                       <Sparkles className="h-4 w-4" />
                       {clearExistingPages ? 'Replace Site' : 'Create Site'}
@@ -491,6 +508,90 @@ export default function NewSitePage() {
                 </CardContent>
               </Card>
             )}
+
+            {/* Validation Results Dialog */}
+            <Dialog open={showValidationDialog} onOpenChange={setShowValidationDialog}>
+              <DialogContent className="max-w-lg">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    {validationResult?.valid ? (
+                      <>
+                        <Check className="h-5 w-5 text-primary" />
+                        Template Valid
+                      </>
+                    ) : (
+                      <>
+                        <AlertCircle className="h-5 w-5 text-destructive" />
+                        Validation Issues Found
+                      </>
+                    )}
+                  </DialogTitle>
+                  <DialogDescription>
+                    {validationResult?.valid 
+                      ? 'The template structure is correct and ready to import.'
+                      : 'Please review the issues below before importing.'}
+                  </DialogDescription>
+                </DialogHeader>
+                
+                <ScrollArea className="max-h-80">
+                  <div className="space-y-4">
+                    {validationResult?.errors && validationResult.errors.length > 0 && (
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-medium flex items-center gap-2 text-destructive">
+                          <AlertCircle className="h-4 w-4" />
+                          Errors ({validationResult.errors.length})
+                        </h4>
+                        <ul className="space-y-1.5">
+                          {validationResult.errors.map((error, i) => (
+                            <li key={i} className="text-sm text-destructive bg-destructive/10 rounded px-3 py-2">
+                              <strong>{error.path}:</strong> {error.message}
+                              {error.suggestion && (
+                                <span className="block text-xs mt-1 opacity-80">💡 {error.suggestion}</span>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    
+                    {validationResult?.warnings && validationResult.warnings.length > 0 && (
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-medium flex items-center gap-2 text-yellow-600 dark:text-yellow-500">
+                          <AlertTriangle className="h-4 w-4" />
+                          Warnings ({validationResult.warnings.length})
+                        </h4>
+                        <ul className="space-y-1.5">
+                          {validationResult.warnings.map((warning, i) => (
+                            <li key={i} className="text-sm text-yellow-700 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 rounded px-3 py-2">
+                              <strong>{warning.path}:</strong> {warning.message}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    
+                    {validationResult?.valid && validationResult.errors.length === 0 && validationResult.warnings.length === 0 && (
+                      <div className="text-center py-6 text-muted-foreground">
+                        <Check className="h-12 w-12 mx-auto mb-3 text-primary" />
+                        <p>No issues found. Template is ready to import!</p>
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
+                
+                <div className="flex justify-end gap-3 pt-2">
+                  <Button variant="outline" onClick={() => setShowValidationDialog(false)}>
+                    Close
+                  </Button>
+                  {validationResult?.valid && (
+                    <Button onClick={() => { setShowValidationDialog(false); handleCreateSite(); }} className="gap-2">
+                      <Sparkles className="h-4 w-4" />
+                      Create Site
+                    </Button>
+                  )}
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         )}
 
