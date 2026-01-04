@@ -278,17 +278,30 @@ export default function NewSitePage() {
     ? (progress.currentPage / (progress.totalPages + 2)) * 100 // +2 for branding and chat steps
     : 0;
 
+  const cameFromTemplates = !!(location.state as any)?.selectedTemplate;
+
   return (
     <AdminLayout>
       <div className="max-w-3xl">
-        <Button
-          variant="ghost"
-          onClick={() => navigate('/admin/pages')}
-          className="mb-6"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to pages
-        </Button>
+        <div className="flex items-center gap-2 mb-6">
+          {cameFromTemplates ? (
+            <Button
+              variant="ghost"
+              onClick={() => navigate('/admin/templates')}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Tillbaka till Templates
+            </Button>
+          ) : (
+            <Button
+              variant="ghost"
+              onClick={() => navigate('/admin/pages')}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to pages
+            </Button>
+          )}
+        </div>
 
         {step === 'select' && (
           <div className="space-y-6">
