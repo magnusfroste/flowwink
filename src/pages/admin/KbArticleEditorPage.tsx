@@ -95,11 +95,7 @@ export default function KbArticleEditorPage() {
   }, [formData.title, isNew]);
 
   const handleSave = async () => {
-    console.log("=== SAVE STARTED ===");
-    console.log("formData:", JSON.stringify(formData));
-    console.log("editor exists:", !!editor);
-    console.log("isNew:", isNew);
-    console.log("id:", id);
+    console.log("=== SAVE STARTED ===", formData.title, formData.category_id, !!editor, isNew);
     
     if (!editor) {
       toast.error("Editor not ready");
