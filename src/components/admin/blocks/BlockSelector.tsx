@@ -271,6 +271,12 @@ const BLOCK_GROUPS: BlockGroup[] = [
         icon: <HelpCircle className="h-5 w-5" />,
         description: 'Full Knowledge Base with search and categories',
       },
+      {
+        type: 'kb-search',
+        label: 'KB Search',
+        icon: <HelpCircle className="h-5 w-5" />,
+        description: 'Standalone search for Knowledge Base',
+      },
     ],
   },
 ];

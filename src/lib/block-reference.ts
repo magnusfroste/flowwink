@@ -439,6 +439,20 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
       { name: 'emptyStateSubtitle', type: 'string', required: false, description: 'Empty state subtitle' },
     ],
   },
+  {
+    type: 'kb-search',
+    name: 'KB Search',
+    description: 'Standalone Knowledge Base search component that can be embedded in hero sections or anywhere on the site.',
+    category: 'interactive',
+    fields: [
+      { name: 'title', type: 'string', required: false, description: 'Optional title above search' },
+      { name: 'subtitle', type: 'string', required: false, description: 'Optional subtitle' },
+      { name: 'placeholder', type: 'string', required: false, description: 'Search input placeholder', default: 'Search for answers...' },
+      { name: 'buttonText', type: 'string', required: false, description: 'Search button text', default: 'Search' },
+      { name: 'variant', type: 'string', required: false, description: 'Display variant', default: 'default', options: ['default', 'minimal', 'hero'] },
+      { name: 'showButton', type: 'boolean', required: false, description: 'Show search button', default: true },
+    ],
+  },
 ];
 
 /**
