@@ -95,33 +95,33 @@ export default function KbArticleEditorPage() {
   }, [formData.title, isNew]);
 
   const handleSave = async () => {
-    console.log("handleSave called", { formData, editor: !!editor });
+    console.log("=== SAVE STARTED ===");
+    console.log("formData:", JSON.stringify(formData));
+    console.log("editor exists:", !!editor);
+    console.log("isNew:", isNew);
+    console.log("id:", id);
     
     if (!editor) {
-      console.log("Editor not ready");
       toast.error("Editor not ready");
       return;
     }
     
     if (!formData.category_id) {
-      console.log("No category selected");
       toast.error("Please select a category");
       return;
     }
 
     if (!formData.title.trim()) {
-      console.log("No title");
       toast.error("Please enter a title");
       return;
     }
 
     if (!formData.question.trim()) {
-      console.log("No question");
       toast.error("Please enter a question");
       return;
     }
     
-    console.log("Validation passed, attempting save...");
+    console.log("=== VALIDATION PASSED ===");
 
     const answer_json = editor.getJSON() as unknown;
     const answer_text = extractPlainText(answer_json);
@@ -138,16 +138,24 @@ export default function KbArticleEditorPage() {
       answer_text,
     };
 
+    console.log("=== ATTEMPTING MUTATION ===", data);
+
     try {
       if (isNew) {
+        console.log("Creating new article...");
         const created = await createArticle.mutateAsync(data);
+        console.log("Created:", created);
+        toast.success("Article created!");
         navigate(`/admin/knowledge-base/${created.id}`);
       } else if (id) {
+        console.log("Updating existing article...");
         await updateArticle.mutateAsync({ id, ...data });
+        console.log("Updated successfully");
+        toast.success("Article saved!");
       }
     } catch (error) {
-      // Error is already handled by the mutation's onError
-      console.error("Save failed:", error);
+      console.error("=== SAVE FAILED ===", error);
+      toast.error(`Save failed: ${(error as Error).message}`);
     }
   };
 
