@@ -47,10 +47,12 @@ import { FeaturesBlockEditor } from './FeaturesBlockEditor';
 import { TimelineBlockEditor } from './TimelineBlockEditor';
 import { ProductsBlockEditor } from './ProductsBlockEditor';
 import { CartBlockEditor } from './CartBlockEditor';
+import { KbFeaturedBlockEditor } from './KbFeaturedBlockEditor';
 import { TemplateEmptyState } from '@/components/admin/StarterTemplateSelector';
 import { StarterTemplate } from '@/data/starter-templates';
 import type { ProductsBlockData } from '@/components/public/blocks/ProductsBlock';
 import type { CartBlockData } from '@/components/public/blocks/CartBlock';
+import type { KbFeaturedBlockData } from '@/components/public/blocks/KbFeaturedBlock';
 
 interface NewsletterBlockData {
   title?: string;
@@ -92,6 +94,7 @@ type BlockDataMap = {
   timeline: Record<string, unknown>;
   products: ProductsBlockData;
   cart: CartBlockData;
+  'kb-featured': KbFeaturedBlockData;
 };
 
 const DEFAULT_BLOCK_DATA: BlockDataMap = {
@@ -240,6 +243,14 @@ const DEFAULT_BLOCK_DATA: BlockDataMap = {
     showContinueShopping: true,
     continueShoppingUrl: '/',
     variant: 'default',
+  },
+  'kb-featured': {
+    title: 'Vanliga frågor',
+    subtitle: '',
+    maxItems: 6,
+    showCategory: true,
+    layout: 'grid',
+    columns: 3,
   },
 };
 
@@ -559,6 +570,13 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
             data={block.data as unknown as CartBlockData}
             onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
             isEditing={isEditing}
+          />
+        );
+      case 'kb-featured':
+        return (
+          <KbFeaturedBlockEditor
+            data={block.data as unknown as KbFeaturedBlockData}
+            onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
           />
         );
       default:

@@ -259,6 +259,12 @@ const BLOCK_GROUPS: BlockGroup[] = [
         icon: <ShoppingCart className="h-5 w-5" />,
         description: 'Shopping cart with checkout link',
       },
+      {
+        type: 'kb-featured',
+        label: 'KB Featured',
+        icon: <HelpCircle className="h-5 w-5" />,
+        description: 'Featured Knowledge Base articles',
+      },
     ],
   },
 ];

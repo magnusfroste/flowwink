@@ -32,6 +32,7 @@ import {
   TimelineBlock,
   ProductsBlock,
   CartBlock,
+  KbFeaturedBlock,
 } from './blocks';
 import type {
   HeroBlockData,
@@ -55,6 +56,7 @@ import type {
 } from '@/types/cms';
 import type { ProductsBlockData } from './blocks/ProductsBlock';
 import type { CartBlockData } from './blocks/CartBlock';
+import type { KbFeaturedBlockData } from './blocks/KbFeaturedBlock';
 
 interface BlockRendererProps {
   block: ContentBlock;
@@ -166,6 +168,8 @@ export function BlockRenderer({ block, pageId, index = 0 }: BlockRendererProps) 
         return <ProductsBlock data={block.data as unknown as ProductsBlockData} />;
       case 'cart':
         return <CartBlock data={block.data as unknown as CartBlockData} />;
+      case 'kb-featured':
+        return <KbFeaturedBlock data={block.data as unknown as KbFeaturedBlockData} />;
       default:
         return null;
     }
