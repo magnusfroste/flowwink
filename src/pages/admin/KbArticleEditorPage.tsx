@@ -115,7 +115,7 @@ export default function KbArticleEditorPage() {
       return;
     }
 
-    const answer_json = editor.getJSON();
+    const answer_json = editor.getJSON() as unknown;
     const answer_text = extractPlainText(answer_json);
 
     const data = {
@@ -126,29 +126,20 @@ export default function KbArticleEditorPage() {
       is_published: formData.is_published,
       is_featured: formData.is_featured,
       include_in_chat: formData.include_in_chat,
-      answer_json,
+      answer_json: answer_json as import("@/integrations/supabase/types").Json,
       answer_text,
     };
 
-    if (isNew) {
-      createArticle.mutate(data, {
-        onSuccess: (created) => {
-          toast.success("Article created");
-          navigate(`/admin/knowledge-base/${created.id}`);
-        },
-        onError: (error) => {
-          toast.error(`Failed to create: ${error.message}`);
-        },
-      });
-    } else if (id) {
-      updateArticle.mutate({ id, ...data }, {
-        onSuccess: () => {
-          toast.success("Article saved");
-        },
-        onError: (error) => {
-          toast.error(`Failed to save: ${error.message}`);
-        },
-      });
+    try {
+      if (isNew) {
+        const created = await createArticle.mutateAsync(data);
+        navigate(`/admin/knowledge-base/${created.id}`);
+      } else if (id) {
+        await updateArticle.mutateAsync({ id, ...data });
+      }
+    } catch (error) {
+      // Error is already handled by the mutation's onError
+      console.error("Save failed:", error);
     }
   };
 
