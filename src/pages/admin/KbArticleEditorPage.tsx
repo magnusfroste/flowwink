@@ -95,7 +95,6 @@ export default function KbArticleEditorPage() {
   }, [formData.title, isNew]);
 
   const handleSave = async () => {
-    console.log("=== SAVE STARTED ===", formData.title, formData.category_id, !!editor, isNew);
     
     if (!editor) {
       toast.error("Editor not ready");
@@ -117,7 +116,7 @@ export default function KbArticleEditorPage() {
       return;
     }
     
-    console.log("=== VALIDATION PASSED ===");
+    
 
     const answer_json = editor.getJSON() as unknown;
     const answer_text = extractPlainText(answer_json);
@@ -134,23 +133,16 @@ export default function KbArticleEditorPage() {
       answer_text,
     };
 
-    console.log("=== ATTEMPTING MUTATION ===", data);
-
     try {
       if (isNew) {
-        console.log("Creating new article...");
         const created = await createArticle.mutateAsync(data);
-        console.log("Created:", created);
         toast.success("Article created!");
         navigate(`/admin/knowledge-base/${created.id}`);
       } else if (id) {
-        console.log("Updating existing article...");
         await updateArticle.mutateAsync({ id, ...data });
-        console.log("Updated successfully");
         toast.success("Article saved!");
       }
     } catch (error) {
-      console.error("=== SAVE FAILED ===", error);
       toast.error(`Save failed: ${(error as Error).message}`);
     }
   };
