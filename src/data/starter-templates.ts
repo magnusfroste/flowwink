@@ -7,7 +7,13 @@ import {
   momentumBlogPosts, 
   pezcmsBlogPosts 
 } from './template-blog-posts';
-import { pezcmsKbCategories, TemplateKbCategory } from './template-kb-articles';
+import { 
+  pezcmsKbCategories, 
+  launchpadKbCategories, 
+  trustcorpKbCategories, 
+  securehealthKbCategories,
+  TemplateKbCategory 
+} from './template-kb-articles';
 
 // Page definition within a template
 export interface TemplatePage {
@@ -2053,6 +2059,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
     aiChatPosition: 'Small card widget for quick support',
     pages: launchpadPages,
     blogPosts: launchpadBlogPosts,
+    kbCategories: launchpadKbCategories,
     branding: {
       organizationName: 'LaunchPad',
       brandTagline: 'Launch Your Vision',
@@ -2086,10 +2093,18 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
       linkedin: 'https://linkedin.com/company/launchpad',
       twitter: 'https://twitter.com/launchpad',
       legalLinks: [
+        { id: 'help', label: 'Help Center', url: '/help', enabled: true },
         { id: 'privacy', label: 'Privacy Policy', url: '/privacy-policy', enabled: true },
         { id: 'terms', label: 'Terms of Service', url: '/terms-of-service', enabled: true },
         { id: 'cookies', label: 'Cookie Policy', url: '/cookie-policy', enabled: true },
       ],
+    },
+    kbSettings: {
+      enabled: true,
+      menuTitle: 'Help',
+      menuSlug: 'help',
+      showInMenu: true,
+      menuOrder: 5,
     },
     seoSettings: {
       siteTitle: 'LaunchPad',
@@ -2171,6 +2186,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
     aiChatPosition: 'Large embedded assistant with data sovereignty messaging',
     pages: trustcorpPages,
     blogPosts: trustcorpBlogPosts,
+    kbCategories: trustcorpKbCategories,
     branding: {
       organizationName: 'TrustCorp',
       brandTagline: 'Enterprise Excellence',
@@ -2203,10 +2219,18 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
       weekendHours: 'Closed',
       linkedin: 'https://linkedin.com/company/trustcorp',
       legalLinks: [
+        { id: 'support', label: 'Support Center', url: '/support', enabled: true },
         { id: 'privacy', label: 'Privacy Policy', url: '/privacy-policy', enabled: true },
         { id: 'terms', label: 'Terms of Service', url: '/terms-of-service', enabled: true },
         { id: 'cookies', label: 'Cookie Policy', url: '/cookie-policy', enabled: true },
       ],
+    },
+    kbSettings: {
+      enabled: true,
+      menuTitle: 'Support',
+      menuSlug: 'support',
+      showInMenu: true,
+      menuOrder: 5,
     },
     seoSettings: {
       siteTitle: 'TrustCorp',
@@ -2233,6 +2257,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
     aiChatPosition: 'Full-height featured AI with explicit privacy messaging',
     pages: securehealthPages,
     blogPosts: securehealthBlogPosts,
+    kbCategories: securehealthKbCategories,
     branding: {
       organizationName: 'SecureHealth',
       brandTagline: 'Your Health, Your Privacy',
@@ -2265,11 +2290,19 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
       weekdayHours: 'Mon-Fri 8-17',
       weekendHours: 'Emergency line 24/7',
       legalLinks: [
+        { id: 'faq', label: 'Patient FAQ', url: '/faq', enabled: true },
         { id: 'privacy', label: 'Privacy Policy', url: '/privacy-policy', enabled: true },
         { id: 'terms', label: 'Terms of Service', url: '/terms-of-service', enabled: true },
         { id: 'cookies', label: 'Cookie Policy', url: '/cookie-policy', enabled: true },
         { id: 'accessibility', label: 'Accessibility', url: '/accessibility', enabled: true },
       ],
+    },
+    kbSettings: {
+      enabled: true,
+      menuTitle: 'Patient FAQ',
+      menuSlug: 'faq',
+      showInMenu: true,
+      menuOrder: 5,
     },
     seoSettings: {
       siteTitle: 'SecureHealth',
