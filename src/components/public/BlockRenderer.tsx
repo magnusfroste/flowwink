@@ -34,6 +34,7 @@ import {
   CartBlock,
   KbFeaturedBlock,
   KbHubBlock,
+  KbSearchBlock,
 } from './blocks';
 import type { KbHubBlockData } from './blocks/KbHubBlock';
 import type {
@@ -174,6 +175,8 @@ export function BlockRenderer({ block, pageId, index = 0 }: BlockRendererProps) 
         return <KbFeaturedBlock data={block.data as unknown as KbFeaturedBlockData} />;
       case 'kb-hub':
         return <KbHubBlock data={block.data as unknown as KbHubBlockData} />;
+      case 'kb-search':
+        return <KbSearchBlock data={block.data as Record<string, unknown>} />;
       default:
         return null;
     }

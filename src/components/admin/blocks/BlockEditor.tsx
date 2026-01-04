@@ -49,6 +49,7 @@ import { ProductsBlockEditor } from './ProductsBlockEditor';
 import { CartBlockEditor } from './CartBlockEditor';
 import { KbFeaturedBlockEditor } from './KbFeaturedBlockEditor';
 import { KbHubBlockEditor } from './KbHubBlockEditor';
+import { KbSearchBlockEditor } from './KbSearchBlockEditor';
 import { TemplateEmptyState } from '@/components/admin/StarterTemplateSelector';
 import { StarterTemplate } from '@/data/starter-templates';
 import type { ProductsBlockData } from '@/components/public/blocks/ProductsBlock';
@@ -98,6 +99,7 @@ type BlockDataMap = {
   cart: CartBlockData;
   'kb-featured': KbFeaturedBlockData;
   'kb-hub': KbHubBlockData;
+  'kb-search': Record<string, unknown>;
 };
 
 const DEFAULT_BLOCK_DATA: BlockDataMap = {
@@ -262,6 +264,13 @@ const DEFAULT_BLOCK_DATA: BlockDataMap = {
     showCategories: true,
     showContactCta: true,
     layout: 'accordion',
+  },
+  'kb-search': {
+    title: 'Sök i kunskapsbasen',
+    placeholder: 'Sök efter svar...',
+    variant: 'default',
+    showButton: true,
+    buttonText: 'Sök',
   },
 };
 
@@ -594,6 +603,13 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
         return (
           <KbHubBlockEditor
             data={block.data as unknown as KbHubBlockData}
+            onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+          />
+        );
+      case 'kb-search':
+        return (
+          <KbSearchBlockEditor
+            data={block.data as Record<string, unknown>}
             onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
           />
         );
