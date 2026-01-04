@@ -404,6 +404,20 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
       { name: 'category', type: 'string', required: false, description: 'Filter by category slug' },
     ],
   },
+  {
+    type: 'kb-featured',
+    name: 'KB Featured',
+    description: 'Display featured Knowledge Base articles as clickable cards.',
+    category: 'interactive',
+    fields: [
+      { name: 'title', type: 'string', required: false, description: 'Section title' },
+      { name: 'subtitle', type: 'string', required: false, description: 'Section subtitle' },
+      { name: 'maxItems', type: 'number', required: false, description: 'Maximum number of articles to show', default: 6 },
+      { name: 'layout', type: 'string', required: false, description: 'Display layout', default: 'grid', options: ['grid', 'list'] },
+      { name: 'columns', type: 'number', required: false, description: 'Grid columns (when layout is grid)', default: 3, options: ['2', '3', '4'] },
+      { name: 'showCategory', type: 'boolean', required: false, description: 'Show article category', default: true },
+    ],
+  },
 ];
 
 /**
