@@ -87,6 +87,7 @@ const navigationGroups: NavGroup[] = [
       { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
       { name: "Analytics", href: "/admin/analytics", icon: BarChart3, moduleId: "analytics" },
       { name: "Quick Start", href: "/admin/quick-start", icon: Rocket },
+      { name: "Templates", href: "/admin/templates", icon: Puzzle },
     ],
   },
   {

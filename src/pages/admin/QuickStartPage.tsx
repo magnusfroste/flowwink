@@ -14,8 +14,8 @@ import {
   ArrowRight,
   Lightbulb,
   Shield,
-  Building2,
-  ShieldCheck
+  Wrench,
+  LayoutTemplate
 } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
@@ -24,6 +24,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { STARTER_TEMPLATES } from '@/data/starter-templates';
 
@@ -39,74 +40,66 @@ interface Step {
   tips?: string[];
 }
 
-const ONBOARDING_STEPS: Step[] = [
+const MANUAL_STEPS: Step[] = [
   {
-    id: 'create-site',
-    title: 'Create Your Site',
-    description: 'Start with a complete site template that includes multiple pages, branding, and AI chat configuration. Perfect for getting started quickly.',
+    id: 'create-page',
+    title: 'Skapa din första sida',
+    description: 'Börja från ett tomt dokument och bygg upp din sida block för block.',
     icon: FileText,
     action: {
-      label: 'Create Site from Template',
-      href: '/admin/new-site',
+      label: 'Skapa ny sida',
+      href: '/admin/pages/new',
     },
     tips: [
-      'Each template creates multiple pre-configured pages',
-      'Branding and chat settings are automatically applied',
-      'Templates can be fully customized after creation',
+      'Börja med ett Hero-block för att fånga besökarens uppmärksamhet',
+      'Använd Features-block för att visa dina tjänster',
+      'Avsluta med ett CTA-block för konvertering',
     ],
   },
   {
     id: 'customize-branding',
-    title: 'Set Up Your Branding',
-    description: 'Add your logo, colors, and fonts to make the site your own. You can also use the Brand Guide Assistant to import branding from an existing website.',
+    title: 'Anpassa varumärke',
+    description: 'Lägg till din logotyp, färger och typsnitt för att göra sajten din egen.',
     icon: Palette,
     action: {
-      label: 'Configure Branding',
+      label: 'Konfigurera branding',
       href: '/admin/branding',
     },
     tips: [
-      'Upload your logo in both light and dark variants',
-      'Use the "Analyze Brand" feature to import colors from your existing site',
-      'Preview changes in real-time before saving',
+      'Ladda upp logotyp i både ljus och mörk variant',
+      'Använd "Analysera Brand" för att importera färger från din befintliga sajt',
+      'Förhandsgranska ändringar i realtid innan du sparar',
     ],
   },
   {
     id: 'configure-chat',
-    title: 'Configure AI Chat',
-    description: 'Set up the Private AI assistant with your knowledge base. Choose which pages to include as context and customize the chat appearance.',
+    title: 'Konfigurera AI-chatt',
+    description: 'Aktivera den privata AI-assistenten med din kunskapsbas.',
     icon: MessageSquare,
     action: {
-      label: 'AI Chat Settings',
+      label: 'AI Chat-inställningar',
       href: '/admin/chat',
     },
     tips: [
-      'Select which published pages become part of the AI knowledge base',
-      'Use Local OpenAI-compatible endpoint for HIPAA compliance',
-      'Customize welcome messages and conversation starters',
+      'Välj vilka publicerade sidor som blir del av AI:ns kunskapsbas',
+      'Anpassa välkomstmeddelanden och konversationsstartare',
     ],
   },
   {
     id: 'publish',
-    title: 'Preview & Publish',
-    description: 'Review your page in preview mode, then publish to make it live. Use the editorial workflow for team review if needed.',
+    title: 'Förhandsgranska & Publicera',
+    description: 'Granska din sida i förhandsgranskningsläge och publicera sedan.',
     icon: Globe,
     action: {
-      label: 'View Pages',
+      label: 'Visa sidor',
       href: '/admin/pages',
     },
     tips: [
-      'Use Preview to see exactly how visitors will experience your page',
-      'Published pages are automatically indexed (unless blocked)',
-      'Schedule pages for future publication if needed',
+      'Använd Preview för att se exakt hur besökare upplever din sida',
+      'Publicerade sidor indexeras automatiskt (om inte blockerade)',
     ],
   },
 ];
-
-const TEMPLATE_ICONS = {
-  launchpad: Rocket,
-  trustcorp: Building2,
-  securehealth: ShieldCheck,
-};
 
 const STORAGE_KEY = 'cms-quickstart-progress';
 
@@ -132,234 +125,302 @@ export default function QuickStartPage() {
     );
   };
 
-  const progress = (completedSteps.length / ONBOARDING_STEPS.length) * 100;
+  const progress = (completedSteps.length / MANUAL_STEPS.length) * 100;
+
+  // Get template counts by category
+  const templateCountsByCategory = STARTER_TEMPLATES.reduce((acc, t) => {
+    acc[t.category] = (acc[t.category] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
 
   return (
     <AdminLayout>
       <AdminPageHeader
-        title="Quick Start Guide"
-        description="Get your site up and running in minutes"
+        title="Kom igång"
+        description="Välj hur du vill börja bygga din sajt"
       />
 
-      {/* Progress Section */}
-      <Card className="mb-8">
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <Rocket className="h-5 w-5 text-primary" />
-              <span className="font-medium">Setup Progress</span>
+      {/* Hero section with two paths */}
+      <div className="grid md:grid-cols-2 gap-6 mb-8">
+        {/* Template path */}
+        <Card className="relative overflow-hidden group hover:border-primary/50 transition-all hover:shadow-lg">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-primary/0" />
+          <CardHeader className="relative">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-3 rounded-xl bg-primary/10">
+                <Sparkles className="h-6 w-6 text-primary" />
+              </div>
+              <Badge variant="secondary" className="text-xs">Rekommenderat</Badge>
             </div>
-            <Badge variant={progress === 100 ? "default" : "secondary"}>
-              {completedSteps.length} of {ONBOARDING_STEPS.length} complete
-            </Badge>
-          </div>
-          <Progress value={progress} className="h-2" />
-          {progress === 100 && (
-            <p className="text-sm text-muted-foreground mt-3 flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-green-500" />
-              Congratulations! You've completed the quick start guide.
-            </p>
-          )}
-        </CardContent>
-      </Card>
+            <CardTitle className="text-xl">Starta från template</CardTitle>
+            <CardDescription className="text-base">
+              Välj ett professionellt designat startpaket med färdiga sidor, branding och AI-chatt-konfiguration.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="relative">
+            <div className="flex flex-wrap gap-2 mb-4">
+              <Badge variant="outline">{STARTER_TEMPLATES.length} templates</Badge>
+              <Badge variant="outline">Flersidig</Badge>
+              <Badge variant="outline">AI-chatt inkluderad</Badge>
+            </div>
+            <Button asChild className="w-full group-hover:bg-primary/90">
+              <Link to="/admin/templates">
+                <LayoutTemplate className="h-4 w-4 mr-2" />
+                Bläddra templates
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
 
-      <div className="grid lg:grid-cols-3 gap-8">
-        {/* Main Steps */}
-        <div className="lg:col-span-2 space-y-4">
-          <h2 className="text-lg font-semibold mb-4">Getting Started Steps</h2>
-          
-          {ONBOARDING_STEPS.map((step, index) => {
-            const isCompleted = completedSteps.includes(step.id);
-            const StepIcon = step.icon;
-            
-            return (
-              <Card 
-                key={step.id}
-                className={cn(
-                  "transition-all",
-                  isCompleted && "bg-muted/30 border-green-200 dark:border-green-900"
-                )}
-              >
-                <CardHeader className="pb-3">
-                  <div className="flex items-start gap-4">
-                    <button
-                      onClick={() => toggleStep(step.id)}
-                      className={cn(
-                        "mt-0.5 shrink-0 rounded-full p-1 transition-colors",
-                        isCompleted 
-                          ? "text-green-500 hover:text-green-600" 
-                          : "text-muted-foreground hover:text-foreground"
-                      )}
-                    >
-                      {isCompleted ? (
-                        <CheckCircle2 className="h-6 w-6" />
-                      ) : (
-                        <Circle className="h-6 w-6" />
-                      )}
-                    </button>
-                    <div className="flex-1 min-w-0">
-                      <CardTitle className={cn(
-                        "text-base flex items-center gap-2",
-                        isCompleted && "line-through text-muted-foreground"
-                      )}>
-                        <span className="text-muted-foreground font-normal">Step {index + 1}:</span>
-                        {step.title}
-                      </CardTitle>
-                      <CardDescription className="mt-1">
-                        {step.description}
-                      </CardDescription>
-                    </div>
-                    <StepIcon className={cn(
-                      "h-5 w-5 shrink-0",
-                      isCompleted ? "text-green-500" : "text-muted-foreground"
-                    )} />
-                  </div>
-                </CardHeader>
-                
-                <CardContent className="pt-0">
-                  {step.tips && (
-                    <Accordion type="single" collapsible className="mb-4">
-                      <AccordionItem value="tips" className="border-none">
-                        <AccordionTrigger className="py-2 text-sm hover:no-underline">
-                          <span className="flex items-center gap-2 text-muted-foreground">
-                            <Lightbulb className="h-4 w-4" />
-                            Pro Tips
-                          </span>
-                        </AccordionTrigger>
-                        <AccordionContent>
-                          <ul className="space-y-2 text-sm text-muted-foreground">
-                            {step.tips.map((tip, i) => (
-                              <li key={i} className="flex items-start gap-2">
-                                <ChevronRight className="h-4 w-4 mt-0.5 shrink-0 text-primary" />
-                                {tip}
-                              </li>
-                            ))}
-                          </ul>
-                        </AccordionContent>
-                      </AccordionItem>
-                    </Accordion>
-                  )}
-                  
-                  {step.action && (
-                    <Button asChild size="sm" variant={isCompleted ? "outline" : "default"}>
-                      <Link to={step.action.href}>
-                        {step.action.label}
-                        <ArrowRight className="h-4 w-4 ml-2" />
-                      </Link>
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+        {/* Manual path */}
+        <Card className="relative overflow-hidden group hover:border-muted-foreground/30 transition-all">
+          <CardHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-3 rounded-xl bg-muted">
+                <Wrench className="h-6 w-6 text-muted-foreground" />
+              </div>
+            </div>
+            <CardTitle className="text-xl">Bygg från grunden</CardTitle>
+            <CardDescription className="text-base">
+              Skapa sidor manuellt, steg för steg. Full kontroll över varje block och inställning.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2 mb-4">
+              <Badge variant="outline">Full kontroll</Badge>
+              <Badge variant="outline">Block-för-block</Badge>
+              <Badge variant="outline">Steg-guide</Badge>
+            </div>
+            <Button variant="outline" asChild className="w-full">
+              <Link to="/admin/pages/new">
+                <FileText className="h-4 w-4 mr-2" />
+                Skapa tom sida
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
 
-        {/* Sidebar - Templates & Resources */}
-        <div className="space-y-6">
-          {/* Templates Quick Access */}
-          <div>
-            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary" />
-              Site Templates
-            </h2>
-            <div className="space-y-3">
-              {STARTER_TEMPLATES.map((template) => {
-                const TemplateIcon = TEMPLATE_ICONS[template.id as keyof typeof TEMPLATE_ICONS] || Rocket;
-                const pageCount = template.pages?.length || 1;
-                
-                return (
-                  <Card 
-                    key={template.id}
-                    className="hover:border-primary/50 transition-colors cursor-pointer"
-                  >
-                    <Link to="/admin/new-site">
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-3">
-                          <div className={cn(
-                            "p-2 rounded-lg shrink-0",
-                            template.category === 'startup' && "bg-violet-100 dark:bg-violet-900/30",
-                            template.category === 'enterprise' && "bg-blue-100 dark:bg-blue-900/30",
-                            template.category === 'compliance' && "bg-emerald-100 dark:bg-emerald-900/30"
-                          )}>
-                            <TemplateIcon className={cn(
-                              "h-4 w-4",
-                              template.category === 'startup' && "text-violet-600 dark:text-violet-400",
-                              template.category === 'enterprise' && "text-blue-600 dark:text-blue-400",
-                              template.category === 'compliance' && "text-emerald-600 dark:text-emerald-400"
-                            )} />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <p className="font-medium text-sm">{template.name}</p>
-                              <Badge variant="secondary" className="text-xs">
-                                {pageCount} pages
-                              </Badge>
-                            </div>
-                            <p className="text-xs text-muted-foreground line-clamp-2">
-                              {template.tagline}
-                            </p>
-                          </div>
-                          <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-1" />
+      {/* Tabs for detailed guides */}
+      <Tabs defaultValue="templates" className="space-y-6">
+        <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="templates" className="gap-2">
+            <Sparkles className="h-4 w-4" />
+            Templates
+          </TabsTrigger>
+          <TabsTrigger value="manual" className="gap-2">
+            <Wrench className="h-4 w-4" />
+            Manuell setup
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Templates tab */}
+        <TabsContent value="templates" className="space-y-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {STARTER_TEMPLATES.slice(0, 6).map((template) => {
+              const pageCount = template.pages?.length || 0;
+              
+              return (
+                <Card 
+                  key={template.id}
+                  className="hover:border-primary/50 transition-colors cursor-pointer group"
+                >
+                  <Link to="/admin/templates">
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-3">
+                        <div 
+                          className="p-2 rounded-lg shrink-0"
+                          style={{ backgroundColor: `${template.branding?.primaryColor || '#6366f1'}20` }}
+                        >
+                          <Rocket className="h-4 w-4 text-primary" />
                         </div>
-                      </CardContent>
-                    </Link>
-                  </Card>
-                );
-              })}
-            </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium text-sm group-hover:text-primary transition-colors">
+                              {template.name}
+                            </p>
+                            <Badge variant="secondary" className="text-xs">
+                              {pageCount} sidor
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground line-clamp-2">
+                            {template.tagline}
+                          </p>
+                        </div>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-1 group-hover:text-primary transition-colors" />
+                      </div>
+                    </CardContent>
+                  </Link>
+                </Card>
+              );
+            })}
           </div>
+          
+          {STARTER_TEMPLATES.length > 6 && (
+            <div className="text-center">
+              <Button variant="outline" asChild>
+                <Link to="/admin/templates">
+                  Visa alla {STARTER_TEMPLATES.length} templates
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Link>
+              </Button>
+            </div>
+          )}
+        </TabsContent>
 
-          {/* Key Features */}
+        {/* Manual setup tab */}
+        <TabsContent value="manual" className="space-y-6">
+          {/* Progress */}
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Shield className="h-4 w-4 text-primary" />
-                Key Features
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm">
-              <div className="flex items-start gap-3">
-                <MessageSquare className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
-                <div>
-                  <p className="font-medium">Private AI Chat</p>
-                  <p className="text-muted-foreground text-xs">Self-hosted AI that never sends data to the cloud</p>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Rocket className="h-5 w-5 text-primary" />
+                  <span className="font-medium">Setup-progress</span>
                 </div>
+                <Badge variant={progress === 100 ? "default" : "secondary"}>
+                  {completedSteps.length} av {MANUAL_STEPS.length} klart
+                </Badge>
               </div>
-              <div className="flex items-start gap-3">
-                <FileText className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
-                <div>
-                  <p className="font-medium">Block-Based Editor</p>
-                  <p className="text-muted-foreground text-xs">16 block types with drag-and-drop editing</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <Globe className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
-                <div>
-                  <p className="font-medium">Headless API</p>
-                  <p className="text-muted-foreground text-xs">REST & GraphQL for multi-channel delivery</p>
-                </div>
-              </div>
+              <Progress value={progress} className="h-2" />
+              {progress === 100 && (
+                <p className="text-sm text-muted-foreground mt-3 flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  Grattis! Du har slutfört alla steg.
+                </p>
+              )}
             </CardContent>
           </Card>
 
-          {/* Video Tutorial Placeholder */}
-          <Card className="bg-primary/5 border-primary/20">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-full bg-primary/10">
-                  <Play className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <p className="font-medium text-sm">Video Walkthrough</p>
-                  <p className="text-xs text-muted-foreground">5-minute setup tutorial</p>
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground mt-3 italic">
-                Coming soon — check back for a video guide!
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+          {/* Steps */}
+          <div className="space-y-4">
+            {MANUAL_STEPS.map((step, index) => {
+              const isCompleted = completedSteps.includes(step.id);
+              const StepIcon = step.icon;
+              
+              return (
+                <Card 
+                  key={step.id}
+                  className={cn(
+                    "transition-all",
+                    isCompleted && "bg-muted/30 border-green-200 dark:border-green-900"
+                  )}
+                >
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start gap-4">
+                      <button
+                        onClick={() => toggleStep(step.id)}
+                        className={cn(
+                          "mt-0.5 shrink-0 rounded-full p-1 transition-colors",
+                          isCompleted 
+                            ? "text-green-500 hover:text-green-600" 
+                            : "text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        {isCompleted ? (
+                          <CheckCircle2 className="h-6 w-6" />
+                        ) : (
+                          <Circle className="h-6 w-6" />
+                        )}
+                      </button>
+                      <div className="flex-1 min-w-0">
+                        <CardTitle className={cn(
+                          "text-base flex items-center gap-2",
+                          isCompleted && "line-through text-muted-foreground"
+                        )}>
+                          <span className="text-muted-foreground font-normal">Steg {index + 1}:</span>
+                          {step.title}
+                        </CardTitle>
+                        <CardDescription className="mt-1">
+                          {step.description}
+                        </CardDescription>
+                      </div>
+                      <StepIcon className={cn(
+                        "h-5 w-5 shrink-0",
+                        isCompleted ? "text-green-500" : "text-muted-foreground"
+                      )} />
+                    </div>
+                  </CardHeader>
+                  
+                  <CardContent className="pt-0">
+                    {step.tips && (
+                      <Accordion type="single" collapsible className="mb-4">
+                        <AccordionItem value="tips" className="border-none">
+                          <AccordionTrigger className="py-2 text-sm hover:no-underline">
+                            <span className="flex items-center gap-2 text-muted-foreground">
+                              <Lightbulb className="h-4 w-4" />
+                              Pro-tips
+                            </span>
+                          </AccordionTrigger>
+                          <AccordionContent>
+                            <ul className="space-y-2 text-sm text-muted-foreground">
+                              {step.tips.map((tip, i) => (
+                                <li key={i} className="flex items-start gap-2">
+                                  <ChevronRight className="h-4 w-4 mt-0.5 shrink-0 text-primary" />
+                                  {tip}
+                                </li>
+                              ))}
+                            </ul>
+                          </AccordionContent>
+                        </AccordionItem>
+                      </Accordion>
+                    )}
+                    
+                    {step.action && (
+                      <Button asChild size="sm" variant={isCompleted ? "outline" : "default"}>
+                        <Link to={step.action.href}>
+                          {step.action.label}
+                          <ArrowRight className="h-4 w-4 ml-2" />
+                        </Link>
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      {/* Quick resources */}
+      <div className="mt-8 grid md:grid-cols-3 gap-4">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <MessageSquare className="h-4 w-4 text-primary" />
+              Privat AI-chatt
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm text-muted-foreground">
+            Självhostad AI som aldrig skickar data till molnet
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <FileText className="h-4 w-4 text-primary" />
+              Block-editor
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm text-muted-foreground">
+            20+ blocktyper med drag-and-drop-redigering
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Globe className="h-4 w-4 text-primary" />
+              Headless API
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm text-muted-foreground">
+            REST & GraphQL för multi-kanal-leverans
+          </CardContent>
+        </Card>
       </div>
     </AdminLayout>
   );
