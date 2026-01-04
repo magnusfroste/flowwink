@@ -26,6 +26,26 @@ interface CreationProgress {
   currentStep: string;
 }
 
+// Extract Tiptap document from ContentBlock array format used in templates
+function extractTiptapFromContentBlocks(answer_json: unknown): unknown {
+  if (!answer_json) return null;
+  
+  // If it's already a Tiptap document, return it directly
+  if (typeof answer_json === 'object' && answer_json !== null && 'type' in answer_json && (answer_json as { type: string }).type === 'doc') {
+    return answer_json;
+  }
+  
+  // If it's an array of ContentBlocks, extract from the first text block
+  if (Array.isArray(answer_json) && answer_json.length > 0) {
+    const textBlock = answer_json.find(b => b?.type === 'text');
+    if (textBlock?.data?.content?.type === 'doc') {
+      return textBlock.data.content;
+    }
+  }
+  
+  return null;
+}
+
 export default function NewSitePage() {
   const [selectedTemplate, setSelectedTemplate] = useState<StarterTemplate | null>(null);
   const [step, setStep] = useState<CreationStep>('select');
@@ -213,12 +233,15 @@ export default function NewSitePage() {
 
           // Create articles for this category
           for (const article of category.articles) {
+            // Extract Tiptap document from ContentBlock array format
+            const extractedAnswerJson = extractTiptapFromContentBlocks(article.answer_json);
+            
             await createKbArticle.mutateAsync({
               category_id: createdCategory.id,
               title: article.title,
               slug: article.slug,
               question: article.question,
-              answer_json: article.answer_json as any,
+              answer_json: extractedAnswerJson as any,
               answer_text: article.answer_text,
               is_published: publishKbArticles,
               is_featured: article.is_featured,
