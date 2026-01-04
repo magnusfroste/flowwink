@@ -91,6 +91,24 @@ export function isDocumentEmpty(content: string | TiptapDocument | undefined): b
 }
 
 /**
+ * Create a TiptapDocument from plain text
+ * Splits on double newlines for paragraphs
+ */
+export function createDocumentFromText(text: string): TiptapDocument {
+  if (!text || !text.trim()) return createEmptyDocument();
+  
+  const paragraphs = text.split(/\n\n+/).filter(p => p.trim());
+  
+  return {
+    type: 'doc',
+    content: paragraphs.map(p => ({
+      type: 'paragraph',
+      content: [{ type: 'text', text: p.trim() }]
+    }))
+  };
+}
+
+/**
  * Extract plain text from Tiptap JSON document
  */
 export function extractPlainText(content: unknown): string {
