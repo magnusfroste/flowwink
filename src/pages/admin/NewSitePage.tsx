@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Loader2, Sparkles, Check, FileText, Palette, MessageSquare, Trash2, AlertTriangle, Send, Newspaper, BookOpen, ShieldCheck, AlertCircle } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
@@ -32,7 +32,10 @@ interface CreationProgress {
 import { createDocumentFromText } from '@/lib/tiptap-utils';
 
 export default function NewSitePage() {
-  const [selectedTemplate, setSelectedTemplate] = useState<StarterTemplate | null>(null);
+  const location = useLocation();
+  const [selectedTemplate, setSelectedTemplate] = useState<StarterTemplate | null>(
+    (location.state as any)?.selectedTemplate || null
+  );
   const [step, setStep] = useState<CreationStep>('select');
   const [progress, setProgress] = useState<CreationProgress>({ currentPage: 0, totalPages: 0, currentStep: '' });
   const [createdPageIds, setCreatedPageIds] = useState<string[]>([]);
