@@ -21,6 +21,290 @@ export interface TemplateKbArticle {
 }
 
 // =====================================================
+// LaunchPad Knowledge Base Articles (SaaS/Startup)
+// =====================================================
+
+export const launchpadKbCategories: TemplateKbCategory[] = [
+  {
+    name: 'Getting Started',
+    slug: 'getting-started',
+    description: 'Get up and running with LaunchPad quickly.',
+    icon: 'Rocket',
+    articles: [
+      {
+        title: 'Quick Start Guide',
+        slug: 'quick-start',
+        question: 'How do I get started with LaunchPad?',
+        answer_text: 'Welcome to LaunchPad! Getting started is easy: 1) Create your account, 2) Set up your first project, 3) Invite your team, and 4) Start building. Our intuitive interface guides you through each step.',
+        is_featured: true,
+        include_in_chat: true,
+      },
+      {
+        title: 'Creating Your First Project',
+        slug: 'first-project',
+        question: 'How do I create my first project?',
+        answer_text: 'To create your first project, click "New Project" from your dashboard. Enter a project name, choose a template or start blank, then configure your settings. Your project will be ready in seconds.',
+        include_in_chat: true,
+      },
+      {
+        title: 'Inviting Team Members',
+        slug: 'invite-team',
+        question: 'How do I invite my team?',
+        answer_text: 'Go to Settings → Team and click "Invite Member". Enter their email address and select their role (Admin, Editor, or Viewer). They will receive an invitation email with instructions to join.',
+        include_in_chat: true,
+      },
+    ],
+  },
+  {
+    name: 'Account & Billing',
+    slug: 'account-billing',
+    description: 'Manage your subscription and billing.',
+    icon: 'CreditCard',
+    articles: [
+      {
+        title: 'Pricing Plans',
+        slug: 'pricing',
+        question: 'What plans are available?',
+        answer_text: 'We offer three plans: Starter (free, up to 3 projects), Pro ($29/mo, unlimited projects, priority support), and Enterprise (custom pricing, dedicated support, SLA). All plans include a 14-day free trial.',
+        is_featured: true,
+        include_in_chat: true,
+      },
+      {
+        title: 'Upgrading Your Plan',
+        slug: 'upgrade',
+        question: 'How do I upgrade my plan?',
+        answer_text: 'Navigate to Settings → Billing and click "Upgrade Plan". Select your new plan and enter payment details. Your new features are available immediately, and billing is prorated.',
+        include_in_chat: true,
+      },
+      {
+        title: 'Cancellation Policy',
+        slug: 'cancel',
+        question: 'How do I cancel my subscription?',
+        answer_text: 'You can cancel anytime from Settings → Billing → Cancel Subscription. Your access continues until the end of your billing period. Data is retained for 30 days after cancellation.',
+        include_in_chat: true,
+      },
+    ],
+  },
+  {
+    name: 'Integrations',
+    slug: 'integrations',
+    description: 'Connect LaunchPad with your favorite tools.',
+    icon: 'Plug',
+    articles: [
+      {
+        title: 'Available Integrations',
+        slug: 'available',
+        question: 'What integrations are available?',
+        answer_text: 'LaunchPad integrates with popular tools including Slack, GitHub, Jira, Figma, Notion, Google Drive, and Zapier. Pro and Enterprise plans unlock additional integrations and custom API access.',
+        is_featured: true,
+        include_in_chat: true,
+      },
+      {
+        title: 'Setting Up Webhooks',
+        slug: 'webhooks',
+        question: 'How do I set up webhooks?',
+        answer_text: 'Go to Settings → Webhooks → Add Webhook. Enter your endpoint URL, select which events to listen for (e.g., project.created, task.completed), and save. Test webhooks with our built-in debugger.',
+        include_in_chat: true,
+      },
+    ],
+  },
+];
+
+// =====================================================
+// TrustCorp Knowledge Base Articles (Enterprise)
+// =====================================================
+
+export const trustcorpKbCategories: TemplateKbCategory[] = [
+  {
+    name: 'Enterprise Solutions',
+    slug: 'enterprise-solutions',
+    description: 'Learn about our enterprise-grade offerings.',
+    icon: 'Building2',
+    articles: [
+      {
+        title: 'Enterprise Overview',
+        slug: 'overview',
+        question: 'What enterprise solutions do you offer?',
+        answer_text: 'TrustCorp offers comprehensive enterprise solutions including custom deployments, dedicated infrastructure, 24/7 support, SLA guarantees, and tailored integrations. Contact our enterprise team for a personalized assessment.',
+        is_featured: true,
+        include_in_chat: true,
+      },
+      {
+        title: 'On-Premise Deployment',
+        slug: 'on-premise',
+        question: 'Can I deploy on my own infrastructure?',
+        answer_text: 'Yes, TrustCorp supports full on-premise deployment. Our team will work with your IT department to install, configure, and maintain the platform on your servers, ensuring complete data sovereignty.',
+        include_in_chat: true,
+      },
+      {
+        title: 'Custom Integrations',
+        slug: 'custom-integrations',
+        question: 'Do you offer custom integrations?',
+        answer_text: 'Our enterprise team specializes in building custom integrations for your existing systems including ERP, CRM, LDAP/Active Directory, and proprietary databases. We ensure seamless data flow across your organization.',
+        include_in_chat: true,
+      },
+    ],
+  },
+  {
+    name: 'Security & Compliance',
+    slug: 'security-compliance',
+    description: 'Our commitment to data security and regulatory compliance.',
+    icon: 'Shield',
+    articles: [
+      {
+        title: 'Security Certifications',
+        slug: 'certifications',
+        question: 'What security certifications do you have?',
+        answer_text: 'TrustCorp maintains ISO 27001, SOC 2 Type II, and CSA STAR certifications. Our security practices undergo annual third-party audits. We also comply with GDPR, CCPA, and industry-specific regulations.',
+        is_featured: true,
+        include_in_chat: true,
+      },
+      {
+        title: 'GDPR Compliance',
+        slug: 'gdpr',
+        question: 'Are you GDPR compliant?',
+        answer_text: 'Yes, TrustCorp is fully GDPR compliant. We provide Data Processing Agreements, support data subject requests, maintain EU data centers, and implement privacy-by-design principles across our platform.',
+        include_in_chat: true,
+      },
+      {
+        title: 'Data Residency',
+        slug: 'data-residency',
+        question: 'Where is my data stored?',
+        answer_text: 'We offer data residency options in EU (Sweden, Germany), US (East/West), and APAC (Singapore). Enterprise customers can specify data location requirements. On-premise deployment ensures data never leaves your network.',
+        include_in_chat: true,
+      },
+    ],
+  },
+  {
+    name: 'API Documentation',
+    slug: 'api-documentation',
+    description: 'Technical documentation for developers.',
+    icon: 'Code',
+    articles: [
+      {
+        title: 'API Overview',
+        slug: 'api-overview',
+        question: 'How do I use the API?',
+        answer_text: 'Our REST API provides full access to all platform features. Get your API key from Settings → API Keys, then use our SDKs (JavaScript, Python, Java) or make direct HTTP requests. Full documentation available at docs.trustcorp.com.',
+        is_featured: true,
+        include_in_chat: true,
+      },
+      {
+        title: 'Authentication',
+        slug: 'authentication',
+        question: 'How does API authentication work?',
+        answer_text: 'We support API key authentication for server-to-server communication and OAuth 2.0 for user-delegated access. Enterprise customers can also use SAML SSO and certificate-based authentication.',
+        include_in_chat: true,
+      },
+      {
+        title: 'Rate Limits',
+        slug: 'rate-limits',
+        question: 'What are the API rate limits?',
+        answer_text: 'Standard API limits are 1000 requests/minute. Enterprise plans offer configurable limits up to 10,000 requests/minute. Bulk operations and webhooks don\'t count toward limits. Contact us for custom requirements.',
+        include_in_chat: true,
+      },
+    ],
+  },
+];
+
+// =====================================================
+// SecureHealth Knowledge Base Articles (Healthcare/Compliance)
+// =====================================================
+
+export const securehealthKbCategories: TemplateKbCategory[] = [
+  {
+    name: 'Patient Information',
+    slug: 'patient-information',
+    description: 'Important information for our patients.',
+    icon: 'HeartPulse',
+    articles: [
+      {
+        title: 'New Patient Registration',
+        slug: 'registration',
+        question: 'How do I register as a new patient?',
+        answer_text: 'To register as a new patient, click "Book Appointment" and select "New Patient Registration". Complete the online form with your personal and insurance information. Bring a valid ID and insurance card to your first visit.',
+        is_featured: true,
+        include_in_chat: true,
+      },
+      {
+        title: 'Preparing for Your Visit',
+        slug: 'prepare-visit',
+        question: 'How should I prepare for my appointment?',
+        answer_text: 'Please arrive 15 minutes early for paperwork. Bring your ID, insurance card, current medications list, and any relevant medical records. Wear comfortable clothing and avoid eating 2 hours before blood tests.',
+        include_in_chat: true,
+      },
+      {
+        title: 'Patient Portal Access',
+        slug: 'portal-access',
+        question: 'How do I access my patient portal?',
+        answer_text: 'After registration, you\'ll receive an email with your portal login. Use it to view test results, request prescription refills, message your care team, and schedule appointments. Call our helpline if you need login assistance.',
+        include_in_chat: true,
+      },
+    ],
+  },
+  {
+    name: 'Insurance & Billing',
+    slug: 'insurance-billing',
+    description: 'Information about insurance and payment options.',
+    icon: 'Wallet',
+    articles: [
+      {
+        title: 'Accepted Insurance',
+        slug: 'accepted-insurance',
+        question: 'What insurance plans do you accept?',
+        answer_text: 'We accept most major insurance plans including Folksam, Trygg-Hansa, If, Skandia, and Region Stockholm. Contact our billing department to verify your specific plan. We also accept international insurance with prior approval.',
+        is_featured: true,
+        include_in_chat: true,
+      },
+      {
+        title: 'Payment Options',
+        slug: 'payment-options',
+        question: 'What payment methods do you accept?',
+        answer_text: 'We accept credit/debit cards, Swish, bank transfer, and invoice payment. Payment is expected at time of service. Payment plans are available for larger expenses. Financial assistance may be available for qualifying patients.',
+        include_in_chat: true,
+      },
+      {
+        title: 'Understanding Your Bill',
+        slug: 'understanding-bill',
+        question: 'How do I understand my medical bill?',
+        answer_text: 'Your bill shows: service date, procedure codes, total charges, insurance payment, and your balance. The "Explanation of Benefits" from your insurer details covered amounts. Our billing team can walk you through any questions.',
+        include_in_chat: true,
+      },
+    ],
+  },
+  {
+    name: 'Privacy & Security',
+    slug: 'privacy-security',
+    description: 'How we protect your health information.',
+    icon: 'Lock',
+    articles: [
+      {
+        title: 'HIPAA Compliance',
+        slug: 'hipaa',
+        question: 'How do you ensure HIPAA compliance?',
+        answer_text: 'We maintain strict HIPAA compliance through encrypted data storage, access controls, staff training, and regular audits. Only authorized healthcare providers access your records for treatment purposes.',
+        is_featured: true,
+        include_in_chat: true,
+      },
+      {
+        title: 'Data Protection',
+        slug: 'data-protection',
+        question: 'How is my health data protected?',
+        answer_text: 'Your health data is encrypted at rest and in transit using AES-256. We use on-premise servers in Sweden, ensuring your data never leaves the country. Multi-factor authentication protects all access points.',
+        include_in_chat: true,
+      },
+      {
+        title: 'Your Privacy Rights',
+        slug: 'privacy-rights',
+        question: 'What are my privacy rights?',
+        answer_text: 'You have the right to: access your medical records, request corrections, know who accessed your data, restrict certain disclosures, and file complaints. Request a copy of our privacy practices at any time.',
+        include_in_chat: true,
+      },
+    ],
+  },
+];
+
+// =====================================================
 // PezCMS Knowledge Base Articles
 // =====================================================
 
