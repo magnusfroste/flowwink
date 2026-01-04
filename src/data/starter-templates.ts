@@ -2379,6 +2379,19 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
               secondaryButton: { text: 'Self-Host Free', url: 'https://github.com/pezcms/pezcms' },
             },
           },
+          // KB SEARCH - Hero variant for Knowledge Base integration
+          {
+            id: 'kb-search-hero',
+            type: 'kb-search',
+            data: {
+              title: 'How can we help you?',
+              subtitle: 'Search our documentation and knowledge base for answers.',
+              placeholder: 'Search for answers...',
+              buttonText: 'Search',
+              variant: 'hero',
+              showButton: true,
+            },
+          },
           // FEATURES - Three pillars (Head + PezCMS + Headless)
           {
             id: 'features-pillars',
