@@ -95,18 +95,23 @@ export default function KbArticleEditorPage() {
   }, [formData.title, isNew]);
 
   const handleSave = async () => {
-    console.log("handleSave called, formData:", formData);
-    console.log("category_id:", formData.category_id);
-    console.log("editor:", !!editor);
-    
     if (!editor) {
-      console.error("No editor found");
+      toast.error("Editor not ready");
       return;
     }
     
     if (!formData.category_id) {
-      console.error("No category selected");
       toast.error("Please select a category");
+      return;
+    }
+
+    if (!formData.title.trim()) {
+      toast.error("Please enter a title");
+      return;
+    }
+
+    if (!formData.question.trim()) {
+      toast.error("Please enter a question");
       return;
     }
 
@@ -114,23 +119,36 @@ export default function KbArticleEditorPage() {
     const answer_text = extractPlainText(answer_json);
 
     const data = {
-      ...formData,
+      category_id: formData.category_id,
+      title: formData.title.trim(),
+      slug: formData.slug.trim(),
+      question: formData.question.trim(),
+      is_published: formData.is_published,
+      is_featured: formData.is_featured,
+      include_in_chat: formData.include_in_chat,
       answer_json,
       answer_text,
     };
 
-    try {
-      if (isNew) {
-        const created = await createArticle.mutateAsync(data);
-        toast.success("Article created");
-        navigate(`/admin/knowledge-base/${created.id}`);
-      } else if (id) {
-        await updateArticle.mutateAsync({ id, ...data });
-        toast.success("Article saved");
-      }
-    } catch (error) {
-      console.error("Save error:", error);
-      toast.error("Failed to save article");
+    if (isNew) {
+      createArticle.mutate(data, {
+        onSuccess: (created) => {
+          toast.success("Article created");
+          navigate(`/admin/knowledge-base/${created.id}`);
+        },
+        onError: (error) => {
+          toast.error(`Failed to create: ${error.message}`);
+        },
+      });
+    } else if (id) {
+      updateArticle.mutate({ id, ...data }, {
+        onSuccess: () => {
+          toast.success("Article saved");
+        },
+        onError: (error) => {
+          toast.error(`Failed to save: ${error.message}`);
+        },
+      });
     }
   };
 
