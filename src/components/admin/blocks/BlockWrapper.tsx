@@ -40,6 +40,7 @@ const BLOCK_LABELS: Record<ContentBlockType, string> = {
   header: 'Header',
   products: 'Products',
   cart: 'Cart',
+  'kb-featured': 'KB Featured',
 };
 
 interface BlockWrapperProps {
