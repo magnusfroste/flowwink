@@ -48,11 +48,13 @@ import { TimelineBlockEditor } from './TimelineBlockEditor';
 import { ProductsBlockEditor } from './ProductsBlockEditor';
 import { CartBlockEditor } from './CartBlockEditor';
 import { KbFeaturedBlockEditor } from './KbFeaturedBlockEditor';
+import { KbHubBlockEditor } from './KbHubBlockEditor';
 import { TemplateEmptyState } from '@/components/admin/StarterTemplateSelector';
 import { StarterTemplate } from '@/data/starter-templates';
 import type { ProductsBlockData } from '@/components/public/blocks/ProductsBlock';
 import type { CartBlockData } from '@/components/public/blocks/CartBlock';
 import type { KbFeaturedBlockData } from '@/components/public/blocks/KbFeaturedBlock';
+import type { KbHubBlockData } from '@/components/public/blocks/KbHubBlock';
 
 interface NewsletterBlockData {
   title?: string;
@@ -95,6 +97,7 @@ type BlockDataMap = {
   products: ProductsBlockData;
   cart: CartBlockData;
   'kb-featured': KbFeaturedBlockData;
+  'kb-hub': KbHubBlockData;
 };
 
 const DEFAULT_BLOCK_DATA: BlockDataMap = {
@@ -251,6 +254,14 @@ const DEFAULT_BLOCK_DATA: BlockDataMap = {
     showCategory: true,
     layout: 'grid',
     columns: 3,
+  },
+  'kb-hub': {
+    title: 'Hur kan vi hjälpa dig?',
+    subtitle: 'Sök i vår kunskapsbas eller bläddra efter kategori',
+    showSearch: true,
+    showCategories: true,
+    showContactCta: true,
+    layout: 'accordion',
   },
 };
 
@@ -576,6 +587,13 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
         return (
           <KbFeaturedBlockEditor
             data={block.data as unknown as KbFeaturedBlockData}
+            onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+          />
+        );
+      case 'kb-hub':
+        return (
+          <KbHubBlockEditor
+            data={block.data as unknown as KbHubBlockData}
             onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
           />
         );

@@ -418,6 +418,27 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
       { name: 'showCategory', type: 'boolean', required: false, description: 'Show article category', default: true },
     ],
   },
+  {
+    type: 'kb-hub',
+    name: 'Knowledge Base',
+    description: 'Full Knowledge Base with search, category filters, and article listing.',
+    category: 'interactive',
+    fields: [
+      { name: 'title', type: 'string', required: false, description: 'Section title' },
+      { name: 'subtitle', type: 'string', required: false, description: 'Section subtitle' },
+      { name: 'searchPlaceholder', type: 'string', required: false, description: 'Search input placeholder' },
+      { name: 'showSearch', type: 'boolean', required: false, description: 'Show search field', default: true },
+      { name: 'showCategories', type: 'boolean', required: false, description: 'Show category filter buttons', default: true },
+      { name: 'showContactCta', type: 'boolean', required: false, description: 'Show contact CTA section', default: true },
+      { name: 'contactTitle', type: 'string', required: false, description: 'Contact CTA title' },
+      { name: 'contactSubtitle', type: 'string', required: false, description: 'Contact CTA subtitle' },
+      { name: 'contactButtonText', type: 'string', required: false, description: 'Contact button text' },
+      { name: 'contactLink', type: 'string', required: false, description: 'Contact button link' },
+      { name: 'layout', type: 'string', required: false, description: 'Display layout', default: 'accordion', options: ['accordion', 'cards'] },
+      { name: 'emptyStateTitle', type: 'string', required: false, description: 'Empty state title' },
+      { name: 'emptyStateSubtitle', type: 'string', required: false, description: 'Empty state subtitle' },
+    ],
+  },
 ];
 
 /**
