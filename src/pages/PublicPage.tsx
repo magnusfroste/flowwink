@@ -37,8 +37,8 @@ export default function PublicPage() {
   const [user, setUser] = useState<unknown>(null);
   const [authLoading, setAuthLoading] = useState(true);
 
-  // Use configured homepage slug, default to 'hem'
-  const homepageSlug = generalSettings?.homepageSlug || 'hem';
+  // Use configured homepage slug, default to 'home'
+  const homepageSlug = generalSettings?.homepageSlug || 'home';
   const pageSlug = slug || homepageSlug;
 
   // Check auth state for dev mode protection
