@@ -5312,6 +5312,38 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
           },
         ],
       },
+      // ===== HELP CENTER =====
+      {
+        title: 'Help',
+        slug: 'help',
+        menu_order: 5,
+        showInMenu: true,
+        meta: {
+          description: 'Find answers to common questions about PezCMS. Search our knowledge base or contact support.',
+          showTitle: false,
+          titleAlignment: 'center',
+        },
+        blocks: [
+          {
+            id: 'kb-hub-main',
+            type: 'kb-hub',
+            data: {
+              title: 'How can we help?',
+              subtitle: 'Search our knowledge base or browse by category to find the answers you need.',
+              searchPlaceholder: 'Search for answers...',
+              showSearch: true,
+              showCategories: true,
+              showArticles: true,
+              showContactCta: true,
+              ctaTitle: 'Still have questions?',
+              ctaDescription: 'Our team is here to help. Get in touch and we will respond within 24 hours.',
+              ctaButtonText: 'Contact Support',
+              ctaButtonUrl: '/contact',
+              variant: 'default',
+            },
+          },
+        ],
+      },
       // ===== TERMS OF SERVICE =====
       {
         title: 'Terms of Service',
