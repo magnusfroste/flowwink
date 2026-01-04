@@ -1302,6 +1302,195 @@ Deno.serve(async (req) => {
       });
     }
 
+    // ============= REST: POST /form/submit =============
+    if (pathParts.length === 2 && pathParts[0] === 'form' && pathParts[1] === 'submit' && req.method === 'POST') {
+      console.log('[Content API] REST: Submitting form');
+      
+      const body = await req.json();
+      const { block_id, page_id, form_name, data, metadata } = body;
+
+      if (!block_id || !data) {
+        return new Response(
+          JSON.stringify({ error: 'Missing required fields: block_id, data' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const { data: submission, error } = await supabase
+        .from('form_submissions')
+        .insert({
+          block_id,
+          page_id: page_id || null,
+          form_name: form_name || 'Contact Form',
+          data,
+          metadata: metadata || null,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      console.log('[Content API] Form submission created:', submission.id);
+
+      return new Response(JSON.stringify({
+        success: true,
+        id: submission.id,
+        message: 'Form submitted successfully',
+      }), {
+        status: 201,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // ============= REST: POST /newsletter/subscribe =============
+    if (pathParts.length === 2 && pathParts[0] === 'newsletter' && pathParts[1] === 'subscribe' && req.method === 'POST') {
+      console.log('[Content API] REST: Newsletter subscription');
+      
+      const body = await req.json();
+      const { email, name, preferences, metadata } = body;
+
+      if (!email) {
+        return new Response(
+          JSON.stringify({ error: 'Email is required' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Check if already subscribed
+      const { data: existing } = await supabase
+        .from('newsletter_subscribers')
+        .select('id, status')
+        .eq('email', email.toLowerCase().trim())
+        .maybeSingle();
+
+      if (existing) {
+        if (existing.status === 'active') {
+          return new Response(JSON.stringify({
+            success: true,
+            message: 'Already subscribed',
+            alreadySubscribed: true,
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+        
+        // Reactivate unsubscribed user
+        const { error: updateError } = await supabase
+          .from('newsletter_subscribers')
+          .update({ 
+            status: 'active', 
+            name: name || null,
+            preferences: preferences || null,
+            unsubscribed_at: null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', existing.id);
+
+        if (updateError) throw updateError;
+
+        return new Response(JSON.stringify({
+          success: true,
+          message: 'Successfully resubscribed',
+          resubscribed: true,
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Create new subscription
+      const { data: subscription, error } = await supabase
+        .from('newsletter_subscribers')
+        .insert({
+          email: email.toLowerCase().trim(),
+          name: name || null,
+          preferences: preferences || null,
+          metadata: metadata || null,
+          status: 'active',
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      console.log('[Content API] Newsletter subscription created:', subscription.id);
+
+      return new Response(JSON.stringify({
+        success: true,
+        message: 'Successfully subscribed',
+        id: subscription.id,
+      }), {
+        status: 201,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // ============= REST: POST /booking/create =============
+    if (pathParts.length === 2 && pathParts[0] === 'booking' && pathParts[1] === 'create' && req.method === 'POST') {
+      console.log('[Content API] REST: Creating booking');
+      
+      const body = await req.json();
+      const { service_id, customer_name, customer_email, customer_phone, start_time, notes, metadata } = body;
+
+      if (!customer_name || !customer_email || !start_time) {
+        return new Response(
+          JSON.stringify({ error: 'Missing required fields: customer_name, customer_email, start_time' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Get service duration if service_id provided
+      let durationMinutes = 60;
+      if (service_id) {
+        const { data: service } = await supabase
+          .from('booking_services')
+          .select('duration_minutes')
+          .eq('id', service_id)
+          .maybeSingle();
+        
+        if (service) {
+          durationMinutes = service.duration_minutes;
+        }
+      }
+
+      const startDate = new Date(start_time);
+      const endDate = new Date(startDate.getTime() + durationMinutes * 60 * 1000);
+
+      const { data: booking, error } = await supabase
+        .from('bookings')
+        .insert({
+          service_id: service_id || null,
+          customer_name,
+          customer_email: customer_email.toLowerCase().trim(),
+          customer_phone: customer_phone || null,
+          start_time: startDate.toISOString(),
+          end_time: endDate.toISOString(),
+          notes: notes || null,
+          metadata: metadata || null,
+          status: 'pending',
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      console.log('[Content API] Booking created:', booking.id);
+
+      return new Response(JSON.stringify({
+        success: true,
+        id: booking.id,
+        message: 'Booking created successfully',
+        booking: {
+          id: booking.id,
+          startTime: booking.start_time,
+          endTime: booking.end_time,
+          status: booking.status,
+        },
+      }), {
+        status: 201,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // ============= Unknown Route =============
     return new Response(
       JSON.stringify({ 
@@ -1315,11 +1504,14 @@ Deno.serve(async (req) => {
             'GET /content-api/blog/categories',
             'GET /content-api/products',
             'GET /content-api/booking/services',
+            'POST /content-api/booking/create',
             'GET /content-api/kb/categories',
             'GET /content-api/kb/articles',
             'GET /content-api/kb/article/:slug',
             'GET /content-api/global-blocks',
             'GET /content-api/settings',
+            'POST /content-api/form/submit',
+            'POST /content-api/newsletter/subscribe',
           ],
           graphql: {
             endpoint: 'POST /content-api/graphql',

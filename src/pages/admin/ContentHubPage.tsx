@@ -36,9 +36,11 @@ interface RestEndpoint {
   path: string;
   description: string;
   params?: { name: string; type: string; description: string; required?: boolean }[];
+  bodyTemplate?: Record<string, unknown>;
 }
 
 const REST_ENDPOINTS: RestEndpoint[] = [
+  // GET endpoints
   { id: "pages", name: "List Pages", method: "GET", path: "/pages", description: "Get all published pages" },
   { id: "page", name: "Get Page", method: "GET", path: "/page/:slug", description: "Get a single page by slug", params: [{ name: "slug", type: "string", description: "Page slug", required: true }] },
   { id: "blog-posts", name: "Blog Posts", method: "GET", path: "/blog/posts", description: "List published blog posts", params: [{ name: "limit", type: "number", description: "Max results" }, { name: "category", type: "string", description: "Category slug" }] },
@@ -52,6 +54,50 @@ const REST_ENDPOINTS: RestEndpoint[] = [
   { id: "kb-article", name: "KB Article", method: "GET", path: "/kb/article/:slug", description: "Get KB article by slug", params: [{ name: "slug", type: "string", description: "Article slug", required: true }] },
   { id: "global-blocks", name: "Global Blocks", method: "GET", path: "/global-blocks/:slot", description: "Get global blocks by slot", params: [{ name: "slot", type: "string", description: "header, footer, or popup", required: true }] },
   { id: "settings", name: "Site Settings", method: "GET", path: "/settings", description: "Get all site settings" },
+  // POST endpoints
+  { 
+    id: "form-submit", 
+    name: "Submit Form", 
+    method: "POST", 
+    path: "/form/submit", 
+    description: "Submit a form (test form submissions)",
+    bodyTemplate: {
+      block_id: "example-block-id",
+      page_id: "example-page-id",
+      form_name: "Contact Form",
+      data: {
+        name: "John Doe",
+        email: "john@example.com",
+        message: "Hello, this is a test message"
+      }
+    }
+  },
+  { 
+    id: "newsletter-subscribe", 
+    name: "Newsletter Subscribe", 
+    method: "POST", 
+    path: "/newsletter/subscribe", 
+    description: "Subscribe to newsletter",
+    bodyTemplate: {
+      email: "subscriber@example.com",
+      name: "Jane Doe"
+    }
+  },
+  { 
+    id: "booking-create", 
+    name: "Create Booking", 
+    method: "POST", 
+    path: "/booking/create", 
+    description: "Create a new booking",
+    bodyTemplate: {
+      service_id: "example-service-id",
+      customer_name: "John Doe",
+      customer_email: "john@example.com",
+      customer_phone: "+46701234567",
+      start_time: new Date(Date.now() + 86400000).toISOString(),
+      notes: "Test booking"
+    }
+  },
 ];
 
 const GRAPHQL_EXAMPLES: { name: string; query: string }[] = [
@@ -131,6 +177,7 @@ export default function ContentHubPage() {
   // REST Explorer state
   const [selectedEndpoint, setSelectedEndpoint] = useState<RestEndpoint>(REST_ENDPOINTS[0]);
   const [restParams, setRestParams] = useState<Record<string, string>>({});
+  const [restBody, setRestBody] = useState<string>("");
   const [restResult, setRestResult] = useState<string | null>(null);
   const [isRestQuerying, setIsRestQuerying] = useState(false);
   const [restResponseTime, setRestResponseTime] = useState<number | null>(null);
@@ -255,16 +302,35 @@ export default function ContentHubPage() {
     const startTime = performance.now();
     try {
       const url = buildRestUrl();
-      const response = await fetch(url, {
+      const fetchOptions: RequestInit = {
         method: selectedEndpoint.method,
         headers: { "Content-Type": "application/json" },
-      });
+      };
+      
+      if (selectedEndpoint.method === "POST" && restBody) {
+        try {
+          JSON.parse(restBody); // Validate JSON
+          fetchOptions.body = restBody;
+        } catch {
+          throw new Error("Invalid JSON in request body");
+        }
+      }
+      
+      const response = await fetch(url, fetchOptions);
       
       const endTime = performance.now();
       setRestResponseTime(Math.round(endTime - startTime));
       
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        const errorText = await response.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { error: errorText || `HTTP ${response.status}: ${response.statusText}` };
+        }
+        setRestResult(JSON.stringify(errorData, null, 2));
+        return;
       }
       
       const data = await response.json();
@@ -274,7 +340,7 @@ export default function ContentHubPage() {
     } finally {
       setIsRestQuerying(false);
     }
-  }, [buildRestUrl, selectedEndpoint.method]);
+  }, [buildRestUrl, selectedEndpoint.method, restBody]);
 
   const handleEndpointChange = (endpointId: string) => {
     const endpoint = REST_ENDPOINTS.find(e => e.id === endpointId);
@@ -283,6 +349,12 @@ export default function ContentHubPage() {
       setRestParams({});
       setRestResult(null);
       setRestResponseTime(null);
+      // Set body template for POST endpoints
+      if (endpoint.method === "POST" && endpoint.bodyTemplate) {
+        setRestBody(JSON.stringify(endpoint.bodyTemplate, null, 2));
+      } else {
+        setRestBody("");
+      }
     }
   };
 
@@ -560,6 +632,33 @@ export default async function Home() {
                       </div>
                     )}
 
+                    {/* Request Body for POST */}
+                    {selectedEndpoint.method === "POST" && (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <label className="text-sm font-medium">Request Body</label>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              if (selectedEndpoint.bodyTemplate) {
+                                setRestBody(JSON.stringify(selectedEndpoint.bodyTemplate, null, 2));
+                              }
+                            }}
+                          >
+                            <RefreshCw className="h-3 w-3 mr-1" />
+                            Reset
+                          </Button>
+                        </div>
+                        <Textarea
+                          value={restBody}
+                          onChange={(e) => setRestBody(e.target.value)}
+                          className="font-mono text-sm min-h-[150px]"
+                          placeholder='{"key": "value"}'
+                        />
+                      </div>
+                    )}
+
                     <Button onClick={runRestQuery} disabled={isRestQuerying} className="w-full">
                       {isRestQuerying ? (
                         <>
@@ -569,7 +668,7 @@ export default async function Home() {
                       ) : (
                         <>
                           <Play className="h-4 w-4 mr-2" />
-                          Send Request
+                          Send {selectedEndpoint.method} Request
                         </>
                       )}
                     </Button>
