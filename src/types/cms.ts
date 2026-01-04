@@ -258,7 +258,19 @@ export interface HeroBlockData {
   secondaryButton?: { text: string; url: string };
 }
 
-// Tiptap JSON document structure (ProseMirror format)
+// =============================================================================
+// TIPTAP DOCUMENT TYPES
+// =============================================================================
+// TiptapDocument is the STANDARD format for all rich text content in PezCMS.
+// 
+// CONTENT FORMAT STRATEGY:
+// - Primary: TiptapDocument (JSON) - stored in database, used in editors
+// - Export: HTML, Markdown, Plain text - generated on demand via tiptap-utils
+// - Legacy: HTML strings - DEPRECATED, will be removed in future versions
+//
+// For conversion utilities, see: src/lib/tiptap-utils.ts
+// =============================================================================
+
 export interface TiptapMark {
   type: string;
   attrs?: Record<string, unknown>;
@@ -272,13 +284,32 @@ export interface TiptapNode {
   text?: string;
 }
 
+/**
+ * Standard Tiptap/ProseMirror document structure.
+ * This is the PRIMARY format for all rich text content in PezCMS.
+ */
 export interface TiptapDocument {
   type: 'doc';
   content: TiptapNode[];
 }
 
+/**
+ * Rich text content type used across block data.
+ * TiptapDocument is the standard format.
+ * @deprecated string (HTML) support is legacy and will be removed.
+ */
+export type RichTextContent = TiptapDocument | string;
+
+// =============================================================================
+// BLOCK DATA TYPES
+// =============================================================================
+
 export interface TextBlockData {
-  content: string | TiptapDocument; // HTML (legacy) or Tiptap JSON
+  /** 
+   * Rich text content. TiptapDocument is the standard format.
+   * @deprecated string (HTML) support is legacy - use TiptapDocument.
+   */
+  content: RichTextContent;
   backgroundColor?: string;
 }
 
@@ -310,7 +341,11 @@ export interface LinkGridBlockData {
 }
 
 export interface TwoColumnBlockData {
-  content: string | TiptapDocument; // HTML (legacy) or Tiptap JSON
+  /** 
+   * Rich text content. TiptapDocument is the standard format.
+   * @deprecated string (HTML) support is legacy - use TiptapDocument.
+   */
+  content: RichTextContent;
   imageSrc: string;
   imageAlt: string;
   imagePosition: 'left' | 'right';
@@ -318,14 +353,27 @@ export interface TwoColumnBlockData {
 
 export interface InfoBoxBlockData {
   title: string;
-  content: string | TiptapDocument; // Plaintext/HTML (legacy) or Tiptap JSON
+  /** 
+   * Rich text content. TiptapDocument is the standard format.
+   * @deprecated string (HTML) support is legacy - use TiptapDocument.
+   */
+  content: RichTextContent;
   variant: 'info' | 'success' | 'warning' | 'highlight';
   icon?: string;
 }
 
 export interface AccordionBlockData {
   title?: string;
-  items: { question: string; answer: string | TiptapDocument; image?: string; imageAlt?: string }[];
+  items: { 
+    question: string; 
+    /** 
+     * Rich text content. TiptapDocument is the standard format.
+     * @deprecated string (HTML) support is legacy - use TiptapDocument.
+     */
+    answer: RichTextContent; 
+    image?: string; 
+    imageAlt?: string;
+  }[];
 }
 
 export interface ArticleGridBlockData {
