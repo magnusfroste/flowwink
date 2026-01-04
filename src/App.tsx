@@ -69,6 +69,7 @@ const router = createBrowserRouter([
   { path: "/", element: <PublicPage /> },
   { path: "/auth", element: <AuthPage /> },
   { path: "/chat", element: <ChatPage /> },
+  { path: "/help", element: <PublicKnowledgeBasePage /> },
   { path: "/hjalp", element: <PublicKnowledgeBasePage /> },
   { path: "/newsletter/manage", element: <NewsletterManagePage /> },
   // Checkout and pricing routes
