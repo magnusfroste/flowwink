@@ -26,36 +26,7 @@ interface CreationProgress {
   currentStep: string;
 }
 
-// Extract Tiptap document from ContentBlock array format, or create from plain text
-function getAnswerJsonForImport(answer_json: unknown, answer_text?: string): unknown {
-  // If it's already a Tiptap document, return it directly
-  if (answer_json && typeof answer_json === 'object' && 'type' in answer_json && (answer_json as { type: string }).type === 'doc') {
-    return answer_json;
-  }
-  
-  // If it's an array of ContentBlocks, extract from the first text block
-  if (Array.isArray(answer_json) && answer_json.length > 0) {
-    const textBlock = answer_json.find(b => b?.type === 'text');
-    if (textBlock?.data?.content?.type === 'doc') {
-      return textBlock.data.content;
-    }
-  }
-  
-  // If no answer_json but we have answer_text, create a Tiptap document from it
-  if (answer_text && answer_text.trim()) {
-    return {
-      type: 'doc',
-      content: [
-        {
-          type: 'paragraph',
-          content: [{ type: 'text', text: answer_text }]
-        }
-      ]
-    };
-  }
-  
-  return null;
-}
+import { createDocumentFromText } from '@/lib/tiptap-utils';
 
 export default function NewSitePage() {
   const [selectedTemplate, setSelectedTemplate] = useState<StarterTemplate | null>(null);
@@ -244,15 +215,15 @@ export default function NewSitePage() {
 
           // Create articles for this category
           for (const article of category.articles) {
-            // Get Tiptap document from ContentBlock format or create from answer_text
-            const finalAnswerJson = getAnswerJsonForImport(article.answer_json, article.answer_text);
+            // Generate TiptapDocument from answer_text
+            const answerJson = createDocumentFromText(article.answer_text);
             
             await createKbArticle.mutateAsync({
               category_id: createdCategory.id,
               title: article.title,
               slug: article.slug,
               question: article.question,
-              answer_json: finalAnswerJson as any,
+              answer_json: answerJson as any,
               answer_text: article.answer_text,
               is_published: publishKbArticles,
               is_featured: article.is_featured,
