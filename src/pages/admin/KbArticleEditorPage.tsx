@@ -95,25 +95,33 @@ export default function KbArticleEditorPage() {
   }, [formData.title, isNew]);
 
   const handleSave = async () => {
+    console.log("handleSave called", { formData, editor: !!editor });
+    
     if (!editor) {
+      console.log("Editor not ready");
       toast.error("Editor not ready");
       return;
     }
     
     if (!formData.category_id) {
+      console.log("No category selected");
       toast.error("Please select a category");
       return;
     }
 
     if (!formData.title.trim()) {
+      console.log("No title");
       toast.error("Please enter a title");
       return;
     }
 
     if (!formData.question.trim()) {
+      console.log("No question");
       toast.error("Please enter a question");
       return;
     }
+    
+    console.log("Validation passed, attempting save...");
 
     const answer_json = editor.getJSON() as unknown;
     const answer_text = extractPlainText(answer_json);
