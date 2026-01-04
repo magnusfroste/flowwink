@@ -1089,6 +1089,21 @@ const trustcorpPages: TemplatePage[] = [
           ],
         },
       },
+      // BOOKING - Schedule a consultation
+      {
+        id: 'booking-1',
+        type: 'booking',
+        data: {
+          title: 'Schedule a Consultation',
+          description: 'Speak with our enterprise solutions team about your specific needs.',
+          mode: 'form',
+          submitButtonText: 'Request Consultation',
+          successMessage: 'Thank you! An enterprise specialist will contact you within one business day.',
+          showPhoneField: true,
+          showDatePicker: false,
+          variant: 'card',
+        },
+      },
     ],
   },
   {
