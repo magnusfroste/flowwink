@@ -31,7 +31,11 @@ const VALID_BLOCK_TYPES: ContentBlockType[] = [
   'testimonials', 'pricing', 'accordion', 'form', 'logos', 'team',
   'gallery', 'timeline', 'quote', 'separator', 'chat', 'map',
   'newsletter', 'products', 'cart', 'booking', 'comparison',
-  'article-grid', 'link-grid', 'youtube', 'info-box', 'popup'
+  'article-grid', 'link-grid', 'youtube', 'info-box', 'popup',
+  // Knowledge Base blocks
+  'kb-hub', 'kb-search', 'kb-featured',
+  // Contact block (alias for form)
+  'contact', 'footer', 'header'
 ];
 
 // Required fields per block type
@@ -39,10 +43,10 @@ const BLOCK_REQUIRED_FIELDS: Record<string, string[]> = {
   hero: ['title'],
   text: ['content'],
   image: ['src'],
-  'two-column': ['content'],
+  'two-column': [], // content is optional - can be empty columns
   cta: ['title', 'buttonText', 'buttonUrl'],
   features: ['features'],
-  stats: ['stats'],
+  stats: [], // stats array is optional - can show placeholder
   testimonials: ['testimonials'],
   pricing: ['tiers'],
   accordion: ['items'],
@@ -50,11 +54,11 @@ const BLOCK_REQUIRED_FIELDS: Record<string, string[]> = {
   logos: ['logos'],
   team: ['members'],
   gallery: ['images'],
-  timeline: ['steps'],
+  timeline: [], // steps is optional
   quote: ['quote'],
   separator: [],
   chat: [],
-  map: ['address'],
+  map: [], // address is optional - can use coordinates
   newsletter: [],
   products: [],
   cart: [],
@@ -62,9 +66,17 @@ const BLOCK_REQUIRED_FIELDS: Record<string, string[]> = {
   comparison: ['products', 'features'],
   'article-grid': [],
   'link-grid': ['links'],
-  youtube: ['videoId'],
-  'info-box': ['title'],
+  youtube: [], // videoId is optional - shows placeholder
+  'info-box': [], // title is optional
   popup: ['content'],
+  // Knowledge Base blocks
+  'kb-hub': [],
+  'kb-search': [],
+  'kb-featured': [],
+  // Other blocks
+  contact: [],
+  footer: [],
+  header: [],
 };
 
 /**
@@ -109,11 +121,11 @@ export function validateTemplate(template: Partial<StarterTemplate>): Validation
       message: 'Template category is required',
       suggestion: 'Use one of: startup, enterprise, compliance, platform',
     });
-  } else if (!['startup', 'enterprise', 'compliance', 'platform'].includes(template.category)) {
+  } else if (!['startup', 'enterprise', 'compliance', 'platform', 'helpcenter'].includes(template.category)) {
     errors.push({
       path: 'category',
       message: `Invalid category "${template.category}"`,
-      suggestion: 'Use one of: startup, enterprise, compliance, platform',
+      suggestion: 'Use one of: startup, enterprise, compliance, platform, helpcenter',
     });
   }
 
