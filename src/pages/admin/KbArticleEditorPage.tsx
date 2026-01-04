@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Save, Eye, EyeOff, MessageSquare, Sparkles } from "lucide-react";
+import { toast } from "sonner";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -94,7 +95,20 @@ export default function KbArticleEditorPage() {
   }, [formData.title, isNew]);
 
   const handleSave = async () => {
-    if (!editor || !formData.category_id) return;
+    console.log("handleSave called, formData:", formData);
+    console.log("category_id:", formData.category_id);
+    console.log("editor:", !!editor);
+    
+    if (!editor) {
+      console.error("No editor found");
+      return;
+    }
+    
+    if (!formData.category_id) {
+      console.error("No category selected");
+      toast.error("Please select a category");
+      return;
+    }
 
     const answer_json = editor.getJSON();
     const answer_text = extractPlainText(answer_json);
@@ -105,11 +119,18 @@ export default function KbArticleEditorPage() {
       answer_text,
     };
 
-    if (isNew) {
-      const created = await createArticle.mutateAsync(data);
-      navigate(`/admin/knowledge-base/${created.id}`);
-    } else if (id) {
-      await updateArticle.mutateAsync({ id, ...data });
+    try {
+      if (isNew) {
+        const created = await createArticle.mutateAsync(data);
+        toast.success("Article created");
+        navigate(`/admin/knowledge-base/${created.id}`);
+      } else if (id) {
+        await updateArticle.mutateAsync({ id, ...data });
+        toast.success("Article saved");
+      }
+    } catch (error) {
+      console.error("Save error:", error);
+      toast.error("Failed to save article");
     }
   };
 
