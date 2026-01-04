@@ -5419,3 +5419,190 @@ export function getTemplateById(id: string): StarterTemplate | undefined {
 export function getTemplatesByCategory(category: StarterTemplate['category']): StarterTemplate[] {
   return STARTER_TEMPLATES.filter(t => t.category === category);
 }
+
+// =====================================================
+// BLANK TEMPLATE - Starting point for new templates
+// =====================================================
+/**
+ * Blank Template
+ * 
+ * Use this as a starting point for creating new templates.
+ * Copy this structure and customize it for your needs.
+ * 
+ * See docs/TEMPLATE-AUTHORING.md for complete documentation.
+ */
+export const BLANK_TEMPLATE: StarterTemplate = {
+  // ===== Basic Info =====
+  id: 'blank',                          // Unique ID (lowercase, dashes)
+  name: 'Blank Template',               // Display name
+  description: 'A minimal starting point for creating your own template.',
+  category: 'startup',                  // startup | enterprise | compliance | platform
+  icon: 'FileText',                     // Lucide icon name
+  tagline: 'Start from scratch',        // One-liner
+  aiChatPosition: 'bottom-right',
+
+  // ===== Pages =====
+  // At minimum, you need one page. Mark one as isHomePage: true
+  pages: [
+    {
+      title: 'Home',
+      slug: 'home',
+      isHomePage: true,                 // This is the homepage
+      menu_order: 1,
+      showInMenu: true,
+      meta: {
+        description: 'Welcome to our website',
+        showTitle: false,
+        titleAlignment: 'center',
+      },
+      blocks: [
+        // Hero block - the main banner
+        {
+          id: 'hero-1',
+          type: 'hero',
+          data: {
+            title: 'Your Headline Here',
+            subtitle: 'Add a compelling subtitle that explains your value proposition.',
+            backgroundType: 'color',
+            heightMode: 'viewport',
+            contentAlignment: 'center',
+            primaryButton: { text: 'Get Started', url: '/contact' },
+          },
+        },
+        // Text block - for content
+        {
+          id: 'text-1',
+          type: 'text',
+          data: {
+            content: {
+              type: 'doc',
+              content: [
+                {
+                  type: 'heading',
+                  attrs: { level: 2 },
+                  content: [{ type: 'text', text: 'About Us' }],
+                },
+                {
+                  type: 'paragraph',
+                  content: [{ type: 'text', text: 'Add your content here. Use the text() or heading() helpers from template-helpers.ts for easier content creation.' }],
+                },
+              ],
+            },
+          },
+        },
+        // CTA block - call to action
+        {
+          id: 'cta-1',
+          type: 'cta',
+          data: {
+            title: 'Ready to Start?',
+            subtitle: 'Contact us today.',
+            buttonText: 'Contact Us',
+            buttonUrl: '/contact',
+            gradient: true,
+          },
+        },
+      ],
+    },
+    {
+      title: 'Contact',
+      slug: 'contact',
+      menu_order: 2,
+      showInMenu: true,
+      meta: {
+        description: 'Get in touch with us',
+        showTitle: true,
+        titleAlignment: 'center',
+      },
+      blocks: [
+        {
+          id: 'hero-1',
+          type: 'hero',
+          data: {
+            title: 'Contact Us',
+            subtitle: 'We\'d love to hear from you.',
+            backgroundType: 'color',
+            heightMode: 'auto',
+            contentAlignment: 'center',
+          },
+        },
+        {
+          id: 'form-1',
+          type: 'form',
+          data: {
+            title: 'Send us a message',
+            submitButtonText: 'Send',
+            successMessage: 'Thanks! We\'ll be in touch soon.',
+            fields: [
+              { id: 'name', type: 'text', label: 'Name', required: true },
+              { id: 'email', type: 'email', label: 'Email', required: true },
+              { id: 'message', type: 'textarea', label: 'Message', required: true },
+            ],
+          },
+        },
+      ],
+    },
+  ],
+
+  // ===== Optional: Blog Posts =====
+  // blogPosts: [],
+
+  // ===== Optional: Knowledge Base =====
+  // kbCategories: [],
+
+  // ===== Branding Settings =====
+  branding: {
+    organizationName: 'My Site',
+    brandTagline: 'Your tagline here',
+    primaryColor: '217 91% 60%',            // Blue in HSL
+    headingFont: 'Inter',
+    bodyFont: 'Inter',
+    borderRadius: 'md',
+  },
+
+  // ===== Chat Settings =====
+  chatSettings: {
+    enabled: true,
+    widgetPosition: 'bottom-right',
+    welcomeMessage: 'Hi! How can I help you today?',
+    placeholder: 'Type your message...',
+    systemPrompt: 'You are a helpful assistant. Answer questions about our company and services.',
+    suggestedPrompts: [
+      'What services do you offer?',
+      'How can I get started?',
+    ],
+  },
+
+  // ===== Footer Settings =====
+  footerSettings: {
+    phone: '',
+    email: 'hello@example.com',
+    address: '',
+    postalCode: '',
+    weekdayHours: '',
+    weekendHours: '',
+    showBrand: true,
+    showQuickLinks: true,
+    showContact: true,
+    showHours: false,
+  },
+
+  // ===== SEO Settings =====
+  seoSettings: {
+    siteTitle: 'My Site',
+    titleTemplate: '%s | My Site',
+    defaultDescription: 'Welcome to our website.',
+    robotsIndex: true,
+    robotsFollow: true,
+  },
+
+  // ===== Cookie Banner =====
+  cookieBannerSettings: {
+    enabled: false,
+  },
+
+  // ===== Site Settings =====
+  siteSettings: {
+    homepageSlug: 'home',
+  },
+};
