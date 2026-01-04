@@ -212,6 +212,129 @@ GET /content-api/settings
 
 ---
 
+## POST Endpoints
+
+### Form Submission
+
+Submit form data for processing and storage.
+
+```http
+POST /content-api/form/submit
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "block_id": "contact-form-1",
+  "data": {
+    "name": "John Doe",
+    "email": "john@example.com",
+    "message": "Hello, I have a question..."
+  },
+  "page_id": "uuid (optional)",
+  "form_name": "Contact Form (optional)"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "submission_id": "uuid"
+}
+```
+
+---
+
+### Newsletter Subscription
+
+Subscribe an email address to the newsletter.
+
+```http
+POST /content-api/newsletter/subscribe
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "email": "subscriber@example.com",
+  "name": "Jane Doe (optional)"
+}
+```
+
+**Response (new subscription):**
+```json
+{
+  "success": true,
+  "message": "Successfully subscribed to newsletter",
+  "subscriber_id": "uuid"
+}
+```
+
+**Response (reactivated):**
+```json
+{
+  "success": true,
+  "message": "Subscription reactivated",
+  "subscriber_id": "uuid"
+}
+```
+
+**Response (already subscribed):**
+```json
+{
+  "success": true,
+  "message": "Already subscribed",
+  "subscriber_id": "uuid"
+}
+```
+
+---
+
+### Create Booking
+
+Create a new booking for a service.
+
+```http
+POST /content-api/booking/create
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "customer_name": "John Doe",
+  "customer_email": "john@example.com",
+  "customer_phone": "+46701234567 (optional)",
+  "start_time": "2024-01-15T10:00:00Z",
+  "service_id": "uuid (optional)",
+  "duration_minutes": 60,
+  "notes": "First-time consultation (optional)"
+}
+```
+
+**Note:** If `service_id` is provided and `duration_minutes` is not, the duration will be automatically fetched from the service.
+
+**Response:**
+```json
+{
+  "success": true,
+  "booking": {
+    "id": "uuid",
+    "customer_name": "John Doe",
+    "customer_email": "john@example.com",
+    "start_time": "2024-01-15T10:00:00Z",
+    "end_time": "2024-01-15T11:00:00Z",
+    "status": "pending",
+    "service_id": "uuid"
+  }
+}
+```
+
+---
+
 ## GraphQL API
 
 ### Endpoint
