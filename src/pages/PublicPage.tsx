@@ -10,11 +10,14 @@ import { BodyScripts } from '@/components/public/BodyScripts';
 import { CookieBanner } from '@/components/public/CookieBanner';
 import { ChatWidget } from '@/components/public/ChatWidget';
 import { cn } from '@/lib/utils';
-import { useSeoSettings, useMaintenanceSettings, useGeneralSettings } from '@/hooks/useSiteSettings';
+import { useSeoSettings, useMaintenanceSettings, useGeneralSettings, useKbSettings } from '@/hooks/useSiteSettings';
 import { Button } from '@/components/ui/button';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, lazy, Suspense } from 'react';
 import type { Page, ContentBlock } from '@/types/cms';
 import { usePageViewTracker } from '@/hooks/usePageViewTracker';
+
+// Lazy load Knowledge Base page for dynamic routing
+const PublicKnowledgeBasePage = lazy(() => import('./KnowledgeBasePage'));
 
 function parseContent(data: {
   content_json: unknown;
@@ -34,12 +37,16 @@ export default function PublicPage() {
   const { data: generalSettings } = useGeneralSettings();
   const { data: seoSettings } = useSeoSettings();
   const { data: maintenanceSettings } = useMaintenanceSettings();
+  const { data: kbSettings, isLoading: kbSettingsLoading } = useKbSettings();
   const [user, setUser] = useState<unknown>(null);
   const [authLoading, setAuthLoading] = useState(true);
 
   // Use configured homepage slug, default to 'home'
   const homepageSlug = generalSettings?.homepageSlug || 'home';
   const pageSlug = slug || homepageSlug;
+
+  // Check if this slug matches the Knowledge Base route
+  const isKbRoute = kbSettings?.enabled && slug && slug === kbSettings.menuSlug;
 
   // Check auth state for dev mode protection
   useEffect(() => {
@@ -100,11 +107,24 @@ export default function PublicPage() {
     pageTitle: page?.title,
   });
 
-  if (isLoading || authLoading) {
+  if (isLoading || authLoading || kbSettingsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
+    );
+  }
+
+  // If this is the Knowledge Base route, render the KB page
+  if (isKbRoute) {
+    return (
+      <Suspense fallback={
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      }>
+        <PublicKnowledgeBasePage />
+      </Suspense>
     );
   }
 

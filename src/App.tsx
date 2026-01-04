@@ -41,7 +41,7 @@ import CompaniesPage from "./pages/admin/CompaniesPage";
 import CompanyDetailPage from "./pages/admin/CompanyDetailPage";
 import ProductsPage from "./pages/admin/ProductsPage";
 import OrdersPage from "./pages/admin/OrdersPage";
-import KnowledgeBasePage from "./pages/admin/KnowledgeBasePage";
+import KnowledgeBaseAdminPage from "./pages/admin/KnowledgeBasePage";
 import AnalyticsDashboardPage from "./pages/admin/AnalyticsDashboardPage";
 import BookingsPage from "./pages/admin/BookingsPage";
 import BookingServicesPage from "./pages/admin/BookingServicesPage";
@@ -49,7 +49,6 @@ import BookingAvailabilityPage from "./pages/admin/BookingAvailabilityPage";
 import ProfilePage from "./pages/admin/ProfilePage";
 import KbArticleEditorPage from "./pages/admin/KbArticleEditorPage";
 import IntegrationsStatusPage from "./pages/admin/IntegrationsStatusPage";
-import PublicKnowledgeBasePage from "./pages/KnowledgeBasePage";
 import PreviewPage from "./pages/PreviewPage";
 import PublicPage from "./pages/PublicPage";
 import BlogArchivePage from "./pages/BlogArchivePage";
@@ -69,8 +68,7 @@ const router = createBrowserRouter([
   { path: "/", element: <PublicPage /> },
   { path: "/auth", element: <AuthPage /> },
   { path: "/chat", element: <ChatPage /> },
-  { path: "/help", element: <PublicKnowledgeBasePage /> },
-  { path: "/hjalp", element: <PublicKnowledgeBasePage /> },
+  // KB routes are now handled dynamically in PublicPage based on kbSettings.menuSlug
   { path: "/newsletter/manage", element: <NewsletterManagePage /> },
   // Checkout and pricing routes
   { path: "/priser", element: <PricingPage /> },
@@ -120,7 +118,7 @@ const router = createBrowserRouter([
   { path: "/admin/modules", element: <ModulesPage /> },
   { path: "/admin/integrations", element: <IntegrationsStatusPage /> },
   { path: "/admin/webhooks", element: <WebhooksPage /> },
-  { path: "/admin/knowledge-base", element: <KnowledgeBasePage /> },
+  { path: "/admin/knowledge-base", element: <KnowledgeBaseAdminPage /> },
   { path: "/admin/knowledge-base/new", element: <KbArticleEditorPage /> },
   { path: "/admin/knowledge-base/:id", element: <KbArticleEditorPage /> },
   { path: "/preview/:id", element: <PreviewPage /> },
