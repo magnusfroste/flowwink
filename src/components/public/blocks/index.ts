@@ -29,3 +29,4 @@ export { TimelineBlock } from './TimelineBlock';
 export { ProductsBlock } from './ProductsBlock';
 export { CartBlock } from './CartBlock';
 export { KbFeaturedBlock } from './KbFeaturedBlock';
+export { KbHubBlock } from './KbHubBlock';

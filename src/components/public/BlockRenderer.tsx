@@ -33,7 +33,9 @@ import {
   ProductsBlock,
   CartBlock,
   KbFeaturedBlock,
+  KbHubBlock,
 } from './blocks';
+import type { KbHubBlockData } from './blocks/KbHubBlock';
 import type {
   HeroBlockData,
   TextBlockData,
@@ -170,6 +172,8 @@ export function BlockRenderer({ block, pageId, index = 0 }: BlockRendererProps) 
         return <CartBlock data={block.data as unknown as CartBlockData} />;
       case 'kb-featured':
         return <KbFeaturedBlock data={block.data as unknown as KbFeaturedBlockData} />;
+      case 'kb-hub':
+        return <KbHubBlock data={block.data as unknown as KbHubBlockData} />;
       default:
         return null;
     }
