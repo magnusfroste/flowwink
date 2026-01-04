@@ -533,8 +533,51 @@ export default function NewSitePage() {
                   </DialogDescription>
                 </DialogHeader>
                 
-                <ScrollArea className="max-h-80">
+                <ScrollArea className="max-h-96">
                   <div className="space-y-4">
+                    {/* Summary Section */}
+                    {selectedTemplate && (
+                      <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+                        <h4 className="text-sm font-medium">Template Summary</h4>
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                          <div className="flex items-center justify-between">
+                            <span className="text-muted-foreground">Pages</span>
+                            <Badge variant="secondary">{selectedTemplate.pages.length}</Badge>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-muted-foreground">Total Blocks</span>
+                            <Badge variant="secondary">
+                              {selectedTemplate.pages.reduce((acc, page) => acc + page.blocks.length, 0)}
+                            </Badge>
+                          </div>
+                          {selectedTemplate.blogPosts && selectedTemplate.blogPosts.length > 0 && (
+                            <div className="flex items-center justify-between">
+                              <span className="text-muted-foreground">Blog Posts</span>
+                              <Badge variant="secondary">{selectedTemplate.blogPosts.length}</Badge>
+                            </div>
+                          )}
+                          {selectedTemplate.kbCategories && selectedTemplate.kbCategories.length > 0 && (
+                            <div className="flex items-center justify-between">
+                              <span className="text-muted-foreground">KB Articles</span>
+                              <Badge variant="secondary">
+                                {selectedTemplate.kbCategories.reduce((acc, cat) => acc + cat.articles.length, 0)}
+                              </Badge>
+                            </div>
+                          )}
+                        </div>
+                        <div className="pt-2 border-t">
+                          <span className="text-xs text-muted-foreground">Block Types Used:</span>
+                          <div className="flex flex-wrap gap-1 mt-1.5">
+                            {[...new Set(selectedTemplate.pages.flatMap(p => p.blocks.map(b => b.type)))].map(type => (
+                              <Badge key={type} variant="outline" className="text-xs">
+                                {type}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     {validationResult?.errors && validationResult.errors.length > 0 && (
                       <div className="space-y-2">
                         <h4 className="text-sm font-medium flex items-center gap-2 text-destructive">
@@ -571,9 +614,9 @@ export default function NewSitePage() {
                     )}
                     
                     {validationResult?.valid && validationResult.errors.length === 0 && validationResult.warnings.length === 0 && (
-                      <div className="text-center py-6 text-muted-foreground">
-                        <Check className="h-12 w-12 mx-auto mb-3 text-primary" />
-                        <p>No issues found. Template is ready to import!</p>
+                      <div className="text-center py-4 text-muted-foreground">
+                        <Check className="h-10 w-10 mx-auto mb-2 text-primary" />
+                        <p className="text-sm">No issues found. Template is ready to import!</p>
                       </div>
                     )}
                   </div>
