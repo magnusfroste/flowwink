@@ -14,8 +14,8 @@ import { StarterTemplate } from '@/data/starter-templates';
 import { useCreatePage, usePages, useDeletePage } from '@/hooks/usePages';
 import { useUpdateBrandingSettings, useUpdateChatSettings, useUpdateGeneralSettings, useUpdateSeoSettings, useUpdateCookieBannerSettings, useUpdateKbSettings } from '@/hooks/useSiteSettings';
 import { useUpdateFooterBlock } from '@/hooks/useGlobalBlocks';
-import { useCreateBlogPost } from '@/hooks/useBlogPosts';
-import { useCreateKbCategory, useCreateKbArticle } from '@/hooks/useKnowledgeBase';
+import { useBlogPosts, useCreateBlogPost, useDeleteBlogPost } from '@/hooks/useBlogPosts';
+import { useKbCategories, useCreateKbCategory, useCreateKbArticle, useDeleteKbCategory } from '@/hooks/useKnowledgeBase';
 import { useToast } from '@/hooks/use-toast';
 
 type CreationStep = 'select' | 'creating' | 'done';
@@ -32,14 +32,21 @@ export default function NewSitePage() {
   const [progress, setProgress] = useState<CreationProgress>({ currentPage: 0, totalPages: 0, currentStep: '' });
   const [createdPageIds, setCreatedPageIds] = useState<string[]>([]);
   const [clearExistingPages, setClearExistingPages] = useState(false);
+  const [clearBlogPosts, setClearBlogPosts] = useState(true);
+  const [clearKbContent, setClearKbContent] = useState(true);
   const [publishPages, setPublishPages] = useState(true);
   const [publishBlogPosts, setPublishBlogPosts] = useState(true);
   const [publishKbArticles, setPublishKbArticles] = useState(true);
   
   const navigate = useNavigate();
   const { data: existingPages } = usePages();
+  const { data: existingBlogPostsData } = useBlogPosts();
+  const existingBlogPosts = existingBlogPostsData?.posts || [];
+  const { data: existingKbCategories } = useKbCategories();
   const createPage = useCreatePage();
   const deletePage = useDeletePage();
+  const deleteBlogPost = useDeleteBlogPost();
+  const deleteKbCategory = useDeleteKbCategory();
   const updateBranding = useUpdateBrandingSettings();
   const updateChat = useUpdateChatSettings();
   const updateGeneral = useUpdateGeneralSettings();
@@ -63,7 +70,7 @@ export default function NewSitePage() {
     const pageIds: string[] = [];
 
     try {
-      // Step 0: Delete existing pages if option is selected
+      // Step 0a: Delete existing pages if option is selected
       if (clearExistingPages && existingPages && existingPages.length > 0) {
         setProgress({ currentPage: 0, totalPages: existingPages.length, currentStep: 'Clearing existing pages...' });
         
@@ -71,9 +78,37 @@ export default function NewSitePage() {
           setProgress({ 
             currentPage: i + 1, 
             totalPages: existingPages.length, 
-            currentStep: `Removing "${existingPages[i].title}"...` 
+            currentStep: `Removing page "${existingPages[i].title}"...` 
           });
           await deletePage.mutateAsync(existingPages[i].id);
+        }
+      }
+
+      // Step 0b: Delete existing blog posts if option is selected
+      if (clearBlogPosts && existingBlogPosts && existingBlogPosts.length > 0) {
+        setProgress({ currentPage: 0, totalPages: existingBlogPosts.length, currentStep: 'Clearing existing blog posts...' });
+        
+        for (let i = 0; i < existingBlogPosts.length; i++) {
+          setProgress({ 
+            currentPage: i + 1, 
+            totalPages: existingBlogPosts.length, 
+            currentStep: `Removing blog post "${existingBlogPosts[i].title}"...` 
+          });
+          await deleteBlogPost.mutateAsync(existingBlogPosts[i].id);
+        }
+      }
+
+      // Step 0c: Delete existing KB categories (cascades to articles) if option is selected
+      if (clearKbContent && existingKbCategories && existingKbCategories.length > 0) {
+        setProgress({ currentPage: 0, totalPages: existingKbCategories.length, currentStep: 'Clearing existing KB content...' });
+        
+        for (let i = 0; i < existingKbCategories.length; i++) {
+          setProgress({ 
+            currentPage: i + 1, 
+            totalPages: existingKbCategories.length, 
+            currentStep: `Removing KB category "${existingKbCategories[i].name}"...` 
+          });
+          await deleteKbCategory.mutateAsync(existingKbCategories[i].id);
         }
       }
 
@@ -319,18 +354,19 @@ export default function NewSitePage() {
                     </div>
                   </div>
 
-                  {/* Clear existing pages option */}
-                  {existingPages && existingPages.length > 0 && (
-                    <div className="space-y-3 pt-2 border-t">
-                      <div className="flex items-center justify-between">
+                  {/* Clear existing content options */}
+                  <div className="space-y-3 pt-2 border-t">
+                    <p className="text-sm font-medium flex items-center gap-2">
+                      <Trash2 className="h-4 w-4" />
+                      Clear existing content
+                    </p>
+                    
+                    {existingPages && existingPages.length > 0 && (
+                      <div className="flex items-center justify-between pl-6">
                         <div className="space-y-0.5">
-                          <Label htmlFor="clear-pages" className="text-sm font-medium flex items-center gap-2">
-                            <Trash2 className="h-4 w-4" />
-                            Clear existing pages
+                          <Label htmlFor="clear-pages" className="text-sm">
+                            Pages ({existingPages.length})
                           </Label>
-                          <p className="text-xs text-muted-foreground">
-                            Remove all {existingPages.length} existing pages before creating new ones
-                          </p>
                         </div>
                         <Switch
                           id="clear-pages"
@@ -338,17 +374,47 @@ export default function NewSitePage() {
                           onCheckedChange={setClearExistingPages}
                         />
                       </div>
-                      
-                      {clearExistingPages && (
-                        <Alert variant="destructive" className="py-2">
-                          <AlertTriangle className="h-4 w-4" />
-                          <AlertDescription className="text-xs">
-                            This will permanently delete all existing pages including their content.
-                          </AlertDescription>
-                        </Alert>
-                      )}
-                    </div>
-                  )}
+                    )}
+
+                    {existingBlogPosts && existingBlogPosts.length > 0 && (
+                      <div className="flex items-center justify-between pl-6">
+                        <div className="space-y-0.5">
+                          <Label htmlFor="clear-blog" className="text-sm">
+                            Blog posts ({existingBlogPosts.length})
+                          </Label>
+                        </div>
+                        <Switch
+                          id="clear-blog"
+                          checked={clearBlogPosts}
+                          onCheckedChange={setClearBlogPosts}
+                        />
+                      </div>
+                    )}
+
+                    {existingKbCategories && existingKbCategories.length > 0 && (
+                      <div className="flex items-center justify-between pl-6">
+                        <div className="space-y-0.5">
+                          <Label htmlFor="clear-kb" className="text-sm">
+                            KB categories ({existingKbCategories.length})
+                          </Label>
+                        </div>
+                        <Switch
+                          id="clear-kb"
+                          checked={clearKbContent}
+                          onCheckedChange={setClearKbContent}
+                        />
+                      </div>
+                    )}
+                    
+                    {(clearExistingPages || clearBlogPosts || clearKbContent) && (
+                      <Alert variant="destructive" className="py-2">
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertDescription className="text-xs">
+                          Selected content will be permanently deleted.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </div>
 
                   {/* Publish pages option */}
                   <div className="flex items-center justify-between pt-2 border-t">
