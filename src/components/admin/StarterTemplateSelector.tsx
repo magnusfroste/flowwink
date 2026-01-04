@@ -1,6 +1,6 @@
 import { useState, forwardRef } from 'react';
-import { Rocket, Building2, ShieldCheck, Sparkles, MessageSquare, Check, FileText, Settings, Palette } from 'lucide-react';
-import { STARTER_TEMPLATES, StarterTemplate } from '@/data/starter-templates';
+import { Rocket, Building2, ShieldCheck, Sparkles, MessageSquare, Check, FileText, Settings, Palette, BookOpen, Bot, Layers } from 'lucide-react';
+import { STARTER_TEMPLATES, StarterTemplate, HelpStyle } from '@/data/starter-templates';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,18 +11,32 @@ const CATEGORY_COLORS = {
   startup: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300',
   enterprise: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
   compliance: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
+  platform: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
+  helpcenter: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300',
 };
 
 const CATEGORY_LABELS = {
   startup: 'Startup',
   enterprise: 'Enterprise',
   compliance: 'Compliance',
+  platform: 'Platform',
+  helpcenter: 'Help Center',
+};
+
+const HELP_STYLE_LABELS: Record<HelpStyle, string> = {
+  'kb-classic': 'SEO-fokus',
+  'ai-hub': 'AI-chatt',
+  'hybrid': 'KB + AI',
+  'none': '',
 };
 
 const ICON_MAP = {
   Rocket: Rocket,
   Building2: Building2,
   ShieldCheck: ShieldCheck,
+  BookOpen: BookOpen,
+  Bot: Bot,
+  Layers: Layers,
 };
 
 interface StarterTemplateSelectorProps {
@@ -88,13 +102,17 @@ export const StarterTemplateSelector = forwardRef<HTMLButtonElement, StarterTemp
                         "p-2 rounded-lg",
                         template.category === 'startup' && "bg-violet-100 dark:bg-violet-900/30",
                         template.category === 'enterprise' && "bg-blue-100 dark:bg-blue-900/30",
-                        template.category === 'compliance' && "bg-emerald-100 dark:bg-emerald-900/30"
+                        template.category === 'compliance' && "bg-emerald-100 dark:bg-emerald-900/30",
+                        template.category === 'platform' && "bg-orange-100 dark:bg-orange-900/30",
+                        template.category === 'helpcenter' && "bg-teal-100 dark:bg-teal-900/30"
                       )}>
                         <IconComponent className={cn(
                           "h-5 w-5",
                           template.category === 'startup' && "text-violet-600 dark:text-violet-400",
                           template.category === 'enterprise' && "text-blue-600 dark:text-blue-400",
-                          template.category === 'compliance' && "text-emerald-600 dark:text-emerald-400"
+                          template.category === 'compliance' && "text-emerald-600 dark:text-emerald-400",
+                          template.category === 'platform' && "text-orange-600 dark:text-orange-400",
+                          template.category === 'helpcenter' && "text-teal-600 dark:text-teal-400"
                         )} />
                       </div>
                       <div>
@@ -105,9 +123,16 @@ export const StarterTemplateSelector = forwardRef<HTMLButtonElement, StarterTemp
                         <p className="text-sm text-muted-foreground">{template.tagline}</p>
                       </div>
                     </div>
-                    <Badge className={CATEGORY_COLORS[template.category]}>
-                      {CATEGORY_LABELS[template.category]}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      {template.helpStyle && template.helpStyle !== 'none' && (
+                        <Badge variant="outline" className="text-xs">
+                          {HELP_STYLE_LABELS[template.helpStyle]}
+                        </Badge>
+                      )}
+                      <Badge className={CATEGORY_COLORS[template.category]}>
+                        {CATEGORY_LABELS[template.category]}
+                      </Badge>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -127,7 +152,7 @@ export const StarterTemplateSelector = forwardRef<HTMLButtonElement, StarterTemp
                     </div>
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                       <MessageSquare className="h-3.5 w-3.5" />
-                      <span className="font-medium">AI Chat</span>
+                      <span className="font-medium">{template.chatSettings?.enabled ? 'AI Chat' : 'No Chat'}</span>
                     </div>
                   </div>
 

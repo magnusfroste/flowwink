@@ -12,8 +12,14 @@ import {
   launchpadKbCategories, 
   trustcorpKbCategories, 
   securehealthKbCategories,
+  kbClassicCategories,
+  aiHubCategories,
+  hybridHelpCategories,
   TemplateKbCategory 
 } from './template-kb-articles';
+
+// Help style for templates
+export type HelpStyle = 'kb-classic' | 'ai-hub' | 'hybrid' | 'none';
 
 // Page definition within a template
 export interface TemplatePage {
@@ -45,10 +51,11 @@ export interface StarterTemplate {
   id: string;
   name: string;
   description: string;
-  category: 'startup' | 'enterprise' | 'compliance' | 'platform';
+  category: 'startup' | 'enterprise' | 'compliance' | 'platform' | 'helpcenter';
   icon: string;
   tagline: string;
   aiChatPosition: string;
+  helpStyle?: HelpStyle;
   
   // Multi-page support
   pages: TemplatePage[];
@@ -5651,3 +5658,649 @@ export const BLANK_TEMPLATE: StarterTemplate = {
     homepageSlug: 'home',
   },
 };
+
+// =====================================================
+// KB CLASSIC - SEO-focused Help Center Template
+// =====================================================
+const kbClassicPages: TemplatePage[] = [
+  {
+    title: 'Home',
+    slug: 'home',
+    isHomePage: true,
+    menu_order: 1,
+    showInMenu: true,
+    meta: {
+      description: 'Welcome to our Help Center - find answers to all your questions.',
+      showTitle: false,
+      titleAlignment: 'center',
+    },
+    blocks: [
+      {
+        id: 'hero-1',
+        type: 'hero',
+        data: {
+          title: 'How can we help you?',
+          subtitle: 'Search our knowledge base or browse categories below.',
+          backgroundType: 'color',
+          heightMode: 'auto',
+          contentAlignment: 'center',
+          overlayOpacity: 0,
+          titleAnimation: 'fade-in',
+        },
+      },
+      {
+        id: 'kb-search-1',
+        type: 'kb-search',
+        data: {
+          placeholder: 'Search for answers...',
+          variant: 'hero',
+          showPopularSearches: true,
+          popularSearches: ['getting started', 'pricing', 'billing', 'security'],
+        },
+      },
+      {
+        id: 'kb-featured-1',
+        type: 'kb-featured',
+        data: {
+          title: 'Popular Articles',
+          subtitle: 'Quick answers to common questions',
+          maxItems: 4,
+          showCategory: true,
+          layout: 'grid',
+          columns: 2,
+        },
+      },
+      {
+        id: 'cta-1',
+        type: 'cta',
+        data: {
+          title: 'Still have questions?',
+          subtitle: 'Our support team is here to help.',
+          buttonText: 'Contact Support',
+          buttonUrl: '/contact',
+          gradient: false,
+        },
+      },
+    ],
+  },
+  {
+    title: 'Help Center',
+    slug: 'help',
+    menu_order: 2,
+    showInMenu: true,
+    meta: {
+      description: 'Browse our complete knowledge base with guides and tutorials.',
+      showTitle: true,
+      titleAlignment: 'center',
+    },
+    blocks: [
+      {
+        id: 'kb-search-1',
+        type: 'kb-search',
+        data: {
+          placeholder: 'Search articles...',
+          variant: 'compact',
+          showPopularSearches: false,
+        },
+      },
+      {
+        id: 'kb-hub-1',
+        type: 'kb-hub',
+        data: {
+          title: 'Knowledge Base',
+          subtitle: 'Find answers organized by topic',
+          showSearch: false,
+          showCategories: true,
+          layout: 'accordion',
+          showContactCta: false,
+        },
+      },
+    ],
+  },
+  {
+    title: 'FAQ',
+    slug: 'faq',
+    menu_order: 3,
+    showInMenu: true,
+    meta: {
+      description: 'Frequently asked questions about our platform.',
+      showTitle: true,
+      titleAlignment: 'center',
+    },
+    blocks: [
+      {
+        id: 'hero-1',
+        type: 'hero',
+        data: {
+          title: 'Frequently Asked Questions',
+          subtitle: 'Quick answers to the most common questions.',
+          backgroundType: 'color',
+          heightMode: 'auto',
+          contentAlignment: 'center',
+        },
+      },
+      {
+        id: 'accordion-1',
+        type: 'accordion',
+        data: {
+          title: 'General Questions',
+          items: [
+            { question: 'What is this platform?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Our platform is a comprehensive solution designed for modern teams. It provides tools for content management, collaboration, and analytics.' }] }] } },
+            { question: 'How do I get started?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Create an account, complete the setup wizard, and you will be ready to go in under 5 minutes.' }] }] } },
+            { question: 'Is there a free trial?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Yes! All paid plans include a 14-day free trial. No credit card required.' }] }] } },
+          ],
+        },
+      },
+      {
+        id: 'accordion-2',
+        type: 'accordion',
+        data: {
+          title: 'Billing & Account',
+          items: [
+            { question: 'What payment methods do you accept?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'We accept all major credit cards, PayPal, and bank transfers for annual plans.' }] }] } },
+            { question: 'Can I cancel anytime?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Yes, you can cancel your subscription at any time. Your access will continue until the end of the billing period.' }] }] } },
+            { question: 'How do I upgrade my plan?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Go to Settings → Billing → Change Plan. Upgrades take effect immediately.' }] }] } },
+          ],
+        },
+      },
+      {
+        id: 'cta-1',
+        type: 'cta',
+        data: {
+          title: 'Did not find your answer?',
+          subtitle: 'Contact our support team for personalized help.',
+          buttonText: 'Contact Us',
+          buttonUrl: '/contact',
+          gradient: false,
+        },
+      },
+    ],
+  },
+  {
+    title: 'Contact',
+    slug: 'contact',
+    menu_order: 4,
+    showInMenu: true,
+    meta: {
+      description: 'Contact our support team.',
+      showTitle: true,
+      titleAlignment: 'center',
+    },
+    blocks: [
+      {
+        id: 'hero-1',
+        type: 'hero',
+        data: {
+          title: 'Contact Us',
+          subtitle: 'We are here to help. Send us a message and we will respond as soon as possible.',
+          backgroundType: 'color',
+          heightMode: 'auto',
+          contentAlignment: 'center',
+        },
+      },
+      {
+        id: 'form-1',
+        type: 'form',
+        data: {
+          title: 'Send a Message',
+          description: 'Fill out the form below and we will get back to you within 24 hours.',
+          fields: [
+            { id: 'name', type: 'text', label: 'Name', placeholder: 'Your name', required: true, width: 'half' },
+            { id: 'email', type: 'email', label: 'Email', placeholder: 'you@example.com', required: true, width: 'half' },
+            { id: 'subject', type: 'text', label: 'Subject', placeholder: 'How can we help?', required: true, width: 'full' },
+            { id: 'message', type: 'textarea', label: 'Message', placeholder: 'Describe your issue or question...', required: true, width: 'full' },
+          ],
+          submitButtonText: 'Send Message',
+          successMessage: 'Thank you! We will get back to you within 24 hours.',
+          variant: 'card',
+        },
+      },
+      {
+        id: 'contact-1',
+        type: 'contact',
+        data: {
+          title: 'Other Ways to Reach Us',
+          email: 'support@example.com',
+          phone: '+1 (555) 123-4567',
+          hours: [
+            { day: 'Monday - Friday', time: '9:00 AM - 6:00 PM' },
+            { day: 'Saturday - Sunday', time: 'Closed' },
+          ],
+        },
+      },
+    ],
+  },
+];
+
+const kbClassicTemplate: StarterTemplate = {
+  id: 'kb-classic',
+  name: 'KB Classic',
+  description: 'SEO-optimized help center with comprehensive knowledge base, structured FAQ, and traditional support form. Ideal for documentation-heavy organizations.',
+  category: 'helpcenter',
+  icon: 'BookOpen',
+  tagline: 'SEO-focused documentation',
+  aiChatPosition: 'No AI chat - pure documentation',
+  helpStyle: 'kb-classic',
+  pages: kbClassicPages,
+  kbCategories: kbClassicCategories,
+  branding: {
+    organizationName: 'Help Center',
+    brandTagline: 'Find answers fast',
+    primaryColor: '220 70% 50%',
+    headingFont: 'Inter',
+    bodyFont: 'Inter',
+    borderRadius: 'md',
+    shadowIntensity: 'subtle',
+  },
+  chatSettings: {
+    enabled: false,
+    widgetEnabled: false,
+  },
+  footerSettings: {
+    email: 'support@example.com',
+    phone: '+1 (555) 123-4567',
+    showBrand: true,
+    showQuickLinks: true,
+    showContact: true,
+    showHours: true,
+    weekdayHours: 'Mon-Fri 9-18',
+    weekendHours: 'Closed',
+  },
+  seoSettings: {
+    siteTitle: 'Help Center',
+    titleTemplate: '%s | Help Center',
+    defaultDescription: 'Find answers to your questions in our comprehensive knowledge base.',
+    robotsIndex: true,
+    robotsFollow: true,
+  },
+  cookieBannerSettings: {
+    enabled: true,
+  },
+  siteSettings: {
+    homepageSlug: 'home',
+  },
+};
+
+// =====================================================
+// AI SUPPORT HUB - Chat-focused Template
+// =====================================================
+const aiHubPages: TemplatePage[] = [
+  {
+    title: 'Home',
+    slug: 'home',
+    isHomePage: true,
+    menu_order: 1,
+    showInMenu: true,
+    meta: {
+      description: 'Get instant AI-powered support - ask any question and get answers in seconds.',
+      showTitle: false,
+      titleAlignment: 'center',
+    },
+    blocks: [
+      {
+        id: 'hero-1',
+        type: 'hero',
+        data: {
+          title: 'Ask Our AI Assistant',
+          subtitle: 'Get instant answers to your questions, 24/7.',
+          backgroundType: 'color',
+          heightMode: 'auto',
+          contentAlignment: 'center',
+          overlayOpacity: 0,
+          titleAnimation: 'slide-up',
+        },
+      },
+      {
+        id: 'chat-1',
+        type: 'chat',
+        data: {
+          title: '',
+          height: 'lg',
+          showSidebar: false,
+          variant: 'card',
+          initialPrompt: 'Hi! I am your AI assistant. Ask me anything about our platform, pricing, features, or how to get started. I am here to help 24/7!',
+        },
+      },
+      {
+        id: 'kb-featured-1',
+        type: 'kb-featured',
+        data: {
+          title: 'Popular Topics',
+          subtitle: 'Quick answers to common questions',
+          maxItems: 3,
+          showCategory: false,
+          layout: 'list',
+          columns: 1,
+        },
+      },
+      {
+        id: 'cta-1',
+        type: 'cta',
+        data: {
+          title: 'Prefer to talk to a human?',
+          subtitle: 'Our support team is available for complex questions.',
+          buttonText: 'Book a Call',
+          buttonUrl: '/contact',
+          gradient: true,
+        },
+      },
+    ],
+  },
+  {
+    title: 'Contact',
+    slug: 'contact',
+    menu_order: 2,
+    showInMenu: true,
+    meta: {
+      description: 'Schedule a call with our support team.',
+      showTitle: true,
+      titleAlignment: 'center',
+    },
+    blocks: [
+      {
+        id: 'hero-1',
+        type: 'hero',
+        data: {
+          title: 'Talk to Our Team',
+          subtitle: 'For complex issues, schedule a personalized support call.',
+          backgroundType: 'color',
+          heightMode: 'auto',
+          contentAlignment: 'center',
+        },
+      },
+      {
+        id: 'booking-1',
+        type: 'booking',
+        data: {
+          title: 'Schedule a Support Call',
+          description: 'Choose a time that works for you. Our team will reach out at the scheduled time.',
+          mode: 'form',
+          submitButtonText: 'Request Callback',
+          successMessage: 'Thanks! We will call you at the scheduled time.',
+          showPhoneField: true,
+          showDatePicker: false,
+          variant: 'card',
+        },
+      },
+    ],
+  },
+];
+
+const aiHubTemplate: StarterTemplate = {
+  id: 'ai-support-hub',
+  name: 'AI Support Hub',
+  description: 'Modern, AI-first support experience with prominent chat interface. Perfect for tech companies and startups prioritizing conversational support.',
+  category: 'helpcenter',
+  icon: 'Bot',
+  tagline: 'AI-powered conversations',
+  aiChatPosition: 'Prominent embedded chat',
+  helpStyle: 'ai-hub',
+  pages: aiHubPages,
+  kbCategories: aiHubCategories,
+  branding: {
+    organizationName: 'Support Hub',
+    brandTagline: 'Instant AI Support',
+    primaryColor: '262 83% 58%',
+    headingFont: 'Space Grotesk',
+    bodyFont: 'Inter',
+    borderRadius: 'lg',
+    shadowIntensity: 'medium',
+  },
+  chatSettings: {
+    enabled: true,
+    aiProvider: 'lovable',
+    widgetEnabled: true,
+    widgetPosition: 'bottom-right',
+    welcomeMessage: 'Hey! 👋 Ask me anything.',
+    systemPrompt: 'You are a helpful, friendly AI support assistant. Be concise and direct. Help users quickly find answers.',
+    suggestedPrompts: [
+      'How do I get started?',
+      'What are the pricing plans?',
+      'How do I contact support?',
+    ],
+  },
+  footerSettings: {
+    email: 'hello@example.com',
+    showBrand: true,
+    showQuickLinks: true,
+    showContact: true,
+    showHours: false,
+  },
+  seoSettings: {
+    siteTitle: 'Support Hub',
+    titleTemplate: '%s | Support Hub',
+    defaultDescription: 'Get instant AI-powered support 24/7.',
+    robotsIndex: true,
+    robotsFollow: true,
+  },
+  cookieBannerSettings: {
+    enabled: false,
+  },
+  siteSettings: {
+    homepageSlug: 'home',
+  },
+};
+
+// =====================================================
+// HYBRID HELP CENTER - Combination Template
+// =====================================================
+const hybridHelpPages: TemplatePage[] = [
+  {
+    title: 'Home',
+    slug: 'home',
+    isHomePage: true,
+    menu_order: 1,
+    showInMenu: true,
+    meta: {
+      description: 'Welcome to our Help Center - search our knowledge base or chat with AI for instant answers.',
+      showTitle: false,
+      titleAlignment: 'center',
+    },
+    blocks: [
+      {
+        id: 'kb-search-1',
+        type: 'kb-search',
+        data: {
+          placeholder: 'Search for answers...',
+          variant: 'hero',
+          showPopularSearches: true,
+          popularSearches: ['getting started', 'pricing', 'account', 'features'],
+        },
+      },
+      {
+        id: 'chat-1',
+        type: 'chat',
+        data: {
+          title: 'Can\'t find what you need? Ask AI',
+          height: 'sm',
+          showSidebar: false,
+          variant: 'embedded',
+          initialPrompt: 'Hi! I can help you find answers quickly. What would you like to know?',
+        },
+      },
+      {
+        id: 'kb-hub-1',
+        type: 'kb-hub',
+        data: {
+          title: 'Browse by Category',
+          subtitle: '',
+          showSearch: false,
+          showCategories: true,
+          layout: 'cards',
+          showContactCta: true,
+          contactCtaTitle: 'Need more help?',
+          contactCtaLink: '/contact',
+          contactCtaButtonText: 'Contact Support',
+          showChat: true,
+        },
+      },
+    ],
+  },
+  {
+    title: 'Help Center',
+    slug: 'help',
+    menu_order: 2,
+    showInMenu: true,
+    meta: {
+      description: 'Complete knowledge base with guides, tutorials, and answers.',
+      showTitle: true,
+      titleAlignment: 'center',
+    },
+    blocks: [
+      {
+        id: 'kb-search-1',
+        type: 'kb-search',
+        data: {
+          placeholder: 'Search articles...',
+          variant: 'compact',
+          showPopularSearches: false,
+        },
+      },
+      {
+        id: 'kb-hub-1',
+        type: 'kb-hub',
+        data: {
+          title: '',
+          subtitle: '',
+          showSearch: false,
+          showCategories: true,
+          layout: 'accordion',
+          showContactCta: false,
+        },
+      },
+    ],
+  },
+  {
+    title: 'Contact',
+    slug: 'contact',
+    menu_order: 3,
+    showInMenu: true,
+    meta: {
+      description: 'Get in touch with our support team.',
+      showTitle: true,
+      titleAlignment: 'center',
+    },
+    blocks: [
+      {
+        id: 'hero-1',
+        type: 'hero',
+        data: {
+          title: 'We are here to help',
+          subtitle: 'Chat with AI, send us a message, or schedule a call.',
+          backgroundType: 'color',
+          heightMode: 'auto',
+          contentAlignment: 'center',
+        },
+      },
+      {
+        id: 'chat-1',
+        type: 'chat',
+        data: {
+          title: 'Quick Question? Ask AI',
+          height: 'sm',
+          showSidebar: false,
+          variant: 'card',
+          initialPrompt: 'Hi! How can I help you today?',
+        },
+      },
+      {
+        id: 'form-1',
+        type: 'form',
+        data: {
+          title: 'Send a Message',
+          description: 'For complex issues, our team will respond within 24 hours.',
+          fields: [
+            { id: 'name', type: 'text', label: 'Name', placeholder: 'Your name', required: true, width: 'half' },
+            { id: 'email', type: 'email', label: 'Email', placeholder: 'you@example.com', required: true, width: 'half' },
+            { id: 'message', type: 'textarea', label: 'How can we help?', placeholder: 'Describe your issue...', required: true, width: 'full' },
+          ],
+          submitButtonText: 'Send',
+          successMessage: 'Thanks! We will get back to you soon.',
+          variant: 'card',
+        },
+      },
+      {
+        id: 'contact-1',
+        type: 'contact',
+        data: {
+          title: 'Other Options',
+          email: 'support@example.com',
+          hours: [
+            { day: 'AI Assistant', time: 'Available 24/7' },
+            { day: 'Human Support', time: 'Mon-Fri 9-18' },
+          ],
+        },
+      },
+    ],
+  },
+];
+
+const hybridHelpTemplate: StarterTemplate = {
+  id: 'hybrid-help-center',
+  name: 'Hybrid Help Center',
+  description: 'Best of both worlds: searchable knowledge base combined with AI chat. Ideal for SaaS, e-commerce, and service businesses.',
+  category: 'helpcenter',
+  icon: 'Layers',
+  tagline: 'KB + AI combined',
+  aiChatPosition: 'Embedded + floating widget',
+  helpStyle: 'hybrid',
+  pages: hybridHelpPages,
+  kbCategories: hybridHelpCategories,
+  branding: {
+    organizationName: 'Help Center',
+    brandTagline: 'Answers made easy',
+    primaryColor: '173 80% 40%',
+    headingFont: 'Inter',
+    bodyFont: 'Inter',
+    borderRadius: 'md',
+    shadowIntensity: 'medium',
+  },
+  chatSettings: {
+    enabled: true,
+    aiProvider: 'lovable',
+    widgetEnabled: true,
+    widgetPosition: 'bottom-right',
+    welcomeMessage: 'Hi! Search our help center or ask me anything.',
+    systemPrompt: 'You are a helpful support assistant. Help users find answers in the knowledge base or answer their questions directly. Be friendly and helpful.',
+    suggestedPrompts: [
+      'How do I get started?',
+      'What are your pricing plans?',
+      'How can I contact support?',
+    ],
+  },
+  footerSettings: {
+    email: 'support@example.com',
+    phone: '+1 (555) 123-4567',
+    showBrand: true,
+    showQuickLinks: true,
+    showContact: true,
+    showHours: true,
+    weekdayHours: 'Mon-Fri 9-18',
+    weekendHours: 'AI: 24/7',
+  },
+  seoSettings: {
+    siteTitle: 'Help Center',
+    titleTemplate: '%s | Help Center',
+    defaultDescription: 'Find answers in our knowledge base or chat with AI for instant help.',
+    robotsIndex: true,
+    robotsFollow: true,
+  },
+  cookieBannerSettings: {
+    enabled: true,
+  },
+  siteSettings: {
+    homepageSlug: 'home',
+  },
+};
+
+// =====================================================
+// HELP CENTER TEMPLATES EXPORT
+// =====================================================
+export const HELP_CENTER_TEMPLATES: StarterTemplate[] = [
+  kbClassicTemplate,
+  aiHubTemplate,
+  hybridHelpTemplate,
+];
+
+// Add help center templates to main export
+STARTER_TEMPLATES.push(...HELP_CENTER_TEMPLATES);

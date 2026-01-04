@@ -1033,3 +1033,474 @@ export const pezcmsKbCategories: TemplateKbCategory[] = [
     ],
   },
 ];
+
+// =====================================================
+// KB CLASSIC - SEO-optimized, documentation-focused articles
+// =====================================================
+
+export const kbClassicCategories: TemplateKbCategory[] = [
+  {
+    name: 'Getting Started',
+    slug: 'getting-started',
+    description: 'Step-by-step guides to help you get started with our platform.',
+    icon: 'Rocket',
+    articles: [
+      {
+        title: 'Platform Overview',
+        slug: 'platform-overview',
+        question: 'What is this platform and what can I do with it?',
+        answer_text: 'Our platform is a comprehensive solution designed to streamline your workflow. It provides tools for content management, team collaboration, and analytics. Key features include a visual editor, real-time collaboration, version history, and integrations with popular third-party services. The platform is built for scalability, supporting teams from solo creators to large enterprises.',
+        is_featured: true,
+        include_in_chat: true,
+      },
+      {
+        title: 'Quick Start Guide',
+        slug: 'quick-start',
+        question: 'How do I get started quickly?',
+        answer_text: 'Getting started takes just 5 minutes: 1) Create your account using email or social login. 2) Complete the onboarding wizard to set up your workspace. 3) Choose a template or start from scratch. 4) Invite team members if applicable. 5) Publish your first content. Our guided setup ensures you have everything configured correctly from day one.',
+        is_featured: true,
+        include_in_chat: true,
+      },
+      {
+        title: 'Account Setup',
+        slug: 'account-setup',
+        question: 'How do I set up my account properly?',
+        answer_text: 'To set up your account: Navigate to Settings → Profile to add your name, avatar, and bio. Set up two-factor authentication for security. Configure notification preferences. Connect any third-party integrations you need. Set your timezone and language preferences. Review billing information if on a paid plan.',
+        include_in_chat: true,
+      },
+      {
+        title: 'Understanding the Dashboard',
+        slug: 'dashboard-guide',
+        question: 'How do I navigate the dashboard?',
+        answer_text: 'The dashboard is your central hub. The sidebar contains main navigation: Content, Media, Settings, and Analytics. The main area shows recent activity and quick actions. Use the search bar (Cmd/Ctrl+K) to quickly find anything. The top bar shows notifications and your profile menu. Customize widgets to show the metrics most important to you.',
+        include_in_chat: true,
+      },
+    ],
+  },
+  {
+    name: 'Account & Billing',
+    slug: 'account-billing',
+    description: 'Manage your subscription, payments, and account settings.',
+    icon: 'CreditCard',
+    articles: [
+      {
+        title: 'Pricing Plans Explained',
+        slug: 'pricing-plans',
+        question: 'What pricing plans are available?',
+        answer_text: 'We offer three plans: Free (up to 3 projects, basic features), Professional ($29/month - unlimited projects, priority support, advanced analytics), and Enterprise (custom pricing - SSO, SLA, dedicated support). All paid plans include a 14-day free trial. Annual billing saves 20%. Educational and non-profit discounts available upon request.',
+        is_featured: true,
+        include_in_chat: true,
+      },
+      {
+        title: 'Billing and Invoices',
+        slug: 'billing-invoices',
+        question: 'How do I access my invoices and billing information?',
+        answer_text: 'Access billing at Settings → Billing. View current plan, next billing date, and payment method. Download past invoices in PDF format. Update payment method anytime. Set up billing alerts for usage thresholds. Add a billing email different from your account email if needed for accounting purposes.',
+        include_in_chat: true,
+      },
+      {
+        title: 'Cancellation and Refunds',
+        slug: 'cancellation-refunds',
+        question: 'How do I cancel my subscription?',
+        answer_text: 'Cancel anytime from Settings → Billing → Cancel Plan. Your access continues until the end of the billing period. Data is retained for 30 days post-cancellation. Refunds are provided within 7 days of charge for unused annual plans. No refunds for monthly plans. You can export all your data before cancelling.',
+        include_in_chat: true,
+      },
+    ],
+  },
+  {
+    name: 'Features & Functionality',
+    slug: 'features',
+    description: 'Learn about all platform features in detail.',
+    icon: 'Sparkles',
+    articles: [
+      {
+        title: 'Content Editor Guide',
+        slug: 'content-editor',
+        question: 'How do I use the content editor?',
+        answer_text: 'The content editor uses a block-based approach. Click + to add blocks: text, images, videos, embeds, and more. Drag blocks to reorder. Use / commands for quick insertion. The toolbar offers formatting options. Save drafts automatically or manually. Preview before publishing. Keyboard shortcuts speed up editing - press ? to see all available shortcuts.',
+        is_featured: true,
+        include_in_chat: true,
+      },
+      {
+        title: 'Media Library',
+        slug: 'media-library',
+        question: 'How do I manage images and files?',
+        answer_text: 'The Media Library stores all your uploads. Drag and drop files or click to upload. Organize with folders. Search by filename or tag. Images are automatically optimized for web. Edit images with built-in cropping and resizing. Access Unsplash integration for stock photos. Maximum file size is 50MB. Supported formats: JPG, PNG, GIF, WebP, PDF, SVG.',
+        include_in_chat: true,
+      },
+      {
+        title: 'Team Collaboration',
+        slug: 'team-collaboration',
+        question: 'How can my team work together?',
+        answer_text: 'Invite team members via Settings → Team. Assign roles: Viewer (read-only), Editor (create/edit content), Admin (full access including settings). Leave comments on content for feedback. Use @mentions to notify team members. See who is currently editing with presence indicators. Track all changes in the activity log.',
+        include_in_chat: true,
+      },
+      {
+        title: 'Version History',
+        slug: 'version-history',
+        question: 'How does version history work?',
+        answer_text: 'Every save creates a new version automatically. Access version history from the content editor toolbar. Compare any two versions side-by-side. Restore previous versions with one click. Versions are retained based on your plan: Free (7 days), Pro (90 days), Enterprise (unlimited). Restoring creates a new version, preserving the complete history.',
+        include_in_chat: true,
+      },
+    ],
+  },
+  {
+    name: 'Security & Privacy',
+    slug: 'security-privacy',
+    description: 'How we protect your data and privacy.',
+    icon: 'Shield',
+    articles: [
+      {
+        title: 'Security Measures',
+        slug: 'security-measures',
+        question: 'How is my data protected?',
+        answer_text: 'We implement industry-standard security: AES-256 encryption at rest, TLS 1.3 in transit, regular security audits, penetration testing, and SOC 2 Type II compliance. Two-factor authentication available for all accounts. IP allowlisting for Enterprise. Automatic session timeout after inactivity. All access logged and auditable.',
+        is_featured: true,
+        include_in_chat: true,
+      },
+      {
+        title: 'GDPR Compliance',
+        slug: 'gdpr-compliance',
+        question: 'Are you GDPR compliant?',
+        answer_text: 'Yes, we are fully GDPR compliant. Data Processing Agreements available for all customers. Export your data anytime in standard formats. Right to deletion honored within 30 days. Data stored in EU data centers (Sweden, Germany) for EU customers. Privacy by design principles followed throughout development.',
+        include_in_chat: true,
+      },
+      {
+        title: 'Two-Factor Authentication',
+        slug: 'two-factor-auth',
+        question: 'How do I enable two-factor authentication?',
+        answer_text: 'Enable 2FA at Settings → Security → Two-Factor Authentication. Choose between authenticator app (recommended) or SMS. Scan the QR code with your authenticator app (Google Authenticator, Authy, 1Password). Save your backup codes in a secure location. You can generate new backup codes anytime from the same settings page.',
+        include_in_chat: true,
+      },
+    ],
+  },
+  {
+    name: 'Troubleshooting',
+    slug: 'troubleshooting',
+    description: 'Solutions to common problems and issues.',
+    icon: 'Wrench',
+    articles: [
+      {
+        title: 'Common Issues',
+        slug: 'common-issues',
+        question: 'What should I do if something is not working?',
+        answer_text: 'First steps: 1) Refresh the page (Ctrl/Cmd+Shift+R for hard refresh). 2) Clear browser cache and cookies. 3) Try a different browser. 4) Disable browser extensions. 5) Check our status page for outages. If issues persist, contact support with: browser/OS info, steps to reproduce, screenshots, and any error messages.',
+        is_featured: true,
+        include_in_chat: true,
+      },
+      {
+        title: 'Password Reset',
+        slug: 'password-reset',
+        question: 'How do I reset my password?',
+        answer_text: 'Click "Forgot Password" on the login page. Enter your email address. Check your inbox (and spam folder) for the reset link. The link expires after 1 hour. Choose a strong password (min 8 characters, mix of letters, numbers, symbols). If you do not receive the email, contact support.',
+        include_in_chat: true,
+      },
+      {
+        title: 'Contact Support',
+        slug: 'contact-support',
+        question: 'How do I get help from support?',
+        answer_text: 'Multiple support options: In-app chat (click the support icon), Email support@example.com, Community forum for discussions, Priority support for Pro/Enterprise plans (response within 4 hours). When contacting support, include your account email, detailed description, and screenshots if applicable.',
+        include_in_chat: true,
+      },
+    ],
+  },
+];
+
+// =====================================================
+// AI SUPPORT HUB - Concise, AI-context-optimized articles
+// =====================================================
+
+export const aiHubCategories: TemplateKbCategory[] = [
+  {
+    name: 'Quick Answers',
+    slug: 'quick-answers',
+    description: 'Fast answers to common questions.',
+    icon: 'Zap',
+    articles: [
+      {
+        title: 'Getting Started',
+        slug: 'getting-started',
+        question: 'How do I get started?',
+        answer_text: 'Create account → Complete setup wizard → Choose template → Start creating. Takes under 5 minutes.',
+        is_featured: true,
+        include_in_chat: true,
+      },
+      {
+        title: 'Pricing',
+        slug: 'pricing',
+        question: 'What does it cost?',
+        answer_text: 'Free tier available. Pro: $29/mo. Enterprise: custom. 14-day trial on all paid plans. Annual saves 20%.',
+        is_featured: true,
+        include_in_chat: true,
+      },
+      {
+        title: 'Integrations',
+        slug: 'integrations',
+        question: 'What integrations are available?',
+        answer_text: 'Slack, GitHub, Figma, Notion, Zapier, Google Drive, and 50+ more. API available for custom integrations.',
+        include_in_chat: true,
+      },
+      {
+        title: 'Team Size',
+        slug: 'team-size',
+        question: 'How many team members can I add?',
+        answer_text: 'Free: 1 user. Pro: 5 users ($10/extra). Enterprise: unlimited. All plans support viewer roles.',
+        include_in_chat: true,
+      },
+    ],
+  },
+  {
+    name: 'Account',
+    slug: 'account',
+    description: 'Account and billing help.',
+    icon: 'User',
+    articles: [
+      {
+        title: 'Change Plan',
+        slug: 'change-plan',
+        question: 'How do I upgrade or downgrade?',
+        answer_text: 'Settings → Billing → Change Plan. Upgrades apply immediately, downgrades at next billing cycle.',
+        include_in_chat: true,
+      },
+      {
+        title: 'Cancel',
+        slug: 'cancel',
+        question: 'How do I cancel?',
+        answer_text: 'Settings → Billing → Cancel. Access continues until period ends. Data kept 30 days.',
+        include_in_chat: true,
+      },
+      {
+        title: 'Invoices',
+        slug: 'invoices',
+        question: 'Where are my invoices?',
+        answer_text: 'Settings → Billing → Invoice History. Download as PDF. Add billing email for automatic delivery.',
+        include_in_chat: true,
+      },
+    ],
+  },
+  {
+    name: 'Features',
+    slug: 'features',
+    description: 'How to use key features.',
+    icon: 'Sparkles',
+    articles: [
+      {
+        title: 'Editor',
+        slug: 'editor',
+        question: 'How do I use the editor?',
+        answer_text: 'Click + to add blocks. Drag to reorder. Use / for quick commands. Auto-saves every 30 seconds.',
+        include_in_chat: true,
+      },
+      {
+        title: 'Collaboration',
+        slug: 'collaboration',
+        question: 'How do I collaborate with my team?',
+        answer_text: 'Invite via Settings → Team. Use comments for feedback. @mention to notify. Real-time presence shows who is editing.',
+        include_in_chat: true,
+      },
+      {
+        title: 'Publishing',
+        slug: 'publishing',
+        question: 'How do I publish content?',
+        answer_text: 'Click Publish button. Choose publish now or schedule. Preview before publishing. Unpublish anytime.',
+        include_in_chat: true,
+      },
+    ],
+  },
+  {
+    name: 'Security',
+    slug: 'security',
+    description: 'Security and privacy info.',
+    icon: 'Shield',
+    articles: [
+      {
+        title: '2FA',
+        slug: 'two-factor',
+        question: 'How do I enable 2FA?',
+        answer_text: 'Settings → Security → Enable 2FA. Use authenticator app. Save backup codes securely.',
+        include_in_chat: true,
+      },
+      {
+        title: 'Data Security',
+        slug: 'data-security',
+        question: 'Is my data secure?',
+        answer_text: 'AES-256 encryption. SOC 2 compliant. GDPR ready. EU data centers available. Regular security audits.',
+        include_in_chat: true,
+      },
+    ],
+  },
+  {
+    name: 'Support',
+    slug: 'support',
+    description: 'Get help when you need it.',
+    icon: 'HeadphonesIcon',
+    articles: [
+      {
+        title: 'Contact',
+        slug: 'contact',
+        question: 'How do I contact support?',
+        answer_text: 'Chat widget (fastest), email support@example.com, or community forum. Pro/Enterprise: priority 4-hour response.',
+        is_featured: true,
+        include_in_chat: true,
+      },
+      {
+        title: 'Issues',
+        slug: 'issues',
+        question: 'Something is not working',
+        answer_text: 'Try: Hard refresh (Cmd+Shift+R), clear cache, different browser, disable extensions. Still broken? Chat with us.',
+        include_in_chat: true,
+      },
+    ],
+  },
+];
+
+// =====================================================
+// HYBRID HELP CENTER - Balanced articles for both SEO and AI
+// =====================================================
+
+export const hybridHelpCategories: TemplateKbCategory[] = [
+  {
+    name: 'Getting Started',
+    slug: 'getting-started',
+    description: 'Everything you need to begin.',
+    icon: 'Rocket',
+    articles: [
+      {
+        title: 'Welcome Guide',
+        slug: 'welcome',
+        question: 'How do I get started with the platform?',
+        answer_text: 'Welcome! Getting started is easy: Create your account, complete the setup wizard, choose a template or start blank, and publish your first content. The whole process takes about 5 minutes. Our AI assistant can guide you through any step.',
+        is_featured: true,
+        include_in_chat: true,
+      },
+      {
+        title: 'Account Setup',
+        slug: 'account-setup',
+        question: 'How should I set up my account?',
+        answer_text: 'Complete your profile in Settings → Profile: add name, avatar, and bio. Enable two-factor authentication for security. Configure notifications. Connect integrations you need. Set timezone and language preferences.',
+        is_featured: true,
+        include_in_chat: true,
+      },
+      {
+        title: 'Dashboard Navigation',
+        slug: 'dashboard-navigation',
+        question: 'How do I navigate the dashboard?',
+        answer_text: 'The sidebar contains main sections: Content, Media, Settings, Analytics. Use Cmd/Ctrl+K for quick search. The top bar shows notifications and your profile. Customize dashboard widgets to show metrics you care about.',
+        include_in_chat: true,
+      },
+    ],
+  },
+  {
+    name: 'Plans & Billing',
+    slug: 'plans-billing',
+    description: 'Pricing, payments, and subscriptions.',
+    icon: 'CreditCard',
+    articles: [
+      {
+        title: 'Pricing Overview',
+        slug: 'pricing',
+        question: 'What are the pricing options?',
+        answer_text: 'Three plans: Free (3 projects, basic features), Professional ($29/mo, unlimited projects, priority support), Enterprise (custom, SSO, SLA). All paid plans include 14-day trial. Annual billing saves 20%.',
+        is_featured: true,
+        include_in_chat: true,
+      },
+      {
+        title: 'Managing Subscription',
+        slug: 'manage-subscription',
+        question: 'How do I manage my subscription?',
+        answer_text: 'Go to Settings → Billing to: view current plan, change plans (upgrade/downgrade), update payment method, download invoices, set billing alerts, and manage team seats.',
+        include_in_chat: true,
+      },
+      {
+        title: 'Cancellation',
+        slug: 'cancellation',
+        question: 'How do I cancel my subscription?',
+        answer_text: 'Settings → Billing → Cancel Plan. Access continues until billing period ends. Data retained 30 days. Export your data first if needed. You can reactivate anytime.',
+        include_in_chat: true,
+      },
+    ],
+  },
+  {
+    name: 'Using the Platform',
+    slug: 'using-platform',
+    description: 'Features and functionality guides.',
+    icon: 'Lightbulb',
+    articles: [
+      {
+        title: 'Content Editor',
+        slug: 'content-editor',
+        question: 'How do I create and edit content?',
+        answer_text: 'Use the block-based editor: click + to add blocks (text, images, video, etc). Drag blocks to reorder. Use / commands for quick insertion. Content auto-saves. Preview before publishing. Keyboard shortcuts available (press ? to see all).',
+        is_featured: true,
+        include_in_chat: true,
+      },
+      {
+        title: 'Media Management',
+        slug: 'media-management',
+        question: 'How do I manage images and files?',
+        answer_text: 'Media Library stores all uploads. Drag & drop or click to upload. Organize with folders. Images auto-optimized. Built-in editor for cropping. Unsplash integration for stock photos. Max 50MB per file.',
+        include_in_chat: true,
+      },
+      {
+        title: 'Team Collaboration',
+        slug: 'team-collaboration',
+        question: 'How can my team collaborate?',
+        answer_text: 'Invite team via Settings → Team. Roles: Viewer (read), Editor (create/edit), Admin (full access). Leave comments, @mention teammates, see real-time presence, and track changes in activity log.',
+        include_in_chat: true,
+      },
+      {
+        title: 'Version Control',
+        slug: 'version-control',
+        question: 'How does version history work?',
+        answer_text: 'Every save creates a version. Access history from editor toolbar. Compare versions side-by-side. Restore any version with one click. Retention: Free 7 days, Pro 90 days, Enterprise unlimited.',
+        include_in_chat: true,
+      },
+    ],
+  },
+  {
+    name: 'Security & Privacy',
+    slug: 'security-privacy',
+    description: 'How we protect your data.',
+    icon: 'Shield',
+    articles: [
+      {
+        title: 'Data Protection',
+        slug: 'data-protection',
+        question: 'How is my data protected?',
+        answer_text: 'AES-256 encryption at rest, TLS 1.3 in transit. SOC 2 Type II certified. Regular security audits. 2FA available. Session timeout. All access logged. GDPR compliant with EU data centers.',
+        is_featured: true,
+        include_in_chat: true,
+      },
+      {
+        title: 'Two-Factor Authentication',
+        slug: 'two-factor-auth',
+        question: 'How do I set up 2FA?',
+        answer_text: 'Settings → Security → Two-Factor Authentication. Choose authenticator app (recommended) or SMS. Scan QR code. Save backup codes securely. Can regenerate codes anytime.',
+        include_in_chat: true,
+      },
+    ],
+  },
+  {
+    name: 'Help & Support',
+    slug: 'help-support',
+    description: 'Get assistance when you need it.',
+    icon: 'HeadphonesIcon',
+    articles: [
+      {
+        title: 'Getting Help',
+        slug: 'getting-help',
+        question: 'How do I get help?',
+        answer_text: 'Multiple options: Ask our AI assistant (try it now!), use in-app chat, email support@example.com, or join community forums. Pro/Enterprise get priority support with 4-hour response time.',
+        is_featured: true,
+        include_in_chat: true,
+      },
+      {
+        title: 'Troubleshooting',
+        slug: 'troubleshooting',
+        question: 'Something is not working correctly',
+        answer_text: 'Try: 1) Hard refresh (Cmd+Shift+R), 2) Clear browser cache, 3) Try different browser, 4) Disable extensions. Still having issues? Chat with us and we will help.',
+        include_in_chat: true,
+      },
+    ],
+  },
+];
