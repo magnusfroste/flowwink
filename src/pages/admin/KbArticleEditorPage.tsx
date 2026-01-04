@@ -32,7 +32,7 @@ import { extractPlainText } from "@/lib/tiptap-utils";
 export default function KbArticleEditorPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const isNew = id === "new";
+  const isNew = !id || id === "new";
 
   const { data: categories, isLoading: categoriesLoading } = useKbCategories();
   const { data: article, isLoading: articleLoading } = useKbArticle(isNew ? "" : id || "");
