@@ -48,6 +48,7 @@ const BLOCK_LABELS: Record<ContentBlockType, string> = {
   marquee: 'Marquee',
   embed: 'Embed',
   table: 'Table',
+  countdown: 'Countdown',
 };
 
 interface BlockWrapperProps {

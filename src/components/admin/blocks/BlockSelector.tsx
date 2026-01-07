@@ -45,6 +45,7 @@ import {
   MoveHorizontal,
   Code2,
   Table2,
+  Timer,
 } from 'lucide-react';
 import { ContentBlockType } from '@/types/cms';
 
@@ -222,6 +223,12 @@ const BLOCK_GROUPS: BlockGroup[] = [
         label: 'Announcement',
         icon: <Bell className="h-5 w-5" />,
         description: 'Sticky banner with countdown timer',
+      },
+      {
+        type: 'countdown',
+        label: 'Countdown',
+        icon: <Timer className="h-5 w-5" />,
+        description: 'Countdown timer for events or campaigns',
       },
       {
         type: 'marquee',
