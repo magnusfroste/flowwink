@@ -96,6 +96,19 @@ const launchpadPages: TemplatePage[] = [
       titleAlignment: 'center',
     },
     blocks: [
+      // ANNOUNCEMENT BAR - Top banner for announcements
+      {
+        id: 'announcement-launch',
+        type: 'announcement-bar',
+        data: {
+          message: '🚀 We just launched v2.0 with AI-powered features!',
+          linkText: 'See what\'s new',
+          linkUrl: '/product',
+          variant: 'gradient',
+          dismissable: true,
+          sticky: false,
+        },
+      },
       {
         id: 'hero-1',
         type: 'hero',
@@ -347,6 +360,23 @@ const launchpadPages: TemplatePage[] = [
           heightMode: 'auto',
           contentAlignment: 'center',
           overlayOpacity: 0,
+        },
+      },
+      // COUNTDOWN - Early bird urgency
+      {
+        id: 'countdown-earlybird',
+        type: 'countdown',
+        data: {
+          title: 'Early Bird Pricing Ends Soon',
+          subtitle: 'Lock in 30% off for life',
+          targetDate: '2025-03-31T23:59:59',
+          expiredMessage: 'Early bird pricing has ended',
+          variant: 'cards',
+          size: 'lg',
+          showDays: true,
+          showHours: true,
+          showMinutes: true,
+          showSeconds: true,
         },
       },
       // PRICING - Actual pricing tiers
@@ -659,12 +689,18 @@ const trustcorpPages: TemplatePage[] = [
         data: {
           title: 'Enterprise Solutions You Can Trust',
           subtitle: 'Powering organizations that demand excellence, security, and scalability.',
-          backgroundType: 'image',
-          backgroundImage: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1920',
+          backgroundType: 'video',
+          videoType: 'direct',
+          videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-aerial-view-of-city-traffic-at-night-11-large.mp4',
+          videoPosterUrl: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1920',
+          videoLoop: true,
+          videoMuted: true,
+          showVideoControls: false,
+          overlayColor: 'dark',
           heightMode: '80vh',
           contentAlignment: 'center',
           overlayOpacity: 65,
-          parallaxEffect: true,
+          parallaxEffect: false,
           titleAnimation: 'fade-in',
           primaryButton: { text: 'Request Demo', url: '/contact' },
           secondaryButton: { text: 'Our Services', url: '/services' },
@@ -1269,6 +1305,25 @@ const securehealthPages: TemplatePage[] = [
           titleAnimation: 'fade-in',
           primaryButton: { text: 'Book Appointment', url: '/book' },
           secondaryButton: { text: 'Our Services', url: '/services' },
+        },
+      },
+      // BADGE - Trust indicators
+      {
+        id: 'badge-compliance',
+        type: 'badge',
+        data: {
+          title: 'Trusted & Certified',
+          badges: [
+            { id: 'b1', title: 'HIPAA Compliant', icon: 'shield' },
+            { id: 'b2', title: 'SOC 2 Type II', icon: 'check' },
+            { id: 'b3', title: 'JCI Accredited', icon: 'award' },
+            { id: 'b4', title: 'ISO 27001', icon: 'medal' },
+          ],
+          variant: 'minimal',
+          columns: 4,
+          size: 'md',
+          showTitles: true,
+          grayscale: false,
         },
       },
       {
@@ -1950,6 +2005,26 @@ const momentumPages: TemplatePage[] = [
             { value: '150+', label: 'Integrations', icon: 'Puzzle' },
             { value: '<1s', label: 'Deploy Time', icon: 'Zap' },
           ],
+        },
+      },
+      // MARQUEE - Tech stack showcase
+      {
+        id: 'marquee-tech',
+        type: 'marquee',
+        data: {
+          items: [
+            { id: 'm1', text: 'React', icon: '⚛️' },
+            { id: 'm2', text: 'TypeScript', icon: '📘' },
+            { id: 'm3', text: 'Tailwind', icon: '🎨' },
+            { id: 'm4', text: 'Supabase', icon: '⚡' },
+            { id: 'm5', text: 'Vite', icon: '🚀' },
+            { id: 'm6', text: 'AI-Powered', icon: '✨' },
+          ],
+          speed: 'normal',
+          direction: 'left',
+          pauseOnHover: true,
+          variant: 'default',
+          separator: '•',
         },
       },
       // Section 3: Link-Grid (features as bento-style cards)
@@ -3884,6 +3959,262 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
                 content: [
                   { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: '💾 Every Save is a Version' }] },
                   { type: 'paragraph', content: [{ type: 'text', text: 'Made a mistake? No problem. Every save creates a version you can restore with one click. Compare any two versions side-by-side to see exactly what changed.' }] },
+                ],
+              },
+            },
+          },
+          // ===========================================
+          // NEW BLOCK TYPES - Interactive & Conversion
+          // ===========================================
+          // Separator - Interactive Blocks
+          {
+            id: 'sep-interactive',
+            type: 'separator',
+            data: {
+              variant: 'text',
+              text: 'Interactive & Conversion Blocks',
+              icon: 'Sparkles',
+            },
+          },
+          // Info Box - Introduction
+          {
+            id: 'info-interactive-intro',
+            type: 'info-box',
+            data: {
+              variant: 'highlight',
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: '✨ New Block Types' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'These blocks add interactivity, urgency, and social proof to your pages. Perfect for landing pages, product launches, and conversion optimization.' }] },
+                ],
+              },
+            },
+          },
+          // Announcement Bar Demo
+          {
+            id: 'demo-announcement',
+            type: 'announcement-bar',
+            data: {
+              message: '🎉 Announcement Bar – Display important updates, promotions, or alerts at the top of your page.',
+              linkText: 'Learn more',
+              linkUrl: '#',
+              variant: 'gradient',
+              dismissable: true,
+              sticky: false,
+            },
+          },
+          // Tabs Demo
+          {
+            id: 'demo-tabs',
+            type: 'tabs',
+            data: {
+              title: 'Tabs Block',
+              subtitle: 'Organize content into switchable panels. Perfect for feature comparisons, multi-step guides, or categorized content.',
+              tabs: [
+                {
+                  id: 'tab-features',
+                  title: 'Features',
+                  icon: 'Star',
+                  content: {
+                    type: 'doc',
+                    content: [
+                      { type: 'paragraph', content: [{ type: 'text', text: 'Each tab can contain rich text content, lists, links, and more. This is the Features tab.' }] },
+                      { type: 'bulletList', content: [
+                        { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Horizontal and vertical orientations' }] }] },
+                        { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Underline, pills, or boxed variants' }] }] },
+                        { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Optional icons for each tab' }] }] },
+                      ]},
+                    ],
+                  },
+                },
+                {
+                  id: 'tab-pricing',
+                  title: 'Pricing',
+                  icon: 'CreditCard',
+                  content: {
+                    type: 'doc',
+                    content: [
+                      { type: 'paragraph', content: [{ type: 'text', text: 'This is the Pricing tab. You could show pricing details, comparison, or FAQs here.' }] },
+                    ],
+                  },
+                },
+                {
+                  id: 'tab-support',
+                  title: 'Support',
+                  icon: 'HeadphonesIcon',
+                  content: {
+                    type: 'doc',
+                    content: [
+                      { type: 'paragraph', content: [{ type: 'text', text: 'This is the Support tab. Add contact info, help resources, or FAQs.' }] },
+                    ],
+                  },
+                },
+              ],
+              orientation: 'horizontal',
+              variant: 'underline',
+            },
+          },
+          // Marquee Demo
+          {
+            id: 'demo-marquee',
+            type: 'marquee',
+            data: {
+              items: [
+                { id: 'mq1', text: 'Marquee Block', icon: '🎠' },
+                { id: 'mq2', text: 'Scrolling text that runs continuously', icon: '📢' },
+                { id: 'mq3', text: 'Great for announcements', icon: '✨' },
+                { id: 'mq4', text: 'Partner logos', icon: '🤝' },
+                { id: 'mq5', text: 'Tech stack display', icon: '💻' },
+              ],
+              speed: 'normal',
+              direction: 'left',
+              pauseOnHover: true,
+              variant: 'gradient',
+              separator: '•',
+            },
+          },
+          // Countdown Demo
+          {
+            id: 'demo-countdown',
+            type: 'countdown',
+            data: {
+              title: 'Countdown Block',
+              subtitle: 'Create urgency with live countdowns. Perfect for product launches, sales, or event registrations.',
+              targetDate: '2025-12-31T23:59:59',
+              expiredMessage: 'The countdown has ended!',
+              variant: 'cards',
+              size: 'lg',
+              showDays: true,
+              showHours: true,
+              showMinutes: true,
+              showSeconds: true,
+            },
+          },
+          // Progress Demo
+          {
+            id: 'demo-progress',
+            type: 'progress',
+            data: {
+              title: 'Progress Block',
+              subtitle: 'Show funding goals, skill levels, or project completion status.',
+              items: [
+                { id: 'prog1', label: 'Funding Goal', value: 75, color: 'primary' },
+                { id: 'prog2', label: 'Development', value: 90 },
+                { id: 'prog3', label: 'Documentation', value: 60 },
+              ],
+              variant: 'default',
+              size: 'md',
+              showLabels: true,
+              showPercentage: true,
+              animated: true,
+            },
+          },
+          // Badge Demo
+          {
+            id: 'demo-badge',
+            type: 'badge',
+            data: {
+              title: 'Badge Block',
+              subtitle: 'Display certifications, awards, or trust indicators.',
+              badges: [
+                { id: 'bdg1', title: 'SOC 2 Certified', icon: 'shield' },
+                { id: 'bdg2', title: 'GDPR Compliant', icon: 'check' },
+                { id: 'bdg3', title: 'ISO 27001', icon: 'award' },
+                { id: 'bdg4', title: '99.9% Uptime', icon: 'medal' },
+              ],
+              variant: 'default',
+              columns: 4,
+              size: 'md',
+              showTitles: true,
+              grayscale: false,
+            },
+          },
+          // Table Demo
+          {
+            id: 'demo-table',
+            type: 'table',
+            data: {
+              title: 'Table Block',
+              caption: 'Display structured data in a clean, responsive table format.',
+              columns: [
+                { id: 'col1', header: 'Feature', align: 'left' },
+                { id: 'col2', header: 'Starter', align: 'center' },
+                { id: 'col3', header: 'Pro', align: 'center' },
+                { id: 'col4', header: 'Enterprise', align: 'center' },
+              ],
+              rows: [
+                ['Pages', '10', 'Unlimited', 'Unlimited'],
+                ['Users', '1', '5', 'Unlimited'],
+                ['API Access', '❌', '✅', '✅'],
+                ['Support', 'Community', 'Priority', 'Dedicated'],
+              ],
+              variant: 'striped',
+              size: 'md',
+              stickyHeader: true,
+              highlightOnHover: true,
+            },
+          },
+          // Embed Demo (Info Box since it requires external setup)
+          {
+            id: 'info-embed',
+            type: 'info-box',
+            data: {
+              variant: 'info',
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: '🔗 Embed Block' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Embed external content from Figma, CodePen, Loom, and more. Just paste the embed code or URL, and the block handles the rest.' }] },
+                ],
+              },
+            },
+          },
+          // Social Proof Demo
+          {
+            id: 'demo-social-proof',
+            type: 'social-proof',
+            data: {
+              title: 'Social Proof Block',
+              subtitle: 'Show live metrics, ratings, and activity to build trust.',
+              items: [
+                { id: 'sp1', type: 'counter', label: 'Happy Customers', value: 12500, icon: 'users' },
+                { id: 'sp2', type: 'rating', label: 'Average Rating', value: 4.9, maxRating: 5 },
+                { id: 'sp3', type: 'counter', label: 'Projects Completed', value: 3200, icon: 'folder' },
+              ],
+              variant: 'cards',
+              layout: 'horizontal',
+              size: 'lg',
+              animated: true,
+              showLiveIndicator: false,
+            },
+          },
+          // Notification Toast (Info Box)
+          {
+            id: 'info-notification',
+            type: 'info-box',
+            data: {
+              variant: 'warning',
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: '🔔 Notification Toast Block' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Display dynamic notifications showing recent signups, purchases, or activity. Creates FOMO and social proof. This block is dynamic and shows randomly timed notifications – it cannot be fully demonstrated in a static page.' }] },
+                ],
+              },
+            },
+          },
+          // Floating CTA (Info Box)
+          {
+            id: 'info-floating-cta',
+            type: 'info-box',
+            data: {
+              variant: 'default',
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: '📌 Floating CTA Block' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'A call-to-action that appears when users scroll down. Sticky bars, floating buttons, or slide-in panels. Configurable trigger points and positions. This block only appears on scroll, so it cannot be fully demonstrated in a static showcase.' }] },
                 ],
               },
             },

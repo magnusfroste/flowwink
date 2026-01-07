@@ -505,6 +505,328 @@ Google Maps embed.
 }
 ```
 
+---
+
+## New Block Types (Interactive & Conversion)
+
+### Announcement Bar Block
+Display important updates at the top of the page.
+
+```typescript
+{
+  id: 'announcement-1',
+  type: 'announcement-bar',
+  data: {
+    message: '🚀 New feature launched!',
+    linkText: 'Learn more',
+    linkUrl: '/news',
+    variant: 'gradient',         // default | gradient | outlined
+    dismissable: true,
+    sticky: false,
+    showCountdown: false,
+    countdownDate: '2025-12-31T23:59:59',  // Optional countdown
+  },
+}
+```
+
+### Tabs Block
+Organize content into switchable panels.
+
+```typescript
+{
+  id: 'tabs-1',
+  type: 'tabs',
+  data: {
+    title: 'Features',
+    subtitle: 'Explore our capabilities',
+    orientation: 'horizontal',   // horizontal | vertical
+    variant: 'underline',        // underline | pills | boxed
+    tabs: [
+      {
+        id: 'tab-1',
+        title: 'Overview',
+        icon: 'Home',            // Optional Lucide icon
+        content: text('Tab content here...'),
+      },
+      // ... more tabs
+    ],
+  },
+}
+```
+
+### Marquee Block
+Scrolling text or items.
+
+```typescript
+{
+  id: 'marquee-1',
+  type: 'marquee',
+  data: {
+    items: [
+      { id: 'm1', text: 'React', icon: '⚛️' },
+      { id: 'm2', text: 'TypeScript', icon: '📘' },
+      // ... more items
+    ],
+    speed: 'normal',             // slow | normal | fast
+    direction: 'left',           // left | right
+    pauseOnHover: true,
+    variant: 'default',          // default | gradient | outlined
+    separator: '•',
+  },
+}
+```
+
+### Countdown Block
+Live countdown timer.
+
+```typescript
+{
+  id: 'countdown-1',
+  type: 'countdown',
+  data: {
+    title: 'Sale Ends In',
+    subtitle: 'Don\'t miss out!',
+    targetDate: '2025-12-31T23:59:59',
+    expiredMessage: 'Sale has ended',
+    variant: 'cards',            // default | cards | minimal | flip
+    size: 'lg',                  // sm | md | lg
+    showDays: true,
+    showHours: true,
+    showMinutes: true,
+    showSeconds: true,
+    labels: { days: 'Days', hours: 'Hours', minutes: 'Minutes', seconds: 'Seconds' },
+  },
+}
+```
+
+### Progress Block
+Progress bars and indicators.
+
+```typescript
+{
+  id: 'progress-1',
+  type: 'progress',
+  data: {
+    title: 'Funding Progress',
+    items: [
+      { id: 'p1', label: 'Goal', value: 75 },
+      { id: 'p2', label: 'Stretch Goal', value: 45 },
+    ],
+    variant: 'default',          // default | circular | minimal | cards
+    size: 'md',                  // sm | md | lg
+    showLabels: true,
+    showPercentage: true,
+    animated: true,
+  },
+}
+```
+
+### Badge Block
+Display certifications and trust indicators.
+
+```typescript
+{
+  id: 'badge-1',
+  type: 'badge',
+  data: {
+    title: 'Certifications',
+    badges: [
+      { id: 'b1', title: 'SOC 2', icon: 'shield' },
+      { id: 'b2', title: 'GDPR', icon: 'check' },
+      // ... more badges (icon: shield | check | award | medal | star)
+    ],
+    variant: 'default',          // default | minimal | outlined
+    columns: 4,                  // 2 | 3 | 4 | 5
+    size: 'md',                  // sm | md | lg
+    showTitles: true,
+    grayscale: false,
+  },
+}
+```
+
+### Table Block
+Display structured data.
+
+```typescript
+{
+  id: 'table-1',
+  type: 'table',
+  data: {
+    title: 'Comparison',
+    caption: 'Feature comparison across plans',
+    columns: [
+      { id: 'c1', header: 'Feature', align: 'left' },
+      { id: 'c2', header: 'Basic', align: 'center' },
+      { id: 'c3', header: 'Pro', align: 'center' },
+    ],
+    rows: [
+      ['Storage', '5GB', '100GB'],
+      ['Support', 'Email', '24/7'],
+    ],
+    variant: 'striped',          // default | striped | bordered | minimal
+    size: 'md',                  // sm | md | lg
+    stickyHeader: true,
+    highlightOnHover: true,
+  },
+}
+```
+
+### Embed Block
+Embed external content.
+
+```typescript
+{
+  id: 'embed-1',
+  type: 'embed',
+  data: {
+    title: 'Demo Video',
+    embedType: 'iframe',         // iframe | html
+    embedCode: '<iframe src="..." />',  // Or use url
+    url: 'https://...',
+    aspectRatio: '16:9',         // 16:9 | 4:3 | 1:1 | 21:9 | custom
+    maxWidth: 'lg',              // sm | md | lg | full
+  },
+}
+```
+
+### Social Proof Block
+Display live metrics and ratings.
+
+```typescript
+{
+  id: 'social-proof-1',
+  type: 'social-proof',
+  data: {
+    title: 'Trusted by Thousands',
+    items: [
+      { id: 'sp1', type: 'counter', label: 'Users', value: 10000, icon: 'users' },
+      { id: 'sp2', type: 'rating', label: 'Rating', value: 4.9, maxRating: 5 },
+      { id: 'sp3', type: 'activity', label: 'Active Now', text: '127 people viewing', icon: 'eye' },
+    ],
+    variant: 'cards',            // default | cards | minimal | banner | floating
+    layout: 'horizontal',        // horizontal | vertical | grid
+    size: 'md',                  // sm | md | lg
+    animated: true,
+    showLiveIndicator: false,
+  },
+}
+```
+
+### Notification Toast Block
+Display dynamic activity notifications.
+
+```typescript
+{
+  id: 'notification-1',
+  type: 'notification-toast',
+  data: {
+    notifications: [
+      { id: 'n1', type: 'signup', title: 'New signup', message: 'John from NYC joined' },
+      { id: 'n2', type: 'purchase', title: 'Purchase', message: 'Someone bought Pro plan' },
+    ],
+    variant: 'default',          // default | minimal | branded
+    position: 'bottom-left',     // top-left | top-right | bottom-left | bottom-right
+    displayDuration: 4000,       // ms
+    delayBetween: 8000,          // ms
+    initialDelay: 3000,          // ms
+    animationType: 'slide',      // slide | fade | bounce
+  },
+}
+```
+
+### Floating CTA Block
+Scroll-triggered call-to-action.
+
+```typescript
+{
+  id: 'floating-cta-1',
+  type: 'floating-cta',
+  data: {
+    text: 'Get Started',
+    buttonText: 'Try Free',
+    buttonUrl: '/signup',
+    variant: 'bar',              // bar | card | minimal | pill
+    position: 'bottom',          // top | bottom | bottom-right | bottom-left
+    showAfterScroll: 25,         // Percentage
+    hideOnScrollUp: false,
+    closeable: true,
+    closePersistent: true,
+    size: 'md',                  // sm | md | lg
+    animationType: 'slide',      // slide | fade | scale
+  },
+}
+```
+
+---
+
+## Hero Block - Advanced Options
+
+The Hero block now supports video backgrounds with multiple sources:
+
+```typescript
+{
+  id: 'hero-1',
+  type: 'hero',
+  data: {
+    title: 'Welcome',
+    subtitle: 'Your tagline here',
+    
+    // Background options
+    backgroundType: 'video',     // color | image | video
+    
+    // For video backgrounds:
+    videoType: 'direct',         // direct | youtube | vimeo
+    videoUrl: 'https://...',     // MP4 URL, YouTube URL, or Vimeo URL
+    videoPosterUrl: 'https://...', // Fallback image
+    videoLoop: true,
+    videoMuted: true,
+    showVideoControls: false,
+    
+    // Overlay
+    overlayColor: 'dark',        // dark | light | primary
+    overlayOpacity: 70,          // 0-100
+    
+    // Text alignment
+    textAlignment: 'center',     // left | center | right
+    contentAlignment: 'center',  // left | center (vertical alignment)
+    
+    // Animation
+    titleAnimation: 'slide-up',  // none | fade-in | slide-up
+    showScrollIndicator: true,
+    
+    // Layout
+    heightMode: 'viewport',      // viewport | 60vh | 80vh | auto
+    layout: 'centered',          // centered | split
+    mediaPosition: 'right',      // For split layout: left | right
+    
+    // Buttons
+    primaryButton: { text: 'Get Started', url: '/contact' },
+    secondaryButton: { text: 'Learn More', url: '/about' },
+  },
+}
+```
+
+### YouTube/Vimeo Example
+
+```typescript
+{
+  id: 'hero-youtube',
+  type: 'hero',
+  data: {
+    title: 'Watch Our Demo',
+    backgroundType: 'video',
+    videoType: 'youtube',
+    videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    heightMode: '60vh',
+    showVideoControls: true,
+    overlayColor: 'dark',
+    overlayOpacity: 40,
+  },
+}
+```
+
+---
+
 ## Settings
 
 ### Branding
