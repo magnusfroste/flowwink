@@ -30,6 +30,16 @@ import { TeamBlock } from '@/components/public/blocks/TeamBlock';
 import { PricingBlock } from '@/components/public/blocks/PricingBlock';
 import { TestimonialsBlock } from '@/components/public/blocks/TestimonialsBlock';
 import { StatsBlock } from '@/components/public/blocks/StatsBlock';
+// New block imports
+import { AnnouncementBarBlock } from '@/components/public/blocks/AnnouncementBarBlock';
+import { TabsBlock } from '@/components/public/blocks/TabsBlock';
+import { MarqueeBlock } from '@/components/public/blocks/MarqueeBlock';
+import { EmbedBlock } from '@/components/public/blocks/EmbedBlock';
+import { TableBlock } from '@/components/public/blocks/TableBlock';
+import { CountdownBlock } from '@/components/public/blocks/CountdownBlock';
+import { ProgressBlock } from '@/components/public/blocks/ProgressBlock';
+import { BadgeBlock } from '@/components/public/blocks/BadgeBlock';
+import { SocialProofBlock } from '@/components/public/blocks/SocialProofBlock';
 
 import type {
   HeroBlockData,
@@ -54,6 +64,15 @@ import type {
   PricingBlockData,
   StatsBlockData,
   TestimonialsBlockData,
+  AnnouncementBarBlockData,
+  TabsBlockData,
+  MarqueeBlockData,
+  EmbedBlockData,
+  TableBlockData,
+  CountdownBlockData,
+  ProgressBlockData,
+  BadgeBlockData,
+  SocialProofBlockData,
 } from '@/types/cms';
 
 import {
@@ -66,6 +85,8 @@ import {
   Mail,
   Search,
   Layers,
+  Bell,
+  MousePointer,
 } from 'lucide-react';
 
 interface TemplateBlockPreviewProps {
@@ -165,6 +186,26 @@ export function TemplateBlockPreview({ block, compact }: TemplateBlockPreviewPro
       case 'testimonials':
         return <TestimonialsBlock data={block.data as unknown as TestimonialsBlockData} />;
 
+      // New blocks that render statically
+      case 'announcement-bar':
+        return <AnnouncementBarBlock data={block.data as any} />;
+      case 'tabs':
+        return <TabsBlock data={block.data as any} />;
+      case 'marquee':
+        return <MarqueeBlock data={block.data as any} />;
+      case 'embed':
+        return <EmbedBlock data={block.data as any} />;
+      case 'table':
+        return <TableBlock data={block.data as any} />;
+      case 'countdown':
+        return <CountdownBlock data={block.data as any} />;
+      case 'progress':
+        return <ProgressBlock data={block.data as any} />;
+      case 'badge':
+        return <BadgeBlock data={block.data as any} />;
+      case 'social-proof':
+        return <SocialProofBlock data={block.data as any} />;
+
       // Blocks that require database context - show placeholders
       case 'chat':
         return (
@@ -245,6 +286,24 @@ export function TemplateBlockPreview({ block, compact }: TemplateBlockPreviewPro
             icon={LayoutGrid} 
             label="Popup"
             description="Modal/popup dialog"
+          />
+        );
+      case 'notification-toast':
+        return (
+          <BlockPlaceholder 
+            type="notification-toast" 
+            icon={Bell} 
+            label="Notification Toast"
+            description="Animerade notifikationer"
+          />
+        );
+      case 'floating-cta':
+        return (
+          <BlockPlaceholder 
+            type="floating-cta" 
+            icon={MousePointer} 
+            label="Floating CTA"
+            description="Sticky call-to-action vid scroll"
           />
         );
       case 'stats':
