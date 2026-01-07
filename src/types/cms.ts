@@ -107,7 +107,8 @@ export type ContentBlockType =
   | 'announcement-bar'
   | 'tabs'
   | 'marquee'
-  | 'embed';
+  | 'embed'
+  | 'table';
 
 // Form field types
 export type FormFieldType = 'text' | 'email' | 'phone' | 'textarea' | 'checkbox';
