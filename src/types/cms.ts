@@ -806,3 +806,203 @@ export interface BlogSettings {
   rssTitle: string;
   rssDescription: string;
 }
+
+// ==================== NEW BLOCK DATA TYPES ====================
+// Re-export types from component files for consistency
+
+export interface AnnouncementBarBlockData {
+  message: string;
+  linkText?: string;
+  linkUrl?: string;
+  variant?: 'solid' | 'gradient' | 'minimal';
+  dismissable?: boolean;
+  showCountdown?: boolean;
+  countdownTarget?: string; // ISO date string
+  backgroundColor?: string;
+  textColor?: string;
+  sticky?: boolean;
+}
+
+export interface TabItem {
+  id: string;
+  title: string;
+  icon?: string;
+  content: RichTextContent;
+}
+
+export interface TabsBlockData {
+  title?: string;
+  subtitle?: string;
+  tabs: TabItem[];
+  orientation?: 'horizontal' | 'vertical';
+  variant?: 'underline' | 'pills' | 'boxed';
+  defaultTab?: string;
+}
+
+export interface MarqueeItem {
+  id: string;
+  text: string;
+  icon?: string;
+}
+
+export interface MarqueeBlockData {
+  items: MarqueeItem[];
+  speed?: 'slow' | 'normal' | 'fast';
+  direction?: 'left' | 'right';
+  pauseOnHover?: boolean;
+  separator?: string;
+  variant?: 'default' | 'gradient' | 'outlined';
+}
+
+export type EmbedProvider = 'vimeo' | 'spotify' | 'soundcloud' | 'codepen' | 'figma' | 'loom' | 'custom';
+
+export interface EmbedBlockData {
+  url: string;
+  provider?: EmbedProvider;
+  customEmbed?: string;
+  aspectRatio?: '16:9' | '4:3' | '1:1' | '9:16' | 'auto';
+  maxWidth?: 'sm' | 'md' | 'lg' | 'full';
+  caption?: string;
+  variant?: 'default' | 'card' | 'minimal';
+}
+
+export interface TableColumn {
+  id: string;
+  header: string;
+  align?: 'left' | 'center' | 'right';
+}
+
+export interface TableBlockData {
+  title?: string;
+  caption?: string;
+  columns: TableColumn[];
+  rows: Record<string, string>[];
+  variant?: 'default' | 'striped' | 'bordered' | 'minimal';
+  size?: 'sm' | 'md' | 'lg';
+  stickyHeader?: boolean;
+  highlightOnHover?: boolean;
+}
+
+export interface CountdownBlockData {
+  title?: string;
+  subtitle?: string;
+  targetDate: string; // ISO date string
+  expiredMessage?: string;
+  showDays?: boolean;
+  showHours?: boolean;
+  showMinutes?: boolean;
+  showSeconds?: boolean;
+  variant?: 'default' | 'cards' | 'minimal' | 'hero';
+  size?: 'sm' | 'md' | 'lg';
+  labels?: {
+    days?: string;
+    hours?: string;
+    minutes?: string;
+    seconds?: string;
+  };
+}
+
+export interface ProgressItem {
+  id: string;
+  label: string;
+  value: number; // 0-100
+  color?: string;
+  icon?: string;
+}
+
+export interface ProgressBlockData {
+  title?: string;
+  subtitle?: string;
+  items: ProgressItem[];
+  variant?: 'default' | 'circular' | 'minimal' | 'cards';
+  size?: 'sm' | 'md' | 'lg';
+  showPercentage?: boolean;
+  showLabels?: boolean;
+  animated?: boolean;
+  animationDuration?: number;
+}
+
+export interface BadgeItem {
+  id: string;
+  title: string;
+  subtitle?: string;
+  icon?: 'award' | 'shield' | 'check' | 'star' | 'medal' | 'trophy';
+  image?: string;
+  url?: string;
+}
+
+export interface BadgeBlockData {
+  title?: string;
+  subtitle?: string;
+  badges: BadgeItem[];
+  variant?: 'default' | 'cards' | 'minimal' | 'bordered';
+  columns?: 3 | 4 | 5 | 6;
+  size?: 'sm' | 'md' | 'lg';
+  showTitles?: boolean;
+  grayscale?: boolean;
+}
+
+export interface SocialProofItem {
+  id: string;
+  type: 'counter' | 'rating' | 'activity' | 'custom';
+  icon?: 'users' | 'star' | 'activity' | 'trending' | 'heart' | 'eye' | 'message' | 'cart';
+  label: string;
+  value: string;
+  suffix?: string;
+  prefix?: string;
+  rating?: number;
+  maxRating?: number;
+  timestamp?: string;
+  description?: string;
+}
+
+export interface SocialProofBlockData {
+  title?: string;
+  subtitle?: string;
+  items: SocialProofItem[];
+  variant?: 'default' | 'cards' | 'minimal' | 'banner' | 'floating';
+  layout?: 'horizontal' | 'vertical' | 'grid';
+  columns?: 2 | 3 | 4;
+  size?: 'sm' | 'md' | 'lg';
+  animated?: boolean;
+  animationDuration?: number;
+  showIcons?: boolean;
+  showLiveIndicator?: boolean;
+  liveText?: string;
+}
+
+export interface NotificationItem {
+  type?: string;
+  icon?: string;
+  title: string;
+  message: string;
+  image?: string;
+  timestamp?: string;
+  location?: string;
+}
+
+export interface NotificationToastBlockData {
+  notifications: NotificationItem[];
+  variant?: 'default' | 'minimal' | 'rounded';
+  position?: 'bottom-left' | 'bottom-right' | 'top-left' | 'top-right';
+  displayDuration?: number;
+  delayBetween?: number;
+  initialDelay?: number;
+  maxWidth?: 'sm' | 'md' | 'lg';
+  animationType?: 'slide' | 'fade' | 'bounce';
+}
+
+export interface FloatingCTABlockData {
+  text?: string;
+  buttonText: string;
+  buttonUrl: string;
+  secondaryText?: string;
+  scrollThreshold?: number;
+  variant?: 'bar' | 'card' | 'minimal' | 'pill';
+  position?: 'bottom' | 'top';
+  size?: 'sm' | 'md' | 'lg';
+  hideOnScrollUp?: boolean;
+  closeable?: boolean;
+  closePersistent?: boolean;
+  showScrollToTop?: boolean;
+}
