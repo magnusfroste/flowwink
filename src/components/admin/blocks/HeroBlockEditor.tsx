@@ -4,10 +4,15 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
-import { HeroBlockData, HeroLayout } from '@/types/cms';
+import { HeroBlockData, HeroLayout, HeroVideoType, HeroOverlayColor, HeroTextAlignment } from '@/types/cms';
 import { ImageUploader } from '../ImageUploader';
 import { AITextAssistant } from '../AITextAssistant';
-import { Image, Video, Palette, Maximize, AlignVerticalJustifyStart, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd, Type, MoveUp, Sparkles, ChevronDown, LayoutTemplate, PanelLeftInactive, PanelRightInactive, AlignCenter } from 'lucide-react';
+import { 
+  Image, Video, Palette, Maximize, AlignVerticalJustifyStart, AlignVerticalJustifyCenter, 
+  AlignVerticalJustifyEnd, Type, MoveUp, Sparkles, ChevronDown, LayoutTemplate, 
+  PanelLeftInactive, PanelRightInactive, AlignCenter, AlignLeft, AlignRight,
+  Youtube, FileVideo, Moon, Sun, Paintbrush
+} from 'lucide-react';
 
 interface HeroBlockEditorProps {
   data: HeroBlockData;
@@ -21,6 +26,24 @@ const LAYOUT_OPTIONS: { value: HeroLayout; label: string; icon: typeof LayoutTem
   { value: 'split-right', label: 'Split (Image Right)', icon: PanelRightInactive },
 ];
 
+const VIDEO_TYPE_OPTIONS: { value: HeroVideoType; label: string; icon: typeof Youtube }[] = [
+  { value: 'direct', label: 'Direct', icon: FileVideo },
+  { value: 'youtube', label: 'YouTube', icon: Youtube },
+  { value: 'vimeo', label: 'Vimeo', icon: Video },
+];
+
+const OVERLAY_COLOR_OPTIONS: { value: HeroOverlayColor; label: string; icon: typeof Moon }[] = [
+  { value: 'dark', label: 'Dark', icon: Moon },
+  { value: 'light', label: 'Light', icon: Sun },
+  { value: 'primary', label: 'Brand', icon: Paintbrush },
+];
+
+const TEXT_ALIGNMENT_OPTIONS: { value: HeroTextAlignment; label: string; icon: typeof AlignCenter }[] = [
+  { value: 'left', label: 'Left', icon: AlignLeft },
+  { value: 'center', label: 'Center', icon: AlignCenter },
+  { value: 'right', label: 'Right', icon: AlignRight },
+];
+
 export function HeroBlockEditor({ data, onChange, isEditing }: HeroBlockEditorProps) {
   const [localData, setLocalData] = useState<HeroBlockData>(data);
 
@@ -32,6 +55,7 @@ export function HeroBlockEditor({ data, onChange, isEditing }: HeroBlockEditorPr
 
   const layout = localData.layout || 'centered';
   const backgroundType = localData.backgroundType || 'image';
+  const videoType = localData.videoType || 'direct';
   const isSplitLayout = layout === 'split-left' || layout === 'split-right';
 
   if (isEditing) {
@@ -145,10 +169,26 @@ export function HeroBlockEditor({ data, onChange, isEditing }: HeroBlockEditorPr
             <p className="text-xs text-muted-foreground">
               Or use a video background:
             </p>
+            {/* Video Type Selector for split layout */}
+            <div className="flex gap-2">
+              {VIDEO_TYPE_OPTIONS.map(({ value, label, icon: Icon }) => (
+                <Button
+                  key={value}
+                  type="button"
+                  variant={videoType === value ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => handleChange({ videoType: value, backgroundType: 'video' })}
+                  className="flex items-center gap-1"
+                >
+                  <Icon className="h-3 w-3" />
+                  {label}
+                </Button>
+              ))}
+            </div>
             <Input
               value={localData.videoUrl || ''}
               onChange={(e) => handleChange({ videoUrl: e.target.value, backgroundType: 'video' })}
-              placeholder="Video URL (MP4)"
+              placeholder={videoType === 'youtube' ? 'YouTube URL or ID' : videoType === 'vimeo' ? 'Vimeo URL or ID' : 'Video URL (MP4)'}
             />
           </div>
         )}
@@ -165,33 +205,72 @@ export function HeroBlockEditor({ data, onChange, isEditing }: HeroBlockEditorPr
         {/* Video Background Options - for centered layout */}
         {!isSplitLayout && backgroundType === 'video' && (
           <div className="space-y-4 p-4 border border-border rounded-lg bg-background/50">
+            {/* Video Type Selector */}
             <div className="space-y-2">
-              <Label htmlFor="video-url">Video URL (MP4)</Label>
+              <Label>Video Source</Label>
+              <div className="flex gap-2">
+                {VIDEO_TYPE_OPTIONS.map(({ value, label, icon: Icon }) => (
+                  <Button
+                    key={value}
+                    type="button"
+                    variant={videoType === value ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => handleChange({ videoType: value })}
+                    className="flex items-center gap-1"
+                  >
+                    <Icon className="h-3 w-3" />
+                    {label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="video-url">
+                {videoType === 'youtube' ? 'YouTube URL' : videoType === 'vimeo' ? 'Vimeo URL' : 'Video URL (MP4)'}
+              </Label>
               <Input
                 id="video-url"
                 value={localData.videoUrl || ''}
                 onChange={(e) => handleChange({ videoUrl: e.target.value })}
-                placeholder="https://example.com/video.mp4"
+                placeholder={
+                  videoType === 'youtube' 
+                    ? 'https://youtube.com/watch?v=... or video ID' 
+                    : videoType === 'vimeo' 
+                    ? 'https://vimeo.com/... or video ID'
+                    : 'https://example.com/video.mp4'
+                }
               />
               <p className="text-xs text-muted-foreground">
-                Use a direct link to an MP4 file or CDN URL
+                {videoType === 'youtube' 
+                  ? 'Paste a YouTube URL or video ID'
+                  : videoType === 'vimeo'
+                  ? 'Paste a Vimeo URL or video ID'
+                  : 'Use a direct link to an MP4 file or CDN URL'
+                }
               </p>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="video-webm">WebM Fallback (Optional)</Label>
-              <Input
-                id="video-webm"
-                value={localData.videoUrlWebm || ''}
-                onChange={(e) => handleChange({ videoUrlWebm: e.target.value })}
-                placeholder="https://example.com/video.webm"
-              />
-            </div>
+            
+            {/* WebM fallback only for direct videos */}
+            {videoType === 'direct' && (
+              <div className="space-y-2">
+                <Label htmlFor="video-webm">WebM Fallback (Optional)</Label>
+                <Input
+                  id="video-webm"
+                  value={localData.videoUrlWebm || ''}
+                  onChange={(e) => handleChange({ videoUrlWebm: e.target.value })}
+                  placeholder="https://example.com/video.webm"
+                />
+              </div>
+            )}
+            
             <ImageUploader
               value={localData.videoPosterUrl || ''}
               onChange={(url) => handleChange({ videoPosterUrl: url })}
               label="Poster Image (shown while loading)"
             />
-            <div className="grid grid-cols-3 gap-4">
+            
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div className="flex items-center justify-between">
                 <Label htmlFor="video-autoplay" className="text-sm">Autoplay</Label>
                 <Switch
@@ -216,6 +295,16 @@ export function HeroBlockEditor({ data, onChange, isEditing }: HeroBlockEditorPr
                   onCheckedChange={(checked) => handleChange({ videoMuted: checked })}
                 />
               </div>
+              {videoType === 'direct' && (
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="video-controls" className="text-sm">Controls</Label>
+                  <Switch
+                    id="video-controls"
+                    checked={localData.showVideoControls || false}
+                    onCheckedChange={(checked) => handleChange({ showVideoControls: checked })}
+                  />
+                </div>
+              )}
             </div>
             <p className="text-xs text-muted-foreground">
               Note: Most browsers require videos to be muted for autoplay to work.
@@ -286,22 +375,65 @@ export function HeroBlockEditor({ data, onChange, isEditing }: HeroBlockEditorPr
                 </div>
               </div>
             )}
-
-            {/* Overlay Opacity - only show when image or video */}
-            {(backgroundType === 'image' || backgroundType === 'video') && (
-              <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">
-                  Overlay Darkness: {localData.overlayOpacity ?? 60}%
-                </Label>
-                <Slider
-                  value={[localData.overlayOpacity ?? 60]}
-                  onValueChange={([value]) => handleChange({ overlayOpacity: value })}
-                  min={0}
-                  max={100}
-                  step={5}
-                  className="w-full"
-                />
+            
+            {/* Text Alignment */}
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground">Text Alignment</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {TEXT_ALIGNMENT_OPTIONS.map(({ value, label, icon: Icon }) => (
+                  <Button
+                    key={value}
+                    type="button"
+                    variant={(localData.textAlignment || 'center') === value ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => handleChange({ textAlignment: value })}
+                    className="flex items-center gap-1"
+                  >
+                    <Icon className="h-3 w-3" />
+                    {label}
+                  </Button>
+                ))}
               </div>
+            </div>
+
+            {/* Overlay settings - only show when image or video */}
+            {(backgroundType === 'image' || backgroundType === 'video') && (
+              <>
+                {/* Overlay Color */}
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">Overlay Color</Label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {OVERLAY_COLOR_OPTIONS.map(({ value, label, icon: Icon }) => (
+                      <Button
+                        key={value}
+                        type="button"
+                        variant={(localData.overlayColor || 'dark') === value ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => handleChange({ overlayColor: value })}
+                        className="flex items-center gap-1"
+                      >
+                        <Icon className="h-3 w-3" />
+                        {label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Overlay Opacity */}
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">
+                    Overlay Opacity: {localData.overlayOpacity ?? 60}%
+                  </Label>
+                  <Slider
+                    value={[localData.overlayOpacity ?? 60]}
+                    onValueChange={([value]) => handleChange({ overlayOpacity: value })}
+                    min={0}
+                    max={100}
+                    step={5}
+                    className="w-full"
+                  />
+                </div>
+              </>
             )}
 
             {/* Parallax Effect - only for images */}
@@ -422,19 +554,27 @@ export function HeroBlockEditor({ data, onChange, isEditing }: HeroBlockEditorPr
           {localData.backgroundImage ? (
             <img src={localData.backgroundImage} alt="" className="absolute inset-0 w-full h-full object-cover" />
           ) : hasVideo ? (
-            <video autoPlay loop muted playsInline className="absolute inset-0 w-full h-full object-cover">
-              <source src={localData.videoUrl} type="video/mp4" />
-            </video>
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center">
+              <Video className="h-12 w-12 text-primary/50" />
+            </div>
           ) : (
             <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/40" />
           )}
         </div>
         <div className={`flex flex-col justify-center p-8 bg-background ${!imageOnLeft ? 'md:order-1' : ''}`}>
-          <h1 className="text-2xl font-bold mb-2">{localData.title || 'Hero Heading'}</h1>
-          {localData.subtitle && <p className="text-muted-foreground mb-4">{localData.subtitle}</p>}
+          <h1 className="font-serif text-2xl font-bold mb-4 text-foreground">{localData.title || 'Hero Title'}</h1>
+          {localData.subtitle && <p className="text-muted-foreground mb-6">{localData.subtitle}</p>}
           <div className="flex flex-wrap gap-3">
-            {localData.primaryButton?.text && <Button>{localData.primaryButton.text}</Button>}
-            {localData.secondaryButton?.text && <Button variant="outline">{localData.secondaryButton.text}</Button>}
+            {localData.primaryButton?.text && (
+              <span className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium">
+                {localData.primaryButton.text}
+              </span>
+            )}
+            {localData.secondaryButton?.text && (
+              <span className="px-4 py-2 border border-border rounded-lg text-sm font-medium">
+                {localData.secondaryButton.text}
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -443,38 +583,29 @@ export function HeroBlockEditor({ data, onChange, isEditing }: HeroBlockEditorPr
   
   // Centered layout preview
   return (
-    <div
-      className="relative overflow-hidden rounded-lg bg-gradient-to-r from-primary/90 to-primary text-primary-foreground"
-      style={{
-        backgroundImage: backgroundType === 'image' && localData.backgroundImage ? `url(${localData.backgroundImage})` : undefined,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      }}
+    <div 
+      className="relative min-h-[300px] rounded-lg overflow-hidden flex items-center justify-center bg-primary text-primary-foreground"
+      style={localData.backgroundImage ? { backgroundImage: `url(${localData.backgroundImage})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}
     >
-      {hasVideo && (
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover"
-          poster={localData.videoPosterUrl}
-        >
-          <source src={localData.videoUrl} type="video/mp4" />
-        </video>
+      {localData.backgroundImage && <div className="absolute inset-0 bg-primary/60" />}
+      {hasVideo && !localData.backgroundImage && (
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/80 to-primary/60 flex items-center justify-center">
+          <Video className="h-16 w-16 text-primary-foreground/30" />
+        </div>
       )}
-      <div className="absolute inset-0 bg-primary/70" />
-      <div className="relative z-10 px-8 py-16 text-center">
-        <h1 className="text-3xl font-bold mb-3">{localData.title || 'Hero Heading'}</h1>
+      <div className="relative z-10 text-center px-6 py-12">
+        <h1 className="font-serif text-3xl font-bold mb-4">{localData.title || 'Hero Title'}</h1>
         {localData.subtitle && <p className="text-lg opacity-90 mb-6">{localData.subtitle}</p>}
-        <div className="flex justify-center gap-3">
+        <div className="flex gap-3 justify-center flex-wrap">
           {localData.primaryButton?.text && (
-            <Button variant="secondary">{localData.primaryButton.text}</Button>
+            <span className="px-5 py-2.5 bg-background text-foreground rounded-lg font-medium">
+              {localData.primaryButton.text}
+            </span>
           )}
           {localData.secondaryButton?.text && (
-            <Button variant="outline" className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10">
+            <span className="px-5 py-2.5 border border-current rounded-lg font-medium">
               {localData.secondaryButton.text}
-            </Button>
+            </span>
           )}
         </div>
       </div>

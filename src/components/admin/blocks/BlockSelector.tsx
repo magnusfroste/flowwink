@@ -116,13 +116,7 @@ const BLOCK_GROUPS: BlockGroup[] = [
         type: 'hero',
         label: 'Hero',
         icon: <Layout className="h-5 w-5" />,
-        description: 'Large heading with background image',
-      },
-      {
-        type: 'video-hero',
-        label: 'Video Hero',
-        icon: <Video className="h-5 w-5" />,
-        description: 'Hero section with YouTube/Vimeo background',
+        description: 'Large heading with image/video background',
       },
       {
         type: 'two-column',

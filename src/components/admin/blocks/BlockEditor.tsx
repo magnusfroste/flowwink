@@ -61,7 +61,6 @@ import { BadgeBlockEditor } from './BadgeBlockEditor';
 import { SocialProofBlockEditor } from './SocialProofBlockEditor';
 import { NotificationToastBlockEditor } from './NotificationToastBlockEditor';
 import { FloatingCTABlockEditor } from './FloatingCTABlockEditor';
-import { VideoHeroBlockEditor } from './VideoHeroBlockEditor';
 import { TemplateEmptyState } from '@/components/admin/StarterTemplateSelector';
 import { StarterTemplate } from '@/data/starter-templates';
 import type { ProductsBlockData } from '@/components/public/blocks/ProductsBlock';
@@ -79,7 +78,6 @@ import type { BadgeBlockData } from '@/components/public/blocks/BadgeBlock';
 import type { SocialProofBlockData } from '@/components/public/blocks/SocialProofBlock';
 import type { NotificationToastBlockData } from '@/components/public/blocks/NotificationToastBlock';
 import type { FloatingCTABlockData } from '@/components/public/blocks/FloatingCTABlock';
-import type { VideoHeroBlockData } from '@/components/public/blocks/VideoHeroBlock';
 
 interface NewsletterBlockData {
   title?: string;
@@ -135,7 +133,6 @@ type BlockDataMap = {
   'social-proof': SocialProofBlockData;
   'notification-toast': NotificationToastBlockData;
   'floating-cta': FloatingCTABlockData;
-  'video-hero': VideoHeroBlockData;
 };
 
 const DEFAULT_BLOCK_DATA: BlockDataMap = {
@@ -415,23 +412,6 @@ const DEFAULT_BLOCK_DATA: BlockDataMap = {
     closePersistent: false,
     showScrollTop: false,
     animationType: 'slide',
-  },
-  'video-hero': {
-    title: 'Din rubrik här',
-    subtitle: 'En kort beskrivning som fångar uppmärksamhet',
-    videoType: 'youtube',
-    videoUrl: '',
-    autoplay: true,
-    loop: true,
-    muted: true,
-    showControls: false,
-    heightMode: 'viewport',
-    contentAlignment: 'center',
-    textAlignment: 'center',
-    overlayOpacity: 50,
-    overlayColor: 'dark',
-    showScrollIndicator: true,
-    titleAnimation: 'fade-in',
   },
 };
 
@@ -858,14 +838,6 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
         return (
           <FloatingCTABlockEditor
             data={block.data as unknown as FloatingCTABlockData}
-            onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
-            isEditing={isEditing}
-          />
-        );
-      case 'video-hero':
-        return (
-          <VideoHeroBlockEditor
-            data={block.data as unknown as VideoHeroBlockData}
             onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
             isEditing={isEditing}
           />
