@@ -56,6 +56,7 @@ import { MarqueeBlockEditor } from './MarqueeBlockEditor';
 import { EmbedBlockEditor } from './EmbedBlockEditor';
 import { TableBlockEditor } from './TableBlockEditor';
 import { CountdownBlockEditor } from './CountdownBlockEditor';
+import { ProgressBlockEditor } from './ProgressBlockEditor';
 import { TemplateEmptyState } from '@/components/admin/StarterTemplateSelector';
 import { StarterTemplate } from '@/data/starter-templates';
 import type { ProductsBlockData } from '@/components/public/blocks/ProductsBlock';
@@ -68,6 +69,7 @@ import type { MarqueeBlockData } from '@/components/public/blocks/MarqueeBlock';
 import type { EmbedBlockData } from '@/components/public/blocks/EmbedBlock';
 import type { TableBlockData } from '@/components/public/blocks/TableBlock';
 import type { CountdownBlockData } from '@/components/public/blocks/CountdownBlock';
+import type { ProgressBlockData } from '@/components/public/blocks/ProgressBlock';
 
 interface NewsletterBlockData {
   title?: string;
@@ -118,6 +120,7 @@ type BlockDataMap = {
   embed: EmbedBlockData;
   table: TableBlockData;
   countdown: CountdownBlockData;
+  progress: ProgressBlockData;
 };
 
 const DEFAULT_BLOCK_DATA: BlockDataMap = {
@@ -335,6 +338,17 @@ const DEFAULT_BLOCK_DATA: BlockDataMap = {
     showHours: true,
     showMinutes: true,
     showSeconds: true,
+  },
+  progress: {
+    title: 'Our Skills',
+    subtitle: '',
+    items: [],
+    variant: 'default',
+    size: 'md',
+    showPercentage: true,
+    showLabels: true,
+    animated: true,
+    animationDuration: 1500,
   },
 };
 
@@ -721,6 +735,14 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
         return (
           <CountdownBlockEditor
             data={block.data as unknown as CountdownBlockData}
+            onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+            isEditing={isEditing}
+          />
+        );
+      case 'progress':
+        return (
+          <ProgressBlockEditor
+            data={block.data as unknown as ProgressBlockData}
             onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
             isEditing={isEditing}
           />

@@ -41,6 +41,7 @@ import {
   EmbedBlock,
   TableBlock,
   CountdownBlock,
+  ProgressBlock,
 } from './blocks';
 import type { KbHubBlockData } from './blocks/KbHubBlock';
 import type {
@@ -72,6 +73,7 @@ import type { MarqueeBlockData } from './blocks/MarqueeBlock';
 import type { EmbedBlockData } from './blocks/EmbedBlock';
 import type { TableBlockData } from './blocks/TableBlock';
 import type { CountdownBlockData } from './blocks/CountdownBlock';
+import type { ProgressBlockData } from './blocks/ProgressBlock';
 
 interface BlockRendererProps {
   block: ContentBlock;
@@ -201,6 +203,8 @@ export function BlockRenderer({ block, pageId, index = 0 }: BlockRendererProps) 
         return <TableBlock data={block.data as unknown as TableBlockData} />;
       case 'countdown':
         return <CountdownBlock data={block.data as unknown as CountdownBlockData} />;
+      case 'progress':
+        return <ProgressBlock data={block.data as unknown as ProgressBlockData} />;
       default:
         return null;
     }

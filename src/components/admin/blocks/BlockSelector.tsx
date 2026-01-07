@@ -46,6 +46,7 @@ import {
   Code2,
   Table2,
   Timer,
+  TrendingUp,
 } from 'lucide-react';
 import { ContentBlockType } from '@/types/cms';
 
@@ -229,6 +230,12 @@ const BLOCK_GROUPS: BlockGroup[] = [
         label: 'Countdown',
         icon: <Timer className="h-5 w-5" />,
         description: 'Countdown timer for events or campaigns',
+      },
+      {
+        type: 'progress',
+        label: 'Progress',
+        icon: <TrendingUp className="h-5 w-5" />,
+        description: 'Animated progress bars and milestones',
       },
       {
         type: 'marquee',
