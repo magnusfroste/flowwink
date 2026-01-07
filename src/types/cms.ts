@@ -114,8 +114,7 @@ export type ContentBlockType =
   | 'badge'
   | 'social-proof'
   | 'notification-toast'
-  | 'floating-cta'
-  | 'video-hero';
+  | 'floating-cta';
 
 // Form field types
 export type FormFieldType = 'text' | 'email' | 'phone' | 'textarea' | 'checkbox';
@@ -249,6 +248,9 @@ export interface ContentBlock {
 }
 
 export type HeroLayout = 'centered' | 'split-left' | 'split-right';
+export type HeroVideoType = 'direct' | 'youtube' | 'vimeo';
+export type HeroOverlayColor = 'dark' | 'light' | 'primary';
+export type HeroTextAlignment = 'left' | 'center' | 'right';
 
 export interface HeroBlockData {
   title: string;
@@ -259,16 +261,20 @@ export interface HeroBlockData {
   backgroundType?: 'image' | 'video' | 'color';
   backgroundImage?: string;
   // Video background support
+  videoType?: HeroVideoType;
   videoUrl?: string;
   videoUrlWebm?: string;
   videoPosterUrl?: string;
   videoAutoplay?: boolean;
   videoLoop?: boolean;
   videoMuted?: boolean;
+  showVideoControls?: boolean;
   // Layout options (for centered layout)
   heightMode?: 'auto' | 'viewport' | '80vh' | '60vh';
   contentAlignment?: 'top' | 'center' | 'bottom';
+  textAlignment?: HeroTextAlignment;
   overlayOpacity?: number;
+  overlayColor?: HeroOverlayColor;
   parallaxEffect?: boolean;
   titleAnimation?: 'none' | 'fade-in' | 'slide-up' | 'typewriter';
   showScrollIndicator?: boolean;
