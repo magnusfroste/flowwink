@@ -44,6 +44,7 @@ import {
   ProgressBlock,
   BadgeBlock,
   SocialProofBlock,
+  NotificationToastBlock,
 } from './blocks';
 import type { KbHubBlockData } from './blocks/KbHubBlock';
 import type {
@@ -78,6 +79,7 @@ import type { CountdownBlockData } from './blocks/CountdownBlock';
 import type { ProgressBlockData } from './blocks/ProgressBlock';
 import type { BadgeBlockData } from './blocks/BadgeBlock';
 import type { SocialProofBlockData } from './blocks/SocialProofBlock';
+import type { NotificationToastBlockData } from './blocks/NotificationToastBlock';
 
 interface BlockRendererProps {
   block: ContentBlock;
@@ -213,6 +215,8 @@ export function BlockRenderer({ block, pageId, index = 0 }: BlockRendererProps) 
         return <BadgeBlock data={block.data as unknown as BadgeBlockData} />;
       case 'social-proof':
         return <SocialProofBlock data={block.data as unknown as SocialProofBlockData} />;
+      case 'notification-toast':
+        return <NotificationToastBlock data={block.data as unknown as NotificationToastBlockData} />;
       default:
         return null;
     }

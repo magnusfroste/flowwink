@@ -49,6 +49,7 @@ import {
   TrendingUp,
   BadgeCheck,
   ThumbsUp,
+  BellRing,
 } from 'lucide-react';
 import { ContentBlockType } from '@/types/cms';
 
@@ -250,6 +251,12 @@ const BLOCK_GROUPS: BlockGroup[] = [
         label: 'Social Proof',
         icon: <ThumbsUp className="h-5 w-5" />,
         description: 'Customer counts, ratings and live activity',
+      },
+      {
+        type: 'notification-toast',
+        label: 'Notification Toast',
+        icon: <BellRing className="h-5 w-5" />,
+        description: 'Popup notifications for purchases and signups',
       },
       {
         type: 'marquee',

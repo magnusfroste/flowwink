@@ -59,6 +59,7 @@ import { CountdownBlockEditor } from './CountdownBlockEditor';
 import { ProgressBlockEditor } from './ProgressBlockEditor';
 import { BadgeBlockEditor } from './BadgeBlockEditor';
 import { SocialProofBlockEditor } from './SocialProofBlockEditor';
+import { NotificationToastBlockEditor } from './NotificationToastBlockEditor';
 import { TemplateEmptyState } from '@/components/admin/StarterTemplateSelector';
 import { StarterTemplate } from '@/data/starter-templates';
 import type { ProductsBlockData } from '@/components/public/blocks/ProductsBlock';
@@ -74,6 +75,7 @@ import type { CountdownBlockData } from '@/components/public/blocks/CountdownBlo
 import type { ProgressBlockData } from '@/components/public/blocks/ProgressBlock';
 import type { BadgeBlockData } from '@/components/public/blocks/BadgeBlock';
 import type { SocialProofBlockData } from '@/components/public/blocks/SocialProofBlock';
+import type { NotificationToastBlockData } from '@/components/public/blocks/NotificationToastBlock';
 
 interface NewsletterBlockData {
   title?: string;
@@ -127,6 +129,7 @@ type BlockDataMap = {
   progress: ProgressBlockData;
   badge: BadgeBlockData;
   'social-proof': SocialProofBlockData;
+  'notification-toast': NotificationToastBlockData;
 };
 
 const DEFAULT_BLOCK_DATA: BlockDataMap = {
@@ -377,6 +380,20 @@ const DEFAULT_BLOCK_DATA: BlockDataMap = {
     animated: true,
     showIcons: true,
     showLiveIndicator: false,
+  },
+  'notification-toast': {
+    notifications: [],
+    variant: 'default',
+    position: 'bottom-left',
+    displayDuration: 5,
+    delayBetween: 8,
+    initialDelay: 3,
+    showCloseButton: true,
+    showImage: true,
+    showTimestamp: true,
+    loop: true,
+    maxWidth: 'sm',
+    animationType: 'slide',
   },
 };
 
@@ -787,6 +804,14 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
         return (
           <SocialProofBlockEditor
             data={block.data as unknown as SocialProofBlockData}
+            onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+            isEditing={isEditing}
+          />
+        );
+      case 'notification-toast':
+        return (
+          <NotificationToastBlockEditor
+            data={block.data as unknown as NotificationToastBlockData}
             onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
             isEditing={isEditing}
           />
