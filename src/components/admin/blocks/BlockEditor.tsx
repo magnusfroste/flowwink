@@ -57,6 +57,7 @@ import { EmbedBlockEditor } from './EmbedBlockEditor';
 import { TableBlockEditor } from './TableBlockEditor';
 import { CountdownBlockEditor } from './CountdownBlockEditor';
 import { ProgressBlockEditor } from './ProgressBlockEditor';
+import { BadgeBlockEditor } from './BadgeBlockEditor';
 import { TemplateEmptyState } from '@/components/admin/StarterTemplateSelector';
 import { StarterTemplate } from '@/data/starter-templates';
 import type { ProductsBlockData } from '@/components/public/blocks/ProductsBlock';
@@ -70,6 +71,7 @@ import type { EmbedBlockData } from '@/components/public/blocks/EmbedBlock';
 import type { TableBlockData } from '@/components/public/blocks/TableBlock';
 import type { CountdownBlockData } from '@/components/public/blocks/CountdownBlock';
 import type { ProgressBlockData } from '@/components/public/blocks/ProgressBlock';
+import type { BadgeBlockData } from '@/components/public/blocks/BadgeBlock';
 
 interface NewsletterBlockData {
   title?: string;
@@ -121,6 +123,7 @@ type BlockDataMap = {
   table: TableBlockData;
   countdown: CountdownBlockData;
   progress: ProgressBlockData;
+  badge: BadgeBlockData;
 };
 
 const DEFAULT_BLOCK_DATA: BlockDataMap = {
@@ -349,6 +352,16 @@ const DEFAULT_BLOCK_DATA: BlockDataMap = {
     showLabels: true,
     animated: true,
     animationDuration: 1500,
+  },
+  badge: {
+    title: 'Trusted By',
+    subtitle: '',
+    badges: [],
+    variant: 'default',
+    columns: 4,
+    size: 'md',
+    showTitles: true,
+    grayscale: false,
   },
 };
 
@@ -743,6 +756,14 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
         return (
           <ProgressBlockEditor
             data={block.data as unknown as ProgressBlockData}
+            onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+            isEditing={isEditing}
+          />
+        );
+      case 'badge':
+        return (
+          <BadgeBlockEditor
+            data={block.data as unknown as BadgeBlockData}
             onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
             isEditing={isEditing}
           />
