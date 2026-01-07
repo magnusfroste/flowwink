@@ -136,6 +136,7 @@ export function useChat(options?: UseChatOptions) {
               includeContentAsContext: settings?.includeContentAsContext,
               contentContextMaxTokens: settings?.contentContextMaxTokens,
               includedPageSlugs: settings?.includedPageSlugs || [],
+              includeKbArticles: settings?.includeKbArticles || false,
             },
           }),
           signal: abortControllerRef.current.signal,
