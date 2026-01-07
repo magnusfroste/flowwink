@@ -478,6 +478,16 @@ export default function BrandingSettingsPage() {
                     <p className="text-xs text-muted-foreground">Displayed in the footer below the organization name</p>
                   </div>
                   
+                  <div className="space-y-2">
+                    <Label>Admin panel name</Label>
+                    <Input
+                      value={settings.adminName || 'PEZ CMS'}
+                      onChange={(e) => updateField('adminName', e.target.value)}
+                      placeholder="E.g. My CMS"
+                    />
+                    <p className="text-xs text-muted-foreground">Displayed in the admin sidebar header</p>
+                  </div>
+                  
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label>Logo (light background)</Label>

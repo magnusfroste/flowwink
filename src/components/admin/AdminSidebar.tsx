@@ -34,6 +34,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { ROLE_LABELS } from "@/types/cms";
 import { useModules, SIDEBAR_TO_MODULE, type ModulesSettings } from "@/hooks/useModules";
+import { useBrandingSettings } from "@/hooks/useSiteSettings";
 import {
   Sidebar,
   SidebarContent,
@@ -143,8 +144,11 @@ export function AdminSidebar() {
   const { profile, role, signOut, isAdmin } = useAuth();
   const { state } = useSidebar();
   const { data: modules } = useModules();
+  const { data: branding } = useBrandingSettings();
   const isCollapsed = state === "collapsed";
   const [searchOpen, setSearchOpen] = useState(false);
+  
+  const adminName = branding?.adminName || 'PEZ CMS';
 
   const isItemActive = (href: string) =>
     location.pathname === href || (href !== "/admin" && location.pathname.startsWith(href));
@@ -216,15 +220,12 @@ export function AdminSidebar() {
 
       <Sidebar collapsible="icon" className="border-r border-sidebar-border">
         {/* Logo */}
-        <SidebarHeader className="border-b border-sidebar-border px-3 py-4">
-          <div className="flex items-center justify-between">
+        <SidebarHeader className="border-b border-sidebar-border px-3 py-3">
+          <div className="flex items-center justify-between gap-2">
             {!isCollapsed && (
-              <div className="overflow-hidden">
-                <span className="font-serif font-bold text-lg">PEZ</span>
-                <span className="block text-xs text-sidebar-foreground/60">CMS</span>
-              </div>
+              <span className="font-serif font-bold text-base truncate">{adminName}</span>
             )}
-            <SidebarTrigger className="h-8 w-8" />
+            <SidebarTrigger className="h-7 w-7 shrink-0" />
           </div>
         </SidebarHeader>
 
