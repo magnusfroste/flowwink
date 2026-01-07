@@ -40,6 +40,9 @@ import {
   GitBranch,
   ShoppingBag,
   ShoppingCart,
+  Bell,
+  Layers,
+  MoveHorizontal,
 } from 'lucide-react';
 import { ContentBlockType } from '@/types/cms';
 
@@ -111,6 +114,12 @@ const BLOCK_GROUPS: BlockGroup[] = [
         label: 'Separator',
         icon: <Minus className="h-5 w-5" />,
         description: 'Visual break between sections',
+      },
+      {
+        type: 'tabs',
+        label: 'Tabs',
+        icon: <Layers className="h-5 w-5" />,
+        description: 'Organize content in tabbed sections',
       },
     ],
   },
@@ -193,6 +202,18 @@ const BLOCK_GROUPS: BlockGroup[] = [
         label: 'Map',
         icon: <MapPin className="h-5 w-5" />,
         description: 'Google Maps location for clinic',
+      },
+      {
+        type: 'announcement-bar',
+        label: 'Announcement',
+        icon: <Bell className="h-5 w-5" />,
+        description: 'Sticky banner with countdown timer',
+      },
+      {
+        type: 'marquee',
+        label: 'Marquee',
+        icon: <MoveHorizontal className="h-5 w-5" />,
+        description: 'Scrolling text ticker for promotions',
       },
     ],
   },
