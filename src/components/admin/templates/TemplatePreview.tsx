@@ -8,11 +8,9 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { 
-  X,
   Monitor,
   Tablet,
   Smartphone,
@@ -22,12 +20,13 @@ import {
   MessageSquare,
   BookOpen,
   Palette,
-  ChevronRight,
   Rocket,
   Building2,
   ShieldCheck,
   Layers
 } from "lucide-react";
+import { TemplateBlockPreview } from "./TemplateBlockPreview";
+import { ContentBlock } from "@/types/cms";
 
 interface TemplatePreviewProps {
   template: StarterTemplate | null;
@@ -66,7 +65,6 @@ export function TemplatePreview({ template, open, onOpenChange, onSelect }: Temp
   const blockCount = template.pages?.reduce((acc, page) => acc + (page.blocks?.length || 0), 0) || 0;
   const hasChat = template.chatSettings?.enabled !== false;
   const hasBlog = (template.blogPosts?.length || 0) > 0;
-  const hasKb = (template.kbCategories?.length || 0) > 0;
   const primaryColor = template.branding?.primaryColor || '#6366f1';
 
   const currentPage = template.pages?.[selectedPage];
@@ -262,76 +260,23 @@ export function TemplatePreview({ template, open, onOpenChange, onSelect }: Temp
                 </div>
               </div>
 
-              {/* Page content preview */}
+              {/* Page content preview - Live block rendering */}
               <ScrollArea className="h-[calc(90vh-220px)]">
-                <div className="p-6 space-y-4">
+                <div className="template-preview-content">
                   {currentPage?.blocks?.map((block, index) => (
-                    <div 
+                    <TemplateBlockPreview 
                       key={block.id || index}
-                      className="bg-muted/50 rounded-lg border border-dashed p-4"
-                    >
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                        <LayoutGrid className="h-4 w-4" />
-                        <span className="font-medium capitalize">{block.type}</span>
-                      </div>
-                      
-                      {/* Block-specific preview */}
-                      {block.type === 'hero' && (
-                        <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg p-6 text-center">
-                          <h2 className="text-lg font-bold mb-2">
-                            {(block.data as any)?.title || 'Hero Title'}
-                          </h2>
-                          <p className="text-sm text-muted-foreground">
-                            {(block.data as any)?.subtitle || 'Hero subtitle goes here'}
-                          </p>
-                        </div>
-                      )}
-                      
-                      {block.type === 'features' && (
-                        <div className="grid grid-cols-3 gap-2">
-                          {[1, 2, 3].map((i) => (
-                            <div key={i} className="bg-background rounded p-3 text-center">
-                              <div className="h-8 w-8 bg-primary/10 rounded-full mx-auto mb-2" />
-                              <div className="h-3 w-16 bg-muted rounded mx-auto" />
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      {block.type === 'kb-hub' && (
-                        <div className="grid grid-cols-2 gap-2">
-                          {[1, 2, 3, 4].map((i) => (
-                            <div key={i} className="bg-background rounded p-3">
-                              <div className="flex items-center gap-2">
-                                <div className="h-6 w-6 bg-primary/10 rounded" />
-                                <div className="h-3 w-20 bg-muted rounded" />
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      {block.type === 'chat' && (
-                        <div className="bg-background rounded-lg border p-4">
-                          <div className="flex items-center gap-2 mb-3">
-                            <MessageSquare className="h-5 w-5 text-primary" />
-                            <span className="font-medium">AI Chat</span>
-                          </div>
-                          <div className="bg-muted rounded-lg p-3 text-sm text-muted-foreground">
-                            Chat preview...
-                          </div>
-                        </div>
-                      )}
-
-                      {!['hero', 'features', 'kb-hub', 'chat'].includes(block.type) && (
-                        <div className="h-20 bg-muted/50 rounded flex items-center justify-center">
-                          <span className="text-xs text-muted-foreground capitalize">
-                            {block.type} block
-                          </span>
-                        </div>
-                      )}
-                    </div>
+                      block={block as ContentBlock}
+                      compact={deviceMode === 'mobile'}
+                    />
                   ))}
+                  
+                  {(!currentPage?.blocks || currentPage.blocks.length === 0) && (
+                    <div className="p-12 text-center text-muted-foreground">
+                      <LayoutGrid className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>Denna sida har inga block</p>
+                    </div>
+                  )}
                 </div>
               </ScrollArea>
             </div>
