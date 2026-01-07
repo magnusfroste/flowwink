@@ -43,6 +43,7 @@ import {
   Bell,
   Layers,
   MoveHorizontal,
+  Code2,
 } from 'lucide-react';
 import { ContentBlockType } from '@/types/cms';
 
@@ -85,6 +86,12 @@ const BLOCK_GROUPS: BlockGroup[] = [
         label: 'YouTube',
         icon: <Youtube className="h-5 w-5" />,
         description: 'Embedded YouTube video',
+      },
+      {
+        type: 'embed',
+        label: 'Embed',
+        icon: <Code2 className="h-5 w-5" />,
+        description: 'Vimeo, Spotify, SoundCloud, etc.',
       },
       {
         type: 'quote',
