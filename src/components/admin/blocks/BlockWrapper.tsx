@@ -50,6 +50,7 @@ const BLOCK_LABELS: Record<ContentBlockType, string> = {
   table: 'Table',
   countdown: 'Countdown',
   progress: 'Progress',
+  badge: 'Badge',
 };
 
 interface BlockWrapperProps {

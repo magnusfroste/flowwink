@@ -39,3 +39,4 @@ export { EmbedBlock } from './EmbedBlock';
 export { TableBlock } from './TableBlock';
 export { CountdownBlock } from './CountdownBlock';
 export { ProgressBlock } from './ProgressBlock';
+export { BadgeBlock } from './BadgeBlock';
