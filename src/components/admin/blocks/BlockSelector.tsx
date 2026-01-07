@@ -51,6 +51,7 @@ import {
   ThumbsUp,
   BellRing,
   PanelBottom,
+  Video,
 } from 'lucide-react';
 import { ContentBlockType } from '@/types/cms';
 
@@ -116,6 +117,12 @@ const BLOCK_GROUPS: BlockGroup[] = [
         label: 'Hero',
         icon: <Layout className="h-5 w-5" />,
         description: 'Large heading with background image',
+      },
+      {
+        type: 'video-hero',
+        label: 'Video Hero',
+        icon: <Video className="h-5 w-5" />,
+        description: 'Hero section with YouTube/Vimeo background',
       },
       {
         type: 'two-column',

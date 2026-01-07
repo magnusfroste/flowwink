@@ -114,7 +114,8 @@ export type ContentBlockType =
   | 'badge'
   | 'social-proof'
   | 'notification-toast'
-  | 'floating-cta';
+  | 'floating-cta'
+  | 'video-hero';
 
 // Form field types
 export type FormFieldType = 'text' | 'email' | 'phone' | 'textarea' | 'checkbox';
