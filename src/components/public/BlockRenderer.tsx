@@ -46,6 +46,7 @@ import {
   SocialProofBlock,
   NotificationToastBlock,
   FloatingCTABlock,
+  VideoHeroBlock,
 } from './blocks';
 import type { KbHubBlockData } from './blocks/KbHubBlock';
 import type {
@@ -82,6 +83,8 @@ import type { BadgeBlockData } from './blocks/BadgeBlock';
 import type { SocialProofBlockData } from './blocks/SocialProofBlock';
 import type { NotificationToastBlockData } from './blocks/NotificationToastBlock';
 import type { FloatingCTABlockData } from './blocks/FloatingCTABlock';
+import type { VideoHeroBlockData } from './blocks/VideoHeroBlock';
+
 interface BlockRendererProps {
   block: ContentBlock;
   pageId?: string;
@@ -220,6 +223,8 @@ export function BlockRenderer({ block, pageId, index = 0 }: BlockRendererProps) 
         return <NotificationToastBlock data={block.data as unknown as NotificationToastBlockData} />;
       case 'floating-cta':
         return <FloatingCTABlock data={block.data as unknown as FloatingCTABlockData} />;
+      case 'video-hero':
+        return <VideoHeroBlock data={block.data as unknown as VideoHeroBlockData} />;
       default:
         return null;
     }
