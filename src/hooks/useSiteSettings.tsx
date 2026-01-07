@@ -45,6 +45,9 @@ export interface BrandingSettings {
   organizationName?: string;
   brandTagline?: string;
   
+  // Admin panel branding
+  adminName?: string;
+  
   // Colors (HSL format)
   primaryColor?: string;
   secondaryColor?: string;
@@ -75,6 +78,7 @@ const defaultBrandingSettings: BrandingSettings = {
   favicon: '',
   organizationName: '',
   brandTagline: '',
+  adminName: 'PEZ CMS',
   primaryColor: '220 100% 26%',
   secondaryColor: '210 40% 96%',
   accentColor: '199 89% 48%',
