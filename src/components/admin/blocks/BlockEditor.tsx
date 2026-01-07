@@ -55,6 +55,7 @@ import { TabsBlockEditor } from './TabsBlockEditor';
 import { MarqueeBlockEditor } from './MarqueeBlockEditor';
 import { EmbedBlockEditor } from './EmbedBlockEditor';
 import { TableBlockEditor } from './TableBlockEditor';
+import { CountdownBlockEditor } from './CountdownBlockEditor';
 import { TemplateEmptyState } from '@/components/admin/StarterTemplateSelector';
 import { StarterTemplate } from '@/data/starter-templates';
 import type { ProductsBlockData } from '@/components/public/blocks/ProductsBlock';
@@ -66,6 +67,7 @@ import type { TabsBlockData } from '@/components/public/blocks/TabsBlock';
 import type { MarqueeBlockData } from '@/components/public/blocks/MarqueeBlock';
 import type { EmbedBlockData } from '@/components/public/blocks/EmbedBlock';
 import type { TableBlockData } from '@/components/public/blocks/TableBlock';
+import type { CountdownBlockData } from '@/components/public/blocks/CountdownBlock';
 
 interface NewsletterBlockData {
   title?: string;
@@ -115,6 +117,7 @@ type BlockDataMap = {
   marquee: MarqueeBlockData;
   embed: EmbedBlockData;
   table: TableBlockData;
+  countdown: CountdownBlockData;
 };
 
 const DEFAULT_BLOCK_DATA: BlockDataMap = {
@@ -323,6 +326,15 @@ const DEFAULT_BLOCK_DATA: BlockDataMap = {
     variant: 'default',
     size: 'md',
     highlightOnHover: true,
+  },
+  countdown: {
+    targetDate: '',
+    variant: 'default',
+    size: 'md',
+    showDays: true,
+    showHours: true,
+    showMinutes: true,
+    showSeconds: true,
   },
 };
 
@@ -701,6 +713,14 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
         return (
           <TableBlockEditor
             data={block.data as unknown as TableBlockData}
+            onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+            isEditing={isEditing}
+          />
+        );
+      case 'countdown':
+        return (
+          <CountdownBlockEditor
+            data={block.data as unknown as CountdownBlockData}
             onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
             isEditing={isEditing}
           />

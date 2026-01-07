@@ -37,3 +37,4 @@ export { TabsBlock } from './TabsBlock';
 export { MarqueeBlock } from './MarqueeBlock';
 export { EmbedBlock } from './EmbedBlock';
 export { TableBlock } from './TableBlock';
+export { CountdownBlock } from './CountdownBlock';

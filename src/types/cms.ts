@@ -108,7 +108,8 @@ export type ContentBlockType =
   | 'tabs'
   | 'marquee'
   | 'embed'
-  | 'table';
+  | 'table'
+  | 'countdown';
 
 // Form field types
 export type FormFieldType = 'text' | 'email' | 'phone' | 'textarea' | 'checkbox';
