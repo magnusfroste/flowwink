@@ -50,12 +50,18 @@ import { CartBlockEditor } from './CartBlockEditor';
 import { KbFeaturedBlockEditor } from './KbFeaturedBlockEditor';
 import { KbHubBlockEditor } from './KbHubBlockEditor';
 import { KbSearchBlockEditor } from './KbSearchBlockEditor';
+import { AnnouncementBarBlockEditor } from './AnnouncementBarBlockEditor';
+import { TabsBlockEditor } from './TabsBlockEditor';
+import { MarqueeBlockEditor } from './MarqueeBlockEditor';
 import { TemplateEmptyState } from '@/components/admin/StarterTemplateSelector';
 import { StarterTemplate } from '@/data/starter-templates';
 import type { ProductsBlockData } from '@/components/public/blocks/ProductsBlock';
 import type { CartBlockData } from '@/components/public/blocks/CartBlock';
 import type { KbFeaturedBlockData } from '@/components/public/blocks/KbFeaturedBlock';
 import type { KbHubBlockData } from '@/components/public/blocks/KbHubBlock';
+import type { AnnouncementBarBlockData } from '@/components/public/blocks/AnnouncementBarBlock';
+import type { TabsBlockData } from '@/components/public/blocks/TabsBlock';
+import type { MarqueeBlockData } from '@/components/public/blocks/MarqueeBlock';
 
 interface NewsletterBlockData {
   title?: string;
@@ -100,6 +106,9 @@ type BlockDataMap = {
   'kb-featured': KbFeaturedBlockData;
   'kb-hub': KbHubBlockData;
   'kb-search': Record<string, unknown>;
+  'announcement-bar': AnnouncementBarBlockData;
+  tabs: TabsBlockData;
+  marquee: MarqueeBlockData;
 };
 
 const DEFAULT_BLOCK_DATA: BlockDataMap = {
@@ -271,6 +280,30 @@ const DEFAULT_BLOCK_DATA: BlockDataMap = {
     variant: 'default',
     showButton: true,
     buttonText: 'Sök',
+  },
+  'announcement-bar': {
+    message: 'Välkommen! Använd kod NYHET för 10% rabatt.',
+    variant: 'solid',
+    dismissable: true,
+    sticky: true,
+  },
+  tabs: {
+    tabs: [
+      { id: 'tab-1', title: 'Flik 1', content: '<p>Innehåll för flik 1</p>' },
+      { id: 'tab-2', title: 'Flik 2', content: '<p>Innehåll för flik 2</p>' },
+    ],
+    variant: 'underline',
+    orientation: 'horizontal',
+  },
+  marquee: {
+    items: [
+      { id: 'item-1', text: 'Nyhet: Ny kollektion lanserad!' },
+      { id: 'item-2', text: 'Fri frakt på ordrar över 500 kr' },
+    ],
+    speed: 'normal',
+    pauseOnHover: true,
+    direction: 'left',
+    variant: 'default',
   },
 };
 
@@ -611,6 +644,30 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
           <KbSearchBlockEditor
             data={block.data as Record<string, unknown>}
             onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+          />
+        );
+      case 'announcement-bar':
+        return (
+          <AnnouncementBarBlockEditor
+            data={block.data as unknown as AnnouncementBarBlockData}
+            onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+            isEditing={isEditing}
+          />
+        );
+      case 'tabs':
+        return (
+          <TabsBlockEditor
+            data={block.data as unknown as TabsBlockData}
+            onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+            isEditing={isEditing}
+          />
+        );
+      case 'marquee':
+        return (
+          <MarqueeBlockEditor
+            data={block.data as unknown as MarqueeBlockData}
+            onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+            isEditing={isEditing}
           />
         );
       default:

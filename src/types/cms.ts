@@ -103,7 +103,10 @@ export type ContentBlockType =
   | 'cart'
   | 'kb-featured'
   | 'kb-hub'
-  | 'kb-search';
+  | 'kb-search'
+  | 'announcement-bar'
+  | 'tabs'
+  | 'marquee';
 
 // Form field types
 export type FormFieldType = 'text' | 'email' | 'phone' | 'textarea' | 'checkbox';
