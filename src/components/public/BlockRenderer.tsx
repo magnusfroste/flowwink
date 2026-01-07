@@ -63,6 +63,9 @@ import type {
 import type { ProductsBlockData } from './blocks/ProductsBlock';
 import type { CartBlockData } from './blocks/CartBlock';
 import type { KbFeaturedBlockData } from './blocks/KbFeaturedBlock';
+import type { AnnouncementBarBlockData } from './blocks/AnnouncementBarBlock';
+import type { TabsBlockData } from './blocks/TabsBlock';
+import type { MarqueeBlockData } from './blocks/MarqueeBlock';
 
 interface BlockRendererProps {
   block: ContentBlock;
@@ -181,11 +184,11 @@ export function BlockRenderer({ block, pageId, index = 0 }: BlockRendererProps) 
       case 'kb-search':
         return <KbSearchBlock data={block.data as Record<string, unknown>} />;
       case 'announcement-bar':
-        return <AnnouncementBarBlock data={block.data as Record<string, unknown>} />;
+        return <AnnouncementBarBlock data={block.data as unknown as AnnouncementBarBlockData} />;
       case 'tabs':
-        return <TabsBlock data={block.data as Record<string, unknown>} />;
+        return <TabsBlock data={block.data as unknown as TabsBlockData} />;
       case 'marquee':
-        return <MarqueeBlock data={block.data as Record<string, unknown>} />;
+        return <MarqueeBlock data={block.data as unknown as MarqueeBlockData} />;
       default:
         return null;
     }
