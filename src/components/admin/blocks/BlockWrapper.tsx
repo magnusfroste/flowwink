@@ -52,6 +52,7 @@ const BLOCK_LABELS: Record<ContentBlockType, string> = {
   progress: 'Progress',
   badge: 'Badge',
   'social-proof': 'Social Proof',
+  'notification-toast': 'Notification Toast',
 };
 
 interface BlockWrapperProps {

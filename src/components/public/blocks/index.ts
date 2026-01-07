@@ -41,3 +41,4 @@ export { CountdownBlock } from './CountdownBlock';
 export { ProgressBlock } from './ProgressBlock';
 export { BadgeBlock } from './BadgeBlock';
 export { SocialProofBlock } from './SocialProofBlock';
+export { NotificationToastBlock } from './NotificationToastBlock';
