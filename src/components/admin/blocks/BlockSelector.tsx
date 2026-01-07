@@ -50,6 +50,7 @@ import {
   BadgeCheck,
   ThumbsUp,
   BellRing,
+  PanelBottom,
 } from 'lucide-react';
 import { ContentBlockType } from '@/types/cms';
 
@@ -257,6 +258,12 @@ const BLOCK_GROUPS: BlockGroup[] = [
         label: 'Notification Toast',
         icon: <BellRing className="h-5 w-5" />,
         description: 'Popup notifications for purchases and signups',
+      },
+      {
+        type: 'floating-cta',
+        label: 'Floating CTA',
+        icon: <PanelBottom className="h-5 w-5" />,
+        description: 'Sticky call-to-action that appears on scroll',
       },
       {
         type: 'marquee',

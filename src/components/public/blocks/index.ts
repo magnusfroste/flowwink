@@ -42,3 +42,4 @@ export { ProgressBlock } from './ProgressBlock';
 export { BadgeBlock } from './BadgeBlock';
 export { SocialProofBlock } from './SocialProofBlock';
 export { NotificationToastBlock } from './NotificationToastBlock';
+export { FloatingCTABlock } from './FloatingCTABlock';

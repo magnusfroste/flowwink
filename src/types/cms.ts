@@ -113,7 +113,8 @@ export type ContentBlockType =
   | 'progress'
   | 'badge'
   | 'social-proof'
-  | 'notification-toast';
+  | 'notification-toast'
+  | 'floating-cta';
 
 // Form field types
 export type FormFieldType = 'text' | 'email' | 'phone' | 'textarea' | 'checkbox';

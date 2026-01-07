@@ -60,6 +60,7 @@ import { ProgressBlockEditor } from './ProgressBlockEditor';
 import { BadgeBlockEditor } from './BadgeBlockEditor';
 import { SocialProofBlockEditor } from './SocialProofBlockEditor';
 import { NotificationToastBlockEditor } from './NotificationToastBlockEditor';
+import { FloatingCTABlockEditor } from './FloatingCTABlockEditor';
 import { TemplateEmptyState } from '@/components/admin/StarterTemplateSelector';
 import { StarterTemplate } from '@/data/starter-templates';
 import type { ProductsBlockData } from '@/components/public/blocks/ProductsBlock';
@@ -76,7 +77,7 @@ import type { ProgressBlockData } from '@/components/public/blocks/ProgressBlock
 import type { BadgeBlockData } from '@/components/public/blocks/BadgeBlock';
 import type { SocialProofBlockData } from '@/components/public/blocks/SocialProofBlock';
 import type { NotificationToastBlockData } from '@/components/public/blocks/NotificationToastBlock';
-
+import type { FloatingCTABlockData } from '@/components/public/blocks/FloatingCTABlock';
 interface NewsletterBlockData {
   title?: string;
   description?: string;
@@ -130,6 +131,7 @@ type BlockDataMap = {
   badge: BadgeBlockData;
   'social-proof': SocialProofBlockData;
   'notification-toast': NotificationToastBlockData;
+  'floating-cta': FloatingCTABlockData;
 };
 
 const DEFAULT_BLOCK_DATA: BlockDataMap = {
@@ -393,6 +395,21 @@ const DEFAULT_BLOCK_DATA: BlockDataMap = {
     showTimestamp: true,
     loop: true,
     maxWidth: 'sm',
+    animationType: 'slide',
+  },
+  'floating-cta': {
+    title: 'Redo att komma igång?',
+    subtitle: 'Boka en tid eller kontakta oss idag',
+    buttonText: 'Boka nu',
+    buttonUrl: '/contact',
+    showAfterScroll: 25,
+    hideOnScrollUp: false,
+    position: 'bottom',
+    variant: 'bar',
+    size: 'md',
+    showCloseButton: true,
+    closePersistent: false,
+    showScrollTop: false,
     animationType: 'slide',
   },
 };
@@ -812,6 +829,14 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
         return (
           <NotificationToastBlockEditor
             data={block.data as unknown as NotificationToastBlockData}
+            onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+            isEditing={isEditing}
+          />
+        );
+      case 'floating-cta':
+        return (
+          <FloatingCTABlockEditor
+            data={block.data as unknown as FloatingCTABlockData}
             onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
             isEditing={isEditing}
           />

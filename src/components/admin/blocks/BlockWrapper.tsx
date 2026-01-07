@@ -53,6 +53,7 @@ const BLOCK_LABELS: Record<ContentBlockType, string> = {
   badge: 'Badge',
   'social-proof': 'Social Proof',
   'notification-toast': 'Notification Toast',
+  'floating-cta': 'Floating CTA',
 };
 
 interface BlockWrapperProps {
