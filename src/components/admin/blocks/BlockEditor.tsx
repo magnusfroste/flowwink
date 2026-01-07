@@ -53,6 +53,7 @@ import { KbSearchBlockEditor } from './KbSearchBlockEditor';
 import { AnnouncementBarBlockEditor } from './AnnouncementBarBlockEditor';
 import { TabsBlockEditor } from './TabsBlockEditor';
 import { MarqueeBlockEditor } from './MarqueeBlockEditor';
+import { EmbedBlockEditor } from './EmbedBlockEditor';
 import { TemplateEmptyState } from '@/components/admin/StarterTemplateSelector';
 import { StarterTemplate } from '@/data/starter-templates';
 import type { ProductsBlockData } from '@/components/public/blocks/ProductsBlock';
@@ -62,6 +63,7 @@ import type { KbHubBlockData } from '@/components/public/blocks/KbHubBlock';
 import type { AnnouncementBarBlockData } from '@/components/public/blocks/AnnouncementBarBlock';
 import type { TabsBlockData } from '@/components/public/blocks/TabsBlock';
 import type { MarqueeBlockData } from '@/components/public/blocks/MarqueeBlock';
+import type { EmbedBlockData } from '@/components/public/blocks/EmbedBlock';
 
 interface NewsletterBlockData {
   title?: string;
@@ -109,6 +111,7 @@ type BlockDataMap = {
   'announcement-bar': AnnouncementBarBlockData;
   tabs: TabsBlockData;
   marquee: MarqueeBlockData;
+  embed: EmbedBlockData;
 };
 
 const DEFAULT_BLOCK_DATA: BlockDataMap = {
@@ -303,6 +306,12 @@ const DEFAULT_BLOCK_DATA: BlockDataMap = {
     speed: 'normal',
     pauseOnHover: true,
     direction: 'left',
+    variant: 'default',
+  },
+  embed: {
+    url: '',
+    aspectRatio: 'auto',
+    maxWidth: 'lg',
     variant: 'default',
   },
 };
@@ -666,6 +675,14 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
         return (
           <MarqueeBlockEditor
             data={block.data as unknown as MarqueeBlockData}
+            onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+            isEditing={isEditing}
+          />
+        );
+      case 'embed':
+        return (
+          <EmbedBlockEditor
+            data={block.data as unknown as EmbedBlockData}
             onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
             isEditing={isEditing}
           />

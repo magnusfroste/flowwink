@@ -46,6 +46,7 @@ const BLOCK_LABELS: Record<ContentBlockType, string> = {
   'announcement-bar': 'Announcement Bar',
   tabs: 'Tabs',
   marquee: 'Marquee',
+  embed: 'Embed',
 };
 
 interface BlockWrapperProps {

@@ -106,7 +106,8 @@ export type ContentBlockType =
   | 'kb-search'
   | 'announcement-bar'
   | 'tabs'
-  | 'marquee';
+  | 'marquee'
+  | 'embed';
 
 // Form field types
 export type FormFieldType = 'text' | 'email' | 'phone' | 'textarea' | 'checkbox';

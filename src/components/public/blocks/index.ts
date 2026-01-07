@@ -35,3 +35,4 @@ export { KbSearchBlock } from './KbSearchBlock';
 export { AnnouncementBarBlock } from './AnnouncementBarBlock';
 export { TabsBlock } from './TabsBlock';
 export { MarqueeBlock } from './MarqueeBlock';
+export { EmbedBlock } from './EmbedBlock';
