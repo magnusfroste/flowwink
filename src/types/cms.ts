@@ -370,6 +370,8 @@ export interface TwoColumnBlockData {
   imageSrc: string;
   imageAlt: string;
   imagePosition: 'left' | 'right';
+  /** Which column should be sticky when scrolling */
+  stickyColumn?: 'none' | 'image' | 'text';
 }
 
 export interface InfoBoxBlockData {

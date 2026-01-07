@@ -5,8 +5,9 @@ import Placeholder from '@tiptap/extension-placeholder';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TwoColumnBlockData, TiptapDocument } from '@/types/cms';
-import { Bold, Italic, List, ListOrdered, ArrowLeftRight } from 'lucide-react';
+import { Bold, Italic, List, ListOrdered, ArrowLeftRight, Pin } from 'lucide-react';
 import { ImageUploader } from '../ImageUploader';
 import { AITiptapToolbar } from '../AITiptapToolbar';
 import { generateHTML } from '@tiptap/react';
@@ -62,12 +63,32 @@ export function TwoColumnBlockEditor({ data, isEditing, onChange }: TwoColumnBlo
   if (isEditing) {
     return (
       <div className="space-y-4 p-4">
-        <div className="flex items-center justify-between">
-          <Label>Image position</Label>
-          <Button variant="outline" size="sm" onClick={togglePosition}>
-            <ArrowLeftRight className="h-4 w-4 mr-2" />
-            {data.imagePosition === 'left' ? 'Image left' : 'Image right'}
-          </Button>
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-2">
+            <Label>Image position</Label>
+            <Button variant="outline" size="sm" onClick={togglePosition}>
+              <ArrowLeftRight className="h-4 w-4 mr-2" />
+              {data.imagePosition === 'left' ? 'Image left' : 'Image right'}
+            </Button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Pin className="h-4 w-4 text-muted-foreground" />
+            <Label>Sticky column</Label>
+            <Select
+              value={data.stickyColumn || 'none'}
+              onValueChange={(value) => onChange({ ...data, stickyColumn: value as 'none' | 'image' | 'text' })}
+            >
+              <SelectTrigger className="w-[140px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                <SelectItem value="image">Image</SelectItem>
+                <SelectItem value="text">Text</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
