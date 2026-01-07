@@ -39,6 +39,7 @@ import {
   TabsBlock,
   MarqueeBlock,
   EmbedBlock,
+  TableBlock,
 } from './blocks';
 import type { KbHubBlockData } from './blocks/KbHubBlock';
 import type {
@@ -68,6 +69,7 @@ import type { AnnouncementBarBlockData } from './blocks/AnnouncementBarBlock';
 import type { TabsBlockData } from './blocks/TabsBlock';
 import type { MarqueeBlockData } from './blocks/MarqueeBlock';
 import type { EmbedBlockData } from './blocks/EmbedBlock';
+import type { TableBlockData } from './blocks/TableBlock';
 
 interface BlockRendererProps {
   block: ContentBlock;
@@ -193,6 +195,8 @@ export function BlockRenderer({ block, pageId, index = 0 }: BlockRendererProps) 
         return <MarqueeBlock data={block.data as unknown as MarqueeBlockData} />;
       case 'embed':
         return <EmbedBlock data={block.data as unknown as EmbedBlockData} />;
+      case 'table':
+        return <TableBlock data={block.data as unknown as TableBlockData} />;
       default:
         return null;
     }

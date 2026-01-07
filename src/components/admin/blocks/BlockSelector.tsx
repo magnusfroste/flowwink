@@ -44,6 +44,7 @@ import {
   Layers,
   MoveHorizontal,
   Code2,
+  Table2,
 } from 'lucide-react';
 import { ContentBlockType } from '@/types/cms';
 
@@ -127,6 +128,12 @@ const BLOCK_GROUPS: BlockGroup[] = [
         label: 'Tabs',
         icon: <Layers className="h-5 w-5" />,
         description: 'Organize content in tabbed sections',
+      },
+      {
+        type: 'table',
+        label: 'Table',
+        icon: <Table2 className="h-5 w-5" />,
+        description: 'Structured data in responsive table',
       },
     ],
   },

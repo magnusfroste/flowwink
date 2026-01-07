@@ -54,6 +54,7 @@ import { AnnouncementBarBlockEditor } from './AnnouncementBarBlockEditor';
 import { TabsBlockEditor } from './TabsBlockEditor';
 import { MarqueeBlockEditor } from './MarqueeBlockEditor';
 import { EmbedBlockEditor } from './EmbedBlockEditor';
+import { TableBlockEditor } from './TableBlockEditor';
 import { TemplateEmptyState } from '@/components/admin/StarterTemplateSelector';
 import { StarterTemplate } from '@/data/starter-templates';
 import type { ProductsBlockData } from '@/components/public/blocks/ProductsBlock';
@@ -64,6 +65,7 @@ import type { AnnouncementBarBlockData } from '@/components/public/blocks/Announ
 import type { TabsBlockData } from '@/components/public/blocks/TabsBlock';
 import type { MarqueeBlockData } from '@/components/public/blocks/MarqueeBlock';
 import type { EmbedBlockData } from '@/components/public/blocks/EmbedBlock';
+import type { TableBlockData } from '@/components/public/blocks/TableBlock';
 
 interface NewsletterBlockData {
   title?: string;
@@ -112,6 +114,7 @@ type BlockDataMap = {
   tabs: TabsBlockData;
   marquee: MarqueeBlockData;
   embed: EmbedBlockData;
+  table: TableBlockData;
 };
 
 const DEFAULT_BLOCK_DATA: BlockDataMap = {
@@ -313,6 +316,13 @@ const DEFAULT_BLOCK_DATA: BlockDataMap = {
     aspectRatio: 'auto',
     maxWidth: 'lg',
     variant: 'default',
+  },
+  table: {
+    columns: [],
+    rows: [],
+    variant: 'default',
+    size: 'md',
+    highlightOnHover: true,
   },
 };
 
@@ -683,6 +693,14 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
         return (
           <EmbedBlockEditor
             data={block.data as unknown as EmbedBlockData}
+            onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+            isEditing={isEditing}
+          />
+        );
+      case 'table':
+        return (
+          <TableBlockEditor
+            data={block.data as unknown as TableBlockData}
             onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
             isEditing={isEditing}
           />
