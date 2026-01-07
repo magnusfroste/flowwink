@@ -18,6 +18,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { StatsBlockData } from '@/types/cms';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Plus, GripVertical, Trash2, TrendingUp } from 'lucide-react';
@@ -191,6 +192,43 @@ export function StatsBlockEditor({ data, onChange, canEdit }: StatsBlockEditorPr
         <Plus className="h-4 w-4 mr-2" />
         Add metric
       </Button>
+
+      {/* Animation settings */}
+      <div className="pt-4 border-t space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <Label className="text-sm">Animate numbers</Label>
+            <p className="text-xs text-muted-foreground">Count up animation when visible</p>
+          </div>
+          <Switch
+            checked={data.animated !== false}
+            onCheckedChange={(checked) => onChange({ ...data, animated: checked })}
+          />
+        </div>
+        
+        {data.animated !== false && (
+          <div className="space-y-2">
+            <Label className="text-sm">Animation speed</Label>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { value: 1000, label: 'Fast' },
+                { value: 2000, label: 'Normal' },
+                { value: 3000, label: 'Slow' },
+              ].map(({ value, label }) => (
+                <Button
+                  key={value}
+                  type="button"
+                  variant={(data.animationDuration || 2000) === value ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => onChange({ ...data, animationDuration: value })}
+                >
+                  {label}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

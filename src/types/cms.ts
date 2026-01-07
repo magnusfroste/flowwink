@@ -236,9 +236,13 @@ export interface ContentBlock {
   animation?: BlockAnimation;
 }
 
+export type HeroLayout = 'centered' | 'split-left' | 'split-right';
+
 export interface HeroBlockData {
   title: string;
   subtitle?: string;
+  // Layout mode
+  layout?: HeroLayout;
   // Background options
   backgroundType?: 'image' | 'video' | 'color';
   backgroundImage?: string;
@@ -249,7 +253,7 @@ export interface HeroBlockData {
   videoAutoplay?: boolean;
   videoLoop?: boolean;
   videoMuted?: boolean;
-  // Layout options
+  // Layout options (for centered layout)
   heightMode?: 'auto' | 'viewport' | '80vh' | '60vh';
   contentAlignment?: 'top' | 'center' | 'bottom';
   overlayOpacity?: number;
@@ -322,11 +326,22 @@ export interface ImageBlockData {
   caption?: string;
 }
 
+export type CTAVariant = 'default' | 'with-image' | 'split' | 'minimal';
+
 export interface CTABlockData {
   title: string;
   subtitle?: string;
   buttonText: string;
   buttonUrl: string;
+  // Secondary button
+  secondaryButtonText?: string;
+  secondaryButtonUrl?: string;
+  // Design variant
+  variant?: CTAVariant;
+  // Background options
+  backgroundImage?: string;
+  overlayOpacity?: number;
+  // Legacy gradient option (used by default variant)
   gradient?: boolean;
 }
 
@@ -415,6 +430,8 @@ export interface GalleryBlockData {
 export interface StatsBlockData {
   title?: string;
   stats: { value: string; label: string; icon?: string }[];
+  animated?: boolean;
+  animationDuration?: number; // in ms, default 2000
 }
 
 export interface ChatBlockData {
