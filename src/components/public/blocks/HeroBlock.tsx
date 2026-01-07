@@ -29,6 +29,93 @@ const titleAnimationClasses: Record<string, string> = {
 export function HeroBlock({ data }: HeroBlockProps) {
   if (!data.title) return null;
   
+  const layout = data.layout || 'centered';
+  
+  // Split layout rendering
+  if (layout === 'split-left' || layout === 'split-right') {
+    const imageOnLeft = layout === 'split-left';
+    const hasImage = data.backgroundImage;
+    const hasVideo = data.backgroundType === 'video' && data.videoUrl;
+    
+    return (
+      <section className="min-h-[60vh] md:min-h-[80vh]">
+        <div className={cn(
+          "grid md:grid-cols-2 min-h-[inherit]",
+          !imageOnLeft && "md:[direction:rtl]"
+        )}>
+          {/* Media side */}
+          <div className={cn(
+            "relative bg-muted min-h-[300px] md:min-h-[inherit]",
+            !imageOnLeft && "md:[direction:ltr]"
+          )}>
+            {hasVideo ? (
+              <video
+                autoPlay={data.videoAutoplay !== false}
+                loop={data.videoLoop !== false}
+                muted={data.videoMuted !== false}
+                playsInline
+                className="absolute inset-0 w-full h-full object-cover"
+                poster={data.videoPosterUrl}
+              >
+                <source src={data.videoUrl} type="video/mp4" />
+                {data.videoUrlWebm && <source src={data.videoUrlWebm} type="video/webm" />}
+              </video>
+            ) : hasImage ? (
+              <img
+                src={data.backgroundImage}
+                alt=""
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+            ) : (
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/40" />
+            )}
+          </div>
+          
+          {/* Content side */}
+          <div className={cn(
+            "flex flex-col justify-center px-8 md:px-12 lg:px-16 xl:px-20 py-16 md:py-20 bg-background",
+            !imageOnLeft && "md:[direction:ltr]"
+          )}>
+            <div className="max-w-xl">
+              <h1 
+                className={cn(
+                  "font-serif text-3xl md:text-4xl lg:text-5xl font-bold mb-6 text-foreground",
+                  titleAnimationClasses[data.titleAnimation || 'none']
+                )}
+              >
+                {data.title}
+              </h1>
+              {data.subtitle && (
+                <p className="text-lg md:text-xl text-muted-foreground mb-8">
+                  {data.subtitle}
+                </p>
+              )}
+              <div className="flex flex-wrap gap-4">
+                {data.primaryButton?.text && data.primaryButton?.url && (
+                  <a
+                    href={data.primaryButton.url}
+                    className="inline-flex items-center justify-center px-6 py-3 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors"
+                  >
+                    {data.primaryButton.text}
+                  </a>
+                )}
+                {data.secondaryButton?.text && data.secondaryButton?.url && (
+                  <a
+                    href={data.secondaryButton.url}
+                    className="inline-flex items-center justify-center px-6 py-3 border border-border text-foreground font-medium rounded-lg hover:bg-muted transition-colors"
+                  >
+                    {data.secondaryButton.text}
+                  </a>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+  
+  // Centered layout (original behavior)
   const backgroundType = data.backgroundType || 'image';
   const hasVideoBackground = backgroundType === 'video' && data.videoUrl;
   const hasImageBackground = backgroundType === 'image' && data.backgroundImage;

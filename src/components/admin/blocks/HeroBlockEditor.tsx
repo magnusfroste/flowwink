@@ -4,16 +4,22 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
-import { HeroBlockData } from '@/types/cms';
+import { HeroBlockData, HeroLayout } from '@/types/cms';
 import { ImageUploader } from '../ImageUploader';
 import { AITextAssistant } from '../AITextAssistant';
-import { Image, Video, Palette, Maximize, AlignVerticalJustifyStart, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd, Type, MoveUp, Sparkles, ChevronDown } from 'lucide-react';
+import { Image, Video, Palette, Maximize, AlignVerticalJustifyStart, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd, Type, MoveUp, Sparkles, ChevronDown, LayoutTemplate, PanelLeftInactive, PanelRightInactive, AlignCenter } from 'lucide-react';
 
 interface HeroBlockEditorProps {
   data: HeroBlockData;
   onChange: (data: HeroBlockData) => void;
   isEditing: boolean;
 }
+
+const LAYOUT_OPTIONS: { value: HeroLayout; label: string; icon: typeof LayoutTemplate }[] = [
+  { value: 'centered', label: 'Centered', icon: AlignCenter },
+  { value: 'split-left', label: 'Split (Image Left)', icon: PanelLeftInactive },
+  { value: 'split-right', label: 'Split (Image Right)', icon: PanelRightInactive },
+];
 
 export function HeroBlockEditor({ data, onChange, isEditing }: HeroBlockEditorProps) {
   const [localData, setLocalData] = useState<HeroBlockData>(data);
@@ -24,11 +30,33 @@ export function HeroBlockEditor({ data, onChange, isEditing }: HeroBlockEditorPr
     onChange(newData);
   };
 
+  const layout = localData.layout || 'centered';
   const backgroundType = localData.backgroundType || 'image';
+  const isSplitLayout = layout === 'split-left' || layout === 'split-right';
 
   if (isEditing) {
     return (
       <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+        {/* Layout Selector */}
+        <div className="space-y-3">
+          <Label>Layout</Label>
+          <div className="grid grid-cols-3 gap-2">
+            {LAYOUT_OPTIONS.map(({ value, label, icon: Icon }) => (
+              <Button
+                key={value}
+                type="button"
+                variant={layout === value ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => handleChange({ layout: value })}
+                className="flex items-center gap-2"
+              >
+                <Icon className="h-4 w-4" />
+                <span className="hidden sm:inline">{label}</span>
+              </Button>
+            ))}
+          </div>
+        </div>
+
         <div className="space-y-2">
           <Label htmlFor="hero-title">Title</Label>
           <div className="flex gap-2">
@@ -66,45 +94,67 @@ export function HeroBlockEditor({ data, onChange, isEditing }: HeroBlockEditorPr
           </div>
         </div>
 
-        {/* Background Type Selector */}
-        <div className="space-y-3">
-          <Label>Background Type</Label>
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              variant={backgroundType === 'image' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => handleChange({ backgroundType: 'image' })}
-              className="flex items-center gap-2"
-            >
-              <Image className="h-4 w-4" />
-              Image
-            </Button>
-            <Button
-              type="button"
-              variant={backgroundType === 'video' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => handleChange({ backgroundType: 'video' })}
-              className="flex items-center gap-2"
-            >
-              <Video className="h-4 w-4" />
-              Video
-            </Button>
-            <Button
-              type="button"
-              variant={backgroundType === 'color' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => handleChange({ backgroundType: 'color' })}
-              className="flex items-center gap-2"
-            >
-              <Palette className="h-4 w-4" />
-              Color
-            </Button>
+        {/* Background Type Selector - only show for centered layout */}
+        {!isSplitLayout && (
+          <div className="space-y-3">
+            <Label>Background Type</Label>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant={backgroundType === 'image' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => handleChange({ backgroundType: 'image' })}
+                className="flex items-center gap-2"
+              >
+                <Image className="h-4 w-4" />
+                Image
+              </Button>
+              <Button
+                type="button"
+                variant={backgroundType === 'video' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => handleChange({ backgroundType: 'video' })}
+                className="flex items-center gap-2"
+              >
+                <Video className="h-4 w-4" />
+                Video
+              </Button>
+              <Button
+                type="button"
+                variant={backgroundType === 'color' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => handleChange({ backgroundType: 'color' })}
+                className="flex items-center gap-2"
+              >
+                <Palette className="h-4 w-4" />
+                Color
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Image Background Options */}
-        {backgroundType === 'image' && (
+        {/* Image/Media uploader for split layout */}
+        {isSplitLayout && (
+          <div className="space-y-3">
+            <Label>Media (Image or Video)</Label>
+            <ImageUploader
+              value={localData.backgroundImage || ''}
+              onChange={(url) => handleChange({ backgroundImage: url, backgroundType: 'image' })}
+              label="Image"
+            />
+            <p className="text-xs text-muted-foreground">
+              Or use a video background:
+            </p>
+            <Input
+              value={localData.videoUrl || ''}
+              onChange={(e) => handleChange({ videoUrl: e.target.value, backgroundType: 'video' })}
+              placeholder="Video URL (MP4)"
+            />
+          </div>
+        )}
+
+        {/* Image Background Options - for centered layout */}
+        {!isSplitLayout && backgroundType === 'image' && (
           <ImageUploader
             value={localData.backgroundImage || ''}
             onChange={(url) => handleChange({ backgroundImage: url })}
@@ -112,8 +162,8 @@ export function HeroBlockEditor({ data, onChange, isEditing }: HeroBlockEditorPr
           />
         )}
 
-        {/* Video Background Options */}
-        {backgroundType === 'video' && (
+        {/* Video Background Options - for centered layout */}
+        {!isSplitLayout && backgroundType === 'video' && (
           <div className="space-y-4 p-4 border border-border rounded-lg bg-background/50">
             <div className="space-y-2">
               <Label htmlFor="video-url">Video URL (MP4)</Label>
@@ -173,141 +223,143 @@ export function HeroBlockEditor({ data, onChange, isEditing }: HeroBlockEditorPr
           </div>
         )}
 
-        {/* Color Background Info */}
-        {backgroundType === 'color' && (
+        {/* Color Background Info - for centered layout */}
+        {!isSplitLayout && backgroundType === 'color' && (
           <p className="text-sm text-muted-foreground p-4 border border-border rounded-lg bg-background/50">
             The hero will use your primary brand color as the background. 
             You can customize colors in Branding Settings.
           </p>
         )}
 
-        {/* Layout Options */}
-        <div className="space-y-4 p-4 border border-border rounded-lg bg-background/50">
-          <Label className="text-sm font-medium">Layout Options</Label>
-          
-          {/* Height Mode */}
-          <div className="space-y-2">
-            <Label className="text-xs text-muted-foreground">Hero Height</Label>
-            <div className="grid grid-cols-4 gap-2">
-              {[
-                { value: 'auto', label: 'Auto', icon: null },
-                { value: 'viewport', label: 'Full', icon: Maximize },
-                { value: '80vh', label: '80%', icon: null },
-                { value: '60vh', label: '60%', icon: null },
-              ].map(({ value, label, icon: Icon }) => (
-                <Button
-                  key={value}
-                  type="button"
-                  variant={(localData.heightMode || 'auto') === value ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => handleChange({ heightMode: value as HeroBlockData['heightMode'] })}
-                  className="flex items-center gap-1"
-                >
-                  {Icon && <Icon className="h-3 w-3" />}
-                  {label}
-                </Button>
-              ))}
-            </div>
-          </div>
-
-          {/* Content Alignment - only show when not auto */}
-          {(localData.heightMode && localData.heightMode !== 'auto') && (
+        {/* Layout Options - only for centered layout */}
+        {!isSplitLayout && (
+          <div className="space-y-4 p-4 border border-border rounded-lg bg-background/50">
+            <Label className="text-sm font-medium">Layout Options</Label>
+            
+            {/* Height Mode */}
             <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground">Content Position</Label>
-              <div className="grid grid-cols-3 gap-2">
+              <Label className="text-xs text-muted-foreground">Hero Height</Label>
+              <div className="grid grid-cols-4 gap-2">
                 {[
-                  { value: 'top', label: 'Top', icon: AlignVerticalJustifyStart },
-                  { value: 'center', label: 'Center', icon: AlignVerticalJustifyCenter },
-                  { value: 'bottom', label: 'Bottom', icon: AlignVerticalJustifyEnd },
+                  { value: 'auto', label: 'Auto', icon: null },
+                  { value: 'viewport', label: 'Full', icon: Maximize },
+                  { value: '80vh', label: '80%', icon: null },
+                  { value: '60vh', label: '60%', icon: null },
                 ].map(({ value, label, icon: Icon }) => (
                   <Button
                     key={value}
                     type="button"
-                    variant={(localData.contentAlignment || 'center') === value ? 'default' : 'outline'}
+                    variant={(localData.heightMode || 'auto') === value ? 'default' : 'outline'}
                     size="sm"
-                    onClick={() => handleChange({ contentAlignment: value as HeroBlockData['contentAlignment'] })}
+                    onClick={() => handleChange({ heightMode: value as HeroBlockData['heightMode'] })}
                     className="flex items-center gap-1"
                   >
-                    <Icon className="h-3 w-3" />
+                    {Icon && <Icon className="h-3 w-3" />}
                     {label}
                   </Button>
                 ))}
               </div>
             </div>
-          )}
 
-          {/* Overlay Opacity - only show when image or video */}
-          {(backgroundType === 'image' || backgroundType === 'video') && (
-            <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground">
-                Overlay Darkness: {localData.overlayOpacity ?? 60}%
-              </Label>
-              <Slider
-                value={[localData.overlayOpacity ?? 60]}
-                onValueChange={([value]) => handleChange({ overlayOpacity: value })}
-                min={0}
-                max={100}
-                step={5}
-                className="w-full"
-              />
-            </div>
-          )}
-
-          {/* Parallax Effect - only for images */}
-          {backgroundType === 'image' && (
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-xs text-muted-foreground">Parallax Effect</Label>
-                <p className="text-xs text-muted-foreground/70">Background moves slower than content</p>
+            {/* Content Alignment - only show when not auto */}
+            {(localData.heightMode && localData.heightMode !== 'auto') && (
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">Content Position</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { value: 'top', label: 'Top', icon: AlignVerticalJustifyStart },
+                    { value: 'center', label: 'Center', icon: AlignVerticalJustifyCenter },
+                    { value: 'bottom', label: 'Bottom', icon: AlignVerticalJustifyEnd },
+                  ].map(({ value, label, icon: Icon }) => (
+                    <Button
+                      key={value}
+                      type="button"
+                      variant={(localData.contentAlignment || 'center') === value ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => handleChange({ contentAlignment: value as HeroBlockData['contentAlignment'] })}
+                      className="flex items-center gap-1"
+                    >
+                      <Icon className="h-3 w-3" />
+                      {label}
+                    </Button>
+                  ))}
+                </div>
               </div>
-              <Switch
-                checked={localData.parallaxEffect || false}
-                onCheckedChange={(checked) => handleChange({ parallaxEffect: checked })}
-              />
-            </div>
-          )}
+            )}
 
-          {/* Title Animation */}
-          <div className="space-y-2">
-            <Label className="text-xs text-muted-foreground">Title Animation</Label>
-            <div className="grid grid-cols-4 gap-2">
-              {[
-                { value: 'none', label: 'None', icon: Type },
-                { value: 'fade-in', label: 'Fade', icon: Sparkles },
-                { value: 'slide-up', label: 'Slide', icon: MoveUp },
-                { value: 'typewriter', label: 'Type', icon: Type },
-              ].map(({ value, label, icon: Icon }) => (
-                <Button
-                  key={value}
-                  type="button"
-                  variant={(localData.titleAnimation || 'none') === value ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => handleChange({ titleAnimation: value as HeroBlockData['titleAnimation'] })}
-                  className="flex items-center gap-1"
-                >
-                  <Icon className="h-3 w-3" />
-                  {label}
-                </Button>
-              ))}
-            </div>
-          </div>
-
-          {/* Scroll Indicator - only for tall heroes */}
-          {(localData.heightMode && localData.heightMode !== 'auto') && (
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                  <ChevronDown className="h-3 w-3" />
-                  Scroll Indicator
+            {/* Overlay Opacity - only show when image or video */}
+            {(backgroundType === 'image' || backgroundType === 'video') && (
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">
+                  Overlay Darkness: {localData.overlayOpacity ?? 60}%
                 </Label>
-                <p className="text-xs text-muted-foreground/70">Show animated arrow at bottom</p>
+                <Slider
+                  value={[localData.overlayOpacity ?? 60]}
+                  onValueChange={([value]) => handleChange({ overlayOpacity: value })}
+                  min={0}
+                  max={100}
+                  step={5}
+                  className="w-full"
+                />
               </div>
-              <Switch
-                checked={localData.showScrollIndicator || false}
-                onCheckedChange={(checked) => handleChange({ showScrollIndicator: checked })}
-              />
-            </div>
-          )}
+            )}
+
+            {/* Parallax Effect - only for images */}
+            {backgroundType === 'image' && (
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Parallax Effect</Label>
+                  <p className="text-xs text-muted-foreground/70">Background moves slower than content</p>
+                </div>
+                <Switch
+                  checked={localData.parallaxEffect || false}
+                  onCheckedChange={(checked) => handleChange({ parallaxEffect: checked })}
+                />
+              </div>
+            )}
+
+            {/* Scroll Indicator - only for tall heroes */}
+            {(localData.heightMode && localData.heightMode !== 'auto') && (
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                    <ChevronDown className="h-3 w-3" />
+                    Scroll Indicator
+                  </Label>
+                  <p className="text-xs text-muted-foreground/70">Show animated arrow at bottom</p>
+                </div>
+                <Switch
+                  checked={localData.showScrollIndicator || false}
+                  onCheckedChange={(checked) => handleChange({ showScrollIndicator: checked })}
+                />
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Title Animation */}
+        <div className="space-y-2">
+          <Label className="text-xs text-muted-foreground">Title Animation</Label>
+          <div className="grid grid-cols-4 gap-2">
+            {[
+              { value: 'none', label: 'None', icon: Type },
+              { value: 'fade-in', label: 'Fade', icon: Sparkles },
+              { value: 'slide-up', label: 'Slide', icon: MoveUp },
+              { value: 'typewriter', label: 'Type', icon: Type },
+            ].map(({ value, label, icon: Icon }) => (
+              <Button
+                key={value}
+                type="button"
+                variant={(localData.titleAnimation || 'none') === value ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => handleChange({ titleAnimation: value as HeroBlockData['titleAnimation'] })}
+                className="flex items-center gap-1"
+              >
+                <Icon className="h-3 w-3" />
+                {label}
+              </Button>
+            ))}
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -361,6 +413,35 @@ export function HeroBlockEditor({ data, onChange, isEditing }: HeroBlockEditorPr
   // Preview mode
   const hasVideo = backgroundType === 'video' && localData.videoUrl;
   
+  // Split layout preview
+  if (isSplitLayout) {
+    const imageOnLeft = layout === 'split-left';
+    return (
+      <div className="grid md:grid-cols-2 min-h-[300px] rounded-lg overflow-hidden">
+        <div className={`relative bg-muted ${!imageOnLeft ? 'md:order-2' : ''}`}>
+          {localData.backgroundImage ? (
+            <img src={localData.backgroundImage} alt="" className="absolute inset-0 w-full h-full object-cover" />
+          ) : hasVideo ? (
+            <video autoPlay loop muted playsInline className="absolute inset-0 w-full h-full object-cover">
+              <source src={localData.videoUrl} type="video/mp4" />
+            </video>
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/40" />
+          )}
+        </div>
+        <div className={`flex flex-col justify-center p-8 bg-background ${!imageOnLeft ? 'md:order-1' : ''}`}>
+          <h1 className="text-2xl font-bold mb-2">{localData.title || 'Hero Heading'}</h1>
+          {localData.subtitle && <p className="text-muted-foreground mb-4">{localData.subtitle}</p>}
+          <div className="flex flex-wrap gap-3">
+            {localData.primaryButton?.text && <Button>{localData.primaryButton.text}</Button>}
+            {localData.secondaryButton?.text && <Button variant="outline">{localData.secondaryButton.text}</Button>}
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  // Centered layout preview
   return (
     <div
       className="relative overflow-hidden rounded-lg bg-gradient-to-r from-primary/90 to-primary text-primary-foreground"
