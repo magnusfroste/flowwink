@@ -48,6 +48,7 @@ import {
   Timer,
   TrendingUp,
   BadgeCheck,
+  ThumbsUp,
 } from 'lucide-react';
 import { ContentBlockType } from '@/types/cms';
 
@@ -243,6 +244,12 @@ const BLOCK_GROUPS: BlockGroup[] = [
         label: 'Badges',
         icon: <BadgeCheck className="h-5 w-5" />,
         description: 'Certifications, awards and trust badges',
+      },
+      {
+        type: 'social-proof',
+        label: 'Social Proof',
+        icon: <ThumbsUp className="h-5 w-5" />,
+        description: 'Customer counts, ratings and live activity',
       },
       {
         type: 'marquee',

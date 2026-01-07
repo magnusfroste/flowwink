@@ -43,6 +43,7 @@ import {
   CountdownBlock,
   ProgressBlock,
   BadgeBlock,
+  SocialProofBlock,
 } from './blocks';
 import type { KbHubBlockData } from './blocks/KbHubBlock';
 import type {
@@ -76,6 +77,7 @@ import type { TableBlockData } from './blocks/TableBlock';
 import type { CountdownBlockData } from './blocks/CountdownBlock';
 import type { ProgressBlockData } from './blocks/ProgressBlock';
 import type { BadgeBlockData } from './blocks/BadgeBlock';
+import type { SocialProofBlockData } from './blocks/SocialProofBlock';
 
 interface BlockRendererProps {
   block: ContentBlock;
@@ -209,6 +211,8 @@ export function BlockRenderer({ block, pageId, index = 0 }: BlockRendererProps) 
         return <ProgressBlock data={block.data as unknown as ProgressBlockData} />;
       case 'badge':
         return <BadgeBlock data={block.data as unknown as BadgeBlockData} />;
+      case 'social-proof':
+        return <SocialProofBlock data={block.data as unknown as SocialProofBlockData} />;
       default:
         return null;
     }

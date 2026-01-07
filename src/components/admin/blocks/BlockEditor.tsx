@@ -58,6 +58,7 @@ import { TableBlockEditor } from './TableBlockEditor';
 import { CountdownBlockEditor } from './CountdownBlockEditor';
 import { ProgressBlockEditor } from './ProgressBlockEditor';
 import { BadgeBlockEditor } from './BadgeBlockEditor';
+import { SocialProofBlockEditor } from './SocialProofBlockEditor';
 import { TemplateEmptyState } from '@/components/admin/StarterTemplateSelector';
 import { StarterTemplate } from '@/data/starter-templates';
 import type { ProductsBlockData } from '@/components/public/blocks/ProductsBlock';
@@ -72,6 +73,7 @@ import type { TableBlockData } from '@/components/public/blocks/TableBlock';
 import type { CountdownBlockData } from '@/components/public/blocks/CountdownBlock';
 import type { ProgressBlockData } from '@/components/public/blocks/ProgressBlock';
 import type { BadgeBlockData } from '@/components/public/blocks/BadgeBlock';
+import type { SocialProofBlockData } from '@/components/public/blocks/SocialProofBlock';
 
 interface NewsletterBlockData {
   title?: string;
@@ -124,6 +126,7 @@ type BlockDataMap = {
   countdown: CountdownBlockData;
   progress: ProgressBlockData;
   badge: BadgeBlockData;
+  'social-proof': SocialProofBlockData;
 };
 
 const DEFAULT_BLOCK_DATA: BlockDataMap = {
@@ -362,6 +365,18 @@ const DEFAULT_BLOCK_DATA: BlockDataMap = {
     size: 'md',
     showTitles: true,
     grayscale: false,
+  },
+  'social-proof': {
+    title: 'Trusted by thousands',
+    subtitle: '',
+    items: [],
+    variant: 'default',
+    layout: 'horizontal',
+    columns: 4,
+    size: 'md',
+    animated: true,
+    showIcons: true,
+    showLiveIndicator: false,
   },
 };
 
@@ -764,6 +779,14 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
         return (
           <BadgeBlockEditor
             data={block.data as unknown as BadgeBlockData}
+            onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+            isEditing={isEditing}
+          />
+        );
+      case 'social-proof':
+        return (
+          <SocialProofBlockEditor
+            data={block.data as unknown as SocialProofBlockData}
             onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
             isEditing={isEditing}
           />
