@@ -51,6 +51,7 @@ const BLOCK_LABELS: Record<ContentBlockType, string> = {
   countdown: 'Countdown',
   progress: 'Progress',
   badge: 'Badge',
+  'social-proof': 'Social Proof',
 };
 
 interface BlockWrapperProps {

@@ -111,7 +111,8 @@ export type ContentBlockType =
   | 'table'
   | 'countdown'
   | 'progress'
-  | 'badge';
+  | 'badge'
+  | 'social-proof';
 
 // Form field types
 export type FormFieldType = 'text' | 'email' | 'phone' | 'textarea' | 'checkbox';
