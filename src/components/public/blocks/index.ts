@@ -31,3 +31,7 @@ export { CartBlock } from './CartBlock';
 export { KbFeaturedBlock } from './KbFeaturedBlock';
 export { KbHubBlock } from './KbHubBlock';
 export { KbSearchBlock } from './KbSearchBlock';
+// New blocks
+export { AnnouncementBarBlock } from './AnnouncementBarBlock';
+export { TabsBlock } from './TabsBlock';
+export { MarqueeBlock } from './MarqueeBlock';

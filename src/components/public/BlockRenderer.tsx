@@ -35,6 +35,9 @@ import {
   KbFeaturedBlock,
   KbHubBlock,
   KbSearchBlock,
+  AnnouncementBarBlock,
+  TabsBlock,
+  MarqueeBlock,
 } from './blocks';
 import type { KbHubBlockData } from './blocks/KbHubBlock';
 import type {
@@ -177,6 +180,12 @@ export function BlockRenderer({ block, pageId, index = 0 }: BlockRendererProps) 
         return <KbHubBlock data={block.data as unknown as KbHubBlockData} />;
       case 'kb-search':
         return <KbSearchBlock data={block.data as Record<string, unknown>} />;
+      case 'announcement-bar':
+        return <AnnouncementBarBlock data={block.data as Record<string, unknown>} />;
+      case 'tabs':
+        return <TabsBlock data={block.data as Record<string, unknown>} />;
+      case 'marquee':
+        return <MarqueeBlock data={block.data as Record<string, unknown>} />;
       default:
         return null;
     }
