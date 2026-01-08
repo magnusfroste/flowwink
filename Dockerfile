@@ -11,6 +11,14 @@
 # -----------------------------------------------------------------------------
 FROM node:20-alpine AS builder
 
+# Build arguments for Vite environment variables
+ARG VITE_SUPABASE_URL
+ARG VITE_SUPABASE_PUBLISHABLE_KEY
+
+# Set as environment variables for the build process
+ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL
+ENV VITE_SUPABASE_PUBLISHABLE_KEY=$VITE_SUPABASE_PUBLISHABLE_KEY
+
 WORKDIR /app
 
 # Copy package files
@@ -22,7 +30,7 @@ RUN npm ci --legacy-peer-deps
 # Copy source code
 COPY . .
 
-# Build the application
+# Build the application (VITE_ env vars are now available)
 # This creates the /app/dist folder with optimized static assets
 RUN npm run build
 
