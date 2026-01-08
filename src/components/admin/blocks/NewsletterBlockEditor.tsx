@@ -3,6 +3,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Mail } from "lucide-react";
 
 interface NewsletterBlockData {
   title?: string;
@@ -16,12 +17,35 @@ interface NewsletterBlockData {
 interface NewsletterBlockEditorProps {
   data: NewsletterBlockData;
   onChange: (data: NewsletterBlockData) => void;
+  isEditing?: boolean;
 }
 
-export function NewsletterBlockEditor({ data, onChange }: NewsletterBlockEditorProps) {
+export function NewsletterBlockEditor({ data, onChange, isEditing }: NewsletterBlockEditorProps) {
   const update = (updates: Partial<NewsletterBlockData>) => {
     onChange({ ...data, ...updates });
   };
+
+  // Preview mode
+  if (!isEditing) {
+    return (
+      <div className="p-6 text-center border-2 border-dashed rounded-lg bg-muted/30">
+        <Mail className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+        <h3 className="font-medium text-lg">{data.title || "Subscribe to our newsletter"}</h3>
+        <p className="text-sm text-muted-foreground mt-1 max-w-md mx-auto">
+          {data.description || "Get the latest updates delivered to your inbox."}
+        </p>
+        <div className="mt-4 flex justify-center gap-2 max-w-sm mx-auto">
+          {data.showNameField && (
+            <div className="h-9 w-24 rounded-md border bg-background" />
+          )}
+          <div className="h-9 flex-1 rounded-md border bg-background" />
+          <div className="h-9 px-4 rounded-md bg-primary text-primary-foreground text-sm flex items-center">
+            {data.buttonText || "Subscribe"}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">

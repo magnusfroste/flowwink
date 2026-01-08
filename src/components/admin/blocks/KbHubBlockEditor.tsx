@@ -3,14 +3,40 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { BookOpen } from 'lucide-react';
 import type { KbHubBlockData } from '@/components/public/blocks/KbHubBlock';
 
 interface KbHubBlockEditorProps {
   data: KbHubBlockData;
   onChange: (data: KbHubBlockData) => void;
+  isEditing?: boolean;
 }
 
-export function KbHubBlockEditor({ data, onChange }: KbHubBlockEditorProps) {
+export function KbHubBlockEditor({ data, onChange, isEditing }: KbHubBlockEditorProps) {
+  // Preview mode
+  if (!isEditing) {
+    return (
+      <div className="p-6 text-center border-2 border-dashed rounded-lg bg-muted/30">
+        <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+        <h3 className="font-medium text-lg">{data.title || "Knowledge Hub"}</h3>
+        <p className="text-sm text-muted-foreground mt-1">
+          {data.layout || 'accordion'} layout
+          {data.showSearch !== false && ' • with search'}
+          {data.showContactCta !== false && ' • with CTA'}
+        </p>
+        <div className="mt-4 max-w-xs mx-auto space-y-2">
+          {data.showSearch !== false && (
+            <div className="h-10 rounded-md border bg-background" />
+          )}
+          <div className="grid grid-cols-2 gap-2">
+            <div className="h-16 rounded border bg-background" />
+            <div className="h-16 rounded border bg-background" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header Section */}
