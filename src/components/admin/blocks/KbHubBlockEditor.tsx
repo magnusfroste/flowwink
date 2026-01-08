@@ -4,6 +4,7 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { BookOpen } from 'lucide-react';
+import { KbPageSlugField } from './KbPageSlugField';
 import type { KbHubBlockData } from '@/components/public/blocks/KbHubBlock';
 
 interface KbHubBlockEditorProps {
@@ -147,18 +148,11 @@ export function KbHubBlockEditor({ data, onChange, isEditing }: KbHubBlockEditor
       </div>
 
       {/* KB Page Slug */}
-      <div className="space-y-2">
-        <Label htmlFor="kb-hub-page-slug">KB Page Slug</Label>
-        <Input
-          id="kb-hub-page-slug"
-          value={data.kbPageSlug || ''}
-          onChange={(e) => onChange({ ...data, kbPageSlug: e.target.value })}
-          placeholder="help"
-        />
-        <p className="text-xs text-muted-foreground">
-          The slug of the KB page for article links (e.g., "help" → /help/article-slug)
-        </p>
-      </div>
+      <KbPageSlugField
+        id="kb-hub-page-slug"
+        value={data.kbPageSlug || ''}
+        onChange={(value) => onChange({ ...data, kbPageSlug: value })}
+      />
 
       {/* Contact CTA Section */}
       <div className="space-y-4">
