@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import { useBranding } from '@/providers/BrandingProvider';
 import { ThemeToggle } from './ThemeToggle';
 import { useHeaderBlock, defaultHeaderData } from '@/hooks/useGlobalBlocks';
-import { useBlogSettings, useKbSettings } from '@/hooks/useSiteSettings';
+import { useBlogSettings } from '@/hooks/useSiteSettings';
 
 interface NavPage {
   id: string;
@@ -30,9 +30,6 @@ export function PublicNavigation() {
   
   // Blog settings
   const { data: blogSettings } = useBlogSettings();
-  
-  // Knowledge Base settings
-  const { data: kbSettings } = useKbSettings();
 
   const { data: pages = [] } = useQuery({
     queryKey: ['public-nav-pages'],
@@ -197,15 +194,6 @@ export function PublicNavigation() {
                 {blogSettings.archiveTitle || 'Blog'}
               </Link>
             )}
-            {/* Knowledge Base link */}
-            {kbSettings?.enabled && kbSettings?.showInMenu && (
-              <Link
-                to={`/${kbSettings.menuSlug || 'help'}`}
-                className={getLinkClasses(location.pathname === `/${kbSettings.menuSlug || 'help'}`)}
-              >
-                {kbSettings.menuTitle || 'Help'}
-              </Link>
-            )}
             {/* Custom nav items */}
             {customNavItems.map((item) => (
               <a
@@ -278,21 +266,6 @@ export function PublicNavigation() {
                   {blogSettings.archiveTitle || 'Blog'}
                 </Link>
               )}
-              {kbSettings?.enabled && kbSettings?.showInMenu && (
-                <Link
-                  to={`/${kbSettings.menuSlug || 'help'}`}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={cn(
-                    'px-4 py-3 rounded-md text-base font-medium transition-colors',
-                    'hover:bg-muted',
-                    location.pathname === `/${kbSettings.menuSlug || 'help'}`
-                      ? 'bg-primary/10 text-primary'
-                      : 'text-muted-foreground'
-                  )}
-                >
-                  {kbSettings.menuTitle || 'Help'}
-                </Link>
-              )}
               {customNavItems.map((item) => (
                 <a
                   key={item.id}
@@ -359,20 +332,6 @@ export function PublicNavigation() {
                   {blogSettings.archiveTitle || 'Blog'}
                 </Link>
               )}
-              {kbSettings?.enabled && kbSettings?.showInMenu && (
-                <Link
-                  to={`/${kbSettings.menuSlug || 'help'}`}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={cn(
-                    'text-2xl font-medium transition-colors',
-                    location.pathname === `/${kbSettings.menuSlug || 'help'}`
-                      ? 'text-primary'
-                      : 'text-muted-foreground hover:text-foreground'
-                  )}
-                >
-                  {kbSettings.menuTitle || 'Help'}
-                </Link>
-              )}
               {customNavItems.map((item) => (
                 <a
                   key={item.id}
@@ -434,21 +393,6 @@ export function PublicNavigation() {
                   )}
                 >
                   {blogSettings.archiveTitle || 'Blog'}
-                </Link>
-              )}
-              {kbSettings?.enabled && kbSettings?.showInMenu && (
-                <Link
-                  to={`/${kbSettings.menuSlug || 'help'}`}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={cn(
-                    'px-4 py-3 rounded-md text-base font-medium transition-colors',
-                    'hover:bg-muted',
-                    location.pathname === `/${kbSettings.menuSlug || 'help'}`
-                      ? 'bg-primary/10 text-primary'
-                      : 'text-muted-foreground'
-                  )}
-                >
-                  {kbSettings.menuTitle || 'Help'}
                 </Link>
               )}
               {customNavItems.map((item) => (
