@@ -45,7 +45,7 @@ export function ProductsBlockEditor({ data, onChange, isEditing }: ProductsBlock
       {/* Header Settings */}
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label>Rubrik</Label>
+          <Label>Title</Label>
           <Input
             value={data.title || ''}
             onChange={(e) => updateData({ title: e.target.value })}
@@ -54,7 +54,7 @@ export function ProductsBlockEditor({ data, onChange, isEditing }: ProductsBlock
         </div>
 
         <div className="space-y-2">
-          <Label>Underrubrik</Label>
+          <Label>Subtitle</Label>
           <Textarea
             value={data.subtitle || ''}
             onChange={(e) => updateData({ subtitle: e.target.value })}
@@ -93,9 +93,9 @@ export function ProductsBlockEditor({ data, onChange, isEditing }: ProductsBlock
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Alla produkter</SelectItem>
-              <SelectItem value="one_time">Engångsköp</SelectItem>
-              <SelectItem value="recurring">Prenumerationer</SelectItem>
+              <SelectItem value="all">All products</SelectItem>
+              <SelectItem value="one_time">One-time purchase</SelectItem>
+              <SelectItem value="recurring">Subscriptions</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -126,10 +126,10 @@ export function ProductsBlockEditor({ data, onChange, isEditing }: ProductsBlock
       {/* Info */}
       <div className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-3">
         <p>
-          <strong>{activeProductsCount}</strong> aktiv{activeProductsCount !== 1 ? 'a' : ''} produkt{activeProductsCount !== 1 ? 'er' : ''} kommer visas.
+          <strong>{activeProductsCount}</strong> active product{activeProductsCount !== 1 ? 's' : ''} will be displayed.
         </p>
         <p className="mt-1">
-          Hantera produkter under <strong>CRM → Produkter</strong> i sidomenyn.
+          Manage products under <strong>CRM → Products</strong> in the sidebar.
         </p>
       </div>
     </div>

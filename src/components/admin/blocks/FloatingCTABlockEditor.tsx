@@ -37,7 +37,7 @@ export function FloatingCTABlockEditor({ data, onChange, isEditing }: FloatingCT
         </h4>
         
         <div className="space-y-2">
-          <Label>Rubrik</Label>
+          <Label>Title</Label>
           <Input
             value={data.title || ''}
             onChange={(e) => onChange({ ...data, title: e.target.value })}
@@ -46,11 +46,11 @@ export function FloatingCTABlockEditor({ data, onChange, isEditing }: FloatingCT
         </div>
 
         <div className="space-y-2">
-          <Label>Underrubrik (valfri)</Label>
+          <Label>Subtitle (optional)</Label>
           <Input
             value={data.subtitle || ''}
             onChange={(e) => onChange({ ...data, subtitle: e.target.value })}
-            placeholder="Ex: Begränsade platser tillgängliga"
+            placeholder="Ex: Limited spots available"
           />
         </div>
 
@@ -60,11 +60,11 @@ export function FloatingCTABlockEditor({ data, onChange, isEditing }: FloatingCT
             <Input
               value={data.buttonText || ''}
               onChange={(e) => onChange({ ...data, buttonText: e.target.value })}
-              placeholder="Boka nu"
+              placeholder="Book now"
             />
           </div>
           <div className="space-y-2">
-            <Label>Knapplänk</Label>
+            <Label>Button link</Label>
             <Input
               value={data.buttonUrl || ''}
               onChange={(e) => onChange({ ...data, buttonUrl: e.target.value })}
@@ -79,11 +79,11 @@ export function FloatingCTABlockEditor({ data, onChange, isEditing }: FloatingCT
             <Input
               value={data.secondaryButtonText || ''}
               onChange={(e) => onChange({ ...data, secondaryButtonText: e.target.value })}
-              placeholder="Läs mer"
+              placeholder="Read more"
             />
           </div>
           <div className="space-y-2">
-            <Label>Sekundär knapplänk</Label>
+            <Label>Secondary button link</Label>
             <Input
               value={data.secondaryButtonUrl || ''}
               onChange={(e) => onChange({ ...data, secondaryButtonUrl: e.target.value })}

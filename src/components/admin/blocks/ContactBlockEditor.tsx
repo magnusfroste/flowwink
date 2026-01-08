@@ -119,7 +119,7 @@ export function ContactBlockEditor({ data, onChange, isEditing }: ContactBlockEd
   // Preview mode
   return (
     <div className="rounded-lg border bg-card p-6">
-      <h3 className="text-xl font-bold mb-4">{localData.title || 'Kontakt'}</h3>
+      <h3 className="text-xl font-bold mb-4">{localData.title || 'Contact'}</h3>
       <div className="grid gap-3 text-sm">
         {localData.phone && (
           <div className="flex items-center gap-3">

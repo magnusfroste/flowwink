@@ -33,12 +33,12 @@ export function CartBlockEditor({ data, onChange, isEditing }: CartBlockEditorPr
     <div className="space-y-6 p-4 border rounded-lg bg-card">
       <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
         <ShoppingCart className="h-4 w-4" />
-        Varukorgblock - Inställningar
+        Cart Block - Settings
       </div>
 
       {/* Title */}
       <div className="space-y-2">
-        <Label>Rubrik</Label>
+        <Label>Title</Label>
         <Input
           value={data.title || ''}
           onChange={(e) => updateData({ title: e.target.value })}
@@ -48,7 +48,7 @@ export function CartBlockEditor({ data, onChange, isEditing }: CartBlockEditorPr
 
       {/* Empty Message */}
       <div className="space-y-2">
-        <Label>Tom varukorg-meddelande</Label>
+        <Label>Empty cart message</Label>
         <Input
           value={data.emptyMessage || ''}
           onChange={(e) => updateData({ emptyMessage: e.target.value })}
@@ -67,7 +67,7 @@ export function CartBlockEditor({ data, onChange, isEditing }: CartBlockEditorPr
           />
         </div>
         <div className="space-y-2">
-          <Label>Kassa-URL</Label>
+          <Label>Checkout URL</Label>
           <Input
             value={data.checkoutUrl || ''}
             onChange={(e) => updateData({ checkoutUrl: e.target.value })}

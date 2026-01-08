@@ -54,7 +54,7 @@ export function KbAccordionBlockEditor({ data, onChange, isEditing }: KbAccordio
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="title">Rubrik</Label>
+        <Label htmlFor="title">Title</Label>
         <Input
           id="title"
           value={data.title || ''}
@@ -64,7 +64,7 @@ export function KbAccordionBlockEditor({ data, onChange, isEditing }: KbAccordio
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="subtitle">Underrubrik</Label>
+        <Label htmlFor="subtitle">Subtitle</Label>
         <Input
           id="subtitle"
           value={data.subtitle || ''}
@@ -130,7 +130,7 @@ export function KbAccordionBlockEditor({ data, onChange, isEditing }: KbAccordio
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="maxItems">Max antal artiklar</Label>
+        <Label htmlFor="maxItems">Max number of articles</Label>
         <Input
           id="maxItems"
           type="number"

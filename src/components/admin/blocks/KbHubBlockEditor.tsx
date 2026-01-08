@@ -42,10 +42,10 @@ export function KbHubBlockEditor({ data, onChange, isEditing }: KbHubBlockEditor
     <div className="space-y-6">
       {/* Header Section */}
       <div className="space-y-4">
-        <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Rubrik</h4>
+        <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Header</h4>
         
         <div className="space-y-2">
-          <Label htmlFor="kb-hub-title">Titel</Label>
+          <Label htmlFor="kb-hub-title">Title</Label>
           <Input
             id="kb-hub-title"
             value={data.title || ''}
@@ -55,7 +55,7 @@ export function KbHubBlockEditor({ data, onChange, isEditing }: KbHubBlockEditor
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="kb-hub-subtitle">Underrubrik</Label>
+          <Label htmlFor="kb-hub-subtitle">Subtitle</Label>
           <Textarea
             id="kb-hub-subtitle"
             value={data.subtitle || ''}
@@ -68,10 +68,10 @@ export function KbHubBlockEditor({ data, onChange, isEditing }: KbHubBlockEditor
 
       {/* Search Section */}
       <div className="space-y-4">
-        <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Sök</h4>
+        <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Search</h4>
         
         <div className="flex items-center justify-between">
-          <Label htmlFor="kb-hub-show-search">Visa sökfält</Label>
+          <Label htmlFor="kb-hub-show-search">Show search field</Label>
           <Switch
             id="kb-hub-show-search"
             checked={data.showSearch !== false}
@@ -94,10 +94,10 @@ export function KbHubBlockEditor({ data, onChange, isEditing }: KbHubBlockEditor
 
       {/* Display Section */}
       <div className="space-y-4">
-        <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Visning</h4>
+        <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Display</h4>
         
         <div className="flex items-center justify-between">
-          <Label htmlFor="kb-hub-show-categories">Visa kategorifilter</Label>
+          <Label htmlFor="kb-hub-show-categories">Show category filter</Label>
           <Switch
             id="kb-hub-show-categories"
             checked={data.showCategories !== false}
@@ -137,12 +137,12 @@ export function KbHubBlockEditor({ data, onChange, isEditing }: KbHubBlockEditor
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="kb-hub-empty-subtitle">Text när inga resultat</Label>
+          <Label htmlFor="kb-hub-empty-subtitle">Text when no results</Label>
           <Input
             id="kb-hub-empty-subtitle"
             value={data.emptyStateSubtitle || ''}
             onChange={(e) => onChange({ ...data, emptyStateSubtitle: e.target.value })}
-            placeholder="Försök med andra söktermer..."
+            placeholder="Try other search terms..."
           />
         </div>
       </div>
@@ -156,10 +156,10 @@ export function KbHubBlockEditor({ data, onChange, isEditing }: KbHubBlockEditor
 
       {/* Contact CTA Section */}
       <div className="space-y-4">
-        <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Kontakt CTA</h4>
+        <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Contact CTA</h4>
         
         <div className="flex items-center justify-between">
-          <Label htmlFor="kb-hub-show-cta">Visa kontakt-sektion</Label>
+          <Label htmlFor="kb-hub-show-cta">Show contact section</Label>
           <Switch
             id="kb-hub-show-cta"
             checked={data.showContactCta !== false}
@@ -170,7 +170,7 @@ export function KbHubBlockEditor({ data, onChange, isEditing }: KbHubBlockEditor
         {data.showContactCta !== false && (
           <>
             <div className="space-y-2">
-              <Label htmlFor="kb-hub-contact-title">Kontakt titel</Label>
+              <Label htmlFor="kb-hub-contact-title">Contact title</Label>
               <Input
                 id="kb-hub-contact-title"
                 value={data.contactTitle || ''}
@@ -180,12 +180,12 @@ export function KbHubBlockEditor({ data, onChange, isEditing }: KbHubBlockEditor
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="kb-hub-contact-subtitle">Kontakt underrubrik</Label>
+              <Label htmlFor="kb-hub-contact-subtitle">Contact subtitle</Label>
               <Input
                 id="kb-hub-contact-subtitle"
                 value={data.contactSubtitle || ''}
                 onChange={(e) => onChange({ ...data, contactSubtitle: e.target.value })}
-                placeholder="Vårt team hjälper dig gärna..."
+                placeholder="Our team is happy to help..."
               />
             </div>
 
@@ -195,17 +195,17 @@ export function KbHubBlockEditor({ data, onChange, isEditing }: KbHubBlockEditor
                 id="kb-hub-contact-button"
                 value={data.contactButtonText || ''}
                 onChange={(e) => onChange({ ...data, contactButtonText: e.target.value })}
-                placeholder="Kontakta oss"
+                placeholder="Contact us"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="kb-hub-contact-link">Kontaktlänk</Label>
+              <Label htmlFor="kb-hub-contact-link">Contact link</Label>
               <Input
                 id="kb-hub-contact-link"
                 value={data.contactLink || ''}
                 onChange={(e) => onChange({ ...data, contactLink: e.target.value })}
-                placeholder="/kontakt"
+                placeholder="/contact"
               />
             </div>
           </>

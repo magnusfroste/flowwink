@@ -30,10 +30,10 @@ export function PricingBlockEditor({ data, onChange, isEditing }: PricingBlockEd
       id: `tier-${Date.now()}`,
       name: 'Ny plan',
       price: '999 kr',
-      period: '/månad',
-      description: 'Perfekt för att komma igång',
-      features: ['Funktion 1', 'Funktion 2', 'Funktion 3'],
-      buttonText: 'Beställ',
+      period: '/month',
+      description: 'Perfect to get started',
+      features: ['Feature 1', 'Feature 2', 'Feature 3'],
+      buttonText: 'Order',
       buttonUrl: '/checkout',
       highlighted: false,
     };
@@ -89,8 +89,8 @@ export function PricingBlockEditor({ data, onChange, isEditing }: PricingBlockEd
         <h3 className="font-medium text-lg">{data.title || 'Pricing'}</h3>
         <p className="text-sm text-muted-foreground mt-1">
           {data.useProducts 
-            ? `Visar produkter från databasen${data.productType && data.productType !== 'all' ? ` (${data.productType === 'recurring' ? 'prenumerationer' : 'engångskostnader'})` : ''}`
-            : `${tiers.length} prisplan${tiers.length !== 1 ? 'er' : ''}`
+            ? `Showing products from database${data.productType && data.productType !== 'all' ? ` (${data.productType === 'recurring' ? 'subscriptions' : 'one-time'})` : ''}`
+            : `${tiers.length} pricing plan${tiers.length !== 1 ? 's' : ''}`
           }
         </p>
       </div>
@@ -154,15 +154,15 @@ export function PricingBlockEditor({ data, onChange, isEditing }: PricingBlockEd
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Alla produkter</SelectItem>
-                <SelectItem value="recurring">Endast prenumerationer</SelectItem>
-                <SelectItem value="one_time">Endast engångskostnader</SelectItem>
+                <SelectItem value="all">All products</SelectItem>
+                <SelectItem value="recurring">Subscriptions only</SelectItem>
+                <SelectItem value="one_time">One-time only</SelectItem>
               </SelectContent>
             </Select>
             
             {products && products.length > 0 && (
               <div className="mt-3 p-3 bg-background rounded border">
-                <p className="text-xs text-muted-foreground mb-2">Produkter som kommer visas:</p>
+                <p className="text-xs text-muted-foreground mb-2">Products that will be displayed:</p>
                 <div className="space-y-1">
                   {products
                     .filter(p => !data.productType || data.productType === 'all' || p.type === data.productType)
@@ -350,14 +350,14 @@ export function PricingBlockEditor({ data, onChange, isEditing }: PricingBlockEd
                   <div className="space-y-2 p-3 bg-muted/50 rounded-lg">
                     <Label className="flex items-center gap-2">
                       <Package className="h-4 w-4" />
-                      Koppla till produkt (för varukorg)
+                      Connect to product (for cart)
                     </Label>
                     <Select
                       value={tier.productId || 'none'}
                       onValueChange={(value) => updateTier(tier.id, { productId: value === 'none' ? undefined : value })}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Välj produkt..." />
+                        <SelectValue placeholder="Select product..." />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="none">No connection (use URL)</SelectItem>
@@ -369,7 +369,7 @@ export function PricingBlockEditor({ data, onChange, isEditing }: PricingBlockEd
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-muted-foreground">
-                      Om en produkt är kopplad läggs den till i varukorgen vid klick
+                      If a product is connected, it will be added to cart on click
                     </p>
                   </div>
 
@@ -379,7 +379,7 @@ export function PricingBlockEditor({ data, onChange, isEditing }: PricingBlockEd
                       <Input
                         value={tier.buttonText || ''}
                         onChange={(e) => updateTier(tier.id, { buttonText: e.target.value })}
-                        placeholder="Beställ"
+                        placeholder="Order"
                       />
                     </div>
                     <div className="space-y-2">
