@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { BookingBlockData } from '@/types/cms';
 import { webhookEvents } from '@/lib/webhook-utils';
+import { SmartBookingBlock } from './SmartBookingBlock';
 
 interface BookingBlockProps {
   data: BookingBlockData;
@@ -134,6 +135,11 @@ export function BookingBlock({ data, blockId, pageId }: BookingBlockProps) {
     data.variant === 'minimal' && 'p-4',
     data.variant === 'default' && 'py-8'
   );
+
+  // Smart mode - render smart booking widget
+  if (data.mode === 'smart') {
+    return <SmartBookingBlock data={data} blockId={blockId} pageId={pageId} />;
+  }
 
   // Embed mode - render iframe
   if (data.mode === 'embed') {

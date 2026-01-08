@@ -7020,3 +7020,455 @@ export const HELP_CENTER_TEMPLATES: StarterTemplate[] = [
 
 // Add help center templates to main export
 STARTER_TEMPLATES.push(...HELP_CENTER_TEMPLATES);
+
+// =====================================================
+// SERVICEPRO - Service Business Template
+// =====================================================
+const serviceProPages: TemplatePage[] = [
+  {
+    title: 'Home',
+    slug: 'home',
+    isHomePage: true,
+    menu_order: 1,
+    showInMenu: true,
+    meta: {
+      description: 'Professional services delivered with excellence',
+      showTitle: false,
+      titleAlignment: 'center',
+    },
+    blocks: [
+      {
+        id: 'hero-1',
+        type: 'hero',
+        data: {
+          title: 'Professional Services You Can Trust',
+          subtitle: 'Book online in seconds. Get the care and attention you deserve from our expert team.',
+          backgroundType: 'image',
+          backgroundImage: 'https://images.unsplash.com/photo-1521791136064-7986c2920216?w=1920',
+          heightMode: '70vh',
+          contentAlignment: 'center',
+          overlayOpacity: 50,
+          titleAnimation: 'fade-in',
+          primaryButton: { text: 'Book Now', url: '/book' },
+          secondaryButton: { text: 'Our Services', url: '/services' },
+        },
+      },
+      {
+        id: 'stats-1',
+        type: 'stats',
+        data: {
+          title: 'Why Choose Us',
+          stats: [
+            { value: '5000+', label: 'Happy Clients', icon: 'Users' },
+            { value: '10+', label: 'Years Experience', icon: 'Award' },
+            { value: '4.9', label: 'Average Rating', icon: 'Star' },
+            { value: '24h', label: 'Response Time', icon: 'Clock' },
+          ],
+        },
+      },
+      {
+        id: 'features-1',
+        type: 'features',
+        data: {
+          title: 'Our Services',
+          subtitle: 'We offer a wide range of professional services tailored to your needs.',
+          features: [
+            { id: 'f1', icon: 'Sparkles', title: 'Consultation', description: 'Expert advice and guidance for your unique situation.' },
+            { id: 'f2', icon: 'Clock', title: 'Flexible Scheduling', description: 'Book appointments that fit your busy lifestyle.' },
+            { id: 'f3', icon: 'Shield', title: 'Guaranteed Quality', description: 'We stand behind every service we provide.' },
+            { id: 'f4', icon: 'HeadphonesIcon', title: '24/7 Support', description: 'Our team is always here when you need us.' },
+          ],
+          columns: 4,
+          layout: 'grid',
+          variant: 'cards',
+          iconStyle: 'circle',
+        },
+      },
+      {
+        id: 'testimonials-1',
+        type: 'testimonials',
+        data: {
+          title: 'What Our Clients Say',
+          testimonials: [
+            {
+              id: 't1',
+              content: 'Exceptional service from start to finish. Booking was easy and the team was incredibly professional.',
+              author: 'Emma Wilson',
+              role: 'Client',
+              rating: 5,
+            },
+            {
+              id: 't2',
+              content: 'I\'ve been a regular customer for 3 years. The quality and attention to detail is unmatched.',
+              author: 'David Chen',
+              role: 'Client',
+              rating: 5,
+            },
+            {
+              id: 't3',
+              content: 'Finally, a service that respects my time. Easy online booking and they\'re always punctual.',
+              author: 'Sarah Johnson',
+              role: 'Client',
+              rating: 5,
+            },
+          ],
+          layout: 'carousel',
+          columns: 3,
+          showRating: true,
+          showAvatar: false,
+          variant: 'cards',
+        },
+      },
+      {
+        id: 'cta-1',
+        type: 'cta',
+        data: {
+          title: 'Ready to Get Started?',
+          subtitle: 'Book your appointment online in just a few clicks.',
+          buttonText: 'Book Now',
+          buttonUrl: '/book',
+          gradient: true,
+        },
+      },
+    ],
+  },
+  {
+    title: 'Services',
+    slug: 'services',
+    menu_order: 2,
+    showInMenu: true,
+    meta: {
+      description: 'Explore our range of professional services',
+      showTitle: true,
+      titleAlignment: 'center',
+    },
+    blocks: [
+      {
+        id: 'hero-1',
+        type: 'hero',
+        data: {
+          title: 'Our Services',
+          subtitle: 'Professional solutions for every need',
+          backgroundType: 'color',
+          heightMode: 'auto',
+          contentAlignment: 'center',
+        },
+      },
+      {
+        id: 'features-1',
+        type: 'features',
+        data: {
+          title: '',
+          features: [
+            { id: 'f1', icon: 'Sparkles', title: 'Basic Consultation', description: 'Perfect for first-time clients. 30-minute session to understand your needs and recommend solutions.' },
+            { id: 'f2', icon: 'Star', title: 'Premium Service', description: 'Our most popular option. 60-minute comprehensive session with personalized recommendations.' },
+            { id: 'f3', icon: 'Crown', title: 'VIP Package', description: 'The complete experience. 90-minute session with priority scheduling and follow-up support.' },
+          ],
+          columns: 3,
+          layout: 'grid',
+          variant: 'cards',
+          iconStyle: 'circle',
+        },
+      },
+      {
+        id: 'pricing-1',
+        type: 'pricing',
+        data: {
+          tiers: [
+            {
+              id: 'tier-basic',
+              name: 'Basic',
+              price: '$49',
+              period: 'per session',
+              description: '30-minute consultation',
+              features: ['Initial assessment', 'Basic recommendations', 'Email follow-up'],
+              buttonText: 'Book Basic',
+              buttonUrl: '/book',
+            },
+            {
+              id: 'tier-premium',
+              name: 'Premium',
+              price: '$99',
+              period: 'per session',
+              description: '60-minute comprehensive',
+              features: ['Full assessment', 'Personalized plan', 'Priority scheduling', '7-day support'],
+              buttonText: 'Book Premium',
+              buttonUrl: '/book',
+              highlighted: true,
+              badge: 'Most Popular',
+            },
+            {
+              id: 'tier-vip',
+              name: 'VIP',
+              price: '$199',
+              period: 'per session',
+              description: '90-minute VIP experience',
+              features: ['Everything in Premium', 'Extended session', 'Same-day booking', '30-day support', 'Priority rebooking'],
+              buttonText: 'Book VIP',
+              buttonUrl: '/book',
+            },
+          ],
+          columns: 3,
+          variant: 'cards',
+        },
+      },
+      {
+        id: 'cta-1',
+        type: 'cta',
+        data: {
+          title: 'Not Sure Which Service?',
+          subtitle: 'Contact us for a free consultation to find the right fit.',
+          buttonText: 'Get in Touch',
+          buttonUrl: '/contact',
+          gradient: false,
+        },
+      },
+    ],
+  },
+  {
+    title: 'Book',
+    slug: 'book',
+    menu_order: 3,
+    showInMenu: true,
+    meta: {
+      description: 'Book your appointment online',
+      showTitle: false,
+      titleAlignment: 'center',
+    },
+    blocks: [
+      {
+        id: 'hero-1',
+        type: 'hero',
+        data: {
+          title: 'Book Your Appointment',
+          subtitle: 'Choose a service and select a time that works for you',
+          backgroundType: 'color',
+          heightMode: 'auto',
+          contentAlignment: 'center',
+        },
+      },
+      {
+        id: 'booking-1',
+        type: 'booking',
+        data: {
+          title: '',
+          mode: 'smart',
+          variant: 'card',
+          showPhoneField: true,
+          submitButtonText: 'Confirm Booking',
+          successMessage: 'Your booking is confirmed! We\'ll send you a confirmation email shortly.',
+          triggerWebhook: false,
+        },
+      },
+      {
+        id: 'text-1',
+        type: 'text',
+        data: {
+          content: {
+            type: 'doc',
+            content: [
+              { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Booking Policy' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'Please arrive 10 minutes before your scheduled appointment. Cancellations must be made at least 24 hours in advance to avoid a cancellation fee. For any questions about your booking, please contact us.' }] },
+            ],
+          },
+          alignment: 'center',
+        },
+      },
+    ],
+  },
+  {
+    title: 'About',
+    slug: 'about',
+    menu_order: 4,
+    showInMenu: true,
+    meta: {
+      description: 'Learn about our team and mission',
+      showTitle: true,
+      titleAlignment: 'center',
+    },
+    blocks: [
+      {
+        id: 'hero-1',
+        type: 'hero',
+        data: {
+          title: 'About Us',
+          subtitle: 'Dedicated professionals committed to your success',
+          backgroundType: 'color',
+          heightMode: 'auto',
+          contentAlignment: 'center',
+        },
+      },
+      {
+        id: 'two-col-1',
+        type: 'two-column',
+        data: {
+          content: {
+            type: 'doc',
+            content: [
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Our Story' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'Founded with a simple mission: to provide exceptional service that puts clients first. Over the years, we\'ve grown from a small practice to a trusted name in professional services.' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'What sets us apart is our commitment to quality and our personal approach. Every client is unique, and we take the time to understand your specific needs.' }] },
+            ],
+          },
+          imageSrc: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800',
+          imageAlt: 'Our team',
+          imagePosition: 'right',
+        },
+      },
+      {
+        id: 'team-1',
+        type: 'team',
+        data: {
+          title: 'Meet Our Team',
+          members: [
+            { id: 'm1', name: 'Alex Thompson', role: 'Founder & Lead', bio: '15+ years of experience in the industry.' },
+            { id: 'm2', name: 'Sarah Mitchell', role: 'Senior Specialist', bio: 'Certified expert with a passion for excellence.' },
+            { id: 'm3', name: 'James Rodriguez', role: 'Client Relations', bio: 'Dedicated to ensuring every client has a great experience.' },
+          ],
+          columns: 3,
+          showBio: true,
+          showSocial: false,
+          variant: 'cards',
+        },
+      },
+    ],
+  },
+  {
+    title: 'Contact',
+    slug: 'contact',
+    menu_order: 5,
+    showInMenu: true,
+    meta: {
+      description: 'Get in touch with our team',
+      showTitle: true,
+      titleAlignment: 'center',
+    },
+    blocks: [
+      {
+        id: 'hero-1',
+        type: 'hero',
+        data: {
+          title: 'Contact Us',
+          subtitle: 'We\'d love to hear from you',
+          backgroundType: 'color',
+          heightMode: 'auto',
+          contentAlignment: 'center',
+        },
+      },
+      {
+        id: 'two-col-1',
+        type: 'two-column',
+        data: {
+          content: {
+            type: 'doc',
+            content: [
+              { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Get in Touch' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'Have a question? Want to learn more about our services? We\'re here to help.' }] },
+              { type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Email: ' }, { type: 'text', text: 'hello@servicepro.com' }] },
+              { type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Phone: ' }, { type: 'text', text: '+1 (555) 123-4567' }] },
+              { type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Hours: ' }, { type: 'text', text: 'Mon-Fri 9am-6pm' }] },
+            ],
+          },
+          imageSrc: '',
+          imageAlt: '',
+          imagePosition: 'right',
+        },
+      },
+      {
+        id: 'form-1',
+        type: 'form',
+        data: {
+          title: 'Send us a Message',
+          fields: [
+            { id: 'name', type: 'text', label: 'Name', placeholder: 'Your name', required: true, width: 'half' },
+            { id: 'email', type: 'email', label: 'Email', placeholder: 'you@example.com', required: true, width: 'half' },
+            { id: 'phone', type: 'phone', label: 'Phone', placeholder: 'Your phone number', required: false, width: 'full' },
+            { id: 'message', type: 'textarea', label: 'Message', placeholder: 'How can we help you?', required: true, width: 'full' },
+          ],
+          submitButtonText: 'Send Message',
+          successMessage: 'Thanks for reaching out! We\'ll get back to you within 24 hours.',
+          variant: 'card',
+        },
+      },
+      {
+        id: 'contact-1',
+        type: 'contact',
+        data: {
+          title: 'Visit Us',
+          address: '123 Main Street, Suite 100',
+          email: 'hello@servicepro.com',
+          phone: '+1 (555) 123-4567',
+          hours: [
+            { day: 'Monday - Friday', time: '9:00 AM - 6:00 PM' },
+            { day: 'Saturday', time: '10:00 AM - 4:00 PM' },
+            { day: 'Sunday', time: 'Closed' },
+          ],
+        },
+      },
+    ],
+  },
+];
+
+const serviceProTemplate: StarterTemplate = {
+  id: 'service-pro',
+  name: 'ServicePro',
+  description: 'Modern template for service businesses. Features smart booking with real-time availability, service showcase, and online scheduling.',
+  category: 'startup',
+  icon: 'CalendarCheck',
+  tagline: 'Perfect for service businesses',
+  aiChatPosition: 'Widget for quick questions',
+  helpStyle: 'none',
+  pages: serviceProPages,
+  branding: {
+    organizationName: 'ServicePro',
+    brandTagline: 'Professional Services You Can Trust',
+    primaryColor: '220 70% 50%',
+    headingFont: 'Plus Jakarta Sans',
+    bodyFont: 'Inter',
+    borderRadius: 'md',
+    shadowIntensity: 'medium',
+  },
+  chatSettings: {
+    enabled: true,
+    aiProvider: 'lovable',
+    widgetEnabled: true,
+    widgetPosition: 'bottom-right',
+    welcomeMessage: 'Hi! How can we help you today?',
+    systemPrompt: 'You are a helpful assistant for a service business. Help users book appointments, answer questions about services, and provide information. Be friendly and professional.',
+    suggestedPrompts: [
+      'What services do you offer?',
+      'How do I book an appointment?',
+      'What are your hours?',
+    ],
+  },
+  footerSettings: {
+    email: 'hello@servicepro.com',
+    phone: '+1 (555) 123-4567',
+    address: '123 Main Street, Suite 100',
+    weekdayHours: 'Mon-Fri 9-18',
+    weekendHours: 'Sat 10-16',
+    showHours: true,
+    showQuickLinks: true,
+    showContact: true,
+    legalLinks: [
+      { id: 'privacy', label: 'Privacy Policy', url: '/privacy-policy', enabled: true },
+      { id: 'terms', label: 'Terms of Service', url: '/terms-of-service', enabled: true },
+    ],
+  },
+  seoSettings: {
+    siteTitle: 'ServicePro',
+    titleTemplate: '%s | ServicePro',
+    defaultDescription: 'Professional services delivered with excellence. Book online in seconds.',
+    robotsIndex: true,
+    robotsFollow: true,
+  },
+  cookieBannerSettings: {
+    enabled: true,
+  },
+  siteSettings: {
+    homepageSlug: 'home',
+  },
+};
+
+// Add ServicePro template to main export
+STARTER_TEMPLATES.push(serviceProTemplate);

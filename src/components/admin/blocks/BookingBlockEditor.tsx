@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { BookingBlockData, BookingService } from '@/types/cms';
-import { Calendar, ExternalLink, Code, Plus, Trash2, Webhook } from 'lucide-react';
+import { Calendar, ExternalLink, Code, Plus, Trash2, Webhook, Sparkles, Settings } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface BookingBlockEditorProps {
   data: BookingBlockData;
@@ -52,6 +53,17 @@ export function BookingBlockEditor({ data, onChange, isEditing }: BookingBlockEd
               {data.provider === 'cal' && 'Cal.com embed'}
               {data.provider === 'hubspot' && 'HubSpot embed'}
               {data.provider === 'custom' && 'Custom iframe embed'}
+            </>
+          ) : data.mode === 'smart' ? (
+            <>
+              <span className="flex items-center justify-center gap-1">
+                <Sparkles className="h-3 w-3" /> Smart booking with real availability
+              </span>
+              {data.triggerWebhook && (
+                <span className="flex items-center justify-center gap-1 text-xs text-primary mt-1">
+                  <Webhook className="h-3 w-3" /> Webhook enabled
+                </span>
+              )}
             </>
           ) : (
             <>
@@ -107,7 +119,7 @@ export function BookingBlockEditor({ data, onChange, isEditing }: BookingBlockEd
         <Label>Booking Mode</Label>
         <Select
           value={data.mode || 'embed'}
-          onValueChange={(value: 'embed' | 'form') => updateData({ mode: value })}
+          onValueChange={(value: 'embed' | 'form' | 'smart') => updateData({ mode: value })}
         >
           <SelectTrigger>
             <SelectValue />
@@ -125,9 +137,101 @@ export function BookingBlockEditor({ data, onChange, isEditing }: BookingBlockEd
                 Simple Booking Form
               </div>
             </SelectItem>
+            <SelectItem value="smart">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4" />
+                Smart Booking
+              </div>
+            </SelectItem>
           </SelectContent>
         </Select>
+        {data.mode === 'smart' && (
+          <p className="text-xs text-muted-foreground">
+            Uses your configured services and availability for real-time booking.
+          </p>
+        )}
       </div>
+
+      {/* Smart Mode Info */}
+      {data.mode === 'smart' && (
+        <div className="space-y-4 p-4 border rounded-lg bg-gradient-to-br from-primary/5 to-primary/10">
+          <div className="flex items-start gap-3">
+            <Sparkles className="h-5 w-5 text-primary mt-0.5" />
+            <div className="space-y-2">
+              <p className="font-medium">Smart Booking Mode</p>
+              <p className="text-sm text-muted-foreground">
+                Visitors will see your actual services and available time slots. 
+                Bookings are saved to the Bookings calendar.
+              </p>
+              <div className="flex flex-col gap-2 mt-3">
+                <Link 
+                  to="/admin/bookings/services" 
+                  className="text-sm text-primary hover:underline flex items-center gap-1"
+                >
+                  <Settings className="h-3.5 w-3.5" />
+                  Configure Services
+                </Link>
+                <Link 
+                  to="/admin/bookings/availability" 
+                  className="text-sm text-primary hover:underline flex items-center gap-1"
+                >
+                  <Calendar className="h-3.5 w-3.5" />
+                  Set Availability
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Submit Button Text</Label>
+            <Input
+              value={data.submitButtonText || ''}
+              onChange={(e) => updateData({ submitButtonText: e.target.value })}
+              placeholder="Confirm Booking"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Success Message</Label>
+            <Textarea
+              value={data.successMessage || ''}
+              onChange={(e) => updateData({ successMessage: e.target.value })}
+              placeholder="Thank you! We'll contact you to confirm your appointment."
+              rows={2}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label>Show Phone Field</Label>
+              <p className="text-xs text-muted-foreground">Include phone number in the form</p>
+            </div>
+            <Switch
+              checked={data.showPhoneField ?? true}
+              onCheckedChange={(checked) => updateData({ showPhoneField: checked })}
+            />
+          </div>
+
+          {/* Webhook Integration */}
+          <div className="border-t pt-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label className="flex items-center gap-2">
+                  <Webhook className="h-4 w-4" />
+                  Trigger Webhook
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Send booking data to automation tools
+                </p>
+              </div>
+              <Switch
+                checked={data.triggerWebhook ?? false}
+                onCheckedChange={(checked) => updateData({ triggerWebhook: checked })}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Embed Mode Options */}
       {data.mode === 'embed' && (
