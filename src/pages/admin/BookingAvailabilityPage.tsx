@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { sv } from 'date-fns/locale';
 import { Plus, Trash2, CalendarOff } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
@@ -26,8 +25,8 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar } from '@/components/ui/calendar';
 
-const WEEKDAYS = ['Söndag', 'Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lördag'];
-const WEEKDAYS_SHORT = ['Sön', 'Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör'];
+const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const WEEKDAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 export default function BookingAvailabilityPage() {
   const { data: availability, isLoading: loadingAvailability } = useAvailability();
@@ -90,21 +89,21 @@ export default function BookingAvailabilityPage() {
   return (
     <AdminLayout>
       <AdminPageHeader
-        title="Tillgänglighet"
-        description="Ställ in öppettider och blockera datum"
+        title="Availability"
+        description="Set opening hours and block dates"
       />
 
       <Tabs defaultValue="weekly" className="space-y-6">
         <TabsList>
-          <TabsTrigger value="weekly">Veckoschema</TabsTrigger>
-          <TabsTrigger value="blocked">Blockerade datum</TabsTrigger>
+          <TabsTrigger value="weekly">Weekly Schedule</TabsTrigger>
+          <TabsTrigger value="blocked">Blocked Dates</TabsTrigger>
         </TabsList>
 
         <TabsContent value="weekly" className="space-y-4">
           <div className="flex justify-end">
             <Button onClick={() => setAvailabilityDialogOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
-              Lägg till tid
+              Add Time Slot
             </Button>
           </div>
 
@@ -123,7 +122,7 @@ export default function BookingAvailabilityPage() {
                   </CardHeader>
                   <CardContent className="space-y-2">
                     {slots.length === 0 ? (
-                      <p className="text-xs text-muted-foreground">Stängd</p>
+                      <p className="text-xs text-muted-foreground">Closed</p>
                     ) : (
                       slots.map((slot) => (
                         <div
@@ -155,7 +154,7 @@ export default function BookingAvailabilityPage() {
           <div className="flex justify-end">
             <Button onClick={() => setBlockedDialogOpen(true)}>
               <CalendarOff className="h-4 w-4 mr-2" />
-              Blockera datum
+              Block Date
             </Button>
           </div>
 
@@ -164,7 +163,7 @@ export default function BookingAvailabilityPage() {
           ) : blockedDates?.length === 0 ? (
             <Card>
               <CardContent className="py-8 text-center text-muted-foreground">
-                Inga blockerade datum
+                No blocked dates
               </CardContent>
             </Card>
           ) : (
@@ -174,7 +173,7 @@ export default function BookingAvailabilityPage() {
                   <CardContent className="p-4 flex items-center justify-between">
                     <div>
                       <p className="font-medium">
-                        {format(new Date(blocked.date), 'EEEE d MMMM yyyy', { locale: sv })}
+                        {format(new Date(blocked.date), 'EEEE, MMMM d, yyyy')}
                       </p>
                       {blocked.reason && (
                         <p className="text-sm text-muted-foreground">{blocked.reason}</p>
@@ -199,11 +198,11 @@ export default function BookingAvailabilityPage() {
       <Dialog open={availabilityDialogOpen} onOpenChange={setAvailabilityDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Lägg till öppettid</DialogTitle>
+            <DialogTitle>Add Time Slot</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleCreateAvailability} className="space-y-4">
             <div className="space-y-2">
-              <Label>Veckodag</Label>
+              <Label>Weekday</Label>
               <Select
                 value={availabilityForm.day_of_week.toString()}
                 onValueChange={(v) =>
@@ -225,7 +224,7 @@ export default function BookingAvailabilityPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Starttid</Label>
+                <Label>Start Time</Label>
                 <Select
                   value={availabilityForm.start_time}
                   onValueChange={(v) =>
@@ -246,7 +245,7 @@ export default function BookingAvailabilityPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>Sluttid</Label>
+                <Label>End Time</Label>
                 <Select
                   value={availabilityForm.end_time}
                   onValueChange={(v) =>
@@ -269,7 +268,7 @@ export default function BookingAvailabilityPage() {
 
             {services && services.length > 0 && (
               <div className="space-y-2">
-                <Label>Tjänst (valfritt)</Label>
+                <Label>Service (optional)</Label>
                 <Select
                   value={availabilityForm.service_id}
                   onValueChange={(v) =>
@@ -277,10 +276,10 @@ export default function BookingAvailabilityPage() {
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Alla tjänster" />
+                    <SelectValue placeholder="All services" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Alla tjänster</SelectItem>
+                    <SelectItem value="">All services</SelectItem>
                     {services.map((service) => (
                       <SelectItem key={service.id} value={service.id}>
                         {service.name}
@@ -297,10 +296,10 @@ export default function BookingAvailabilityPage() {
                 variant="outline"
                 onClick={() => setAvailabilityDialogOpen(false)}
               >
-                Avbryt
+                Cancel
               </Button>
               <Button type="submit" disabled={createAvailability.isPending}>
-                Lägg till
+                Add
               </Button>
             </DialogFooter>
           </form>
@@ -311,7 +310,7 @@ export default function BookingAvailabilityPage() {
       <Dialog open={blockedDialogOpen} onOpenChange={setBlockedDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Blockera datum</DialogTitle>
+            <DialogTitle>Block Date</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="flex justify-center">
@@ -325,12 +324,12 @@ export default function BookingAvailabilityPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="reason">Anledning (valfritt)</Label>
+              <Label htmlFor="reason">Reason (optional)</Label>
               <Input
                 id="reason"
                 value={blockedReason}
                 onChange={(e) => setBlockedReason(e.target.value)}
-                placeholder="T.ex. Semester, Helgdag..."
+                placeholder="e.g., Vacation, Holiday..."
               />
             </div>
 
@@ -340,13 +339,13 @@ export default function BookingAvailabilityPage() {
                 variant="outline"
                 onClick={() => setBlockedDialogOpen(false)}
               >
-                Avbryt
+                Cancel
               </Button>
               <Button
                 onClick={handleCreateBlockedDate}
                 disabled={!selectedBlockedDate || createBlockedDate.isPending}
               >
-                Blockera
+                Block
               </Button>
             </DialogFooter>
           </div>
