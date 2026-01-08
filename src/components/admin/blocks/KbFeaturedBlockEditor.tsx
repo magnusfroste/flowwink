@@ -3,6 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Star } from 'lucide-react';
+import { KbPageSlugField } from './KbPageSlugField';
 import type { KbFeaturedBlockData } from '@/components/public/blocks/KbFeaturedBlock';
 
 interface KbFeaturedBlockEditorProps {
@@ -112,18 +113,10 @@ export function KbFeaturedBlockEditor({ data, onChange, isEditing }: KbFeaturedB
         />
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="kbPageSlug">KB Page Slug</Label>
-        <Input
-          id="kbPageSlug"
-          value={data.kbPageSlug || ''}
-          onChange={(e) => handleChange('kbPageSlug', e.target.value)}
-          placeholder="help"
-        />
-        <p className="text-xs text-muted-foreground">
-          The slug of the KB page for article links (e.g., "help" → /help/article-slug)
-        </p>
-      </div>
+      <KbPageSlugField
+        value={data.kbPageSlug || ''}
+        onChange={(value) => handleChange('kbPageSlug', value)}
+      />
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search } from 'lucide-react';
+import { KbPageSlugField } from './KbPageSlugField';
 
 interface KbSearchBlockData {
   title?: string;
@@ -122,17 +123,11 @@ export function KbSearchBlockEditor({ data, onChange, isEditing }: KbSearchBlock
         </div>
       )}
 
-      <div className="space-y-2">
-        <Label>KB Page Slug</Label>
-        <Input
-          value={data.kbPageSlug || ''}
-          onChange={(e) => updateField('kbPageSlug', e.target.value)}
-          placeholder="help"
-        />
-        <p className="text-xs text-muted-foreground">
-          The slug of the KB page for search results (e.g., "help" → /help?q=...)
-        </p>
-      </div>
+      <KbPageSlugField
+        value={data.kbPageSlug || ''}
+        onChange={(value) => updateField('kbPageSlug', value)}
+        description="The slug of the KB page for search results (e.g., &quot;help&quot; → /help?q=...)"
+      />
     </div>
   );
 }
