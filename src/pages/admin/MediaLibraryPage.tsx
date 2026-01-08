@@ -44,6 +44,7 @@ interface StorageFile {
 
 export default function MediaLibraryPage() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [folderFilter, setFolderFilter] = useState<'all' | 'pages' | 'imports'>('all');
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
   const [deleteFile, setDeleteFile] = useState<(StorageFile & { folder: string }) | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -220,9 +221,11 @@ export default function MediaLibraryPage() {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
-  const filteredFiles = files?.filter(file => 
-    file.name.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
+  const filteredFiles = files?.filter(file => {
+    const matchesSearch = file.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesFolder = folderFilter === 'all' || file.folder === folderFilter;
+    return matchesSearch && matchesFolder;
+  }) || [];
 
   return (
     <AdminLayout>
@@ -272,15 +275,33 @@ export default function MediaLibraryPage() {
           </div>
         )}
 
-        {/* Search */}
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search images..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
-          />
+        {/* Filter tabs and Search */}
+        <div className="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
+          <div className="flex gap-1 p-1 bg-muted rounded-lg w-fit">
+            {(['all', 'pages', 'imports'] as const).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setFolderFilter(tab)}
+                className={cn(
+                  "px-3 py-1.5 text-sm font-medium rounded-md transition-colors",
+                  folderFilter === tab
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {tab === 'all' ? 'All' : tab === 'pages' ? 'Pages' : 'Imports'}
+              </button>
+            ))}
+          </div>
+          <div className="relative max-w-md w-full sm:w-auto">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search images..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
         </div>
 
         {/* Drop zone when empty */}
