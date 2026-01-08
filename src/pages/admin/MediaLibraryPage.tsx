@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminLayout } from '@/components/admin/AdminLayout';
@@ -61,8 +61,9 @@ export default function MediaLibraryPage() {
   const [isDragging, setIsDragging] = useState(false);
   const [showUnsplash, setShowUnsplash] = useState(false);
   const [editingImage, setEditingImage] = useState<{ url: string; name: string } | null>(null);
-  const [lightboxImage, setLightboxImage] = useState<{ url: string; name: string } | null>(null);
+  const [lightboxImage, setLightboxImage] = useState<{ url: string; name: string; index: number } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
   const { toast } = useToast();
 
   const { data: files, isLoading, refetch } = useQuery({
@@ -88,12 +89,46 @@ export default function MediaLibraryPage() {
     },
   });
 
-  const getPublicUrl = (file: StorageFile & { folder: string }) => {
+  const getPublicUrl = useCallback((file: StorageFile & { folder: string }) => {
     const { data } = supabase.storage
       .from('cms-images')
       .getPublicUrl(`${file.folder}/${file.name}`);
     return data.publicUrl;
-  };
+  }, []);
+
+  const filteredFiles = files?.filter(file => {
+    const matchesSearch = file.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesFolder = folderFilter === 'all' || file.folder === folderFilter;
+    return matchesSearch && matchesFolder;
+  }) || [];
+
+  // Keyboard navigation for lightbox
+  useEffect(() => {
+    if (!lightboxImage) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        const prevIndex = lightboxImage.index - 1;
+        if (prevIndex >= 0 && filteredFiles[prevIndex]) {
+          const file = filteredFiles[prevIndex];
+          setLightboxImage({ url: getPublicUrl(file), name: file.name, index: prevIndex });
+        }
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        const nextIndex = lightboxImage.index + 1;
+        if (nextIndex < filteredFiles.length && filteredFiles[nextIndex]) {
+          const file = filteredFiles[nextIndex];
+          setLightboxImage({ url: getPublicUrl(file), name: file.name, index: nextIndex });
+        }
+      } else if (e.key === 'Escape') {
+        setLightboxImage(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [lightboxImage, filteredFiles, getPublicUrl]);
 
   const handleUpload = useCallback(async (filesToUpload: FileList | File[]) => {
     const imageFiles = Array.from(filesToUpload).filter(f => f.type.startsWith('image/'));
@@ -287,11 +322,6 @@ export default function MediaLibraryPage() {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
-  const filteredFiles = files?.filter(file => {
-    const matchesSearch = file.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFolder = folderFilter === 'all' || file.folder === folderFilter;
-    return matchesSearch && matchesFolder;
-  }) || [];
 
   return (
     <AdminLayout>
@@ -461,7 +491,10 @@ export default function MediaLibraryPage() {
 
                 <div 
                   className="aspect-square bg-muted cursor-pointer"
-                  onClick={() => setLightboxImage({ url: getPublicUrl(file), name: file.name })}
+                  onClick={() => {
+                    const index = filteredFiles.findIndex(f => f.id === file.id);
+                    setLightboxImage({ url: getPublicUrl(file), name: file.name, index });
+                  }}
                 >
                   <img
                     src={getPublicUrl(file)}
