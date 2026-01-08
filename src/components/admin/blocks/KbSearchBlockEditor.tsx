@@ -11,6 +11,7 @@ interface KbSearchBlockData {
   buttonText?: string;
   variant?: 'default' | 'minimal' | 'hero';
   showButton?: boolean;
+  kbPageSlug?: string;
 }
 
 interface KbSearchBlockEditorProps {
@@ -120,6 +121,18 @@ export function KbSearchBlockEditor({ data, onChange, isEditing }: KbSearchBlock
           />
         </div>
       )}
+
+      <div className="space-y-2">
+        <Label>KB Page Slug</Label>
+        <Input
+          value={data.kbPageSlug || ''}
+          onChange={(e) => updateField('kbPageSlug', e.target.value)}
+          placeholder="help"
+        />
+        <p className="text-xs text-muted-foreground">
+          The slug of the KB page for search results (e.g., "help" → /help?q=...)
+        </p>
+      </div>
     </div>
   );
 }
