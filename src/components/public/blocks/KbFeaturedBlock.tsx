@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { HelpCircle, ChevronRight } from 'lucide-react';
+import { useKbSlug } from '@/hooks/useKbSlug';
 
 export interface KbFeaturedBlockData {
   title?: string;
@@ -21,8 +22,6 @@ interface KbFeaturedBlockProps {
 }
 
 export function KbFeaturedBlock({ data }: KbFeaturedBlockProps) {
-  const location = useLocation();
-  
   const {
     title = 'Vanliga frågor',
     subtitle,
@@ -33,8 +32,7 @@ export function KbFeaturedBlock({ data }: KbFeaturedBlockProps) {
     kbPageSlug,
   } = data;
 
-  // Use configured slug or derive from current page URL (e.g., /help -> help)
-  const kbSlug = kbPageSlug || location.pathname.split('/')[1] || 'help';
+  const kbSlug = useKbSlug(kbPageSlug);
 
   const { data: articles, isLoading } = useQuery({
     queryKey: ['kb-featured-articles', maxItems],

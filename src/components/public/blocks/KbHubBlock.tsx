@@ -10,7 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { renderTiptapContent } from '@/lib/tiptap-utils';
 import { useIsModuleEnabled } from '@/hooks/useModules';
-import { useLocation } from 'react-router-dom';
+import { useKbSlug } from '@/hooks/useKbSlug';
 
 export interface KbHubBlockData {
   title?: string;
@@ -78,9 +78,7 @@ export function KbHubBlock({ data }: KbHubBlockProps) {
   const [expandedArticles, setExpandedArticles] = useState<Set<string>>(new Set());
 
   const chatEnabled = useIsModuleEnabled('chat');
-  const location = useLocation();
-  // Use configured slug or derive from current page URL (e.g., /help -> help)
-  const kbSlug = kbPageSlug || location.pathname.split('/')[1] || 'help';
+  const kbSlug = useKbSlug(kbPageSlug);
 
   // Fetch categories
   const { data: categories, isLoading: categoriesLoading } = useQuery({
