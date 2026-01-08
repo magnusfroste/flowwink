@@ -8,9 +8,10 @@ interface StatsBlockProps {
 }
 
 // Parse a stat value to extract numeric parts for animation
-function parseStatValue(value: string): { prefix: string; number: number; suffix: string } | null {
+function parseStatValue(value: string | number | undefined): { prefix: string; number: number; suffix: string } | null {
+  const valueStr = String(value ?? '');
   // Match patterns like "500+", "$1.2M", "99%", "10k+", etc.
-  const match = value.match(/^([^\d]*)([\d,.]+)(.*)$/);
+  const match = valueStr.match(/^([^\d]*)([\d,.]+)(.*)$/);
   if (!match) return null;
   
   const [, prefix, numStr, suffix] = match;

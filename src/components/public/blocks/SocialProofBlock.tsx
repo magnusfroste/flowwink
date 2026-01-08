@@ -65,7 +65,8 @@ function AnimatedCounter({
   const hasAnimated = useRef(false);
 
   useEffect(() => {
-    const numericValue = parseFloat(value.replace(/[^0-9.]/g, ''));
+    const valueStr = String(value ?? '');
+    const numericValue = parseFloat(valueStr.replace(/[^0-9.]/g, ''));
     const isNumeric = !isNaN(numericValue);
 
     if (!isNumeric) {
