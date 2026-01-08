@@ -90,6 +90,7 @@ export type ContentBlockType =
   | 'newsletter'
   | 'popup'
   | 'booking'
+  | 'smart-booking'
   | 'pricing'
   | 'testimonials'
   | 'team'

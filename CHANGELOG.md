@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Smart Booking Block**: Native booking system with services, availability calendar, and time slots
+- **Booking Management**: Admin pages for services, availability, and booking overview
+- **Media Library Enhancements**:
+  - Folder organization (pages/imports)
+  - Bulk select and delete
+  - Lightbox preview with keyboard navigation
+  - Folder tabs for filtering
+- **Knowledge Base Improvements**: KB page slug field with autocomplete
+- **Additional Blocks**: 20+ new blocks (Announcement Bar, Tabs, Marquee, Embed, Table, Countdown, Progress, Badge, Social Proof, Notification Toast, Floating CTA, Products, Cart, KB Featured, KB Hub, KB Search, KB Accordion)
+
+### Changed
+- Enhanced gallery block with improved lightbox functionality
+- Improved numeric parsing safety across forms
+
 ## [1.0.0-beta.1] - 2024-12-28
 
 ### Added

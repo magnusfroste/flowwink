@@ -219,6 +219,25 @@ const launchpadPages: TemplatePage[] = [
           autoplaySpeed: 5,
         },
       },
+      // BADGE - Trust indicators
+      {
+        id: 'badge-trust',
+        type: 'badge',
+        data: {
+          title: 'Trusted & Certified',
+          subtitle: 'Built with security and compliance in mind',
+          badges: [
+            { id: 'b1', title: 'SOC 2 Type II', subtitle: 'Certified', icon: 'shield' },
+            { id: 'b2', title: 'GDPR', subtitle: 'Compliant', icon: 'check' },
+            { id: 'b3', title: '99.9%', subtitle: 'Uptime SLA', icon: 'award' },
+            { id: 'b4', title: 'ISO 27001', subtitle: 'Certified', icon: 'medal' },
+          ],
+          variant: 'cards',
+          columns: 4,
+          size: 'md',
+          showTitles: true,
+        },
+      },
       // NEWSLETTER - Email subscription
       {
         id: 'newsletter-1',
@@ -871,6 +890,26 @@ const trustcorpPages: TemplatePage[] = [
           showRating: true,
           showAvatar: false,
           variant: 'cards',
+        },
+      },
+      // SOCIAL PROOF - Live enterprise metrics
+      {
+        id: 'social-proof-1',
+        type: 'social-proof',
+        data: {
+          title: 'Real-Time Enterprise Metrics',
+          items: [
+            { id: 'sp1', type: 'counter', icon: 'users', label: 'Active Users', value: '2.5M', suffix: '+', animated: true },
+            { id: 'sp2', type: 'rating', icon: 'star', label: 'Customer Satisfaction', value: '4.9', maxRating: 5, rating: 4.9 },
+            { id: 'sp3', type: 'counter', icon: 'activity', label: 'Transactions/Day', value: '10M', suffix: '+' },
+            { id: 'sp4', type: 'counter', icon: 'trending', label: 'Uptime This Year', value: '99.99', suffix: '%' },
+          ],
+          variant: 'cards',
+          layout: 'grid',
+          columns: 4,
+          size: 'lg',
+          animated: true,
+          showIcons: true,
         },
       },
       {
@@ -1558,20 +1597,69 @@ const securehealthPages: TemplatePage[] = [
           columns: 3,
           showRating: true,
           showAvatar: false,
-          variant: 'cards',
-          autoplay: true,
-          autoplaySpeed: 5,
-        },
-      },
-      {
-        id: 'cta-1',
-        type: 'cta',
-        data: {
-          title: 'Your Health Journey Starts Here',
-          subtitle: 'Experience healthcare that puts your privacy first.',
-          buttonText: 'Book Appointment',
           buttonUrl: '/book',
           gradient: false,
+        },
+      },
+      // TABS - Medical services overview
+      {
+        id: 'tabs-services',
+        type: 'tabs',
+        data: {
+          title: 'Our Medical Services',
+          subtitle: 'Comprehensive care across all specialties',
+          tabs: [
+            {
+              id: 'tab-primary',
+              label: 'Primary Care',
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'General Medicine' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Routine checkups, preventive care, and treatment for common illnesses. Our primary care physicians are your first point of contact for all health concerns.' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Annual health screenings' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Chronic disease management' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Vaccinations and immunizations' }] }] },
+                  ]},
+                ],
+              },
+            },
+            {
+              id: 'tab-specialists',
+              label: 'Specialists',
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Expert Specialty Care' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Access to board-certified specialists across cardiology, orthopedics, neurology, and more. Coordinated care with your primary physician.' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Cardiology and heart health' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Orthopedics and sports medicine' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Neurology and mental health' }] }] },
+                  ]},
+                ],
+              },
+            },
+            {
+              id: 'tab-emergency',
+              label: 'Emergency Care',
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: '24/7 Emergency Services' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'State-of-the-art emergency department with experienced trauma teams. Open 24 hours a day, 365 days a year.' }] },
+                  { type: 'bulletList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Immediate triage and assessment' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Advanced diagnostic imaging' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Trauma and critical care' }] }] },
+                  ]},
+                ],
+              },
+            },
+          ],
+          orientation: 'horizontal',
+          variant: 'pills',
         },
       },
     ],
@@ -2508,6 +2596,23 @@ const momentumPages: TemplatePage[] = [
               { type: 'paragraph', content: [{ type: 'text', text: 'Questions about these terms? Contact us at legal@momentum.dev.' }] },
             ],
           },
+        },
+      },
+      // FLOATING CTA - Persistent conversion element
+      {
+        id: 'floating-cta-1',
+        type: 'floating-cta',
+        data: {
+          text: 'Ready to ship faster?',
+          buttonText: 'Start Building Free',
+          buttonUrl: '#pricing',
+          variant: 'pill',
+          position: 'bottom',
+          size: 'md',
+          scrollThreshold: 300,
+          hideOnScrollUp: false,
+          closeable: true,
+          closePersistent: true,
         },
       },
     ],
@@ -7070,6 +7175,49 @@ const serviceProPages: TemplatePage[] = [
           showRating: true,
           showAvatar: false,
           variant: 'cards',
+          autoplay: true,
+          autoplaySpeed: 5,
+        },
+      },
+      // MARQUEE - Client logos
+      {
+        id: 'marquee-clients',
+        type: 'marquee',
+        data: {
+          items: [
+            { id: 'm1', text: 'TechCorp', icon: '🏢' },
+            { id: 'm2', text: 'StartupX', icon: '🚀' },
+            { id: 'm3', text: 'DesignCo', icon: '🎨' },
+            { id: 'm4', text: 'MediaHub', icon: '📱' },
+            { id: 'm5', text: 'FinanceFirst', icon: '💼' },
+            { id: 'm6', text: 'HealthPlus', icon: '🏥' },
+          ],
+          speed: 'normal',
+          direction: 'left',
+          pauseOnHover: true,
+          variant: 'default',
+          separator: '•',
+        },
+      },
+      // PROGRESS - Service quality metrics
+      {
+        id: 'progress-metrics',
+        type: 'progress',
+        data: {
+          title: 'Our Service Quality',
+          subtitle: 'Metrics that matter to our clients',
+          items: [
+            { id: 'p1', label: 'Customer Satisfaction', value: 98, color: 'hsl(142, 76%, 36%)', icon: 'Heart' },
+            { id: 'p2', label: 'On-Time Delivery', value: 95, color: 'hsl(221, 83%, 53%)', icon: 'Clock' },
+            { id: 'p3', label: 'Repeat Customers', value: 87, color: 'hsl(262, 83%, 58%)', icon: 'Users' },
+            { id: 'p4', label: 'Project Success Rate', value: 92, color: 'hsl(47, 96%, 53%)', icon: 'CheckCircle' },
+          ],
+          variant: 'default',
+          size: 'md',
+          showPercentage: true,
+          showLabels: true,
+          animated: true,
+          animationDuration: 2000,
         },
       },
       {

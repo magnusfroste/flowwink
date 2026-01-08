@@ -37,7 +37,7 @@ Unlike traditional CMS (website only) or pure headless solutions (API only, requ
 ## Features
 
 ### Content Management
-- **16 block types** — Text, images, galleries, accordions, CTAs, and more
+- **46 block types** — Text, images, galleries, accordions, CTAs, booking, and more
 - **Drag & drop** — Reorder blocks visually
 - **Rich text editor** — Powered by Tiptap
 - **Media library** — With automatic WebP optimization

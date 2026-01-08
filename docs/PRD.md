@@ -50,7 +50,7 @@ Till skillnad från traditionella CMS (som bara levererar webbplats) eller rena 
 
 Pezcms använder en modulär block-arkitektur för flexibel innehållshantering:
 
-#### Tillgängliga Block (27 typer)
+#### Tillgängliga Block (46 typer)
 
 | Kategori | Block | Beskrivning |
 |----------|-------|-------------|
@@ -76,6 +76,7 @@ Pezcms använder en modulär block-arkitektur för flexibel innehållshantering:
 | | Pricing | Pristabell med tiers, features och badges |
 | | Comparison | Jämförelsetabell för produkter/planer |
 | | Booking | Bokningsformulär eller embed (Calendly/Cal.com/HubSpot) |
+| | Smart Booking | Inbyggt bokningssystem med tjänster, tillgänglighet och kalender |
 | | Form | Anpassningsbart formulär med fältvalidering |
 | | Newsletter | Nyhetsbrev-anmälan med GDPR-samtycke |
 | **Kontakt** | Contact | Kontaktinformation med adress och öppettider |
@@ -97,7 +98,10 @@ Pezcms använder en modulär block-arkitektur för flexibel innehållshantering:
 - **Uppladdning**: Drag & drop eller filväljare
 - **WebP-konvertering**: Automatisk optimering
 - **Unsplash-integration**: Sök och använd stockbilder
-- **Sök & Filter**: Hitta bilder snabbt
+- **Mappar**: Automatisk organisering (pages/imports)
+- **Sök & Filter**: Hitta bilder snabbt med folder-tabs
+- **Bulk-hantering**: Markera flera, radera samtidigt
+- **Lightbox**: Fullskärmsvisning med tangentbordsnavigering
 - **Återanvändning**: Välj från biblioteket i alla block
 - **Alt-text**: WCAG-kompatibel bildhantering
 
@@ -490,7 +494,7 @@ Visuellt diagram som demonstrerar innehållsflöde från CMS till olika kanaler:
 
 ### 8.3 Content Model Overview
 
-Översikt av alla 27 block-typer med:
+Översikt av alla 46 block-typer med:
 - Antal instanser i publicerade sidor
 - JSON-preview av block-struktur
 - Dokumentation av data-format
@@ -858,7 +862,7 @@ För vårdorganisationer som kräver HIPAA:
 ## Appendix A: Roadmap
 
 ### Fas 1: MVP ✅ (Complete)
-- Block-baserad sidbyggare (16 block types)
+- Block-baserad sidbyggare (46 block types)
 - Editorial workflow (Draft → Review → Published)
 - Branding & SEO
 - AI Chat & Import
@@ -878,11 +882,21 @@ För vårdorganisationer som kräver HIPAA:
 | **Conversion Blocks** | High | Social proof, pricing tables | ✅ Complete |
 
 #### Booking Module Features
-- **Service Selection**: Configurable services with duration and description
+
+**Basic Booking Block**:
 - **Form Mode**: Built-in appointment request form
 - **Embed Mode**: Calendly, Cal.com, HubSpot integration
 - **Webhook Trigger**: Automatic `booking.submitted` event for n8n workflows
-- **Dedicated Page**: SecureHealth template includes `/boka` appointments page
+
+**Smart Booking Block** (Native System):
+- **Service Management**: Create services with name, duration, price, description
+- **Availability Calendar**: Configure available days and time slots per service
+- **Multi-step Flow**: Service selection → Date/time picker → Customer details → Confirmation
+- **Week View**: Visual calendar with available slots
+- **Real-time Availability**: Shows only bookable time slots
+- **Admin Dashboard**: View, manage, and track all bookings
+- **Status Tracking**: Pending, confirmed, cancelled, completed
+- **Webhook Integration**: Triggers `booking.created` event for automation
 
 #### Conversion Blocks Added
 - **Testimonials**: Customer reviews with star ratings, carousel/grid layouts
