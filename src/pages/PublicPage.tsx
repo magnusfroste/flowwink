@@ -10,12 +10,11 @@ import { BodyScripts } from '@/components/public/BodyScripts';
 import { CookieBanner } from '@/components/public/CookieBanner';
 import { ChatWidget } from '@/components/public/ChatWidget';
 import { cn } from '@/lib/utils';
-import { useSeoSettings, useMaintenanceSettings, useGeneralSettings, useKbSettings } from '@/hooks/useSiteSettings';
+import { useSeoSettings, useMaintenanceSettings, useGeneralSettings } from '@/hooks/useSiteSettings';
 import { Button } from '@/components/ui/button';
 import { useEffect, useState } from 'react';
 import type { Page, ContentBlock } from '@/types/cms';
 import { usePageViewTracker } from '@/hooks/usePageViewTracker';
-import KnowledgeBasePage from './KnowledgeBasePage';
 
 function parseContent(data: {
   content_json: unknown;
@@ -35,17 +34,12 @@ export default function PublicPage() {
   const { data: generalSettings } = useGeneralSettings();
   const { data: seoSettings } = useSeoSettings();
   const { data: maintenanceSettings } = useMaintenanceSettings();
-  const { data: kbSettings } = useKbSettings();
   const [user, setUser] = useState<unknown>(null);
   const [authLoading, setAuthLoading] = useState(true);
 
   // Use configured homepage slug, default to 'home'
   const homepageSlug = generalSettings?.homepageSlug || 'home';
   const pageSlug = slug || homepageSlug;
-  
-  // Check if this is the KB route
-  const kbSlug = kbSettings?.menuSlug || 'kunskapsbas';
-  const isKbRoute = kbSettings?.enabled && pageSlug === kbSlug;
 
   // Check auth state for dev mode protection
   useEffect(() => {
@@ -64,9 +58,6 @@ export default function PublicPage() {
   const { data: page, isLoading, error } = useQuery({
     queryKey: ['public-page', pageSlug],
     queryFn: async () => {
-      // Skip fetching if this is a KB route
-      if (isKbRoute) return null;
-      
       try {
         // Use edge function for fetching (handles caching internally)
         const response = await fetch(
@@ -100,7 +91,6 @@ export default function PublicPage() {
       return parseContent(dbData);
     },
     staleTime: 5 * 60 * 1000, // 5 min client-side cache
-    enabled: !isKbRoute, // Don't run query for KB routes
   });
 
   // Track page view
@@ -109,11 +99,6 @@ export default function PublicPage() {
     pageSlug: pageSlug,
     pageTitle: page?.title,
   });
-
-  // Handle KB route - render KnowledgeBasePage
-  if (isKbRoute) {
-    return <KnowledgeBasePage />;
-  }
 
   if (isLoading || authLoading) {
     return (
