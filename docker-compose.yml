@@ -1,0 +1,37 @@
+# =============================================================================
+# Docker Compose for Local Testing
+# =============================================================================
+# Use this to test the Docker build locally before deploying to Easypanel
+# Usage:
+#   docker-compose up --build
+#   Open http://localhost:3000
+# =============================================================================
+
+version: '3.8'
+
+services:
+  pezcms:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    environment:
+      # These are build-time variables baked into the static files
+      # For production, set these in Easypanel environment variables
+      - VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
+      - VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+# =============================================================================
+# Notes:
+# - Environment variables must be set in .env file or exported before running
+# - Vite bakes env vars into the build, so changes require rebuild
+# - For production deployment, use Easypanel's environment variable settings
+# =============================================================================

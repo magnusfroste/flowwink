@@ -143,23 +143,43 @@ The fastest way to get started — remix the project on Lovable and get AI featu
 - ✅ Managed Supabase backend
 - ✅ Automatic updates
 
-### Option 2: Full Self-Hosting (Complete Control)
+### Option 2: Static Hosting (Simple Self-Hosting)
 
-Deploy on your own infrastructure with full control over your data:
+Deploy on static hosting platforms with your own Supabase backend:
 
 | Component | Your Choice |
 |-----------|-------------|
 | **Frontend** | Vercel, Netlify, Cloudflare Pages, or any static host |
-| **Backend** | Your own Supabase project |
+| **Backend** | Your own Supabase project (Cloud or Self-Hosted) |
 | **AI** | Private LLM (OpenAI, Gemini, Ollama, LM Studio, etc.) |
 
 See **[docs/SETUP.md](docs/SETUP.md)** for complete self-hosting instructions.
+
+### Option 3: Docker Deployment (100% Self-Hosted)
+
+Deploy with Docker on any platform for complete control:
+
+| Platform | Description |
+|----------|-------------|
+| **Easypanel** | One-click Docker deployment with auto-HTTPS |
+| **Railway** | Git-based deployment with automatic builds |
+| **Fly.io** | Global edge deployment |
+| **VPS** | Any server with Docker (Hetzner, DigitalOcean, etc.) |
+
+**What you get:**
+- ✅ 100% self-hosted (no vendor lock-in)
+- ✅ Works with Supabase Cloud OR Self-Hosted Supabase
+- ✅ Docker image for consistent deployments
+- ✅ Optional Cloudflare CDN for global performance
+
+See **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** for complete Docker deployment guide.
 
 **Note:** When self-hosting, AI features require configuring a Private LLM endpoint in the CMS admin panel. The Lovable AI Gateway is only available when using Lovable Cloud.
 
 ## Documentation
 
-- **[docs/SETUP.md](docs/SETUP.md)** — Self-hosting guide
+- **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** — Docker deployment guide (Easypanel, Railway, Fly.io)
+- **[docs/SETUP.md](docs/SETUP.md)** — Supabase setup guide
 - **[docs/PRD.md](docs/PRD.md)** — Full product documentation
 
 ## Contributing
