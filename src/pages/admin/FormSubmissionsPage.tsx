@@ -130,6 +130,25 @@ export default function FormSubmissionsPage() {
     });
   }, [submissions, filterFormName, searchQuery]);
 
+  // Format a value for display (handles objects, arrays, booleans)
+  const formatDisplayValue = (value: unknown): string => {
+    if (value === null || value === undefined) return '-';
+    if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+    if (Array.isArray(value)) {
+      return value.map(v => formatDisplayValue(v)).join(', ');
+    }
+    if (typeof value === 'object') {
+      // Handle select options like {label: "...", value: "..."}
+      const obj = value as Record<string, unknown>;
+      if ('label' in obj) return String(obj.label);
+      if ('value' in obj) return String(obj.value);
+      if ('name' in obj) return String(obj.name);
+      // Fallback to JSON for other objects
+      return JSON.stringify(value);
+    }
+    return String(value);
+  };
+
   // Export to CSV
   const exportToCSV = () => {
     if (filteredSubmissions.length === 0) {
@@ -153,8 +172,7 @@ export default function FormSubmissionsPage() {
         s.page?.title || '-',
         ...fieldKeys.map((key) => {
           const value = s.data[key];
-          if (typeof value === 'boolean') return value ? 'Yes' : 'No';
-          return String(value || '');
+          return formatDisplayValue(value);
         }),
       ];
       return row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',');
@@ -177,7 +195,7 @@ export default function FormSubmissionsPage() {
     const entries = Object.entries(data).slice(0, 2);
     return entries
       .map(([key, value]) => {
-        const displayValue = typeof value === 'boolean' ? (value ? 'Yes' : 'No') : String(value || '');
+        const displayValue = formatDisplayValue(value);
         return `${key}: ${displayValue.substring(0, 30)}${displayValue.length > 30 ? '...' : ''}`;
       })
       .join(', ');
@@ -338,7 +356,7 @@ export default function FormSubmissionsPage() {
                         {key.replace(/_/g, ' ')}
                       </span>
                       <span className="font-medium text-right max-w-[60%] break-words">
-                        {typeof value === 'boolean' ? (value ? 'Yes' : 'No') : String(value || '-')}
+                        {formatDisplayValue(value)}
                       </span>
                     </div>
                   ))}
