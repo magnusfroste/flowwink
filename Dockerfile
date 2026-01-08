@@ -31,6 +31,11 @@ RUN npm run build
 # -----------------------------------------------------------------------------
 FROM nginx:alpine
 
+# Install curl for health checks and enable nginx logging to stdout/stderr
+RUN apk add --no-cache curl \
+    && ln -sf /dev/stdout /var/log/nginx/access.log \
+    && ln -sf /dev/stderr /var/log/nginx/error.log
+
 # Copy built assets from builder stage
 COPY --from=builder /app/dist /usr/share/nginx/html
 
@@ -41,8 +46,9 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80
 
 # Health check for container orchestration
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost/ || exit 1
+# Using curl instead of wget, shorter interval for faster startup detection
+HEALTHCHECK --interval=10s --timeout=5s --start-period=10s --retries=3 \
+  CMD curl -f http://localhost/health || exit 1
 
 # Start nginx in foreground
 CMD ["nginx", "-g", "daemon off;"]
