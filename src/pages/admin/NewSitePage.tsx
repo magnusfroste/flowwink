@@ -15,7 +15,7 @@ import { StarterTemplateSelector } from '@/components/admin/StarterTemplateSelec
 import { StarterTemplate } from '@/data/starter-templates';
 import { validateTemplate, ValidationResult } from '@/lib/template-validator';
 import { useCreatePage, usePages, useDeletePage } from '@/hooks/usePages';
-import { useUpdateBrandingSettings, useUpdateChatSettings, useUpdateGeneralSettings, useUpdateSeoSettings, useUpdateCookieBannerSettings, useUpdateKbSettings } from '@/hooks/useSiteSettings';
+import { useUpdateBrandingSettings, useUpdateChatSettings, useUpdateGeneralSettings, useUpdateSeoSettings, useUpdateCookieBannerSettings } from '@/hooks/useSiteSettings';
 import { useUpdateFooterBlock } from '@/hooks/useGlobalBlocks';
 import { useBlogPosts, useCreateBlogPost, useDeleteBlogPost } from '@/hooks/useBlogPosts';
 import { useKbCategories, useCreateKbCategory, useCreateKbArticle, useDeleteKbCategory } from '@/hooks/useKnowledgeBase';
@@ -63,7 +63,7 @@ export default function NewSitePage() {
   const updateFooter = useUpdateFooterBlock();
   const updateSeo = useUpdateSeoSettings();
   const updateCookieBanner = useUpdateCookieBannerSettings();
-  const updateKbSettings = useUpdateKbSettings();
+  
   const createBlogPost = useCreateBlogPost();
   const createKbCategory = useCreateKbCategory();
   const createKbArticle = useCreateKbArticle();

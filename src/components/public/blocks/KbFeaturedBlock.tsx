@@ -5,7 +5,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { HelpCircle, ChevronRight } from 'lucide-react';
-import { useKbSettings } from '@/hooks/useSiteSettings';
 
 export interface KbFeaturedBlockData {
   title?: string;
@@ -14,6 +13,7 @@ export interface KbFeaturedBlockData {
   showCategory?: boolean;
   layout?: 'grid' | 'list';
   columns?: 2 | 3 | 4;
+  kbPageSlug?: string;
 }
 
 interface KbFeaturedBlockProps {
@@ -28,10 +28,10 @@ export function KbFeaturedBlock({ data }: KbFeaturedBlockProps) {
     showCategory = true,
     layout = 'grid',
     columns = 3,
+    kbPageSlug = 'help',
   } = data;
 
-  const { data: kbSettings } = useKbSettings();
-  const kbSlug = kbSettings?.menuSlug || 'help';
+  const kbSlug = kbPageSlug;
 
   const { data: articles, isLoading } = useQuery({
     queryKey: ['kb-featured-articles', maxItems],
