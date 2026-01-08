@@ -220,6 +220,19 @@ const launchpadPages: TemplatePage[] = [
           autoplaySpeed: 5,
         },
       },
+      // NEWSLETTER - Email subscription
+      {
+        id: 'newsletter-1',
+        type: 'newsletter',
+        data: {
+          title: 'Stay in the Loop',
+          description: 'Get product updates, tips, and insights delivered to your inbox.',
+          buttonText: 'Subscribe',
+          successMessage: 'Thanks for subscribing! Check your email to confirm.',
+          variant: 'default',
+          showNameField: false,
+        },
+      },
       {
         id: 'cta-1',
         type: 'cta',
