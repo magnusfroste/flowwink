@@ -534,8 +534,8 @@ export default function SiteSettingsPage() {
                 <Bot className="h-4 w-4" />
                 <AlertTitle>Answer Engine Optimization</AlertTitle>
                 <AlertDescription>
-                  AEO optimerar ditt innehåll för AI-drivna sökmotorer som Perplexity, ChatGPT, Google AI Overviews och Bing Copilot.
-                  Aktivera AEO för att generera llms.txt, Schema.org/JSON-LD och sitemap.xml.
+                  AEO optimizes your content for AI-powered search engines like Perplexity, ChatGPT, Google AI Overviews and Bing Copilot.
+                  Enable AEO to generate llms.txt, Schema.org/JSON-LD and sitemap.xml.
                 </AlertDescription>
               </Alert>
             )}
@@ -543,9 +543,9 @@ export default function SiteSettingsPage() {
             {aeoData.enabled && (
               <Alert className="border-emerald-500/50 bg-emerald-50 dark:bg-emerald-950/20">
                 <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                <AlertTitle className="text-emerald-800 dark:text-emerald-200">AEO är aktiverat</AlertTitle>
+                <AlertTitle className="text-emerald-800 dark:text-emerald-200">AEO is enabled</AlertTitle>
                 <AlertDescription className="text-emerald-700 dark:text-emerald-300">
-                  Din webbplats är nu optimerad för AI-sökmotorer. Följande endpoints är tillgängliga:
+                  Your website is now optimized for AI search engines. The following endpoints are available:
                   <div className="flex flex-wrap gap-2 mt-2">
                     {aeoData.llmsTxtEnabled && (
                       <Badge variant="secondary" className="gap-1">
@@ -663,7 +663,7 @@ export default function SiteSettingsPage() {
                         llms.txt
                       </CardTitle>
                       <CardDescription>
-                        Standard för AI-agenter att förstå din webbplats
+                        Standard for AI agents to understand your website
                         <a 
                           href="https://llmstxt.org" 
                           target="_blank" 
@@ -678,7 +678,7 @@ export default function SiteSettingsPage() {
                       <div className="flex items-center justify-between">
                         <div>
                           <Label>Generera /llms.txt</Label>
-                          <p className="text-xs text-muted-foreground">Kortfattad översikt för AI-agenter</p>
+                          <p className="text-xs text-muted-foreground">Brief overview for AI agents</p>
                         </div>
                         <Switch
                           checked={aeoData.llmsTxtEnabled}
@@ -688,7 +688,7 @@ export default function SiteSettingsPage() {
                       <div className="flex items-center justify-between">
                         <div>
                           <Label>Generera /llms-full.txt</Label>
-                          <p className="text-xs text-muted-foreground">Fullständigt innehåll i markdown</p>
+                          <p className="text-xs text-muted-foreground">Full content in markdown</p>
                         </div>
                         <Switch
                           checked={aeoData.llmsFullTxtEnabled}
@@ -697,7 +697,7 @@ export default function SiteSettingsPage() {
                       </div>
                       {aeoData.llmsFullTxtEnabled && (
                         <div className="space-y-2 pt-2 border-t">
-                          <Label htmlFor="maxWords">Max ord per sida</Label>
+                          <Label htmlFor="maxWords">Max words per page</Label>
                           <Input
                             id="maxWords"
                             type="number"
@@ -709,7 +709,7 @@ export default function SiteSettingsPage() {
                               maxWordsPerPage: Math.max(500, parseInt(e.target.value) || 2000) 
                             }))}
                           />
-                          <p className="text-xs text-muted-foreground">Begränsar innehållsmängden per sida i llms-full.txt</p>
+                          <p className="text-xs text-muted-foreground">Limits content amount per page in llms-full.txt</p>
                         </div>
                       )}
                     </CardContent>

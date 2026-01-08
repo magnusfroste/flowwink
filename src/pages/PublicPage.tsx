@@ -225,7 +225,7 @@ export default function PublicPage() {
           ) : (
             <div className="py-16 px-6">
               <div className="container mx-auto max-w-3xl text-center text-muted-foreground">
-                <p>Denna sida har inget innehåll ännu.</p>
+                <p>This page has no content yet.</p>
               </div>
             </div>
           )}

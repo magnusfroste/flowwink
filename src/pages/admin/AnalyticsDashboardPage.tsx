@@ -234,7 +234,7 @@ export default function AnalyticsDashboardPage() {
       <div className="space-y-6">
         <AdminPageHeader
           title="Analytics"
-          description="Översikt över leads, deals, newsletter och innehåll"
+          description="Overview of leads, deals, newsletter and content"
         />
 
         {/* Empty State if no modules */}
