@@ -382,7 +382,7 @@ const launchpadPages: TemplatePage[] = [
         data: {
           title: 'Early Bird Pricing Ends Soon',
           subtitle: 'Lock in 30% off for life',
-          targetDate: '2025-03-31T23:59:59',
+          targetDate: '2026-03-31T23:59:59',
           expiredMessage: 'Early bird pricing has ended',
           variant: 'cards',
           size: 'lg',
@@ -1357,6 +1357,90 @@ const trustcorpPages: TemplatePage[] = [
       },
     ],
   },
+  {
+    title: 'Support Center',
+    slug: 'support',
+    menu_order: 6,
+    showInMenu: true,
+    meta: {
+      description: 'Enterprise support center - Get help with our solutions and services',
+      showTitle: true,
+      titleAlignment: 'center',
+    },
+    blocks: [
+      {
+        id: 'hero-support',
+        type: 'hero',
+        data: {
+          title: 'Enterprise Support Center',
+          subtitle: 'Get the help you need from our dedicated enterprise team',
+          backgroundType: 'color',
+          heightMode: 'auto',
+          contentAlignment: 'center',
+          overlayOpacity: 0,
+        },
+      },
+      {
+        id: 'link-grid-support',
+        type: 'link-grid',
+        data: {
+          columns: 3,
+          links: [
+            { icon: 'MessageSquare', title: 'Contact Support', description: 'Reach our enterprise support team directly', url: '/contact' },
+            { icon: 'FileText', title: 'Documentation', description: 'Technical guides and API reference', url: '/case-studies' },
+            { icon: 'Users', title: 'Account Manager', description: 'Connect with your dedicated account manager', url: '/contact' },
+          ],
+        },
+      },
+      {
+        id: 'accordion-deployment',
+        type: 'accordion',
+        data: {
+          title: 'Deployment & Infrastructure',
+          items: [
+            { question: 'What deployment options are available?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'We offer multiple deployment options including on-premise, private cloud, and hybrid solutions. All deployments include full data sovereignty guarantees and can be customized to meet your specific compliance requirements.' }] }] } },
+            { question: 'What are the system requirements?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Requirements vary based on deployment type and scale. For on-premise installations, we provide detailed specifications. Our team will work with you to ensure optimal configuration for your infrastructure.' }] }] } },
+            { question: 'How is maintenance handled?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Enterprise clients receive 24/7 monitoring and proactive maintenance. Updates are scheduled during your designated maintenance windows, and all changes are communicated in advance.' }] }] } },
+          ],
+        },
+      },
+      {
+        id: 'accordion-security',
+        type: 'accordion',
+        data: {
+          title: 'Security & Compliance',
+          items: [
+            { question: 'What security certifications do you hold?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'TrustCorp maintains SOC 2 Type II, ISO 27001, and GDPR compliance. For healthcare clients, we offer HIPAA-compliant configurations. Certification documentation is available upon request under NDA.' }] }] } },
+            { question: 'How do you ensure data sovereignty?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'All data is processed and stored within your designated geographic region. Our private AI solutions run entirely on your infrastructure, ensuring complete data sovereignty. We never transmit data to external services without explicit authorization.' }] }] } },
+            { question: 'What is your security incident response process?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Enterprise clients have access to our 24/7 Security Operations Center. Any potential security events are investigated immediately, with dedicated escalation paths and regular status updates until resolution.' }] }] } },
+          ],
+        },
+      },
+      {
+        id: 'accordion-sla',
+        type: 'accordion',
+        data: {
+          title: 'SLA & Support Levels',
+          items: [
+            { question: 'What SLA guarantees do you offer?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Enterprise clients receive 99.99% uptime SLA with financial guarantees. Critical issues have a 15-minute response time, with 4-hour resolution targets for P1 incidents.' }] }] } },
+            { question: 'What support channels are available?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Enterprise support includes 24/7 phone and email support, dedicated Slack channel, video conferencing with technical experts, and on-site support for critical situations.' }] }] } },
+            { question: 'Do we get a dedicated account manager?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Yes, all enterprise clients are assigned a dedicated account manager and technical account manager. They serve as your primary contacts for all business and technical matters.' }] }] } },
+          ],
+        },
+      },
+      {
+        id: 'cta-support',
+        type: 'cta',
+        data: {
+          title: 'Need Immediate Assistance?',
+          subtitle: 'Our enterprise support team is available 24/7 for critical issues.',
+          buttonText: 'Contact Support',
+          buttonUrl: '/contact',
+          gradient: false,
+        },
+      },
+    ],
+  },
 ];
 
 // =====================================================
@@ -1941,26 +2025,52 @@ const securehealthPages: TemplatePage[] = [
         },
       },
       {
-        id: 'kb-search-faq',
-        type: 'kb-search',
+        id: 'accordion-appointments',
+        type: 'accordion',
         data: {
-          placeholder: 'Search our knowledge base...',
-          buttonText: 'Search',
-          variant: 'inline',
-          showButton: true,
+          title: 'Appointments & Scheduling',
+          items: [
+            { question: 'How do I schedule an appointment?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'You can schedule an appointment online through our patient portal, by calling our office at +1 (555) 234-5678, or by using our AI assistant. Same-day appointments may be available for urgent needs.' }] }] } },
+            { question: 'What should I bring to my first appointment?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Please bring your insurance card, a valid photo ID, a list of current medications, and any relevant medical records. New patients should arrive 15 minutes early to complete paperwork.' }] }] } },
+            { question: 'How do I cancel or reschedule?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Please cancel or reschedule at least 24 hours before your appointment. You can do this through the patient portal, by calling our office, or using our AI assistant.' }] }] } },
+            { question: 'Do you offer telehealth appointments?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Yes! We offer secure video consultations for many types of appointments. Ask about telehealth options when scheduling, or select "Video Visit" in our online booking system.' }] }] } },
+          ],
         },
       },
       {
-        id: 'kb-accordion-faq',
-        type: 'kb-accordion',
+        id: 'accordion-insurance',
+        type: 'accordion',
         data: {
-          title: 'Frequently Asked Questions',
-          subtitle: 'Browse our most common patient questions',
-          maxItems: 20,
-          showCategory: true,
-          allowMultiple: true,
-          defaultOpen: 'first',
-          variant: 'bordered',
+          title: 'Insurance & Billing',
+          items: [
+            { question: 'What insurance plans do you accept?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'We accept most major insurance plans including Medicare, Blue Cross Blue Shield, Aetna, Cigna, United Healthcare, and many others. Contact us to verify your specific coverage before your visit.' }] }] } },
+            { question: 'What if I don\'t have insurance?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'We offer self-pay options and payment plans for uninsured patients. Please speak with our billing department to discuss options that work for your situation.' }] }] } },
+            { question: 'How do I access my billing statements?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'You can view and pay bills through our secure patient portal. Paper statements are also mailed monthly. For billing questions, contact our billing department directly.' }] }] } },
+          ],
+        },
+      },
+      {
+        id: 'accordion-privacy',
+        type: 'accordion',
+        data: {
+          title: 'Privacy & Records',
+          items: [
+            { question: 'Is my health information secure?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Yes. We are fully HIPAA compliant and use state-of-the-art encryption to protect your health information. All data is stored on our own secure servers and never shared with third parties without your consent.' }] }] } },
+            { question: 'How do I access my medical records?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'You can access your medical records, test results, and appointment history through our secure patient portal. We use two-factor authentication for your protection.' }] }] } },
+            { question: 'Is the AI assistant really private?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Yes. Unlike cloud-based AI services, our Private AI runs entirely on our own HIPAA-compliant servers. Your conversations never leave our secure infrastructure.' }] }] } },
+          ],
+        },
+      },
+      {
+        id: 'accordion-services',
+        type: 'accordion',
+        data: {
+          title: 'Services & Care',
+          items: [
+            { question: 'What services do you offer?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'We offer comprehensive primary care, specialist consultations (cardiology, dermatology, etc.), pediatric care, mental health services, diagnostic testing, preventive care, and 24/7 urgent care.' }] }] } },
+            { question: 'Do you provide prescription refills?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Yes. Request prescription refills through the patient portal or by calling our office. Please allow 48-72 hours for processing. Some medications may require an appointment.' }] }] } },
+            { question: 'Where are you located?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'We have multiple locations throughout the region, each featuring free parking and full accessibility. Visit our Contact page for addresses and directions to each facility.' }] }] } },
+          ],
         },
       },
       {
@@ -2094,6 +2204,60 @@ const securehealthPages: TemplatePage[] = [
               { type: 'paragraph', content: [{ type: 'text', text: 'You can manage non-essential cookie preferences through our cookie banner. Note that disabling essential cookies may prevent access to certain healthcare services.' }] },
               { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Contact' }] },
               { type: 'paragraph', content: [{ type: 'text', text: 'Questions about cookies or data privacy? Contact our privacy team at privacy@securehealth.com.' }] },
+            ],
+          },
+        },
+      },
+    ],
+  },
+  {
+    title: 'Accessibility',
+    slug: 'accessibility',
+    menu_order: 99,
+    showInMenu: false,
+    meta: {
+      description: 'Our commitment to making healthcare accessible to everyone',
+      showTitle: true,
+      titleAlignment: 'left',
+    },
+    blocks: [
+      {
+        id: 'text-accessibility',
+        type: 'text',
+        data: {
+          content: {
+            type: 'doc',
+            content: [
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Our Commitment to Accessibility' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'SecureHealth is committed to ensuring that our website and healthcare services are accessible to everyone, including individuals with disabilities. We strive to meet or exceed the requirements of the Americans with Disabilities Act (ADA) and Web Content Accessibility Guidelines (WCAG) 2.1 Level AA.' }] },
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Accessibility Features' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'Our website includes the following accessibility features:' }] },
+              { type: 'bulletList', content: [
+                { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Keyboard navigation support for all interactive elements' }] }] },
+                { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Screen reader compatibility with proper ARIA labels and semantic HTML' }] }] },
+                { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'High contrast text and adjustable font sizes' }] }] },
+                { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Alternative text for all images and media' }] }] },
+                { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Clear and consistent navigation structure' }] }] },
+                { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Captions and transcripts for video and audio content' }] }] },
+              ]},
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Physical Accessibility' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'All SecureHealth facilities are fully accessible and compliant with ADA requirements, including:' }] },
+              { type: 'bulletList', content: [
+                { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Wheelchair accessible entrances and examination rooms' }] }] },
+                { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Accessible parking spaces close to building entrances' }] }] },
+                { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Elevators in multi-story facilities' }] }] },
+                { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Accessible restrooms on all floors' }] }] },
+                { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Sign language interpretation available upon request' }] }] },
+              ]},
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Assistive Technologies' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'We provide accommodations for patients who use assistive technologies including screen readers, magnification software, and voice recognition software. Please let us know your needs when scheduling your appointment.' }] },
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Feedback and Assistance' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'We are continually working to improve accessibility. If you encounter any barriers or have suggestions for improvement, please contact us:' }] },
+              { type: 'bulletList', content: [
+                { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Email: accessibility@securehealth.com' }] }] },
+                { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Phone: +1 (555) 234-5680 (TTY available)' }] }] },
+              ]},
+              { type: 'paragraph', content: [{ type: 'text', text: 'We aim to respond to all accessibility inquiries within 2 business days and will work with you to provide the information or service you need in an accessible format.' }] },
             ],
           },
         },
@@ -2283,6 +2447,84 @@ const momentumPages: TemplatePage[] = [
       },
     ],
   },
+  {
+    title: 'Privacy Policy',
+    slug: 'privacy-policy',
+    menu_order: 99,
+    showInMenu: false,
+    meta: {
+      description: 'How Momentum collects, uses, and protects your data',
+      showTitle: true,
+      titleAlignment: 'left',
+    },
+    blocks: [
+      {
+        id: 'text-privacy',
+        type: 'text',
+        data: {
+          content: {
+            type: 'doc',
+            content: [
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Introduction' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'At Momentum, we take your privacy seriously. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our developer platform.' }] },
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Information We Collect' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'We collect information you provide directly, including account information (name, email, company), usage data, and content you create using our platform.' }] },
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'How We Use Your Information' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'We use collected information to provide and improve our services, communicate with you about your account, ensure platform security, and comply with legal obligations.' }] },
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Data Security' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'We implement industry-standard security measures including encryption at rest and in transit, regular security audits, and SOC 2 Type II compliance. Your code and data are protected with enterprise-grade security.' }] },
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Data Retention' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'We retain your data for as long as your account is active. Upon account deletion, we remove your data within 30 days, except where retention is required by law.' }] },
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Your Rights' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'You have the right to access, correct, or delete your personal data. You can export your data at any time through your account settings. Contact privacy@momentum.dev for data requests.' }] },
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Contact' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'Questions about this policy? Email us at privacy@momentum.dev.' }] },
+            ],
+          },
+        },
+      },
+    ],
+  },
+  {
+    title: 'Terms of Service',
+    slug: 'terms-of-service',
+    menu_order: 99,
+    showInMenu: false,
+    meta: {
+      description: 'Terms and conditions for using the Momentum platform',
+      showTitle: true,
+      titleAlignment: 'left',
+    },
+    blocks: [
+      {
+        id: 'text-terms',
+        type: 'text',
+        data: {
+          content: {
+            type: 'doc',
+            content: [
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Acceptance of Terms' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'By accessing or using Momentum, you agree to be bound by these Terms of Service and our Privacy Policy. If you disagree with any part of these terms, you may not use our services.' }] },
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Description of Service' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'Momentum provides a developer platform for building, deploying, and scaling applications. We reserve the right to modify, suspend, or discontinue any part of the service with notice.' }] },
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'User Accounts' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'You are responsible for maintaining the confidentiality of your account credentials and for all activities under your account. Notify us immediately of any unauthorized access.' }] },
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Acceptable Use' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'You agree not to use our platform for any unlawful purpose, to harm others, distribute malware, or violate any applicable laws or regulations.' }] },
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Intellectual Property' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'You retain ownership of content you create. You grant us a license to host and serve your content as necessary to provide the service. Momentum and its logo are our trademarks.' }] },
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Limitation of Liability' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'To the maximum extent permitted by law, Momentum shall not be liable for any indirect, incidental, special, or consequential damages arising from your use of the service.' }] },
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Termination' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'We may terminate or suspend your account for violations of these terms. You may terminate your account at any time through your account settings.' }] },
+              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Contact' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'Questions about these terms? Contact us at legal@momentum.dev.' }] },
+            ],
+          },
+        },
+      },
+    ],
+  },
 ];
 
 // =====================================================
@@ -2397,8 +2639,8 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
       weekendHours: '',
       showHours: false,
       legalLinks: [
-        { id: 'privacy', label: 'Privacy', url: '/privacy', enabled: true },
-        { id: 'terms', label: 'Terms', url: '/terms', enabled: true },
+        { id: 'privacy', label: 'Privacy', url: '/privacy-policy', enabled: true },
+        { id: 'terms', label: 'Terms', url: '/terms-of-service', enabled: true },
       ],
     },
     seoSettings: {
