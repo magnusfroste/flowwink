@@ -19,8 +19,10 @@ import {
   ImageIcon,
   Upload,
   Crop,
-  Image as ImageIconLucide
+  Image as ImageIconLucide,
+  X
 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,6 +47,8 @@ interface StorageFile {
 export default function MediaLibraryPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [folderFilter, setFolderFilter] = useState<'all' | 'pages' | 'imports'>('all');
+  const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
+  const [showBulkDelete, setShowBulkDelete] = useState(false);
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
   const [deleteFile, setDeleteFile] = useState<(StorageFile & { folder: string }) | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -215,6 +219,63 @@ export default function MediaLibraryPage() {
     }
   };
 
+  const handleBulkDelete = async () => {
+    if (selectedFiles.size === 0) return;
+    
+    setIsDeleting(true);
+    try {
+      const filesToDelete = files?.filter(f => selectedFiles.has(f.id)) || [];
+      const paths = filesToDelete.map(f => `${f.folder}/${f.name}`);
+      
+      const { error } = await supabase.storage
+        .from('cms-images')
+        .remove(paths);
+
+      if (error) throw error;
+
+      toast({
+        title: `${selectedFiles.size} image${selectedFiles.size > 1 ? 's' : ''} deleted`,
+        description: 'Images have been removed from the media library',
+      });
+      setSelectedFiles(new Set());
+      refetch();
+    } catch (error) {
+      console.error('Bulk delete error:', error);
+      toast({
+        title: 'Could not delete images',
+        description: 'An error occurred. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDeleting(false);
+      setShowBulkDelete(false);
+    }
+  };
+
+  const toggleFileSelection = (fileId: string) => {
+    setSelectedFiles(prev => {
+      const next = new Set(prev);
+      if (next.has(fileId)) {
+        next.delete(fileId);
+      } else {
+        next.add(fileId);
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedFiles.size === filteredFiles.length) {
+      setSelectedFiles(new Set());
+    } else {
+      setSelectedFiles(new Set(filteredFiles.map(f => f.id)));
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedFiles(new Set());
+  };
+
   const formatFileSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -304,6 +365,34 @@ export default function MediaLibraryPage() {
           </div>
         </div>
 
+        {/* Bulk selection bar */}
+        {selectedFiles.size > 0 && (
+          <div className="flex items-center gap-4 p-3 bg-muted rounded-lg">
+            <div className="flex items-center gap-2">
+              <Checkbox
+                checked={selectedFiles.size === filteredFiles.length}
+                onCheckedChange={toggleSelectAll}
+              />
+              <span className="text-sm font-medium">
+                {selectedFiles.size} selected
+              </span>
+            </div>
+            <div className="flex-1" />
+            <Button variant="ghost" size="sm" onClick={clearSelection}>
+              <X className="h-4 w-4 mr-1" />
+              Clear
+            </Button>
+            <Button 
+              variant="destructive" 
+              size="sm" 
+              onClick={() => setShowBulkDelete(true)}
+            >
+              <Trash2 className="h-4 w-4 mr-1" />
+              Delete {selectedFiles.size}
+            </Button>
+          </div>
+        )}
+
         {/* Drop zone when empty */}
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
@@ -345,8 +434,26 @@ export default function MediaLibraryPage() {
             {filteredFiles.map((file) => (
               <div 
                 key={file.id} 
-                className="group relative bg-card rounded-lg border overflow-hidden"
+                className={cn(
+                  "group relative bg-card rounded-lg border overflow-hidden",
+                  selectedFiles.has(file.id) && "ring-2 ring-primary"
+                )}
               >
+                {/* Selection checkbox */}
+                <div 
+                  className={cn(
+                    "absolute top-2 left-2 z-10 transition-opacity",
+                    selectedFiles.size > 0 ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                  )}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Checkbox
+                    checked={selectedFiles.has(file.id)}
+                    onCheckedChange={() => toggleFileSelection(file.id)}
+                    className="bg-background/80 backdrop-blur-sm"
+                  />
+                </div>
+
                 <div className="aspect-square bg-muted">
                   <img
                     src={getPublicUrl(file)}
@@ -427,6 +534,32 @@ export default function MediaLibraryPage() {
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
               ) : null}
               Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk delete confirmation */}
+      <AlertDialog open={showBulkDelete} onOpenChange={setShowBulkDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {selectedFiles.size} images?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete these images? 
+              This cannot be undone and the images will no longer display on pages where they're used.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDelete}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : null}
+              Delete {selectedFiles.size} images
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
