@@ -447,11 +447,14 @@ export interface GalleryBlockData {
   columns: 2 | 3 | 4;
 }
 
+export type StatsAnimationStyle = 'count-up' | 'fade-in' | 'slide-up' | 'typewriter';
+
 export interface StatsBlockData {
   title?: string;
   stats: { value: string; label: string; icon?: string }[];
   animated?: boolean;
   animationDuration?: number; // in ms, default 2000
+  animationStyle?: StatsAnimationStyle; // default 'count-up'
 }
 
 export interface ChatBlockData {
