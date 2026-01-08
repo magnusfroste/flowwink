@@ -35,6 +35,7 @@ import {
   KbFeaturedBlock,
   KbHubBlock,
   KbSearchBlock,
+  KbAccordionBlock,
   AnnouncementBarBlock,
   TabsBlock,
   MarqueeBlock,
@@ -71,6 +72,7 @@ import type {
 import type { ProductsBlockData } from './blocks/ProductsBlock';
 import type { CartBlockData } from './blocks/CartBlock';
 import type { KbFeaturedBlockData } from './blocks/KbFeaturedBlock';
+import type { KbAccordionBlockData } from './blocks/KbAccordionBlock';
 import type { AnnouncementBarBlockData } from './blocks/AnnouncementBarBlock';
 import type { TabsBlockData } from './blocks/TabsBlock';
 import type { MarqueeBlockData } from './blocks/MarqueeBlock';
@@ -199,6 +201,8 @@ export function BlockRenderer({ block, pageId, index = 0 }: BlockRendererProps) 
         return <KbHubBlock data={block.data as unknown as KbHubBlockData} />;
       case 'kb-search':
         return <KbSearchBlock data={block.data as Record<string, unknown>} />;
+      case 'kb-accordion':
+        return <KbAccordionBlock data={block.data as unknown as KbAccordionBlockData} />;
       case 'announcement-bar':
         return <AnnouncementBarBlock data={block.data as unknown as AnnouncementBarBlockData} />;
       case 'tabs':

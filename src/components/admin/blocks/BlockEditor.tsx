@@ -50,6 +50,7 @@ import { CartBlockEditor } from './CartBlockEditor';
 import { KbFeaturedBlockEditor } from './KbFeaturedBlockEditor';
 import { KbHubBlockEditor } from './KbHubBlockEditor';
 import { KbSearchBlockEditor } from './KbSearchBlockEditor';
+import { KbAccordionBlockEditor } from './KbAccordionBlockEditor';
 import { AnnouncementBarBlockEditor } from './AnnouncementBarBlockEditor';
 import { TabsBlockEditor } from './TabsBlockEditor';
 import { MarqueeBlockEditor } from './MarqueeBlockEditor';
@@ -67,6 +68,7 @@ import type { ProductsBlockData } from '@/components/public/blocks/ProductsBlock
 import type { CartBlockData } from '@/components/public/blocks/CartBlock';
 import type { KbFeaturedBlockData } from '@/components/public/blocks/KbFeaturedBlock';
 import type { KbHubBlockData } from '@/components/public/blocks/KbHubBlock';
+import type { KbAccordionBlockData } from '@/components/public/blocks/KbAccordionBlock';
 import type { AnnouncementBarBlockData } from '@/components/public/blocks/AnnouncementBarBlock';
 import type { TabsBlockData } from '@/components/public/blocks/TabsBlock';
 import type { MarqueeBlockData } from '@/components/public/blocks/MarqueeBlock';
@@ -122,6 +124,7 @@ type BlockDataMap = {
   'kb-featured': KbFeaturedBlockData;
   'kb-hub': KbHubBlockData;
   'kb-search': Record<string, unknown>;
+  'kb-accordion': KbAccordionBlockData;
   'announcement-bar': AnnouncementBarBlockData;
   tabs: TabsBlockData;
   marquee: MarqueeBlockData;
@@ -304,6 +307,15 @@ const DEFAULT_BLOCK_DATA: BlockDataMap = {
     variant: 'default',
     showButton: true,
     buttonText: 'Sök',
+  },
+  'kb-accordion': {
+    title: 'Vanliga frågor',
+    subtitle: '',
+    maxItems: 10,
+    showCategory: false,
+    allowMultiple: false,
+    defaultOpen: 'none',
+    variant: 'default',
   },
   'announcement-bar': {
     message: 'Välkommen! Använd kod NYHET för 10% rabatt.',
@@ -751,6 +763,13 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
         return (
           <KbSearchBlockEditor
             data={block.data as Record<string, unknown>}
+            onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+          />
+        );
+      case 'kb-accordion':
+        return (
+          <KbAccordionBlockEditor
+            data={block.data as unknown as KbAccordionBlockData}
             onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
           />
         );

@@ -104,6 +104,7 @@ export type ContentBlockType =
   | 'kb-featured'
   | 'kb-hub'
   | 'kb-search'
+  | 'kb-accordion'
   | 'announcement-bar'
   | 'tabs'
   | 'marquee'
