@@ -472,15 +472,17 @@ export interface TimeSlot {
   available: boolean;
 }
 
-export function useAvailableSlots(date: Date | null, serviceId: string | null) {
+export function useAvailableSlots(date: string | null, serviceId: string | null) {
   return useQuery({
-    queryKey: ['available-slots', date?.toDateString(), serviceId],
+    queryKey: ['available-slots', date, serviceId],
     enabled: !!date,
     queryFn: async () => {
       if (!date) return [];
 
-      const dayOfWeek = date.getDay();
-      const dateStr = date.toISOString().split('T')[0];
+      // Parse the date string
+      const dateObj = new Date(date + 'T00:00:00');
+      const dayOfWeek = dateObj.getDay();
+      const dateStr = date;
 
       // Get availability for this day
       let availabilityQuery = supabase
@@ -509,9 +511,9 @@ export function useAvailableSlots(date: Date | null, serviceId: string | null) {
       }
 
       // Get existing bookings for this date
-      const startOfDay = new Date(date);
+      const startOfDay = new Date(dateObj);
       startOfDay.setHours(0, 0, 0, 0);
-      const endOfDay = new Date(date);
+      const endOfDay = new Date(dateObj);
       endOfDay.setHours(23, 59, 59, 999);
 
       const { data: bookings, error: bookingsError } = await supabase
@@ -550,7 +552,7 @@ export function useAvailableSlots(date: Date | null, serviceId: string | null) {
           const slotTime = `${slotHour.toString().padStart(2, '0')}:${slotMin.toString().padStart(2, '0')}`;
 
           // Check if this slot conflicts with existing bookings
-          const slotStart = new Date(date);
+          const slotStart = new Date(dateObj);
           slotStart.setHours(slotHour, slotMin, 0, 0);
           const slotEnd = new Date(slotStart.getTime() + duration * 60 * 1000);
 
@@ -574,10 +576,11 @@ export function useAvailableSlots(date: Date | null, serviceId: string | null) {
         }
       }
 
-      // Sort by time
+      // Sort by time and return only available slots as simple strings
       slots.sort((a, b) => a.time.localeCompare(b.time));
 
-      return slots;
+      // Return only available times as string array for simpler consumption
+      return slots.filter(s => s.available).map(s => s.time);
     },
   });
 }
