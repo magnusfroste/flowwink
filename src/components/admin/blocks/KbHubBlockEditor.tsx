@@ -115,8 +115,8 @@ export function KbHubBlockEditor({ data, onChange, isEditing }: KbHubBlockEditor
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="accordion">Accordion (expanderbara frågor)</SelectItem>
-              <SelectItem value="cards">Kort (klickbara länkar)</SelectItem>
+              <SelectItem value="accordion">Accordion (expandable questions)</SelectItem>
+              <SelectItem value="cards">Cards (clickable links)</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -124,15 +124,15 @@ export function KbHubBlockEditor({ data, onChange, isEditing }: KbHubBlockEditor
 
       {/* Empty State Section */}
       <div className="space-y-4">
-        <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Tomt tillstånd</h4>
+        <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Empty State</h4>
         
         <div className="space-y-2">
-          <Label htmlFor="kb-hub-empty-title">Titel när inga resultat</Label>
+          <Label htmlFor="kb-hub-empty-title">Title when no results</Label>
           <Input
             id="kb-hub-empty-title"
             value={data.emptyStateTitle || ''}
             onChange={(e) => onChange({ ...data, emptyStateTitle: e.target.value })}
-            placeholder="Inga resultat hittades"
+            placeholder="No results found"
           />
         </div>
 
@@ -190,7 +190,7 @@ export function KbHubBlockEditor({ data, onChange, isEditing }: KbHubBlockEditor
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="kb-hub-contact-button">Knapptext</Label>
+              <Label htmlFor="kb-hub-contact-button">Button text</Label>
               <Input
                 id="kb-hub-contact-button"
                 value={data.contactButtonText || ''}

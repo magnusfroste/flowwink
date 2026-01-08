@@ -56,7 +56,7 @@ export function FloatingCTABlockEditor({ data, onChange, isEditing }: FloatingCT
 
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label>Knapptext</Label>
+            <Label>Button text</Label>
             <Input
               value={data.buttonText || ''}
               onChange={(e) => onChange({ ...data, buttonText: e.target.value })}
@@ -75,7 +75,7 @@ export function FloatingCTABlockEditor({ data, onChange, isEditing }: FloatingCT
 
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label>Sekundär knapptext (valfri)</Label>
+            <Label>Secondary button text (optional)</Label>
             <Input
               value={data.secondaryButtonText || ''}
               onChange={(e) => onChange({ ...data, secondaryButtonText: e.target.value })}

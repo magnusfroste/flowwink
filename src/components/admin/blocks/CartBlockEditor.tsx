@@ -42,7 +42,7 @@ export function CartBlockEditor({ data, onChange, isEditing }: CartBlockEditorPr
         <Input
           value={data.title || ''}
           onChange={(e) => updateData({ title: e.target.value })}
-          placeholder="Din varukorg"
+          placeholder="Your cart"
         />
       </div>
 
@@ -52,18 +52,18 @@ export function CartBlockEditor({ data, onChange, isEditing }: CartBlockEditorPr
         <Input
           value={data.emptyMessage || ''}
           onChange={(e) => updateData({ emptyMessage: e.target.value })}
-          placeholder="Din varukorg är tom"
+          placeholder="Your cart is empty"
         />
       </div>
 
       {/* Checkout Settings */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label>Kassa-knapptext</Label>
+          <Label>Checkout button text</Label>
           <Input
             value={data.checkoutButtonText || ''}
             onChange={(e) => updateData({ checkoutButtonText: e.target.value })}
-            placeholder="Gå till kassan"
+            placeholder="Go to checkout"
           />
         </div>
         <div className="space-y-2">
@@ -78,7 +78,7 @@ export function CartBlockEditor({ data, onChange, isEditing }: CartBlockEditorPr
 
       {/* Style */}
       <div className="space-y-2">
-        <Label>Stil</Label>
+        <Label>Style</Label>
         <Select
           value={data.variant || 'default'}
           onValueChange={(value: 'default' | 'compact' | 'minimal') => updateData({ variant: value })}
@@ -88,7 +88,7 @@ export function CartBlockEditor({ data, onChange, isEditing }: CartBlockEditorPr
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="default">Standard</SelectItem>
-            <SelectItem value="compact">Kompakt</SelectItem>
+            <SelectItem value="compact">Compact</SelectItem>
             <SelectItem value="minimal">Minimal</SelectItem>
           </SelectContent>
         </Select>
@@ -98,8 +98,8 @@ export function CartBlockEditor({ data, onChange, isEditing }: CartBlockEditorPr
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="space-y-0.5">
-            <Label>Visa "Fortsätt handla"</Label>
-            <p className="text-xs text-muted-foreground">Knapp för att gå tillbaka till shopping</p>
+            <Label>Show "Continue Shopping"</Label>
+            <p className="text-xs text-muted-foreground">Button to return to shopping</p>
           </div>
           <Switch
             checked={data.showContinueShopping !== false}
@@ -109,7 +109,7 @@ export function CartBlockEditor({ data, onChange, isEditing }: CartBlockEditorPr
 
         {data.showContinueShopping !== false && (
           <div className="space-y-2">
-            <Label>Fortsätt handla-URL</Label>
+            <Label>Continue Shopping URL</Label>
             <Input
               value={data.continueShoppingUrl || ''}
               onChange={(e) => updateData({ continueShoppingUrl: e.target.value })}

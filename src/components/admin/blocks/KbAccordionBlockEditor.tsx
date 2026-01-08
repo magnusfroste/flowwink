@@ -105,14 +105,14 @@ export function KbAccordionBlockEditor({ data, onChange, isEditing }: KbAccordio
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="default">Standard</SelectItem>
-              <SelectItem value="bordered">Med ram</SelectItem>
+              <SelectItem value="bordered">Bordered</SelectItem>
               <SelectItem value="minimal">Minimal</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="defaultOpen">Öppna som standard</Label>
+          <Label htmlFor="defaultOpen">Default Open</Label>
           <Select
             value={data.defaultOpen || 'none'}
             onValueChange={(value) => handleChange('defaultOpen', value)}
@@ -121,9 +121,9 @@ export function KbAccordionBlockEditor({ data, onChange, isEditing }: KbAccordio
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="none">Ingen</SelectItem>
-              <SelectItem value="first">Första</SelectItem>
-              <SelectItem value="all">Alla (kräver "Tillåt flera öppna")</SelectItem>
+              <SelectItem value="none">None</SelectItem>
+              <SelectItem value="first">First</SelectItem>
+              <SelectItem value="all">All (requires "Allow multiple open")</SelectItem>
             </SelectContent>
           </Select>
         </div>

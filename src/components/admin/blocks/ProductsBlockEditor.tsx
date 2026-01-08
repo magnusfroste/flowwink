@@ -103,19 +103,19 @@ export function ProductsBlockEditor({ data, onChange, isEditing }: ProductsBlock
 
       {/* Button Text */}
       <div className="space-y-2">
-        <Label>Knapptext</Label>
+        <Label>Button text</Label>
         <Input
           value={data.buttonText || ''}
           onChange={(e) => updateData({ buttonText: e.target.value })}
-          placeholder="Lägg i varukorg"
+          placeholder="Add to cart"
         />
       </div>
 
       {/* Options */}
       <div className="flex items-center justify-between">
         <div className="space-y-0.5">
-          <Label>Visa beskrivning</Label>
-          <p className="text-xs text-muted-foreground">Visa produktbeskrivning i kortet</p>
+          <Label>Show description</Label>
+          <p className="text-xs text-muted-foreground">Show product description in card</p>
         </div>
         <Switch
           checked={data.showDescription !== false}

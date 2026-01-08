@@ -360,7 +360,7 @@ export function PricingBlockEditor({ data, onChange, isEditing }: PricingBlockEd
                         <SelectValue placeholder="Välj produkt..." />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="none">Ingen koppling (använd URL)</SelectItem>
+                        <SelectItem value="none">No connection (use URL)</SelectItem>
                         {products?.map(p => (
                           <SelectItem key={p.id} value={p.id}>
                             {p.name} - {formatPrice(p.price_cents, p.currency)}{p.type === 'recurring' ? '/mån' : ''}
@@ -375,7 +375,7 @@ export function PricingBlockEditor({ data, onChange, isEditing }: PricingBlockEd
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Knapptext</Label>
+                      <Label>Button text</Label>
                       <Input
                         value={tier.buttonText || ''}
                         onChange={(e) => updateTier(tier.id, { buttonText: e.target.value })}
@@ -383,7 +383,7 @@ export function PricingBlockEditor({ data, onChange, isEditing }: PricingBlockEd
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>URL (om ingen produkt)</Label>
+                      <Label>URL (if no product)</Label>
                       <Input
                         value={tier.buttonUrl || ''}
                         onChange={(e) => updateTier(tier.id, { buttonUrl: e.target.value })}
