@@ -43,6 +43,7 @@ const BLOCK_LABELS: Record<ContentBlockType, string> = {
   'kb-featured': 'KB Featured',
   'kb-hub': 'Knowledge Base',
   'kb-search': 'KB Search',
+  'kb-accordion': 'KB Accordion',
   'announcement-bar': 'Announcement Bar',
   tabs: 'Tabs',
   marquee: 'Marquee',
