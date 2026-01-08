@@ -26,6 +26,7 @@ export interface KbHubBlockData {
   emptyStateTitle?: string;
   emptyStateSubtitle?: string;
   layout?: 'accordion' | 'cards';
+  kbPageSlug?: string;
 }
 
 interface KbHubBlockProps {
