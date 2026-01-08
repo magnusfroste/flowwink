@@ -111,6 +111,19 @@ export function KbFeaturedBlockEditor({ data, onChange, isEditing }: KbFeaturedB
           onCheckedChange={(checked) => handleChange('showCategory', checked)}
         />
       </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="kbPageSlug">KB Page Slug</Label>
+        <Input
+          id="kbPageSlug"
+          value={data.kbPageSlug || ''}
+          onChange={(e) => handleChange('kbPageSlug', e.target.value)}
+          placeholder="help"
+        />
+        <p className="text-xs text-muted-foreground">
+          The slug of the KB page for article links (e.g., "help" → /help/article-slug)
+        </p>
+      </div>
     </div>
   );
 }
