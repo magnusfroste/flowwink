@@ -33,6 +33,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+} from '@/components/ui/dialog';
 
 interface StorageFile {
   name: string;
@@ -57,6 +61,7 @@ export default function MediaLibraryPage() {
   const [isDragging, setIsDragging] = useState(false);
   const [showUnsplash, setShowUnsplash] = useState(false);
   const [editingImage, setEditingImage] = useState<{ url: string; name: string } | null>(null);
+  const [lightboxImage, setLightboxImage] = useState<{ url: string; name: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -454,7 +459,10 @@ export default function MediaLibraryPage() {
                   />
                 </div>
 
-                <div className="aspect-square bg-muted">
+                <div 
+                  className="aspect-square bg-muted cursor-pointer"
+                  onClick={() => setLightboxImage({ url: getPublicUrl(file), name: file.name })}
+                >
                   <img
                     src={getPublicUrl(file)}
                     alt={file.name}
@@ -613,6 +621,24 @@ export default function MediaLibraryPage() {
           setEditingImage(null);
         }}
       />
+
+      {/* Lightbox */}
+      <Dialog open={!!lightboxImage} onOpenChange={(open) => !open && setLightboxImage(null)}>
+        <DialogContent className="max-w-[90vw] max-h-[90vh] p-0 overflow-hidden bg-black/95 border-none">
+          {lightboxImage && (
+            <div className="relative flex items-center justify-center w-full h-full min-h-[50vh]">
+              <img
+                src={lightboxImage.url}
+                alt={lightboxImage.name}
+                className="max-w-full max-h-[85vh] object-contain"
+              />
+              <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
+                <p className="text-white text-sm truncate">{lightboxImage.name}</p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 }
