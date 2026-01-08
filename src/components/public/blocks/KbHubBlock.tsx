@@ -70,6 +70,7 @@ export function KbHubBlock({ data }: KbHubBlockProps) {
     emptyStateTitle = 'Inga resultat hittades',
     emptyStateSubtitle = 'Försök med andra söktermer eller bläddra i alla kategorier',
     layout = 'accordion',
+    kbPageSlug,
   } = data;
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -78,8 +79,8 @@ export function KbHubBlock({ data }: KbHubBlockProps) {
 
   const chatEnabled = useIsModuleEnabled('chat');
   const location = useLocation();
-  // Derive KB slug from current page URL (e.g., /help -> help)
-  const kbSlug = location.pathname.split('/')[1] || 'help';
+  // Use configured slug or derive from current page URL (e.g., /help -> help)
+  const kbSlug = kbPageSlug || location.pathname.split('/')[1] || 'help';
 
   // Fetch categories
   const { data: categories, isLoading: categoriesLoading } = useQuery({
