@@ -98,7 +98,7 @@ export function CountdownBlockEditor({ data, onChange, isEditing }: CountdownBlo
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="default">Standard</SelectItem>
-              <SelectItem value="cards">Kort</SelectItem>
+              <SelectItem value="cards">Cards</SelectItem>
               <SelectItem value="minimal">Minimal</SelectItem>
               <SelectItem value="hero">Hero</SelectItem>
             </SelectContent>
@@ -106,7 +106,7 @@ export function CountdownBlockEditor({ data, onChange, isEditing }: CountdownBlo
         </div>
 
         <div className="grid gap-2">
-          <Label>Storlek</Label>
+          <Label>Size</Label>
           <Select
             value={data.size || 'md'}
             onValueChange={(value: 'sm' | 'md' | 'lg') =>

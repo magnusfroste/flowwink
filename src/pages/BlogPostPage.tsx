@@ -99,7 +99,7 @@ export default function BlogPostPage() {
               className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Tillbaka till bloggen
+              Back to blog
             </Link>
           </nav>
           

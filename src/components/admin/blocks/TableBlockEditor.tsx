@@ -117,15 +117,15 @@ export function TableBlockEditor({ data, onChange, isEditing }: TableBlockEditor
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="default">Standard</SelectItem>
-              <SelectItem value="striped">Randig</SelectItem>
-              <SelectItem value="bordered">Kantlinje</SelectItem>
+              <SelectItem value="striped">Striped</SelectItem>
+              <SelectItem value="bordered">Bordered</SelectItem>
               <SelectItem value="minimal">Minimal</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         <div className="grid gap-2">
-          <Label>Storlek</Label>
+          <Label>Size</Label>
           <Select
             value={data.size || 'md'}
             onValueChange={(value: 'sm' | 'md' | 'lg') =>

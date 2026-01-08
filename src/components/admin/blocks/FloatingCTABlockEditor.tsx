@@ -144,8 +144,8 @@ export function FloatingCTABlockEditor({ data, onChange, isEditing }: FloatingCT
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="bar">Bar (fullbredd)</SelectItem>
-                <SelectItem value="card">Kort</SelectItem>
+                <SelectItem value="bar">Bar (full width)</SelectItem>
+                <SelectItem value="card">Card</SelectItem>
                 <SelectItem value="minimal">Minimal</SelectItem>
                 <SelectItem value="pill">Pill</SelectItem>
               </SelectContent>
@@ -164,9 +164,9 @@ export function FloatingCTABlockEditor({ data, onChange, isEditing }: FloatingCT
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="bottom">Centrerad</SelectItem>
-                <SelectItem value="bottom-left">Nere till vänster</SelectItem>
-                <SelectItem value="bottom-right">Nere till höger</SelectItem>
+                <SelectItem value="bottom">Centered</SelectItem>
+                <SelectItem value="bottom-left">Bottom left</SelectItem>
+                <SelectItem value="bottom-right">Bottom right</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -174,7 +174,7 @@ export function FloatingCTABlockEditor({ data, onChange, isEditing }: FloatingCT
 
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label>Storlek</Label>
+            <Label>Size</Label>
             <Select
               value={data.size || 'md'}
               onValueChange={(value: FloatingCTABlockData['size']) => 
