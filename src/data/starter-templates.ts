@@ -1834,6 +1834,65 @@ const securehealthPages: TemplatePage[] = [
     ],
   },
   {
+    title: 'Patient FAQ',
+    slug: 'faq',
+    menu_order: 7,
+    showInMenu: true,
+    meta: {
+      description: 'Frequently asked questions about our healthcare services, appointments, and patient care',
+      showTitle: true,
+      titleAlignment: 'center',
+    },
+    blocks: [
+      {
+        id: 'hero-faq',
+        type: 'hero',
+        data: {
+          title: 'Patient FAQ',
+          subtitle: 'Find answers to common questions about our services, appointments, and patient care',
+          backgroundType: 'color',
+          heightMode: 'auto',
+          contentAlignment: 'center',
+          overlayOpacity: 0,
+        },
+      },
+      {
+        id: 'kb-search-faq',
+        type: 'kb-search',
+        data: {
+          placeholder: 'Search our knowledge base...',
+          buttonText: 'Search',
+          variant: 'inline',
+          showButton: true,
+        },
+      },
+      {
+        id: 'kb-accordion-faq',
+        type: 'kb-accordion',
+        data: {
+          title: 'Frequently Asked Questions',
+          subtitle: 'Browse our most common patient questions',
+          maxItems: 20,
+          showCategory: true,
+          allowMultiple: true,
+          defaultOpen: 'first',
+          variant: 'bordered',
+        },
+      },
+      {
+        id: 'cta-faq',
+        type: 'cta',
+        data: {
+          title: 'Still Have Questions?',
+          subtitle: 'Our care team is here to help. Contact us or use our AI assistant.',
+          buttonText: 'Contact Us',
+          buttonUrl: '/contact',
+          gradient: false,
+        },
+      },
+    ],
+  },
+  {
     title: 'Privacy Policy',
     slug: 'privacy-policy',
     menu_order: 99,
