@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to Pezcms will be documented in this file.
+All notable changes to FlowWink will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Knowledge Base Improvements**: KB page slug field with autocomplete
 - **Additional Blocks**: 20+ new blocks (Announcement Bar, Tabs, Marquee, Embed, Table, Countdown, Progress, Badge, Social Proof, Notification Toast, Floating CTA, Products, Cart, KB Featured, KB Hub, KB Search, KB Accordion)
 - **Template Improvements**: Enhanced starter templates with Badge, Floating CTA, Social Proof, Tabs, Marquee, and Progress blocks
-- **Competitor Comparison**: Comprehensive documentation comparing Pezcms with Webflow, Squarespace, and Weebly
+- **Competitor Comparison**: Comprehensive documentation comparing FlowWink with Webflow, Squarespace, and Weebly
 - **Docker Deployment**: Full Easypanel/Docker support with Build Arguments for Vite environment variables
 
 ### Changed

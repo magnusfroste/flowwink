@@ -75,7 +75,7 @@ async function sendWebhookWithRetry(
     try {
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
-        'User-Agent': 'PezCMS-Webhook/1.0',
+        'User-Agent': 'FlowWink-Webhook/1.0',
         'X-Webhook-Event': payload.event,
         'X-Webhook-Timestamp': payload.timestamp,
         'X-Webhook-Attempt': String(attempt + 1),

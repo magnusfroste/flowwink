@@ -6,7 +6,7 @@ import Link from '@tiptap/extension-link';
 // TIPTAP UTILITIES
 // =============================================================================
 // This module provides utilities for working with Tiptap/ProseMirror documents.
-// TiptapDocument is the STANDARD format for rich text in PezCMS.
+// TiptapDocument is the STANDARD format for rich text in FlowWink.
 //
 // CONTENT FORMAT STRATEGY:
 // - Primary format: TiptapDocument (JSON) - stored in database, used in editors
@@ -19,7 +19,7 @@ import Link from '@tiptap/extension-link';
 
 /**
  * Standard Tiptap document structure (ProseMirror format)
- * This is the PRIMARY format for all rich text content in PezCMS.
+ * This is the PRIMARY format for all rich text content in FlowWink.
  */
 export interface TiptapDocument {
   type: 'doc';

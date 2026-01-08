@@ -1,6 +1,6 @@
 # Headless API Documentation
 
-Pezcms provides a powerful headless API for multi-channel content delivery. Access your content via REST or GraphQL endpoints.
+FlowWink provides a powerful headless API for multi-channel content delivery. Access your content via REST or GraphQL endpoints.
 
 ## Base URL
 

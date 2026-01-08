@@ -1,6 +1,6 @@
 # Docker Deployment Guide
 
-Complete guide for deploying Pezcms with Docker on Easypanel, Railway, Fly.io, or any Docker-compatible platform.
+Complete guide for deploying FlowWink with Docker on Easypanel, Railway, Fly.io, or any Docker-compatible platform.
 
 ## Table of Contents
 
@@ -144,14 +144,14 @@ Easypanel will:
 
 ```bash
 # Build locally
-docker build -t pezcms:latest .
+docker build -t flowwink:latest .
 
 # Push to Docker Hub or registry
-docker tag pezcms:latest your-registry/pezcms:latest
-docker push your-registry/pezcms:latest
+docker tag flowwink:latest your-registry/flowwink:latest
+docker push your-registry/flowwink:latest
 
 # Deploy in Easypanel
-# Create Service → Docker Image → your-registry/pezcms:latest
+# Create Service → Docker Image → your-registry/flowwink:latest
 ```
 
 ### 6. Configure Domain (Optional)
@@ -227,7 +227,7 @@ Cloudflare provides:
    - Go to **SSL/TLS** → **Overview**
    - Set to **Full (strict)**
 
-4. **Cache Settings** (Optional - Pezcms already sets Cache-Control headers)
+4. **Cache Settings** (Optional - FlowWink already sets Cache-Control headers)
    - Go to **Rules** → **Page Rules**
    - Add rule for `*cms.example.com/assets/*`:
      - Cache Level: Cache Everything
@@ -246,10 +246,10 @@ Cloudflare Edge (respects Cache-Control headers)
    ↓
    ├─ /assets/* → Cached 1 year (immutable)
    ├─ /index.html → No cache (always fresh)
-   └─ Supabase API → Cached per Pezcms settings (5 min default)
+   └─ Supabase API → Cached per FlowWink settings (5 min default)
 ```
 
-**Pezcms cache settings** (in Admin → Settings → Performance) control:
+**FlowWink cache settings** (in Admin → Settings → Performance) control:
 - Edge Function caching (content API)
 - TTL duration
 - Cache invalidation
@@ -306,8 +306,8 @@ fly deploy
 
 ```bash
 # On your VPS
-git clone https://github.com/magnusfroste/pezcms.git
-cd pezcms
+git clone https://github.com/magnusfroste/flowwink.git
+cd flowwink
 
 # Create .env file
 cat > .env << EOF
@@ -324,7 +324,7 @@ docker-compose up -d
 Add Nginx reverse proxy + Let's Encrypt for HTTPS:
 
 ```nginx
-# /etc/nginx/sites-available/pezcms
+# /etc/nginx/sites-available/flowwink
 server {
     listen 80;
     server_name cms.example.com;
@@ -403,13 +403,13 @@ npm run dev
 
 ```bash
 # Build
-docker build -t pezcms:test .
+docker build -t flowwink:test .
 
 # Run
 docker run -p 3000:80 \
   -e VITE_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co \
   -e VITE_SUPABASE_ANON_KEY=your-anon-key-here \
-  pezcms:test
+  flowwink:test
 
 # Access at http://localhost:3000
 ```
@@ -425,7 +425,7 @@ docker run -p 3000:80 \
 **Solution**: The Dockerfile uses `--legacy-peer-deps` flag. If still failing:
 ```bash
 # Locally test build
-docker build --no-cache -t pezcms:debug .
+docker build --no-cache -t flowwink:debug .
 ```
 
 ### Environment Variables Not Working
@@ -525,7 +525,7 @@ docker-compose up --build
 
 ### Image Optimization
 
-Pezcms automatically converts uploaded images to WebP via the `process-image` Edge Function.
+FlowWink automatically converts uploaded images to WebP via the `process-image` Edge Function.
 
 **Manual optimization** (if needed):
 ```bash
@@ -554,7 +554,7 @@ Current production build:
 |----------|----------------|--------|
 | `/assets/*` | 1 year | `public, immutable` |
 | `/index.html` | No cache | `no-cache, must-revalidate` |
-| Supabase API | 5 min (configurable) | Set by Pezcms admin |
+| Supabase API | 5 min (configurable) | Set by FlowWink admin |
 | Images | 1 hour | Set by Supabase Storage |
 
 ---
@@ -615,10 +615,10 @@ Use Supabase Dashboard → Storage → Download bucket contents
 
 ```bash
 # Save image
-docker save pezcms:latest | gzip > pezcms-backup.tar.gz
+docker save flowwink:latest | gzip > flowwink-backup.tar.gz
 
 # Restore
-docker load < pezcms-backup.tar.gz
+docker load < flowwink-backup.tar.gz
 ```
 
 ---
@@ -669,7 +669,7 @@ Cloudflare automatically scales globally. No config needed.
 
 ## Support
 
-- **GitHub Issues**: [github.com/magnusfroste/pezcms/issues](https://github.com/magnusfroste/pezcms/issues)
+- **GitHub Issues**: [github.com/magnusfroste/flowwink/issues](https://github.com/magnusfroste/flowwink/issues)
 - **Documentation**: See `docs/PRD.md` for full feature documentation
 - **Setup Guide**: See `docs/SETUP.md` for Supabase-only setup
 

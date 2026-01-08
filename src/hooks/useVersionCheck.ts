@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 
 const CURRENT_VERSION = '1.0.0-beta.1';
-const GITHUB_REPO = 'magnusfroste/pezcms';
+const GITHUB_REPO = 'magnusfroste/flowwink';
 
 interface GitHubRelease {
   tag_name: string;

@@ -1,6 +1,6 @@
-# Upgrading Pezcms
+# Upgrading FlowWink
 
-This guide explains how to safely upgrade your self-hosted Pezcms installation.
+This guide explains how to safely upgrade your self-hosted FlowWink installation.
 
 ## Before You Upgrade
 
@@ -62,7 +62,7 @@ If you prefer manual control:
 
 ```bash
 # 1. Navigate to your project directory
-cd your-pezcms-directory
+cd your-flowwink-directory
 
 # 2. Fetch latest changes
 git fetch origin
@@ -205,7 +205,7 @@ git checkout main
 
 ### How Migrations Work
 
-Pezcms uses Supabase migrations. Each migration is designed to be:
+FlowWink uses Supabase migrations. Each migration is designed to be:
 - **Idempotent**: Safe to run multiple times
 - **Non-destructive**: Never deletes user data without explicit action
 - **Backward compatible**: Old data continues to work

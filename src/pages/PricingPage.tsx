@@ -60,8 +60,8 @@ export default function PricingPage() {
   return (
     <>
       <Helmet>
-        <title>Pricing | PezCMS</title>
-        <meta name="description" content="Simple and transparent pricing for the PezCMS platform. Choose between monthly hosting or get started with professional setup." />
+        <title>Pricing | FlowWink</title>
+        <meta name="description" content="Simple and transparent pricing for the FlowWink platform. Choose between monthly hosting or get started with professional setup." />
       </Helmet>
       
       <PublicNavigation />

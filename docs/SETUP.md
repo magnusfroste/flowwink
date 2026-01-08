@@ -1,8 +1,8 @@
 # Self-Hosting Setup Guide
 
-This guide walks you through setting up Pezcms on your own Supabase instance.
+This guide walks you through setting up FlowWink on your own Supabase instance.
 
-> **Already running Pezcms?** See [UPGRADING.md](./UPGRADING.md) for upgrade instructions.
+> **Already running FlowWink?** See [UPGRADING.md](./UPGRADING.md) for upgrade instructions.
 > 
 > **Want to contribute?** See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
 
@@ -343,7 +343,7 @@ VITE_SUPABASE_ANON_KEY=<local-anon-key-from-supabase-start>
 
 ## Support
 
-- **GitHub Issues**: [github.com/magnusfroste/pezcms/issues](https://github.com/magnusfroste/pezcms/issues)
+- **GitHub Issues**: [github.com/magnusfroste/flowwink/issues](https://github.com/magnusfroste/flowwink/issues)
 - **Documentation**: See `docs/PRD.md` for full feature documentation
 
 ---

@@ -1,10 +1,10 @@
-# Pezcms vs Konkurrenter - Funktionsjämförelse
+# FlowWink vs Konkurrenter - Funktionsjämförelse
 
 > **Last Updated:** December 2024
 
 ## Översikt
 
-| Kategori | Pezcms | Webflow | Storyblok | Contentful | WordPress |
+| Kategori | FlowWink | Webflow | Storyblok | Contentful | WordPress |
 |----------|--------|---------|-----------|------------|-----------|
 | **Typ** | Head + Headless | Visual Builder | Visual + Headless | Pure Headless | Traditional CMS |
 | **Målgrupp** | SMB, Healthcare | Designers, Agencies | Developers, Marketers | Enterprise | Alla |
@@ -13,13 +13,13 @@
 
 ---
 
-## Website Builders: Pezcms vs Weebly, Webflow, Squarespace
+## Website Builders: FlowWink vs Weebly, Webflow, Squarespace
 
 ### Arkitektur-Jämförelse: Head vs Headless
 
 | Platform | Arkitektur | Webbplats | API | Målgrupp |
 |----------|------------|-----------|-----|----------|
-| **Pezcms** | **Head + Headless** | ✅ Inbyggd, färdig | ✅ REST + GraphQL | SMB, Healthcare, Developers |
+| **FlowWink** | **Head + Headless** | ✅ Inbyggd, färdig | ✅ REST + GraphQL | SMB, Healthcare, Developers |
 | **Webflow** | **Head-only** | ✅ Visuell designer | ⚠️ Begränsad (CMS API) | Designers, Agencies |
 | **Squarespace** | **Head-only** | ✅ Templates | ❌ Ingen headless API | Small business, Creators |
 | **Weebly** | **Head-only** | ✅ Drag & drop | ❌ Ingen headless API | Beginners, Small shops |
@@ -44,10 +44,10 @@
 - ❌ Kan inte använda innehåll i app/signage/etc.
 - ❌ Måste bygga om allt om du vill byta plattform
 
-**Head + Headless (Pezcms)**:
+**Head + Headless (FlowWink)**:
 ```
 ┌─────────────────────────────────────┐
-│           PEZCMS                    │
+│           FLOWWINK                  │
 │  (Inbyggd Site + Open API)         │
 └─────────────────────────────────────┘
          │
@@ -65,7 +65,7 @@
 
 ### Block-System Jämförelse
 
-| Funktion | Pezcms | Webflow | Squarespace | Weebly |
+| Funktion | FlowWink | Webflow | Squarespace | Weebly |
 |----------|--------|---------|-------------|--------|
 | **Antal block/element** | 46 block | ~50 elements | ~20 sections | ~15 sections |
 | **Drag & drop** | ✅ Ja | ✅ Ja | ✅ Ja | ✅ Ja |
@@ -74,7 +74,7 @@
 | **Block-återanvändning** | ✅ Global blocks | ✅ Symbols | ⚠️ Begränsad | ❌ Nej |
 | **Block-animationer** | ✅ Per block | ✅ Interactions | ⚠️ Begränsad | ❌ Nej |
 
-#### Pezcms Block-Kategorier (46 block)
+#### FlowWink Block-Kategorier (46 block)
 
 | Kategori | Block | Användning |
 |----------|-------|------------|
@@ -128,7 +128,7 @@
 
 ### Funktionsjämförelse: Website Builders
 
-| Funktion | Pezcms | Webflow | Squarespace | Weebly |
+| Funktion | FlowWink | Webflow | Squarespace | Weebly |
 |----------|--------|---------|-------------|--------|
 | **Visuell editor** | ✅ Block-baserad | ✅ Pixel-perfect | ✅ Template-baserad | ✅ Drag & drop |
 | **Responsiv design** | ✅ Automatisk | ✅ Manuell kontroll | ✅ Automatisk | ✅ Automatisk |
@@ -149,31 +149,31 @@
 
 | Platform | Startpris/mån | Mellanpris/mån | Pro/mån | Kommentar |
 |----------|---------------|----------------|---------|-----------|
-| **Pezcms** | 💰 Gratis (self-host) | - | - | Self-host eller managed |
+| **FlowWink** | 💰 Gratis (self-host) | - | - | Self-host eller managed |
 | **Webflow** | $14 (Basic) | $23 (CMS) | $39 (Business) | + $29/mån för CMS API |
 | **Squarespace** | $16 (Personal) | $23 (Business) | $49 (Commerce) | Årlig betalning |
 | **Weebly** | $10 (Personal) | $12 (Professional) | $26 (Performance) | Årlig betalning |
 
-**Pezcms Fördel**: Self-host gratis, eller managed hosting till lägre kostnad än konkurrenterna.
+**FlowWink Fördel**: Self-host gratis, eller managed hosting till lägre kostnad än konkurrenterna.
 
 ### Användningsfall: Vilken Plattform?
 
 | Scenario | Bästa Val | Varför? |
 |----------|-----------|---------|
-| **Snabb webbplats + framtida API** | ✅ **Pezcms** | Head + Headless i ett |
+| **Snabb webbplats + framtida API** | ✅ **FlowWink** | Head + Headless i ett |
 | **Pixel-perfect design-kontroll** | Webflow | Bäst för designers |
 | **Vacker portfolio/blogg** | Squarespace | Vackraste templates |
 | **Absolut enklast för nybörjare** | Weebly | Lägst inlärningskurva |
-| **Healthcare/GDPR-kritiskt** | ✅ **Pezcms** | Compliance inbyggd |
-| **Redaktionellt arbetsflöde** | ✅ **Pezcms** | Enda med approval flow |
+| **Healthcare/GDPR-kritiskt** | ✅ **FlowWink** | Compliance inbyggd |
+| **Redaktionellt arbetsflöde** | ✅ **FlowWink** | Enda med approval flow |
 | **E-commerce fokus** | Squarespace/Webflow | Mer e-commerce features |
-| **Innehåll till app + webb** | ✅ **Pezcms** | Enda med headless API |
-| **Budget-begränsad** | ✅ **Pezcms** (self-host) | Gratis att self-hosta |
-| **Snabb time-to-market** | ✅ **Pezcms** / Squarespace | Färdiga templates |
+| **Innehåll till app + webb** | ✅ **FlowWink** | Enda med headless API |
+| **Budget-begränsad** | ✅ **FlowWink** (self-host) | Gratis att self-hosta |
+| **Snabb time-to-market** | ✅ **FlowWink** / Squarespace | Färdiga templates |
 
 ### Teknisk Jämförelse
 
-| Aspekt | Pezcms | Webflow | Squarespace | Weebly |
+| Aspekt | FlowWink | Webflow | Squarespace | Weebly |
 |--------|--------|---------|-------------|--------|
 | **Hosting** | Supabase + Vercel/Self | Webflow CDN | Squarespace | Weebly/Square |
 | **Databas** | PostgreSQL (Supabase) | Webflow CMS | Proprietary | Proprietary |
@@ -184,15 +184,15 @@
 | **Self-hosting** | ✅ Ja | ❌ Nej | ❌ Nej | ❌ Nej |
 | **Open source** | ✅ MIT License | ❌ Nej | ❌ Nej | ❌ Nej |
 
-### Migration Till/Från Pezcms
+### Migration Till/Från FlowWink
 
-**Från Website Builders → Pezcms**:
+**Från Website Builders → FlowWink**:
 - ✅ **AI Migration**: Automatisk import från befintlig webbplats
 - ✅ **Content scraping**: Extraherar text, bilder, struktur
 - ✅ **Brand analysis**: Analyserar färger, typsnitt
 - ⏱️ **Tid**: Minuter till timmar (vs veckor manuellt)
 
-**Från Pezcms → Annan Plattform**:
+**Från FlowWink → Annan Plattform**:
 - ✅ **Full export**: Alla data i JSON/SQL
 - ✅ **Open source**: Ingen vendor lock-in
 - ✅ **Standard tech**: React, PostgreSQL, REST/GraphQL
@@ -203,9 +203,9 @@
 - ❌ **Proprietary**: Måste bygga om från scratch
 - ⏱️ **Tid**: Veckor till månader
 
-### Sammanfattning: Pezcms Unika Position
+### Sammanfattning: FlowWink Unika Position
 
-**Pezcms = Website Builder + Headless CMS**
+**FlowWink = Website Builder + Headless CMS**
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -225,7 +225,7 @@
 └─────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────┐
-│                      PEZCMS                             │
+│                      FLOWWINK                           │
 ├─────────────────────────────────────────────────────────┤
 │                                                         │
 │              Website + API i samma plattform           │
@@ -239,7 +239,7 @@
 └─────────────────────────────────────────────────────────┘
 ```
 
-**Välj Pezcms om du vill**:
+**Välj FlowWink om du vill**:
 - ✅ Snabb webbplats NU + API för framtiden
 - ✅ Redaktionellt arbetsflöde (Writer → Approver → Admin)
 - ✅ GDPR/WCAG compliance inbyggd
@@ -266,7 +266,7 @@
 
 ## Core Platform
 
-| Funktion | Pezcms | Webflow | Storyblok | Contentful | WordPress |
+| Funktion | FlowWink | Webflow | Storyblok | Contentful | WordPress |
 |----------|--------|---------|-----------|------------|-----------|
 | **Visuell webbplatsbyggare** | ✅ Ja | ✅ Ja | ✅ Ja | ⚠️ Studio add-on | ✅ Ja |
 | **Headless API** | ✅ REST + GraphQL | ⚠️ Begränsad | ✅ REST + GraphQL | ✅ REST + GraphQL | ⚠️ Plugin krävs |
@@ -278,7 +278,7 @@
 
 ## Content Management
 
-| Funktion | Pezcms | Webflow | Storyblok | Contentful | WordPress |
+| Funktion | FlowWink | Webflow | Storyblok | Contentful | WordPress |
 |----------|--------|---------|-----------|------------|-----------|
 | **Block-baserad editor** | ✅ 46 blocktyper | ✅ Sections | ✅ Bloks | ⚠️ Begränsad | ✅ Gutenberg |
 | **Drag-and-drop** | ✅ Ja | ✅ Ja | ✅ Ja | ❌ Nej | ✅ Ja |
@@ -291,7 +291,7 @@
 
 ## Editorial Workflow (Competitive Edge)
 
-| Funktion | Pezcms | Webflow | Storyblok | Contentful | WordPress |
+| Funktion | FlowWink | Webflow | Storyblok | Contentful | WordPress |
 |----------|--------|---------|-----------|------------|-----------|
 | **Roller (Writer/Approver/Admin)** | ✅ Inbyggd | ❌ Nej | ⚠️ Begränsad | ⚠️ Enterprise | ✅ Ja |
 | **Approval workflow** | ✅ Draft→Review→Publish | ❌ Nej | ⚠️ Begränsad | 💰 Enterprise | ⚠️ Plugin |
@@ -303,7 +303,7 @@
 
 ## AI & Automation
 
-| Funktion | Pezcms | Webflow | Storyblok | Contentful | WordPress |
+| Funktion | FlowWink | Webflow | Storyblok | Contentful | WordPress |
 |----------|--------|---------|-----------|------------|-----------|
 | **AI Chat-assistent** | ✅ Multi-provider | 💰 Betald add-on | ❌ Nej | 💰 Betald add-on | ⚠️ Plugin |
 | **AI Content Migration** | ✅ Automatisk | ❌ Nej | ❌ Nej | ❌ Nej | ❌ Nej |
@@ -316,7 +316,7 @@
 
 ## Built-in Modules (Competitive Edge)
 
-| Funktion | Pezcms | Webflow | Storyblok | Contentful | WordPress |
+| Funktion | FlowWink | Webflow | Storyblok | Contentful | WordPress |
 |----------|--------|---------|-----------|------------|-----------|
 | **Bloggmodul** | ✅ Komplett | ✅ CMS Collections | ⚠️ Custom setup | ❌ Nej | ✅ Inbyggd |
 | **Nyhetsbrev** | ✅ Inbyggd | ❌ Nej | ❌ Nej | ❌ Nej | ⚠️ Plugin |
@@ -329,7 +329,7 @@
 
 ## SEO & Performance
 
-| Funktion | Pezcms | Webflow | Storyblok | Contentful | WordPress |
+| Funktion | FlowWink | Webflow | Storyblok | Contentful | WordPress |
 |----------|--------|---------|-----------|------------|-----------|
 | **SEO-inställningar** | ✅ Global + per sida | ✅ Ja | ⚠️ Custom | ❌ Manuellt | ✅ Yoast/plugins |
 | **Meta tags** | ✅ Automatisk | ✅ Ja | ⚠️ Custom | ❌ Manuellt | ✅ Plugin |
@@ -341,7 +341,7 @@
 
 ## Branding & Design
 
-| Funktion | Pezcms | Webflow | Storyblok | Contentful | WordPress |
+| Funktion | FlowWink | Webflow | Storyblok | Contentful | WordPress |
 |----------|--------|---------|-----------|------------|-----------|
 | **Design system** | ✅ CSS variables | ✅ Classes | ❌ N/A | ❌ N/A | ⚠️ Tema-beroende |
 | **Predefined themes** | ✅ 4 healthcare themes | ✅ Templates | ❌ N/A | ❌ N/A | ✅ Tusentals |
@@ -353,7 +353,7 @@
 
 ## Compliance & Security
 
-| Funktion | Pezcms | Webflow | Storyblok | Contentful | WordPress |
+| Funktion | FlowWink | Webflow | Storyblok | Contentful | WordPress |
 |----------|--------|---------|-----------|------------|-----------|
 | **GDPR compliance** | ✅ Inbyggd | ⚠️ Delvis | ⚠️ Delvis | ⚠️ Enterprise | ⚠️ Plugin |
 | **Cookie banner** | ✅ Konfigurerbar | ❌ Nej | ❌ Nej | ❌ Nej | ⚠️ Plugin |
@@ -366,7 +366,7 @@
 
 ## Multi-channel Delivery
 
-| Funktion | Pezcms | Webflow | Storyblok | Contentful | WordPress |
+| Funktion | FlowWink | Webflow | Storyblok | Contentful | WordPress |
 |----------|--------|---------|-----------|------------|-----------|
 | **REST API** | ✅ Ja | ⚠️ Begränsad | ✅ Ja | ✅ Ja | ✅ Ja |
 | **GraphQL** | ✅ Ja | ❌ Nej | ✅ Ja | ✅ Ja | ⚠️ Plugin |
@@ -379,7 +379,7 @@
 
 ## Pricing & Setup
 
-| Aspekt | Pezcms | Webflow | Storyblok | Contentful | WordPress |
+| Aspekt | FlowWink | Webflow | Storyblok | Contentful | WordPress |
 |--------|--------|---------|-----------|------------|-----------|
 | **Startpris** | 💰 Låg | 💰💰 Medel | 💰💰 Medel | 💰💰💰 Hög | 💰 Gratis/Self-host |
 | **Enterprise features** | ✅ Inkluderade | 💰💰 Extra | 💰💰 Extra | 💰💰💰 Extra | 💰💰 Plugins |
@@ -389,12 +389,12 @@
 
 ---
 
-## Unika Pezcms-fördelar
+## Unika FlowWink-fördelar
 
 ### 1. Head + Headless i ett
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                    PEZCMS UNIKT                         │
+│                    FLOWWINK UNIKT                       │
 ├─────────────────────────────────────────────────────────┤
 │  ✅ Komplett webbplats PLUS headless API               │
 │  ✅ Ingen frontend-utveckling krävs                     │
@@ -428,20 +428,20 @@
 
 ---
 
-## Sammanfattning: När välja Pezcms?
+## Sammanfattning: När välja FlowWink?
 
 | Scenario | Rekommendation |
 |----------|----------------|
-| Vill ha komplett webbplats + API | ✅ **Pezcms** |
-| Visuell byggare + headless API | ✅ **Pezcms** eller Storyblok |
-| Behöver redaktionellt arbetsflöde | ✅ **Pezcms** |
-| Behöver AI-funktioner ut-ur-boxen | ✅ **Pezcms** |
+| Vill ha komplett webbplats + API | ✅ **FlowWink** |
+| Visuell byggare + headless API | ✅ **FlowWink** eller Storyblok |
+| Behöver redaktionellt arbetsflöde | ✅ **FlowWink** |
+| Behöver AI-funktioner ut-ur-boxen | ✅ **FlowWink** |
 | Designfokuserad byrå | Webflow |
 | Enterprise med stor budget | Contentful |
 | Blogger/enkel site | WordPress |
-| Svensk sjukvårdsorganisation | ✅ **Pezcms** |
-| GDPR + WCAG compliance kritiskt | ✅ **Pezcms** |
-| Snabb time-to-market | ✅ **Pezcms** |
+| Svensk sjukvårdsorganisation | ✅ **FlowWink** |
+| GDPR + WCAG compliance kritiskt | ✅ **FlowWink** |
+| Snabb time-to-market | ✅ **FlowWink** |
 
 ---
 

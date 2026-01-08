@@ -1,4 +1,4 @@
-# Pezcms Strategic Vision
+# FlowWink Strategic Vision
 
 > **Purpose:** Strategic thinking, exploration, and future direction  
 > **Last Updated:** December 2024  
@@ -10,13 +10,13 @@
 
 ### "Process-First Platform"
 
-The unique position of Pezcms is **reducing complexity from disparate setups and integrations** by focusing on complete processes rather than isolated features.
+The unique position of FlowWink is **reducing complexity from disparate setups and integrations** by focusing on complete processes rather than isolated features.
 
 > **"One platform for the complete customer journey: Discover → Engage → Book → Convert → Retain"**
 
 ### The Odoo Parallel
 
-Like Odoo, Pezcms uses a **modular architecture** where:
+Like Odoo, FlowWink uses a **modular architecture** where:
 - Modules share data (single source of truth)
 - Users enable only what they need
 - Modules are interconnected (not siloed)
@@ -39,7 +39,7 @@ Each new module should leverage existing data:
 | **Best-of-Breed** | Deep features, market leader | Integration hell, multiple vendors |
 | **General Platform** | Unified data, simpler ops | Jack of all trades, master of none |
 
-**Pezcms Position:** General platform for the 80% use case, with webhooks for specialized needs.
+**FlowWink Position:** General platform for the 80% use case, with webhooks for specialized needs.
 
 ### 3. The 80/20 Rule
 

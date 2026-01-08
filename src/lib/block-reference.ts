@@ -1,7 +1,7 @@
 /**
  * Block Reference
  * 
- * Documentation for all available block types in PezCMS.
+ * Documentation for all available block types in FlowWink.
  * Use this as a reference when creating templates.
  */
 

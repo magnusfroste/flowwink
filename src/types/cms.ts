@@ -288,7 +288,7 @@ export interface HeroBlockData {
 // =============================================================================
 // TIPTAP DOCUMENT TYPES
 // =============================================================================
-// TiptapDocument is the STANDARD format for all rich text content in PezCMS.
+// TiptapDocument is the STANDARD format for all rich text content in FlowWink.
 // 
 // CONTENT FORMAT STRATEGY:
 // - Primary: TiptapDocument (JSON) - stored in database, used in editors
@@ -313,7 +313,7 @@ export interface TiptapNode {
 
 /**
  * Standard Tiptap/ProseMirror document structure.
- * This is the PRIMARY format for all rich text content in PezCMS.
+ * This is the PRIMARY format for all rich text content in FlowWink.
  */
 export interface TiptapDocument {
   type: 'doc';

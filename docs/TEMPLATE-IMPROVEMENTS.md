@@ -25,7 +25,7 @@ Based on the comprehensive competitor analysis (Weebly, Webflow, Squarespace), w
 **Added**: Social Proof Block (Live Metrics)
 - **Location**: After testimonials, before final CTA
 - **Purpose**: Real-time enterprise metrics (users, satisfaction, transactions, uptime)
-- **Competitive Edge**: Unique to Pezcms - competitors don't offer live metric displays
+- **Competitive Edge**: Unique to FlowWink - competitors don't offer live metric displays
 - **Block ID**: `social-proof-1`
 - **Features**: Animated counters, rating display, 4-column grid
 
@@ -59,7 +59,7 @@ Based on the comprehensive competitor analysis (Weebly, Webflow, Squarespace), w
 
 ## Competitive Positioning
 
-| Feature | Pezcms | Webflow | Squarespace | Weebly |
+| Feature | FlowWink | Webflow | Squarespace | Weebly |
 |---------|--------|---------|-------------|--------|
 | **Badge/Certification Display** | ✅ Built-in | ⚠️ Custom code | ❌ No | ❌ No |
 | **Floating CTA** | ✅ Built-in | ❌ No | ⚠️ Limited | ❌ No |

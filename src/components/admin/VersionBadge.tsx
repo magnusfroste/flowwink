@@ -8,7 +8,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
-const CHANGELOG_URL = 'https://github.com/magnusfroste/pezcms/blob/main/CHANGELOG.md';
+const CHANGELOG_URL = 'https://github.com/magnusfroste/flowwink/blob/main/CHANGELOG.md';
 
 export function VersionBadge() {
   const { currentVersion, latestVersion, latestReleaseUrl, hasUpdate } = useVersionCheck();

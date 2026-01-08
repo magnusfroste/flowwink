@@ -300,7 +300,7 @@ export default function IntegrationsStatusPage() {
               </div>
               <Button variant="outline" asChild>
                 <a
-                  href="https://github.com/your-repo/pezcms/blob/main/docs/SETUP.md"
+                  href="https://github.com/your-repo/flowwink/blob/main/docs/SETUP.md"
                   target="_blank"
                   rel="noopener noreferrer"
                 >

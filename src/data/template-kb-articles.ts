@@ -303,29 +303,29 @@ export const securehealthKbCategories: TemplateKbCategory[] = [
 ];
 
 // =====================================================
-// PezCMS Knowledge Base Articles
+// FlowWink Knowledge Base Articles
 // =====================================================
 
-export const pezcmsKbCategories: TemplateKbCategory[] = [
+export const flowwinkKbCategories: TemplateKbCategory[] = [
   // ===== GETTING STARTED =====
   {
     name: 'Getting Started',
     slug: 'getting-started',
-    description: 'Learn the basics of PezCMS and get up and running quickly.',
+    description: 'Learn the basics of FlowWink and get up and running quickly.',
     icon: 'Rocket',
     articles: [
       {
-        title: 'What is PezCMS?',
-        slug: 'what-is-pezcms',
-        question: 'What is PezCMS and what can I do with it?',
-        answer_text: 'PezCMS is a modern, open-source content management system built for speed, simplicity, and flexibility. It combines a visual block editor with a headless API, giving you the best of both worlds. Key features include: Visual Block Editor with 27+ block types, Headless API for custom frontends and mobile apps, Self-Hostable on your own infrastructure, AI-Powered content generation and chat, and Built-in Modules for blog, newsletter, CRM, knowledge base, and e-commerce.',
+        title: 'What is FlowWink?',
+        slug: 'what-is-flowwink',
+        question: 'What is FlowWink and what can I do with it?',
+        answer_text: 'FlowWink is a modern, open-source content management system built for speed, simplicity, and flexibility. It combines a visual block editor with a headless API, giving you the best of both worlds. Key features include: Visual Block Editor with 27+ block types, Headless API for custom frontends and mobile apps, Self-Hostable on your own infrastructure, AI-Powered content generation and chat, and Built-in Modules for blog, newsletter, CRM, knowledge base, and e-commerce.',
         is_featured: true,
         include_in_chat: true,
       },
       {
         title: 'Creating Your First Page',
         slug: 'creating-first-page',
-        question: 'How do I create my first page in PezCMS?',
+        question: 'How do I create my first page in FlowWink?',
         answer_text: 'To create your first page: 1) Navigate to Admin → Pages, 2) Click New Page in the top right, 3) Enter a title for your page, 4) Click the + button to add blocks (Hero, Text, Images, etc.), 5) Arrange and edit blocks as needed, 6) Click Save to save as draft, 7) Click Publish when ready to go live. Tip: Every save creates a version you can restore later if needed.',
         is_featured: true,
         include_in_chat: true,
@@ -333,14 +333,14 @@ export const pezcmsKbCategories: TemplateKbCategory[] = [
       {
         title: 'Understanding User Roles',
         slug: 'user-roles',
-        question: 'What are the different user roles in PezCMS?',
-        answer_text: 'PezCMS has three roles: Writer – Can create and edit their own drafts, submit for review. Approver – Can review content, approve/reject submissions, publish content. Admin – Full access to all features including settings, users, and site configuration.',
+        question: 'What are the different user roles in FlowWink?',
+        answer_text: 'FlowWink has three roles: Writer – Can create and edit their own drafts, submit for review. Approver – Can review content, approve/reject submissions, publish content. Admin – Full access to all features including settings, users, and site configuration.',
         include_in_chat: true,
       },
       {
         title: 'Navigating the Admin',
         slug: 'navigating-admin',
-        question: 'How do I navigate the PezCMS admin interface?',
+        question: 'How do I navigate the FlowWink admin interface?',
         answer_text: 'The admin sidebar contains all main sections: Pages, Blog, Knowledge Base, CRM, Newsletter, Media Library, and Settings. Use the top bar for quick actions like creating new content. The dashboard shows recent activity and statistics.',
         include_in_chat: true,
       },
@@ -357,8 +357,8 @@ export const pezcmsKbCategories: TemplateKbCategory[] = [
       {
         title: 'Block Types Overview',
         slug: 'block-types',
-        question: 'What types of blocks are available in PezCMS?',
-        answer_text: 'PezCMS offers 27+ block types: Layout blocks (Hero, Two Column, Separator), Content blocks (Text, Image, Gallery, Video), Interactive blocks (Form, Contact, Accordion, Tabs), Marketing blocks (CTA, Pricing, Testimonials, Stats), Navigation blocks (Header, Footer, Link Grid), and Special blocks (Products, Booking, Chat, Newsletter).',
+        question: 'What types of blocks are available in FlowWink?',
+        answer_text: 'FlowWink offers 27+ block types: Layout blocks (Hero, Two Column, Separator), Content blocks (Text, Image, Gallery, Video), Interactive blocks (Form, Contact, Accordion, Tabs), Marketing blocks (CTA, Pricing, Testimonials, Stats), Navigation blocks (Header, Footer, Link Grid), and Special blocks (Products, Booking, Chat, Newsletter).',
         is_featured: true,
         include_in_chat: true,
       },
@@ -387,7 +387,7 @@ export const pezcmsKbCategories: TemplateKbCategory[] = [
         title: 'SEO Settings',
         slug: 'seo-settings',
         question: 'How do I configure SEO for my pages?',
-        answer_text: 'Each page has SEO settings in the Page Settings dialog. Set the meta title, description, and Open Graph image. PezCMS automatically generates structured data and sitemaps for better search engine visibility. Automatic features include: Sitemap generation at /sitemap.xml, Structured data for rich snippets, and Semantic HTML for better crawling.',
+        answer_text: 'Each page has SEO settings in the Page Settings dialog. Set the meta title, description, and Open Graph image. FlowWink automatically generates structured data and sitemaps for better search engine visibility. Automatic features include: Sitemap generation at /sitemap.xml, Structured data for rich snippets, and Semantic HTML for better crawling.',
         include_in_chat: true,
       },
       {
@@ -462,14 +462,14 @@ export const pezcmsKbCategories: TemplateKbCategory[] = [
   {
     name: 'Webhooks & Automation',
     slug: 'webhooks-automation',
-    description: 'Connect PezCMS to external services and automate workflows.',
+    description: 'Connect FlowWink to external services and automate workflows.',
     icon: 'Webhook',
     articles: [
       {
         title: 'Webhooks Overview',
         slug: 'webhooks-overview',
         question: 'What are webhooks and how do they work?',
-        answer_text: 'Webhooks allow PezCMS to notify external services when events occur. When a page is published, form submitted, or order placed, PezCMS sends an HTTP request to your specified URL with event data. Use webhooks to: Sync content to other systems, Trigger email notifications, Update CRM records, Start automation workflows.',
+        answer_text: 'Webhooks allow FlowWink to notify external services when events occur. When a page is published, form submitted, or order placed, FlowWink sends an HTTP request to your specified URL with event data. Use webhooks to: Sync content to other systems, Trigger email notifications, Update CRM records, Start automation workflows.',
         is_featured: true,
         include_in_chat: true,
       },
@@ -485,14 +485,14 @@ export const pezcmsKbCategories: TemplateKbCategory[] = [
         title: 'Webhook Events',
         slug: 'webhook-events',
         question: 'What events can trigger webhooks?',
-        answer_text: 'PezCMS supports events for pages (published, updated, deleted), blog posts (published, updated, deleted), forms (submitted), newsletter (subscribed, unsubscribed), bookings (submitted), and orders (created, paid, cancelled, refunded).',
+        answer_text: 'FlowWink supports events for pages (published, updated, deleted), blog posts (published, updated, deleted), forms (submitted), newsletter (subscribed, unsubscribed), bookings (submitted), and orders (created, paid, cancelled, refunded).',
         include_in_chat: true,
       },
       {
         title: 'Webhook Security',
         slug: 'webhook-security',
         question: 'How do I secure my webhooks?',
-        answer_text: 'Use the secret field when creating a webhook. PezCMS will include an HMAC-SHA256 signature in the X-Webhook-Signature header. Verify this signature on your server to ensure requests are authentic.',
+        answer_text: 'Use the secret field when creating a webhook. FlowWink will include an HMAC-SHA256 signature in the X-Webhook-Signature header. Verify this signature on your server to ensure requests are authentic.',
         include_in_chat: true,
       },
       {
@@ -505,8 +505,8 @@ export const pezcmsKbCategories: TemplateKbCategory[] = [
       {
         title: 'n8n Integration',
         slug: 'n8n-integration',
-        question: 'How do I connect PezCMS to n8n?',
-        answer_text: 'n8n is a workflow automation tool. Create a webhook trigger in n8n, copy the URL, then create a webhook in PezCMS pointing to that URL. Select the events you want to trigger your n8n workflow.',
+        question: 'How do I connect FlowWink to n8n?',
+        answer_text: 'n8n is a workflow automation tool. Create a webhook trigger in n8n, copy the URL, then create a webhook in FlowWink pointing to that URL. Select the events you want to trigger your n8n workflow.',
         include_in_chat: true,
       },
     ],
@@ -522,8 +522,8 @@ export const pezcmsKbCategories: TemplateKbCategory[] = [
       {
         title: 'API Overview',
         slug: 'api-overview',
-        question: 'Does PezCMS have an API?',
-        answer_text: 'Yes! PezCMS is fully headless with a complete REST API. You can fetch pages, blog posts, products, and more. Use the API to build custom frontends, mobile apps, or integrate with other systems. Available endpoints include: Pages, Blog Posts, Products, Knowledge Base, and Settings.',
+        question: 'Does FlowWink have an API?',
+        answer_text: 'Yes! FlowWink is fully headless with a complete REST API. You can fetch pages, blog posts, products, and more. Use the API to build custom frontends, mobile apps, or integrate with other systems. Available endpoints include: Pages, Blog Posts, Products, Knowledge Base, and Settings.',
         is_featured: true,
         include_in_chat: true,
       },
@@ -538,7 +538,7 @@ export const pezcmsKbCategories: TemplateKbCategory[] = [
       {
         title: 'RSS Feed',
         slug: 'rss-feed',
-        question: 'Does PezCMS have an RSS feed?',
+        question: 'Does FlowWink have an RSS feed?',
         answer_text: 'Yes, the blog has an automatic RSS feed at /functions/v1/blog-rss. The feed includes published posts with titles, excerpts, dates, and links. Use it for podcast apps, feed readers, or syndication.',
         include_in_chat: true,
       },
@@ -546,14 +546,14 @@ export const pezcmsKbCategories: TemplateKbCategory[] = [
         title: 'Sitemap',
         slug: 'sitemap',
         question: 'Is there an automatic sitemap?',
-        answer_text: 'Yes, PezCMS generates a sitemap.xml automatically at /functions/v1/sitemap-xml. It includes all published pages, blog posts, and categories. Submit it to Google Search Console for better indexing.',
+        answer_text: 'Yes, FlowWink generates a sitemap.xml automatically at /functions/v1/sitemap-xml. It includes all published pages, blog posts, and categories. Submit it to Google Search Console for better indexing.',
         include_in_chat: true,
       },
       {
         title: 'LLMs.txt',
         slug: 'llms-txt',
         question: 'What is LLMs.txt?',
-        answer_text: 'LLMs.txt is a standard for providing AI-friendly content to large language models. PezCMS generates this automatically at /functions/v1/llms-txt, helping AI search engines understand and reference your content.',
+        answer_text: 'LLMs.txt is a standard for providing AI-friendly content to large language models. FlowWink generates this automatically at /functions/v1/llms-txt, helping AI search engines understand and reference your content.',
         include_in_chat: true,
       },
       {
@@ -576,7 +576,7 @@ export const pezcmsKbCategories: TemplateKbCategory[] = [
       {
         title: 'CRM Overview',
         slug: 'crm-overview',
-        question: 'What is the CRM module in PezCMS?',
+        question: 'What is the CRM module in FlowWink?',
         answer_text: 'The CRM module helps you manage your sales pipeline with leads, deals, and companies. Track interactions, qualify prospects with AI, and convert leads into customers – all from within your CMS. Key components include: Leads (potential customers), Deals (sales opportunities), Companies (organizations), and Activities (notes, calls, meetings).',
         is_featured: true,
         include_in_chat: true,
@@ -584,7 +584,7 @@ export const pezcmsKbCategories: TemplateKbCategory[] = [
       {
         title: 'Managing Leads',
         slug: 'managing-leads',
-        question: 'How do I manage leads in PezCMS?',
+        question: 'How do I manage leads in FlowWink?',
         answer_text: 'Go to Admin → Leads to see all leads. Leads are automatically created from form submissions. You can filter by status (Lead, Opportunity, Customer, Lost), assign leads to team members, and view lead scores. Lead sources include: Form submissions, Chat conversations, Newsletter signups, Manual entry, and CSV import.',
         is_featured: true,
         include_in_chat: true,
@@ -639,7 +639,7 @@ export const pezcmsKbCategories: TemplateKbCategory[] = [
         title: 'AEO: Optimizing for AI Search',
         slug: 'aeo-ai-search-optimization',
         question: 'What is Answer Engine Optimization (AEO)?',
-        answer_text: 'AEO optimizes content for AI-powered search engines that provide direct answers. Write clear, question-based content, use structured data, and ensure your knowledge base is comprehensive. Best practices: Structure articles around specific questions, provide direct answers in the first paragraph, follow with detailed explanations, use proper headings and lists. PezCMS AEO features: AEO Analyzer reviews your content, LLMs.txt provides AI-friendly content, Knowledge Base is already AEO-optimized.',
+        answer_text: 'AEO optimizes content for AI-powered search engines that provide direct answers. Write clear, question-based content, use structured data, and ensure your knowledge base is comprehensive. Best practices: Structure articles around specific questions, provide direct answers in the first paragraph, follow with detailed explanations, use proper headings and lists. FlowWink AEO features: AEO Analyzer reviews your content, LLMs.txt provides AI-friendly content, Knowledge Base is already AEO-optimized.',
         is_featured: true,
         include_in_chat: true,
       },
@@ -647,7 +647,7 @@ export const pezcmsKbCategories: TemplateKbCategory[] = [
         title: 'Performance Optimization',
         slug: 'performance-optimization',
         question: 'How do I make my website faster?',
-        answer_text: 'Image Optimization: Upload images at display size, use WebP or JPEG for photos, PezCMS auto-compresses uploads. Page Structure: Keep pages focused, use pagination for long lists, lazy load below-the-fold content. Monitor with: Google PageSpeed Insights, GTmetrix, WebPageTest.',
+        answer_text: 'Image Optimization: Upload images at display size, use WebP or JPEG for photos, FlowWink auto-compresses uploads. Page Structure: Keep pages focused, use pagination for long lists, lazy load below-the-fold content. Monitor with: Google PageSpeed Insights, GTmetrix, WebPageTest.',
         include_in_chat: true,
       },
       {
@@ -692,7 +692,7 @@ export const pezcmsKbCategories: TemplateKbCategory[] = [
         title: 'Newsletter Overview',
         slug: 'newsletter-overview',
         question: 'What can I do with the Newsletter module?',
-        answer_text: 'The Newsletter module enables email marketing directly from PezCMS. Collect subscribers, create campaigns, and track opens and clicks. Features: Newsletter block for signup forms, Subscriber management with import/export, Visual email editor, Open and click tracking, GDPR-compliant unsubscribe.',
+        answer_text: 'The Newsletter module enables email marketing directly from FlowWink. Collect subscribers, create campaigns, and track opens and clicks. Features: Newsletter block for signup forms, Subscriber management with import/export, Visual email editor, Open and click tracking, GDPR-compliant unsubscribe.',
         is_featured: true,
         include_in_chat: true,
       },
@@ -715,14 +715,14 @@ export const pezcmsKbCategories: TemplateKbCategory[] = [
         title: 'Tracking Engagement',
         slug: 'tracking-engagement',
         question: 'How do I track email opens and clicks?',
-        answer_text: 'Each campaign shows: Total sent, Open rate, Click rate, and Link-by-link click counts. PezCMS automatically tracks opens using a tracking pixel and rewrites links for click tracking. View detailed analytics on the campaign detail page.',
+        answer_text: 'Each campaign shows: Total sent, Open rate, Click rate, and Link-by-link click counts. FlowWink automatically tracks opens using a tracking pixel and rewrites links for click tracking. View detailed analytics on the campaign detail page.',
         include_in_chat: true,
       },
       {
         title: 'GDPR Compliance',
         slug: 'newsletter-gdpr',
         question: 'Is the newsletter GDPR compliant?',
-        answer_text: 'Yes. PezCMS supports double opt-in (confirmation email before subscription), easy one-click unsubscribe in every email, data export for subscribers, and preference management. Configure these in Admin → Newsletter → Settings.',
+        answer_text: 'Yes. FlowWink supports double opt-in (confirmation email before subscription), easy one-click unsubscribe in every email, data export for subscribers, and preference management. Configure these in Admin → Newsletter → Settings.',
         include_in_chat: true,
       },
     ],
@@ -815,7 +815,7 @@ export const pezcmsKbCategories: TemplateKbCategory[] = [
       {
         title: 'Dark Mode',
         slug: 'dark-mode',
-        question: 'Does PezCMS support dark mode?',
+        question: 'Does FlowWink support dark mode?',
         answer_text: 'Yes! Enable the theme toggle in Global Blocks → Header to let visitors switch between light and dark modes. The site automatically adapts colors, images, and contrast. You can also set a default theme preference.',
         include_in_chat: true,
       },
@@ -886,8 +886,8 @@ export const pezcmsKbCategories: TemplateKbCategory[] = [
       {
         title: 'E-Commerce Overview',
         slug: 'ecommerce-overview',
-        question: 'Can I sell products with PezCMS?',
-        answer_text: 'Yes! PezCMS includes e-commerce features: Product catalog with images and descriptions, Shopping cart functionality, Stripe checkout integration, Order management, and Webhook notifications for fulfillment.',
+        question: 'Can I sell products with FlowWink?',
+        answer_text: 'Yes! FlowWink includes e-commerce features: Product catalog with images and descriptions, Shopping cart functionality, Stripe checkout integration, Order management, and Webhook notifications for fulfillment.',
         is_featured: true,
         include_in_chat: true,
       },
@@ -903,7 +903,7 @@ export const pezcmsKbCategories: TemplateKbCategory[] = [
         title: 'Stripe Integration',
         slug: 'stripe-integration',
         question: 'How do I connect Stripe for payments?',
-        answer_text: 'Connect your Stripe account in Admin → Settings → Integrations. Create products and prices in Stripe, then copy the Price IDs to your PezCMS products. Checkout redirects to Stripe\'s secure payment page.',
+        answer_text: 'Connect your Stripe account in Admin → Settings → Integrations. Create products and prices in Stripe, then copy the Price IDs to your FlowWink products. Checkout redirects to Stripe\'s secure payment page.',
         include_in_chat: true,
       },
       {
@@ -933,8 +933,8 @@ export const pezcmsKbCategories: TemplateKbCategory[] = [
       {
         title: 'Available Modules',
         slug: 'available-modules',
-        question: 'What modules are available in PezCMS?',
-        answer_text: 'PezCMS includes these modules: Core (always on): Pages, Media Library, Global Elements. Content: Blog, Knowledge Base. Marketing: Newsletter, AI Chat, Forms. Sales: Leads, Deals, Companies, Products, Orders, Booking. System: Analytics, Webhooks, Users, Integrations. Go to Admin → Modules to toggle them on/off.',
+        question: 'What modules are available in FlowWink?',
+        answer_text: 'FlowWink includes these modules: Core (always on): Pages, Media Library, Global Elements. Content: Blog, Knowledge Base. Marketing: Newsletter, AI Chat, Forms. Sales: Leads, Deals, Companies, Products, Orders, Booking. System: Analytics, Webhooks, Users, Integrations. Go to Admin → Modules to toggle them on/off.',
         is_featured: true,
         include_in_chat: true,
       },

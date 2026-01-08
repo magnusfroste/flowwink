@@ -1,12 +1,12 @@
-# Pezcms
+# FlowWink
 
-**Head + Headless CMS** — The complete CMS that gives you a beautiful website AND a powerful API.
+**Flow into Content Creation** — The modern CMS that makes content creation effortless.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-## What is Pezcms?
+## What is FlowWink?
 
-Pezcms is a modern, open-source Content Management System built for organizations that need:
+FlowWink is a modern, open-source Content Management System built for organizations that need:
 
 - ✅ A complete website without developers
 - ✅ Headless API for multi-channel delivery
@@ -16,11 +16,11 @@ Pezcms is a modern, open-source Content Management System built for organization
 
 ### Head + Headless
 
-Unlike traditional CMS (website only) or pure headless solutions (API only, requires separate frontend), Pezcms delivers **both**:
+Unlike traditional CMS (website only) or pure headless solutions (API only, requires separate frontend), FlowWink delivers **both**:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                      PEZCMS CONTENT                         │
+│                     FLOWWINK CONTENT                        │
 │                    (Single Source of Truth)                 │
 └─────────────────────────────────────────────────────────────┘
                               │
@@ -94,14 +94,14 @@ Unlike traditional CMS (website only) or pure headless solutions (API only, requ
 
 ## Self-Hosting
 
-Pezcms is **free to self-host**. Deploy on your own Supabase instance with full control over your data.
+FlowWink is **free to self-host**. Deploy on your own Supabase instance with full control over your data.
 
 ### Quick Start
 
 ```bash
 # Clone the repository
-git clone https://github.com/magnusfroste/pezcms.git
-cd pezcms
+git clone https://github.com/magnusfroste/flowwink.git
+cd flowwink
 
 # Install dependencies
 npm install

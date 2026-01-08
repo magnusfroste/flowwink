@@ -5,10 +5,10 @@ import {
   trustcorpBlogPosts, 
   securehealthBlogPosts, 
   momentumBlogPosts, 
-  pezcmsBlogPosts 
+  flowwinkBlogPosts 
 } from './template-blog-posts';
 import { 
-  pezcmsKbCategories, 
+  flowwinkKbCategories, 
   launchpadKbCategories, 
   trustcorpKbCategories, 
   securehealthKbCategories,
@@ -2873,18 +2873,18 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
     },
   },
   // =====================================================
-  // PEZCMS PLATFORM - SaaS Template (Dogfooding)
+  // FLOWWINK PLATFORM - SaaS Template (Dogfooding)
   // =====================================================
   {
-    id: 'pezcms-platform',
-    name: 'PezCMS Platform',
+    id: 'flowwink-platform',
+    name: 'FlowWink Platform',
     description: 'Complete SaaS landing page template showcasing all CMS features. Built for platform businesses with pricing, comparisons, and feature highlights.',
     category: 'platform',
     icon: 'Blocks',
-    tagline: 'The ultimate dogfood - built with PezCMS, for PezCMS',
+    tagline: 'The ultimate dogfood - built with FlowWink, for FlowWink',
     aiChatPosition: 'Embedded assistant for product questions',
-    blogPosts: pezcmsBlogPosts,
-    kbCategories: pezcmsKbCategories,
+    blogPosts: flowwinkBlogPosts,
+    kbCategories: flowwinkKbCategories,
     pages: [
       // ===== HOME PAGE =====
       {
@@ -2914,7 +2914,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
               titleAnimation: 'slide-up',
               showScrollIndicator: true,
               primaryButton: { text: 'Try the Demo', url: '/demo' },
-              secondaryButton: { text: 'Self-Host Free', url: 'https://github.com/pezcms/pezcms' },
+              secondaryButton: { text: 'Self-Host Free', url: 'https://github.com/flowwink/flowwink' },
             },
           },
           // KB SEARCH - Hero variant for Knowledge Base integration
@@ -2930,7 +2930,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
               showButton: true,
             },
           },
-          // FEATURES - Three pillars (Head + PezCMS + Headless)
+          // FEATURES - Three pillars (Head + FlowWink + Headless)
           {
             id: 'features-pillars',
             type: 'features',
@@ -2946,7 +2946,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
                 {
                   id: 'pillar-core',
                   icon: 'Blocks',
-                  title: 'PEZCMS',
+                  title: 'FLOWWINK',
                   description: 'Single source of truth for all your content. Structured data, version control, and collaboration tools.',
                 },
                 {
@@ -3120,7 +3120,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
                 },
                 {
                   id: 'test-3',
-                  content: 'The private LLM support was the dealbreaker for us. We needed AI features but couldn\'t send patient data to external services. PezCMS delivered.',
+                  content: 'The private LLM support was the dealbreaker for us. We needed AI features but couldn\'t send patient data to external services. FlowWink delivered.',
                   author: 'Dr. Sofia Berg',
                   role: 'Medical Director',
                   company: 'HealthTech Nordic',
@@ -3142,9 +3142,9 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
             type: 'comparison',
             data: {
               title: 'How We Compare',
-              subtitle: 'See why teams choose PezCMS over traditional solutions.',
+              subtitle: 'See why teams choose FlowWink over traditional solutions.',
               products: [
-                { id: 'pez', name: 'PezCMS', highlighted: true },
+                { id: 'pez', name: 'FlowWink', highlighted: true },
                 { id: 'webflow', name: 'Webflow' },
                 { id: 'contentful', name: 'Contentful' },
                 { id: 'wordpress', name: 'WordPress' },
@@ -3176,7 +3176,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
             type: 'pricing',
             data: {
               title: 'Your Infrastructure, Your Rules',
-              subtitle: 'Choose how you want to run PezCMS. Same features, your choice of control.',
+              subtitle: 'Choose how you want to run FlowWink. Same features, your choice of control.',
               tiers: [
                 {
                   id: 'tier-self',
@@ -3193,7 +3193,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
                     'GitHub issues & discussions',
                   ],
                   buttonText: 'Get Started',
-                  buttonUrl: 'https://github.com/pezcms/pezcms',
+                  buttonUrl: 'https://github.com/flowwink/flowwink',
                 },
                 {
                   id: 'tier-managed',
@@ -3241,11 +3241,11 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
             type: 'timeline',
             data: {
               title: 'Zero to Launch',
-              subtitle: 'See how fast you can go live with PezCMS compared to alternatives.',
+              subtitle: 'See how fast you can go live with FlowWink compared to alternatives.',
               steps: [
                 {
                   id: 'tl-1',
-                  title: 'PezCMS',
+                  title: 'FlowWink',
                   description: 'Pick a template, customize content, and publish. Done in minutes.',
                   date: '5 minutes',
                   icon: 'Rocket',
@@ -3322,7 +3322,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
         menu_order: 2,
         showInMenu: true,
         meta: {
-          description: 'Explore all PezCMS features - from visual editing to headless API, AI tools to CRM integration.',
+          description: 'Explore all FlowWink features - from visual editing to headless API, AI tools to CRM integration.',
           showTitle: true,
           titleAlignment: 'center',
         },
@@ -3755,8 +3755,8 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
               title: 'Resources',
               links: [
                 { id: 'link-docs', icon: 'BookOpen', title: 'Documentation', description: 'API reference and guides', url: '/docs' },
-                { id: 'link-github', icon: 'Github', title: 'GitHub', description: 'Source code and issues', url: 'https://github.com/pezcms/pezcms' },
-                { id: 'link-discord', icon: 'MessageCircle', title: 'Community', description: 'Discord support', url: 'https://discord.gg/pezcms' },
+                { id: 'link-github', icon: 'Github', title: 'GitHub', description: 'Source code and issues', url: 'https://github.com/flowwink/flowwink' },
+                { id: 'link-discord', icon: 'MessageCircle', title: 'Community', description: 'Discord support', url: 'https://discord.gg/flowwink' },
                 { id: 'link-selfhost', icon: 'Server', title: 'Self-Hosting', description: 'Deployment guide', url: '/docs/self-hosting' },
               ],
               columns: 4,
@@ -3785,7 +3785,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
         menu_order: 3,
         showInMenu: true,
         meta: {
-          description: 'Try PezCMS live - Explore the visual editor, content blocks, and publishing workflow. No signup required.',
+          description: 'Try FlowWink live - Explore the visual editor, content blocks, and publishing workflow. No signup required.',
           showTitle: true,
           titleAlignment: 'center',
         },
@@ -3795,14 +3795,14 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
             id: 'hero-demo',
             type: 'hero',
             data: {
-              title: 'See PezCMS in Action',
-              subtitle: 'Explore every feature below. This entire page was built with PezCMS – what you see is what you get.',
+              title: 'See FlowWink in Action',
+              subtitle: 'Explore every feature below. This entire page was built with FlowWink – what you see is what you get.',
               backgroundType: 'color',
               heightMode: 'auto',
               contentAlignment: 'center',
               overlayOpacity: 0,
               primaryButton: { text: 'Try the Admin', url: '/admin' },
-              secondaryButton: { text: 'View Source', url: 'https://github.com/pezcms/pezcms' },
+              secondaryButton: { text: 'View Source', url: 'https://github.com/flowwink/flowwink' },
             },
           },
           // Info Box - How This Works
@@ -3815,7 +3815,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
                 type: 'doc',
                 content: [
                   { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: '👋 Welcome to the Interactive Demo' }] },
-                  { type: 'paragraph', content: [{ type: 'text', text: 'This page showcases every block type available in PezCMS. Scroll through to see how each block looks and behaves. Then click "Try the Admin" above to create your own pages.' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'This page showcases every block type available in FlowWink. Scroll through to see how each block looks and behaves. Then click "Try the Admin" above to create your own pages.' }] },
                 ],
               },
             },
@@ -3839,7 +3839,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
                 type: 'doc',
                 content: [
                   { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Drag, Drop, Done' }] },
-                  { type: 'paragraph', content: [{ type: 'text', text: 'The visual editor is the heart of PezCMS. Add blocks, arrange them, edit content – all in real-time with instant preview.' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'The visual editor is the heart of FlowWink. Add blocks, arrange them, edit content – all in real-time with instant preview.' }] },
                   { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'How It Works' }] },
                   { type: 'orderedList', content: [
                     { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Add a Block' }, { type: 'text', text: ' – Click the + button and choose from 27+ block types' }] }] },
@@ -4059,7 +4059,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
                   answer: {
                     type: 'doc',
                     content: [
-                      { type: 'paragraph', content: [{ type: 'text', text: 'Absolutely. PezCMS automatically generates FAQ structured data (JSON-LD) for accordion blocks, helping your content appear in Google rich results.' }] },
+                      { type: 'paragraph', content: [{ type: 'text', text: 'Absolutely. FlowWink automatically generates FAQ structured data (JSON-LD) for accordion blocks, helping your content appear in Google rich results.' }] },
                     ],
                   },
                 },
@@ -4323,8 +4323,8 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
             data: {
               title: 'Chat Block',
               subtitle: 'Embed an AI chatbot that answers questions using your content and knowledge base.',
-              placeholder: 'Ask me anything about PezCMS...',
-              welcomeMessage: 'Hi! I am the PezCMS assistant. Ask me about features, pricing, or how to get started.',
+              placeholder: 'Ask me anything about FlowWink...',
+              welcomeMessage: 'Hi! I am the FlowWink assistant. Ask me about features, pricing, or how to get started.',
               showHistory: true,
             },
           },
@@ -4366,9 +4366,9 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
             id: 'demo-quote',
             type: 'quote',
             data: {
-              quote: 'The best CMS is the one your team actually uses. PezCMS is simple enough for marketers and powerful enough for developers.',
+              quote: 'The best CMS is the one your team actually uses. FlowWink is simple enough for marketers and powerful enough for developers.',
               author: 'Product Team',
-              role: 'PezCMS',
+              role: 'FlowWink',
               variant: 'centered',
             },
           },
@@ -4690,7 +4690,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
                 type: 'doc',
                 content: [
                   { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Ready to Build?' }] },
-                  { type: 'paragraph', content: [{ type: 'text', text: 'The best way to understand PezCMS is to use it. Click the button to access the admin panel and start creating.' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'The best way to understand FlowWink is to use it. Click the button to access the admin panel and start creating.' }] },
                   { type: 'bulletList', content: [
                     { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'No signup required for the demo' }] }] },
                     { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Full access to all features' }] }] },
@@ -4723,7 +4723,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
               buttonText: 'Open Admin Panel',
               buttonUrl: '/admin',
               secondaryButtonText: 'Self-Host Free',
-              secondaryButtonUrl: 'https://github.com/pezcms/pezcms',
+              secondaryButtonUrl: 'https://github.com/flowwink/flowwink',
               gradient: true,
             },
           },
@@ -4736,7 +4736,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
         menu_order: 4,
         showInMenu: true,
         meta: {
-          description: 'PezCMS pricing - Self-hosted free forever, or managed cloud starting at €49/month.',
+          description: 'FlowWink pricing - Self-hosted free forever, or managed cloud starting at €49/month.',
           showTitle: true,
           titleAlignment: 'center',
         },
@@ -4774,7 +4774,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
                     'GitHub issues',
                   ],
                   buttonText: 'View on GitHub',
-                  buttonUrl: 'https://github.com/pezcms/pezcms',
+                  buttonUrl: 'https://github.com/flowwink/flowwink',
                 },
                 {
                   id: 'tier-managed',
@@ -4828,14 +4828,14 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
                   question: 'Is self-hosted really free forever?',
                   answer: {
                     type: 'doc',
-                    content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Yes! PezCMS is open source under the MIT license. You can run it on your own servers indefinitely without any licensing fees. The only costs are your own hosting and infrastructure.' }] }],
+                    content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Yes! FlowWink is open source under the MIT license. You can run it on your own servers indefinitely without any licensing fees. The only costs are your own hosting and infrastructure.' }] }],
                   },
                 },
                 {
                   question: 'What\'s included in managed cloud?',
                   answer: {
                     type: 'doc',
-                    content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Everything. We handle server management, updates, security patches, backups, SSL certificates, and CDN distribution. You get a fully managed PezCMS instance that\'s always up-to-date.' }] }],
+                    content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Everything. We handle server management, updates, security patches, backups, SSL certificates, and CDN distribution. You get a fully managed FlowWink instance that\'s always up-to-date.' }] }],
                   },
                 },
                 {
@@ -4857,14 +4857,14 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
           },
         ],
       },
-      // ===== WHY PEZCMS PAGE =====
+      // ===== WHY FLOWWINK PAGE =====
       {
-        title: 'Why PezCMS',
-        slug: 'why-pezcms',
+        title: 'Why FlowWink',
+        slug: 'why-flowwink',
         menu_order: 5,
         showInMenu: true,
         meta: {
-          description: 'Compare PezCMS to WordPress, Webflow, and Contentful. See why teams switch and how to migrate.',
+          description: 'Compare FlowWink to WordPress, Webflow, and Contentful. See why teams switch and how to migrate.',
           showTitle: true,
           titleAlignment: 'center',
         },
@@ -4874,7 +4874,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
             id: 'hero-why',
             type: 'hero',
             data: {
-              title: 'Why Teams Switch to PezCMS',
+              title: 'Why Teams Switch to FlowWink',
               subtitle: 'Compare features, understand tradeoffs, and see detailed migration paths from your current platform.',
               backgroundType: 'color',
               heightMode: 'auto',
@@ -4929,7 +4929,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
               rightColumn: {
                 type: 'doc',
                 content: [
-                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'PezCMS Advantages' }] },
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'FlowWink Advantages' }] },
                   { type: 'bulletList', content: [
                     { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Modern security' }, { type: 'text', text: ' – Built on Supabase with Row Level Security. No plugin vulnerabilities.' }] }] },
                     { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'API-first design' }, { type: 'text', text: ' – Full REST API from day one. Use the website OR the API OR both.' }] }] },
@@ -4959,11 +4959,11 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
                   },
                 },
                 {
-                  question: 'Step 2: Import to PezCMS',
+                  question: 'Step 2: Import to FlowWink',
                   answer: {
                     type: 'doc',
                     content: [
-                      { type: 'paragraph', content: [{ type: 'text', text: 'In PezCMS Admin, go to Pages → Import → WordPress. Upload your XML file. AI will analyze the content and convert it to structured blocks. Posts become blog posts, pages become pages, categories and tags are preserved.' }] },
+                      { type: 'paragraph', content: [{ type: 'text', text: 'In FlowWink Admin, go to Pages → Import → WordPress. Upload your XML file. AI will analyze the content and convert it to structured blocks. Posts become blog posts, pages become pages, categories and tags are preserved.' }] },
                     ],
                   },
                 },
@@ -4981,7 +4981,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
                   answer: {
                     type: 'doc',
                     content: [
-                      { type: 'paragraph', content: [{ type: 'text', text: 'PezCMS generates a redirect map from your old WordPress URLs to new slugs. Configure your web server or CDN to redirect traffic. We provide Nginx and Cloudflare configuration examples.' }] },
+                      { type: 'paragraph', content: [{ type: 'text', text: 'FlowWink generates a redirect map from your old WordPress URLs to new slugs. Configure your web server or CDN to redirect traffic. We provide Nginx and Cloudflare configuration examples.' }] },
                     ],
                   },
                 },
@@ -4990,7 +4990,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
                   answer: {
                     type: 'doc',
                     content: [
-                      { type: 'paragraph', content: [{ type: 'text', text: 'Update your DNS to point to PezCMS. If self-hosting, point to your server. If using managed cloud, we provide the destination. TTL should be set low before cutover for fast propagation.' }] },
+                      { type: 'paragraph', content: [{ type: 'text', text: 'Update your DNS to point to FlowWink. If self-hosting, point to your server. If using managed cloud, we provide the destination. TTL should be set low before cutover for fast propagation.' }] },
                     ],
                   },
                 },
@@ -5002,7 +5002,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
             id: 'quote-wordpress',
             type: 'quote',
             data: {
-              quote: 'We spent more time updating plugins than creating content. PezCMS migration took a weekend, and we have not looked back.',
+              quote: 'We spent more time updating plugins than creating content. FlowWink migration took a weekend, and we have not looked back.',
               author: 'Marcus Andersson',
               role: 'Digital Director, TechStart AB',
               variant: 'centered',
@@ -5039,7 +5039,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
               rightColumn: {
                 type: 'doc',
                 content: [
-                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'PezCMS Advantages' }] },
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'FlowWink Advantages' }] },
                   { type: 'bulletList', content: [
                     { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Head + Headless' }, { type: 'text', text: ' – Beautiful website included AND full API. Power any frontend from one source.' }] }] },
                     { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Self-host free' }, { type: 'text', text: ' – Open source. No per-seat charges. Managed cloud available if preferred.' }] }] },
@@ -5073,7 +5073,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
                   answer: {
                     type: 'doc',
                     content: [
-                      { type: 'paragraph', content: [{ type: 'text', text: 'For each Webflow page, use PezCMS Import → URL. Paste the live Webflow URL. AI analyzes the page structure and converts it to PezCMS blocks. Hero sections, feature grids, testimonials – all converted automatically.' }] },
+                      { type: 'paragraph', content: [{ type: 'text', text: 'For each Webflow page, use FlowWink Import → URL. Paste the live Webflow URL. AI analyzes the page structure and converts it to FlowWink blocks. Hero sections, feature grids, testimonials – all converted automatically.' }] },
                     ],
                   },
                 },
@@ -5082,7 +5082,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
                   answer: {
                     type: 'doc',
                     content: [
-                      { type: 'paragraph', content: [{ type: 'text', text: 'Upload your exported CSVs to PezCMS. Blog posts go to the Blog module, team members to Team blocks, testimonials to Testimonials blocks. Field mapping is automatic with manual override options.' }] },
+                      { type: 'paragraph', content: [{ type: 'text', text: 'Upload your exported CSVs to FlowWink. Blog posts go to the Blog module, team members to Team blocks, testimonials to Testimonials blocks. Field mapping is automatic with manual override options.' }] },
                     ],
                   },
                 },
@@ -5091,7 +5091,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
                   answer: {
                     type: 'doc',
                     content: [
-                      { type: 'paragraph', content: [{ type: 'text', text: 'PezCMS supports common animations: fade-in, slide-up, scale. For complex Webflow interactions, you may need to simplify or use custom CSS. Most marketing sites work perfectly with our built-in options.' }] },
+                      { type: 'paragraph', content: [{ type: 'text', text: 'FlowWink supports common animations: fade-in, slide-up, scale. For complex Webflow interactions, you may need to simplify or use custom CSS. Most marketing sites work perfectly with our built-in options.' }] },
                     ],
                   },
                 },
@@ -5100,7 +5100,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
                   answer: {
                     type: 'doc',
                     content: [
-                      { type: 'paragraph', content: [{ type: 'text', text: 'Recreate your forms in PezCMS Form Builder. All submissions are stored and can trigger webhooks, feed into the CRM, or send emails. No per-submission fees like Webflow charges.' }] },
+                      { type: 'paragraph', content: [{ type: 'text', text: 'Recreate your forms in FlowWink Form Builder. All submissions are stored and can trigger webhooks, feed into the CRM, or send emails. No per-submission fees like Webflow charges.' }] },
                     ],
                   },
                 },
@@ -5112,7 +5112,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
             id: 'quote-webflow',
             type: 'quote',
             data: {
-              quote: 'Webflow was great for design, but we needed an API for our mobile app. PezCMS gives us both – the visual builder AND the headless flexibility.',
+              quote: 'Webflow was great for design, but we needed an API for our mobile app. FlowWink gives us both – the visual builder AND the headless flexibility.',
               author: 'Emma Lindqvist',
               role: 'CTO, DigitalFlow',
               variant: 'centered',
@@ -5149,7 +5149,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
               rightColumn: {
                 type: 'doc',
                 content: [
-                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'PezCMS Advantages' }] },
+                  { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'FlowWink Advantages' }] },
                   { type: 'bulletList', content: [
                     { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Website included' }, { type: 'text', text: ' – Beautiful, responsive site out of the box. API available when you need it.' }] }] },
                     { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Self-host free' }, { type: 'text', text: ' – Open source forever. Managed cloud at €49/mo if you prefer.' }] }] },
@@ -5183,7 +5183,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
                   answer: {
                     type: 'doc',
                     content: [
-                      { type: 'paragraph', content: [{ type: 'text', text: 'Review your Contentful content types. Most map directly to PezCMS blocks: Rich Text → Text Block, Media → Image/Gallery, References → Article Grid. Custom types may need manual mapping.' }] },
+                      { type: 'paragraph', content: [{ type: 'text', text: 'Review your Contentful content types. Most map directly to FlowWink blocks: Rich Text → Text Block, Media → Image/Gallery, References → Article Grid. Custom types may need manual mapping.' }] },
                     ],
                   },
                 },
@@ -5192,7 +5192,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
                   answer: {
                     type: 'doc',
                     content: [
-                      { type: 'paragraph', content: [{ type: 'text', text: 'In PezCMS Admin → Import → JSON. Upload your Contentful export. The importer transforms Contentful structure to PezCMS blocks. Blog entries become blog posts, page entries become pages.' }] },
+                      { type: 'paragraph', content: [{ type: 'text', text: 'In FlowWink Admin → Import → JSON. Upload your Contentful export. The importer transforms Contentful structure to FlowWink blocks. Blog entries become blog posts, page entries become pages.' }] },
                     ],
                   },
                 },
@@ -5201,7 +5201,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
                   answer: {
                     type: 'doc',
                     content: [
-                      { type: 'paragraph', content: [{ type: 'text', text: 'If you had a custom frontend with Contentful, you can keep using it – just point API calls to PezCMS instead. Or use our built-in website and skip frontend maintenance entirely.' }] },
+                      { type: 'paragraph', content: [{ type: 'text', text: 'If you had a custom frontend with Contentful, you can keep using it – just point API calls to FlowWink instead. Or use our built-in website and skip frontend maintenance entirely.' }] },
                     ],
                   },
                 },
@@ -5210,7 +5210,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
                   answer: {
                     type: 'doc',
                     content: [
-                      { type: 'paragraph', content: [{ type: 'text', text: 'Replace Contentful webhooks with PezCMS webhooks. Same events, similar payload structure. Update any external services that were calling Contentful APIs to use PezCMS endpoints.' }] },
+                      { type: 'paragraph', content: [{ type: 'text', text: 'Replace Contentful webhooks with FlowWink webhooks. Same events, similar payload structure. Update any external services that were calling Contentful APIs to use FlowWink endpoints.' }] },
                     ],
                   },
                 },
@@ -5222,7 +5222,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
             id: 'quote-contentful',
             type: 'quote',
             data: {
-              quote: 'Contentful was overkill for our needs. We were paying $300/month and still had to build a frontend. PezCMS does everything for €49.',
+              quote: 'Contentful was overkill for our needs. We were paying $300/month and still had to build a frontend. FlowWink does everything for €49.',
               author: 'Dr. Sofia Berg',
               role: 'Director, HealthTech Nordic',
               variant: 'centered',
@@ -5245,7 +5245,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
             data: {
               title: '',
               products: [
-                { id: 'pez', name: 'PezCMS', highlighted: true },
+                { id: 'pez', name: 'FlowWink', highlighted: true },
                 { id: 'wordpress', name: 'WordPress' },
                 { id: 'webflow', name: 'Webflow' },
                 { id: 'contentful', name: 'Contentful' },
@@ -5314,7 +5314,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
         menu_order: 6,
         showInMenu: true,
         meta: {
-          description: 'PezCMS product roadmap - See upcoming features, completed milestones, and vote on what we build next.',
+          description: 'FlowWink product roadmap - See upcoming features, completed milestones, and vote on what we build next.',
           showTitle: true,
           titleAlignment: 'center',
         },
@@ -5325,7 +5325,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
             type: 'hero',
             data: {
               title: 'Product Roadmap',
-              subtitle: 'See where we are headed, what we have shipped, and help shape the future of PezCMS.',
+              subtitle: 'See where we are headed, what we have shipped, and help shape the future of FlowWink.',
               backgroundType: 'color',
               heightMode: 'auto',
               contentAlignment: 'center',
@@ -5369,7 +5369,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
                 { id: 'prog-1', icon: 'Globe', title: 'Multi-language Content', description: 'Native localization with AI translation. Manage content in multiple languages from one place.' },
                 { id: 'prog-2', icon: 'GitBranch', title: 'Content Staging', description: 'Preview changes before publishing. Share staging links with stakeholders for review.' },
                 { id: 'prog-3', icon: 'Smartphone', title: 'Mobile App Preview', description: 'See how content looks on mobile devices. Real-time preview in the editor.' },
-                { id: 'prog-4', icon: 'Plug', title: 'Plugin System', description: 'Extend PezCMS with custom blocks and integrations. Community plugin marketplace.' },
+                { id: 'prog-4', icon: 'Plug', title: 'Plugin System', description: 'Extend FlowWink with custom blocks and integrations. Community plugin marketplace.' },
               ],
               columns: 2,
               variant: 'cards',
@@ -5494,7 +5494,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
                 type: 'doc',
                 content: [
                   { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Help Shape the Future' }] },
-                  { type: 'paragraph', content: [{ type: 'text', text: 'PezCMS is built in the open. Your votes directly influence what we build next. The most-requested features move up the priority list.' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'FlowWink is built in the open. Your votes directly influence what we build next. The most-requested features move up the priority list.' }] },
                 ],
               },
             },
@@ -5507,12 +5507,12 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
               title: 'Top Requested Features',
               subtitle: 'Vote on GitHub Discussions to show your support.',
               features: [
-                { id: 'vote-1', icon: 'Star', title: 'GraphQL API', description: 'Alternative to REST for flexible queries. Popular with React/Next.js teams.', url: 'https://github.com/pezcms/pezcms/discussions/123' },
-                { id: 'vote-2', icon: 'Star', title: 'Real-time Collaboration', description: 'Multiple editors working on the same page simultaneously. Google Docs-style.', url: 'https://github.com/pezcms/pezcms/discussions/124' },
-                { id: 'vote-3', icon: 'Star', title: 'A/B Testing', description: 'Test different versions of content. Automatic winner selection based on metrics.', url: 'https://github.com/pezcms/pezcms/discussions/125' },
-                { id: 'vote-4', icon: 'Star', title: 'Content Scheduling Calendar', description: 'Visual calendar for scheduled content. Drag-and-drop rescheduling.', url: 'https://github.com/pezcms/pezcms/discussions/126' },
-                { id: 'vote-5', icon: 'Star', title: 'White-label Admin', description: 'Customize the admin panel with your own branding. Remove all PezCMS references.', url: 'https://github.com/pezcms/pezcms/discussions/127' },
-                { id: 'vote-6', icon: 'Star', title: 'Import from Notion', description: 'One-click import from Notion pages and databases. Preserve structure and formatting.', url: 'https://github.com/pezcms/pezcms/discussions/128' },
+                { id: 'vote-1', icon: 'Star', title: 'GraphQL API', description: 'Alternative to REST for flexible queries. Popular with React/Next.js teams.', url: 'https://github.com/flowwink/flowwink/discussions/123' },
+                { id: 'vote-2', icon: 'Star', title: 'Real-time Collaboration', description: 'Multiple editors working on the same page simultaneously. Google Docs-style.', url: 'https://github.com/flowwink/flowwink/discussions/124' },
+                { id: 'vote-3', icon: 'Star', title: 'A/B Testing', description: 'Test different versions of content. Automatic winner selection based on metrics.', url: 'https://github.com/flowwink/flowwink/discussions/125' },
+                { id: 'vote-4', icon: 'Star', title: 'Content Scheduling Calendar', description: 'Visual calendar for scheduled content. Drag-and-drop rescheduling.', url: 'https://github.com/flowwink/flowwink/discussions/126' },
+                { id: 'vote-5', icon: 'Star', title: 'White-label Admin', description: 'Customize the admin panel with your own branding. Remove all FlowWink references.', url: 'https://github.com/flowwink/flowwink/discussions/127' },
+                { id: 'vote-6', icon: 'Star', title: 'Import from Notion', description: 'One-click import from Notion pages and databases. Preserve structure and formatting.', url: 'https://github.com/flowwink/flowwink/discussions/128' },
               ],
               columns: 3,
               variant: 'cards',
@@ -5527,10 +5527,10 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
             data: {
               title: 'Get Involved',
               links: [
-                { id: 'part-1', icon: 'Github', title: 'GitHub Discussions', description: 'Vote and propose features', url: 'https://github.com/pezcms/pezcms/discussions' },
-                { id: 'part-2', icon: 'MessageCircle', title: 'Discord Community', description: 'Chat with the team', url: 'https://discord.gg/pezcms' },
-                { id: 'part-3', icon: 'History', title: 'Changelog', description: 'Detailed release notes', url: 'https://github.com/pezcms/pezcms/releases' },
-                { id: 'part-4', icon: 'GitPullRequest', title: 'Contribute', description: 'Submit a PR', url: 'https://github.com/pezcms/pezcms/contribute' },
+                { id: 'part-1', icon: 'Github', title: 'GitHub Discussions', description: 'Vote and propose features', url: 'https://github.com/flowwink/flowwink/discussions' },
+                { id: 'part-2', icon: 'MessageCircle', title: 'Discord Community', description: 'Chat with the team', url: 'https://discord.gg/flowwink' },
+                { id: 'part-3', icon: 'History', title: 'Changelog', description: 'Detailed release notes', url: 'https://github.com/flowwink/flowwink/releases' },
+                { id: 'part-4', icon: 'GitPullRequest', title: 'Contribute', description: 'Submit a PR', url: 'https://github.com/flowwink/flowwink/contribute' },
               ],
               columns: 4,
             },
@@ -5554,9 +5554,9 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
               title: 'Have a Feature Request?',
               subtitle: 'Open a discussion on GitHub or join our Discord to share your ideas.',
               buttonText: 'Open Discussion',
-              buttonUrl: 'https://github.com/pezcms/pezcms/discussions/new',
+              buttonUrl: 'https://github.com/flowwink/flowwink/discussions/new',
               secondaryButtonText: 'Join Discord',
-              secondaryButtonUrl: 'https://discord.gg/pezcms',
+              secondaryButtonUrl: 'https://discord.gg/flowwink',
               gradient: true,
             },
           },
@@ -5569,7 +5569,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
         menu_order: 7,
         showInMenu: true,
         meta: {
-          description: 'Get in touch with the PezCMS team - we\'re here to help with questions, demos, and enterprise inquiries.',
+          description: 'Get in touch with the FlowWink team - we\'re here to help with questions, demos, and enterprise inquiries.',
           showTitle: true,
           titleAlignment: 'center',
         },
@@ -5579,7 +5579,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
             type: 'hero',
             data: {
               title: 'Let\'s Talk',
-              subtitle: 'Questions about PezCMS? Want a personalized demo? We\'re here to help.',
+              subtitle: 'Questions about FlowWink? Want a personalized demo? We\'re here to help.',
               backgroundType: 'color',
               heightMode: 'auto',
               contentAlignment: 'center',
@@ -5591,7 +5591,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
             type: 'booking',
             data: {
               title: 'Book a Demo',
-              description: 'See PezCMS in action with a personalized walkthrough tailored to your needs.',
+              description: 'See FlowWink in action with a personalized walkthrough tailored to your needs.',
               mode: 'smart',
               submitButtonText: 'Confirm Demo',
               successMessage: 'Your demo is booked! We\'ll send you a confirmation email.',
@@ -5607,7 +5607,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
               height: 'sm',
               showSidebar: false,
               variant: 'card',
-              initialPrompt: 'Hi! I can answer questions about PezCMS features, pricing, and deployment options. What would you like to know?',
+              initialPrompt: 'Hi! I can answer questions about FlowWink features, pricing, and deployment options. What would you like to know?',
             },
           },
           {
@@ -5615,7 +5615,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
             type: 'contact',
             data: {
               title: 'Other Ways to Reach Us',
-              email: 'hello@pezcms.com',
+              email: 'hello@flowwink.com',
               phone: '+46 70 123 45 67',
               hours: [
                 { day: 'Sales & Demos', time: 'Mon-Fri 9-17 CET' },
@@ -5632,7 +5632,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
         menu_order: 5,
         showInMenu: true,
         meta: {
-          description: 'PezCMS developer documentation - API reference, self-hosting guide, webhooks, and integration resources.',
+          description: 'FlowWink developer documentation - API reference, self-hosting guide, webhooks, and integration resources.',
           showTitle: true,
           titleAlignment: 'center',
         },
@@ -5643,7 +5643,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
             type: 'hero',
             data: {
               title: 'Documentation',
-              subtitle: 'Everything you need to integrate, customize, and deploy PezCMS.',
+              subtitle: 'Everything you need to integrate, customize, and deploy FlowWink.',
               backgroundType: 'color',
               heightMode: 'auto',
               contentAlignment: 'center',
@@ -5684,7 +5684,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
                 type: 'doc',
                 content: [
                   { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'REST API' }] },
-                  { type: 'paragraph', content: [{ type: 'text', text: 'PezCMS provides a complete REST API for accessing all content programmatically. Use it to build custom frontends, mobile apps, or integrate with other services.' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'FlowWink provides a complete REST API for accessing all content programmatically. Use it to build custom frontends, mobile apps, or integrate with other services.' }] },
                   { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Base URL' }] },
                   { type: 'codeBlock', attrs: { language: 'text' }, content: [{ type: 'text', text: 'https://your-instance.com/api/v1' }] },
                   { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Authentication' }] },
@@ -5831,7 +5831,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
                 type: 'doc',
                 content: [
                   { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Deploy on Your Infrastructure' }] },
-                  { type: 'paragraph', content: [{ type: 'text', text: 'PezCMS is fully self-hostable. Run it on your own servers for complete control over your data and infrastructure.' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'FlowWink is fully self-hostable. Run it on your own servers for complete control over your data and infrastructure.' }] },
                   { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Requirements' }] },
                   { type: 'bulletList', content: [
                     { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Node.js 18+ or Bun' }] }] },
@@ -5845,7 +5845,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
                 type: 'doc',
                 content: [
                   { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Quick Start' }] },
-                  { type: 'codeBlock', attrs: { language: 'bash' }, content: [{ type: 'text', text: '# Clone the repository\ngit clone https://github.com/pezcms/pezcms\ncd pezcms\n\n# Install dependencies\nnpm install\n\n# Configure environment\ncp .env.example .env\n# Edit .env with your database URL\n\n# Run migrations\nnpm run db:migrate\n\n# Start the server\nnpm run start' }] },
+                  { type: 'codeBlock', attrs: { language: 'bash' }, content: [{ type: 'text', text: '# Clone the repository\ngit clone https://github.com/flowwink/flowwink\ncd flowwink\n\n# Install dependencies\nnpm install\n\n# Configure environment\ncp .env.example .env\n# Edit .env with your database URL\n\n# Run migrations\nnpm run db:migrate\n\n# Start the server\nnpm run start' }] },
                 ],
               },
               layout: '50-50',
@@ -5858,7 +5858,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
             data: {
               title: 'Deployment Options',
               features: [
-                { id: 'deploy-docker', icon: 'Container', title: 'Docker', description: 'Official Docker image for containerized deployments. Works with Docker Compose, Kubernetes, or any container platform.', url: 'https://hub.docker.com/r/pezcms/pezcms' },
+                { id: 'deploy-docker', icon: 'Container', title: 'Docker', description: 'Official Docker image for containerized deployments. Works with Docker Compose, Kubernetes, or any container platform.', url: 'https://hub.docker.com/r/flowwink/flowwink' },
                 { id: 'deploy-vercel', icon: 'Triangle', title: 'Vercel', description: 'One-click deploy to Vercel. Connect your GitHub repo and deploy automatically on every push.' },
                 { id: 'deploy-railway', icon: 'Train', title: 'Railway', description: 'Deploy with Railway for managed PostgreSQL and automatic scaling. Template available.' },
                 { id: 'deploy-vps', icon: 'Server', title: 'VPS / Bare Metal', description: 'Run on any Linux server with Node.js. Use PM2 or systemd for process management.' },
@@ -5881,7 +5881,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
                   answer: {
                     type: 'doc',
                     content: [
-                      { type: 'paragraph', content: [{ type: 'text', text: 'Yes! PezCMS works with any PostgreSQL 14+ database. You can use a managed service like Supabase, Neon, or AWS RDS, or run your own PostgreSQL instance.' }] },
+                      { type: 'paragraph', content: [{ type: 'text', text: 'Yes! FlowWink works with any PostgreSQL 14+ database. You can use a managed service like Supabase, Neon, or AWS RDS, or run your own PostgreSQL instance.' }] },
                     ],
                   },
                 },
@@ -6011,7 +6011,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
               subtitle: 'AI-powered migration converts your content to structured blocks automatically.',
               features: [
                 { id: 'mig-wp', icon: 'FileCode', title: 'WordPress', description: 'Import posts, pages, and media. Categories and tags are preserved. Featured images are downloaded.' },
-                { id: 'mig-webflow', icon: 'Layout', title: 'Webflow', description: 'Convert Webflow pages to PezCMS blocks. Styles are mapped to our design system.' },
+                { id: 'mig-webflow', icon: 'Layout', title: 'Webflow', description: 'Convert Webflow pages to FlowWink blocks. Styles are mapped to our design system.' },
                 { id: 'mig-html', icon: 'Code', title: 'Any HTML', description: 'Paste any URL and AI converts the content to structured blocks. Works with any website.' },
                 { id: 'mig-json', icon: 'Braces', title: 'JSON Import', description: 'Import content from any source using our JSON schema. Full control over mapping.' },
               ],
@@ -6057,10 +6057,10 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
             data: {
               title: '',
               links: [
-                { id: 'res-github', icon: 'Github', title: 'GitHub Repository', description: 'Source code, issues, and discussions', url: 'https://github.com/pezcms/pezcms' },
-                { id: 'res-discord', icon: 'MessageCircle', title: 'Discord Community', description: 'Get help from the community', url: 'https://discord.gg/pezcms' },
-                { id: 'res-changelog', icon: 'History', title: 'Changelog', description: 'See what is new in each release', url: 'https://github.com/pezcms/pezcms/releases' },
-                { id: 'res-roadmap', icon: 'Map', title: 'Roadmap', description: 'Upcoming features and priorities', url: 'https://github.com/pezcms/pezcms/projects' },
+                { id: 'res-github', icon: 'Github', title: 'GitHub Repository', description: 'Source code, issues, and discussions', url: 'https://github.com/flowwink/flowwink' },
+                { id: 'res-discord', icon: 'MessageCircle', title: 'Discord Community', description: 'Get help from the community', url: 'https://discord.gg/flowwink' },
+                { id: 'res-changelog', icon: 'History', title: 'Changelog', description: 'See what is new in each release', url: 'https://github.com/flowwink/flowwink/releases' },
+                { id: 'res-roadmap', icon: 'Map', title: 'Roadmap', description: 'Upcoming features and priorities', url: 'https://github.com/flowwink/flowwink/projects' },
               ],
               columns: 4,
             },
@@ -6075,7 +6075,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
               buttonText: 'Launch Demo',
               buttonUrl: '/demo',
               secondaryButtonText: 'View on GitHub',
-              secondaryButtonUrl: 'https://github.com/pezcms/pezcms',
+              secondaryButtonUrl: 'https://github.com/flowwink/flowwink',
               gradient: true,
             },
           },
@@ -6088,7 +6088,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
         menu_order: 99,
         showInMenu: false,
         meta: {
-          description: 'PezCMS Privacy Policy - How we collect, use, and protect your personal data.',
+          description: 'FlowWink Privacy Policy - How we collect, use, and protect your personal data.',
           showTitle: true,
           titleAlignment: 'left',
         },
@@ -6101,9 +6101,9 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
                 type: 'doc',
                 content: [
                   { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Introduction' }] },
-                  { type: 'paragraph', content: [{ type: 'text', text: 'PezCMS AB ("we", "us", or "our") is committed to protecting your privacy. This policy describes how we collect, use, and protect your personal information when you use our website and services.' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'FlowWink AB ("we", "us", or "our") is committed to protecting your privacy. This policy describes how we collect, use, and protect your personal information when you use our website and services.' }] },
                   { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Data Controller' }] },
-                  { type: 'paragraph', content: [{ type: 'text', text: 'PezCMS AB is the data controller for the processing of your personal data. Contact us at privacy@pezcms.com for any questions.' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'FlowWink AB is the data controller for the processing of your personal data. Contact us at privacy@flowwink.com for any questions.' }] },
                   { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'What Data We Collect' }] },
                   { type: 'paragraph', content: [{ type: 'text', text: 'We collect information you provide when creating an account, contacting us, or subscribing to our newsletter. This includes name, email, company name, and any other information you choose to provide.' }] },
                   { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Your Rights' }] },
@@ -6121,7 +6121,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
         menu_order: 5,
         showInMenu: true,
         meta: {
-          description: 'Find answers to common questions about PezCMS. Search our knowledge base or contact support.',
+          description: 'Find answers to common questions about FlowWink. Search our knowledge base or contact support.',
           showTitle: false,
           titleAlignment: 'center',
         },
@@ -6153,7 +6153,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
         menu_order: 100,
         showInMenu: false,
         meta: {
-          description: 'PezCMS Terms of Service - Terms and conditions for using our platform.',
+          description: 'FlowWink Terms of Service - Terms and conditions for using our platform.',
           showTitle: true,
           titleAlignment: 'left',
         },
@@ -6166,11 +6166,11 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
                 type: 'doc',
                 content: [
                   { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Agreement to Terms' }] },
-                  { type: 'paragraph', content: [{ type: 'text', text: 'By accessing or using PezCMS, you agree to be bound by these Terms of Service. If you disagree with any part of these terms, you may not access our services.' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'By accessing or using FlowWink, you agree to be bound by these Terms of Service. If you disagree with any part of these terms, you may not access our services.' }] },
                   { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Use of Service' }] },
                   { type: 'paragraph', content: [{ type: 'text', text: 'You may use our services only for lawful purposes and in accordance with these Terms. You agree not to use our services in any way that violates applicable laws or regulations.' }] },
                   { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Open Source License' }] },
-                  { type: 'paragraph', content: [{ type: 'text', text: 'PezCMS is open source software licensed under the MIT License. You are free to use, modify, and distribute the software according to the license terms.' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'FlowWink is open source software licensed under the MIT License. You are free to use, modify, and distribute the software according to the license terms.' }] },
                   { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Managed Services' }] },
                   { type: 'paragraph', content: [{ type: 'text', text: 'Our managed cloud services are provided as-is. We strive for 99.9% uptime but are not liable for service interruptions beyond our control.' }] },
                 ],
@@ -6181,7 +6181,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
       },
     ],
     branding: {
-      organizationName: 'PezCMS',
+      organizationName: 'FlowWink',
       brandTagline: 'Head + Headless CMS',
       primaryColor: '162 63% 41%',
       headingFont: 'Inter',
@@ -6195,24 +6195,24 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
       widgetEnabled: true,
       widgetPosition: 'bottom-right',
       blockEnabled: true,
-      welcomeMessage: 'Hi! I can answer questions about PezCMS. What would you like to know?',
-      systemPrompt: 'You are the PezCMS assistant. Help users understand the product, features, and pricing. Be helpful, concise, and friendly. PezCMS is a complete CMS with both traditional website features and headless API capabilities.',
+      welcomeMessage: 'Hi! I can answer questions about FlowWink. What would you like to know?',
+      systemPrompt: 'You are the FlowWink assistant. Help users understand the product, features, and pricing. Be helpful, concise, and friendly. FlowWink is a complete CMS with both traditional website features and headless API capabilities.',
       suggestedPrompts: [
-        'What is PezCMS?',
+        'What is FlowWink?',
         'How much does it cost?',
-        'Can I self-host PezCMS?',
+        'Can I self-host FlowWink?',
         'Does it support headless API?',
       ],
     },
     footerSettings: {
-      email: 'hello@pezcms.com',
+      email: 'hello@flowwink.com',
       phone: '+46 70 123 45 67',
       address: 'Stockholm, Sweden',
       postalCode: '',
       weekdayHours: 'Mon-Fri 9-17',
       weekendHours: 'Community support 24/7',
-      linkedin: 'https://linkedin.com/company/pezcms',
-      twitter: 'https://twitter.com/pezcms',
+      linkedin: 'https://linkedin.com/company/flowwink',
+      twitter: 'https://twitter.com/flowwink',
       facebook: '',
       instagram: '',
       youtube: '',
@@ -6223,8 +6223,8 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
       ],
     },
     seoSettings: {
-      siteTitle: 'PezCMS',
-      titleTemplate: '%s | PezCMS - Head + Headless CMS',
+      siteTitle: 'FlowWink',
+      titleTemplate: '%s | FlowWink - Head + Headless CMS',
       defaultDescription: 'Keep Your Head While Going Headless. The complete CMS with beautiful websites AND powerful APIs. Self-host free or use our managed cloud.',
       robotsIndex: true,
       robotsFollow: true,

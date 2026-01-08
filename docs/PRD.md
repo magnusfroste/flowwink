@@ -1,4 +1,4 @@
-# Pezcms - Product Requirements Document (PRD)
+# FlowWink - Product Requirements Document (PRD)
 
 > **Version:** 2.0  
 > **Last Updated:** December 2024  
@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-**Pezcms** är ett modernt Content Management System byggt specifikt för svenska vårdgivare och organisationer som behöver:
+**FlowWink** är ett modernt Content Management System byggt specifikt för svenska vårdgivare och organisationer som behöver:
 
 - ✅ En komplett webbplats utan utvecklare
 - ✅ Headless API för multi-kanal distribution
@@ -18,11 +18,11 @@
 
 ### Unik Positionering: "Head + Headless"
 
-Till skillnad från traditionella CMS (som bara levererar webbplats) eller rena headless-lösningar (som kräver separat frontend-utveckling), erbjuder Pezcms **båda**:
+Till skillnad från traditionella CMS (som bara levererar webbplats) eller rena headless-lösningar (som kräver separat frontend-utveckling), erbjuder FlowWink **båda**:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                      PEZCMS CONTENT                         │
+│                     FLOWWINK CONTENT                        │
 │                    (Single Source of Truth)                 │
 └─────────────────────────────────────────────────────────────┘
                               │
@@ -48,7 +48,7 @@ Till skillnad från traditionella CMS (som bara levererar webbplats) eller rena 
 
 ### 1.1 Block-baserad Sidbyggare
 
-Pezcms använder en modulär block-arkitektur för flexibel innehållshantering:
+FlowWink använder en modulär block-arkitektur för flexibel innehållshantering:
 
 #### Tillgängliga Block (46 typer)
 
@@ -297,7 +297,7 @@ Request → Edge Cache Hit?
 
 #### Multi-Provider Arkitektur
 
-Pezcms stödjer tre olika AI-providers för maximal flexibilitet:
+FlowWink stödjer tre olika AI-providers för maximal flexibilitet:
 
 | Provider | Användning | Data Location |
 |----------|------------|---------------|
@@ -805,7 +805,7 @@ För vårdorganisationer som kräver HIPAA:
 
 ### 11.1 Jämfört med Contentful/Sanity
 
-| Pezcms | Contentful/Sanity |
+| FlowWink | Contentful/Sanity |
 |--------|-------------------|
 | ✅ Inbyggd webbplats | ❌ Kräver separat frontend |
 | ✅ Svensk lokalisering | ❌ Engelska UI |
@@ -814,7 +814,7 @@ För vårdorganisationer som kräver HIPAA:
 
 ### 11.2 Jämfört med WordPress
 
-| Pezcms | WordPress |
+| FlowWink | WordPress |
 |--------|-----------|
 | ✅ Modern React-stack | ❌ PHP/Legacy |
 | ✅ Block-baserat native | ❌ Gutenberg addon |
@@ -823,7 +823,7 @@ För vårdorganisationer som kräver HIPAA:
 
 ### 11.3 Jämfört med Strapi
 
-| Pezcms | Strapi |
+| FlowWink | Strapi |
 |--------|--------|
 | ✅ Komplett lösning | ❌ Bara backend |
 | ✅ Zero-config | ❌ Kräver hosting |
@@ -995,7 +995,7 @@ Se separat API-dokumentation för fullständig referens av:
 | **Launchpad** | Startup | 5 | SaaS/Tech startups |
 | **TrustCorp** | Enterprise | 5 | B2B companies |
 | **SecureHealth** | Compliance | 7 | Healthcare providers |
-| **PezCMS Platform** | Platform | 5 | CMS showcase |
+| **FlowWink Platform** | Platform | 5 | CMS showcase |
 
 ### SecureHealth Template Highlights
 - HIPAA-compliant messaging
@@ -1008,4 +1008,4 @@ Se separat API-dokumentation för fullständig referens av:
 
 ---
 
-*Dokumentet underhålls av Pezcms-teamet. Senast uppdaterad december 2024.*
+*Dokumentet underhålls av FlowWink-teamet. Senast uppdaterad december 2024.*

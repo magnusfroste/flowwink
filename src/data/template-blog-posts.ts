@@ -361,9 +361,9 @@ export const momentumBlogPosts: TemplateBlogPost[] = [
 ];
 
 // =====================================================
-// PEZCMS PLATFORM - Blog Posts
+// FLOWWINK PLATFORM - Blog Posts
 // =====================================================
-export const pezcmsBlogPosts: TemplateBlogPost[] = [
+export const flowwinkBlogPosts: TemplateBlogPost[] = [
   {
     title: 'Head + Headless: Why You Should Not Have to Choose',
     slug: 'head-headless-why-not-choose',

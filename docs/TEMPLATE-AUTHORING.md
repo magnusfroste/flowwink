@@ -1,6 +1,6 @@
 # Template Authoring Guide
 
-This guide helps content managers create new site templates for PezCMS. No TypeScript experience required - just follow the examples and patterns.
+This guide helps content managers create new site templates for FlowWink. No TypeScript experience required - just follow the examples and patterns.
 
 ## Quick Start
 

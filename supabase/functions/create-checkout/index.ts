@@ -136,7 +136,7 @@ serve(async (req: Request) => {
           description: product.description || undefined,
           images: product.image_url ? [product.image_url] : undefined,
           metadata: {
-            pezcms_product_id: product.id,
+            flowwink_product_id: product.id,
           },
         });
 

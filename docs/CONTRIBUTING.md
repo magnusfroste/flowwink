@@ -1,6 +1,6 @@
-# Contributing to Pezcms
+# Contributing to FlowWink
 
-Thank you for your interest in contributing to Pezcms! This guide will help you get started.
+Thank you for your interest in contributing to FlowWink! This guide will help you get started.
 
 ## Getting Started
 
