@@ -48,11 +48,18 @@ function AnimatedStat({
   duration: number;
 }) {
   const [displayValue, setDisplayValue] = useState(value);
-  const parsed = parseStatValue(value);
   const animationRef = useRef<number>();
   const startTimeRef = useRef<number>();
+  const hasAnimatedRef = useRef(false);
   
   useEffect(() => {
+    const parsed = parseStatValue(value);
+    
+    // Don't re-animate if already completed
+    if (hasAnimatedRef.current) {
+      return;
+    }
+    
     if (!isVisible || !parsed) {
       setDisplayValue(value);
       return;
@@ -78,6 +85,9 @@ function AnimatedStat({
       
       if (progress < 1) {
         animationRef.current = requestAnimationFrame(animate);
+      } else {
+        // Mark animation as complete
+        hasAnimatedRef.current = true;
       }
     };
     
@@ -89,7 +99,7 @@ function AnimatedStat({
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [isVisible, value, parsed, duration]);
+  }, [isVisible, value, duration]);
   
   return <>{displayValue}</>;
 }
