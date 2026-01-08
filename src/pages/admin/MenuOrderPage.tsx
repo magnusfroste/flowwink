@@ -10,8 +10,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useUnsavedChanges, UnsavedChangesDialog } from '@/hooks/useUnsavedChanges';
-import { useBlogSettings, useUpdateBlogSettings, useKbSettings, useUpdateKbSettings } from '@/hooks/useSiteSettings';
-import { Loader2, Save, GripVertical, Eye, EyeOff, FileText, BookOpen, HelpCircle } from 'lucide-react';
+import { useBlogSettings, useUpdateBlogSettings } from '@/hooks/useSiteSettings';
+import { Loader2, Save, GripVertical, Eye, EyeOff, FileText, BookOpen } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -24,16 +24,6 @@ interface PageItem {
   status: string;
   menu_order: number;
   show_in_menu: boolean;
-}
-
-interface ModuleItem {
-  id: string;
-  type: 'blog' | 'kb';
-  title: string;
-  slug: string;
-  enabled: boolean;
-  showInMenu: boolean;
-  menuOrder: number;
 }
 
 interface SortablePageItemProps {
@@ -99,80 +89,6 @@ function SortablePageItem({ page, onToggleVisibility }: SortablePageItemProps) {
   );
 }
 
-interface SortableModuleItemProps {
-  module: ModuleItem;
-  onToggleVisibility: (id: string, visible: boolean) => void;
-  onTitleChange: (id: string, title: string) => void;
-  onSlugChange: (id: string, slug: string) => void;
-}
-
-function SortableModuleItem({ module, onToggleVisibility, onTitleChange, onSlugChange }: SortableModuleItemProps) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: module.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
-  const Icon = module.type === 'blog' ? BookOpen : HelpCircle;
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={cn(
-        "flex items-center gap-3 p-4 bg-card border border-border rounded-lg",
-        isDragging && "opacity-50 shadow-lg",
-        (!module.enabled || !module.showInMenu) && "opacity-60"
-      )}
-    >
-      <button
-        {...attributes}
-        {...listeners}
-        className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground"
-      >
-        <GripVertical className="h-5 w-5" />
-      </button>
-      <Icon className="h-4 w-4 text-muted-foreground" />
-      <div className="flex-1 grid grid-cols-2 gap-3">
-        <div>
-          <Label className="text-xs text-muted-foreground">Menu Title</Label>
-          <Input
-            value={module.title}
-            onChange={(e) => onTitleChange(module.id, e.target.value)}
-            className="h-8 text-sm"
-          />
-        </div>
-        <div>
-          <Label className="text-xs text-muted-foreground">Slug</Label>
-          <Input
-            value={module.slug}
-            onChange={(e) => onSlugChange(module.id, e.target.value)}
-            className="h-8 text-sm"
-          />
-        </div>
-      </div>
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2">
-          <Eye className="h-4 w-4 text-muted-foreground" />
-          <Switch
-            checked={module.showInMenu}
-            onCheckedChange={(checked) => onToggleVisibility(module.id, checked)}
-            aria-label={module.showInMenu ? 'Hide from menu' : 'Show in menu'}
-            disabled={!module.enabled}
-          />
-        </div>
-        <span className={cn(
-          "text-xs px-2 py-1 rounded-full min-w-[60px] text-center",
-          module.enabled ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" : "bg-muted text-muted-foreground"
-        )}>
-          {module.enabled ? 'Enabled' : 'Disabled'}
-        </span>
-      </div>
-    </div>
-  );
-}
-
 export default function MenuOrderPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -192,12 +108,11 @@ export default function MenuOrderPage() {
   });
 
   const { data: blogSettings, isLoading: blogLoading } = useBlogSettings();
-  const { data: kbSettings, isLoading: kbLoading } = useKbSettings();
   const updateBlogSettings = useUpdateBlogSettings();
-  const updateKbSettings = useUpdateKbSettings();
 
   const [orderedPages, setOrderedPages] = useState<PageItem[]>([]);
-  const [orderedModules, setOrderedModules] = useState<ModuleItem[]>([]);
+  const [blogTitle, setBlogTitle] = useState('');
+  const [blogSlug, setBlogSlug] = useState('');
   const [hasChanges, setHasChanges] = useState(false);
 
   // Initialize pages
@@ -207,34 +122,13 @@ export default function MenuOrderPage() {
     }
   }, [pages]);
 
-  // Initialize modules
+  // Initialize blog settings
   useEffect(() => {
-    if (blogSettings && kbSettings) {
-      const modules: ModuleItem[] = [
-        {
-          id: 'module-blog',
-          type: 'blog',
-          title: blogSettings.archiveTitle || 'Blogg',
-          slug: blogSettings.archiveSlug || 'blogg',
-          enabled: blogSettings.enabled,
-          showInMenu: blogSettings.enabled, // Blog shows if enabled
-          menuOrder: 0,
-        },
-        {
-          id: 'module-kb',
-          type: 'kb',
-          title: kbSettings.menuTitle || 'Hjälp',
-          slug: kbSettings.menuSlug || 'hjalp',
-          enabled: kbSettings.enabled,
-          showInMenu: kbSettings.showInMenu,
-          menuOrder: kbSettings.menuOrder || 1,
-        },
-      ];
-      // Sort by menuOrder
-      modules.sort((a, b) => a.menuOrder - b.menuOrder);
-      setOrderedModules(modules);
+    if (blogSettings) {
+      setBlogTitle(blogSettings.archiveTitle || 'Blogg');
+      setBlogSlug(blogSettings.archiveSlug || 'blogg');
     }
-  }, [blogSettings, kbSettings]);
+  }, [blogSettings]);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -253,18 +147,6 @@ export default function MenuOrderPage() {
     }
   };
 
-  const handleModuleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (over && active.id !== over.id) {
-      setOrderedModules((items) => {
-        const oldIndex = items.findIndex((item) => item.id === active.id);
-        const newIndex = items.findIndex((item) => item.id === over.id);
-        return arrayMove(items, oldIndex, newIndex);
-      });
-      setHasChanges(true);
-    }
-  };
-
   const handleTogglePageVisibility = (id: string, visible: boolean) => {
     setOrderedPages((items) =>
       items.map((item) =>
@@ -274,30 +156,13 @@ export default function MenuOrderPage() {
     setHasChanges(true);
   };
 
-  const handleToggleModuleVisibility = (id: string, visible: boolean) => {
-    setOrderedModules((items) =>
-      items.map((item) =>
-        item.id === id ? { ...item, showInMenu: visible } : item
-      )
-    );
+  const handleBlogTitleChange = (title: string) => {
+    setBlogTitle(title);
     setHasChanges(true);
   };
 
-  const handleModuleTitleChange = (id: string, title: string) => {
-    setOrderedModules((items) =>
-      items.map((item) =>
-        item.id === id ? { ...item, title } : item
-      )
-    );
-    setHasChanges(true);
-  };
-
-  const handleModuleSlugChange = (id: string, slug: string) => {
-    setOrderedModules((items) =>
-      items.map((item) =>
-        item.id === id ? { ...item, slug } : item
-      )
-    );
+  const handleBlogSlugChange = (slug: string) => {
+    setBlogSlug(slug);
     setHasChanges(true);
   };
 
@@ -317,25 +182,12 @@ export default function MenuOrderPage() {
         throw new Error('Failed to update some pages');
       }
 
-      // Save module settings
-      const blogModule = orderedModules.find(m => m.type === 'blog');
-      const kbModule = orderedModules.find(m => m.type === 'kb');
-
-      if (blogModule && blogSettings) {
+      // Save blog settings
+      if (blogSettings) {
         await updateBlogSettings.mutateAsync({
           ...blogSettings,
-          archiveTitle: blogModule.title,
-          archiveSlug: blogModule.slug,
-        });
-      }
-
-      if (kbModule && kbSettings) {
-        await updateKbSettings.mutateAsync({
-          ...kbSettings,
-          menuTitle: kbModule.title,
-          menuSlug: kbModule.slug,
-          showInMenu: kbModule.showInMenu,
-          menuOrder: orderedModules.findIndex(m => m.id === kbModule.id),
+          archiveTitle: blogTitle,
+          archiveSlug: blogSlug,
         });
       }
     },
@@ -343,7 +195,6 @@ export default function MenuOrderPage() {
       queryClient.invalidateQueries({ queryKey: ['pages-menu-order'] });
       queryClient.invalidateQueries({ queryKey: ['public-nav-pages'] });
       queryClient.invalidateQueries({ queryKey: ['site-settings', 'blog'] });
-      queryClient.invalidateQueries({ queryKey: ['site-settings', 'kb'] });
       setHasChanges(false);
       toast({
         title: 'Saved',
@@ -365,7 +216,7 @@ export default function MenuOrderPage() {
     saveMutation.mutate();
   };
 
-  const isLoading = pagesLoading || blogLoading || kbLoading;
+  const isLoading = pagesLoading || blogLoading;
 
   if (isLoading) {
     return (
@@ -423,30 +274,47 @@ export default function MenuOrderPage() {
           </CardContent>
         </Card>
 
-        {/* Modules Section */}
+        {/* Blog Module Section */}
         <Card>
           <CardHeader>
-            <CardTitle className="font-serif">Modules</CardTitle>
+            <CardTitle className="font-serif">Blog</CardTitle>
             <CardDescription>
-              Configure how Blog and Knowledge Base appear in the navigation. Disabled modules can be enabled in their respective settings.
+              Configure how the blog appears in the navigation. Enable/disable the blog module in Blog Settings.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleModuleDragEnd}>
-              <SortableContext items={orderedModules.map(m => m.id)} strategy={verticalListSortingStrategy}>
-                <div className="space-y-2">
-                  {orderedModules.map((module) => (
-                    <SortableModuleItem 
-                      key={module.id} 
-                      module={module}
-                      onToggleVisibility={handleToggleModuleVisibility}
-                      onTitleChange={handleModuleTitleChange}
-                      onSlugChange={handleModuleSlugChange}
-                    />
-                  ))}
+            <div className={cn(
+              "flex items-center gap-3 p-4 bg-card border border-border rounded-lg",
+              !blogSettings?.enabled && "opacity-60"
+            )}>
+              <BookOpen className="h-4 w-4 text-muted-foreground" />
+              <div className="flex-1 grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Menu Title</Label>
+                  <Input
+                    value={blogTitle}
+                    onChange={(e) => handleBlogTitleChange(e.target.value)}
+                    className="h-8 text-sm"
+                    disabled={!blogSettings?.enabled}
+                  />
                 </div>
-              </SortableContext>
-            </DndContext>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Slug</Label>
+                  <Input
+                    value={blogSlug}
+                    onChange={(e) => handleBlogSlugChange(e.target.value)}
+                    className="h-8 text-sm"
+                    disabled={!blogSettings?.enabled}
+                  />
+                </div>
+              </div>
+              <span className={cn(
+                "text-xs px-2 py-1 rounded-full min-w-[60px] text-center",
+                blogSettings?.enabled ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" : "bg-muted text-muted-foreground"
+              )}>
+                {blogSettings?.enabled ? 'Enabled' : 'Disabled'}
+              </span>
+            </div>
           </CardContent>
         </Card>
       </div>

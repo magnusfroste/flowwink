@@ -1,5 +1,5 @@
 import { ContentBlock, PageMeta, FooterBlockData } from '@/types/cms';
-import { BrandingSettings, ChatSettings, SeoSettings, CookieBannerSettings, KbSettings } from '@/hooks/useSiteSettings';
+import { BrandingSettings, ChatSettings, SeoSettings, CookieBannerSettings } from '@/hooks/useSiteSettings';
 import { 
   launchpadBlogPosts, 
   trustcorpBlogPosts, 
@@ -72,7 +72,6 @@ export interface StarterTemplate {
   footerSettings: Partial<FooterBlockData>;
   seoSettings: Partial<SeoSettings>;
   cookieBannerSettings: Partial<CookieBannerSettings>;
-  kbSettings?: Partial<KbSettings>;
   
   // General settings
   siteSettings: {
@@ -2569,13 +2568,6 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
         { id: 'cookies', label: 'Cookie Policy', url: '/cookie-policy', enabled: true },
       ],
     },
-    kbSettings: {
-      enabled: true,
-      menuTitle: 'Help',
-      menuSlug: 'help',
-      showInMenu: true,
-      menuOrder: 5,
-    },
     seoSettings: {
       siteTitle: 'LaunchPad',
       titleTemplate: '%s | LaunchPad',
@@ -2695,13 +2687,6 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
         { id: 'cookies', label: 'Cookie Policy', url: '/cookie-policy', enabled: true },
       ],
     },
-    kbSettings: {
-      enabled: true,
-      menuTitle: 'Support',
-      menuSlug: 'support',
-      showInMenu: true,
-      menuOrder: 5,
-    },
     seoSettings: {
       siteTitle: 'TrustCorp',
       titleTemplate: '%s | TrustCorp',
@@ -2766,13 +2751,6 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
         { id: 'cookies', label: 'Cookie Policy', url: '/cookie-policy', enabled: true },
         { id: 'accessibility', label: 'Accessibility', url: '/accessibility', enabled: true },
       ],
-    },
-    kbSettings: {
-      enabled: true,
-      menuTitle: 'Patient FAQ',
-      menuSlug: 'faq',
-      showInMenu: true,
-      menuOrder: 5,
     },
     seoSettings: {
       siteTitle: 'SecureHealth',
@@ -6138,13 +6116,6 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
         { id: 'privacy', label: 'Privacy Policy', url: '/privacy-policy', enabled: true },
         { id: 'terms', label: 'Terms of Service', url: '/terms-of-service', enabled: true },
       ],
-    },
-    kbSettings: {
-      enabled: true,
-      menuTitle: 'Help',
-      menuSlug: 'help',
-      showInMenu: true,
-      menuOrder: 5,
     },
     seoSettings: {
       siteTitle: 'PezCMS',

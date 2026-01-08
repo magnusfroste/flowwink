@@ -175,11 +175,7 @@ export default function NewSitePage() {
       setProgress({ currentPage: selectedTemplate.pages.length, totalPages: selectedTemplate.pages.length, currentStep: 'Configuring cookies...' });
       await updateCookieBanner.mutateAsync(selectedTemplate.cookieBannerSettings as any);
 
-      // Step 7: Apply Knowledge Base settings if present
-      if (selectedTemplate.kbSettings) {
-        setProgress({ currentPage: selectedTemplate.pages.length, totalPages: selectedTemplate.pages.length, currentStep: 'Configuring Knowledge Base...' });
-        await updateKbSettings.mutateAsync(selectedTemplate.kbSettings as any);
-      }
+      // Step 7: Set homepage
 
       // Step 8: Set homepage
       setProgress({ currentPage: selectedTemplate.pages.length, totalPages: selectedTemplate.pages.length, currentStep: 'Finalizing...' });
