@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { convertToWebP } from '@/lib/image-utils';
 import { cn } from '@/lib/utils';
+import { UnsplashPicker } from '@/components/admin/UnsplashPicker';
+import { ImageCropper } from '@/components/admin/ImageCropper';
 import { 
   Loader2, 
   Search, 
@@ -16,7 +18,8 @@ import {
   Check,
   ImageIcon,
   Upload,
-  X
+  Crop,
+  Image as ImageIconLucide
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -47,6 +50,8 @@ export default function MediaLibraryPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [showUnsplash, setShowUnsplash] = useState(false);
+  const [editingImage, setEditingImage] = useState<{ url: string; name: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -239,6 +244,10 @@ export default function MediaLibraryPage() {
             onChange={handleFileInput}
             className="hidden"
           />
+          <Button variant="outline" onClick={() => setShowUnsplash(true)} disabled={isUploading}>
+            <ImageIconLucide className="h-4 w-4 mr-2" />
+            Unsplash
+          </Button>
           <Button onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
             {isUploading ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -332,6 +341,15 @@ export default function MediaLibraryPage() {
                     size="sm"
                     variant="secondary"
                     className="w-full"
+                    onClick={() => setEditingImage({ url: getPublicUrl(file), name: file.name })}
+                  >
+                    <Crop className="h-3 w-3 mr-1" />
+                    Edit
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="w-full"
                     onClick={() => handleCopyUrl(file)}
                   >
                     {copiedUrl === file.name ? (
@@ -392,6 +410,55 @@ export default function MediaLibraryPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Unsplash Picker */}
+      <UnsplashPicker
+        open={showUnsplash}
+        onOpenChange={setShowUnsplash}
+        onSelect={(url) => {
+          setShowUnsplash(false);
+          toast({
+            title: 'Image added',
+            description: 'Unsplash image has been added to your library',
+          });
+          refetch();
+        }}
+      />
+
+      {/* Image Editor */}
+      <ImageCropper
+        open={!!editingImage}
+        onOpenChange={(open) => !open && setEditingImage(null)}
+        imageUrl={editingImage?.url || ''}
+        onCropComplete={async (blob) => {
+          if (!editingImage) return;
+          try {
+            const fileName = `edited-${Date.now()}-${editingImage.name}`;
+            const { error } = await supabase.storage
+              .from('cms-images')
+              .upload(`pages/${fileName}`, blob, {
+                contentType: 'image/webp',
+                cacheControl: '31536000',
+              });
+
+            if (error) throw error;
+
+            toast({
+              title: 'Image saved',
+              description: 'Edited image has been saved to your library',
+            });
+            refetch();
+          } catch (error) {
+            console.error('Save error:', error);
+            toast({
+              title: 'Save failed',
+              description: 'Could not save edited image',
+              variant: 'destructive',
+            });
+          }
+          setEditingImage(null);
+        }}
+      />
     </AdminLayout>
   );
 }
