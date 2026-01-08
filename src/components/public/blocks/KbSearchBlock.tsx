@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { useKbSlug } from '@/hooks/useKbSlug';
 
 interface KbSearchBlockData {
   title?: string;
@@ -21,7 +22,6 @@ interface KbSearchBlockProps {
 export function KbSearchBlock({ data }: KbSearchBlockProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
-  const location = useLocation();
   
   const {
     title,
@@ -33,8 +33,7 @@ export function KbSearchBlock({ data }: KbSearchBlockProps) {
     kbPageSlug,
   } = data;
 
-  // Use configured slug, or derive from current URL
-  const kbSlug = kbPageSlug || location.pathname.split('/')[1] || 'help';
+  const kbSlug = useKbSlug(kbPageSlug);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
