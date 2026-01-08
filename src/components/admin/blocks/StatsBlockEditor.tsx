@@ -16,7 +16,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { StatsBlockData } from '@/types/cms';
+import { StatsBlockData, StatsAnimationStyle } from '@/types/cms';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
@@ -207,26 +207,50 @@ export function StatsBlockEditor({ data, onChange, canEdit }: StatsBlockEditorPr
         </div>
         
         {data.animated !== false && (
-          <div className="space-y-2">
-            <Label className="text-sm">Animation speed</Label>
-            <div className="grid grid-cols-3 gap-2">
-              {[
-                { value: 1000, label: 'Fast' },
-                { value: 2000, label: 'Normal' },
-                { value: 3000, label: 'Slow' },
-              ].map(({ value, label }) => (
-                <Button
-                  key={value}
-                  type="button"
-                  variant={(data.animationDuration || 2000) === value ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => onChange({ ...data, animationDuration: value })}
-                >
-                  {label}
-                </Button>
-              ))}
+          <>
+            <div className="space-y-2">
+              <Label className="text-sm">Animation style</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { value: 'count-up', label: 'Count Up' },
+                  { value: 'fade-in', label: 'Fade In' },
+                  { value: 'slide-up', label: 'Slide Up' },
+                  { value: 'typewriter', label: 'Typewriter' },
+                ].map(({ value, label }) => (
+                  <Button
+                    key={value}
+                    type="button"
+                    variant={(data.animationStyle || 'count-up') === value ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => onChange({ ...data, animationStyle: value as StatsAnimationStyle })}
+                  >
+                    {label}
+                  </Button>
+                ))}
+              </div>
             </div>
-          </div>
+            
+            <div className="space-y-2">
+              <Label className="text-sm">Animation speed</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { value: 1000, label: 'Fast' },
+                  { value: 2000, label: 'Normal' },
+                  { value: 3000, label: 'Slow' },
+                ].map(({ value, label }) => (
+                  <Button
+                    key={value}
+                    type="button"
+                    variant={(data.animationDuration || 2000) === value ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => onChange({ ...data, animationDuration: value })}
+                  >
+                    {label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </>
         )}
       </div>
     </div>

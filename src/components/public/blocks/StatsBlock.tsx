@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { StatsBlockData } from '@/types/cms';
+import { useState, useEffect, useRef } from 'react';
+import { StatsBlockData, StatsAnimationStyle } from '@/types/cms';
 import { icons, LucideIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface StatsBlockProps {
   data: StatsBlockData;
@@ -37,8 +38,8 @@ function formatNumber(num: number, originalValue: string): string {
   return Math.round(num).toString();
 }
 
-// Animated counter component
-function AnimatedStat({ 
+// Count-up animation component
+function CountUpStat({ 
   value, 
   isVisible, 
   duration = 2000 
@@ -104,12 +105,109 @@ function AnimatedStat({
   return <>{displayValue}</>;
 }
 
+// Typewriter animation component
+function TypewriterStat({ 
+  value, 
+  isVisible, 
+  duration = 2000 
+}: { 
+  value: string; 
+  isVisible: boolean;
+  duration: number;
+}) {
+  const [displayValue, setDisplayValue] = useState('');
+  const hasAnimatedRef = useRef(false);
+  
+  useEffect(() => {
+    if (hasAnimatedRef.current || !isVisible) {
+      if (!isVisible) setDisplayValue('');
+      return;
+    }
+    
+    const chars = value.split('');
+    const charDelay = duration / chars.length;
+    let currentIndex = 0;
+    
+    const interval = setInterval(() => {
+      currentIndex++;
+      setDisplayValue(value.slice(0, currentIndex));
+      
+      if (currentIndex >= chars.length) {
+        clearInterval(interval);
+        hasAnimatedRef.current = true;
+      }
+    }, charDelay);
+    
+    return () => clearInterval(interval);
+  }, [isVisible, value, duration]);
+  
+  return <>{displayValue || '\u00A0'}</>;
+}
+
+// Animated stat wrapper for fade-in and slide-up
+function AnimatedStatWrapper({ 
+  children, 
+  isVisible, 
+  style,
+  duration,
+  delay = 0
+}: { 
+  children: React.ReactNode;
+  isVisible: boolean;
+  style: StatsAnimationStyle;
+  duration: number;
+  delay?: number;
+}) {
+  const [hasAnimated, setHasAnimated] = useState(false);
+  
+  useEffect(() => {
+    if (isVisible && !hasAnimated) {
+      const timer = setTimeout(() => setHasAnimated(true), delay);
+      return () => clearTimeout(timer);
+    }
+  }, [isVisible, hasAnimated, delay]);
+  
+  const shouldShow = hasAnimated || !isVisible;
+  const durationMs = duration;
+  
+  if (style === 'fade-in') {
+    return (
+      <span
+        className={cn(
+          'inline-block transition-opacity',
+          shouldShow ? 'opacity-100' : 'opacity-0'
+        )}
+        style={{ transitionDuration: `${durationMs}ms` }}
+      >
+        {children}
+      </span>
+    );
+  }
+  
+  if (style === 'slide-up') {
+    return (
+      <span
+        className={cn(
+          'inline-block transition-all',
+          shouldShow ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+        )}
+        style={{ transitionDuration: `${durationMs}ms` }}
+      >
+        {children}
+      </span>
+    );
+  }
+  
+  return <>{children}</>;
+}
+
 export function StatsBlock({ data }: StatsBlockProps) {
   const stats = data.stats || [];
   const [isVisible, setIsVisible] = useState(false);
   const containerRef = useRef<HTMLElement>(null);
   const animated = data.animated !== false; // Default to true
   const duration = data.animationDuration || 2000;
+  const animationStyle: StatsAnimationStyle = data.animationStyle || 'count-up';
 
   // Intersection Observer to trigger animation when visible
   useEffect(() => {
@@ -148,6 +246,45 @@ export function StatsBlock({ data }: StatsBlockProps) {
     4: 'grid-cols-2 sm:grid-cols-4',
   }[Math.min(stats.length, 4) as 1 | 2 | 3 | 4];
 
+  const renderStatValue = (value: string, index: number) => {
+    if (!animated) return value;
+    
+    const delay = index * 150; // Stagger animations
+    
+    switch (animationStyle) {
+      case 'count-up':
+        return (
+          <CountUpStat 
+            value={value} 
+            isVisible={isVisible}
+            duration={duration}
+          />
+        );
+      case 'typewriter':
+        return (
+          <TypewriterStat 
+            value={value} 
+            isVisible={isVisible}
+            duration={duration}
+          />
+        );
+      case 'fade-in':
+      case 'slide-up':
+        return (
+          <AnimatedStatWrapper
+            isVisible={isVisible}
+            style={animationStyle}
+            duration={duration}
+            delay={delay}
+          >
+            {value}
+          </AnimatedStatWrapper>
+        );
+      default:
+        return value;
+    }
+  };
+
   return (
     <section ref={containerRef} className="py-12 md:py-20 bg-primary/5">
       <div className="container mx-auto px-4">
@@ -162,9 +299,6 @@ export function StatsBlock({ data }: StatsBlockProps) {
             <div
               key={index}
               className="text-center p-6 bg-background rounded-xl shadow-sm"
-              style={{
-                animationDelay: animated ? `${index * 100}ms` : undefined,
-              }}
             >
               {stat.icon && (
                 <div className="flex justify-center mb-4 text-primary">
@@ -172,15 +306,7 @@ export function StatsBlock({ data }: StatsBlockProps) {
                 </div>
               )}
               <div className="text-4xl md:text-5xl font-bold text-primary mb-2">
-                {animated ? (
-                  <AnimatedStat 
-                    value={stat.value} 
-                    isVisible={isVisible}
-                    duration={duration}
-                  />
-                ) : (
-                  stat.value
-                )}
+                {renderStatValue(stat.value, index)}
               </div>
               <div className="text-muted-foreground font-medium">
                 {stat.label}
