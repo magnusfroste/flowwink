@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -6,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent } from '@/components/ui/card';
-import { Plus, Trash2, GripVertical, ExternalLink } from 'lucide-react';
+import { Plus, Trash2, GripVertical, ExternalLink, Zap } from 'lucide-react';
 import { IconPicker } from '../IconPicker';
 import { FeaturesBlockData, FeatureItem } from '@/types/cms';
 import {
@@ -30,6 +29,7 @@ import { CSS } from '@dnd-kit/utilities';
 interface FeaturesBlockEditorProps {
   data: FeaturesBlockData;
   onChange: (data: FeaturesBlockData) => void;
+  isEditing?: boolean;
 }
 
 function SortableFeatureItem({
@@ -127,9 +127,31 @@ function SortableFeatureItem({
   );
 }
 
-export function FeaturesBlockEditor({ data, onChange }: FeaturesBlockEditorProps) {
+export function FeaturesBlockEditor({ data, onChange, isEditing }: FeaturesBlockEditorProps) {
   const features = data.features || [];
   const showLinks = data.showLinks ?? true;
+
+  // Preview mode
+  if (!isEditing) {
+    return (
+      <div className="p-6 text-center border-2 border-dashed rounded-lg bg-muted/30">
+        <Zap className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+        <h3 className="font-medium text-lg">{data.title || "Features"}</h3>
+        <p className="text-sm text-muted-foreground mt-1">
+          {features.length} feature{features.length !== 1 ? 's' : ''} • {data.columns || 3} columns • {data.layout || 'grid'}
+        </p>
+        {features.length > 0 && (
+          <div className="mt-4 grid grid-cols-3 gap-2 max-w-xs mx-auto">
+            {features.slice(0, 3).map((f) => (
+              <div key={f.id} className="p-2 rounded bg-background border text-xs truncate">
+                {f.title || 'Feature'}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   const sensors = useSensors(
     useSensor(PointerSensor),

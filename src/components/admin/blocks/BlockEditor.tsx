@@ -634,6 +634,7 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
           <ChatBlockEditor
             data={block.data as unknown as ChatBlockData}
             onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+            isEditing={isEditing}
           />
         );
       case 'map':
@@ -657,6 +658,7 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
           <NewsletterBlockEditor
             data={block.data as unknown as NewsletterBlockData}
             onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+            isEditing={isEditing}
           />
         );
       case 'popup':
@@ -720,6 +722,7 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
           <FeaturesBlockEditor
             data={block.data as unknown as FeaturesBlockData}
             onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+            isEditing={isEditing}
           />
         );
       case 'timeline':
@@ -727,6 +730,7 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
           <TimelineBlockEditor
             data={block.data as Record<string, unknown>}
             onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+            isEditing={isEditing}
           />
         );
       case 'products':
@@ -750,6 +754,7 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
           <KbFeaturedBlockEditor
             data={block.data as unknown as KbFeaturedBlockData}
             onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+            isEditing={isEditing}
           />
         );
       case 'kb-hub':
@@ -757,6 +762,7 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
           <KbHubBlockEditor
             data={block.data as unknown as KbHubBlockData}
             onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+            isEditing={isEditing}
           />
         );
       case 'kb-search':
@@ -764,6 +770,7 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
           <KbSearchBlockEditor
             data={block.data as Record<string, unknown>}
             onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+            isEditing={isEditing}
           />
         );
       case 'kb-accordion':
@@ -771,6 +778,7 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
           <KbAccordionBlockEditor
             data={block.data as unknown as KbAccordionBlockData}
             onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+            isEditing={isEditing}
           />
         );
       case 'announcement-bar':

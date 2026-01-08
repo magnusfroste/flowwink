@@ -2,6 +2,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Search } from 'lucide-react';
 
 interface KbSearchBlockData {
   title?: string;
@@ -15,9 +16,32 @@ interface KbSearchBlockData {
 interface KbSearchBlockEditorProps {
   data: KbSearchBlockData;
   onChange: (data: KbSearchBlockData) => void;
+  isEditing?: boolean;
 }
 
-export function KbSearchBlockEditor({ data, onChange }: KbSearchBlockEditorProps) {
+export function KbSearchBlockEditor({ data, onChange, isEditing }: KbSearchBlockEditorProps) {
+  // Preview mode
+  if (!isEditing) {
+    return (
+      <div className="p-6 text-center border-2 border-dashed rounded-lg bg-muted/30">
+        <Search className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+        <h3 className="font-medium text-lg">{data.title || "Knowledge Base Search"}</h3>
+        <p className="text-sm text-muted-foreground mt-1">
+          {data.variant || 'default'} style
+          {data.showButton !== false && ' • with button'}
+        </p>
+        <div className="mt-4 max-w-sm mx-auto flex gap-2">
+          <div className="h-10 flex-1 rounded-md border bg-background" />
+          {data.showButton !== false && (
+            <div className="h-10 px-4 rounded-md bg-primary text-primary-foreground text-sm flex items-center">
+              {data.buttonText || 'Search'}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   const updateField = <K extends keyof KbSearchBlockData>(
     field: K,
     value: KbSearchBlockData[K]

@@ -4,13 +4,34 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { MessageSquare } from 'lucide-react';
 
 interface ChatBlockEditorProps {
   data: ChatBlockData;
   onChange: (data: ChatBlockData) => void;
+  isEditing?: boolean;
 }
 
-export function ChatBlockEditor({ data, onChange }: ChatBlockEditorProps) {
+export function ChatBlockEditor({ data, onChange, isEditing }: ChatBlockEditorProps) {
+  // Preview mode
+  if (!isEditing) {
+    return (
+      <div className="p-6 text-center border-2 border-dashed rounded-lg bg-muted/30">
+        <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+        <h3 className="font-medium text-lg">{data.title || "AI Chat Assistant"}</h3>
+        <p className="text-sm text-muted-foreground mt-1">
+          {data.variant === 'card' ? 'Card style' : 'Embedded'} • {data.height || 'md'} height
+          {data.showSidebar && ' • With history'}
+        </p>
+        <div className="mt-4 max-w-sm mx-auto">
+          <div className="h-24 rounded-lg border bg-background flex items-center justify-center text-muted-foreground text-sm">
+            Chat interface preview
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <div className="space-y-2">

@@ -3,7 +3,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, GripVertical } from "lucide-react";
+import { Plus, Trash2, GripVertical, GitBranch } from "lucide-react";
 import { IconPicker } from "../IconPicker";
 
 interface TimelineStep {
@@ -25,11 +25,39 @@ interface TimelineBlockData {
 interface TimelineBlockEditorProps {
   data: Partial<TimelineBlockData>;
   onChange: (data: TimelineBlockData) => void;
+  isEditing?: boolean;
 }
 
-export function TimelineBlockEditor({ data, onChange }: TimelineBlockEditorProps) {
+export function TimelineBlockEditor({ data, onChange, isEditing }: TimelineBlockEditorProps) {
   const steps = data.steps || [];
   const variant = data.variant || 'vertical';
+
+  // Preview mode
+  if (!isEditing) {
+    return (
+      <div className="p-6 text-center border-2 border-dashed rounded-lg bg-muted/30">
+        <GitBranch className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+        <h3 className="font-medium text-lg">{data.title || "Timeline"}</h3>
+        <p className="text-sm text-muted-foreground mt-1">
+          {steps.length} step{steps.length !== 1 ? 's' : ''} • {variant} layout
+        </p>
+        {steps.length > 0 && (
+          <div className="mt-4 flex justify-center gap-2">
+            {steps.slice(0, 4).map((step, i) => (
+              <div key={step.id} className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium">
+                {i + 1}
+              </div>
+            ))}
+            {steps.length > 4 && (
+              <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-xs">
+                +{steps.length - 4}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   const addStep = () => {
     const newStep: TimelineStep = {
