@@ -270,16 +270,16 @@ export default function BookingAvailabilityPage() {
               <div className="space-y-2">
                 <Label>Service (optional)</Label>
                 <Select
-                  value={availabilityForm.service_id}
+                  value={availabilityForm.service_id || 'all'}
                   onValueChange={(v) =>
-                    setAvailabilityForm({ ...availabilityForm, service_id: v })
+                    setAvailabilityForm({ ...availabilityForm, service_id: v === 'all' ? '' : v })
                   }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="All services" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All services</SelectItem>
+                    <SelectItem value="all">All services</SelectItem>
                     {services.map((service) => (
                       <SelectItem key={service.id} value={service.id}>
                         {service.name}
