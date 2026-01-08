@@ -146,6 +146,20 @@ export function KbHubBlockEditor({ data, onChange, isEditing }: KbHubBlockEditor
         </div>
       </div>
 
+      {/* KB Page Slug */}
+      <div className="space-y-2">
+        <Label htmlFor="kb-hub-page-slug">KB Page Slug</Label>
+        <Input
+          id="kb-hub-page-slug"
+          value={data.kbPageSlug || ''}
+          onChange={(e) => onChange({ ...data, kbPageSlug: e.target.value })}
+          placeholder="help"
+        />
+        <p className="text-xs text-muted-foreground">
+          The slug of the KB page for article links (e.g., "help" → /help/article-slug)
+        </p>
+      </div>
+
       {/* Contact CTA Section */}
       <div className="space-y-4">
         <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Kontakt CTA</h4>
