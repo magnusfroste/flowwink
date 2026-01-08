@@ -678,6 +678,77 @@ const launchpadPages: TemplatePage[] = [
       },
     ],
   },
+  {
+    title: 'Help Center',
+    slug: 'help',
+    menu_order: 5,
+    showInMenu: false,
+    meta: {
+      description: 'Get answers to frequently asked questions about LaunchPad',
+      showTitle: true,
+      titleAlignment: 'center',
+    },
+    blocks: [
+      {
+        id: 'hero-help',
+        type: 'hero',
+        data: {
+          title: 'How Can We Help?',
+          subtitle: 'Find answers to common questions or reach out to our support team.',
+          backgroundType: 'color',
+          heightMode: 'auto',
+          contentAlignment: 'center',
+        },
+      },
+      {
+        id: 'accordion-getting-started',
+        type: 'accordion',
+        data: {
+          title: 'Getting Started',
+          items: [
+            { question: 'How do I create an account?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Click "Get Started Free" on our homepage. Enter your email and create a password. You\'ll receive a confirmation email to verify your account.' }] }] } },
+            { question: 'What\'s included in the free tier?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'The free tier includes 1 project, 1,000 API calls per month, community support, and basic analytics. No credit card required.' }] }] } },
+            { question: 'How do I invite team members?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Go to Settings → Team → Invite Members. Enter their email addresses and select their role (viewer, editor, or admin).' }] }] } },
+          ],
+        },
+      },
+      {
+        id: 'accordion-billing',
+        type: 'accordion',
+        data: {
+          title: 'Billing & Subscriptions',
+          items: [
+            { question: 'What payment methods do you accept?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'We accept all major credit cards (Visa, Mastercard, American Express), PayPal, and bank transfers for annual plans.' }] }] } },
+            { question: 'Can I cancel my subscription anytime?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Yes, you can cancel at any time. Your access continues until the end of your billing period. No hidden fees or cancellation charges.' }] }] } },
+            { question: 'Do you offer refunds?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'We offer a 14-day money-back guarantee. If you\'re not satisfied, contact support within 14 days of purchase for a full refund.' }] }] } },
+          ],
+        },
+      },
+      {
+        id: 'accordion-technical',
+        type: 'accordion',
+        data: {
+          title: 'Technical Questions',
+          items: [
+            { question: 'What are the API rate limits?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Free: 1,000 calls/month. Pro: 100,000 calls/month. Team: Unlimited. Rate limits reset on the 1st of each month.' }] }] } },
+            { question: 'Do you offer an uptime SLA?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Yes, we guarantee 99.9% uptime for Pro and Team plans. Check our status page at status.launchpad.io for real-time updates.' }] }] } },
+            { question: 'How do I integrate with my existing tools?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'We offer 50+ pre-built integrations. Go to Settings → Integrations to connect Slack, GitHub, Jira, and more. Custom webhooks are also available.' }] }] } },
+          ],
+        },
+      },
+      {
+        id: 'cta-help',
+        type: 'cta',
+        data: {
+          title: 'Still Need Help?',
+          subtitle: 'Our support team is available 24/7 to assist you.',
+          buttonText: 'Contact Support',
+          buttonUrl: '/contact',
+          gradient: false,
+        },
+      },
+    ],
+  },
 ];
 
 // =====================================================
