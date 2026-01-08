@@ -198,7 +198,7 @@ export default function BlogPostPage() {
           {/* Author bio */}
           {blogSettings?.showAuthorBio && post.author && (
             <div className="mb-12">
-              <h3 className="text-lg font-semibold mb-4">Om författaren</h3>
+              <h3 className="text-lg font-semibold mb-4">About the author</h3>
               <AuthorCard author={post.author} />
             </div>
           )}
@@ -206,7 +206,7 @@ export default function BlogPostPage() {
           {/* Related posts */}
           {relatedPosts.length > 0 && (
             <div>
-              <h3 className="text-lg font-semibold mb-4">Relaterade inlägg</h3>
+              <h3 className="text-lg font-semibold mb-4">Related posts</h3>
               <div className="grid gap-4 md:grid-cols-2">
                 {relatedPosts.map((relatedPost) => (
                   <BlogPostCard

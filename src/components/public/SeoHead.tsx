@@ -227,7 +227,7 @@ export function SeoHead({
   const { data: scriptsSettings } = useCustomScriptsSettings();
   const { data: aeoSettings } = useAeoSettings();
 
-  const siteTitle = seoSettings?.siteTitle || 'Webbplats';
+  const siteTitle = seoSettings?.siteTitle || 'Website';
   const titleTemplate = seoSettings?.titleTemplate || '%s';
   const finalTitle = title 
     ? titleTemplate.replace('%s', title)

@@ -112,16 +112,16 @@ export default function PublicPage() {
   if (maintenanceSettings?.enabled && !user) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <SeoHead title={maintenanceSettings.title || 'Underhåll'} noIndex />
+        <SeoHead title={maintenanceSettings.title || 'Maintenance'} noIndex />
         <div className="text-center max-w-md px-6">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-6">
             <Wrench className="h-8 w-8 text-muted-foreground" />
           </div>
           <h1 className="font-serif text-3xl font-bold mb-4">
-            {maintenanceSettings.title || 'Webbplatsen är under underhåll'}
+            {maintenanceSettings.title || 'Website is under maintenance'}
           </h1>
           <p className="text-muted-foreground mb-4">
-            {maintenanceSettings.message || 'Vi genomför planerat underhåll just nu. Webbplatsen kommer att vara tillgänglig igen inom kort.'}
+            {maintenanceSettings.message || 'We are performing scheduled maintenance. The website will be available again shortly.'}
           </p>
           {maintenanceSettings.expectedEndTime && (
             <p className="text-sm text-muted-foreground mb-8">
@@ -129,7 +129,7 @@ export default function PublicPage() {
             </p>
           )}
           <Button variant="outline" onClick={() => navigate('/auth')} size="sm">
-            Logga in (administratörer)
+            Sign in (administrators)
           </Button>
         </div>
       </div>
@@ -140,17 +140,17 @@ export default function PublicPage() {
   if (seoSettings?.developmentMode && seoSettings?.requireAuthInDevMode && !user) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <SeoHead title="Under utveckling" noIndex />
+        <SeoHead title="Under Development" noIndex />
         <div className="text-center max-w-md px-6">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-6">
             <Lock className="h-8 w-8 text-muted-foreground" />
           </div>
-          <h1 className="font-serif text-3xl font-bold mb-4">Webbplatsen är under utveckling</h1>
+          <h1 className="font-serif text-3xl font-bold mb-4">Website is under development</h1>
           <p className="text-muted-foreground mb-8">
-            Den här webbplatsen är för närvarande under utveckling och endast tillgänglig för inloggade användare.
+            This website is currently under development and only available to logged-in users.
           </p>
           <Button onClick={() => navigate('/auth')} size="lg">
-            Logga in
+            Sign in
           </Button>
         </div>
       </div>
@@ -160,13 +160,13 @@ export default function PublicPage() {
   if (error || !page) {
     return (
       <div className="min-h-screen bg-background">
-        <SeoHead title="Sidan hittades inte" noIndex />
+        <SeoHead title="Page not found" noIndex />
         <PublicNavigation />
         <div className="flex items-center justify-center py-32">
           <div className="text-center">
             <h1 className="font-serif text-4xl font-bold mb-4">404</h1>
-            <p className="text-muted-foreground mb-6">Sidan kunde inte hittas</p>
-            <a href="/" className="text-primary hover:underline">Tillbaka till startsidan</a>
+            <p className="text-muted-foreground mb-6">Page could not be found</p>
+            <a href="/" className="text-primary hover:underline">Back to homepage</a>
           </div>
         </div>
       </div>

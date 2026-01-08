@@ -116,7 +116,7 @@ export default function TemplateGalleryPage() {
                 Template Gallery
               </h1>
               <p className="text-muted-foreground">
-                Välj en professionellt designad template för att komma igång snabbt
+                Choose a professionally designed template to get started quickly
               </p>
             </div>
           </div>
@@ -136,7 +136,7 @@ export default function TemplateGalleryPage() {
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Sök templates..."
+                    placeholder="Search templates..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-9"

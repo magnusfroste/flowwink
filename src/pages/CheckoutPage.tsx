@@ -112,38 +112,38 @@ export default function CheckoutPage() {
           className="mb-6"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Tillbaka
+          Back
         </Button>
 
         <div className="grid gap-8 md:grid-cols-2">
           {/* Customer Form */}
           <Card>
             <CardHeader>
-              <CardTitle>Dina uppgifter</CardTitle>
+              <CardTitle>Your Details</CardTitle>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleCheckout} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Namn *</Label>
+                  <Label htmlFor="name">Name *</Label>
                   <Input
                     id="name"
                     name="name"
                     value={formData.name}
                     onChange={handleInputChange}
-                    placeholder="Ditt namn"
+                    placeholder="Your name"
                     required
                     disabled={isLoading}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">E-post *</Label>
+                  <Label htmlFor="email">Email *</Label>
                   <Input
                     id="email"
                     name="email"
                     type="email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    placeholder="din@epost.se"
+                    placeholder="your@email.com"
                     required
                     disabled={isLoading}
                   />

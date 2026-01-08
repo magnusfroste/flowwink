@@ -43,60 +43,60 @@ interface Step {
 const MANUAL_STEPS: Step[] = [
   {
     id: 'create-page',
-    title: 'Skapa din första sida',
-    description: 'Börja från ett tomt dokument och bygg upp din sida block för block.',
+    title: 'Create your first page',
+    description: 'Start from a blank document and build your page block by block.',
     icon: FileText,
     action: {
-      label: 'Skapa ny sida',
+      label: 'Create new page',
       href: '/admin/pages/new',
     },
     tips: [
-      'Börja med ett Hero-block för att fånga besökarens uppmärksamhet',
-      'Använd Features-block för att visa dina tjänster',
-      'Avsluta med ett CTA-block för konvertering',
+      'Start with a Hero block to capture visitor attention',
+      'Use Features blocks to showcase your services',
+      'End with a CTA block for conversion',
     ],
   },
   {
     id: 'customize-branding',
-    title: 'Anpassa varumärke',
-    description: 'Lägg till din logotyp, färger och typsnitt för att göra sajten din egen.',
+    title: 'Customize branding',
+    description: 'Add your logo, colors, and fonts to make the site your own.',
     icon: Palette,
     action: {
-      label: 'Konfigurera branding',
+      label: 'Configure branding',
       href: '/admin/branding',
     },
     tips: [
-      'Ladda upp logotyp i både ljus och mörk variant',
-      'Använd "Analysera Brand" för att importera färger från din befintliga sajt',
-      'Förhandsgranska ändringar i realtid innan du sparar',
+      'Upload logo in both light and dark variants',
+      'Use "Analyze Brand" to import colors from your existing site',
+      'Preview changes in real-time before saving',
     ],
   },
   {
     id: 'configure-chat',
-    title: 'Konfigurera AI-chatt',
-    description: 'Aktivera den privata AI-assistenten med din kunskapsbas.',
+    title: 'Configure AI Chat',
+    description: 'Enable the private AI assistant with your knowledge base.',
     icon: MessageSquare,
     action: {
-      label: 'AI Chat-inställningar',
+      label: 'AI Chat settings',
       href: '/admin/chat',
     },
     tips: [
-      'Välj vilka publicerade sidor som blir del av AI:ns kunskapsbas',
-      'Anpassa välkomstmeddelanden och konversationsstartare',
+      'Choose which published pages become part of the AI knowledge base',
+      'Customize welcome messages and conversation starters',
     ],
   },
   {
     id: 'publish',
-    title: 'Förhandsgranska & Publicera',
-    description: 'Granska din sida i förhandsgranskningsläge och publicera sedan.',
+    title: 'Preview & Publish',
+    description: 'Review your page in preview mode and then publish.',
     icon: Globe,
     action: {
-      label: 'Visa sidor',
+      label: 'View pages',
       href: '/admin/pages',
     },
     tips: [
-      'Använd Preview för att se exakt hur besökare upplever din sida',
-      'Publicerade sidor indexeras automatiskt (om inte blockerade)',
+      'Use Preview to see exactly how visitors experience your page',
+      'Published pages are automatically indexed (unless blocked)',
     ],
   },
 ];
@@ -136,8 +136,8 @@ export default function QuickStartPage() {
   return (
     <AdminLayout>
       <AdminPageHeader
-        title="Kom igång"
-        description="Välj hur du vill börja bygga din sajt"
+        title="Quick Start"
+        description="Choose how you want to start building your site"
       />
 
       {/* Hero section with two paths */}
@@ -150,23 +150,23 @@ export default function QuickStartPage() {
               <div className="p-3 rounded-xl bg-primary/10">
                 <Sparkles className="h-6 w-6 text-primary" />
               </div>
-              <Badge variant="secondary" className="text-xs">Rekommenderat</Badge>
+              <Badge variant="secondary" className="text-xs">Recommended</Badge>
             </div>
-            <CardTitle className="text-xl">Starta från template</CardTitle>
+            <CardTitle className="text-xl">Start from template</CardTitle>
             <CardDescription className="text-base">
-              Välj ett professionellt designat startpaket med färdiga sidor, branding och AI-chatt-konfiguration.
+              Choose a professionally designed starter kit with ready-made pages, branding, and AI chat configuration.
             </CardDescription>
           </CardHeader>
           <CardContent className="relative">
             <div className="flex flex-wrap gap-2 mb-4">
               <Badge variant="outline">{STARTER_TEMPLATES.length} templates</Badge>
-              <Badge variant="outline">Flersidig</Badge>
-              <Badge variant="outline">AI-chatt inkluderad</Badge>
+              <Badge variant="outline">Multi-page</Badge>
+              <Badge variant="outline">AI chat included</Badge>
             </div>
             <Button asChild className="w-full group-hover:bg-primary/90">
               <Link to="/admin/templates">
                 <LayoutTemplate className="h-4 w-4 mr-2" />
-                Bläddra templates
+                Browse templates
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Link>
             </Button>
@@ -181,21 +181,21 @@ export default function QuickStartPage() {
                 <Wrench className="h-6 w-6 text-muted-foreground" />
               </div>
             </div>
-            <CardTitle className="text-xl">Bygg från grunden</CardTitle>
+            <CardTitle className="text-xl">Build from scratch</CardTitle>
             <CardDescription className="text-base">
-              Skapa sidor manuellt, steg för steg. Full kontroll över varje block och inställning.
+              Create pages manually, step by step. Full control over every block and setting.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2 mb-4">
-              <Badge variant="outline">Full kontroll</Badge>
-              <Badge variant="outline">Block-för-block</Badge>
-              <Badge variant="outline">Steg-guide</Badge>
+              <Badge variant="outline">Full control</Badge>
+              <Badge variant="outline">Block-by-block</Badge>
+              <Badge variant="outline">Step guide</Badge>
             </div>
             <Button variant="outline" asChild className="w-full">
               <Link to="/admin/pages/new">
                 <FileText className="h-4 w-4 mr-2" />
-                Skapa tom sida
+                Create blank page
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Link>
             </Button>
@@ -212,7 +212,7 @@ export default function QuickStartPage() {
           </TabsTrigger>
           <TabsTrigger value="manual" className="gap-2">
             <Wrench className="h-4 w-4" />
-            Manuell setup
+            Manual setup
           </TabsTrigger>
         </TabsList>
 
@@ -242,7 +242,7 @@ export default function QuickStartPage() {
                               {template.name}
                             </p>
                             <Badge variant="secondary" className="text-xs">
-                              {pageCount} sidor
+                              {pageCount} pages
                             </Badge>
                           </div>
                           <p className="text-xs text-muted-foreground line-clamp-2">
@@ -262,7 +262,7 @@ export default function QuickStartPage() {
             <div className="text-center">
               <Button variant="outline" asChild>
                 <Link to="/admin/templates">
-                  Visa alla {STARTER_TEMPLATES.length} templates
+                  View all {STARTER_TEMPLATES.length} templates
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Link>
               </Button>

@@ -92,11 +92,11 @@ export default function BlogCategoryPage() {
             <div className="flex-1">
               {isLoading ? (
                 <div className="text-center py-12 text-muted-foreground">
-                  Laddar inlägg...
+                  Loading posts...
                 </div>
               ) : posts.length === 0 ? (
                 <div className="text-center py-12">
-                  <p className="text-muted-foreground">Inga inlägg i denna kategori ännu.</p>
+                  <p className="text-muted-foreground">No posts in this category yet.</p>
                 </div>
               ) : (
                 <>

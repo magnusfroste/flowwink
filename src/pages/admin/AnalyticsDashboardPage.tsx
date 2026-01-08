@@ -260,24 +260,24 @@ export default function AnalyticsDashboardPage() {
         {/* Content & Page Views Stats */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <SummaryCard
-            title="Publicerade sidor"
+            title="Published Pages"
             value={summary?.publishedPages || 0}
             icon={FileText}
             isLoading={summaryLoading}
           />
           {blogEnabled && (
             <SummaryCard
-              title="Publicerade inlägg"
+              title="Published Posts"
               value={summary?.publishedPosts || 0}
               icon={BookOpen}
               isLoading={summaryLoading}
             />
           )}
           <SummaryCard
-            title="Sidvisningar"
+            title="Page Views"
             value={summary?.totalPageViews || 0}
             icon={Eye}
-            description={`${summary?.uniqueVisitors || 0} unika besökare`}
+            description={`${summary?.uniqueVisitors || 0} unique visitors`}
             isLoading={summaryLoading}
           />
         </div>
@@ -289,9 +289,9 @@ export default function AnalyticsDashboardPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <TrendingUp className="h-5 w-5" />
-                Sidvisningar (30 dagar)
+                Page Views (30 days)
               </CardTitle>
-              <CardDescription>Daglig trafik och unika besökare</CardDescription>
+              <CardDescription>Daily traffic and unique visitors</CardDescription>
             </CardHeader>
             <CardContent>
               {pageViewsTimeSeriesLoading ? (
@@ -319,7 +319,7 @@ export default function AnalyticsDashboardPage() {
                     <Area
                       type="monotone"
                       dataKey="views"
-                      name="Visningar"
+                      name="Views"
                       stroke="hsl(var(--chart-3))"
                       fillOpacity={1}
                       fill="url(#colorViews)"
@@ -327,7 +327,7 @@ export default function AnalyticsDashboardPage() {
                     <Area
                       type="monotone"
                       dataKey="unique_visitors"
-                      name="Unika besökare"
+                      name="Unique Visitors"
                       stroke="hsl(var(--chart-4))"
                       fillOpacity={0.5}
                       fill="hsl(var(--chart-4))"
@@ -338,8 +338,8 @@ export default function AnalyticsDashboardPage() {
                 <div className="h-[250px] flex items-center justify-center text-muted-foreground">
                   <div className="text-center">
                     <Eye className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p>Ingen trafikdata ännu</p>
-                    <p className="text-xs mt-1">Sidvisningar registreras när besökare ser dina publicerade sidor</p>
+                    <p>No traffic data yet</p>
+                    <p className="text-xs mt-1">Page views are recorded when visitors view your published pages</p>
                   </div>
                 </div>
               )}
@@ -351,9 +351,9 @@ export default function AnalyticsDashboardPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Eye className="h-5 w-5" />
-                Populäraste sidor
+                Most Popular Pages
               </CardTitle>
-              <CardDescription>Topp 10 mest besökta sidor</CardDescription>
+              <CardDescription>Top 10 most visited pages</CardDescription>
             </CardHeader>
             <CardContent>
               {topPagesLoading ? (
@@ -371,7 +371,7 @@ export default function AnalyticsDashboardPage() {
                       </div>
                       <div className="text-right">
                         <p className="text-sm font-medium">{page.views.toLocaleString()}</p>
-                        <p className="text-xs text-muted-foreground">{page.unique_visitors} unika</p>
+                        <p className="text-xs text-muted-foreground">{page.unique_visitors} unique</p>
                       </div>
                     </div>
                   ))}
@@ -380,7 +380,7 @@ export default function AnalyticsDashboardPage() {
                 <div className="h-[250px] flex items-center justify-center text-muted-foreground">
                   <div className="text-center">
                     <Eye className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p>Inga sidvisningar ännu</p>
+                    <p>No page views yet</p>
                   </div>
                 </div>
               )}

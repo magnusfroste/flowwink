@@ -104,7 +104,7 @@ export default function CompanyDetailPage() {
 
   const handleEnrich = async () => {
     if (!company?.domain) {
-      toast.error('Ingen domän angiven för detta företag');
+      toast.error('No domain specified for this company');
       return;
     }
     
@@ -131,13 +131,13 @@ export default function CompanyDetailPage() {
             : company.notes,
           enriched_at: new Date().toISOString(),
         });
-        toast.success('Företagsinformation uppdaterad');
+        toast.success('Company information updated');
       } else {
-        toast.error('Kunde inte hämta företagsinformation');
+        toast.error('Could not fetch company information');
       }
     } catch (error) {
       console.error('Enrichment failed:', error);
-      toast.error('Kunde inte hämta företagsinformation');
+      toast.error('Could not fetch company information');
     } finally {
       setIsEnriching(false);
     }
@@ -159,9 +159,9 @@ export default function CompanyDetailPage() {
       <AdminLayout>
         <div className="text-center py-12">
           <Building2 className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-          <p className="text-muted-foreground">Företaget hittades inte</p>
+          <p className="text-muted-foreground">Company not found</p>
           <Button variant="outline" className="mt-4" asChild>
-            <Link to="/admin/companies">Tillbaka till företag</Link>
+            <Link to="/admin/companies">Back to companies</Link>
           </Button>
         </div>
       </AdminLayout>
@@ -191,11 +191,11 @@ export default function CompanyDetailPage() {
               <>
                 <Button variant="outline" onClick={() => setIsEditing(false)}>
                   <X className="h-4 w-4 mr-2" />
-                  Avbryt
+                  Cancel
                 </Button>
                 <Button onClick={handleSave} disabled={updateCompany.isPending}>
                   <Save className="h-4 w-4 mr-2" />
-                  Spara
+                  Save
                 </Button>
               </>
             ) : (
@@ -204,37 +204,37 @@ export default function CompanyDetailPage() {
                   variant="outline" 
                   onClick={handleEnrich}
                   disabled={isEnriching || !company.domain}
-                  title={!company.domain ? 'Lägg till en domän för att kunna berika' : undefined}
+                  title={!company.domain ? 'Add a domain to enable enrichment' : undefined}
                 >
                   {isEnriching ? (
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   ) : (
                     <Sparkles className="h-4 w-4 mr-2" />
                   )}
-                  Berika
+                  Enrich
                 </Button>
                 <Button variant="outline" onClick={handleEdit}>
                   <Pencil className="h-4 w-4 mr-2" />
-                  Redigera
+                  Edit
                 </Button>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="destructive">Ta bort</Button>
+                    <Button variant="destructive">Delete</Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Ta bort företag?</AlertDialogTitle>
+                      <AlertDialogTitle>Delete company?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Detta kommer ta bort företaget permanent. Kontakter kopplade till företaget behålls men förlorar sin koppling.
+                        This will permanently delete the company. Contacts linked to the company will be kept but will lose their association.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel>Avbryt</AlertDialogCancel>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
                       <AlertDialogAction
                         onClick={handleDelete}
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       >
-                        Ta bort
+                        Delete
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
@@ -250,21 +250,21 @@ export default function CompanyDetailPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Building2 className="h-5 w-5" />
-                Företagsinformation
+                Company Information
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {isEditing ? (
                 <>
                   <div className="space-y-2">
-                    <Label>Namn</Label>
+                    <Label>Name</Label>
                     <Input
                       value={editForm.name}
                       onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Domän</Label>
+                    <Label>Domain</Label>
                     <Input
                       value={editForm.domain}
                       onChange={(e) => setEditForm({ ...editForm, domain: e.target.value })}
@@ -272,14 +272,14 @@ export default function CompanyDetailPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Bransch</Label>
+                    <Label>Industry</Label>
                     <Input
                       value={editForm.industry}
                       onChange={(e) => setEditForm({ ...editForm, industry: e.target.value })}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Storlek</Label>
+                    <Label>Size</Label>
                     <Input
                       value={editForm.size}
                       onChange={(e) => setEditForm({ ...editForm, size: e.target.value })}
@@ -287,7 +287,7 @@ export default function CompanyDetailPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Webbplats</Label>
+                    <Label>Website</Label>
                     <Input
                       value={editForm.website}
                       onChange={(e) => setEditForm({ ...editForm, website: e.target.value })}
@@ -295,14 +295,14 @@ export default function CompanyDetailPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Telefon</Label>
+                    <Label>Phone</Label>
                     <Input
                       value={editForm.phone}
                       onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Adress</Label>
+                    <Label>Address</Label>
                     <Textarea
                       value={editForm.address}
                       onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
@@ -310,7 +310,7 @@ export default function CompanyDetailPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Anteckningar</Label>
+                    <Label>Notes</Label>
                     <Textarea
                       value={editForm.notes}
                       onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
