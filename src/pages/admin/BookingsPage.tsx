@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek, isToday, isSameMonth } from 'date-fns';
-import { sv } from 'date-fns/locale';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Clock, User, Mail, Phone, Filter, LayoutGrid, List, Check, X, MoreHorizontal, Settings, CalendarClock } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
@@ -19,10 +18,10 @@ import { cn } from '@/lib/utils';
 import { CreateBookingDialog } from '@/components/admin/booking/CreateBookingDialog';
 
 const STATUS_LABELS: Record<string, string> = {
-  pending: 'Väntande',
-  confirmed: 'Bekräftad',
-  cancelled: 'Avbokad',
-  completed: 'Genomförd',
+  pending: 'Pending',
+  confirmed: 'Confirmed',
+  cancelled: 'Cancelled',
+  completed: 'Completed',
 };
 
 const STATUS_COLORS: Record<string, string> = {
@@ -84,7 +83,7 @@ export default function BookingsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Är du säker på att du vill radera denna bokning?')) {
+    if (confirm('Are you sure you want to delete this booking?')) {
       await deleteBooking.mutateAsync(id);
       setSelectedBooking(null);
     }
@@ -93,20 +92,20 @@ export default function BookingsPage() {
   return (
     <AdminLayout>
       <AdminPageHeader
-        title="Bokningar"
-        description="Hantera bokningar och se kalenderöversikt"
+        title="Bookings"
+        description="Manage bookings and view calendar overview"
       >
         <div className="flex items-center gap-2">
           <Button variant="outline" asChild>
             <Link to="/admin/bookings/services">
               <Settings className="h-4 w-4 mr-2" />
-              Tjänster
+              Services
             </Link>
           </Button>
           <Button variant="outline" asChild>
             <Link to="/admin/bookings/availability">
               <CalendarClock className="h-4 w-4 mr-2" />
-              Tillgänglighet
+              Availability
             </Link>
           </Button>
         </div>
@@ -116,7 +115,7 @@ export default function BookingsPage() {
       <div className="grid gap-4 md:grid-cols-4 mb-6">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Denna månad</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">This Month</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats?.total || 0}</div>
@@ -124,7 +123,7 @@ export default function BookingsPage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Kommande</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Upcoming</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">{stats?.upcoming || 0}</div>
@@ -132,7 +131,7 @@ export default function BookingsPage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Väntande</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Pending</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-yellow-600">{stats?.pending || 0}</div>
@@ -140,7 +139,7 @@ export default function BookingsPage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Avbokade</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Cancelled</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">{stats?.cancelled || 0}</div>
@@ -159,7 +158,7 @@ export default function BookingsPage() {
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <h2 className="text-lg font-semibold min-w-[160px] text-center">
-            {format(currentMonth, 'MMMM yyyy', { locale: sv })}
+            {format(currentMonth, 'MMMM yyyy')}
           </h2>
           <Button
             variant="outline"
@@ -169,7 +168,7 @@ export default function BookingsPage() {
             <ChevronRight className="h-4 w-4" />
           </Button>
           <Button variant="outline" size="sm" onClick={() => setCurrentMonth(new Date())}>
-            Idag
+            Today
           </Button>
         </div>
 
@@ -180,11 +179,11 @@ export default function BookingsPage() {
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Alla</SelectItem>
-              <SelectItem value="pending">Väntande</SelectItem>
-              <SelectItem value="confirmed">Bekräftade</SelectItem>
-              <SelectItem value="cancelled">Avbokade</SelectItem>
-              <SelectItem value="completed">Genomförda</SelectItem>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="confirmed">Confirmed</SelectItem>
+              <SelectItem value="cancelled">Cancelled</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
             </SelectContent>
           </Select>
 
@@ -207,7 +206,7 @@ export default function BookingsPage() {
 
           <Button onClick={() => setCreateDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
-            Ny bokning
+            New Booking
           </Button>
         </div>
       </div>
@@ -223,7 +222,7 @@ export default function BookingsPage() {
           <CardContent className="p-4">
             {/* Weekday headers */}
             <div className="grid grid-cols-7 mb-2">
-              {['Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör', 'Sön'].map((day) => (
+              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
                 <div key={day} className="text-center text-sm font-medium text-muted-foreground py-2">
                   {day}
                 </div>
@@ -272,7 +271,7 @@ export default function BookingsPage() {
                       ))}
                       {dayBookings.length > 2 && (
                         <div className="text-xs text-muted-foreground">
-                          +{dayBookings.length - 2} fler
+                          +{dayBookings.length - 2} more
                         </div>
                       )}
                     </div>
@@ -287,7 +286,7 @@ export default function BookingsPage() {
           <CardContent className="p-0">
             {filteredBookings.length === 0 ? (
               <div className="p-8 text-center text-muted-foreground">
-                Inga bokningar att visa
+                No bookings to display
               </div>
             ) : (
               <div className="divide-y">
@@ -311,7 +310,7 @@ export default function BookingsPage() {
                       <div className="text-sm text-muted-foreground flex items-center gap-4 mt-1">
                         <span className="flex items-center gap-1">
                           <CalendarIcon className="h-3 w-3" />
-                          {format(new Date(booking.start_time), 'PPP', { locale: sv })}
+                          {format(new Date(booking.start_time), 'PPP')}
                         </span>
                         <span className="flex items-center gap-1">
                           <Clock className="h-3 w-3" />
@@ -331,17 +330,17 @@ export default function BookingsPage() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => handleStatusChange(booking, 'confirmed')}>
                           <Check className="h-4 w-4 mr-2" />
-                          Bekräfta
+                          Confirm
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleStatusChange(booking, 'completed')}>
-                          Markera genomförd
+                          Mark Completed
                         </DropdownMenuItem>
                         <DropdownMenuItem 
                           onClick={() => handleStatusChange(booking, 'cancelled')}
                           className="text-destructive"
                         >
                           <X className="h-4 w-4 mr-2" />
-                          Avboka
+                          Cancel
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -358,12 +357,12 @@ export default function BookingsPage() {
         <Card className="mt-4">
           <CardHeader>
             <CardTitle className="text-lg">
-              {format(selectedDate, 'EEEE d MMMM', { locale: sv })}
+              {format(selectedDate, 'EEEE, MMMM d')}
             </CardTitle>
           </CardHeader>
           <CardContent>
             {getBookingsForDate(selectedDate).length === 0 ? (
-              <p className="text-muted-foreground">Inga bokningar denna dag</p>
+              <p className="text-muted-foreground">No bookings on this day</p>
             ) : (
               <div className="space-y-3">
                 {getBookingsForDate(selectedDate).map((booking) => (
@@ -416,13 +415,13 @@ export default function BookingsPage() {
       <Dialog open={!!selectedBooking} onOpenChange={() => setSelectedBooking(null)}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Bokningsdetaljer</DialogTitle>
+            <DialogTitle>Booking Details</DialogTitle>
           </DialogHeader>
           {selectedBooking && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-muted-foreground">Kund</Label>
+                  <Label className="text-muted-foreground">Customer</Label>
                   <p className="font-medium">{selectedBooking.customer_name}</p>
                 </div>
                 <div>
@@ -435,48 +434,48 @@ export default function BookingsPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="pending">Väntande</SelectItem>
-                      <SelectItem value="confirmed">Bekräftad</SelectItem>
-                      <SelectItem value="completed">Genomförd</SelectItem>
-                      <SelectItem value="cancelled">Avbokad</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="confirmed">Confirmed</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground">E-post</Label>
+                  <Label className="text-muted-foreground">Email</Label>
                   <p>{selectedBooking.customer_email}</p>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground">Telefon</Label>
+                  <Label className="text-muted-foreground">Phone</Label>
                   <p>{selectedBooking.customer_phone || '-'}</p>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground">Datum</Label>
-                  <p>{format(new Date(selectedBooking.start_time), 'PPP', { locale: sv })}</p>
+                  <Label className="text-muted-foreground">Date</Label>
+                  <p>{format(new Date(selectedBooking.start_time), 'PPP')}</p>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground">Tid</Label>
+                  <Label className="text-muted-foreground">Time</Label>
                   <p>
                     {format(new Date(selectedBooking.start_time), 'HH:mm')} - {format(new Date(selectedBooking.end_time), 'HH:mm')}
                   </p>
                 </div>
                 {selectedBooking.service && (
                   <div className="col-span-2">
-                    <Label className="text-muted-foreground">Tjänst</Label>
+                    <Label className="text-muted-foreground">Service</Label>
                     <p>{selectedBooking.service.name}</p>
                   </div>
                 )}
               </div>
               {selectedBooking.notes && (
                 <div>
-                  <Label className="text-muted-foreground">Kundens anteckning</Label>
+                  <Label className="text-muted-foreground">Customer Notes</Label>
                   <p className="text-sm">{selectedBooking.notes}</p>
                 </div>
               )}
               <div>
-                <Label className="text-muted-foreground">Interna anteckningar</Label>
+                <Label className="text-muted-foreground">Internal Notes</Label>
                 <Textarea
-                  placeholder="Lägg till interna anteckningar..."
+                  placeholder="Add internal notes..."
                   defaultValue={selectedBooking.internal_notes || ''}
                   onBlur={(e) => {
                     if (e.target.value !== selectedBooking.internal_notes) {
@@ -495,7 +494,7 @@ export default function BookingsPage() {
               variant="destructive"
               onClick={() => selectedBooking && handleDelete(selectedBooking.id)}
             >
-              Radera
+              Delete
             </Button>
           </DialogFooter>
         </DialogContent>

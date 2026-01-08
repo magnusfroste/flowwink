@@ -523,8 +523,8 @@ export interface BookingBlockData {
   // Content
   title?: string;
   description?: string;
-  // Mode
-  mode: 'embed' | 'form';
+  // Mode: embed = external calendar, form = simple form, smart = real-time availability
+  mode: 'embed' | 'form' | 'smart';
   // Embed settings
   provider?: BookingProvider;
   embedUrl?: string;
@@ -534,7 +534,7 @@ export interface BookingBlockData {
   successMessage?: string;
   showPhoneField?: boolean;
   showDatePicker?: boolean;
-  // Service selection
+  // Service selection (for form mode only - smart mode uses database)
   services?: BookingService[];
   showServiceSelector?: boolean;
   // Webhook integration

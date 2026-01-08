@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { sv } from 'date-fns/locale';
 import { CalendarIcon } from 'lucide-react';
 import { useCreateBooking, type BookingService } from '@/hooks/useBookings';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -89,11 +88,11 @@ export function CreateBookingDialog({ open, onOpenChange, services, initialDate 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Ny bokning</DialogTitle>
+          <DialogTitle>New Booking</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="customer_name">Namn *</Label>
+            <Label htmlFor="customer_name">Name *</Label>
             <Input
               id="customer_name"
               value={formData.customer_name}
@@ -103,7 +102,7 @@ export function CreateBookingDialog({ open, onOpenChange, services, initialDate 
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="customer_email">E-post *</Label>
+            <Label htmlFor="customer_email">Email *</Label>
             <Input
               id="customer_email"
               type="email"
@@ -114,7 +113,7 @@ export function CreateBookingDialog({ open, onOpenChange, services, initialDate 
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="customer_phone">Telefon</Label>
+            <Label htmlFor="customer_phone">Phone</Label>
             <Input
               id="customer_phone"
               type="tel"
@@ -125,13 +124,13 @@ export function CreateBookingDialog({ open, onOpenChange, services, initialDate 
 
           {services.length > 0 && (
             <div className="space-y-2">
-              <Label>Tjänst</Label>
+              <Label>Service</Label>
               <Select
                 value={formData.service_id}
                 onValueChange={(v) => setFormData({ ...formData, service_id: v })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Välj tjänst" />
+                  <SelectValue placeholder="Select service" />
                 </SelectTrigger>
                 <SelectContent>
                   {services.filter((s) => s.is_active).map((service) => (
@@ -146,7 +145,7 @@ export function CreateBookingDialog({ open, onOpenChange, services, initialDate 
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Datum *</Label>
+              <Label>Date *</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -157,7 +156,7 @@ export function CreateBookingDialog({ open, onOpenChange, services, initialDate 
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.date ? format(formData.date, 'PPP', { locale: sv }) : 'Välj datum'}
+                    {formData.date ? format(formData.date, 'PPP') : 'Select date'}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -173,7 +172,7 @@ export function CreateBookingDialog({ open, onOpenChange, services, initialDate 
             </div>
 
             <div className="space-y-2">
-              <Label>Starttid *</Label>
+              <Label>Start Time *</Label>
               <Select
                 value={formData.start_time}
                 onValueChange={(v) => setFormData({ ...formData, start_time: v })}
@@ -194,26 +193,26 @@ export function CreateBookingDialog({ open, onOpenChange, services, initialDate 
 
           {selectedService && (
             <p className="text-sm text-muted-foreground">
-              Sluttid: {calculateEndTime(formData.start_time, duration)} ({duration} minuter)
+              End time: {calculateEndTime(formData.start_time, duration)} ({duration} minutes)
             </p>
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="notes">Anteckningar</Label>
+            <Label htmlFor="notes">Notes</Label>
             <Textarea
               id="notes"
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              placeholder="Valfria anteckningar..."
+              placeholder="Optional notes..."
             />
           </div>
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Avbryt
+              Cancel
             </Button>
             <Button type="submit" disabled={createBooking.isPending}>
-              {createBooking.isPending ? 'Skapar...' : 'Skapa bokning'}
+              {createBooking.isPending ? 'Creating...' : 'Create Booking'}
             </Button>
           </DialogFooter>
         </form>

@@ -81,13 +81,13 @@ export default function BookingServicesPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Är du säker på att du vill radera denna tjänst?')) {
+    if (confirm('Are you sure you want to delete this service?')) {
       await deleteService.mutateAsync(id);
     }
   };
 
   const formatPrice = (cents: number, currency: string) => {
-    return new Intl.NumberFormat('sv-SE', {
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency,
       minimumFractionDigits: 0,
@@ -97,12 +97,12 @@ export default function BookingServicesPage() {
   return (
     <AdminLayout>
       <AdminPageHeader
-        title="Tjänster"
-        description="Hantera bokningsbara tjänster"
+        title="Services"
+        description="Manage bookable services"
       >
         <Button onClick={openCreateDialog}>
           <Plus className="h-4 w-4 mr-2" />
-          Ny tjänst
+          New Service
         </Button>
       </AdminPageHeader>
 
@@ -115,10 +115,10 @@ export default function BookingServicesPage() {
       ) : services?.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground mb-4">Inga tjänster skapade ännu</p>
+            <p className="text-muted-foreground mb-4">No services created yet</p>
             <Button onClick={openCreateDialog}>
               <Plus className="h-4 w-4 mr-2" />
-              Skapa din första tjänst
+              Create your first service
             </Button>
           </CardContent>
         </Card>
@@ -141,7 +141,7 @@ export default function BookingServicesPage() {
                     <div className="flex items-center gap-2">
                       <h3 className="font-medium">{service.name}</h3>
                       {!service.is_active && (
-                        <Badge variant="secondary">Inaktiv</Badge>
+                        <Badge variant="secondary">Inactive</Badge>
                       )}
                     </div>
                     {service.description && (
@@ -192,12 +192,12 @@ export default function BookingServicesPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {editingService ? 'Redigera tjänst' : 'Ny tjänst'}
+              {editingService ? 'Edit Service' : 'New Service'}
             </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Namn *</Label>
+              <Label htmlFor="name">Name *</Label>
               <Input
                 id="name"
                 value={formData.name}
@@ -207,7 +207,7 @@ export default function BookingServicesPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Beskrivning</Label>
+              <Label htmlFor="description">Description</Label>
               <Textarea
                 id="description"
                 value={formData.description}
@@ -217,7 +217,7 @@ export default function BookingServicesPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="duration">Längd (minuter) *</Label>
+                <Label htmlFor="duration">Duration (minutes) *</Label>
                 <Input
                   id="duration"
                   type="number"
@@ -232,7 +232,7 @@ export default function BookingServicesPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="price">Pris (kr)</Label>
+                <Label htmlFor="price">Price</Label>
                 <Input
                   id="price"
                   type="number"
@@ -246,7 +246,7 @@ export default function BookingServicesPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="color">Färg</Label>
+              <Label htmlFor="color">Color</Label>
               <div className="flex items-center gap-2">
                 <input
                   type="color"
@@ -264,7 +264,7 @@ export default function BookingServicesPage() {
             </div>
 
             <div className="flex items-center justify-between">
-              <Label htmlFor="is_active">Aktiv</Label>
+              <Label htmlFor="is_active">Active</Label>
               <Switch
                 id="is_active"
                 checked={formData.is_active}
@@ -274,13 +274,13 @@ export default function BookingServicesPage() {
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                Avbryt
+                Cancel
               </Button>
               <Button
                 type="submit"
                 disabled={createService.isPending || updateService.isPending}
               >
-                {editingService ? 'Spara' : 'Skapa'}
+                {editingService ? 'Save' : 'Create'}
               </Button>
             </DialogFooter>
           </form>

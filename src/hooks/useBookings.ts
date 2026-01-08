@@ -76,6 +76,21 @@ export function useBookingServices() {
   });
 }
 
+export function useActiveBookingServices() {
+  return useQuery({
+    queryKey: ['booking-services', 'active'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('booking_services')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
+      if (error) throw error;
+      return data as BookingService[];
+    },
+  });
+}
+
 export function useCreateService() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -92,10 +107,10 @@ export function useCreateService() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['booking-services'] });
-      toast({ title: 'Tjänst skapad' });
+      toast({ title: 'Service created' });
     },
     onError: (error) => {
-      toast({ title: 'Kunde inte skapa tjänst', variant: 'destructive' });
+      toast({ title: 'Could not create service', variant: 'destructive' });
       console.error(error);
     },
   });
@@ -118,10 +133,10 @@ export function useUpdateService() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['booking-services'] });
-      toast({ title: 'Tjänst uppdaterad' });
+      toast({ title: 'Service updated' });
     },
     onError: (error) => {
-      toast({ title: 'Kunde inte uppdatera tjänst', variant: 'destructive' });
+      toast({ title: 'Could not update service', variant: 'destructive' });
       console.error(error);
     },
   });
@@ -138,10 +153,10 @@ export function useDeleteService() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['booking-services'] });
-      toast({ title: 'Tjänst raderad' });
+      toast({ title: 'Service deleted' });
     },
     onError: (error) => {
-      toast({ title: 'Kunde inte radera tjänst', variant: 'destructive' });
+      toast({ title: 'Could not delete service', variant: 'destructive' });
       console.error(error);
     },
   });
@@ -179,10 +194,10 @@ export function useCreateAvailability() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['booking-availability'] });
-      toast({ title: 'Tillgänglighet tillagd' });
+      toast({ title: 'Availability added' });
     },
     onError: (error) => {
-      toast({ title: 'Kunde inte lägga till tillgänglighet', variant: 'destructive' });
+      toast({ title: 'Could not add availability', variant: 'destructive' });
       console.error(error);
     },
   });
@@ -205,10 +220,10 @@ export function useUpdateAvailability() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['booking-availability'] });
-      toast({ title: 'Tillgänglighet uppdaterad' });
+      toast({ title: 'Availability updated' });
     },
     onError: (error) => {
-      toast({ title: 'Kunde inte uppdatera tillgänglighet', variant: 'destructive' });
+      toast({ title: 'Could not update availability', variant: 'destructive' });
       console.error(error);
     },
   });
@@ -225,10 +240,10 @@ export function useDeleteAvailability() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['booking-availability'] });
-      toast({ title: 'Tillgänglighet raderad' });
+      toast({ title: 'Availability deleted' });
     },
     onError: (error) => {
-      toast({ title: 'Kunde inte radera tillgänglighet', variant: 'destructive' });
+      toast({ title: 'Could not delete availability', variant: 'destructive' });
       console.error(error);
     },
   });
@@ -299,10 +314,10 @@ export function useCreateBooking() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bookings'] });
-      toast({ title: 'Bokning skapad' });
+      toast({ title: 'Booking created' });
     },
     onError: (error) => {
-      toast({ title: 'Kunde inte skapa bokning', variant: 'destructive' });
+      toast({ title: 'Could not create booking', variant: 'destructive' });
       console.error(error);
     },
   });
@@ -329,10 +344,10 @@ export function useUpdateBooking() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bookings'] });
-      toast({ title: 'Bokning uppdaterad' });
+      toast({ title: 'Booking updated' });
     },
     onError: (error) => {
-      toast({ title: 'Kunde inte uppdatera bokning', variant: 'destructive' });
+      toast({ title: 'Could not update booking', variant: 'destructive' });
       console.error(error);
     },
   });
@@ -349,10 +364,10 @@ export function useDeleteBooking() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bookings'] });
-      toast({ title: 'Bokning raderad' });
+      toast({ title: 'Booking deleted' });
     },
     onError: (error) => {
-      toast({ title: 'Kunde inte radera bokning', variant: 'destructive' });
+      toast({ title: 'Could not delete booking', variant: 'destructive' });
       console.error(error);
     },
   });
@@ -389,10 +404,10 @@ export function useCreateBlockedDate() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['blocked-dates'] });
-      toast({ title: 'Blockerat datum tillagt' });
+      toast({ title: 'Blocked date added' });
     },
     onError: (error) => {
-      toast({ title: 'Kunde inte lägga till blockerat datum', variant: 'destructive' });
+      toast({ title: 'Could not add blocked date', variant: 'destructive' });
       console.error(error);
     },
   });
@@ -409,10 +424,10 @@ export function useDeleteBlockedDate() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['blocked-dates'] });
-      toast({ title: 'Blockerat datum borttaget' });
+      toast({ title: 'Blocked date removed' });
     },
     onError: (error) => {
-      toast({ title: 'Kunde inte ta bort blockerat datum', variant: 'destructive' });
+      toast({ title: 'Could not remove blocked date', variant: 'destructive' });
       console.error(error);
     },
   });
@@ -447,6 +462,122 @@ export function useBookingStats() {
       };
 
       return stats;
+    },
+  });
+}
+
+// Available slots for smart booking
+export interface TimeSlot {
+  time: string;
+  available: boolean;
+}
+
+export function useAvailableSlots(date: Date | null, serviceId: string | null) {
+  return useQuery({
+    queryKey: ['available-slots', date?.toDateString(), serviceId],
+    enabled: !!date,
+    queryFn: async () => {
+      if (!date) return [];
+
+      const dayOfWeek = date.getDay();
+      const dateStr = date.toISOString().split('T')[0];
+
+      // Get availability for this day
+      let availabilityQuery = supabase
+        .from('booking_availability')
+        .select('*')
+        .eq('day_of_week', dayOfWeek)
+        .eq('is_active', true);
+
+      // If service specific, filter by service or null (all services)
+      if (serviceId) {
+        availabilityQuery = availabilityQuery.or(`service_id.eq.${serviceId},service_id.is.null`);
+      }
+
+      const { data: availability, error: availError } = await availabilityQuery;
+      if (availError) throw availError;
+
+      // Check if date is blocked
+      const { data: blocked } = await supabase
+        .from('booking_blocked_dates')
+        .select('*')
+        .eq('date', dateStr);
+
+      if (blocked && blocked.length > 0) {
+        // Date is fully blocked
+        return [];
+      }
+
+      // Get existing bookings for this date
+      const startOfDay = new Date(date);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(date);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      const { data: bookings, error: bookingsError } = await supabase
+        .from('bookings')
+        .select('start_time, end_time, service_id')
+        .gte('start_time', startOfDay.toISOString())
+        .lte('start_time', endOfDay.toISOString())
+        .neq('status', 'cancelled');
+
+      if (bookingsError) throw bookingsError;
+
+      // Get service duration
+      let duration = 60; // default
+      if (serviceId) {
+        const { data: service } = await supabase
+          .from('booking_services')
+          .select('duration_minutes')
+          .eq('id', serviceId)
+          .single();
+        if (service) duration = service.duration_minutes;
+      }
+
+      // Generate slots based on availability
+      const slots: TimeSlot[] = [];
+
+      for (const slot of availability || []) {
+        const [startHour, startMin] = slot.start_time.split(':').map(Number);
+        const [endHour, endMin] = slot.end_time.split(':').map(Number);
+        const startMinutes = startHour * 60 + startMin;
+        const endMinutes = endHour * 60 + endMin;
+
+        // Generate 30-min slots within this availability window
+        for (let time = startMinutes; time + duration <= endMinutes; time += 30) {
+          const slotHour = Math.floor(time / 60);
+          const slotMin = time % 60;
+          const slotTime = `${slotHour.toString().padStart(2, '0')}:${slotMin.toString().padStart(2, '0')}`;
+
+          // Check if this slot conflicts with existing bookings
+          const slotStart = new Date(date);
+          slotStart.setHours(slotHour, slotMin, 0, 0);
+          const slotEnd = new Date(slotStart.getTime() + duration * 60 * 1000);
+
+          const hasConflict = bookings?.some((booking) => {
+            const bookingStart = new Date(booking.start_time);
+            const bookingEnd = new Date(booking.end_time);
+            // Check overlap
+            return slotStart < bookingEnd && slotEnd > bookingStart;
+          });
+
+          // Only add if not already in list and not in the past
+          const now = new Date();
+          const isInPast = slotStart < now;
+
+          if (!slots.some((s) => s.time === slotTime)) {
+            slots.push({
+              time: slotTime,
+              available: !hasConflict && !isInPast,
+            });
+          }
+        }
+      }
+
+      // Sort by time
+      slots.sort((a, b) => a.time.localeCompare(b.time));
+
+      return slots;
     },
   });
 }
