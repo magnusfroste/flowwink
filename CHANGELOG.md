@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-01-09
+
 ### Added
 - **Smart Booking Block**: Native booking system with services, availability calendar, and time slots
 - **Booking Management**: Admin pages for services, availability, and booking overview
@@ -17,10 +19,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Folder tabs for filtering
 - **Knowledge Base Improvements**: KB page slug field with autocomplete
 - **Additional Blocks**: 20+ new blocks (Announcement Bar, Tabs, Marquee, Embed, Table, Countdown, Progress, Badge, Social Proof, Notification Toast, Floating CTA, Products, Cart, KB Featured, KB Hub, KB Search, KB Accordion)
+- **Template Improvements**: Enhanced starter templates with Badge, Floating CTA, Social Proof, Tabs, Marquee, and Progress blocks
+- **Competitor Comparison**: Comprehensive documentation comparing Pezcms with Webflow, Squarespace, and Weebly
+- **Docker Deployment**: Full Easypanel/Docker support with Build Arguments for Vite environment variables
 
 ### Changed
 - Enhanced gallery block with improved lightbox functionality
 - Improved numeric parsing safety across forms
+- Updated block count to 46 across all documentation
+- Dockerfile now supports VITE_ build arguments for proper environment variable handling
+
+### Fixed
+- Health check in Dockerfile now uses curl and /health endpoint
+- Nginx logging properly outputs to stdout/stderr for container environments
 
 ## [1.0.0-beta.1] - 2024-12-28
 

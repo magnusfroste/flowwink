@@ -128,8 +128,10 @@ WHERE user_id = (
    - **Environment Variables**:
      ```
      VITE_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
-     VITE_SUPABASE_ANON_KEY=your-anon-key-here
+     VITE_SUPABASE_PUBLISHABLE_KEY=your-publishable-key-here
      ```
+   > **Note**: Easypanel automatically passes environment variables as Docker build arguments.
+   > The Dockerfile is configured to accept `VITE_*` variables via `ARG` directives.
 5. Click **Deploy**
 
 Easypanel will:
