@@ -3170,6 +3170,45 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
               stickyHeader: true,
             },
           },
+          // FEATURES - Compliance & Security
+          {
+            id: 'features-compliance',
+            type: 'features',
+            data: {
+              title: 'Built for Scale & Compliance',
+              subtitle: 'Whether you\'re a startup preparing for growth or an enterprise with strict requirements, FlowWink has you covered.',
+              features: [
+                {
+                  id: 'comp-gdpr',
+                  icon: 'Shield',
+                  title: 'GDPR Compliance',
+                  description: 'Not a plugin or afterthought. Privacy by design with complete audit trails.',
+                },
+                {
+                  id: 'comp-wcag',
+                  icon: 'Eye',
+                  title: 'WCAG 2.1 AA',
+                  description: 'Accessibility built into every theme and component. Real compliance, not just claims.',
+                },
+                {
+                  id: 'comp-security',
+                  icon: 'Lock',
+                  title: 'Data Security',
+                  description: 'Your data stays secure. Self-host option means sensitive information never leaves your control.',
+                },
+                {
+                  id: 'comp-audit',
+                  icon: 'FileSearch',
+                  title: 'Full Audit Trail',
+                  description: 'Every change tracked. Who did what, when. Perfect for compliance audits.',
+                },
+              ],
+              columns: 4,
+              layout: 'grid',
+              variant: 'minimal',
+              iconStyle: 'circle',
+            },
+          },
           // PRICING - Deployment options
           {
             id: 'pricing-main',
