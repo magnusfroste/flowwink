@@ -3,6 +3,7 @@
 **Flow into Content Creation** — The modern CMS that makes content creation effortless.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Docker Image](https://img.shields.io/badge/Docker-ghcr.io-blue)](https://github.com/magnusfroste/flowwink/pkgs/container/flowwink)
 
 ## What is FlowWink?
 
@@ -131,19 +132,31 @@ A complete SQL schema is available at **[supabase/schema.sql](supabase/schema.sq
 
 ## Deployment Options
 
-### Option 1: Remix on Lovable (Easiest)
+### Option 1: Docker (Recommended for Self-Hosting)
 
-The fastest way to get started — remix the project on Lovable and get AI features included:
+Deploy with Docker on any platform for complete control and easy upgrades:
 
-[![Remix on Lovable](https://img.shields.io/badge/Remix%20on-Lovable-ff69b4)](https://lovable.dev/projects/fac5f9b2-2dc8-4cce-be0a-4266a826f893)
+```bash
+# Pull the latest image
+docker pull ghcr.io/magnusfroste/flowwink:latest
+
+# Or use docker-compose (see docs/DEPLOYMENT.md)
+docker-compose up -d
+```
 
 **What you get:**
-- ✅ One-click deployment
-- ✅ Lovable AI Gateway included (Gemini-powered AI chat)
-- ✅ Managed Supabase backend
-- ✅ Automatic updates
+- ✅ Easy upgrades (`docker pull` for new versions)
+- ✅ Works with Supabase Cloud OR Self-Hosted Supabase
+- ✅ Deploy on Easypanel, Railway, Fly.io, or any VPS
+- ✅ Your data, your infrastructure
 
-### Option 2: Static Hosting (Simple Self-Hosting)
+**Platforms:**
+- **Easypanel** — One-click Docker deployment with auto-HTTPS ([Guide](docs/DEPLOYMENT.md))
+- **Railway** — Git-based deployment with automatic builds
+- **Fly.io** — Global edge deployment
+- **VPS** — Any server with Docker (Hetzner, DigitalOcean, etc.)
+
+### Option 2: Static Hosting (Alternative)
 
 Deploy on static hosting platforms with your own Supabase backend:
 
@@ -155,26 +168,17 @@ Deploy on static hosting platforms with your own Supabase backend:
 
 See **[docs/SETUP.md](docs/SETUP.md)** for complete self-hosting instructions.
 
-### Option 3: Docker Deployment (100% Self-Hosted)
+### Option 3: Development/Testing with Lovable
 
-Deploy with Docker on any platform for complete control:
+For development and testing only (not recommended for production):
 
-| Platform | Description |
-|----------|-------------|
-| **Easypanel** | One-click Docker deployment with auto-HTTPS |
-| **Railway** | Git-based deployment with automatic builds |
-| **Fly.io** | Global edge deployment |
-| **VPS** | Any server with Docker (Hetzner, DigitalOcean, etc.) |
+[![Remix on Lovable](https://img.shields.io/badge/Remix%20on-Lovable-ff69b4)](https://lovable.dev/projects/fac5f9b2-2dc8-4cce-be0a-4266a826f893)
 
-**What you get:**
-- ✅ 100% self-hosted (no vendor lock-in)
-- ✅ Works with Supabase Cloud OR Self-Hosted Supabase
-- ✅ Docker image for consistent deployments
-- ✅ Optional Cloudflare CDN for global performance
+**Note:** Remixing creates a fork that won't receive upstream updates. Use Docker deployment for production to maintain upgradeability.
 
-See **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** for complete Docker deployment guide.
+See **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** for complete deployment guides.
 
-**Note:** When self-hosting, AI features require configuring a Private LLM endpoint in the CMS admin panel. The Lovable AI Gateway is only available when using Lovable Cloud.
+**AI Features:** When self-hosting, configure a Private LLM endpoint (OpenAI, Gemini, Ollama, LM Studio, or N8N) in the CMS admin panel.
 
 ## Documentation
 
