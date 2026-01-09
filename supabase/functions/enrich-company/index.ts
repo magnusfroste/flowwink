@@ -30,15 +30,26 @@ serve(async (req) => {
     }
 
     const firecrawlApiKey = Deno.env.get('FIRECRAWL_API_KEY');
-    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+    const openaiKey = Deno.env.get('OPENAI_API_KEY');
+    const geminiKey = Deno.env.get('GEMINI_API_KEY');
 
-    if (!firecrawlApiKey || !lovableApiKey) {
-      console.error('Missing API keys');
+    if (!firecrawlApiKey) {
+      console.error('Missing Firecrawl API key');
       return new Response(
-        JSON.stringify({ error: 'API keys not configured' }),
+        JSON.stringify({ error: 'FIRECRAWL_API_KEY not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    if (!openaiKey && !geminiKey) {
+      console.error('Missing AI API key');
+      return new Response(
+        JSON.stringify({ error: 'AI API key not configured. Add OPENAI_API_KEY or GEMINI_API_KEY to Supabase Secrets.' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const useGemini = !openaiKey && geminiKey;
 
     // Normalize domain to URL
     const url = domain.startsWith('http') ? domain : `https://${domain}`;
@@ -74,15 +85,54 @@ serve(async (req) => {
     console.log('Scraped content length:', pageContent.length);
     console.log('Metadata:', JSON.stringify(metadata));
 
-    // Use Lovable AI to extract structured company info
-    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${lovableApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+    // Use AI to extract structured company info
+    let aiResponse: Response;
+
+    if (useGemini) {
+      // Use Google Gemini API
+      const model = 'gemini-2.0-flash-exp';
+      const systemContent = `You are a company data extraction expert. Extract structured company information from website content.
+            
+Return a JSON object with these fields (use null if not found):
+- industry: The company's industry/sector (map to one of: Teknik, Finans, Hälsovård, Tillverkning, Detaljhandel, Konsulting, Utbildning, Media, Fastigheter, Transport, Övrigt)
+- size: Estimate company size based on content (use one of: 1-10, 11-50, 51-200, 201-500, 501-1000, 1000+)
+- phone: Company phone number
+- address: Company address or location
+- description: A brief 1-2 sentence description of what the company does
+
+Only return the JSON object, no other text.`;
+      
+      const userContent = `Extract company information from this website content:\n\nURL: ${url}\nTitle: ${metadata.title || 'Unknown'}\nDescription: ${metadata.description || 'None'}\n\nContent:\n${pageContent.substring(0, 8000)}`;
+
+      aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: 'user',
+              parts: [{ text: `${systemContent}\n\n${userContent}` }]
+            }
+          ],
+          generationConfig: {
+            temperature: 0.1,
+            maxOutputTokens: 2048,
+          }
+        }),
+      });
+    } else {
+      // Use OpenAI API
+      const model = 'gpt-4o-mini';
+      aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openaiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model,
         messages: [
           {
             role: 'system',
@@ -102,37 +152,10 @@ Only return the JSON object, no other text.`
             content: `Extract company information from this website content:\n\nURL: ${url}\nTitle: ${metadata.title || 'Unknown'}\nDescription: ${metadata.description || 'None'}\n\nContent:\n${pageContent.substring(0, 8000)}`
           }
         ],
-        tools: [
-          {
-            type: 'function',
-            function: {
-              name: 'extract_company_info',
-              description: 'Extract structured company information',
-              parameters: {
-                type: 'object',
-                properties: {
-                  industry: { 
-                    type: 'string', 
-                    enum: ['Teknik', 'Finans', 'Hälsovård', 'Tillverkning', 'Detaljhandel', 'Konsulting', 'Utbildning', 'Media', 'Fastigheter', 'Transport', 'Övrigt'],
-                    description: 'Company industry' 
-                  },
-                  size: { 
-                    type: 'string', 
-                    enum: ['1-10', '11-50', '51-200', '201-500', '501-1000', '1000+'],
-                    description: 'Estimated company size' 
-                  },
-                  phone: { type: 'string', description: 'Company phone number' },
-                  address: { type: 'string', description: 'Company address' },
-                  description: { type: 'string', description: 'Brief company description' }
-                },
-                required: []
-              }
-            }
-          }
-        ],
-        tool_choice: { type: 'function', function: { name: 'extract_company_info' } }
-      }),
-    });
+        response_format: { type: 'json_object' }
+        }),
+      });
+    }
 
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();
@@ -146,15 +169,24 @@ Only return the JSON object, no other text.`
     const aiData = await aiResponse.json();
     console.log('AI response:', JSON.stringify(aiData));
 
-    // Extract the tool call result
-    const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+    // Parse response based on provider
     let enrichment: EnrichmentResult = {};
-
-    if (toolCall?.function?.arguments) {
+    
+    if (useGemini) {
+      // Gemini response format
+      const aiContent = aiData.candidates?.[0]?.content?.parts?.[0]?.text || '';
       try {
-        enrichment = JSON.parse(toolCall.function.arguments);
+        enrichment = JSON.parse(aiContent);
       } catch (e) {
-        console.error('Failed to parse tool call arguments:', e);
+        console.error('Failed to parse Gemini response:', e);
+      }
+    } else {
+      // OpenAI response format with JSON mode
+      const aiContent = aiData.choices?.[0]?.message?.content || '';
+      try {
+        enrichment = JSON.parse(aiContent);
+      } catch (e) {
+        console.error('Failed to parse OpenAI response:', e);
       }
     }
 

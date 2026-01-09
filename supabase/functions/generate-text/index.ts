@@ -79,33 +79,65 @@ serve(async (req) => {
       );
     }
 
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      console.error('LOVABLE_API_KEY is not configured');
+    // Get AI provider from environment (defaults to OpenAI)
+    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+    const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
+    
+    const useGemini = !OPENAI_API_KEY && GEMINI_API_KEY;
+    
+    if (!OPENAI_API_KEY && !GEMINI_API_KEY) {
+      console.error('No AI API key configured');
       return new Response(
-        JSON.stringify({ error: 'AI service not configured' }),
+        JSON.stringify({ error: 'AI service not configured. Please add OPENAI_API_KEY or GEMINI_API_KEY to Supabase Secrets.' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     const systemPrompt = getSystemPrompt(action, context, targetLanguage, tone);
     
-    console.log(`Generating text with action: ${action}, input length: ${text.length}`);
+    console.log(`Generating text with action: ${action}, provider: ${useGemini ? 'gemini' : 'openai'}, input length: ${text.length}`);
 
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: text }
-        ],
-      }),
-    });
+    let response: Response;
+
+    if (useGemini) {
+      // Use Google Gemini API
+      const model = 'gemini-2.0-flash-exp';
+      response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: 'user',
+              parts: [{ text: `${systemPrompt}\n\n${text}` }]
+            }
+          ],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 2048,
+          }
+        }),
+      });
+    } else {
+      // Use OpenAI API
+      const model = 'gpt-4o-mini';
+      response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: text }
+          ],
+        }),
+      });
+    }
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -131,12 +163,21 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    const generatedText = data.choices?.[0]?.message?.content?.trim();
+    
+    // Parse response based on provider
+    let generatedText = '';
+    if (useGemini) {
+      // Gemini response format
+      generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    } else {
+      // OpenAI response format
+      generatedText = data.choices?.[0]?.message?.content || '';
+    }
 
     if (!generatedText) {
-      console.error('No content in AI response:', data);
+      console.error('No text generated from AI');
       return new Response(
-        JSON.stringify({ error: 'No text generated' }),
+        JSON.stringify({ error: 'Failed to generate text' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }

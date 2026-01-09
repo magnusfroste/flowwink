@@ -11,24 +11,30 @@ interface ChatMessage {
   content: string;
 }
 
+interface ChatSettings {
+  aiProvider: 'openai' | 'gemini' | 'local' | 'n8n';
+  openaiApiKey?: string;
+  openaiModel?: string;
+  openaiBaseUrl?: string;
+  geminiApiKey?: string;
+  geminiModel?: string;
+  localEndpoint?: string;
+  localModel?: string;
+  localApiKey?: string;
+  n8nWebhookUrl?: string;
+  n8nWebhookType?: 'chat' | 'generic';
+  systemPrompt?: string;
+  includeContentAsContext?: boolean;
+  contentContextMaxTokens?: number;
+  includedPageSlugs?: string[];
+  includeKbArticles?: boolean;
+}
+
 interface ChatRequest {
   messages: ChatMessage[];
   conversationId?: string;
   sessionId?: string;
-  settings?: {
-    aiProvider: 'lovable' | 'local' | 'n8n';
-    lovableModel?: string;
-    localEndpoint?: string;
-    localModel?: string;
-    localApiKey?: string;
-    n8nWebhookUrl?: string;
-    n8nWebhookType?: 'chat' | 'generic';
-    systemPrompt?: string;
-    includeContentAsContext?: boolean;
-    contentContextMaxTokens?: number;
-    includedPageSlugs?: string[];
-    includeKbArticles?: boolean;
-  };
+  settings?: ChatSettings;
 }
 
 // Extract text from Tiptap JSON content
@@ -265,7 +271,7 @@ serve(async (req) => {
       sessionId
     });
 
-    const aiProvider = settings?.aiProvider || 'lovable';
+    const aiProvider = settings?.aiProvider || 'openai';
     let systemPrompt = settings?.systemPrompt || 'Du är en hjälpsam AI-assistent.';
 
     // Add knowledge base if enabled
@@ -291,23 +297,65 @@ serve(async (req) => {
 
     let response: Response;
 
-    if (aiProvider === 'lovable') {
-      // Use Lovable AI Gateway
-      const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-      if (!LOVABLE_API_KEY) {
-        throw new Error('LOVABLE_API_KEY is not configured');
+    if (aiProvider === 'openai') {
+      // Use OpenAI API
+      const apiKey = settings?.openaiApiKey || Deno.env.get('OPENAI_API_KEY');
+      if (!apiKey) {
+        throw new Error('OpenAI API key is not configured');
       }
 
-      response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      const baseUrl = settings?.openaiBaseUrl || 'https://api.openai.com/v1';
+      const model = settings?.openaiModel || 'gpt-4o-mini';
+
+      response = await fetch(`${baseUrl}/chat/completions`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+          'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: settings?.lovableModel || 'google/gemini-2.5-flash',
+          model,
           messages: fullMessages,
           stream: true,
+        }),
+      });
+    } else if (aiProvider === 'gemini') {
+      // Use Google Gemini API
+      const apiKey = settings?.geminiApiKey || Deno.env.get('GEMINI_API_KEY');
+      if (!apiKey) {
+        throw new Error('Gemini API key is not configured');
+      }
+
+      const model = settings?.geminiModel || 'gemini-2.0-flash-exp';
+
+      // Convert messages to Gemini format
+      const geminiMessages = fullMessages
+        .filter(m => m.role !== 'system')
+        .map(m => ({
+          role: m.role === 'assistant' ? 'model' : 'user',
+          parts: [{ text: m.content }]
+        }));
+
+      // Add system prompt as first user message if exists
+      const systemMsg = fullMessages.find(m => m.role === 'system');
+      if (systemMsg) {
+        geminiMessages.unshift({
+          role: 'user',
+          parts: [{ text: `System instructions: ${systemMsg.content}` }]
+        });
+      }
+
+      response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: geminiMessages,
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 2048,
+          }
         }),
       });
     } else if (aiProvider === 'local') {

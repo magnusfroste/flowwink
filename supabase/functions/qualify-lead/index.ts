@@ -40,7 +40,9 @@ serve(async (req) => {
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+    const openaiKey = Deno.env.get('OPENAI_API_KEY');
+    const geminiKey = Deno.env.get('GEMINI_API_KEY');
+    const useGemini = !openaiKey && geminiKey;
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -87,7 +89,7 @@ serve(async (req) => {
     let needsReview = false;
     let confidence = 0;
 
-    if (lovableApiKey) {
+    if (openaiKey || geminiKey) {
       try {
         const prompt = `Du är en säljassistent som analyserar leads. Analysera denna lead och ge en kort sammanfattning samt rekommendation.
 
@@ -116,24 +118,58 @@ Svara ENDAST med JSON i detta format:
   "reasoning": "Kort förklaring av varför"
 }`;
 
-        const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${lovableApiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: 'google/gemini-2.5-flash',
-            messages: [
-              { role: 'user', content: prompt }
-            ],
-            max_tokens: 500,
-          }),
-        });
+        let response: Response;
+
+        if (useGemini) {
+          // Use Google Gemini API
+          const model = 'gemini-2.0-flash-exp';
+          response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              contents: [
+                {
+                  role: 'user',
+                  parts: [{ text: prompt }]
+                }
+              ],
+              generationConfig: {
+                temperature: 0.3,
+                maxOutputTokens: 1024,
+              }
+            }),
+          });
+        } else {
+          // Use OpenAI API
+          const model = 'gpt-4o-mini';
+          response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${openaiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model,
+              messages: [
+                { role: 'user', content: prompt }
+              ],
+              response_format: { type: 'json_object' }
+            }),
+          });
+        }
 
         if (response.ok) {
           const data = await response.json();
-          const content = data.choices?.[0]?.message?.content || '';
+          
+          // Parse response based on provider
+          let content = '';
+          if (useGemini) {
+            content = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          } else {
+            content = data.choices?.[0]?.message?.content || '';
+          }
           
           // Parse JSON from response
           const jsonMatch = content.match(/\{[\s\S]*\}/);

@@ -18,7 +18,8 @@ interface SecretsStatus {
     stripe_webhook: boolean;
     unsplash: boolean;
     firecrawl: boolean;
-    lovable_ai: boolean;
+    openai: boolean;
+    gemini: boolean;
   };
 }
 
@@ -86,7 +87,8 @@ serve(async (req) => {
         stripe_webhook: !!Deno.env.get('STRIPE_WEBHOOK_SECRET'),
         unsplash: !!Deno.env.get('UNSPLASH_ACCESS_KEY'),
         firecrawl: !!Deno.env.get('FIRECRAWL_API_KEY'),
-        lovable_ai: !!Deno.env.get('LOVABLE_API_KEY'),
+        openai: !!Deno.env.get('OPENAI_API_KEY'),
+        gemini: !!Deno.env.get('GEMINI_API_KEY'),
       }
     };
 

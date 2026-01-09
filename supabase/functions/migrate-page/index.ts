@@ -69,7 +69,8 @@ serve(async (req) => {
     }
 
     const firecrawlKey = Deno.env.get('FIRECRAWL_API_KEY');
-    const lovableKey = Deno.env.get('LOVABLE_API_KEY');
+    const openaiKey = Deno.env.get('OPENAI_API_KEY');
+    const geminiKey = Deno.env.get('GEMINI_API_KEY');
 
     if (!firecrawlKey) {
       return new Response(
@@ -78,12 +79,14 @@ serve(async (req) => {
       );
     }
 
-    if (!lovableKey) {
+    if (!openaiKey && !geminiKey) {
       return new Response(
-        JSON.stringify({ success: false, error: 'LOVABLE_API_KEY saknas' }),
+        JSON.stringify({ success: false, error: 'AI API key saknas. Lägg till OPENAI_API_KEY eller GEMINI_API_KEY i Supabase Secrets.' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    const useGemini = !openaiKey && geminiKey;
 
     // Format URL
     let formattedUrl = url.trim();
@@ -127,14 +130,66 @@ serve(async (req) => {
     // Step 2: Use AI to map content to blocks
     console.log('Step 3: Mapping content to CMS blocks with AI...');
 
-    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${lovableKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+    let aiResponse: Response;
+
+    if (useGemini) {
+      // Use Google Gemini API
+      const model = 'gemini-2.0-flash-exp';
+      const systemContent = `Du är en expert på att analysera webbsidor och mappa innehåll till CMS-block.
+Din uppgift är att ta innehåll från en scrapad webbsida och omvandla det till strukturerade CMS-block.
+
+${BLOCK_TYPES_SCHEMA}
+
+=== VIKTIGA REGLER ===
+
+FILTRERING - IGNORERA DETTA INNEHÅLL:
+- Navigationsmenyer (topbar, sidomeny, footer-länkar)
+- Brödsmulor (breadcrumbs)
+- "Tillbaka"-länkar och navigeringslänkar
+- Cookie-banners och popup-meddelanden
+- Sidofält med relaterade länkar (om de inte är huvudinnehåll)
+- Upprepade menystrukturer
+Fokusera ENDAST på huvudinnehållet (det som normalt ligger i <main> eller artikelområdet).`;
+      
+      const userContent = `Analysera denna webbsida och skapa CMS-block:
+
+URL: ${url}
+Titel: ${metadata.title || 'Ingen titel'}
+Beskrivning: ${metadata.description || 'Ingen beskrivning'}
+OG-bild: ${metadata.ogImage || 'Ingen bild'}
+
+Innehåll (Markdown):
+${markdown.slice(0, 30000)}`;
+
+      aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: 'user',
+              parts: [{ text: `${systemContent}\n\n${userContent}` }]
+            }
+          ],
+          generationConfig: {
+            temperature: 0.3,
+            maxOutputTokens: 8192,
+          }
+        }),
+      });
+    } else {
+      // Use OpenAI API
+      const model = 'gpt-4o-mini';
+      aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openaiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model,
         messages: [
           {
             role: 'system',
@@ -277,7 +332,7 @@ Svara endast med JSON.`
       }
       if (aiResponse.status === 402) {
         return new Response(
-          JSON.stringify({ success: false, error: 'AI-krediter slut. Lägg till mer i Lovable Settings.' }),
+          JSON.stringify({ success: false, error: 'AI-krediter slut. Kontrollera ditt API-konto.' }),
           { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
@@ -289,7 +344,16 @@ Svara endast med JSON.`
     }
 
     const aiData = await aiResponse.json();
-    const aiContent = aiData.choices?.[0]?.message?.content || '';
+    
+    // Parse response based on provider
+    let aiContent = '';
+    if (useGemini) {
+      // Gemini response format
+      aiContent = aiData.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    } else {
+      // OpenAI response format
+      aiContent = aiData.choices?.[0]?.message?.content || '';
+    }
     
     console.log('Step 4: AI response received, parsing...');
 

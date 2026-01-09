@@ -168,7 +168,7 @@ const defaultMaintenanceSettings: MaintenanceSettings = {
 };
 
 // Chat settings
-export type ChatAiProvider = 'lovable' | 'local' | 'n8n';
+export type ChatAiProvider = 'openai' | 'gemini' | 'local' | 'n8n';
 
 export interface ChatSettings {
   // Grundläggande
@@ -180,8 +180,14 @@ export interface ChatSettings {
   // AI-leverantör
   aiProvider: ChatAiProvider;
   
-  // Lovable AI (cloud)
-  lovableModel: 'google/gemini-2.5-flash' | 'google/gemini-2.5-pro' | 'openai/gpt-5-mini';
+  // OpenAI
+  openaiApiKey: string;
+  openaiModel: 'gpt-4o' | 'gpt-4o-mini' | 'gpt-3.5-turbo';
+  openaiBaseUrl: string;
+  
+  // Google Gemini
+  geminiApiKey: string;
+  geminiModel: 'gemini-2.0-flash-exp' | 'gemini-1.5-pro' | 'gemini-1.5-flash';
   
   // Local AI (HIPAA-compliant)
   localEndpoint: string;
@@ -231,8 +237,12 @@ const defaultChatSettings: ChatSettings = {
   title: 'AI Assistent',
   placeholder: 'Ställ en fråga...',
   welcomeMessage: 'Hej! Hur kan jag hjälpa dig idag?',
-  aiProvider: 'lovable',
-  lovableModel: 'google/gemini-2.5-flash',
+  aiProvider: 'openai',
+  openaiApiKey: '',
+  openaiModel: 'gpt-4o-mini',
+  openaiBaseUrl: 'https://api.openai.com/v1',
+  geminiApiKey: '',
+  geminiModel: 'gemini-2.0-flash-exp',
   localEndpoint: '',
   localModel: 'llama3',
   localApiKey: '',
