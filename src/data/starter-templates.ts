@@ -7207,6 +7207,24 @@ const serviceProPages: TemplatePage[] = [
           iconStyle: 'circle',
         },
       },
+      // Products block showing popular services
+      {
+        id: 'products-popular',
+        type: 'products',
+        data: {
+          title: 'Popular Services',
+          subtitle: 'Our most booked services - ready to book online',
+          columns: 3,
+          layout: 'grid',
+          showPrice: true,
+          showDescription: true,
+          showAddToCart: true,
+          addToCartText: 'Book Now',
+          emptyMessage: 'No services available.',
+          variant: 'cards',
+          maxProducts: 3,
+        },
+      },
       {
         id: 'testimonials-1',
         type: 'testimonials',
