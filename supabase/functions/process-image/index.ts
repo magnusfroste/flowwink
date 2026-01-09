@@ -12,7 +12,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { imageUrl, fileName } = await req.json();
+    const { imageUrl, fileName, folder = 'imports' } = await req.json();
 
     if (!imageUrl) {
       return new Response(
@@ -52,12 +52,14 @@ Deno.serve(async (req) => {
     const randomStr = Math.random().toString(36).substring(7);
     const baseName = fileName 
       ? fileName.replace(/\.[^/.]+$/, '') // Remove extension
-      : `imported-${randomStr}`;
+      : `image-${randomStr}`;
+    
+    // Validate folder name to prevent path traversal
+    const safeFolder = (folder || 'imports').replace(/[^a-zA-Z0-9-_]/g, '');
     
     // For now, we keep the original format since Deno doesn't have native WebP encoding
-    // The conversion to WebP will happen client-side before upload
     const originalExt = contentType.split('/')[1]?.split(';')[0] || 'jpg';
-    const finalFileName = `imports/${timestamp}-${baseName}.${originalExt}`;
+    const finalFileName = `${safeFolder}/${timestamp}-${baseName}.${originalExt}`;
 
     // Upload to Supabase Storage
     const { data: uploadData, error: uploadError } = await supabase.storage
