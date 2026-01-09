@@ -443,7 +443,7 @@ export const flowwinkKbCategories: TemplateKbCategory[] = [
         title: 'AI Chat Widget',
         slug: 'ai-chat',
         question: 'How does the AI Chat work?',
-        answer_text: 'The AI Chat provides intelligent responses based on your Knowledge Base articles and page content. Configure it in Admin → Chat Settings. Choose between Lovable AI (no API key needed), Private LLM (self-hosted), or N8N Webhook (custom integrations). The chat uses Context Augmented Generation to provide accurate answers from your content.',
+        answer_text: 'The AI Chat provides intelligent responses based on your Knowledge Base articles and page content. Configure it in Admin → Chat Settings. Choose between OpenAI (GPT models), Google Gemini, Private LLM (self-hosted), or N8N Webhook (custom integrations). The chat uses Context Augmented Generation to provide accurate answers from your content.',
         is_featured: true,
         include_in_chat: true,
       },
@@ -964,7 +964,7 @@ export const flowwinkKbCategories: TemplateKbCategory[] = [
         title: 'AI Chat Module',
         slug: 'ai-chat-module',
         question: 'What is the AI Chat module?',
-        answer_text: 'Add an intelligent chatbot using Context Augmented Generation based on your Knowledge Base, blog posts, and page content. Supports Lovable AI, Private LLM, or N8N Webhook providers.',
+        answer_text: 'Add an intelligent chatbot using Context Augmented Generation based on your Knowledge Base, blog posts, and page content. Supports OpenAI, Google Gemini, Private LLM (self-hosted), or N8N Webhook providers.',
         include_in_chat: true,
       },
       {
