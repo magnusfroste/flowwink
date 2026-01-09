@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Loader2, Sparkles, Check, FileText, Palette, MessageSquare, Trash2, AlertTriangle, Send, Newspaper, BookOpen, ShieldCheck, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Loader2, Sparkles, Check, FileText, Palette, MessageSquare, Trash2, AlertTriangle, Send, Newspaper, BookOpen, ShieldCheck, AlertCircle, Package, Puzzle } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,6 +19,8 @@ import { useUpdateBrandingSettings, useUpdateChatSettings, useUpdateGeneralSetti
 import { useUpdateFooterBlock } from '@/hooks/useGlobalBlocks';
 import { useBlogPosts, useCreateBlogPost, useDeleteBlogPost } from '@/hooks/useBlogPosts';
 import { useKbCategories, useCreateKbCategory, useCreateKbArticle, useDeleteKbCategory } from '@/hooks/useKnowledgeBase';
+import { useModules, useUpdateModules, ModulesSettings, defaultModulesSettings } from '@/hooks/useModules';
+import { useProducts, useCreateProduct, useDeleteProduct } from '@/hooks/useProducts';
 import { useToast } from '@/hooks/use-toast';
 
 type CreationStep = 'select' | 'creating' | 'done';
@@ -42,6 +44,7 @@ export default function NewSitePage() {
   const [clearExistingPages, setClearExistingPages] = useState(false);
   const [clearBlogPosts, setClearBlogPosts] = useState(true);
   const [clearKbContent, setClearKbContent] = useState(true);
+  const [clearProducts, setClearProducts] = useState(true);
   const [publishPages, setPublishPages] = useState(true);
   const [publishBlogPosts, setPublishBlogPosts] = useState(true);
   const [publishKbArticles, setPublishKbArticles] = useState(true);
@@ -53,20 +56,25 @@ export default function NewSitePage() {
   const { data: existingBlogPostsData } = useBlogPosts();
   const existingBlogPosts = existingBlogPostsData?.posts || [];
   const { data: existingKbCategories } = useKbCategories();
+  const { data: existingProducts } = useProducts();
+  const { data: currentModules } = useModules();
   const createPage = useCreatePage();
   const deletePage = useDeletePage();
   const deleteBlogPost = useDeleteBlogPost();
   const deleteKbCategory = useDeleteKbCategory();
+  const deleteProduct = useDeleteProduct();
   const updateBranding = useUpdateBrandingSettings();
   const updateChat = useUpdateChatSettings();
   const updateGeneral = useUpdateGeneralSettings();
   const updateFooter = useUpdateFooterBlock();
   const updateSeo = useUpdateSeoSettings();
   const updateCookieBanner = useUpdateCookieBannerSettings();
+  const updateModules = useUpdateModules();
   
   const createBlogPost = useCreateBlogPost();
   const createKbCategory = useCreateKbCategory();
   const createKbArticle = useCreateKbArticle();
+  const createProduct = useCreateProduct();
   const { toast } = useToast();
 
   const handleTemplateSelect = (template: StarterTemplate) => {
@@ -130,7 +138,40 @@ export default function NewSitePage() {
         }
       }
 
-      // Step 1: Create all pages
+      // Step 0d: Delete existing products if option is selected and template has products
+      if (clearProducts && selectedTemplate.products && selectedTemplate.products.length > 0 && existingProducts && existingProducts.length > 0) {
+        setProgress({ currentPage: 0, totalPages: existingProducts.length, currentStep: 'Clearing existing products...' });
+        
+        for (let i = 0; i < existingProducts.length; i++) {
+          setProgress({ 
+            currentPage: i + 1, 
+            totalPages: existingProducts.length, 
+            currentStep: `Removing product "${existingProducts[i].name}"...` 
+          });
+          await deleteProduct.mutateAsync(existingProducts[i].id);
+        }
+      }
+
+      // Step 1: Enable required modules
+      if (selectedTemplate.requiredModules && selectedTemplate.requiredModules.length > 0) {
+        setProgress({ currentPage: 0, totalPages: 1, currentStep: 'Enabling modules...' });
+        
+        const baseModules = currentModules || defaultModulesSettings;
+        const updatedModules = { ...baseModules } as ModulesSettings;
+        
+        for (const moduleId of selectedTemplate.requiredModules) {
+          if (updatedModules[moduleId]) {
+            updatedModules[moduleId] = { 
+              ...updatedModules[moduleId], 
+              enabled: true 
+            };
+          }
+        }
+        
+        await updateModules.mutateAsync(updatedModules);
+      }
+
+      // Step 2: Create all pages
       setProgress({ currentPage: 0, totalPages: selectedTemplate.pages.length, currentStep: 'Creating pages...' });
       
       for (let i = 0; i < selectedTemplate.pages.length; i++) {
@@ -154,34 +195,56 @@ export default function NewSitePage() {
         pageIds.push(page.id);
       }
 
-      // Step 2: Apply branding
-      setProgress({ currentPage: selectedTemplate.pages.length, totalPages: selectedTemplate.pages.length, currentStep: 'Applying branding...' });
+      // Step 3: Apply branding
       setProgress({ currentPage: selectedTemplate.pages.length, totalPages: selectedTemplate.pages.length, currentStep: 'Applying branding...' });
       await updateBranding.mutateAsync(selectedTemplate.branding);
 
-      // Step 3: Apply chat settings
+      // Step 4: Apply chat settings
       setProgress({ currentPage: selectedTemplate.pages.length, totalPages: selectedTemplate.pages.length, currentStep: 'Configuring AI chat...' });
       await updateChat.mutateAsync(selectedTemplate.chatSettings as any);
 
-      // Step 4: Apply footer settings
+      // Step 5: Apply footer settings
       setProgress({ currentPage: selectedTemplate.pages.length, totalPages: selectedTemplate.pages.length, currentStep: 'Applying footer...' });
       await updateFooter.mutateAsync(selectedTemplate.footerSettings as any);
 
-      // Step 5: Apply SEO settings
+      // Step 6: Apply SEO settings
       setProgress({ currentPage: selectedTemplate.pages.length, totalPages: selectedTemplate.pages.length, currentStep: 'Configuring SEO...' });
       await updateSeo.mutateAsync(selectedTemplate.seoSettings as any);
 
-      // Step 6: Apply Cookie Banner settings
+      // Step 7: Apply Cookie Banner settings
       setProgress({ currentPage: selectedTemplate.pages.length, totalPages: selectedTemplate.pages.length, currentStep: 'Configuring cookies...' });
       await updateCookieBanner.mutateAsync(selectedTemplate.cookieBannerSettings as any);
-
-      // Step 7: Set homepage
 
       // Step 8: Set homepage
       setProgress({ currentPage: selectedTemplate.pages.length, totalPages: selectedTemplate.pages.length, currentStep: 'Finalizing...' });
       await updateGeneral.mutateAsync({ homepageSlug: selectedTemplate.siteSettings.homepageSlug });
 
-      // Step 8: Create blog posts if template has them
+      // Step 9: Create products if template has them
+      const templateProducts = selectedTemplate.products || [];
+      if (templateProducts.length > 0) {
+        for (let i = 0; i < templateProducts.length; i++) {
+          const product = templateProducts[i];
+          setProgress({ 
+            currentPage: i + 1, 
+            totalPages: templateProducts.length, 
+            currentStep: `Creating product "${product.name}"...` 
+          });
+          
+          await createProduct.mutateAsync({
+            name: product.name,
+            description: product.description,
+            price_cents: product.price_cents,
+            currency: product.currency,
+            type: product.type,
+            image_url: product.image_url || null,
+            is_active: product.is_active ?? true,
+            sort_order: i,
+            stripe_price_id: null,
+          });
+        }
+      }
+
+      // Step 10: Create blog posts if template has them
       const blogPosts = selectedTemplate.blogPosts || [];
       if (blogPosts.length > 0) {
         for (let i = 0; i < blogPosts.length; i++) {
@@ -204,7 +267,7 @@ export default function NewSitePage() {
         }
       }
 
-      // Step 10: Create Knowledge Base categories and articles if template has them
+      // Step 11: Create Knowledge Base categories and articles if template has them
       const kbCategories = selectedTemplate.kbCategories || [];
       let totalKbArticles = 0;
       if (kbCategories.length > 0) {
@@ -251,10 +314,15 @@ export default function NewSitePage() {
       
       const blogCount = blogPosts.length;
       const kbCount = totalKbArticles;
+      const productCount = templateProducts.length;
+      const moduleCount = selectedTemplate.requiredModules?.length || 0;
+      
       let description = `Created ${selectedTemplate.pages.length} pages`;
+      if (productCount > 0) description += `, ${productCount} products`;
       if (blogCount > 0) description += `, ${blogCount} blog posts`;
       if (kbCount > 0) description += `, ${kbCount} KB articles`;
-      description += ' with branding and chat configured.';
+      if (moduleCount > 0) description += `. Enabled ${moduleCount} modules`;
+      description += '.';
       
       toast({
         title: 'Site created!',
@@ -350,6 +418,12 @@ export default function NewSitePage() {
                       <FileText className="h-4 w-4 text-muted-foreground" />
                       <span>{selectedTemplate.pages.length} pages</span>
                     </div>
+                    {selectedTemplate.products && selectedTemplate.products.length > 0 && (
+                      <div className="flex items-center gap-2">
+                        <Package className="h-4 w-4 text-muted-foreground" />
+                        <span>{selectedTemplate.products.length} products</span>
+                      </div>
+                    )}
                     {selectedTemplate.blogPosts && selectedTemplate.blogPosts.length > 0 && (
                       <div className="flex items-center gap-2">
                         <Newspaper className="h-4 w-4 text-muted-foreground" />
@@ -360,6 +434,12 @@ export default function NewSitePage() {
                       <div className="flex items-center gap-2">
                         <BookOpen className="h-4 w-4 text-muted-foreground" />
                         <span>{selectedTemplate.kbCategories.reduce((acc, cat) => acc + cat.articles.length, 0)} KB articles</span>
+                      </div>
+                    )}
+                    {selectedTemplate.requiredModules && selectedTemplate.requiredModules.length > 0 && (
+                      <div className="flex items-center gap-2">
+                        <Puzzle className="h-4 w-4 text-muted-foreground" />
+                        <span>{selectedTemplate.requiredModules.length} modules enabled</span>
                       </div>
                     )}
                     <div className="flex items-center gap-2">
@@ -406,6 +486,21 @@ export default function NewSitePage() {
                       </div>
                     )}
 
+                    {selectedTemplate.products && selectedTemplate.products.length > 0 && existingProducts && existingProducts.length > 0 && (
+                      <div className="flex items-center justify-between pl-6">
+                        <div className="space-y-0.5">
+                          <Label htmlFor="clear-products" className="text-sm">
+                            Products ({existingProducts.length})
+                          </Label>
+                        </div>
+                        <Switch
+                          id="clear-products"
+                          checked={clearProducts}
+                          onCheckedChange={setClearProducts}
+                        />
+                      </div>
+                    )}
+
                     {existingBlogPosts && existingBlogPosts.length > 0 && (
                       <div className="flex items-center justify-between pl-6">
                         <div className="space-y-0.5">
@@ -436,7 +531,7 @@ export default function NewSitePage() {
                       </div>
                     )}
                     
-                    {(clearExistingPages || clearBlogPosts || clearKbContent) && (
+                    {(clearExistingPages || clearBlogPosts || clearKbContent || clearProducts) && (
                       <Alert variant="destructive" className="py-2">
                         <AlertTriangle className="h-4 w-4" />
                         <AlertDescription className="text-xs">
