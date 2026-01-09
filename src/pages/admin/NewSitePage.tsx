@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Loader2, Sparkles, Check, FileText, Palette, MessageSquare, Trash2, AlertTriangle, Send, Newspaper, BookOpen, ShieldCheck, AlertCircle, Package, Puzzle, ImageIcon } from 'lucide-react';
+import { ArrowLeft, Loader2, Sparkles, Check, FileText, Palette, MessageSquare, Trash2, AlertTriangle, Send, Newspaper, BookOpen, ShieldCheck, AlertCircle, Package, Puzzle, ImageIcon, HardDrive, Download } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,6 +23,9 @@ import { useModules, useUpdateModules, ModulesSettings, defaultModulesSettings }
 import { useProducts, useCreateProduct, useDeleteProduct } from '@/hooks/useProducts';
 import { useMediaLibraryCount, useClearMediaLibrary } from '@/hooks/useMediaLibrary';
 import { useToast } from '@/hooks/use-toast';
+import { extractImagesFromTemplate, updateBlockAtPath } from '@/lib/image-extraction';
+import { supabase } from '@/integrations/supabase/client';
+import type { ContentBlock } from '@/types/cms';
 
 type CreationStep = 'select' | 'creating' | 'done';
 
@@ -47,6 +50,7 @@ export default function NewSitePage() {
   const [clearKbContent, setClearKbContent] = useState(true);
   const [clearProducts, setClearProducts] = useState(true);
   const [clearMedia, setClearMedia] = useState(false);
+  const [downloadImages, setDownloadImages] = useState(false);
   const [publishPages, setPublishPages] = useState(true);
   const [publishBlogPosts, setPublishBlogPosts] = useState(true);
   const [publishKbArticles, setPublishKbArticles] = useState(true);
@@ -81,6 +85,12 @@ export default function NewSitePage() {
   const createProduct = useCreateProduct();
   const { toast } = useToast();
 
+  // Calculate template image count
+  const templateImageInfo = useMemo(() => {
+    if (!selectedTemplate) return null;
+    return extractImagesFromTemplate(selectedTemplate);
+  }, [selectedTemplate]);
+
   const handleTemplateSelect = (template: StarterTemplate) => {
     setSelectedTemplate(template);
     setValidationResult(null);
@@ -91,6 +101,112 @@ export default function NewSitePage() {
     const result = validateTemplate(selectedTemplate);
     setValidationResult(result);
     setShowValidationDialog(true);
+  };
+
+  // Process images through edge function and return URL mapping
+  const processTemplateImages = async (
+    uniqueUrls: string[],
+    onProgress: (current: number, total: number, url: string) => void
+  ): Promise<Map<string, string>> => {
+    const urlMap = new Map<string, string>();
+    
+    // Process max 3 images simultaneously
+    const batchSize = 3;
+    
+    for (let i = 0; i < uniqueUrls.length; i += batchSize) {
+      const batch = uniqueUrls.slice(i, i + batchSize);
+      
+      await Promise.all(batch.map(async (url, batchIndex) => {
+        const globalIndex = i + batchIndex;
+        onProgress(globalIndex, uniqueUrls.length, url);
+        
+        try {
+          const { data, error } = await supabase.functions.invoke('process-image', {
+            body: { imageUrl: url, folder: 'templates' }
+          });
+          
+          if (error) {
+            console.warn(`Failed to process image ${url}:`, error);
+            return;
+          }
+          
+          if (data.success && data.url) {
+            urlMap.set(url, data.url);
+            console.log(`Processed: ${url.substring(0, 50)}... → local`);
+          }
+        } catch (err) {
+          console.warn(`Error processing image ${url}:`, err);
+        }
+      }));
+    }
+    
+    return urlMap;
+  };
+
+  // Apply URL mapping to template pages
+  const applyImageMappingToPages = (
+    pages: StarterTemplate['pages'],
+    imageInfo: ReturnType<typeof extractImagesFromTemplate>,
+    urlMap: Map<string, string>
+  ): StarterTemplate['pages'] => {
+    // Create a deep copy of pages
+    const updatedPages = pages.map(page => ({
+      ...page,
+      blocks: [...page.blocks.map(block => ({ ...block, data: { ...block.data as object } }))]
+    }));
+
+    // Apply URL mappings to blocks
+    for (const ref of imageInfo.pages) {
+      const newUrl = urlMap.get(ref.url);
+      if (newUrl) {
+        const page = updatedPages[ref.pageIndex];
+        if (page) {
+          page.blocks = updateBlockAtPath(page.blocks as ContentBlock[], ref.blockIndex, ref.path, newUrl) as typeof page.blocks;
+        }
+      }
+    }
+
+    return updatedPages;
+  };
+
+  // Apply URL mapping to blog posts
+  const applyImageMappingToBlogPosts = (
+    posts: StarterTemplate['blogPosts'],
+    imageInfo: ReturnType<typeof extractImagesFromTemplate>,
+    urlMap: Map<string, string>
+  ): StarterTemplate['blogPosts'] => {
+    if (!posts) return posts;
+    
+    return posts.map((post, index) => {
+      const ref = imageInfo.blogPosts.find(r => r.postIndex === index);
+      if (ref) {
+        const newUrl = urlMap.get(ref.url);
+        if (newUrl) {
+          return { ...post, featured_image: newUrl };
+        }
+      }
+      return post;
+    });
+  };
+
+  // Apply URL mapping to products
+  const applyImageMappingToProducts = (
+    products: StarterTemplate['products'],
+    imageInfo: ReturnType<typeof extractImagesFromTemplate>,
+    urlMap: Map<string, string>
+  ): StarterTemplate['products'] => {
+    if (!products) return products;
+    
+    return products.map((product, index) => {
+      const ref = imageInfo.products.find(r => r.productIndex === index);
+      if (ref) {
+        const newUrl = urlMap.get(ref.url);
+        if (newUrl) {
+          return { ...product, image_url: newUrl };
+        }
+      }
+      return product;
+    });
   };
 
   const handleCreateSite = async () => {
@@ -164,6 +280,41 @@ export default function NewSitePage() {
         });
       }
 
+      // Prepare template data (will be modified if downloading images)
+      let templatePages = selectedTemplate.pages;
+      let templateBlogPosts = selectedTemplate.blogPosts;
+      let templateProducts = selectedTemplate.products;
+
+      // Step 0f: Download images if option is selected
+      if (downloadImages && templateImageInfo && templateImageInfo.uniqueUrls.length > 0) {
+        setProgress({ 
+          currentPage: 0, 
+          totalPages: templateImageInfo.uniqueUrls.length, 
+          currentStep: 'Downloading template images...' 
+        });
+
+        const urlMap = await processTemplateImages(
+          templateImageInfo.uniqueUrls,
+          (current, total, url) => {
+            const shortUrl = url.length > 40 ? url.substring(0, 40) + '...' : url;
+            setProgress({ 
+              currentPage: current + 1, 
+              totalPages: total, 
+              currentStep: `Downloading image ${current + 1}/${total}: ${shortUrl}` 
+            });
+          }
+        );
+
+        // Apply URL mappings to template data
+        if (urlMap.size > 0) {
+          templatePages = applyImageMappingToPages(templatePages, templateImageInfo, urlMap);
+          templateBlogPosts = applyImageMappingToBlogPosts(templateBlogPosts, templateImageInfo, urlMap);
+          templateProducts = applyImageMappingToProducts(templateProducts, templateImageInfo, urlMap);
+          
+          console.log(`Downloaded ${urlMap.size} images to media library`);
+        }
+      }
+
       // Step 1: Enable required modules
       if (selectedTemplate.requiredModules && selectedTemplate.requiredModules.length > 0) {
         setProgress({ currentPage: 0, totalPages: 1, currentStep: 'Enabling modules...' });
@@ -184,13 +335,13 @@ export default function NewSitePage() {
       }
 
       // Step 2: Create all pages
-      setProgress({ currentPage: 0, totalPages: selectedTemplate.pages.length, currentStep: 'Creating pages...' });
+      setProgress({ currentPage: 0, totalPages: templatePages.length, currentStep: 'Creating pages...' });
       
-      for (let i = 0; i < selectedTemplate.pages.length; i++) {
-        const templatePage = selectedTemplate.pages[i];
+      for (let i = 0; i < templatePages.length; i++) {
+        const templatePage = templatePages[i];
         setProgress({ 
           currentPage: i + 1, 
-          totalPages: selectedTemplate.pages.length, 
+          totalPages: templatePages.length, 
           currentStep: `Creating "${templatePage.title}"...` 
         });
 
@@ -232,13 +383,13 @@ export default function NewSitePage() {
       await updateGeneral.mutateAsync({ homepageSlug: selectedTemplate.siteSettings.homepageSlug });
 
       // Step 9: Create products if template has them
-      const templateProducts = selectedTemplate.products || [];
-      if (templateProducts.length > 0) {
-        for (let i = 0; i < templateProducts.length; i++) {
-          const product = templateProducts[i];
+      const productsToCreate = templateProducts || [];
+      if (productsToCreate.length > 0) {
+        for (let i = 0; i < productsToCreate.length; i++) {
+          const product = productsToCreate[i];
           setProgress({ 
             currentPage: i + 1, 
-            totalPages: templateProducts.length, 
+            totalPages: productsToCreate.length, 
             currentStep: `Creating product "${product.name}"...` 
           });
           
@@ -257,13 +408,13 @@ export default function NewSitePage() {
       }
 
       // Step 10: Create blog posts if template has them
-      const blogPosts = selectedTemplate.blogPosts || [];
-      if (blogPosts.length > 0) {
-        for (let i = 0; i < blogPosts.length; i++) {
-          const post = blogPosts[i];
+      const postsToCreate = templateBlogPosts || [];
+      if (postsToCreate.length > 0) {
+        for (let i = 0; i < postsToCreate.length; i++) {
+          const post = postsToCreate[i];
           setProgress({ 
             currentPage: i + 1, 
-            totalPages: blogPosts.length, 
+            totalPages: postsToCreate.length, 
             currentStep: `Creating blog post "${post.title}"...` 
           });
           
@@ -324,9 +475,9 @@ export default function NewSitePage() {
       setCreatedPageIds(pageIds);
       setStep('done');
       
-      const blogCount = blogPosts.length;
+      const blogCount = postsToCreate.length;
       const kbCount = totalKbArticles;
-      const productCount = templateProducts.length;
+      const productCount = productsToCreate.length;
       const moduleCount = selectedTemplate.requiredModules?.length || 0;
       
       let description = `Created ${selectedTemplate.pages.length} pages`;
@@ -454,6 +605,12 @@ export default function NewSitePage() {
                         <span>{selectedTemplate.requiredModules.length} modules enabled</span>
                       </div>
                     )}
+                    {templateImageInfo && templateImageInfo.uniqueUrls.length > 0 && (
+                      <div className="flex items-center gap-2">
+                        <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                        <span>{templateImageInfo.uniqueUrls.length} images</span>
+                      </div>
+                    )}
                     <div className="flex items-center gap-2">
                       <Palette className="h-4 w-4 text-muted-foreground" />
                       <span>Branding</span>
@@ -568,6 +725,26 @@ export default function NewSitePage() {
                       </Alert>
                     )}
                   </div>
+
+                  {/* Download images option */}
+                  {templateImageInfo && templateImageInfo.uniqueUrls.length > 0 && (
+                    <div className="flex items-center justify-between pt-2 border-t">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="download-images" className="text-sm font-medium flex items-center gap-2">
+                          <Download className="h-4 w-4" />
+                          Download images to Media Library
+                        </Label>
+                        <p className="text-xs text-muted-foreground">
+                          Save {templateImageInfo.uniqueUrls.length} images locally instead of using external links
+                        </p>
+                      </div>
+                      <Switch
+                        id="download-images"
+                        checked={downloadImages}
+                        onCheckedChange={setDownloadImages}
+                      />
+                    </div>
+                  )}
 
                   {/* Publish pages option */}
                   <div className="flex items-center justify-between pt-2 border-t">
