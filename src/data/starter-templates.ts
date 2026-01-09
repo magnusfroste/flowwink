@@ -3232,7 +3232,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
                     'GitHub issues & discussions',
                   ],
                   buttonText: 'Get Started',
-                  buttonUrl: 'https://github.com/flowwink/flowwink',
+                  buttonUrl: 'https://github.com/magnusfroste/flowwink/pkgs/container/flowwink',
                 },
                 {
                   id: 'tier-managed',
