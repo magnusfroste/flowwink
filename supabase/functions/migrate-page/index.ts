@@ -317,8 +317,11 @@ ${html.substring(0, 12000)}
 Svara endast med JSON.`
           }
         ],
+        max_tokens: 8192,
+        temperature: 0.3,
       }),
     });
+    }
 
     if (!aiResponse.ok) {
       const aiError = await aiResponse.text();

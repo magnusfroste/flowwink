@@ -124,9 +124,8 @@ export function useChat(options?: UseChatOptions) {
             })),
             conversationId: convId,
             sessionId: getSessionId(),
-            settings: {
-              aiProvider: settings?.aiProvider || 'lovable',
-              lovableModel: settings?.lovableModel,
+          settings: {
+              aiProvider: settings?.aiProvider || 'openai',
               localEndpoint: settings?.localEndpoint,
               localModel: settings?.localModel,
               localApiKey: settings?.localApiKey,

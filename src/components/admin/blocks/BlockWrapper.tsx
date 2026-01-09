@@ -29,6 +29,7 @@ const BLOCK_LABELS: Record<ContentBlockType, string> = {
   newsletter: 'Newsletter',
   popup: 'Popup',
   booking: 'Booking',
+  'smart-booking': 'Smart Booking',
   pricing: 'Pricing',
   testimonials: 'Testimonials',
   team: 'Team',

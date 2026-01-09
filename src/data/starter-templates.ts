@@ -7924,7 +7924,7 @@ const digitalShopTemplate: StarterTemplate = {
   id: 'digital-shop',
   name: 'Digital Shop',
   description: 'E-commerce template for selling digital products. Features product showcase, shopping cart, Stripe checkout, and order management.',
-  category: 'ecommerce',
+  category: 'platform',
   icon: 'ShoppingBag',
   tagline: 'Perfect for digital product stores',
   aiChatPosition: 'Widget for customer support',
