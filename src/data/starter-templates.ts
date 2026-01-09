@@ -1,5 +1,6 @@
 import { ContentBlock, PageMeta, FooterBlockData } from '@/types/cms';
 import { BrandingSettings, ChatSettings, SeoSettings, CookieBannerSettings } from '@/hooks/useSiteSettings';
+import { ModulesSettings } from '@/hooks/useModules';
 import { 
   launchpadBlogPosts, 
   trustcorpBlogPosts, 
@@ -20,6 +21,17 @@ import {
 
 // Help style for templates
 export type HelpStyle = 'kb-classic' | 'ai-hub' | 'hybrid' | 'none';
+
+// Product definition for e-commerce templates
+export interface TemplateProduct {
+  name: string;
+  description: string;
+  price_cents: number;
+  currency: string;
+  type: 'one_time' | 'recurring';
+  image_url?: string;
+  is_active?: boolean;
+}
 
 // Page definition within a template
 export interface TemplatePage {
@@ -65,6 +77,12 @@ export interface StarterTemplate {
   
   // Knowledge Base (optional)
   kbCategories?: TemplateKbCategory[];
+  
+  // Modules to enable on template install
+  requiredModules?: (keyof ModulesSettings)[];
+  
+  // Products for e-commerce templates
+  products?: TemplateProduct[];
   
   // Site-wide settings
   branding: Partial<BrandingSettings>;
@@ -2634,6 +2652,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
     pages: launchpadPages,
     blogPosts: launchpadBlogPosts,
     kbCategories: launchpadKbCategories,
+    requiredModules: ['blog', 'knowledgeBase', 'chat', 'newsletter', 'leads', 'forms'],
     branding: {
       organizationName: 'LaunchPad',
       brandTagline: 'Launch Your Vision',
@@ -2698,6 +2717,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
     aiChatPosition: 'Disabled for clean single-page experience',
     pages: momentumPages,
     blogPosts: momentumBlogPosts,
+    requiredModules: ['blog', 'forms', 'leads'],
     branding: {
       organizationName: 'Momentum',
       brandTagline: 'Build the Future',
@@ -2754,6 +2774,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
     pages: trustcorpPages,
     blogPosts: trustcorpBlogPosts,
     kbCategories: trustcorpKbCategories,
+    requiredModules: ['blog', 'knowledgeBase', 'chat', 'forms', 'leads'],
     branding: {
       organizationName: 'TrustCorp',
       brandTagline: 'Enterprise Excellence',
@@ -2818,6 +2839,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
     pages: securehealthPages,
     blogPosts: securehealthBlogPosts,
     kbCategories: securehealthKbCategories,
+    requiredModules: ['blog', 'knowledgeBase', 'chat', 'forms', 'bookings'],
     branding: {
       organizationName: 'SecureHealth',
       brandTagline: 'Your Health, Your Privacy',
@@ -2885,6 +2907,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
     aiChatPosition: 'Embedded assistant for product questions',
     blogPosts: flowwinkBlogPosts,
     kbCategories: flowwinkKbCategories,
+    requiredModules: ['blog', 'knowledgeBase', 'chat', 'newsletter', 'leads', 'forms', 'products', 'orders'],
     pages: [
       // ===== HOME PAGE =====
       {
@@ -6697,6 +6720,7 @@ const kbClassicTemplate: StarterTemplate = {
   helpStyle: 'kb-classic',
   pages: kbClassicPages,
   kbCategories: kbClassicCategories,
+  requiredModules: ['knowledgeBase', 'forms'],
   branding: {
     organizationName: 'Help Center',
     brandTagline: 'Find answers fast',
@@ -6850,6 +6874,7 @@ const aiHubTemplate: StarterTemplate = {
   helpStyle: 'ai-hub',
   pages: aiHubPages,
   kbCategories: aiHubCategories,
+  requiredModules: ['knowledgeBase', 'chat', 'bookings'],
   branding: {
     organizationName: 'Support Hub',
     brandTagline: 'Instant AI Support',
@@ -7059,6 +7084,7 @@ const hybridHelpTemplate: StarterTemplate = {
   helpStyle: 'hybrid',
   pages: hybridHelpPages,
   kbCategories: hybridHelpCategories,
+  requiredModules: ['knowledgeBase', 'chat', 'forms'],
   branding: {
     organizationName: 'Help Center',
     brandTagline: 'Answers made easy',
@@ -7920,6 +7946,46 @@ const digitalShopPages: TemplatePage[] = [
   },
 ];
 
+// Example products for Digital Shop template
+const digitalShopProducts: TemplateProduct[] = [
+  {
+    name: 'Business Template Pack',
+    description: 'Professional templates for presentations, documents, and reports. Includes 50+ designs.',
+    price_cents: 4900,
+    currency: 'USD',
+    type: 'one_time',
+    image_url: 'https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=400&h=300&fit=crop',
+    is_active: true,
+  },
+  {
+    name: 'UI Design Kit Pro',
+    description: 'Complete UI kit with 500+ components for web and mobile. Figma & Sketch included.',
+    price_cents: 7900,
+    currency: 'USD',
+    type: 'one_time',
+    image_url: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400&h=300&fit=crop',
+    is_active: true,
+  },
+  {
+    name: 'Marketing Mastery Course',
+    description: 'Complete marketing course with 40+ video lessons. Learn SEO, ads, and social media.',
+    price_cents: 19900,
+    currency: 'USD',
+    type: 'one_time',
+    image_url: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&h=300&fit=crop',
+    is_active: true,
+  },
+  {
+    name: 'Monthly Pro Membership',
+    description: 'Access all products with monthly subscription. New content added weekly.',
+    price_cents: 2900,
+    currency: 'USD',
+    type: 'recurring',
+    image_url: 'https://images.unsplash.com/photo-1553729459-efe14ef6055d?w=400&h=300&fit=crop',
+    is_active: true,
+  },
+];
+
 const digitalShopTemplate: StarterTemplate = {
   id: 'digital-shop',
   name: 'Digital Shop',
@@ -7930,6 +7996,8 @@ const digitalShopTemplate: StarterTemplate = {
   aiChatPosition: 'Widget for customer support',
   helpStyle: 'none',
   pages: digitalShopPages,
+  requiredModules: ['products', 'orders', 'chat', 'forms'],
+  products: digitalShopProducts,
   branding: {
     organizationName: 'Digital Shop',
     brandTagline: 'Premium Digital Products',
