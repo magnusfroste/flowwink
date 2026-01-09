@@ -7575,16 +7575,69 @@ const serviceProPages: TemplatePage[] = [
   },
 ];
 
+// Example services as products for ServicePro template
+const serviceProProducts: TemplateProduct[] = [
+  {
+    name: 'Basic Consultation',
+    description: '30-minute consultation session. Perfect for first-time clients to understand your needs and recommend solutions.',
+    price_cents: 4900,
+    currency: 'USD',
+    type: 'one_time',
+    image_url: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400',
+    is_active: true,
+  },
+  {
+    name: 'Premium Service',
+    description: '60-minute comprehensive session with personalized recommendations. Our most popular option.',
+    price_cents: 9900,
+    currency: 'USD',
+    type: 'one_time',
+    image_url: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=400',
+    is_active: true,
+  },
+  {
+    name: 'VIP Package',
+    description: '90-minute VIP experience with priority scheduling, extended support, and follow-up consultations.',
+    price_cents: 19900,
+    currency: 'USD',
+    type: 'one_time',
+    image_url: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=400',
+    is_active: true,
+  },
+  {
+    name: 'Monthly Retainer',
+    description: 'Ongoing support with 4 sessions per month, priority booking, and unlimited email support.',
+    price_cents: 29900,
+    currency: 'USD',
+    type: 'recurring',
+    image_url: 'https://images.unsplash.com/photo-1553729459-efe14ef6055d?w=400',
+    is_active: true,
+  },
+  {
+    name: 'Team Workshop',
+    description: 'Half-day workshop for teams up to 10 people. Includes materials and follow-up resources.',
+    price_cents: 79900,
+    currency: 'USD',
+    type: 'one_time',
+    image_url: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=400',
+    is_active: true,
+  },
+];
+
 const serviceProTemplate: StarterTemplate = {
   id: 'service-pro',
   name: 'ServicePro',
-  description: 'Modern template for service businesses. Features smart booking with real-time availability, service showcase, and online scheduling.',
+  description: 'Modern template for service businesses. Features smart booking with real-time availability, service showcase, product catalog, and online scheduling.',
   category: 'startup',
   icon: 'CalendarCheck',
   tagline: 'Perfect for service businesses',
   aiChatPosition: 'Widget for quick questions',
   helpStyle: 'none',
   pages: serviceProPages,
+  // Modules to enable for service businesses
+  requiredModules: ['bookings', 'products', 'orders', 'forms', 'chat', 'leads'],
+  // Example services as products
+  products: serviceProProducts,
   branding: {
     organizationName: 'ServicePro',
     brandTagline: 'Professional Services You Can Trust',
