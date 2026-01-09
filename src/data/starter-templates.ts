@@ -2645,7 +2645,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
     },
     chatSettings: {
       enabled: true,
-      aiProvider: 'lovable',
+      aiProvider: 'openai',
       n8nWebhookUrl: '',
       widgetEnabled: true,
       widgetPosition: 'bottom-right',
@@ -6230,7 +6230,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
     },
     chatSettings: {
       enabled: true,
-      aiProvider: 'lovable',
+      aiProvider: 'openai',
       widgetEnabled: true,
       widgetPosition: 'bottom-right',
       blockEnabled: true,
@@ -6861,7 +6861,7 @@ const aiHubTemplate: StarterTemplate = {
   },
   chatSettings: {
     enabled: true,
-    aiProvider: 'lovable',
+    aiProvider: 'openai',
     widgetEnabled: true,
     widgetPosition: 'bottom-right',
     welcomeMessage: 'Hey! 👋 Ask me anything.',
@@ -7070,7 +7070,7 @@ const hybridHelpTemplate: StarterTemplate = {
   },
   chatSettings: {
     enabled: true,
-    aiProvider: 'lovable',
+    aiProvider: 'openai',
     widgetEnabled: true,
     widgetPosition: 'bottom-right',
     welcomeMessage: 'Hi! Search our help center or ask me anything.',
@@ -7570,7 +7570,7 @@ const serviceProTemplate: StarterTemplate = {
   },
   chatSettings: {
     enabled: true,
-    aiProvider: 'lovable',
+    aiProvider: 'openai',
     widgetEnabled: true,
     widgetPosition: 'bottom-right',
     welcomeMessage: 'Hi! How can we help you today?',
@@ -7941,7 +7941,7 @@ const digitalShopTemplate: StarterTemplate = {
   },
   chatSettings: {
     enabled: true,
-    aiProvider: 'lovable',
+    aiProvider: 'openai',
     widgetEnabled: true,
     widgetPosition: 'bottom-right',
     welcomeMessage: 'Hi! Need help finding the perfect product?',

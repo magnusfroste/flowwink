@@ -13,7 +13,8 @@ interface IntegrationStatus {
     stripe_webhook: boolean;
     unsplash: boolean;
     firecrawl: boolean;
-    lovable_ai: boolean;
+    openai: boolean;
+    gemini: boolean;
   };
 }
 
@@ -40,7 +41,12 @@ export function useIsStripeConfigured() {
   return data?.integrations?.stripe ?? null;
 }
 
-export function useIsLovableAIConfigured() {
+export function useIsOpenAIConfigured() {
   const { data } = useIntegrationStatus();
-  return data?.integrations?.lovable_ai ?? null;
+  return data?.integrations?.openai ?? null;
+}
+
+export function useIsGeminiConfigured() {
+  const { data } = useIntegrationStatus();
+  return data?.integrations?.gemini ?? null;
 }

@@ -35,7 +35,8 @@ interface SecretsStatus {
     stripe_webhook: boolean;
     unsplash: boolean;
     firecrawl: boolean;
-    lovable_ai: boolean;
+    openai: boolean;
+    gemini: boolean;
   };
 }
 
@@ -96,12 +97,22 @@ const integrations: IntegrationConfig[] = [
     docsUrl: "https://firecrawl.dev/docs",
   },
   {
-    key: "lovable_ai",
-    name: "Lovable AI",
-    description: "AI-powered features",
+    key: "openai",
+    name: "OpenAI",
+    description: "GPT-4o, GPT-4o-mini",
     icon: Bot,
-    features: ["AI Chat", "Text generation", "Content suggestions"],
-    secretName: "LOVABLE_API_KEY",
+    features: ["AI Chat", "Text generation", "Content migration", "Company enrichment"],
+    secretName: "OPENAI_API_KEY",
+    docsUrl: "https://platform.openai.com/api-keys",
+  },
+  {
+    key: "gemini",
+    name: "Google Gemini",
+    description: "Gemini 2.0, 1.5 Pro",
+    icon: Bot,
+    features: ["AI Chat", "Text generation", "Content migration", "Company enrichment"],
+    secretName: "GEMINI_API_KEY",
+    docsUrl: "https://aistudio.google.com/apikey",
   },
 ];
 

@@ -4,7 +4,7 @@ import { AlertTriangle, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface IntegrationWarningProps {
-  integration: 'resend' | 'stripe' | 'lovable_ai';
+  integration: 'resend' | 'stripe' | 'openai' | 'gemini';
   title?: string;
   description?: string;
 }
@@ -18,9 +18,13 @@ const defaultMessages = {
     title: 'Payment integration not configured',
     description: 'Stripe is not configured. Payment processing and checkout functionality will not work.',
   },
-  lovable_ai: {
-    title: 'AI integration not configured',
-    description: 'Lovable AI key is missing. AI chat functionality will not work with the cloud provider.',
+  openai: {
+    title: 'OpenAI API not configured',
+    description: 'OPENAI_API_KEY is missing in Supabase Secrets. AI chat and content generation will not work.',
+  },
+  gemini: {
+    title: 'Google Gemini API not configured',
+    description: 'GEMINI_API_KEY is missing in Supabase Secrets. AI chat and content generation will not work.',
   },
 };
 

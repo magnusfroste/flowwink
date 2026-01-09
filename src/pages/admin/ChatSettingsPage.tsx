@@ -18,14 +18,15 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useUnsavedChanges, UnsavedChangesDialog } from '@/hooks/useUnsavedChanges';
 import { Link } from 'react-router-dom';
-import { useIsLovableAIConfigured } from '@/hooks/useIntegrationStatus';
+import { useIsOpenAIConfigured, useIsGeminiConfigured } from '@/hooks/useIntegrationStatus';
 import { IntegrationWarning } from '@/components/admin/IntegrationWarning';
 
 export default function ChatSettingsPage() {
   const { data: settings, isLoading } = useChatSettings();
   const updateSettings = useUpdateChatSettings();
   const [formData, setFormData] = useState<ChatSettings | null>(null);
-  const isLovableAIConfigured = useIsLovableAIConfigured();
+  const isOpenAIConfigured = useIsOpenAIConfigured();
+  const isGeminiConfigured = useIsGeminiConfigured();
 
   useEffect(() => {
     if (settings) {
@@ -75,8 +76,11 @@ export default function ChatSettingsPage() {
           </Button>
         </AdminPageHeader>
 
-        {formData.aiProvider === 'lovable' && isLovableAIConfigured === false && (
-          <IntegrationWarning integration="lovable_ai" />
+        {formData.aiProvider === 'openai' && isOpenAIConfigured === false && (
+          <IntegrationWarning integration="openai" />
+        )}
+        {formData.aiProvider === 'gemini' && isGeminiConfigured === false && (
+          <IntegrationWarning integration="gemini" />
         )}
 
         <div className="max-w-4xl space-y-6">
@@ -222,19 +226,29 @@ export default function ChatSettingsPage() {
                 <CardContent className="space-y-6">
                   <div className="grid gap-4">
                     {/* Provider selection */}
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-2 gap-4">
                       <ProviderCard
-                        provider="lovable"
-                        title="Gemini 2.5 Flash AI"
-                        description="Cloud-based AI"
+                        provider="openai"
+                        title="OpenAI"
+                        description="GPT-4o, GPT-4o-mini"
                         icon={<Cloud className="h-5 w-5" />}
                         badge="Recommended"
-                        selected={formData.aiProvider === 'lovable'}
-                        onClick={() => setFormData({ ...formData, aiProvider: 'lovable' })}
+                        selected={formData.aiProvider === 'openai'}
+                        onClick={() => setFormData({ ...formData, aiProvider: 'openai' })}
+                      />
+                      <ProviderCard
+                        provider="gemini"
+                        title="Google Gemini"
+                        description="Gemini 2.0, 1.5 Pro"
+                        icon={<Cloud className="h-5 w-5" />}
+                        badge="Cost-effective"
+                        badgeVariant="secondary"
+                        selected={formData.aiProvider === 'gemini'}
+                        onClick={() => setFormData({ ...formData, aiProvider: 'gemini' })}
                       />
                       <ProviderCard
                         provider="local"
-                        title="Local AI"
+                        title="Local LLM"
                         description="HIPAA-compliant"
                         icon={<Server className="h-5 w-5" />}
                         badge="Private"
@@ -252,35 +266,87 @@ export default function ChatSettingsPage() {
                       />
                     </div>
 
-                    {/* Lovable AI settings */}
-                    {formData.aiProvider === 'lovable' && (
+                    {/* OpenAI settings */}
+                    {formData.aiProvider === 'openai' && (
                       <div className="space-y-4 pt-4 border-t">
                         <Alert>
                           <Cloud className="h-4 w-4" />
-                          <AlertTitle>Cloud-based Solution</AlertTitle>
+                          <AlertTitle>OpenAI API</AlertTitle>
                           <AlertDescription>
-                            Data is sent to external AI services. Not suitable for HIPAA or sensitive patient data.
+                            Add OPENAI_API_KEY to Supabase Secrets. Get your key at platform.openai.com/api-keys
                           </AlertDescription>
                         </Alert>
 
                         <div className="space-y-2">
-                          <Label>AI Model</Label>
+                          <Label>Model</Label>
                           <Select
-                            value={formData.lovableModel}
+                            value={formData.openaiModel}
                             onValueChange={(value) => setFormData({ 
                               ...formData, 
-                              lovableModel: value as ChatSettings['lovableModel']
+                              openaiModel: value as ChatSettings['openaiModel']
                             })}
                           >
                             <SelectTrigger>
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="google/gemini-2.5-flash">Gemini 2.5 Flash (Fast)</SelectItem>
-                              <SelectItem value="google/gemini-2.5-pro">Gemini 2.5 Pro (Powerful)</SelectItem>
-                              <SelectItem value="openai/gpt-5-mini">GPT-5 Mini (Balanced)</SelectItem>
+                              <SelectItem value="gpt-4o-mini">GPT-4o Mini (Recommended)</SelectItem>
+                              <SelectItem value="gpt-4o">GPT-4o (Powerful)</SelectItem>
+                              <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo (Legacy)</SelectItem>
                             </SelectContent>
                           </Select>
+                          <p className="text-xs text-muted-foreground">
+                            gpt-4o-mini: $0.15/1M input tokens (best value)
+                          </p>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="openaiBaseUrl">Base URL (Optional)</Label>
+                          <Input
+                            id="openaiBaseUrl"
+                            value={formData.openaiBaseUrl}
+                            onChange={(e) => setFormData({ ...formData, openaiBaseUrl: e.target.value })}
+                            placeholder="https://api.openai.com/v1"
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            For OpenAI-compatible APIs (Azure, etc.)
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Gemini settings */}
+                    {formData.aiProvider === 'gemini' && (
+                      <div className="space-y-4 pt-4 border-t">
+                        <Alert>
+                          <Cloud className="h-4 w-4" />
+                          <AlertTitle>Google Gemini API</AlertTitle>
+                          <AlertDescription>
+                            Add GEMINI_API_KEY to Supabase Secrets. Get your key at aistudio.google.com/apikey
+                          </AlertDescription>
+                        </Alert>
+
+                        <div className="space-y-2">
+                          <Label>Model</Label>
+                          <Select
+                            value={formData.geminiModel}
+                            onValueChange={(value) => setFormData({ 
+                              ...formData, 
+                              geminiModel: value as ChatSettings['geminiModel']
+                            })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="gemini-2.0-flash-exp">Gemini 2.0 Flash (Recommended)</SelectItem>
+                              <SelectItem value="gemini-1.5-flash">Gemini 1.5 Flash (Stable)</SelectItem>
+                              <SelectItem value="gemini-1.5-pro">Gemini 1.5 Pro (Powerful)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <p className="text-xs text-muted-foreground">
+                            gemini-2.0-flash-exp: Free tier available, $0.075/1M tokens
+                          </p>
                         </div>
                       </div>
                     )}
