@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Loader2, Sparkles, Check, FileText, Palette, MessageSquare, Trash2, AlertTriangle, Send, Newspaper, BookOpen, ShieldCheck, AlertCircle, Package, Puzzle } from 'lucide-react';
+import { ArrowLeft, Loader2, Sparkles, Check, FileText, Palette, MessageSquare, Trash2, AlertTriangle, Send, Newspaper, BookOpen, ShieldCheck, AlertCircle, Package, Puzzle, ImageIcon } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,6 +21,7 @@ import { useBlogPosts, useCreateBlogPost, useDeleteBlogPost } from '@/hooks/useB
 import { useKbCategories, useCreateKbCategory, useCreateKbArticle, useDeleteKbCategory } from '@/hooks/useKnowledgeBase';
 import { useModules, useUpdateModules, ModulesSettings, defaultModulesSettings } from '@/hooks/useModules';
 import { useProducts, useCreateProduct, useDeleteProduct } from '@/hooks/useProducts';
+import { useMediaLibraryCount, useClearMediaLibrary } from '@/hooks/useMediaLibrary';
 import { useToast } from '@/hooks/use-toast';
 
 type CreationStep = 'select' | 'creating' | 'done';
@@ -45,6 +46,7 @@ export default function NewSitePage() {
   const [clearBlogPosts, setClearBlogPosts] = useState(true);
   const [clearKbContent, setClearKbContent] = useState(true);
   const [clearProducts, setClearProducts] = useState(true);
+  const [clearMedia, setClearMedia] = useState(false);
   const [publishPages, setPublishPages] = useState(true);
   const [publishBlogPosts, setPublishBlogPosts] = useState(true);
   const [publishKbArticles, setPublishKbArticles] = useState(true);
@@ -57,6 +59,8 @@ export default function NewSitePage() {
   const existingBlogPosts = existingBlogPostsData?.posts || [];
   const { data: existingKbCategories } = useKbCategories();
   const { data: existingProducts } = useProducts();
+  const { count: mediaCount } = useMediaLibraryCount();
+  const clearMediaLibrary = useClearMediaLibrary();
   const { data: currentModules } = useModules();
   const createPage = useCreatePage();
   const deletePage = useDeletePage();
@@ -150,6 +154,14 @@ export default function NewSitePage() {
           });
           await deleteProduct.mutateAsync(existingProducts[i].id);
         }
+      }
+
+      // Step 0e: Clear media library if option is selected
+      if (clearMedia && mediaCount > 0) {
+        setProgress({ currentPage: 0, totalPages: mediaCount, currentStep: 'Clearing media library...' });
+        await clearMediaLibrary.mutateAsync((current, total, step) => {
+          setProgress({ currentPage: current, totalPages: total, currentStep: step });
+        });
       }
 
       // Step 1: Enable required modules
@@ -530,8 +542,24 @@ export default function NewSitePage() {
                         />
                       </div>
                     )}
+
+                    {mediaCount > 0 && (
+                      <div className="flex items-center justify-between pl-6">
+                        <div className="space-y-0.5">
+                          <Label htmlFor="clear-media" className="text-sm flex items-center gap-2">
+                            <ImageIcon className="h-3 w-3" />
+                            Media library ({mediaCount} files)
+                          </Label>
+                        </div>
+                        <Switch
+                          id="clear-media"
+                          checked={clearMedia}
+                          onCheckedChange={setClearMedia}
+                        />
+                      </div>
+                    )}
                     
-                    {(clearExistingPages || clearBlogPosts || clearKbContent || clearProducts) && (
+                    {(clearExistingPages || clearBlogPosts || clearKbContent || clearProducts || clearMedia) && (
                       <Alert variant="destructive" className="py-2">
                         <AlertTriangle className="h-4 w-4" />
                         <AlertDescription className="text-xs">
