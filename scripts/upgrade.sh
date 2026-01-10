@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Pezcms Upgrade Script
-# Run this script to upgrade your self-hosted Pezcms installation
+# FlowWink Upgrade Script
+# Run this script to upgrade your self-hosted FlowWink installation
 # Usage: ./scripts/upgrade.sh
 
 set -e
@@ -15,7 +15,7 @@ NC='\033[0m' # No Color
 
 echo ""
 echo -e "${BLUE}╔════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║      Pezcms Upgrade Script             ║${NC}"
+echo -e "${BLUE}║      FlowWink Upgrade Script           ║${NC}"
 echo -e "${BLUE}╚════════════════════════════════════════╝${NC}"
 echo ""
 

@@ -148,7 +148,7 @@ export function AdminSidebar() {
   const isCollapsed = state === "collapsed";
   const [searchOpen, setSearchOpen] = useState(false);
   
-  const adminName = branding?.adminName || 'PEZ CMS';
+  const adminName = branding?.adminName || 'FlowWink';
 
   const isItemActive = (href: string) =>
     location.pathname === href || (href !== "/admin" && location.pathname.startsWith(href));

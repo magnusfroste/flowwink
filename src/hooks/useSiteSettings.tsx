@@ -78,7 +78,7 @@ const defaultBrandingSettings: BrandingSettings = {
   favicon: '',
   organizationName: '',
   brandTagline: '',
-  adminName: 'PEZ CMS',
+  adminName: 'FlowWink',
   primaryColor: '220 100% 26%',
   secondaryColor: '210 40% 96%',
   accentColor: '199 89% 48%',

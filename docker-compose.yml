@@ -10,7 +10,7 @@
 version: '3.8'
 
 services:
-  pezcms:
+  flowwink:
     build:
       context: .
       dockerfile: Dockerfile
