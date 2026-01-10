@@ -87,32 +87,196 @@ import {
   Layers,
   Bell,
   MousePointer,
+  Bot,
+  BookOpen,
+  Sparkles,
 } from 'lucide-react';
 
 interface TemplateBlockPreviewProps {
   block: ContentBlock;
   compact?: boolean;
+  primaryColor?: string;
 }
 
 /**
- * Placeholder component for blocks that require database/API context
+ * Enhanced placeholder component for blocks that require database/API context
  */
 function BlockPlaceholder({ 
   type, 
   icon: Icon, 
   label,
   description,
+  primaryColor = '#6366f1',
+  variant = 'default',
 }: { 
   type: string; 
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   description?: string;
+  primaryColor?: string;
+  variant?: 'default' | 'chat' | 'products' | 'booking' | 'kb';
 }) {
+  // Different visual styles based on block type
+  if (variant === 'chat') {
+    return (
+      <div className="bg-gradient-to-br from-muted/50 to-muted/30 rounded-2xl border border-dashed p-8 mx-4 my-4">
+        <div className="flex items-start gap-4 max-w-md mx-auto">
+          <div 
+            className="p-3 rounded-xl shrink-0"
+            style={{ backgroundColor: `${primaryColor}15` }}
+          >
+            <Bot className="h-6 w-6" style={{ color: primaryColor }} />
+          </div>
+          <div className="flex-1 space-y-3">
+            <div className="space-y-2">
+              <div className="h-3 bg-muted rounded-full w-3/4" />
+              <div className="h-3 bg-muted rounded-full w-1/2" />
+            </div>
+            <div 
+              className="rounded-xl p-3 text-sm text-white"
+              style={{ backgroundColor: primaryColor }}
+            >
+              <p className="opacity-90">Hej! Hur kan jag hjälpa dig idag?</p>
+            </div>
+            <div className="flex gap-2">
+              <div className="flex-1 h-9 bg-muted rounded-lg" />
+              <div 
+                className="h-9 w-9 rounded-lg shrink-0"
+                style={{ backgroundColor: primaryColor }}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (variant === 'products') {
+    return (
+      <div className="py-12 px-4">
+        <div className="text-center mb-6">
+          <p className="font-semibold text-lg">{label}</p>
+          <p className="text-sm text-muted-foreground">{description}</p>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-w-3xl mx-auto">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="bg-muted/30 rounded-xl border p-4 space-y-3">
+              <div className="aspect-square bg-muted rounded-lg flex items-center justify-center">
+                <Package className="h-8 w-8 text-muted-foreground/50" />
+              </div>
+              <div className="space-y-1">
+                <div className="h-3 bg-muted rounded w-3/4" />
+                <div className="h-3 bg-muted rounded w-1/2" />
+              </div>
+              <div 
+                className="h-8 rounded-md"
+                style={{ backgroundColor: `${primaryColor}20` }}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (variant === 'booking') {
+    return (
+      <div className="py-12 px-4">
+        <div className="max-w-2xl mx-auto">
+          <div className="text-center mb-6">
+            <p className="font-semibold text-lg">{label}</p>
+            <p className="text-sm text-muted-foreground">{description}</p>
+          </div>
+          <div className="bg-muted/30 rounded-xl border p-6 grid md:grid-cols-2 gap-6">
+            {/* Calendar mockup */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="h-4 bg-muted rounded w-24" />
+                <div className="flex gap-1">
+                  <div className="h-6 w-6 bg-muted rounded" />
+                  <div className="h-6 w-6 bg-muted rounded" />
+                </div>
+              </div>
+              <div className="grid grid-cols-7 gap-1">
+                {Array.from({ length: 35 }).map((_, i) => (
+                  <div 
+                    key={i} 
+                    className={cn(
+                      "aspect-square rounded text-[10px] flex items-center justify-center",
+                      i === 15 ? "text-white" : "bg-muted/50"
+                    )}
+                    style={i === 15 ? { backgroundColor: primaryColor } : {}}
+                  >
+                    {(i % 7) + 1}
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* Time slots mockup */}
+            <div className="space-y-2">
+              {['09:00', '10:00', '11:00', '14:00'].map((time) => (
+                <div 
+                  key={time}
+                  className="h-10 rounded-lg border bg-background flex items-center justify-center text-sm text-muted-foreground"
+                >
+                  {time}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (variant === 'kb') {
+    return (
+      <div className="py-12 px-4">
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-8">
+            <p className="font-semibold text-xl mb-2">{label}</p>
+            <div className="max-w-md mx-auto">
+              <div className="flex items-center gap-2 bg-muted/50 rounded-xl border px-4 py-3">
+                <Search className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Sök i kunskapsbasen...</span>
+              </div>
+            </div>
+          </div>
+          <div className="grid md:grid-cols-3 gap-4">
+            {[
+              { icon: BookOpen, title: 'Kom igång' },
+              { icon: Sparkles, title: 'Funktioner' },
+              { icon: MessageSquare, title: 'Vanliga frågor' },
+            ].map((cat, i) => (
+              <div 
+                key={i}
+                className="bg-muted/30 rounded-xl border p-5 hover:border-primary/50 transition-colors"
+              >
+                <div 
+                  className="p-2.5 rounded-lg w-fit mb-3"
+                  style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}
+                >
+                  <cat.icon className="h-5 w-5" />
+                </div>
+                <p className="font-medium mb-1">{cat.title}</p>
+                <p className="text-xs text-muted-foreground">12 artiklar</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Default placeholder
   return (
-    <div className="bg-muted/30 rounded-lg border border-dashed p-6 text-center">
-      <div className="flex flex-col items-center gap-3">
-        <div className="p-3 bg-primary/10 rounded-full">
-          <Icon className="h-6 w-6 text-primary" />
+    <div className="bg-muted/30 rounded-xl border border-dashed p-6 mx-4 my-4 text-center">
+      <div className="flex flex-col items-center gap-3 max-w-xs mx-auto">
+        <div 
+          className="p-3 rounded-xl"
+          style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}
+        >
+          <Icon className="h-6 w-6" />
         </div>
         <div>
           <p className="font-medium text-foreground">{label}</p>
@@ -129,7 +293,7 @@ function BlockPlaceholder({
  * Renders a block component for template preview
  * Falls back to placeholder for blocks requiring database context
  */
-export function TemplateBlockPreview({ block, compact }: TemplateBlockPreviewProps) {
+export function TemplateBlockPreview({ block, compact, primaryColor = '#6366f1' }: TemplateBlockPreviewProps) {
   // Scale down the preview when in compact mode
   const wrapperClass = cn(
     'template-block-preview',
@@ -206,7 +370,7 @@ export function TemplateBlockPreview({ block, compact }: TemplateBlockPreviewPro
       case 'social-proof':
         return <SocialProofBlock data={block.data as any} />;
 
-      // Blocks that require database context - show placeholders
+      // Blocks that require database context - show enhanced placeholders
       case 'chat':
         return (
           <BlockPlaceholder 
@@ -214,6 +378,8 @@ export function TemplateBlockPreview({ block, compact }: TemplateBlockPreviewPro
             icon={MessageSquare} 
             label="AI Chatt"
             description="Interaktiv AI-chattwidget"
+            primaryColor={primaryColor}
+            variant="chat"
           />
         );
       case 'booking':
@@ -223,6 +389,8 @@ export function TemplateBlockPreview({ block, compact }: TemplateBlockPreviewPro
             icon={Calendar} 
             label="Bokningssystem"
             description="Kalender & tidsbokning"
+            primaryColor={primaryColor}
+            variant="booking"
           />
         );
       case 'form':
@@ -232,6 +400,7 @@ export function TemplateBlockPreview({ block, compact }: TemplateBlockPreviewPro
             icon={FileText} 
             label="Kontaktformulär"
             description="Anpassningsbart formulär"
+            primaryColor={primaryColor}
           />
         );
       case 'products':
@@ -241,6 +410,8 @@ export function TemplateBlockPreview({ block, compact }: TemplateBlockPreviewPro
             icon={Package} 
             label="Produktgrid"
             description="Visar produkter från databasen"
+            primaryColor={primaryColor}
+            variant="products"
           />
         );
       case 'cart':
@@ -250,6 +421,7 @@ export function TemplateBlockPreview({ block, compact }: TemplateBlockPreviewPro
             icon={ShoppingCart} 
             label="Varukorg"
             description="E-handel varukorg"
+            primaryColor={primaryColor}
           />
         );
       case 'kb-hub':
@@ -257,8 +429,10 @@ export function TemplateBlockPreview({ block, compact }: TemplateBlockPreviewPro
           <BlockPlaceholder 
             type="kb-hub" 
             icon={Layers} 
-            label="Kunskapsbas Hub"
+            label="Kunskapsbas"
             description="Kategoriöversikt för hjälpartiklar"
+            primaryColor={primaryColor}
+            variant="kb"
           />
         );
       case 'kb-search':
@@ -268,6 +442,7 @@ export function TemplateBlockPreview({ block, compact }: TemplateBlockPreviewPro
             icon={Search} 
             label="KB Sök"
             description="Sök i kunskapsbasen"
+            primaryColor={primaryColor}
           />
         );
       case 'kb-featured':
@@ -277,6 +452,7 @@ export function TemplateBlockPreview({ block, compact }: TemplateBlockPreviewPro
             icon={FileText} 
             label="Utvalda artiklar"
             description="Visar utvalda KB-artiklar"
+            primaryColor={primaryColor}
           />
         );
       case 'popup':
@@ -286,6 +462,7 @@ export function TemplateBlockPreview({ block, compact }: TemplateBlockPreviewPro
             icon={LayoutGrid} 
             label="Popup"
             description="Modal/popup dialog"
+            primaryColor={primaryColor}
           />
         );
       case 'notification-toast':
@@ -295,6 +472,7 @@ export function TemplateBlockPreview({ block, compact }: TemplateBlockPreviewPro
             icon={Bell} 
             label="Notification Toast"
             description="Animerade notifikationer"
+            primaryColor={primaryColor}
           />
         );
       case 'floating-cta':
@@ -304,6 +482,7 @@ export function TemplateBlockPreview({ block, compact }: TemplateBlockPreviewPro
             icon={MousePointer} 
             label="Floating CTA"
             description="Sticky call-to-action vid scroll"
+            primaryColor={primaryColor}
           />
         );
       case 'stats':
@@ -317,6 +496,7 @@ export function TemplateBlockPreview({ block, compact }: TemplateBlockPreviewPro
             icon={LayoutGrid} 
             label="Statistik"
             description="Siffror & nyckeltal"
+            primaryColor={primaryColor}
           />
         );
 
@@ -326,6 +506,7 @@ export function TemplateBlockPreview({ block, compact }: TemplateBlockPreviewPro
             type={block.type} 
             icon={LayoutGrid} 
             label={block.type.charAt(0).toUpperCase() + block.type.slice(1).replace(/-/g, ' ')}
+            primaryColor={primaryColor}
           />
         );
     }

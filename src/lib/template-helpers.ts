@@ -441,3 +441,91 @@ export function featuresBlock(options: {
     },
   };
 }
+
+// ============================================
+// Template Preview Helpers
+// ============================================
+
+import { StarterTemplate } from '@/data/starter-templates';
+
+/**
+ * Extract the hero image or generate a gradient preview URL from a template.
+ * Returns the first hero background image or video thumbnail, or generates a CSS gradient.
+ */
+export function getTemplateThumbnail(template: StarterTemplate): { type: 'image' | 'gradient'; value: string } {
+  // Try to find hero block in the first page
+  const firstPage = template.pages?.[0];
+  if (firstPage?.blocks) {
+    for (const block of firstPage.blocks) {
+      if (block.type === 'hero') {
+        const data = block.data as any;
+        
+        // Check for background image
+        if (data.backgroundType === 'image' && data.imageSrc) {
+          return { type: 'image', value: data.imageSrc };
+        }
+        
+        // Check for video (use poster or first frame)
+        if (data.backgroundType === 'video' && data.videoUrl) {
+          // For videos, we'll use a gradient based on primary color
+          const primary = template.branding?.primaryColor || '#6366f1';
+          const accent = template.branding?.accentColor || '#8b5cf6';
+          return { 
+            type: 'gradient', 
+            value: `linear-gradient(135deg, ${primary} 0%, ${accent} 100%)` 
+          };
+        }
+      }
+      
+      // Also check two-column blocks for images
+      if (block.type === 'two-column') {
+        const data = block.data as any;
+        if (data.imageSrc) {
+          return { type: 'image', value: data.imageSrc };
+        }
+      }
+    }
+  }
+  
+  // Fallback to gradient based on branding colors
+  const primary = template.branding?.primaryColor || '#6366f1';
+  const accent = template.branding?.accentColor || '#8b5cf6';
+  return { 
+    type: 'gradient', 
+    value: `linear-gradient(135deg, ${primary} 0%, ${accent} 100%)` 
+  };
+}
+
+/**
+ * Get the hero block from a template's first page
+ */
+export function getTemplateHero(template: StarterTemplate): any | null {
+  const firstPage = template.pages?.[0];
+  if (firstPage?.blocks) {
+    for (const block of firstPage.blocks) {
+      if (block.type === 'hero') {
+        return block.data;
+      }
+    }
+  }
+  return null;
+}
+
+/**
+ * Generate a CSS background style for template preview
+ */
+export function getTemplatePreviewStyle(template: StarterTemplate): React.CSSProperties {
+  const thumbnail = getTemplateThumbnail(template);
+  
+  if (thumbnail.type === 'image') {
+    return {
+      backgroundImage: `url(${thumbnail.value})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+    };
+  }
+  
+  return {
+    background: thumbnail.value,
+  };
+}
