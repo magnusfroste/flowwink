@@ -2986,17 +2986,40 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
               secondaryButton: { text: 'Self-Host Free', url: 'https://github.com/flowwink/flowwink' },
             },
           },
-          // KB SEARCH - Hero variant for Knowledge Base integration
+          // CHAT USP - Content-aware AI assistant intro
           {
-            id: 'kb-search-hero',
-            type: 'kb-search',
+            id: 'chat-intro',
+            type: 'text',
             data: {
-              title: 'How can we help you?',
-              subtitle: 'Search our documentation and knowledge base for answers.',
-              placeholder: 'Search for answers...',
-              buttonText: 'Search',
-              variant: 'hero',
-              showButton: true,
+              content: {
+                type: 'doc',
+                content: [
+                  {
+                    type: 'heading',
+                    attrs: { level: 2 },
+                    content: [{ type: 'text', text: 'AI That Actually Knows Your Content' }]
+                  },
+                  {
+                    type: 'paragraph',
+                    content: [
+                      { type: 'text', text: 'Unlike generic chat widgets, our AI assistant reads your ' },
+                      { type: 'text', marks: [{ type: 'bold' }], text: 'actual content' },
+                      { type: 'text', text: ' – every page, blog post, and knowledge base article. Ask it anything about FlowWink and see the difference.' },
+                    ]
+                  },
+                ],
+              },
+              alignment: 'center',
+            },
+          },
+          // CHAT BLOCK - Interactive AI demo
+          {
+            id: 'chat-hero',
+            type: 'chat',
+            data: {
+              title: 'Ask Anything About FlowWink',
+              variant: 'card',
+              height: 'md',
             },
           },
           // FEATURES - Three pillars (Head + FlowWink + Headless)
