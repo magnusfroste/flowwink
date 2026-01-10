@@ -1,4 +1,4 @@
-import { ContentBlock, PageMeta, FooterBlockData } from '@/types/cms';
+import { ContentBlock, PageMeta, FooterBlockData, HeaderBlockData } from '@/types/cms';
 import { BrandingSettings, ChatSettings, SeoSettings, CookieBannerSettings } from '@/hooks/useSiteSettings';
 import { ModulesSettings } from '@/hooks/useModules';
 import { 
@@ -87,6 +87,7 @@ export interface StarterTemplate {
   // Site-wide settings
   branding: Partial<BrandingSettings>;
   chatSettings: Partial<ChatSettings>;
+  headerSettings: Partial<HeaderBlockData>;
   footerSettings: Partial<FooterBlockData>;
   seoSettings: Partial<SeoSettings>;
   cookieBannerSettings: Partial<CookieBannerSettings>;
@@ -2582,6 +2583,12 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
         'How much does it cost?',
         'Can I get a demo?',
       ],
+    headerSettings: {
+      variant: 'sticky',
+      stickyHeader: true,
+      backgroundStyle: 'blur',
+      headerShadow: 'sm',
+      showBorder: true,
     },
     footerSettings: {
       variant: 'full',
@@ -2640,8 +2647,17 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
       defaultTheme: 'dark',              // Force dark mode for this template
     },
     chatSettings: {
-      enabled: false,                    // Clean single-page feel
+      enabled: false,
       widgetEnabled: false,
+    },
+    headerSettings: {
+      variant: 'clean',
+      stickyHeader: false,
+      backgroundStyle: 'transparent',
+      headerShadow: 'none',
+      showBorder: false,
+      headerHeight: 'tall',
+      linkColorScheme: 'contrast',
     },
     footerSettings: {
       variant: 'minimal',
@@ -2709,6 +2725,14 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
         'How do you ensure data security?',
         'I need to speak with a consultant',
       ],
+    },
+    headerSettings: {
+      variant: 'mega-menu',
+      stickyHeader: true,
+      backgroundStyle: 'solid',
+      headerShadow: 'md',
+      showBorder: true,
+      headerHeight: 'default',
     },
     footerSettings: {
       variant: 'enterprise',
@@ -2780,6 +2804,13 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
         'How do I book an appointment?',
         'Is my data kept private?',
       ],
+    },
+    headerSettings: {
+      variant: 'mega-menu',
+      stickyHeader: true,
+      backgroundStyle: 'solid',
+      headerShadow: 'md',
+      showBorder: true,
     },
     footerSettings: {
       variant: 'enterprise',
@@ -6186,6 +6217,12 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
         'Does it support headless API?',
       ],
     },
+    headerSettings: {
+      variant: 'sticky',
+      stickyHeader: true,
+      backgroundStyle: 'blur',
+      headerShadow: 'sm',
+    },
     footerSettings: {
       variant: 'full',
       email: 'hello@flowwink.com',
@@ -6616,6 +6653,11 @@ const helpCenterTemplate: StarterTemplate = {
       'What are your pricing plans?',
       'How can I contact support?',
     ],
+  },
+  headerSettings: {
+    variant: 'sticky',
+    stickyHeader: true,
+    backgroundStyle: 'blur',
   },
   footerSettings: {
     variant: 'minimal',
@@ -7168,6 +7210,11 @@ const serviceProTemplate: StarterTemplate = {
       'What are your hours?',
     ],
   },
+  headerSettings: {
+    variant: 'sticky',
+    stickyHeader: true,
+    backgroundStyle: 'blur',
+  },
   footerSettings: {
     variant: 'full',
     email: 'hello@servicepro.com',
@@ -7581,6 +7628,11 @@ const digitalShopTemplate: StarterTemplate = {
       'How does delivery work?',
       'Do you offer refunds?',
     ],
+  },
+  headerSettings: {
+    variant: 'sticky',
+    stickyHeader: true,
+    backgroundStyle: 'blur',
   },
   footerSettings: {
     variant: 'full',

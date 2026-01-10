@@ -158,6 +158,8 @@ export interface GlobalBlock {
 
 // Header block data (stored in global_blocks.data)
 export interface HeaderBlockData {
+  // Variant determines overall layout/style preset
+  variant?: HeaderVariant;
   showLogo?: boolean;
   showNameWithLogo?: boolean;
   logoSize?: 'sm' | 'md' | 'lg';
@@ -175,6 +177,9 @@ export interface HeaderBlockData {
   // Mobile menu
   mobileMenuStyle?: 'default' | 'fullscreen' | 'slide';
   mobileMenuAnimation?: 'fade' | 'slide-down' | 'slide-up';
+  // Mega menu specific
+  megaMenuEnabled?: boolean;
+  megaMenuColumns?: 2 | 3 | 4;
   // Custom nav items (external links beyond CMS pages)
   customNavItems?: HeaderNavItem[];
 }
@@ -186,6 +191,9 @@ export interface HeaderNavItem {
   openInNewTab?: boolean;
   enabled: boolean;
 }
+
+// Header variant types
+export type HeaderVariant = 'clean' | 'sticky' | 'mega-menu';
 
 // Footer variant types
 export type FooterVariant = 'minimal' | 'full' | 'enterprise';

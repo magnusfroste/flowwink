@@ -4,8 +4,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Plus, Trash2, GripVertical, ExternalLink } from 'lucide-react';
-import { HeaderBlockData, HeaderNavItem } from '@/types/cms';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Plus, Trash2, GripVertical, ExternalLink, Sparkles, Pin, LayoutGrid } from 'lucide-react';
+import { HeaderBlockData, HeaderNavItem, HeaderVariant } from '@/types/cms';
+import { headerVariantPresets } from '@/hooks/useGlobalBlocks';
 import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
@@ -135,293 +137,322 @@ export function HeaderBlockEditor({ data, onChange }: HeaderBlockEditorProps) {
     });
   };
 
+  const applyVariantPreset = (variant: HeaderVariant) => {
+    const preset = headerVariantPresets[variant];
+    if (preset) {
+      onChange({ ...data, ...preset });
+    }
+  };
+
+  const variantDescriptions: Record<HeaderVariant, string> = {
+    clean: 'Minimalistisk transparent header för kreativa sidor',
+    sticky: 'Fast header med blur-effekt som följer vid scroll',
+    'mega-menu': 'Kraftfull header med dropdown mega-menyer',
+  };
+
+  const variantIcons: Record<HeaderVariant, React.ReactNode> = {
+    clean: <Sparkles className="h-5 w-5" />,
+    sticky: <Pin className="h-5 w-5" />,
+    'mega-menu': <LayoutGrid className="h-5 w-5" />,
+  };
+
   return (
-    <div className="space-y-6">
+    <Tabs defaultValue="variant" className="space-y-6">
+      <TabsList className="grid w-full grid-cols-4">
+        <TabsTrigger value="variant">Variant</TabsTrigger>
+        <TabsTrigger value="branding">Logo</TabsTrigger>
+        <TabsTrigger value="appearance">Utseende</TabsTrigger>
+        <TabsTrigger value="navigation">Navigation</TabsTrigger>
+      </TabsList>
+
+      {/* Variant Selection */}
+      <TabsContent value="variant" className="space-y-4">
+        <div className="grid gap-3">
+          {(['clean', 'sticky', 'mega-menu'] as HeaderVariant[]).map((variant) => (
+            <Card
+              key={variant}
+              className={`cursor-pointer transition-all hover:border-primary/50 ${
+                data.variant === variant ? 'border-primary ring-2 ring-primary/20' : ''
+              }`}
+              onClick={() => applyVariantPreset(variant)}
+            >
+              <CardContent className="p-4 flex items-start gap-4">
+                <div className={`p-2 rounded-lg ${
+                  data.variant === variant ? 'bg-primary text-primary-foreground' : 'bg-muted'
+                }`}>
+                  {variantIcons[variant]}
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-medium capitalize">{variant.replace('-', ' ')}</h4>
+                  <p className="text-sm text-muted-foreground">{variantDescriptions[variant]}</p>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </TabsContent>
+
       {/* Logo & Branding */}
-      <Card>
-        <CardContent className="pt-6 space-y-4">
-          <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
-            Logo & Branding
-          </h3>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <Label>Show Logo</Label>
-              <p className="text-sm text-muted-foreground">Display logo in header</p>
+      <TabsContent value="branding" className="space-y-4">
+        <Card>
+          <CardContent className="pt-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Visa logotyp</Label>
+                <p className="text-sm text-muted-foreground">Visa logotyp i header</p>
+              </div>
+              <Switch
+                checked={data.showLogo !== false}
+                onCheckedChange={(checked) => onChange({ ...data, showLogo: checked })}
+              />
             </div>
-            <Switch
-              checked={data.showLogo !== false}
-              onCheckedChange={(checked) => onChange({ ...data, showLogo: checked })}
-            />
-          </div>
 
-          <div className="flex items-center justify-between">
-            <div>
-              <Label>Show Name with Logo</Label>
-              <p className="text-sm text-muted-foreground">Display organization name next to logo</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Visa namn med logotyp</Label>
+                <p className="text-sm text-muted-foreground">Visa organisationsnamn bredvid logotyp</p>
+              </div>
+              <Switch
+                checked={data.showNameWithLogo === true}
+                onCheckedChange={(checked) => onChange({ ...data, showNameWithLogo: checked })}
+              />
             </div>
-            <Switch
-              checked={data.showNameWithLogo === true}
-              onCheckedChange={(checked) => onChange({ ...data, showNameWithLogo: checked })}
-            />
-          </div>
 
-          <div className="space-y-2">
-            <Label>Logo Size</Label>
-            <Select
-              value={data.logoSize || 'md'}
-              onValueChange={(value: 'sm' | 'md' | 'lg') => onChange({ ...data, logoSize: value })}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="sm">Small</SelectItem>
-                <SelectItem value="md">Medium</SelectItem>
-                <SelectItem value="lg">Large</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label>Navigation Alignment</Label>
-            <Select
-              value={data.navAlignment || 'right'}
-              onValueChange={(value: 'left' | 'center' | 'right') => onChange({ ...data, navAlignment: value })}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="left">Left (after logo)</SelectItem>
-                <SelectItem value="center">Center</SelectItem>
-                <SelectItem value="right">Right</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+            <div className="space-y-2">
+              <Label>Logotypstorlek</Label>
+              <Select
+                value={data.logoSize || 'md'}
+                onValueChange={(value: 'sm' | 'md' | 'lg') => onChange({ ...data, logoSize: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="sm">Liten</SelectItem>
+                  <SelectItem value="md">Medium</SelectItem>
+                  <SelectItem value="lg">Stor</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div className="space-y-2">
-            <Label>Header Height</Label>
-            <Select
-              value={data.headerHeight || 'default'}
-              onValueChange={(value: 'compact' | 'default' | 'tall') => onChange({ ...data, headerHeight: value })}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="compact">Compact (48px)</SelectItem>
-                <SelectItem value="default">Default (64px)</SelectItem>
-                <SelectItem value="tall">Tall (80px)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+            <div className="space-y-2">
+              <Label>Header-höjd</Label>
+              <Select
+                value={data.headerHeight || 'default'}
+                onValueChange={(value: 'compact' | 'default' | 'tall') => onChange({ ...data, headerHeight: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="compact">Kompakt (48px)</SelectItem>
+                  <SelectItem value="default">Standard (64px)</SelectItem>
+                  <SelectItem value="tall">Hög (80px)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+      </TabsContent>
 
       {/* Appearance */}
-      <Card>
-        <CardContent className="pt-6 space-y-4">
-          <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
-            Appearance
-          </h3>
-
-          <div className="space-y-2">
-            <Label>Background Style</Label>
-            <Select
-              value={data.backgroundStyle || 'solid'}
-              onValueChange={(value: 'solid' | 'transparent' | 'blur') => onChange({ ...data, backgroundStyle: value })}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="solid">Solid Background</SelectItem>
-                <SelectItem value="transparent">Transparent</SelectItem>
-                <SelectItem value="blur">Blur (Glass Effect)</SelectItem>
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">
-              {data.backgroundStyle === 'blur' && 'Creates a frosted glass effect when scrolling over content'}
-              {data.backgroundStyle === 'transparent' && 'Header has no background, content shows through'}
-              {(!data.backgroundStyle || data.backgroundStyle === 'solid') && 'Standard opaque background'}
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Shadow</Label>
-            <Select
-              value={data.headerShadow || 'none'}
-              onValueChange={(value: 'none' | 'sm' | 'md' | 'lg') => onChange({ ...data, headerShadow: value })}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">None</SelectItem>
-                <SelectItem value="sm">Small</SelectItem>
-                <SelectItem value="md">Medium</SelectItem>
-                <SelectItem value="lg">Large</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Link Color Scheme</Label>
-            <Select
-              value={data.linkColorScheme || 'default'}
-              onValueChange={(value: 'default' | 'primary' | 'muted' | 'contrast') => onChange({ ...data, linkColorScheme: value })}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="default">Default (Muted → Foreground)</SelectItem>
-                <SelectItem value="primary">Primary Accent</SelectItem>
-                <SelectItem value="muted">Subtle Muted</SelectItem>
-                <SelectItem value="contrast">High Contrast</SelectItem>
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">
-              Affects navigation link colors and hover states
-            </p>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <Label>Show Border</Label>
-              <p className="text-sm text-muted-foreground">Display a bottom border on the header</p>
-            </div>
-            <Switch
-              checked={data.showBorder !== false}
-              onCheckedChange={(checked) => onChange({ ...data, showBorder: checked })}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Behavior */}
-      <Card>
-        <CardContent className="pt-6 space-y-4">
-          <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
-            Behavior
-          </h3>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <Label>Sticky Header</Label>
-              <p className="text-sm text-muted-foreground">Header stays visible when scrolling</p>
-            </div>
-            <Switch
-              checked={data.stickyHeader !== false}
-              onCheckedChange={(checked) => onChange({ ...data, stickyHeader: checked })}
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <Label>Show Theme Toggle</Label>
-              <p className="text-sm text-muted-foreground">Allow visitors to switch dark/light mode</p>
-            </div>
-            <Switch
-              checked={data.showThemeToggle !== false}
-              onCheckedChange={(checked) => onChange({ ...data, showThemeToggle: checked })}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Mobile Menu */}
-      <Card>
-        <CardContent className="pt-6 space-y-4">
-          <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
-            Mobile Menu
-          </h3>
-
-          <div className="space-y-2">
-            <Label>Menu Style</Label>
-            <Select
-              value={data.mobileMenuStyle || 'default'}
-              onValueChange={(value: 'default' | 'fullscreen' | 'slide') => onChange({ ...data, mobileMenuStyle: value })}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="default">Default (Dropdown)</SelectItem>
-                <SelectItem value="fullscreen">Fullscreen Overlay</SelectItem>
-                <SelectItem value="slide">Slide from Right</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Animation</Label>
-            <Select
-              value={data.mobileMenuAnimation || 'fade'}
-              onValueChange={(value: 'fade' | 'slide-down' | 'slide-up') => onChange({ ...data, mobileMenuAnimation: value })}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="fade">Fade In</SelectItem>
-                <SelectItem value="slide-down">Slide Down</SelectItem>
-                <SelectItem value="slide-up">Slide Up</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Custom Navigation Items */}
-      <Card>
-        <CardContent className="pt-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
-                Custom Navigation Items
-              </h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                Add external links beyond CMS pages
-              </p>
-            </div>
-            <Button variant="outline" size="sm" onClick={addNavItem}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Link
-            </Button>
-          </div>
-
-          {(data.customNavItems || []).length > 0 && (
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleDragEnd}
-            >
-              <SortableContext
-                items={(data.customNavItems || []).map((item) => item.id)}
-                strategy={verticalListSortingStrategy}
+      <TabsContent value="appearance" className="space-y-4">
+        <Card>
+          <CardContent className="pt-6 space-y-4">
+            <div className="space-y-2">
+              <Label>Bakgrundsstil</Label>
+              <Select
+                value={data.backgroundStyle || 'solid'}
+                onValueChange={(value: 'solid' | 'transparent' | 'blur') => onChange({ ...data, backgroundStyle: value })}
               >
-                <div className="space-y-2">
-                  {(data.customNavItems || []).map((item) => (
-                    <SortableNavItem
-                      key={item.id}
-                      item={item}
-                      onUpdate={(updated) => updateNavItem(item.id, updated)}
-                      onRemove={() => removeNavItem(item.id)}
-                    />
-                  ))}
-                </div>
-              </SortableContext>
-            </DndContext>
-          )}
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="solid">Solid bakgrund</SelectItem>
+                  <SelectItem value="transparent">Transparent</SelectItem>
+                  <SelectItem value="blur">Blur (glaseffekt)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          {(data.customNavItems || []).length === 0 && (
-            <p className="text-sm text-muted-foreground text-center py-4">
-              No custom navigation items. CMS pages will be shown automatically.
-            </p>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+            <div className="space-y-2">
+              <Label>Skugga</Label>
+              <Select
+                value={data.headerShadow || 'none'}
+                onValueChange={(value: 'none' | 'sm' | 'md' | 'lg') => onChange({ ...data, headerShadow: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Ingen</SelectItem>
+                  <SelectItem value="sm">Liten</SelectItem>
+                  <SelectItem value="md">Medium</SelectItem>
+                  <SelectItem value="lg">Stor</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Länkfärg</Label>
+              <Select
+                value={data.linkColorScheme || 'default'}
+                onValueChange={(value: 'default' | 'primary' | 'muted' | 'contrast') => onChange({ ...data, linkColorScheme: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="default">Standard</SelectItem>
+                  <SelectItem value="primary">Primärfärg</SelectItem>
+                  <SelectItem value="muted">Subtil</SelectItem>
+                  <SelectItem value="contrast">Hög kontrast</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Visa kant</Label>
+                <p className="text-sm text-muted-foreground">Visa en nedre kant på headern</p>
+              </div>
+              <Switch
+                checked={data.showBorder !== false}
+                onCheckedChange={(checked) => onChange({ ...data, showBorder: checked })}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Sticky header</Label>
+                <p className="text-sm text-muted-foreground">Header följer med vid scroll</p>
+              </div>
+              <Switch
+                checked={data.stickyHeader !== false}
+                onCheckedChange={(checked) => onChange({ ...data, stickyHeader: checked })}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Visa tema-växlare</Label>
+                <p className="text-sm text-muted-foreground">Låt besökare byta mellan mörkt/ljust läge</p>
+              </div>
+              <Switch
+                checked={data.showThemeToggle !== false}
+                onCheckedChange={(checked) => onChange({ ...data, showThemeToggle: checked })}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      {/* Navigation */}
+      <TabsContent value="navigation" className="space-y-4">
+        <Card>
+          <CardContent className="pt-6 space-y-4">
+            <div className="space-y-2">
+              <Label>Navigeringsjustering</Label>
+              <Select
+                value={data.navAlignment || 'right'}
+                onValueChange={(value: 'left' | 'center' | 'right') => onChange({ ...data, navAlignment: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="left">Vänster (efter logotyp)</SelectItem>
+                  <SelectItem value="center">Centrerad</SelectItem>
+                  <SelectItem value="right">Höger</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Mobilmeny-stil</Label>
+              <Select
+                value={data.mobileMenuStyle || 'default'}
+                onValueChange={(value: 'default' | 'fullscreen' | 'slide') => onChange({ ...data, mobileMenuStyle: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="default">Dropdown</SelectItem>
+                  <SelectItem value="fullscreen">Helskärm</SelectItem>
+                  <SelectItem value="slide">Slide från höger</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Mobilmeny-animation</Label>
+              <Select
+                value={data.mobileMenuAnimation || 'fade'}
+                onValueChange={(value: 'fade' | 'slide-down' | 'slide-up') => onChange({ ...data, mobileMenuAnimation: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="fade">Fade in</SelectItem>
+                  <SelectItem value="slide-down">Slide ner</SelectItem>
+                  <SelectItem value="slide-up">Slide upp</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Custom Navigation Items */}
+        <Card>
+          <CardContent className="pt-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-medium">Egna navigeringslänkar</h3>
+                <p className="text-sm text-muted-foreground">
+                  Lägg till externa länkar utöver CMS-sidor
+                </p>
+              </div>
+              <Button variant="outline" size="sm" onClick={addNavItem}>
+                <Plus className="h-4 w-4 mr-2" />
+                Lägg till
+              </Button>
+            </div>
+
+            {(data.customNavItems || []).length > 0 && (
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={(data.customNavItems || []).map((item) => item.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="space-y-2">
+                    {(data.customNavItems || []).map((item) => (
+                      <SortableNavItem
+                        key={item.id}
+                        item={item}
+                        onUpdate={(updated) => updateNavItem(item.id, updated)}
+                        onRemove={() => removeNavItem(item.id)}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
+            )}
+
+            {(data.customNavItems || []).length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                Inga egna navigeringslänkar. CMS-sidor visas automatiskt.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      </TabsContent>
+    </Tabs>
   );
 }
