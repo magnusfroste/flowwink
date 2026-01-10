@@ -190,6 +190,21 @@ export interface HeaderNavItem {
   url: string;
   openInNewTab?: boolean;
   enabled: boolean;
+  // Mega menu sub-items
+  children?: HeaderNavSubItem[];
+  // Column settings for mega menu
+  columnLabel?: string;
+  description?: string;
+  icon?: string;
+}
+
+export interface HeaderNavSubItem {
+  id: string;
+  label: string;
+  url: string;
+  description?: string;
+  icon?: string;
+  openInNewTab?: boolean;
 }
 
 // Header variant types
