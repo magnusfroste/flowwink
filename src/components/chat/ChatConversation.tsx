@@ -22,7 +22,7 @@ export function ChatConversation({
   conversationId,
   onNewConversation,
 }: ChatConversationProps) {
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const { data: settings } = useChatSettings();
   
   const {
@@ -33,9 +33,15 @@ export function ChatConversation({
     cancelRequest,
   } = useChat({ conversationId, onNewConversation });
 
-  // Auto-scroll to bottom on new messages
+  // Auto-scroll within the chat container (not the whole page)
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const container = scrollContainerRef.current;
+    if (container) {
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: 'smooth',
+      });
+    }
   }, [messages, isLoading]);
 
   const handlePromptClick = (prompt: string) => {
@@ -52,7 +58,7 @@ export function ChatConversation({
       className
     )}>
       {/* Messages area */}
-      <div className="flex-1 overflow-y-auto">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
         {showEmptyState ? (
           <ChatEmptyState
             title={settings?.title}
@@ -71,7 +77,6 @@ export function ChatConversation({
               />
             ))}
             {showTypingIndicator && <ChatTypingIndicator />}
-            <div ref={messagesEndRef} />
           </div>
         )}
       </div>
