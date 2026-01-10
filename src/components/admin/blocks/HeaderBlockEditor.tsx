@@ -3,22 +3,27 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Trash2, GripVertical, ExternalLink, Sparkles, Pin, LayoutGrid } from 'lucide-react';
-import { HeaderBlockData, HeaderNavItem, HeaderVariant } from '@/types/cms';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Textarea } from '@/components/ui/textarea';
+import { Plus, Trash2, GripVertical, ExternalLink, Sparkles, Pin, LayoutGrid, ChevronDown, ChevronRight } from 'lucide-react';
+import { HeaderBlockData, HeaderNavItem, HeaderNavSubItem, HeaderVariant } from '@/types/cms';
 import { headerVariantPresets } from '@/hooks/useGlobalBlocks';
 import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { arrayMove } from '@dnd-kit/sortable';
+import { useState } from 'react';
+import { cn } from '@/lib/utils';
 
 interface HeaderBlockEditorProps {
   data: HeaderBlockData;
   onChange: (data: HeaderBlockData) => void;
 }
 
-function SortableNavItem({
+// Simple nav item for regular links (non-mega-menu)
+function SimpleNavItem({
   item,
   onUpdate,
   onRemove,
@@ -88,11 +93,223 @@ function SortableNavItem({
   );
 }
 
+// Sub-item editor for mega menu children
+function SubItemEditor({
+  subItem,
+  onUpdate,
+  onRemove,
+}: {
+  subItem: HeaderNavSubItem;
+  onUpdate: (subItem: HeaderNavSubItem) => void;
+  onRemove: () => void;
+}) {
+  return (
+    <div className="flex items-start gap-3 p-3 bg-background border rounded-lg">
+      <div className="flex-1 space-y-3">
+        <div className="grid grid-cols-3 gap-2">
+          <Input
+            value={subItem.icon || ''}
+            onChange={(e) => onUpdate({ ...subItem, icon: e.target.value })}
+            placeholder="Emoji 🎯"
+            className="w-full"
+          />
+          <Input
+            value={subItem.label}
+            onChange={(e) => onUpdate({ ...subItem, label: e.target.value })}
+            placeholder="Rubrik"
+            className="col-span-2"
+          />
+        </div>
+        <Input
+          value={subItem.url}
+          onChange={(e) => onUpdate({ ...subItem, url: e.target.value })}
+          placeholder="URL (t.ex. /solutions/analytics)"
+        />
+        <Input
+          value={subItem.description || ''}
+          onChange={(e) => onUpdate({ ...subItem, description: e.target.value })}
+          placeholder="Kort beskrivning..."
+        />
+      </div>
+      
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-1">
+          <Switch
+            checked={subItem.openInNewTab}
+            onCheckedChange={(checked) => onUpdate({ ...subItem, openInNewTab: checked })}
+          />
+          <ExternalLink className="h-3 w-3 text-muted-foreground" />
+        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onRemove}
+          className="text-destructive hover:text-destructive h-8 w-8"
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// Mega menu parent item with expandable children
+function MegaMenuParentItem({
+  item,
+  onUpdate,
+  onRemove,
+}: {
+  item: HeaderNavItem;
+  onUpdate: (item: HeaderNavItem) => void;
+  onRemove: () => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+  } = useSortable({ id: item.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  const addSubItem = () => {
+    const newSubItem: HeaderNavSubItem = {
+      id: crypto.randomUUID(),
+      label: '',
+      url: '',
+      description: '',
+      icon: '',
+    };
+    onUpdate({
+      ...item,
+      children: [...(item.children || []), newSubItem],
+    });
+  };
+
+  const updateSubItem = (subItemId: string, updatedSubItem: HeaderNavSubItem) => {
+    onUpdate({
+      ...item,
+      children: (item.children || []).map((sub) =>
+        sub.id === subItemId ? updatedSubItem : sub
+      ),
+    });
+  };
+
+  const removeSubItem = (subItemId: string) => {
+    onUpdate({
+      ...item,
+      children: (item.children || []).filter((sub) => sub.id !== subItemId),
+    });
+  };
+
+  const childCount = item.children?.length || 0;
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="border rounded-lg overflow-hidden"
+    >
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        <div className="flex items-center gap-3 p-3 bg-muted/50">
+          <div {...attributes} {...listeners} className="cursor-grab">
+            <GripVertical className="h-4 w-4 text-muted-foreground" />
+          </div>
+          
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              {isOpen ? (
+                <ChevronDown className="h-4 w-4" />
+              ) : (
+                <ChevronRight className="h-4 w-4" />
+              )}
+            </Button>
+          </CollapsibleTrigger>
+
+          <div className="flex-1 grid grid-cols-3 gap-3">
+            <Input
+              value={item.label}
+              onChange={(e) => onUpdate({ ...item, label: e.target.value })}
+              placeholder="Menyrubrik"
+            />
+            <Input
+              value={item.url || ''}
+              onChange={(e) => onUpdate({ ...item, url: e.target.value })}
+              placeholder="URL (valfri)"
+            />
+            <Input
+              value={item.description || ''}
+              onChange={(e) => onUpdate({ ...item, description: e.target.value })}
+              placeholder="Beskrivning"
+            />
+          </div>
+
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span className="bg-primary/10 text-primary px-2 py-0.5 rounded text-xs font-medium">
+              {childCount} {childCount === 1 ? 'länk' : 'länkar'}
+            </span>
+          </div>
+
+          <Switch
+            checked={item.enabled}
+            onCheckedChange={(checked) => onUpdate({ ...item, enabled: checked })}
+          />
+
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onRemove}
+            className="text-destructive hover:text-destructive"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+
+        <CollapsibleContent>
+          <div className="p-4 bg-muted/20 border-t space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-medium">Dropdown-länkar</h4>
+              <Button variant="outline" size="sm" onClick={addSubItem}>
+                <Plus className="h-4 w-4 mr-2" />
+                Lägg till länk
+              </Button>
+            </div>
+
+            {(item.children || []).length > 0 ? (
+              <div className="space-y-2">
+                {(item.children || []).map((subItem) => (
+                  <SubItemEditor
+                    key={subItem.id}
+                    subItem={subItem}
+                    onUpdate={(updated) => updateSubItem(subItem.id, updated)}
+                    onRemove={() => removeSubItem(subItem.id)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-4 border-2 border-dashed rounded-lg">
+                Inga dropdown-länkar ännu. Lägg till för att skapa en mega-meny.
+              </p>
+            )}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+    </div>
+  );
+}
+
 export function HeaderBlockEditor({ data, onChange }: HeaderBlockEditorProps) {
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor)
   );
+
+  const isMegaMenuVariant = data.variant === 'mega-menu' || data.megaMenuEnabled;
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -114,6 +331,7 @@ export function HeaderBlockEditor({ data, onChange }: HeaderBlockEditorProps) {
       url: '',
       openInNewTab: false,
       enabled: true,
+      children: isMegaMenuVariant ? [] : undefined,
     };
     onChange({
       ...data,
@@ -158,11 +376,12 @@ export function HeaderBlockEditor({ data, onChange }: HeaderBlockEditorProps) {
 
   return (
     <Tabs defaultValue="variant" className="space-y-6">
-      <TabsList className="grid w-full grid-cols-4">
+      <TabsList className={cn("grid w-full", isMegaMenuVariant ? "grid-cols-5" : "grid-cols-4")}>
         <TabsTrigger value="variant">Variant</TabsTrigger>
         <TabsTrigger value="branding">Logo</TabsTrigger>
         <TabsTrigger value="appearance">Utseende</TabsTrigger>
         <TabsTrigger value="navigation">Navigation</TabsTrigger>
+        {isMegaMenuVariant && <TabsTrigger value="megamenu">Mega-meny</TabsTrigger>}
       </TabsList>
 
       {/* Variant Selection */}
@@ -405,54 +624,167 @@ export function HeaderBlockEditor({ data, onChange }: HeaderBlockEditorProps) {
           </CardContent>
         </Card>
 
-        {/* Custom Navigation Items */}
-        <Card>
-          <CardContent className="pt-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-medium">Egna navigeringslänkar</h3>
-                <p className="text-sm text-muted-foreground">
-                  Lägg till externa länkar utöver CMS-sidor
-                </p>
+        {/* Custom Navigation Items - Simple version for non-mega-menu */}
+        {!isMegaMenuVariant && (
+          <Card>
+            <CardContent className="pt-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-medium">Egna navigeringslänkar</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Lägg till externa länkar utöver CMS-sidor
+                  </p>
+                </div>
+                <Button variant="outline" size="sm" onClick={addNavItem}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Lägg till
+                </Button>
               </div>
-              <Button variant="outline" size="sm" onClick={addNavItem}>
-                <Plus className="h-4 w-4 mr-2" />
-                Lägg till
-              </Button>
-            </div>
 
-            {(data.customNavItems || []).length > 0 && (
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleDragEnd}
-              >
-                <SortableContext
-                  items={(data.customNavItems || []).map((item) => item.id)}
-                  strategy={verticalListSortingStrategy}
+              {(data.customNavItems || []).length > 0 && (
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
                 >
-                  <div className="space-y-2">
-                    {(data.customNavItems || []).map((item) => (
-                      <SortableNavItem
-                        key={item.id}
-                        item={item}
-                        onUpdate={(updated) => updateNavItem(item.id, updated)}
-                        onRemove={() => removeNavItem(item.id)}
-                      />
-                    ))}
-                  </div>
-                </SortableContext>
-              </DndContext>
-            )}
+                  <SortableContext
+                    items={(data.customNavItems || []).map((item) => item.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div className="space-y-2">
+                      {(data.customNavItems || []).map((item) => (
+                        <SimpleNavItem
+                          key={item.id}
+                          item={item}
+                          onUpdate={(updated) => updateNavItem(item.id, updated)}
+                          onRemove={() => removeNavItem(item.id)}
+                        />
+                      ))}
+                    </div>
+                  </SortableContext>
+                </DndContext>
+              )}
 
-            {(data.customNavItems || []).length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                Inga egna navigeringslänkar. CMS-sidor visas automatiskt.
-              </p>
-            )}
-          </CardContent>
-        </Card>
+              {(data.customNavItems || []).length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Inga egna navigeringslänkar. CMS-sidor visas automatiskt.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </TabsContent>
+
+      {/* Mega Menu Tab - Only shown when mega-menu variant is active */}
+      {isMegaMenuVariant && (
+        <TabsContent value="megamenu" className="space-y-4">
+          {/* Mega Menu Settings */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <LayoutGrid className="h-4 w-4" />
+                Mega-meny inställningar
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>Aktivera mega-meny</Label>
+                  <p className="text-sm text-muted-foreground">Visa dropdowns med flera kolumner</p>
+                </div>
+                <Switch
+                  checked={data.megaMenuEnabled !== false}
+                  onCheckedChange={(checked) => onChange({ ...data, megaMenuEnabled: checked })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Antal kolumner i dropdown</Label>
+                <Select
+                  value={String(data.megaMenuColumns || 3)}
+                  onValueChange={(value) => onChange({ ...data, megaMenuColumns: Number(value) as 2 | 3 | 4 })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="2">2 kolumner</SelectItem>
+                    <SelectItem value="3">3 kolumner</SelectItem>
+                    <SelectItem value="4">4 kolumner</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Mega Menu Items */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-base">Menygrupper</CardTitle>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Skapa dropdown-menyer med kategorier och länkar
+                  </p>
+                </div>
+                <Button variant="outline" size="sm" onClick={addNavItem}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Lägg till menygrupp
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {(data.customNavItems || []).length > 0 ? (
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                >
+                  <SortableContext
+                    items={(data.customNavItems || []).map((item) => item.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div className="space-y-3">
+                      {(data.customNavItems || []).map((item) => (
+                        <MegaMenuParentItem
+                          key={item.id}
+                          item={item}
+                          onUpdate={(updated) => updateNavItem(item.id, updated)}
+                          onRemove={() => removeNavItem(item.id)}
+                        />
+                      ))}
+                    </div>
+                  </SortableContext>
+                </DndContext>
+              ) : (
+                <div className="text-center py-8 border-2 border-dashed rounded-lg">
+                  <LayoutGrid className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                  <p className="text-sm text-muted-foreground">
+                    Inga menygrupper ännu. Lägg till för att skapa dropdown-menyer.
+                  </p>
+                  <Button variant="outline" size="sm" className="mt-4" onClick={addNavItem}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Skapa första menygruppen
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Quick Tips */}
+          <Card className="bg-primary/5 border-primary/20">
+            <CardContent className="pt-6">
+              <h4 className="font-medium text-sm mb-2">💡 Tips för mega-menyer</h4>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>• Använd emojis som ikoner för visuell klarhet (t.ex. 📊 🔒 ⚡)</li>
+                <li>• Håll beskrivningar korta och informativa</li>
+                <li>• Gruppera relaterade länkar under samma menygrupp</li>
+                <li>• Lämna URL tom på menygruppen om den bara ska öppna dropdown</li>
+              </ul>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      )}
     </Tabs>
   );
 }
