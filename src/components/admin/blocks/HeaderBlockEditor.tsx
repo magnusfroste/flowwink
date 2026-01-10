@@ -93,7 +93,7 @@ function SimpleNavItem({
   );
 }
 
-// Sub-item editor for mega menu children
+// Sub-item editor for mega menu children with drag-and-drop
 function SubItemEditor({
   subItem,
   onUpdate,
@@ -103,8 +103,29 @@ function SubItemEditor({
   onUpdate: (subItem: HeaderNavSubItem) => void;
   onRemove: () => void;
 }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+  } = useSortable({ id: subItem.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
   return (
-    <div className="flex items-start gap-3 p-3 bg-background border rounded-lg">
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-start gap-3 p-3 bg-background border rounded-lg"
+    >
+      <div {...attributes} {...listeners} className="cursor-grab mt-2">
+        <GripVertical className="h-4 w-4 text-muted-foreground" />
+      </div>
+
       <div className="flex-1 space-y-3">
         <div className="grid grid-cols-3 gap-2">
           <Input
@@ -172,6 +193,11 @@ function MegaMenuParentItem({
     transition,
   } = useSortable({ id: item.id });
 
+  const subItemSensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor)
+  );
+
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -207,7 +233,21 @@ function MegaMenuParentItem({
     });
   };
 
+  const handleSubItemDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const children = item.children || [];
+      const oldIndex = children.findIndex((sub) => sub.id === active.id);
+      const newIndex = children.findIndex((sub) => sub.id === over.id);
+      onUpdate({
+        ...item,
+        children: arrayMove(children, oldIndex, newIndex),
+      });
+    }
+  };
+
   const childCount = item.children?.length || 0;
+  const subItemIds = (item.children || []).map((sub) => sub.id);
 
   return (
     <div
@@ -281,16 +321,24 @@ function MegaMenuParentItem({
             </div>
 
             {(item.children || []).length > 0 ? (
-              <div className="space-y-2">
-                {(item.children || []).map((subItem) => (
-                  <SubItemEditor
-                    key={subItem.id}
-                    subItem={subItem}
-                    onUpdate={(updated) => updateSubItem(subItem.id, updated)}
-                    onRemove={() => removeSubItem(subItem.id)}
-                  />
-                ))}
-              </div>
+              <DndContext
+                sensors={subItemSensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleSubItemDragEnd}
+              >
+                <SortableContext items={subItemIds} strategy={verticalListSortingStrategy}>
+                  <div className="space-y-2">
+                    {(item.children || []).map((subItem) => (
+                      <SubItemEditor
+                        key={subItem.id}
+                        subItem={subItem}
+                        onUpdate={(updated) => updateSubItem(subItem.id, updated)}
+                        onRemove={() => removeSubItem(subItem.id)}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
             ) : (
               <p className="text-sm text-muted-foreground text-center py-4 border-2 border-dashed rounded-lg">
                 Inga dropdown-länkar ännu. Lägg till för att skapa en mega-meny.
