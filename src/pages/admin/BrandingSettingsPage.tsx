@@ -481,7 +481,7 @@ export default function BrandingSettingsPage() {
                   <div className="space-y-2">
                     <Label>Admin panel name</Label>
                     <Input
-                      value={settings.adminName || 'PEZ CMS'}
+                      value={settings.adminName || 'FlowWink'}
                       onChange={(e) => updateField('adminName', e.target.value)}
                       placeholder="E.g. My CMS"
                     />

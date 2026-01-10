@@ -1,7 +1,7 @@
 -- =============================================================================
--- PEZCMS DATABASE SCHEMA
+-- FLOWWINK DATABASE SCHEMA
 -- =============================================================================
--- This file contains the complete database schema for self-hosting Pezcms.
+-- This file contains the complete database schema for self-hosting FlowWink.
 -- Run this in your Supabase SQL Editor to set up a new instance.
 --
 -- Generated from migrations in /supabase/migrations/

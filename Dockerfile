@@ -1,5 +1,5 @@
 # =============================================================================
-# Pezcms Dockerfile - Multi-stage build for production
+# FlowWink Dockerfile - Multi-stage build for production
 # =============================================================================
 # This Dockerfile creates an optimized production image:
 # - Stage 1: Build the Vite React app
