@@ -1,14 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
-import { useState } from 'react';
+import { Menu, X, ChevronDown } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 import { useBranding } from '@/providers/BrandingProvider';
 import { ThemeToggle } from './ThemeToggle';
 import { useHeaderBlock, defaultHeaderData } from '@/hooks/useGlobalBlocks';
 import { useBlogSettings } from '@/hooks/useSiteSettings';
+import type { HeaderNavItem } from '@/types/cms';
 
 interface NavPage {
   id: string;
@@ -19,6 +20,8 @@ interface NavPage {
 
 export function PublicNavigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [openMegaMenu, setOpenMegaMenu] = useState<string | null>(null);
+  const megaMenuTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const location = useLocation();
   const currentSlug = location.pathname === '/' ? 'hem' : location.pathname.slice(1);
   const { branding } = useBranding();
@@ -28,8 +31,20 @@ export function PublicNavigation() {
   const { data: headerBlock } = useHeaderBlock();
   const headerSettings = headerBlock?.data ?? defaultHeaderData;
   
+  // Check if mega-menu variant is active
+  const isMegaMenuVariant = headerSettings.variant === 'mega-menu' || headerSettings.megaMenuEnabled;
+  
   // Blog settings
   const { data: blogSettings } = useBlogSettings();
+
+  // Close mega menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => setOpenMegaMenu(null);
+    if (openMegaMenu) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [openMegaMenu]);
 
   const { data: pages = [] } = useQuery({
     queryKey: ['public-nav-pages'],
@@ -102,8 +117,204 @@ export function PublicNavigation() {
     }
   };
 
+  // Handle mega menu hover
+  const handleMegaMenuEnter = (itemId: string) => {
+    if (megaMenuTimeoutRef.current) {
+      clearTimeout(megaMenuTimeoutRef.current);
+    }
+    setOpenMegaMenu(itemId);
+  };
+
+  const handleMegaMenuLeave = () => {
+    megaMenuTimeoutRef.current = setTimeout(() => {
+      setOpenMegaMenu(null);
+    }, 150);
+  };
+
+  // Render mega menu dropdown for an item
+  const renderMegaMenuDropdown = (item: HeaderNavItem) => {
+    if (!item.children || item.children.length === 0) return null;
+    
+    const columns = headerSettings.megaMenuColumns || 3;
+    
+    return (
+      <div 
+        className={cn(
+          "absolute top-full left-0 right-0 mt-2 bg-card border rounded-xl shadow-xl z-50",
+          "opacity-0 invisible translate-y-2 transition-all duration-200",
+          openMegaMenu === item.id && "opacity-100 visible translate-y-0"
+        )}
+        onMouseEnter={() => handleMegaMenuEnter(item.id)}
+        onMouseLeave={handleMegaMenuLeave}
+      >
+        <div className="container mx-auto px-6 py-8">
+          <div className={cn(
+            "grid gap-8",
+            columns === 2 && "grid-cols-2",
+            columns === 3 && "grid-cols-3",
+            columns === 4 && "grid-cols-4"
+          )}>
+            {/* Group children into columns based on columnLabel */}
+            {item.children.map((child) => (
+              <a
+                key={child.id}
+                href={child.url}
+                target={child.openInNewTab ? '_blank' : undefined}
+                rel={child.openInNewTab ? 'noopener noreferrer' : undefined}
+                className="group flex items-start gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
+              >
+                {child.icon && (
+                  <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                    <span className="text-lg">{child.icon}</span>
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-foreground group-hover:text-primary transition-colors">
+                    {child.label}
+                  </div>
+                  {child.description && (
+                    <p className="text-sm text-muted-foreground mt-0.5 line-clamp-2">
+                      {child.description}
+                    </p>
+                  )}
+                </div>
+              </a>
+            ))}
+          </div>
+          
+          {/* Optional footer with main link */}
+          {item.url && item.url !== '#' && (
+            <div className="mt-6 pt-6 border-t">
+              <a 
+                href={item.url}
+                className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+              >
+                View all {item.label.toLowerCase()}
+                <ChevronDown className="w-4 h-4 rotate-[-90deg]" />
+              </a>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // Render a nav item (with or without mega menu)
+  const renderNavItem = (item: HeaderNavItem) => {
+    const hasChildren = item.children && item.children.length > 0;
+    const showAsMegaMenu = isMegaMenuVariant && hasChildren;
+    
+    if (showAsMegaMenu) {
+      return (
+        <div 
+          key={item.id}
+          className="relative"
+          onMouseEnter={() => handleMegaMenuEnter(item.id)}
+          onMouseLeave={handleMegaMenuLeave}
+        >
+          <button
+            className={cn(
+              getLinkClasses(false),
+              "inline-flex items-center gap-1"
+            )}
+            onClick={(e) => {
+              e.stopPropagation();
+              setOpenMegaMenu(openMegaMenu === item.id ? null : item.id);
+            }}
+          >
+            {item.label}
+            <ChevronDown className={cn(
+              "w-4 h-4 transition-transform",
+              openMegaMenu === item.id && "rotate-180"
+            )} />
+          </button>
+        </div>
+      );
+    }
+    
+    // Regular link
+    return (
+      <a
+        key={item.id}
+        href={item.url}
+        target={item.openInNewTab ? '_blank' : undefined}
+        rel={item.openInNewTab ? 'noopener noreferrer' : undefined}
+        className={getLinkClasses(false)}
+      >
+        {item.label}
+      </a>
+    );
+  };
+
   return (
     <header className={getBackgroundClasses()}>
+      {/* Mega Menu Dropdowns - Rendered at header level for full width */}
+      {isMegaMenuVariant && customNavItems.map((item) => (
+        item.children && item.children.length > 0 && (
+          <div 
+            key={`mega-${item.id}`}
+            className={cn(
+              "absolute left-0 right-0 top-full bg-card border-b shadow-xl z-50",
+              "opacity-0 invisible translate-y-[-10px] transition-all duration-200",
+              openMegaMenu === item.id && "opacity-100 visible translate-y-0"
+            )}
+            onMouseEnter={() => handleMegaMenuEnter(item.id)}
+            onMouseLeave={handleMegaMenuLeave}
+          >
+            <div className="container mx-auto px-6 py-8">
+              <div className={cn(
+                "grid gap-6",
+                (headerSettings.megaMenuColumns || 3) === 2 && "grid-cols-2",
+                (headerSettings.megaMenuColumns || 3) === 3 && "grid-cols-3",
+                (headerSettings.megaMenuColumns || 3) === 4 && "grid-cols-4"
+              )}>
+                {item.children.map((child) => (
+                  <a
+                    key={child.id}
+                    href={child.url}
+                    target={child.openInNewTab ? '_blank' : undefined}
+                    rel={child.openInNewTab ? 'noopener noreferrer' : undefined}
+                    className="group flex items-start gap-4 p-4 rounded-xl hover:bg-muted transition-colors"
+                    onClick={() => setOpenMegaMenu(null)}
+                  >
+                    {child.icon && (
+                      <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                        <span className="text-xl">{child.icon}</span>
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                        {child.label}
+                      </div>
+                      {child.description && (
+                        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                          {child.description}
+                        </p>
+                      )}
+                    </div>
+                  </a>
+                ))}
+              </div>
+              
+              {/* Footer link */}
+              {item.url && item.url !== '#' && (
+                <div className="mt-6 pt-6 border-t flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">{item.description}</span>
+                  <a 
+                    href={item.url}
+                    className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+                    onClick={() => setOpenMegaMenu(null)}
+                  >
+                    Explore {item.label}
+                    <ChevronDown className="w-4 h-4 rotate-[-90deg]" />
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
+        )
+      ))}
+      
       <div className="container mx-auto px-6">
         <div className={cn(
           "flex items-center relative",
@@ -194,18 +405,8 @@ export function PublicNavigation() {
                 {blogSettings.archiveTitle || 'Blog'}
               </Link>
             )}
-            {/* Custom nav items */}
-            {customNavItems.map((item) => (
-              <a
-                key={item.id}
-                href={item.url}
-                target={item.openInNewTab ? '_blank' : undefined}
-                rel={item.openInNewTab ? 'noopener noreferrer' : undefined}
-                className={getLinkClasses(false)}
-              >
-                {item.label}
-              </a>
-            ))}
+            {/* Custom nav items - with mega menu support */}
+            {customNavItems.map((item) => renderNavItem(item))}
             {headerSettings.showThemeToggle !== false && <ThemeToggle />}
           </nav>
 
