@@ -86,11 +86,11 @@ export interface StarterTemplate {
   
   // Site-wide settings
   branding: Partial<BrandingSettings>;
-  chatSettings: Partial<ChatSettings>;
-  headerSettings: Partial<HeaderBlockData>;
-  footerSettings: Partial<FooterBlockData>;
-  seoSettings: Partial<SeoSettings>;
-  cookieBannerSettings: Partial<CookieBannerSettings>;
+  chatSettings?: Partial<ChatSettings>;
+  headerSettings?: Partial<HeaderBlockData>;
+  footerSettings?: Partial<FooterBlockData>;
+  seoSettings?: Partial<SeoSettings>;
+  cookieBannerSettings?: Partial<CookieBannerSettings>;
   
   // General settings
   siteSettings: {
@@ -2583,6 +2583,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
         'How much does it cost?',
         'Can I get a demo?',
       ],
+    },
     headerSettings: {
       variant: 'sticky',
       stickyHeader: true,
