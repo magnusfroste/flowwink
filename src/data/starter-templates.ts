@@ -6421,6 +6421,17 @@ export const BLANK_TEMPLATE: StarterTemplate = {
     ],
   },
 
+  // ===== Header Settings =====
+  headerSettings: {
+    variant: 'sticky',
+    stickyHeader: true,
+    backgroundStyle: 'blur',
+    headerShadow: 'sm',
+    showBorder: true,
+    headerHeight: 'default',
+    linkColorScheme: 'default',
+  },
+
   // ===== Footer Settings =====
   footerSettings: {
     variant: 'full',
