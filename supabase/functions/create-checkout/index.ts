@@ -54,6 +54,22 @@ serve(async (req: Request) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // Check if Stripe integration is enabled
+    const { data: integrationSettings } = await supabase
+      .from("site_settings")
+      .select("value")
+      .eq("key", "integrations")
+      .maybeSingle();
+
+    const stripeEnabled = (integrationSettings?.value as any)?.stripe?.enabled ?? false;
+    if (!stripeEnabled) {
+      logStep("Stripe integration is disabled");
+      return new Response(
+        JSON.stringify({ error: "Payments are currently disabled" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const {
       items,
       customerName,

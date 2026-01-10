@@ -272,6 +272,41 @@ serve(async (req) => {
     });
 
     const aiProvider = settings?.aiProvider || 'openai';
+
+    // Check if the AI provider integration is enabled
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const { data: integrationSettings } = await supabase
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'integrations')
+      .maybeSingle();
+
+    const aiIntegrations = integrationSettings?.value as any;
+    
+    // For openai and gemini providers, check if enabled
+    if (aiProvider === 'openai') {
+      const openaiEnabled = aiIntegrations?.openai?.enabled ?? false;
+      if (!openaiEnabled) {
+        console.log('[chat-completion] OpenAI integration is disabled');
+        return new Response(
+          JSON.stringify({ error: 'OpenAI integration is disabled. Enable it in Integrations settings.' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    } else if (aiProvider === 'gemini') {
+      const geminiEnabled = aiIntegrations?.gemini?.enabled ?? false;
+      if (!geminiEnabled) {
+        console.log('[chat-completion] Gemini integration is disabled');
+        return new Response(
+          JSON.stringify({ error: 'Gemini integration is disabled. Enable it in Integrations settings.' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
     let systemPrompt = settings?.systemPrompt || 'Du är en hjälpsam AI-assistent.';
 
     // Add knowledge base if enabled

@@ -93,6 +93,40 @@ serve(async (req) => {
       );
     }
 
+    // Check if the AI integration is enabled
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const { data: integrationSettings } = await supabase
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'integrations')
+      .maybeSingle();
+
+    const aiIntegrations = integrationSettings?.value as any;
+    
+    if (useGemini) {
+      const geminiEnabled = aiIntegrations?.gemini?.enabled ?? false;
+      if (!geminiEnabled) {
+        console.log('[generate-text] Gemini integration is disabled');
+        return new Response(
+          JSON.stringify({ error: 'Gemini integration is disabled. Enable it in Integrations settings.' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    } else {
+      const openaiEnabled = aiIntegrations?.openai?.enabled ?? false;
+      if (!openaiEnabled) {
+        console.log('[generate-text] OpenAI integration is disabled');
+        return new Response(
+          JSON.stringify({ error: 'OpenAI integration is disabled. Enable it in Integrations settings.' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
     const systemPrompt = getSystemPrompt(action, context, targetLanguage, tone);
     
     console.log(`Generating text with action: ${action}, provider: ${useGemini ? 'gemini' : 'openai'}, input length: ${text.length}`);
