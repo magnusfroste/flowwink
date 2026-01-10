@@ -6,12 +6,56 @@ import type { Json } from '@/integrations/supabase/types';
 
 // Default header data
 export const defaultHeaderData: HeaderBlockData = {
+  variant: 'sticky',
   showLogo: true,
   showNameWithLogo: false,
   logoSize: 'md',
   stickyHeader: true,
   showThemeToggle: true,
+  backgroundStyle: 'solid',
+  headerShadow: 'sm',
+  linkColorScheme: 'default',
+  navAlignment: 'right',
+  headerHeight: 'default',
+  showBorder: true,
+  mobileMenuStyle: 'default',
   customNavItems: [],
+};
+
+// Header presets for different variants
+export const headerVariantPresets: Record<string, Partial<HeaderBlockData>> = {
+  clean: {
+    variant: 'clean',
+    stickyHeader: false,
+    backgroundStyle: 'transparent',
+    headerShadow: 'none',
+    showBorder: false,
+    headerHeight: 'tall',
+    linkColorScheme: 'contrast',
+    mobileMenuStyle: 'fullscreen',
+  },
+  sticky: {
+    variant: 'sticky',
+    stickyHeader: true,
+    backgroundStyle: 'blur',
+    headerShadow: 'sm',
+    showBorder: true,
+    headerHeight: 'default',
+    linkColorScheme: 'default',
+    mobileMenuStyle: 'slide',
+  },
+  'mega-menu': {
+    variant: 'mega-menu',
+    stickyHeader: true,
+    backgroundStyle: 'solid',
+    headerShadow: 'md',
+    showBorder: true,
+    headerHeight: 'tall',
+    linkColorScheme: 'default',
+    megaMenuEnabled: true,
+    megaMenuColumns: 3,
+    mobileMenuStyle: 'fullscreen',
+  },
 };
 
 // Default footer data
