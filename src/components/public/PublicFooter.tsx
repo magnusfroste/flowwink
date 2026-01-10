@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
-import { Phone, Mail, MapPin, Clock, Facebook, Instagram, Linkedin, Twitter, Youtube } from 'lucide-react';
+import { Phone, Mail, MapPin, Clock, Facebook, Instagram, Linkedin, Twitter, Youtube, Shield } from 'lucide-react';
 import { useFooterBlock, defaultFooterData } from '@/hooks/useGlobalBlocks';
 import { useBranding } from '@/providers/BrandingProvider';
 import { useTheme } from 'next-themes';
-import { FooterSectionId } from '@/types/cms';
+import { FooterSectionId, FooterVariant } from '@/types/cms';
 
 interface NavPage {
   id: string;
@@ -18,6 +18,7 @@ export function PublicFooter() {
   const settings = footerBlock?.data || defaultFooterData;
   const { branding } = useBranding();
   const { resolvedTheme } = useTheme();
+  const variant: FooterVariant = settings?.variant || 'full';
   
   const { data: pages = [] } = useQuery({
     queryKey: ['public-nav-pages'],
@@ -41,11 +42,11 @@ export function PublicFooter() {
   const brandTagline = branding?.brandTagline || '';
   const brandInitial = brandName.charAt(0);
 
-  // Determine which sections to show
+  // Determine which sections to show based on variant
   const showBrand = settings?.showBrand !== false;
-  const showQuickLinks = settings?.showQuickLinks !== false && pages.length > 0;
-  const showContact = settings?.showContact !== false && (settings?.phone || settings?.email || settings?.address || settings?.postalCode);
-  const showHours = settings?.showHours !== false && (settings?.weekdayHours || settings?.weekendHours);
+  const showQuickLinks = variant !== 'minimal' && settings?.showQuickLinks !== false && pages.length > 0;
+  const showContact = variant !== 'minimal' && settings?.showContact !== false && (settings?.phone || settings?.email || settings?.address || settings?.postalCode);
+  const showHours = variant === 'full' && settings?.showHours !== false && (settings?.weekdayHours || settings?.weekendHours);
   
   // Section order
   const sectionOrder: FooterSectionId[] = settings?.sectionOrder || ['brand', 'quickLinks', 'contact', 'hours'];
@@ -60,10 +61,22 @@ export function PublicFooter() {
   
   // Calculate grid columns based on visible sections
   const visibleSections = sectionOrder.filter(id => sectionVisibility[id]).length;
-  const gridCols = visibleSections === 1 ? 'grid-cols-1' 
-    : visibleSections === 2 ? 'grid-cols-1 md:grid-cols-2' 
-    : visibleSections === 3 ? 'grid-cols-1 md:grid-cols-3' 
-    : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4';
+  
+  // Minimal variant: single column centered
+  // Full/Enterprise: responsive grid
+  const getGridCols = () => {
+    if (variant === 'minimal') return 'grid-cols-1 max-w-md mx-auto text-center';
+    if (visibleSections === 1) return 'grid-cols-1';
+    if (visibleSections === 2) return 'grid-cols-1 md:grid-cols-2';
+    if (visibleSections === 3) return 'grid-cols-1 md:grid-cols-3';
+    return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4';
+  };
+
+  // Footer logo handling
+  const footerLogo = resolvedTheme === 'dark' 
+    ? (branding?.logo || branding?.logoDark)
+    : (branding?.logoDark || branding?.logo);
+  const hasFooterLogo = !!footerLogo;
 
   // Section components
   const renderSection = (sectionId: FooterSectionId) => {
@@ -71,15 +84,9 @@ export function PublicFooter() {
     
     switch (sectionId) {
       case 'brand':
-        // In footer (which has bg-primary), use logoDark in light mode, logo in dark mode
-        const footerLogo = resolvedTheme === 'dark' 
-          ? (branding?.logo || branding?.logoDark)
-          : (branding?.logoDark || branding?.logo);
-        const hasFooterLogo = !!footerLogo;
-        
         return (
-          <div key="brand">
-            <div className="flex items-center gap-3 mb-4">
+          <div key="brand" className={variant === 'minimal' ? 'flex flex-col items-center' : ''}>
+            <div className={`flex items-center gap-3 mb-4 ${variant === 'minimal' ? 'justify-center' : ''}`}>
               {hasFooterLogo ? (
                 <img 
                   src={footerLogo} 
@@ -177,15 +184,48 @@ export function PublicFooter() {
     }
   };
 
+  // Compliance badges for enterprise variant
+  const renderComplianceBadges = () => {
+    if (variant !== 'enterprise' || !settings?.showComplianceBadges) return null;
+    
+    const badges = settings.complianceBadges || ['SOC2', 'GDPR', 'ISO27001'];
+    
+    return (
+      <div className="flex items-center justify-center gap-4 py-4 border-t border-primary-foreground/20 mt-8">
+        <Shield className="h-4 w-4 text-primary-foreground/60" />
+        <div className="flex gap-3">
+          {badges.map((badge) => (
+            <span 
+              key={badge}
+              className="text-xs font-medium px-2 py-1 rounded bg-primary-foreground/10 text-primary-foreground/80"
+            >
+              {badge}
+            </span>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  // Get container padding based on variant
+  const getContainerPadding = () => {
+    if (variant === 'minimal') return 'py-8';
+    if (variant === 'enterprise') return 'py-16';
+    return 'py-12';
+  };
+
   return (
     <footer className="bg-primary text-primary-foreground mt-16">
-      <div className="container mx-auto px-6 py-12">
-        <div className={`grid ${gridCols} gap-8`}>
+      <div className={`container mx-auto px-6 ${getContainerPadding()}`}>
+        <div className={`grid ${getGridCols()} gap-8`}>
           {sectionOrder.map(renderSection)}
         </div>
 
+        {/* Compliance badges for enterprise */}
+        {renderComplianceBadges()}
+
         {/* Bottom bar */}
-        <div className="border-t border-primary-foreground/20 mt-10 pt-6 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className={`border-t border-primary-foreground/20 ${variant === 'minimal' ? 'mt-6 pt-4' : 'mt-10 pt-6'} flex flex-col md:flex-row justify-between items-center gap-4`}>
           <p className="text-sm text-primary-foreground/60">
             © {new Date().getFullYear()} {brandName}. All rights reserved.
           </p>

@@ -187,8 +187,13 @@ export interface HeaderNavItem {
   enabled: boolean;
 }
 
+// Footer variant types
+export type FooterVariant = 'minimal' | 'full' | 'enterprise';
+
 // Footer block data (stored in global_blocks.data)
 export interface FooterBlockData {
+  // Variant determines overall layout/style
+  variant?: FooterVariant;
   phone: string;
   email: string;
   address: string;
@@ -210,6 +215,9 @@ export interface FooterBlockData {
   sectionOrder?: FooterSectionId[];
   // Legal links
   legalLinks?: FooterLegalLink[];
+  // Enterprise-specific
+  showComplianceBadges?: boolean;
+  complianceBadges?: string[];
 }
 
 export type FooterSectionId = 'brand' | 'quickLinks' | 'contact' | 'hours';

@@ -2584,6 +2584,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
       ],
     },
     footerSettings: {
+      variant: 'full',
       email: 'hello@launchpad.io',
       phone: '+46 8 123 456 78',
       address: 'Birger Jarlsgatan 57',
@@ -2643,12 +2644,16 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
       widgetEnabled: false,
     },
     footerSettings: {
+      variant: 'minimal',
       email: 'hello@momentum.dev',
       phone: '',
       address: 'San Francisco, CA',
       postalCode: '',
       weekdayHours: '',
       weekendHours: '',
+      showBrand: true,
+      showQuickLinks: false,
+      showContact: false,
       showHours: false,
       legalLinks: [
         { id: 'privacy', label: 'Privacy', url: '/privacy-policy', enabled: true },
@@ -2706,18 +2711,23 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
       ],
     },
     footerSettings: {
+      variant: 'enterprise',
       email: 'contact@trustcorp.com',
       phone: '+46 8 555 000 00',
       address: 'Stureplan 4',
       postalCode: '114 35 Stockholm',
       weekdayHours: 'Mon-Fri 8-17',
       weekendHours: 'Closed',
+      showHours: false,
       linkedin: 'https://linkedin.com/company/trustcorp',
+      showComplianceBadges: true,
+      complianceBadges: ['SOC2', 'GDPR', 'ISO27001'],
       legalLinks: [
         { id: 'support', label: 'Support Center', url: '/support', enabled: true },
         { id: 'privacy', label: 'Privacy Policy', url: '/privacy-policy', enabled: true },
         { id: 'terms', label: 'Terms of Service', url: '/terms-of-service', enabled: true },
-        { id: 'cookies', label: 'Cookie Policy', url: '/cookie-policy', enabled: true },
+        { id: 'security', label: 'Security', url: '/security', enabled: true },
+        { id: 'sla', label: 'SLA', url: '/sla', enabled: true },
       ],
     },
     seoSettings: {
@@ -2772,12 +2782,15 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
       ],
     },
     footerSettings: {
+      variant: 'enterprise',
       email: 'info@securehealth.se',
       phone: '+46 8 700 00 00',
       address: 'Valhallavägen 91',
       postalCode: '114 28 Stockholm',
       weekdayHours: 'Mon-Fri 8-17',
       weekendHours: 'Emergency line 24/7',
+      showComplianceBadges: true,
+      complianceBadges: ['HIPAA', 'SOC2', 'GDPR'],
       legalLinks: [
         { id: 'faq', label: 'Patient FAQ', url: '/faq', enabled: true },
         { id: 'privacy', label: 'Privacy Policy', url: '/privacy-policy', enabled: true },
@@ -6174,6 +6187,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
       ],
     },
     footerSettings: {
+      variant: 'full',
       email: 'hello@flowwink.com',
       phone: '+46 70 123 45 67',
       address: 'Stockholm, Sweden',
@@ -6371,6 +6385,7 @@ export const BLANK_TEMPLATE: StarterTemplate = {
 
   // ===== Footer Settings =====
   footerSettings: {
+    variant: 'full',
     phone: '',
     email: 'hello@example.com',
     address: '',
@@ -6603,14 +6618,19 @@ const helpCenterTemplate: StarterTemplate = {
     ],
   },
   footerSettings: {
+    variant: 'minimal',
     email: 'support@example.com',
     phone: '+1 (555) 123-4567',
     showBrand: true,
-    showQuickLinks: true,
-    showContact: true,
-    showHours: true,
+    showQuickLinks: false,
+    showContact: false,
+    showHours: false,
     weekdayHours: 'Mon-Fri 9-18',
     weekendHours: 'AI: 24/7',
+    legalLinks: [
+      { id: 'privacy', label: 'Privacy', url: '/privacy-policy', enabled: true },
+      { id: 'terms', label: 'Terms', url: '/terms-of-service', enabled: true },
+    ],
   },
   seoSettings: {
     siteTitle: 'Help Center',
@@ -7149,6 +7169,7 @@ const serviceProTemplate: StarterTemplate = {
     ],
   },
   footerSettings: {
+    variant: 'full',
     email: 'hello@servicepro.com',
     phone: '+1 (555) 123-4567',
     address: '123 Main Street, Suite 100',
@@ -7562,6 +7583,7 @@ const digitalShopTemplate: StarterTemplate = {
     ],
   },
   footerSettings: {
+    variant: 'full',
     email: 'hello@digitalshop.com',
     phone: '+1 (555) 123-4567',
     showHours: true,

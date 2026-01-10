@@ -16,6 +16,7 @@ export const defaultHeaderData: HeaderBlockData = {
 
 // Default footer data
 export const defaultFooterData: FooterBlockData = {
+  variant: 'full',
   phone: '',
   email: '',
   address: '',
@@ -36,6 +37,51 @@ export const defaultFooterData: FooterBlockData = {
     { id: 'privacy', label: 'Privacy Policy', url: '/privacy-policy', enabled: true },
     { id: 'accessibility', label: 'Accessibility', url: '/accessibility', enabled: true },
   ],
+  showComplianceBadges: false,
+  complianceBadges: [],
+};
+
+// Footer presets for different variants
+export const footerVariantPresets: Record<string, Partial<FooterBlockData>> = {
+  minimal: {
+    variant: 'minimal',
+    showBrand: true,
+    showQuickLinks: false,
+    showContact: false,
+    showHours: false,
+    sectionOrder: ['brand'],
+    legalLinks: [
+      { id: 'privacy', label: 'Privacy', url: '/privacy-policy', enabled: true },
+    ],
+  },
+  full: {
+    variant: 'full',
+    showBrand: true,
+    showQuickLinks: true,
+    showContact: true,
+    showHours: true,
+    sectionOrder: ['brand', 'quickLinks', 'contact', 'hours'],
+    legalLinks: [
+      { id: 'privacy', label: 'Privacy Policy', url: '/privacy-policy', enabled: true },
+      { id: 'terms', label: 'Terms of Service', url: '/terms', enabled: true },
+    ],
+  },
+  enterprise: {
+    variant: 'enterprise',
+    showBrand: true,
+    showQuickLinks: true,
+    showContact: true,
+    showHours: false,
+    sectionOrder: ['brand', 'quickLinks', 'contact'],
+    showComplianceBadges: true,
+    complianceBadges: ['SOC2', 'GDPR', 'ISO27001'],
+    legalLinks: [
+      { id: 'privacy', label: 'Privacy Policy', url: '/privacy-policy', enabled: true },
+      { id: 'terms', label: 'Terms of Service', url: '/terms', enabled: true },
+      { id: 'security', label: 'Security', url: '/security', enabled: true },
+      { id: 'sla', label: 'SLA', url: '/sla', enabled: true },
+    ],
+  },
 };
 
 // Hook to fetch a global block by slot
