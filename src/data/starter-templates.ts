@@ -2540,101 +2540,8 @@ const momentumPages: TemplatePage[] = [
       },
     ],
   },
-  {
-    title: 'Privacy Policy',
-    slug: 'privacy-policy',
-    menu_order: 99,
-    showInMenu: false,
-    meta: {
-      description: 'How Momentum collects, uses, and protects your data',
-      showTitle: true,
-      titleAlignment: 'left',
-    },
-    blocks: [
-      {
-        id: 'text-privacy',
-        type: 'text',
-        data: {
-          content: {
-            type: 'doc',
-            content: [
-              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Introduction' }] },
-              { type: 'paragraph', content: [{ type: 'text', text: 'At Momentum, we take your privacy seriously. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our developer platform.' }] },
-              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Information We Collect' }] },
-              { type: 'paragraph', content: [{ type: 'text', text: 'We collect information you provide directly, including account information (name, email, company), usage data, and content you create using our platform.' }] },
-              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'How We Use Your Information' }] },
-              { type: 'paragraph', content: [{ type: 'text', text: 'We use collected information to provide and improve our services, communicate with you about your account, ensure platform security, and comply with legal obligations.' }] },
-              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Data Security' }] },
-              { type: 'paragraph', content: [{ type: 'text', text: 'We implement industry-standard security measures including encryption at rest and in transit, regular security audits, and SOC 2 Type II compliance. Your code and data are protected with enterprise-grade security.' }] },
-              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Data Retention' }] },
-              { type: 'paragraph', content: [{ type: 'text', text: 'We retain your data for as long as your account is active. Upon account deletion, we remove your data within 30 days, except where retention is required by law.' }] },
-              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Your Rights' }] },
-              { type: 'paragraph', content: [{ type: 'text', text: 'You have the right to access, correct, or delete your personal data. You can export your data at any time through your account settings. Contact privacy@momentum.dev for data requests.' }] },
-              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Contact' }] },
-              { type: 'paragraph', content: [{ type: 'text', text: 'Questions about this policy? Email us at privacy@momentum.dev.' }] },
-            ],
-          },
-        },
-      },
-    ],
-  },
-  {
-    title: 'Terms of Service',
-    slug: 'terms-of-service',
-    menu_order: 99,
-    showInMenu: false,
-    meta: {
-      description: 'Terms and conditions for using the Momentum platform',
-      showTitle: true,
-      titleAlignment: 'left',
-    },
-    blocks: [
-      {
-        id: 'text-terms',
-        type: 'text',
-        data: {
-          content: {
-            type: 'doc',
-            content: [
-              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Acceptance of Terms' }] },
-              { type: 'paragraph', content: [{ type: 'text', text: 'By accessing or using Momentum, you agree to be bound by these Terms of Service and our Privacy Policy. If you disagree with any part of these terms, you may not use our services.' }] },
-              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Description of Service' }] },
-              { type: 'paragraph', content: [{ type: 'text', text: 'Momentum provides a developer platform for building, deploying, and scaling applications. We reserve the right to modify, suspend, or discontinue any part of the service with notice.' }] },
-              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'User Accounts' }] },
-              { type: 'paragraph', content: [{ type: 'text', text: 'You are responsible for maintaining the confidentiality of your account credentials and for all activities under your account. Notify us immediately of any unauthorized access.' }] },
-              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Acceptable Use' }] },
-              { type: 'paragraph', content: [{ type: 'text', text: 'You agree not to use our platform for any unlawful purpose, to harm others, distribute malware, or violate any applicable laws or regulations.' }] },
-              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Intellectual Property' }] },
-              { type: 'paragraph', content: [{ type: 'text', text: 'You retain ownership of content you create. You grant us a license to host and serve your content as necessary to provide the service. Momentum and its logo are our trademarks.' }] },
-              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Limitation of Liability' }] },
-              { type: 'paragraph', content: [{ type: 'text', text: 'To the maximum extent permitted by law, Momentum shall not be liable for any indirect, incidental, special, or consequential damages arising from your use of the service.' }] },
-              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Termination' }] },
-              { type: 'paragraph', content: [{ type: 'text', text: 'We may terminate or suspend your account for violations of these terms. You may terminate your account at any time through your account settings.' }] },
-              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Contact' }] },
-              { type: 'paragraph', content: [{ type: 'text', text: 'Questions about these terms? Contact us at legal@momentum.dev.' }] },
-            ],
-          },
-        },
-      },
-      // FLOATING CTA - Persistent conversion element
-      {
-        id: 'floating-cta-1',
-        type: 'floating-cta',
-        data: {
-          text: 'Ready to ship faster?',
-          buttonText: 'Start Building Free',
-          buttonUrl: '#pricing',
-          variant: 'pill',
-          position: 'bottom',
-          size: 'md',
-          scrollThreshold: 300,
-          hideOnScrollUp: false,
-          closeable: true,
-          closePersistent: true,
-        },
-      },
-    ],
-  },
+  // Note: Momentum is intentionally single-page for maximum impact
+  // Privacy/Terms pages removed - users should add from footer settings if needed
 ];
 
 // =====================================================
@@ -2716,8 +2623,8 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
     tagline: 'One page. Maximum impact.',
     aiChatPosition: 'Disabled for clean single-page experience',
     pages: momentumPages,
-    blogPosts: momentumBlogPosts,
-    requiredModules: ['blog', 'forms', 'leads'],
+    // Note: Momentum is a single-page template - no blog for clean, focused experience
+    requiredModules: ['forms', 'leads'],
     branding: {
       organizationName: 'Momentum',
       brandTagline: 'Build the Future',
@@ -2772,9 +2679,9 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
     tagline: 'For enterprises that demand excellence',
     aiChatPosition: 'Large embedded assistant with data sovereignty messaging',
     pages: trustcorpPages,
-    blogPosts: trustcorpBlogPosts,
+    // Note: TrustCorp focuses on lead gen, not content marketing - no blog
     kbCategories: trustcorpKbCategories,
-    requiredModules: ['blog', 'knowledgeBase', 'chat', 'forms', 'leads'],
+    requiredModules: ['knowledgeBase', 'chat', 'forms', 'leads'],
     branding: {
       organizationName: 'TrustCorp',
       brandTagline: 'Enterprise Excellence',
@@ -6496,428 +6403,8 @@ export const BLANK_TEMPLATE: StarterTemplate = {
   },
 };
 
-// =====================================================
-// KB CLASSIC - SEO-focused Help Center Template
-// =====================================================
-const kbClassicPages: TemplatePage[] = [
-  {
-    title: 'Home',
-    slug: 'home',
-    isHomePage: true,
-    menu_order: 1,
-    showInMenu: true,
-    meta: {
-      description: 'Welcome to our Help Center - find answers to all your questions.',
-      showTitle: false,
-      titleAlignment: 'center',
-    },
-    blocks: [
-      {
-        id: 'hero-1',
-        type: 'hero',
-        data: {
-          title: 'How can we help you?',
-          subtitle: 'Search our knowledge base or browse categories below.',
-          backgroundType: 'color',
-          heightMode: 'auto',
-          contentAlignment: 'center',
-          overlayOpacity: 0,
-          titleAnimation: 'fade-in',
-        },
-      },
-      {
-        id: 'kb-search-1',
-        type: 'kb-search',
-        data: {
-          placeholder: 'Search for answers...',
-          variant: 'hero',
-          showPopularSearches: true,
-          popularSearches: ['getting started', 'pricing', 'billing', 'security'],
-        },
-      },
-      {
-        id: 'kb-featured-1',
-        type: 'kb-featured',
-        data: {
-          title: 'Popular Articles',
-          subtitle: 'Quick answers to common questions',
-          maxItems: 4,
-          showCategory: true,
-          layout: 'grid',
-          columns: 2,
-        },
-      },
-      {
-        id: 'cta-1',
-        type: 'cta',
-        data: {
-          title: 'Still have questions?',
-          subtitle: 'Our support team is here to help.',
-          buttonText: 'Contact Support',
-          buttonUrl: '/contact',
-          gradient: false,
-        },
-      },
-    ],
-  },
-  {
-    title: 'Help Center',
-    slug: 'help',
-    menu_order: 2,
-    showInMenu: true,
-    meta: {
-      description: 'Browse our complete knowledge base with guides and tutorials.',
-      showTitle: true,
-      titleAlignment: 'center',
-    },
-    blocks: [
-      {
-        id: 'kb-search-1',
-        type: 'kb-search',
-        data: {
-          placeholder: 'Search articles...',
-          variant: 'compact',
-          showPopularSearches: false,
-        },
-      },
-      {
-        id: 'kb-hub-1',
-        type: 'kb-hub',
-        data: {
-          title: 'Knowledge Base',
-          subtitle: 'Find answers organized by topic',
-          showSearch: false,
-          showCategories: true,
-          layout: 'accordion',
-          showContactCta: false,
-        },
-      },
-    ],
-  },
-  {
-    title: 'FAQ',
-    slug: 'faq',
-    menu_order: 3,
-    showInMenu: true,
-    meta: {
-      description: 'Frequently asked questions about our platform.',
-      showTitle: true,
-      titleAlignment: 'center',
-    },
-    blocks: [
-      {
-        id: 'hero-1',
-        type: 'hero',
-        data: {
-          title: 'Frequently Asked Questions',
-          subtitle: 'Quick answers to the most common questions.',
-          backgroundType: 'color',
-          heightMode: 'auto',
-          contentAlignment: 'center',
-        },
-      },
-      {
-        id: 'accordion-1',
-        type: 'accordion',
-        data: {
-          title: 'General Questions',
-          items: [
-            { question: 'What is this platform?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Our platform is a comprehensive solution designed for modern teams. It provides tools for content management, collaboration, and analytics.' }] }] } },
-            { question: 'How do I get started?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Create an account, complete the setup wizard, and you will be ready to go in under 5 minutes.' }] }] } },
-            { question: 'Is there a free trial?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Yes! All paid plans include a 14-day free trial. No credit card required.' }] }] } },
-          ],
-        },
-      },
-      {
-        id: 'accordion-2',
-        type: 'accordion',
-        data: {
-          title: 'Billing & Account',
-          items: [
-            { question: 'What payment methods do you accept?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'We accept all major credit cards, PayPal, and bank transfers for annual plans.' }] }] } },
-            { question: 'Can I cancel anytime?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Yes, you can cancel your subscription at any time. Your access will continue until the end of the billing period.' }] }] } },
-            { question: 'How do I upgrade my plan?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Go to Settings → Billing → Change Plan. Upgrades take effect immediately.' }] }] } },
-          ],
-        },
-      },
-      {
-        id: 'cta-1',
-        type: 'cta',
-        data: {
-          title: 'Did not find your answer?',
-          subtitle: 'Contact our support team for personalized help.',
-          buttonText: 'Contact Us',
-          buttonUrl: '/contact',
-          gradient: false,
-        },
-      },
-    ],
-  },
-  {
-    title: 'Contact',
-    slug: 'contact',
-    menu_order: 4,
-    showInMenu: true,
-    meta: {
-      description: 'Contact our support team.',
-      showTitle: true,
-      titleAlignment: 'center',
-    },
-    blocks: [
-      {
-        id: 'hero-1',
-        type: 'hero',
-        data: {
-          title: 'Contact Us',
-          subtitle: 'We are here to help. Send us a message and we will respond as soon as possible.',
-          backgroundType: 'color',
-          heightMode: 'auto',
-          contentAlignment: 'center',
-        },
-      },
-      {
-        id: 'form-1',
-        type: 'form',
-        data: {
-          title: 'Send a Message',
-          description: 'Fill out the form below and we will get back to you within 24 hours.',
-          fields: [
-            { id: 'name', type: 'text', label: 'Name', placeholder: 'Your name', required: true, width: 'half' },
-            { id: 'email', type: 'email', label: 'Email', placeholder: 'you@example.com', required: true, width: 'half' },
-            { id: 'subject', type: 'text', label: 'Subject', placeholder: 'How can we help?', required: true, width: 'full' },
-            { id: 'message', type: 'textarea', label: 'Message', placeholder: 'Describe your issue or question...', required: true, width: 'full' },
-          ],
-          submitButtonText: 'Send Message',
-          successMessage: 'Thank you! We will get back to you within 24 hours.',
-          variant: 'card',
-        },
-      },
-      {
-        id: 'contact-1',
-        type: 'contact',
-        data: {
-          title: 'Other Ways to Reach Us',
-          email: 'support@example.com',
-          phone: '+1 (555) 123-4567',
-          hours: [
-            { day: 'Monday - Friday', time: '9:00 AM - 6:00 PM' },
-            { day: 'Saturday - Sunday', time: 'Closed' },
-          ],
-        },
-      },
-    ],
-  },
-];
-
-const kbClassicTemplate: StarterTemplate = {
-  id: 'kb-classic',
-  name: 'KB Classic',
-  description: 'SEO-optimized help center with comprehensive knowledge base, structured FAQ, and traditional support form. Ideal for documentation-heavy organizations.',
-  category: 'helpcenter',
-  icon: 'BookOpen',
-  tagline: 'SEO-focused documentation',
-  aiChatPosition: 'No AI chat - pure documentation',
-  helpStyle: 'kb-classic',
-  pages: kbClassicPages,
-  kbCategories: kbClassicCategories,
-  requiredModules: ['knowledgeBase', 'forms'],
-  branding: {
-    organizationName: 'Help Center',
-    brandTagline: 'Find answers fast',
-    primaryColor: '220 70% 50%',
-    headingFont: 'Inter',
-    bodyFont: 'Inter',
-    borderRadius: 'md',
-    shadowIntensity: 'subtle',
-  },
-  chatSettings: {
-    enabled: false,
-    widgetEnabled: false,
-  },
-  footerSettings: {
-    email: 'support@example.com',
-    phone: '+1 (555) 123-4567',
-    showBrand: true,
-    showQuickLinks: true,
-    showContact: true,
-    showHours: true,
-    weekdayHours: 'Mon-Fri 9-18',
-    weekendHours: 'Closed',
-  },
-  seoSettings: {
-    siteTitle: 'Help Center',
-    titleTemplate: '%s | Help Center',
-    defaultDescription: 'Find answers to your questions in our comprehensive knowledge base.',
-    robotsIndex: true,
-    robotsFollow: true,
-  },
-  cookieBannerSettings: {
-    enabled: true,
-  },
-  siteSettings: {
-    homepageSlug: 'home',
-  },
-};
-
-// =====================================================
-// AI SUPPORT HUB - Chat-focused Template
-// =====================================================
-const aiHubPages: TemplatePage[] = [
-  {
-    title: 'Home',
-    slug: 'home',
-    isHomePage: true,
-    menu_order: 1,
-    showInMenu: true,
-    meta: {
-      description: 'Get instant AI-powered support - ask any question and get answers in seconds.',
-      showTitle: false,
-      titleAlignment: 'center',
-    },
-    blocks: [
-      {
-        id: 'hero-1',
-        type: 'hero',
-        data: {
-          title: 'Ask Our AI Assistant',
-          subtitle: 'Get instant answers to your questions, 24/7.',
-          backgroundType: 'color',
-          heightMode: 'auto',
-          contentAlignment: 'center',
-          overlayOpacity: 0,
-          titleAnimation: 'slide-up',
-        },
-      },
-      {
-        id: 'chat-1',
-        type: 'chat',
-        data: {
-          title: '',
-          height: 'lg',
-          showSidebar: false,
-          variant: 'card',
-          initialPrompt: 'Hi! I am your AI assistant. Ask me anything about our platform, pricing, features, or how to get started. I am here to help 24/7!',
-        },
-      },
-      {
-        id: 'kb-featured-1',
-        type: 'kb-featured',
-        data: {
-          title: 'Popular Topics',
-          subtitle: 'Quick answers to common questions',
-          maxItems: 3,
-          showCategory: false,
-          layout: 'list',
-          columns: 1,
-        },
-      },
-      {
-        id: 'cta-1',
-        type: 'cta',
-        data: {
-          title: 'Prefer to talk to a human?',
-          subtitle: 'Our support team is available for complex questions.',
-          buttonText: 'Book a Call',
-          buttonUrl: '/contact',
-          gradient: true,
-        },
-      },
-    ],
-  },
-  {
-    title: 'Contact',
-    slug: 'contact',
-    menu_order: 2,
-    showInMenu: true,
-    meta: {
-      description: 'Schedule a call with our support team.',
-      showTitle: true,
-      titleAlignment: 'center',
-    },
-    blocks: [
-      {
-        id: 'hero-1',
-        type: 'hero',
-        data: {
-          title: 'Talk to Our Team',
-          subtitle: 'For complex issues, schedule a personalized support call.',
-          backgroundType: 'color',
-          heightMode: 'auto',
-          contentAlignment: 'center',
-        },
-      },
-      {
-        id: 'booking-1',
-        type: 'booking',
-        data: {
-          title: 'Schedule a Support Call',
-          description: 'Choose a time that works for you.',
-          mode: 'smart',
-          submitButtonText: 'Confirm Call',
-          successMessage: 'Your call is booked! We\'ll reach out at the scheduled time.',
-          showPhoneField: true,
-          variant: 'card',
-        },
-      },
-    ],
-  },
-];
-
-const aiHubTemplate: StarterTemplate = {
-  id: 'ai-support-hub',
-  name: 'AI Support Hub',
-  description: 'Modern, AI-first support experience with prominent chat interface. Perfect for tech companies and startups prioritizing conversational support.',
-  category: 'helpcenter',
-  icon: 'Bot',
-  tagline: 'AI-powered conversations',
-  aiChatPosition: 'Prominent embedded chat',
-  helpStyle: 'ai-hub',
-  pages: aiHubPages,
-  kbCategories: aiHubCategories,
-  requiredModules: ['knowledgeBase', 'chat', 'bookings'],
-  branding: {
-    organizationName: 'Support Hub',
-    brandTagline: 'Instant AI Support',
-    primaryColor: '262 83% 58%',
-    headingFont: 'Space Grotesk',
-    bodyFont: 'Inter',
-    borderRadius: 'lg',
-    shadowIntensity: 'medium',
-  },
-  chatSettings: {
-    enabled: true,
-    aiProvider: 'openai',
-    widgetEnabled: true,
-    widgetPosition: 'bottom-right',
-    welcomeMessage: 'Hey! 👋 Ask me anything.',
-    systemPrompt: 'You are a helpful, friendly AI support assistant. Be concise and direct. Help users quickly find answers.',
-    suggestedPrompts: [
-      'How do I get started?',
-      'What are the pricing plans?',
-      'How do I contact support?',
-    ],
-  },
-  footerSettings: {
-    email: 'hello@example.com',
-    showBrand: true,
-    showQuickLinks: true,
-    showContact: true,
-    showHours: false,
-  },
-  seoSettings: {
-    siteTitle: 'Support Hub',
-    titleTemplate: '%s | Support Hub',
-    defaultDescription: 'Get instant AI-powered support 24/7.',
-    robotsIndex: true,
-    robotsFollow: true,
-  },
-  cookieBannerSettings: {
-    enabled: false,
-  },
-  siteSettings: {
-    homepageSlug: 'home',
-  },
-};
+// Note: KB Classic and AI Support Hub templates have been consolidated into
+// the unified HelpCenter template below. Use helpStyle parameter to switch modes.
 
 // =====================================================
 // HYBRID HELP CENTER - Combination Template
@@ -7073,22 +6560,30 @@ const hybridHelpPages: TemplatePage[] = [
   },
 ];
 
-const hybridHelpTemplate: StarterTemplate = {
-  id: 'hybrid-help-center',
-  name: 'Hybrid Help Center',
-  description: 'Best of both worlds: searchable knowledge base combined with AI chat. Ideal for SaaS, e-commerce, and service businesses.',
+// Note: The old hybridHelpTemplate has been replaced by helpCenterTemplate below
+// =====================================================
+// UNIFIED HELP CENTER TEMPLATE
+// =====================================================
+// Consolidated template that supports all help styles via helpStyle parameter:
+// - 'kb-classic': SEO-focused documentation without AI
+// - 'ai-hub': AI-first with prominent chat
+// - 'hybrid': Searchable KB + AI chat (default)
+const helpCenterTemplate: StarterTemplate = {
+  id: 'helpcenter',
+  name: 'HelpCenter',
+  description: 'Flexible help center template with support for traditional KB, AI chat, or hybrid approach. Configure via helpStyle to match your support strategy.',
   category: 'helpcenter',
-  icon: 'Layers',
-  tagline: 'KB + AI combined',
-  aiChatPosition: 'Embedded + floating widget',
-  helpStyle: 'hybrid',
-  pages: hybridHelpPages,
+  icon: 'HelpCircle',
+  tagline: 'KB + AI support made simple',
+  aiChatPosition: 'Configurable via helpStyle',
+  helpStyle: 'hybrid', // Default to hybrid, can be changed to 'kb-classic' or 'ai-hub'
+  pages: hybridHelpPages, // Uses the most complete page set
   kbCategories: hybridHelpCategories,
-  requiredModules: ['knowledgeBase', 'chat', 'forms'],
+  requiredModules: ['knowledgeBase', 'chat', 'forms', 'bookings'],
   branding: {
     organizationName: 'Help Center',
     brandTagline: 'Answers made easy',
-    primaryColor: '173 80% 40%',
+    primaryColor: '220 70% 50%',
     headingFont: 'Inter',
     bodyFont: 'Inter',
     borderRadius: 'md',
@@ -7132,17 +6627,8 @@ const hybridHelpTemplate: StarterTemplate = {
   },
 };
 
-// =====================================================
-// HELP CENTER TEMPLATES EXPORT
-// =====================================================
-export const HELP_CENTER_TEMPLATES: StarterTemplate[] = [
-  kbClassicTemplate,
-  aiHubTemplate,
-  hybridHelpTemplate,
-];
-
-// Add help center templates to main export
-STARTER_TEMPLATES.push(...HELP_CENTER_TEMPLATES);
+// Add unified help center template to main export
+STARTER_TEMPLATES.push(helpCenterTemplate);
 
 // =====================================================
 // SERVICEPRO - Service Business Template
