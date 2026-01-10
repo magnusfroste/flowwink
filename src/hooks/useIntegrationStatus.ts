@@ -18,6 +18,16 @@ interface IntegrationStatus {
   };
 }
 
+interface IntegrationsSettings {
+  stripe?: { enabled: boolean };
+  stripe_webhook?: { enabled: boolean };
+  resend?: { enabled: boolean };
+  openai?: { enabled: boolean };
+  gemini?: { enabled: boolean };
+  unsplash?: { enabled: boolean };
+  firecrawl?: { enabled: boolean };
+}
+
 export function useIntegrationStatus() {
   return useQuery({
     queryKey: ['integration-status'],
@@ -31,22 +41,61 @@ export function useIntegrationStatus() {
   });
 }
 
+// Helper to get integration enabled status from site_settings
+function useIntegrationsEnabledSettings() {
+  return useQuery({
+    queryKey: ['integrations-enabled-settings'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('site_settings')
+        .select('value')
+        .eq('key', 'integrations')
+        .maybeSingle();
+      
+      if (error) throw error;
+      return (data?.value as IntegrationsSettings) || {};
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+// Returns true ONLY if both key exists AND integration is enabled
 export function useIsResendConfigured() {
-  const { data } = useIntegrationStatus();
-  return data?.integrations?.resend ?? null;
+  const { data: secretsStatus } = useIntegrationStatus();
+  const { data: enabledSettings } = useIntegrationsEnabledSettings();
+  
+  const hasKey = secretsStatus?.integrations?.resend ?? false;
+  const isEnabled = enabledSettings?.resend?.enabled ?? false;
+  
+  return hasKey && isEnabled;
 }
 
 export function useIsStripeConfigured() {
-  const { data } = useIntegrationStatus();
-  return data?.integrations?.stripe ?? null;
+  const { data: secretsStatus } = useIntegrationStatus();
+  const { data: enabledSettings } = useIntegrationsEnabledSettings();
+  
+  const hasKey = secretsStatus?.integrations?.stripe ?? false;
+  const isEnabled = enabledSettings?.stripe?.enabled ?? false;
+  
+  return hasKey && isEnabled;
 }
 
 export function useIsOpenAIConfigured() {
-  const { data } = useIntegrationStatus();
-  return data?.integrations?.openai ?? null;
+  const { data: secretsStatus } = useIntegrationStatus();
+  const { data: enabledSettings } = useIntegrationsEnabledSettings();
+  
+  const hasKey = secretsStatus?.integrations?.openai ?? false;
+  const isEnabled = enabledSettings?.openai?.enabled ?? false;
+  
+  return hasKey && isEnabled;
 }
 
 export function useIsGeminiConfigured() {
-  const { data } = useIntegrationStatus();
-  return data?.integrations?.gemini ?? null;
+  const { data: secretsStatus } = useIntegrationStatus();
+  const { data: enabledSettings } = useIntegrationsEnabledSettings();
+  
+  const hasKey = secretsStatus?.integrations?.gemini ?? false;
+  const isEnabled = enabledSettings?.gemini?.enabled ?? false;
+  
+  return hasKey && isEnabled;
 }

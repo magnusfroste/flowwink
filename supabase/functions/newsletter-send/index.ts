@@ -42,6 +42,23 @@ serve(async (req) => {
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Check if Resend integration is enabled
+    const { data: integrationSettings } = await supabase
+      .from("site_settings")
+      .select("value")
+      .eq("key", "integrations")
+      .maybeSingle();
+
+    const resendEnabled = (integrationSettings?.value as any)?.resend?.enabled ?? false;
+    if (!resendEnabled) {
+      console.log("[newsletter-send] Resend integration is disabled");
+      return new Response(JSON.stringify({ error: "Email sending is currently disabled" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const ResendClass = await getResend();
     const resend = new ResendClass(resendApiKey);
 
