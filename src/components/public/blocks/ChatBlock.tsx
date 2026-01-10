@@ -45,7 +45,9 @@ export function ChatBlock({ data }: ChatBlockProps) {
             </h2>
           )}
           <Card className="overflow-hidden shadow-lg">
-            {content}
+            <div className={cn(heightClasses[data.height || 'md'], 'overflow-hidden')}>
+              {content}
+            </div>
           </Card>
         </div>
       </section>

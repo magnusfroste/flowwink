@@ -2576,13 +2576,20 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
       n8nWebhookUrl: '',
       widgetEnabled: true,
       widgetPosition: 'bottom-right',
+      blockEnabled: true,
+      landingPageEnabled: true,
       welcomeMessage: 'Hi! How can we help you today?',
-      systemPrompt: 'You are a helpful assistant for a SaaS startup. Be friendly, concise, and help users understand the product.',
+      systemPrompt: 'You are an intelligent AI assistant for FlowWink CMS. You have complete knowledge of all site content, pages, and knowledge base articles. Answer questions accurately based on the actual content. Be helpful, concise, and friendly.',
       suggestedPrompts: [
-        'What does your product do?',
-        'How much does it cost?',
-        'Can I get a demo?',
+        'What is FlowWink?',
+        'What features does this CMS have?',
+        'How do I create my first page?',
       ],
+      // Enable content-aware AI - our key USP
+      includeContentAsContext: true,
+      contentContextMaxTokens: 50000,
+      includedPageSlugs: ['*'],  // Include ALL pages
+      includeKbArticles: true,   // Include entire Knowledge Base
     },
     headerSettings: {
       variant: 'sticky',
