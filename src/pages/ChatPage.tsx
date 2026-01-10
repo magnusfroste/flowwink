@@ -88,13 +88,13 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="h-screen flex flex-col bg-background overflow-hidden">
       <PublicNavigation />
       
-      <main className="flex-1 flex overflow-hidden">
+      <main className="flex-1 flex min-h-0">
         {/* Sidebar */}
         <aside className={cn(
-          'w-72 border-r bg-muted/30 flex flex-col transition-all',
+          'w-72 border-r bg-muted/30 flex flex-col transition-all flex-shrink-0',
           !sidebarOpen && 'w-0 overflow-hidden'
         )}>
           <div className="p-4 border-b">
@@ -142,12 +142,12 @@ export default function ChatPage() {
         </aside>
 
         {/* Main chat area */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-h-0 min-w-0">
           <ChatConversation
             mode="landing"
             conversationId={activeConversationId}
             onNewConversation={handleConversationCreated}
-            className="flex-1"
+            className="flex-1 min-h-0"
           />
         </div>
       </main>
