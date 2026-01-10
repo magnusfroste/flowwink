@@ -6,8 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   GripVertical, 
   Phone, 
@@ -26,9 +27,13 @@ import {
   Building2,
   Link2,
   Scale,
+  Minimize2,
+  Maximize2,
+  Shield,
 } from 'lucide-react';
-import { FooterBlockData, FooterSectionId, FooterLegalLink } from '@/types/cms';
+import { FooterBlockData, FooterSectionId, FooterLegalLink, FooterVariant } from '@/types/cms';
 import { useBlockEditor } from '@/hooks/useBlockEditor';
+import { footerVariantPresets } from '@/hooks/useGlobalBlocks';
 
 interface FooterBlockEditorProps {
   data: FooterBlockData;
@@ -88,6 +93,24 @@ const sectionLabels: Record<FooterSectionId, { label: string; icon: React.Elemen
   hours: { label: 'Opening Hours', icon: Clock },
 };
 
+const variantInfo: Record<FooterVariant, { label: string; description: string; icon: React.ElementType }> = {
+  minimal: { 
+    label: 'Minimal', 
+    description: 'Brand + socials only. Clean, startup look.',
+    icon: Minimize2
+  },
+  full: { 
+    label: 'Full', 
+    description: 'All sections. Complete contact & hours.',
+    icon: Maximize2
+  },
+  enterprise: { 
+    label: 'Enterprise', 
+    description: 'Professional with compliance badges.',
+    icon: Shield
+  },
+};
+
 export function FooterBlockEditor({ data, onChange }: FooterBlockEditorProps) {
   const { 
     data: footerData, 
@@ -102,6 +125,25 @@ export function FooterBlockEditor({ data, onChange }: FooterBlockEditorProps) {
   });
 
   const sectionOrder = footerData.sectionOrder || ['brand', 'quickLinks', 'contact', 'hours'];
+  const currentVariant: FooterVariant = footerData.variant || 'full';
+
+  const handleVariantChange = (newVariant: FooterVariant) => {
+    const preset = footerVariantPresets[newVariant];
+    if (preset) {
+      // Apply preset while preserving user data
+      onChange({
+        ...footerData,
+        variant: newVariant,
+        showBrand: preset.showBrand,
+        showQuickLinks: preset.showQuickLinks,
+        showContact: preset.showContact,
+        showHours: preset.showHours,
+        sectionOrder: preset.sectionOrder,
+        showComplianceBadges: preset.showComplianceBadges,
+        legalLinks: footerData.legalLinks?.length ? footerData.legalLinks : preset.legalLinks,
+      });
+    }
+  };
 
   const handleSectionReorder = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -139,13 +181,86 @@ export function FooterBlockEditor({ data, onChange }: FooterBlockEditorProps) {
   };
 
   return (
-    <Tabs defaultValue="layout" className="w-full">
-      <TabsList className="grid w-full grid-cols-4">
+    <Tabs defaultValue="variant" className="w-full">
+      <TabsList className="grid w-full grid-cols-5">
+        <TabsTrigger value="variant">Variant</TabsTrigger>
         <TabsTrigger value="layout">Layout</TabsTrigger>
         <TabsTrigger value="contact">Contact</TabsTrigger>
         <TabsTrigger value="social">Social</TabsTrigger>
-        <TabsTrigger value="legal">Legal Links</TabsTrigger>
+        <TabsTrigger value="legal">Legal</TabsTrigger>
       </TabsList>
+
+      {/* Variant Tab */}
+      <TabsContent value="variant" className="space-y-6 mt-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Footer Style</CardTitle>
+            <CardDescription>
+              Choose a preset that matches your brand. Settings can be customized in other tabs.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-3 gap-3">
+              {(Object.keys(variantInfo) as FooterVariant[]).map((variant) => {
+                const info = variantInfo[variant];
+                const Icon = info.icon;
+                const isActive = currentVariant === variant;
+                
+                return (
+                  <button
+                    key={variant}
+                    onClick={() => handleVariantChange(variant)}
+                    className={`p-4 rounded-lg border-2 text-left transition-all ${
+                      isActive 
+                        ? 'border-primary bg-primary/5' 
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                  >
+                    <Icon className={`h-5 w-5 mb-2 ${isActive ? 'text-primary' : 'text-muted-foreground'}`} />
+                    <p className="font-medium text-sm">{info.label}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{info.description}</p>
+                  </button>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Enterprise-specific options */}
+        {currentVariant === 'enterprise' && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                Compliance Badges
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="showBadges">Show compliance badges</Label>
+                <Switch
+                  id="showBadges"
+                  checked={footerData.showComplianceBadges ?? false}
+                  onCheckedChange={(checked) => updateField('showComplianceBadges', checked)}
+                />
+              </div>
+              {footerData.showComplianceBadges && (
+                <div className="space-y-2">
+                  <Label>Badges (comma-separated)</Label>
+                  <Input
+                    value={(footerData.complianceBadges || []).join(', ')}
+                    onChange={(e) => {
+                      const badges = e.target.value.split(',').map(b => b.trim()).filter(Boolean);
+                      updateField('complianceBadges', badges);
+                    }}
+                    placeholder="SOC2, GDPR, ISO27001, HIPAA"
+                  />
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+      </TabsContent>
 
       {/* Layout Tab */}
       <TabsContent value="layout" className="space-y-6 mt-6">
