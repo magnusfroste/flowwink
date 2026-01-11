@@ -4,6 +4,7 @@ import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { useChatSettings, useUpdateChatSettings, ChatSettings, ChatAiProvider } from '@/hooks/useSiteSettings';
 import { usePages } from '@/hooks/usePages';
 import { useKbArticles, useKbStats } from '@/hooks/useKnowledgeBase';
+import { useChatFeedbackStats, useChatFeedbackList, useKbArticlesNeedingImprovement, exportFeedbackForFineTuning } from '@/hooks/useChatFeedback';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,13 +14,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, Save, AlertTriangle, Cloud, Server, Webhook, Shield, Database, BookOpen, FileText, HelpCircle, ExternalLink } from 'lucide-react';
+import { Loader2, Save, AlertTriangle, Cloud, Server, Webhook, Shield, Database, BookOpen, FileText, HelpCircle, ExternalLink, ThumbsUp, ThumbsDown, Download } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useUnsavedChanges, UnsavedChangesDialog } from '@/hooks/useUnsavedChanges';
 import { Link } from 'react-router-dom';
 import { useIsOpenAIConfigured, useIsGeminiConfigured } from '@/hooks/useIntegrationStatus';
 import { IntegrationWarning } from '@/components/admin/IntegrationWarning';
+import { toast } from 'sonner';
 
 export default function ChatSettingsPage() {
   const { data: settings, isLoading } = useChatSettings();
@@ -104,11 +106,12 @@ export default function ChatSettingsPage() {
 
         {formData.enabled && (
           <Tabs defaultValue="general" className="space-y-6">
-            <TabsList className="grid grid-cols-5 w-full">
+            <TabsList className="grid grid-cols-6 w-full">
               <TabsTrigger value="general">General</TabsTrigger>
               <TabsTrigger value="provider">AI Provider</TabsTrigger>
               <TabsTrigger value="knowledge">Knowledge Base</TabsTrigger>
               <TabsTrigger value="display">Display</TabsTrigger>
+              <TabsTrigger value="feedback">Feedback</TabsTrigger>
               <TabsTrigger value="privacy">Privacy</TabsTrigger>
             </TabsList>
 
@@ -801,6 +804,11 @@ export default function ChatSettingsPage() {
               </Card>
             </TabsContent>
 
+            {/* Feedback settings */}
+            <TabsContent value="feedback">
+              <FeedbackTab formData={formData} setFormData={setFormData} />
+            </TabsContent>
+
             {/* Privacy settings */}
             <TabsContent value="privacy">
               <Card>
@@ -1061,6 +1069,205 @@ function KbArticlesInfo() {
           </Link>
         </Button>
       </div>
+    </div>
+  );
+}
+
+// Feedback Tab component
+function FeedbackTab({ 
+  formData, 
+  setFormData 
+}: { 
+  formData: ChatSettings; 
+  setFormData: (data: ChatSettings) => void;
+}) {
+  const { data: stats, isLoading: statsLoading } = useChatFeedbackStats();
+  const { data: recentFeedback, isLoading: feedbackLoading } = useChatFeedbackList(10);
+  const { data: articlesNeedingImprovement } = useKbArticlesNeedingImprovement();
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const count = await exportFeedbackForFineTuning();
+      toast.success(`Exported ${count} conversations for fine-tuning`);
+    } catch (error) {
+      toast.error('Failed to export data');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Feedback toggle */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>User Feedback</CardTitle>
+              <CardDescription>
+                Allow users to rate AI responses with thumbs up/down
+              </CardDescription>
+            </div>
+            <Switch
+              checked={formData.feedbackEnabled ?? true}
+              onCheckedChange={(feedbackEnabled) => setFormData({ ...formData, feedbackEnabled })}
+            />
+          </div>
+        </CardHeader>
+      </Card>
+
+      {/* Stats */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Feedback Statistics</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {statsLoading ? (
+            <div className="flex items-center justify-center p-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : stats ? (
+            <div className="grid grid-cols-4 gap-4">
+              <div className="text-center p-4 rounded-lg bg-muted/50">
+                <div className="text-2xl font-bold">{stats.total}</div>
+                <div className="text-sm text-muted-foreground">Total</div>
+              </div>
+              <div className="text-center p-4 rounded-lg bg-green-50 dark:bg-green-950">
+                <div className="text-2xl font-bold text-green-600 flex items-center justify-center gap-1">
+                  <ThumbsUp className="h-5 w-5" />
+                  {stats.positive}
+                </div>
+                <div className="text-sm text-green-600/70">Positive</div>
+              </div>
+              <div className="text-center p-4 rounded-lg bg-red-50 dark:bg-red-950">
+                <div className="text-2xl font-bold text-red-600 flex items-center justify-center gap-1">
+                  <ThumbsDown className="h-5 w-5" />
+                  {stats.negative}
+                </div>
+                <div className="text-sm text-red-600/70">Negative</div>
+              </div>
+              <div className="text-center p-4 rounded-lg bg-primary/10">
+                <div className="text-2xl font-bold text-primary">{stats.positiveRate}%</div>
+                <div className="text-sm text-muted-foreground">Satisfaction</div>
+              </div>
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-center py-4">No feedback data yet</p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Articles needing improvement */}
+      {articlesNeedingImprovement && articlesNeedingImprovement.length > 0 && (
+        <Card className="border-amber-200 dark:border-amber-900">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-amber-600">
+              <AlertTriangle className="h-5 w-5" />
+              Articles Needing Improvement
+            </CardTitle>
+            <CardDescription>
+              These KB articles have received negative feedback and may need updates
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {articlesNeedingImprovement.map(article => (
+                <Link
+                  key={article.id}
+                  to={`/admin/knowledge-base/${article.slug}`}
+                  className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors"
+                >
+                  <span className="font-medium">{article.title}</span>
+                  <div className="flex items-center gap-3 text-sm">
+                    <span className="text-green-600 flex items-center gap-1">
+                      <ThumbsUp className="h-3 w-3" /> {article.positive_feedback_count || 0}
+                    </span>
+                    <span className="text-red-600 flex items-center gap-1">
+                      <ThumbsDown className="h-3 w-3" /> {article.negative_feedback_count || 0}
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Recent feedback */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Feedback</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {feedbackLoading ? (
+            <div className="flex items-center justify-center p-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : recentFeedback && recentFeedback.length > 0 ? (
+            <div className="space-y-3 max-h-64 overflow-y-auto">
+              {recentFeedback.map(feedback => (
+                <div 
+                  key={feedback.id} 
+                  className="flex items-start gap-3 p-3 rounded-lg border"
+                >
+                  <div className={feedback.rating === 'positive' 
+                    ? 'text-green-500' 
+                    : 'text-red-500'
+                  }>
+                    {feedback.rating === 'positive' 
+                      ? <ThumbsUp className="h-4 w-4" /> 
+                      : <ThumbsDown className="h-4 w-4" />
+                    }
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    {feedback.user_question && (
+                      <p className="text-sm font-medium truncate">
+                        Q: {feedback.user_question}
+                      </p>
+                    )}
+                    {feedback.ai_response && (
+                      <p className="text-xs text-muted-foreground line-clamp-2">
+                        A: {feedback.ai_response}
+                      </p>
+                    )}
+                    <time className="text-xs text-muted-foreground mt-1 block">
+                      {new Date(feedback.created_at).toLocaleDateString()}
+                    </time>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-center py-4">No feedback yet</p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Export for fine-tuning */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Export for Fine-tuning</CardTitle>
+          <CardDescription>
+            Download positive-rated Q&A pairs in JSONL format for model fine-tuning
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button 
+            variant="outline" 
+            onClick={handleExport}
+            disabled={isExporting || !stats?.positive}
+          >
+            {isExporting ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4 mr-2" />
+            )}
+            Export {stats?.positive || 0} positive conversations
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }

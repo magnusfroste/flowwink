@@ -475,6 +475,63 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_feedback: {
+        Row: {
+          ai_response: string | null
+          context_kb_articles: string[] | null
+          context_pages: string[] | null
+          conversation_id: string | null
+          created_at: string
+          id: string
+          message_id: string | null
+          rating: string
+          session_id: string | null
+          user_id: string | null
+          user_question: string | null
+        }
+        Insert: {
+          ai_response?: string | null
+          context_kb_articles?: string[] | null
+          context_pages?: string[] | null
+          conversation_id?: string | null
+          created_at?: string
+          id?: string
+          message_id?: string | null
+          rating: string
+          session_id?: string | null
+          user_id?: string | null
+          user_question?: string | null
+        }
+        Update: {
+          ai_response?: string | null
+          context_kb_articles?: string[] | null
+          context_pages?: string[] | null
+          conversation_id?: string | null
+          created_at?: string
+          id?: string
+          message_id?: string | null
+          rating?: string
+          session_id?: string | null
+          user_id?: string | null
+          user_question?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_feedback_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "chat_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_feedback_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_messages: {
         Row: {
           content: string
@@ -752,7 +809,10 @@ export type Database = {
           is_featured: boolean | null
           is_published: boolean | null
           meta_json: Json | null
+          needs_improvement: boolean | null
+          negative_feedback_count: number | null
           not_helpful_count: number | null
+          positive_feedback_count: number | null
           question: string
           slug: string
           sort_order: number | null
@@ -773,7 +833,10 @@ export type Database = {
           is_featured?: boolean | null
           is_published?: boolean | null
           meta_json?: Json | null
+          needs_improvement?: boolean | null
+          negative_feedback_count?: number | null
           not_helpful_count?: number | null
+          positive_feedback_count?: number | null
           question: string
           slug: string
           sort_order?: number | null
@@ -794,7 +857,10 @@ export type Database = {
           is_featured?: boolean | null
           is_published?: boolean | null
           meta_json?: Json | null
+          needs_improvement?: boolean | null
+          negative_feedback_count?: number | null
           not_helpful_count?: number | null
+          positive_feedback_count?: number | null
           question?: string
           slug?: string
           sort_order?: number | null
