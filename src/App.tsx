@@ -50,6 +50,7 @@ import BookingAvailabilityPage from "./pages/admin/BookingAvailabilityPage";
 import ProfilePage from "./pages/admin/ProfilePage";
 import KbArticleEditorPage from "./pages/admin/KbArticleEditorPage";
 import IntegrationsStatusPage from "./pages/admin/IntegrationsStatusPage";
+import CopilotPage from "./pages/admin/CopilotPage";
 import PreviewPage from "./pages/PreviewPage";
 import PublicPage from "./pages/PublicPage";
 import BlogArchivePage from "./pages/BlogArchivePage";
@@ -123,6 +124,7 @@ const router = createBrowserRouter([
   { path: "/admin/knowledge-base", element: <KnowledgeBaseAdminPage /> },
   { path: "/admin/knowledge-base/new", element: <KbArticleEditorPage /> },
   { path: "/admin/knowledge-base/:id", element: <KbArticleEditorPage /> },
+  { path: "/admin/copilot", element: <CopilotPage /> },
   { path: "/preview/:id", element: <PreviewPage /> },
   { path: "/:slug", element: <PublicPage /> },
 ]);
