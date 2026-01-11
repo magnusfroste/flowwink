@@ -15,7 +15,8 @@ import {
   Lightbulb,
   Shield,
   Wrench,
-  LayoutTemplate
+  LayoutTemplate,
+  Bot
 } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
@@ -140,33 +141,63 @@ export default function QuickStartPage() {
         description="Choose how you want to start building your site"
       />
 
-      {/* Hero section with two paths */}
-      <div className="grid md:grid-cols-2 gap-6 mb-8">
-        {/* Template path */}
+      {/* Hero section with three paths */}
+      <div className="grid md:grid-cols-3 gap-6 mb-8">
+        {/* Copilot path - NEW */}
         <Card className="relative overflow-hidden group hover:border-primary/50 transition-all hover:shadow-lg">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-primary/0" />
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-primary/0" />
           <CardHeader className="relative">
             <div className="flex items-center gap-3 mb-2">
               <div className="p-3 rounded-xl bg-primary/10">
-                <Sparkles className="h-6 w-6 text-primary" />
+                <Bot className="h-6 w-6 text-primary" />
               </div>
-              <Badge variant="secondary" className="text-xs">Recommended</Badge>
+              <Badge className="text-xs">AI-driven</Badge>
             </div>
-            <CardTitle className="text-xl">Start from template</CardTitle>
+            <CardTitle className="text-xl">Copilot</CardTitle>
             <CardDescription className="text-base">
-              Choose a professionally designed starter kit with ready-made pages, branding, and AI chat configuration.
+              Beskriv din verksamhet så bygger AI:n sidor och aktiverar moduler åt dig.
             </CardDescription>
           </CardHeader>
           <CardContent className="relative">
             <div className="flex flex-wrap gap-2 mb-4">
-              <Badge variant="outline">{STARTER_TEMPLATES.length} templates</Badge>
-              <Badge variant="outline">Multi-page</Badge>
-              <Badge variant="outline">AI chat included</Badge>
+              <Badge variant="outline">35+ block</Badge>
+              <Badge variant="outline">16 moduler</Badge>
+              <Badge variant="outline">Konversation</Badge>
             </div>
             <Button asChild className="w-full group-hover:bg-primary/90">
+              <Link to="/admin/copilot">
+                <Sparkles className="h-4 w-4 mr-2" />
+                Starta Copilot
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Template path */}
+        <Card className="relative overflow-hidden group hover:border-muted-foreground/30 transition-all">
+          <CardHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-3 rounded-xl bg-muted">
+                <LayoutTemplate className="h-6 w-6 text-muted-foreground" />
+              </div>
+              <Badge variant="secondary" className="text-xs">Recommended</Badge>
+            </div>
+            <CardTitle className="text-xl">Mallar</CardTitle>
+            <CardDescription className="text-base">
+              Välj en professionellt designad mall med färdiga sidor och branding.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2 mb-4">
+              <Badge variant="outline">{STARTER_TEMPLATES.length} mallar</Badge>
+              <Badge variant="outline">Multi-sida</Badge>
+              <Badge variant="outline">AI-chatt</Badge>
+            </div>
+            <Button variant="outline" asChild className="w-full">
               <Link to="/admin/templates">
-                <LayoutTemplate className="h-4 w-4 mr-2" />
-                Browse templates
+                <Sparkles className="h-4 w-4 mr-2" />
+                Bläddra mallar
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Link>
             </Button>
@@ -181,21 +212,21 @@ export default function QuickStartPage() {
                 <Wrench className="h-6 w-6 text-muted-foreground" />
               </div>
             </div>
-            <CardTitle className="text-xl">Build from scratch</CardTitle>
+            <CardTitle className="text-xl">Bygg själv</CardTitle>
             <CardDescription className="text-base">
-              Create pages manually, step by step. Full control over every block and setting.
+              Skapa sidor manuellt, steg för steg. Full kontroll över varje block.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2 mb-4">
-              <Badge variant="outline">Full control</Badge>
-              <Badge variant="outline">Block-by-block</Badge>
-              <Badge variant="outline">Step guide</Badge>
+              <Badge variant="outline">Full kontroll</Badge>
+              <Badge variant="outline">Block-för-block</Badge>
+              <Badge variant="outline">Steg-guide</Badge>
             </div>
             <Button variant="outline" asChild className="w-full">
               <Link to="/admin/pages/new">
                 <FileText className="h-4 w-4 mr-2" />
-                Create blank page
+                Skapa tom sida
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Link>
             </Button>
