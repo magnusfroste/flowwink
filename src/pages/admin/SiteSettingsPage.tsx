@@ -35,11 +35,12 @@ import {
 } from '@/hooks/useSiteSettings';
 import { usePages } from '@/hooks/usePages';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Save, Globe, Zap, ImageIcon, X, AlertTriangle, Code, Cookie, Info, Wrench, Home, Search, Lock, Clock, CheckCircle2, Circle, Bot, FileText, Building2, ExternalLink } from 'lucide-react';
+import { Loader2, Save, Globe, Zap, ImageIcon, X, AlertTriangle, Code, Cookie, Info, Wrench, Home, Search, Lock, Clock, CheckCircle2, Circle, Bot, FileText, Building2, ExternalLink, Trash2 } from 'lucide-react';
 import { MediaLibraryPicker } from '@/components/admin/MediaLibraryPicker';
 import { CodeEditor } from '@/components/admin/CodeEditor';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useUnsavedChanges, UnsavedChangesDialog } from '@/hooks/useUnsavedChanges';
+import { ResetSiteDialog } from '@/components/admin/ResetSiteDialog';
 
 
 function OgImagePicker({ value, onChange }: { value: string; onChange: (url: string) => void }) {
@@ -91,6 +92,7 @@ function OgImagePicker({ value, onChange }: { value: string; onChange: (url: str
 }
 
 export default function SiteSettingsPage() {
+  const [showResetDialog, setShowResetDialog] = useState(false);
   const { data: seoSettings, isLoading: seoLoading } = useSeoSettings();
   const { data: performanceSettings, isLoading: performanceLoading } = usePerformanceSettings();
   const { data: customScriptsSettings, isLoading: scriptsLoading } = useCustomScriptsSettings();
@@ -329,7 +331,37 @@ export default function SiteSettingsPage() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Danger Zone */}
+            <Card className="border-destructive/50">
+              <CardHeader>
+                <CardTitle className="font-serif text-destructive flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5" />
+                  Danger Zone
+                </CardTitle>
+                <CardDescription>Irreversible actions that affect your entire site</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between p-4 rounded-lg border border-destructive/30 bg-destructive/5">
+                  <div>
+                    <h4 className="font-medium">Reset Site</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Delete all content, CRM data, media files, and reset settings to defaults.
+                    </p>
+                  </div>
+                  <Button 
+                    variant="destructive" 
+                    onClick={() => setShowResetDialog(true)}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Reset Site
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
+
+          <ResetSiteDialog open={showResetDialog} onOpenChange={setShowResetDialog} />
 
           {/* SEO Tab */}
           <TabsContent value="seo" className="space-y-6">
