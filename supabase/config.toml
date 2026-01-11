@@ -86,3 +86,9 @@ verify_jwt = true
 
 [functions.send-booking-confirmation]
 verify_jwt = true
+
+[functions.copilot-action]
+verify_jwt = true
+
+[functions.update-kb-feedback]
+verify_jwt = false
