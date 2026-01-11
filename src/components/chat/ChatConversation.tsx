@@ -54,6 +54,7 @@ export function ChatConversation({
 
   const showEmptyState = messages.length === 0 && !isLoading;
   const showTypingIndicator = isLoading && messages[messages.length - 1]?.role === 'user';
+  const showFeedback = settings?.feedbackEnabled ?? true;
 
   return (
     <div className={cn(
@@ -74,14 +75,25 @@ export function ChatConversation({
           />
         ) : (
           <div className="py-2">
-            {messages.map((message) => (
-              <ChatMessage
-                key={message.id}
-                role={message.role}
-                content={message.content}
-                createdAt={message.createdAt}
-              />
-            ))}
+            {messages.map((message, index) => {
+              // Find the previous user message for context
+              const previousUserMessage = message.role === 'assistant' 
+                ? messages.slice(0, index).reverse().find(m => m.role === 'user')?.content
+                : undefined;
+              
+              return (
+                <ChatMessage
+                  key={message.id}
+                  role={message.role}
+                  content={message.content}
+                  createdAt={message.createdAt}
+                  messageId={message.id}
+                  conversationId={conversationId}
+                  previousUserMessage={previousUserMessage}
+                  showFeedback={showFeedback && message.role === 'assistant' && !!message.content}
+                />
+              );
+            })}
             {showTypingIndicator && <ChatTypingIndicator />}
           </div>
         )}

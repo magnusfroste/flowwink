@@ -237,6 +237,9 @@ export interface ChatSettings {
   // Context indicator
   showContextIndicator: boolean;
   
+  // Feedback
+  feedbackEnabled: boolean;
+  
   // Suggested prompts (shown in empty state)
   suggestedPrompts: string[];
 }
@@ -278,6 +281,7 @@ const defaultChatSettings: ChatSettings = {
   includedPageSlugs: [],
   includeKbArticles: false,
   showContextIndicator: true,
+  feedbackEnabled: true,
   suggestedPrompts: [
     'What can you help me with?',
     'Tell me about your services',

@@ -2,14 +2,27 @@ import { cn } from '@/lib/utils';
 import { User, Bot, Copy, Check } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { ChatFeedback } from './ChatFeedback';
 
 interface ChatMessageProps {
   role: 'user' | 'assistant';
   content: string;
   createdAt?: Date;
+  messageId?: string;
+  conversationId?: string;
+  previousUserMessage?: string;
+  showFeedback?: boolean;
 }
 
-export function ChatMessage({ role, content, createdAt }: ChatMessageProps) {
+export function ChatMessage({ 
+  role, 
+  content, 
+  createdAt,
+  messageId,
+  conversationId,
+  previousUserMessage,
+  showFeedback = true,
+}: ChatMessageProps) {
   const [copied, setCopied] = useState(false);
   const isUser = role === 'user';
 
@@ -48,18 +61,32 @@ export function ChatMessage({ role, content, createdAt }: ChatMessageProps) {
         </div>
         
         {!isUser && content && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute -right-10 top-1 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-            onClick={handleCopy}
-          >
-            {copied ? (
-              <Check className="h-3.5 w-3.5 text-green-500" />
-            ) : (
-              <Copy className="h-3.5 w-3.5" />
-            )}
-          </Button>
+          <div className="absolute -right-10 top-1 flex flex-col gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+              onClick={handleCopy}
+            >
+              {copied ? (
+                <Check className="h-3.5 w-3.5 text-green-500" />
+              ) : (
+                <Copy className="h-3.5 w-3.5" />
+              )}
+            </Button>
+          </div>
+        )}
+
+        {/* Feedback buttons for assistant messages */}
+        {!isUser && content && showFeedback && messageId && (
+          <div className="mt-2 pt-2 border-t border-border/50">
+            <ChatFeedback
+              messageId={messageId}
+              conversationId={conversationId}
+              userQuestion={previousUserMessage}
+              aiResponse={content}
+            />
+          </div>
         )}
 
         {createdAt && (
