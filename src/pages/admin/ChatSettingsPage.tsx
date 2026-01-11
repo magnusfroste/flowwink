@@ -671,27 +671,91 @@ export default function ChatSettingsPage() {
 
                     {formData.widgetEnabled && (
                       <div className="space-y-4 pt-4 border-t">
-                        <div className="space-y-2">
-                          <Label>Position</Label>
-                          <Select
-                            value={formData.widgetPosition}
-                            onValueChange={(value) => setFormData({ 
-                              ...formData, 
-                              widgetPosition: value as ChatSettings['widgetPosition']
-                            })}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="bottom-right">Bottom right</SelectItem>
-                              <SelectItem value="bottom-left">Bottom left</SelectItem>
-                            </SelectContent>
-                          </Select>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label>Position</Label>
+                            <Select
+                              value={formData.widgetPosition}
+                              onValueChange={(value) => setFormData({ 
+                                ...formData, 
+                                widgetPosition: value as ChatSettings['widgetPosition']
+                              })}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="bottom-right">Bottom right</SelectItem>
+                                <SelectItem value="bottom-left">Bottom left</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label>Style</Label>
+                            <Select
+                              value={formData.widgetStyle || 'floating'}
+                              onValueChange={(value) => setFormData({ 
+                                ...formData, 
+                                widgetStyle: value as ChatSettings['widgetStyle']
+                              })}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="floating">Floating button</SelectItem>
+                                <SelectItem value="pill">Pill (expands on hover)</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label>Size</Label>
+                            <Select
+                              value={formData.widgetSize || 'md'}
+                              onValueChange={(value) => setFormData({ 
+                                ...formData, 
+                                widgetSize: value as ChatSettings['widgetSize']
+                              })}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="sm">Small</SelectItem>
+                                <SelectItem value="md">Medium</SelectItem>
+                                <SelectItem value="lg">Large</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label>Max Quick Prompts</Label>
+                            <Select
+                              value={String(formData.widgetMaxPrompts ?? 3)}
+                              onValueChange={(value) => setFormData({ 
+                                ...formData, 
+                                widgetMaxPrompts: parseInt(value)
+                              })}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="2">2 prompts</SelectItem>
+                                <SelectItem value="3">3 prompts</SelectItem>
+                                <SelectItem value="4">4 prompts</SelectItem>
+                                <SelectItem value="5">5 prompts</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
                         </div>
 
                         <div className="space-y-2">
-                          <Label htmlFor="widgetButtonText">Button Text</Label>
+                          <Label htmlFor="widgetButtonText">Button Text (for pill style)</Label>
                           <Input
                             id="widgetButtonText"
                             value={formData.widgetButtonText}
@@ -699,8 +763,39 @@ export default function ChatSettingsPage() {
                             placeholder="Chat with us"
                           />
                         </div>
+
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                          <div>
+                            <h5 className="text-sm font-medium">Show on mobile</h5>
+                            <p className="text-xs text-muted-foreground">
+                              Display widget on small screens
+                            </p>
+                          </div>
+                          <Switch
+                            checked={formData.widgetShowOnMobile ?? true}
+                            onCheckedChange={(widgetShowOnMobile) => 
+                              setFormData({ ...formData, widgetShowOnMobile })
+                            }
+                          />
+                        </div>
                       </div>
                     )}
+                  </div>
+
+                  {/* Context indicator setting */}
+                  <div className="flex items-center justify-between p-4 rounded-lg border">
+                    <div>
+                      <h4 className="font-medium">Show Context Indicator</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Display "X pages • Y articles" badge in chat
+                      </p>
+                    </div>
+                    <Switch
+                      checked={formData.showContextIndicator ?? true}
+                      onCheckedChange={(showContextIndicator) => 
+                        setFormData({ ...formData, showContextIndicator })
+                      }
+                    />
                   </div>
                 </CardContent>
               </Card>
