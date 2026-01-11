@@ -20,20 +20,20 @@ interface CopilotChatProps {
   onRejectModules: () => void;
 }
 
-const WELCOME_MESSAGE = `Hej! 👋 Jag är din Copilot och hjälper dig bygga din webbplats.
+const WELCOME_MESSAGE = `Hi! 👋 I'm your Copilot and I'll help you build your website.
 
-Berätta lite om din verksamhet:
-• Vad heter ditt företag?
-• Vilken bransch är ni i?
-• Vilka tjänster eller produkter erbjuder ni?
+Tell me a bit about your business:
+• What's your company name?
+• What industry are you in?
+• What services or products do you offer?
 
-Baserat på dina svar kommer jag att rekommendera moduler och skapa block för din sida.`;
+Based on your answers, I'll recommend modules and create blocks for your page.`;
 
 const STARTER_PROMPTS = [
-  'Jag driver en skönhetssalong',
-  'Vi är en konsultbyrå',
-  'Jag har en restaurang',
-  'Vi säljer produkter online',
+  'I run a beauty salon',
+  'We are a consulting agency',
+  'I have a restaurant',
+  'We sell products online',
 ];
 
 export function CopilotChat({
@@ -133,7 +133,7 @@ export function CopilotChat({
         onSend={onSendMessage}
         onCancel={onCancel}
         isLoading={isLoading}
-        placeholder="Beskriv din verksamhet..."
+        placeholder="Describe your business..."
       />
     </div>
   );
@@ -177,7 +177,7 @@ function MessageBubble({ message }: { message: CopilotMessage }) {
 
       {isUser && (
         <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-          <span className="text-primary-foreground text-sm font-medium">Du</span>
+          <span className="text-primary-foreground text-sm font-medium">You</span>
         </div>
       )}
     </div>
@@ -201,7 +201,7 @@ function ModuleRecommendationCard({
         </div>
         <div className="flex-1 space-y-3">
           <div>
-            <p className="font-medium text-sm">Rekommenderade moduler</p>
+            <p className="font-medium text-sm">Recommended modules</p>
             <p className="text-xs text-muted-foreground">{recommendation.reason}</p>
           </div>
 
@@ -219,11 +219,11 @@ function ModuleRecommendationCard({
           <div className="flex gap-2">
             <Button size="sm" onClick={onAccept}>
               <Check className="h-3.5 w-3.5 mr-1.5" />
-              Aktivera alla
+              Activate all
             </Button>
             <Button size="sm" variant="outline" onClick={onReject}>
               <X className="h-3.5 w-3.5 mr-1.5" />
-              Hoppa över
+              Skip
             </Button>
           </div>
         </div>

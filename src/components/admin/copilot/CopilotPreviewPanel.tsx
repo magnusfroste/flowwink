@@ -42,7 +42,7 @@ export function CopilotPreviewPanel({
           <TabsList className="h-8">
             <TabsTrigger value="blocks" className="text-xs px-3 gap-1.5">
               <Layers className="h-3.5 w-3.5" />
-              Block
+              Blocks
               {blocks.length > 0 && (
                 <Badge variant="secondary" className="h-4 px-1 text-[10px]">
                   {blocks.length}
@@ -51,7 +51,7 @@ export function CopilotPreviewPanel({
             </TabsTrigger>
             <TabsTrigger value="modules" className="text-xs px-3 gap-1.5">
               <Package className="h-3.5 w-3.5" />
-              Moduler
+              Modules
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -97,7 +97,7 @@ export function CopilotPreviewPanel({
                 {pendingBlocks.length > 0 && (
                   <div className="space-y-3">
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Väntar på godkännande
+                      Pending approval
                     </p>
                     {pendingBlocks.map((block) => (
                       <CopilotArtifact
@@ -116,7 +116,7 @@ export function CopilotPreviewPanel({
                 {approvedBlocks.length > 0 && (
                   <div className="space-y-3">
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Godkända block
+                      Approved blocks
                     </p>
                     {approvedBlocks.map((block) => (
                       <CopilotArtifact
@@ -152,9 +152,9 @@ function EmptyState() {
       <div className="p-4 rounded-full bg-muted mb-4">
         <Layers className="h-8 w-8 text-muted-foreground" />
       </div>
-      <h3 className="font-medium mb-1">Inga block ännu</h3>
+      <h3 className="font-medium mb-1">No blocks yet</h3>
       <p className="text-sm text-muted-foreground max-w-[250px]">
-        Beskriv din verksamhet i chatten så skapar jag block för din sida
+        Describe your business in the chat and I'll create blocks for your page
       </p>
     </div>
   );
@@ -170,9 +170,9 @@ function ModulesPreview({ recommendation }: { recommendation: ModuleRecommendati
         <div className="p-4 rounded-full bg-muted mb-4">
           <Package className="h-8 w-8 text-muted-foreground" />
         </div>
-        <h3 className="font-medium mb-1">Inga moduler rekommenderade</h3>
+        <h3 className="font-medium mb-1">No modules recommended</h3>
         <p className="text-sm text-muted-foreground max-w-[250px]">
-          Beskriv din verksamhet så rekommenderar jag passande moduler
+          Describe your business and I'll recommend suitable modules
         </p>
       </div>
     );
@@ -182,12 +182,12 @@ function ModulesPreview({ recommendation }: { recommendation: ModuleRecommendati
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-          {isAccepted ? 'Aktiverade moduler' : 'Rekommenderade moduler'}
+          {isAccepted ? 'Activated modules' : 'Recommended modules'}
         </p>
         {isAccepted && (
           <Badge variant="default" className="text-xs">
             <Check className="h-3 w-3 mr-1" />
-            Aktiverade
+            Activated
           </Badge>
         )}
       </div>

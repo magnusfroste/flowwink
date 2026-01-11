@@ -34,7 +34,7 @@ export default function CopilotPage() {
                 <Badge variant="secondary" className="text-xs">AI-driven</Badge>
               </div>
               <p className="text-sm text-muted-foreground">
-                Beskriv din verksamhet så bygger jag sidor och aktiverar moduler
+                Describe your business and I'll build pages and activate modules
               </p>
             </div>
           </div>
@@ -43,7 +43,7 @@ export default function CopilotPage() {
             {hasApprovedBlocks && (
               <Button onClick={() => setShowCreateDialog(true)}>
                 <Wand2 className="h-4 w-4 mr-2" />
-                Skapa sida ({copilot.approvedBlocks.length} block)
+                Create page ({copilot.approvedBlocks.length} blocks)
               </Button>
             )}
           </div>

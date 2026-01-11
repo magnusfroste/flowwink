@@ -57,7 +57,7 @@ export function CopilotArtifact({
               {isApproved && (
                 <Badge variant="outline" className="text-green-600 border-green-200">
                   <Check className="h-3 w-3 mr-1" />
-                  Godkänt
+                  Approved
                 </Badge>
               )}
             </div>
@@ -108,7 +108,7 @@ export function CopilotArtifact({
           {showFeedback && !isApproved && (
             <div className="flex gap-2 mt-3">
               <Input
-                placeholder="Beskriv vad du vill ändra..."
+                placeholder="Describe what you want to change..."
                 value={feedback}
                 onChange={(e) => setFeedback(e.target.value)}
                 className="text-sm h-8"
@@ -119,7 +119,7 @@ export function CopilotArtifact({
                 }}
               />
               <Button size="sm" onClick={handleRegenerate}>
-                Regenerera
+                Regenerate
               </Button>
             </div>
           )}

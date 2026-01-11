@@ -56,7 +56,7 @@ export function CreateFromCopilotDialog({
 
   const handleCreate = async () => {
     if (!title.trim()) {
-      toast.error('Ange ett sidnamn');
+      toast.error('Please enter a page name');
       return;
     }
 
@@ -79,11 +79,11 @@ export function CreateFromCopilotDialog({
         menu_order: 0,
       });
 
-      toast.success('Sidan skapad!');
+      toast.success('Page created!');
       onSuccess();
     } catch (error) {
       console.error('Failed to create page:', error);
-      toast.error('Kunde inte skapa sidan');
+      toast.error('Could not create page');
     } finally {
       setIsCreating(false);
     }
@@ -99,10 +99,10 @@ export function CreateFromCopilotDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Wand2 className="h-5 w-5 text-primary" />
-            Skapa din sida
+            Create your page
           </DialogTitle>
           <DialogDescription>
-            Ge din sida ett namn och välj om den ska publiceras direkt.
+            Give your page a name and choose whether to publish it immediately.
           </DialogDescription>
         </DialogHeader>
 
@@ -110,7 +110,7 @@ export function CreateFromCopilotDialog({
           {/* Summary */}
           <div className="space-y-3">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Block som skapas:</span>
+              <span className="text-muted-foreground">Blocks to create:</span>
               <div className="flex flex-wrap gap-1 justify-end">
                 {blocks.map((block) => {
                   const info = BLOCK_REFERENCE.find(b => b.type === block.type);
@@ -125,7 +125,7 @@ export function CreateFromCopilotDialog({
 
             {acceptedModules.length > 0 && (
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Aktiverade moduler:</span>
+                <span className="text-muted-foreground">Activated modules:</span>
                 <div className="flex flex-wrap gap-1 justify-end">
                   {acceptedModules.map((moduleId) => {
                     const module = defaultModulesSettings[moduleId];
@@ -144,10 +144,10 @@ export function CreateFromCopilotDialog({
           {/* Page details */}
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="title">Sidnamn</Label>
+              <Label htmlFor="title">Page name</Label>
               <Input
                 id="title"
-                placeholder="t.ex. Startsida, Om oss, Kontakt"
+                placeholder="e.g. Home, About, Contact"
                 value={title}
                 onChange={(e) => handleTitleChange(e.target.value)}
               />
@@ -165,15 +165,15 @@ export function CreateFromCopilotDialog({
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                Lämna tomt för startsida
+                Leave empty for homepage
               </p>
             </div>
 
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor="publish">Publicera direkt</Label>
+                <Label htmlFor="publish">Publish immediately</Label>
                 <p className="text-xs text-muted-foreground">
-                  Annars sparas sidan som utkast
+                  Otherwise saved as draft
                 </p>
               </div>
               <Switch
@@ -187,18 +187,18 @@ export function CreateFromCopilotDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Avbryt
+            Cancel
           </Button>
           <Button onClick={handleCreate} disabled={isCreating}>
             {isCreating ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Skapar...
+                Creating...
               </>
             ) : (
               <>
                 <Wand2 className="h-4 w-4 mr-2" />
-                Skapa sida
+                Create page
               </>
             )}
           </Button>

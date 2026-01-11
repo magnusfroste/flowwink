@@ -146,7 +146,7 @@ export function useCopilot(): UseCopilotReturn {
     setBlocks(prev => prev.map(b => 
       b.id === blockId ? { ...b, status: 'approved' as const } : b
     ));
-    toast.success('Block godkänt');
+    toast.success('Block approved');
   }, []);
 
   const rejectBlock = useCallback((blockId: string) => {
@@ -186,9 +186,9 @@ export function useCopilot(): UseCopilotReturn {
 
       await updateModules.mutateAsync(updatedModules);
       setModuleRecommendation(prev => prev ? { ...prev, status: 'accepted' } : null);
-      toast.success('Moduler aktiverade');
+      toast.success('Modules activated');
     } catch (err) {
-      toast.error('Kunde inte aktivera moduler');
+      toast.error('Could not activate modules');
     }
   }, [moduleRecommendation, currentModules, updateModules]);
 
