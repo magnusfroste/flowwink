@@ -9,6 +9,7 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { WelcomeModal } from '@/components/admin/WelcomeModal';
 import { LeadsDashboardWidget } from '@/components/admin/LeadsDashboardWidget';
 import { AeoDashboardWidget } from '@/components/admin/AeoDashboardWidget';
+import { ChatFeedbackDashboardWidget } from '@/components/admin/ChatFeedbackDashboardWidget';
 import { usePages } from '@/hooks/usePages';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsModuleEnabled } from '@/hooks/useModules';
@@ -107,6 +108,11 @@ export default function AdminDashboard() {
         {/* AEO Widget */}
         <div className="mb-8">
           <AeoDashboardWidget />
+        </div>
+
+        {/* Chat Feedback Widget */}
+        <div className="mb-8">
+          <ChatFeedbackDashboardWidget />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
