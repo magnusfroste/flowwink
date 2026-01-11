@@ -155,19 +155,19 @@ export default function QuickStartPage() {
             </div>
             <CardTitle className="text-xl">Copilot</CardTitle>
             <CardDescription className="text-base">
-              Beskriv din verksamhet så bygger AI:n sidor och aktiverar moduler åt dig.
+              Describe your business and AI will build pages and activate modules for you.
             </CardDescription>
           </CardHeader>
           <CardContent className="relative">
             <div className="flex flex-wrap gap-2 mb-4">
-              <Badge variant="outline">35+ block</Badge>
-              <Badge variant="outline">16 moduler</Badge>
-              <Badge variant="outline">Konversation</Badge>
+              <Badge variant="outline">35+ blocks</Badge>
+              <Badge variant="outline">16 modules</Badge>
+              <Badge variant="outline">Conversation</Badge>
             </div>
             <Button asChild className="w-full group-hover:bg-primary/90">
               <Link to="/admin/copilot">
                 <Sparkles className="h-4 w-4 mr-2" />
-                Starta Copilot
+                Start Copilot
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Link>
             </Button>
@@ -183,21 +183,21 @@ export default function QuickStartPage() {
               </div>
               <Badge variant="secondary" className="text-xs">Recommended</Badge>
             </div>
-            <CardTitle className="text-xl">Mallar</CardTitle>
+            <CardTitle className="text-xl">Templates</CardTitle>
             <CardDescription className="text-base">
-              Välj en professionellt designad mall med färdiga sidor och branding.
+              Choose a professionally designed template with ready-made pages and branding.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2 mb-4">
-              <Badge variant="outline">{STARTER_TEMPLATES.length} mallar</Badge>
-              <Badge variant="outline">Multi-sida</Badge>
-              <Badge variant="outline">AI-chatt</Badge>
+              <Badge variant="outline">{STARTER_TEMPLATES.length} templates</Badge>
+              <Badge variant="outline">Multi-page</Badge>
+              <Badge variant="outline">AI chat</Badge>
             </div>
             <Button variant="outline" asChild className="w-full">
               <Link to="/admin/templates">
                 <Sparkles className="h-4 w-4 mr-2" />
-                Bläddra mallar
+                Browse templates
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Link>
             </Button>
@@ -212,21 +212,21 @@ export default function QuickStartPage() {
                 <Wrench className="h-6 w-6 text-muted-foreground" />
               </div>
             </div>
-            <CardTitle className="text-xl">Bygg själv</CardTitle>
+            <CardTitle className="text-xl">Build yourself</CardTitle>
             <CardDescription className="text-base">
-              Skapa sidor manuellt, steg för steg. Full kontroll över varje block.
+              Create pages manually, step by step. Full control over every block.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2 mb-4">
-              <Badge variant="outline">Full kontroll</Badge>
-              <Badge variant="outline">Block-för-block</Badge>
-              <Badge variant="outline">Steg-guide</Badge>
+              <Badge variant="outline">Full control</Badge>
+              <Badge variant="outline">Block-by-block</Badge>
+              <Badge variant="outline">Step guide</Badge>
             </div>
             <Button variant="outline" asChild className="w-full">
               <Link to="/admin/pages/new">
                 <FileText className="h-4 w-4 mr-2" />
-                Skapa tom sida
+                Create blank page
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Link>
             </Button>
@@ -312,14 +312,14 @@ export default function QuickStartPage() {
                   <span className="font-medium">Setup-progress</span>
                 </div>
                 <Badge variant={progress === 100 ? "default" : "secondary"}>
-                  {completedSteps.length} av {MANUAL_STEPS.length} klart
+                  {completedSteps.length} of {MANUAL_STEPS.length} done
                 </Badge>
               </div>
               <Progress value={progress} className="h-2" />
               {progress === 100 && (
                 <p className="text-sm text-muted-foreground mt-3 flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-green-500" />
-                  Grattis! Du har slutfört alla steg.
+                  Congratulations! You have completed all steps.
                 </p>
               )}
             </CardContent>
@@ -361,7 +361,7 @@ export default function QuickStartPage() {
                           "text-base flex items-center gap-2",
                           isCompleted && "line-through text-muted-foreground"
                         )}>
-                          <span className="text-muted-foreground font-normal">Steg {index + 1}:</span>
+                          <span className="text-muted-foreground font-normal">Step {index + 1}:</span>
                           {step.title}
                         </CardTitle>
                         <CardDescription className="mt-1">
@@ -421,11 +421,11 @@ export default function QuickStartPage() {
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <MessageSquare className="h-4 w-4 text-primary" />
-              Privat AI-chatt
+              Private AI Chat
             </CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">
-            Självhostad AI som aldrig skickar data till molnet
+            Self-hosted AI that never sends data to the cloud
           </CardContent>
         </Card>
         
@@ -433,11 +433,11 @@ export default function QuickStartPage() {
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <FileText className="h-4 w-4 text-primary" />
-              Block-editor
+              Block Editor
             </CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">
-            20+ blocktyper med drag-and-drop-redigering
+            20+ block types with drag-and-drop editing
           </CardContent>
         </Card>
         
@@ -449,7 +449,7 @@ export default function QuickStartPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">
-            REST & GraphQL för multi-kanal-leverans
+            REST & GraphQL for multi-channel delivery
           </CardContent>
         </Card>
       </div>
