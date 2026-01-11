@@ -2576,6 +2576,10 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
       n8nWebhookUrl: '',
       widgetEnabled: true,
       widgetPosition: 'bottom-right',
+      widgetStyle: 'pill',
+      widgetSize: 'md',
+      widgetMaxPrompts: 3,
+      widgetShowOnMobile: true,
       blockEnabled: true,
       landingPageEnabled: true,
       welcomeMessage: 'Hi! How can we help you today?',
@@ -2590,6 +2594,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
       contentContextMaxTokens: 50000,
       includedPageSlugs: ['*'],  // Include ALL pages
       includeKbArticles: true,   // Include entire Knowledge Base
+      showContextIndicator: true, // Show "X pages • Y articles" badge
     },
     headerSettings: {
       variant: 'sticky',

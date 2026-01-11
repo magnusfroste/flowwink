@@ -169,6 +169,8 @@ const defaultMaintenanceSettings: MaintenanceSettings = {
 
 // Chat settings
 export type ChatAiProvider = 'openai' | 'gemini' | 'local' | 'n8n';
+export type ChatWidgetStyle = 'floating' | 'pill' | 'expanded';
+export type ChatWidgetSize = 'sm' | 'md' | 'lg';
 
 export interface ChatSettings {
   // Grundläggande
@@ -207,6 +209,10 @@ export interface ChatSettings {
   widgetEnabled: boolean;
   widgetPosition: 'bottom-right' | 'bottom-left';
   widgetButtonText: string;
+  widgetStyle: ChatWidgetStyle;
+  widgetSize: ChatWidgetSize;
+  widgetMaxPrompts: number;
+  widgetShowOnMobile: boolean;
   
   // Landing page
   landingPageEnabled: boolean;
@@ -227,6 +233,9 @@ export interface ChatSettings {
   
   // KB Articles in context
   includeKbArticles: boolean;
+  
+  // Context indicator
+  showContextIndicator: boolean;
   
   // Suggested prompts (shown in empty state)
   suggestedPrompts: string[];
@@ -254,6 +263,10 @@ const defaultChatSettings: ChatSettings = {
   widgetEnabled: false,
   widgetPosition: 'bottom-right',
   widgetButtonText: 'Chatta med oss',
+  widgetStyle: 'floating',
+  widgetSize: 'md',
+  widgetMaxPrompts: 3,
+  widgetShowOnMobile: true,
   landingPageEnabled: false,
   blockEnabled: true,
   saveConversations: true,
@@ -264,6 +277,7 @@ const defaultChatSettings: ChatSettings = {
   contentContextMaxTokens: 50000,
   includedPageSlugs: [],
   includeKbArticles: false,
+  showContextIndicator: true,
   suggestedPrompts: [
     'What can you help me with?',
     'Tell me about your services',

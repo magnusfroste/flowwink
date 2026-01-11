@@ -14,6 +14,8 @@ interface ChatConversationProps {
   className?: string;
   conversationId?: string;
   onNewConversation?: (id: string) => void;
+  maxPrompts?: number;
+  compact?: boolean;
 }
 
 export function ChatConversation({ 
@@ -21,6 +23,8 @@ export function ChatConversation({
   className,
   conversationId,
   onNewConversation,
+  maxPrompts,
+  compact = false,
 }: ChatConversationProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const { data: settings } = useChatSettings();
@@ -65,6 +69,8 @@ export function ChatConversation({
             welcomeMessage={settings?.welcomeMessage}
             suggestedPrompts={settings?.suggestedPrompts}
             onPromptClick={handlePromptClick}
+            maxPrompts={maxPrompts}
+            compact={compact}
           />
         ) : (
           <div className="py-2">
