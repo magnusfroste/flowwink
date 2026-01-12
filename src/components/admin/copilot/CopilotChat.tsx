@@ -60,28 +60,28 @@ export function CopilotChat({
   return (
     <div className="flex flex-col h-full">
       <ScrollArea className="flex-1">
-        <div className="p-4 space-y-4">
+        <div className="p-3 space-y-3">
           {/* Welcome state */}
           {isEmpty && (
-            <div className="space-y-6 py-8">
-              <div className="text-center space-y-2">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-2">
-                  <Sparkles className="w-6 h-6 text-primary" />
+            <div className="space-y-4 py-6">
+              <div className="text-center space-y-1">
+                <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 mb-1">
+                  <Sparkles className="w-5 h-5 text-primary" />
                 </div>
-                <h3 className="font-medium">What are we building?</h3>
-                <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                <h3 className="font-medium text-sm">What are we building?</h3>
+                <p className="text-xs text-muted-foreground max-w-xs mx-auto">
                   {WELCOME_MESSAGE}
                 </p>
               </div>
 
-              <div className="flex flex-wrap justify-center gap-2">
+              <div className="flex flex-wrap justify-center gap-1.5">
                 {STARTER_PROMPTS.map((prompt) => (
                   <Button
                     key={prompt}
                     variant="outline"
                     size="sm"
                     onClick={() => onSendMessage(`I run a ${prompt.toLowerCase()}`)}
-                    className="text-xs"
+                    className="text-xs h-7 px-2.5"
                   >
                     {prompt}
                   </Button>
@@ -90,7 +90,7 @@ export function CopilotChat({
             </div>
           )}
 
-          {/* Messages - minimal design without avatars */}
+          {/* Messages */}
           {messages.map((message) => (
             <div
               key={message.id}
@@ -101,16 +101,16 @@ export function CopilotChat({
             >
               <div
                 className={cn(
-                  'inline-block max-w-[85%] rounded-2xl px-4 py-2.5',
+                  'inline-block max-w-[90%] rounded-xl px-3 py-2',
                   message.role === 'user'
                     ? 'bg-primary text-primary-foreground'
                     : 'bg-muted'
                 )}
               >
-                <div className="whitespace-pre-wrap">{message.content}</div>
+                <div className="whitespace-pre-wrap text-sm leading-relaxed">{message.content}</div>
                 
                 {message.toolCall && (
-                  <Badge variant="secondary" className="mt-2 text-xs opacity-70">
+                  <Badge variant="secondary" className="mt-1.5 text-[10px] opacity-60">
                     {message.toolCall.name.replace(/_/g, ' ')}
                   </Badge>
                 )}
@@ -130,8 +130,8 @@ export function CopilotChat({
           {/* Loading state */}
           {isLoading && (
             <div className="text-left">
-              <div className="inline-flex items-center gap-2 bg-muted rounded-2xl px-4 py-2.5 text-sm text-muted-foreground">
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <div className="inline-flex items-center gap-1.5 bg-muted rounded-xl px-3 py-2 text-sm text-muted-foreground">
+                <Loader2 className="w-3 h-3 animate-spin" />
                 <span>Thinking...</span>
               </div>
             </div>
@@ -141,19 +141,20 @@ export function CopilotChat({
         </div>
       </ScrollArea>
 
-      {/* Minimal input */}
-      <div className="p-4 border-t bg-background">
+      {/* Input */}
+      <div className="p-3 border-t bg-background">
         <form onSubmit={handleSubmit} className="flex gap-2">
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Describe your business..."
             disabled={isLoading}
-            className="flex-1"
+            className="flex-1 h-9 text-sm"
           />
           <Button 
             type="submit" 
             size="icon" 
+            className="h-9 w-9"
             disabled={!input.trim() || isLoading}
           >
             {isLoading ? (
@@ -163,8 +164,8 @@ export function CopilotChat({
             )}
           </Button>
         </form>
-        <div className="flex justify-end mt-2">
-          <Button variant="ghost" size="sm" onClick={onCancel} className="text-xs text-muted-foreground">
+        <div className="flex justify-end mt-1.5">
+          <Button variant="ghost" size="sm" onClick={onCancel} className="text-xs h-6 px-2 text-muted-foreground">
             Cancel
           </Button>
         </div>
@@ -183,33 +184,35 @@ function ModuleRecommendationCard({
   onReject: () => void;
 }) {
   return (
-    <Card className="p-4 border-primary/30 bg-primary/5">
-      <div className="space-y-3">
+    <Card className="p-3 border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
+      <div className="space-y-2.5">
         <div className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-primary" />
+          <div className="flex items-center justify-center w-6 h-6 rounded-md bg-primary/10">
+            <Sparkles className="h-3.5 w-3.5 text-primary" />
+          </div>
           <span className="font-medium text-sm">Recommended modules</span>
         </div>
         
-        <p className="text-xs text-muted-foreground">{recommendation.reason}</p>
+        <p className="text-xs text-muted-foreground leading-relaxed">{recommendation.reason}</p>
 
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-1">
           {recommendation.modules.map((moduleId) => {
             const module = defaultModulesSettings[moduleId];
             return (
-              <Badge key={moduleId} variant="secondary" className="text-xs">
+              <Badge key={moduleId} variant="secondary" className="text-[10px] px-1.5 py-0.5">
                 {module?.name || moduleId}
               </Badge>
             );
           })}
         </div>
 
-        <div className="flex gap-2 pt-1">
-          <Button size="sm" onClick={onAccept} className="flex-1">
-            <Check className="h-3.5 w-3.5 mr-1.5" />
-            Activate
+        <div className="flex gap-2 pt-0.5">
+          <Button size="sm" onClick={onAccept} className="flex-1 h-8 text-xs">
+            <Check className="h-3 w-3 mr-1" />
+            Activate all
           </Button>
-          <Button size="sm" variant="outline" onClick={onReject}>
-            <X className="h-3.5 w-3.5" />
+          <Button size="sm" variant="outline" onClick={onReject} className="h-8 w-8 p-0">
+            <X className="h-3 w-3" />
           </Button>
         </div>
       </div>
