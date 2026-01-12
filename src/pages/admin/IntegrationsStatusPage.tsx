@@ -24,6 +24,8 @@ import {
   AlertCircle,
   PauseCircle,
   Settings,
+  Zap,
+  Loader2,
 } from "lucide-react";
 import {
   useIntegrations,
@@ -33,6 +35,7 @@ import {
   type IntegrationsSettings,
 } from "@/hooks/useIntegrations";
 import { useIntegrationStatus } from "@/hooks/useIntegrationStatus";
+import { supabase } from "@/integrations/supabase/client";
 
 // Icon mapping
 const iconMap = {
@@ -69,6 +72,64 @@ function getStatusBadge(status: IntegrationStatus) {
         </Badge>
       );
   }
+}
+
+// Test AI Connection Button Component
+function TestAIConnectionButton({ 
+  provider, 
+  hasKey, 
+  isEnabled 
+}: { 
+  provider: 'openai' | 'gemini'; 
+  hasKey: boolean; 
+  isEnabled: boolean;
+}) {
+  const [isTesting, setIsTesting] = useState(false);
+
+  const handleTest = async () => {
+    if (!hasKey || !isEnabled) return;
+    
+    setIsTesting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('test-ai-connection', {
+        body: { provider }
+      });
+
+      if (error) {
+        toast.error(`Test failed: ${error.message}`);
+        return;
+      }
+
+      if (data?.success) {
+        toast.success(`${provider === 'openai' ? 'OpenAI' : 'Gemini'} connection verified! Model: ${data.model}`);
+      } else {
+        toast.error(`Test failed: ${data?.error || 'Unknown error'}`);
+      }
+    } catch (err) {
+      toast.error(`Test failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally {
+      setIsTesting(false);
+    }
+  };
+
+  if (!hasKey || !isEnabled) return null;
+
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={handleTest}
+      disabled={isTesting}
+      className="gap-1.5"
+    >
+      {isTesting ? (
+        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+      ) : (
+        <Zap className="h-3.5 w-3.5" />
+      )}
+      Test Connection
+    </Button>
+  );
 }
 
 export default function IntegrationsStatusPage() {
@@ -292,6 +353,15 @@ export default function IntegrationsStatusPage() {
 
                             {/* Actions */}
                             <div className="flex items-center gap-2 flex-wrap">
+                              {/* Test Connection Button for AI integrations */}
+                              {(key === 'openai' || key === 'gemini') && (
+                                <TestAIConnectionButton 
+                                  provider={key} 
+                                  hasKey={hasKey} 
+                                  isEnabled={isEnabled} 
+                                />
+                              )}
+
                               <a
                                 href={integration.docsUrl}
                                 target="_blank"

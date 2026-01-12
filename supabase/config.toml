@@ -95,3 +95,6 @@ verify_jwt = false
 
 [functions.setup-database]
 verify_jwt = false
+
+[functions.test-ai-connection]
+verify_jwt = true
