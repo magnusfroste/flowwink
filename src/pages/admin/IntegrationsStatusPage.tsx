@@ -8,6 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
 import {
   CheckCircle2,
@@ -21,11 +25,13 @@ import {
   Database,
   RefreshCw,
   ExternalLink,
-  AlertCircle,
   PauseCircle,
   Settings,
   Zap,
   Loader2,
+  Server,
+  Webhook,
+  ChevronDown,
 } from "lucide-react";
 import {
   useIntegrations,
@@ -33,6 +39,7 @@ import {
   INTEGRATION_CATEGORIES,
   defaultIntegrationsSettings,
   type IntegrationsSettings,
+  type IntegrationProviderConfig,
 } from "@/hooks/useIntegrations";
 import { useIntegrationStatus } from "@/hooks/useIntegrationStatus";
 import { supabase } from "@/integrations/supabase/client";
@@ -44,6 +51,8 @@ const iconMap = {
   Bot,
   Image,
   Flame,
+  Server,
+  Webhook,
 };
 
 type IntegrationStatus = 'active' | 'disabled' | 'not_configured';
@@ -132,8 +141,176 @@ function TestAIConnectionButton({
   );
 }
 
+// Integration Configuration Component
+function IntegrationConfigPanel({ 
+  integrationKey,
+  config,
+  onConfigChange,
+  hasKey,
+  isEnabled,
+}: { 
+  integrationKey: keyof IntegrationsSettings;
+  config?: IntegrationProviderConfig;
+  onConfigChange: (config: IntegrationProviderConfig) => void;
+  hasKey: boolean;
+  isEnabled: boolean;
+}) {
+  if (!hasKey || !isEnabled) return null;
+
+  if (integrationKey === 'openai') {
+    return (
+      <div className="space-y-3 pt-3 border-t">
+        <div className="space-y-2">
+          <Label htmlFor="openai-baseurl" className="text-xs">Base URL (optional)</Label>
+          <Input
+            id="openai-baseurl"
+            value={config?.baseUrl || 'https://api.openai.com/v1'}
+            onChange={(e) => onConfigChange({ ...config, baseUrl: e.target.value })}
+            placeholder="https://api.openai.com/v1"
+            className="h-8 text-sm"
+          />
+          <p className="text-xs text-muted-foreground">For Azure OpenAI or compatible APIs</p>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="openai-model" className="text-xs">Default Model</Label>
+          <Select
+            value={config?.model || 'gpt-4o-mini'}
+            onValueChange={(value) => onConfigChange({ ...config, model: value })}
+          >
+            <SelectTrigger id="openai-model" className="h-8 text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="gpt-4o-mini">GPT-4o Mini (Recommended)</SelectItem>
+              <SelectItem value="gpt-4o">GPT-4o (Powerful)</SelectItem>
+              <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo (Legacy)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+    );
+  }
+
+  if (integrationKey === 'gemini') {
+    return (
+      <div className="space-y-3 pt-3 border-t">
+        <div className="space-y-2">
+          <Label htmlFor="gemini-model" className="text-xs">Default Model</Label>
+          <Select
+            value={config?.model || 'gemini-2.0-flash-exp'}
+            onValueChange={(value) => onConfigChange({ ...config, model: value })}
+          >
+            <SelectTrigger id="gemini-model" className="h-8 text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="gemini-2.0-flash-exp">Gemini 2.0 Flash (Recommended)</SelectItem>
+              <SelectItem value="gemini-1.5-flash">Gemini 1.5 Flash (Stable)</SelectItem>
+              <SelectItem value="gemini-1.5-pro">Gemini 1.5 Pro (Powerful)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+    );
+  }
+
+  if (integrationKey === 'local_llm') {
+    return (
+      <div className="space-y-3 pt-3 border-t">
+        <div className="space-y-2">
+          <Label htmlFor="local-endpoint" className="text-xs">Endpoint URL *</Label>
+          <Input
+            id="local-endpoint"
+            value={config?.endpoint || ''}
+            onChange={(e) => onConfigChange({ ...config, endpoint: e.target.value })}
+            placeholder="http://localhost:11434"
+            className="h-8 text-sm"
+          />
+          <p className="text-xs text-muted-foreground">OpenAI-compatible API (Ollama, vLLM, LocalAI)</p>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="local-model" className="text-xs">Model Name</Label>
+          <Input
+            id="local-model"
+            value={config?.model || 'llama3'}
+            onChange={(e) => onConfigChange({ ...config, model: e.target.value })}
+            placeholder="llama3"
+            className="h-8 text-sm"
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (integrationKey === 'n8n') {
+    return (
+      <div className="space-y-3 pt-3 border-t">
+        <div className="space-y-2">
+          <Label htmlFor="n8n-webhook" className="text-xs">Webhook URL *</Label>
+          <Input
+            id="n8n-webhook"
+            value={config?.webhookUrl || ''}
+            onChange={(e) => onConfigChange({ ...config, webhookUrl: e.target.value })}
+            placeholder="https://n8n.example.com/webhook/..."
+            className="h-8 text-sm"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="n8n-type" className="text-xs">Webhook Type</Label>
+          <Select
+            value={config?.webhookType || 'chat'}
+            onValueChange={(value) => onConfigChange({ ...config, webhookType: value as 'chat' | 'generic' })}
+          >
+            <SelectTrigger id="n8n-type" className="h-8 text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="chat">Chat Webhook (with session memory)</SelectItem>
+              <SelectItem value="generic">Generic Webhook (OpenAI-compatible)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="n8n-trigger" className="text-xs">Trigger Mode</Label>
+          <Select
+            value={config?.triggerMode || 'always'}
+            onValueChange={(value) => onConfigChange({ ...config, triggerMode: value as 'always' | 'keywords' | 'fallback' })}
+          >
+            <SelectTrigger id="n8n-trigger" className="h-8 text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="always">All messages</SelectItem>
+              <SelectItem value="keywords">Only on keywords</SelectItem>
+              <SelectItem value="fallback">As fallback</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {config?.triggerMode === 'keywords' && (
+          <div className="space-y-2">
+            <Label htmlFor="n8n-keywords" className="text-xs">Trigger Keywords</Label>
+            <Input
+              id="n8n-keywords"
+              value={(config?.triggerKeywords || []).join(', ')}
+              onChange={(e) => onConfigChange({ 
+                ...config, 
+                triggerKeywords: e.target.value.split(',').map(k => k.trim()).filter(Boolean) 
+              })}
+              placeholder="book, price, contact"
+              className="h-8 text-sm"
+            />
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return null;
+}
+
 export default function IntegrationsStatusPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
 
   const { data: secretsStatus, isLoading: secretsLoading, refetch: refetchSecrets } = useIntegrationStatus();
   const { data: integrationSettings, isLoading: settingsLoading } = useIntegrations();
@@ -157,6 +334,24 @@ export default function IntegrationsStatusPage() {
   const handleToggle = (key: keyof IntegrationsSettings, enabled: boolean) => {
     updateIntegrations.mutate({
       [key]: { enabled },
+    });
+  };
+
+  const handleConfigChange = (key: keyof IntegrationsSettings, config: IntegrationProviderConfig) => {
+    updateIntegrations.mutate({
+      [key]: { config },
+    });
+  };
+
+  const toggleCardExpanded = (key: string) => {
+    setExpandedCards(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
     });
   };
 
@@ -275,10 +470,15 @@ export default function IntegrationsStatusPage() {
                 <div className="grid gap-4 md:grid-cols-2">
                   {categoryIntegrations.map((integration) => {
                     const key = integration.key;
-                    const hasKey = secretsStatus?.integrations?.[key] ?? false;
+                    // For local_llm and n8n, no secret required - just need config
+                    const requiresSecret = key !== 'local_llm' && key !== 'n8n';
+                    const hasKey = requiresSecret ? (secretsStatus?.integrations?.[key] ?? false) : true;
                     const isEnabled = integrationSettings?.[key]?.enabled ?? false;
                     const status: IntegrationStatus = !hasKey ? 'not_configured' : isEnabled ? 'active' : 'disabled';
                     const IconComponent = iconMap[integration.icon as keyof typeof iconMap] || Bot;
+                    const currentConfig = integrationSettings?.[key]?.config || integration.config;
+                    const hasConfigSection = ['openai', 'gemini', 'local_llm', 'n8n'].includes(key);
+                    const isExpanded = expandedCards.has(key);
 
                     return (
                       <Card 
@@ -362,6 +562,20 @@ export default function IntegrationsStatusPage() {
                                 />
                               )}
 
+                              {/* Configuration toggle for AI integrations */}
+                              {hasConfigSection && hasKey && isEnabled && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => toggleCardExpanded(key)}
+                                  className="gap-1.5"
+                                >
+                                  <Settings className="h-3.5 w-3.5" />
+                                  Configure
+                                  <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                                </Button>
+                              )}
+
                               <a
                                 href={integration.docsUrl}
                                 target="_blank"
@@ -371,23 +585,21 @@ export default function IntegrationsStatusPage() {
                                 {integration.docsLabel || 'Get API key'}
                                 <ExternalLink className="h-3 w-3" />
                               </a>
-
-                              {integration.settingsUrl && hasKey && (
-                                <>
-                                  <span className="text-muted-foreground">•</span>
-                                  <Link
-                                    to={integration.settingsUrl}
-                                    className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
-                                  >
-                                    <Settings className="h-3 w-3" />
-                                    Settings
-                                  </Link>
-                                </>
-                              )}
                             </div>
 
-                            {/* CLI Command (only if not configured) */}
-                            {!hasKey && (
+                            {/* Configuration Panel */}
+                            {hasConfigSection && isExpanded && (
+                              <IntegrationConfigPanel
+                                integrationKey={key}
+                                config={currentConfig}
+                                onConfigChange={(config) => handleConfigChange(key, config)}
+                                hasKey={hasKey}
+                                isEnabled={isEnabled}
+                              />
+                            )}
+
+                            {/* CLI Command (only if not configured and requires secret) */}
+                            {!hasKey && requiresSecret && (
                               <div className="space-y-1.5 pt-2">
                                 <p className="text-xs text-muted-foreground">CLI command:</p>
                                 <div className="flex items-center gap-2">

@@ -15,6 +15,8 @@ interface IntegrationStatus {
     firecrawl: boolean;
     openai: boolean;
     gemini: boolean;
+    local_llm: boolean;
+    n8n: boolean;
   };
 }
 
@@ -22,10 +24,12 @@ interface IntegrationsSettings {
   stripe?: { enabled: boolean };
   stripe_webhook?: { enabled: boolean };
   resend?: { enabled: boolean };
-  openai?: { enabled: boolean };
-  gemini?: { enabled: boolean };
+  openai?: { enabled: boolean; config?: { baseUrl?: string; model?: string } };
+  gemini?: { enabled: boolean; config?: { model?: string } };
   unsplash?: { enabled: boolean };
   firecrawl?: { enabled: boolean };
+  local_llm?: { enabled: boolean; config?: { endpoint?: string; model?: string } };
+  n8n?: { enabled: boolean; config?: { webhookUrl?: string; webhookType?: string; triggerMode?: string; triggerKeywords?: string[] } };
 }
 
 export function useIntegrationStatus() {
