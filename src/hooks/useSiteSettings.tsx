@@ -182,21 +182,18 @@ export interface ChatSettings {
   // AI-leverantör
   aiProvider: ChatAiProvider;
   
-  // OpenAI
-  openaiApiKey: string;
+  // OpenAI (model selection only - keys managed via integrations)
   openaiModel: 'gpt-4o' | 'gpt-4o-mini' | 'gpt-3.5-turbo';
   openaiBaseUrl: string;
   
-  // Google Gemini
-  geminiApiKey: string;
+  // Google Gemini (model selection only - keys managed via integrations)
   geminiModel: 'gemini-2.0-flash-exp' | 'gemini-1.5-pro' | 'gemini-1.5-flash';
   
-  // Local AI (HIPAA-compliant)
+  // Local AI - endpoint config (keys managed via integrations or Supabase secrets)
   localEndpoint: string;
   localModel: string;
-  localApiKey: string;
   
-  // N8N Integration
+  // N8N Integration - webhook config (keys managed via integrations or Supabase secrets)
   n8nWebhookUrl: string;
   n8nWebhookType: 'chat' | 'generic';
   n8nTriggerMode: 'always' | 'keywords' | 'fallback';
@@ -250,14 +247,11 @@ const defaultChatSettings: ChatSettings = {
   placeholder: 'Ställ en fråga...',
   welcomeMessage: 'Hej! Hur kan jag hjälpa dig idag?',
   aiProvider: 'openai',
-  openaiApiKey: '',
   openaiModel: 'gpt-4o-mini',
   openaiBaseUrl: 'https://api.openai.com/v1',
-  geminiApiKey: '',
   geminiModel: 'gemini-2.0-flash-exp',
   localEndpoint: '',
   localModel: 'llama3',
-  localApiKey: '',
   n8nWebhookUrl: '',
   n8nWebhookType: 'chat',
   n8nTriggerMode: 'always',
