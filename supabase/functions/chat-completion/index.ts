@@ -395,17 +395,27 @@ serve(async (req) => {
       });
     } else if (aiProvider === 'local') {
       // Use local/self-hosted LLM (OpenAI-compatible API)
-      const endpoint = settings?.localEndpoint;
+      // Get config from integrations settings
+      const localConfig = aiIntegrations?.local_llm?.config || {};
+      
+      // Priority: settings (from chat), then integrations config
+      const endpoint = settings?.localEndpoint || localConfig?.endpoint;
       if (!endpoint) {
-        throw new Error('Local endpoint is not configured');
+        throw new Error('Local endpoint is not configured. Set it in Integrations → Local LLM.');
       }
+
+      // Hybrid key lookup: Supabase secret first, then UI config
+      const supabaseLocalKey = Deno.env.get('LOCAL_LLM_API_KEY');
+      const configLocalKey = localConfig?.apiKey;
+      const localApiKey = supabaseLocalKey || settings?.localApiKey || configLocalKey;
 
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
       };
       
-      if (settings?.localApiKey) {
-        headers['Authorization'] = `Bearer ${settings.localApiKey}`;
+      if (localApiKey) {
+        headers['Authorization'] = `Bearer ${localApiKey}`;
+        console.log('Using Local LLM API key from:', supabaseLocalKey ? 'Supabase secret' : 'UI config');
       }
 
       // Handle endpoints that already include /v1 path
@@ -413,25 +423,35 @@ serve(async (req) => {
       const apiPath = baseEndpoint.endsWith('/v1') ? '/chat/completions' : '/v1/chat/completions';
       const fullUrl = `${baseEndpoint}${apiPath}`;
       
-      console.log('Calling local AI endpoint:', { fullUrl, model: settings?.localModel });
+      const model = settings?.localModel || localConfig?.model || 'llama3';
+      console.log('Calling local AI endpoint:', { fullUrl, model });
 
       response = await fetch(fullUrl, {
         method: 'POST',
         headers,
         body: JSON.stringify({
-          model: settings?.localModel || 'llama3',
+          model,
           messages: fullMessages,
           stream: true,
         }),
       });
     } else if (aiProvider === 'n8n') {
       // Use N8N webhook for agentic workflows
-      const webhookUrl = settings?.n8nWebhookUrl;
+      // Get config from integrations settings
+      const n8nConfig = aiIntegrations?.n8n?.config || {};
+      
+      // Priority: settings (from chat), then integrations config
+      const webhookUrl = settings?.n8nWebhookUrl || n8nConfig?.webhookUrl;
       if (!webhookUrl) {
-        throw new Error('N8N webhook URL is not configured');
+        throw new Error('N8N webhook URL is not configured. Set it in Integrations → N8N.');
       }
 
-      const n8nWebhookType = settings?.n8nWebhookType || 'chat';
+      // Hybrid key lookup: Supabase secret first, then UI config
+      const supabaseN8nKey = Deno.env.get('N8N_API_KEY');
+      const configN8nKey = n8nConfig?.apiKey;
+      const n8nApiKey = supabaseN8nKey || configN8nKey;
+
+      const n8nWebhookType = settings?.n8nWebhookType || n8nConfig?.webhookType || 'chat';
       const lastUserMessage = messages.filter(m => m.role === 'user').pop();
       
       // Build payload based on webhook type
@@ -465,11 +485,19 @@ serve(async (req) => {
         });
       }
 
+      // Build headers with optional auth
+      const n8nHeaders: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      
+      if (n8nApiKey) {
+        n8nHeaders['Authorization'] = n8nApiKey.startsWith('Bearer ') ? n8nApiKey : `Bearer ${n8nApiKey}`;
+        console.log('Using N8N API key from:', supabaseN8nKey ? 'Supabase secret' : 'UI config');
+      }
+
       const n8nResponse = await fetch(webhookUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: n8nHeaders,
         body: JSON.stringify(n8nPayload),
       });
 
