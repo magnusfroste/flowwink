@@ -99,3 +99,10 @@ export function useIsGeminiConfigured() {
   
   return hasKey && isEnabled;
 }
+
+// Combined helper: true if ANY AI provider is configured and enabled
+export function useIsAIConfigured() {
+  const isOpenAI = useIsOpenAIConfigured();
+  const isGemini = useIsGeminiConfigured();
+  return isOpenAI || isGemini;
+}

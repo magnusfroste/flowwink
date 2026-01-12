@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Rocket, Sparkles, ArrowRight } from 'lucide-react';
+import { Sparkles, LayoutTemplate, FileText, ArrowRight, Bot, Settings } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { usePages } from '@/hooks/usePages';
+import { useIsAIConfigured } from '@/hooks/useIntegrationStatus';
 
 const WELCOME_KEY = 'cms-welcome-seen';
 const WELCOME_DISMISSED_AT_KEY = 'cms-welcome-dismissed-at';
@@ -18,6 +19,7 @@ const RETRIGGER_DAYS = 7; // Re-show after 7 days if site is empty
 export function WelcomeModal() {
   const [open, setOpen] = useState(false);
   const { data: pages, isLoading } = usePages();
+  const isAIConfigured = useIsAIConfigured();
 
   useEffect(() => {
     if (isLoading) return;
@@ -67,30 +69,97 @@ export function WelcomeModal() {
           </div>
           <DialogTitle className="text-2xl font-serif">Welcome to the CMS</DialogTitle>
           <DialogDescription className="text-base">
-            Get your site up and running in minutes with our Quick Start Guide.
+            Choose how you want to build your site.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
-          <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
-            <Rocket className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-            <div>
-              <p className="font-medium text-sm">Start with a template</p>
+        <div className="space-y-3 py-4">
+          {/* When AI is configured - show Copilot as primary */}
+          {isAIConfigured ? (
+            <>
+              <Link
+                to="/admin/copilot"
+                onClick={handleClose}
+                className="flex items-start gap-3 p-3 rounded-lg bg-primary/5 border border-primary/20 hover:bg-primary/10 transition-colors"
+              >
+                <Bot className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                <div className="flex-1">
+                  <p className="font-medium text-sm">AI Copilot</p>
+                  <p className="text-sm text-muted-foreground">
+                    Describe your site in plain language. AI builds it for you.
+                  </p>
+                </div>
+                <ArrowRight className="h-4 w-4 text-primary mt-1 shrink-0" />
+              </Link>
+
+              <Link
+                to="/admin/templates"
+                onClick={handleClose}
+                className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+              >
+                <LayoutTemplate className="h-5 w-5 text-muted-foreground mt-0.5 shrink-0" />
+                <div className="flex-1">
+                  <p className="font-medium text-sm">Browse Templates</p>
+                  <p className="text-sm text-muted-foreground">
+                    Pick a ready-made design to customize.
+                  </p>
+                </div>
+                <ArrowRight className="h-4 w-4 text-muted-foreground mt-1 shrink-0" />
+              </Link>
+            </>
+          ) : (
+            <>
+              {/* When AI is NOT configured - show Templates as primary */}
+              <Link
+                to="/admin/templates"
+                onClick={handleClose}
+                className="flex items-start gap-3 p-3 rounded-lg bg-primary/5 border border-primary/20 hover:bg-primary/10 transition-colors"
+              >
+                <LayoutTemplate className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                <div className="flex-1">
+                  <p className="font-medium text-sm">Browse Templates</p>
+                  <p className="text-sm text-muted-foreground">
+                    Pick a professionally designed template. Works immediately.
+                  </p>
+                </div>
+                <ArrowRight className="h-4 w-4 text-primary mt-1 shrink-0" />
+              </Link>
+
+              <Link
+                to="/admin/integrations#ai"
+                onClick={handleClose}
+                className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+              >
+                <Bot className="h-5 w-5 text-muted-foreground mt-0.5 shrink-0" />
+                <div className="flex-1">
+                  <p className="font-medium text-sm">Use AI Copilot</p>
+                  <p className="text-sm text-muted-foreground">
+                    Requires OpenAI or Gemini API key setup.
+                  </p>
+                </div>
+                <Settings className="h-4 w-4 text-muted-foreground mt-1 shrink-0" />
+              </Link>
+            </>
+          )}
+
+          <Link
+            to="/admin/pages/new"
+            onClick={handleClose}
+            className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+          >
+            <FileText className="h-5 w-5 text-muted-foreground mt-0.5 shrink-0" />
+            <div className="flex-1">
+              <p className="font-medium text-sm">Start Blank</p>
               <p className="text-sm text-muted-foreground">
-                Choose from ready-made site templates with multiple pages, branding, and AI chat pre-configured.
+                Build from scratch with full control.
               </p>
             </div>
-          </div>
+            <ArrowRight className="h-4 w-4 text-muted-foreground mt-1 shrink-0" />
+          </Link>
 
-          <div className="flex gap-3">
-            <Button variant="outline" onClick={handleClose} className="flex-1">
+          <div className="pt-2">
+            <Button variant="ghost" onClick={handleClose} className="w-full text-muted-foreground">
               Skip for now
-            </Button>
-            <Button asChild className="flex-1">
-              <Link to="/admin/quick-start" onClick={handleClose}>
-                Quick Start
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Link>
             </Button>
           </div>
         </div>
