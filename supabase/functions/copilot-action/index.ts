@@ -5,44 +5,48 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const COPILOT_SYSTEM_PROMPT = `Du är FlowWink Copilot, en expert på att bygga webbplatser.
+const COPILOT_SYSTEM_PROMPT = `You are FlowWink Copilot, an expert at building websites. You communicate in English.
 
-TILLGÄNGLIGA MODULER:
-- analytics: Dashboard med insikter
-- bookings: Tidsbokning med kalender
-- pages: Skapa och hantera sidor (core)
-- blog: Blogginlägg med kategorier
-- knowledgeBase: Strukturerad FAQ
-- chat: AI-chatbot
-- newsletter: E-postkampanjer
-- forms: Formulär och kontakt
-- leads: Lead-hantering
-- deals: Pipeline för affärer
-- companies: Företagshantering
-- products: Produktkatalog
-- orders: Orderhantering
+AVAILABLE MODULES:
+- analytics: Dashboard with insights
+- bookings: Appointment scheduling with calendar
+- pages: Create and manage pages (core - always enabled)
+- blog: Blog posts with categories
+- knowledgeBase: Structured FAQ
+- chat: AI chatbot
+- newsletter: Email campaigns
+- forms: Forms and contact
+- leads: Lead management
+- deals: Sales pipeline
+- companies: Company management
+- products: Product catalog
+- orders: Order management
 - contentApi: Headless CMS API
 - globalElements: Header, footer
-- mediaLibrary: Bildhantering (core)
+- mediaLibrary: Image management (core - always enabled)
 
-MODUL-REKOMMENDATIONER PER BRANSCH:
-- Skönhet/Frisör/Spa: bookings, forms, products
-- Restaurang/Café: bookings, forms, products, orders
-- Konsult/Byrå: leads, deals, companies, forms, blog
-- E-handel: products, orders, newsletter
+MODULE RECOMMENDATIONS BY INDUSTRY:
+- Beauty/Hair/Spa: bookings, forms, products
+- Restaurant/Café: bookings, forms, products, orders
+- Consulting/Agency: leads, deals, companies, forms, blog
+- E-commerce: products, orders, newsletter
 - SaaS/Tech: blog, knowledgeBase, chat, newsletter
-- Hantverkare: forms, bookings, leads
+- Contractors: forms, bookings, leads
 
-BLOCK-TYPER: hero, text, features, cta, testimonials, stats, team, logos, timeline, accordion, image, gallery, youtube, two-column, separator, form, chat, newsletter, map, booking, pricing, products, contact
+BLOCK TYPES: hero, text, features, cta, testimonials, stats, team, logos, timeline, accordion, image, gallery, youtube, two-column, separator, form, chat, newsletter, map, booking, pricing, products, contact
 
-REGLER:
-1. Börja med att fråga om verksamhetstyp och namn
-2. Baserat på svar, REKOMMENDERA lämpliga moduler med activate_modules
-3. Vänta på bekräftelse innan nästa steg
-4. Skapa ETT block i taget
-5. Använd ENDAST befintliga block-typer
+WORKFLOW:
+1. First ask about the business type and name (one question)
+2. Based on response, recommend modules with activate_modules tool
+3. After modules are accepted, create blocks ONE AT A TIME
+4. Start with hero block, then features, then cta
+5. ALWAYS include a message with your tool call explaining what you're doing
 
-Använd tool calling för att aktivera moduler eller skapa block.`;
+RULES:
+- Be concise and friendly
+- Create content relevant to the business type
+- Use realistic placeholder content
+- When creating blocks, ALWAYS include an explanatory message`;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -50,13 +54,21 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, currentModules } = await req.json();
+    const { messages, currentModules, continueAfterToolCall } = await req.json();
 
-    // Get API key from environment
-    const apiKey = Deno.env.get('OPENAI_API_KEY');
+    // Get API key from environment - prefer Lovable AI
+    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+    const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
+    
+    const apiKey = lovableApiKey || openaiApiKey;
+    const apiUrl = lovableApiKey 
+      ? 'https://ai.gateway.lovable.dev/v1/chat/completions'
+      : 'https://api.openai.com/v1/chat/completions';
+    const model = lovableApiKey ? 'google/gemini-2.5-flash' : 'gpt-4o-mini';
+
     if (!apiKey) {
       return new Response(
-        JSON.stringify({ error: 'AI not configured. Please add OPENAI_API_KEY.' }),
+        JSON.stringify({ error: 'AI not configured. Please add LOVABLE_API_KEY or OPENAI_API_KEY.' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -67,18 +79,18 @@ serve(async (req) => {
         type: "function",
         function: {
           name: "activate_modules",
-          description: "Aktivera moduler baserat på verksamhetsbehov",
+          description: "Recommend and activate modules based on business needs",
           parameters: {
             type: "object",
             properties: {
               modules: {
                 type: "array",
                 items: { type: "string" },
-                description: "Lista med modul-ID:n att aktivera"
+                description: "List of module IDs to activate"
               },
               reason: {
                 type: "string",
-                description: "Kort förklaring varför dessa moduler rekommenderas"
+                description: "Brief explanation why these modules are recommended"
               }
             },
             required: ["modules", "reason"]
@@ -89,19 +101,14 @@ serve(async (req) => {
         type: "function",
         function: {
           name: "create_hero_block",
-          description: "Skapa en Hero-sektion",
+          description: "Create a Hero section with title, subtitle, and optional call-to-action button",
           parameters: {
             type: "object",
             properties: {
-              title: { type: "string", description: "Huvudrubrik" },
-              subtitle: { type: "string", description: "Underrubrik" },
-              primaryButton: {
-                type: "object",
-                properties: {
-                  text: { type: "string" },
-                  url: { type: "string" }
-                }
-              }
+              title: { type: "string", description: "Main headline" },
+              subtitle: { type: "string", description: "Supporting text" },
+              primaryButtonText: { type: "string", description: "Button text" },
+              primaryButtonUrl: { type: "string", description: "Button URL" }
             },
             required: ["title"]
           }
@@ -111,11 +118,12 @@ serve(async (req) => {
         type: "function",
         function: {
           name: "create_features_block",
-          description: "Skapa en Features-sektion med tjänster/fördelar",
+          description: "Create a Features section showcasing services or benefits",
           parameters: {
             type: "object",
             properties: {
               title: { type: "string" },
+              subtitle: { type: "string" },
               features: {
                 type: "array",
                 items: {
@@ -136,7 +144,7 @@ serve(async (req) => {
         type: "function",
         function: {
           name: "create_cta_block",
-          description: "Skapa en Call-to-Action sektion",
+          description: "Create a Call-to-Action section",
           parameters: {
             type: "object",
             properties: {
@@ -145,7 +153,7 @@ serve(async (req) => {
               buttonText: { type: "string" },
               buttonUrl: { type: "string" }
             },
-            required: ["title", "buttonText", "buttonUrl"]
+            required: ["title", "buttonText"]
           }
         }
       },
@@ -153,51 +161,86 @@ serve(async (req) => {
         type: "function",
         function: {
           name: "create_contact_block",
-          description: "Skapa ett kontaktformulär",
+          description: "Create a contact form",
           parameters: {
             type: "object",
             properties: {
               title: { type: "string" },
-              submitButtonText: { type: "string" },
-              fields: {
+              subtitle: { type: "string" },
+              submitButtonText: { type: "string" }
+            }
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "create_testimonials_block",
+          description: "Create a testimonials section with customer quotes",
+          parameters: {
+            type: "object",
+            properties: {
+              title: { type: "string" },
+              testimonials: {
                 type: "array",
                 items: {
                   type: "object",
                   properties: {
-                    type: { type: "string" },
-                    label: { type: "string" },
-                    required: { type: "boolean" }
+                    quote: { type: "string" },
+                    author: { type: "string" },
+                    role: { type: "string" }
                   }
                 }
               }
-            }
+            },
+            required: ["testimonials"]
           }
         }
       }
     ];
 
-    // Call OpenAI
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    console.log('Copilot request:', { 
+      messageCount: messages.length, 
+      continueAfterToolCall,
+      usingLovableAI: !!lovableApiKey 
+    });
+
+    // Call AI
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model,
         messages: [
           { role: 'system', content: COPILOT_SYSTEM_PROMPT },
           ...messages
         ],
         tools,
         tool_choice: 'auto',
-        temperature: 0.7,
+        ...(lovableApiKey ? {} : { temperature: 0.7 }),
       }),
     });
 
     if (!response.ok) {
       const error = await response.text();
-      console.error('OpenAI error:', error);
+      console.error('AI error:', response.status, error);
+      
+      if (response.status === 429) {
+        return new Response(
+          JSON.stringify({ error: 'Rate limit exceeded. Please try again in a moment.' }),
+          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      if (response.status === 402) {
+        return new Response(
+          JSON.stringify({ error: 'AI credits depleted. Please add credits to continue.' }),
+          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
       throw new Error('Failed to get AI response');
     }
 
@@ -205,19 +248,36 @@ serve(async (req) => {
     const choice = data.choices[0];
     const assistantMessage = choice.message;
 
+    console.log('AI response:', { 
+      hasContent: !!assistantMessage.content,
+      hasToolCalls: !!assistantMessage.tool_calls?.length 
+    });
+
     // Process tool calls if any
     let toolCall = null;
+    let responseMessage = assistantMessage.content || '';
+
     if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
       const tc = assistantMessage.tool_calls[0];
       toolCall = {
         name: tc.function.name,
         arguments: JSON.parse(tc.function.arguments),
       };
+
+      // If there's no message but there's a tool call, generate a contextual message
+      if (!responseMessage) {
+        if (toolCall.name === 'activate_modules') {
+          responseMessage = `Based on your business, I recommend activating some modules that will help you get started. ${toolCall.arguments.reason}`;
+        } else if (toolCall.name.startsWith('create_')) {
+          const blockType = toolCall.name.replace('create_', '').replace('_block', '');
+          responseMessage = `Creating a ${blockType} section for your page.`;
+        }
+      }
     }
 
     return new Response(
       JSON.stringify({
-        message: assistantMessage.content || '',
+        message: responseMessage,
         toolCall,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

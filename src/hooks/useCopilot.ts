@@ -160,8 +160,8 @@ export function useCopilot(): UseCopilotReturn {
     if (!block) return;
 
     const regeneratePrompt = feedback 
-      ? `Regenerera ${block.type}-blocket med följande feedback: ${feedback}`
-      : `Regenerera ${block.type}-blocket med bättre innehåll`;
+      ? `Regenerate the ${block.type} block with this feedback: ${feedback}`
+      : `Regenerate the ${block.type} block with better content`;
 
     // Remove the old block
     setBlocks(prev => prev.filter(b => b.id !== blockId));
@@ -187,10 +187,17 @@ export function useCopilot(): UseCopilotReturn {
       await updateModules.mutateAsync(updatedModules);
       setModuleRecommendation(prev => prev ? { ...prev, status: 'accepted' } : null);
       toast.success('Modules activated');
+
+      // Continue conversation to start creating blocks
+      const continueMessage = 'Great! Modules are activated. Now please create a hero block for my website.';
+      // Add slight delay to ensure state is updated
+      setTimeout(() => {
+        sendMessage(continueMessage);
+      }, 500);
     } catch (err) {
       toast.error('Could not activate modules');
     }
-  }, [moduleRecommendation, currentModules, updateModules]);
+  }, [moduleRecommendation, currentModules, updateModules, sendMessage]);
 
   const rejectModules = useCallback(() => {
     setModuleRecommendation(prev => prev ? { ...prev, status: 'rejected' } : null);
