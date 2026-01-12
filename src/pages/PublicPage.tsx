@@ -75,17 +75,24 @@ export default function PublicPage() {
           `${supabaseUrl}/functions/v1/get-page?slug=${encodeURIComponent(pageSlug)}`
         );
         
+        // If edge function returns 404, page doesn't exist - return null (not an error)
+        if (response.status === 404) {
+          console.log('[PublicPage] Page not found via edge function:', pageSlug);
+          return null;
+        }
+        
         if (response.ok) {
           const pageData = await response.json();
           if (!pageData.error) {
             return parseContent(pageData);
           }
-        }
-        
-        // If edge function returns 404, page doesn't exist - return null (not an error)
-        if (response.status === 404) {
+          // Edge function returned data with error field - treat as not found
+          console.log('[PublicPage] Edge function returned error:', pageData.error);
           return null;
         }
+        
+        // Other error status codes - fall through to direct DB query
+        console.log('[PublicPage] Edge function returned status:', response.status);
       } catch (e) {
         console.log('[PublicPage] Edge function unavailable, using direct DB query', e);
       }
