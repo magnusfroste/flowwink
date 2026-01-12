@@ -255,7 +255,14 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { service_role_key, supabase_url } = await req.json();
+    const { 
+      service_role_key, 
+      supabase_url,
+      create_admin,
+      admin_email,
+      admin_password,
+      admin_name
+    } = await req.json();
 
     if (!service_role_key) {
       console.error('[setup-database] Missing service_role_key');
@@ -284,6 +291,89 @@ Deno.serve(async (req) => {
         persistSession: false,
       },
     });
+
+    // If this is a request to create admin user
+    if (create_admin) {
+      console.log('[setup-database] Creating first admin user...');
+      
+      if (!admin_email || !admin_password) {
+        return new Response(
+          JSON.stringify({ error: 'Email and password are required for admin creation' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Check if any admin users exist
+      const { data: existingAdmins, error: checkAdminError } = await supabaseAdmin
+        .from('user_roles')
+        .select('id')
+        .eq('role', 'admin')
+        .limit(1);
+
+      if (checkAdminError) {
+        console.error('[setup-database] Error checking for existing admins:', checkAdminError);
+      }
+
+      if (existingAdmins && existingAdmins.length > 0) {
+        return new Response(
+          JSON.stringify({ 
+            error: 'An admin user already exists. Use the normal signup flow.',
+            success: false 
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Create the admin user
+      const { data: newUser, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
+        email: admin_email,
+        password: admin_password,
+        email_confirm: true,
+        user_metadata: { full_name: admin_name || admin_email }
+      });
+
+      if (createUserError) {
+        console.error('[setup-database] Error creating user:', createUserError);
+        return new Response(
+          JSON.stringify({ 
+            error: createUserError.message || 'Failed to create admin user',
+            success: false 
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      console.log('[setup-database] User created, updating role to admin...');
+
+      // The trigger will have created a 'writer' role, update it to 'admin'
+      const { error: updateRoleError } = await supabaseAdmin
+        .from('user_roles')
+        .update({ role: 'admin' })
+        .eq('user_id', newUser.user.id);
+
+      if (updateRoleError) {
+        console.error('[setup-database] Error updating role:', updateRoleError);
+        // User was created but role update failed - still a partial success
+        return new Response(
+          JSON.stringify({ 
+            success: true,
+            warning: 'User created but role update failed. Please update role manually.',
+            user_id: newUser.user.id
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      console.log('[setup-database] First admin user created successfully!');
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: 'Admin user created successfully',
+          user_id: newUser.user.id
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // First, check if database is already set up
     console.log('[setup-database] Checking existing setup...');

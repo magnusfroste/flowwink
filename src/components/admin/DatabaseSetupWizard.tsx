@@ -6,9 +6,11 @@ import {
   AlertCircle, 
   Loader2,
   ExternalLink,
-  Copy,
   ChevronRight,
-  Terminal
+  Terminal,
+  UserPlus,
+  Mail,
+  Lock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,7 +24,7 @@ import {
 } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
 
-type SetupStep = 'welcome' | 'credentials' | 'running' | 'success' | 'manual';
+type SetupStep = 'welcome' | 'credentials' | 'running' | 'create-admin' | 'creating-admin' | 'success' | 'manual';
 
 interface SetupResult {
   success: boolean;
@@ -38,6 +40,12 @@ export function DatabaseSetupWizard() {
   const [serviceRoleKey, setServiceRoleKey] = useState('');
   const [isRunning, setIsRunning] = useState(false);
   const [result, setResult] = useState<SetupResult | null>(null);
+  
+  // Admin creation fields
+  const [adminEmail, setAdminEmail] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
+  const [adminName, setAdminName] = useState('');
+  const [isCreatingAdmin, setIsCreatingAdmin] = useState(false);
 
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 
@@ -73,9 +81,14 @@ export function DatabaseSetupWizard() {
       setResult(data);
 
       if (data.success) {
-        setStep('success');
-        // Clear the key from state for security
-        setServiceRoleKey('');
+        // If already setup, skip admin creation
+        if (data.already_setup) {
+          setStep('success');
+          setServiceRoleKey('');
+        } else {
+          // Proceed to admin creation
+          setStep('create-admin');
+        }
       } else if (data.manual_required) {
         setStep('manual');
       } else {
@@ -104,8 +117,81 @@ export function DatabaseSetupWizard() {
     }
   };
 
-  const handleCopySchema = () => {
-    window.open('https://github.com/your-repo/blob/main/supabase/schema.sql', '_blank');
+  const handleCreateAdmin = async () => {
+    if (!adminEmail.trim() || !adminPassword.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Email and password are required',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (adminPassword.length < 8) {
+      toast({
+        title: 'Error',
+        description: 'Password must be at least 8 characters',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setStep('creating-admin');
+    setIsCreatingAdmin(true);
+
+    try {
+      const response = await fetch(
+        `${supabaseUrl}/functions/v1/setup-database`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            service_role_key: serviceRoleKey,
+            supabase_url: supabaseUrl,
+            create_admin: true,
+            admin_email: adminEmail,
+            admin_password: adminPassword,
+            admin_name: adminName || adminEmail,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.success) {
+        setStep('success');
+        // Clear sensitive data
+        setServiceRoleKey('');
+        setAdminPassword('');
+        toast({
+          title: 'Admin Created',
+          description: `Admin account created for ${adminEmail}`,
+        });
+      } else {
+        setStep('create-admin');
+        toast({
+          title: 'Failed to Create Admin',
+          description: data.error || 'Unknown error occurred',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      setStep('create-admin');
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Network error',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsCreatingAdmin(false);
+    }
+  };
+
+  const handleSkipAdmin = () => {
+    setServiceRoleKey('');
+    setStep('success');
   };
 
   const handleRefresh = () => {
@@ -144,7 +230,7 @@ export function DatabaseSetupWizard() {
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                    Create storage bucket for images
+                    Create your first admin account
                   </li>
                 </ul>
               </div>
@@ -259,6 +345,119 @@ export function DatabaseSetupWizard() {
           </>
         )}
 
+        {step === 'create-admin' && (
+          <>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <UserPlus className="h-5 w-5" />
+                Create Admin Account
+              </CardTitle>
+              <CardDescription>
+                Set up the first administrator account for your CMS.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3 text-sm">
+                <div className="flex gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                  <p className="text-emerald-600 dark:text-emerald-400">
+                    Database setup complete! Now create your admin account.
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label htmlFor="admin-name">Full Name (optional)</Label>
+                  <Input
+                    id="admin-name"
+                    type="text"
+                    placeholder="John Doe"
+                    value={adminName}
+                    onChange={(e) => setAdminName(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="admin-email">Email Address</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="admin-email"
+                      type="email"
+                      placeholder="admin@example.com"
+                      className="pl-10"
+                      value={adminEmail}
+                      onChange={(e) => setAdminEmail(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="admin-password">Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="admin-password"
+                      type="password"
+                      placeholder="Minimum 8 characters"
+                      className="pl-10"
+                      value={adminPassword}
+                      onChange={(e) => setAdminPassword(e.target.value)}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Must be at least 8 characters long
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={handleSkipAdmin}
+                  className="flex-1"
+                >
+                  Skip for now
+                </Button>
+                <Button 
+                  onClick={handleCreateAdmin}
+                  disabled={!adminEmail.trim() || adminPassword.length < 8}
+                  className="flex-1"
+                >
+                  Create Admin
+                </Button>
+              </div>
+            </CardContent>
+          </>
+        )}
+
+        {step === 'creating-admin' && (
+          <>
+            <CardHeader className="text-center">
+              <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                <Loader2 className="h-6 w-6 text-primary animate-spin" />
+              </div>
+              <CardTitle>Creating Admin Account</CardTitle>
+              <CardDescription>
+                Setting up your administrator account...
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <p className="flex items-center gap-2">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Creating user...
+                </p>
+                <p className="flex items-center gap-2">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Assigning admin role...
+                </p>
+              </div>
+            </CardContent>
+          </>
+        )}
+
         {step === 'success' && (
           <>
             <CardHeader className="text-center">
@@ -269,17 +468,17 @@ export function DatabaseSetupWizard() {
               <CardDescription>
                 {result?.already_setup 
                   ? 'Your database was already configured.' 
-                  : 'Your database has been successfully configured.'}
+                  : 'Your database and admin account are ready.'}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="bg-muted/50 rounded-lg p-4 space-y-2 text-sm">
-                <p className="font-medium">Next steps:</p>
-                <ol className="list-decimal list-inside text-muted-foreground space-y-1">
-                  <li>Create your first admin user</li>
-                  <li>Sign in to the admin dashboard</li>
-                  <li>Start building your website!</li>
-                </ol>
+                <p className="font-medium">You're all set!</p>
+                <p className="text-muted-foreground">
+                  {adminEmail 
+                    ? `Sign in with ${adminEmail} to access the admin dashboard.`
+                    : 'Sign up to create your account and access the admin dashboard.'}
+                </p>
               </div>
               <Button onClick={handleRefresh} className="w-full">
                 Continue to App
@@ -325,6 +524,15 @@ export function DatabaseSetupWizard() {
                 </li>
                 <li className="flex gap-3">
                   <span className="shrink-0 w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs font-medium">3</span>
+                  <div>
+                    <p className="font-medium">Create admin user</p>
+                    <p className="text-muted-foreground">
+                      Sign up in the app, then update user_roles to set role = 'admin'
+                    </p>
+                  </div>
+                </li>
+                <li className="flex gap-3">
+                  <span className="shrink-0 w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs font-medium">4</span>
                   <div>
                     <p className="font-medium">Refresh this page</p>
                     <p className="text-muted-foreground">The app will detect the configured database</p>
