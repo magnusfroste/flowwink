@@ -3,6 +3,7 @@ import { FileText, Clock, CheckCircle, AlertCircle, Plus } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { VersionBadge } from '@/components/admin/VersionBadge';
+import { EmptyDashboard } from '@/components/admin/EmptyDashboard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/StatusBadge';
@@ -30,17 +31,29 @@ export default function AdminDashboard() {
   const recentPages = pages?.slice(0, 5) || [];
   const pendingReview = pages?.filter(p => p.status === 'reviewing') || [];
 
+  const isEmpty = !isLoading && stats.total === 0;
+
   return (
     <AdminLayout>
       <WelcomeModal />
       <div>
         <AdminPageHeader 
           title={`Welcome, ${profile?.full_name?.split(' ')[0] || 'user'}`}
-          description="Here's an overview of your content"
+          description={isEmpty ? "Let's get your site up and running" : "Here's an overview of your content"}
         />
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {/* Empty State - Show when no pages exist */}
+        {isEmpty ? (
+          <>
+            <EmptyDashboard />
+            <div className="mt-12 pt-6 border-t flex justify-end">
+              <VersionBadge />
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
@@ -232,10 +245,12 @@ export default function AdminDashboard() {
           )}
         </div>
 
-        {/* Version Badge */}
-        <div className="mt-12 pt-6 border-t flex justify-end">
-          <VersionBadge />
-        </div>
+            {/* Version Badge */}
+            <div className="mt-12 pt-6 border-t flex justify-end">
+              <VersionBadge />
+            </div>
+          </>
+        )}
       </div>
     </AdminLayout>
   );
