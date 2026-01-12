@@ -1,5 +1,5 @@
 import { useRef, useEffect } from 'react';
-import { Sparkles, Check, X, ArrowUp, Loader2, CheckCircle2, Circle, Layout, Image, MessageSquare, Users } from 'lucide-react';
+import { Sparkles, Check, X, ArrowUp, Loader2, CheckCircle2, Layout, Image, MessageSquare, Users, Wand2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -36,6 +36,15 @@ const SUGGESTED_BLOCKS = [
   { id: 'gallery', label: 'Gallery', icon: Image },
   { id: 'contact', label: 'Contact form', icon: MessageSquare },
 ];
+
+const FULL_PAGE_PROMPT = `Create a complete landing page for me with these sections in order:
+1. Hero section with headline and call-to-action
+2. Features section showing 3-4 key benefits
+3. Testimonials from happy customers
+4. Call-to-action section
+5. Contact form
+
+Create them one at a time, starting with the hero.`;
 
 export function CopilotChat({
   messages,
@@ -135,6 +144,23 @@ export function CopilotChat({
                   </Button>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Generate full page button - show after modules accepted but before blocks */}
+          {!isEmpty && !hasBlocks && !isLoading && moduleRecommendation?.status === 'accepted' && (
+            <div className="py-3">
+              <Button
+                onClick={() => onSendMessage(FULL_PAGE_PROMPT)}
+                className="w-full gap-2"
+                variant="default"
+              >
+                <Wand2 className="w-4 h-4" />
+                Generate full landing page
+              </Button>
+              <p className="text-[10px] text-muted-foreground text-center mt-1.5">
+                Hero → Features → Testimonials → CTA → Contact
+              </p>
             </div>
           )}
 
