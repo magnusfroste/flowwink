@@ -15,6 +15,7 @@ import {
   useMonthlyComparison,
   usePageViewsByPage,
   usePageViewsTimeSeries,
+  useVisitorsByCountry,
 } from '@/hooks/useAnalytics';
 import { useBookingStats } from '@/hooks/useBookings';
 import { useIsModuleEnabled } from '@/hooks/useModules';
@@ -32,6 +33,7 @@ import {
   BarChart3,
   Eye,
   TrendingUp,
+  Globe,
 } from 'lucide-react';
 import {
   AreaChart,
@@ -189,6 +191,7 @@ export default function AnalyticsDashboardPage() {
   const { data: bookingStats, isLoading: bookingsLoading } = useBookingStats();
   const { data: topPages, isLoading: topPagesLoading } = usePageViewsByPage(10);
   const { data: pageViewsTimeSeries, isLoading: pageViewsTimeSeriesLoading } = usePageViewsTimeSeries(30);
+  const { data: visitorsByCountry, isLoading: countryLoading } = useVisitorsByCountry(10);
 
   // Build dynamic summary cards
   const summaryCards = [
@@ -381,6 +384,45 @@ export default function AnalyticsDashboardPage() {
                   <div className="text-center">
                     <Eye className="h-8 w-8 mx-auto mb-2 opacity-50" />
                     <p>No page views yet</p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Visitors by Country */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Globe className="h-5 w-5" />
+                Visitors by Country
+              </CardTitle>
+              <CardDescription>Geographic distribution of traffic</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {countryLoading ? (
+                <Skeleton className="h-[250px] w-full" />
+              ) : visitorsByCountry && visitorsByCountry.length > 0 && visitorsByCountry.some(c => c.country !== 'Unknown') ? (
+                <div className="space-y-3 max-h-[250px] overflow-y-auto">
+                  {visitorsByCountry.map((country, index) => (
+                    <div key={country.country} className="flex items-center gap-3">
+                      <span className="text-sm font-medium text-muted-foreground w-6">{index + 1}.</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium">{country.country}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-medium">{country.views.toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground">{country.unique_visitors} unique</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="h-[250px] flex items-center justify-center text-muted-foreground">
+                  <div className="text-center">
+                    <Globe className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p>No geographic data yet</p>
+                    <p className="text-xs mt-1">Country data is collected from visitor IPs</p>
                   </div>
                 </div>
               )}

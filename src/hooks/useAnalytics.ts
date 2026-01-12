@@ -61,6 +61,12 @@ export interface PageViewsTimeSeries {
   unique_visitors: number;
 }
 
+export interface VisitorsByCountry {
+  country: string;
+  views: number;
+  unique_visitors: number;
+}
+
 export function useAnalyticsSummary() {
   return useQuery({
     queryKey: ['analytics', 'summary'],
@@ -408,6 +414,42 @@ export function useMonthlyComparison() {
             : 0,
         },
       };
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
+export function useVisitorsByCountry(limit: number = 10) {
+  return useQuery({
+    queryKey: ['analytics', 'visitors-by-country', limit],
+    queryFn: async (): Promise<VisitorsByCountry[]> => {
+      const { data, error } = await supabase
+        .from('page_views')
+        .select('country, visitor_id');
+
+      if (error) throw error;
+
+      // Group by country
+      const grouped = (data || []).reduce((acc, view) => {
+        const country = view.country || 'Unknown';
+        if (!acc[country]) {
+          acc[country] = { views: 0, visitors: new Set<string>() };
+        }
+        acc[country].views += 1;
+        if (view.visitor_id) {
+          acc[country].visitors.add(view.visitor_id);
+        }
+        return acc;
+      }, {} as Record<string, { views: number; visitors: Set<string> }>);
+
+      return Object.entries(grouped)
+        .map(([country, data]) => ({
+          country,
+          views: data.views,
+          unique_visitors: data.visitors.size,
+        }))
+        .sort((a, b) => b.views - a.views)
+        .slice(0, limit);
     },
     staleTime: 1000 * 60 * 5,
   });
