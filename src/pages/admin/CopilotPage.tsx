@@ -55,6 +55,7 @@ export default function CopilotPage() {
           <div className="w-1/2 border-r flex flex-col">
             <CopilotChat
               messages={copilot.messages}
+              blocks={copilot.blocks}
               isLoading={copilot.isLoading}
               onSendMessage={copilot.sendMessage}
               onCancel={copilot.cancelRequest}
