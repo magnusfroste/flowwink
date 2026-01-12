@@ -50,6 +50,8 @@ const WIZARD_STEPS = [
 
 const TOTAL_STEPS = 4;
 
+const STEP_LABELS = ['Welcome', 'Setup', 'Admin', 'Done'];
+
 function StepIndicator({ currentStep }: { currentStep: SetupStep }) {
   const currentStepConfig = WIZARD_STEPS.find(s => s.id === currentStep);
   const currentNumber = currentStepConfig?.number || 1;
@@ -58,34 +60,43 @@ function StepIndicator({ currentStep }: { currentStep: SetupStep }) {
   if (currentStep === 'manual') return null;
   
   return (
-    <div className="flex items-center justify-center gap-2 mb-4">
+    <div className="flex items-center justify-center mb-4">
       {Array.from({ length: TOTAL_STEPS }, (_, i) => {
         const stepNum = i + 1;
         const isComplete = stepNum < currentNumber;
         const isCurrent = stepNum === currentNumber;
         
         return (
-          <div key={stepNum} className="flex items-center gap-2">
-            <div
-              className={`
-                w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium transition-colors
-                ${isComplete 
-                  ? 'bg-primary text-primary-foreground' 
-                  : isCurrent 
-                    ? 'bg-primary/20 text-primary border-2 border-primary' 
-                    : 'bg-muted text-muted-foreground'
-                }
-              `}
-            >
-              {isComplete ? (
-                <CheckCircle2 className="h-4 w-4" />
-              ) : (
-                stepNum
-              )}
+          <div key={stepNum} className="flex items-center">
+            <div className="flex flex-col items-center">
+              <div
+                className={`
+                  w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium transition-colors
+                  ${isComplete 
+                    ? 'bg-primary text-primary-foreground' 
+                    : isCurrent 
+                      ? 'bg-primary/20 text-primary border-2 border-primary' 
+                      : 'bg-muted text-muted-foreground'
+                  }
+                `}
+              >
+                {isComplete ? (
+                  <CheckCircle2 className="h-4 w-4" />
+                ) : (
+                  stepNum
+                )}
+              </div>
+              <span 
+                className={`text-xs mt-1.5 font-medium ${
+                  isCurrent ? 'text-primary' : isComplete ? 'text-foreground' : 'text-muted-foreground'
+                }`}
+              >
+                {STEP_LABELS[i]}
+              </span>
             </div>
             {stepNum < TOTAL_STEPS && (
               <div 
-                className={`w-8 h-0.5 transition-colors ${
+                className={`w-12 h-0.5 mx-2 mt-[-1rem] transition-colors ${
                   isComplete ? 'bg-primary' : 'bg-muted'
                 }`} 
               />
