@@ -1,5 +1,5 @@
-import { useRef, useEffect } from 'react';
-import { Sparkles, Check, X, ArrowUp, Loader2, CheckCircle2, Layout, Image, MessageSquare, Users, Wand2 } from 'lucide-react';
+import { useRef, useEffect, useState } from 'react';
+import { Sparkles, Check, X, ArrowUp, Loader2, CheckCircle2, Layout, Image, MessageSquare, Users, Wand2, Square } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -8,15 +8,16 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import type { CopilotMessage, ModuleRecommendation, CopilotBlock } from '@/hooks/useCopilot';
 import { defaultModulesSettings } from '@/hooks/useModules';
-import { useState } from 'react';
 
 interface CopilotChatProps {
   messages: CopilotMessage[];
   blocks: CopilotBlock[];
   isLoading: boolean;
+  isAutoContinue: boolean;
   onSendMessage: (message: string) => void;
   onCancel: () => void;
   onFinishPage: () => void;
+  onStopAutoContinue: () => void;
   moduleRecommendation: ModuleRecommendation | null;
   onAcceptModules: () => void;
   onRejectModules: () => void;
@@ -54,9 +55,11 @@ export function CopilotChat({
   messages,
   blocks,
   isLoading,
+  isAutoContinue,
   onSendMessage,
   onCancel,
   onFinishPage,
+  onStopAutoContinue,
   moduleRecommendation,
   onAcceptModules,
   onRejectModules,
@@ -279,13 +282,24 @@ export function CopilotChat({
             </div>
           )}
 
-          {/* Loading state */}
+          {/* Loading state with auto-continue indicator */}
           {isLoading && (
             <div className="text-left">
               <div className="inline-flex items-center gap-1.5 bg-muted rounded-xl px-3 py-2 text-sm text-muted-foreground">
                 <Loader2 className="w-3 h-3 animate-spin" />
-                <span>Thinking...</span>
+                <span>{isAutoContinue ? 'Generating page...' : 'Thinking...'}</span>
               </div>
+              {isAutoContinue && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onStopAutoContinue}
+                  className="mt-1 text-xs h-6 px-2 text-muted-foreground"
+                >
+                  <Square className="w-3 h-3 mr-1 fill-current" />
+                  Stop auto-generation
+                </Button>
+              )}
             </div>
           )}
 
