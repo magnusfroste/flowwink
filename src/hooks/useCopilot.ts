@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useUpdateModules, useModules, type ModulesSettings, defaultModulesSettings } from '@/hooks/useModules';
 import { toast } from 'sonner';
@@ -26,9 +26,6 @@ export interface ModuleRecommendation {
   reason: string;
   status: 'pending' | 'accepted' | 'rejected';
 }
-
-// Full page generation sequence
-const FULL_PAGE_SEQUENCE = ['hero', 'features', 'testimonials', 'cta', 'contact'];
 
 interface UseCopilotReturn {
   messages: CopilotMessage[];
@@ -58,39 +55,13 @@ export function useCopilot(): UseCopilotReturn {
   const [isAutoContinue, setIsAutoContinue] = useState(false);
   
   const abortControllerRef = useRef<AbortController | null>(null);
-  const autoContinueRef = useRef<boolean>(false);
   const updateModules = useUpdateModules();
   const { data: currentModules } = useModules();
 
-  const generateId = () => {
-    return Math.random().toString(36).substring(2, 15);
-  };
-
-  // Get the next block to generate in auto-continue mode
-  const getNextBlockInSequence = useCallback((currentBlocks: CopilotBlock[]): string | null => {
-    const createdTypes = new Set(currentBlocks.map(b => b.type));
-    for (const blockType of FULL_PAGE_SEQUENCE) {
-      if (!createdTypes.has(blockType)) {
-        return blockType;
-      }
-    }
-    return null;
-  }, []);
-
-  // Format block type for display
-  const formatBlockType = (type: string): string => {
-    return type.charAt(0).toUpperCase() + type.slice(1);
-  };
+  const generateId = () => Math.random().toString(36).substring(2, 15);
 
   const sendMessage = useCallback(async (content: string) => {
     if (!content.trim() || isLoading) return;
-
-    // Detect if this is a full page generation request
-    const isFullPageRequest = content.toLowerCase().includes('complete landing page');
-    if (isFullPageRequest) {
-      setIsAutoContinue(true);
-      autoContinueRef.current = true;
-    }
 
     // Add user message
     const userMessage: CopilotMessage = {
@@ -131,8 +102,6 @@ export function useCopilot(): UseCopilotReturn {
         createdAt: new Date(),
       };
 
-      let newBlockType: string | null = null;
-
       // Handle tool calls
       if (data.toolCall) {
         assistantMessage.toolCall = data.toolCall;
@@ -148,105 +117,30 @@ export function useCopilot(): UseCopilotReturn {
         } else if (data.toolCall.name.startsWith('create_') && data.toolCall.name.endsWith('_block')) {
           // Block creation - auto-approve by default
           const blockType = data.toolCall.name.replace('create_', '').replace('_block', '');
-          newBlockType = blockType;
           const newBlock: CopilotBlock = {
             id: generateId(),
             type: blockType,
             data: data.toolCall.arguments as Record<string, unknown>,
             status: 'approved',
           };
-          setBlocks(prev => {
-            const updatedBlocks = [...prev, newBlock];
-            
-            // Auto-continue: trigger next block after a short delay
-            if (autoContinueRef.current) {
-              const nextBlock = getNextBlockInSequence(updatedBlocks);
-              if (nextBlock) {
-                setTimeout(() => {
-                  if (autoContinueRef.current) {
-                    // Use a ref-based approach to avoid stale closure
-                    const continueMessage = `Continue with the ${formatBlockType(nextBlock)} section`;
-                    // We need to call sendMessage but avoid the dependency issue
-                    // Instead, we'll use a different approach with state
-                  }
-                }, 800);
-              } else {
-                // All blocks complete
-                setIsAutoContinue(false);
-                autoContinueRef.current = false;
-              }
-            }
-            
-            return updatedBlocks;
-          });
+          setBlocks(prev => [...prev, newBlock]);
         }
       }
 
       setMessages(prev => [...prev, assistantMessage]);
 
-      // Auto-continue logic after state updates
-      if (autoContinueRef.current && newBlockType) {
-        setBlocks(currentBlocks => {
-          const nextBlock = getNextBlockInSequence(currentBlocks);
-          if (nextBlock) {
-            // Schedule next block generation
-            setTimeout(() => {
-              if (autoContinueRef.current) {
-                const continueMessage = `Continue with the ${formatBlockType(nextBlock)} section`;
-                // Trigger next message via a queued approach
-                queueMicrotask(() => {
-                  if (autoContinueRef.current && !isLoading) {
-                    // We need to avoid the recursive call issue
-                    // This will be handled by the useEffect below
-                  }
-                });
-              }
-            }, 500);
-          } else {
-            setIsAutoContinue(false);
-            autoContinueRef.current = false;
-            toast.success('Full page generated!');
-          }
-          return currentBlocks;
-        });
-      }
-
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') {
-        // Request was cancelled
-        setIsAutoContinue(false);
-        autoContinueRef.current = false;
         return;
       }
       const message = err instanceof Error ? err.message : 'Failed to send message';
       setError(message);
       toast.error(message);
-      setIsAutoContinue(false);
-      autoContinueRef.current = false;
     } finally {
       setIsLoading(false);
       abortControllerRef.current = null;
     }
-  }, [messages, isLoading, currentModules, getNextBlockInSequence]);
-
-  // Effect to handle auto-continue chain
-  useEffect(() => {
-    if (!isAutoContinue || isLoading || blocks.length === 0) return;
-
-    const nextBlock = getNextBlockInSequence(blocks);
-    if (nextBlock) {
-      const timer = setTimeout(() => {
-        if (autoContinueRef.current && !isLoading) {
-          const continueMessage = `Continue with the ${formatBlockType(nextBlock)} section`;
-          sendMessage(continueMessage);
-        }
-      }, 1000);
-      return () => clearTimeout(timer);
-    } else if (blocks.length >= FULL_PAGE_SEQUENCE.length) {
-      setIsAutoContinue(false);
-      autoContinueRef.current = false;
-    }
-  }, [blocks, isAutoContinue, isLoading, getNextBlockInSequence, sendMessage]);
+  }, [messages, isLoading, currentModules]);
 
   const approveBlock = useCallback((blockId: string) => {
     setBlocks(prev => prev.map(b => 
@@ -295,10 +189,8 @@ export function useCopilot(): UseCopilotReturn {
       toast.success('Modules activated');
 
       // Continue conversation to start creating blocks
-      const continueMessage = 'Great! Modules are activated. Now please create a hero block for my website.';
-      // Add slight delay to ensure state is updated
       setTimeout(() => {
-        sendMessage(continueMessage);
+        sendMessage('Great! Modules are activated. Now please create a hero block for my website.');
       }, 500);
     } catch (err) {
       toast.error('Could not activate modules');
@@ -316,12 +208,10 @@ export function useCopilot(): UseCopilotReturn {
       setIsLoading(false);
     }
     setIsAutoContinue(false);
-    autoContinueRef.current = false;
   }, []);
 
   const stopAutoContinue = useCallback(() => {
     setIsAutoContinue(false);
-    autoContinueRef.current = false;
   }, []);
 
   const clearConversation = useCallback(() => {
@@ -330,7 +220,6 @@ export function useCopilot(): UseCopilotReturn {
     setModuleRecommendation(null);
     setError(null);
     setIsAutoContinue(false);
-    autoContinueRef.current = false;
   }, []);
 
   const approvedBlocks = blocks.filter(b => b.status === 'approved');

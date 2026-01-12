@@ -506,6 +506,11 @@ serve(async (req) => {
       }
     }
 
+    // Handle empty responses - ask for clarification
+    if (!responseMessage && !toolCall) {
+      responseMessage = "I'd love to help you build your website! Could you tell me a bit more about your business? For example:\n\n• What type of business is it? (restaurant, salon, agency, etc.)\n• What's the main goal of your website?\n• Any specific features you need?";
+    }
+
     return new Response(
       JSON.stringify({
         message: responseMessage,
