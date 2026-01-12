@@ -10,6 +10,7 @@ import { BodyScripts } from '@/components/public/BodyScripts';
 import { CookieBanner } from '@/components/public/CookieBanner';
 import { ChatWidget } from '@/components/public/ChatWidget';
 import { ComingSoonPage } from '@/components/public/ComingSoonPage';
+import { SetupRequiredPage } from '@/components/public/SetupRequiredPage';
 import { cn } from '@/lib/utils';
 import { useSeoSettings, useMaintenanceSettings, useGeneralSettings } from '@/hooks/useSiteSettings';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,8 @@ import { useEffect, useState } from 'react';
 import type { Page, ContentBlock } from '@/types/cms';
 import { usePageViewTracker } from '@/hooks/usePageViewTracker';
 
+// Special marker to distinguish connection errors from "page not found"
+const CONNECTION_ERROR = Symbol('CONNECTION_ERROR');
 function parseContent(data: {
   content_json: unknown;
   meta_json: unknown;
@@ -58,11 +61,18 @@ export default function PublicPage() {
 
   const { data: page, isLoading } = useQuery({
     queryKey: ['public-page', pageSlug],
-    queryFn: async () => {
+    queryFn: async (): Promise<Page | null | typeof CONNECTION_ERROR> => {
+      // Check if Supabase URL is configured
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      if (!supabaseUrl || supabaseUrl === 'undefined' || supabaseUrl === '') {
+        console.error('[PublicPage] Supabase URL not configured');
+        return CONNECTION_ERROR;
+      }
+
       try {
         // Use edge function for fetching (handles caching internally)
         const response = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-page?slug=${encodeURIComponent(pageSlug)}`
+          `${supabaseUrl}/functions/v1/get-page?slug=${encodeURIComponent(pageSlug)}`
         );
         
         if (response.ok) {
@@ -81,30 +91,56 @@ export default function PublicPage() {
       }
 
       // Fallback to direct DB query
-      const { data: dbData, error: dbError } = await supabase
-        .from('pages')
-        .select('*')
-        .eq('slug', pageSlug)
-        .eq('status', 'published')
-        .maybeSingle();
+      try {
+        const { data: dbData, error: dbError } = await supabase
+          .from('pages')
+          .select('*')
+          .eq('slug', pageSlug)
+          .eq('status', 'published')
+          .maybeSingle();
 
-      if (dbError) {
-        console.error('[PublicPage] DB error:', dbError);
-        return null; // Return null instead of throwing - treat as "page not found"
+        if (dbError) {
+          // Check for connection-related errors
+          const errorMessage = dbError.message?.toLowerCase() || '';
+          const isConnectionError = 
+            errorMessage.includes('fetch') ||
+            errorMessage.includes('network') ||
+            errorMessage.includes('connection') ||
+            errorMessage.includes('failed to fetch') ||
+            dbError.code === 'PGRST000' || // PostgREST connection error
+            dbError.code === '42P01'; // Relation does not exist (table missing)
+          
+          if (isConnectionError) {
+            console.error('[PublicPage] Database connection error:', dbError);
+            return CONNECTION_ERROR;
+          }
+          
+          console.error('[PublicPage] DB error:', dbError);
+          return null;
+        }
+        if (!dbData) return null;
+
+        return parseContent(dbData);
+      } catch (e) {
+        console.error('[PublicPage] Unexpected error:', e);
+        return CONNECTION_ERROR;
       }
-      if (!dbData) return null;
-
-      return parseContent(dbData);
     },
     staleTime: 5 * 60 * 1000, // 5 min client-side cache
-    retry: false, // Don't retry on 404s
+    retry: false, // Don't retry on errors
   });
+
+  // Check for connection error first
+  const isConnectionError = page === CONNECTION_ERROR;
+  
+  // Get the actual page data (null if error or not found)
+  const pageData = isConnectionError ? null : page;
 
   // Track page view
   usePageViewTracker({
-    pageId: page?.id,
+    pageId: pageData?.id,
     pageSlug: pageSlug,
-    pageTitle: page?.title,
+    pageTitle: pageData?.title,
   });
 
   if (isLoading || authLoading) {
@@ -113,6 +149,11 @@ export default function PublicPage() {
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
+  }
+
+  // Database connection error - show setup page for self-hosted users
+  if (isConnectionError) {
+    return <SetupRequiredPage />;
   }
 
   // Maintenance mode - block unauthenticated users
@@ -165,7 +206,7 @@ export default function PublicPage() {
   }
 
   // No page found - show Coming Soon for homepage, 404 for other pages
-  if (!page) {
+  if (!pageData) {
     // If this is the homepage request, show Coming Soon instead of 404
     const isHomepageRequest = pageSlug === homepageSlug;
     
@@ -197,20 +238,20 @@ export default function PublicPage() {
     { name: 'Hem', url: baseUrl }
   ];
   if (pageSlug !== homepageSlug) {
-    breadcrumbs.push({ name: page.title, url: canonicalUrl });
+    breadcrumbs.push({ name: pageData.title, url: canonicalUrl });
   }
 
   return (
     <>
       <SeoHead 
-        title={page.meta_json?.seoTitle || page.title}
-        description={page.meta_json?.description}
-        ogImage={page.meta_json?.og_image}
+        title={pageData.meta_json?.seoTitle || pageData.title}
+        description={pageData.meta_json?.description}
+        ogImage={pageData.meta_json?.og_image}
         canonicalUrl={canonicalUrl}
-        noIndex={page.meta_json?.noIndex}
-        noFollow={page.meta_json?.noFollow}
+        noIndex={pageData.meta_json?.noIndex}
+        noFollow={pageData.meta_json?.noFollow}
         pageType="page"
-        contentBlocks={page.content_json}
+        contentBlocks={pageData.content_json}
         breadcrumbs={breadcrumbs}
       />
       <HeadScripts />
@@ -220,22 +261,22 @@ export default function PublicPage() {
         <PublicNavigation />
 
         {/* Page Title - only show if showTitle !== false */}
-        {page.meta_json?.showTitle !== false && (
+        {pageData.meta_json?.showTitle !== false && (
           <div className="bg-muted/30 py-12 px-6">
             <div className={cn(
               "container mx-auto",
-              page.meta_json?.titleAlignment === 'center' && "text-center"
+              pageData.meta_json?.titleAlignment === 'center' && "text-center"
             )}>
-              <h1 className="font-serif text-4xl font-bold">{page.title}</h1>
+              <h1 className="font-serif text-4xl font-bold">{pageData.title}</h1>
             </div>
           </div>
         )}
 
         {/* Content Blocks */}
         <main>
-          {page.content_json?.length > 0 ? (
-            page.content_json.map((block, index) => (
-              <BlockRenderer key={block.id} block={block} pageId={page.id} index={index} />
+          {pageData.content_json?.length > 0 ? (
+            pageData.content_json.map((block, index) => (
+              <BlockRenderer key={block.id} block={block} pageId={pageData.id} index={index} />
             ))
           ) : (
             <div className="py-16 px-6">
