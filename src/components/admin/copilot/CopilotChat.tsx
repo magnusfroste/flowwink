@@ -1,10 +1,21 @@
 import { useRef, useEffect, useState } from 'react';
-import { Sparkles, Check, X, ArrowUp, Loader2, CheckCircle2, Layout, Image, MessageSquare, Users, Wand2, Square, RotateCcw } from 'lucide-react';
+import { Sparkles, Check, X, ArrowUp, Loader2, CheckCircle2, Layout, Image, MessageSquare, Users, Wand2, Square, RotateCcw, AlertTriangle } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import type { CopilotMessage, ModuleRecommendation, CopilotBlock } from '@/hooks/useCopilot';
 import { defaultModulesSettings } from '@/hooks/useModules';
@@ -354,15 +365,38 @@ export function CopilotChat({
         </form>
         <div className="flex justify-between">
           {(messages.length > 0 || blocks.length > 0) && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={onReset} 
-              className="text-xs h-6 px-2 text-muted-foreground hover:text-destructive"
-            >
-              <RotateCcw className="w-3 h-3 mr-1" />
-              Reset page
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-xs h-6 px-2 text-muted-foreground hover:text-destructive"
+                >
+                  <RotateCcw className="w-3 h-3 mr-1" />
+                  Reset page
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5 text-destructive" />
+                    Reset page?
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will clear all {blocks.length} generated block{blocks.length !== 1 ? 's' : ''} and conversation history. This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={onReset}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Reset everything
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           )}
           <div className="flex-1" />
           <Button variant="ghost" size="sm" onClick={onCancel} className="text-xs h-6 px-2 text-muted-foreground">
