@@ -5,6 +5,8 @@ import { useIntegrationStatus } from './useIntegrationStatus';
 
 // Provider-specific configuration stored per integration
 export interface IntegrationProviderConfig {
+  // Common
+  apiKey?: string;  // For integrations where user can set key in UI
   // OpenAI
   baseUrl?: string;
   model?: string;
