@@ -2,7 +2,6 @@ import { Link } from 'react-router-dom';
 import { FileText, Clock, CheckCircle, AlertCircle, Plus } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
-import { VersionBadge } from '@/components/admin/VersionBadge';
 import { EmptyDashboard } from '@/components/admin/EmptyDashboard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -44,12 +43,7 @@ export default function AdminDashboard() {
 
         {/* Empty State - Show when no pages exist */}
         {isEmpty ? (
-          <>
-            <EmptyDashboard />
-            <div className="mt-12 pt-6 border-t flex justify-end">
-              <VersionBadge />
-            </div>
-          </>
+          <EmptyDashboard />
         ) : (
           <>
             {/* Stats Grid */}
@@ -244,11 +238,6 @@ export default function AdminDashboard() {
             </Card>
           )}
         </div>
-
-            {/* Version Badge */}
-            <div className="mt-12 pt-6 border-t flex justify-end">
-              <VersionBadge />
-            </div>
           </>
         )}
       </div>
