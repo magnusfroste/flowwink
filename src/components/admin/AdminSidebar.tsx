@@ -10,7 +10,6 @@ import {
   Menu,
   Palette,
   MessageSquare,
-  Database,
   Rocket,
   LayoutGrid,
   Inbox,
@@ -32,7 +31,7 @@ import {
   Plug,
   Bot,
 } from "lucide-react";
-import { ConnectionStatusIndicator } from "./ConnectionStatusIndicator";
+
 import { useAuth } from "@/hooks/useAuth";
 import { ROLE_LABELS } from "@/types/cms";
 import { useModules, SIDEBAR_TO_MODULE, type ModulesSettings } from "@/hooks/useModules";
@@ -131,7 +130,7 @@ const navigationGroups: NavGroup[] = [
     items: [
       { name: "Modules", href: "/admin/modules", icon: Puzzle },
       { name: "Integrations", href: "/admin/integrations", icon: Plug },
-      { name: "Content Hub", href: "/admin/content-hub", icon: Database, moduleId: "contentApi" },
+      { name: "Content Hub", href: "/admin/content-hub", icon: Library, moduleId: "contentApi" },
       { name: "Webhooks", href: "/admin/webhooks", icon: Webhook },
       { name: "Menu Order", href: "/admin/menu-order", icon: Menu },
       { name: "Users", href: "/admin/users", icon: Users },
@@ -293,9 +292,8 @@ export function AdminSidebar() {
           ))}
         </SidebarContent>
 
-        {/* Connection Status & User section */}
-        <SidebarFooter className="border-t border-sidebar-border p-2 space-y-2">
-          <ConnectionStatusIndicator collapsed={isCollapsed} />
+        {/* User section */}
+        <SidebarFooter className="border-t border-sidebar-border p-2">
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
