@@ -1,10 +1,18 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Database, ExternalLink, Terminal } from 'lucide-react';
+import { Database, ExternalLink, Terminal, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SeoHead } from '@/components/public/SeoHead';
 
 export function SetupRequiredPage() {
   const navigate = useNavigate();
+  const [isRetrying, setIsRetrying] = useState(false);
+
+  const handleRetry = () => {
+    setIsRetrying(true);
+    // Force a full page reload to re-attempt connection
+    window.location.reload();
+  };
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center">
@@ -35,6 +43,14 @@ export function SetupRequiredPage() {
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          <Button 
+            onClick={handleRetry}
+            disabled={isRetrying}
+            className="gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${isRetrying ? 'animate-spin' : ''}`} />
+            {isRetrying ? 'Connecting...' : 'Retry Connection'}
+          </Button>
           <Button 
             variant="outline" 
             onClick={() => window.open('https://docs.lovable.dev/tips-tricks/self-hosting', '_blank')}
