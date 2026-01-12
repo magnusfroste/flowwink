@@ -162,21 +162,21 @@ export default function KnowledgeBasePage() {
                     All Articles
                   </Button>
                   {categories?.map(category => (
-                    <div key={category.id} className="flex items-center gap-1">
+                    <div key={category.id} className="flex items-center gap-1 min-w-0">
                       <Button
                         variant={selectedCategory === category.id ? "secondary" : "ghost"}
-                        className="flex-1 justify-start"
+                        className="flex-1 justify-start min-w-0 overflow-hidden"
                         onClick={() => setSelectedCategory(category.id)}
                       >
-                        <Folder className="h-4 w-4 mr-2" />
-                        {category.name}
+                        <Folder className="h-4 w-4 mr-2 shrink-0" />
+                        <span className="truncate">{category.name}</span>
                         {!category.is_active && (
-                          <Badge variant="outline" className="ml-auto text-xs">Hidden</Badge>
+                          <Badge variant="outline" className="ml-auto text-xs shrink-0">Hidden</Badge>
                         )}
                       </Button>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
