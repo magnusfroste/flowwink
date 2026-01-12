@@ -16,6 +16,7 @@ interface CopilotChatProps {
   isLoading: boolean;
   onSendMessage: (message: string) => void;
   onCancel: () => void;
+  onFinishPage: () => void;
   moduleRecommendation: ModuleRecommendation | null;
   onAcceptModules: () => void;
   onRejectModules: () => void;
@@ -55,6 +56,7 @@ export function CopilotChat({
   isLoading,
   onSendMessage,
   onCancel,
+  onFinishPage,
   moduleRecommendation,
   onAcceptModules,
   onRejectModules,
@@ -292,7 +294,19 @@ export function CopilotChat({
       </ScrollArea>
 
       {/* Input */}
-      <div className="p-3 border-t bg-background">
+      <div className="p-3 border-t bg-background space-y-2">
+        {/* Finish page button - show after 3+ blocks */}
+        {blocks.length >= 3 && !isLoading && (
+          <Button 
+            onClick={onFinishPage}
+            variant="secondary"
+            className="w-full gap-2 bg-green-500/10 hover:bg-green-500/20 text-green-700 dark:text-green-400 border border-green-500/20"
+          >
+            <CheckCircle2 className="w-4 h-4" />
+            Finish & create page ({blocks.length} blocks)
+          </Button>
+        )}
+        
         <form onSubmit={handleSubmit} className="flex gap-2">
           <Input
             value={input}
@@ -314,7 +328,7 @@ export function CopilotChat({
             )}
           </Button>
         </form>
-        <div className="flex justify-end mt-1.5">
+        <div className="flex justify-end">
           <Button variant="ghost" size="sm" onClick={onCancel} className="text-xs h-6 px-2 text-muted-foreground">
             Cancel
           </Button>

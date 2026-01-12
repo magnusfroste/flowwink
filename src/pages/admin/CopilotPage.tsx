@@ -59,6 +59,7 @@ export default function CopilotPage() {
               isLoading={copilot.isLoading}
               onSendMessage={copilot.sendMessage}
               onCancel={copilot.cancelRequest}
+              onFinishPage={() => setShowCreateDialog(true)}
               moduleRecommendation={copilot.moduleRecommendation}
               onAcceptModules={copilot.acceptModules}
               onRejectModules={copilot.rejectModules}
