@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import type { CopilotMessage, ModuleRecommendation, CopilotBlock } from '@/hooks/useCopilot';
 import { defaultModulesSettings } from '@/hooks/useModules';
+import { CopilotMiniPreview } from './CopilotMiniPreview';
 
 interface CopilotChatProps {
   messages: CopilotMessage[];
@@ -101,66 +102,73 @@ export function CopilotChat({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Progress indicator */}
+      {/* Progress indicator with mini preview */}
       {hasBlocks && (
         <div className="px-3 py-2 border-b bg-muted/30">
-          <div className="flex items-center justify-between text-xs">
-            <div className="flex items-center gap-1.5">
-              {/* Full page mode: show X of 5 progress */}
-              {isFullPageMode ? (
-                <>
-                  <div className="flex items-center gap-0.5">
-                    {FULL_PAGE_BLOCKS.map((type, i) => (
-                      <div
-                        key={type}
-                        className={cn(
-                          'w-2 h-2 rounded-full transition-colors',
-                          blocks.some(b => b.type === type)
-                            ? blocks.find(b => b.type === type)?.status === 'approved'
-                              ? 'bg-primary'
-                              : 'bg-primary/50'
-                            : 'bg-muted-foreground/20'
-                        )}
-                      />
-                    ))}
-                  </div>
-                  <span className="text-muted-foreground font-medium">
-                    {fullPageProgress} of {FULL_PAGE_BLOCK_COUNT}
-                  </span>
-                  {fullPageProgress === FULL_PAGE_BLOCK_COUNT && (
-                    <Badge variant="secondary" className="text-[10px] h-4 px-1.5 bg-green-500/10 text-green-600">
-                      Complete!
-                    </Badge>
-                  )}
-                </>
-              ) : (
-                <>
-                  <div className="flex items-center gap-1">
-                    {[...Array(Math.min(blocks.length, 5))].map((_, i) => (
-                      <div
-                        key={i}
-                        className={cn(
-                          'w-1.5 h-1.5 rounded-full transition-colors',
-                          i < approvedCount ? 'bg-primary' : 'bg-muted-foreground/30'
-                        )}
-                      />
-                    ))}
-                    {blocks.length > 5 && (
-                      <span className="text-muted-foreground ml-0.5">+{blocks.length - 5}</span>
+          <div className="flex items-center gap-3">
+            {/* Mini preview thumbnail */}
+            <CopilotMiniPreview blocks={blocks} />
+            
+            {/* Progress info */}
+            <div className="flex-1 flex flex-col gap-1">
+              <div className="flex items-center gap-1.5 text-xs">
+                {/* Full page mode: show X of 5 progress */}
+                {isFullPageMode ? (
+                  <>
+                    <div className="flex items-center gap-0.5">
+                      {FULL_PAGE_BLOCKS.map((type, i) => (
+                        <div
+                          key={type}
+                          className={cn(
+                            'w-2 h-2 rounded-full transition-colors',
+                            blocks.some(b => b.type === type)
+                              ? blocks.find(b => b.type === type)?.status === 'approved'
+                                ? 'bg-primary'
+                                : 'bg-primary/50'
+                              : 'bg-muted-foreground/20'
+                          )}
+                        />
+                      ))}
+                    </div>
+                    <span className="text-muted-foreground font-medium">
+                      {fullPageProgress} of {FULL_PAGE_BLOCK_COUNT}
+                    </span>
+                    {fullPageProgress === FULL_PAGE_BLOCK_COUNT && (
+                      <Badge variant="secondary" className="text-[10px] h-4 px-1.5 bg-green-500/10 text-green-600">
+                        Complete!
+                      </Badge>
                     )}
-                  </div>
-                  <span className="text-muted-foreground">
-                    {blocks.length} block{blocks.length !== 1 ? 's' : ''} created
-                  </span>
-                </>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-1">
+                      {[...Array(Math.min(blocks.length, 5))].map((_, i) => (
+                        <div
+                          key={i}
+                          className={cn(
+                            'w-1.5 h-1.5 rounded-full transition-colors',
+                            i < approvedCount ? 'bg-primary' : 'bg-muted-foreground/30'
+                          )}
+                        />
+                      ))}
+                      {blocks.length > 5 && (
+                        <span className="text-muted-foreground ml-0.5">+{blocks.length - 5}</span>
+                      )}
+                    </div>
+                    <span className="text-muted-foreground">
+                      {blocks.length} block{blocks.length !== 1 ? 's' : ''} created
+                    </span>
+                  </>
+                )}
+              </div>
+              
+              {approvedCount > 0 && (
+                <Badge variant="secondary" className="text-[10px] h-5 w-fit">
+                  <CheckCircle2 className="w-3 h-3 mr-1 text-primary" />
+                  {approvedCount} ready
+                </Badge>
               )}
             </div>
-            {approvedCount > 0 && (
-              <Badge variant="secondary" className="text-[10px] h-5">
-                <CheckCircle2 className="w-3 h-3 mr-1 text-primary" />
-                {approvedCount} ready
-              </Badge>
-            )}
           </div>
         </div>
       )}
