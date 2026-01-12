@@ -1,17 +1,18 @@
 import { useRef, useEffect } from 'react';
-import { Sparkles, Check, X, ArrowUp, Loader2 } from 'lucide-react';
+import { Sparkles, Check, X, ArrowUp, Loader2, CheckCircle2, Circle, Layout, Image, MessageSquare, Users } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import type { CopilotMessage, ModuleRecommendation } from '@/hooks/useCopilot';
+import type { CopilotMessage, ModuleRecommendation, CopilotBlock } from '@/hooks/useCopilot';
 import { defaultModulesSettings } from '@/hooks/useModules';
 import { useState } from 'react';
 
 interface CopilotChatProps {
   messages: CopilotMessage[];
+  blocks: CopilotBlock[];
   isLoading: boolean;
   onSendMessage: (message: string) => void;
   onCancel: () => void;
@@ -29,8 +30,16 @@ const STARTER_PROMPTS = [
   'E-commerce store',
 ];
 
+const SUGGESTED_BLOCKS = [
+  { id: 'features', label: 'Features', icon: Layout },
+  { id: 'testimonials', label: 'Testimonials', icon: Users },
+  { id: 'gallery', label: 'Gallery', icon: Image },
+  { id: 'contact', label: 'Contact form', icon: MessageSquare },
+];
+
 export function CopilotChat({
   messages,
+  blocks,
   isLoading,
   onSendMessage,
   onCancel,
@@ -56,9 +65,48 @@ export function CopilotChat({
   };
 
   const isEmpty = messages.length === 0;
+  const hasBlocks = blocks.length > 0;
+  const approvedCount = blocks.filter(b => b.status === 'approved').length;
+
+  // Determine which block types have been created
+  const createdBlockTypes = new Set(blocks.map(b => b.type));
+  const suggestedNext = SUGGESTED_BLOCKS.filter(s => !createdBlockTypes.has(s.id)).slice(0, 3);
 
   return (
     <div className="flex flex-col h-full">
+      {/* Progress indicator */}
+      {hasBlocks && (
+        <div className="px-3 py-2 border-b bg-muted/30">
+          <div className="flex items-center justify-between text-xs">
+            <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1">
+                {[...Array(Math.min(blocks.length, 5))].map((_, i) => (
+                  <div
+                    key={i}
+                    className={cn(
+                      'w-1.5 h-1.5 rounded-full transition-colors',
+                      i < approvedCount ? 'bg-primary' : 'bg-muted-foreground/30'
+                    )}
+                  />
+                ))}
+                {blocks.length > 5 && (
+                  <span className="text-muted-foreground ml-0.5">+{blocks.length - 5}</span>
+                )}
+              </div>
+              <span className="text-muted-foreground">
+                {blocks.length} block{blocks.length !== 1 ? 's' : ''} created
+              </span>
+            </div>
+            {approvedCount > 0 && (
+              <Badge variant="secondary" className="text-[10px] h-5">
+                <CheckCircle2 className="w-3 h-3 mr-1 text-primary" />
+                {approvedCount} ready
+              </Badge>
+            )}
+          </div>
+        </div>
+      )}
+
       <ScrollArea className="flex-1">
         <div className="p-3 space-y-3">
           {/* Welcome state */}
@@ -127,6 +175,27 @@ export function CopilotChat({
             />
           )}
 
+          {/* Quick suggestions after blocks are created */}
+          {hasBlocks && !isLoading && suggestedNext.length > 0 && (
+            <div className="pt-2">
+              <p className="text-xs text-muted-foreground mb-2">Add more sections:</p>
+              <div className="flex flex-wrap gap-1.5">
+                {suggestedNext.map((suggestion) => (
+                  <Button
+                    key={suggestion.id}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onSendMessage(`Add a ${suggestion.label.toLowerCase()} section`)}
+                    className="text-xs h-7 px-2.5 gap-1.5"
+                  >
+                    <suggestion.icon className="w-3 h-3" />
+                    {suggestion.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Loading state */}
           {isLoading && (
             <div className="text-left">
@@ -147,7 +216,7 @@ export function CopilotChat({
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Describe your business..."
+            placeholder={hasBlocks ? "Ask for more blocks..." : "Describe your business..."}
             disabled={isLoading}
             className="flex-1 h-9 text-sm"
           />
