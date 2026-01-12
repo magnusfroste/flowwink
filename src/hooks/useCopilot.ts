@@ -114,13 +114,13 @@ export function useCopilot(): UseCopilotReturn {
             status: 'pending',
           });
         } else if (data.toolCall.name.startsWith('create_') && data.toolCall.name.endsWith('_block')) {
-          // Block creation
+          // Block creation - auto-approve by default
           const blockType = data.toolCall.name.replace('create_', '').replace('_block', '');
           const newBlock: CopilotBlock = {
             id: generateId(),
             type: blockType,
             data: data.toolCall.arguments as Record<string, unknown>,
-            status: 'pending',
+            status: 'approved',
           };
           setBlocks(prev => [...prev, newBlock]);
         }

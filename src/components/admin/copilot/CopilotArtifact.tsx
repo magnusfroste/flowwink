@@ -63,34 +63,25 @@ export function CopilotArtifact({
             </div>
 
             <div className="flex items-center gap-1">
-              {!isApproved && (
-                <>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-7 w-7 text-green-600 hover:text-green-700 hover:bg-green-50"
-                    onClick={onApprove}
-                  >
-                    <Check className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-50"
-                    onClick={onReject}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-7 w-7"
-                    onClick={() => setShowFeedback(!showFeedback)}
-                  >
-                    <RefreshCw className="h-4 w-4" />
-                  </Button>
-                </>
-              )}
+              {/* Reject and regenerate options */}
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                onClick={onReject}
+                title="Remove block"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                onClick={() => setShowFeedback(!showFeedback)}
+                title="Regenerate block"
+              >
+                <RefreshCw className="h-4 w-4" />
+              </Button>
 
               <CollapsibleTrigger asChild>
                 <Button size="icon" variant="ghost" className="h-7 w-7">
@@ -104,8 +95,8 @@ export function CopilotArtifact({
             </div>
           </div>
 
-          {/* Feedback input */}
-          {showFeedback && !isApproved && (
+          {/* Feedback input for regeneration */}
+          {showFeedback && (
             <div className="flex gap-2 mt-3">
               <Input
                 placeholder="Describe what you want to change..."
