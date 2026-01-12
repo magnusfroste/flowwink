@@ -30,12 +30,15 @@ import {
   CalendarDays,
   Plug,
   Bot,
+  Github,
+  ArrowUpCircle,
 } from "lucide-react";
 
 import { useAuth } from "@/hooks/useAuth";
 import { ROLE_LABELS } from "@/types/cms";
-import { useModules, SIDEBAR_TO_MODULE, type ModulesSettings } from "@/hooks/useModules";
+import { useModules, type ModulesSettings } from "@/hooks/useModules";
 import { useBrandingSettings } from "@/hooks/useSiteSettings";
+import { useVersionCheck } from "@/hooks/useVersionCheck";
 import {
   Sidebar,
   SidebarContent,
@@ -147,10 +150,12 @@ export function AdminSidebar() {
   const { state } = useSidebar();
   const { data: modules } = useModules();
   const { data: branding } = useBrandingSettings();
+  const { currentVersion, latestVersion, latestReleaseUrl, hasUpdate } = useVersionCheck();
   const isCollapsed = state === "collapsed";
   const [searchOpen, setSearchOpen] = useState(false);
   
   const adminName = branding?.adminName || 'FlowWink';
+  const GITHUB_RELEASES_URL = 'https://github.com/magnusfroste/flowwink/releases';
 
   const isItemActive = (href: string) =>
     location.pathname === href || (href !== "/admin" && location.pathname.startsWith(href));
@@ -338,6 +343,30 @@ export function AdminSidebar() {
                   Settings
                 </Link>
               </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              
+              {/* Version info */}
+              <DropdownMenuItem asChild>
+                <a 
+                  href={hasUpdate && latestReleaseUrl ? latestReleaseUrl : GITHUB_RELEASES_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="cursor-pointer"
+                >
+                  {hasUpdate ? (
+                    <>
+                      <ArrowUpCircle className="mr-2 h-4 w-4 text-warning" />
+                      <span className="flex-1">v{currentVersion} → v{latestVersion}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Github className="mr-2 h-4 w-4" />
+                      <span className="flex-1">v{currentVersion}</span>
+                    </>
+                  )}
+                </a>
+              </DropdownMenuItem>
+              
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={signOut} className="text-destructive focus:text-destructive cursor-pointer">
                 <LogOut className="mr-2 h-4 w-4" />
