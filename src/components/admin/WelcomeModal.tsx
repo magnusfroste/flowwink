@@ -9,23 +9,50 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { usePages } from '@/hooks/usePages';
 
 const WELCOME_KEY = 'cms-welcome-seen';
+const WELCOME_DISMISSED_AT_KEY = 'cms-welcome-dismissed-at';
+const RETRIGGER_DAYS = 7; // Re-show after 7 days if site is empty
 
 export function WelcomeModal() {
   const [open, setOpen] = useState(false);
+  const { data: pages, isLoading } = usePages();
 
   useEffect(() => {
+    if (isLoading) return;
+
     const hasSeenWelcome = localStorage.getItem(WELCOME_KEY);
+    const dismissedAtStr = localStorage.getItem(WELCOME_DISMISSED_AT_KEY);
+    const pagesExist = pages && pages.length > 0;
+
+    // If pages exist, never show the modal
+    if (pagesExist) {
+      return;
+    }
+
+    // First time user - show modal
     if (!hasSeenWelcome) {
-      // Small delay for smoother UX
       const timer = setTimeout(() => setOpen(true), 500);
       return () => clearTimeout(timer);
     }
-  }, []);
+
+    // Previously dismissed but site is now empty - check if enough time has passed
+    if (dismissedAtStr) {
+      const dismissedAt = new Date(dismissedAtStr);
+      const now = new Date();
+      const daysSinceDismissed = (now.getTime() - dismissedAt.getTime()) / (1000 * 60 * 60 * 24);
+      
+      if (daysSinceDismissed >= RETRIGGER_DAYS) {
+        const timer = setTimeout(() => setOpen(true), 500);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [pages, isLoading]);
 
   const handleClose = () => {
     localStorage.setItem(WELCOME_KEY, 'true');
+    localStorage.setItem(WELCOME_DISMISSED_AT_KEY, new Date().toISOString());
     setOpen(false);
   };
 
