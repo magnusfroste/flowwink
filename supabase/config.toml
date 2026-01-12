@@ -92,3 +92,6 @@ verify_jwt = true
 
 [functions.update-kb-feedback]
 verify_jwt = false
+
+[functions.setup-database]
+verify_jwt = false
