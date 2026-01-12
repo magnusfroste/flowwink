@@ -201,24 +201,35 @@ export function CopilotChat({
             />
           )}
 
-          {/* Quick suggestions after blocks are created */}
+          {/* Continue building button - primary action after block created */}
           {hasBlocks && !isLoading && suggestedNext.length > 0 && (
-            <div className="pt-2">
-              <p className="text-xs text-muted-foreground mb-2">Add more sections:</p>
-              <div className="flex flex-wrap gap-1.5">
-                {suggestedNext.map((suggestion) => (
-                  <Button
-                    key={suggestion.id}
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onSendMessage(`Add a ${suggestion.label.toLowerCase()} section`)}
-                    className="text-xs h-7 px-2.5 gap-1.5"
-                  >
-                    <suggestion.icon className="w-3 h-3" />
-                    {suggestion.label}
-                  </Button>
-                ))}
-              </div>
+            <div className="pt-2 space-y-2">
+              <Button
+                onClick={() => onSendMessage(`Continue building. Add a ${suggestedNext[0].label.toLowerCase()} section next.`)}
+                className="w-full gap-2"
+                size="sm"
+              >
+                <ArrowUp className="w-3.5 h-3.5" />
+                Continue with {suggestedNext[0].label}
+              </Button>
+              
+              {suggestedNext.length > 1 && (
+                <div className="flex flex-wrap gap-1.5">
+                  <span className="text-[10px] text-muted-foreground w-full">Or choose:</span>
+                  {suggestedNext.slice(1).map((suggestion) => (
+                    <Button
+                      key={suggestion.id}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onSendMessage(`Add a ${suggestion.label.toLowerCase()} section`)}
+                      className="text-xs h-6 px-2 gap-1"
+                    >
+                      <suggestion.icon className="w-3 h-3" />
+                      {suggestion.label}
+                    </Button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
