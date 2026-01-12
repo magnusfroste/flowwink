@@ -128,7 +128,6 @@ export function useChat(options?: UseChatOptions) {
               aiProvider: settings?.aiProvider || 'openai',
               localEndpoint: settings?.localEndpoint,
               localModel: settings?.localModel,
-              localApiKey: settings?.localApiKey,
               n8nWebhookUrl: settings?.n8nWebhookUrl,
               n8nWebhookType: settings?.n8nWebhookType || 'chat',
               systemPrompt: settings?.systemPrompt,
