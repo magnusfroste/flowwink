@@ -46,6 +46,9 @@ const FULL_PAGE_PROMPT = `Create a complete landing page for me with these secti
 
 Create them one at a time, starting with the hero.`;
 
+const FULL_PAGE_BLOCKS = ['hero', 'features', 'testimonials', 'cta', 'contact'];
+const FULL_PAGE_BLOCK_COUNT = 5;
+
 export function CopilotChat({
   messages,
   blocks,
@@ -77,6 +80,16 @@ export function CopilotChat({
   const hasBlocks = blocks.length > 0;
   const approvedCount = blocks.filter(b => b.status === 'approved').length;
 
+  // Detect if full page generation is in progress
+  const isFullPageMode = messages.some(m => 
+    m.role === 'user' && m.content.toLowerCase().includes('complete landing page')
+  );
+  
+  // Count how many of the expected full page blocks have been created
+  const fullPageProgress = FULL_PAGE_BLOCKS.filter(type => 
+    blocks.some(b => b.type === type)
+  ).length;
+
   // Determine which block types have been created
   const createdBlockTypes = new Set(blocks.map(b => b.type));
   const suggestedNext = SUGGESTED_BLOCKS.filter(s => !createdBlockTypes.has(s.id)).slice(0, 3);
@@ -88,23 +101,54 @@ export function CopilotChat({
         <div className="px-3 py-2 border-b bg-muted/30">
           <div className="flex items-center justify-between text-xs">
             <div className="flex items-center gap-1.5">
-              <div className="flex items-center gap-1">
-                {[...Array(Math.min(blocks.length, 5))].map((_, i) => (
-                  <div
-                    key={i}
-                    className={cn(
-                      'w-1.5 h-1.5 rounded-full transition-colors',
-                      i < approvedCount ? 'bg-primary' : 'bg-muted-foreground/30'
+              {/* Full page mode: show X of 5 progress */}
+              {isFullPageMode ? (
+                <>
+                  <div className="flex items-center gap-0.5">
+                    {FULL_PAGE_BLOCKS.map((type, i) => (
+                      <div
+                        key={type}
+                        className={cn(
+                          'w-2 h-2 rounded-full transition-colors',
+                          blocks.some(b => b.type === type)
+                            ? blocks.find(b => b.type === type)?.status === 'approved'
+                              ? 'bg-primary'
+                              : 'bg-primary/50'
+                            : 'bg-muted-foreground/20'
+                        )}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-muted-foreground font-medium">
+                    {fullPageProgress} of {FULL_PAGE_BLOCK_COUNT}
+                  </span>
+                  {fullPageProgress === FULL_PAGE_BLOCK_COUNT && (
+                    <Badge variant="secondary" className="text-[10px] h-4 px-1.5 bg-green-500/10 text-green-600">
+                      Complete!
+                    </Badge>
+                  )}
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center gap-1">
+                    {[...Array(Math.min(blocks.length, 5))].map((_, i) => (
+                      <div
+                        key={i}
+                        className={cn(
+                          'w-1.5 h-1.5 rounded-full transition-colors',
+                          i < approvedCount ? 'bg-primary' : 'bg-muted-foreground/30'
+                        )}
+                      />
+                    ))}
+                    {blocks.length > 5 && (
+                      <span className="text-muted-foreground ml-0.5">+{blocks.length - 5}</span>
                     )}
-                  />
-                ))}
-                {blocks.length > 5 && (
-                  <span className="text-muted-foreground ml-0.5">+{blocks.length - 5}</span>
-                )}
-              </div>
-              <span className="text-muted-foreground">
-                {blocks.length} block{blocks.length !== 1 ? 's' : ''} created
-              </span>
+                  </div>
+                  <span className="text-muted-foreground">
+                    {blocks.length} block{blocks.length !== 1 ? 's' : ''} created
+                  </span>
+                </>
+              )}
             </div>
             {approvedCount > 0 && (
               <Badge variant="secondary" className="text-[10px] h-5">
