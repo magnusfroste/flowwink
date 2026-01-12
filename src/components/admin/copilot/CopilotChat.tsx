@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from 'react';
-import { Sparkles, Check, X, ArrowUp, Loader2, CheckCircle2, Layout, Image, MessageSquare, Users, Wand2, Square } from 'lucide-react';
+import { Sparkles, Check, X, ArrowUp, Loader2, CheckCircle2, Layout, Image, MessageSquare, Users, Wand2, Square, RotateCcw } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -19,6 +19,7 @@ interface CopilotChatProps {
   onCancel: () => void;
   onFinishPage: () => void;
   onStopAutoContinue: () => void;
+  onReset: () => void;
   moduleRecommendation: ModuleRecommendation | null;
   onAcceptModules: () => void;
   onRejectModules: () => void;
@@ -61,6 +62,7 @@ export function CopilotChat({
   onCancel,
   onFinishPage,
   onStopAutoContinue,
+  onReset,
   moduleRecommendation,
   onAcceptModules,
   onRejectModules,
@@ -350,7 +352,19 @@ export function CopilotChat({
             )}
           </Button>
         </form>
-        <div className="flex justify-end">
+        <div className="flex justify-between">
+          {(messages.length > 0 || blocks.length > 0) && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={onReset} 
+              className="text-xs h-6 px-2 text-muted-foreground hover:text-destructive"
+            >
+              <RotateCcw className="w-3 h-3 mr-1" />
+              Reset page
+            </Button>
+          )}
+          <div className="flex-1" />
           <Button variant="ghost" size="sm" onClick={onCancel} className="text-xs h-6 px-2 text-muted-foreground">
             Cancel
           </Button>
