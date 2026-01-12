@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Lock, Wrench } from 'lucide-react';
@@ -35,11 +35,15 @@ function parseContent(data: {
 export default function PublicPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { data: generalSettings } = useGeneralSettings();
   const { data: seoSettings } = useSeoSettings();
   const { data: maintenanceSettings } = useMaintenanceSettings();
   const [user, setUser] = useState<unknown>(null);
   const [authLoading, setAuthLoading] = useState(true);
+
+  // Check for ?setup=true to force setup wizard (dev mode)
+  const forceSetup = searchParams.get('setup') === 'true';
 
   // Use configured homepage slug, default to 'home'
   const homepageSlug = generalSettings?.homepageSlug || 'home';
@@ -156,6 +160,11 @@ export default function PublicPage() {
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
+  }
+
+  // Force setup wizard via ?setup=true URL parameter (for testing)
+  if (forceSetup) {
+    return <SetupRequiredPage />;
   }
 
   // Database connection error - show setup page for self-hosted users
