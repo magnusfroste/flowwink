@@ -14,12 +14,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, Save, AlertTriangle, Cloud, Server, Webhook, Shield, Database, BookOpen, FileText, HelpCircle, ExternalLink, ThumbsUp, ThumbsDown, Download } from 'lucide-react';
+import { Loader2, Save, Cloud, Server, Webhook, Shield, Database, BookOpen, FileText, HelpCircle, ExternalLink, ThumbsUp, ThumbsDown, Download, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useUnsavedChanges, UnsavedChangesDialog } from '@/hooks/useUnsavedChanges';
 import { Link } from 'react-router-dom';
 import { useIsOpenAIConfigured, useIsGeminiConfigured } from '@/hooks/useIntegrationStatus';
+import { useIntegrations } from '@/hooks/useIntegrations';
 import { IntegrationWarning } from '@/components/admin/IntegrationWarning';
 import { toast } from 'sonner';
 
@@ -29,6 +30,7 @@ export default function ChatSettingsPage() {
   const [formData, setFormData] = useState<ChatSettings | null>(null);
   const isOpenAIConfigured = useIsOpenAIConfigured();
   const isGeminiConfigured = useIsGeminiConfigured();
+  const { data: integrationSettings } = useIntegrations();
 
   useEffect(() => {
     if (settings) {
@@ -223,7 +225,10 @@ export default function ChatSettingsPage() {
                 <CardHeader>
                   <CardTitle>AI Provider</CardTitle>
                   <CardDescription>
-                    Choose how AI responses should be generated
+                    Choose which AI provider powers your chat. Configure API keys and settings in{' '}
+                    <Link to="/admin/integrations" className="text-primary hover:underline">
+                      Integrations
+                    </Link>.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -235,7 +240,8 @@ export default function ChatSettingsPage() {
                         title="OpenAI"
                         description="GPT-4o, GPT-4o-mini"
                         icon={<Cloud className="h-5 w-5" />}
-                        badge="Recommended"
+                        badge={isOpenAIConfigured ? undefined : "Setup required"}
+                        badgeVariant="secondary"
                         selected={formData.aiProvider === 'openai'}
                         onClick={() => setFormData({ ...formData, aiProvider: 'openai' })}
                       />
@@ -244,7 +250,7 @@ export default function ChatSettingsPage() {
                         title="Google Gemini"
                         description="Gemini 2.0, 1.5 Pro"
                         icon={<Cloud className="h-5 w-5" />}
-                        badge="Cost-effective"
+                        badge={isGeminiConfigured ? undefined : "Setup required"}
                         badgeVariant="secondary"
                         selected={formData.aiProvider === 'gemini'}
                         onClick={() => setFormData({ ...formData, aiProvider: 'gemini' })}
@@ -254,7 +260,7 @@ export default function ChatSettingsPage() {
                         title="Local LLM"
                         description="HIPAA-compliant"
                         icon={<Server className="h-5 w-5" />}
-                        badge="Private"
+                        badge={integrationSettings?.local_llm?.enabled ? undefined : "Setup required"}
                         badgeVariant="secondary"
                         selected={formData.aiProvider === 'local'}
                         onClick={() => setFormData({ ...formData, aiProvider: 'local' })}
@@ -264,231 +270,119 @@ export default function ChatSettingsPage() {
                         title="N8N Webhook"
                         description="Agentic workflows"
                         icon={<Webhook className="h-5 w-5" />}
+                        badge={integrationSettings?.n8n?.enabled ? undefined : "Setup required"}
+                        badgeVariant="secondary"
                         selected={formData.aiProvider === 'n8n'}
                         onClick={() => setFormData({ ...formData, aiProvider: 'n8n' })}
                       />
                     </div>
 
-                    {/* OpenAI settings */}
-                    {formData.aiProvider === 'openai' && (
-                      <div className="space-y-4 pt-4 border-t">
-                        <Alert>
-                          <Cloud className="h-4 w-4" />
-                          <AlertTitle>OpenAI API</AlertTitle>
-                          <AlertDescription>
-                            Add OPENAI_API_KEY to Supabase Secrets. Get your key at platform.openai.com/api-keys
-                          </AlertDescription>
-                        </Alert>
-
-                        <div className="space-y-2">
-                          <Label>Model</Label>
-                          <Select
-                            value={formData.openaiModel}
-                            onValueChange={(value) => setFormData({ 
-                              ...formData, 
-                              openaiModel: value as ChatSettings['openaiModel']
-                            })}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="gpt-4o-mini">GPT-4o Mini (Recommended)</SelectItem>
-                              <SelectItem value="gpt-4o">GPT-4o (Powerful)</SelectItem>
-                              <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo (Legacy)</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <p className="text-xs text-muted-foreground">
-                            gpt-4o-mini: $0.15/1M input tokens (best value)
-                          </p>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="openaiBaseUrl">Base URL (Optional)</Label>
-                          <Input
-                            id="openaiBaseUrl"
-                            value={formData.openaiBaseUrl}
-                            onChange={(e) => setFormData({ ...formData, openaiBaseUrl: e.target.value })}
-                            placeholder="https://api.openai.com/v1"
-                          />
-                          <p className="text-xs text-muted-foreground">
-                            For OpenAI-compatible APIs (Azure, etc.)
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Gemini settings */}
-                    {formData.aiProvider === 'gemini' && (
-                      <div className="space-y-4 pt-4 border-t">
-                        <Alert>
-                          <Cloud className="h-4 w-4" />
-                          <AlertTitle>Google Gemini API</AlertTitle>
-                          <AlertDescription>
-                            Add GEMINI_API_KEY to Supabase Secrets. Get your key at aistudio.google.com/apikey
-                          </AlertDescription>
-                        </Alert>
-
-                        <div className="space-y-2">
-                          <Label>Model</Label>
-                          <Select
-                            value={formData.geminiModel}
-                            onValueChange={(value) => setFormData({ 
-                              ...formData, 
-                              geminiModel: value as ChatSettings['geminiModel']
-                            })}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="gemini-2.0-flash-exp">Gemini 2.0 Flash (Recommended)</SelectItem>
-                              <SelectItem value="gemini-1.5-flash">Gemini 1.5 Flash (Stable)</SelectItem>
-                              <SelectItem value="gemini-1.5-pro">Gemini 1.5 Pro (Powerful)</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <p className="text-xs text-muted-foreground">
-                            gemini-2.0-flash-exp: Free tier available, $0.075/1M tokens
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Local AI settings */}
-                    {formData.aiProvider === 'local' && (
-                      <div className="space-y-4 pt-4 border-t">
-                        <Alert className="bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-900">
-                          <Shield className="h-4 w-4 text-green-600" />
-                          <AlertTitle className="text-green-800 dark:text-green-200">HIPAA-compliant</AlertTitle>
-                          <AlertDescription className="text-green-700 dark:text-green-300">
-                            All data is processed locally. No data leaves your servers.
-                          </AlertDescription>
-                        </Alert>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="localEndpoint">Endpoint URL</Label>
-                          <Input
-                            id="localEndpoint"
-                            value={formData.localEndpoint}
-                            onChange={(e) => setFormData({ ...formData, localEndpoint: e.target.value })}
-                            placeholder="http://localhost:11434"
-                          />
-                          <p className="text-xs text-muted-foreground">
-                            OpenAI-compatible API (e.g., Ollama, vLLM, LocalAI)
-                          </p>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="localModel">Model Name</Label>
-                          <Input
-                            id="localModel"
-                            value={formData.localModel}
-                            onChange={(e) => setFormData({ ...formData, localModel: e.target.value })}
-                            placeholder="llama3"
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="localApiKey">API Key (optional)</Label>
-                          <Input
-                            id="localApiKey"
-                            type="password"
-                            value={formData.localApiKey}
-                            onChange={(e) => setFormData({ ...formData, localApiKey: e.target.value })}
-                            placeholder="If your local server requires authentication"
-                          />
-                        </div>
-                      </div>
-                    )}
-
-                    {/* N8N settings */}
-                    {formData.aiProvider === 'n8n' && (
-                      <div className="space-y-4 pt-4 border-t">
-                        <Alert>
-                          <Webhook className="h-4 w-4" />
-                          <AlertTitle>Agentic Workflows</AlertTitle>
-                          <AlertDescription>
-                            Connect the chat to N8N to perform actions such as bookings, data retrieval, etc.
-                          </AlertDescription>
-                        </Alert>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="n8nWebhookUrl">Webhook URL</Label>
-                          <Input
-                            id="n8nWebhookUrl"
-                            value={formData.n8nWebhookUrl}
-                            onChange={(e) => setFormData({ ...formData, n8nWebhookUrl: e.target.value })}
-                            placeholder="https://n8n.example.com/webhook/..."
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label>Webhook Type</Label>
-                          <Select
-                            value={formData.n8nWebhookType || 'chat'}
-                            onValueChange={(value) => setFormData({ 
-                              ...formData, 
-                              n8nWebhookType: value as 'chat' | 'generic'
-                            })}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="chat">
-                                Chat Webhook (with session memory)
-                              </SelectItem>
-                              <SelectItem value="generic">
-                                Generic Webhook (OpenAI-compatible)
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <p className="text-xs text-muted-foreground">
-                            {formData.n8nWebhookType === 'generic' 
-                              ? 'Sends full conversation history. Use for Ollama, LM Studio or custom AI logic.'
-                              : 'N8N Chat node handles session memory. Perfect for AI Agent with Memory.'}
-                          </p>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label>Trigger Mode</Label>
-                          <Select
-                            value={formData.n8nTriggerMode}
-                            onValueChange={(value) => setFormData({ 
-                              ...formData, 
-                              n8nTriggerMode: value as ChatSettings['n8nTriggerMode']
-                            })}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="always">All messages</SelectItem>
-                              <SelectItem value="keywords">Only on keywords</SelectItem>
-                              <SelectItem value="fallback">As fallback</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        {formData.n8nTriggerMode === 'keywords' && (
-                          <div className="space-y-2">
-                            <Label htmlFor="n8nKeywords">Trigger Keywords</Label>
-                            <Input
-                              id="n8nKeywords"
-                              value={formData.n8nTriggerKeywords.join(', ')}
-                              onChange={(e) => setFormData({ 
-                                ...formData, 
-                                n8nTriggerKeywords: e.target.value.split(',').map(k => k.trim()).filter(Boolean)
-                              })}
-                              placeholder="book, price, contact"
-                            />
-                            <p className="text-xs text-muted-foreground">
-                              Comma-separated keywords that trigger the N8N webhook
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    )}
+                    {/* Configuration status */}
+                    <div className="pt-4 border-t space-y-4">
+                      {formData.aiProvider === 'openai' && (
+                        isOpenAIConfigured ? (
+                          <Alert className="bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-900">
+                            <CheckCircle2 className="h-4 w-4 text-green-600" />
+                            <AlertTitle className="text-green-800 dark:text-green-200">OpenAI Ready</AlertTitle>
+                            <AlertDescription className="text-green-700 dark:text-green-300">
+                              Model: {integrationSettings?.openai?.config?.model || 'gpt-4o-mini'}.{' '}
+                              <Link to="/admin/integrations#ai" className="underline">
+                                Change settings
+                              </Link>
+                            </AlertDescription>
+                          </Alert>
+                        ) : (
+                          <Alert>
+                            <XCircle className="h-4 w-4" />
+                            <AlertTitle>OpenAI Not Configured</AlertTitle>
+                            <AlertDescription>
+                              Add your API key in{' '}
+                              <Link to="/admin/integrations#ai" className="text-primary underline">
+                                Integrations → OpenAI
+                              </Link>
+                            </AlertDescription>
+                          </Alert>
+                        )
+                      )}
+                      
+                      {formData.aiProvider === 'gemini' && (
+                        isGeminiConfigured ? (
+                          <Alert className="bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-900">
+                            <CheckCircle2 className="h-4 w-4 text-green-600" />
+                            <AlertTitle className="text-green-800 dark:text-green-200">Gemini Ready</AlertTitle>
+                            <AlertDescription className="text-green-700 dark:text-green-300">
+                              Model: {integrationSettings?.gemini?.config?.model || 'gemini-2.0-flash-exp'}.{' '}
+                              <Link to="/admin/integrations#ai" className="underline">
+                                Change settings
+                              </Link>
+                            </AlertDescription>
+                          </Alert>
+                        ) : (
+                          <Alert>
+                            <XCircle className="h-4 w-4" />
+                            <AlertTitle>Gemini Not Configured</AlertTitle>
+                            <AlertDescription>
+                              Add your API key in{' '}
+                              <Link to="/admin/integrations#ai" className="text-primary underline">
+                                Integrations → Gemini
+                              </Link>
+                            </AlertDescription>
+                          </Alert>
+                        )
+                      )}
+                      
+                      {formData.aiProvider === 'local' && (
+                        integrationSettings?.local_llm?.enabled ? (
+                          <Alert className="bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-900">
+                            <Shield className="h-4 w-4 text-green-600" />
+                            <AlertTitle className="text-green-800 dark:text-green-200">Local LLM Ready (HIPAA-compliant)</AlertTitle>
+                            <AlertDescription className="text-green-700 dark:text-green-300">
+                              Endpoint: {integrationSettings?.local_llm?.config?.endpoint || 'Not set'}.{' '}
+                              <Link to="/admin/integrations#ai" className="underline">
+                                Change settings
+                              </Link>
+                            </AlertDescription>
+                          </Alert>
+                        ) : (
+                          <Alert>
+                            <XCircle className="h-4 w-4" />
+                            <AlertTitle>Local LLM Not Configured</AlertTitle>
+                            <AlertDescription>
+                              Configure your endpoint in{' '}
+                              <Link to="/admin/integrations#ai" className="text-primary underline">
+                                Integrations → Local LLM
+                              </Link>
+                            </AlertDescription>
+                          </Alert>
+                        )
+                      )}
+                      
+                      {formData.aiProvider === 'n8n' && (
+                        integrationSettings?.n8n?.enabled ? (
+                          <Alert className="bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-900">
+                            <Webhook className="h-4 w-4 text-green-600" />
+                            <AlertTitle className="text-green-800 dark:text-green-200">N8N Ready</AlertTitle>
+                            <AlertDescription className="text-green-700 dark:text-green-300">
+                              Mode: {integrationSettings?.n8n?.config?.webhookType || 'chat'}.{' '}
+                              <Link to="/admin/integrations#automation" className="underline">
+                                Change settings
+                              </Link>
+                            </AlertDescription>
+                          </Alert>
+                        ) : (
+                          <Alert>
+                            <XCircle className="h-4 w-4" />
+                            <AlertTitle>N8N Not Configured</AlertTitle>
+                            <AlertDescription>
+                              Configure your webhook in{' '}
+                              <Link to="/admin/integrations#automation" className="text-primary underline">
+                                Integrations → N8N
+                              </Link>
+                            </AlertDescription>
+                          </Alert>
+                        )
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>

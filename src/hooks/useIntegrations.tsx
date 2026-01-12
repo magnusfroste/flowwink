@@ -3,18 +3,34 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useIntegrationStatus } from './useIntegrationStatus';
 
+// Provider-specific configuration stored per integration
+export interface IntegrationProviderConfig {
+  // OpenAI
+  baseUrl?: string;
+  model?: string;
+  // Local LLM
+  endpoint?: string;
+  // N8N
+  webhookUrl?: string;
+  webhookType?: 'chat' | 'generic';
+  triggerMode?: 'always' | 'keywords' | 'fallback';
+  triggerKeywords?: string[];
+}
+
 // Integration configuration type
 export interface IntegrationConfig {
   enabled: boolean;
   name: string;
   description: string;
   icon: string;
-  category: 'payments' | 'communication' | 'ai' | 'media';
+  category: 'payments' | 'communication' | 'ai' | 'media' | 'automation';
   features: string[];
   secretName: string;
   docsUrl: string;
   docsLabel?: string;
   settingsUrl?: string;
+  // Provider-specific config (stored per integration)
+  config?: IntegrationProviderConfig;
 }
 
 // All integrations settings
@@ -26,6 +42,8 @@ export interface IntegrationsSettings {
   gemini: IntegrationConfig;
   unsplash: IntegrationConfig;
   firecrawl: IntegrationConfig;
+  local_llm: IntegrationConfig;
+  n8n: IntegrationConfig;
 }
 
 // Default settings - all disabled by default, requiring explicit activation
@@ -69,11 +87,14 @@ export const defaultIntegrationsSettings: IntegrationsSettings = {
     description: 'GPT-4o, GPT-4o-mini',
     icon: 'Bot',
     category: 'ai',
-    features: ['AI Chat', 'Text generation', 'Content migration', 'Company enrichment'],
+    features: ['AI Chat', 'Text generation', 'Content migration'],
     secretName: 'OPENAI_API_KEY',
     docsUrl: 'https://platform.openai.com/api-keys',
     docsLabel: 'Get API key',
-    settingsUrl: '/admin/settings/chat',
+    config: {
+      baseUrl: 'https://api.openai.com/v1',
+      model: 'gpt-4o-mini',
+    },
   },
   gemini: {
     enabled: false,
@@ -81,11 +102,45 @@ export const defaultIntegrationsSettings: IntegrationsSettings = {
     description: 'Gemini 2.0, 1.5 Pro',
     icon: 'Bot',
     category: 'ai',
-    features: ['AI Chat', 'Text generation', 'Content migration', 'Company enrichment'],
+    features: ['AI Chat', 'Text generation', 'Content migration'],
     secretName: 'GEMINI_API_KEY',
     docsUrl: 'https://aistudio.google.com/apikey',
     docsLabel: 'Get API key',
-    settingsUrl: '/admin/settings/chat',
+    config: {
+      model: 'gemini-2.0-flash-exp',
+    },
+  },
+  local_llm: {
+    enabled: false,
+    name: 'Local LLM',
+    description: 'Self-hosted AI (Ollama, vLLM)',
+    icon: 'Server',
+    category: 'ai',
+    features: ['HIPAA-compliant', 'Private', 'No API costs'],
+    secretName: 'LOCAL_LLM_API_KEY',
+    docsUrl: 'https://ollama.ai/',
+    docsLabel: 'Setup guide',
+    config: {
+      endpoint: '',
+      model: 'llama3',
+    },
+  },
+  n8n: {
+    enabled: false,
+    name: 'N8N',
+    description: 'Workflow automation',
+    icon: 'Webhook',
+    category: 'automation',
+    features: ['Agentic workflows', 'Custom logic', 'Tool calling'],
+    secretName: 'N8N_API_KEY',
+    docsUrl: 'https://n8n.io/docs',
+    docsLabel: 'Setup guide',
+    config: {
+      webhookUrl: '',
+      webhookType: 'chat',
+      triggerMode: 'always',
+      triggerKeywords: [],
+    },
   },
   unsplash: {
     enabled: false,
@@ -116,7 +171,8 @@ export const INTEGRATION_CATEGORIES = {
   payments: { label: 'Payments', order: 1 },
   communication: { label: 'Communication', order: 2 },
   ai: { label: 'AI Providers', order: 3 },
-  media: { label: 'Media & Tools', order: 4 },
+  automation: { label: 'Automation', order: 4 },
+  media: { label: 'Media & Tools', order: 5 },
 } as const;
 
 // Fetch integrations settings
