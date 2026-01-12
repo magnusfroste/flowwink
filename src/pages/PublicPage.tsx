@@ -9,6 +9,7 @@ import { SeoHead, HeadScripts } from '@/components/public/SeoHead';
 import { BodyScripts } from '@/components/public/BodyScripts';
 import { CookieBanner } from '@/components/public/CookieBanner';
 import { ChatWidget } from '@/components/public/ChatWidget';
+import { ComingSoonPage } from '@/components/public/ComingSoonPage';
 import { cn } from '@/lib/utils';
 import { useSeoSettings, useMaintenanceSettings, useGeneralSettings } from '@/hooks/useSiteSettings';
 import { Button } from '@/components/ui/button';
@@ -157,7 +158,15 @@ export default function PublicPage() {
     );
   }
 
+  // No page found - show Coming Soon for homepage, 404 for other pages
   if (error || !page) {
+    // If this is the homepage request, show Coming Soon instead of 404
+    const isHomepageRequest = pageSlug === homepageSlug;
+    
+    if (isHomepageRequest) {
+      return <ComingSoonPage />;
+    }
+
     return (
       <div className="min-h-screen bg-background">
         <SeoHead title="Page not found" noIndex />
