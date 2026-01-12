@@ -56,7 +56,7 @@ export default function PublicPage() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const { data: page, isLoading, error } = useQuery({
+  const { data: page, isLoading } = useQuery({
     queryKey: ['public-page', pageSlug],
     queryFn: async () => {
       try {
@@ -72,10 +72,12 @@ export default function PublicPage() {
           }
         }
         
-        // If edge function fails (404 is valid), check status
-        if (response.status === 404) return null;
-      } catch {
-        console.log('[PublicPage] Edge function unavailable, using direct DB query');
+        // If edge function returns 404, page doesn't exist - return null (not an error)
+        if (response.status === 404) {
+          return null;
+        }
+      } catch (e) {
+        console.log('[PublicPage] Edge function unavailable, using direct DB query', e);
       }
 
       // Fallback to direct DB query
@@ -86,12 +88,16 @@ export default function PublicPage() {
         .eq('status', 'published')
         .maybeSingle();
 
-      if (dbError) throw dbError;
+      if (dbError) {
+        console.error('[PublicPage] DB error:', dbError);
+        return null; // Return null instead of throwing - treat as "page not found"
+      }
       if (!dbData) return null;
 
       return parseContent(dbData);
     },
     staleTime: 5 * 60 * 1000, // 5 min client-side cache
+    retry: false, // Don't retry on 404s
   });
 
   // Track page view
@@ -159,7 +165,7 @@ export default function PublicPage() {
   }
 
   // No page found - show Coming Soon for homepage, 404 for other pages
-  if (error || !page) {
+  if (!page) {
     // If this is the homepage request, show Coming Soon instead of 404
     const isHomepageRequest = pageSlug === homepageSlug;
     
