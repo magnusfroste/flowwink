@@ -32,6 +32,7 @@ import {
   Plug,
   Bot,
 } from "lucide-react";
+import { ConnectionStatusIndicator } from "./ConnectionStatusIndicator";
 import { useAuth } from "@/hooks/useAuth";
 import { ROLE_LABELS } from "@/types/cms";
 import { useModules, SIDEBAR_TO_MODULE, type ModulesSettings } from "@/hooks/useModules";
@@ -292,8 +293,10 @@ export function AdminSidebar() {
           ))}
         </SidebarContent>
 
-        {/* User section */}
-        <SidebarFooter className="border-t border-sidebar-border p-2">
+        {/* Connection Status & User section */}
+        <SidebarFooter className="border-t border-sidebar-border p-2 space-y-2">
+          <ConnectionStatusIndicator collapsed={isCollapsed} />
+          
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="flex items-center gap-3 w-full p-2 rounded-md hover:bg-sidebar-accent transition-colors text-left">
