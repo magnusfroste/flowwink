@@ -37,6 +37,66 @@ interface SetupResult {
   already_setup?: boolean;
 }
 
+// Step configuration for progress indicator
+const WIZARD_STEPS = [
+  { id: 'welcome', label: 'Welcome', number: 1 },
+  { id: 'credentials', label: 'Credentials', number: 2 },
+  { id: 'running', label: 'Setup', number: 2 },
+  { id: 'create-admin', label: 'Admin', number: 3 },
+  { id: 'creating-admin', label: 'Admin', number: 3 },
+  { id: 'success', label: 'Complete', number: 4 },
+  { id: 'manual', label: 'Manual', number: 2 },
+] as const;
+
+const TOTAL_STEPS = 4;
+
+function StepIndicator({ currentStep }: { currentStep: SetupStep }) {
+  const currentStepConfig = WIZARD_STEPS.find(s => s.id === currentStep);
+  const currentNumber = currentStepConfig?.number || 1;
+  
+  // Don't show for manual step
+  if (currentStep === 'manual') return null;
+  
+  return (
+    <div className="flex items-center justify-center gap-2 mb-4">
+      {Array.from({ length: TOTAL_STEPS }, (_, i) => {
+        const stepNum = i + 1;
+        const isComplete = stepNum < currentNumber;
+        const isCurrent = stepNum === currentNumber;
+        
+        return (
+          <div key={stepNum} className="flex items-center gap-2">
+            <div
+              className={`
+                w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium transition-colors
+                ${isComplete 
+                  ? 'bg-primary text-primary-foreground' 
+                  : isCurrent 
+                    ? 'bg-primary/20 text-primary border-2 border-primary' 
+                    : 'bg-muted text-muted-foreground'
+                }
+              `}
+            >
+              {isComplete ? (
+                <CheckCircle2 className="h-4 w-4" />
+              ) : (
+                stepNum
+              )}
+            </div>
+            {stepNum < TOTAL_STEPS && (
+              <div 
+                className={`w-8 h-0.5 transition-colors ${
+                  isComplete ? 'bg-primary' : 'bg-muted'
+                }`} 
+              />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export function DatabaseSetupWizard() {
   const [step, setStep] = useState<SetupStep>('welcome');
   const [serviceRoleKey, setServiceRoleKey] = useState('');
@@ -204,10 +264,11 @@ export function DatabaseSetupWizard() {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-6">
-      <Card className="w-full max-w-lg">
+      <Card className="w-full max-w-lg pt-6">
+        <StepIndicator currentStep={step} />
         {step === 'welcome' && (
           <>
-            <CardHeader className="text-center">
+            <CardHeader className="text-center pt-0">
               <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
                 <Database className="h-6 w-6 text-primary" />
               </div>
