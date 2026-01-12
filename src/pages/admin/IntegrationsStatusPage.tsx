@@ -238,6 +238,18 @@ function IntegrationConfigPanel({
             className="h-8 text-sm"
           />
         </div>
+        <div className="space-y-2">
+          <Label htmlFor="local-apikey" className="text-xs">API Key (optional)</Label>
+          <Input
+            id="local-apikey"
+            type="password"
+            value={config?.apiKey || ''}
+            onChange={(e) => onConfigChange({ ...config, apiKey: e.target.value })}
+            placeholder="sk-..."
+            className="h-8 text-sm"
+          />
+          <p className="text-xs text-muted-foreground">Required if your local LLM needs authentication</p>
+        </div>
       </div>
     );
   }
@@ -254,6 +266,18 @@ function IntegrationConfigPanel({
             placeholder="https://n8n.example.com/webhook/..."
             className="h-8 text-sm"
           />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="n8n-apikey" className="text-xs">API Key / Header Auth (optional)</Label>
+          <Input
+            id="n8n-apikey"
+            type="password"
+            value={config?.apiKey || ''}
+            onChange={(e) => onConfigChange({ ...config, apiKey: e.target.value })}
+            placeholder="Bearer token or API key"
+            className="h-8 text-sm"
+          />
+          <p className="text-xs text-muted-foreground">Sent as Authorization header if set</p>
         </div>
         <div className="space-y-2">
           <Label htmlFor="n8n-type" className="text-xs">Webhook Type</Label>
