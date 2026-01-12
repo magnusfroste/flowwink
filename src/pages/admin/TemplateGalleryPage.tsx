@@ -1,93 +1,42 @@
 import { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
-import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Card, CardContent } from "@/components/ui/card";
 import { STARTER_TEMPLATES, StarterTemplate } from "@/data/starter-templates";
-import { TemplateCard } from "@/components/admin/templates/TemplateCard";
-import { TemplateFilters, CategoryFilter, HelpStyleFilter } from "@/components/admin/templates/TemplateFilters";
 import { TemplatePreview } from "@/components/admin/templates/TemplatePreview";
 import { 
   Search, 
-  LayoutGrid, 
-  List,
+  ArrowLeft,
+  Eye,
+  ArrowRight,
   Sparkles,
-  ArrowLeft
+  FileText,
+  Bot,
+  MessageSquare
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Link } from "react-router-dom";
-
-type ViewMode = 'grid' | 'list';
 
 export default function TemplateGalleryPage() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>('all');
-  const [selectedHelpStyle, setSelectedHelpStyle] = useState<HelpStyleFilter>('all');
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [previewTemplate, setPreviewTemplate] = useState<StarterTemplate | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [hoveredTemplate, setHoveredTemplate] = useState<string | null>(null);
 
-  // Filter templates
+  // Simple search filter only
   const filteredTemplates = useMemo(() => {
-    return STARTER_TEMPLATES.filter((template) => {
-      // Search filter
-      if (searchQuery) {
-        const search = searchQuery.toLowerCase();
-        const matchesSearch = 
-          template.name.toLowerCase().includes(search) ||
-          template.description.toLowerCase().includes(search) ||
-          template.tagline.toLowerCase().includes(search);
-        if (!matchesSearch) return false;
-      }
-
-      // Category filter
-      if (selectedCategory !== 'all' && template.category !== selectedCategory) {
-        return false;
-      }
-
-      // Help style filter
-      if (selectedHelpStyle !== 'all') {
-        const templateHelpStyle = template.helpStyle || 'none';
-        if (templateHelpStyle !== selectedHelpStyle) {
-          return false;
-        }
-      }
-
-      return true;
-    });
-  }, [searchQuery, selectedCategory, selectedHelpStyle]);
-
-  // Calculate counts for filters
-  const templateCounts = useMemo(() => {
-    const categories: Record<CategoryFilter, number> = {
-      all: STARTER_TEMPLATES.length,
-      startup: 0,
-      enterprise: 0,
-      compliance: 0,
-      platform: 0,
-      helpcenter: 0,
-    };
-
-    const helpStyles: Record<HelpStyleFilter, number> = {
-      all: STARTER_TEMPLATES.length,
-      'kb-classic': 0,
-      'ai-hub': 0,
-      'hybrid': 0,
-      'none': 0,
-    };
-
-    STARTER_TEMPLATES.forEach((template) => {
-      categories[template.category]++;
-      const style = template.helpStyle || 'none';
-      helpStyles[style]++;
-    });
-
-    return { categories, helpStyles };
-  }, []);
+    if (!searchQuery) return STARTER_TEMPLATES;
+    
+    const search = searchQuery.toLowerCase();
+    return STARTER_TEMPLATES.filter((template) => 
+      template.name.toLowerCase().includes(search) ||
+      template.description.toLowerCase().includes(search) ||
+      template.tagline.toLowerCase().includes(search)
+    );
+  }, [searchQuery]);
 
   const handlePreview = (template: StarterTemplate) => {
     setPreviewTemplate(template);
@@ -95,128 +44,186 @@ export default function TemplateGalleryPage() {
   };
 
   const handleSelect = (template: StarterTemplate) => {
-    // Navigate to new-site page with template pre-selected
     navigate('/admin/new-site', { state: { selectedTemplate: template } });
   };
 
   return (
     <AdminLayout>
-      <div className="flex flex-col h-full">
+      <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" asChild>
-              <Link to="/admin/quick-start">
-                <ArrowLeft className="h-4 w-4" />
-              </Link>
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold flex items-center gap-2">
-                <Sparkles className="h-6 w-6 text-primary" />
-                Template Gallery
-              </h1>
-              <p className="text-muted-foreground">
-                Choose a professionally designed template to get started quickly
-              </p>
-            </div>
+        <div className="flex items-center gap-4 mb-8">
+          <Button variant="ghost" size="icon" asChild>
+            <Link to="/admin/quick-start">
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+          </Button>
+          <div className="flex-1">
+            <h1 className="text-2xl font-bold">Templates</h1>
+            <p className="text-muted-foreground">
+              Pick a template to get started. What you see is what you get.
+            </p>
           </div>
-          
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="text-sm">
-              {filteredTemplates.length} av {STARTER_TEMPLATES.length} templates
-            </Badge>
+          <div className="relative w-72">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search templates..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
           </div>
         </div>
 
-        <div className="flex flex-1 gap-6 min-h-0">
-          {/* Filters sidebar */}
-          <div className="w-64 shrink-0">
-            <div className="sticky top-0">
-              <div className="mb-4">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search templates..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9"
-                  />
-                </div>
-              </div>
-
-              <TemplateFilters
-                selectedCategory={selectedCategory}
-                selectedHelpStyle={selectedHelpStyle}
-                onCategoryChange={setSelectedCategory}
-                onHelpStyleChange={setSelectedHelpStyle}
-                templateCounts={templateCounts}
-              />
-            </div>
+        {/* Template grid - large visual cards */}
+        {filteredTemplates.length === 0 ? (
+          <div className="text-center py-16">
+            <p className="text-muted-foreground mb-4">No templates match your search</p>
+            <Button variant="outline" onClick={() => setSearchQuery('')}>
+              Clear search
+            </Button>
           </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredTemplates.map((template) => {
+              const pageCount = template.pages?.length || 0;
+              const hasKb = template.kbCategories && template.kbCategories.length > 0;
+              const hasBlog = template.blogPosts && template.blogPosts.length > 0;
+              const isHovered = hoveredTemplate === template.id;
+              
+              return (
+                <Card 
+                  key={template.id}
+                  className={cn(
+                    "group cursor-pointer overflow-hidden transition-all duration-300",
+                    isHovered ? "border-primary shadow-xl scale-[1.02]" : "hover:border-muted-foreground/50"
+                  )}
+                  onMouseEnter={() => setHoveredTemplate(template.id)}
+                  onMouseLeave={() => setHoveredTemplate(null)}
+                >
+                  {/* Visual preview area */}
+                  <div 
+                    className="aspect-[16/10] relative overflow-hidden"
+                    style={{ 
+                      backgroundColor: template.branding?.primaryColor || '#6366f1',
+                    }}
+                  >
+                    {/* Simulated page preview */}
+                    <div className="absolute inset-4 bg-background rounded-lg shadow-2xl overflow-hidden">
+                      {/* Mini header */}
+                      <div className="h-8 bg-muted/50 border-b flex items-center px-3 gap-2">
+                        <div 
+                          className="w-4 h-4 rounded"
+                          style={{ backgroundColor: template.branding?.primaryColor || '#6366f1' }}
+                        />
+                        <div className="flex-1" />
+                        <div className="flex gap-1">
+                          {[1, 2, 3].map((i) => (
+                            <div key={i} className="w-8 h-2 bg-muted rounded" />
+                          ))}
+                        </div>
+                      </div>
+                      {/* Mini content */}
+                      <div className="p-4 space-y-3">
+                        <div className="space-y-2">
+                          <div 
+                            className="h-3 rounded w-3/4"
+                            style={{ backgroundColor: `${template.branding?.primaryColor || '#6366f1'}30` }}
+                          />
+                          <div className="h-2 bg-muted rounded w-full" />
+                          <div className="h-2 bg-muted rounded w-5/6" />
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 pt-2">
+                          {[1, 2, 3].map((i) => (
+                            <div key={i} className="aspect-square bg-muted rounded" />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
 
-          {/* Template grid */}
-          <div className="flex-1 min-w-0">
-            {/* View controls */}
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">
-                {selectedCategory === 'all' && selectedHelpStyle === 'all' 
-                  ? 'Alla templates' 
-                  : 'Filtrerade templates'}
-              </h2>
-              <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
-                <Button
-                  variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('grid')}
-                  className="h-8 w-8 p-0"
-                >
-                  <LayoutGrid className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant={viewMode === 'list' ? 'secondary' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('list')}
-                  className="h-8 w-8 p-0"
-                >
-                  <List className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
+                    {/* Hover overlay with actions */}
+                    <div className={cn(
+                      "absolute inset-0 bg-black/60 flex items-center justify-center gap-3 transition-opacity duration-200",
+                      isHovered ? "opacity-100" : "opacity-0"
+                    )}>
+                      <Button 
+                        size="sm" 
+                        variant="secondary"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePreview(template);
+                        }}
+                      >
+                        <Eye className="h-4 w-4 mr-2" />
+                        Preview
+                      </Button>
+                      <Button 
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSelect(template);
+                        }}
+                      >
+                        Use template
+                        <ArrowRight className="h-4 w-4 ml-2" />
+                      </Button>
+                    </div>
+                  </div>
 
-            {filteredTemplates.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground">
-                  Inga templates matchar dina filter
-                </p>
-                <Button 
-                  variant="link" 
-                  onClick={() => {
-                    setSelectedCategory('all');
-                    setSelectedHelpStyle('all');
-                    setSearchQuery('');
-                  }}
-                >
-                  Rensa alla filter
-                </Button>
-              </div>
-            ) : (
-              <div className={cn(
-                "grid gap-4",
-                viewMode === 'grid' 
-                  ? "grid-cols-1 md:grid-cols-2 xl:grid-cols-3" 
-                  : "grid-cols-1"
-              )}>
-                {filteredTemplates.map((template) => (
-                  <TemplateCard
-                    key={template.id}
-                    template={template}
-                    onPreview={handlePreview}
-                    onSelect={handleSelect}
-                  />
-                ))}
-              </div>
-            )}
+                  {/* Template info */}
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <h3 className="font-semibold text-lg truncate">{template.name}</h3>
+                        <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+                          {template.tagline}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    {/* Feature badges */}
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      <Badge variant="secondary" className="text-xs">
+                        <FileText className="h-3 w-3 mr-1" />
+                        {pageCount} pages
+                      </Badge>
+                      {hasKb && (
+                        <Badge variant="secondary" className="text-xs">
+                          <Bot className="h-3 w-3 mr-1" />
+                          Knowledge base
+                        </Badge>
+                      )}
+                      {hasBlog && (
+                        <Badge variant="secondary" className="text-xs">
+                          <Sparkles className="h-3 w-3 mr-1" />
+                          Blog
+                        </Badge>
+                      )}
+                      {template.chatSettings && (
+                        <Badge variant="secondary" className="text-xs">
+                          <MessageSquare className="h-3 w-3 mr-1" />
+                          AI Chat
+                        </Badge>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
+        )}
+
+        {/* Copilot upsell */}
+        <div className="mt-12 text-center">
+          <p className="text-muted-foreground mb-3">
+            Can't find what you're looking for?
+          </p>
+          <Button variant="outline" asChild>
+            <Link to="/admin/copilot">
+              <Bot className="h-4 w-4 mr-2" />
+              Let Copilot build it for you
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </Link>
+          </Button>
         </div>
       </div>
 
