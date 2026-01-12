@@ -29,8 +29,8 @@ export function CopilotPreviewPanel({
   const [deviceMode, setDeviceMode] = useState<DeviceMode>('desktop');
   const [activeTab, setActiveTab] = useState<'blocks' | 'modules'>('blocks');
 
-  const pendingBlocks = blocks.filter(b => b.status === 'pending');
-  const approvedBlocks = blocks.filter(b => b.status === 'approved');
+  // All blocks are now auto-approved, so we just show them all
+  const activeBlocks = blocks.filter(b => b.status !== 'rejected');
 
   const isEmpty = blocks.length === 0 && !moduleRecommendation;
 
@@ -92,46 +92,22 @@ export function CopilotPreviewPanel({
             {isEmpty ? (
               <EmptyState />
             ) : (
-              <>
-                {/* Pending blocks */}
-                {pendingBlocks.length > 0 && (
-                  <div className="space-y-3">
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Pending approval
-                    </p>
-                    {pendingBlocks.map((block) => (
-                      <CopilotArtifact
-                        key={block.id}
-                        block={block}
-                        onApprove={() => onApprove(block.id)}
-                        onReject={() => onReject(block.id)}
-                        onRegenerate={(feedback) => onRegenerate(block.id, feedback)}
-                        deviceMode={deviceMode}
-                      />
-                    ))}
-                  </div>
-                )}
-
-                {/* Approved blocks */}
-                {approvedBlocks.length > 0 && (
-                  <div className="space-y-3">
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Approved blocks
-                    </p>
-                    {approvedBlocks.map((block) => (
-                      <CopilotArtifact
-                        key={block.id}
-                        block={block}
-                        onApprove={() => {}}
-                        onReject={() => {}}
-                        onRegenerate={() => {}}
-                        deviceMode={deviceMode}
-                        isApproved
-                      />
-                    ))}
-                  </div>
-                )}
-              </>
+              <div className="space-y-3">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  Page blocks ({activeBlocks.length})
+                </p>
+                {activeBlocks.map((block) => (
+                  <CopilotArtifact
+                    key={block.id}
+                    block={block}
+                    onApprove={() => onApprove(block.id)}
+                    onReject={() => onReject(block.id)}
+                    onRegenerate={(feedback) => onRegenerate(block.id, feedback)}
+                    deviceMode={deviceMode}
+                    isApproved={block.status === 'approved'}
+                  />
+                ))}
+              </div>
             )}
           </div>
         )}
