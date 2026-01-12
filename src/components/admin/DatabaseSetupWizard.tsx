@@ -10,11 +10,13 @@ import {
   Terminal,
   UserPlus,
   Mail,
-  Lock
+  Lock,
+  Info
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import {
   Card,
   CardContent,
@@ -46,6 +48,7 @@ export function DatabaseSetupWizard() {
   const [adminPassword, setAdminPassword] = useState('');
   const [adminName, setAdminName] = useState('');
   const [isCreatingAdmin, setIsCreatingAdmin] = useState(false);
+  const [skipEmailConfirmation, setSkipEmailConfirmation] = useState(true);
 
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 
@@ -154,6 +157,7 @@ export function DatabaseSetupWizard() {
             admin_email: adminEmail,
             admin_password: adminPassword,
             admin_name: adminName || adminEmail,
+            skip_email_confirmation: skipEmailConfirmation,
           }),
         }
       );
@@ -410,6 +414,33 @@ export function DatabaseSetupWizard() {
                     Must be at least 8 characters long
                   </p>
                 </div>
+
+                <div className="flex items-center justify-between rounded-lg border p-3">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="skip-email" className="text-sm font-medium cursor-pointer">
+                      Skip email verification
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Recommended for development. Disable in production.
+                    </p>
+                  </div>
+                  <Switch
+                    id="skip-email"
+                    checked={skipEmailConfirmation}
+                    onCheckedChange={setSkipEmailConfirmation}
+                  />
+                </div>
+
+                {!skipEmailConfirmation && (
+                  <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 text-sm">
+                    <div className="flex gap-2">
+                      <Info className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                      <p className="text-muted-foreground">
+                        Email verification is enabled. The admin will need to confirm their email before signing in.
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-2">
