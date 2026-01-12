@@ -33,7 +33,7 @@ MODULE RECOMMENDATIONS BY INDUSTRY:
 - SaaS/Tech: blog, knowledgeBase, chat, newsletter
 - Contractors: forms, bookings, leads
 
-BLOCK TYPES: hero, text, features, cta, testimonials, stats, team, logos, timeline, accordion, image, gallery, youtube, two-column, separator, form, chat, newsletter, map, booking, pricing, products, contact
+BLOCK TYPES YOU CAN CREATE (use ONLY these): hero, text, features, cta, testimonials, stats, team, logos, timeline, accordion, gallery, separator, contact, quote, pricing
 
 CONVERSATION STYLE:
 - Be warm and encouraging
@@ -219,6 +219,212 @@ serve(async (req) => {
               }
             },
             required: ["testimonials"]
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "create_text_block",
+          description: "Create a text/content section with rich text",
+          parameters: {
+            type: "object",
+            properties: {
+              content: { type: "string", description: "HTML content or plain text" }
+            },
+            required: ["content"]
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "create_stats_block",
+          description: "Create a statistics section with numbers and labels",
+          parameters: {
+            type: "object",
+            properties: {
+              title: { type: "string" },
+              stats: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    value: { type: "string", description: "The number or value" },
+                    label: { type: "string", description: "Description of the stat" }
+                  }
+                }
+              }
+            },
+            required: ["stats"]
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "create_team_block",
+          description: "Create a team section showcasing team members",
+          parameters: {
+            type: "object",
+            properties: {
+              title: { type: "string" },
+              members: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    name: { type: "string" },
+                    role: { type: "string" },
+                    bio: { type: "string" }
+                  }
+                }
+              }
+            },
+            required: ["members"]
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "create_logos_block",
+          description: "Create a logos section showing partner or client logos",
+          parameters: {
+            type: "object",
+            properties: {
+              title: { type: "string" },
+              logos: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    name: { type: "string" },
+                    url: { type: "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "create_timeline_block",
+          description: "Create a timeline section showing history or process steps",
+          parameters: {
+            type: "object",
+            properties: {
+              title: { type: "string" },
+              items: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    title: { type: "string" },
+                    description: { type: "string" },
+                    date: { type: "string" }
+                  }
+                }
+              }
+            },
+            required: ["items"]
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "create_accordion_block",
+          description: "Create an FAQ/accordion section with expandable items",
+          parameters: {
+            type: "object",
+            properties: {
+              title: { type: "string" },
+              items: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    question: { type: "string" },
+                    answer: { type: "string" }
+                  }
+                }
+              }
+            },
+            required: ["items"]
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "create_gallery_block",
+          description: "Create an image gallery section",
+          parameters: {
+            type: "object",
+            properties: {
+              layout: { type: "string", enum: ["grid", "masonry"], description: "Gallery layout style" },
+              columns: { type: "number", enum: [2, 3, 4], description: "Number of columns" }
+            }
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "create_separator_block",
+          description: "Create a visual separator between sections",
+          parameters: {
+            type: "object",
+            properties: {
+              style: { type: "string", enum: ["line", "dots", "ornament", "space"] },
+              spacing: { type: "string", enum: ["sm", "md", "lg"] }
+            }
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "create_quote_block",
+          description: "Create a quote/testimonial highlight block",
+          parameters: {
+            type: "object",
+            properties: {
+              text: { type: "string", description: "The quote text" },
+              author: { type: "string" },
+              source: { type: "string" }
+            },
+            required: ["text"]
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "create_pricing_block",
+          description: "Create a pricing table section",
+          parameters: {
+            type: "object",
+            properties: {
+              title: { type: "string" },
+              plans: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    name: { type: "string" },
+                    price: { type: "string" },
+                    period: { type: "string" },
+                    features: { type: "array", items: { type: "string" } },
+                    highlighted: { type: "boolean" }
+                  }
+                }
+              }
+            },
+            required: ["plans"]
           }
         }
       }
