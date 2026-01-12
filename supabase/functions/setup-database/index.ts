@@ -261,7 +261,8 @@ Deno.serve(async (req) => {
       create_admin,
       admin_email,
       admin_password,
-      admin_name
+      admin_name,
+      skip_email_confirmation = true
     } = await req.json();
 
     if (!service_role_key) {
@@ -328,7 +329,7 @@ Deno.serve(async (req) => {
       const { data: newUser, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
         email: admin_email,
         password: admin_password,
-        email_confirm: true,
+        email_confirm: skip_email_confirmation,
         user_metadata: { full_name: admin_name || admin_email }
       });
 
