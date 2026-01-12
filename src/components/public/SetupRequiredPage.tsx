@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Database, ExternalLink, Terminal, RefreshCw, Wand2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SeoHead } from '@/components/public/SeoHead';
@@ -7,15 +7,25 @@ import { DatabaseSetupWizard } from '@/components/admin/DatabaseSetupWizard';
 
 export function SetupRequiredPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [isRetrying, setIsRetrying] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
+
+  // Check for ?setup=true URL parameter to force wizard display (dev mode)
+  const forceSetup = searchParams.get('setup') === 'true';
+
+  useEffect(() => {
+    if (forceSetup) {
+      setShowWizard(true);
+    }
+  }, [forceSetup]);
 
   const handleRetry = () => {
     setIsRetrying(true);
     window.location.reload();
   };
 
-  // Show the setup wizard if user chose auto-setup
+  // Show the setup wizard if user chose auto-setup or ?setup=true
   if (showWizard) {
     return <DatabaseSetupWizard />;
   }
