@@ -1591,3 +1591,131 @@ export const hybridHelpCategories: TemplateKbCategory[] = [
     ],
   },
 ];
+
+// =====================================================
+// FlowWink Agency Knowledge Base Articles
+// =====================================================
+
+export const agencyKbCategories: TemplateKbCategory[] = [
+  {
+    name: 'Getting Started',
+    slug: 'getting-started',
+    description: 'Set up FlowWink for your agency in minutes.',
+    icon: 'Rocket',
+    articles: [
+      {
+        title: '5-Minute Docker Setup',
+        slug: 'docker-setup',
+        question: 'How do I install FlowWink with Docker?',
+        answer_text: 'FlowWink runs anywhere Docker runs. Quick setup: 1) Clone the repository, 2) Copy .env.example to .env and configure your database URL, 3) Run docker-compose up -d, 4) Access your instance at localhost:3000. The entire process takes under 5 minutes on a fresh server.',
+        is_featured: true,
+        include_in_chat: true,
+      },
+      {
+        title: 'Your First Client Site',
+        slug: 'first-client-site',
+        question: 'How do I create a site for my first client?',
+        answer_text: 'After installation: 1) Log into admin at /admin, 2) Navigate to Settings → Site Settings, 3) Configure the organization name and branding for your client, 4) Create pages using the visual block editor, 5) Set up a custom domain. You can duplicate this setup for each new client using Docker containers or database separation.',
+        is_featured: true,
+        include_in_chat: true,
+      },
+      {
+        title: 'White-Labeling Guide',
+        slug: 'white-labeling',
+        question: 'How do I white-label FlowWink for my agency?',
+        answer_text: 'FlowWink is fully white-labelable: 1) Replace the logo in Settings → Branding, 2) Customize colors and fonts to match your agency brand, 3) Configure custom domains per client, 4) Update email templates with your branding, 5) Customize the AI chat system prompt to reference your agency. There are no "Powered by" badges to remove.',
+        include_in_chat: true,
+      },
+    ],
+  },
+  {
+    name: 'Multi-Site Management',
+    slug: 'multi-site',
+    description: 'Managing multiple client sites efficiently.',
+    icon: 'Layers',
+    articles: [
+      {
+        title: 'Architecture Options',
+        slug: 'architecture',
+        question: 'How should I structure multiple client sites?',
+        answer_text: 'Three approaches: 1) Single instance with shared database (simplest, best for related sites), 2) Single instance with separate databases per client (more isolation), 3) Separate Docker containers per client (complete isolation, easiest to transfer). Most agencies use approach 2 or 3 depending on client requirements.',
+        is_featured: true,
+        include_in_chat: true,
+      },
+      {
+        title: 'Template Reuse',
+        slug: 'template-reuse',
+        question: 'Can I reuse page templates across clients?',
+        answer_text: 'Yes! Create template pages in a "master" instance, then export and import them to client sites. Or use Global Blocks to create reusable components. Many agencies maintain a template library of common page layouts (service pages, about pages, contact pages) that can be customized per client.',
+        include_in_chat: true,
+      },
+      {
+        title: 'Client Onboarding',
+        slug: 'onboarding',
+        question: 'What is the best way to onboard new clients?',
+        answer_text: 'Our recommended workflow: 1) Clone your agency template repository, 2) Configure client branding, 3) Import starter content, 4) Train client on the admin interface (most need only 30-minute walkthrough), 5) Set up their user account with appropriate permissions. Most agencies can complete client onboarding in under 2 hours.',
+        include_in_chat: true,
+      },
+    ],
+  },
+  {
+    name: 'Migrations',
+    slug: 'migrations',
+    description: 'Moving client sites from other platforms.',
+    icon: 'ArrowRightLeft',
+    articles: [
+      {
+        title: 'From WordPress',
+        slug: 'from-wordpress',
+        question: 'How do I migrate a client from WordPress?',
+        answer_text: 'WordPress migration steps: 1) Export WordPress content using WP All Export or similar, 2) Use FlowWink import tool to bring in pages and posts, 3) Recreate the design using FlowWink blocks (often cleaner than the original), 4) Redirect old URLs to new slugs, 5) Test thoroughly before DNS cutover. Typical migration: 4-8 hours depending on site complexity.',
+        is_featured: true,
+        include_in_chat: true,
+      },
+      {
+        title: 'From Webflow',
+        slug: 'from-webflow',
+        question: 'How do I migrate a client from Webflow?',
+        answer_text: 'Webflow migration: 1) Export Webflow content (CMS items export to CSV), 2) Design is typically recreated in FlowWink (block-based approach is different), 3) Import blog posts and CMS content, 4) Set up redirects for URL changes, 5) Cancel Webflow subscription after successful cutover. Most agencies find FlowWink simpler to maintain than Webflow.',
+        include_in_chat: true,
+      },
+      {
+        title: 'From Squarespace',
+        slug: 'from-squarespace',
+        question: 'How do I migrate a client from Squarespace?',
+        answer_text: 'Squarespace migration: 1) Export content using Squarespace export (limited to blog and pages), 2) Download all images manually, 3) Recreate pages in FlowWink using the block editor, 4) Import blog posts, 5) Test and cutover. Clients often appreciate the simpler FlowWink admin compared to Squarespace.',
+        include_in_chat: true,
+      },
+    ],
+  },
+  {
+    name: 'Pricing & Billing',
+    slug: 'pricing',
+    description: 'Understanding FlowWink costs for agencies.',
+    icon: 'DollarSign',
+    articles: [
+      {
+        title: 'Is FlowWink Really Free?',
+        slug: 'is-it-free',
+        question: 'Is FlowWink really free to use?',
+        answer_text: 'Yes, FlowWink is 100% free and open source. You pay only for your infrastructure (VPS hosting, typically €10-50/month for multiple sites). There are no per-site fees, no user limits, no feature gates. The code is MIT licensed, meaning you can use, modify, and distribute it freely.',
+        is_featured: true,
+        include_in_chat: true,
+      },
+      {
+        title: 'Infrastructure Costs',
+        slug: 'infrastructure-costs',
+        question: 'What are the typical infrastructure costs?',
+        answer_text: 'Typical costs: 1) VPS hosting: €10-50/month depending on traffic, 2) Domain names: €10-15/year per client domain, 3) Email sending: Often free tier is sufficient. A €20/month VPS (Hetzner, DigitalOcean) can easily host 20+ client sites. That is €1 per site per month.',
+        include_in_chat: true,
+      },
+      {
+        title: 'Managed Hosting Option',
+        slug: 'managed-hosting',
+        question: 'Do you offer managed hosting?',
+        answer_text: 'Yes, if you prefer not to manage infrastructure, we offer managed hosting starting at €49/site/month. This includes automatic updates, backups, monitoring, and priority support. Many agencies start self-hosted and move high-value clients to managed hosting for peace of mind.',
+        include_in_chat: true,
+      },
+    ],
+  },
+];
