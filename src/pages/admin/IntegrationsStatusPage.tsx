@@ -141,6 +141,70 @@ function TestAIConnectionButton({
   );
 }
 
+// Test Config-based Connection Button (Local LLM, N8N)
+function TestConfigConnectionButton({ 
+  provider, 
+  config,
+  isEnabled 
+}: { 
+  provider: 'local_llm' | 'n8n'; 
+  config?: IntegrationProviderConfig;
+  isEnabled: boolean;
+}) {
+  const [isTesting, setIsTesting] = useState(false);
+
+  const canTest = isEnabled && (
+    (provider === 'local_llm' && config?.endpoint) ||
+    (provider === 'n8n' && config?.webhookUrl)
+  );
+
+  const handleTest = async () => {
+    if (!canTest) return;
+    
+    setIsTesting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('test-ai-connection', {
+        body: { provider, config }
+      });
+
+      if (error) {
+        toast.error(`Test failed: ${error.message}`);
+        return;
+      }
+
+      const providerName = provider === 'local_llm' ? 'Local LLM' : 'N8N';
+      if (data?.success) {
+        toast.success(`${providerName} connection verified! ${data.model ? `Model: ${data.model}` : ''}`);
+      } else {
+        toast.error(`Test failed: ${data?.error || 'Unknown error'}`);
+      }
+    } catch (err) {
+      toast.error(`Test failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally {
+      setIsTesting(false);
+    }
+  };
+
+  if (!canTest) return null;
+
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={handleTest}
+      disabled={isTesting}
+      className="gap-1.5"
+    >
+      {isTesting ? (
+        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+      ) : (
+        <Zap className="h-3.5 w-3.5" />
+      )}
+      Test Connection
+    </Button>
+  );
+}
+
 // Integration Configuration Component
 function IntegrationConfigPanel({ 
   integrationKey,
@@ -577,11 +641,20 @@ export default function IntegrationsStatusPage() {
 
                             {/* Actions */}
                             <div className="flex items-center gap-2 flex-wrap">
-                              {/* Test Connection Button for AI integrations */}
+                              {/* Test Connection Button for AI integrations with secrets */}
                               {(key === 'openai' || key === 'gemini') && (
                                 <TestAIConnectionButton 
                                   provider={key} 
                                   hasKey={hasKey} 
+                                  isEnabled={isEnabled} 
+                                />
+                              )}
+
+                              {/* Test Connection Button for config-based integrations */}
+                              {(key === 'local_llm' || key === 'n8n') && (
+                                <TestConfigConnectionButton 
+                                  provider={key} 
+                                  config={currentConfig}
                                   isEnabled={isEnabled} 
                                 />
                               )}
