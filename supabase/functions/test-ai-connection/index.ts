@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { provider } = await req.json();
+    const { provider, config } = await req.json();
     
     let result: { success: boolean; provider: string; model?: string; error?: string };
 
@@ -102,9 +102,139 @@ serve(async (req) => {
         model: 'gemini-1.5-flash'
       };
 
+    } else if (provider === 'local_llm') {
+      // Test local LLM connection using config from request
+      const endpoint = config?.endpoint;
+      const model = config?.model || 'llama3';
+      const apiKey = config?.apiKey;
+
+      if (!endpoint) {
+        return new Response(
+          JSON.stringify({ success: false, provider: 'local_llm', error: 'Endpoint URL is required' }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      try {
+        // Try OpenAI-compatible endpoint format
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+        };
+        if (apiKey) {
+          headers['Authorization'] = `Bearer ${apiKey}`;
+        }
+
+        const baseUrl = endpoint.replace(/\/$/, '');
+        const chatEndpoint = baseUrl.includes('/v1') ? `${baseUrl}/chat/completions` : `${baseUrl}/v1/chat/completions`;
+
+        const response = await fetch(chatEndpoint, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            model,
+            messages: [{ role: 'user', content: 'Say "OK"' }],
+            max_tokens: 5,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.text();
+          console.error('Local LLM API error:', response.status, errorData);
+          return new Response(
+            JSON.stringify({ 
+              success: false, 
+              provider: 'local_llm', 
+              error: `API returned ${response.status}: ${response.statusText}` 
+            }),
+            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        const data = await response.json();
+        result = { 
+          success: true, 
+          provider: 'local_llm', 
+          model: data.model || model
+        };
+      } catch (fetchError) {
+        console.error('Local LLM connection error:', fetchError);
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            provider: 'local_llm', 
+            error: `Connection failed: ${fetchError instanceof Error ? fetchError.message : 'Unknown error'}` 
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+    } else if (provider === 'n8n') {
+      // Test n8n webhook connection
+      const webhookUrl = config?.webhookUrl;
+      const apiKey = config?.apiKey;
+      const webhookType = config?.webhookType || 'chat';
+
+      if (!webhookUrl) {
+        return new Response(
+          JSON.stringify({ success: false, provider: 'n8n', error: 'Webhook URL is required' }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      try {
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+        };
+        if (apiKey) {
+          headers['Authorization'] = apiKey.startsWith('Bearer ') ? apiKey : `Bearer ${apiKey}`;
+        }
+
+        // For n8n webhooks, we do a test ping
+        // Chat webhooks expect { action: 'sendMessage', ... }
+        // Generic webhooks expect OpenAI-compatible format
+        const testBody = webhookType === 'chat' 
+          ? { action: 'sendMessage', chatInput: 'test', sessionId: 'test-connection' }
+          : { messages: [{ role: 'user', content: 'test' }], model: 'test' };
+
+        const response = await fetch(webhookUrl, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(testBody),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.text();
+          console.error('N8N webhook error:', response.status, errorData);
+          return new Response(
+            JSON.stringify({ 
+              success: false, 
+              provider: 'n8n', 
+              error: `Webhook returned ${response.status}: ${response.statusText}` 
+            }),
+            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        result = { 
+          success: true, 
+          provider: 'n8n', 
+          model: `${webhookType} webhook`
+        };
+      } catch (fetchError) {
+        console.error('N8N connection error:', fetchError);
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            provider: 'n8n', 
+            error: `Connection failed: ${fetchError instanceof Error ? fetchError.message : 'Unknown error'}` 
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
     } else {
       return new Response(
-        JSON.stringify({ success: false, error: 'Invalid provider. Use "openai" or "gemini".' }),
+        JSON.stringify({ success: false, error: 'Invalid provider. Use "openai", "gemini", "local_llm", or "n8n".' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
