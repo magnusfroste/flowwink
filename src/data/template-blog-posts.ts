@@ -685,3 +685,139 @@ export const flowwinkBlogPosts: TemplateBlogPost[] = [
     meta: { description: 'Discover 10 real-world webhook automation patterns that save hours of manual work. Learn how to integrate your CMS with CRMs, email platforms, analytics, and more.' },
   },
 ];
+
+// =====================================================
+// FLOWWINK AGENCY - Agency Blog Posts
+// =====================================================
+export const agencyBlogPosts: TemplateBlogPost[] = [
+  {
+    title: 'The Hidden Cost of Webflow: Why Agencies Are Switching to Self-Hosted',
+    slug: 'hidden-cost-webflow-agencies-switching-self-hosted',
+    excerpt: 'Webflow charges €20-200 per client site. For agencies managing 20+ sites, that adds up fast. Here is a better way.',
+    featured_image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1200',
+    featured_image_alt: 'Dashboard showing cost savings',
+    is_featured: true,
+    content: [
+      createTextBlock({
+        type: 'doc',
+        content: [
+          p('Web agencies are facing a profitability crisis. SaaS tools that promise to save time are quietly eating into margins with per-client fees that compound as you grow.'),
+          h2('The Math That Matters'),
+          p('Let us do the math. A mid-tier Webflow CMS plan costs around €40 per site per month. Managing 20 client sites means €800 monthly just for the CMS platform—before hosting, before your time, before anything else.'),
+          ul(
+            '20 sites × €40/month = €9,600/year in platform fees alone',
+            'That is revenue going to Webflow instead of your agency',
+            'And the costs only grow as you add more clients'
+          ),
+          h2('The Self-Hosted Alternative'),
+          p('With a self-hosted CMS like FlowWink, you pay for infrastructure, not per-site licenses. A €20/month VPS can host dozens of client sites. The math becomes dramatically different:'),
+          ul(
+            '20 sites on €20/month VPS = €240/year total',
+            'Savings: €9,360/year that stays in your pocket',
+            'No per-client fees, ever'
+          ),
+          h2('But What About the Work?'),
+          p('The objection is always maintenance. Who wants to manage servers? The reality: modern containerized deployments (Docker, Coolify) make this trivial. One-click updates, automatic SSL, zero downtime.'),
+          h2('The Real Win: Ownership'),
+          p('Beyond cost, self-hosting gives you control. Your clients are not locked into a platform. You can customize freely. And you can white-label everything—no "Made with Webflow" badges.'),
+          h2('Getting Started'),
+          p('The transition is easier than you think. Start with one new client on FlowWink. Learn the workflow. Then migrate existing clients as contracts renew. Within a year, you can transform your agency economics.'),
+        ],
+      }),
+    ],
+    meta: { description: 'Understand the true cost of Webflow for agencies and how self-hosted alternatives like FlowWink can save €10,000+ annually while providing more control.' },
+  },
+  {
+    title: 'How to Price Client Websites for Recurring Revenue',
+    slug: 'how-price-client-websites-recurring-revenue',
+    excerpt: 'Project-based pricing is a trap. Here is how to structure website pricing that builds predictable monthly revenue.',
+    featured_image: 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=1200',
+    featured_image_alt: 'Financial charts showing recurring revenue growth',
+    content: [
+      createTextBlock({
+        type: 'doc',
+        content: [
+          p('The feast-or-famine cycle kills agencies. Big project, big payment, then scrambling for the next one. Recurring revenue changes everything.'),
+          h2('The Three-Part Pricing Model'),
+          p('Smart agencies split website pricing into three components:'),
+          h3('1. Setup Fee (One-Time)'),
+          p('Cover your initial costs: design, development, content migration. This should be profitable on its own, but does not need to be your main revenue driver.'),
+          h3('2. Monthly Management (Recurring)'),
+          p('This is where agencies build value. Include:'),
+          ul(
+            'Hosting and infrastructure',
+            'Security updates and monitoring',
+            'Content updates (with limits)',
+            'Performance optimization',
+            'Basic analytics reporting'
+          ),
+          p('Typical range: €99-499/month depending on complexity.'),
+          h3('3. Additional Services (Variable)'),
+          p('Beyond the base management, offer add-ons:'),
+          ul(
+            'Additional content updates',
+            'SEO optimization packages',
+            'New page development',
+            'Marketing campaign support'
+          ),
+          h2('The Math That Works'),
+          p('Example: 20 clients at €199/month average = €3,980 monthly recurring revenue. That is nearly €48,000 per year in predictable income, before any project work.'),
+          h2('How Self-Hosting Enables Better Margins'),
+          p('The key to profitable recurring revenue is low delivery costs. When you self-host, your actual cost per client site drops to near-zero. The €199/month is almost pure margin.'),
+          h2('Selling the Value'),
+          p('Clients understand ongoing value when you frame it right. They are not paying for "hosting"—they are paying for a maintained, secure, high-performing website that just works.'),
+        ],
+      }),
+    ],
+    meta: { description: 'Learn how to price client websites with setup fees and recurring monthly management for predictable agency revenue. Includes practical examples and margin analysis.' },
+  },
+  {
+    title: 'White-Label Best Practices: Delivering Client Sites That Look Like Yours',
+    slug: 'white-label-best-practices-client-sites',
+    excerpt: 'White-labeling is not just about removing logos. It is about creating a seamless experience that builds your agency brand.',
+    featured_image: 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?w=1200',
+    featured_image_alt: 'Designer working on branded interface',
+    content: [
+      createTextBlock({
+        type: 'doc',
+        content: [
+          p('When clients log into their website admin, what do they see? With most SaaS platforms, they see the platform brand. With white-label solutions, they see yours.'),
+          h2('Why White-Labeling Matters'),
+          p('Every touchpoint is a branding opportunity. When clients use a platform with your logo, colors, and domain, you reinforce your relationship. They think of you, not some third party.'),
+          h2('The Complete White-Label Checklist'),
+          h3('Visual Branding'),
+          ul(
+            'Replace all logos with your agency brand',
+            'Apply your color scheme to the admin interface',
+            'Use custom fonts that match your brand guidelines',
+            'Design custom email templates for notifications'
+          ),
+          h3('Domain Configuration'),
+          ul(
+            'Use client subdomains (client.youragency.com) or custom domains',
+            'Ensure SSL certificates are properly configured',
+            'Set up proper email DNS for transactional emails'
+          ),
+          h3('Experience Customization'),
+          ul(
+            'Write help text in your voice',
+            'Configure AI assistants with your agency context',
+            'Create onboarding guides with your branding',
+            'Set up support channels that route to your team'
+          ),
+          h2('What to Avoid'),
+          p('Common white-label mistakes:'),
+          ul(
+            'Inconsistent branding across different areas',
+            'Forgetting to customize error messages',
+            'Leaving default placeholder content',
+            'Exposing raw platform URLs in emails or links'
+          ),
+          h2('Tools That Support White-Labeling'),
+          p('Not all platforms are equal. Self-hosted solutions like FlowWink give you complete control. SaaS platforms vary—some offer white-labeling only on expensive enterprise plans.'),
+        ],
+      }),
+    ],
+    meta: { description: 'Master white-label website delivery with this comprehensive guide covering branding, domains, customization, and common pitfalls to avoid.' },
+  },
+];
