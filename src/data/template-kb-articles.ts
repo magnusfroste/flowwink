@@ -1013,7 +1013,7 @@ export const flowwinkKbCategories: TemplateKbCategory[] = [
         title: 'Analytics Module',
         slug: 'analytics-module',
         question: 'What is the Analytics module?',
-        answer_text: 'Track page views, visitor stats, popular content, and traffic sources. Privacy-focused with no third-party cookies.',
+        answer_text: 'Track page views, visitor stats, popular content, traffic sources, and country/city-level geography. Privacy-focused with no third-party cookies. View trends over time and identify top-performing content.',
         include_in_chat: true,
       },
       {
@@ -1028,6 +1028,93 @@ export const flowwinkKbCategories: TemplateKbCategory[] = [
         slug: 'media-library-module',
         question: 'What is the Media Library module?',
         answer_text: 'Centralized management for images and files. Includes auto-optimization, Unsplash integration, and image cropping. This is a core module.',
+        include_in_chat: true,
+      },
+    ],
+  },
+
+  // ===== SELF-HOSTING & DEPLOYMENT =====
+  {
+    name: 'Self-Hosting & Deployment',
+    slug: 'self-hosting',
+    description: 'Run FlowWink on your own infrastructure with Docker.',
+    icon: 'Server',
+    articles: [
+      {
+        title: 'Self-Hosting Overview',
+        slug: 'self-hosting-overview',
+        question: 'Can I self-host FlowWink?',
+        answer_text: 'Yes! FlowWink is fully self-hostable using Docker. Download the official image from GitHub Container Registry, configure your environment variables, and run with docker-compose. Benefits include: complete data sovereignty, private LLM support, custom domain, and no per-seat licensing.',
+        is_featured: true,
+        include_in_chat: true,
+      },
+      {
+        title: 'Docker Quick Start',
+        slug: 'docker-quickstart',
+        question: 'How do I deploy FlowWink with Docker?',
+        answer_text: 'Quick start: 1) Create docker-compose.yml with the FlowWink image. 2) Set environment variables for Supabase connection. 3) Run docker-compose up -d. 4) Access at localhost:8080. See the docs/DOCKER-QUICKSTART.md file for complete instructions.',
+        is_featured: true,
+        include_in_chat: true,
+      },
+      {
+        title: 'Environment Variables',
+        slug: 'environment-variables',
+        question: 'What environment variables do I need to configure?',
+        answer_text: 'Required: VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY. Optional: API keys for OpenAI, Gemini, Resend (email), Unsplash, Firecrawl. For private LLM: configure endpoint URL in integrations settings. All secrets are stored securely in your Supabase project.',
+        include_in_chat: true,
+      },
+      {
+        title: 'Connecting Your Domain',
+        slug: 'connecting-domain',
+        question: 'How do I connect my custom domain?',
+        answer_text: 'For self-hosted: Configure your reverse proxy (nginx, Caddy, Traefik) to point to the FlowWink container. Add SSL with Let\'s Encrypt. For Lovable Cloud: Add your domain in Project Settings → Domains. Create the required DNS records pointing to Lovable\'s infrastructure.',
+        include_in_chat: true,
+      },
+      {
+        title: 'Upgrading FlowWink',
+        slug: 'upgrading',
+        question: 'How do I upgrade to a new version?',
+        answer_text: 'For Docker: Pull the latest image (docker pull ghcr.io/magnusfroste/flowwink:latest) and restart your container. Database migrations run automatically on startup. Always backup your database before major upgrades. Check CHANGELOG.md for breaking changes.',
+        include_in_chat: true,
+      },
+    ],
+  },
+
+  // ===== AI CONFIGURATION =====
+  {
+    name: 'AI Configuration',
+    slug: 'ai-configuration',
+    description: 'Configure AI providers and test connections.',
+    icon: 'Brain',
+    articles: [
+      {
+        title: 'AI Providers Overview',
+        slug: 'ai-providers',
+        question: 'What AI providers does FlowWink support?',
+        answer_text: 'FlowWink supports 5 AI providers: 1) Lovable AI (default, no API key needed), 2) OpenAI (GPT models), 3) Google Gemini, 4) Local LLM (self-hosted OpenAI-compatible), 5) N8N Webhook (custom AI workflows). Configure in Admin → Settings → Integrations.',
+        is_featured: true,
+        include_in_chat: true,
+      },
+      {
+        title: 'Setting Up Local LLM',
+        slug: 'local-llm-setup',
+        question: 'How do I connect my own LLM for privacy?',
+        answer_text: 'For complete data sovereignty: 1) Set up an OpenAI-compatible endpoint (Ollama, LM Studio, vLLM). 2) In Integrations, enable Local LLM. 3) Enter your endpoint URL (e.g., http://localhost:11434/v1). 4) Specify the model name. 5) Add API key if required. 6) Click Test Connection to verify.',
+        is_featured: true,
+        include_in_chat: true,
+      },
+      {
+        title: 'Testing AI Connections',
+        slug: 'testing-ai',
+        question: 'How do I test if my AI provider is working?',
+        answer_text: 'Each AI provider has a Test Connection button in Integrations. This sends a test request and verifies the response. For N8N webhooks, it tests the endpoint is reachable. Check the Chat Settings page for an Active Provider Indicator showing which provider is currently configured.',
+        include_in_chat: true,
+      },
+      {
+        title: 'N8N AI Agent Integration',
+        slug: 'n8n-ai-agent',
+        question: 'How do I connect FlowWink to an N8N AI Agent?',
+        answer_text: 'Create an N8N workflow with a Chat Trigger or Webhook node. Configure the AI Agent node with tools (calendar, email, database). Copy the webhook URL to FlowWink\'s N8N integration settings. Choose between Chat mode (with session memory) or Generic mode (manual history management).',
         include_in_chat: true,
       },
     ],

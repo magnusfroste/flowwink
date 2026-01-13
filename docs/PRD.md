@@ -1,8 +1,8 @@
 # FlowWink - Product Requirements Document (PRD)
 
-> **Version:** 2.0  
-> **Last Updated:** December 2024  
-> **Status:** Core Modules Complete
+> **Version:** 2.1  
+> **Last Updated:** January 2025  
+> **Status:** Core Modules + Conversion Blocks Complete
 
 ---
 
@@ -50,7 +50,7 @@ Till skillnad från traditionella CMS (som bara levererar webbplats) eller rena 
 
 FlowWink använder en modulär block-arkitektur för flexibel innehållshantering:
 
-#### Tillgängliga Block (46 typer)
+#### Tillgängliga Block (50+ typer)
 
 | Kategori | Block | Beskrivning |
 |----------|-------|-------------|
@@ -59,19 +59,28 @@ FlowWink använder en modulär block-arkitektur för flexibel innehållshanterin
 | | Gallery | Galleri med grid/carousel/masonry + lightbox |
 | | Quote | Citat med författare och källa |
 | | YouTube | Inbäddad YouTube-video med autoplay-inställningar |
+| | Embed | Anpassad iframe/HTML-embed med aspektförhållande |
+| | Table | Strukturerad data med kolumner och rader |
 | **Layout** | Two-Column | Tvåkolumnslayout med text och bild |
 | | Separator | Visuell avdelare (linje/punkter/ornament/mellanrum) |
+| | Tabs | Flikbaserat innehåll med ikoner och varianter |
 | **Navigation** | Link Grid | Rutnät med länkkort och ikoner |
 | | Hero | Sidhuvud med bakgrund (bild/video/färg), titel och CTA |
+| | Announcement Bar | Toppbanner för meddelanden och erbjudanden |
 | **Information** | Info Box | Informationsblock med variant (info/success/warning/highlight) |
 | | Stats | Nyckeltal och statistik med ikoner |
 | | Accordion | Expanderbar FAQ/innehåll med bilder |
 | | Article Grid | Rutnät med artikelkort |
 | | Features | Funktioner/tjänster med ikoner och beskrivningar |
 | | Timeline | Stegvis process eller historik |
+| | Progress | Framstegsindikatorer och progress bars |
+| | Countdown | Nedräkningstimer till specifikt datum |
+| | Marquee | Rullande text/ikoner för uppmärksamhet |
 | **Social Proof** | Testimonials | Kundrecensioner med stjärnbetyg, carousel/grid-layout |
 | | Logos | Kundlogotyper/partners med gråskale-/scroll-variant |
 | | Team | Teammedlemmar med bio, foto och sociala länkar |
+| | Badge | Certifieringar och förtroendeikoner (SOC2, GDPR, etc.) |
+| | Social Proof | Liveräknare, betyg och aktivitetsnotifieringar |
 | **Konvertering** | CTA | Call-to-action med knappar och gradient |
 | | Pricing | Pristabell med tiers, features och badges |
 | | Comparison | Jämförelsetabell för produkter/planer |
@@ -79,10 +88,18 @@ FlowWink använder en modulär block-arkitektur för flexibel innehållshanterin
 | | Smart Booking | Inbyggt bokningssystem med tjänster, tillgänglighet och kalender |
 | | Form | Anpassningsbart formulär med fältvalidering |
 | | Newsletter | Nyhetsbrev-anmälan med GDPR-samtycke |
+| | Floating CTA | Scroll-triggad CTA som dyker upp vid scroll |
+| | Notification Toast | Dynamiska aktivitetsnotifieringar (köp, registreringar) |
 | **Kontakt** | Contact | Kontaktinformation med adress och öppettider |
 | | Map | Google Maps-embed med adress |
 | **Interaktivt** | Chat | Inbäddad AI-chatt med kontextmedvetenhet |
 | | Popup | Triggade popups (scroll/tid/exit-intent) |
+| **Knowledge Base** | KB Hub | Kunskapsbas-landningssida med kategorier |
+| | KB Search | Sökblock för kunskapsbas |
+| | KB Featured | Utvalda KB-artiklar |
+| | KB Accordion | FAQ i accordion-format |
+| **E-commerce** | Products | Produktrutnät från databas med varukorg |
+| | Cart | Varukorg med summering och checkout |
 
 #### Block-funktioner
 
@@ -297,13 +314,22 @@ Request → Edge Cache Hit?
 
 #### Multi-Provider Arkitektur
 
-FlowWink stödjer tre olika AI-providers för maximal flexibilitet:
+FlowWink stödjer fem olika AI-providers för maximal flexibilitet:
 
-| Provider | Användning | Data Location |
-|----------|------------|---------------|
-| **Lovable AI** | Standard molntjänst, ingen setup krävs | Moln (EU) |
-| **Private LLM** | Självhostad OpenAI-kompatibel endpoint | On-premise/Privat |
-| **N8N Webhook** | Agentic workflows med AI-agent | Konfigurerbart |
+| Provider | Användning | Data Location | Setup |
+|----------|------------|---------------|-------|
+| **Lovable AI** | Standard molntjänst, ingen setup krävs | Moln (EU) | Ingen API-nyckel behövs |
+| **OpenAI** | GPT-modeller med anpassad konfiguration | OpenAI Cloud | API-nyckel (secret) |
+| **Google Gemini** | Google AI-modeller | Google Cloud | API-nyckel (secret) |
+| **Private LLM** | Självhostad OpenAI-kompatibel endpoint | On-premise/Privat | Endpoint URL, valfri API-nyckel |
+| **N8N Webhook** | Agentic workflows med AI-agent | Konfigurerbart | Webhook URL |
+
+#### Integration Testing
+
+Alla AI-providers har inbyggda testfunktioner:
+- **Test Connection**: Verifiera att anslutningen fungerar
+- **Active Provider Indicator**: Visa vilken provider som är aktiv
+- **Error Handling**: Tydliga felmeddelanden vid konfigurationsproblem
 
 #### Private/Local LLM (HIPAA-kompatibel)
 
@@ -494,7 +520,7 @@ Visuellt diagram som demonstrerar innehållsflöde från CMS till olika kanaler:
 
 ### 8.3 Content Model Overview
 
-Översikt av alla 46 block-typer med:
+Översikt av alla 50+ block-typer med:
 - Antal instanser i publicerade sidor
 - JSON-preview av block-struktur
 - Dokumentation av data-format
@@ -880,6 +906,7 @@ För vårdorganisationer som kräver HIPAA:
 | **Booking/Scheduling** | High | Newsletter (reminders), Webhooks (calendar sync) | ✅ Complete |
 | **Lead CRM** | Medium | Forms → Pipeline, Newsletter nurturing | ✅ Complete |
 | **Conversion Blocks** | High | Social proof, pricing tables | ✅ Complete |
+| **Interactive Blocks** | High | Tabs, countdown, progress | ✅ Complete |
 
 #### Booking Module Features
 
@@ -907,13 +934,25 @@ För vårdorganisationer som kräver HIPAA:
 - **Features**: Service/feature grids with icons
 - **Timeline**: Step-by-step process visualization
 
+#### Interactive Blocks Added (January 2025)
+- **Badge**: Trust badges and certifications (SOC2, GDPR, ISO)
+- **Social Proof**: Live counters, ratings, and activity indicators
+- **Notification Toast**: Dynamic activity notifications (purchases, signups)
+- **Floating CTA**: Scroll-triggered call-to-action bars
+- **Marquee**: Scrolling text/icons for announcements
+- **Tabs**: Tabbed content with multiple orientations and variants
+- **Countdown**: Live countdown timers with customizable labels
+- **Progress**: Progress bars and circular indicators
+- **Embed**: Custom iframe/HTML embeds with aspect ratio control
+- **Table**: Structured data tables with styling options
+- **Announcement Bar**: Top banner for important messages
+
 ### Fas 4: Enterprise (Future)
 - SSO/SAML
 - Multi-site support
 - Advanced analytics & A/B testing
 - API rate limiting
 - Dedicated support SLA
-- Knowledge Base with structured FAQ
 
 ### Backlog: Account & Data Management
 
