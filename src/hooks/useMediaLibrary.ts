@@ -17,19 +17,23 @@ export function useMediaLibrary() {
   const { data: files, isLoading, refetch } = useQuery({
     queryKey: ['media-library'],
     queryFn: async () => {
-      const [pagesResult, importsResult] = await Promise.all([
+      const [pagesResult, importsResult, templatesResult] = await Promise.all([
         supabase.storage.from('cms-images').list('pages', {
           sortBy: { column: 'created_at', order: 'desc' },
         }),
         supabase.storage.from('cms-images').list('imports', {
           sortBy: { column: 'created_at', order: 'desc' },
         }),
+        supabase.storage.from('cms-images').list('templates', {
+          sortBy: { column: 'created_at', order: 'desc' },
+        }),
       ]);
 
       const pagesFiles = (pagesResult.data || []).map(f => ({ ...f, folder: 'pages' }));
       const importsFiles = (importsResult.data || []).map(f => ({ ...f, folder: 'imports' }));
+      const templatesFiles = (templatesResult.data || []).map(f => ({ ...f, folder: 'templates' }));
       
-      const allFiles = [...pagesFiles, ...importsFiles].sort(
+      const allFiles = [...pagesFiles, ...importsFiles, ...templatesFiles].sort(
         (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
 
@@ -44,15 +48,17 @@ export function useMediaLibraryCount() {
   const { data: count, isLoading } = useQuery({
     queryKey: ['media-library-count'],
     queryFn: async () => {
-      const [pagesResult, importsResult] = await Promise.all([
+      const [pagesResult, importsResult, templatesResult] = await Promise.all([
         supabase.storage.from('cms-images').list('pages'),
         supabase.storage.from('cms-images').list('imports'),
+        supabase.storage.from('cms-images').list('templates'),
       ]);
 
       const pagesCount = pagesResult.data?.length || 0;
       const importsCount = importsResult.data?.length || 0;
+      const templatesCount = templatesResult.data?.length || 0;
       
-      return pagesCount + importsCount;
+      return pagesCount + importsCount + templatesCount;
     },
   });
 
@@ -65,15 +71,17 @@ export function useClearMediaLibrary() {
 
   return useMutation({
     mutationFn: async (onProgress?: (current: number, total: number, step: string) => void) => {
-      // Get all files from both folders
-      const [pagesResult, importsResult] = await Promise.all([
+      // Get all files from all folders
+      const [pagesResult, importsResult, templatesResult] = await Promise.all([
         supabase.storage.from('cms-images').list('pages'),
         supabase.storage.from('cms-images').list('imports'),
+        supabase.storage.from('cms-images').list('templates'),
       ]);
 
       const pagesFiles = (pagesResult.data || []).map(f => `pages/${f.name}`);
       const importsFiles = (importsResult.data || []).map(f => `imports/${f.name}`);
-      const allFiles = [...pagesFiles, ...importsFiles];
+      const templatesFiles = (templatesResult.data || []).map(f => `templates/${f.name}`);
+      const allFiles = [...pagesFiles, ...importsFiles, ...templatesFiles];
 
       if (allFiles.length === 0) {
         return { deleted: 0 };
