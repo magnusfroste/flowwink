@@ -1016,4 +1016,29 @@ Icons use [Lucide](https://lucide.dev/icons) names. Popular ones:
 
 ---
 
-*Last updated: 2025*
+## 16 Modules Overview
+
+FlowWink includes 16 built-in modules:
+
+| Module | Description | Default |
+|--------|-------------|---------|
+| Pages | Visual block-based page builder | Active |
+| Blog | Posts, categories, tags, authors | Active |
+| Newsletter | Subscribers, campaigns, tracking | Active |
+| Knowledge Base | FAQ articles, categories, search | Active |
+| AI Chat | Content-aware AI assistant | Active |
+| Forms | Custom forms with webhooks | Active |
+| Leads | Lead capture and management | Active |
+| Deals | Sales pipeline and tracking | Active |
+| Companies | B2B company management | Active |
+| Products | E-commerce product catalog | Active |
+| Orders | Order and payment tracking | Active |
+| Booking | Appointment scheduling | Active |
+| Analytics | Page views and visitor tracking | Active |
+| Media Library | Image and file management | Active |
+| Global Blocks | Header, footer, announcement | Active |
+| Webhooks | Event-based integrations | Active |
+
+---
+
+*Last updated: January 2025*
