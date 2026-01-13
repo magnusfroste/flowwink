@@ -50,7 +50,7 @@ interface StorageFile {
 
 export default function MediaLibraryPage() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [folderFilter, setFolderFilter] = useState<'all' | 'pages' | 'imports'>('all');
+  const [folderFilter, setFolderFilter] = useState<'all' | 'pages' | 'imports' | 'templates'>('all');
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
   const [showBulkDelete, setShowBulkDelete] = useState(false);
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
@@ -69,19 +69,23 @@ export default function MediaLibraryPage() {
   const { data: files, isLoading, refetch } = useQuery({
     queryKey: ['media-library'],
     queryFn: async () => {
-      const [pagesResult, importsResult] = await Promise.all([
+      const [pagesResult, importsResult, templatesResult] = await Promise.all([
         supabase.storage.from('cms-images').list('pages', {
           sortBy: { column: 'created_at', order: 'desc' },
         }),
         supabase.storage.from('cms-images').list('imports', {
           sortBy: { column: 'created_at', order: 'desc' },
         }),
+        supabase.storage.from('cms-images').list('templates', {
+          sortBy: { column: 'created_at', order: 'desc' },
+        }),
       ]);
 
       const pagesFiles = (pagesResult.data || []).map(f => ({ ...f, folder: 'pages' }));
       const importsFiles = (importsResult.data || []).map(f => ({ ...f, folder: 'imports' }));
+      const templatesFiles = (templatesResult.data || []).map(f => ({ ...f, folder: 'templates' }));
       
-      const allFiles = [...pagesFiles, ...importsFiles].sort(
+      const allFiles = [...pagesFiles, ...importsFiles, ...templatesFiles].sort(
         (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
 
@@ -374,7 +378,7 @@ export default function MediaLibraryPage() {
         {/* Filter tabs and Search */}
         <div className="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
           <div className="flex gap-1 p-1 bg-muted rounded-lg w-fit">
-            {(['all', 'pages', 'imports'] as const).map((tab) => (
+            {(['all', 'pages', 'imports', 'templates'] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setFolderFilter(tab)}
@@ -385,7 +389,7 @@ export default function MediaLibraryPage() {
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                {tab === 'all' ? 'All' : tab === 'pages' ? 'Pages' : 'Imports'}
+                {tab === 'all' ? 'All' : tab === 'pages' ? 'Pages' : tab === 'imports' ? 'Imports' : 'Templates'}
               </button>
             ))}
           </div>
