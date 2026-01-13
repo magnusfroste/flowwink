@@ -2998,40 +2998,49 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
               secondaryButton: { text: 'Self-Host Free', url: 'https://github.com/flowwink/flowwink' },
             },
           },
-          // CHAT USP - Content-aware AI assistant intro
+          // STATS - Key numbers upfront
           {
-            id: 'chat-intro',
-            type: 'text',
+            id: 'stats-hero',
+            type: 'stats',
             data: {
-              content: {
-                type: 'doc',
-                content: [
-                  {
-                    type: 'heading',
-                    attrs: { level: 2 },
-                    content: [{ type: 'text', text: 'AI That Actually Knows Your Content' }]
-                  },
-                  {
-                    type: 'paragraph',
-                    content: [
-                      { type: 'text', text: 'Unlike generic chat widgets, our AI assistant reads your ' },
-                      { type: 'text', marks: [{ type: 'bold' }], text: 'actual content' },
-                      { type: 'text', text: ' – every page, blog post, and knowledge base article. Ask it anything about FlowWink and see the difference.' },
-                    ]
-                  },
-                ],
-              },
-              alignment: 'center',
+              items: [
+                { id: 's1', value: '43+', label: 'Block Types' },
+                { id: 's2', value: '16', label: 'Built-in Modules' },
+                { id: 's3', value: '5', label: 'AI Providers' },
+                { id: 's4', value: '∞', label: 'Self-Host Free' },
+              ],
+              columns: 4,
+              variant: 'minimal',
             },
           },
-          // CHAT BLOCK - Interactive AI demo
+          // TIMELINE - How it Works (NEW)
           {
-            id: 'chat-hero',
-            type: 'chat',
+            id: 'timeline-how',
+            type: 'timeline',
             data: {
-              title: 'Ask Anything About FlowWink',
-              variant: 'card',
-              height: 'md',
+              title: 'How It Works',
+              subtitle: 'From zero to published in three steps.',
+              items: [
+                {
+                  id: 'hw-1',
+                  title: 'Deploy',
+                  description: 'Self-host with Docker in 5 minutes, or use our managed cloud. No credit card required.',
+                  icon: 'Rocket',
+                },
+                {
+                  id: 'hw-2',
+                  title: 'Create',
+                  description: 'Use the visual editor to build pages with 43+ blocks. No coding needed.',
+                  icon: 'Blocks',
+                },
+                {
+                  id: 'hw-3',
+                  title: 'Publish',
+                  description: 'Go live instantly or schedule for later. Use the API to power any frontend.',
+                  icon: 'Globe',
+                },
+              ],
+              layout: 'horizontal',
             },
           },
           // FEATURES - Three pillars (Head + FlowWink + Headless)
@@ -3066,23 +3075,39 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
               iconStyle: 'circle',
             },
           },
-          // LOGOS - Trusted by
+          // CHAT INTRO + DEMO
           {
-            id: 'logos-trusted',
-            type: 'logos',
+            id: 'chat-intro',
+            type: 'text',
             data: {
-              title: 'Trusted by Modern Teams',
-              logos: [
-                { id: 'logo-1', name: 'TechCorp', logo: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=120&h=40&fit=crop' },
-                { id: 'logo-2', name: 'StartupX', logo: 'https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?w=120&h=40&fit=crop' },
-                { id: 'logo-3', name: 'DigitalCo', logo: 'https://images.unsplash.com/photo-1611162618071-b39a2ec055fb?w=120&h=40&fit=crop' },
-                { id: 'logo-4', name: 'InnovateLab', logo: 'https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=120&h=40&fit=crop' },
-                { id: 'logo-5', name: 'FutureTech', logo: 'https://images.unsplash.com/photo-1611162616475-46b635cb6868?w=120&h=40&fit=crop' },
-              ],
-              columns: 5,
-              layout: 'grid',
-              variant: 'grayscale',
-              logoSize: 'md',
+              content: {
+                type: 'doc',
+                content: [
+                  {
+                    type: 'heading',
+                    attrs: { level: 2 },
+                    content: [{ type: 'text', text: 'AI That Actually Knows Your Content' }]
+                  },
+                  {
+                    type: 'paragraph',
+                    content: [
+                      { type: 'text', text: 'Unlike generic chat widgets, our AI assistant reads your ' },
+                      { type: 'text', marks: [{ type: 'bold' }], text: 'actual content' },
+                      { type: 'text', text: ' – every page, blog post, and knowledge base article. Try it now.' },
+                    ]
+                  },
+                ],
+              },
+              alignment: 'center',
+            },
+          },
+          {
+            id: 'chat-hero',
+            type: 'chat',
+            data: {
+              title: 'Ask Anything About FlowWink',
+              variant: 'card',
+              height: 'md',
             },
           },
           // FEATURES - Complete CMS modules
@@ -3199,16 +3224,16 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
               iconStyle: 'circle',
             },
           },
-          // TESTIMONIALS - Social proof
+          // TESTIMONIALS - Social proof with metrics
           {
             id: 'testimonials-main',
             type: 'testimonials',
             data: {
-              title: 'What Our Users Say',
+              title: 'Real Results from Real Teams',
               testimonials: [
                 {
                   id: 'test-1',
-                  content: 'Finally a CMS that gives us both a beautiful website AND the API flexibility we need. The AI chat feature has reduced our support tickets by 40%.',
+                  content: 'Reduced support tickets by 40% after adding the AI chat widget. It answers questions 24/7 using our actual content.',
                   author: 'Emma Lindqvist',
                   role: 'CTO',
                   company: 'TechStart AB',
@@ -3216,7 +3241,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
                 },
                 {
                   id: 'test-2',
-                  content: 'We migrated from WordPress in an afternoon. The visual editor is intuitive, and the headless API lets us build our mobile app with the same content.',
+                  content: 'Migrated 200 pages from WordPress in 3 hours using AI import. The headless API powers our mobile app with the same content.',
                   author: 'Marcus Andersson',
                   role: 'Product Lead',
                   company: 'DigitalFlow',
@@ -3224,7 +3249,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
                 },
                 {
                   id: 'test-3',
-                  content: 'The private LLM support was the dealbreaker for us. We needed AI features but couldn\'t send patient data to external services. FlowWink delivered.',
+                  content: 'Saved €3,600/year compared to Contentful. Self-hosting with private LLM keeps patient data in our infrastructure.',
                   author: 'Dr. Sofia Berg',
                   role: 'Medical Director',
                   company: 'HealthTech Nordic',
@@ -3476,24 +3501,93 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
             type: 'hero',
             data: {
               title: 'Features That Matter',
-              subtitle: 'Everything you need to manage content, engage visitors, and grow your business – with 27+ content blocks, editorial workflow, and AI-powered tools.',
+              subtitle: 'Everything you need to manage content, engage visitors, and grow your business.',
               backgroundType: 'color',
               heightMode: 'auto',
               contentAlignment: 'center',
               overlayOpacity: 0,
-              showScrollIndicator: true,
             },
           },
-          // Stats - Block count highlight
+          // TABS - Features organized by user type (NEW)
+          {
+            id: 'tabs-features',
+            type: 'tabs',
+            data: {
+              title: 'Built for Every Role',
+              subtitle: 'From content creators to developers to business leaders – FlowWink adapts to how you work.',
+              tabs: [
+                {
+                  id: 'tab-creators',
+                  title: 'For Content Creators',
+                  icon: 'PenLine',
+                  content: {
+                    type: 'doc',
+                    content: [
+                      { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Visual Editor & 43+ Blocks' }] },
+                      { type: 'paragraph', content: [{ type: 'text', text: 'Drag-and-drop page building with real-time preview. No coding required.' }] },
+                      { type: 'bulletList', content: [
+                        { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Rich Text Editor' }, { type: 'text', text: ' – Full formatting, links, images, and embedded media' }] }] },
+                        { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'AI Writing Assistant' }, { type: 'text', text: ' – Generate, expand, and translate content in your brand voice' }] }] },
+                        { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Editorial Workflow' }, { type: 'text', text: ' – Draft → Review → Approve → Publish with version history' }] }] },
+                        { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Blog Module' }, { type: 'text', text: ' – Categories, tags, authors, RSS, and SEO optimization' }] }] },
+                        { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Media Library' }, { type: 'text', text: ' – Centralized assets with image cropping and Unsplash integration' }] }] },
+                      ]},
+                    ],
+                  },
+                },
+                {
+                  id: 'tab-developers',
+                  title: 'For Developers',
+                  icon: 'Code',
+                  content: {
+                    type: 'doc',
+                    content: [
+                      { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Headless API & Self-Hosting' }] },
+                      { type: 'paragraph', content: [{ type: 'text', text: 'Full REST API, webhooks, and Docker deployment. Open source MIT license.' }] },
+                      { type: 'bulletList', content: [
+                        { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'REST API' }, { type: 'text', text: ' – Full access to pages, posts, media, settings, and more' }] }] },
+                        { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Webhooks' }, { type: 'text', text: ' – Trigger external services on publish, update, delete events' }] }] },
+                        { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'N8N Templates' }, { type: 'text', text: ' – Pre-built automation workflows for common integrations' }] }] },
+                        { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Docker Deploy' }, { type: 'text', text: ' – Self-host in 5 minutes with docker-compose' }] }] },
+                        { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Private LLM' }, { type: 'text', text: ' – Connect your own OpenAI-compatible model for data sovereignty' }] }] },
+                      ]},
+                    ],
+                  },
+                },
+                {
+                  id: 'tab-business',
+                  title: 'For Business',
+                  icon: 'Briefcase',
+                  content: {
+                    type: 'doc',
+                    content: [
+                      { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'CRM, Analytics & E-commerce' }] },
+                      { type: 'paragraph', content: [{ type: 'text', text: 'Built-in modules for lead generation, customer management, and sales.' }] },
+                      { type: 'bulletList', content: [
+                        { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Lead CRM' }, { type: 'text', text: ' – Capture leads from forms, score them with AI, track activities' }] }] },
+                        { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Deal Pipeline' }, { type: 'text', text: ' – Kanban board for sales, link to leads and products' }] }] },
+                        { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Newsletter' }, { type: 'text', text: ' – GDPR-compliant subscriber management and email campaigns' }] }] },
+                        { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'E-commerce' }, { type: 'text', text: ' – Products, orders, Stripe checkout for subscriptions and one-time' }] }] },
+                        { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Analytics' }, { type: 'text', text: ' – Page views, visitor geography, traffic sources, and trends' }] }] },
+                      ]},
+                    ],
+                  },
+                },
+              ],
+              orientation: 'horizontal',
+              variant: 'boxed',
+            },
+          },
+          // Stats - Updated numbers
           {
             id: 'stats-blocks',
             type: 'stats',
             data: {
               title: '',
               items: [
-                { id: 'stat-blocks', value: '27+', label: 'Content Blocks' },
+                { id: 'stat-blocks', value: '43+', label: 'Content Blocks' },
                 { id: 'stat-roles', value: '3', label: 'Editorial Roles' },
-                { id: 'stat-modules', value: '8', label: 'Built-in Modules' },
+                { id: 'stat-modules', value: '16', label: 'Built-in Modules' },
                 { id: 'stat-api', value: '100%', label: 'API Coverage' },
               ],
               columns: 4,
@@ -3933,34 +4027,34 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
           titleAlignment: 'center',
         },
         blocks: [
-          // Hero
+          // Hero - Simplified
           {
             id: 'hero-demo',
             type: 'hero',
             data: {
               title: 'See FlowWink in Action',
-              subtitle: 'Explore every feature below. This entire page was built with FlowWink – what you see is what you get.',
+              subtitle: 'This page is built with FlowWink. Explore 43+ block types organized by category below.',
               backgroundType: 'color',
               heightMode: 'auto',
               contentAlignment: 'center',
               overlayOpacity: 0,
               primaryButton: { text: 'Try the Admin', url: '/admin' },
-              secondaryButton: { text: 'View Source', url: 'https://github.com/flowwink/flowwink' },
+              secondaryButton: { text: 'View Docs', url: '/docs' },
             },
           },
-          // Info Box - How This Works
+          // Stats - Quick numbers
           {
-            id: 'info-demo-intro',
-            type: 'info-box',
+            id: 'stats-demo-overview',
+            type: 'stats',
             data: {
-              variant: 'highlight',
-              content: {
-                type: 'doc',
-                content: [
-                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: '👋 Welcome to the Interactive Demo' }] },
-                  { type: 'paragraph', content: [{ type: 'text', text: 'This page showcases every block type available in FlowWink. Scroll through to see how each block looks and behaves. Then click "Try the Admin" above to create your own pages.' }] },
-                ],
-              },
+              items: [
+                { id: 'ds1', value: '43+', label: 'Block Types' },
+                { id: 'ds2', value: '16', label: 'Modules' },
+                { id: 'ds3', value: '5', label: 'AI Providers' },
+                { id: 'ds4', value: '3', label: 'User Roles' },
+              ],
+              columns: 4,
+              variant: 'minimal',
             },
           },
           // Separator - Visual Editor
@@ -5000,11 +5094,117 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
           },
         ],
       },
-      // ===== WHY FLOWWINK PAGE =====
+      // ===== DOCS PAGE (NEW) =====
       {
-        title: 'Why FlowWink',
-        slug: 'why-flowwink',
+        title: 'Docs',
+        slug: 'docs',
         menu_order: 5,
+        showInMenu: true,
+        meta: {
+          description: 'FlowWink documentation - guides, tutorials, API reference, and self-hosting instructions.',
+          showTitle: true,
+          titleAlignment: 'center',
+        },
+        blocks: [
+          // Hero with KB Search
+          {
+            id: 'hero-docs',
+            type: 'hero',
+            data: {
+              title: 'Documentation',
+              subtitle: 'Everything you need to get started, build, and scale with FlowWink.',
+              backgroundType: 'color',
+              heightMode: 'auto',
+              contentAlignment: 'center',
+              overlayOpacity: 0,
+            },
+          },
+          // KB Search
+          {
+            id: 'kb-search-docs',
+            type: 'kb-search',
+            data: {
+              title: '',
+              placeholder: 'Search documentation...',
+              showRecentSearches: true,
+            },
+          },
+          // Link Grid - Documentation Categories
+          {
+            id: 'links-docs-categories',
+            type: 'link-grid',
+            data: {
+              title: 'Browse by Topic',
+              links: [
+                { id: 'doc-getting-started', icon: 'Rocket', title: 'Getting Started', description: 'Quick start guide and first steps', url: '/knowledge-base' },
+                { id: 'doc-blocks', icon: 'Blocks', title: 'Block Reference', description: 'All 43+ content block types', url: '/knowledge-base' },
+                { id: 'doc-api', icon: 'Code', title: 'API & Integrations', description: 'REST API, webhooks, N8N', url: '/knowledge-base' },
+                { id: 'doc-self-host', icon: 'Server', title: 'Self-Hosting', description: 'Docker, deployment, configuration', url: '/knowledge-base' },
+                { id: 'doc-ai', icon: 'Sparkles', title: 'AI Configuration', description: 'Providers, local LLM, N8N agents', url: '/knowledge-base' },
+                { id: 'doc-admin', icon: 'Settings', title: 'Admin Guide', description: 'Users, roles, settings', url: '/knowledge-base' },
+              ],
+              columns: 3,
+            },
+          },
+          // KB Featured Articles
+          {
+            id: 'kb-featured-docs',
+            type: 'kb-featured',
+            data: {
+              title: 'Popular Articles',
+              subtitle: 'Most-read documentation',
+              limit: 6,
+              columns: 2,
+              showDescription: true,
+              showCategory: true,
+            },
+          },
+          // Separator
+          {
+            id: 'sep-resources',
+            type: 'separator',
+            data: {
+              variant: 'text',
+              text: 'Additional Resources',
+              icon: 'ExternalLink',
+            },
+          },
+          // Link Grid - External Resources
+          {
+            id: 'links-external',
+            type: 'link-grid',
+            data: {
+              title: '',
+              links: [
+                { id: 'ext-github', icon: 'Github', title: 'GitHub Repository', description: 'Source code and issues', url: 'https://github.com/flowwink/flowwink' },
+                { id: 'ext-docker', icon: 'Container', title: 'Docker Registry', description: 'Container images', url: 'https://github.com/magnusfroste/flowwink/pkgs/container/flowwink' },
+                { id: 'ext-discord', icon: 'MessageCircle', title: 'Community', description: 'Discord support channel', url: 'https://discord.gg/flowwink' },
+                { id: 'ext-changelog', icon: 'FileText', title: 'Changelog', description: 'Version history and updates', url: 'https://github.com/flowwink/flowwink/releases' },
+              ],
+              columns: 4,
+            },
+          },
+          // CTA
+          {
+            id: 'cta-docs',
+            type: 'cta',
+            data: {
+              title: 'Can\'t Find What You Need?',
+              subtitle: 'Our AI assistant can answer questions about FlowWink instantly.',
+              buttonText: 'Ask the AI',
+              buttonUrl: '/chat',
+              secondaryButtonText: 'Contact Support',
+              secondaryButtonUrl: '/contact',
+              gradient: false,
+            },
+          },
+        ],
+      },
+      // ===== COMPARE PAGE (renamed from Why FlowWink) =====
+      {
+        title: 'Compare',
+        slug: 'compare',
+        menu_order: 6,
         showInMenu: true,
         meta: {
           description: 'Compare FlowWink to WordPress, Webflow, and Contentful. See why teams switch and how to migrate.',
