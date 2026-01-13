@@ -23,6 +23,107 @@ import { useIsOpenAIConfigured, useIsGeminiConfigured } from '@/hooks/useIntegra
 import { useIntegrations } from '@/hooks/useIntegrations';
 import { IntegrationWarning } from '@/components/admin/IntegrationWarning';
 import { toast } from 'sonner';
+import { IntegrationsSettings } from '@/hooks/useIntegrations';
+
+// Component to show which AI provider is currently active
+function ActiveProviderIndicator({ 
+  selectedProvider, 
+  isOpenAIConfigured, 
+  isGeminiConfigured,
+  integrationSettings 
+}: { 
+  selectedProvider: ChatAiProvider;
+  isOpenAIConfigured: boolean | null;
+  isGeminiConfigured: boolean | null;
+  integrationSettings: IntegrationsSettings | undefined;
+}) {
+  const getProviderStatus = () => {
+    switch (selectedProvider) {
+      case 'openai':
+        return {
+          name: 'OpenAI',
+          model: integrationSettings?.openai?.config?.model || 'gpt-4o-mini',
+          isConfigured: isOpenAIConfigured === true,
+          icon: <Cloud className="h-4 w-4" />,
+        };
+      case 'gemini':
+        return {
+          name: 'Google Gemini',
+          model: integrationSettings?.gemini?.config?.model || 'gemini-2.0-flash-exp',
+          isConfigured: isGeminiConfigured === true,
+          icon: <Cloud className="h-4 w-4" />,
+        };
+      case 'local':
+        return {
+          name: 'Local LLM',
+          model: integrationSettings?.local_llm?.config?.model || 'Custom model',
+          isConfigured: integrationSettings?.local_llm?.enabled === true && !!integrationSettings?.local_llm?.config?.endpoint,
+          icon: <Server className="h-4 w-4" />,
+        };
+      case 'n8n':
+        return {
+          name: 'N8N Webhook',
+          model: integrationSettings?.n8n?.config?.webhookType || 'chat',
+          isConfigured: integrationSettings?.n8n?.enabled === true && !!integrationSettings?.n8n?.config?.webhookUrl,
+          icon: <Webhook className="h-4 w-4" />,
+        };
+      default:
+        return {
+          name: 'Unknown',
+          model: '',
+          isConfigured: false,
+          icon: <AlertTriangle className="h-4 w-4" />,
+        };
+    }
+  };
+
+  const status = getProviderStatus();
+
+  return (
+    <div className={`flex items-center gap-3 p-3 rounded-lg border ${
+      status.isConfigured 
+        ? 'bg-green-50 border-green-200 dark:bg-green-950/50 dark:border-green-900' 
+        : 'bg-amber-50 border-amber-200 dark:bg-amber-950/50 dark:border-amber-900'
+    }`}>
+      <div className={`p-2 rounded-full ${
+        status.isConfigured 
+          ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' 
+          : 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300'
+      }`}>
+        {status.isConfigured ? <CheckCircle2 className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <span className={`text-sm font-medium ${
+            status.isConfigured 
+              ? 'text-green-800 dark:text-green-200' 
+              : 'text-amber-800 dark:text-amber-200'
+          }`}>
+            Active Provider: {status.name}
+          </span>
+          <Badge variant={status.isConfigured ? 'default' : 'secondary'} className="text-xs">
+            {status.isConfigured ? 'Ready' : 'Not configured'}
+          </Badge>
+        </div>
+        <p className={`text-xs mt-0.5 ${
+          status.isConfigured 
+            ? 'text-green-600 dark:text-green-400' 
+            : 'text-amber-600 dark:text-amber-400'
+        }`}>
+          {status.isConfigured 
+            ? `Using ${status.model}` 
+            : 'Configure in Integrations to enable chat'}
+        </p>
+      </div>
+      <Link to="/admin/integrations#ai">
+        <Button variant="ghost" size="sm" className="text-xs">
+          {status.icon}
+          <span className="ml-1.5">Settings</span>
+        </Button>
+      </Link>
+    </div>
+  );
+}
 
 export default function ChatSettingsPage() {
   const { data: settings, isLoading } = useChatSettings();
@@ -104,6 +205,16 @@ export default function ChatSettingsPage() {
               />
             </div>
           </CardHeader>
+          {formData.enabled && (
+            <CardContent className="pt-0">
+              <ActiveProviderIndicator
+                selectedProvider={formData.aiProvider}
+                isOpenAIConfigured={isOpenAIConfigured}
+                isGeminiConfigured={isGeminiConfigured}
+                integrationSettings={integrationSettings}
+              />
+            </CardContent>
+          )}
         </Card>
 
         {formData.enabled && (
