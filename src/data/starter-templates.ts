@@ -4079,7 +4079,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
                   { type: 'paragraph', content: [{ type: 'text', text: 'The visual editor is the heart of FlowWink. Add blocks, arrange them, edit content – all in real-time with instant preview.' }] },
                   { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'How It Works' }] },
                   { type: 'orderedList', content: [
-                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Add a Block' }, { type: 'text', text: ' – Click the + button and choose from 27+ block types' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Add a Block' }, { type: 'text', text: ' – Click the + button and choose from 43+ block types' }] }] },
                     { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Edit Content' }, { type: 'text', text: ' – Click any text to edit. Upload images. Configure settings.' }] }] },
                     { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Rearrange' }, { type: 'text', text: ' – Drag blocks to reorder. Move sections around freely.' }] }] },
                     { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Preview' }, { type: 'text', text: ' – See exactly how it looks on desktop, tablet, and mobile.' }] }] },
@@ -4125,7 +4125,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
             id: 'demo-block-overview',
             type: 'features',
             data: {
-              title: '27+ Block Types Available',
+              title: '43+ Block Types Available',
               subtitle: 'From simple text to complex e-commerce – build any page with drag-and-drop blocks.',
               features: [
                 { id: 'cat-content', icon: 'FileText', title: 'Content', description: 'Hero, Text, Image, Quote, Separator, Two-Column, Info Box' },
@@ -5090,112 +5090,6 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
                   },
                 },
               ],
-            },
-          },
-        ],
-      },
-      // ===== DOCS PAGE (NEW) =====
-      {
-        title: 'Docs',
-        slug: 'docs',
-        menu_order: 5,
-        showInMenu: true,
-        meta: {
-          description: 'FlowWink documentation - guides, tutorials, API reference, and self-hosting instructions.',
-          showTitle: true,
-          titleAlignment: 'center',
-        },
-        blocks: [
-          // Hero with KB Search
-          {
-            id: 'hero-docs',
-            type: 'hero',
-            data: {
-              title: 'Documentation',
-              subtitle: 'Everything you need to get started, build, and scale with FlowWink.',
-              backgroundType: 'color',
-              heightMode: 'auto',
-              contentAlignment: 'center',
-              overlayOpacity: 0,
-            },
-          },
-          // KB Search
-          {
-            id: 'kb-search-docs',
-            type: 'kb-search',
-            data: {
-              title: '',
-              placeholder: 'Search documentation...',
-              showRecentSearches: true,
-            },
-          },
-          // Link Grid - Documentation Categories
-          {
-            id: 'links-docs-categories',
-            type: 'link-grid',
-            data: {
-              title: 'Browse by Topic',
-              links: [
-                { id: 'doc-getting-started', icon: 'Rocket', title: 'Getting Started', description: 'Quick start guide and first steps', url: '/knowledge-base' },
-                { id: 'doc-blocks', icon: 'Blocks', title: 'Block Reference', description: 'All 43+ content block types', url: '/knowledge-base' },
-                { id: 'doc-api', icon: 'Code', title: 'API & Integrations', description: 'REST API, webhooks, N8N', url: '/knowledge-base' },
-                { id: 'doc-self-host', icon: 'Server', title: 'Self-Hosting', description: 'Docker, deployment, configuration', url: '/knowledge-base' },
-                { id: 'doc-ai', icon: 'Sparkles', title: 'AI Configuration', description: 'Providers, local LLM, N8N agents', url: '/knowledge-base' },
-                { id: 'doc-admin', icon: 'Settings', title: 'Admin Guide', description: 'Users, roles, settings', url: '/knowledge-base' },
-              ],
-              columns: 3,
-            },
-          },
-          // KB Featured Articles
-          {
-            id: 'kb-featured-docs',
-            type: 'kb-featured',
-            data: {
-              title: 'Popular Articles',
-              subtitle: 'Most-read documentation',
-              limit: 6,
-              columns: 2,
-              showDescription: true,
-              showCategory: true,
-            },
-          },
-          // Separator
-          {
-            id: 'sep-resources',
-            type: 'separator',
-            data: {
-              variant: 'text',
-              text: 'Additional Resources',
-              icon: 'ExternalLink',
-            },
-          },
-          // Link Grid - External Resources
-          {
-            id: 'links-external',
-            type: 'link-grid',
-            data: {
-              title: '',
-              links: [
-                { id: 'ext-github', icon: 'Github', title: 'GitHub Repository', description: 'Source code and issues', url: 'https://github.com/flowwink/flowwink' },
-                { id: 'ext-docker', icon: 'Container', title: 'Docker Registry', description: 'Container images', url: 'https://github.com/magnusfroste/flowwink/pkgs/container/flowwink' },
-                { id: 'ext-discord', icon: 'MessageCircle', title: 'Community', description: 'Discord support channel', url: 'https://discord.gg/flowwink' },
-                { id: 'ext-changelog', icon: 'FileText', title: 'Changelog', description: 'Version history and updates', url: 'https://github.com/flowwink/flowwink/releases' },
-              ],
-              columns: 4,
-            },
-          },
-          // CTA
-          {
-            id: 'cta-docs',
-            type: 'cta',
-            data: {
-              title: 'Can\'t Find What You Need?',
-              subtitle: 'Our AI assistant can answer questions about FlowWink instantly.',
-              buttonText: 'Ask the AI',
-              buttonUrl: '/chat',
-              secondaryButtonText: 'Contact Support',
-              secondaryButtonUrl: '/contact',
-              gradient: false,
             },
           },
         ],
