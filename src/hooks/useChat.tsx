@@ -126,9 +126,10 @@ export function useChat(options?: UseChatOptions) {
             sessionId: getSessionId(),
           settings: {
               aiProvider: settings?.aiProvider || 'openai',
-              localEndpoint: settings?.localEndpoint,
-              localModel: settings?.localModel,
-              n8nWebhookUrl: settings?.n8nWebhookUrl,
+              // Only send if actually configured (not empty string) - let edge function use Integration config
+              localEndpoint: settings?.localEndpoint || undefined,
+              localModel: settings?.localModel || undefined,
+              n8nWebhookUrl: settings?.n8nWebhookUrl || undefined,
               n8nWebhookType: settings?.n8nWebhookType || 'chat',
               systemPrompt: settings?.systemPrompt,
               includeContentAsContext: settings?.includeContentAsContext,

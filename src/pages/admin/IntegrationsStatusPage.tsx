@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
@@ -205,7 +205,7 @@ function TestConfigConnectionButton({
   );
 }
 
-// Integration Configuration Component
+// Integration Configuration Component with debounce
 function IntegrationConfigPanel({ 
   integrationKey,
   config,
@@ -219,6 +219,33 @@ function IntegrationConfigPanel({
   hasKey: boolean;
   isEnabled: boolean;
 }) {
+  // Local state for debounced inputs
+  const [localConfig, setLocalConfig] = useState<IntegrationProviderConfig>(config || {});
+  const [isDirty, setIsDirty] = useState(false);
+
+  // Sync local state when external config changes (e.g., on mount or refetch)
+  useEffect(() => {
+    setLocalConfig(config || {});
+  }, [config]);
+
+  // Debounced save - only fires 800ms after user stops typing
+  useEffect(() => {
+    if (!isDirty) return;
+
+    const timer = setTimeout(() => {
+      onConfigChange(localConfig);
+      setIsDirty(false);
+    }, 800);
+
+    return () => clearTimeout(timer);
+  }, [localConfig, isDirty, onConfigChange]);
+
+  // Update local state on input change
+  const handleChange = useCallback((updates: Partial<IntegrationProviderConfig>) => {
+    setLocalConfig(prev => ({ ...prev, ...updates }));
+    setIsDirty(true);
+  }, []);
+
   if (!hasKey || !isEnabled) return null;
 
   if (integrationKey === 'openai') {
@@ -228,8 +255,8 @@ function IntegrationConfigPanel({
           <Label htmlFor="openai-baseurl" className="text-xs">Base URL (optional)</Label>
           <Input
             id="openai-baseurl"
-            value={config?.baseUrl || 'https://api.openai.com/v1'}
-            onChange={(e) => onConfigChange({ ...config, baseUrl: e.target.value })}
+            value={localConfig?.baseUrl || 'https://api.openai.com/v1'}
+            onChange={(e) => handleChange({ baseUrl: e.target.value })}
             placeholder="https://api.openai.com/v1"
             className="h-8 text-sm"
           />
@@ -238,8 +265,8 @@ function IntegrationConfigPanel({
         <div className="space-y-2">
           <Label htmlFor="openai-model" className="text-xs">Default Model</Label>
           <Select
-            value={config?.model || 'gpt-4o-mini'}
-            onValueChange={(value) => onConfigChange({ ...config, model: value })}
+            value={localConfig?.model || 'gpt-4o-mini'}
+            onValueChange={(value) => handleChange({ model: value })}
           >
             <SelectTrigger id="openai-model" className="h-8 text-sm">
               <SelectValue />
@@ -261,8 +288,8 @@ function IntegrationConfigPanel({
         <div className="space-y-2">
           <Label htmlFor="gemini-model" className="text-xs">Default Model</Label>
           <Select
-            value={config?.model || 'gemini-2.0-flash-exp'}
-            onValueChange={(value) => onConfigChange({ ...config, model: value })}
+            value={localConfig?.model || 'gemini-2.0-flash-exp'}
+            onValueChange={(value) => handleChange({ model: value })}
           >
             <SelectTrigger id="gemini-model" className="h-8 text-sm">
               <SelectValue />
@@ -285,8 +312,8 @@ function IntegrationConfigPanel({
           <Label htmlFor="local-endpoint" className="text-xs">Endpoint URL *</Label>
           <Input
             id="local-endpoint"
-            value={config?.endpoint || ''}
-            onChange={(e) => onConfigChange({ ...config, endpoint: e.target.value })}
+            value={localConfig?.endpoint || ''}
+            onChange={(e) => handleChange({ endpoint: e.target.value })}
             placeholder="http://localhost:11434"
             className="h-8 text-sm"
           />
@@ -296,8 +323,8 @@ function IntegrationConfigPanel({
           <Label htmlFor="local-model" className="text-xs">Model Name</Label>
           <Input
             id="local-model"
-            value={config?.model || 'llama3'}
-            onChange={(e) => onConfigChange({ ...config, model: e.target.value })}
+            value={localConfig?.model || 'llama3'}
+            onChange={(e) => handleChange({ model: e.target.value })}
             placeholder="llama3"
             className="h-8 text-sm"
           />
@@ -307,8 +334,8 @@ function IntegrationConfigPanel({
           <Input
             id="local-apikey"
             type="password"
-            value={config?.apiKey || ''}
-            onChange={(e) => onConfigChange({ ...config, apiKey: e.target.value })}
+            value={localConfig?.apiKey || ''}
+            onChange={(e) => handleChange({ apiKey: e.target.value })}
             placeholder="sk-..."
             className="h-8 text-sm"
           />
@@ -325,8 +352,8 @@ function IntegrationConfigPanel({
           <Label htmlFor="n8n-webhook" className="text-xs">Webhook URL *</Label>
           <Input
             id="n8n-webhook"
-            value={config?.webhookUrl || ''}
-            onChange={(e) => onConfigChange({ ...config, webhookUrl: e.target.value })}
+            value={localConfig?.webhookUrl || ''}
+            onChange={(e) => handleChange({ webhookUrl: e.target.value })}
             placeholder="https://n8n.example.com/webhook/..."
             className="h-8 text-sm"
           />
@@ -336,8 +363,8 @@ function IntegrationConfigPanel({
           <Input
             id="n8n-apikey"
             type="password"
-            value={config?.apiKey || ''}
-            onChange={(e) => onConfigChange({ ...config, apiKey: e.target.value })}
+            value={localConfig?.apiKey || ''}
+            onChange={(e) => handleChange({ apiKey: e.target.value })}
             placeholder="Bearer token or API key"
             className="h-8 text-sm"
           />
@@ -346,8 +373,8 @@ function IntegrationConfigPanel({
         <div className="space-y-2">
           <Label htmlFor="n8n-type" className="text-xs">Webhook Type</Label>
           <Select
-            value={config?.webhookType || 'chat'}
-            onValueChange={(value) => onConfigChange({ ...config, webhookType: value as 'chat' | 'generic' })}
+            value={localConfig?.webhookType || 'chat'}
+            onValueChange={(value) => handleChange({ webhookType: value as 'chat' | 'generic' })}
           >
             <SelectTrigger id="n8n-type" className="h-8 text-sm">
               <SelectValue />
@@ -361,8 +388,8 @@ function IntegrationConfigPanel({
         <div className="space-y-2">
           <Label htmlFor="n8n-trigger" className="text-xs">Trigger Mode</Label>
           <Select
-            value={config?.triggerMode || 'always'}
-            onValueChange={(value) => onConfigChange({ ...config, triggerMode: value as 'always' | 'keywords' | 'fallback' })}
+            value={localConfig?.triggerMode || 'always'}
+            onValueChange={(value) => handleChange({ triggerMode: value as 'always' | 'keywords' | 'fallback' })}
           >
             <SelectTrigger id="n8n-trigger" className="h-8 text-sm">
               <SelectValue />
@@ -374,14 +401,13 @@ function IntegrationConfigPanel({
             </SelectContent>
           </Select>
         </div>
-        {config?.triggerMode === 'keywords' && (
+        {localConfig?.triggerMode === 'keywords' && (
           <div className="space-y-2">
             <Label htmlFor="n8n-keywords" className="text-xs">Trigger Keywords</Label>
             <Input
               id="n8n-keywords"
-              value={(config?.triggerKeywords || []).join(', ')}
-              onChange={(e) => onConfigChange({ 
-                ...config, 
+              value={(localConfig?.triggerKeywords || []).join(', ')}
+              onChange={(e) => handleChange({ 
                 triggerKeywords: e.target.value.split(',').map(k => k.trim()).filter(Boolean) 
               })}
               placeholder="book, price, contact"
