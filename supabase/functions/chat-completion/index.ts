@@ -395,19 +395,23 @@ serve(async (req) => {
       });
     } else if (aiProvider === 'local') {
       // Use local/self-hosted LLM (OpenAI-compatible API)
-      // Get config from integrations settings
+      // Get config from integrations settings (PRIMARY SOURCE)
       const localConfig = aiIntegrations?.local_llm?.config || {};
       
-      // Priority: settings (from chat), then integrations config
-      const endpoint = settings?.localEndpoint || localConfig?.endpoint;
+      // Priority: integrations config FIRST (chat settings may have placeholder values)
+      // Only use chat settings if they look like real configured values (not placeholders)
+      const chatEndpoint = settings?.localEndpoint;
+      const isPlaceholder = !chatEndpoint || chatEndpoint.includes('your-local-llm') || chatEndpoint.includes('placeholder');
+      const endpoint = isPlaceholder ? localConfig?.endpoint : chatEndpoint;
+      
       if (!endpoint) {
         throw new Error('Local endpoint is not configured. Set it in Integrations → Local LLM.');
       }
 
-      // Hybrid key lookup: Supabase secret first, then UI config
+      // Hybrid key lookup: Supabase secret first, then integrations config, then chat settings
       const supabaseLocalKey = Deno.env.get('LOCAL_LLM_API_KEY');
       const configLocalKey = localConfig?.apiKey;
-      const localApiKey = supabaseLocalKey || settings?.localApiKey || configLocalKey;
+      const localApiKey = supabaseLocalKey || configLocalKey || settings?.localApiKey;
 
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
@@ -415,7 +419,7 @@ serve(async (req) => {
       
       if (localApiKey) {
         headers['Authorization'] = `Bearer ${localApiKey}`;
-        console.log('Using Local LLM API key from:', supabaseLocalKey ? 'Supabase secret' : 'UI config');
+        console.log('Using Local LLM API key from:', supabaseLocalKey ? 'Supabase secret' : 'Integrations config');
       }
 
       // Handle endpoints that already include /v1 path
@@ -423,8 +427,10 @@ serve(async (req) => {
       const apiPath = baseEndpoint.endsWith('/v1') ? '/chat/completions' : '/v1/chat/completions';
       const fullUrl = `${baseEndpoint}${apiPath}`;
       
-      const model = settings?.localModel || localConfig?.model || 'llama3';
-      console.log('Calling local AI endpoint:', { fullUrl, model });
+      // Priority: integrations config for model too
+      const chatModel = settings?.localModel;
+      const model = localConfig?.model || (chatModel && chatModel !== 'llama3' ? chatModel : null) || 'llama3';
+      console.log('Calling local AI endpoint:', { fullUrl, model, source: isPlaceholder ? 'integrations' : 'chat-settings' });
 
       response = await fetch(fullUrl, {
         method: 'POST',
