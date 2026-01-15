@@ -1,6 +1,6 @@
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { supabase, isSupabaseConfigured } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Lock, Wrench } from 'lucide-react';
 import { BlockRenderer } from '@/components/public/BlockRenderer';
 import { PublicNavigation } from '@/components/public/PublicNavigation';
@@ -153,11 +153,6 @@ export default function PublicPage() {
     pageSlug: pageSlug,
     pageTitle: pageData?.title,
   });
-
-  // Show setup wizard immediately if Supabase is not configured (before any loading)
-  if (!isSupabaseConfigured) {
-    return <SetupRequiredPage />;
-  }
 
   if (isLoading || authLoading) {
     return (

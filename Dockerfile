@@ -50,10 +50,6 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 # Copy custom nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copy entrypoint script for runtime env var injection
-COPY docker-entrypoint.sh /docker-entrypoint.sh
-RUN chmod +x /docker-entrypoint.sh
-
 # Expose port 80 (Easypanel/Traefik will handle HTTPS)
 EXPOSE 80
 
@@ -62,5 +58,5 @@ EXPOSE 80
 HEALTHCHECK --interval=10s --timeout=5s --start-period=10s --retries=3 \
   CMD curl -f http://localhost/health || exit 1
 
-# Use entrypoint to inject env vars at runtime, then start nginx
-ENTRYPOINT ["/docker-entrypoint.sh"]
+# Start nginx in foreground
+CMD ["nginx", "-g", "daemon off;"]
