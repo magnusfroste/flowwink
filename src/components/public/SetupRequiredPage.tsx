@@ -1,17 +1,34 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Database, ExternalLink, Terminal, RefreshCw } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Database, ExternalLink, Terminal, RefreshCw, Wand2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SeoHead } from '@/components/public/SeoHead';
+import { DatabaseSetupWizard } from '@/components/admin/DatabaseSetupWizard';
 
 export function SetupRequiredPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [isRetrying, setIsRetrying] = useState(false);
+  const [showWizard, setShowWizard] = useState(false);
+
+  // Check for ?setup=true URL parameter to force wizard display (dev mode)
+  const forceSetup = searchParams.get('setup') === 'true';
+
+  useEffect(() => {
+    if (forceSetup) {
+      setShowWizard(true);
+    }
+  }, [forceSetup]);
 
   const handleRetry = () => {
     setIsRetrying(true);
     window.location.reload();
   };
+
+  // Show the setup wizard if user chose auto-setup or ?setup=true
+  if (showWizard) {
+    return <DatabaseSetupWizard />;
+  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center">
@@ -21,43 +38,68 @@ export function SetupRequiredPage() {
           <Database className="h-8 w-8 text-primary" />
         </div>
         <h1 className="font-serif text-3xl font-bold mb-4">
-          Database Not Configured
+          Setup Required
         </h1>
         <p className="text-muted-foreground mb-6">
-          Run the setup script to configure your Supabase backend, then redeploy.
+          FlowWink requires edge functions to be deployed before the setup wizard can run.
         </p>
         
-        {/* Setup Instructions */}
-        <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 text-left mb-4">
-          <h2 className="font-medium mb-2 flex items-center gap-2">
-            <Terminal className="h-4 w-4 text-primary" />
-            Run Setup Script
+        {/* Prerequisites Warning */}
+        <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4 text-left mb-4">
+          <h2 className="font-medium mb-2 flex items-center gap-2 text-amber-600 dark:text-amber-400">
+            <Terminal className="h-4 w-4" />
+            Edge Functions Required
           </h2>
           <p className="text-sm text-muted-foreground mb-3">
-            Run this command in your project directory:
+            Before using the setup wizard, you must deploy edge functions via Supabase CLI:
           </p>
           <div className="bg-background/50 rounded p-3 mb-3">
-            <code className="text-sm font-mono">
-              ./scripts/setup-supabase.sh
+            <code className="text-xs block space-y-1">
+              <div className="text-muted-foreground"># Install Supabase CLI</div>
+              <div>npm install -g supabase</div>
+              <div className="text-muted-foreground"># Login and link</div>
+              <div>supabase login</div>
+              <div>supabase link --project-ref YOUR_PROJECT_REF</div>
+              <div className="text-muted-foreground"># Deploy essential functions</div>
+              <div>supabase functions deploy setup-database</div>
+              <div>supabase functions deploy get-page</div>
+              <div>supabase functions deploy track-page-view</div>
             </code>
           </div>
           <p className="text-xs text-muted-foreground">
-            This will deploy edge functions, run migrations, create admin user, and give you env vars to paste into Easypanel.
+            Once deployed, refresh this page and the setup wizard will be available.
           </p>
         </div>
 
-        {/* What the script does */}
-        <div className="bg-muted/50 rounded-lg p-4 text-left mb-6">
-          <h2 className="font-medium mb-3">What the script does:</h2>
-          <ul className="text-sm text-muted-foreground space-y-2">
-            <li>✓ Deploys all 33 edge functions (~60 seconds)</li>
-            <li>✓ Runs database migrations (creates tables, RLS policies)</li>
-            <li>✓ Creates your admin user</li>
-            <li>✓ Displays env vars ready to copy-paste</li>
-          </ul>
-          <p className="text-xs text-muted-foreground mt-3">
-            See <a href="https://github.com/magnusfroste/flowwink/blob/main/docs/SETUP.md" target="_blank" className="text-primary hover:underline">SETUP.md</a> for detailed instructions.
+        {/* Auto Setup Option */}
+        <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 text-left mb-4">
+          <h2 className="font-medium mb-2 flex items-center gap-2">
+            <Wand2 className="h-4 w-4 text-primary" />
+            Setup Wizard (After Edge Functions)
+          </h2>
+          <p className="text-sm text-muted-foreground mb-3">
+            After deploying edge functions, use the wizard to create database tables and admin user.
           </p>
+          <Button onClick={() => setShowWizard(true)} className="w-full gap-2">
+            <Wand2 className="h-4 w-4" />
+            Start Setup Wizard
+          </Button>
+        </div>
+
+        {/* Full Manual Setup */}
+        <div className="bg-muted/50 rounded-lg p-4 text-left mb-6">
+          <h2 className="font-medium mb-3 flex items-center gap-2">
+            <Terminal className="h-4 w-4" />
+            Complete Setup Steps
+          </h2>
+          <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
+            <li>Create a Supabase project at supabase.com</li>
+            <li>Install Supabase CLI: <code className="bg-muted px-1 rounded">npm install -g supabase</code></li>
+            <li>Deploy edge functions (see above)</li>
+            <li>Set environment variables in your hosting platform</li>
+            <li>Run <code className="bg-muted px-1 rounded">schema.sql</code> in SQL Editor or use setup wizard</li>
+            <li>Refresh this page</li>
+          </ol>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
