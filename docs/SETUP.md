@@ -1,16 +1,23 @@
-# Self-Hosting Setup Guide
+# Supabase Backend Setup
 
-This guide walks you through setting up FlowWink on your own Supabase instance.
+This guide covers setting up the Supabase backend for FlowWink. This is required for both local development and production deployment.
 
+> **After completing this guide**, proceed to:
+> - [Local Development](#local-development) - Run FlowWink locally with `npm run dev`
+> - [DEPLOYMENT.md](./DEPLOYMENT.md) - Deploy to production (Easypanel, Railway, etc.)
+>
 > **Already running FlowWink?** See [UPGRADING.md](./UPGRADING.md) for upgrade instructions.
-> 
-> **Want to contribute?** See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
 
 ## Prerequisites
 
 - [Node.js](https://nodejs.org/) 18+ and npm
 - A [Supabase](https://supabase.com/) account (free tier works)
-- [Supabase CLI](https://supabase.com/docs/guides/cli) (optional, for local development)
+- **[Supabase CLI](https://supabase.com/docs/guides/cli) (REQUIRED)** - Edge functions cannot be deployed via UI alone
+
+> **⚠️ Important**: The Supabase CLI is **mandatory** for deploying edge functions. There is no way to bulk-upload edge functions via the Supabase Dashboard. You must either:
+> - Use the CLI locally (recommended)
+> - Manually upload each function file individually via Dashboard (tedious - 30+ files)
+> - Use GitHub Actions to automate deployment
 
 ## Quick Start
 
@@ -19,46 +26,38 @@ This guide walks you through setting up FlowWink on your own Supabase instance.
 1. Go to [supabase.com](https://supabase.com/) and create a new project
 2. Note your project URL and anon key from **Settings → API**
 
-### 2. Run Database Migrations
-
-You have two options:
-
-#### Option A: Using Supabase CLI (Recommended)
+### 2. Install and Configure Supabase CLI
 
 ```bash
-# Install Supabase CLI
+# Install Supabase CLI globally
 npm install -g supabase
 
-# Login to Supabase
+# Login to Supabase (opens browser for OAuth)
 supabase login
 
 # Link to your project
 supabase link --project-ref YOUR_PROJECT_REF
-
-# Run all migrations
-supabase db push
 ```
 
-#### Option B: Manual SQL Execution
+> **Note**: The CLI uses browser-based OAuth authentication. Make sure you have admin access to the Supabase project.
 
-1. Go to your Supabase Dashboard → **SQL Editor**
-2. Run the combined schema from `supabase/schema.sql` (or run each migration file in order from `supabase/migrations/`)
+### 3. Deploy Edge Functions (REQUIRED)
 
-### 3. Configure Environment Variables
+**⚠️ Critical**: Edge functions must be deployed BEFORE running database migrations or the setup wizard will not work.
 
-Create a `.env` file in the project root:
-
-```env
-VITE_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key-here
-```
-
-### 4. Deploy Edge Functions
-
-Edge Functions provide AI chat, content API, image processing, and more.
+#### Minimal Setup (3 functions - basic CMS functionality)
 
 ```bash
-# Deploy all functions
+# Deploy only the essential functions
+supabase functions deploy setup-database   # Required for setup wizard
+supabase functions deploy get-page         # Required for pages to display
+supabase functions deploy track-page-view  # Required for analytics
+```
+
+#### Full Setup (all features)
+
+```bash
+# Deploy all functions for complete functionality
 supabase functions deploy analyze-brand
 supabase functions deploy blog-rss
 supabase functions deploy chat-completion
@@ -71,6 +70,9 @@ supabase functions deploy migrate-page
 supabase functions deploy process-image
 supabase functions deploy publish-scheduled-pages
 supabase functions deploy send-webhook
+supabase functions deploy setup-database
+supabase functions deploy sitemap-xml
+supabase functions deploy track-page-view
 supabase functions deploy newsletter-send
 supabase functions deploy newsletter-export
 supabase functions deploy newsletter-subscribe
@@ -79,6 +81,43 @@ supabase functions deploy newsletter-unsubscribe
 supabase functions deploy newsletter-track-open
 supabase functions deploy newsletter-track-click
 ```
+
+### 4. Run Database Migrations
+
+You have two options:
+
+#### Option A: Using Supabase CLI (Recommended)
+
+```bash
+# Run all migrations
+supabase db push
+```
+
+#### Option B: Manual SQL Execution
+
+1. Go to your Supabase Dashboard → **SQL Editor**
+2. Run the combined schema from `supabase/schema.sql`
+
+### 5. Configure Environment Variables
+
+Create a `.env` file in the project root:
+
+```env
+VITE_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key-here
+```
+
+### 6. Verify Setup
+
+Your Supabase backend is now ready! You can verify by:
+
+1. Check edge functions are deployed: `supabase functions list`
+2. Check database tables exist in Supabase Dashboard → Database
+3. Verify `cms-images` storage bucket exists
+
+**Next Steps:**
+- For local development: See [Local Development](#local-development) below
+- For production deployment: See [DEPLOYMENT.md](./DEPLOYMENT.md)
 
 ---
 
@@ -133,20 +172,6 @@ This keeps all AI data on your own infrastructure — no external secrets needed
 
 ---
 
-### 5. Create Storage Bucket
-
-The migration creates a `cms-images` bucket automatically. Verify it exists in **Storage** in your Supabase Dashboard.
-
-### 6. Install Dependencies & Run
-
-```bash
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
-```
-
 ### 7. Create Your First Admin User
 
 1. Go to your app and sign up with email/password
@@ -165,28 +190,37 @@ Or use the `create-user` Edge Function to create admin users programmatically.
 
 ---
 
-## Production Deployment
+## Local Development
 
-### Build for Production
+After completing the Supabase setup above, you can run FlowWink locally:
 
 ```bash
-npm run build
+# Clone the repository (if not already done)
+git clone https://github.com/magnusfroste/flowwink.git
+cd flowwink
+
+# Install dependencies
+npm install
+
+# Create .env file
+cp .env.example .env
+# Edit .env with your Supabase credentials
+
+# Start development server
+npm run dev
 ```
 
-The `dist/` folder contains your static site, ready for deployment to:
-- **Vercel**
-- **Netlify**
-- **Cloudflare Pages**
-- **Any static hosting**
+The app will automatically detect if the database is not configured and show the setup wizard.
 
-### Environment Variables for Production
+Access the app at `http://localhost:5173`
 
-Set these in your hosting provider:
+---
 
-| Variable | Description |
-|----------|-------------|
-| `VITE_SUPABASE_URL` | Your Supabase project URL |
-| `VITE_SUPABASE_ANON_KEY` | Your Supabase anon/public key |
+## Production Deployment
+
+For production deployment to Easypanel, Railway, Fly.io, or other platforms, see:
+
+**[DEPLOYMENT.md](./DEPLOYMENT.md)** - Complete production deployment guide
 
 ---
 

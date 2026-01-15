@@ -1,12 +1,13 @@
-# Docker Deployment Guide
+# Production Deployment Guide
 
-Complete guide for deploying FlowWink with Docker on Easypanel, Railway, Fly.io, or any Docker-compatible platform.
+Complete guide for deploying FlowWink to production with Docker on Easypanel, Railway, Fly.io, or any Docker-compatible platform.
+
+> **⚠️ Prerequisites**: You must complete [SETUP.md](./SETUP.md) first to set up your Supabase backend (database + edge functions).
 
 ## Table of Contents
 
 - [Prerequisites](#prerequisites)
 - [Quick Start (Easypanel)](#quick-start-easypanel)
-- [Supabase Setup](#supabase-setup)
 - [Cloudflare Setup (Optional but Recommended)](#cloudflare-setup-optional-but-recommended)
 - [Alternative Platforms](#alternative-platforms)
 - [Environment Variables](#environment-variables)
@@ -17,121 +18,49 @@ Complete guide for deploying FlowWink with Docker on Easypanel, Railway, Fly.io,
 
 ## Prerequisites
 
-- **Supabase Account** (Cloud or Self-Hosted)
+- **✅ Completed [SETUP.md](./SETUP.md)** - Supabase backend must be configured first
 - **Docker-compatible hosting** (Easypanel, Railway, Fly.io, or VPS with Docker)
 - **Domain name** (optional, but recommended for production)
 - **Cloudflare account** (optional, for CDN and caching)
+
+> **⚠️ Important**: If you haven't set up Supabase yet, complete [SETUP.md](./SETUP.md) first. The app requires:
+> - Supabase project created
+> - Edge functions deployed (via CLI)
+> - Database migrations run
+> - Environment variables noted (URL + anon key)
 
 ---
 
 ## Quick Start (Easypanel)
 
-### 1. Create Supabase Project
+> **Before starting**: Complete [SETUP.md](./SETUP.md) to set up your Supabase backend.
 
-Choose one of the following:
+### 1. Prepare Environment Variables
 
-#### Option A: Supabase Cloud (Easiest)
+From your Supabase project (Settings → API), note:
+- **Project URL**: `https://YOUR_PROJECT_REF.supabase.co`
+- **Anon/Public Key**: `eyJhbGc...`
 
-1. Go to [supabase.com](https://supabase.com) and create a new project
-2. Note your **Project URL** and **Anon Key** from **Settings → API**
+You'll need these for Easypanel configuration.
 
-#### Option B: Self-Hosted Supabase (Full Control)
+### 2. Deploy to Easypanel
 
-Follow [Supabase Self-Hosting Guide](https://supabase.com/docs/guides/self-hosting/docker) to deploy your own Supabase instance.
-
-### 2. Run Database Migrations
-
-You have two options:
-
-#### Option A: Using Supabase CLI (Recommended)
-
-```bash
-# Install Supabase CLI
-npm install -g supabase
-
-# Login to Supabase
-supabase login
-
-# Link to your project
-supabase link --project-ref YOUR_PROJECT_REF
-
-# Run all migrations
-supabase db push
-```
-
-#### Option B: Manual SQL Execution
-
-1. Go to your Supabase Dashboard → **SQL Editor**
-2. Copy the entire contents of `supabase/schema.sql`
-3. Paste and run in the SQL Editor
-
-This creates all tables, RLS policies, and storage buckets.
-
-### 3. Deploy Edge Functions
-
-Edge Functions provide the backend API, AI features, and webhooks.
-
-```bash
-# Deploy all functions (run from project root)
-supabase functions deploy analyze-brand
-supabase functions deploy blog-rss
-supabase functions deploy chat-completion
-supabase functions deploy content-api
-supabase functions deploy create-user
-supabase functions deploy generate-text
-supabase functions deploy get-page
-supabase functions deploy invalidate-cache
-supabase functions deploy llms-txt
-supabase functions deploy migrate-page
-supabase functions deploy newsletter-confirm
-supabase functions deploy newsletter-export
-supabase functions deploy newsletter-link
-supabase functions deploy newsletter-send
-supabase functions deploy newsletter-subscribe
-supabase functions deploy newsletter-track
-supabase functions deploy newsletter-unsubscribe
-supabase functions deploy process-image
-supabase functions deploy publish-scheduled-pages
-supabase functions deploy send-webhook
-supabase functions deploy sitemap-xml
-```
-
-**Optional Secrets** (only if using AI Brand Analysis or AI Migration):
-
-```bash
-supabase secrets set FIRECRAWL_API_KEY=your-firecrawl-api-key
-```
-
-### 4. Create First Admin User
-
-After deploying, sign up in the app, then run this SQL in Supabase Dashboard:
-
-```sql
--- Replace with your user's email
-UPDATE public.user_roles 
-SET role = 'admin' 
-WHERE user_id = (
-  SELECT id FROM auth.users WHERE email = 'your-email@example.com'
-);
-```
-
-### 5. Deploy to Easypanel
 
 #### Via GitHub (Recommended - Auto-deploy on push)
 
-1. Push your code to GitHub
+1. **Fork or push** FlowWink code to your GitHub repository
 2. In Easypanel, click **Create Service → GitHub**
-3. Select your repository
-4. Configure:
+3. **Select your repository**
+4. **Configure**:
    - **Build Method**: Dockerfile
    - **Port**: 80
    - **Environment Variables**:
      ```
      VITE_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
-     VITE_SUPABASE_PUBLISHABLE_KEY=your-publishable-key-here
+     VITE_SUPABASE_PUBLISHABLE_KEY=your-anon-key-here
+     VITE_SUPABASE_PROJECT_ID=YOUR_PROJECT_REF
      ```
    > **Note**: Easypanel automatically passes environment variables as Docker build arguments.
-   > The Dockerfile is configured to accept `VITE_*` variables via `ARG` directives.
 5. Click **Deploy**
 
 Easypanel will:
@@ -154,7 +83,24 @@ docker push your-registry/flowwink:latest
 # Create Service → Docker Image → your-registry/flowwink:latest
 ```
 
-### 6. Configure Domain (Optional)
+### 3. Create First Admin User
+
+After deployment:
+
+1. Visit your deployed app
+2. Sign up with email/password
+3. In Supabase Dashboard → **SQL Editor**, run:
+
+```sql
+-- Replace with your user's email
+UPDATE public.user_roles 
+SET role = 'admin' 
+WHERE user_id = (
+  SELECT id FROM auth.users WHERE email = 'your-email@example.com'
+);
+```
+
+### 4. Configure Domain (Optional)
 
 In Easypanel:
 1. Go to your service → **Domains**
@@ -165,38 +111,6 @@ In Easypanel:
    ```
 
 Easypanel automatically provisions SSL via Let's Encrypt.
-
----
-
-## Supabase Setup
-
-### Storage Bucket
-
-Verify the `cms-images` bucket exists:
-
-1. Go to Supabase Dashboard → **Storage**
-2. Check for `cms-images` bucket (created by migrations)
-3. Ensure it's **public** (for serving images)
-
-### Scheduled Publishing (Optional)
-
-Enable automatic publishing of scheduled pages:
-
-```sql
--- Run in Supabase SQL Editor
-SELECT cron.schedule(
-  'publish-scheduled-pages',
-  '* * * * *',  -- Every minute
-  $$
-  SELECT net.http_post(
-    url := 'https://YOUR_PROJECT_REF.supabase.co/functions/v1/publish-scheduled-pages',
-    headers := '{"Authorization": "Bearer YOUR_SERVICE_ROLE_KEY"}'::jsonb
-  );
-  $$
-);
-```
-
-Replace `YOUR_PROJECT_REF` and `YOUR_SERVICE_ROLE_KEY` with your values.
 
 ---
 

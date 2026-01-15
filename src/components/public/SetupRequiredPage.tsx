@@ -38,20 +38,47 @@ export function SetupRequiredPage() {
           <Database className="h-8 w-8 text-primary" />
         </div>
         <h1 className="font-serif text-3xl font-bold mb-4">
-          Database Setup Required
+          Setup Required
         </h1>
         <p className="text-muted-foreground mb-6">
-          Unable to connect to the database. This usually means the application hasn't been fully configured yet.
+          FlowWink requires edge functions to be deployed before the setup wizard can run.
         </p>
         
+        {/* Prerequisites Warning */}
+        <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4 text-left mb-4">
+          <h2 className="font-medium mb-2 flex items-center gap-2 text-amber-600 dark:text-amber-400">
+            <Terminal className="h-4 w-4" />
+            Edge Functions Required
+          </h2>
+          <p className="text-sm text-muted-foreground mb-3">
+            Before using the setup wizard, you must deploy edge functions via Supabase CLI:
+          </p>
+          <div className="bg-background/50 rounded p-3 mb-3">
+            <code className="text-xs block space-y-1">
+              <div className="text-muted-foreground"># Install Supabase CLI</div>
+              <div>npm install -g supabase</div>
+              <div className="text-muted-foreground"># Login and link</div>
+              <div>supabase login</div>
+              <div>supabase link --project-ref YOUR_PROJECT_REF</div>
+              <div className="text-muted-foreground"># Deploy essential functions</div>
+              <div>supabase functions deploy setup-database</div>
+              <div>supabase functions deploy get-page</div>
+              <div>supabase functions deploy track-page-view</div>
+            </code>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Once deployed, refresh this page and the setup wizard will be available.
+          </p>
+        </div>
+
         {/* Auto Setup Option */}
         <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 text-left mb-4">
           <h2 className="font-medium mb-2 flex items-center gap-2">
             <Wand2 className="h-4 w-4 text-primary" />
-            Automatic Setup (Recommended)
+            Setup Wizard (After Edge Functions)
           </h2>
           <p className="text-sm text-muted-foreground mb-3">
-            Run the database setup wizard to automatically create all required tables and configurations.
+            After deploying edge functions, use the wizard to create database tables and admin user.
           </p>
           <Button onClick={() => setShowWizard(true)} className="w-full gap-2">
             <Wand2 className="h-4 w-4" />
@@ -59,18 +86,19 @@ export function SetupRequiredPage() {
           </Button>
         </div>
 
-        {/* Manual Setup Option */}
+        {/* Full Manual Setup */}
         <div className="bg-muted/50 rounded-lg p-4 text-left mb-6">
           <h2 className="font-medium mb-3 flex items-center gap-2">
             <Terminal className="h-4 w-4" />
-            Manual Setup Steps
+            Complete Setup Steps
           </h2>
           <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
             <li>Create a Supabase project at supabase.com</li>
-            <li>Copy your project URL and anon key</li>
-            <li>Add them to your <code className="bg-muted px-1 rounded">.env</code> file</li>
-            <li>Run <code className="bg-muted px-1 rounded">schema.sql</code> in SQL Editor</li>
-            <li>Restart the application</li>
+            <li>Install Supabase CLI: <code className="bg-muted px-1 rounded">npm install -g supabase</code></li>
+            <li>Deploy edge functions (see above)</li>
+            <li>Set environment variables in your hosting platform</li>
+            <li>Run <code className="bg-muted px-1 rounded">schema.sql</code> in SQL Editor or use setup wizard</li>
+            <li>Refresh this page</li>
           </ol>
         </div>
 
@@ -86,11 +114,11 @@ export function SetupRequiredPage() {
           </Button>
           <Button 
             variant="outline" 
-            onClick={() => window.open('https://docs.lovable.dev/tips-tricks/self-hosting', '_blank')}
+            onClick={() => window.open('https://github.com/magnusfroste/flowwink/blob/main/docs/DEPLOYMENT.md', '_blank')}
             className="gap-2"
           >
             <ExternalLink className="h-4 w-4" />
-            Setup Guide
+            Deployment Guide
           </Button>
           <Button 
             variant="outline" 
