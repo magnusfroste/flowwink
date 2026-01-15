@@ -41,6 +41,7 @@ export default function PublicPage() {
   const { data: maintenanceSettings } = useMaintenanceSettings();
   const [user, setUser] = useState<unknown>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [renderError, setRenderError] = useState<Error | null>(null);
 
   // Check for ?setup=true to force setup wizard (dev mode)
   const forceSetup = searchParams.get('setup') === 'true';
@@ -91,6 +92,8 @@ export default function PublicPage() {
   const { data: page, isLoading } = useQuery({
     queryKey: ['public-page', pageSlug],
     queryFn: async (): Promise<Page | null | typeof CONNECTION_ERROR> => {
+      console.log('[PublicPage] Fetching page:', pageSlug);
+      
       // Check if Supabase URL is configured
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       if (!supabaseUrl || supabaseUrl === 'undefined' || supabaseUrl === '') {
@@ -100,9 +103,11 @@ export default function PublicPage() {
 
       try {
         // Use edge function for fetching (handles caching internally)
-        const response = await fetch(
-          `${supabaseUrl}/functions/v1/get-page?slug=${encodeURIComponent(pageSlug)}`
-        );
+        const edgeFunctionUrl = `${supabaseUrl}/functions/v1/get-page?slug=${encodeURIComponent(pageSlug)}`;
+        console.log('[PublicPage] Trying edge function:', edgeFunctionUrl);
+        
+        const response = await fetch(edgeFunctionUrl);
+        console.log('[PublicPage] Edge function response status:', response.status);
         
         // If edge function returns 404, page doesn't exist - return null (not an error)
         if (response.status === 404) {
@@ -112,8 +117,16 @@ export default function PublicPage() {
         
         if (response.ok) {
           const pageData = await response.json();
+          console.log('[PublicPage] Edge function returned data:', { 
+            hasError: !!pageData.error, 
+            hasContent: !!pageData.content_json,
+            contentLength: pageData.content_json?.length 
+          });
+          
           if (!pageData.error) {
-            return parseContent(pageData);
+            const parsed = parseContent(pageData);
+            console.log('[PublicPage] Successfully parsed page data');
+            return parsed;
           }
           // Edge function returned data with error field - treat as not found
           console.log('[PublicPage] Edge function returned error:', pageData.error);
@@ -121,12 +134,13 @@ export default function PublicPage() {
         }
         
         // Other error status codes - fall through to direct DB query
-        console.log('[PublicPage] Edge function returned status:', response.status);
+        console.log('[PublicPage] Edge function returned status:', response.status, '- falling back to DB');
       } catch (e) {
         console.log('[PublicPage] Edge function unavailable, using direct DB query', e);
       }
 
       // Fallback to direct DB query
+      console.log('[PublicPage] Using direct DB query for:', pageSlug);
       try {
         const { data: dbData, error: dbError } = await supabase
           .from('pages')
@@ -136,6 +150,8 @@ export default function PublicPage() {
           .maybeSingle();
 
         if (dbError) {
+          console.error('[PublicPage] DB query error:', dbError);
+          
           // Check for connection-related errors
           const errorMessage = dbError.message?.toLowerCase() || '';
           const isConnectionError = 
@@ -151,12 +167,22 @@ export default function PublicPage() {
             return CONNECTION_ERROR;
           }
           
-          console.error('[PublicPage] DB error:', dbError);
           return null;
         }
-        if (!dbData) return null;
+        
+        if (!dbData) {
+          console.log('[PublicPage] No page found in DB for slug:', pageSlug);
+          return null;
+        }
 
-        return parseContent(dbData);
+        console.log('[PublicPage] DB query successful:', {
+          hasContent: !!dbData.content_json,
+          contentLength: Array.isArray(dbData.content_json) ? dbData.content_json.length : 'not-array'
+        });
+        
+        const parsed = parseContent(dbData);
+        console.log('[PublicPage] Successfully parsed DB data');
+        return parsed;
       } catch (e) {
         console.error('[PublicPage] Unexpected error:', e);
         return CONNECTION_ERROR;
@@ -315,10 +341,23 @@ export default function PublicPage() {
 
         {/* Content Blocks */}
         <main>
-          {pageData.content_json?.length > 0 ? (
-            pageData.content_json.map((block, index) => (
-              <BlockRenderer key={block.id} block={block} pageId={pageData.id} index={index} />
-            ))
+          {renderError ? (
+            <div className="py-16 px-6">
+              <div className="container mx-auto max-w-3xl text-center">
+                <p className="text-destructive mb-2">Error rendering page content</p>
+                <p className="text-sm text-muted-foreground">{renderError.message}</p>
+              </div>
+            </div>
+          ) : pageData.content_json?.length > 0 ? (
+            pageData.content_json.map((block, index) => {
+              try {
+                return <BlockRenderer key={block.id} block={block} pageId={pageData.id} index={index} />;
+              } catch (err) {
+                console.error('[PublicPage] Error rendering block:', block.type, err);
+                setRenderError(err as Error);
+                return null;
+              }
+            })
           ) : (
             <div className="py-16 px-6">
               <div className="container mx-auto max-w-3xl text-center text-muted-foreground">
