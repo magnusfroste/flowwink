@@ -127,6 +127,7 @@ const router = createBrowserRouter([
   { path: "/admin/copilot", element: <CopilotPage /> },
   { path: "/preview/:id", element: <PreviewPage /> },
   { path: "/:slug", element: <PublicPage /> },
+  { path: "*", element: <NotFound /> },
 ]);
 
 const App = () => (
