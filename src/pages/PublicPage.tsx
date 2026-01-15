@@ -63,6 +63,31 @@ export default function PublicPage() {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Check if any published pages exist (to detect fresh installs)
+  const { data: hasAnyPages, isLoading: checkingPages } = useQuery({
+    queryKey: ['has-published-pages'],
+    queryFn: async (): Promise<boolean> => {
+      try {
+        const { count, error } = await supabase
+          .from('pages')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'published');
+        
+        if (error) {
+          console.error('[PublicPage] Error checking for pages:', error);
+          return false;
+        }
+        
+        return (count ?? 0) > 0;
+      } catch (e) {
+        console.error('[PublicPage] Error checking for pages:', e);
+        return false;
+      }
+    },
+    staleTime: 5 * 60 * 1000, // 5 min cache
+    retry: false,
+  });
+
   const { data: page, isLoading } = useQuery({
     queryKey: ['public-page', pageSlug],
     queryFn: async (): Promise<Page | null | typeof CONNECTION_ERROR> => {
@@ -154,7 +179,7 @@ export default function PublicPage() {
     pageTitle: pageData?.title,
   });
 
-  if (isLoading || authLoading) {
+  if (isLoading || authLoading || checkingPages) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -221,15 +246,15 @@ export default function PublicPage() {
     );
   }
 
-  // No page found - show Coming Soon for homepage, 404 for other pages
+  // No page found - show Coming Soon if no pages exist, otherwise 404
   if (!pageData) {
-    // If this is the homepage request, show Coming Soon instead of 404
-    const isHomepageRequest = pageSlug === homepageSlug;
-    
-    if (isHomepageRequest) {
+    // If no pages exist in the database at all (fresh install or template switch),
+    // show Coming Soon page for all routes to avoid 404 errors during setup
+    if (!hasAnyPages) {
       return <ComingSoonPage />;
     }
 
+    // Pages exist but this specific page wasn't found - show 404
     return (
       <div className="min-h-screen bg-background">
         <SeoHead title="Page not found" noIndex />
