@@ -2,17 +2,21 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+// Support both build-time and runtime env injection
+// Runtime placeholders are replaced by docker-entrypoint.sh at container start
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '__VITE_SUPABASE_URL_PLACEHOLDER__';
+const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '__VITE_SUPABASE_PUBLISHABLE_KEY_PLACEHOLDER__';
 
-// Check if Supabase is configured
+// Check if Supabase is configured (not placeholder or empty)
 export const isSupabaseConfigured = Boolean(
   SUPABASE_URL && 
   SUPABASE_URL !== 'undefined' && 
   SUPABASE_URL !== '' &&
+  !SUPABASE_URL.includes('PLACEHOLDER') &&
   SUPABASE_PUBLISHABLE_KEY && 
   SUPABASE_PUBLISHABLE_KEY !== 'undefined' && 
-  SUPABASE_PUBLISHABLE_KEY !== ''
+  SUPABASE_PUBLISHABLE_KEY !== '' &&
+  !SUPABASE_PUBLISHABLE_KEY.includes('PLACEHOLDER')
 );
 
 // Import the supabase client like this:
