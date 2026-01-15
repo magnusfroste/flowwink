@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import { Rocket, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SeoHead } from '@/components/public/SeoHead';
@@ -9,6 +10,16 @@ export function ComingSoonPage() {
   const { data: branding } = useBrandingSettings();
   
   const siteName = branding?.organizationName || 'Our Website';
+
+  // Auto-redirect to admin login when no pages exist
+  // The admin needs to set up content, so send them directly to login
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      navigate('/auth');
+    }, 2000); // 2 second delay so user sees the message
+
+    return () => clearTimeout(timer);
+  }, [navigate]);
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center">
@@ -21,10 +32,10 @@ export function ComingSoonPage() {
           {siteName}
         </h1>
         <p className="text-muted-foreground mb-2">
-          Coming Soon
+          No Content Yet
         </p>
         <p className="text-sm text-muted-foreground mb-8">
-          We're working on something great. Check back soon!
+          Redirecting to admin login...
         </p>
         <Button 
           variant="outline" 
