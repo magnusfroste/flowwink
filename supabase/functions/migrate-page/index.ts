@@ -17,8 +17,21 @@ const corsHeaders = {
 const BLOCK_TYPES_SCHEMA = `
 Available CMS block types:
 
-1. hero - Hero section with title, subtitle, background image, optional CTA button
-   Data: { title: string, subtitle?: string, backgroundImage?: string, primaryButton?: { text: string, url: string } }
+1. hero - Hero section with title, subtitle, background image OR video, optional CTA button
+   Data: { 
+     title: string, 
+     subtitle?: string, 
+     backgroundType?: 'image' | 'video' | 'color', // Default: 'image'
+     backgroundImage?: string, // Use for backgroundType: 'image'
+     videoType?: 'direct' | 'youtube' | 'vimeo', // Use for backgroundType: 'video'
+     videoUrl?: string, // MP4/WebM URL for direct, or YouTube/Vimeo URL
+     videoPosterUrl?: string, // Fallback image while video loads
+     videoAutoplay?: boolean, // Default: true
+     videoLoop?: boolean, // Default: true
+     videoMuted?: boolean, // Default: true
+     primaryButton?: { text: string, url: string },
+     secondaryButton?: { text: string, url: string }
+   }
 
 2. text - Rich text content block
    Data: { content: string } // HTML content
@@ -156,11 +169,81 @@ function detectPlatform(html: string, metadata: Record<string, unknown>): string
   return 'unknown';
 }
 
-// Extract video URLs from HTML
-function extractVideos(html: string): { type: string; url: string; id?: string }[] {
-  const videos: { type: string; url: string; id?: string }[] = [];
+// Extract video URLs from HTML - supports HTML5 video, YouTube, and Vimeo
+function extractVideos(html: string): { type: string; url: string; id?: string; poster?: string; isHeroCandidate?: boolean }[] {
+  const videos: { type: string; url: string; id?: string; poster?: string; isHeroCandidate?: boolean }[] = [];
+  const seenUrls = new Set<string>();
   
-  // YouTube patterns
+  // 1. HTML5 <video> tags with source - PRIORITY for hero videos
+  const videoTagRegex = /<video[^>]*>[\s\S]*?<\/video>/gi;
+  let videoMatch;
+  while ((videoMatch = videoTagRegex.exec(html)) !== null) {
+    const videoBlock = videoMatch[0];
+    
+    // Check if this looks like a hero/background video
+    const isHero = /hero|banner|background|fullscreen|cover/i.test(videoBlock) || 
+                   /autoplay|muted|loop|playsinline/i.test(videoBlock);
+    
+    // Extract poster image
+    const posterMatch = videoBlock.match(/poster=["']([^"']+)["']/i);
+    const poster = posterMatch ? posterMatch[1] : undefined;
+    
+    // Extract MP4 source
+    const mp4Match = videoBlock.match(/src=["']([^"']+\.mp4[^"']*)["']/i) ||
+                     videoBlock.match(/<source[^>]+src=["']([^"']+\.mp4[^"']*)["']/i);
+    if (mp4Match && !seenUrls.has(mp4Match[1])) {
+      seenUrls.add(mp4Match[1]);
+      videos.push({ 
+        type: 'direct', 
+        url: mp4Match[1],
+        poster,
+        isHeroCandidate: isHero
+      });
+    }
+    
+    // Extract WebM source
+    const webmMatch = videoBlock.match(/src=["']([^"']+\.webm[^"']*)["']/i) ||
+                      videoBlock.match(/<source[^>]+src=["']([^"']+\.webm[^"']*)["']/i);
+    if (webmMatch && !seenUrls.has(webmMatch[1])) {
+      seenUrls.add(webmMatch[1]);
+      videos.push({ 
+        type: 'direct', 
+        url: webmMatch[1],
+        poster,
+        isHeroCandidate: isHero
+      });
+    }
+  }
+  
+  // 2. Direct video file URLs in attributes (data-src, data-video, etc.)
+  const directVideoRegex = /(?:src|data-src|data-video|href)=["']([^"']+\.(mp4|webm|mov)[^"']*)["']/gi;
+  while ((videoMatch = directVideoRegex.exec(html)) !== null) {
+    const url = videoMatch[1];
+    if (!seenUrls.has(url)) {
+      seenUrls.add(url);
+      videos.push({ 
+        type: 'direct', 
+        url,
+        isHeroCandidate: /hero|banner|background|cover/i.test(html.substring(Math.max(0, videoMatch.index - 500), videoMatch.index + 500))
+      });
+    }
+  }
+  
+  // 3. Background video in style or inline
+  const bgVideoRegex = /background(?:-video)?:\s*url\(['"]?([^'")\s]+\.(mp4|webm)[^'")\s]*)['"]?\)/gi;
+  while ((videoMatch = bgVideoRegex.exec(html)) !== null) {
+    const url = videoMatch[1];
+    if (!seenUrls.has(url)) {
+      seenUrls.add(url);
+      videos.push({ 
+        type: 'direct', 
+        url,
+        isHeroCandidate: true
+      });
+    }
+  }
+  
+  // 4. YouTube patterns
   const youtubePatterns = [
     /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube-nocookie\.com\/embed\/)([a-zA-Z0-9_-]{11})/gi,
     /youtube\.com\/v\/([a-zA-Z0-9_-]{11})/gi,
@@ -174,13 +257,14 @@ function extractVideos(html: string): { type: string; url: string; id?: string }
         videos.push({ 
           type: 'youtube', 
           url: `https://www.youtube.com/watch?v=${videoId}`,
-          id: videoId 
+          id: videoId,
+          isHeroCandidate: false
         });
       }
     }
   }
   
-  // Vimeo patterns
+  // 5. Vimeo patterns
   const vimeoPatterns = [
     /vimeo\.com\/(\d+)/gi,
     /player\.vimeo\.com\/video\/(\d+)/gi,
@@ -194,7 +278,8 @@ function extractVideos(html: string): { type: string; url: string; id?: string }
         videos.push({ 
           type: 'vimeo', 
           url: `https://vimeo.com/${videoId}`,
-          id: videoId 
+          id: videoId,
+          isHeroCandidate: false
         });
       }
     }
@@ -373,22 +458,36 @@ CONTENT FILTERING - IGNORE:
 - Login/signup forms
 Focus ONLY on main content (typically in <main> or article area).
 
-HERO BLOCK - CRITICAL:
+HERO BLOCK - CRITICAL (VIDEO PRIORITY):
 - If the page has a clear hero/banner section, create a "hero" block
-- ALWAYS use the OG image (Open Graph image) as backgroundImage for hero block
-- Hero block should have: title (main heading), subtitle (subheading if present), backgroundImage (OG image)
+- PRIORITY 1: If a HERO VIDEO is found (marked as isHeroCandidate: true), use video background:
+  {
+    "backgroundType": "video",
+    "videoType": "direct",  // or "youtube" / "vimeo"
+    "videoUrl": "the video URL",
+    "videoPosterUrl": "poster image if available",
+    "videoAutoplay": true,
+    "videoLoop": true,
+    "videoMuted": true
+  }
+- PRIORITY 2: If no hero video, use the OG image as backgroundImage:
+  {
+    "backgroundType": "image",
+    "backgroundImage": "OG image URL"
+  }
+- Hero block should also have: title (main heading), subtitle (subheading if present), buttons
+
+VIDEO CONTENT - CRITICAL:
+- For hero/background videos (direct MP4/WebM): Use in HERO block with backgroundType: 'video'
+- For YouTube videos: Create "youtube" blocks
+- Create "embed" blocks for Vimeo and other video embeds
+- Pre-extracted videos are provided below with isHeroCandidate flag
 
 IMAGES - PRESERVE ALL:
 - Extract and preserve ALL images from the page
 - Use original image URLs (full http/https URLs)
 - Include image alt text when available
 - Create gallery blocks for image collections
-
-VIDEO CONTENT - CRITICAL:
-- Create "youtube" blocks for YouTube videos
-- Create "embed" blocks for Vimeo and other video embeds
-- Extract video URLs from iframes and embed codes
-- Pre-extracted videos are provided below
 
 TEAM/CONTACT PERSONS - CRITICAL:
 Identify and include ALL contact persons on the page.
@@ -422,10 +521,28 @@ Respond ONLY with valid JSON, no other text:
 {
   "title": "Page main title",
   "blocks": [
-    { "id": "block-1", "type": "hero", "data": { "title": "...", "subtitle": "...", "backgroundImage": "OG image URL" } },
+    { 
+      "id": "block-1", 
+      "type": "hero", 
+      "data": { 
+        "title": "...", 
+        "subtitle": "...", 
+        "backgroundType": "video",  // or "image" if no video
+        "videoType": "direct",      // only if backgroundType is video
+        "videoUrl": "...",          // only if backgroundType is video
+        "videoMuted": true,
+        "videoAutoplay": true,
+        "videoLoop": true,
+        "backgroundImage": "..."    // only if backgroundType is image
+      } 
+    },
     { "id": "block-2", "type": "text", "data": { "content": "<p>...</p>" } }
   ]
 }`;
+
+    // Identify hero video candidates
+    const heroVideos = extractedVideos.filter(v => v.isHeroCandidate);
+    const otherVideos = extractedVideos.filter(v => !v.isHeroCandidate);
 
     const userPrompt = `Analyze this web page and create CMS blocks:
 
@@ -434,11 +551,16 @@ Platform: ${platform}
 Title: ${metadata.title || 'Unknown'}
 Description: ${metadata.description || 'None'}
 
-=== OG IMAGE (USE AS HERO BACKGROUND) ===
+=== HERO BACKGROUND VIDEO (USE THIS FOR HERO BLOCK!) ===
+${heroVideos.length > 0 
+  ? heroVideos.map(v => `- Type: ${v.type}, URL: ${v.url}${v.poster ? `, Poster: ${v.poster}` : ''}`).join('\n')
+  : 'No hero video found - use OG image instead'}
+
+=== OG IMAGE (FALLBACK FOR HERO IF NO VIDEO) ===
 ${metadata['og:image'] || metadata.ogImage || 'No OG image available'}
 
-=== PRE-EXTRACTED VIDEOS ===
-${extractedVideos.length > 0 ? extractedVideos.map(v => `- ${v.type}: ${v.url}`).join('\n') : 'No videos found'}
+=== OTHER VIDEOS (CREATE YOUTUBE/EMBED BLOCKS) ===
+${otherVideos.length > 0 ? otherVideos.map(v => `- ${v.type}: ${v.url}`).join('\n') : 'No other videos found'}
 
 === PRE-EXTRACTED IMAGES (${extractedImages.length} total) ===
 ${extractedImages.slice(0, 20).map(img => `- ${img.src}${img.alt ? ` (alt: ${img.alt})` : ''}`).join('\n')}
@@ -452,13 +574,14 @@ ${markdown.length > 40000 ? '\n... (content truncated)' : ''}
 ${html.substring(0, 20000)}
 
 === INSTRUCTIONS ===
-1. Create HERO block with OG image as backgroundImage
-2. Create VIDEO blocks for all pre-extracted videos
-3. Include ALL images appropriately (gallery, two-column, article-grid, etc.)
-4. Identify team members and create team block
-5. Create stats blocks for numerical facts
-6. Identify quotes and testimonials
-7. Group related content into appropriate block types
+1. If HERO BACKGROUND VIDEO is found: Create HERO block with backgroundType: 'video', videoType, videoUrl
+2. If NO hero video: Create HERO block with backgroundType: 'image', backgroundImage (OG image)
+3. Create "youtube" or "embed" blocks for OTHER VIDEOS (not hero videos)
+4. Include ALL images appropriately (gallery, two-column, article-grid, etc.)
+5. Identify team members and create team block
+6. Create stats blocks for numerical facts
+7. Identify quotes and testimonials
+8. Group related content into appropriate block types
 
 Respond only with JSON.`;
 
@@ -598,6 +721,7 @@ Respond only with JSON.`;
           originalDescription: metadata.description,
           platform,
           videosFound: extractedVideos.length,
+          heroVideosFound: heroVideos.length,
           imagesFound: extractedImages.length,
           screenshotAvailable: !!screenshot,
           scrapedAt: new Date().toISOString(),

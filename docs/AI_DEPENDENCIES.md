@@ -105,11 +105,20 @@ GEMINI_API_KEY=...
 
 **Features:**
 - **Platform Detection:** Automatically detects CMS platform (WordPress, Wix, Squarespace, Webflow, Shopify, Ghost, HubSpot, Drupal, SiteVision, Episerver) for optimized extraction
+- **Hero Video Extraction:** Detects HTML5 background videos (MP4/WebM) commonly used in hero sections, preserving them as video backgrounds in imported hero blocks
 - **Video Extraction:** Finds YouTube and Vimeo videos embedded on the page
+- **Direct Video Support:** Extracts direct video file URLs (MP4, WebM, MOV) from video tags, data attributes, and background styles
 - **Image Extraction:** Extracts all images including lazy-loaded and background images
 - **Screenshot Context:** Captures page screenshot for AI visual analysis
-- **Block Mapping:** Maps content to 22+ block types (hero, text, gallery, team, stats, testimonials, etc.)
+- **Block Mapping:** Maps content to 33+ block types (hero, text, gallery, team, stats, testimonials, etc.)
 - **Local Image Storage:** Optional download of all images to media library
+
+**Hero Block Enhancement:**
+The importer now intelligently detects hero sections with video backgrounds:
+- Identifies `<video>` tags with autoplay, loop, muted attributes as hero candidates
+- Extracts MP4/WebM sources and poster images
+- Creates hero blocks with `backgroundType: 'video'` when video is found
+- Falls back to OG image as `backgroundType: 'image'` when no video is present
 
 **Edge Function:**
 - `migrate-page` (scraping + AI conversion)
