@@ -113,7 +113,7 @@ export default function UsersPage() {
 
   return (
     <AdminLayout>
-      <div>
+      <div className="space-y-6">
         <AdminPageHeader 
           title="Users"
           description="Manage users and their roles"

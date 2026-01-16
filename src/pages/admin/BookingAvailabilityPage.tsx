@@ -88,12 +88,13 @@ export default function BookingAvailabilityPage() {
 
   return (
     <AdminLayout>
-      <AdminPageHeader
-        title="Availability"
-        description="Set opening hours and block dates"
-      />
+      <div className="space-y-6">
+        <AdminPageHeader
+          title="Availability"
+          description="Set opening hours and block dates"
+        />
 
-      <Tabs defaultValue="weekly" className="space-y-6">
+        <Tabs defaultValue="weekly" className="space-y-6">
         <TabsList>
           <TabsTrigger value="weekly">Weekly Schedule</TabsTrigger>
           <TabsTrigger value="blocked">Blocked Dates</TabsTrigger>
@@ -351,6 +352,7 @@ export default function BookingAvailabilityPage() {
           </div>
         </DialogContent>
       </Dialog>
+      </div>
     </AdminLayout>
   );
 }

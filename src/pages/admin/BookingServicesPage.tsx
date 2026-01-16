@@ -96,15 +96,16 @@ export default function BookingServicesPage() {
 
   return (
     <AdminLayout>
-      <AdminPageHeader
-        title="Services"
-        description="Manage bookable services"
-      >
-        <Button onClick={openCreateDialog}>
-          <Plus className="h-4 w-4 mr-2" />
-          New Service
-        </Button>
-      </AdminPageHeader>
+      <div className="space-y-6">
+        <AdminPageHeader
+          title="Services"
+          description="Manage bookable services"
+        >
+          <Button onClick={openCreateDialog}>
+            <Plus className="h-4 w-4 mr-2" />
+            New Service
+          </Button>
+        </AdminPageHeader>
 
       {isLoading ? (
         <div className="space-y-4">
@@ -286,6 +287,7 @@ export default function BookingServicesPage() {
           </form>
         </DialogContent>
       </Dialog>
+      </div>
     </AdminLayout>
   );
 }

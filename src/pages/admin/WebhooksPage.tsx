@@ -125,17 +125,18 @@ export default function WebhooksPage() {
 
   return (
     <AdminLayout>
-      <AdminPageHeader
-        title="Webhooks"
-        description="Automate with webhooks that trigger on various events"
-      >
-        <Button onClick={() => { resetForm(); setIsDialogOpen(true); }}>
-          <Plus className="h-4 w-4 mr-2" />
-          New Webhook
-        </Button>
-      </AdminPageHeader>
+      <div className="space-y-6">
+        <AdminPageHeader
+          title="Webhooks"
+          description="Automate with webhooks that trigger on various events"
+        >
+          <Button onClick={() => { resetForm(); setIsDialogOpen(true); }}>
+            <Plus className="h-4 w-4 mr-2" />
+            New Webhook
+          </Button>
+        </AdminPageHeader>
 
-      <Tabs defaultValue="webhooks" className="space-y-4">
+        <Tabs defaultValue="webhooks" className="space-y-4">
         <TabsList>
           <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
           <TabsTrigger value="stats">
@@ -529,6 +530,7 @@ export default function WebhooksPage() {
           </form>
         </DialogContent>
       </Dialog>
+      </div>
     </AdminLayout>
   );
 }
