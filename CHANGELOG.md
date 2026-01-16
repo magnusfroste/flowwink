@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-01-16
+
+### Added
+- **Self-Hosting Setup Script**: Complete CLI-driven setup (`./scripts/setup-supabase.sh`)
+  - Automatic Supabase login with interactive prompts
+  - Project selection with numbered list
+  - Deploy all 33 edge functions automatically
+  - Run database migrations
+  - Create admin user with proper role assignment
+  - Output environment variables for deployment
+  - `--fresh` flag for agencies setting up multiple sites
+  - `--env` flag to only display environment variables
+- **Secrets Configuration Script**: Interactive secrets setup (`./scripts/configure-secrets.sh`)
+  - Resend (email)
+  - Stripe (payments)
+  - OpenAI (AI features)
+  - Google Gemini (AI alternative)
+  - Firecrawl (web scraping)
+  - Unsplash (stock photos)
+  - Local LLM (self-hosted AI)
+  - N8N (workflow automation)
+
+### Changed
+- Auth page branding updated to FlowWink
+- Setup documentation rewritten for CLI-first workflow
+- Improved error handling in setup scripts
+
+### Fixed
+- Environment variables now fetched via `supabase projects api-keys`
+- Admin user creation uses Supabase Admin API directly
+- Project selection handles deleted projects gracefully
+
 ## [1.0.0] - 2026-01-09
 
 ### Added
