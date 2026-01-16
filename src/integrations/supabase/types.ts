@@ -478,30 +478,62 @@ export type Database = {
       }
       chat_conversations: {
         Row: {
+          assigned_agent_id: string | null
+          conversation_status: string | null
           created_at: string
+          customer_email: string | null
+          customer_name: string | null
+          escalated_at: string | null
+          escalation_reason: string | null
           id: string
+          priority: string | null
+          sentiment_score: number | null
           session_id: string | null
           title: string | null
           updated_at: string
           user_id: string | null
         }
         Insert: {
+          assigned_agent_id?: string | null
+          conversation_status?: string | null
           created_at?: string
+          customer_email?: string | null
+          customer_name?: string | null
+          escalated_at?: string | null
+          escalation_reason?: string | null
           id?: string
+          priority?: string | null
+          sentiment_score?: number | null
           session_id?: string | null
           title?: string | null
           updated_at?: string
           user_id?: string | null
         }
         Update: {
+          assigned_agent_id?: string | null
+          conversation_status?: string | null
           created_at?: string
+          customer_email?: string | null
+          customer_name?: string | null
+          escalated_at?: string | null
+          escalation_reason?: string | null
           id?: string
+          priority?: string | null
+          sentiment_score?: number | null
           session_id?: string | null
           title?: string | null
           updated_at?: string
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "chat_conversations_assigned_agent_id_fkey"
+            columns: ["assigned_agent_id"]
+            isOneToOne: false
+            referencedRelation: "support_agents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       chat_feedback: {
         Row: {
@@ -1606,6 +1638,119 @@ export type Database = {
           value?: Json
         }
         Relationships: []
+      }
+      support_agents: {
+        Row: {
+          created_at: string
+          current_conversations: number
+          id: string
+          last_seen_at: string
+          max_conversations: number
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_conversations?: number
+          id?: string
+          last_seen_at?: string
+          max_conversations?: number
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_conversations?: number
+          id?: string
+          last_seen_at?: string
+          max_conversations?: number
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_agents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_agents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_escalations: {
+        Row: {
+          ai_summary: string | null
+          conversation_id: string
+          created_at: string
+          form_submission_id: string | null
+          id: string
+          priority: string
+          reason: string
+          resolved_at: string | null
+          resolved_by: string | null
+        }
+        Insert: {
+          ai_summary?: string | null
+          conversation_id: string
+          created_at?: string
+          form_submission_id?: string | null
+          id?: string
+          priority?: string
+          reason: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+        }
+        Update: {
+          ai_summary?: string | null
+          conversation_id?: string
+          created_at?: string
+          form_submission_id?: string | null
+          id?: string
+          priority?: string
+          reason?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_escalations_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "chat_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_escalations_form_submission_id_fkey"
+            columns: ["form_submission_id"]
+            isOneToOne: false
+            referencedRelation: "form_submissions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_escalations_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_escalations_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
