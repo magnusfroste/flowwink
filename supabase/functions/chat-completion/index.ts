@@ -508,13 +508,80 @@ serve(async (req) => {
 
     // Build tools array based on settings
     const tools: any[] = [];
-    if (settings?.toolCallingEnabled) {
+    const toolCallingSupported = aiProvider === 'openai'; // Only OpenAI reliably supports tool calling
+    
+    if (settings?.toolCallingEnabled && toolCallingSupported) {
       if (settings?.firecrawlSearchEnabled && aiIntegrations?.firecrawl?.enabled) {
         tools.push(AVAILABLE_TOOLS.firecrawl_search);
       }
       if (settings?.humanHandoffEnabled) {
         tools.push(AVAILABLE_TOOLS.handoff_to_human);
         tools.push(AVAILABLE_TOOLS.create_escalation);
+      }
+    }
+
+    // Fallback: Keyword-based handoff detection for non-OpenAI providers
+    if (settings?.humanHandoffEnabled && !toolCallingSupported) {
+      const lastUserMessage = messages.filter(m => m.role === 'user').pop()?.content?.toLowerCase() || '';
+      const handoffKeywords = [
+        'talk to a person', 'speak to a human', 'real person', 'human agent',
+        'talk to human', 'speak to person', 'want a person', 'need a human',
+        'customer service', 'support agent', 'live agent', 'not helpful',
+        'prata med människa', 'riktig person', 'mänsklig support'
+      ];
+      
+      const shouldHandoff = handoffKeywords.some(kw => lastUserMessage.includes(kw));
+      
+      if (shouldHandoff && conversationId) {
+        console.log('Keyword-based handoff triggered for conversation:', conversationId);
+        
+        // Call support router
+        try {
+          const routerResponse = await fetch(`${supabaseUrl}/functions/v1/support-router`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${supabaseKey}`,
+            },
+            body: JSON.stringify({
+              conversationId,
+              sentiment: {
+                frustrationLevel: 8,
+                urgency: 'high',
+                humanNeeded: true,
+                trigger: 'User explicitly requested human support',
+              },
+              customerEmail,
+              customerName,
+            }),
+          });
+
+          const routerResult = await routerResponse.json();
+          console.log('Support router result:', routerResult);
+          
+          // Return handoff message to user
+          const handoffMessage = routerResult.message || 'Connecting you to a support agent...';
+          const encoder = new TextEncoder();
+          const stream = new ReadableStream({
+            start(controller) {
+              const data = JSON.stringify({
+                choices: [{
+                  delta: { content: handoffMessage },
+                  finish_reason: 'stop'
+                }]
+              });
+              controller.enqueue(encoder.encode(`data: ${data}\n\n`));
+              controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+              controller.close();
+            }
+          });
+
+          return new Response(stream, {
+            headers: { ...corsHeaders, 'Content-Type': 'text/event-stream' },
+          });
+        } catch (error) {
+          console.error('Fallback handoff error:', error);
+        }
       }
     }
 
@@ -737,14 +804,22 @@ serve(async (req) => {
       const chatModel = settings?.localModel;
       const model = localConfig?.model || (chatModel && chatModel !== 'llama3' ? chatModel : null) || 'llama3';
 
+      const localRequestBody: any = {
+        model,
+        messages: fullMessages,
+        stream: true,
+      };
+
+      // Add tools if any are enabled (requires OpenAI-compatible local LLM)
+      if (tools.length > 0) {
+        localRequestBody.tools = tools;
+        localRequestBody.tool_choice = 'auto';
+      }
+
       response = await fetch(fullUrl, {
         method: 'POST',
         headers,
-        body: JSON.stringify({
-          model,
-          messages: fullMessages,
-          stream: true,
-        }),
+        body: JSON.stringify(localRequestBody),
       });
     } else if (aiProvider === 'n8n') {
       const n8nConfig = aiIntegrations?.n8n?.config || {};

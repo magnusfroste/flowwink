@@ -136,6 +136,12 @@ export function useChat(options?: UseChatOptions) {
               contentContextMaxTokens: settings?.contentContextMaxTokens,
               includedPageSlugs: settings?.includedPageSlugs || [],
               includeKbArticles: settings?.includeKbArticles || false,
+              // Tool calling settings
+              toolCallingEnabled: settings?.toolCallingEnabled || false,
+              firecrawlSearchEnabled: settings?.firecrawlSearchEnabled || false,
+              humanHandoffEnabled: settings?.humanHandoffEnabled || false,
+              sentimentDetectionEnabled: settings?.sentimentDetectionEnabled || false,
+              sentimentThreshold: settings?.sentimentThreshold || 7,
             },
           }),
           signal: abortControllerRef.current.signal,
