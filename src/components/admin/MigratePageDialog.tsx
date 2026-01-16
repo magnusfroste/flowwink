@@ -8,7 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Loader2, Download, Sparkles, Globe, CheckCircle2, AlertCircle, FileText, Image, Layout, Type, HardDrive } from 'lucide-react';
+import { Loader2, Download, Sparkles, Globe, CheckCircle2, AlertCircle, FileText, Image, Layout, Type, HardDrive, Video, Play } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useCreatePage } from '@/hooks/usePages';
 import { supabase } from '@/integrations/supabase/client';
@@ -57,6 +57,7 @@ interface MigrationResult {
     originalDescription?: string;
     platform?: string;
     videosFound?: number;
+    heroVideosFound?: number;
     imagesFound?: number;
     screenshotAvailable?: boolean;
     scrapedAt: string;
@@ -466,8 +467,15 @@ export function MigratePageDialog() {
                   Local images
                 </Badge>
               )}
+              {result.metadata.heroVideosFound && result.metadata.heroVideosFound > 0 && (
+                <Badge variant="default" className="bg-green-600">
+                  <Play className="h-3 w-3 mr-1" />
+                  Hero video
+                </Badge>
+              )}
               {result.metadata.videosFound && result.metadata.videosFound > 0 && (
                 <Badge variant="secondary">
+                  <Video className="h-3 w-3 mr-1" />
                   {result.metadata.videosFound} videos
                 </Badge>
               )}
