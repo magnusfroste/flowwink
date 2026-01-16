@@ -288,6 +288,122 @@ function extractVideos(html: string): { type: string; url: string; id?: string; 
   return videos;
 }
 
+// Extract Lottie animations from HTML
+function extractLottieAnimations(html: string): { src: string; type: 'lottie' | 'dotlottie'; context?: string }[] {
+  const animations: { src: string; type: 'lottie' | 'dotlottie'; context?: string }[] = [];
+  const seenUrls = new Set<string>();
+  
+  // 1. lottie-player web component
+  const lottiePlayerRegex = /<lottie-player[^>]+src=["']([^"']+)["'][^>]*>/gi;
+  let match;
+  while ((match = lottiePlayerRegex.exec(html)) !== null) {
+    const src = match[1];
+    if (!seenUrls.has(src)) {
+      seenUrls.add(src);
+      const context = html.substring(Math.max(0, match.index - 200), match.index).match(/class=["'][^"']*["']/i)?.[0] || '';
+      animations.push({ src, type: 'lottie', context });
+    }
+  }
+  
+  // 2. dotlottie-player and dotlottie-wc web components
+  const dotlottieRegex = /<(?:dotlottie-player|dotlottie-wc)[^>]+src=["']([^"']+)["'][^>]*>/gi;
+  while ((match = dotlottieRegex.exec(html)) !== null) {
+    const src = match[1];
+    if (!seenUrls.has(src)) {
+      seenUrls.add(src);
+      animations.push({ src, type: 'dotlottie' });
+    }
+  }
+  
+  // 3. amp-bodymovin-animation (AMP)
+  const ampRegex = /<amp-bodymovin-animation[^>]+src=["']([^"']+)["'][^>]*>/gi;
+  while ((match = ampRegex.exec(html)) !== null) {
+    const src = match[1];
+    if (!seenUrls.has(src)) {
+      seenUrls.add(src);
+      animations.push({ src, type: 'lottie' });
+    }
+  }
+  
+  // 4. lottie.loadAnimation or bodymovin.loadAnimation in scripts
+  const scriptLoadRegex = /(?:lottie|bodymovin)\.loadAnimation\s*\(\s*\{[^}]*(?:path|animationData)\s*:\s*["']([^"']+\.json)["'][^}]*\}/gi;
+  while ((match = scriptLoadRegex.exec(html)) !== null) {
+    const src = match[1];
+    if (!seenUrls.has(src)) {
+      seenUrls.add(src);
+      animations.push({ src, type: 'lottie' });
+    }
+  }
+  
+  // 5. Direct .lottie or .json lottie file URLs in data attributes
+  const dataAttrRegex = /(?:data-animation|data-lottie|data-src)=["']([^"']+\.(?:lottie|json))["']/gi;
+  while ((match = dataAttrRegex.exec(html)) !== null) {
+    const src = match[1];
+    // Only add if it looks like a Lottie file (not any JSON)
+    if (!seenUrls.has(src) && (src.includes('lottie') || src.includes('animation'))) {
+      seenUrls.add(src);
+      animations.push({ src, type: src.endsWith('.lottie') ? 'dotlottie' : 'lottie' });
+    }
+  }
+  
+  // 6. lottie.host URLs (common hosting platform)
+  const lottieHostRegex = /https?:\/\/(?:lottie\.host|assets\d*\.lottiefiles\.com)\/[^"'\s)]+/gi;
+  while ((match = lottieHostRegex.exec(html)) !== null) {
+    const src = match[0];
+    if (!seenUrls.has(src)) {
+      seenUrls.add(src);
+      animations.push({ src, type: src.endsWith('.lottie') ? 'dotlottie' : 'lottie' });
+    }
+  }
+  
+  return animations;
+}
+
+// Extract SVG animations from HTML
+function extractSvgAnimations(html: string): { svg: string; type: 'inline' | 'external'; src?: string; hasAnimation: boolean }[] {
+  const svgAnimations: { svg: string; type: 'inline' | 'external'; src?: string; hasAnimation: boolean }[] = [];
+  
+  // 1. External SVG files (check for common animation patterns in URL/class)
+  const externalSvgRegex = /<(?:img|object|embed)[^>]+(?:src|data)=["']([^"']+\.svg[^"']*)["'][^>]*>/gi;
+  let match;
+  while ((match = externalSvgRegex.exec(html)) !== null) {
+    const src = match[1];
+    const context = match[0].toLowerCase();
+    // Look for animation hints in class names or surrounding context
+    const hasAnimationHint = /anim|motion|loader|spinner|pulse|bounce/i.test(context) ||
+                             /class=["'][^"']*(?:anim|motion|loader|spinner)[^"']*["']/i.test(html.substring(Math.max(0, match.index - 100), match.index + 100));
+    
+    if (hasAnimationHint) {
+      svgAnimations.push({ 
+        svg: '', 
+        type: 'external', 
+        src, 
+        hasAnimation: true 
+      });
+    }
+  }
+  
+  // 2. Inline SVG with SMIL animations (<animate>, <animateTransform>, <animateMotion>)
+  const inlineSvgRegex = /<svg[^>]*>[\s\S]*?<\/svg>/gi;
+  while ((match = inlineSvgRegex.exec(html)) !== null) {
+    const svgContent = match[0];
+    const hasSmilAnimation = /<animate(?:Transform|Motion)?[^>]*>/i.test(svgContent);
+    const hasCssAnimation = /animation:|@keyframes/i.test(svgContent);
+    
+    if (hasSmilAnimation || hasCssAnimation) {
+      // Truncate very large SVGs for the preview
+      const truncatedSvg = svgContent.length > 5000 ? svgContent.substring(0, 5000) + '...' : svgContent;
+      svgAnimations.push({ 
+        svg: truncatedSvg, 
+        type: 'inline', 
+        hasAnimation: true 
+      });
+    }
+  }
+  
+  return svgAnimations;
+}
+
 // Extract images from HTML with better pattern matching
 function extractImagesFromHtml(html: string): { src: string; alt?: string }[] {
   const images: { src: string; alt?: string }[] = [];
@@ -419,6 +535,14 @@ serve(async (req) => {
     const extractedImages = extractImagesFromHtml(rawHtml);
     console.log('Extracted images:', extractedImages.length);
 
+    // Extract Lottie animations
+    const extractedLotties = extractLottieAnimations(rawHtml);
+    console.log('Extracted Lottie animations:', extractedLotties.length);
+
+    // Extract SVG animations
+    const extractedSvgAnimations = extractSvgAnimations(rawHtml);
+    console.log('Extracted SVG animations:', extractedSvgAnimations.length);
+
     // Step 2: Use AI to map content to blocks
     console.log('Step 3: Mapping content to CMS blocks with AI...');
 
@@ -516,6 +640,12 @@ Look for patterns:
 
 Create "quote" or "testimonials" blocks.
 
+LOTTIE & SVG ANIMATIONS:
+- If Lottie animations (.json or .lottie files) are found, create "embed" blocks with the animation URL
+- For SVG animations, you can include them in "image" blocks if they are decorative
+- Note the animation URLs in the block data for reference
+- Animations are often used for loading states, hero decorations, or interactive elements
+
 === RESPONSE FORMAT ===
 Respond ONLY with valid JSON, no other text:
 {
@@ -536,7 +666,8 @@ Respond ONLY with valid JSON, no other text:
         "backgroundImage": "..."    // only if backgroundType is image
       } 
     },
-    { "id": "block-2", "type": "text", "data": { "content": "<p>...</p>" } }
+    { "id": "block-2", "type": "text", "data": { "content": "<p>...</p>" } },
+    { "id": "block-3", "type": "embed", "data": { "url": "lottie animation URL", "title": "Animation name" } }
   ]
 }`;
 
@@ -566,6 +697,16 @@ ${otherVideos.length > 0 ? otherVideos.map(v => `- ${v.type}: ${v.url}`).join('\
 ${extractedImages.slice(0, 20).map(img => `- ${img.src}${img.alt ? ` (alt: ${img.alt})` : ''}`).join('\n')}
 ${extractedImages.length > 20 ? `\n... and ${extractedImages.length - 20} more images` : ''}
 
+=== LOTTIE ANIMATIONS (${extractedLotties.length} found) ===
+${extractedLotties.length > 0 
+  ? extractedLotties.map(l => `- ${l.type}: ${l.src}`).join('\n')
+  : 'No Lottie animations found'}
+
+=== SVG ANIMATIONS (${extractedSvgAnimations.length} found) ===
+${extractedSvgAnimations.length > 0 
+  ? extractedSvgAnimations.map(s => s.type === 'external' ? `- External: ${s.src}` : '- Inline SVG with SMIL/CSS animation').join('\n')
+  : 'No SVG animations found'}
+
 === MAIN CONTENT (Markdown) ===
 ${markdown.substring(0, 40000)}
 ${markdown.length > 40000 ? '\n... (content truncated)' : ''}
@@ -582,6 +723,7 @@ ${html.substring(0, 20000)}
 6. Create stats blocks for numerical facts
 7. Identify quotes and testimonials
 8. Group related content into appropriate block types
+9. If LOTTIE or SVG ANIMATIONS found: Create "embed" blocks for them with the animation URL
 
 Respond only with JSON.`;
 
@@ -723,6 +865,8 @@ Respond only with JSON.`;
           videosFound: extractedVideos.length,
           heroVideosFound: heroVideos.length,
           imagesFound: extractedImages.length,
+          lottieAnimationsFound: extractedLotties.length,
+          svgAnimationsFound: extractedSvgAnimations.length,
           screenshotAvailable: !!screenshot,
           scrapedAt: new Date().toISOString(),
         }
