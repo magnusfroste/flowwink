@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -12,56 +12,38 @@ import { Loader2, Download, Sparkles, Globe, CheckCircle2, AlertCircle, FileText
 import { useToast } from '@/hooks/use-toast';
 import { useCreatePage } from '@/hooks/usePages';
 import { supabase } from '@/integrations/supabase/client';
+import { getBlockTypeLabels } from '@/lib/block-reference';
 import type { ContentBlock } from '@/types/cms';
 
+// Dynamic icon mapping based on block category
 const BLOCK_TYPE_ICONS: Record<string, React.ReactNode> = {
   hero: <Layout className="h-4 w-4" />,
   text: <Type className="h-4 w-4" />,
   image: <Image className="h-4 w-4" />,
-  'two-column': <Layout className="h-4 w-4" />,
-  'article-grid': <FileText className="h-4 w-4" />,
-  'link-grid': <Layout className="h-4 w-4" />,
-  accordion: <FileText className="h-4 w-4" />,
+  gallery: <Image className="h-4 w-4" />,
+  logos: <Image className="h-4 w-4" />,
+  youtube: <Globe className="h-4 w-4" />,
+  embed: <Globe className="h-4 w-4" />,
+  map: <Globe className="h-4 w-4" />,
   cta: <Sparkles className="h-4 w-4" />,
   quote: <Type className="h-4 w-4" />,
-  stats: <FileText className="h-4 w-4" />,
-  contact: <FileText className="h-4 w-4" />,
-  separator: <Layout className="h-4 w-4" />,
-  youtube: <FileText className="h-4 w-4" />,
-  gallery: <Image className="h-4 w-4" />,
-  'info-box': <AlertCircle className="h-4 w-4" />,
-  embed: <Globe className="h-4 w-4" />,
   testimonials: <Type className="h-4 w-4" />,
-  team: <FileText className="h-4 w-4" />,
+  'info-box': <AlertCircle className="h-4 w-4" />,
+  // Layout blocks
+  'two-column': <Layout className="h-4 w-4" />,
+  separator: <Layout className="h-4 w-4" />,
+  'link-grid': <Layout className="h-4 w-4" />,
   features: <Layout className="h-4 w-4" />,
-  pricing: <FileText className="h-4 w-4" />,
-  logos: <Image className="h-4 w-4" />,
-  map: <Globe className="h-4 w-4" />,
+  'announcement-bar': <Layout className="h-4 w-4" />,
+  tabs: <Layout className="h-4 w-4" />,
+  marquee: <Layout className="h-4 w-4" />,
+  popup: <Layout className="h-4 w-4" />,
+  'floating-cta': <Layout className="h-4 w-4" />,
 };
 
-const BLOCK_TYPE_LABELS: Record<string, string> = {
-  hero: 'Hero',
-  text: 'Text',
-  image: 'Image',
-  'two-column': 'Two Columns',
-  'article-grid': 'Article Grid',
-  'link-grid': 'Link Grid',
-  accordion: 'Accordion',
-  cta: 'Call to Action',
-  quote: 'Quote',
-  stats: 'Stats',
-  contact: 'Contact',
-  separator: 'Separator',
-  youtube: 'YouTube',
-  gallery: 'Gallery',
-  'info-box': 'Info Box',
-  embed: 'Embed',
-  testimonials: 'Testimonials',
-  team: 'Team',
-  features: 'Features',
-  pricing: 'Pricing',
-  logos: 'Logos',
-  map: 'Map',
+// Fallback icon for blocks not in the map
+const getBlockIcon = (type: string): React.ReactNode => {
+  return BLOCK_TYPE_ICONS[type] || <FileText className="h-4 w-4" />;
 };
 
 type MigrationStep = 'input' | 'analyzing' | 'processing-images' | 'preview' | 'saving' | 'done';
@@ -101,6 +83,9 @@ export function MigratePageDialog() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const createPage = useCreatePage();
+  
+  // Get block labels dynamically from block-reference
+  const blockLabels = useMemo(() => getBlockTypeLabels(), []);
 
   const generateSlug = (text: string) => {
     return text
@@ -503,9 +488,9 @@ export function MigratePageDialog() {
                       <CardHeader className="py-2 px-3">
                         <CardTitle className="text-sm flex items-center gap-2">
                           <span className="text-muted-foreground">#{index + 1}</span>
-                          {BLOCK_TYPE_ICONS[block.type] || <FileText className="h-4 w-4" />}
+                          {getBlockIcon(block.type)}
                           <Badge variant="secondary">
-                            {BLOCK_TYPE_LABELS[block.type] || block.type}
+                            {blockLabels[block.type] || block.type}
                           </Badge>
                         </CardTitle>
                       </CardHeader>

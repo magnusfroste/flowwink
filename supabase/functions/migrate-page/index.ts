@@ -5,6 +5,15 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+/**
+ * Block types schema for AI import.
+ * 
+ * IMPORTANT: Keep this in sync with src/lib/block-reference.ts
+ * When adding new blocks, update both files!
+ * 
+ * Excluded from import (require dynamic data):
+ * - products, cart, kb-featured, kb-hub, kb-search, kb-accordion, smart-booking
+ */
 const BLOCK_TYPES_SCHEMA = `
 Available CMS block types:
 
@@ -48,16 +57,16 @@ Available CMS block types:
     Data: { style: 'line' | 'dots' | 'space' }
 
 14. youtube - YouTube video embed
-    Data: { url: string, title?: string } // Use full YouTube URL like "https://www.youtube.com/watch?v=VIDEO_ID"
+    Data: { videoId: string, title?: string } // Extract video ID from URL
 
 15. embed - Generic embed/iframe (for Vimeo, maps, widgets, etc.)
-    Data: { embedCode: string, title?: string }
+    Data: { url: string, title?: string }
 
 16. gallery - Image gallery
     Data: { images: [{ src: string, alt?: string, caption?: string }], columns: 2 | 3 | 4 }
 
 17. testimonials - Customer testimonials
-    Data: { title?: string, items: [{ quote: string, author: string, role?: string, image?: string }] }
+    Data: { title?: string, testimonials: [{ content: string, author: string, role?: string, avatar?: string }] }
 
 18. team - Team member cards
     Data: { title?: string, members: [{ name: string, role?: string, image?: string, bio?: string, email?: string, phone?: string }] }
@@ -66,13 +75,46 @@ Available CMS block types:
     Data: { title?: string, features: [{ title: string, description: string, icon?: string }], columns: 2 | 3 | 4 }
 
 20. pricing - Pricing table
-    Data: { title?: string, plans: [{ name: string, price: string, features: string[], buttonText?: string, buttonUrl?: string, highlighted?: boolean }] }
+    Data: { tiers: [{ name: string, price: string, features: string[], buttonText?: string, buttonUrl?: string, highlighted?: boolean }] }
 
 21. logos - Logo showcase
-    Data: { title?: string, logos: [{ src: string, alt: string, url?: string }] }
+    Data: { title?: string, logos: [{ name: string, logo: string }] }
 
 22. map - Google Maps embed
-    Data: { embedCode: string, title?: string }
+    Data: { address: string }
+
+23. form - Contact form
+    Data: { title?: string, fields: [{ type: 'text' | 'email' | 'textarea', label: string, required?: boolean }], submitButtonText?: string }
+
+24. newsletter - Email signup
+    Data: { title?: string, description?: string, buttonText?: string }
+
+25. timeline - Step-by-step or chronological content
+    Data: { title?: string, steps: [{ title: string, description: string }] }
+
+26. comparison - Feature comparison table
+    Data: { title?: string, products: [{ name: string }], features: [{ name: string, values: string[] }] }
+
+27. tabs - Tabbed content sections
+    Data: { tabs: [{ title: string, content: string }] }
+
+28. table - Data table
+    Data: { title?: string, columns: [{ header: string }], rows: [{ [columnId]: value }] }
+
+29. countdown - Countdown timer
+    Data: { title?: string, targetDate: string }
+
+30. badge - Certification/trust badges
+    Data: { title?: string, badges: [{ title: string, image?: string }] }
+
+31. announcement-bar - Top banner for announcements
+    Data: { message: string, link?: string, linkText?: string }
+
+32. marquee - Scrolling text ticker
+    Data: { items: [{ text: string }] }
+
+33. social-proof - Social proof metrics
+    Data: { items: [{ label: string, value: string }] }
 `;
 
 // Detect platform from HTML/metadata
