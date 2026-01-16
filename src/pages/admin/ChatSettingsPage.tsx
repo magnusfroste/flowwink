@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, Save, Cloud, Server, Webhook, Shield, Database, BookOpen, FileText, HelpCircle, ExternalLink, ThumbsUp, ThumbsDown, Download, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
+import { Loader2, Save, Cloud, Server, Webhook, Shield, Database, BookOpen, FileText, HelpCircle, ExternalLink, ThumbsUp, ThumbsDown, Download, CheckCircle2, XCircle, AlertTriangle, Wrench, Globe, Headphones, Brain, Gauge } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useUnsavedChanges, UnsavedChangesDialog } from '@/hooks/useUnsavedChanges';
@@ -219,10 +219,11 @@ export default function ChatSettingsPage() {
 
         {formData.enabled && (
           <Tabs defaultValue="general" className="space-y-6">
-            <TabsList className="grid grid-cols-6 w-full">
+            <TabsList className="grid grid-cols-7 w-full">
               <TabsTrigger value="general">General</TabsTrigger>
               <TabsTrigger value="provider">AI Provider</TabsTrigger>
               <TabsTrigger value="knowledge">Knowledge Base</TabsTrigger>
+              <TabsTrigger value="advanced">Advanced</TabsTrigger>
               <TabsTrigger value="display">Display</TabsTrigger>
               <TabsTrigger value="feedback">Feedback</TabsTrigger>
               <TabsTrigger value="privacy">Privacy</TabsTrigger>
@@ -807,6 +808,179 @@ export default function ChatSettingsPage() {
                   </div>
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            {/* Advanced / Tool Calling settings */}
+            <TabsContent value="advanced">
+              <div className="space-y-6">
+                {/* Tool Calling Master Toggle */}
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-primary/10">
+                          <Wrench className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <CardTitle>Tool Calling</CardTitle>
+                          <CardDescription>
+                            Enable AI to use external tools and take actions
+                          </CardDescription>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={formData.toolCallingEnabled ?? false}
+                        onCheckedChange={(toolCallingEnabled) => 
+                          setFormData({ ...formData, toolCallingEnabled })
+                        }
+                      />
+                    </div>
+                  </CardHeader>
+                </Card>
+
+                {formData.toolCallingEnabled && (
+                  <>
+                    {/* Firecrawl Web Search */}
+                    <Card>
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
+                              <Globe className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                            </div>
+                            <div>
+                              <CardTitle className="text-base">Firecrawl Web Search</CardTitle>
+                              <CardDescription>
+                                AI can search the web for current information
+                              </CardDescription>
+                            </div>
+                          </div>
+                          <Switch
+                            checked={formData.firecrawlSearchEnabled ?? false}
+                            onCheckedChange={(firecrawlSearchEnabled) => 
+                              setFormData({ ...formData, firecrawlSearchEnabled })
+                            }
+                          />
+                        </div>
+                      </CardHeader>
+                      {formData.firecrawlSearchEnabled && (
+                        <CardContent className="pt-0">
+                          <Alert>
+                            <Globe className="h-4 w-4" />
+                            <AlertDescription>
+                              Requires Firecrawl API key configured in{' '}
+                              <Link to="/admin/integrations" className="text-primary underline">
+                                Integrations
+                              </Link>
+                            </AlertDescription>
+                          </Alert>
+                        </CardContent>
+                      )}
+                    </Card>
+
+                    {/* Human Handoff */}
+                    <Card>
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/30">
+                              <Headphones className="h-5 w-5 text-green-600 dark:text-green-400" />
+                            </div>
+                            <div>
+                              <CardTitle className="text-base">Human Handoff</CardTitle>
+                              <CardDescription>
+                                AI can transfer conversations to live support agents
+                              </CardDescription>
+                            </div>
+                          </div>
+                          <Switch
+                            checked={formData.humanHandoffEnabled ?? false}
+                            onCheckedChange={(humanHandoffEnabled) => 
+                              setFormData({ ...formData, humanHandoffEnabled })
+                            }
+                          />
+                        </div>
+                      </CardHeader>
+                      {formData.humanHandoffEnabled && (
+                        <CardContent className="pt-0">
+                          <Alert className="bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-900">
+                            <Headphones className="h-4 w-4 text-green-600" />
+                            <AlertDescription className="text-green-700 dark:text-green-300">
+                              When enabled, AI will route conversations to available agents when users need human support.
+                              If no agents are online, an escalation ticket will be created.
+                            </AlertDescription>
+                          </Alert>
+                        </CardContent>
+                      )}
+                    </Card>
+
+                    {/* Sentiment Detection */}
+                    <Card>
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30">
+                              <Brain className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                            </div>
+                            <div>
+                              <CardTitle className="text-base">Sentiment Detection</CardTitle>
+                              <CardDescription>
+                                AI analyzes user sentiment to detect frustration
+                              </CardDescription>
+                            </div>
+                          </div>
+                          <Switch
+                            checked={formData.sentimentDetectionEnabled ?? false}
+                            onCheckedChange={(sentimentDetectionEnabled) => 
+                              setFormData({ ...formData, sentimentDetectionEnabled })
+                            }
+                          />
+                        </div>
+                      </CardHeader>
+                      {formData.sentimentDetectionEnabled && (
+                        <CardContent className="pt-0 space-y-4">
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <Label htmlFor="sentimentThreshold">Handoff Threshold</Label>
+                              <span className="text-sm text-muted-foreground">
+                                {formData.sentimentThreshold ?? 7}/10 frustration
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-4">
+                              <Gauge className="h-4 w-4 text-muted-foreground" />
+                              <input
+                                type="range"
+                                id="sentimentThreshold"
+                                min={1}
+                                max={10}
+                                value={formData.sentimentThreshold ?? 7}
+                                onChange={(e) => setFormData({ 
+                                  ...formData, 
+                                  sentimentThreshold: parseInt(e.target.value) 
+                                })}
+                                className="flex-1 h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
+                              />
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              When user frustration exceeds this level, AI will automatically suggest human support
+                            </p>
+                          </div>
+                        </CardContent>
+                      )}
+                    </Card>
+                  </>
+                )}
+
+                {!formData.toolCallingEnabled && (
+                  <Alert>
+                    <Wrench className="h-4 w-4" />
+                    <AlertTitle>Tool Calling Disabled</AlertTitle>
+                    <AlertDescription>
+                      Enable tool calling above to configure web search, human handoff, and sentiment detection features.
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
             </TabsContent>
 
             {/* Feedback settings */}

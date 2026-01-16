@@ -32,6 +32,7 @@ import {
   Bot,
   Github,
   ArrowUpCircle,
+  Headphones,
 } from "lucide-react";
 
 import { useAuth } from "@/hooks/useAuth";
@@ -125,6 +126,7 @@ const navigationGroups: NavGroup[] = [
       { name: "Newsletter", href: "/admin/newsletter", icon: Mail, moduleId: "newsletter" },
       { name: "Form Submissions", href: "/admin/forms", icon: Inbox, moduleId: "forms" },
       { name: "AI Chat", href: "/admin/chat", icon: MessageSquare, moduleId: "chat" },
+      { name: "Live Support", href: "/admin/live-support", icon: Headphones, moduleId: "liveSupport" },
     ],
   },
   {
