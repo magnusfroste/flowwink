@@ -40,6 +40,7 @@ import {
   TabsBlock,
   MarqueeBlock,
   EmbedBlock,
+  LottieBlock,
   TableBlock,
   CountdownBlock,
   ProgressBlock,
@@ -77,6 +78,7 @@ import type { AnnouncementBarBlockData } from './blocks/AnnouncementBarBlock';
 import type { TabsBlockData } from './blocks/TabsBlock';
 import type { MarqueeBlockData } from './blocks/MarqueeBlock';
 import type { EmbedBlockData } from './blocks/EmbedBlock';
+import type { LottieBlockData } from './blocks/LottieBlock';
 import type { TableBlockData } from './blocks/TableBlock';
 import type { CountdownBlockData } from './blocks/CountdownBlock';
 import type { ProgressBlockData } from './blocks/ProgressBlock';
@@ -211,6 +213,8 @@ export function BlockRenderer({ block, pageId, index = 0 }: BlockRendererProps) 
         return <MarqueeBlock data={block.data as unknown as MarqueeBlockData} />;
       case 'embed':
         return <EmbedBlock data={block.data as unknown as EmbedBlockData} />;
+      case 'lottie':
+        return <LottieBlock data={block.data as unknown as LottieBlockData} />;
       case 'table':
         return <TableBlock data={block.data as unknown as TableBlockData} />;
       case 'countdown':

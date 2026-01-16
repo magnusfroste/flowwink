@@ -110,6 +110,7 @@ export type ContentBlockType =
   | 'tabs'
   | 'marquee'
   | 'embed'
+  | 'lottie'
   | 'table'
   | 'countdown'
   | 'progress'

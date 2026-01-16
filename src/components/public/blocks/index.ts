@@ -38,6 +38,7 @@ export { AnnouncementBarBlock } from './AnnouncementBarBlock';
 export { TabsBlock } from './TabsBlock';
 export { MarqueeBlock } from './MarqueeBlock';
 export { EmbedBlock } from './EmbedBlock';
+export { LottieBlock } from './LottieBlock';
 export { TableBlock } from './TableBlock';
 export { CountdownBlock } from './CountdownBlock';
 export { ProgressBlock } from './ProgressBlock';

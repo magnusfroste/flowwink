@@ -49,6 +49,7 @@ const BLOCK_LABELS: Record<ContentBlockType, string> = {
   tabs: 'Tabs',
   marquee: 'Marquee',
   embed: 'Embed',
+  lottie: 'Lottie Animation',
   table: 'Table',
   countdown: 'Countdown',
   progress: 'Progress',
