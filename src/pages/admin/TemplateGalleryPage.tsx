@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
+import { AdminPageContainer } from "@/components/admin/AdminPageContainer";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { STARTER_TEMPLATES, StarterTemplate } from "@/data/starter-templates";
@@ -42,7 +43,7 @@ export default function TemplateGalleryPage() {
 
   return (
     <AdminLayout>
-      <div className="max-w-5xl mx-auto">
+      <AdminPageContainer maxWidth="max-w-5xl" className="mx-auto">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
           <Button variant="ghost" size="icon" asChild>
@@ -101,7 +102,7 @@ export default function TemplateGalleryPage() {
             </Link>
           </Button>
         </div>
-      </div>
+      </AdminPageContainer>
 
       {/* Preview modal */}
       <TemplatePreview

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
+import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -125,7 +126,7 @@ export default function WebhooksPage() {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <AdminPageContainer>
         <AdminPageHeader
           title="Webhooks"
           description="Automate with webhooks that trigger on various events"
@@ -530,7 +531,7 @@ export default function WebhooksPage() {
           </form>
         </DialogContent>
       </Dialog>
-      </div>
+      </AdminPageContainer>
     </AdminLayout>
   );
 }

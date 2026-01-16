@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
+import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -159,7 +160,7 @@ export default function ProfilePage() {
 
   return (
     <AdminLayout>
-      <div className="space-y-6 max-w-2xl">
+      <AdminPageContainer maxWidth="max-w-2xl">
         <AdminPageHeader
           title="Profile"
           description="Manage your personal information and avatar"
@@ -366,7 +367,7 @@ export default function ProfilePage() {
               Save Changes
             </Button>
         </div>
-      </div>
+      </AdminPageContainer>
     </AdminLayout>
   );
 }

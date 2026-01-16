@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { FileText, Clock, CheckCircle, AlertCircle, Plus } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
+import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
 import { EmptyDashboard } from '@/components/admin/EmptyDashboard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -36,7 +37,7 @@ export default function AdminDashboard() {
   return (
     <AdminLayout>
       <WelcomeModal />
-      <div className="space-y-6">
+      <AdminPageContainer>
         <AdminPageHeader 
           title={`Welcome, ${profile?.full_name?.split(' ')[0] || 'user'}`}
           description={isEmpty ? "Let's get your site up and running" : "Here's an overview of your content"}
@@ -235,7 +236,7 @@ export default function AdminDashboard() {
         </div>
           </>
         )}
-      </div>
+      </AdminPageContainer>
     </AdminLayout>
   );
 }

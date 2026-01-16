@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
+import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -55,7 +56,7 @@ export default function CompaniesPage() {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <AdminPageContainer>
         <AdminPageHeader
           title="Companies"
           description="Manage companies and organizations in your CRM"
@@ -261,7 +262,7 @@ export default function CompaniesPage() {
           )}
         </CardContent>
       </Card>
-      </div>
+      </AdminPageContainer>
     </AdminLayout>
   );
 }

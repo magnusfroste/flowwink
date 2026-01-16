@@ -3,6 +3,7 @@ import { format } from 'date-fns';
 import { Plus, Trash2, CalendarOff } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
+import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
 import {
   useAvailability,
   useCreateAvailability,
@@ -88,7 +89,7 @@ export default function BookingAvailabilityPage() {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <AdminPageContainer>
         <AdminPageHeader
           title="Availability"
           description="Set opening hours and block dates"
@@ -352,7 +353,7 @@ export default function BookingAvailabilityPage() {
           </div>
         </DialogContent>
       </Dialog>
-      </div>
+      </AdminPageContainer>
     </AdminLayout>
   );
 }
