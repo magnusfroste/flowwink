@@ -1,5 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { useState, useCallback } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminPageContainer } from "@/components/admin/AdminPageContainer";
@@ -12,7 +11,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
 import {
   CheckCircle2,
@@ -33,7 +31,9 @@ import {
   Server,
   Webhook,
   ChevronDown,
+  Save,
 } from "lucide-react";
+import { useUnsavedChanges, UnsavedChangesDialog } from "@/hooks/useUnsavedChanges";
 import {
   useIntegrations,
   useUpdateIntegrations,
@@ -207,7 +207,7 @@ function TestConfigConnectionButton({
   );
 }
 
-// Integration Configuration Component with debounce
+// Integration Configuration Component - no auto-save, uses parent callback directly
 function IntegrationConfigPanel({ 
   integrationKey,
   config,
@@ -221,32 +221,10 @@ function IntegrationConfigPanel({
   hasKey: boolean;
   isEnabled: boolean;
 }) {
-  // Local state for debounced inputs
-  const [localConfig, setLocalConfig] = useState<IntegrationProviderConfig>(config || {});
-  const [isDirty, setIsDirty] = useState(false);
-
-  // Sync local state when external config changes (e.g., on mount or refetch)
-  useEffect(() => {
-    setLocalConfig(config || {});
-  }, [config]);
-
-  // Debounced save - only fires 800ms after user stops typing
-  useEffect(() => {
-    if (!isDirty) return;
-
-    const timer = setTimeout(() => {
-      onConfigChange(localConfig);
-      setIsDirty(false);
-    }, 800);
-
-    return () => clearTimeout(timer);
-  }, [localConfig, isDirty, onConfigChange]);
-
-  // Update local state on input change
+  // Update parent state directly on change
   const handleChange = useCallback((updates: Partial<IntegrationProviderConfig>) => {
-    setLocalConfig(prev => ({ ...prev, ...updates }));
-    setIsDirty(true);
-  }, []);
+    onConfigChange({ ...config, ...updates });
+  }, [config, onConfigChange]);
 
   if (!hasKey || !isEnabled) return null;
 
@@ -257,7 +235,7 @@ function IntegrationConfigPanel({
           <Label htmlFor="openai-baseurl" className="text-xs">Base URL (optional)</Label>
           <Input
             id="openai-baseurl"
-            value={localConfig?.baseUrl || 'https://api.openai.com/v1'}
+            value={config?.baseUrl || 'https://api.openai.com/v1'}
             onChange={(e) => handleChange({ baseUrl: e.target.value })}
             placeholder="https://api.openai.com/v1"
             className="h-8 text-sm"
@@ -267,7 +245,7 @@ function IntegrationConfigPanel({
         <div className="space-y-2">
           <Label htmlFor="openai-model" className="text-xs">Default Model</Label>
           <Select
-            value={localConfig?.model || 'gpt-4o-mini'}
+            value={config?.model || 'gpt-4o-mini'}
             onValueChange={(value) => handleChange({ model: value })}
           >
             <SelectTrigger id="openai-model" className="h-8 text-sm">
@@ -290,7 +268,7 @@ function IntegrationConfigPanel({
         <div className="space-y-2">
           <Label htmlFor="gemini-model" className="text-xs">Default Model</Label>
           <Select
-            value={localConfig?.model || 'gemini-2.0-flash-exp'}
+            value={config?.model || 'gemini-2.0-flash-exp'}
             onValueChange={(value) => handleChange({ model: value })}
           >
             <SelectTrigger id="gemini-model" className="h-8 text-sm">
@@ -314,7 +292,7 @@ function IntegrationConfigPanel({
           <Label htmlFor="local-endpoint" className="text-xs">Endpoint URL *</Label>
           <Input
             id="local-endpoint"
-            value={localConfig?.endpoint || ''}
+            value={config?.endpoint || ''}
             onChange={(e) => handleChange({ endpoint: e.target.value })}
             placeholder="http://localhost:11434"
             className="h-8 text-sm"
@@ -325,7 +303,7 @@ function IntegrationConfigPanel({
           <Label htmlFor="local-model" className="text-xs">Model Name</Label>
           <Input
             id="local-model"
-            value={localConfig?.model || 'llama3'}
+            value={config?.model || 'llama3'}
             onChange={(e) => handleChange({ model: e.target.value })}
             placeholder="llama3"
             className="h-8 text-sm"
@@ -336,7 +314,7 @@ function IntegrationConfigPanel({
           <Input
             id="local-apikey"
             type="password"
-            value={localConfig?.apiKey || ''}
+            value={config?.apiKey || ''}
             onChange={(e) => handleChange({ apiKey: e.target.value })}
             placeholder="sk-..."
             className="h-8 text-sm"
@@ -354,7 +332,7 @@ function IntegrationConfigPanel({
           <Label htmlFor="n8n-webhook" className="text-xs">Webhook URL *</Label>
           <Input
             id="n8n-webhook"
-            value={localConfig?.webhookUrl || ''}
+            value={config?.webhookUrl || ''}
             onChange={(e) => handleChange({ webhookUrl: e.target.value })}
             placeholder="https://n8n.example.com/webhook/..."
             className="h-8 text-sm"
@@ -365,7 +343,7 @@ function IntegrationConfigPanel({
           <Input
             id="n8n-apikey"
             type="password"
-            value={localConfig?.apiKey || ''}
+            value={config?.apiKey || ''}
             onChange={(e) => handleChange({ apiKey: e.target.value })}
             placeholder="Bearer token or API key"
             className="h-8 text-sm"
@@ -375,7 +353,7 @@ function IntegrationConfigPanel({
         <div className="space-y-2">
           <Label htmlFor="n8n-type" className="text-xs">Webhook Type</Label>
           <Select
-            value={localConfig?.webhookType || 'chat'}
+            value={config?.webhookType || 'chat'}
             onValueChange={(value) => handleChange({ webhookType: value as 'chat' | 'generic' })}
           >
             <SelectTrigger id="n8n-type" className="h-8 text-sm">
@@ -390,7 +368,7 @@ function IntegrationConfigPanel({
         <div className="space-y-2">
           <Label htmlFor="n8n-trigger" className="text-xs">Trigger Mode</Label>
           <Select
-            value={localConfig?.triggerMode || 'always'}
+            value={config?.triggerMode || 'always'}
             onValueChange={(value) => handleChange({ triggerMode: value as 'always' | 'keywords' | 'fallback' })}
           >
             <SelectTrigger id="n8n-trigger" className="h-8 text-sm">
@@ -403,12 +381,12 @@ function IntegrationConfigPanel({
             </SelectContent>
           </Select>
         </div>
-        {localConfig?.triggerMode === 'keywords' && (
+        {config?.triggerMode === 'keywords' && (
           <div className="space-y-2">
             <Label htmlFor="n8n-keywords" className="text-xs">Trigger Keywords</Label>
             <Input
               id="n8n-keywords"
-              value={(localConfig?.triggerKeywords || []).join(', ')}
+              value={(config?.triggerKeywords || []).join(', ')}
               onChange={(e) => handleChange({ 
                 triggerKeywords: e.target.value.split(',').map(k => k.trim()).filter(Boolean) 
               })}
@@ -422,7 +400,7 @@ function IntegrationConfigPanel({
   }
 
   if (integrationKey === 'resend') {
-    const emailConfig = localConfig?.emailConfig || { fromEmail: 'onboarding@resend.dev', fromName: 'Newsletter' };
+    const emailConfig = config?.emailConfig || { fromEmail: 'onboarding@resend.dev', fromName: 'Newsletter' };
     
     return (
       <div className="space-y-3 pt-3 border-t">
@@ -472,12 +450,17 @@ function IntegrationConfigPanel({
 export default function IntegrationsStatusPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
+  const [pendingSettings, setPendingSettings] = useState<Partial<IntegrationsSettings> | null>(null);
 
   const { data: secretsStatus, isLoading: secretsLoading, refetch: refetchSecrets } = useIntegrationStatus();
   const { data: integrationSettings, isLoading: settingsLoading } = useIntegrations();
   const updateIntegrations = useUpdateIntegrations();
 
   const isLoading = secretsLoading || settingsLoading;
+  const hasUnsavedChanges = pendingSettings !== null;
+
+  // Unsaved changes protection
+  const { blocker } = useUnsavedChanges({ hasChanges: hasUnsavedChanges });
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -492,16 +475,41 @@ export default function IntegrationsStatusPage() {
     toast.success("Command copied to clipboard");
   };
 
+  // Toggle saves immediately (no pending state needed for switches)
   const handleToggle = (key: keyof IntegrationsSettings, enabled: boolean) => {
     updateIntegrations.mutate({
       [key]: { enabled },
     });
   };
 
+  // Config changes are collected into pending state
   const handleConfigChange = (key: keyof IntegrationsSettings, config: IntegrationProviderConfig) => {
-    updateIntegrations.mutate({
-      [key]: { config },
-    });
+    setPendingSettings(prev => ({
+      ...prev,
+      [key]: { 
+        ...(integrationSettings?.[key] || {}),
+        config 
+      },
+    }));
+  };
+
+  // Save all pending changes
+  const handleSave = async () => {
+    if (!pendingSettings) return;
+    
+    try {
+      await updateIntegrations.mutateAsync(pendingSettings);
+      setPendingSettings(null);
+      toast.success("Settings saved");
+    } catch (error) {
+      toast.error("Failed to save settings");
+    }
+  };
+
+  // Discard pending changes
+  const handleDiscard = () => {
+    setPendingSettings(null);
+    toast.success("Changes discarded");
   };
 
   const toggleCardExpanded = (key: string) => {
@@ -532,6 +540,11 @@ export default function IntegrationsStatusPage() {
     if (hasKey && isEnabled) activeCount++;
   }
 
+  // Helper to get the display config (pending if available, otherwise current)
+  const getDisplayConfig = (key: keyof IntegrationsSettings) => {
+    return pendingSettings?.[key]?.config || integrationSettings?.[key]?.config;
+  };
+
   // Group integrations by category
   const groupedIntegrations = integrationKeys.reduce((acc, key) => {
     const integration = integrationSettings?.[key] || defaultIntegrationsSettings[key];
@@ -552,7 +565,31 @@ export default function IntegrationsStatusPage() {
         <AdminPageHeader
           title="Integrations"
           description="Manage external service integrations"
-        />
+        >
+          {hasUnsavedChanges && (
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                onClick={handleDiscard}
+                disabled={updateIntegrations.isPending}
+              >
+                Discard
+              </Button>
+              <Button 
+                onClick={handleSave} 
+                disabled={updateIntegrations.isPending}
+                className="gap-2"
+              >
+                {updateIntegrations.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
+                Save Changes
+              </Button>
+            </div>
+          )}
+        </AdminPageHeader>
         {/* System Status */}
         <Card>
           <CardHeader className="pb-3">
@@ -636,7 +673,7 @@ export default function IntegrationsStatusPage() {
                     const isEnabled = integrationSettings?.[key]?.enabled ?? false;
                     const status: IntegrationStatus = !hasKey ? 'not_configured' : isEnabled ? 'active' : 'disabled';
                     const IconComponent = iconMap[integration.icon as keyof typeof iconMap] || Bot;
-                    const currentConfig = integrationSettings?.[key]?.config || integration.config;
+                    const currentConfig = getDisplayConfig(key) || integration.config;
                     const hasConfigSection = ['openai', 'gemini', 'local_llm', 'n8n', 'resend'].includes(key);
                     const isExpanded = expandedCards.has(key);
 
@@ -820,6 +857,7 @@ export default function IntegrationsStatusPage() {
           </CardContent>
         </Card>
       </AdminPageContainer>
+      <UnsavedChangesDialog blocker={blocker} />
     </AdminLayout>
   );
 }
