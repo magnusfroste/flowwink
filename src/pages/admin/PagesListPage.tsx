@@ -318,7 +318,6 @@ export default function PagesListPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      </div>
     </AdminLayout>
   );
 }
