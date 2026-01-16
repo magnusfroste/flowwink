@@ -2,6 +2,10 @@
 
 # FlowWink Supabase Setup Script
 # This script sets up the complete Supabase backend for self-hosting
+#
+# Usage:
+#   ./scripts/setup-supabase.sh          # Normal setup
+#   ./scripts/setup-supabase.sh --fresh  # Fresh start (logout, clear cache)
 
 set -e
 
@@ -11,6 +15,26 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
+
+# Check for --fresh flag (useful for agencies setting up multiple sites)
+if [[ "$1" == "--fresh" ]]; then
+    echo -e "${YELLOW}Fresh start requested - clearing all cached data...${NC}"
+    echo ""
+    
+    # Logout from Supabase CLI (auto-confirm with 'y')
+    if command -v supabase &> /dev/null; then
+        echo "y" | supabase logout 2>/dev/null || true
+        echo -e "${GREEN}✓ Logged out from Supabase CLI${NC}"
+    fi
+    
+    # Clear cached project link
+    if [ -d "supabase/.temp" ]; then
+        rm -rf supabase/.temp
+        echo -e "${GREEN}✓ Cleared cached project link${NC}"
+    fi
+    
+    echo ""
+fi
 
 echo -e "${BLUE}╔════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║   FlowWink Supabase Setup                                  ║${NC}"
@@ -27,35 +51,83 @@ fi
 # Check if logged in
 echo -e "${YELLOW}Checking Supabase login status...${NC}"
 if ! supabase projects list &> /dev/null; then
-    echo -e "${RED}Not logged in to Supabase CLI${NC}"
-    echo "Run: supabase login"
-    exit 1
+    echo -e "${YELLOW}Not logged in to Supabase CLI${NC}"
+    echo ""
+    read -p "Would you like to login now? [Y/n]: " do_login
+    if [[ ! "$do_login" =~ ^[Nn]$ ]]; then
+        echo ""
+        supabase login
+        echo ""
+        # Verify login worked
+        if ! supabase projects list &> /dev/null; then
+            echo -e "${RED}Login failed. Please try again.${NC}"
+            exit 1
+        fi
+    else
+        echo -e "${RED}Login required to continue.${NC}"
+        exit 1
+    fi
 fi
 echo -e "${GREEN}✓ Logged in to Supabase${NC}"
 
-# Check if project is linked
-if [ ! -f "supabase/.temp/project-ref" ]; then
-    echo ""
-    echo -e "${YELLOW}No project linked. Let's link one now.${NC}"
-    echo ""
-    echo "Your Supabase projects:"
-    supabase projects list
-    echo ""
-    read -p "Enter your project ref (from the list above): " PROJECT_REF
+# Get list of projects and let user choose by number
+echo ""
+echo -e "${BLUE}Your Supabase projects:${NC}"
+echo ""
+
+# Get projects and display with numbers
+PROJECTS=$(supabase projects list --output json 2>/dev/null || echo "[]")
+if [ "$PROJECTS" == "[]" ] || [ -z "$PROJECTS" ]; then
+    echo -e "${RED}No projects found. Create one at supabase.com first.${NC}"
+    exit 1
+fi
+
+# Parse and display projects with numbers
+echo "$PROJECTS" | jq -r 'to_entries | .[] | "\(.key + 1)) \(.value.name) (\(.value.id)) - \(.value.region)"'
+echo ""
+
+# Check if already linked
+CURRENT_REF=""
+if [ -f "supabase/.temp/project-ref" ]; then
+    CURRENT_REF=$(cat supabase/.temp/project-ref)
+    CURRENT_NAME=$(echo "$PROJECTS" | jq -r --arg ref "$CURRENT_REF" '.[] | select(.id == $ref) | .name' 2>/dev/null || echo "")
+    if [ -n "$CURRENT_NAME" ]; then
+        echo -e "${YELLOW}Currently linked to: ${CURRENT_NAME} (${CURRENT_REF})${NC}"
+    else
+        echo -e "${YELLOW}Currently linked to: ${CURRENT_REF} (project may have been deleted)${NC}"
+    fi
+    read -p "Use this project? [Y/n]: " use_current
     
-    if [ -z "$PROJECT_REF" ]; then
-        echo -e "${RED}Error: Project ref is required${NC}"
+    if [[ "$use_current" =~ ^[Nn]$ ]]; then
+        rm -rf supabase/.temp
+        CURRENT_REF=""
+    fi
+fi
+
+# If no current project or user wants to switch
+if [ -z "$CURRENT_REF" ]; then
+    PROJECT_COUNT=$(echo "$PROJECTS" | jq 'length')
+    
+    read -p "Select project number (1-${PROJECT_COUNT}): " selection
+    
+    # Validate selection
+    if ! [[ "$selection" =~ ^[0-9]+$ ]] || [ "$selection" -lt 1 ] || [ "$selection" -gt "$PROJECT_COUNT" ]; then
+        echo -e "${RED}Invalid selection${NC}"
         exit 1
     fi
     
+    # Get project ref by index (0-based)
+    PROJECT_REF=$(echo "$PROJECTS" | jq -r ".[$((selection - 1))].id")
+    PROJECT_NAME=$(echo "$PROJECTS" | jq -r ".[$((selection - 1))].name")
+    
     echo ""
-    echo -e "${YELLOW}Linking to project ${PROJECT_REF}...${NC}"
+    echo -e "${YELLOW}Linking to ${PROJECT_NAME} (${PROJECT_REF})...${NC}"
     supabase link --project-ref "$PROJECT_REF"
-    echo -e "${GREEN}✓ Project linked${NC}"
 else
-    PROJECT_REF=$(cat supabase/.temp/project-ref)
-    echo -e "${GREEN}✓ Project already linked: ${PROJECT_REF}${NC}"
+    PROJECT_REF="$CURRENT_REF"
 fi
+
+echo -e "${GREEN}✓ Project linked: ${PROJECT_REF}${NC}"
 
 echo ""
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
@@ -149,16 +221,25 @@ echo -e "${BLUE}  Step 4: Environment Variables${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
 
-# Fetch project details
-echo -e "${YELLOW}Fetching project details...${NC}"
+# Fetch project API keys
+echo -e "${YELLOW}Fetching API keys...${NC}"
 
-# Get the anon key
-ANON_KEY=$(supabase status 2>/dev/null | grep "anon key" | awk '{print $3}' || echo "")
+# Get the anon key from project API settings
+API_KEYS=$(supabase projects api-keys --project-ref "$PROJECT_REF" --output json 2>/dev/null || echo "[]")
+ANON_KEY=$(echo "$API_KEYS" | jq -r '.[] | select(.name == "anon") | .api_key' 2>/dev/null || echo "")
 
-if [ -z "$ANON_KEY" ]; then
+if [ -z "$ANON_KEY" ] || [ "$ANON_KEY" == "null" ]; then
     echo -e "${YELLOW}Could not fetch keys automatically. Get them from Supabase Dashboard.${NC}"
     echo ""
     echo "Go to: https://supabase.com/dashboard/project/${PROJECT_REF}/settings/api"
+    echo ""
+    echo "Then set these environment variables:"
+    echo ""
+    echo -e "${BLUE}┌────────────────────────────────────────────────────────────┐${NC}"
+    echo "VITE_SUPABASE_URL=https://${PROJECT_REF}.supabase.co"
+    echo "VITE_SUPABASE_PUBLISHABLE_KEY=<your-anon-key>"
+    echo "VITE_SUPABASE_PROJECT_ID=${PROJECT_REF}"
+    echo -e "${BLUE}└────────────────────────────────────────────────────────────┘${NC}"
 else
     echo ""
     echo -e "${GREEN}Copy these environment variables to your hosting platform (e.g., Easypanel):${NC}"
