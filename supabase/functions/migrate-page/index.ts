@@ -128,6 +128,23 @@ Available CMS block types:
 
 33. social-proof - Social proof metrics
     Data: { items: [{ label: string, value: string }] }
+
+34. lottie - Lottie animation block (native support for .json and .lottie files)
+    Data: { 
+      src: string,           // URL to .json or .lottie file
+      alt?: string,          // Accessibility description
+      autoplay?: boolean,    // Default: true
+      loop?: boolean,        // Default: true
+      speed?: number,        // 0.5-2, Default: 1
+      direction?: 1 | -1,    // 1=forward, -1=reverse, Default: 1
+      playOn?: 'load' | 'hover' | 'click' | 'scroll', // Default: 'load'
+      hoverAction?: 'play' | 'pause' | 'reverse',     // Default: 'play'
+      size?: 'small' | 'medium' | 'large' | 'full' | 'custom', // Default: 'medium'
+      maxWidth?: number,     // Custom max width in px
+      aspectRatio?: '1:1' | '16:9' | '4:3' | '3:2' | 'auto', // Default: 'auto'
+      alignment?: 'left' | 'center' | 'right', // Default: 'center'
+      caption?: string       // Optional caption below animation
+    }
 `;
 
 // Detect platform from HTML/metadata
@@ -640,11 +657,12 @@ Look for patterns:
 
 Create "quote" or "testimonials" blocks.
 
-LOTTIE & SVG ANIMATIONS:
-- If Lottie animations (.json or .lottie files) are found, create "embed" blocks with the animation URL
+LOTTIE ANIMATIONS - CRITICAL:
+- For Lottie animations (.json or .lottie files), ALWAYS create native "lottie" blocks (NOT embed blocks!)
+- "lottie" block requires: { src: "animation URL", autoplay: true, loop: true }
+- Optional: Add alt text, caption, size, and playOn settings based on context
+- Common placements: hero decorations (playOn: 'load'), hover effects (playOn: 'hover'), scroll reveals (playOn: 'scroll')
 - For SVG animations, you can include them in "image" blocks if they are decorative
-- Note the animation URLs in the block data for reference
-- Animations are often used for loading states, hero decorations, or interactive elements
 
 === RESPONSE FORMAT ===
 Respond ONLY with valid JSON, no other text:
@@ -667,7 +685,7 @@ Respond ONLY with valid JSON, no other text:
       } 
     },
     { "id": "block-2", "type": "text", "data": { "content": "<p>...</p>" } },
-    { "id": "block-3", "type": "embed", "data": { "url": "lottie animation URL", "title": "Animation name" } }
+    { "id": "block-3", "type": "lottie", "data": { "src": "https://lottie.host/...", "autoplay": true, "loop": true, "alt": "Animation description" } }
   ]
 }`;
 
@@ -723,7 +741,8 @@ ${html.substring(0, 20000)}
 6. Create stats blocks for numerical facts
 7. Identify quotes and testimonials
 8. Group related content into appropriate block types
-9. If LOTTIE or SVG ANIMATIONS found: Create "embed" blocks for them with the animation URL
+9. If LOTTIE ANIMATIONS found: Create native "lottie" blocks (NOT embed!) with src, autoplay: true, loop: true
+10. For SVG animations: Include in image blocks or as decorative elements
 
 Respond only with JSON.`;
 
