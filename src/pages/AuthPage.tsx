@@ -114,10 +114,10 @@ export default function AuthPage() {
         {/* Logo */}
         <div className="flex items-center justify-center gap-3 mb-8">
           <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center shadow-lg">
-            <span className="text-primary-foreground font-serif font-bold text-2xl">S</span>
+            <span className="text-primary-foreground font-serif font-bold text-2xl">F</span>
           </div>
           <div>
-            <h1 className="font-serif font-bold text-2xl text-foreground">Sophia CMS</h1>
+            <h1 className="font-serif font-bold text-2xl text-foreground">FlowWink</h1>
             <p className="text-sm text-muted-foreground">Content Management System</p>
           </div>
         </div>
