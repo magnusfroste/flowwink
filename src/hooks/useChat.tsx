@@ -285,6 +285,18 @@ export function useChat(options?: UseChatOptions) {
         throw new Error(errorData.error || 'Could not send message');
       }
 
+      // Check if AI skipped the response (e.g., live agent is handling)
+      const contentType = response.headers.get('content-type');
+      if (contentType?.includes('application/json')) {
+        const jsonData = await response.json();
+        if (jsonData.skipped) {
+          console.log('AI response skipped:', jsonData.reason);
+          // Don't add an assistant message - live agent will respond
+          setIsLoading(false);
+          return;
+        }
+      }
+
       if (!response.body) {
         throw new Error('No response from server');
       }
