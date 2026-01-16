@@ -159,13 +159,11 @@ export default function ProfilePage() {
 
   return (
     <AdminLayout>
-      <div className="container max-w-2xl py-8">
+      <div className="space-y-6 max-w-2xl">
         <AdminPageHeader
           title="Profile"
           description="Manage your personal information and avatar"
         />
-
-        <div className="space-y-6 mt-6">
           {/* Avatar Section */}
           <Card>
             <CardHeader>
@@ -367,7 +365,6 @@ export default function ProfilePage() {
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Save Changes
             </Button>
-          </div>
         </div>
       </div>
     </AdminLayout>

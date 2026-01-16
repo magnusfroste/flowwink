@@ -55,21 +55,20 @@ export default function ProductsPage() {
 
   return (
     <AdminLayout>
-      <AdminPageHeader
-        title="Products"
-        description="Manage products and services for your deals"
-      />
+      <div className="space-y-6">
+        <AdminPageHeader
+          title="Products"
+          description="Manage products and services for your deals"
+        >
+          <Button onClick={() => { setEditingProduct(null); setDialogOpen(true); }}>
+            <Plus className="h-4 w-4 mr-2" />
+            New Product
+          </Button>
+        </AdminPageHeader>
 
-      {isStripeConfigured === false && (
-        <IntegrationWarning integration="stripe" />
-      )}
-
-      <div className="flex justify-end mb-6">
-        <Button onClick={() => { setEditingProduct(null); setDialogOpen(true); }}>
-          <Plus className="h-4 w-4 mr-2" />
-          New Product
-        </Button>
-      </div>
+        {isStripeConfigured === false && (
+          <IntegrationWarning integration="stripe" />
+        )}
 
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
@@ -155,6 +154,7 @@ export default function ProductsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      </div>
     </AdminLayout>
   );
 }

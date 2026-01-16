@@ -501,12 +501,11 @@ export default function IntegrationsStatusPage() {
 
   return (
     <AdminLayout>
-      <AdminPageHeader
-        title="Integrations"
-        description="Manage external service integrations"
-      />
-
       <div className="space-y-6">
+        <AdminPageHeader
+          title="Integrations"
+          description="Manage external service integrations"
+        />
         {/* System Status */}
         <Card>
           <CardHeader className="pb-3">
