@@ -98,22 +98,29 @@ GEMINI_API_KEY=...
 
 ---
 
-### 3. Content Migration (WordPress/Webflow Import)
-**Location:** Admin → Tools → Migrate Page
+### 3. Content Migration (AI Page Import)
+**Location:** Admin → Pages → Import Page
 
-**Purpose:** Import content from WordPress, Webflow, or any HTML page and convert to FlowWink blocks using AI.
+**Purpose:** Import content from any website (WordPress, Wix, Squarespace, Webflow, Shopify, etc.) and convert to FlowWink blocks using AI.
 
-**Edge Functions:**
-- `migrate-page` (AI conversion)
-- `firecrawl` (web scraping)
+**Features:**
+- **Platform Detection:** Automatically detects CMS platform (WordPress, Wix, Squarespace, Webflow, Shopify, Ghost, HubSpot, Drupal, SiteVision, Episerver) for optimized extraction
+- **Video Extraction:** Finds YouTube and Vimeo videos embedded on the page
+- **Image Extraction:** Extracts all images including lazy-loaded and background images
+- **Screenshot Context:** Captures page screenshot for AI visual analysis
+- **Block Mapping:** Maps content to 22+ block types (hero, text, gallery, team, stats, testimonials, etc.)
+- **Local Image Storage:** Optional download of all images to media library
+
+**Edge Function:**
+- `migrate-page` (scraping + AI conversion)
 
 **Configuration:**
-- Uses the same AI provider as Chat Settings
-- Requires Firecrawl for web scraping
+- Uses OpenAI (gpt-4o) or Gemini (gemini-2.0-flash-exp) for AI analysis
+- Requires Firecrawl for enhanced web scraping
 
 **API Keys Used:**
 - `OPENAI_API_KEY` or `GEMINI_API_KEY` (for AI conversion)
-- `FIRECRAWL_API_KEY` (for web scraping)
+- `FIRECRAWL_API_KEY` (for web scraping with screenshot support)
 
 ---
 
