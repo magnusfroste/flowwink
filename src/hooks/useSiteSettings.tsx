@@ -247,6 +247,9 @@ export interface ChatSettings {
   
   // Suggested prompts (shown in empty state)
   suggestedPrompts: string[];
+  
+  // Live agent avatar - show agent's profile picture instead of robot icon
+  showAgentAvatar: boolean;
 }
 
 const defaultChatSettings: ChatSettings = {
@@ -295,6 +298,7 @@ const defaultChatSettings: ChatSettings = {
     'Tell me about your services',
     'How do I book an appointment?',
   ],
+  showAgentAvatar: true,
 };
 
 // Generic hook for fetching settings

@@ -10,6 +10,12 @@ export interface ChatMessage {
   createdAt: Date;
 }
 
+export interface AgentInfo {
+  id: string;
+  fullName: string | null;
+  avatarUrl: string | null;
+}
+
 interface UseChatOptions {
   conversationId?: string;
   onNewConversation?: (id: string) => void;
@@ -24,6 +30,7 @@ export function useChat(options?: UseChatOptions) {
   const [conversationId, setConversationId] = useState<string | undefined>(options?.conversationId);
   const [initialized, setInitialized] = useState(false);
   const [isWithLiveAgent, setIsWithLiveAgent] = useState(false);
+  const [agentInfo, setAgentInfo] = useState<AgentInfo | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   
   const { data: settings } = useChatSettings();
@@ -123,20 +130,45 @@ export function useChat(options?: UseChatOptions) {
   useEffect(() => {
     if (!conversationId) {
       setIsWithLiveAgent(false);
+      setAgentInfo(null);
       return;
     }
 
     const checkStatus = async () => {
       const { data } = await supabase
         .from('chat_conversations')
-        .select('conversation_status, assigned_agent_id')
+        .select(`
+          conversation_status, 
+          assigned_agent_id,
+          support_agents!chat_conversations_assigned_agent_id_fkey (
+            user_id,
+            profiles!support_agents_user_id_fkey (
+              full_name,
+              avatar_url
+            )
+          )
+        `)
         .eq('id', conversationId)
         .single();
       
-      setIsWithLiveAgent(
-        !!data?.assigned_agent_id && 
-        (data.conversation_status === 'with_agent' || data.conversation_status === 'waiting_agent')
-      );
+      const isWithAgent = !!data?.assigned_agent_id && 
+        (data.conversation_status === 'with_agent' || data.conversation_status === 'waiting_agent');
+      
+      setIsWithLiveAgent(isWithAgent);
+      
+      if (isWithAgent && data?.support_agents) {
+        const agent = data.support_agents as unknown as { 
+          user_id: string; 
+          profiles: { full_name: string | null; avatar_url: string | null } 
+        };
+        setAgentInfo({
+          id: agent.user_id,
+          fullName: agent.profiles?.full_name || null,
+          avatarUrl: agent.profiles?.avatar_url || null,
+        });
+      } else {
+        setAgentInfo(null);
+      }
     };
 
     checkStatus();
@@ -445,6 +477,7 @@ export function useChat(options?: UseChatOptions) {
     error,
     conversationId,
     isWithLiveAgent,
+    agentInfo,
     sendMessage,
     cancelRequest,
     clearMessages,

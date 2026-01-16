@@ -791,6 +791,22 @@ export default function ChatSettingsPage() {
                     )}
                   </div>
 
+                  {/* Live Agent Avatar setting */}
+                  <div className="flex items-center justify-between p-4 rounded-lg border">
+                    <div>
+                      <h4 className="font-medium">Show Agent Avatar</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Display live agent's profile picture instead of robot icon
+                      </p>
+                    </div>
+                    <Switch
+                      checked={formData.showAgentAvatar ?? true}
+                      onCheckedChange={(showAgentAvatar) => 
+                        setFormData({ ...formData, showAgentAvatar })
+                      }
+                    />
+                  </div>
+
                   {/* Context indicator setting */}
                   <div className="flex items-center justify-between p-4 rounded-lg border">
                     <div>
