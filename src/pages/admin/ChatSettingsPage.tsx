@@ -971,6 +971,42 @@ export default function ChatSettingsPage() {
                   </>
                 )}
 
+                {/* Local AI Tool Calling Support Toggle */}
+                {formData.toolCallingEnabled && formData.aiProvider === 'local' && (
+                  <Card>
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-900/30">
+                            <Server className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                          </div>
+                          <div>
+                            <CardTitle className="text-base">Local AI Tool Calling</CardTitle>
+                            <CardDescription>
+                              Enable if your local model supports OpenAI-compatible function calling
+                            </CardDescription>
+                          </div>
+                        </div>
+                        <Switch
+                          checked={formData.localSupportsToolCalling ?? false}
+                          onCheckedChange={(localSupportsToolCalling) => 
+                            setFormData({ ...formData, localSupportsToolCalling })
+                          }
+                        />
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <Alert className="bg-orange-50 border-orange-200 dark:bg-orange-950 dark:border-orange-900">
+                        <Server className="h-4 w-4 text-orange-600" />
+                        <AlertDescription className="text-orange-700 dark:text-orange-300">
+                          Compatible models include Qwen3, Mistral, and other models that support OpenAI function calling format.
+                          If disabled, keyword-based handoff detection will be used as fallback.
+                        </AlertDescription>
+                      </Alert>
+                    </CardContent>
+                  </Card>
+                )}
+
                 {!formData.toolCallingEnabled && (
                   <Alert>
                     <Wrench className="h-4 w-4" />

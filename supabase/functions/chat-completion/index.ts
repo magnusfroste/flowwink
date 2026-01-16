@@ -45,6 +45,7 @@ interface ChatSettings {
   humanHandoffEnabled?: boolean;
   sentimentDetectionEnabled?: boolean;
   sentimentThreshold?: number;
+  localSupportsToolCalling?: boolean; // Whether local AI supports OpenAI-compatible tool calling (e.g., vLLM/Qwen3)
 }
 
 interface ChatRequest {
@@ -508,7 +509,9 @@ serve(async (req) => {
 
     // Build tools array based on settings
     const tools: any[] = [];
-    const toolCallingSupported = aiProvider === 'openai'; // Only OpenAI reliably supports tool calling
+    // OpenAI always supports tool calling; local providers support it if explicitly enabled (e.g., vLLM/Qwen3)
+    const toolCallingSupported = aiProvider === 'openai' || 
+      (aiProvider === 'local' && settings?.localSupportsToolCalling);
     
     if (settings?.toolCallingEnabled && toolCallingSupported) {
       if (settings?.firecrawlSearchEnabled && aiIntegrations?.firecrawl?.enabled) {
