@@ -55,6 +55,7 @@ import { AnnouncementBarBlockEditor } from './AnnouncementBarBlockEditor';
 import { TabsBlockEditor } from './TabsBlockEditor';
 import { MarqueeBlockEditor } from './MarqueeBlockEditor';
 import { EmbedBlockEditor } from './EmbedBlockEditor';
+import { LottieBlockEditor } from './LottieBlockEditor';
 import { TableBlockEditor } from './TableBlockEditor';
 import { CountdownBlockEditor } from './CountdownBlockEditor';
 import { ProgressBlockEditor } from './ProgressBlockEditor';
@@ -73,6 +74,7 @@ import type { AnnouncementBarBlockData } from '@/components/public/blocks/Announ
 import type { TabsBlockData } from '@/components/public/blocks/TabsBlock';
 import type { MarqueeBlockData } from '@/components/public/blocks/MarqueeBlock';
 import type { EmbedBlockData } from '@/components/public/blocks/EmbedBlock';
+import type { LottieBlockData } from '@/components/public/blocks/LottieBlock';
 import type { TableBlockData } from '@/components/public/blocks/TableBlock';
 import type { CountdownBlockData } from '@/components/public/blocks/CountdownBlock';
 import type { ProgressBlockData } from '@/components/public/blocks/ProgressBlock';
@@ -129,6 +131,7 @@ type BlockDataMap = {
   tabs: TabsBlockData;
   marquee: MarqueeBlockData;
   embed: EmbedBlockData;
+  lottie: LottieBlockData;
   table: TableBlockData;
   countdown: CountdownBlockData;
   progress: ProgressBlockData;
@@ -345,6 +348,18 @@ const DEFAULT_BLOCK_DATA: BlockDataMap = {
     url: '',
     aspectRatio: 'auto',
     maxWidth: 'lg',
+    variant: 'default',
+  },
+  lottie: {
+    src: '',
+    autoplay: true,
+    loop: true,
+    speed: 1,
+    direction: 'forward',
+    playOn: 'load',
+    size: 'md',
+    aspectRatio: 'auto',
+    alignment: 'center',
     variant: 'default',
   },
   table: {
@@ -809,6 +824,14 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
         return (
           <EmbedBlockEditor
             data={block.data as unknown as EmbedBlockData}
+            onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+            isEditing={isEditing}
+          />
+        );
+      case 'lottie':
+        return (
+          <LottieBlockEditor
+            data={block.data as unknown as LottieBlockData}
             onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
             isEditing={isEditing}
           />
