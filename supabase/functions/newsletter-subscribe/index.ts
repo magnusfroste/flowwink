@@ -270,12 +270,46 @@ serve(async (req) => {
     // Send confirmation email if Resend is configured
     if (resendApiKey && subscriber?.confirmation_token) {
       try {
+        // Get email configuration from site_settings (same as newsletter-send)
+        const { data: integrationSettings } = await supabase
+          .from("site_settings")
+          .select("value")
+          .eq("key", "integrations")
+          .maybeSingle();
+
+        const resendSettings = (integrationSettings?.value as any)?.resend;
+        const resendEnabled = resendSettings?.enabled ?? false;
+        
+        if (!resendEnabled) {
+          console.log("[newsletter-subscribe] Resend integration is disabled, auto-confirming");
+          await supabase
+            .from("newsletter_subscribers")
+            .update({ 
+              status: "confirmed", 
+              confirmed_at: new Date().toISOString() 
+            })
+            .eq("email", email.toLowerCase());
+          
+          return new Response(
+            JSON.stringify({ success: true, message: "Subscribed successfully" }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        // Get email configuration from settings
+        const emailConfig = resendSettings?.config?.emailConfig || {
+          fromEmail: "onboarding@resend.dev",
+          fromName: "Newsletter",
+        };
+        
+        console.log(`[newsletter-subscribe] Using sender: ${emailConfig.fromName} <${emailConfig.fromEmail}>`);
+
         const ResendClass = await getResend();
         const resendClient = new ResendClass(resendApiKey);
         const confirmUrl = `${supabaseUrl}/functions/v1/newsletter-subscribe?action=confirm&token=${subscriber.confirmation_token}`;
         
         await resendClient.emails.send({
-          from: "Newsletter <onboarding@resend.dev>",
+          from: `${emailConfig.fromName} <${emailConfig.fromEmail}>`,
           to: [email],
           subject: "Confirm your subscription",
           html: `
