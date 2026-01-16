@@ -36,7 +36,7 @@ export default function AdminDashboard() {
   return (
     <AdminLayout>
       <WelcomeModal />
-      <div>
+      <div className="space-y-6">
         <AdminPageHeader 
           title={`Welcome, ${profile?.full_name?.split(' ')[0] || 'user'}`}
           description={isEmpty ? "Let's get your site up and running" : "Here's an overview of your content"}
@@ -48,7 +48,7 @@ export default function AdminDashboard() {
         ) : (
           <>
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
@@ -108,27 +108,16 @@ export default function AdminDashboard() {
 
         {/* Leads Widget (if enabled) */}
         {leadsEnabled && (
-          <div className="mb-8">
-            <LeadsDashboardWidget />
-          </div>
+          <LeadsDashboardWidget />
         )}
 
-        {/* AEO Widget */}
-        <div className="mb-8">
-          <AeoDashboardWidget />
-        </div>
+        <AeoDashboardWidget />
 
-        {/* Chat Feedback Widget */}
-        <div className="mb-8">
-          <ChatFeedbackDashboardWidget />
-        </div>
+        <ChatFeedbackDashboardWidget />
 
-        {/* Live Support Widget */}
-        <div className="mb-8">
-          <LiveSupportDashboardWidget />
-        </div>
+        <LiveSupportDashboardWidget />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Recent Pages */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">

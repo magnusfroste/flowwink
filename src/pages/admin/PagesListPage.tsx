@@ -116,7 +116,7 @@ export default function PagesListPage() {
 
   return (
     <AdminLayout>
-      <div>
+      <div className="space-y-6">
         <AdminPageHeader 
           title="Pages"
           description="Manage and edit your pages"
@@ -137,7 +137,7 @@ export default function PagesListPage() {
         </AdminPageHeader>
 
         {/* Filters */}
-        <Card className="mb-6">
+        <Card>
           <CardContent className="pt-6">
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="relative flex-1">
@@ -318,6 +318,7 @@ export default function PagesListPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      </div>
     </AdminLayout>
   );
 }

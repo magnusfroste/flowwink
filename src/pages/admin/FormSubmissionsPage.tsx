@@ -203,12 +203,12 @@ export default function FormSubmissionsPage() {
 
   return (
     <AdminLayout>
-      <AdminPageHeader
-        title="Form Submissions"
-        description="View and manage form submissions from your website"
-      />
+      <div className="space-y-6">
+        <AdminPageHeader
+          title="Form Submissions"
+          description="View and manage form submissions from your website"
+        />
 
-      <div className="p-6 space-y-6">
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">

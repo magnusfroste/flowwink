@@ -91,7 +91,8 @@ export default function BookingsPage() {
 
   return (
     <AdminLayout>
-      <AdminPageHeader
+      <div className="space-y-6">
+        <AdminPageHeader
         title="Bookings"
         description="Manage bookings and view calendar overview"
       >
@@ -112,7 +113,7 @@ export default function BookingsPage() {
       </AdminPageHeader>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-4 mb-6">
+      <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">This Month</CardTitle>
@@ -507,6 +508,7 @@ export default function BookingsPage() {
         services={services || []}
         initialDate={selectedDate}
       />
+      </div>
     </AdminLayout>
   );
 }

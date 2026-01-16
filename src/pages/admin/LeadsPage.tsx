@@ -55,34 +55,35 @@ export default function LeadsPage() {
 
   return (
     <AdminLayout>
-      <AdminPageHeader
-        title="Contacts"
-        description="Manage contacts and view pipeline"
-      >
-        <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={handleExport} disabled={!leads?.length}>
-                <Download className="h-4 w-4 mr-2" />
-                Export CSV
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setShowImportDialog(true)}>
-                <Upload className="h-4 w-4 mr-2" />
-                Import CSV
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <Button onClick={() => setShowCreateDialog(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            New Contact
-          </Button>
-        </div>
-      </AdminPageHeader>
+      <div className="space-y-6">
+        <AdminPageHeader
+          title="Contacts"
+          description="Manage contacts and view pipeline"
+        >
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleExport} disabled={!leads?.length}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Export CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowImportDialog(true)}>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Import CSV
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button onClick={() => setShowCreateDialog(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              New Contact
+            </Button>
+          </div>
+        </AdminPageHeader>
 
       <CreateLeadDialog open={showCreateDialog} onOpenChange={setShowCreateDialog} />
       <CsvImportDialog
@@ -293,6 +294,7 @@ export default function LeadsPage() {
           </Card>
         </TabsContent>
       </Tabs>
+      </div>
     </AdminLayout>
   );
 }
