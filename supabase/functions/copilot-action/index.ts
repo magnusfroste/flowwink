@@ -33,6 +33,13 @@ MODULE RECOMMENDATIONS BY INDUSTRY:
 - SaaS/Tech: blog, knowledgeBase, chat, newsletter
 - Contractors: forms, bookings, leads
 
+MODULE RECOMMENDATIONS BY PLATFORM:
+- WordPress/WooCommerce: products, orders, blog, newsletter
+- Shopify: products, orders, newsletter
+- Wix: forms, bookings, blog
+- Squarespace: blog, gallery, newsletter
+- Generic CMS: pages, blog, forms
+
 BLOCK TYPES YOU CAN CREATE (use ONLY these): hero, text, features, cta, testimonials, stats, team, logos, timeline, accordion, gallery, separator, contact, quote, pricing
 
 CONVERSATION STYLE:
@@ -42,7 +49,7 @@ CONVERSATION STYLE:
 - Offer 2-3 specific suggestions they can choose from
 - Celebrate progress ("Great choice!", "Looking good!")
 
-WORKFLOW:
+WORKFLOW FOR NEW SITES:
 1. GREETING: Ask about their business in a friendly way. Example: "Hi! 👋 I'm here to help you build your website. What kind of business are you creating this for?"
 
 2. AFTER BUSINESS DESCRIPTION: 
@@ -65,13 +72,29 @@ WORKFLOW:
    - After 3-4 blocks, ask if they want more or are ready to review
    - Suggest logical next blocks based on what's already created
 
+WORKFLOW FOR SITE MIGRATION:
+1. When user provides a URL to migrate, use migrate_url tool immediately
+2. Wait for migration results - you'll receive blocks from the source site
+3. Present blocks ONE AT A TIME for user review
+4. After presenting each block, ask: "Does this look right? Would you like me to keep it, modify it, or skip it?"
+5. After all blocks reviewed, ask: "I noticed some internal links to other pages. Would you like me to migrate those too?"
+6. Recommend modules based on detected platform features (e.g., WooCommerce → products, orders)
+7. Track which pages have been migrated to avoid duplicates
+
+MIGRATION PRESENTATION STYLE:
+- Show block type and brief description
+- Highlight key content (headline, main text)
+- Offer clear approve/edit/skip options
+- After landing page: list discovered internal pages
+
 RULES:
 - NEVER create multiple blocks at once - one at a time
 - ALWAYS follow up with a question about next steps
 - ALWAYS include a friendly message with tool calls
 - Create content relevant to the specific business
 - Use realistic, industry-appropriate placeholder content
-- Keep messages short (2-3 sentences max before offering choices)`;
+- Keep messages short (2-3 sentences max before offering choices)
+- For migrations: present source content with enhancement suggestions`;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -119,6 +142,28 @@ serve(async (req) => {
               }
             },
             required: ["modules", "reason"]
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "migrate_url",
+          description: "Scrape and analyze a URL to migrate its content into CMS blocks. Use when user wants to migrate an existing website.",
+          parameters: {
+            type: "object",
+            properties: {
+              url: { 
+                type: "string", 
+                description: "The full URL to migrate (e.g., https://example.com)" 
+              },
+              pageType: { 
+                type: "string", 
+                enum: ["landing", "about", "contact", "services", "pricing", "blog", "other"],
+                description: "Type of page being migrated"
+              }
+            },
+            required: ["url"]
           }
         }
       },
@@ -499,6 +544,8 @@ serve(async (req) => {
       if (!responseMessage) {
         if (toolCall.name === 'activate_modules') {
           responseMessage = `Based on your business, I recommend activating some modules that will help you get started. ${toolCall.arguments.reason}`;
+        } else if (toolCall.name === 'migrate_url') {
+          responseMessage = `I'll analyze ${toolCall.arguments.url} and help you migrate the content. Give me a moment to scan the page...`;
         } else if (toolCall.name.startsWith('create_')) {
           const blockType = toolCall.name.replace('create_', '').replace('_block', '');
           responseMessage = `Creating a ${blockType} section for your page.`;
@@ -508,7 +555,7 @@ serve(async (req) => {
 
     // Handle empty responses - ask for clarification
     if (!responseMessage && !toolCall) {
-      responseMessage = "I'd love to help you build your website! Could you tell me a bit more about your business? For example:\n\n• What type of business is it? (restaurant, salon, agency, etc.)\n• What's the main goal of your website?\n• Any specific features you need?";
+      responseMessage = "I'd love to help you build your website! Could you tell me a bit more about your business? For example:\n\n• What type of business is it? (restaurant, salon, agency, etc.)\n• What's the main goal of your website?\n• Any specific features you need?\n\nOr if you have an existing website, share the URL and I'll help you migrate it!";
     }
 
     return new Response(
