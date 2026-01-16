@@ -55,31 +55,32 @@ export default function CompaniesPage() {
 
   return (
     <AdminLayout>
-      <AdminPageHeader
-        title="Companies"
-        description="Manage companies and organizations in your CRM"
-      >
-        <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={handleExport} disabled={!companies?.length}>
-                <Download className="h-4 w-4 mr-2" />
-                Export CSV
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setShowImportDialog(true)}>
-                <Upload className="h-4 w-4 mr-2" />
-                Import CSV
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <CreateCompanyDialog />
-        </div>
-      </AdminPageHeader>
+      <div className="space-y-6">
+        <AdminPageHeader
+          title="Companies"
+          description="Manage companies and organizations in your CRM"
+        >
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleExport} disabled={!companies?.length}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Export CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowImportDialog(true)}>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Import CSV
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <CreateCompanyDialog />
+          </div>
+        </AdminPageHeader>
 
       <CsvImportDialog
         open={showImportDialog}
@@ -90,7 +91,7 @@ export default function CompaniesPage() {
         onImport={handleImport}
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total</CardTitle>
@@ -260,6 +261,7 @@ export default function CompaniesPage() {
           )}
         </CardContent>
       </Card>
+      </div>
     </AdminLayout>
   );
 }

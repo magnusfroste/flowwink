@@ -287,7 +287,7 @@ export default function NewsletterPage() {
 
   return (
     <AdminLayout>
-      <div className="space-y-8">
+      <div className="space-y-6">
         <AdminPageHeader
           title="Newsletter"
           description="Manage subscribers and send email campaigns"
