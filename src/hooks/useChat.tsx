@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useChatSettings } from './useSiteSettings';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -33,6 +33,76 @@ export function useChat(options?: UseChatOptions) {
     }
     return sessionId;
   }, []);
+
+  // Load existing messages when conversationId is set
+  useEffect(() => {
+    if (!conversationId) return;
+
+    const loadMessages = async () => {
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .select('*')
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: true });
+
+      if (!error && data) {
+        setMessages(data.map(m => ({
+          id: m.id,
+          // Treat 'agent' role as 'assistant' for display
+          role: (m.role === 'user' ? 'user' : 'assistant') as 'user' | 'assistant',
+          content: m.content,
+          createdAt: new Date(m.created_at),
+        })));
+      }
+    };
+
+    loadMessages();
+  }, [conversationId]);
+
+  // Realtime subscription for agent messages
+  useEffect(() => {
+    if (!conversationId || !settings?.saveConversations) return;
+
+    const channel = supabase
+      .channel(`chat-${conversationId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'chat_messages',
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        (payload) => {
+          const newMessage = payload.new as {
+            id: string;
+            role: string;
+            content: string;
+            created_at: string;
+          };
+
+          // Only add messages from agent (not user or assistant - those are added locally)
+          if (newMessage.role === 'agent') {
+            setMessages(prev => {
+              // Check if message already exists
+              if (prev.some(m => m.id === newMessage.id)) return prev;
+              
+              return [...prev, {
+                id: newMessage.id,
+                role: 'assistant' as const,
+                content: newMessage.content,
+                createdAt: new Date(newMessage.created_at),
+              }];
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [conversationId, settings?.saveConversations]);
 
   const saveMessage = useCallback(async (
     convId: string,
@@ -142,6 +212,7 @@ export function useChat(options?: UseChatOptions) {
               humanHandoffEnabled: settings?.humanHandoffEnabled || false,
               sentimentDetectionEnabled: settings?.sentimentDetectionEnabled || false,
               sentimentThreshold: settings?.sentimentThreshold || 7,
+              localSupportsToolCalling: settings?.localSupportsToolCalling || false,
             },
           }),
           signal: abortControllerRef.current.signal,
