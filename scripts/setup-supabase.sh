@@ -238,18 +238,35 @@ if [ -z "$SERVICE_ROLE_KEY" ] || [ "$SERVICE_ROLE_KEY" == "null" ]; then
     echo -e "${YELLOW}Note: Could not get service role key automatically.${NC}"
     echo "You can create the admin user manually in Supabase Dashboard → Authentication"
 else
-    # Use the setup-database edge function to create admin
-    RESPONSE=$(curl -s -X POST "${SUPABASE_URL}/functions/v1/setup-database" \
+    # Create admin user via Supabase Admin API
+    RESPONSE=$(curl -s -X POST "${SUPABASE_URL}/auth/v1/admin/users" \
         -H "Authorization: Bearer ${SERVICE_ROLE_KEY}" \
+        -H "apikey: ${SERVICE_ROLE_KEY}" \
         -H "Content-Type: application/json" \
-        -d "{\"email\": \"${ADMIN_EMAIL}\", \"password\": \"${ADMIN_PASSWORD}\"}" 2>&1)
+        -d "{\"email\": \"${ADMIN_EMAIL}\", \"password\": \"${ADMIN_PASSWORD}\", \"email_confirm\": true, \"user_metadata\": {\"full_name\": \"Admin\"}}" 2>&1)
     
-    if echo "$RESPONSE" | grep -q "error"; then
-        echo -e "${YELLOW}⚠ Could not create admin via edge function${NC}"
+    if echo "$RESPONSE" | grep -q '"id"'; then
+        # User created, now update role to admin
+        USER_ID=$(echo "$RESPONSE" | jq -r '.id' 2>/dev/null || echo "")
+        if [ -n "$USER_ID" ] && [ "$USER_ID" != "null" ]; then
+            # Update role via edge function or direct API
+            curl -s -X PATCH "${SUPABASE_URL}/rest/v1/user_roles?user_id=eq.${USER_ID}" \
+                -H "Authorization: Bearer ${SERVICE_ROLE_KEY}" \
+                -H "apikey: ${SERVICE_ROLE_KEY}" \
+                -H "Content-Type: application/json" \
+                -H "Prefer: return=minimal" \
+                -d '{"role": "admin"}' > /dev/null 2>&1
+            echo -e "${GREEN}✓ Admin user created: ${ADMIN_EMAIL}${NC}"
+        else
+            echo -e "${GREEN}✓ User created: ${ADMIN_EMAIL}${NC}"
+            echo -e "${YELLOW}  Note: Run this SQL to make admin: UPDATE user_roles SET role = 'admin' WHERE user_id = (SELECT id FROM auth.users WHERE email = '${ADMIN_EMAIL}');${NC}"
+        fi
+    elif echo "$RESPONSE" | grep -q "already been registered"; then
+        echo -e "${YELLOW}⚠ User already exists: ${ADMIN_EMAIL}${NC}"
+    else
+        echo -e "${YELLOW}⚠ Could not create admin user${NC}"
         echo "Create admin manually: Supabase Dashboard → Authentication → Add user"
         echo "Then run: INSERT INTO user_roles (user_id, role) SELECT id, 'admin' FROM auth.users WHERE email = '${ADMIN_EMAIL}';"
-    else
-        echo -e "${GREEN}✓ Admin user created: ${ADMIN_EMAIL}${NC}"
     fi
 fi
 
