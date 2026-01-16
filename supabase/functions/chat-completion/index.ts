@@ -458,6 +458,27 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // Check if conversation is handled by a live agent - AI should not respond
+    if (conversationId) {
+      const { data: conversation } = await supabase
+        .from('chat_conversations')
+        .select('conversation_status, assigned_agent_id')
+        .eq('id', conversationId)
+        .single();
+      
+      if (conversation?.assigned_agent_id && 
+          (conversation.conversation_status === 'with_agent' || conversation.conversation_status === 'waiting_agent')) {
+        console.log('Conversation is handled by live agent, AI will not respond:', conversationId);
+        return new Response(
+          JSON.stringify({ 
+            skipped: true, 
+            reason: 'Conversation is being handled by a live support agent.' 
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
     const { data: integrationSettings } = await supabase
       .from('site_settings')
       .select('value')
