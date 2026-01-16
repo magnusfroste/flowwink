@@ -6,6 +6,7 @@
 # Usage:
 #   ./scripts/setup-supabase.sh          # Normal setup
 #   ./scripts/setup-supabase.sh --fresh  # Fresh start (logout, clear cache)
+#   ./scripts/setup-supabase.sh --env    # Just show environment variables
 
 set -e
 
@@ -15,6 +16,12 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
+
+# Check for --env flag (just show environment variables)
+ENV_ONLY=false
+if [[ "$1" == "--env" ]]; then
+    ENV_ONLY=true
+fi
 
 # Check for --fresh flag (useful for agencies setting up multiple sites)
 if [[ "$1" == "--fresh" ]]; then
@@ -86,29 +93,45 @@ fi
 echo "$PROJECTS" | jq -r 'to_entries | .[] | "\(.key + 1)) \(.value.name) (\(.value.id)) - \(.value.region)"'
 echo ""
 
-# Check if already linked
+# Check if already linked and if the project still exists
 CURRENT_REF=""
+PROJECT_COUNT=$(echo "$PROJECTS" | jq 'length')
+
 if [ -f "supabase/.temp/project-ref" ]; then
     CURRENT_REF=$(cat supabase/.temp/project-ref)
     CURRENT_NAME=$(echo "$PROJECTS" | jq -r --arg ref "$CURRENT_REF" '.[] | select(.id == $ref) | .name' 2>/dev/null || echo "")
-    if [ -n "$CURRENT_NAME" ]; then
-        echo -e "${YELLOW}Currently linked to: ${CURRENT_NAME} (${CURRENT_REF})${NC}"
-    else
-        echo -e "${YELLOW}Currently linked to: ${CURRENT_REF} (project may have been deleted)${NC}"
-    fi
-    read -p "Use this project? [Y/n]: " use_current
     
-    if [[ "$use_current" =~ ^[Nn]$ ]]; then
+    if [ -n "$CURRENT_NAME" ] && [ "$CURRENT_NAME" != "null" ]; then
+        # Project exists - ask if user wants to use it
+        echo -e "${YELLOW}Currently linked to: ${CURRENT_NAME} (${CURRENT_REF})${NC}"
+        echo ""
+        read -p "Use this project? [Y/n] or enter number to switch: " use_current
+        
+        # Check if user entered a number (wants to switch)
+        if [[ "$use_current" =~ ^[0-9]+$ ]]; then
+            rm -rf supabase/.temp
+            CURRENT_REF=""
+            selection="$use_current"
+        elif [[ "$use_current" =~ ^[Nn]$ ]]; then
+            rm -rf supabase/.temp
+            CURRENT_REF=""
+            selection=""
+        fi
+    else
+        # Project was deleted - force re-selection
+        echo -e "${YELLOW}Previously linked project no longer exists.${NC}"
         rm -rf supabase/.temp
         CURRENT_REF=""
+        selection=""
     fi
 fi
 
 # If no current project or user wants to switch
 if [ -z "$CURRENT_REF" ]; then
-    PROJECT_COUNT=$(echo "$PROJECTS" | jq 'length')
-    
-    read -p "Select project number (1-${PROJECT_COUNT}): " selection
+    # If selection wasn't already set by entering a number above
+    if [ -z "$selection" ]; then
+        read -p "Select project number (1-${PROJECT_COUNT}): " selection
+    fi
     
     # Validate selection
     if ! [[ "$selection" =~ ^[0-9]+$ ]] || [ "$selection" -lt 1 ] || [ "$selection" -gt "$PROJECT_COUNT" ]; then
@@ -128,6 +151,12 @@ else
 fi
 
 echo -e "${GREEN}✓ Project linked: ${PROJECT_REF}${NC}"
+
+# If --env flag, skip to environment variables
+if [ "$ENV_ONLY" = true ]; then
+    echo ""
+    echo -e "${YELLOW}Skipping setup steps (--env flag)${NC}"
+else
 
 echo ""
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
@@ -215,6 +244,8 @@ else
     echo -e "${GREEN}✓ Admin user created: ${ADMIN_EMAIL}${NC}"
 fi
 
+fi  # End of ENV_ONLY check
+
 echo ""
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "${BLUE}  Step 4: Environment Variables${NC}"
@@ -259,7 +290,20 @@ echo ""
 echo "Next steps:"
 echo "  1. Copy the environment variables above to your hosting platform"
 echo "  2. Deploy your frontend"
-echo "  3. Login with: ${ADMIN_EMAIL}"
+if [ "$ENV_ONLY" = false ]; then
+    echo "  3. Login with: ${ADMIN_EMAIL}"
+fi
 echo ""
-echo "Optional: Run ./scripts/configure-secrets.sh to set up integrations"
-echo ""
+
+# Ask if user wants to configure integrations
+if [ "$ENV_ONLY" = false ]; then
+    read -p "Configure optional integrations (AI, email, payments)? [y/N]: " configure_secrets
+    if [[ "$configure_secrets" =~ ^[Yy]$ ]]; then
+        echo ""
+        ./scripts/configure-secrets.sh
+    else
+        echo ""
+        echo "You can run ./scripts/configure-secrets.sh later to set up integrations."
+        echo ""
+    fi
+fi
