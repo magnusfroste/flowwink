@@ -19,6 +19,7 @@ export interface ModulesSettings {
   blog: ModuleConfig;
   knowledgeBase: ModuleConfig;
   chat: ModuleConfig;
+  liveSupport: ModuleConfig;
   newsletter: ModuleConfig;
   forms: ModuleConfig;
   leads: ModuleConfig;
@@ -73,6 +74,13 @@ export const defaultModulesSettings: ModulesSettings = {
     name: 'AI Chat',
     description: 'Intelligent chatbot with Context-Augmented Generation',
     icon: 'MessageSquare',
+    category: 'communication',
+  },
+  liveSupport: {
+    enabled: false,
+    name: 'Live Support',
+    description: 'Human agent support with AI handoff and escalation',
+    icon: 'Headphones',
     category: 'communication',
   },
   newsletter: {
@@ -156,6 +164,7 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/blog': 'blog',
   '/admin/knowledge-base': 'knowledgeBase',
   '/admin/chat': 'chat',
+  '/admin/live-support': 'liveSupport',
   '/admin/newsletter': 'newsletter',
   '/admin/forms': 'forms',
   '/admin/leads': 'leads',

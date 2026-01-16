@@ -7,8 +7,19 @@ const corsHeaders = {
 };
 
 interface ChatMessage {
-  role: 'user' | 'assistant' | 'system';
+  role: 'user' | 'assistant' | 'system' | 'tool';
   content: string;
+  tool_call_id?: string;
+  tool_calls?: ToolCall[];
+}
+
+interface ToolCall {
+  id: string;
+  type: 'function';
+  function: {
+    name: string;
+    arguments: string;
+  };
 }
 
 interface ChatSettings {
@@ -28,6 +39,12 @@ interface ChatSettings {
   contentContextMaxTokens?: number;
   includedPageSlugs?: string[];
   includeKbArticles?: boolean;
+  // Tool calling settings
+  toolCallingEnabled?: boolean;
+  firecrawlSearchEnabled?: boolean;
+  humanHandoffEnabled?: boolean;
+  sentimentDetectionEnabled?: boolean;
+  sentimentThreshold?: number;
 }
 
 interface ChatRequest {
@@ -35,18 +52,83 @@ interface ChatRequest {
   conversationId?: string;
   sessionId?: string;
   settings?: ChatSettings;
+  customerEmail?: string;
+  customerName?: string;
 }
+
+// Tool definitions for function calling
+const AVAILABLE_TOOLS = {
+  firecrawl_search: {
+    type: "function",
+    function: {
+      name: "firecrawl_search",
+      description: "Search the web for current information when the user asks about topics not in your knowledge base, or when they need up-to-date information.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: {
+            type: "string",
+            description: "The search query to find information about"
+          }
+        },
+        required: ["query"]
+      }
+    }
+  },
+  handoff_to_human: {
+    type: "function",
+    function: {
+      name: "handoff_to_human",
+      description: "Transfer the conversation to a human support agent. Use this when: 1) The user explicitly asks to speak to a human, 2) The user is very frustrated or upset, 3) You cannot help with their specific request, 4) The issue is complex and requires human judgment.",
+      parameters: {
+        type: "object",
+        properties: {
+          reason: {
+            type: "string",
+            description: "Brief description of why handoff is needed"
+          },
+          urgency: {
+            type: "string",
+            enum: ["low", "normal", "high", "urgent"],
+            description: "How urgent is this handoff"
+          }
+        },
+        required: ["reason", "urgency"]
+      }
+    }
+  },
+  create_escalation: {
+    type: "function",
+    function: {
+      name: "create_escalation",
+      description: "Create a support ticket when no human agents are available. This saves the conversation for follow-up.",
+      parameters: {
+        type: "object",
+        properties: {
+          summary: {
+            type: "string",
+            description: "Brief summary of the issue"
+          },
+          priority: {
+            type: "string",
+            enum: ["low", "normal", "high", "urgent"],
+            description: "Priority level for the ticket"
+          }
+        },
+        required: ["summary", "priority"]
+      }
+    }
+  }
+};
 
 // Extract text from Tiptap JSON content
 function extractTextFromTiptap(content: any): string {
   if (!content) return '';
   
-  // If it's a string (HTML or plain text), strip tags
   if (typeof content === 'string') {
     return content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
   }
   
-  // If it's Tiptap JSON, recursively extract text
   if (typeof content === 'object') {
     const texts: string[] = [];
     
@@ -77,7 +159,6 @@ function extractTextFromBlock(block: any): string {
 
   switch (type) {
     case 'text':
-      // Handle both HTML strings and Tiptap JSON
       if (data.content) {
         texts.push(extractTextFromTiptap(data.content));
       }
@@ -101,9 +182,9 @@ function extractTextFromBlock(block: any): string {
       }
       break;
     case 'contact':
-      if (data.phone) texts.push(`Telefon: ${data.phone}`);
-      if (data.email) texts.push(`E-post: ${data.email}`);
-      if (data.address) texts.push(`Adress: ${data.address}`);
+      if (data.phone) texts.push(`Phone: ${data.phone}`);
+      if (data.email) texts.push(`Email: ${data.email}`);
+      if (data.address) texts.push(`Address: ${data.address}`);
       break;
     case 'quote':
       if (data.quote) texts.push(data.quote);
@@ -162,7 +243,6 @@ async function buildKnowledgeBase(
   const sections: string[] = [];
   let estimatedTokens = 0;
 
-  // Fetch CMS pages
   let query = supabase
     .from('pages')
     .select('title, slug, content_json')
@@ -178,7 +258,6 @@ async function buildKnowledgeBase(
     console.error('Failed to fetch pages for knowledge base:', pagesError);
   }
 
-  // Process pages
   if (pages) {
     for (const page of pages) {
       const pageTexts: string[] = [];
@@ -205,7 +284,6 @@ async function buildKnowledgeBase(
     }
   }
 
-  // Fetch KB articles if enabled
   if (includeKbArticles) {
     const { data: kbArticles, error: kbError } = await supabase
       .from('kb_articles')
@@ -221,7 +299,6 @@ async function buildKnowledgeBase(
       const faqSection: string[] = [];
       
       for (const article of kbArticles) {
-        // Extract answer text
         let answerText = article.answer_text || '';
         if (!answerText && article.answer_json) {
           answerText = extractTextFromTiptap(article.answer_json);
@@ -242,7 +319,7 @@ async function buildKnowledgeBase(
       }
 
       if (faqSection.length > 0) {
-        sections.push(`\n## Vanliga frågor (FAQ)\n${faqSection.join('\n\n')}`);
+        sections.push(`\n## FAQ\n${faqSection.join('\n\n')}`);
         console.log(`Added ${faqSection.length} KB articles to knowledge base`);
       }
     }
@@ -252,7 +329,111 @@ async function buildKnowledgeBase(
 
   console.log(`Built knowledge base: ~${estimatedTokens} tokens`);
   
-  return `\n\n## Webbplatsens innehåll (kunskapsbas)\nAnvänd följande information för att svara på frågor om verksamheten:\n\n${sections.join('\n\n')}`;
+  return `\n\n## Website Content (Knowledge Base)\nUse this information to answer questions:\n\n${sections.join('\n\n')}`;
+}
+
+// Execute tool calls
+async function executeToolCall(
+  toolName: string, 
+  args: Record<string, any>,
+  conversationId: string | undefined,
+  customerEmail: string | undefined,
+  customerName: string | undefined
+): Promise<string> {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+  console.log(`Executing tool: ${toolName}`, args);
+
+  switch (toolName) {
+    case 'firecrawl_search': {
+      try {
+        const response = await fetch(`${supabaseUrl}/functions/v1/firecrawl-search`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${supabaseKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ query: args.query, limit: 3 }),
+        });
+
+        const data = await response.json();
+        
+        if (!data.success) {
+          return `Search failed: ${data.error}`;
+        }
+
+        const results = (data.results || []).map((r: any) => 
+          `**${r.title}** (${r.url})\n${r.description || r.content?.substring(0, 300) || ''}`
+        ).join('\n\n');
+
+        return results || 'No results found.';
+      } catch (error) {
+        console.error('Firecrawl search error:', error);
+        return `Search error: ${error instanceof Error ? error.message : 'Unknown error'}`;
+      }
+    }
+
+    case 'handoff_to_human':
+    case 'create_escalation': {
+      if (!conversationId) {
+        return 'Cannot create handoff without a conversation ID.';
+      }
+
+      try {
+        const response = await fetch(`${supabaseUrl}/functions/v1/support-router`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${supabaseKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            conversationId,
+            sentiment: {
+              frustrationLevel: toolName === 'handoff_to_human' ? 8 : 5,
+              urgency: args.urgency || args.priority || 'normal',
+              humanNeeded: true,
+              trigger: args.reason || args.summary || 'User requested',
+            },
+            customerEmail,
+            customerName,
+          }),
+        });
+
+        const data = await response.json();
+        
+        if (data.action === 'handoff_to_agent') {
+          return `HANDOFF_SUCCESS: ${data.message}`;
+        } else if (data.action === 'create_escalation') {
+          return `ESCALATION_CREATED: ${data.message}`;
+        }
+        
+        return data.message || 'Handoff processed.';
+      } catch (error) {
+        console.error('Support router error:', error);
+        return `Handoff error: ${error instanceof Error ? error.message : 'Unknown error'}`;
+      }
+    }
+
+    default:
+      return `Unknown tool: ${toolName}`;
+  }
+}
+
+// Build sentiment detection prompt
+function buildSentimentPrompt(threshold: number): string {
+  return `
+
+## Sentiment Analysis
+Analyze each user message for emotional state. Look for:
+- Frustration indicators: repeated questions, caps, exclamation marks, negative words
+- Urgency: time-sensitive language, deadlines, emergency words
+- Explicit requests: "speak to human", "talk to person", "real person"
+
+If frustration level exceeds ${threshold}/10 OR user explicitly requests human help:
+- Call the handoff_to_human tool with appropriate reason and urgency
+
+Be empathetic and acknowledge frustration before attempting handoff.`;
 }
 
 serve(async (req) => {
@@ -261,19 +442,17 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, conversationId, sessionId, settings } = await req.json() as ChatRequest;
+    const { messages, conversationId, sessionId, settings, customerEmail, customerName } = await req.json() as ChatRequest;
     
     console.log('Chat request received:', { 
       messageCount: messages.length, 
       provider: settings?.aiProvider,
-      includeContent: settings?.includeContentAsContext,
+      toolCallingEnabled: settings?.toolCallingEnabled,
       conversationId,
-      sessionId
     });
 
     const aiProvider = settings?.aiProvider || 'openai';
 
-    // Check if the AI provider integration is enabled
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
@@ -286,28 +465,26 @@ serve(async (req) => {
 
     const aiIntegrations = integrationSettings?.value as any;
     
-    // For openai and gemini providers, check if enabled
+    // Check if provider is enabled
     if (aiProvider === 'openai') {
       const openaiEnabled = aiIntegrations?.openai?.enabled ?? false;
       if (!openaiEnabled) {
-        console.log('[chat-completion] OpenAI integration is disabled');
         return new Response(
-          JSON.stringify({ error: 'OpenAI integration is disabled. Enable it in Integrations settings.' }),
+          JSON.stringify({ error: 'OpenAI integration is disabled.' }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
     } else if (aiProvider === 'gemini') {
       const geminiEnabled = aiIntegrations?.gemini?.enabled ?? false;
       if (!geminiEnabled) {
-        console.log('[chat-completion] Gemini integration is disabled');
         return new Response(
-          JSON.stringify({ error: 'Gemini integration is disabled. Enable it in Integrations settings.' }),
+          JSON.stringify({ error: 'Gemini integration is disabled.' }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
     }
 
-    let systemPrompt = settings?.systemPrompt || 'Du är en hjälpsam AI-assistent.';
+    let systemPrompt = settings?.systemPrompt || 'You are a helpful AI assistant.';
 
     // Add knowledge base if enabled
     if (settings?.includeContentAsContext || settings?.includeKbArticles) {
@@ -324,6 +501,23 @@ serve(async (req) => {
       }
     }
 
+    // Add sentiment detection if enabled
+    if (settings?.sentimentDetectionEnabled && settings?.humanHandoffEnabled) {
+      systemPrompt += buildSentimentPrompt(settings?.sentimentThreshold || 7);
+    }
+
+    // Build tools array based on settings
+    const tools: any[] = [];
+    if (settings?.toolCallingEnabled) {
+      if (settings?.firecrawlSearchEnabled && aiIntegrations?.firecrawl?.enabled) {
+        tools.push(AVAILABLE_TOOLS.firecrawl_search);
+      }
+      if (settings?.humanHandoffEnabled) {
+        tools.push(AVAILABLE_TOOLS.handoff_to_human);
+        tools.push(AVAILABLE_TOOLS.create_escalation);
+      }
+    }
+
     // Prepare messages with system prompt
     const fullMessages: ChatMessage[] = [
       { role: 'system', content: systemPrompt },
@@ -333,7 +527,6 @@ serve(async (req) => {
     let response: Response;
 
     if (aiProvider === 'openai') {
-      // Use OpenAI API
       const apiKey = settings?.openaiApiKey || Deno.env.get('OPENAI_API_KEY');
       if (!apiKey) {
         throw new Error('OpenAI API key is not configured');
@@ -342,20 +535,144 @@ serve(async (req) => {
       const baseUrl = settings?.openaiBaseUrl || 'https://api.openai.com/v1';
       const model = settings?.openaiModel || 'gpt-4o-mini';
 
+      const requestBody: any = {
+        model,
+        messages: fullMessages,
+        stream: true,
+      };
+
+      // Add tools if any are enabled
+      if (tools.length > 0) {
+        requestBody.tools = tools;
+        requestBody.tool_choice = 'auto';
+      }
+
       response = await fetch(`${baseUrl}/chat/completions`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          model,
-          messages: fullMessages,
-          stream: true,
-        }),
+        body: JSON.stringify(requestBody),
       });
+
+      // Handle tool calls (non-streaming for tool execution)
+      if (tools.length > 0) {
+        const clonedResponse = response.clone();
+        const reader = clonedResponse.body?.getReader();
+        const decoder = new TextDecoder();
+        let fullContent = '';
+        let toolCalls: ToolCall[] = [];
+
+        if (reader) {
+          let buffer = '';
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || '';
+
+            for (const line of lines) {
+              if (!line.startsWith('data: ') || line === 'data: [DONE]') continue;
+              try {
+                const parsed = JSON.parse(line.slice(6));
+                const delta = parsed.choices?.[0]?.delta;
+                
+                if (delta?.content) {
+                  fullContent += delta.content;
+                }
+                
+                if (delta?.tool_calls) {
+                  for (const tc of delta.tool_calls) {
+                    if (tc.index !== undefined) {
+                      if (!toolCalls[tc.index]) {
+                        toolCalls[tc.index] = {
+                          id: tc.id || '',
+                          type: 'function',
+                          function: { name: '', arguments: '' }
+                        };
+                      }
+                      if (tc.id) toolCalls[tc.index].id = tc.id;
+                      if (tc.function?.name) toolCalls[tc.index].function.name = tc.function.name;
+                      if (tc.function?.arguments) toolCalls[tc.index].function.arguments += tc.function.arguments;
+                    }
+                  }
+                }
+              } catch (e) {
+                // Ignore parse errors
+              }
+            }
+          }
+        }
+
+        // If there are tool calls, execute them and make another request
+        if (toolCalls.length > 0 && toolCalls[0]?.function?.name) {
+          console.log('Tool calls detected:', toolCalls);
+          
+          // Execute each tool call
+          const toolResults: ChatMessage[] = [];
+          for (const tc of toolCalls) {
+            try {
+              const args = JSON.parse(tc.function.arguments);
+              const result = await executeToolCall(
+                tc.function.name, 
+                args, 
+                conversationId,
+                customerEmail,
+                customerName
+              );
+              
+              toolResults.push({
+                role: 'tool',
+                tool_call_id: tc.id,
+                content: result,
+              });
+            } catch (error) {
+              console.error('Tool execution error:', error);
+              toolResults.push({
+                role: 'tool',
+                tool_call_id: tc.id,
+                content: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              });
+            }
+          }
+
+          // Add assistant message with tool calls and tool results
+          const assistantMessage: ChatMessage = {
+            role: 'assistant',
+            content: fullContent || '',
+            tool_calls: toolCalls,
+          };
+
+          const followUpMessages = [
+            ...fullMessages,
+            assistantMessage,
+            ...toolResults,
+          ];
+
+          // Make follow-up request
+          const followUpResponse = await fetch(`${baseUrl}/chat/completions`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model,
+              messages: followUpMessages,
+              stream: true,
+            }),
+          });
+
+          return new Response(followUpResponse.body, {
+            headers: { ...corsHeaders, 'Content-Type': 'text/event-stream' },
+          });
+        }
+      }
+
     } else if (aiProvider === 'gemini') {
-      // Use Google Gemini API
       const apiKey = settings?.geminiApiKey || Deno.env.get('GEMINI_API_KEY');
       if (!apiKey) {
         throw new Error('Gemini API key is not configured');
@@ -363,7 +680,6 @@ serve(async (req) => {
 
       const model = settings?.geminiModel || 'gemini-2.0-flash-exp';
 
-      // Convert messages to Gemini format
       const geminiMessages = fullMessages
         .filter(m => m.role !== 'system')
         .map(m => ({
@@ -371,7 +687,6 @@ serve(async (req) => {
           parts: [{ text: m.content }]
         }));
 
-      // Add system prompt as first user message if exists
       const systemMsg = fullMessages.find(m => m.role === 'system');
       if (systemMsg) {
         geminiMessages.unshift({
@@ -394,21 +709,15 @@ serve(async (req) => {
         }),
       });
     } else if (aiProvider === 'local') {
-      // Use local/self-hosted LLM (OpenAI-compatible API)
-      // Get config from integrations settings (PRIMARY SOURCE)
       const localConfig = aiIntegrations?.local_llm?.config || {};
-      
-      // Priority: integrations config FIRST (chat settings may have placeholder values)
-      // Only use chat settings if they look like real configured values (not placeholders)
       const chatEndpoint = settings?.localEndpoint;
       const isPlaceholder = !chatEndpoint || chatEndpoint.includes('your-local-llm') || chatEndpoint.includes('placeholder');
       const endpoint = isPlaceholder ? localConfig?.endpoint : chatEndpoint;
       
       if (!endpoint) {
-        throw new Error('Local endpoint is not configured. Set it in Integrations → Local LLM.');
+        throw new Error('Local endpoint is not configured.');
       }
 
-      // Hybrid key lookup: Supabase secret first, then integrations config, then chat settings
       const supabaseLocalKey = Deno.env.get('LOCAL_LLM_API_KEY');
       const configLocalKey = localConfig?.apiKey;
       const localApiKey = supabaseLocalKey || configLocalKey || settings?.localApiKey;
@@ -419,18 +728,14 @@ serve(async (req) => {
       
       if (localApiKey) {
         headers['Authorization'] = `Bearer ${localApiKey}`;
-        console.log('Using Local LLM API key from:', supabaseLocalKey ? 'Supabase secret' : 'Integrations config');
       }
 
-      // Handle endpoints that already include /v1 path
-      const baseEndpoint = endpoint.replace(/\/+$/, ''); // Remove trailing slashes
+      const baseEndpoint = endpoint.replace(/\/+$/, '');
       const apiPath = baseEndpoint.endsWith('/v1') ? '/chat/completions' : '/v1/chat/completions';
       const fullUrl = `${baseEndpoint}${apiPath}`;
       
-      // Priority: integrations config for model too
       const chatModel = settings?.localModel;
       const model = localConfig?.model || (chatModel && chatModel !== 'llama3' ? chatModel : null) || 'llama3';
-      console.log('Calling local AI endpoint:', { fullUrl, model, source: isPlaceholder ? 'integrations' : 'chat-settings' });
 
       response = await fetch(fullUrl, {
         method: 'POST',
@@ -442,17 +747,12 @@ serve(async (req) => {
         }),
       });
     } else if (aiProvider === 'n8n') {
-      // Use N8N webhook for agentic workflows
-      // Get config from integrations settings
       const n8nConfig = aiIntegrations?.n8n?.config || {};
-      
-      // Priority: settings (from chat), then integrations config
       const webhookUrl = settings?.n8nWebhookUrl || n8nConfig?.webhookUrl;
       if (!webhookUrl) {
-        throw new Error('N8N webhook URL is not configured. Set it in Integrations → N8N.');
+        throw new Error('N8N webhook URL is not configured.');
       }
 
-      // Hybrid key lookup: Supabase secret first, then UI config
       const supabaseN8nKey = Deno.env.get('N8N_API_KEY');
       const configN8nKey = n8nConfig?.apiKey;
       const n8nApiKey = supabaseN8nKey || configN8nKey;
@@ -460,45 +760,29 @@ serve(async (req) => {
       const n8nWebhookType = settings?.n8nWebhookType || n8nConfig?.webhookType || 'chat';
       const lastUserMessage = messages.filter(m => m.role === 'user').pop();
       
-      // Build payload based on webhook type
       let n8nPayload: Record<string, unknown>;
       
       if (n8nWebhookType === 'chat') {
-        // Chat Webhook: N8N Chat node handles session memory
-        // Only send the latest message + session info
         n8nPayload = {
           chatInput: lastUserMessage?.content || '',
           sessionId: sessionId || conversationId,
           systemPrompt,
         };
-        console.log('Sending to N8N Chat Webhook:', { 
-          webhookUrl, 
-          chatInput: lastUserMessage?.content?.substring(0, 50),
-          sessionId: sessionId || conversationId
-        });
       } else {
-        // Generic Webhook: OpenAI-compatible format with full history
-        // Suitable for Ollama, LM Studio, or custom AI logic
         n8nPayload = {
           messages: fullMessages,
-          model: 'gpt-4', // Hint for downstream processing
+          model: 'gpt-4',
           conversationId,
           sessionId,
         };
-        console.log('Sending to N8N Generic Webhook:', { 
-          webhookUrl, 
-          messageCount: fullMessages.length
-        });
       }
 
-      // Build headers with optional auth
       const n8nHeaders: Record<string, string> = {
         'Content-Type': 'application/json',
       };
       
       if (n8nApiKey) {
         n8nHeaders['Authorization'] = n8nApiKey.startsWith('Bearer ') ? n8nApiKey : `Bearer ${n8nApiKey}`;
-        console.log('Using N8N API key from:', supabaseN8nKey ? 'Supabase secret' : 'UI config');
       }
 
       const n8nResponse = await fetch(webhookUrl, {
@@ -513,15 +797,9 @@ serve(async (req) => {
         throw new Error('N8N webhook failed');
       }
 
-      // N8N returns a structured response, convert to SSE format
       const n8nData = await n8nResponse.json();
-      console.log('N8N response data:', JSON.stringify(n8nData));
       
-      // Handle various N8N response formats:
-      // - Array with output: [{ "output": "..." }]
-      // - Object with message/response: { "message": "..." } or { "response": "..." }
-      // - Object with output: { "output": "..." }
-      let responseContent = 'Jag kunde inte behandla din förfrågan.';
+      let responseContent = 'I could not process your request.';
       
       if (Array.isArray(n8nData) && n8nData.length > 0) {
         responseContent = n8nData[0].output || n8nData[0].message || n8nData[0].response || responseContent;
@@ -529,7 +807,6 @@ serve(async (req) => {
         responseContent = n8nData.output || n8nData.message || n8nData.response || responseContent;
       }
       
-      // Create a simple SSE stream for N8N response
       const encoder = new TextEncoder();
       const stream = new ReadableStream({
         start(controller) {
@@ -554,26 +831,25 @@ serve(async (req) => {
 
     if (!response.ok) {
       if (response.status === 429) {
-        return new Response(JSON.stringify({ error: 'För många förfrågningar. Vänta en stund och försök igen.' }), {
+        return new Response(JSON.stringify({ error: 'Too many requests. Please wait and try again.' }), {
           status: 429,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
       if (response.status === 402) {
-        return new Response(JSON.stringify({ error: 'Krediter slut. Kontakta administratören.' }), {
+        return new Response(JSON.stringify({ error: 'Credits exhausted. Contact administrator.' }), {
           status: 402,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
       const errorText = await response.text();
       console.error('AI provider error:', response.status, errorText);
-      return new Response(JSON.stringify({ error: 'AI-tjänsten svarade inte korrekt.' }), {
+      return new Response(JSON.stringify({ error: 'AI service error.' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Stream the response
     return new Response(response.body, {
       headers: { ...corsHeaders, 'Content-Type': 'text/event-stream' },
     });
@@ -581,7 +857,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Chat completion error:', error);
     return new Response(JSON.stringify({ 
-      error: error instanceof Error ? error.message : 'Ett oväntat fel uppstod.' 
+      error: error instanceof Error ? error.message : 'An unexpected error occurred.' 
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
