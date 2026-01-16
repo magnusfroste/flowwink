@@ -150,24 +150,25 @@ export function useChat(options?: UseChatOptions) {
       
       // Fetch agent info separately if agent is assigned
       if (isWithAgent && data?.assigned_agent_id) {
+        // First get the user_id from support_agents
         const { data: agentData } = await supabase
           .from('support_agents')
-          .select(`
-            user_id,
-            profiles!support_agents_user_id_fkey (
-              full_name,
-              avatar_url
-            )
-          `)
+          .select('user_id')
           .eq('id', data.assigned_agent_id)
           .single();
         
-        if (agentData?.profiles) {
-          const profiles = agentData.profiles as { full_name: string | null; avatar_url: string | null };
+        if (agentData?.user_id) {
+          // Then fetch profile from public view (accessible without auth)
+          const { data: profileData } = await supabase
+            .from('profiles_public')
+            .select('full_name, avatar_url')
+            .eq('id', agentData.user_id)
+            .single();
+          
           setAgentInfo({
             id: agentData.user_id,
-            fullName: profiles.full_name || null,
-            avatarUrl: profiles.avatar_url || null,
+            fullName: profileData?.full_name || null,
+            avatarUrl: profileData?.avatar_url || null,
           });
         } else {
           setAgentInfo(null);
