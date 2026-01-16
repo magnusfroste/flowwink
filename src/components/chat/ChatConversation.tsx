@@ -58,9 +58,8 @@ export function ChatConversation({
   const showEmptyState = messages.length === 0 && !isLoading;
   const showTypingIndicator = isLoading && messages[messages.length - 1]?.role === 'user';
   const showFeedback = settings?.feedbackEnabled ?? true;
-  
-  // Show agent avatar when: setting is enabled AND we have a live agent with agentInfo
-  const showAgentAvatar = (settings?.showAgentAvatar ?? true) && isWithLiveAgent && !!agentInfo;
+  const showLiveAgentBanner = (settings?.showLiveAgentBanner ?? true) && isWithLiveAgent;
+  const liveAgentIconStyle = settings?.liveAgentIconStyle ?? 'avatar';
 
   return (
     <div className={cn(
@@ -69,7 +68,7 @@ export function ChatConversation({
       className
     )}>
       {/* Live agent indicator */}
-      {isWithLiveAgent && <LiveAgentIndicator />}
+      {showLiveAgentBanner && <LiveAgentIndicator />}
       
       {/* Messages area */}
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
@@ -101,7 +100,8 @@ export function ChatConversation({
                   previousUserMessage={previousUserMessage}
                   showFeedback={showFeedback && message.role === 'assistant' && !!message.content}
                   agentInfo={agentInfo}
-                  showAgentAvatar={showAgentAvatar}
+                  isWithLiveAgent={isWithLiveAgent}
+                  liveAgentIconStyle={liveAgentIconStyle}
                 />
               );
             })}

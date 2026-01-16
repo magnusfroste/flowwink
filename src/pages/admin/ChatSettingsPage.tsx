@@ -791,20 +791,45 @@ export default function ChatSettingsPage() {
                     )}
                   </div>
 
-                  {/* Live Agent Avatar setting */}
+                  {/* Live Agent Banner setting */}
                   <div className="flex items-center justify-between p-4 rounded-lg border">
                     <div>
-                      <h4 className="font-medium">Show Agent Avatar</h4>
+                      <h4 className="font-medium">Show Live Agent Banner</h4>
                       <p className="text-sm text-muted-foreground">
-                        Display live agent's profile picture instead of robot icon
+                        Display "You are now chatting with a live agent" banner
                       </p>
                     </div>
                     <Switch
-                      checked={formData.showAgentAvatar ?? true}
-                      onCheckedChange={(showAgentAvatar) => 
-                        setFormData({ ...formData, showAgentAvatar })
+                      checked={formData.showLiveAgentBanner ?? true}
+                      onCheckedChange={(showLiveAgentBanner) => 
+                        setFormData({ ...formData, showLiveAgentBanner })
                       }
                     />
+                  </div>
+
+                  {/* Live Agent Icon Style setting */}
+                  <div className="space-y-2 p-4 rounded-lg border">
+                    <div>
+                      <h4 className="font-medium">Live Agent Icon Style</h4>
+                      <p className="text-sm text-muted-foreground">
+                        What to display instead of the robot icon when chatting with a live agent
+                      </p>
+                    </div>
+                    <Select
+                      value={formData.liveAgentIconStyle ?? 'avatar'}
+                      onValueChange={(liveAgentIconStyle: 'avatar' | 'person' | 'headphones') => 
+                        setFormData({ ...formData, liveAgentIconStyle })
+                      }
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="avatar">Profile Avatar</SelectItem>
+                        <SelectItem value="person">Person Icon</SelectItem>
+                        <SelectItem value="headphones">Headphones Icon</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   {/* Context indicator setting */}

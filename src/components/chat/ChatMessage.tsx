@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { User, Bot, Copy, Check } from 'lucide-react';
+import { User, Bot, Copy, Check, Headphones } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ChatFeedback } from './ChatFeedback';
@@ -11,6 +11,8 @@ interface AgentInfo {
   avatarUrl: string | null;
 }
 
+type LiveAgentIconStyle = 'avatar' | 'person' | 'headphones';
+
 interface ChatMessageProps {
   role: 'user' | 'assistant';
   content: string;
@@ -20,7 +22,8 @@ interface ChatMessageProps {
   previousUserMessage?: string;
   showFeedback?: boolean;
   agentInfo?: AgentInfo | null;
-  showAgentAvatar?: boolean;
+  isWithLiveAgent?: boolean;
+  liveAgentIconStyle?: LiveAgentIconStyle;
 }
 
 export function ChatMessage({ 
@@ -32,7 +35,8 @@ export function ChatMessage({
   previousUserMessage,
   showFeedback = true,
   agentInfo,
-  showAgentAvatar = false,
+  isWithLiveAgent = false,
+  liveAgentIconStyle = 'avatar',
 }: ChatMessageProps) {
   const [copied, setCopied] = useState(false);
   const isUser = role === 'user';
@@ -43,20 +47,43 @@ export function ChatMessage({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Show agent avatar if enabled and agent info is available
-  const shouldShowAgentAvatar = !isUser && showAgentAvatar && agentInfo;
-
   const renderAssistantAvatar = () => {
-    if (shouldShowAgentAvatar && agentInfo) {
-      return (
-        <Avatar className="h-8 w-8">
-          <AvatarImage src={agentInfo.avatarUrl || undefined} alt={agentInfo.fullName || 'Agent'} />
-          <AvatarFallback className="bg-primary/10 text-primary text-xs">
-            {agentInfo.fullName?.split(' ').map(n => n[0]).join('').slice(0, 2) || 'AG'}
-          </AvatarFallback>
-        </Avatar>
-      );
+    // If we're with a live agent, render based on the icon style setting
+    if (!isUser && isWithLiveAgent) {
+      switch (liveAgentIconStyle) {
+        case 'avatar':
+          if (agentInfo?.avatarUrl) {
+            return (
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={agentInfo.avatarUrl} alt={agentInfo.fullName || 'Agent'} />
+                <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                  {agentInfo.fullName?.split(' ').map(n => n[0]).join('').slice(0, 2) || 'AG'}
+                </AvatarFallback>
+              </Avatar>
+            );
+          }
+          // Fallback to person icon if no avatar URL
+          return (
+            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center">
+              <User className="w-4 h-4 text-green-600 dark:text-green-400" />
+            </div>
+          );
+        case 'person':
+          return (
+            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center">
+              <User className="w-4 h-4 text-green-600 dark:text-green-400" />
+            </div>
+          );
+        case 'headphones':
+          return (
+            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center">
+              <Headphones className="w-4 h-4 text-green-600 dark:text-green-400" />
+            </div>
+          );
+      }
     }
+    
+    // Default: AI/Bot icon
     return (
       <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
         <Bot className="w-4 h-4 text-primary" />
