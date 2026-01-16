@@ -8,7 +8,6 @@ import { AdminPageContainer } from "@/components/admin/AdminPageContainer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
@@ -19,6 +18,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { useIsResendConfigured } from "@/hooks/useIntegrationStatus";
 import { IntegrationWarning } from "@/components/admin/IntegrationWarning";
+import { NewsletterEditor } from "@/components/admin/NewsletterEditor";
 
 interface Subscriber {
   id: string;
@@ -359,7 +359,7 @@ export default function NewsletterPage() {
                     Create Newsletter
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-lg">
+                <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>Create Newsletter</DialogTitle>
                   </DialogHeader>
@@ -375,14 +375,13 @@ export default function NewsletterPage() {
                       />
                     </div>
                     <div>
-                      <label className="text-sm font-medium">Content (HTML)</label>
-                      <Textarea
-                        value={newNewsletter.content_html}
-                        onChange={(e) =>
-                          setNewNewsletter((prev) => ({ ...prev, content_html: e.target.value }))
+                      <label className="text-sm font-medium">Content</label>
+                      <NewsletterEditor
+                        content={newNewsletter.content_html}
+                        onChange={(html) =>
+                          setNewNewsletter((prev) => ({ ...prev, content_html: html }))
                         }
-                        placeholder="<h1>Hello!</h1><p>Newsletter content...</p>"
-                        className="min-h-[200px] font-mono text-sm"
+                        placeholder="Write your newsletter content..."
                       />
                     </div>
                   </div>
@@ -495,7 +494,7 @@ export default function NewsletterPage() {
                                       <Edit2 className="h-4 w-4" />
                                     </Button>
                                   </DialogTrigger>
-                                  <DialogContent className="sm:max-w-lg">
+                                  <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
                                     <DialogHeader>
                                       <DialogTitle>Edit Newsletter</DialogTitle>
                                     </DialogHeader>
@@ -513,17 +512,16 @@ export default function NewsletterPage() {
                                           />
                                         </div>
                                         <div>
-                                          <label className="text-sm font-medium">Content (HTML)</label>
-                                          <Textarea
-                                            value={editingNewsletter.content_html || ""}
-                                            onChange={(e) =>
+                                          <label className="text-sm font-medium">Content</label>
+                                          <NewsletterEditor
+                                            content={editingNewsletter.content_html || ""}
+                                            onChange={(html) =>
                                               setEditingNewsletter((prev) =>
                                                 prev
-                                                  ? { ...prev, content_html: e.target.value }
+                                                  ? { ...prev, content_html: html }
                                                   : null
                                               )
                                             }
-                                            className="min-h-[200px] font-mono text-sm"
                                           />
                                         </div>
                                       </div>
