@@ -1,9 +1,8 @@
 # Supabase Backend Setup
 
-This guide covers setting up the Supabase backend for FlowWink. This is required for both local development and production deployment.
+This guide covers setting up the Supabase backend for FlowWink self-hosting.
 
 > **After completing this guide**, proceed to:
-> - [Local Development](#local-development) - Run FlowWink locally with `npm run dev`
 > - [DEPLOYMENT.md](./DEPLOYMENT.md) - Deploy to production (Easypanel, Railway, etc.)
 >
 > **Already running FlowWink?** See [UPGRADING.md](./UPGRADING.md) for upgrade instructions.
@@ -12,122 +11,136 @@ This guide covers setting up the Supabase backend for FlowWink. This is required
 
 - [Node.js](https://nodejs.org/) 18+ and npm
 - A [Supabase](https://supabase.com/) account (free tier works)
-- **[Supabase CLI](https://supabase.com/docs/guides/cli) (REQUIRED)** - Edge functions cannot be deployed via UI alone
+- **[Supabase CLI](https://supabase.com/docs/guides/cli) (REQUIRED)**
 
-> **⚠️ Important**: The Supabase CLI is **mandatory** for deploying edge functions. There is no way to bulk-upload edge functions via the Supabase Dashboard. You must either:
-> - Use the CLI locally (recommended)
-> - Manually upload each function file individually via Dashboard (tedious - 30+ files)
-> - Use GitHub Actions to automate deployment
+## Quick Start (Recommended)
 
-## Quick Start
+The setup script handles everything automatically:
 
 ### 1. Create a Supabase Project
 
 1. Go to [supabase.com](https://supabase.com/) and create a new project
-2. Note your project URL and anon key from **Settings → API**
+2. Note your **project ref** (e.g., `abcdefghijklmnop`) from the URL or Settings
 
-### 2. Install and Configure Supabase CLI
+### 2. Run the Setup Script
 
 ```bash
-# Install Supabase CLI globally
+# Clone the repository
+git clone https://github.com/magnusfroste/flowwink.git
+cd flowwink
+
+# Run the setup script
+./scripts/setup-supabase.sh
+```
+
+The script will:
+1. Prompt you to login to Supabase CLI (if not logged in)
+2. Ask for your project ref
+3. **Deploy all 33 edge functions** (~60 seconds)
+4. **Run database migrations** (creates tables, RLS policies)
+5. **Create your admin user** (prompts for email/password)
+6. **Output environment variables** ready to copy-paste
+
+### 3. Copy Environment Variables
+
+The script outputs 3 environment variables at the end:
+
+```
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=eyJhbG...
+VITE_SUPABASE_PROJECT_ID=your-project-ref
+```
+
+Copy these to your hosting platform (Easypanel, Railway, etc.) or `.env` file for local development.
+
+### 4. Deploy Frontend
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for deploying to Easypanel or other platforms.
+
+### 5. Login
+
+Visit your deployed site and login with the admin credentials you created in step 2.
+
+---
+
+## Optional: Configure Integrations
+
+After setup, you can configure optional integrations (AI, email, payments):
+
+```bash
+./scripts/configure-secrets.sh
+```
+
+This configures:
+- **Resend** - Email/newsletters
+- **Stripe** - Payments
+- **OpenAI** - AI chat
+- **Gemini** - AI alternative
+- **Firecrawl** - Web scraping
+- **Unsplash** - Stock photos
+- **Local LLM** - Self-hosted AI
+- **N8N** - Workflow automation
+
+---
+
+## Manual Setup (Alternative)
+
+If you prefer manual steps instead of the script:
+
+### 1. Install and Configure Supabase CLI
+
+```bash
 npm install -g supabase
-
-# Login to Supabase (opens browser for OAuth)
 supabase login
-
-# Link to your project
 supabase link --project-ref YOUR_PROJECT_REF
 ```
 
-> **Note**: The CLI uses browser-based OAuth authentication. Make sure you have admin access to the Supabase project.
-
-### 3. Deploy Edge Functions (REQUIRED)
-
-**⚠️ Critical**: Edge functions must be deployed BEFORE running database migrations or the setup wizard will not work.
-
-#### Minimal Setup (3 functions - basic CMS functionality)
+### 2. Deploy Edge Functions
 
 ```bash
-# Deploy only the essential functions
-supabase functions deploy setup-database   # Required for setup wizard
-supabase functions deploy get-page         # Required for pages to display
-supabase functions deploy track-page-view  # Required for analytics
+# Deploy all functions (recommended)
+for func in supabase/functions/*/; do
+  supabase functions deploy $(basename $func) --no-verify-jwt
+done
 ```
 
-#### Full Setup (all features)
+### 3. Run Database Migrations
 
 ```bash
-# Deploy all functions for complete functionality
-supabase functions deploy analyze-brand
-supabase functions deploy blog-rss
-supabase functions deploy chat-completion
-supabase functions deploy content-api
-supabase functions deploy create-user
-supabase functions deploy generate-text
-supabase functions deploy get-page
-supabase functions deploy invalidate-cache
-supabase functions deploy migrate-page
-supabase functions deploy process-image
-supabase functions deploy publish-scheduled-pages
-supabase functions deploy send-webhook
-supabase functions deploy setup-database
-supabase functions deploy sitemap-xml
-supabase functions deploy track-page-view
-supabase functions deploy newsletter-send
-supabase functions deploy newsletter-export
-supabase functions deploy newsletter-subscribe
-supabase functions deploy newsletter-confirm
-supabase functions deploy newsletter-unsubscribe
-supabase functions deploy newsletter-track-open
-supabase functions deploy newsletter-track-click
-```
-
-### 4. Run Database Migrations
-
-You have two options:
-
-#### Option A: Using Supabase CLI (Recommended)
-
-```bash
-# Run all migrations
 supabase db push
 ```
 
-#### Option B: Manual SQL Execution
+### 4. Create Admin User
 
-1. Go to your Supabase Dashboard → **SQL Editor**
-2. Run the combined schema from `supabase/schema.sql`
+Use the Supabase Dashboard → Authentication → Users to create a user, then run:
 
-### 5. Configure Environment Variables
-
-Create a `.env` file in the project root:
-
-```env
-VITE_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key-here
+```sql
+UPDATE public.user_roles 
+SET role = 'admin' 
+WHERE user_id = (SELECT id FROM auth.users WHERE email = 'your-email@example.com');
 ```
 
-### 6. Verify Setup
+### 5. Get Environment Variables
 
-Your Supabase backend is now ready! You can verify by:
-
-1. Check edge functions are deployed: `supabase functions list`
-2. Check database tables exist in Supabase Dashboard → Database
-3. Verify `cms-images` storage bucket exists
-
-**Next Steps:**
-- For local development: See [Local Development](#local-development) below
-- For production deployment: See [DEPLOYMENT.md](./DEPLOYMENT.md)
+From Supabase Dashboard → Settings → API, copy:
+- Project URL → `VITE_SUPABASE_URL`
+- Anon/Public key → `VITE_SUPABASE_PUBLISHABLE_KEY`
+- Project ref → `VITE_SUPABASE_PROJECT_ID`
 
 ---
 
 ## Edge Function Secrets
 
-Edge Functions use secrets for API keys and sensitive configuration. See `.env.example` for a complete reference.
+Edge Functions use secrets for API keys. Use `./scripts/configure-secrets.sh` to set them interactively, or manually:
+
+```bash
+supabase secrets set SECRET_NAME=value
+supabase secrets list
+```
 
 ### Automatic Secrets (No action needed)
 
-These are automatically available to all Edge Functions — Supabase sets them for you:
+These are automatically available to all Edge Functions:
 
 | Secret | Description |
 |--------|-------------|
@@ -135,82 +148,39 @@ These are automatically available to all Edge Functions — Supabase sets them f
 | `SUPABASE_ANON_KEY` | Public/anon key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Service role key (admin access) |
 
-### Manual Secrets
+### Optional Secrets
 
 | Secret | Required For | How to Get |
 |--------|--------------|------------|
-| `FIRECRAWL_API_KEY` | AI Brand Analysis, AI Page Migration (web scraping) | [firecrawl.dev](https://firecrawl.dev) |
+| `RESEND_API_KEY` | Email/newsletters | [resend.com](https://resend.com) |
+| `STRIPE_SECRET_KEY` | Payments | [stripe.com](https://stripe.com) |
+| `OPENAI_API_KEY` | AI chat | [openai.com](https://openai.com) |
+| `GEMINI_API_KEY` | AI chat (alternative) | [aistudio.google.com](https://aistudio.google.com) |
+| `FIRECRAWL_API_KEY` | Web scraping | [firecrawl.dev](https://firecrawl.dev) |
+| `UNSPLASH_ACCESS_KEY` | Stock photos | [unsplash.com](https://unsplash.com) |
+| `LOCAL_LLM_API_KEY` | Self-hosted AI | Your LLM provider |
+| `N8N_API_KEY` | Workflow automation | Your N8N instance |
 
-```bash
-# Set secrets via CLI (optional)
-supabase secrets set FIRECRAWL_API_KEY=your-firecrawl-api-key
-
-# List current secrets
-supabase secrets list
-```
-
-### AI Chat Configuration
-
-#### Option A: Lovable AI Gateway (Lovable Cloud only)
-
-The `LOVABLE_API_KEY` is **automatically provided** when you remix the project on Lovable:
-
-[![Remix on Lovable](https://img.shields.io/badge/Remix%20on-Lovable-ff69b4)](https://lovable.dev/projects/fac5f9b2-2dc8-4cce-be0a-4266a826f893)
-
-This key is injected by Lovable Cloud and is **not available for full self-hosting**.
-
-#### Option B: Private LLM (Self-Hosting)
-
-For full self-hosting, configure a **Private LLM** in the CMS:
-
-1. Go to **Admin → Settings → AI Chat**
-2. Select **Private LLM** as provider
-3. Enter your OpenAI-compatible endpoint (e.g., `https://api.openai.com/v1`, Ollama, LM Studio, etc.)
-4. Enter model name and API key (if required)
-
-This keeps all AI data on your own infrastructure — no external secrets needed.
-
----
-
-### 7. Create Your First Admin User
-
-1. Go to your app and sign up with email/password
-2. In Supabase Dashboard → **SQL Editor**, run:
-
-```sql
--- Replace with your user's email
-UPDATE public.user_roles 
-SET role = 'admin' 
-WHERE user_id = (
-  SELECT id FROM auth.users WHERE email = 'your-email@example.com'
-);
-```
-
-Or use the `create-user` Edge Function to create admin users programmatically.
+Use `./scripts/configure-secrets.sh` to set these interactively.
 
 ---
 
 ## Local Development
 
-After completing the Supabase setup above, you can run FlowWink locally:
+After running the setup script, you can run FlowWink locally:
 
 ```bash
-# Clone the repository (if not already done)
-git clone https://github.com/magnusfroste/flowwink.git
-cd flowwink
-
 # Install dependencies
 npm install
 
-# Create .env file
-cp .env.example .env
-# Edit .env with your Supabase credentials
+# Create .env with the values from the setup script output
+# VITE_SUPABASE_URL=...
+# VITE_SUPABASE_PUBLISHABLE_KEY=...
+# VITE_SUPABASE_PROJECT_ID=...
 
 # Start development server
 npm run dev
 ```
-
-The app will automatically detect if the database is not configured and show the setup wizard.
 
 Access the app at `http://localhost:5173`
 
@@ -218,9 +188,7 @@ Access the app at `http://localhost:5173`
 
 ## Production Deployment
 
-For production deployment to Easypanel, Railway, Fly.io, or other platforms, see:
-
-**[DEPLOYMENT.md](./DEPLOYMENT.md)** - Complete production deployment guide
+See **[DEPLOYMENT.md](./DEPLOYMENT.md)** for deploying to Easypanel, Railway, or other platforms.
 
 ---
 
