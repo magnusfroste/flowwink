@@ -58,7 +58,9 @@ export function ChatConversation({
   const showEmptyState = messages.length === 0 && !isLoading;
   const showTypingIndicator = isLoading && messages[messages.length - 1]?.role === 'user';
   const showFeedback = settings?.feedbackEnabled ?? true;
-  const showAgentAvatar = (settings?.showAgentAvatar ?? true) && isWithLiveAgent;
+  
+  // Show agent avatar when: setting is enabled AND we have a live agent with agentInfo
+  const showAgentAvatar = (settings?.showAgentAvatar ?? true) && isWithLiveAgent && !!agentInfo;
 
   return (
     <div className={cn(

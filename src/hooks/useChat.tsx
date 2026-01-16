@@ -184,15 +184,42 @@ export function useChat(options?: UseChatOptions) {
           table: 'chat_conversations',
           filter: `id=eq.${conversationId}`,
         },
-        (payload) => {
+        async (payload) => {
           const updated = payload.new as {
             conversation_status: string;
             assigned_agent_id: string | null;
           };
-          setIsWithLiveAgent(
-            !!updated.assigned_agent_id && 
-            (updated.conversation_status === 'with_agent' || updated.conversation_status === 'waiting_agent')
-          );
+          
+          const isWithAgent = !!updated.assigned_agent_id && 
+            (updated.conversation_status === 'with_agent' || updated.conversation_status === 'waiting_agent');
+          
+          setIsWithLiveAgent(isWithAgent);
+          
+          // Fetch agent info when agent is assigned
+          if (isWithAgent && updated.assigned_agent_id) {
+            const { data: agentData } = await supabase
+              .from('support_agents')
+              .select(`
+                user_id,
+                profiles!support_agents_user_id_fkey (
+                  full_name,
+                  avatar_url
+                )
+              `)
+              .eq('id', updated.assigned_agent_id)
+              .single();
+            
+            if (agentData?.profiles) {
+              const profiles = agentData.profiles as { full_name: string | null; avatar_url: string | null };
+              setAgentInfo({
+                id: agentData.user_id,
+                fullName: profiles.full_name || null,
+                avatarUrl: profiles.avatar_url || null,
+              });
+            }
+          } else {
+            setAgentInfo(null);
+          }
         }
       )
       .subscribe();
