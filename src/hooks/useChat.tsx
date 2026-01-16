@@ -137,17 +137,7 @@ export function useChat(options?: UseChatOptions) {
     const checkStatus = async () => {
       const { data } = await supabase
         .from('chat_conversations')
-        .select(`
-          conversation_status, 
-          assigned_agent_id,
-          support_agents!chat_conversations_assigned_agent_id_fkey (
-            user_id,
-            profiles!support_agents_user_id_fkey (
-              full_name,
-              avatar_url
-            )
-          )
-        `)
+        .select('conversation_status, assigned_agent_id')
         .eq('id', conversationId)
         .single();
       
@@ -156,16 +146,30 @@ export function useChat(options?: UseChatOptions) {
       
       setIsWithLiveAgent(isWithAgent);
       
-      if (isWithAgent && data?.support_agents) {
-        const agent = data.support_agents as unknown as { 
-          user_id: string; 
-          profiles: { full_name: string | null; avatar_url: string | null } 
-        };
-        setAgentInfo({
-          id: agent.user_id,
-          fullName: agent.profiles?.full_name || null,
-          avatarUrl: agent.profiles?.avatar_url || null,
-        });
+      // Fetch agent info separately if agent is assigned
+      if (isWithAgent && data?.assigned_agent_id) {
+        const { data: agentData } = await supabase
+          .from('support_agents')
+          .select(`
+            user_id,
+            profiles!support_agents_user_id_fkey (
+              full_name,
+              avatar_url
+            )
+          `)
+          .eq('id', data.assigned_agent_id)
+          .single();
+        
+        if (agentData?.profiles) {
+          const profiles = agentData.profiles as { full_name: string | null; avatar_url: string | null };
+          setAgentInfo({
+            id: agentData.user_id,
+            fullName: profiles.full_name || null,
+            avatarUrl: profiles.avatar_url || null,
+          });
+        } else {
+          setAgentInfo(null);
+        }
       } else {
         setAgentInfo(null);
       }
