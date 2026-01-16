@@ -15,11 +15,14 @@ interface UseChatOptions {
   onNewConversation?: (id: string) => void;
 }
 
+const CONVERSATION_STORAGE_KEY = 'chat-conversation-id';
+
 export function useChat(options?: UseChatOptions) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [conversationId, setConversationId] = useState<string | undefined>(options?.conversationId);
+  const [initialized, setInitialized] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
   
   const { data: settings } = useChatSettings();
@@ -33,6 +36,62 @@ export function useChat(options?: UseChatOptions) {
     }
     return sessionId;
   }, []);
+
+  // Restore conversation from localStorage on mount
+  useEffect(() => {
+    if (initialized || options?.conversationId) return;
+    
+    const restoreConversation = async () => {
+      // First try to get stored conversation ID
+      const storedConvId = localStorage.getItem(CONVERSATION_STORAGE_KEY);
+      
+      if (storedConvId) {
+        // Verify conversation still exists and belongs to this user/session
+        const sessionId = getSessionId();
+        const { data } = await supabase
+          .from('chat_conversations')
+          .select('id')
+          .eq('id', storedConvId)
+          .or(`user_id.eq.${user?.id || 'null'},session_id.eq.${sessionId}`)
+          .single();
+        
+        if (data) {
+          setConversationId(storedConvId);
+          setInitialized(true);
+          return;
+        }
+      }
+      
+      // If no stored conversation, try to find the most recent one
+      const sessionId = getSessionId();
+      const query = supabase
+        .from('chat_conversations')
+        .select('id')
+        .order('updated_at', { ascending: false })
+        .limit(1);
+      
+      if (user?.id) {
+        query.eq('user_id', user.id);
+      } else {
+        query.eq('session_id', sessionId);
+      }
+      
+      const { data } = await query.single();
+      
+      if (data) {
+        setConversationId(data.id);
+        localStorage.setItem(CONVERSATION_STORAGE_KEY, data.id);
+      }
+      
+      setInitialized(true);
+    };
+    
+    if (settings?.saveConversations) {
+      restoreConversation();
+    } else {
+      setInitialized(true);
+    }
+  }, [settings?.saveConversations, user?.id, getSessionId, options?.conversationId, initialized]);
 
   // Load existing messages when conversationId is set
   useEffect(() => {
@@ -141,6 +200,8 @@ export function useChat(options?: UseChatOptions) {
     }
 
     setConversationId(data.id);
+    // Persist conversation ID to localStorage
+    localStorage.setItem(CONVERSATION_STORAGE_KEY, data.id);
     options?.onNewConversation?.(data.id);
     return data.id;
   }, [user?.id, getSessionId, options]);
@@ -310,6 +371,8 @@ export function useChat(options?: UseChatOptions) {
     setMessages([]);
     setConversationId(undefined);
     setError(null);
+    // Clear stored conversation ID to start fresh
+    localStorage.removeItem(CONVERSATION_STORAGE_KEY);
   }, []);
 
   return {
