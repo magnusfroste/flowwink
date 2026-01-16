@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Sheet,
   SheetContent,
@@ -53,6 +54,7 @@ import {
   PanelBottom,
   Video,
   Wand2,
+  Search,
 } from 'lucide-react';
 import { ContentBlockType } from '@/types/cms';
 
@@ -378,9 +380,24 @@ interface BlockSelectorProps {
 
 export function BlockSelector({ onAdd }: BlockSelectorProps) {
   const [open, setOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredGroups = useMemo(() => {
+    if (!searchQuery.trim()) return BLOCK_GROUPS;
+    
+    const query = searchQuery.toLowerCase();
+    return BLOCK_GROUPS.map(group => ({
+      ...group,
+      blocks: group.blocks.filter(block => 
+        block.label.toLowerCase().includes(query) ||
+        block.description.toLowerCase().includes(query)
+      )
+    })).filter(group => group.blocks.length > 0);
+  }, [searchQuery]);
 
   const handleSelect = (type: ContentBlockType) => {
     onAdd(type);
+    setSearchQuery('');
     setOpen(false);
   };
 
@@ -393,12 +410,25 @@ export function BlockSelector({ onAdd }: BlockSelectorProps) {
         </Button>
       </SheetTrigger>
       <SheetContent side="right" className="w-[400px] sm:w-[540px] p-0">
-        <SheetHeader className="px-6 py-4 border-b bg-card">
+        <SheetHeader className="px-6 py-4 border-b bg-card space-y-3">
           <SheetTitle className="font-serif">Select Block Type</SheetTitle>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search blocks..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 h-9 text-sm"
+            />
+          </div>
         </SheetHeader>
-        <ScrollArea className="h-[calc(100vh-80px)]">
+        <ScrollArea className="h-[calc(100vh-140px)]">
           <div className="p-6 space-y-6">
-            {BLOCK_GROUPS.map((group) => (
+            {filteredGroups.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground text-sm">
+                No blocks match your search
+              </div>
+            ) : filteredGroups.map((group) => (
               <div key={group.name}>
                 <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                   {group.name}
