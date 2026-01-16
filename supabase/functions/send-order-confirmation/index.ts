@@ -13,8 +13,13 @@ interface OrderConfirmationRequest {
   orderId: string;
 }
 
+interface EmailConfig {
+  fromEmail: string;
+  fromName: string;
+}
+
 const formatPrice = (cents: number, currency: string) => {
-  return new Intl.NumberFormat("sv-SE", {
+  return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: currency,
   }).format(cents / 100);
@@ -64,6 +69,30 @@ serve(async (req: Request) => {
     const orderItems = items || [];
     console.log("[send-order-confirmation] Found items:", orderItems.length);
 
+    // Fetch site settings for branding
+    const { data: siteSettings } = await supabase
+      .from("site_settings")
+      .select("value")
+      .eq("key", "general")
+      .maybeSingle();
+
+    const { data: integrationSettings } = await supabase
+      .from("site_settings")
+      .select("value")
+      .eq("key", "integrations")
+      .maybeSingle();
+
+    const siteName = (siteSettings?.value as { siteName?: string })?.siteName || "Our Store";
+    
+    // Get email configuration from integrations
+    const resendSettings = (integrationSettings?.value as any)?.resend;
+    const emailConfig: EmailConfig = resendSettings?.config?.emailConfig || {
+      fromEmail: "onboarding@resend.dev",
+      fromName: "Order",
+    };
+
+    console.log(`[send-order-confirmation] Using sender: ${emailConfig.fromName} <${emailConfig.fromEmail}>`);
+
     // Build items HTML
     const itemsHtml = orderItems
       .map(
@@ -87,26 +116,26 @@ serve(async (req: Request) => {
         <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f9fafb; margin: 0; padding: 40px 20px;">
           <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
             <div style="background-color: #18181b; padding: 32px; text-align: center;">
-              <h1 style="color: #ffffff; margin: 0; font-size: 24px;">Orderbekräftelse</h1>
+              <h1 style="color: #ffffff; margin: 0; font-size: 24px;">Order Confirmation</h1>
             </div>
             
             <div style="padding: 32px;">
               <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 24px;">
-                Hej${order.customer_name ? ` ${order.customer_name}` : ""}!
+                Hello${order.customer_name ? ` ${order.customer_name}` : ""}!
               </p>
               
               <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 24px;">
-                Tack för din beställning! Vi har tagit emot din betalning och din order behandlas nu.
+                Thank you for your order! We have received your payment and your order is now being processed.
               </p>
 
               <div style="background-color: #f9fafb; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
-                <h2 style="color: #18181b; font-size: 18px; margin: 0 0 16px;">Orderdetaljer</h2>
+                <h2 style="color: #18181b; font-size: 18px; margin: 0 0 16px;">Order Details</h2>
                 <table style="width: 100%; border-collapse: collapse;">
                   <thead>
                     <tr style="background-color: #e5e7eb;">
-                      <th style="padding: 12px; text-align: left; font-size: 14px;">Produkt</th>
-                      <th style="padding: 12px; text-align: center; font-size: 14px;">Antal</th>
-                      <th style="padding: 12px; text-align: right; font-size: 14px;">Pris</th>
+                      <th style="padding: 12px; text-align: left; font-size: 14px;">Product</th>
+                      <th style="padding: 12px; text-align: center; font-size: 14px;">Quantity</th>
+                      <th style="padding: 12px; text-align: right; font-size: 14px;">Price</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -114,7 +143,7 @@ serve(async (req: Request) => {
                   </tbody>
                   <tfoot>
                     <tr>
-                      <td colspan="2" style="padding: 16px 12px; font-weight: bold; font-size: 16px;">Totalt</td>
+                      <td colspan="2" style="padding: 16px 12px; font-weight: bold; font-size: 16px;">Total</td>
                       <td style="padding: 16px 12px; font-weight: bold; font-size: 16px; text-align: right;">${formatPrice(order.total_cents, order.currency)}</td>
                     </tr>
                   </tfoot>
@@ -122,22 +151,22 @@ serve(async (req: Request) => {
               </div>
 
               <div style="background-color: #f9fafb; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
-                <h3 style="color: #18181b; font-size: 14px; margin: 0 0 12px;">Orderinformation</h3>
+                <h3 style="color: #18181b; font-size: 14px; margin: 0 0 12px;">Order Information</h3>
                 <p style="color: #6b7280; font-size: 14px; margin: 0; line-height: 1.8;">
-                  <strong>Order-ID:</strong> ${order.id.slice(0, 8)}...<br>
-                  <strong>E-post:</strong> ${order.customer_email}<br>
-                  <strong>Datum:</strong> ${new Date(order.created_at).toLocaleDateString("sv-SE", { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                  <strong>Order ID:</strong> ${order.id.slice(0, 8)}...<br>
+                  <strong>Email:</strong> ${order.customer_email}<br>
+                  <strong>Date:</strong> ${new Date(order.created_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                 </p>
               </div>
 
               <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0;">
-                Om du har några frågor, tveka inte att kontakta oss.
+                If you have any questions, please don't hesitate to contact us.
               </p>
             </div>
 
             <div style="background-color: #f9fafb; padding: 24px; text-align: center; border-top: 1px solid #e5e7eb;">
               <p style="color: #9ca3af; font-size: 12px; margin: 0;">
-                Detta är ett automatiskt meddelande. Svara inte på detta mail.
+                ${siteName} — This is an automated message. Please do not reply to this email.
               </p>
             </div>
           </div>
@@ -146,9 +175,9 @@ serve(async (req: Request) => {
     `;
 
     const emailResponse = await resend.emails.send({
-      from: "Order <onboarding@resend.dev>",
+      from: `${emailConfig.fromName} <${emailConfig.fromEmail}>`,
       to: [order.customer_email],
-      subject: `Orderbekräftelse - ${order.id.slice(0, 8)}`,
+      subject: `Order Confirmation - ${order.id.slice(0, 8)}`,
       html: emailHtml,
     });
 

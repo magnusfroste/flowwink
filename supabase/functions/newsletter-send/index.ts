@@ -16,6 +16,11 @@ interface SendNewsletterRequest {
   newsletter_id: string;
 }
 
+interface EmailConfig {
+  fromEmail: string;
+  fromName: string;
+}
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -43,14 +48,16 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Check if Resend integration is enabled
+    // Check if Resend integration is enabled and get email config
     const { data: integrationSettings } = await supabase
       .from("site_settings")
       .select("value")
       .eq("key", "integrations")
       .maybeSingle();
 
-    const resendEnabled = (integrationSettings?.value as any)?.resend?.enabled ?? false;
+    const resendSettings = (integrationSettings?.value as any)?.resend;
+    const resendEnabled = resendSettings?.enabled ?? false;
+    
     if (!resendEnabled) {
       console.log("[newsletter-send] Resend integration is disabled");
       return new Response(JSON.stringify({ error: "Email sending is currently disabled" }), {
@@ -58,6 +65,14 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // Get email configuration
+    const emailConfig: EmailConfig = resendSettings?.config?.emailConfig || {
+      fromEmail: "onboarding@resend.dev",
+      fromName: "Newsletter",
+    };
+    
+    console.log(`[newsletter-send] Using sender: ${emailConfig.fromName} <${emailConfig.fromEmail}>`);
 
     const ResendClass = await getResend();
     const resend = new ResendClass(resendApiKey);
@@ -247,7 +262,7 @@ serve(async (req) => {
           : "";
         
         await resend.emails.send({
-          from: "Newsletter <onboarding@resend.dev>",
+          from: `${emailConfig.fromName} <${emailConfig.fromEmail}>`,
           to: [subscriber.email],
           subject: newsletter.subject,
           html: `

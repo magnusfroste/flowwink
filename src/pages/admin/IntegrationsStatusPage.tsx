@@ -41,6 +41,7 @@ import {
   defaultIntegrationsSettings,
   type IntegrationsSettings,
   type IntegrationProviderConfig,
+  type EmailConfig,
 } from "@/hooks/useIntegrations";
 import { useIntegrationStatus } from "@/hooks/useIntegrationStatus";
 import { supabase } from "@/integrations/supabase/client";
@@ -420,6 +421,51 @@ function IntegrationConfigPanel({
     );
   }
 
+  if (integrationKey === 'resend') {
+    const emailConfig = localConfig?.emailConfig || { fromEmail: 'onboarding@resend.dev', fromName: 'Newsletter' };
+    
+    return (
+      <div className="space-y-3 pt-3 border-t">
+        <div className="space-y-2">
+          <Label htmlFor="resend-from-name" className="text-xs">From Name</Label>
+          <Input
+            id="resend-from-name"
+            value={emailConfig.fromName}
+            onChange={(e) => handleChange({ 
+              emailConfig: { ...emailConfig, fromName: e.target.value } 
+            })}
+            placeholder="Newsletter"
+            className="h-8 text-sm"
+          />
+          <p className="text-xs text-muted-foreground">Display name for sent emails</p>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="resend-from-email" className="text-xs">From Email *</Label>
+          <Input
+            id="resend-from-email"
+            value={emailConfig.fromEmail}
+            onChange={(e) => handleChange({ 
+              emailConfig: { ...emailConfig, fromEmail: e.target.value } 
+            })}
+            placeholder="news@yourdomain.com"
+            className="h-8 text-sm"
+          />
+          <p className="text-xs text-muted-foreground">
+            Must use a verified domain in Resend.{" "}
+            <a 
+              href="https://resend.com/domains" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="text-primary hover:underline"
+            >
+              Verify domain →
+            </a>
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return null;
 }
 
@@ -591,7 +637,7 @@ export default function IntegrationsStatusPage() {
                     const status: IntegrationStatus = !hasKey ? 'not_configured' : isEnabled ? 'active' : 'disabled';
                     const IconComponent = iconMap[integration.icon as keyof typeof iconMap] || Bot;
                     const currentConfig = integrationSettings?.[key]?.config || integration.config;
-                    const hasConfigSection = ['openai', 'gemini', 'local_llm', 'n8n'].includes(key);
+                    const hasConfigSection = ['openai', 'gemini', 'local_llm', 'n8n', 'resend'].includes(key);
                     const isExpanded = expandedCards.has(key);
 
                     return (
