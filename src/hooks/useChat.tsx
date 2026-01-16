@@ -23,6 +23,7 @@ export function useChat(options?: UseChatOptions) {
   const [error, setError] = useState<string | null>(null);
   const [conversationId, setConversationId] = useState<string | undefined>(options?.conversationId);
   const [initialized, setInitialized] = useState(false);
+  const [isWithLiveAgent, setIsWithLiveAgent] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
   
   const { data: settings } = useChatSettings();
@@ -116,6 +117,57 @@ export function useChat(options?: UseChatOptions) {
     };
 
     loadMessages();
+  }, [conversationId]);
+
+  // Track conversation status for live agent indicator
+  useEffect(() => {
+    if (!conversationId) {
+      setIsWithLiveAgent(false);
+      return;
+    }
+
+    const checkStatus = async () => {
+      const { data } = await supabase
+        .from('chat_conversations')
+        .select('conversation_status, assigned_agent_id')
+        .eq('id', conversationId)
+        .single();
+      
+      setIsWithLiveAgent(
+        !!data?.assigned_agent_id && 
+        (data.conversation_status === 'with_agent' || data.conversation_status === 'waiting_agent')
+      );
+    };
+
+    checkStatus();
+
+    // Subscribe to conversation status changes
+    const channel = supabase
+      .channel(`chat-status-${conversationId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'chat_conversations',
+          filter: `id=eq.${conversationId}`,
+        },
+        (payload) => {
+          const updated = payload.new as {
+            conversation_status: string;
+            assigned_agent_id: string | null;
+          };
+          setIsWithLiveAgent(
+            !!updated.assigned_agent_id && 
+            (updated.conversation_status === 'with_agent' || updated.conversation_status === 'waiting_agent')
+          );
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [conversationId]);
 
   // Realtime subscription for agent messages
@@ -392,6 +444,7 @@ export function useChat(options?: UseChatOptions) {
     isLoading,
     error,
     conversationId,
+    isWithLiveAgent,
     sendMessage,
     cancelRequest,
     clearMessages,
