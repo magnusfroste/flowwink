@@ -249,27 +249,45 @@ See **[DEPLOYMENT.md](./DEPLOYMENT.md)** for deploying to Easypanel, Railway, or
 
 ## Edge Functions Reference
 
-| Function | Purpose | Auth Required |
-|----------|---------|---------------|
-| `analyze-brand` | Extract branding from URLs | Yes |
-| `blog-rss` | Generate RSS feed | No |
-| `chat-completion` | AI chat responses | No |
-| `content-api` | REST/GraphQL API | No |
-| `create-user` | Create users programmatically | No |
-| `generate-text` | AI text generation | Yes |
-| `get-page` | Cached page fetching | No |
-| `invalidate-cache` | Clear page cache | Yes |
-| `migrate-page` | AI content migration | Yes |
-| `process-image` | WebP conversion | Yes |
-| `publish-scheduled-pages` | Cron job for scheduling | No |
-| `send-webhook` | Trigger webhooks for events | Yes |
-| `newsletter-send` | Send newsletter campaigns | Yes |
-| `newsletter-export` | GDPR export of subscribers | Yes |
-| `newsletter-subscribe` | Handle newsletter subscriptions | No |
-| `newsletter-confirm` | Double opt-in confirmation | No |
-| `newsletter-unsubscribe` | Handle unsubscriptions | No |
-| `newsletter-track-open` | Track email opens | No |
-| `newsletter-track-click` | Track link clicks | No |
+| Function | Purpose | Auth Required | Secrets Required |
+|----------|---------|---------------|------------------|
+| `analyze-brand` | Extract branding from URLs | Yes | `FIRECRAWL_API_KEY` |
+| `blog-rss` | Generate RSS feed | No | - |
+| `chat-completion` | AI chat responses | No | AI API keys (optional) |
+| `check-secrets` | Check secrets configuration status | Yes (Admin) | - |
+| `content-api` | REST/GraphQL API | No | - |
+| `copilot-action` | AI copilot actions | Yes | AI API keys |
+| `create-checkout` | Create Stripe checkout sessions | No | `STRIPE_SECRET_KEY` |
+| `create-user` | Create users programmatically | No | - |
+| `enrich-company` | Enrich company data | Yes | - |
+| `firecrawl-search` | Web scraping search | Yes | `FIRECRAWL_API_KEY` |
+| `generate-text` | AI text generation | Yes | AI API keys |
+| `get-page` | Cached page fetching | No | - |
+| `invalidate-cache` | Clear page cache | Yes | - |
+| `llms-txt` | LLM text processing | Yes | AI API keys |
+| `migrate-page` | AI content migration | Yes | `FIRECRAWL_API_KEY` |
+| `newsletter-confirm` | Double opt-in confirmation | No | - |
+| `newsletter-export` | GDPR export of subscribers | Yes | - |
+| `newsletter-gdpr` | GDPR operations for newsletters | Yes | - |
+| `newsletter-link` | Newsletter link processing | No | - |
+| `newsletter-send` | Send newsletter campaigns | Yes | `RESEND_API_KEY` |
+| `newsletter-subscribe` | Handle newsletter subscriptions | No | - |
+| `newsletter-track` | Track newsletter opens/clicks | No | - |
+| `newsletter-unsubscribe` | Handle unsubscriptions | No | - |
+| `process-image` | WebP conversion | Yes | - |
+| `publish-scheduled-pages` | Cron job for scheduling | No | - |
+| `qualify-lead` | Lead qualification | Yes | AI API keys |
+| `send-booking-confirmation` | Send booking confirmations | Yes | `RESEND_API_KEY` |
+| `send-order-confirmation` | Send order confirmations | Yes | `RESEND_API_KEY` |
+| `send-webhook` | Trigger webhooks for events | Yes | - |
+| `setup-database` | Database setup/initialization | Yes (Admin) | - |
+| `sitemap-xml` | Generate sitemap | No | - |
+| `stripe-webhook` | Handle Stripe webhooks | No | `STRIPE_WEBHOOK_SECRET` |
+| `support-router` | Route support requests | No | - |
+| `test-ai-connection` | Test AI provider connections | Yes | AI API keys |
+| `track-page-view` | Track page analytics | No | - |
+| `unsplash-search` | Search Unsplash for images | Yes | `UNSPLASH_ACCESS_KEY` |
+| `update-kb-feedback` | Update knowledge base feedback | Yes | - |
 
 ---
 
@@ -340,6 +358,71 @@ VITE_SUPABASE_ANON_KEY=<local-anon-key-from-supabase-start>
 - Verify pg_cron extension is enabled
 - Check the cron job is scheduled correctly
 - Verify the service role key is correct
+
+### Pages showing blank (404 errors) - Missing Edge Functions
+If your pages show blank or return 404 errors, you likely have missing edge functions. This is common with new Supabase instances.
+
+#### Deploy Critical Functions First
+These are the minimum functions needed for pages to work:
+1. **`get-page`** - Fetches and caches published pages
+2. **`track-page-view`** - Tracks page analytics
+
+#### Deployment Options
+
+**Via Supabase Dashboard:**
+1. Go to your Supabase project dashboard
+2. Navigate to **Edge Functions** in the left sidebar
+3. Click **Deploy new function**
+4. For each function:
+   - Name: `get-page`
+   - Upload the file: `supabase/functions/get-page/index.ts`
+   - Click **Deploy**
+5. Repeat for `track-page-view`, `content-api`, and `sitemap-xml`
+
+**Via Supabase CLI:**
+```bash
+# Login and link to project
+supabase login
+supabase link --project-ref YOUR_PROJECT_REF
+
+# Deploy critical functions
+supabase functions deploy get-page
+supabase functions deploy track-page-view
+supabase functions deploy content-api
+supabase functions deploy sitemap-xml
+```
+
+**Deploy All Functions:**
+```bash
+# Deploy all 36 functions at once
+for func in supabase/functions/*/; do
+  func_name=$(basename "$func")
+  echo "Deploying $func_name..."
+  supabase functions deploy "$func_name"
+done
+```
+
+#### Verify Deployment
+Test the functions after deployment:
+
+1. **Test get-page:**
+   ```
+   https://YOUR_PROJECT_REF.supabase.co/functions/v1/get-page?slug=home
+   ```
+   Should return page data (not 404)
+
+2. **Test track-page-view:**
+   ```
+   curl -X POST https://YOUR_PROJECT_REF.supabase.co/functions/v1/track-page-view \
+     -H "Content-Type: application/json" \
+     -d '{"pageSlug":"home"}'
+   ```
+   Should return 200 OK
+
+#### Why This Happens
+- Blog posts work: They use direct database queries
+- Pages fail: They require the `get-page` edge function for caching and performance
+- Once edge functions are deployed, pages will load correctly!
 
 ---
 
