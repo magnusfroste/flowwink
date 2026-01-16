@@ -187,7 +187,7 @@ export function MediaLibraryPicker({ open, onOpenChange, onSelect }: MediaLibrar
   return (
     <>
       <Dialog open={open && !showCropper} onOpenChange={handleClose}>
-        <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col">
+        <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col overflow-hidden z-[100]">
           <DialogHeader>
             <DialogTitle>Select image</DialogTitle>
           </DialogHeader>
@@ -217,7 +217,7 @@ export function MediaLibraryPicker({ open, onOpenChange, onSelect }: MediaLibrar
               </div>
 
               {/* Content */}
-              <div className="flex-1 overflow-y-auto min-h-[300px]">
+              <div className="flex-1 overflow-y-auto min-h-[300px] max-h-[50vh]">
                 {isLoadingFiles ? (
                   <div className="flex items-center justify-center py-12">
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -288,7 +288,7 @@ export function MediaLibraryPicker({ open, onOpenChange, onSelect }: MediaLibrar
               </form>
 
               {/* Content */}
-              <div className="flex-1 overflow-y-auto min-h-[300px]">
+              <div className="flex-1 overflow-y-auto min-h-[300px] max-h-[50vh]">
                 {isLoadingUnsplash || isFetchingUnsplash ? (
                   <div className="flex items-center justify-center py-12">
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
