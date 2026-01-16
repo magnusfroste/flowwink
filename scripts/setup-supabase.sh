@@ -229,19 +229,28 @@ echo -e "${YELLOW}Creating admin user...${NC}"
 
 # Create admin user via edge function
 SUPABASE_URL="https://${PROJECT_REF}.supabase.co"
-SERVICE_ROLE_KEY=$(supabase secrets list 2>/dev/null | grep SUPABASE_SERVICE_ROLE_KEY | awk '{print $2}' || echo "")
 
-if [ -z "$SERVICE_ROLE_KEY" ]; then
+# Get service role key from API keys
+API_KEYS_ADMIN=$(supabase projects api-keys --project-ref "$PROJECT_REF" --output json 2>/dev/null || echo "[]")
+SERVICE_ROLE_KEY=$(echo "$API_KEYS_ADMIN" | jq -r '.[] | select(.name == "service_role") | .api_key' 2>/dev/null || echo "")
+
+if [ -z "$SERVICE_ROLE_KEY" ] || [ "$SERVICE_ROLE_KEY" == "null" ]; then
     echo -e "${YELLOW}Note: Could not get service role key automatically.${NC}"
     echo "You can create the admin user manually in Supabase Dashboard → Authentication"
 else
     # Use the setup-database edge function to create admin
-    curl -s -X POST "${SUPABASE_URL}/functions/v1/setup-database" \
+    RESPONSE=$(curl -s -X POST "${SUPABASE_URL}/functions/v1/setup-database" \
         -H "Authorization: Bearer ${SERVICE_ROLE_KEY}" \
         -H "Content-Type: application/json" \
-        -d "{\"email\": \"${ADMIN_EMAIL}\", \"password\": \"${ADMIN_PASSWORD}\"}" > /dev/null 2>&1
+        -d "{\"email\": \"${ADMIN_EMAIL}\", \"password\": \"${ADMIN_PASSWORD}\"}" 2>&1)
     
-    echo -e "${GREEN}✓ Admin user created: ${ADMIN_EMAIL}${NC}"
+    if echo "$RESPONSE" | grep -q "error"; then
+        echo -e "${YELLOW}⚠ Could not create admin via edge function${NC}"
+        echo "Create admin manually: Supabase Dashboard → Authentication → Add user"
+        echo "Then run: INSERT INTO user_roles (user_id, role) SELECT id, 'admin' FROM auth.users WHERE email = '${ADMIN_EMAIL}';"
+    else
+        echo -e "${GREEN}✓ Admin user created: ${ADMIN_EMAIL}${NC}"
+    fi
 fi
 
 fi  # End of ENV_ONLY check
