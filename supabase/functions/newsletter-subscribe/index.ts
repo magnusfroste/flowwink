@@ -27,16 +27,16 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
-    
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    
+
     const url = new URL(req.url);
     const action = url.searchParams.get("action");
 
     // Handle confirmation
     if (action === "confirm") {
       const token = url.searchParams.get("token");
-      
+
       if (!token) {
         return new Response(JSON.stringify({ error: "Missing confirmation token" }), {
           status: 400,
@@ -46,10 +46,10 @@ serve(async (req) => {
 
       const { data, error } = await supabase
         .from("newsletter_subscribers")
-        .update({ 
-          status: "confirmed", 
+        .update({
+          status: "confirmed",
           confirmed_at: new Date().toISOString(),
-          confirmation_token: null 
+          confirmation_token: null,
         })
         .eq("confirmation_token", token)
         .eq("status", "pending")
@@ -65,14 +65,10 @@ serve(async (req) => {
       }
 
       console.log(`[newsletter-subscribe] Email confirmed: ${data.email}`);
-      
+
       // Create or update lead from newsletter subscription
       try {
-        const { data: existingLead } = await supabase
-          .from("leads")
-          .select("id")
-          .eq("email", data.email)
-          .maybeSingle();
+        const { data: existingLead } = await supabase.from("leads").select("id").eq("email", data.email).maybeSingle();
 
         if (existingLead) {
           // Add activity to existing lead
@@ -91,10 +87,7 @@ serve(async (req) => {
 
           if (activities) {
             const totalScore = activities.reduce((sum, a) => sum + (a.points || 0), 0);
-            await supabase
-              .from("leads")
-              .update({ score: totalScore })
-              .eq("id", existingLead.id);
+            await supabase.from("leads").update({ score: totalScore }).eq("id", existingLead.id);
           }
         } else {
           // Create new lead
@@ -124,23 +117,23 @@ serve(async (req) => {
       } catch (leadError) {
         console.warn("[newsletter-subscribe] Lead creation error:", leadError);
       }
-      
+
       // Trigger webhook for newsletter subscribed
       try {
-        await supabase.functions.invoke('send-webhook', {
-          body: { 
-            event: 'newsletter.subscribed', 
-            data: { 
-              email: data.email, 
+        await supabase.functions.invoke("send-webhook", {
+          body: {
+            event: "newsletter.subscribed",
+            data: {
+              email: data.email,
               name: data.name,
               subscribed_at: new Date().toISOString(),
-            } 
+            },
           },
         });
       } catch (webhookError) {
-        console.warn('[newsletter-subscribe] Webhook error:', webhookError);
+        console.warn("[newsletter-subscribe] Webhook error:", webhookError);
       }
-      
+
       // Redirect to success page or return success
       return new Response(JSON.stringify({ success: true, message: "Subscription confirmed" }), {
         status: 200,
@@ -151,7 +144,7 @@ serve(async (req) => {
     // Handle unsubscribe
     if (action === "unsubscribe") {
       const email = url.searchParams.get("email");
-      
+
       if (!email) {
         return new Response(JSON.stringify({ error: "Missing email" }), {
           status: 400,
@@ -161,9 +154,9 @@ serve(async (req) => {
 
       const { error } = await supabase
         .from("newsletter_subscribers")
-        .update({ 
-          status: "unsubscribed", 
-          unsubscribed_at: new Date().toISOString() 
+        .update({
+          status: "unsubscribed",
+          unsubscribed_at: new Date().toISOString(),
         })
         .eq("email", email);
 
@@ -172,22 +165,22 @@ serve(async (req) => {
       }
 
       console.log(`[newsletter-subscribe] Unsubscribed: ${email}`);
-      
+
       // Trigger webhook for newsletter unsubscribed
       try {
-        await supabase.functions.invoke('send-webhook', {
-          body: { 
-            event: 'newsletter.unsubscribed', 
-            data: { 
+        await supabase.functions.invoke("send-webhook", {
+          body: {
+            event: "newsletter.unsubscribed",
+            data: {
               email,
               unsubscribed_at: new Date().toISOString(),
-            } 
+            },
           },
         });
       } catch (webhookError) {
-        console.warn('[newsletter-subscribe] Webhook error:', webhookError);
+        console.warn("[newsletter-subscribe] Webhook error:", webhookError);
       }
-      
+
       return new Response(JSON.stringify({ success: true, message: "Unsubscribed successfully" }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -225,31 +218,29 @@ serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      
+
       // Re-activate if unsubscribed
       if (existing.status === "unsubscribed") {
         const { error: updateError } = await supabase
           .from("newsletter_subscribers")
-          .update({ 
-            status: "pending", 
+          .update({
+            status: "pending",
             unsubscribed_at: null,
-            confirmation_token: crypto.randomUUID()
+            confirmation_token: crypto.randomUUID(),
           })
           .eq("id", existing.id);
-          
+
         if (updateError) {
           console.error("[newsletter-subscribe] Re-subscribe error:", updateError);
         }
       }
     } else {
       // Create new subscription
-      const { error: insertError } = await supabase
-        .from("newsletter_subscribers")
-        .insert({
-          email: email.toLowerCase(),
-          name: name || null,
-          status: "pending",
-        });
+      const { error: insertError } = await supabase.from("newsletter_subscribers").insert({
+        email: email.toLowerCase(),
+        name: name || null,
+        status: "pending",
+      });
 
       if (insertError) {
         console.error("[newsletter-subscribe] Insert error:", insertError);
@@ -279,21 +270,21 @@ serve(async (req) => {
 
         const resendSettings = (integrationSettings?.value as any)?.resend;
         const resendEnabled = resendSettings?.enabled ?? false;
-        
+
         if (!resendEnabled) {
           console.log("[newsletter-subscribe] Resend integration is disabled, auto-confirming");
           await supabase
             .from("newsletter_subscribers")
-            .update({ 
-              status: "confirmed", 
-              confirmed_at: new Date().toISOString() 
+            .update({
+              status: "confirmed",
+              confirmed_at: new Date().toISOString(),
             })
             .eq("email", email.toLowerCase());
-          
-          return new Response(
-            JSON.stringify({ success: true, message: "Subscribed successfully" }),
-            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
+
+          return new Response(JSON.stringify({ success: true, message: "Subscribed successfully" }), {
+            status: 200,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
         }
 
         // Get email configuration from settings
@@ -301,13 +292,13 @@ serve(async (req) => {
           fromEmail: "onboarding@resend.dev",
           fromName: "Newsletter",
         };
-        
+
         console.log(`[newsletter-subscribe] Using sender: ${emailConfig.fromName} <${emailConfig.fromEmail}>`);
 
         const ResendClass = await getResend();
         const resendClient = new ResendClass(resendApiKey);
         const confirmUrl = `${supabaseUrl}/functions/v1/newsletter-subscribe?action=confirm&token=${subscriber.confirmation_token}`;
-        
+
         await resendClient.emails.send({
           from: `${emailConfig.fromName} <${emailConfig.fromEmail}>`,
           to: [email],
@@ -319,7 +310,7 @@ serve(async (req) => {
             <p>If you didn't subscribe, you can safely ignore this email.</p>
           `,
         });
-        
+
         console.log(`[newsletter-subscribe] Confirmation email sent to: ${email}`);
       } catch (emailError) {
         console.error("[newsletter-subscribe] Email send error:", emailError);
@@ -329,24 +320,24 @@ serve(async (req) => {
       // Auto-confirm if no email service
       await supabase
         .from("newsletter_subscribers")
-        .update({ 
-          status: "confirmed", 
-          confirmed_at: new Date().toISOString() 
+        .update({
+          status: "confirmed",
+          confirmed_at: new Date().toISOString(),
         })
         .eq("email", email.toLowerCase());
-        
+
       console.log(`[newsletter-subscribe] Auto-confirmed (no email service): ${email}`);
     }
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: resendApiKey ? "Please check your email to confirm" : "Subscribed successfully" 
+      JSON.stringify({
+        success: true,
+        message: resendApiKey ? "Please check your email to confirm" : "Subscribed successfully",
       }),
       {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      },
     );
   } catch (error: any) {
     console.error("[newsletter-subscribe] Error:", error);
