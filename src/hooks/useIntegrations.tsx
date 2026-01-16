@@ -3,6 +3,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useIntegrationStatus } from './useIntegrationStatus';
 
+// Email configuration (shared across all email-sending functions)
+export interface EmailConfig {
+  fromEmail: string;
+  fromName: string;
+}
+
 // Provider-specific configuration stored per integration
 export interface IntegrationProviderConfig {
   // Common
@@ -17,6 +23,8 @@ export interface IntegrationProviderConfig {
   webhookType?: 'chat' | 'generic';
   triggerMode?: 'always' | 'keywords' | 'fallback';
   triggerKeywords?: string[];
+  // Email (for resend integration)
+  emailConfig?: EmailConfig;
 }
 
 // Integration configuration type
@@ -82,6 +90,12 @@ export const defaultIntegrationsSettings: IntegrationsSettings = {
     secretName: 'RESEND_API_KEY',
     docsUrl: 'https://resend.com/docs/introduction',
     docsLabel: 'Get API key',
+    config: {
+      emailConfig: {
+        fromEmail: 'onboarding@resend.dev',
+        fromName: 'Newsletter',
+      },
+    },
   },
   openai: {
     enabled: false,
