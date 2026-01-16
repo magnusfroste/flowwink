@@ -1,7 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
+import { playNotificationSound } from '@/lib/notification-sound';
 
 interface SupportConversation {
   id: string;
@@ -217,6 +218,8 @@ export function useSupportConversations() {
 // Hook to get messages for a conversation
 export function useConversationMessages(conversationId: string | null) {
   const queryClient = useQueryClient();
+  const previousMessagesCountRef = useRef<number>(0);
+  const isInitialLoadRef = useRef<boolean>(true);
 
   const { data: messages, isLoading } = useQuery({
     queryKey: ['conversation-messages', conversationId],
@@ -234,6 +237,36 @@ export function useConversationMessages(conversationId: string | null) {
     },
     enabled: !!conversationId,
   });
+
+  // Track message count changes to play sound for new messages
+  useEffect(() => {
+    if (!messages) return;
+    
+    // Skip initial load
+    if (isInitialLoadRef.current) {
+      previousMessagesCountRef.current = messages.length;
+      isInitialLoadRef.current = false;
+      return;
+    }
+    
+    // Check if new messages arrived (not from agent)
+    if (messages.length > previousMessagesCountRef.current) {
+      const newMessages = messages.slice(previousMessagesCountRef.current);
+      const hasUserMessage = newMessages.some(m => m.role === 'user');
+      
+      if (hasUserMessage) {
+        playNotificationSound();
+      }
+    }
+    
+    previousMessagesCountRef.current = messages.length;
+  }, [messages]);
+
+  // Reset refs when conversation changes
+  useEffect(() => {
+    isInitialLoadRef.current = true;
+    previousMessagesCountRef.current = 0;
+  }, [conversationId]);
 
   // Realtime subscription for new messages
   useEffect(() => {
