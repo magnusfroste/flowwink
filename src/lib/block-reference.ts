@@ -657,3 +657,120 @@ export function getRequiredFields(type: string): string[] {
   if (!block) return [];
   return block.fields.filter(f => f.required).map(f => f.name);
 }
+
+/**
+ * Get all block types that are suitable for AI import.
+ * Excludes blocks that require dynamic data (products, cart, kb-*, etc.)
+ */
+export function getImportableBlockTypes(): string[] {
+  const excluded = ['products', 'cart', 'kb-featured', 'kb-hub', 'kb-search', 'kb-accordion', 'smart-booking'];
+  return BLOCK_REFERENCE
+    .filter(b => !excluded.includes(b.type))
+    .map(b => b.type);
+}
+
+/**
+ * Generate AI schema for page import.
+ * This is used by the migrate-page edge function.
+ */
+export function generateAIBlockSchema(): string {
+  const importableTypes = getImportableBlockTypes();
+  const blocks = BLOCK_REFERENCE.filter(b => importableTypes.includes(b.type));
+  
+  let schema = 'Available CMS block types:\n\n';
+  
+  blocks.forEach((block, index) => {
+    const requiredFields = block.fields.filter(f => f.required);
+    const optionalFields = block.fields.filter(f => !f.required);
+    
+    schema += `${index + 1}. ${block.type} - ${block.name}\n`;
+    schema += `   Description: ${block.description}\n`;
+    
+    // Build data structure hint
+    const dataHints: string[] = [];
+    requiredFields.forEach(f => {
+      if (f.type === 'array') {
+        dataHints.push(`${f.name}: [...] (required)`);
+      } else {
+        dataHints.push(`${f.name}: ${f.type} (required)`);
+      }
+    });
+    optionalFields.slice(0, 3).forEach(f => {
+      if (f.options) {
+        dataHints.push(`${f.name}?: "${f.options.join('" | "')}"`);
+      } else {
+        dataHints.push(`${f.name}?: ${f.type}`);
+      }
+    });
+    
+    schema += `   Data: { ${dataHints.join(', ')} }\n\n`;
+  });
+  
+  return schema;
+}
+
+/**
+ * Get block type icons mapping for UI.
+ */
+export function getBlockTypeIcons(): Record<string, string> {
+  const iconMap: Record<string, string> = {
+    hero: 'Layout',
+    text: 'Type',
+    image: 'Image',
+    'two-column': 'Layout',
+    'article-grid': 'FileText',
+    'link-grid': 'Layout',
+    accordion: 'FileText',
+    cta: 'Sparkles',
+    quote: 'Type',
+    stats: 'FileText',
+    contact: 'FileText',
+    separator: 'Layout',
+    youtube: 'FileText',
+    gallery: 'Image',
+    'info-box': 'AlertCircle',
+    embed: 'Globe',
+    testimonials: 'Type',
+    team: 'FileText',
+    features: 'Layout',
+    pricing: 'FileText',
+    logos: 'Image',
+    map: 'Globe',
+    form: 'FileText',
+    chat: 'FileText',
+    newsletter: 'FileText',
+    booking: 'FileText',
+    popup: 'Layout',
+    comparison: 'FileText',
+    products: 'FileText',
+    cart: 'FileText',
+    'announcement-bar': 'Layout',
+    tabs: 'Layout',
+    marquee: 'Layout',
+    table: 'FileText',
+    countdown: 'FileText',
+    progress: 'FileText',
+    badge: 'FileText',
+    'social-proof': 'FileText',
+    'notification-toast': 'FileText',
+    'floating-cta': 'Layout',
+    timeline: 'FileText',
+    'kb-featured': 'FileText',
+    'kb-hub': 'FileText',
+    'kb-search': 'FileText',
+    'kb-accordion': 'FileText',
+    'smart-booking': 'FileText',
+  };
+  return iconMap;
+}
+
+/**
+ * Get block type labels mapping for UI.
+ */
+export function getBlockTypeLabels(): Record<string, string> {
+  const labels: Record<string, string> = {};
+  BLOCK_REFERENCE.forEach(block => {
+    labels[block.type] = block.name;
+  });
+  return labels;
+}
