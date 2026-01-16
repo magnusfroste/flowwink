@@ -30,6 +30,13 @@ const BLOCK_TYPE_ICONS: Record<string, React.ReactNode> = {
   youtube: <FileText className="h-4 w-4" />,
   gallery: <Image className="h-4 w-4" />,
   'info-box': <AlertCircle className="h-4 w-4" />,
+  embed: <Globe className="h-4 w-4" />,
+  testimonials: <Type className="h-4 w-4" />,
+  team: <FileText className="h-4 w-4" />,
+  features: <Layout className="h-4 w-4" />,
+  pricing: <FileText className="h-4 w-4" />,
+  logos: <Image className="h-4 w-4" />,
+  map: <Globe className="h-4 w-4" />,
 };
 
 const BLOCK_TYPE_LABELS: Record<string, string> = {
@@ -48,6 +55,13 @@ const BLOCK_TYPE_LABELS: Record<string, string> = {
   youtube: 'YouTube',
   gallery: 'Gallery',
   'info-box': 'Info Box',
+  embed: 'Embed',
+  testimonials: 'Testimonials',
+  team: 'Team',
+  features: 'Features',
+  pricing: 'Pricing',
+  logos: 'Logos',
+  map: 'Map',
 };
 
 type MigrationStep = 'input' | 'analyzing' | 'processing-images' | 'preview' | 'saving' | 'done';
@@ -59,6 +73,10 @@ interface MigrationResult {
   metadata: {
     originalTitle?: string;
     originalDescription?: string;
+    platform?: string;
+    videosFound?: number;
+    imagesFound?: number;
+    screenshotAvailable?: boolean;
     scrapedAt: string;
   };
 }
@@ -449,13 +467,29 @@ export function MigratePageDialog() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
               <Globe className="h-4 w-4" />
-              Imported from: {result.sourceUrl}
+              <span className="truncate max-w-[300px]">{result.sourceUrl}</span>
+              {result.metadata.platform && result.metadata.platform !== 'unknown' && (
+                <Badge variant="outline" className="capitalize">
+                  {result.metadata.platform}
+                </Badge>
+              )}
               {saveImagesLocally && (
-                <Badge variant="secondary" className="ml-2">
+                <Badge variant="secondary">
                   <HardDrive className="h-3 w-3 mr-1" />
                   Local images
+                </Badge>
+              )}
+              {result.metadata.videosFound && result.metadata.videosFound > 0 && (
+                <Badge variant="secondary">
+                  {result.metadata.videosFound} videos
+                </Badge>
+              )}
+              {result.metadata.imagesFound && result.metadata.imagesFound > 0 && (
+                <Badge variant="secondary">
+                  <Image className="h-3 w-3 mr-1" />
+                  {result.metadata.imagesFound} images
                 </Badge>
               )}
             </div>

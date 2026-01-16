@@ -401,9 +401,20 @@ Koppla chatten till N8N för avancerade AI-agenter med verktyg:
 - **Token-limit**: Konfigurerbar maxgräns
 - **Per-sida toggle**: Inkludera/exkludera specifika sidor
 
-### 6.2 AI-driven Sidimport
+### 6.2 AI-driven Page Import
 
----
+**Intelligent Content Migration** från valfri webbplats:
+
+| Feature | Description |
+|---------|-------------|
+| **Platform Detection** | Auto-detects WordPress, Wix, Squarespace, Webflow, Shopify, Ghost, HubSpot, Drupal, SiteVision, Episerver |
+| **Video Extraction** | YouTube, Vimeo and embedded iframes |
+| **Image Extraction** | Regular images, lazy-loaded, background-images |
+| **Screenshot Analysis** | Visual context for AI block mapping |
+| **22+ Block Types** | Hero, text, gallery, team, stats, testimonials, pricing, features, accordion, etc. |
+| **Local Storage** | Optional download of all images to media library |
+
+**Usage:** Admin → Pages → Import Page → Enter URL → AI analyzes and maps to blocks
 
 ## 7. Headless Content API
 
