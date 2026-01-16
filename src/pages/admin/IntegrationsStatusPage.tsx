@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { AdminPageContainer } from "@/components/admin/AdminPageContainer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -501,7 +502,7 @@ export default function IntegrationsStatusPage() {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <AdminPageContainer>
         <AdminPageHeader
           title="Integrations"
           description="Manage external service integrations"
@@ -772,7 +773,7 @@ export default function IntegrationsStatusPage() {
             </div>
           </CardContent>
         </Card>
-      </div>
+      </AdminPageContainer>
     </AdminLayout>
   );
 }

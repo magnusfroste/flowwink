@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Plus, Pencil, Trash2, GripVertical, Clock, DollarSign } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
+import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
 import {
   useBookingServices,
   useCreateService,
@@ -96,7 +97,7 @@ export default function BookingServicesPage() {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <AdminPageContainer>
         <AdminPageHeader
           title="Services"
           description="Manage bookable services"
@@ -287,7 +288,7 @@ export default function BookingServicesPage() {
           </form>
         </DialogContent>
       </Dialog>
-      </div>
+      </AdminPageContainer>
     </AdminLayout>
   );
 }

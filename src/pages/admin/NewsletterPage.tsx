@@ -4,6 +4,7 @@ import { Mail, Users, Send, Plus, Trash2, Eye, Edit2, Calendar, BarChart3, Link2
 import { supabase } from "@/integrations/supabase/client";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { AdminPageContainer } from "@/components/admin/AdminPageContainer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -287,7 +288,7 @@ export default function NewsletterPage() {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <AdminPageContainer>
         <AdminPageHeader
           title="Newsletter"
           description="Manage subscribers and send email campaigns"
@@ -942,7 +943,7 @@ export default function NewsletterPage() {
             )}
           </DialogContent>
         </Dialog>
-      </div>
+      </AdminPageContainer>
     </AdminLayout>
   );
 }
