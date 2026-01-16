@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Live Agent Chat Avatars**: Agent profile photos now display in chat widget for personalized support experience
+- **Sentiment Detection**: Real-time AI-powered sentiment analysis during conversations
+  - Automatic frustration detection (caps, repeated questions, negative words)
+  - Configurable threshold (1-10 scale) for human handoff triggers
+  - Visual sentiment indicator on Live Support page (green/yellow/red)
+- **Human Handoff Improvements**: Enhanced escalation with explicit "speak to human" detection
+- **Live Support Dashboard Widget**: New admin dashboard widget showing:
+  - Active and waiting conversations
+  - Online agent count
+  - Average sentiment metrics
+  - Quick access to support queue
+
+### Changed
+- Support agents table now has public read access for chat widget avatar display
+- Improved agent presence detection in chat conversations
+
+### Fixed
+- Agent avatars now correctly display for anonymous chat visitors (RLS policy update)
+- Profile avatar URL properly fetched from profiles_public view
+
 ## [1.1.0] - 2026-01-16
 
 ### Added
