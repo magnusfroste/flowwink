@@ -22,7 +22,7 @@ interface ChatMessageProps {
   previousUserMessage?: string;
   showFeedback?: boolean;
   agentInfo?: AgentInfo | null;
-  isWithLiveAgent?: boolean;
+  isFromAgent?: boolean; // True if this specific message is from a live agent
   liveAgentIconStyle?: LiveAgentIconStyle;
 }
 
@@ -35,7 +35,7 @@ export function ChatMessage({
   previousUserMessage,
   showFeedback = true,
   agentInfo,
-  isWithLiveAgent = false,
+  isFromAgent = false,
   liveAgentIconStyle = 'avatar',
 }: ChatMessageProps) {
   const [copied, setCopied] = useState(false);
@@ -48,8 +48,8 @@ export function ChatMessage({
   };
 
   const renderAssistantAvatar = () => {
-    // If we're with a live agent, render based on the icon style setting
-    if (!isUser && isWithLiveAgent) {
+    // Only show live agent icon for messages actually from a live agent
+    if (!isUser && isFromAgent) {
       switch (liveAgentIconStyle) {
         case 'avatar':
           if (agentInfo?.avatarUrl) {

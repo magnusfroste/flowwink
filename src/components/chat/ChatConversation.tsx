@@ -100,7 +100,7 @@ export function ChatConversation({
                   previousUserMessage={previousUserMessage}
                   showFeedback={showFeedback && message.role === 'assistant' && !!message.content}
                   agentInfo={agentInfo}
-                  isWithLiveAgent={isWithLiveAgent}
+                  isFromAgent={message.isFromAgent}
                   liveAgentIconStyle={liveAgentIconStyle}
                 />
               );

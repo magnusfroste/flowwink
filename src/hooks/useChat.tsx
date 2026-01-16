@@ -8,6 +8,7 @@ export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   createdAt: Date;
+  isFromAgent?: boolean; // True if message is from live agent (not AI)
 }
 
 export interface AgentInfo {
@@ -119,6 +120,7 @@ export function useChat(options?: UseChatOptions) {
           role: (m.role === 'user' ? 'user' : 'assistant') as 'user' | 'assistant',
           content: m.content,
           createdAt: new Date(m.created_at),
+          isFromAgent: m.role === 'agent', // Track if message is from live agent
         })));
       }
     };
@@ -266,6 +268,7 @@ export function useChat(options?: UseChatOptions) {
                 role: 'assistant' as const,
                 content: newMessage.content,
                 createdAt: new Date(newMessage.created_at),
+                isFromAgent: true, // This message is from live agent
               }];
             });
           }
