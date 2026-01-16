@@ -401,6 +401,41 @@ Koppla chatten till N8N för avancerade AI-agenter med verktyg:
 - **Token-limit**: Konfigurerbar maxgräns
 - **Per-sida toggle**: Inkludera/exkludera specifika sidor
 
+#### Human Handoff & Live Agent Support
+
+FlowWink supports seamless escalation from AI to human agents:
+
+| Feature | Description |
+|---------|-------------|
+| **Automatic Escalation** | AI detects frustration signals (caps, repeated questions, negative words) |
+| **Explicit Request** | User says "speak to human", "talk to agent", etc. |
+| **Sentiment Detection** | Real-time sentiment scoring (1-10 scale) with configurable threshold |
+| **Agent Avatars** | Live agents display with profile photos in chat widget |
+| **Presence System** | Real-time agent online/offline/away/busy status |
+| **Queue Management** | Waiting conversations ordered by priority and time |
+
+**Sentiment Analysis Flow:**
+```
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│   User Message  │ ──► │  AI Analysis    │ ──► │  Handoff Check  │
+│   "THIS IS BAD" │     │  Score: 7/10    │     │  Threshold: 5   │
+└─────────────────┘     └─────────────────┘     └─────────────────┘
+                                                        │
+                                                        ▼
+                                              ┌─────────────────┐
+                                              │  Human Handoff  │
+                                              │  Agent Notified │
+                                              └─────────────────┘
+```
+
+**Live Support Dashboard:**
+- Active conversation count
+- Waiting queue size
+- Online agent count
+- Average sentiment indicator (green/yellow/red)
+- Quick access to support queue
+
+
 ### 6.2 AI-driven Page Import
 
 **Intelligent Content Migration** från valfri webbplats:

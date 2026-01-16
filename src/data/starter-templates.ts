@@ -2867,6 +2867,12 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
         'How do I book an appointment?',
         'Is my data kept private?',
       ],
+      // Live agent support for healthcare
+      humanHandoffEnabled: true,
+      sentimentDetectionEnabled: true,
+      sentimentThreshold: 5,
+      showLiveAgentBanner: true,
+      liveAgentIconStyle: 'avatar',
     },
     headerSettings: {
       variant: 'mega-menu',
