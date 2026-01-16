@@ -36,13 +36,13 @@ interface CopilotChatProps {
   onRejectModules: () => void;
 }
 
-const WELCOME_MESSAGE = `Tell me about your business and I'll help you build the perfect website. What's your company name and what do you do?`;
+const WELCOME_MESSAGE = `Tell me about your business and I'll help you build the perfect website — or share a URL to migrate an existing site!`;
 
 const STARTER_PROMPTS = [
   'Beauty salon',
   'Consulting agency',
   'Restaurant',
-  'E-commerce store',
+  'Migrate my site',
 ];
 
 const SUGGESTED_BLOCKS = [

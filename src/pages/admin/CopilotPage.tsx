@@ -2,12 +2,12 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bot, Sparkles, Wand2 } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useCopilot } from '@/hooks/useCopilot';
 import { CopilotChat } from '@/components/admin/copilot/CopilotChat';
 import { CopilotPreviewPanel } from '@/components/admin/copilot/CopilotPreviewPanel';
+import { CopilotMigrationPreview } from '@/components/admin/copilot/CopilotMigrationPreview';
 import { CreateFromCopilotDialog } from '@/components/admin/copilot/CreateFromCopilotDialog';
 
 export default function CopilotPage() {
@@ -69,15 +69,26 @@ export default function CopilotPage() {
             />
           </div>
 
-          {/* Right panel - Preview */}
+          {/* Right panel - Preview or Migration */}
           <div className="w-1/2 flex flex-col bg-muted/30">
-            <CopilotPreviewPanel
-              blocks={copilot.blocks}
-              onApprove={copilot.approveBlock}
-              onReject={copilot.rejectBlock}
-              onRegenerate={copilot.regenerateBlock}
-              moduleRecommendation={copilot.moduleRecommendation}
-            />
+            {copilot.migrationState.isActive ? (
+              <CopilotMigrationPreview
+                migrationState={copilot.migrationState}
+                onApprove={copilot.approveMigrationBlock}
+                onSkip={copilot.skipMigrationBlock}
+                onEdit={copilot.editMigrationBlock}
+                onMigrateNextPage={copilot.migrateNextPage}
+                isLoading={copilot.isLoading}
+              />
+            ) : (
+              <CopilotPreviewPanel
+                blocks={copilot.blocks}
+                onApprove={copilot.approveBlock}
+                onReject={copilot.rejectBlock}
+                onRegenerate={copilot.regenerateBlock}
+                moduleRecommendation={copilot.moduleRecommendation}
+              />
+            )}
           </div>
         </div>
       </div>
