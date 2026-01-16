@@ -3,6 +3,13 @@ import { User, Bot, Copy, Check } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ChatFeedback } from './ChatFeedback';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+
+interface AgentInfo {
+  id: string;
+  fullName: string | null;
+  avatarUrl: string | null;
+}
 
 interface ChatMessageProps {
   role: 'user' | 'assistant';
@@ -12,6 +19,8 @@ interface ChatMessageProps {
   conversationId?: string;
   previousUserMessage?: string;
   showFeedback?: boolean;
+  agentInfo?: AgentInfo | null;
+  showAgentAvatar?: boolean;
 }
 
 export function ChatMessage({ 
@@ -22,6 +31,8 @@ export function ChatMessage({
   conversationId,
   previousUserMessage,
   showFeedback = true,
+  agentInfo,
+  showAgentAvatar = false,
 }: ChatMessageProps) {
   const [copied, setCopied] = useState(false);
   const isUser = role === 'user';
@@ -32,16 +43,33 @@ export function ChatMessage({
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // Show agent avatar if enabled and agent info is available
+  const shouldShowAgentAvatar = !isUser && showAgentAvatar && agentInfo;
+
+  const renderAssistantAvatar = () => {
+    if (shouldShowAgentAvatar && agentInfo) {
+      return (
+        <Avatar className="h-8 w-8">
+          <AvatarImage src={agentInfo.avatarUrl || undefined} alt={agentInfo.fullName || 'Agent'} />
+          <AvatarFallback className="bg-primary/10 text-primary text-xs">
+            {agentInfo.fullName?.split(' ').map(n => n[0]).join('').slice(0, 2) || 'AG'}
+          </AvatarFallback>
+        </Avatar>
+      );
+    }
+    return (
+      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+        <Bot className="w-4 h-4 text-primary" />
+      </div>
+    );
+  };
+
   return (
     <div className={cn(
       'flex gap-3 py-4 px-4 group',
       isUser ? 'justify-end' : 'justify-start'
     )}>
-      {!isUser && (
-        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-          <Bot className="w-4 h-4 text-primary" />
-        </div>
-      )}
+      {!isUser && renderAssistantAvatar()}
       
       <div className={cn(
         'relative max-w-[80%] rounded-2xl px-4 py-3',

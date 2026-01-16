@@ -35,6 +35,7 @@ export function ChatConversation({
     isLoading,
     error,
     isWithLiveAgent,
+    agentInfo,
     sendMessage,
     cancelRequest,
   } = useChat({ conversationId, onNewConversation });
@@ -57,6 +58,7 @@ export function ChatConversation({
   const showEmptyState = messages.length === 0 && !isLoading;
   const showTypingIndicator = isLoading && messages[messages.length - 1]?.role === 'user';
   const showFeedback = settings?.feedbackEnabled ?? true;
+  const showAgentAvatar = (settings?.showAgentAvatar ?? true) && isWithLiveAgent;
 
   return (
     <div className={cn(
@@ -96,6 +98,8 @@ export function ChatConversation({
                   conversationId={conversationId}
                   previousUserMessage={previousUserMessage}
                   showFeedback={showFeedback && message.role === 'assistant' && !!message.content}
+                  agentInfo={agentInfo}
+                  showAgentAvatar={showAgentAvatar}
                 />
               );
             })}
