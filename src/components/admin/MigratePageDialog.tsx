@@ -8,7 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Loader2, Download, Sparkles, Globe, CheckCircle2, AlertCircle, FileText, Image, Layout, Type, HardDrive, Video, Play } from 'lucide-react';
+import { Loader2, Download, Sparkles, Globe, CheckCircle2, AlertCircle, FileText, Image, Layout, Type, HardDrive, Video, Play, Wand2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useCreatePage } from '@/hooks/usePages';
 import { supabase } from '@/integrations/supabase/client';
@@ -59,6 +59,8 @@ interface MigrationResult {
     videosFound?: number;
     heroVideosFound?: number;
     imagesFound?: number;
+    lottieAnimationsFound?: number;
+    svgAnimationsFound?: number;
     screenshotAvailable?: boolean;
     scrapedAt: string;
   };
@@ -483,6 +485,18 @@ export function MigratePageDialog() {
                 <Badge variant="secondary">
                   <Image className="h-3 w-3 mr-1" />
                   {result.metadata.imagesFound} images
+                </Badge>
+              )}
+              {(result.metadata.lottieAnimationsFound ?? 0) > 0 && (
+                <Badge variant="default" className="bg-purple-600">
+                  <Wand2 className="h-3 w-3 mr-1" />
+                  {result.metadata.lottieAnimationsFound} Lottie
+                </Badge>
+              )}
+              {(result.metadata.svgAnimationsFound ?? 0) > 0 && (
+                <Badge variant="secondary" className="border-purple-300">
+                  <Sparkles className="h-3 w-3 mr-1" />
+                  {result.metadata.svgAnimationsFound} SVG anim
                 </Badge>
               )}
             </div>

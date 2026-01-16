@@ -108,6 +108,17 @@ GEMINI_API_KEY=...
 - **Hero Video Extraction:** Detects HTML5 background videos (MP4/WebM) commonly used in hero sections, preserving them as video backgrounds in imported hero blocks
 - **Video Extraction:** Finds YouTube and Vimeo videos embedded on the page
 - **Direct Video Support:** Extracts direct video file URLs (MP4, WebM, MOV) from video tags, data attributes, and background styles
+- **Lottie Animation Extraction:** Detects Lottie animations from:
+  - `<lottie-player>` and `<dotlottie-player>` web components
+  - `<dotlottie-wc>` elements
+  - `<amp-bodymovin-animation>` (AMP)
+  - `lottie.loadAnimation()` and `bodymovin.loadAnimation()` script calls
+  - Data attributes referencing .lottie or .json files
+  - lottie.host and lottiefiles.com URLs
+- **SVG Animation Extraction:** Detects animated SVGs:
+  - External SVG files with animation hints in class names
+  - Inline SVGs with SMIL animations (`<animate>`, `<animateTransform>`, `<animateMotion>`)
+  - Inline SVGs with CSS keyframe animations
 - **Image Extraction:** Extracts all images including lazy-loaded and background images
 - **Screenshot Context:** Captures page screenshot for AI visual analysis
 - **Block Mapping:** Maps content to 33+ block types (hero, text, gallery, team, stats, testimonials, etc.)
@@ -119,6 +130,9 @@ The importer now intelligently detects hero sections with video backgrounds:
 - Extracts MP4/WebM sources and poster images
 - Creates hero blocks with `backgroundType: 'video'` when video is found
 - Falls back to OG image as `backgroundType: 'image'` when no video is present
+
+**Animation Block Support:**
+Lottie and SVG animations are imported as "embed" blocks with the animation URL, allowing for later playback or conversion to native animation components.
 
 **Edge Function:**
 - `migrate-page` (scraping + AI conversion)
