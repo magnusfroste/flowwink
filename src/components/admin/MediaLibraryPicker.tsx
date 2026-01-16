@@ -22,6 +22,7 @@ interface StorageFile {
     size?: number;
     mimetype?: string;
   } | null;
+  folder: string;
 }
 
 interface UnsplashPhoto {
@@ -41,7 +42,7 @@ interface MediaLibraryPickerProps {
 
 export function MediaLibraryPicker({ open, onOpenChange, onSelect }: MediaLibraryPickerProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedFile, setSelectedFile] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<{ folder: string; name: string } | null>(null);
   const [activeTab, setActiveTab] = useState<'library' | 'unsplash'>('library');
   
   // Unsplash state
@@ -57,14 +58,28 @@ export function MediaLibraryPicker({ open, onOpenChange, onSelect }: MediaLibrar
   const { data: files, isLoading: isLoadingFiles } = useQuery({
     queryKey: ['media-library-picker'],
     queryFn: async () => {
-      const { data, error } = await supabase.storage
-        .from('cms-images')
-        .list('pages', {
+      // Fetch from all folders like useMediaLibrary does
+      const [pagesResult, importsResult, templatesResult] = await Promise.all([
+        supabase.storage.from('cms-images').list('pages', {
           sortBy: { column: 'created_at', order: 'desc' },
-        });
+        }),
+        supabase.storage.from('cms-images').list('imports', {
+          sortBy: { column: 'created_at', order: 'desc' },
+        }),
+        supabase.storage.from('cms-images').list('templates', {
+          sortBy: { column: 'created_at', order: 'desc' },
+        }),
+      ]);
 
-      if (error) throw error;
-      return data as StorageFile[];
+      const pagesFiles = (pagesResult.data || []).map(f => ({ ...f, folder: 'pages' }));
+      const importsFiles = (importsResult.data || []).map(f => ({ ...f, folder: 'imports' }));
+      const templatesFiles = (templatesResult.data || []).map(f => ({ ...f, folder: 'templates' }));
+      
+      const allFiles = [...pagesFiles, ...importsFiles, ...templatesFiles].sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+
+      return allFiles as StorageFile[];
     },
     enabled: open && activeTab === 'library',
   });
@@ -84,10 +99,10 @@ export function MediaLibraryPicker({ open, onOpenChange, onSelect }: MediaLibrar
     enabled: open && activeTab === 'unsplash' && debouncedUnsplashQuery.length > 0,
   });
 
-  const getPublicUrl = (fileName: string) => {
+  const getPublicUrl = (folder: string, fileName: string) => {
     const { data } = supabase.storage
       .from('cms-images')
-      .getPublicUrl(`pages/${fileName}`);
+      .getPublicUrl(`${folder}/${fileName}`);
     return data.publicUrl;
   };
 
@@ -112,7 +127,7 @@ export function MediaLibraryPicker({ open, onOpenChange, onSelect }: MediaLibrar
 
   const handleSelect = () => {
     if (activeTab === 'library' && selectedFile) {
-      onSelect(getPublicUrl(selectedFile));
+      onSelect(getPublicUrl(selectedFile.folder, selectedFile.name));
       setSelectedFile(null);
       onOpenChange(false);
     } else if (activeTab === 'unsplash' && selectedUnsplashPhoto) {
@@ -222,31 +237,34 @@ export function MediaLibraryPicker({ open, onOpenChange, onSelect }: MediaLibrar
                   </div>
                 ) : (
                   <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 p-1">
-                    {filteredFiles.map((file) => (
-                      <button
-                        key={file.id}
-                        onClick={() => setSelectedFile(file.name)}
-                        className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${
-                          selectedFile === file.name 
-                            ? 'border-primary ring-2 ring-primary/20' 
-                            : 'border-transparent hover:border-muted-foreground/30'
-                        }`}
-                      >
-                        <img
-                          src={getPublicUrl(file.name)}
-                          alt={file.name}
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                        />
-                        {selectedFile === file.name && (
-                          <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
-                            <div className="bg-primary text-primary-foreground rounded-full p-1">
-                              <Check className="h-4 w-4" />
+                    {filteredFiles.map((file) => {
+                      const isSelected = selectedFile?.folder === file.folder && selectedFile?.name === file.name;
+                      return (
+                        <button
+                          key={`${file.folder}/${file.id}`}
+                          onClick={() => setSelectedFile({ folder: file.folder, name: file.name })}
+                          className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${
+                            isSelected 
+                              ? 'border-primary ring-2 ring-primary/20' 
+                              : 'border-transparent hover:border-muted-foreground/30'
+                          }`}
+                        >
+                          <img
+                            src={getPublicUrl(file.folder, file.name)}
+                            alt={file.name}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                          {isSelected && (
+                            <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                              <div className="bg-primary text-primary-foreground rounded-full p-1">
+                                <Check className="h-4 w-4" />
+                              </div>
                             </div>
-                          </div>
-                        )}
-                      </button>
-                    ))}
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </div>
