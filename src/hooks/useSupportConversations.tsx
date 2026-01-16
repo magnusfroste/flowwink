@@ -263,18 +263,32 @@ export function useConversationMessages(conversationId: string | null) {
   // Send a message as agent
   const sendMessage = useMutation({
     mutationFn: async (content: string) => {
-      if (!conversationId) throw new Error('No conversation');
+      if (!conversationId) {
+        console.error('sendMessage: No conversation ID');
+        throw new Error('No conversation selected');
+      }
 
-      const { error } = await supabase.from('chat_messages').insert({
+      console.log('sendMessage: Sending to conversation', conversationId, 'content:', content);
+
+      const { data, error } = await supabase.from('chat_messages').insert({
         conversation_id: conversationId,
         role: 'agent',
         content,
-      });
+      }).select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('sendMessage: Error inserting message', error);
+        throw error;
+      }
+
+      console.log('sendMessage: Message sent successfully', data);
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['conversation-messages', conversationId] });
+    },
+    onError: (error) => {
+      console.error('sendMessage mutation error:', error);
     },
   });
 
