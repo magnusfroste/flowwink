@@ -1,7 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
+import packageJson from '../../package.json';
 
-const CURRENT_VERSION = '1.0.0-beta.1';
 const GITHUB_REPO = 'magnusfroste/flowwink';
+
+// Read version from package.json
+const CURRENT_VERSION = packageJson.version;
 
 interface GitHubRelease {
   tag_name: string;
