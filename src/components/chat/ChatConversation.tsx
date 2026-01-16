@@ -5,6 +5,7 @@ import { ChatMessage } from './ChatMessage';
 import { ChatInput } from './ChatInput';
 import { ChatEmptyState } from './ChatEmptyState';
 import { ChatTypingIndicator } from './ChatTypingIndicator';
+import { LiveAgentIndicator } from './LiveAgentIndicator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -33,6 +34,7 @@ export function ChatConversation({
     messages,
     isLoading,
     error,
+    isWithLiveAgent,
     sendMessage,
     cancelRequest,
   } = useChat({ conversationId, onNewConversation });
@@ -62,6 +64,9 @@ export function ChatConversation({
       mode === 'widget' && 'rounded-t-xl',
       className
     )}>
+      {/* Live agent indicator */}
+      {isWithLiveAgent && <LiveAgentIndicator />}
+      
       {/* Messages area */}
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
         {showEmptyState ? (
