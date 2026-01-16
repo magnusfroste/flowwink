@@ -202,6 +202,13 @@ export interface ChatSettings {
   // System prompt
   systemPrompt: string;
   
+  // Tool Calling (Agentic AI)
+  toolCallingEnabled: boolean;
+  firecrawlSearchEnabled: boolean;
+  humanHandoffEnabled: boolean;
+  sentimentDetectionEnabled: boolean;
+  sentimentThreshold: number; // 0-10, triggers handoff when exceeded
+  
   // Widget-inställningar
   widgetEnabled: boolean;
   widgetPosition: 'bottom-right' | 'bottom-left';
@@ -257,6 +264,11 @@ const defaultChatSettings: ChatSettings = {
   n8nTriggerMode: 'always',
   n8nTriggerKeywords: [],
   systemPrompt: 'Du är en hjälpsam AI-assistent för en svensk organisation. Svara alltid på svenska om inte användaren skriver på ett annat språk.',
+  toolCallingEnabled: false,
+  firecrawlSearchEnabled: false,
+  humanHandoffEnabled: false,
+  sentimentDetectionEnabled: true,
+  sentimentThreshold: 7,
   widgetEnabled: false,
   widgetPosition: 'bottom-right',
   widgetButtonText: 'Chatta med oss',
