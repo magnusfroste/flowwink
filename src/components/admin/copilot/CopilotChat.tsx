@@ -17,7 +17,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
-import type { CopilotMessage, ModuleRecommendation, CopilotBlock, MigrationState } from '@/hooks/useCopilot';
+import type { CopilotMessage, ModuleRecommendation, CopilotBlock, MigrationState, DiscoveryStatus } from '@/hooks/useCopilot';
 import { defaultModulesSettings } from '@/hooks/useModules';
 
 interface CopilotChatProps {
@@ -34,6 +34,8 @@ interface CopilotChatProps {
   onAcceptModules: () => void;
   onRejectModules: () => void;
   migrationState?: MigrationState;
+  onAnalyzeSite: (url: string) => Promise<void>;
+  discoveryStatus: DiscoveryStatus;
 }
 
 const WELCOME_MESSAGE = `👋 Hi! I'm FlowPilot, your AI migration assistant.\n\nPaste a URL and I'll migrate your entire website — all pages, blog posts, and knowledge base articles. I'll guide you through each step!`;
@@ -74,6 +76,8 @@ export function CopilotChat({
   moduleRecommendation,
   onAcceptModules,
   onRejectModules,
+  onAnalyzeSite,
+  discoveryStatus,
 }: CopilotChatProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [input, setInput] = useState('');
@@ -87,7 +91,17 @@ export function CopilotChat({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (input.trim() && !isLoading) {
-      onSendMessage(input.trim());
+      const trimmedInput = input.trim();
+      
+      // Check if input contains a URL - trigger site analysis
+      const urlMatch = trimmedInput.match(/https?:\/\/[^\s]+/);
+      if (urlMatch) {
+        onAnalyzeSite(urlMatch[0]);
+        setInput('');
+        return;
+      }
+      
+      onSendMessage(trimmedInput);
       setInput('');
     }
   };

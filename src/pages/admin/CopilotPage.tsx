@@ -66,6 +66,8 @@ export default function CopilotPage() {
               moduleRecommendation={copilot.moduleRecommendation}
               onAcceptModules={copilot.acceptModules}
               onRejectModules={copilot.rejectModules}
+              onAnalyzeSite={copilot.analyzeSite}
+              discoveryStatus={copilot.migrationState.discoveryStatus}
             />
           </div>
 
@@ -90,6 +92,10 @@ export default function CopilotPage() {
                 onReject={copilot.rejectBlock}
                 onRegenerate={copilot.regenerateBlock}
                 moduleRecommendation={copilot.moduleRecommendation}
+                migrationState={copilot.migrationState}
+                onTogglePage={copilot.togglePageSelection}
+                onStartMigration={copilot.migrateSelectedPages}
+                isLoading={copilot.isLoading}
               />
             )}
           </div>

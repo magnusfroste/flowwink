@@ -1,12 +1,13 @@
 import { useState } from 'react';
-import { Monitor, Tablet, Smartphone, Layers, Check, Package } from 'lucide-react';
+import { Monitor, Tablet, Smartphone, Layers, Check, Package, Globe } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { CopilotArtifact } from './CopilotArtifact';
-import type { CopilotBlock, ModuleRecommendation } from '@/hooks/useCopilot';
+import { CopilotSiteOverview } from './CopilotSiteOverview';
+import type { CopilotBlock, ModuleRecommendation, MigrationState } from '@/hooks/useCopilot';
 import { defaultModulesSettings } from '@/hooks/useModules';
 
 interface CopilotPreviewPanelProps {
@@ -15,6 +16,10 @@ interface CopilotPreviewPanelProps {
   onReject: (blockId: string) => void;
   onRegenerate: (blockId: string, feedback?: string) => void;
   moduleRecommendation: ModuleRecommendation | null;
+  migrationState: MigrationState;
+  onTogglePage: (url: string) => void;
+  onStartMigration: () => void;
+  isLoading: boolean;
 }
 
 type DeviceMode = 'desktop' | 'tablet' | 'mobile';
@@ -25,14 +30,19 @@ export function CopilotPreviewPanel({
   onReject,
   onRegenerate,
   moduleRecommendation,
+  migrationState,
+  onTogglePage,
+  onStartMigration,
+  isLoading,
 }: CopilotPreviewPanelProps) {
   const [deviceMode, setDeviceMode] = useState<DeviceMode>('desktop');
-  const [activeTab, setActiveTab] = useState<'blocks' | 'modules'>('blocks');
+  const [activeTab, setActiveTab] = useState<'site' | 'blocks' | 'modules'>(() => {
+    return migrationState.siteStructure ? 'site' : 'blocks';
+  });
 
-  // All blocks are now auto-approved, so we just show them all
   const activeBlocks = blocks.filter(b => b.status !== 'rejected');
-
   const isEmpty = blocks.length === 0 && !moduleRecommendation;
+  const hasSiteStructure = !!migrationState.siteStructure;
 
   return (
     <div className="flex flex-col h-full">
@@ -40,6 +50,15 @@ export function CopilotPreviewPanel({
       <div className="flex items-center justify-between px-4 py-3 border-b bg-background">
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
           <TabsList className="h-8">
+            <TabsTrigger value="site" className="text-xs px-3 gap-1.5">
+              <Globe className="h-3.5 w-3.5" />
+              Site
+              {hasSiteStructure && migrationState.siteStructure && (
+                <Badge variant="secondary" className="h-4 px-1 text-[10px]">
+                  {migrationState.siteStructure.pages.length}
+                </Badge>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="blocks" className="text-xs px-3 gap-1.5">
               <Layers className="h-3.5 w-3.5" />
               Blocks
@@ -56,38 +75,50 @@ export function CopilotPreviewPanel({
           </TabsList>
         </Tabs>
 
-        {/* Device toggle */}
-        <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
-          <Button
-            variant={deviceMode === 'desktop' ? 'secondary' : 'ghost'}
-            size="icon"
-            className="h-7 w-7"
-            onClick={() => setDeviceMode('desktop')}
-          >
-            <Monitor className="h-3.5 w-3.5" />
-          </Button>
-          <Button
-            variant={deviceMode === 'tablet' ? 'secondary' : 'ghost'}
-            size="icon"
-            className="h-7 w-7"
-            onClick={() => setDeviceMode('tablet')}
-          >
-            <Tablet className="h-3.5 w-3.5" />
-          </Button>
-          <Button
-            variant={deviceMode === 'mobile' ? 'secondary' : 'ghost'}
-            size="icon"
-            className="h-7 w-7"
-            onClick={() => setDeviceMode('mobile')}
-          >
-            <Smartphone className="h-3.5 w-3.5" />
-          </Button>
-        </div>
+        {/* Device toggle - only show for blocks tab */}
+        {activeTab === 'blocks' && (
+          <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+            <Button
+              variant={deviceMode === 'desktop' ? 'secondary' : 'ghost'}
+              size="icon"
+              className="h-7 w-7"
+              onClick={() => setDeviceMode('desktop')}
+            >
+              <Monitor className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant={deviceMode === 'tablet' ? 'secondary' : 'ghost'}
+              size="icon"
+              className="h-7 w-7"
+              onClick={() => setDeviceMode('tablet')}
+            >
+              <Tablet className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant={deviceMode === 'mobile' ? 'secondary' : 'ghost'}
+              size="icon"
+              className="h-7 w-7"
+              onClick={() => setDeviceMode('mobile')}
+            >
+              <Smartphone className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Content */}
-      <ScrollArea className="flex-1">
-        {activeTab === 'blocks' && (
+      {activeTab === 'site' && (
+        <CopilotSiteOverview
+          siteStructure={migrationState.siteStructure}
+          discoveryStatus={migrationState.discoveryStatus}
+          onTogglePage={onTogglePage}
+          onStartMigration={onStartMigration}
+          isLoading={isLoading}
+        />
+      )}
+
+      {activeTab === 'blocks' && (
+        <ScrollArea className="flex-1">
           <div className="p-4 space-y-4">
             {isEmpty ? (
               <EmptyState />
@@ -110,14 +141,16 @@ export function CopilotPreviewPanel({
               </div>
             )}
           </div>
-        )}
+        </ScrollArea>
+      )}
 
-        {activeTab === 'modules' && (
+      {activeTab === 'modules' && (
+        <ScrollArea className="flex-1">
           <div className="p-4 space-y-4">
             <ModulesPreview recommendation={moduleRecommendation} />
           </div>
-        )}
-      </ScrollArea>
+        </ScrollArea>
+      )}
     </div>
   );
 }
