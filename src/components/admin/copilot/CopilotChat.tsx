@@ -33,11 +33,11 @@ interface CopilotChatProps {
   discoveryStatus: DiscoveryStatus;
 }
 
-const WELCOME_MESSAGE = `👋 Hi! I'm FlowPilot, your AI migration assistant.\n\nPaste a URL and I'll migrate your entire website — all pages, blog posts, and knowledge base articles. I'll guide you through each step!`;
+const WELCOME_MESSAGE = `👋 Hi! I'm FlowPilot, your AI migration assistant.\n\nPaste a URL and I'll migrate your entire website automatically — pages, blog posts, and knowledge base articles.\n\nOr describe your business and I'll build you a new site from scratch!`;
 
 const STARTER_PROMPTS = [
-  { label: 'Migrate my site', icon: Globe },
-  { label: 'Build from scratch', icon: Wand2 },
+  { label: 'Migrate my site', icon: Globe, hint: 'Paste your URL' },
+  { label: 'Build from scratch', icon: Wand2, hint: 'Describe your business' },
 ];
 
 const SUGGESTED_BLOCKS = [
@@ -55,6 +55,13 @@ const FULL_PAGE_PROMPT = `Create a complete landing page for me with these secti
 5. Contact form
 
 Create them one at a time, starting with the hero.`;
+
+// Quick action hints during migration
+const MIGRATION_HINTS = [
+  { command: 'yes', label: 'Keep it' },
+  { command: 'skip', label: 'Skip' },
+  { command: 'make it shorter', label: 'Shorter' },
+];
 
 export function CopilotChat({
   messages,
@@ -185,8 +192,8 @@ export function CopilotChat({
             </div>
           ))}
 
-          {/* Continue building button - primary action after block created */}
-          {hasBlocks && !isLoading && suggestedNext.length > 0 && (
+          {/* Quick action hints during migration - show only when NOT in discovery/migration mode */}
+          {hasBlocks && !isLoading && suggestedNext.length > 0 && discoveryStatus !== 'migrating' && discoveryStatus !== 'ready' && (
             <div className="pt-2 space-y-2">
               <Button
                 onClick={() => onSendMessage(`Continue building. Add a ${suggestedNext[0].label.toLowerCase()} section next.`)}
@@ -214,6 +221,26 @@ export function CopilotChat({
                   ))}
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Migration quick actions - conversational commands */}
+          {discoveryStatus === 'migrating' && !isLoading && (
+            <div className="pt-2">
+              <div className="flex flex-wrap gap-1.5 justify-center">
+                <span className="text-[10px] text-muted-foreground w-full text-center mb-1">Quick commands:</span>
+                {MIGRATION_HINTS.map((hint) => (
+                  <Button
+                    key={hint.command}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onSendMessage(hint.command)}
+                    className="text-xs h-6 px-3"
+                  >
+                    {hint.label}
+                  </Button>
+                ))}
+              </div>
             </div>
           )}
 

@@ -38,7 +38,8 @@ export default function CopilotPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            {hasApprovedBlocks && (
+            {/* Only show Create page button when NOT in discovery/migration mode */}
+            {hasApprovedBlocks && copilot.migrationState.discoveryStatus !== 'migrating' && copilot.migrationState.discoveryStatus !== 'ready' && (
               <Button onClick={() => setShowCreateDialog(true)}>
                 <Wand2 className="h-4 w-4 mr-2" />
                 Create page ({copilot.approvedBlocks.length} blocks)
@@ -88,7 +89,6 @@ export default function CopilotPage() {
                 onRegenerate={copilot.regenerateBlock}
                 migrationState={copilot.migrationState}
                 onTogglePage={copilot.togglePageSelection}
-                onStartMigration={copilot.migrateSelectedPages}
                 isLoading={copilot.isLoading}
               />
             )}
