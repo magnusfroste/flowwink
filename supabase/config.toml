@@ -98,3 +98,9 @@ verify_jwt = false
 
 [functions.test-ai-connection]
 verify_jwt = true
+
+[functions.research-content]
+verify_jwt = true
+
+[functions.generate-content-proposal]
+verify_jwt = true
