@@ -60,6 +60,7 @@ import BlogCategoryPage from "./pages/BlogCategoryPage";
 import BlogTagPage from "./pages/BlogTagPage";
 import ChatPage from "./pages/ChatPage";
 import NewsletterManagePage from "./pages/NewsletterManagePage";
+import NewsletterConfirmedPage from "./pages/NewsletterConfirmedPage";
 import NotFound from "./pages/NotFound";
 import CheckoutPage from "./pages/CheckoutPage";
 import CheckoutSuccessPage from "./pages/CheckoutSuccessPage";
@@ -73,6 +74,7 @@ const router = createBrowserRouter([
   { path: "/chat", element: <ChatPage /> },
   // KB routes are now handled dynamically in PublicPage based on kbSettings.menuSlug
   { path: "/newsletter/manage", element: <NewsletterManagePage /> },
+  { path: "/newsletter/confirmed", element: <NewsletterConfirmedPage /> },
   // Checkout and pricing routes
   { path: "/priser", element: <PricingPage /> },
   { path: "/checkout", element: <CheckoutPage /> },
