@@ -585,11 +585,21 @@ function extractUrlsFromSitemap(
   }
 }
 
-// Categorize URL by type
-function categorizeUrl(url: string, baseUrl: string): 'page' | 'blog' | 'kb' {
+// Categorize URL by type - platform-aware
+function categorizeUrl(url: string, baseUrl: string, platform: string = 'unknown'): 'page' | 'blog' | 'kb' {
   const path = url.replace(baseUrl, '').toLowerCase();
   
-  // Blog patterns
+  // WordPress-specific: date-based URLs are blog posts (/YYYY/MM/DD/post-name/)
+  if (platform === 'wordpress' && /^\/\d{4}\/\d{2}(\/\d{2})?\//.test(path)) {
+    return 'blog';
+  }
+  
+  // WordPress category/tag/author pages are blog archives
+  if (platform === 'wordpress' && /^\/(category|tag|author|arkiv)\//.test(path)) {
+    return 'blog';
+  }
+  
+  // Blog patterns (generic)
   if (/^\/(blog|news|articles|aktuellt|nyheter|insights|journal|posts?)(?:\/|$)/i.test(path)) {
     return 'blog';
   }
@@ -647,16 +657,16 @@ async function analyzeSiteStructure(url: string, firecrawlKey: string): Promise<
   // Combine and deduplicate
   const allPages = new Map<string, { url: string; title: string; type: 'page' | 'blog' | 'kb'; source: 'nav' | 'sitemap' }>();
   
-  // Add navigation links first (higher priority)
+  // Add navigation links first (higher priority) - use platform for categorization
   for (const link of navLinks) {
-    const type = categorizeUrl(link.url, baseUrl);
+    const type = categorizeUrl(link.url, baseUrl, platform);
     allPages.set(link.url, { url: link.url, title: link.label, type, source: 'nav' });
   }
   
   // Add sitemap pages
   for (const page of sitemapPages) {
     if (!allPages.has(page.url)) {
-      const type = categorizeUrl(page.url, baseUrl);
+      const type = categorizeUrl(page.url, baseUrl, platform);
       // Extract title from URL path
       const pathParts = page.url.replace(baseUrl, '').split('/').filter(Boolean);
       const title = pathParts[pathParts.length - 1]?.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || 'Home';
@@ -669,7 +679,16 @@ async function analyzeSiteStructure(url: string, firecrawlKey: string): Promise<
     allPages.set(baseUrl, { url: baseUrl, title: 'Home', type: 'page', source: 'nav' });
   }
   
-  const pages = Array.from(allPages.values());
+  // Sort: homepage first, then navigation order, then sitemap
+  const pages = Array.from(allPages.values()).sort((a, b) => {
+    const aIsHome = a.url === baseUrl || a.url === baseUrl + '/' || a.title.toLowerCase() === 'home' || a.title.toLowerCase() === 'hem';
+    const bIsHome = b.url === baseUrl || b.url === baseUrl + '/' || b.title.toLowerCase() === 'home' || b.title.toLowerCase() === 'hem';
+    if (aIsHome && !bIsHome) return -1;
+    if (!aIsHome && bIsHome) return 1;
+    if (a.source === 'nav' && b.source === 'sitemap') return -1;
+    if (a.source === 'sitemap' && b.source === 'nav') return 1;
+    return 0;
+  });
   const hasBlog = pages.some(p => p.type === 'blog');
   const hasKnowledgeBase = pages.some(p => p.type === 'kb');
   
@@ -818,19 +837,74 @@ serve(async (req) => {
     // Step 2: Use AI to map content to blocks
     console.log('Step 3: Mapping content to CMS blocks with AI...');
 
-    // Build enhanced context
-    const platformHints = {
-      wordpress: 'This is a WordPress site. Look for wp-content patterns, post content, and featured images.',
-      wix: 'This is a Wix site. Content may be heavily nested in divs. Focus on visible text and images.',
-      squarespace: 'This is a Squarespace site. Look for section blocks and full-bleed images.',
-      shopify: 'This is a Shopify site. Look for product info, prices, and collection layouts.',
-      webflow: 'This is a Webflow site. Look for rich interactions and custom layouts.',
-      sitevision: 'This is a SiteVision CMS (Swedish). Content structure follows Swedish conventions.',
-      episerver: 'This is an Episerver/Optimizely site. Look for structured content blocks.',
-      unknown: 'Platform unknown. Use general extraction logic.',
+    // Platform-specific prompts for specialized extraction
+    const PLATFORM_PROMPTS: Record<string, string> = {
+      wordpress: `=== WORDPRESS-SPECIFIC EXTRACTION ===
+- Images in /wp-content/uploads/ - PRESERVE these URLs exactly
+- Date URLs like /YYYY/MM/DD/slug/ are BLOG POSTS - not pages
+- Look for content in .entry-content, .post-content, article classes
+- Sidebar widgets (.widget, .sidebar) are NOT main content - IGNORE
+- Cookie plugins (CookieLaw, TCKY, Complianz) - IGNORE COMPLETELY
+- "Hej världen" / "Hello World" are default placeholder posts - mark as LOW_QUALITY
+- "Powered by WordPress" footer - IGNORE
+- Social sharing buttons and widgets - IGNORE
+- Comment sections - IGNORE unless explicitly requested`,
+
+      wix: `=== WIX-SPECIFIC EXTRACTION ===
+- Content in [data-mesh-id] containers is main content
+- Images often in static.wixstatic.com - PRESERVE URLs
+- Sections use .section-* classes
+- Strip/columns layouts are common - preserve structure
+- Wix ads/branding - IGNORE
+- Premium upgrade prompts - IGNORE
+- Social bar widgets - typically IGNORE unless main feature`,
+
+      squarespace: `=== SQUARESPACE-SPECIFIC EXTRACTION ===
+- Sections in .page-section containers
+- Images in images.squarespace-cdn.com - PRESERVE URLs  
+- Block-based layouts (.sqs-block) - follow structure
+- Gallery blocks have specific structure - create gallery blocks
+- Squarespace badge/footer - IGNORE
+- Social links bar - IGNORE unless primary content`,
+
+      shopify: `=== SHOPIFY-SPECIFIC EXTRACTION ===
+- Product pages have structured data - extract into products block
+- Images in cdn.shopify.com - PRESERVE URLs
+- Collection/product URLs are E-COMMERCE content
+- Theme sections in .shopify-section
+- Announcement bars → announcement-bar block
+- Product grids → products block
+- Trust badges → badge block`,
+
+      webflow: `=== WEBFLOW-SPECIFIC EXTRACTION ===
+- Elements have w-* classes - clean semantic structure
+- Rich text in .w-richtext
+- CMS items have w-dyn-* classes
+- Interactions data in data-w-id - note for animations
+- Usually well-organized sections
+- High-quality images with srcset - use largest`,
+
+      sitevision: `=== SITEVISION-SPECIFIC EXTRACTION ===
+- Swedish CMS - content often in Swedish
+- Portlet structure (sv-portlet) 
+- Navigation patterns follow Swedish conventions
+- Contact info patterns: telefon, e-post, adress
+- Organization/myndighet pages common`,
+
+      ghost: `=== GHOST-SPECIFIC EXTRACTION ===
+- Blog-focused CMS - expect post structure
+- Clean semantic markup
+- Feature images prominent
+- Author cards common`,
+
+      unknown: `=== GENERAL EXTRACTION ===
+- Look for semantic HTML: <header>, <main>, <article>, <section>
+- Identify hero by position (first large section) and content (h1, tagline)
+- Look for repeating patterns (cards, testimonials, features)
+- Extract only meaningful content`
     };
 
-    const platformHint = platformHints[platform as keyof typeof platformHints] || platformHints.unknown;
+    const platformPrompt = PLATFORM_PROMPTS[platform] || PLATFORM_PROMPTS.unknown;
 
     let aiResponse: Response;
 
@@ -839,20 +913,30 @@ Your task is to take content from a scraped web page and transform it into struc
 
 ${BLOCK_TYPES_SCHEMA}
 
-=== PLATFORM CONTEXT ===
-${platformHint}
+${platformPrompt}
 
-=== CRITICAL RULES ===
+=== CONTENT QUALITY FILTER - CRITICAL ===
 
-CONTENT FILTERING - IGNORE:
+IGNORE COMPLETELY (do not create blocks for):
 - Navigation menus (topbar, sidebar, footer links)
-- Breadcrumbs
-- "Back" links and navigation links
-- Cookie banners and popup messages
-- Sidebars with related links (unless main content)
-- Repeated menu structures
-- Login/signup forms
-Focus ONLY on main content (typically in <main> or article area).
+- Cookie consent banners and their images (CookieLaw, TCKY, Complianz, GDPR popups)
+- Close/X button images
+- Breadcrumbs and "Back" links
+- "Powered by X" badges
+- Default placeholder content ("Hej världen", "Hello World", "Sample Page")
+- Plugin-generated content
+- Sidebar widgets (unless explicitly main content)
+- Footer links and copyright notices
+- Login/signup forms (unless main feature)
+- Social sharing buttons (unless prominent feature)
+- Comment sections
+
+QUALITY CHECK:
+- If main content has less than 100 words of actual text: add "lowQuality": true to metadata
+- If page is mostly navigation/footer: add "lowQuality": true
+- Skip promotional/cookie images: look for close.svg, cookie, consent, powered, plugin in URLs
+
+Focus ONLY on main content (typically in <main>, <article>, or primary content area).
 
 HERO BLOCK - CRITICAL (VIDEO PRIORITY):
 - If the page has a clear hero/banner section, create a "hero" block

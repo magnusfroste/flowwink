@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -46,6 +47,84 @@ RULES:
 - Track progress, avoid duplicates
 - If stuck, ask ONE specific question`;
 
+// Helper to get AI configuration from settings
+async function getAIConfiguration(): Promise<{
+  apiKey: string;
+  apiUrl: string;
+  model: string;
+  provider: string;
+}> {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  const supabase = createClient(supabaseUrl, supabaseKey);
+  
+  // Try to read AI provider from site_settings
+  const { data: integrations } = await supabase
+    .from('site_settings')
+    .select('value')
+    .eq('key', 'integrations')
+    .maybeSingle();
+
+  const aiSettings = (integrations?.value as Record<string, any>) || {};
+  
+  // Check which AI provider is enabled in settings
+  if (aiSettings?.openai?.enabled && Deno.env.get('OPENAI_API_KEY')) {
+    const config = aiSettings.openai.config || {};
+    return {
+      apiKey: Deno.env.get('OPENAI_API_KEY')!,
+      apiUrl: 'https://api.openai.com/v1/chat/completions',
+      model: config.model || 'gpt-4o-mini',
+      provider: 'openai'
+    };
+  }
+  
+  if (aiSettings?.gemini?.enabled && Deno.env.get('GEMINI_API_KEY')) {
+    const config = aiSettings.gemini.config || {};
+    return {
+      apiKey: Deno.env.get('GEMINI_API_KEY')!,
+      apiUrl: 'https://generativelanguage.googleapis.com/v1beta/models',
+      model: config.model || 'gemini-2.0-flash-exp',
+      provider: 'gemini'
+    };
+  }
+  
+  if (aiSettings?.local_llm?.enabled) {
+    const config = aiSettings.local_llm.config || {};
+    const apiKey = Deno.env.get('LOCAL_LLM_API_KEY') || '';
+    if (config.endpoint) {
+      return {
+        apiKey,
+        apiUrl: config.endpoint,
+        model: config.model || 'llama3',
+        provider: 'local'
+      };
+    }
+  }
+  
+  // Fallback: Lovable AI > OpenAI > error
+  const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+  if (lovableApiKey) {
+    return {
+      apiKey: lovableApiKey,
+      apiUrl: 'https://ai.gateway.lovable.dev/v1/chat/completions',
+      model: 'google/gemini-2.5-flash',
+      provider: 'lovable'
+    };
+  }
+  
+  const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
+  if (openaiApiKey) {
+    return {
+      apiKey: openaiApiKey,
+      apiUrl: 'https://api.openai.com/v1/chat/completions',
+      model: 'gpt-4o-mini',
+      provider: 'openai'
+    };
+  }
+  
+  throw new Error('No AI provider configured');
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -54,19 +133,13 @@ serve(async (req) => {
   try {
     const { messages, currentModules, continueAfterToolCall } = await req.json();
 
-    // Get API key from environment - prefer Lovable AI
-    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
-    const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
-    
-    const apiKey = lovableApiKey || openaiApiKey;
-    const apiUrl = lovableApiKey 
-      ? 'https://ai.gateway.lovable.dev/v1/chat/completions'
-      : 'https://api.openai.com/v1/chat/completions';
-    const model = lovableApiKey ? 'google/gemini-2.5-flash' : 'gpt-4o-mini';
-
-    if (!apiKey) {
+    // Get AI configuration from settings or environment
+    let aiConfig;
+    try {
+      aiConfig = await getAIConfiguration();
+    } catch (e) {
       return new Response(
-        JSON.stringify({ error: 'AI not configured. Please add LOVABLE_API_KEY or OPENAI_API_KEY.' }),
+        JSON.stringify({ error: 'AI not configured. Please add LOVABLE_API_KEY or OPENAI_API_KEY, or configure an AI provider in Chat Settings.' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -405,25 +478,26 @@ serve(async (req) => {
     console.log('Copilot request:', { 
       messageCount: messages.length, 
       continueAfterToolCall,
-      usingLovableAI: !!lovableApiKey 
+      provider: aiConfig.provider,
+      model: aiConfig.model
     });
 
     // Call AI
-    const response = await fetch(apiUrl, {
+    const response = await fetch(aiConfig.apiUrl, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
+        'Authorization': `Bearer ${aiConfig.apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model,
+        model: aiConfig.model,
         messages: [
           { role: 'system', content: COPILOT_SYSTEM_PROMPT },
           ...messages
         ],
         tools,
         tool_choice: 'auto',
-        ...(lovableApiKey ? {} : { temperature: 0.7 }),
+        ...(aiConfig.provider === 'lovable' ? {} : { temperature: 0.7 }),
       }),
     });
 
