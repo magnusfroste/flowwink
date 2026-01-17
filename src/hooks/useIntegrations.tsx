@@ -9,6 +9,12 @@ export interface EmailConfig {
   fromName: string;
 }
 
+// Newsletter tracking configuration
+export interface NewsletterTrackingConfig {
+  enableOpenTracking: boolean;
+  enableClickTracking: boolean;
+}
+
 // Provider-specific configuration stored per integration
 export interface IntegrationProviderConfig {
   // Common
@@ -25,6 +31,8 @@ export interface IntegrationProviderConfig {
   triggerKeywords?: string[];
   // Email (for resend integration)
   emailConfig?: EmailConfig;
+  // Newsletter tracking (for resend integration)
+  newsletterTracking?: NewsletterTrackingConfig;
 }
 
 // Integration configuration type
@@ -94,6 +102,10 @@ export const defaultIntegrationsSettings: IntegrationsSettings = {
       emailConfig: {
         fromEmail: 'onboarding@resend.dev',
         fromName: 'Newsletter',
+      },
+      newsletterTracking: {
+        enableOpenTracking: false,
+        enableClickTracking: false,
       },
     },
   },
