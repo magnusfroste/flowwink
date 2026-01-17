@@ -134,60 +134,6 @@ const VALIDATION_RULES: Record<string, { minWords?: number; maxChars?: number; m
   print: { minWords: 400 },
 };
 
-async function generateWithLovableAI(
-  systemPrompt: string,
-  userPrompt: string,
-  apiKey: string
-): Promise<any> {
-  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "google/gemini-3-flash-preview",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-      temperature: 0.8,
-      max_tokens: 8000,
-    }),
-  });
-
-  if (!response.ok) {
-    if (response.status === 429) {
-      throw new Error("Rate limit exceeded. Please try again later.");
-    }
-    if (response.status === 402) {
-      throw new Error("AI credits exhausted. Please add funds to continue.");
-    }
-    const error = await response.text();
-    throw new Error(`Lovable AI error: ${error}`);
-  }
-
-  const data = await response.json();
-  const content = data.choices?.[0]?.message?.content;
-  
-  if (!content) {
-    throw new Error("No content received from Lovable AI");
-  }
-  
-  // Parse JSON from response (handle markdown code blocks)
-  let jsonContent = content.trim();
-  if (jsonContent.startsWith("```json")) {
-    jsonContent = jsonContent.slice(7);
-  } else if (jsonContent.startsWith("```")) {
-    jsonContent = jsonContent.slice(3);
-  }
-  if (jsonContent.endsWith("```")) {
-    jsonContent = jsonContent.slice(0, -3);
-  }
-  
-  return JSON.parse(jsonContent.trim());
-}
-
 async function generateWithOpenAI(
   systemPrompt: string,
   userPrompt: string,
@@ -451,13 +397,12 @@ serve(async (req) => {
       });
     }
 
-    // Check for AI providers (priority: Lovable AI > OpenAI > Gemini > Local LLM)
-    const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
+    // Check for AI providers (priority: OpenAI > Gemini > Local LLM via N8N)
     const openaiKey = Deno.env.get("OPENAI_API_KEY");
     const geminiKey = Deno.env.get("GEMINI_API_KEY");
     const n8nWebhookUrl = Deno.env.get("N8N_WEBHOOK_URL");
 
-    if (!lovableApiKey && !openaiKey && !geminiKey && !n8nWebhookUrl) {
+    if (!openaiKey && !geminiKey && !n8nWebhookUrl) {
       return new Response(JSON.stringify({ 
         error: "No AI provider configured. Please add OPENAI_API_KEY, GEMINI_API_KEY, or N8N_WEBHOOK_URL in your environment." 
       }), {
@@ -523,9 +468,8 @@ CRITICAL: Generate comprehensive, publication-ready content. Each piece should r
     let generatedContent: any;
     let aiProvider: string = "unknown";
 
-    // Try providers in order of preference
+    // Try providers in order of preference (OpenAI > Gemini > Local LLM)
     const providers = [
-      { key: lovableApiKey, name: "lovable_ai", fn: generateWithLovableAI },
       { key: openaiKey, name: "openai", fn: generateWithOpenAI },
       { key: geminiKey, name: "gemini", fn: generateWithGemini },
       { key: n8nWebhookUrl, name: "local_llm", fn: generateWithLocalLLM },
