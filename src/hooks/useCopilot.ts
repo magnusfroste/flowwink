@@ -3,6 +3,36 @@ import { supabase } from '@/integrations/supabase/client';
 import { useUpdateModules, useModules, type ModulesSettings, defaultModulesSettings } from '@/hooks/useModules';
 import { toast } from 'sonner';
 
+// Block-to-Module mapping for auto-enabling modules
+const BLOCK_MODULE_MAP: Record<string, keyof ModulesSettings> = {
+  // Booking
+  'booking': 'bookings',
+  'smart-booking': 'bookings',
+  
+  // Blog
+  'article-grid': 'blog',
+  
+  // Knowledge Base
+  'kb-hub': 'knowledgeBase',
+  'kb-featured': 'knowledgeBase',
+  'kb-search': 'knowledgeBase',
+  'kb-accordion': 'knowledgeBase',
+  
+  // Communication
+  'chat': 'chat',
+  'newsletter': 'newsletter',
+  
+  // E-commerce
+  'products': 'products',
+  'cart': 'orders',
+  'pricing': 'products',
+  'comparison': 'products',
+  
+  // Forms
+  'form': 'forms',
+  'contact': 'forms',
+};
+
 export interface CopilotMessage {
   id: string;
   role: 'user' | 'assistant';
@@ -43,12 +73,6 @@ export interface CopilotBlock {
   sourceUrl?: string; // For migrated blocks
 }
 
-export interface ModuleRecommendation {
-  modules: (keyof ModulesSettings)[];
-  reason: string;
-  status: 'pending' | 'accepted' | 'rejected';
-}
-
 export type MigrationPhase = 'idle' | 'pages' | 'blog' | 'knowledgeBase' | 'complete';
 
 export interface MigrationState {
@@ -83,17 +107,14 @@ export interface MigrationState {
 interface UseCopilotReturn {
   messages: CopilotMessage[];
   blocks: CopilotBlock[];
-  moduleRecommendation: ModuleRecommendation | null;
   isLoading: boolean;
   error: string | null;
   isAutoContinue: boolean;
   migrationState: MigrationState;
   sendMessage: (content: string) => Promise<void>;
-  approveBlock: (blockId: string) => void;
+  approveBlock: (blockId: string) => Promise<void>;
   rejectBlock: (blockId: string) => void;
   regenerateBlock: (blockId: string, feedback?: string) => Promise<void>;
-  acceptModules: () => Promise<void>;
-  rejectModules: () => void;
   cancelRequest: () => void;
   clearConversation: () => void;
   stopAutoContinue: () => void;
@@ -145,15 +166,50 @@ const initialMigrationState: MigrationState = {
 export function useCopilot(): UseCopilotReturn {
   const [messages, setMessages] = useState<CopilotMessage[]>([]);
   const [blocks, setBlocks] = useState<CopilotBlock[]>([]);
-  const [moduleRecommendation, setModuleRecommendation] = useState<ModuleRecommendation | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isAutoContinue, setIsAutoContinue] = useState(false);
   const [migrationState, setMigrationState] = useState<MigrationState>(initialMigrationState);
+  const [enabledModulesCache, setEnabledModulesCache] = useState<Set<string>>(new Set());
   
   const abortControllerRef = useRef<AbortController | null>(null);
   const updateModules = useUpdateModules();
   const { data: currentModules } = useModules();
+
+  // Helper to auto-enable a module silently
+  const autoEnableModule = useCallback(async (moduleId: keyof ModulesSettings) => {
+    if (!currentModules) return;
+    
+    const moduleConfig = currentModules[moduleId];
+    if (!moduleConfig || moduleConfig.enabled || moduleConfig.core) return;
+    
+    // Prevent duplicate toasts using cache
+    if (enabledModulesCache.has(moduleId)) return;
+    
+    try {
+      const updated = { ...currentModules };
+      updated[moduleId] = { ...moduleConfig, enabled: true };
+      await updateModules.mutateAsync(updated);
+      
+      setEnabledModulesCache(prev => new Set(prev).add(moduleId));
+      
+      // Educational toast
+      toast.success(`${moduleConfig.name} enabled`, {
+        description: moduleConfig.description,
+        duration: 4000,
+      });
+    } catch (err) {
+      console.error('Failed to auto-enable module:', moduleId, err);
+    }
+  }, [currentModules, updateModules, enabledModulesCache]);
+
+  // Auto-enable modules for a block type
+  const autoEnableModuleForBlock = useCallback(async (blockType: string) => {
+    const requiredModule = BLOCK_MODULE_MAP[blockType];
+    if (requiredModule) {
+      await autoEnableModule(requiredModule);
+    }
+  }, [autoEnableModule]);
 
   const generateId = () => Math.random().toString(36).substring(2, 15);
 
@@ -275,15 +331,11 @@ export function useCopilot(): UseCopilotReturn {
       };
       setMessages(prev => [...prev, successMessage]);
 
-      // Recommend modules based on detected platform
+      // Auto-enable modules based on detected platform
       if (data.metadata?.platform) {
         const suggestedModules = detectModulesFromPlatform(data.metadata.platform);
-        if (suggestedModules.length > 0) {
-          setModuleRecommendation({
-            modules: suggestedModules,
-            reason: `Based on your ${data.metadata.platform} site, these modules will help you maintain similar functionality.`,
-            status: 'pending',
-          });
+        for (const moduleId of suggestedModules) {
+          await autoEnableModule(moduleId);
         }
       }
 
@@ -454,13 +506,11 @@ export function useCopilot(): UseCopilotReturn {
         assistantMessage.toolCall = data.toolCall;
 
         if (data.toolCall.name === 'activate_modules') {
-          // Module recommendation
+          // Auto-enable modules silently instead of asking
           const args = data.toolCall.arguments as { modules: string[]; reason: string };
-          setModuleRecommendation({
-            modules: args.modules as (keyof ModulesSettings)[],
-            reason: args.reason,
-            status: 'pending',
-          });
+          for (const moduleId of args.modules) {
+            await autoEnableModule(moduleId as keyof ModulesSettings);
+          }
         } else if (data.toolCall.name === 'migrate_url') {
           // Migration request from AI
           const args = data.toolCall.arguments as { url: string };
@@ -468,8 +518,12 @@ export function useCopilot(): UseCopilotReturn {
           await startMigration(args.url);
           return;
         } else if (data.toolCall.name.startsWith('create_') && data.toolCall.name.endsWith('_block')) {
-          // Block creation - auto-approve by default
+          // Block creation - auto-approve and auto-enable required modules
           const blockType = data.toolCall.name.replace('create_', '').replace('_block', '');
+          
+          // Auto-enable required module for this block type
+          await autoEnableModuleForBlock(blockType);
+          
           const newBlock: CopilotBlock = {
             id: generateId(),
             type: blockType,
@@ -493,14 +547,20 @@ export function useCopilot(): UseCopilotReturn {
       setIsLoading(false);
       abortControllerRef.current = null;
     }
-  }, [messages, isLoading, currentModules, migrationState, startMigration]);
+  }, [messages, isLoading, currentModules, migrationState, startMigration, autoEnableModule, autoEnableModuleForBlock]);
 
-  const approveBlock = useCallback((blockId: string) => {
+  const approveBlock = useCallback(async (blockId: string) => {
+    const block = blocks.find(b => b.id === blockId);
+    if (!block) return;
+    
+    // Auto-enable required module for this block type
+    await autoEnableModuleForBlock(block.type);
+    
     setBlocks(prev => prev.map(b => 
       b.id === blockId ? { ...b, status: 'approved' as const } : b
     ));
     toast.success('Block approved');
-  }, []);
+  }, [blocks, autoEnableModuleForBlock]);
 
   const rejectBlock = useCallback((blockId: string) => {
     setBlocks(prev => prev.map(b => 
@@ -523,40 +583,6 @@ export function useCopilot(): UseCopilotReturn {
     await sendMessage(regeneratePrompt);
   }, [blocks, sendMessage]);
 
-  const acceptModules = useCallback(async () => {
-    if (!moduleRecommendation || !currentModules) return;
-
-    try {
-      const updatedModules = { ...currentModules };
-      moduleRecommendation.modules.forEach(moduleId => {
-        if (updatedModules[moduleId] && !updatedModules[moduleId].core) {
-          updatedModules[moduleId] = {
-            ...updatedModules[moduleId],
-            enabled: true,
-          };
-        }
-      });
-
-      await updateModules.mutateAsync(updatedModules);
-      setModuleRecommendation(prev => prev ? { ...prev, status: 'accepted' } : null);
-      toast.success('Modules activated');
-
-      // If in migration mode, don't auto-continue
-      if (!migrationState.isActive) {
-        // Continue conversation to start creating blocks
-        setTimeout(() => {
-          sendMessage('Great! Modules are activated. Now please create a hero block for my website.');
-        }, 500);
-      }
-    } catch (err) {
-      toast.error('Could not activate modules');
-    }
-  }, [moduleRecommendation, currentModules, updateModules, sendMessage, migrationState.isActive]);
-
-  const rejectModules = useCallback(() => {
-    setModuleRecommendation(prev => prev ? { ...prev, status: 'rejected' } : null);
-  }, []);
-
   const cancelRequest = useCallback(() => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -573,10 +599,10 @@ export function useCopilot(): UseCopilotReturn {
   const clearConversation = useCallback(() => {
     setMessages([]);
     setBlocks([]);
-    setModuleRecommendation(null);
     setError(null);
     setIsAutoContinue(false);
     setMigrationState(initialMigrationState);
+    setEnabledModulesCache(new Set());
   }, []);
 
   // Phase control functions
@@ -737,15 +763,11 @@ export function useCopilot(): UseCopilotReturn {
         kbArticlesDiscovered: kbCount,
       }));
 
-      // Recommend modules based on detected platform
+      // Auto-enable modules based on detected platform
       if (siteStructure.platform && siteStructure.platform !== 'unknown') {
         const suggestedModules = detectModulesFromPlatform(siteStructure.platform);
-        if (suggestedModules.length > 0) {
-          setModuleRecommendation({
-            modules: suggestedModules,
-            reason: `Based on your ${siteStructure.platform} site, these modules will help you maintain similar functionality.`,
-            status: 'pending',
-          });
+        for (const moduleId of suggestedModules) {
+          await autoEnableModule(moduleId);
         }
       }
 
@@ -845,7 +867,6 @@ export function useCopilot(): UseCopilotReturn {
   return {
     messages,
     blocks,
-    moduleRecommendation,
     isLoading,
     error,
     isAutoContinue,
@@ -854,8 +875,6 @@ export function useCopilot(): UseCopilotReturn {
     approveBlock,
     rejectBlock,
     regenerateBlock,
-    acceptModules,
-    rejectModules,
     cancelRequest,
     clearConversation,
     stopAutoContinue,
