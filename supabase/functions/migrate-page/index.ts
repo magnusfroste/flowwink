@@ -460,13 +460,238 @@ function extractImagesFromHtml(html: string): { src: string; alt?: string }[] {
   return images;
 }
 
+// Extract navigation links from HTML
+function extractNavLinks(html: string, baseUrl: string): { label: string; url: string }[] {
+  const links: { label: string; url: string }[] = [];
+  const seenUrls = new Set<string>();
+  
+  // Find all <nav> elements and extract links
+  const navRegex = /<nav[^>]*>([\s\S]*?)<\/nav>/gi;
+  let navMatch;
+  while ((navMatch = navRegex.exec(html)) !== null) {
+    const navContent = navMatch[1];
+    
+    // Extract <a> tags from nav
+    const linkRegex = /<a[^>]+href=["']([^"'#]+)["'][^>]*>([^<]*(?:<[^/][^>]*>[^<]*)*)<\/a>/gi;
+    let linkMatch;
+    while ((linkMatch = linkRegex.exec(navContent)) !== null) {
+      let href = linkMatch[1].trim();
+      // Clean up label - remove HTML tags
+      const label = linkMatch[2].replace(/<[^>]*>/g, '').trim();
+      
+      if (!href || !label || href.startsWith('javascript:') || href.startsWith('mailto:') || href.startsWith('tel:')) {
+        continue;
+      }
+      
+      // Convert relative URLs to absolute
+      try {
+        const absoluteUrl = new URL(href, baseUrl).href;
+        // Only include same-domain links
+        if (absoluteUrl.startsWith(baseUrl) && !seenUrls.has(absoluteUrl)) {
+          seenUrls.add(absoluteUrl);
+          links.push({ label, url: absoluteUrl });
+        }
+      } catch {
+        // Invalid URL, skip
+      }
+    }
+  }
+  
+  return links;
+}
+
+// Fetch and parse sitemap.xml
+async function fetchSitemap(baseUrl: string): Promise<{ url: string; title?: string; lastmod?: string }[]> {
+  const pages: { url: string; title?: string; lastmod?: string }[] = [];
+  
+  try {
+    // Try common sitemap locations
+    const sitemapUrls = [
+      `${baseUrl}/sitemap.xml`,
+      `${baseUrl}/sitemap_index.xml`,
+      `${baseUrl}/sitemap-index.xml`,
+    ];
+    
+    for (const sitemapUrl of sitemapUrls) {
+      try {
+        const response = await fetch(sitemapUrl, { 
+          headers: { 'User-Agent': 'FlowPilot-Bot/1.0' },
+          signal: AbortSignal.timeout(5000)
+        });
+        
+        if (!response.ok) continue;
+        
+        const xml = await response.text();
+        
+        // Check if it's a sitemap index (contains other sitemaps)
+        if (xml.includes('<sitemapindex')) {
+          // Extract sitemap URLs from index
+          const sitemapLocRegex = /<sitemap>[\s\S]*?<loc>([^<]+)<\/loc>[\s\S]*?<\/sitemap>/gi;
+          let sitemapMatch;
+          const childSitemaps: string[] = [];
+          while ((sitemapMatch = sitemapLocRegex.exec(xml)) !== null) {
+            childSitemaps.push(sitemapMatch[1].trim());
+          }
+          
+          // Fetch first few child sitemaps (limit to avoid timeout)
+          for (const childUrl of childSitemaps.slice(0, 3)) {
+            try {
+              const childResponse = await fetch(childUrl, { 
+                headers: { 'User-Agent': 'FlowPilot-Bot/1.0' },
+                signal: AbortSignal.timeout(3000)
+              });
+              if (childResponse.ok) {
+                const childXml = await childResponse.text();
+                extractUrlsFromSitemap(childXml, pages, baseUrl);
+              }
+            } catch {
+              // Skip this child sitemap
+            }
+          }
+        } else {
+          // Regular sitemap
+          extractUrlsFromSitemap(xml, pages, baseUrl);
+        }
+        
+        // If we found pages, stop trying other sitemap URLs
+        if (pages.length > 0) break;
+        
+      } catch {
+        // Try next sitemap URL
+      }
+    }
+  } catch (error) {
+    console.error('Sitemap fetch error:', error);
+  }
+  
+  return pages;
+}
+
+function extractUrlsFromSitemap(
+  xml: string, 
+  pages: { url: string; title?: string; lastmod?: string }[],
+  baseUrl: string
+): void {
+  const urlRegex = /<url>[\s\S]*?<loc>([^<]+)<\/loc>(?:[\s\S]*?<lastmod>([^<]+)<\/lastmod>)?[\s\S]*?<\/url>/gi;
+  let match;
+  while ((match = urlRegex.exec(xml)) !== null) {
+    const url = match[1].trim();
+    const lastmod = match[2]?.trim();
+    
+    // Only include same-domain URLs
+    if (url.startsWith(baseUrl)) {
+      pages.push({ url, lastmod });
+    }
+  }
+}
+
+// Categorize URL by type
+function categorizeUrl(url: string, baseUrl: string): 'page' | 'blog' | 'kb' {
+  const path = url.replace(baseUrl, '').toLowerCase();
+  
+  // Blog patterns
+  if (/^\/(blog|news|articles|aktuellt|nyheter|insights|journal|posts?)(?:\/|$)/i.test(path)) {
+    return 'blog';
+  }
+  
+  // Knowledge base patterns
+  if (/^\/(help|faq|support|knowledge|kb|docs|documentation|hjalp|vanliga-fragor)(?:\/|$)/i.test(path)) {
+    return 'kb';
+  }
+  
+  return 'page';
+}
+
+// Analyze full site structure
+async function analyzeSiteStructure(url: string, firecrawlKey: string): Promise<{
+  siteName: string;
+  platform: string;
+  baseUrl: string;
+  pages: { url: string; title: string; type: 'page' | 'blog' | 'kb'; source: 'nav' | 'sitemap' }[];
+  navigation: { label: string; url: string }[];
+  hasBlog: boolean;
+  hasKnowledgeBase: boolean;
+}> {
+  // Get base URL
+  const urlObj = new URL(url);
+  const baseUrl = `${urlObj.protocol}//${urlObj.host}`;
+  
+  // Fetch homepage to get navigation
+  const scrapeResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${firecrawlKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      url: baseUrl,
+      formats: ['html', 'rawHtml'],
+      onlyMainContent: false,
+      waitFor: 2000,
+    }),
+  });
+  
+  const scrapeData = await scrapeResponse.json();
+  const html = scrapeData.data?.rawHtml || scrapeData.data?.html || '';
+  const metadata = scrapeData.data?.metadata || {};
+  
+  // Detect platform
+  const platform = detectPlatform(html, metadata);
+  
+  // Extract navigation links
+  const navLinks = extractNavLinks(html, baseUrl);
+  
+  // Fetch sitemap
+  const sitemapPages = await fetchSitemap(baseUrl);
+  
+  // Combine and deduplicate
+  const allPages = new Map<string, { url: string; title: string; type: 'page' | 'blog' | 'kb'; source: 'nav' | 'sitemap' }>();
+  
+  // Add navigation links first (higher priority)
+  for (const link of navLinks) {
+    const type = categorizeUrl(link.url, baseUrl);
+    allPages.set(link.url, { url: link.url, title: link.label, type, source: 'nav' });
+  }
+  
+  // Add sitemap pages
+  for (const page of sitemapPages) {
+    if (!allPages.has(page.url)) {
+      const type = categorizeUrl(page.url, baseUrl);
+      // Extract title from URL path
+      const pathParts = page.url.replace(baseUrl, '').split('/').filter(Boolean);
+      const title = pathParts[pathParts.length - 1]?.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || 'Home';
+      allPages.set(page.url, { url: page.url, title, type, source: 'sitemap' });
+    }
+  }
+  
+  // Always include homepage if not present
+  if (!allPages.has(baseUrl) && !allPages.has(baseUrl + '/')) {
+    allPages.set(baseUrl, { url: baseUrl, title: 'Home', type: 'page', source: 'nav' });
+  }
+  
+  const pages = Array.from(allPages.values());
+  const hasBlog = pages.some(p => p.type === 'blog');
+  const hasKnowledgeBase = pages.some(p => p.type === 'kb');
+  
+  return {
+    siteName: metadata.title || urlObj.host,
+    platform,
+    baseUrl,
+    pages,
+    navigation: navLinks,
+    hasBlog,
+    hasKnowledgeBase,
+  };
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { url } = await req.json();
+    const body = await req.json();
+    const { url, action } = body;
 
     if (!url) {
       return new Response(
@@ -486,6 +711,36 @@ serve(async (req) => {
       );
     }
 
+    // Handle site analysis action
+    if (action === 'analyze-site') {
+      console.log('Analyzing site structure for:', url);
+      
+      // Format URL
+      let formattedUrl = url.trim();
+      if (!formattedUrl.startsWith('http://') && !formattedUrl.startsWith('https://')) {
+        formattedUrl = `https://${formattedUrl}`;
+      }
+      
+      const siteStructure = await analyzeSiteStructure(formattedUrl, firecrawlKey);
+      
+      console.log('Site analysis complete:', {
+        siteName: siteStructure.siteName,
+        platform: siteStructure.platform,
+        pagesFound: siteStructure.pages.length,
+        hasBlog: siteStructure.hasBlog,
+        hasKnowledgeBase: siteStructure.hasKnowledgeBase,
+      });
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          ...siteStructure 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Original migrate-page logic continues here
     if (!openaiKey && !geminiKey) {
       return new Response(
         JSON.stringify({ success: false, error: 'AI API key missing. Add OPENAI_API_KEY or GEMINI_API_KEY in Settings → Integrations.' }),
