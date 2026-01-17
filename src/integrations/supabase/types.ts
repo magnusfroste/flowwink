@@ -675,6 +675,54 @@ export type Database = {
         }
         Relationships: []
       }
+      content_proposals: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          channel_variants: Json | null
+          created_at: string
+          created_by: string | null
+          id: string
+          pillar_content: string | null
+          published_channels: string[] | null
+          scheduled_for: string | null
+          source_research: Json | null
+          status: string
+          topic: string
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          channel_variants?: Json | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          pillar_content?: string | null
+          published_channels?: string[] | null
+          scheduled_for?: string | null
+          source_research?: Json | null
+          status?: string
+          topic: string
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          channel_variants?: Json | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          pillar_content?: string | null
+          published_channels?: string[] | null
+          scheduled_for?: string | null
+          source_research?: Json | null
+          status?: string
+          topic?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       deal_activities: {
         Row: {
           completed_at: string | null
