@@ -1,8 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
-import { Zap, Check, X, ArrowUp, Loader2, CheckCircle2, Layout, Image, MessageSquare, Users, Wand2, Square, RotateCcw, AlertTriangle, Globe } from 'lucide-react';
+import { Zap, ArrowUp, Loader2, CheckCircle2, Layout, Image, MessageSquare, Users, Wand2, Square, RotateCcw, AlertTriangle, Globe } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import {
@@ -17,8 +16,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
-import type { CopilotMessage, ModuleRecommendation, CopilotBlock, MigrationState, DiscoveryStatus } from '@/hooks/useCopilot';
-import { defaultModulesSettings } from '@/hooks/useModules';
+import type { CopilotMessage, CopilotBlock, MigrationState, DiscoveryStatus } from '@/hooks/useCopilot';
 
 interface CopilotChatProps {
   messages: CopilotMessage[];
@@ -30,9 +28,6 @@ interface CopilotChatProps {
   onFinishPage: () => void;
   onStopAutoContinue: () => void;
   onReset: () => void;
-  moduleRecommendation: ModuleRecommendation | null;
-  onAcceptModules: () => void;
-  onRejectModules: () => void;
   migrationState?: MigrationState;
   onAnalyzeSite: (url: string) => Promise<void>;
   discoveryStatus: DiscoveryStatus;
@@ -44,8 +39,6 @@ const STARTER_PROMPTS = [
   { label: 'Migrate my site', icon: Globe },
   { label: 'Build from scratch', icon: Wand2 },
 ];
-
-const MIGRATION_PHASES = ['pages', 'blog', 'knowledgeBase'] as const;
 
 const SUGGESTED_BLOCKS = [
   { id: 'features', label: 'Features', icon: Layout },
@@ -73,9 +66,6 @@ export function CopilotChat({
   onFinishPage,
   onStopAutoContinue,
   onReset,
-  moduleRecommendation,
-  onAcceptModules,
-  onRejectModules,
   onAnalyzeSite,
   discoveryStatus,
 }: CopilotChatProps) {
@@ -150,8 +140,8 @@ export function CopilotChat({
             </div>
           )}
 
-          {/* Generate full page button - show after modules accepted but before blocks */}
-          {!isEmpty && !hasBlocks && !isLoading && moduleRecommendation?.status === 'accepted' && (
+          {/* Generate full page button - show when ready to build */}
+          {!isEmpty && !hasBlocks && !isLoading && (
             <div className="py-3">
               <Button
                 onClick={() => onSendMessage(FULL_PAGE_PROMPT)}
@@ -194,15 +184,6 @@ export function CopilotChat({
               </div>
             </div>
           ))}
-
-          {/* Module recommendation */}
-          {moduleRecommendation && moduleRecommendation.status === 'pending' && (
-            <ModuleRecommendationCard
-              recommendation={moduleRecommendation}
-              onAccept={onAcceptModules}
-              onReject={onRejectModules}
-            />
-          )}
 
           {/* Continue building button - primary action after block created */}
           {hasBlocks && !isLoading && suggestedNext.length > 0 && (
@@ -338,51 +319,5 @@ export function CopilotChat({
         </div>
       </div>
     </div>
-  );
-}
-
-function ModuleRecommendationCard({
-  recommendation,
-  onAccept,
-  onReject,
-}: {
-  recommendation: ModuleRecommendation;
-  onAccept: () => void;
-  onReject: () => void;
-}) {
-  return (
-    <Card className="p-3 border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
-      <div className="space-y-2.5">
-        <div className="flex items-center gap-2">
-          <div className="flex items-center justify-center w-6 h-6 rounded-md bg-primary/10">
-            <Zap className="h-3.5 w-3.5 text-primary" />
-          </div>
-          <span className="font-medium text-sm">Recommended modules</span>
-        </div>
-        
-        <p className="text-xs text-muted-foreground leading-relaxed">{recommendation.reason}</p>
-
-        <div className="flex flex-wrap gap-1">
-          {recommendation.modules.map((moduleId) => {
-            const module = defaultModulesSettings[moduleId];
-            return (
-              <Badge key={moduleId} variant="secondary" className="text-[10px] px-1.5 py-0.5">
-                {module?.name || moduleId}
-              </Badge>
-            );
-          })}
-        </div>
-
-        <div className="flex gap-2 pt-0.5">
-          <Button size="sm" onClick={onAccept} className="flex-1 h-8 text-xs">
-            <Check className="h-3 w-3 mr-1" />
-            Activate all
-          </Button>
-          <Button size="sm" variant="outline" onClick={onReject} className="h-8 w-8 p-0">
-            <X className="h-3 w-3" />
-          </Button>
-        </div>
-      </div>
-    </Card>
   );
 }

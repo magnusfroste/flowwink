@@ -17,8 +17,6 @@ export default function CopilotPage() {
 
   const hasApprovedBlocks = copilot.approvedBlocks.length > 0;
 
-  // Custom layout without p-8 padding for full width split view
-
   return (
     <AdminLayout>
       <div className="flex flex-col h-[calc(100vh-4rem)]">
@@ -63,9 +61,6 @@ export default function CopilotPage() {
               onFinishPage={() => setShowCreateDialog(true)}
               onStopAutoContinue={copilot.stopAutoContinue}
               onReset={copilot.clearConversation}
-              moduleRecommendation={copilot.moduleRecommendation}
-              onAcceptModules={copilot.acceptModules}
-              onRejectModules={copilot.rejectModules}
               onAnalyzeSite={copilot.analyzeSite}
               discoveryStatus={copilot.migrationState.discoveryStatus}
             />
@@ -91,7 +86,6 @@ export default function CopilotPage() {
                 onApprove={copilot.approveBlock}
                 onReject={copilot.rejectBlock}
                 onRegenerate={copilot.regenerateBlock}
-                moduleRecommendation={copilot.moduleRecommendation}
                 migrationState={copilot.migrationState}
                 onTogglePage={copilot.togglePageSelection}
                 onStartMigration={copilot.migrateSelectedPages}
@@ -107,7 +101,6 @@ export default function CopilotPage() {
         open={showCreateDialog}
         onOpenChange={setShowCreateDialog}
         blocks={copilot.approvedBlocks}
-        moduleRecommendation={copilot.moduleRecommendation}
         onSuccess={() => {
           copilot.clearConversation();
           navigate('/admin/pages');

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Wand2, Check, Loader2 } from 'lucide-react';
+import { Wand2, Loader2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -15,16 +15,14 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { useCreatePage } from '@/hooks/usePages';
 import { toast } from 'sonner';
-import type { CopilotBlock, ModuleRecommendation } from '@/hooks/useCopilot';
+import type { CopilotBlock } from '@/hooks/useCopilot';
 import type { ContentBlock } from '@/types/cms';
 import { BLOCK_REFERENCE } from '@/lib/block-reference';
-import { defaultModulesSettings } from '@/hooks/useModules';
 
 interface CreateFromCopilotDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   blocks: CopilotBlock[];
-  moduleRecommendation: ModuleRecommendation | null;
   onSuccess: () => void;
 }
 
@@ -32,7 +30,6 @@ export function CreateFromCopilotDialog({
   open,
   onOpenChange,
   blocks,
-  moduleRecommendation,
   onSuccess,
 }: CreateFromCopilotDialogProps) {
   const createPage = useCreatePage();
@@ -89,10 +86,6 @@ export function CreateFromCopilotDialog({
     }
   };
 
-  const acceptedModules = moduleRecommendation?.status === 'accepted' 
-    ? moduleRecommendation.modules 
-    : [];
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -122,23 +115,6 @@ export function CreateFromCopilotDialog({
                 })}
               </div>
             </div>
-
-            {acceptedModules.length > 0 && (
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Activated modules:</span>
-                <div className="flex flex-wrap gap-1 justify-end">
-                  {acceptedModules.map((moduleId) => {
-                    const module = defaultModulesSettings[moduleId];
-                    return (
-                      <Badge key={moduleId} variant="outline" className="text-xs text-green-600">
-                        <Check className="h-3 w-3 mr-1" />
-                        {module?.name || moduleId}
-                      </Badge>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Page details */}

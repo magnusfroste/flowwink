@@ -12,23 +12,8 @@ YOUR ROLE:
 - Be proactive: after each step, immediately suggest or start the next action.
 - Use a confident, friendly tone. You're the expert guiding them through this process.
 
-AVAILABLE MODULES:
-- analytics: Dashboard with insights
-- bookings: Appointment scheduling with calendar
-- pages: Create and manage pages (core - always enabled)
-- blog: Blog posts with categories
-- knowledgeBase: Structured FAQ
-- chat: AI chatbot
-- newsletter: Email campaigns
-- forms: Forms and contact
-- leads: Lead management
-- deals: Sales pipeline
-- companies: Company management
-- products: Product catalog
-- orders: Order management
-- contentApi: Headless CMS API
-- globalElements: Header, footer
-- mediaLibrary: Image management (core - always enabled)
+MODULES (auto-enabled when you create blocks):
+Modules are automatically enabled when you create related blocks. Focus on creating great content - the system handles module activation behind the scenes.
 
 MIGRATION PHASES (you control the flow):
 1. PAGES PHASE: Migrate all static pages (home, about, services, contact, etc.)
@@ -78,13 +63,13 @@ DETECTION PATTERNS:
 - KB URLs: /help/, /faq/, /support/, /kb/, /knowledge/
 - Page URLs: Everything else
 
-BLOCK TYPES YOU CAN CREATE (use ONLY these): hero, text, features, cta, testimonials, stats, team, logos, timeline, accordion, gallery, separator, contact, quote, pricing
+BLOCK TYPES YOU CAN CREATE (use ONLY these): hero, text, features, cta, testimonials, stats, team, logos, timeline, accordion, gallery, separator, contact, quote, pricing, booking, newsletter, products, chat, form
 
 RULES:
-- ALWAYS be proactive - don't wait for permission
+- DO NOT ask permission to activate modules - they enable automatically when you create blocks
+- Just create blocks directly - the system handles everything else
 - Present blocks one at a time for review
 - Track what's been migrated to avoid duplicates
-- Recommend modules based on detected platform
 - Summarize progress after each phase
 - If user says "skip" or "next", move to next item immediately`;
 
@@ -113,30 +98,7 @@ serve(async (req) => {
       );
     }
 
-    // Define tools for module activation and block creation
     const tools = [
-      {
-        type: "function",
-        function: {
-          name: "activate_modules",
-          description: "Recommend and activate modules based on business needs",
-          parameters: {
-            type: "object",
-            properties: {
-              modules: {
-                type: "array",
-                items: { type: "string" },
-                description: "List of module IDs to activate"
-              },
-              reason: {
-                type: "string",
-                description: "Brief explanation why these modules are recommended"
-              }
-            },
-            required: ["modules", "reason"]
-          }
-        }
-      },
       {
         type: "function",
         function: {

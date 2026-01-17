@@ -1,21 +1,18 @@
 import { useState } from 'react';
-import { Monitor, Tablet, Smartphone, Layers, Check, Package, Globe } from 'lucide-react';
+import { Monitor, Tablet, Smartphone, Layers, Globe } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { cn } from '@/lib/utils';
 import { CopilotArtifact } from './CopilotArtifact';
 import { CopilotSiteOverview } from './CopilotSiteOverview';
-import type { CopilotBlock, ModuleRecommendation, MigrationState } from '@/hooks/useCopilot';
-import { defaultModulesSettings } from '@/hooks/useModules';
+import type { CopilotBlock, MigrationState } from '@/hooks/useCopilot';
 
 interface CopilotPreviewPanelProps {
   blocks: CopilotBlock[];
   onApprove: (blockId: string) => void;
   onReject: (blockId: string) => void;
   onRegenerate: (blockId: string, feedback?: string) => void;
-  moduleRecommendation: ModuleRecommendation | null;
   migrationState: MigrationState;
   onTogglePage: (url: string) => void;
   onStartMigration: () => void;
@@ -29,19 +26,18 @@ export function CopilotPreviewPanel({
   onApprove,
   onReject,
   onRegenerate,
-  moduleRecommendation,
   migrationState,
   onTogglePage,
   onStartMigration,
   isLoading,
 }: CopilotPreviewPanelProps) {
   const [deviceMode, setDeviceMode] = useState<DeviceMode>('desktop');
-  const [activeTab, setActiveTab] = useState<'site' | 'blocks' | 'modules'>(() => {
+  const [activeTab, setActiveTab] = useState<'site' | 'blocks'>(() => {
     return migrationState.siteStructure ? 'site' : 'blocks';
   });
 
   const activeBlocks = blocks.filter(b => b.status !== 'rejected');
-  const isEmpty = blocks.length === 0 && !moduleRecommendation;
+  const isEmpty = blocks.length === 0;
   const hasSiteStructure = !!migrationState.siteStructure;
 
   return (
@@ -67,10 +63,6 @@ export function CopilotPreviewPanel({
                   {blocks.length}
                 </Badge>
               )}
-            </TabsTrigger>
-            <TabsTrigger value="modules" className="text-xs px-3 gap-1.5">
-              <Package className="h-3.5 w-3.5" />
-              Modules
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -143,14 +135,6 @@ export function CopilotPreviewPanel({
           </div>
         </ScrollArea>
       )}
-
-      {activeTab === 'modules' && (
-        <ScrollArea className="flex-1">
-          <div className="p-4 space-y-4">
-            <ModulesPreview recommendation={moduleRecommendation} />
-          </div>
-        </ScrollArea>
-      )}
     </div>
   );
 }
@@ -165,81 +149,6 @@ function EmptyState() {
       <p className="text-sm text-muted-foreground max-w-[250px]">
         Describe your business in the chat and I'll create blocks for your page
       </p>
-    </div>
-  );
-}
-
-function ModulesPreview({ recommendation }: { recommendation: ModuleRecommendation | null }) {
-  const recommendedModules = recommendation?.modules || [];
-  const isAccepted = recommendation?.status === 'accepted';
-
-  if (recommendedModules.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-12 text-center">
-        <div className="p-4 rounded-full bg-muted mb-4">
-          <Package className="h-8 w-8 text-muted-foreground" />
-        </div>
-        <h3 className="font-medium mb-1">No modules recommended</h3>
-        <p className="text-sm text-muted-foreground max-w-[250px]">
-          Describe your business and I'll recommend suitable modules
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-          {isAccepted ? 'Activated modules' : 'Recommended modules'}
-        </p>
-        {isAccepted && (
-          <Badge variant="default" className="text-xs">
-            <Check className="h-3 w-3 mr-1" />
-            Activated
-          </Badge>
-        )}
-      </div>
-
-      <div className="grid gap-2">
-        {recommendedModules.map((moduleId) => {
-          const module = defaultModulesSettings[moduleId];
-          return (
-            <div
-              key={moduleId}
-              className={cn(
-                'flex items-center gap-3 p-3 rounded-lg border',
-                isAccepted ? 'bg-primary/5 border-primary/20' : 'bg-muted/50'
-              )}
-            >
-              <div className={cn(
-                'p-2 rounded-lg',
-                isAccepted ? 'bg-primary/10' : 'bg-background'
-              )}>
-                <Package className={cn(
-                  'h-4 w-4',
-                  isAccepted ? 'text-primary' : 'text-muted-foreground'
-                )} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm">{module?.name || moduleId}</p>
-                <p className="text-xs text-muted-foreground truncate">
-                  {module?.description}
-                </p>
-              </div>
-              {isAccepted && (
-                <Check className="h-4 w-4 text-primary flex-shrink-0" />
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {recommendation?.reason && (
-        <p className="text-xs text-muted-foreground italic">
-          {recommendation.reason}
-        </p>
-      )}
     </div>
   );
 }
