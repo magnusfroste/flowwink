@@ -14,6 +14,27 @@ export interface CopilotMessage {
   };
 }
 
+// Site Discovery Types
+export interface DiscoveredPage {
+  url: string;
+  title: string;
+  type: 'page' | 'blog' | 'kb';
+  source: 'navigation' | 'sitemap' | 'link';
+  status?: 'pending' | 'migrating' | 'completed' | 'skipped';
+}
+
+export interface SiteStructure {
+  siteName: string;
+  platform: string;
+  baseUrl: string;
+  pages: DiscoveredPage[];
+  navigation: string[];
+  hasBlog: boolean;
+  hasKnowledgeBase: boolean;
+}
+
+export type DiscoveryStatus = 'idle' | 'analyzing' | 'ready' | 'migrating' | 'complete';
+
 export interface CopilotBlock {
   id: string;
   type: string;
@@ -53,6 +74,10 @@ export interface MigrationState {
   hasKnowledgeBase: boolean;
   blogUrls: string[];
   kbUrls: string[];
+  // New site discovery
+  siteStructure: SiteStructure | null;
+  discoveryStatus: DiscoveryStatus;
+  currentPageUrl: string | null;
 }
 
 interface UseCopilotReturn {
@@ -73,6 +98,11 @@ interface UseCopilotReturn {
   clearConversation: () => void;
   stopAutoContinue: () => void;
   approvedBlocks: CopilotBlock[];
+  // Site discovery
+  analyzeSite: (url: string) => Promise<void>;
+  selectPageForMigration: (url: string) => void;
+  togglePageSelection: (url: string) => void;
+  migrateSelectedPages: () => Promise<void>;
   // Migration functions
   startMigration: (url: string) => Promise<void>;
   approveMigrationBlock: () => void;
@@ -106,6 +136,10 @@ const initialMigrationState: MigrationState = {
   hasKnowledgeBase: false,
   blogUrls: [],
   kbUrls: [],
+  // New site discovery
+  siteStructure: null,
+  discoveryStatus: 'idle',
+  currentPageUrl: null,
 };
 
 export function useCopilot(): UseCopilotReturn {
@@ -207,7 +241,8 @@ export function useCopilot(): UseCopilotReturn {
         baseDomain = new URL(url).origin;
       } catch {}
 
-      setMigrationState({
+      setMigrationState(prev => ({
+        ...prev,
         sourceUrl: url,
         baseDomain,
         detectedPlatform: data.metadata?.platform || 'unknown',
@@ -228,7 +263,8 @@ export function useCopilot(): UseCopilotReturn {
         hasKnowledgeBase,
         blogUrls,
         kbUrls,
-      });
+        currentPageUrl: url,
+      }));
 
       // Add success message with first block preview
       const successMessage: CopilotMessage = {
@@ -646,6 +682,166 @@ export function useCopilot(): UseCopilotReturn {
 
   const approvedBlocks = blocks.filter(b => b.status === 'approved');
 
+  // ==================== SITE DISCOVERY FUNCTIONS ====================
+
+  const analyzeSite = useCallback(async (url: string) => {
+    setIsLoading(true);
+    setError(null);
+    setMigrationState(prev => ({ ...prev, discoveryStatus: 'analyzing', sourceUrl: url }));
+
+    // Add analyzing message
+    const analyzeMessage: CopilotMessage = {
+      id: generateId(),
+      role: 'assistant',
+      content: `🔍 Analyzing site structure for ${url}...\n\nI'm scanning navigation, sitemap, and detecting content types.`,
+      createdAt: new Date(),
+    };
+    setMessages(prev => [...prev, analyzeMessage]);
+
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke('migrate-page', {
+        body: { url, action: 'analyze-site' },
+      });
+
+      if (fnError) throw new Error(fnError.message);
+      if (!data?.success) throw new Error(data?.error || 'Site analysis failed');
+
+      const siteStructure: SiteStructure = {
+        siteName: data.siteName || 'Unknown Site',
+        platform: data.platform || 'unknown',
+        baseUrl: data.baseUrl || url,
+        pages: (data.pages || []).map((p: DiscoveredPage) => ({
+          ...p,
+          status: 'pending' as const,
+        })),
+        navigation: data.navigation || [],
+        hasBlog: data.hasBlog || false,
+        hasKnowledgeBase: data.hasKnowledgeBase || false,
+      };
+
+      // Categorize pages
+      const pageCount = siteStructure.pages.filter(p => p.type === 'page').length;
+      const blogCount = siteStructure.pages.filter(p => p.type === 'blog').length;
+      const kbCount = siteStructure.pages.filter(p => p.type === 'kb').length;
+
+      setMigrationState(prev => ({
+        ...prev,
+        siteStructure,
+        discoveryStatus: 'ready',
+        baseDomain: siteStructure.baseUrl,
+        detectedPlatform: siteStructure.platform,
+        hasBlog: siteStructure.hasBlog,
+        hasKnowledgeBase: siteStructure.hasKnowledgeBase,
+        pagesTotal: pageCount,
+        blogPostsDiscovered: blogCount,
+        kbArticlesDiscovered: kbCount,
+      }));
+
+      // Recommend modules based on detected platform
+      if (siteStructure.platform && siteStructure.platform !== 'unknown') {
+        const suggestedModules = detectModulesFromPlatform(siteStructure.platform);
+        if (suggestedModules.length > 0) {
+          setModuleRecommendation({
+            modules: suggestedModules,
+            reason: `Based on your ${siteStructure.platform} site, these modules will help you maintain similar functionality.`,
+            status: 'pending',
+          });
+        }
+      }
+
+      // Success message with summary
+      const successMessage: CopilotMessage = {
+        id: generateId(),
+        role: 'assistant',
+        content: `✨ **${siteStructure.siteName}** analyzed successfully!${siteStructure.platform !== 'unknown' ? ` (${siteStructure.platform})` : ''}\n\n**Found:**\n• ${pageCount} pages\n${blogCount > 0 ? `• ${blogCount} blog posts\n` : ''}${kbCount > 0 ? `• ${kbCount} KB articles\n` : ''}\nSelect which pages to migrate from the site overview on the right.`,
+        createdAt: new Date(),
+      };
+      setMessages(prev => [...prev, successMessage]);
+
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to analyze site';
+      setError(message);
+      setMigrationState(prev => ({ ...prev, discoveryStatus: 'idle' }));
+      toast.error(message);
+
+      const errorMessage: CopilotMessage = {
+        id: generateId(),
+        role: 'assistant',
+        content: `❌ I couldn't analyze that site. ${message}\n\nPlease check that:\n• The URL is correct and accessible\n• The site isn't password protected`,
+        createdAt: new Date(),
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const selectPageForMigration = useCallback((url: string) => {
+    setMigrationState(prev => {
+      if (!prev.siteStructure) return prev;
+      
+      const updatedPages = prev.siteStructure.pages.map(p =>
+        p.url === url ? { ...p, status: 'pending' as const } : p
+      );
+      
+      return {
+        ...prev,
+        siteStructure: { ...prev.siteStructure, pages: updatedPages },
+      };
+    });
+  }, []);
+
+  const togglePageSelection = useCallback((url: string) => {
+    setMigrationState(prev => {
+      if (!prev.siteStructure) return prev;
+      
+      const updatedPages = prev.siteStructure.pages.map(p => {
+        if (p.url === url) {
+          const newStatus = p.status === 'pending' ? 'skipped' : 'pending';
+          return { ...p, status: newStatus as 'pending' | 'skipped' };
+        }
+        return p;
+      });
+      
+      return {
+        ...prev,
+        siteStructure: { ...prev.siteStructure, pages: updatedPages },
+      };
+    });
+  }, []);
+
+  const migrateSelectedPages = useCallback(async () => {
+    if (!migrationState.siteStructure) return;
+
+    const selectedPages = migrationState.siteStructure.pages.filter(
+      p => p.status === 'pending'
+    );
+
+    if (selectedPages.length === 0) {
+      toast.info('No pages selected for migration');
+      return;
+    }
+
+    setMigrationState(prev => ({ ...prev, discoveryStatus: 'migrating', phase: 'pages' }));
+
+    const startMsg: CopilotMessage = {
+      id: generateId(),
+      role: 'assistant',
+      content: `🚀 Starting migration of ${selectedPages.length} pages...\n\nI'll process each page and show you the content for review.`,
+      createdAt: new Date(),
+    };
+    setMessages(prev => [...prev, startMsg]);
+
+    // Start with the first selected page
+    const firstPage = selectedPages[0];
+    if (firstPage) {
+      const fullUrl = firstPage.url.startsWith('http') 
+        ? firstPage.url 
+        : `${migrationState.siteStructure.baseUrl}${firstPage.url}`;
+      await startMigration(fullUrl);
+    }
+  }, [migrationState.siteStructure, startMigration]);
+
   return {
     messages,
     blocks,
@@ -664,6 +860,11 @@ export function useCopilot(): UseCopilotReturn {
     clearConversation,
     stopAutoContinue,
     approvedBlocks,
+    // Site discovery
+    analyzeSite,
+    selectPageForMigration,
+    togglePageSelection,
+    migrateSelectedPages,
     // Migration functions
     startMigration,
     approveMigrationBlock,
