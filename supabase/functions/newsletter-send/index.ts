@@ -21,6 +21,11 @@ interface EmailConfig {
   fromName: string;
 }
 
+interface NewsletterTrackingConfig {
+  enableOpenTracking: boolean;
+  enableClickTracking: boolean;
+}
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -72,7 +77,14 @@ serve(async (req) => {
       fromName: "Newsletter",
     };
     
+    // Get tracking configuration (default to disabled for deliverability)
+    const trackingConfig: NewsletterTrackingConfig = resendSettings?.config?.newsletterTracking || {
+      enableOpenTracking: false,
+      enableClickTracking: false,
+    };
+    
     console.log(`[newsletter-send] Using sender: ${emailConfig.fromName} <${emailConfig.fromEmail}>`);
+    console.log(`[newsletter-send] Open tracking: ${trackingConfig.enableOpenTracking}, Click tracking: ${trackingConfig.enableClickTracking}`);
 
     const ResendClass = await getResend();
     const resend = new ResendClass(resendApiKey);
@@ -183,43 +195,119 @@ serve(async (req) => {
     // Use site URL if available, otherwise fall back to a default
     const siteUrl = (siteUrlSetting?.value as string) || "";
     
-    // IMPORTANT: Use site URL for unsubscribe links to avoid spam filters
-    // Gmail and other providers flag emails with mismatched domains
+    // Use site URL for unsubscribe links to avoid spam filters
     const unsubscribeUrl = siteUrl 
       ? `${siteUrl}/newsletter/manage?action=unsubscribe`
       : `${supabaseUrl}/functions/v1/newsletter-subscribe?action=unsubscribe`;
+    
+    const trackingBaseUrl = `${supabaseUrl}/functions/v1/newsletter-track`;
+    const linkTrackingBaseUrl = `${supabaseUrl}/functions/v1/newsletter-link`;
     
     console.log(`[newsletter-send] Using unsubscribe URL: ${unsubscribeUrl}`);
 
     let sentCount = 0;
     
-    // NOTE: Click tracking is DISABLED to improve email deliverability
-    // Rewriting links triggers spam filters, especially Gmail
+    // Helper function to rewrite links for tracking (only if enabled)
+    const rewriteLinksForTracking = async (
+      html: string, 
+      newsletterId: string, 
+      recipientEmail: string
+    ): Promise<string> => {
+      if (!trackingConfig.enableClickTracking) {
+        return html;
+      }
+      
+      // Match all href attributes with http/https links
+      const linkRegex = /href=["'](https?:\/\/[^"']+)["']/gi;
+      const matches = [...html.matchAll(linkRegex)];
+      
+      let processedHtml = html;
+      
+      for (const match of matches) {
+        const originalUrl = match[1];
+        
+        // Skip unsubscribe links and newsletter-related links
+        if (originalUrl.includes('newsletter-subscribe') || originalUrl.includes('newsletter/manage')) {
+          continue;
+        }
+        
+        // Create link tracking record
+        const { data: linkRecord, error: linkError } = await supabase
+          .from("newsletter_link_clicks")
+          .insert({
+            newsletter_id: newsletterId,
+            recipient_email: recipientEmail,
+            original_url: originalUrl,
+          })
+          .select("link_id")
+          .single();
+        
+        if (linkError) {
+          console.error(`[newsletter-send] Failed to create link tracking:`, linkError);
+          continue;
+        }
+        
+        // Replace original URL with tracking URL
+        const trackingUrl = `${linkTrackingBaseUrl}?l=${linkRecord.link_id}`;
+        processedHtml = processedHtml.replace(
+          `href="${originalUrl}"`,
+          `href="${trackingUrl}"`
+        );
+        processedHtml = processedHtml.replace(
+          `href='${originalUrl}'`,
+          `href='${trackingUrl}'`
+        );
+      }
+      
+      return processedHtml;
+    };
 
     // Send emails in batches
     for (const subscriber of subscribers) {
       try {
+        // Create tracking record for open tracking (only if enabled)
+        let trackingPixel = "";
+        if (trackingConfig.enableOpenTracking) {
+          const { data: trackingRecord, error: trackingError } = await supabase
+            .from("newsletter_email_opens")
+            .insert({
+              newsletter_id: newsletter_id,
+              recipient_email: subscriber.email,
+            })
+            .select("tracking_id")
+            .single();
+
+          if (trackingError) {
+            console.error(`[newsletter-send] Failed to create tracking for ${subscriber.email}:`, trackingError);
+          } else if (trackingRecord) {
+            trackingPixel = `<img src="${trackingBaseUrl}?t=${trackingRecord.tracking_id}" width="1" height="1" alt="" style="display:none;" />`;
+          }
+        }
+
         // Build personalized unsubscribe link
         const personalUnsubscribe = siteUrl
           ? `${siteUrl}/newsletter/manage?action=unsubscribe&email=${encodeURIComponent(subscriber.email)}`
           : `${supabaseUrl}/functions/v1/newsletter-subscribe?action=unsubscribe&email=${encodeURIComponent(subscriber.email)}`;
         
-        // Content without link rewriting (disabled for deliverability)
+        // Process content (with or without link tracking based on settings)
         const contentHtml = newsletter.content_html || "<p>No content</p>";
-        
-        // NOTE: Open tracking pixel is DISABLED to improve email deliverability
-        // Tracking pixels from different domains trigger spam filters
+        const processedContent = await rewriteLinksForTracking(
+          contentHtml, 
+          newsletter_id, 
+          subscriber.email
+        );
         
         await resend.emails.send({
           from: `${emailConfig.fromName} <${emailConfig.fromEmail}>`,
           to: [subscriber.email],
           subject: newsletter.subject,
           html: `
-            ${contentHtml}
+            ${processedContent}
             <hr style="margin-top: 40px; border: none; border-top: 1px solid #eee;" />
             <p style="font-size: 12px; color: #666; text-align: center;">
               <a href="${personalUnsubscribe}" style="color: #666;">Unsubscribe</a>
             </p>
+            ${trackingPixel}
           `,
         });
         
