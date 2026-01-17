@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Sparkles, Loader2, Info, ArrowRight, ArrowLeft, Search } from 'lucide-react';
+import { Sparkles, Loader2, Info, ArrowRight, ArrowLeft, Search, BookOpen, Save } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -29,10 +29,11 @@ import {
 } from '@/components/ui/tooltip';
 import { ChannelType } from '@/hooks/useContentProposals';
 import { useGenerateProposal } from '@/hooks/useGenerateProposal';
-import { useContentResearch, ContentAngle } from '@/hooks/useContentResearch';
+import { useContentResearch, ContentAngle, ContentResearch } from '@/hooks/useContentResearch';
+import { useSavedResearch } from '@/hooks/useSavedResearch';
 import { ChannelIcon, ALL_CHANNELS, getChannelConfig } from './ChannelIcon';
 import { ResearchPreview } from './ResearchPreview';
-
+import { SavedResearchPicker } from './SavedResearchPicker';
 interface AIProposalDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -69,7 +70,7 @@ const TONE_LABELS = [
   'Casual',
 ];
 
-type Step = 'input' | 'research' | 'generating';
+type Step = 'input' | 'saved' | 'research' | 'generating';
 
 export function AIProposalDialog({ open, onOpenChange, onSuccess }: AIProposalDialogProps) {
   const [step, setStep] = useState<Step>('input');
@@ -89,10 +90,11 @@ export function AIProposalDialog({ open, onOpenChange, onSuccess }: AIProposalDi
   // Research state
   const [selectedAngle, setSelectedAngle] = useState<ContentAngle | null>(null);
   const [selectedHooks, setSelectedHooks] = useState<string[]>([]);
+  const [researchData, setResearchData] = useState<ContentResearch | null>(null);
 
   const { generateProposal, isGenerating, progress } = useGenerateProposal();
   const { research, isResearching, progress: researchProgress, reset: resetResearch } = useContentResearch();
-  const [researchData, setResearchData] = useState<any>(null);
+  const { saveResearch, isSaving, savedResearch } = useSavedResearch();
 
   const handleResearch = async () => {
     if (!topic.trim()) return;
@@ -109,9 +111,33 @@ export function AIProposalDialog({ open, onOpenChange, onSuccess }: AIProposalDi
         setResearchData(result.research);
         setStep('research');
       }
-    } catch (error) {
+    } catch {
       // Error is handled by the hook
     }
+  };
+
+  const handleSaveResearch = async () => {
+    if (!researchData || !topic.trim()) return;
+    
+    await saveResearch({
+      topic,
+      target_audience: targetAudience || undefined,
+      industry: industry || undefined,
+      target_channels: selectedChannels,
+      research_data: researchData,
+    });
+  };
+
+  const handleUseSavedResearch = (
+    research: ContentResearch, 
+    metadata: { topic: string; target_audience?: string; industry?: string; target_channels: string[] }
+  ) => {
+    setTopic(metadata.topic);
+    setTargetAudience(metadata.target_audience || '');
+    setIndustry(metadata.industry || '');
+    setSelectedChannels(metadata.target_channels as ChannelType[]);
+    setResearchData(research);
+    setStep('research');
   };
 
   const handleGenerate = async () => {
@@ -197,6 +223,10 @@ export function AIProposalDialog({ open, onOpenChange, onSuccess }: AIProposalDi
     );
   };
 
+  const handleShowSavedResearch = () => {
+    setStep('saved');
+  };
+
   const toggleHook = (hook: string) => {
     setSelectedHooks(prev =>
       prev.includes(hook)
@@ -209,16 +239,18 @@ export function AIProposalDialog({ open, onOpenChange, onSuccess }: AIProposalDi
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className={`max-h-[90vh] overflow-y-auto ${step === 'research' ? 'sm:max-w-3xl' : 'sm:max-w-xl'}`}>
+      <DialogContent className={`max-h-[90vh] overflow-y-auto ${step === 'research' || step === 'saved' ? 'sm:max-w-3xl' : 'sm:max-w-xl'}`}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-amber-500" />
             {step === 'input' && 'AI Content Campaign Generator'}
+            {step === 'saved' && 'Select Saved Research'}
             {step === 'research' && 'Research Results - Select Your Angle'}
             {step === 'generating' && 'Generating Content...'}
           </DialogTitle>
           <DialogDescription>
             {step === 'input' && 'Step 1: Define your topic and audience. AI will research angles and ideas.'}
+            {step === 'saved' && 'Choose from previously saved research to reuse for a new campaign.'}
             {step === 'research' && 'Step 2: Review research, select an angle and hooks, then generate content.'}
             {step === 'generating' && 'Creating publication-ready content for all selected channels...'}
           </DialogDescription>
@@ -393,6 +425,15 @@ export function AIProposalDialog({ open, onOpenChange, onSuccess }: AIProposalDi
           </div>
         )}
 
+        {step === 'saved' && (
+          <div className="py-4">
+            <SavedResearchPicker
+              onSelect={handleUseSavedResearch}
+              onClose={() => setStep('input')}
+            />
+          </div>
+        )}
+
         {step === 'research' && researchData && (
           <div className="py-4">
             <ResearchPreview
@@ -421,6 +462,17 @@ export function AIProposalDialog({ open, onOpenChange, onSuccess }: AIProposalDi
               <Button variant="outline" onClick={() => handleClose(false)} disabled={isLoading}>
                 Cancel
               </Button>
+              {savedResearch.length > 0 && (
+                <Button 
+                  variant="outline" 
+                  onClick={handleShowSavedResearch}
+                  disabled={isLoading}
+                  className="gap-2"
+                >
+                  <BookOpen className="h-4 w-4" />
+                  Use Saved
+                </Button>
+              )}
               <Button 
                 onClick={handleResearch}
                 disabled={!topic.trim() || selectedChannels.length === 0 || isLoading}
@@ -441,20 +493,46 @@ export function AIProposalDialog({ open, onOpenChange, onSuccess }: AIProposalDi
             </>
           )}
 
+          {step === 'saved' && (
+            <>
+              <Button 
+                variant="outline" 
+                onClick={() => setStep('input')}
+                className="gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back
+              </Button>
+            </>
+          )}
+
           {step === 'research' && (
             <>
               <Button 
                 variant="outline" 
                 onClick={() => setStep('input')} 
-                disabled={isLoading}
+                disabled={isLoading || isSaving}
                 className="gap-2"
               >
                 <ArrowLeft className="h-4 w-4" />
                 Back
               </Button>
               <Button 
+                variant="outline"
+                onClick={handleSaveResearch}
+                disabled={isLoading || isSaving}
+                className="gap-2"
+              >
+                {isSaving ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
+                Save Research
+              </Button>
+              <Button 
                 onClick={handleGenerate}
-                disabled={isLoading}
+                disabled={isLoading || isSaving}
                 className="gap-2"
               >
                 <Sparkles className="h-4 w-4" />

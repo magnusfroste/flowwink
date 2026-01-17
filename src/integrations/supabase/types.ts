@@ -723,6 +723,45 @@ export type Database = {
         }
         Relationships: []
       }
+      content_research: {
+        Row: {
+          ai_provider: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          industry: string | null
+          research_data: Json
+          target_audience: string | null
+          target_channels: string[] | null
+          topic: string
+          updated_at: string
+        }
+        Insert: {
+          ai_provider?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          industry?: string | null
+          research_data: Json
+          target_audience?: string | null
+          target_channels?: string[] | null
+          topic: string
+          updated_at?: string
+        }
+        Update: {
+          ai_provider?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          industry?: string | null
+          research_data?: Json
+          target_audience?: string | null
+          target_channels?: string[] | null
+          topic?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       deal_activities: {
         Row: {
           completed_at: string | null
