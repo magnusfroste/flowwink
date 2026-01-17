@@ -134,7 +134,23 @@ serve(async (req) => {
         console.warn("[newsletter-subscribe] Webhook error:", webhookError);
       }
 
-      // Redirect to success page or return success
+      // Get site URL for redirect
+      const { data: siteSettings } = await supabase
+        .from("site_settings")
+        .select("value")
+        .eq("key", "general")
+        .maybeSingle();
+
+      const siteUrl = (siteSettings?.value as any)?.siteUrl || req.headers.get("origin") || "";
+      const redirectUrl = siteUrl ? `${siteUrl}/newsletter/confirmed` : null;
+
+      if (redirectUrl) {
+        return new Response(null, {
+          status: 302,
+          headers: { ...corsHeaders, "Location": redirectUrl },
+        });
+      }
+
       return new Response(JSON.stringify({ success: true, message: "Subscription confirmed" }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
