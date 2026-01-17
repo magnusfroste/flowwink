@@ -33,6 +33,7 @@ import {
   Github,
   ArrowUpCircle,
   Headphones,
+  Zap,
 } from "lucide-react";
 
 import { useAuth } from "@/hooks/useAuth";
@@ -92,7 +93,7 @@ const navigationGroups: NavGroup[] = [
     items: [
       { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
       { name: "Analytics", href: "/admin/analytics", icon: BarChart3, moduleId: "analytics" },
-      { name: "Copilot", href: "/admin/copilot", icon: Bot },
+      { name: "FlowPilot", href: "/admin/copilot", icon: Zap },
       { name: "Quick Start", href: "/admin/quick-start", icon: Rocket },
       { name: "Templates", href: "/admin/templates", icon: Puzzle },
     ],

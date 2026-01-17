@@ -28,8 +28,11 @@ export interface ModuleRecommendation {
   status: 'pending' | 'accepted' | 'rejected';
 }
 
+export type MigrationPhase = 'idle' | 'pages' | 'blog' | 'knowledgeBase' | 'complete';
+
 export interface MigrationState {
   sourceUrl: string | null;
+  baseDomain: string | null;
   detectedPlatform: string | null;
   pendingBlocks: CopilotBlock[];
   currentBlockIndex: number;
@@ -37,6 +40,19 @@ export interface MigrationState {
   discoveredLinks: string[];
   isActive: boolean;
   pageTitle: string | null;
+  // Full site migration phases
+  phase: MigrationPhase;
+  pagesCompleted: number;
+  pagesTotal: number;
+  blogPostsDiscovered: number;
+  blogPostsMigrated: number;
+  kbArticlesDiscovered: number;
+  kbArticlesMigrated: number;
+  // Detected content
+  hasBlog: boolean;
+  hasKnowledgeBase: boolean;
+  blogUrls: string[];
+  kbUrls: string[];
 }
 
 interface UseCopilotReturn {
@@ -63,10 +79,15 @@ interface UseCopilotReturn {
   skipMigrationBlock: () => void;
   editMigrationBlock: (feedback: string) => void;
   migrateNextPage: (url: string) => Promise<void>;
+  // Phase control
+  startBlogMigration: () => Promise<void>;
+  startKbMigration: () => Promise<void>;
+  skipPhase: () => void;
 }
 
 const initialMigrationState: MigrationState = {
   sourceUrl: null,
+  baseDomain: null,
   detectedPlatform: null,
   pendingBlocks: [],
   currentBlockIndex: 0,
@@ -74,6 +95,17 @@ const initialMigrationState: MigrationState = {
   discoveredLinks: [],
   isActive: false,
   pageTitle: null,
+  phase: 'idle',
+  pagesCompleted: 0,
+  pagesTotal: 0,
+  blogPostsDiscovered: 0,
+  blogPostsMigrated: 0,
+  kbArticlesDiscovered: 0,
+  kbArticlesMigrated: 0,
+  hasBlog: false,
+  hasKnowledgeBase: false,
+  blogUrls: [],
+  kbUrls: [],
 };
 
 export function useCopilot(): UseCopilotReturn {
@@ -161,16 +193,41 @@ export function useCopilot(): UseCopilotReturn {
 
       // Extract discovered links from metadata if available
       const discoveredLinks: string[] = data.metadata?.internalLinks || [];
+      
+      // Detect blog and KB presence
+      const hasBlog = data.metadata?.hasBlog || discoveredLinks.some(l => /blog|news|articles?|posts?/i.test(l));
+      const hasKnowledgeBase = data.metadata?.hasKnowledgeBase || discoveredLinks.some(l => /help|faq|support|kb|knowledge/i.test(l));
+      const blogUrls = discoveredLinks.filter(l => /blog|news|articles?|posts?/i.test(l));
+      const kbUrls = discoveredLinks.filter(l => /help|faq|support|kb|knowledge/i.test(l));
+      const pageUrls = discoveredLinks.filter(l => !blogUrls.includes(l) && !kbUrls.includes(l));
+      
+      // Extract base domain
+      let baseDomain = null;
+      try {
+        baseDomain = new URL(url).origin;
+      } catch {}
 
       setMigrationState({
         sourceUrl: url,
+        baseDomain,
         detectedPlatform: data.metadata?.platform || 'unknown',
         pendingBlocks: migratedBlocks,
         currentBlockIndex: 0,
         migratedPages: [url],
-        discoveredLinks,
+        discoveredLinks: pageUrls,
         isActive: true,
         pageTitle: data.title || 'Untitled Page',
+        phase: 'pages',
+        pagesCompleted: 1,
+        pagesTotal: pageUrls.length + 1,
+        blogPostsDiscovered: blogUrls.length,
+        blogPostsMigrated: 0,
+        kbArticlesDiscovered: kbUrls.length,
+        kbArticlesMigrated: 0,
+        hasBlog,
+        hasKnowledgeBase,
+        blogUrls,
+        kbUrls,
       });
 
       // Add success message with first block preview
@@ -486,6 +543,107 @@ export function useCopilot(): UseCopilotReturn {
     setMigrationState(initialMigrationState);
   }, []);
 
+  // Phase control functions
+  const startBlogMigration = useCallback(async () => {
+    if (!migrationState.hasBlog || migrationState.blogUrls.length === 0) {
+      const msg: CopilotMessage = {
+        id: generateId(),
+        role: 'assistant',
+        content: `No blog detected on this site. Let's move on!`,
+        createdAt: new Date(),
+      };
+      setMessages(prev => [...prev, msg]);
+      return;
+    }
+    
+    setMigrationState(prev => ({ ...prev, phase: 'blog' }));
+    
+    const msg: CopilotMessage = {
+      id: generateId(),
+      role: 'assistant',
+      content: `📝 Great! I found ${migrationState.blogUrls.length} blog posts. Let me start migrating them as blog posts in your new system.\n\nI'll handle the content, categories, and metadata automatically.`,
+      createdAt: new Date(),
+    };
+    setMessages(prev => [...prev, msg]);
+    
+    // Start migrating first blog URL
+    if (migrationState.blogUrls[0]) {
+      const fullUrl = migrationState.baseDomain 
+        ? new URL(migrationState.blogUrls[0], migrationState.baseDomain).href 
+        : migrationState.blogUrls[0];
+      await startMigration(fullUrl);
+    }
+  }, [migrationState, startMigration]);
+
+  const startKbMigration = useCallback(async () => {
+    if (!migrationState.hasKnowledgeBase || migrationState.kbUrls.length === 0) {
+      const msg: CopilotMessage = {
+        id: generateId(),
+        role: 'assistant',
+        content: `No knowledge base detected on this site. You're all set!`,
+        createdAt: new Date(),
+      };
+      setMessages(prev => [...prev, msg]);
+      setMigrationState(prev => ({ ...prev, phase: 'complete' }));
+      return;
+    }
+    
+    setMigrationState(prev => ({ ...prev, phase: 'knowledgeBase' }));
+    
+    const msg: CopilotMessage = {
+      id: generateId(),
+      role: 'assistant',
+      content: `📚 Found ${migrationState.kbUrls.length} knowledge base articles. I'll migrate these into structured FAQ/help content.\n\nEach article will be organized by category for easy navigation.`,
+      createdAt: new Date(),
+    };
+    setMessages(prev => [...prev, msg]);
+    
+    // Start migrating first KB URL
+    if (migrationState.kbUrls[0]) {
+      const fullUrl = migrationState.baseDomain 
+        ? new URL(migrationState.kbUrls[0], migrationState.baseDomain).href 
+        : migrationState.kbUrls[0];
+      await startMigration(fullUrl);
+    }
+  }, [migrationState, startMigration]);
+
+  const skipPhase = useCallback(() => {
+    const currentPhase = migrationState.phase;
+    let nextPhase: MigrationPhase = 'complete';
+    let message = '';
+    
+    if (currentPhase === 'pages') {
+      if (migrationState.hasBlog) {
+        nextPhase = 'blog';
+        message = `Skipped remaining pages. Found ${migrationState.blogUrls.length} blog posts. Would you like me to migrate them?`;
+      } else if (migrationState.hasKnowledgeBase) {
+        nextPhase = 'knowledgeBase';
+        message = `Skipped remaining pages. Found ${migrationState.kbUrls.length} KB articles. Would you like me to migrate them?`;
+      } else {
+        message = `Migration complete! All content has been imported.`;
+      }
+    } else if (currentPhase === 'blog') {
+      if (migrationState.hasKnowledgeBase) {
+        nextPhase = 'knowledgeBase';
+        message = `Skipped blog migration. Found ${migrationState.kbUrls.length} KB articles. Would you like me to migrate them?`;
+      } else {
+        message = `Migration complete! Your pages and content are ready.`;
+      }
+    } else {
+      message = `Migration complete! All content has been imported.`;
+    }
+    
+    setMigrationState(prev => ({ ...prev, phase: nextPhase }));
+    
+    const msg: CopilotMessage = {
+      id: generateId(),
+      role: 'assistant',
+      content: message,
+      createdAt: new Date(),
+    };
+    setMessages(prev => [...prev, msg]);
+  }, [migrationState]);
+
   const approvedBlocks = blocks.filter(b => b.status === 'approved');
 
   return {
@@ -512,5 +670,9 @@ export function useCopilot(): UseCopilotReturn {
     skipMigrationBlock,
     editMigrationBlock,
     migrateNextPage,
+    // Phase control
+    startBlogMigration,
+    startKbMigration,
+    skipPhase,
   };
 }
