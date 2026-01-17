@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { 
   Globe, Smartphone, MessageSquare, Mail, Code2, Copy, Check, Play, Database, 
   FileJson, Layers, Info, FileText, Rss, Settings2, Plus, Loader2, RefreshCw,
-  ExternalLink, ChevronRight,
+  ExternalLink, ChevronRight, Megaphone,
   // Block icons
   LayoutTemplate, PanelTop, PanelBottom, Columns2, Minus, Type, 
   ChevronDown, AlertCircle, Quote, LayoutGrid, Image, Images, 
@@ -27,6 +27,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { useModules } from "@/hooks/useModules";
+import { CampaignsDashboard } from "@/components/admin/content-hub";
 
 // REST endpoint definitions
 interface RestEndpoint {
@@ -541,6 +542,23 @@ export default async function Home() {
                 </div>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Content Campaigns Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Megaphone className="h-5 w-5" />
+              Content Campaigns
+              <Badge variant="secondary">AI-Powered</Badge>
+            </CardTitle>
+            <CardDescription>
+              Create content once, automatically adapted for all channels
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <CampaignsDashboard />
           </CardContent>
         </Card>
 
