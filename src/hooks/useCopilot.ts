@@ -1,7 +1,9 @@
 import { useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useUpdateModules, useModules, type ModulesSettings, defaultModulesSettings } from '@/hooks/useModules';
+import { useCreatePage } from '@/hooks/usePages';
 import { toast } from 'sonner';
+import type { ContentBlock, ContentBlockType } from '@/types/cms';
 
 // Block-to-Module mapping for auto-enabling modules
 const BLOCK_MODULE_MAP: Record<string, keyof ModulesSettings> = {
@@ -175,6 +177,7 @@ export function useCopilot(): UseCopilotReturn {
   const abortControllerRef = useRef<AbortController | null>(null);
   const updateModules = useUpdateModules();
   const { data: currentModules } = useModules();
+  const createPageMutation = useCreatePage();
 
   // Helper to auto-enable a module silently
   const autoEnableModule = useCallback(async (moduleId: keyof ModulesSettings) => {
@@ -356,29 +359,150 @@ export function useCopilot(): UseCopilotReturn {
     }
   }, []);
 
-  const approveMigrationBlock = useCallback(() => {
+  // Helper: Update page status in siteStructure
+  const updatePageStatusInStructure = useCallback((url: string, status: 'pending' | 'migrating' | 'completed' | 'skipped') => {
+    setMigrationState(prev => {
+      if (!prev.siteStructure) return prev;
+      return {
+        ...prev,
+        siteStructure: {
+          ...prev.siteStructure,
+          pages: prev.siteStructure.pages.map(p =>
+            p.url === url || p.url === prev.currentPageUrl ? { ...p, status } : p
+          ),
+        },
+      };
+    });
+  }, []);
+
+  // Helper: Find next pending page
+  const findNextPendingPage = useCallback(() => {
+    if (!migrationState.siteStructure) return null;
+    return migrationState.siteStructure.pages.find(
+      p => p.status === 'pending' && p.type === 'page'
+    );
+  }, [migrationState.siteStructure]);
+
+  // Helper: Generate slug from title
+  const generateSlug = (title: string): string => {
+    return title
+      .toLowerCase()
+      .replace(/[äå]/g, 'a')
+      .replace(/ö/g, 'o')
+      .replace(/[^a-z0-9\s-]/g, '')
+      .trim()
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-');
+  };
+
+  const approveMigrationBlock = useCallback(async () => {
     if (!migrationState.isActive || migrationState.pendingBlocks.length === 0) return;
 
     const currentBlock = migrationState.pendingBlocks[migrationState.currentBlockIndex];
     if (!currentBlock) return;
 
     // Add to approved blocks
-    setBlocks(prev => [...prev, { ...currentBlock, status: 'approved' }]);
+    const updatedBlocks = [...blocks, { ...currentBlock, status: 'approved' as const }];
+    setBlocks(updatedBlocks);
 
     // Move to next block
     const nextIndex = migrationState.currentBlockIndex + 1;
     
     if (nextIndex >= migrationState.pendingBlocks.length) {
-      // All blocks reviewed
+      // All blocks reviewed - AUTO-SAVE and CONTINUE
       setMigrationState(prev => ({ ...prev, currentBlockIndex: nextIndex }));
       
-      const completionMessage: CopilotMessage = {
-        id: generateId(),
-        role: 'assistant',
-        content: `🎉 All ${migrationState.pendingBlocks.length} sections reviewed!${migrationState.discoveredLinks.length > 0 ? `\n\nI found ${migrationState.discoveredLinks.length} other pages on this site. Would you like me to migrate any of them?` : '\n\nYour page is ready! Click "Finish & create page" when you\'re happy with the result.'}`,
-        createdAt: new Date(),
-      };
-      setMessages(prev => [...prev, completionMessage]);
+      const approvedBlocks = updatedBlocks.filter(b => b.status === 'approved');
+      
+      if (approvedBlocks.length > 0) {
+        const pageTitle = migrationState.pageTitle || 'Imported Page';
+        const pageSlug = generateSlug(pageTitle);
+        const pagesCompleted = migrationState.pagesCompleted;
+        const pagesTotal = migrationState.pagesTotal;
+        
+        try {
+          // Auto-save page
+          await createPageMutation.mutateAsync({
+            title: pageTitle,
+            slug: pageSlug,
+            content: approvedBlocks.map(b => ({ 
+              id: b.id, 
+              type: b.type as ContentBlockType, 
+              data: b.data 
+            })) as ContentBlock[],
+            status: 'draft',
+          });
+          
+          // Mark current page as completed in siteStructure
+          if (migrationState.currentPageUrl) {
+            updatePageStatusInStructure(migrationState.currentPageUrl, 'completed');
+          }
+          
+          // Clear blocks for next page
+          setBlocks([]);
+          
+          // Update pages completed count
+          const newPagesCompleted = pagesCompleted + 1;
+          setMigrationState(prev => ({ ...prev, pagesCompleted: newPagesCompleted }));
+          
+          // Find next pending page
+          const nextPage = findNextPendingPage();
+          
+          if (nextPage && nextPage.status === 'pending') {
+            // Auto-continue to next page
+            const continueMessage: CopilotMessage = {
+              id: generateId(),
+              role: 'assistant',
+              content: `✅ **${pageTitle}** saved! (${newPagesCompleted}/${pagesTotal})\n\n➡️ Moving to: **${nextPage.title}**...`,
+              createdAt: new Date(),
+            };
+            setMessages(prev => [...prev, continueMessage]);
+            
+            // Start next page migration after short delay
+            const fullUrl = nextPage.url.startsWith('http') 
+              ? nextPage.url 
+              : `${migrationState.baseDomain}${nextPage.url}`;
+            
+            setTimeout(() => startMigration(fullUrl), 800);
+          } else {
+            // All pages done - check for blog/kb
+            const hasBlog = migrationState.hasBlog && migrationState.blogUrls.length > 0;
+            const hasKb = migrationState.hasKnowledgeBase && migrationState.kbUrls.length > 0;
+            
+            let completeContent = `🎉 **All ${newPagesCompleted} pages migrated!**\n\n`;
+            
+            if (hasBlog) {
+              completeContent += `📝 Found ${migrationState.blogUrls.length} blog posts. Say "yes" or "migrate blog" to continue.\n\n`;
+            }
+            if (hasKb) {
+              completeContent += `📚 Found ${migrationState.kbUrls.length} knowledge base articles. Say "migrate kb" to continue.\n\n`;
+            }
+            if (!hasBlog && !hasKb) {
+              completeContent += `Your site migration is complete! All pages have been saved as drafts.`;
+            }
+            
+            const completeMessage: CopilotMessage = {
+              id: generateId(),
+              role: 'assistant',
+              content: completeContent,
+              createdAt: new Date(),
+            };
+            setMessages(prev => [...prev, completeMessage]);
+            setMigrationState(prev => ({ ...prev, discoveryStatus: 'complete', phase: 'complete' }));
+          }
+        } catch (err) {
+          console.error('Failed to save page:', err);
+          toast.error('Failed to save page');
+          
+          const errorMessage: CopilotMessage = {
+            id: generateId(),
+            role: 'assistant',
+            content: `❌ Failed to save "${pageTitle}". You can try again or skip to the next page.`,
+            createdAt: new Date(),
+          };
+          setMessages(prev => [...prev, errorMessage]);
+        }
+      }
     } else {
       setMigrationState(prev => ({ ...prev, currentBlockIndex: nextIndex }));
       
@@ -392,27 +516,114 @@ export function useCopilot(): UseCopilotReturn {
     }
 
     toast.success('Block added');
-  }, [migrationState]);
+  }, [migrationState, blocks, createPageMutation, updatePageStatusInStructure, findNextPendingPage, startMigration]);
 
-  const skipMigrationBlock = useCallback(() => {
+  const skipMigrationBlock = useCallback(async () => {
     if (!migrationState.isActive || migrationState.pendingBlocks.length === 0) return;
 
     const nextIndex = migrationState.currentBlockIndex + 1;
     
     if (nextIndex >= migrationState.pendingBlocks.length) {
+      // All blocks reviewed - check if we have any approved blocks to save
       setMigrationState(prev => ({ ...prev, currentBlockIndex: nextIndex }));
       
-      const completionMessage: CopilotMessage = {
-        id: generateId(),
-        role: 'assistant',
-        content: `Review complete! ${blocks.length} sections added.${migrationState.discoveredLinks.length > 0 ? ` Want to migrate more pages?` : ''}`,
-        createdAt: new Date(),
-      };
-      setMessages(prev => [...prev, completionMessage]);
+      const approvedBlocks = blocks.filter(b => b.status === 'approved');
+      
+      if (approvedBlocks.length > 0) {
+        // Auto-save with approved blocks
+        const pageTitle = migrationState.pageTitle || 'Imported Page';
+        const pageSlug = generateSlug(pageTitle);
+        const pagesCompleted = migrationState.pagesCompleted;
+        const pagesTotal = migrationState.pagesTotal;
+        
+        try {
+          await createPageMutation.mutateAsync({
+            title: pageTitle,
+            slug: pageSlug,
+            content: approvedBlocks.map(b => ({ 
+              id: b.id, 
+              type: b.type as ContentBlockType, 
+              data: b.data 
+            })) as ContentBlock[],
+            status: 'draft',
+          });
+          
+          if (migrationState.currentPageUrl) {
+            updatePageStatusInStructure(migrationState.currentPageUrl, 'completed');
+          }
+          
+          setBlocks([]);
+          const newPagesCompleted = pagesCompleted + 1;
+          setMigrationState(prev => ({ ...prev, pagesCompleted: newPagesCompleted }));
+          
+          const nextPage = findNextPendingPage();
+          
+          if (nextPage && nextPage.status === 'pending') {
+            const continueMessage: CopilotMessage = {
+              id: generateId(),
+              role: 'assistant',
+              content: `✅ **${pageTitle}** saved with ${approvedBlocks.length} sections! (${newPagesCompleted}/${pagesTotal})\n\n➡️ Moving to: **${nextPage.title}**...`,
+              createdAt: new Date(),
+            };
+            setMessages(prev => [...prev, continueMessage]);
+            
+            const fullUrl = nextPage.url.startsWith('http') 
+              ? nextPage.url 
+              : `${migrationState.baseDomain}${nextPage.url}`;
+            
+            setTimeout(() => startMigration(fullUrl), 800);
+          } else {
+            // All pages done
+            const completeMessage: CopilotMessage = {
+              id: generateId(),
+              role: 'assistant',
+              content: `🎉 **All ${newPagesCompleted} pages migrated!**\n\nYour site migration is complete!`,
+              createdAt: new Date(),
+            };
+            setMessages(prev => [...prev, completeMessage]);
+            setMigrationState(prev => ({ ...prev, discoveryStatus: 'complete', phase: 'complete' }));
+          }
+        } catch (err) {
+          console.error('Failed to save page:', err);
+          toast.error('Failed to save page');
+        }
+      } else {
+        // No approved blocks - skip this page entirely
+        if (migrationState.currentPageUrl) {
+          updatePageStatusInStructure(migrationState.currentPageUrl, 'skipped');
+        }
+        
+        const nextPage = findNextPendingPage();
+        
+        if (nextPage && nextPage.status === 'pending') {
+          const skipMessage: CopilotMessage = {
+            id: generateId(),
+            role: 'assistant',
+            content: `⏭️ Page skipped. Moving to: **${nextPage.title}**...`,
+            createdAt: new Date(),
+          };
+          setMessages(prev => [...prev, skipMessage]);
+          
+          const fullUrl = nextPage.url.startsWith('http') 
+            ? nextPage.url 
+            : `${migrationState.baseDomain}${nextPage.url}`;
+          
+          setTimeout(() => startMigration(fullUrl), 800);
+        } else {
+          const completeMessage: CopilotMessage = {
+            id: generateId(),
+            role: 'assistant',
+            content: `✅ Migration review complete! ${migrationState.pagesCompleted} pages were saved as drafts.`,
+            createdAt: new Date(),
+          };
+          setMessages(prev => [...prev, completeMessage]);
+          setMigrationState(prev => ({ ...prev, discoveryStatus: 'complete', phase: 'complete' }));
+        }
+      }
     } else {
       setMigrationState(prev => ({ ...prev, currentBlockIndex: nextIndex }));
     }
-  }, [migrationState, blocks.length]);
+  }, [migrationState, blocks, createPageMutation, updatePageStatusInStructure, findNextPendingPage, startMigration]);
 
   const editMigrationBlock = useCallback((feedback: string) => {
     if (!migrationState.isActive) return;
