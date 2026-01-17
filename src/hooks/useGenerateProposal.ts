@@ -9,6 +9,11 @@ interface GenerateProposalInput {
   pillar_content?: string;
   target_channels: ChannelType[];
   brand_voice?: string;
+  target_audience?: string;
+  tone_level?: number; // 1-5 (1=formal, 5=casual)
+  industry?: string;
+  content_goals?: string[];
+  unique_angle?: string;
   schedule_for?: string;
 }
 
@@ -16,6 +21,7 @@ interface GenerateProposalResponse {
   success: boolean;
   proposal: ContentProposal;
   message: string;
+  validation_issues?: string[];
 }
 
 export function useGenerateProposal() {
@@ -42,7 +48,15 @@ export function useGenerateProposal() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['content-proposals'] });
-      toast.success(data.message || 'Content proposal generated');
+      
+      if (data.validation_issues?.length) {
+        toast.success(data.message, {
+          description: `Note: ${data.validation_issues.length} minor quality suggestions available`,
+        });
+      } else {
+        toast.success(data.message || 'Content proposal generated');
+      }
+      
       setProgress(null);
     },
     onError: (error: Error) => {
