@@ -147,8 +147,8 @@ export function CopilotChat({
             </div>
           )}
 
-          {/* Generate full page button - show when ready to build */}
-          {!isEmpty && !hasBlocks && !isLoading && (
+          {/* Generate full page button - show when ready to build NEW sites, not during migration */}
+          {!isEmpty && !hasBlocks && !isLoading && discoveryStatus === 'idle' && (
             <div className="py-3">
               <Button
                 onClick={() => onSendMessage(FULL_PAGE_PROMPT)}
