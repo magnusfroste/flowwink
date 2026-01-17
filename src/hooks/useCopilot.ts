@@ -801,17 +801,27 @@ export function useCopilot(): UseCopilotReturn {
 
       // Success message - immediately start migration
       const totalPages = siteStructure.pages.length;
-      const firstPage = siteStructure.pages.find(p => p.type === 'page') || siteStructure.pages[0];
+      
+      // Prioritize homepage selection
+      const homePage = siteStructure.pages.find(p => 
+        p.url === siteStructure.baseUrl || 
+        p.url === siteStructure.baseUrl + '/' ||
+        p.title.toLowerCase() === 'home' ||
+        p.title.toLowerCase() === 'hem' ||
+        p.title.toLowerCase() === 'start' ||
+        p.title.toLowerCase() === 'startsida'
+      );
+      const firstPage = homePage || siteStructure.pages.find(p => p.type === 'page') || siteStructure.pages[0];
       
       const successMessage: CopilotMessage = {
         id: generateId(),
         role: 'assistant',
-        content: `✨ **${siteStructure.siteName}** - Found ${totalPages} pages!${siteStructure.platform !== 'unknown' ? ` (${siteStructure.platform})` : ''}\n\nStarting with your homepage. I'll show you each section for review.`,
+        content: `✨ **${siteStructure.siteName}** - Found ${totalPages} pages!${siteStructure.platform !== 'unknown' ? ` (${siteStructure.platform})` : ''}\n\nStarting with ${firstPage?.title || 'homepage'}. I'll show you each section for review.`,
         createdAt: new Date(),
       };
       setMessages(prev => [...prev, successMessage]);
 
-      // AUTO-START MIGRATION with first page
+      // AUTO-START MIGRATION with first page (homepage)
       if (firstPage) {
         setMigrationState(prev => ({ ...prev, discoveryStatus: 'migrating', phase: 'pages' }));
         const fullUrl = firstPage.url.startsWith('http') 
