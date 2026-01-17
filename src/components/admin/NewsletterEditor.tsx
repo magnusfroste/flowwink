@@ -13,6 +13,13 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Input } from '@/components/ui/input';
 import { MediaLibraryPicker } from '@/components/admin/MediaLibraryPicker';
 import { UnsplashPicker } from '@/components/admin/UnsplashPicker';
+import { 
+  CTAButton, 
+  CalloutBox, 
+  Divider, 
+  AuthorBlock, 
+  NewsletterBlockSelector 
+} from '@/components/admin/newsletter';
 
 interface NewsletterEditorProps {
   content: string;
@@ -38,6 +45,10 @@ export function NewsletterEditor({ content, onChange, placeholder = 'Write your 
         },
       }),
       ResizableImage,
+      CTAButton,
+      CalloutBox,
+      Divider,
+      AuthorBlock,
     ],
     content: content || '',
     onUpdate: ({ editor }) => {
@@ -82,6 +93,8 @@ export function NewsletterEditor({ content, onChange, placeholder = 'Write your 
   return (
     <div className="rounded-lg border bg-card">
       <div className="border-b px-3 py-2 flex items-center gap-1 flex-wrap bg-muted/30">
+        <NewsletterBlockSelector editor={editor} />
+        <Separator orientation="vertical" className="h-6 mx-2" />
         <Toggle
           size="sm"
           pressed={editor.isActive('bold')}
