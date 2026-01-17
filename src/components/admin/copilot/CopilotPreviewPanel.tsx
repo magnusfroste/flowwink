@@ -15,7 +15,6 @@ interface CopilotPreviewPanelProps {
   onRegenerate: (blockId: string, feedback?: string) => void;
   migrationState: MigrationState;
   onTogglePage: (url: string) => void;
-  onStartMigration: () => void;
   isLoading: boolean;
 }
 
@@ -28,7 +27,6 @@ export function CopilotPreviewPanel({
   onRegenerate,
   migrationState,
   onTogglePage,
-  onStartMigration,
   isLoading,
 }: CopilotPreviewPanelProps) {
   const [deviceMode, setDeviceMode] = useState<DeviceMode>('desktop');
@@ -104,7 +102,6 @@ export function CopilotPreviewPanel({
           siteStructure={migrationState.siteStructure}
           discoveryStatus={migrationState.discoveryStatus}
           onTogglePage={onTogglePage}
-          onStartMigration={onStartMigration}
           isLoading={isLoading}
         />
       )}

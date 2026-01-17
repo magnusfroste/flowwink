@@ -437,6 +437,34 @@ export function useCopilot(): UseCopilotReturn {
   const sendMessage = useCallback(async (content: string) => {
     if (!content.trim() || isLoading) return;
 
+    const lowerContent = content.toLowerCase().trim();
+
+    // CONVERSATIONAL COMMANDS - Handle quick intents locally
+    // Approval commands
+    if (['yes', 'looks good', 'keep it', 'approve', 'ok', 'perfect', 'great'].includes(lowerContent)) {
+      if (migrationState.isActive && migrationState.pendingBlocks.length > 0) {
+        approveMigrationBlock();
+        return;
+      }
+    }
+
+    // Skip commands
+    if (['skip', 'next', 'pass', 'no'].includes(lowerContent)) {
+      if (migrationState.isActive && migrationState.pendingBlocks.length > 0) {
+        skipMigrationBlock();
+        return;
+      }
+    }
+
+    // Phase skip commands
+    if (lowerContent.includes('skip blog') || lowerContent.includes('skip kb') || 
+        lowerContent.includes('just pages') || lowerContent.includes('only pages')) {
+      if (migrationState.phase !== 'complete') {
+        skipPhase();
+        return;
+      }
+    }
+
     // Check if this is a migration request
     const urlMatch = content.match(/https?:\/\/[^\s]+/);
     const isMigrationRequest = content.toLowerCase().includes('migrate') || 
@@ -719,7 +747,7 @@ export function useCopilot(): UseCopilotReturn {
     const analyzeMessage: CopilotMessage = {
       id: generateId(),
       role: 'assistant',
-      content: `🔍 Analyzing site structure for ${url}...\n\nI'm scanning navigation, sitemap, and detecting content types.`,
+      content: `🔍 Analyzing site structure for ${url}...\n\nScanning navigation, sitemap, and detecting content types.`,
       createdAt: new Date(),
     };
     setMessages(prev => [...prev, analyzeMessage]);
@@ -771,14 +799,30 @@ export function useCopilot(): UseCopilotReturn {
         }
       }
 
-      // Success message with summary
+      // Success message - immediately start migration
+      const totalPages = siteStructure.pages.length;
+      const firstPage = siteStructure.pages.find(p => p.type === 'page') || siteStructure.pages[0];
+      
       const successMessage: CopilotMessage = {
         id: generateId(),
         role: 'assistant',
-        content: `✨ **${siteStructure.siteName}** analyzed successfully!${siteStructure.platform !== 'unknown' ? ` (${siteStructure.platform})` : ''}\n\n**Found:**\n• ${pageCount} pages\n${blogCount > 0 ? `• ${blogCount} blog posts\n` : ''}${kbCount > 0 ? `• ${kbCount} KB articles\n` : ''}\nSelect which pages to migrate from the site overview on the right.`,
+        content: `✨ **${siteStructure.siteName}** - Found ${totalPages} pages!${siteStructure.platform !== 'unknown' ? ` (${siteStructure.platform})` : ''}\n\nStarting with your homepage. I'll show you each section for review.`,
         createdAt: new Date(),
       };
       setMessages(prev => [...prev, successMessage]);
+
+      // AUTO-START MIGRATION with first page
+      if (firstPage) {
+        setMigrationState(prev => ({ ...prev, discoveryStatus: 'migrating', phase: 'pages' }));
+        const fullUrl = firstPage.url.startsWith('http') 
+          ? firstPage.url 
+          : `${siteStructure.baseUrl}${firstPage.url}`;
+        
+        // Small delay for UX
+        setTimeout(() => {
+          startMigration(fullUrl);
+        }, 500);
+      }
 
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to analyze site';
@@ -796,7 +840,7 @@ export function useCopilot(): UseCopilotReturn {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [autoEnableModule, startMigration]);
 
   const selectPageForMigration = useCallback((url: string) => {
     setMigrationState(prev => {

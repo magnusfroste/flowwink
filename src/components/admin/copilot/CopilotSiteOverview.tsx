@@ -22,7 +22,6 @@ interface CopilotSiteOverviewProps {
   siteStructure: SiteStructure | null;
   discoveryStatus: DiscoveryStatus;
   onTogglePage: (url: string) => void;
-  onStartMigration: () => void;
   isLoading: boolean;
 }
 
@@ -38,7 +37,6 @@ export function CopilotSiteOverview({
   siteStructure,
   discoveryStatus,
   onTogglePage,
-  onStartMigration,
   isLoading,
 }: CopilotSiteOverviewProps) {
   const [expandedCategories, setExpandedCategories] = useState<Set<PageCategory>>(
@@ -51,7 +49,7 @@ export function CopilotSiteOverview({
         <Globe className="h-16 w-16 text-muted-foreground/30 mb-4" />
         <h3 className="text-lg font-medium mb-2">Site Overview</h3>
         <p className="text-sm text-muted-foreground max-w-xs">
-          Enter a URL in the chat to analyze and discover all pages on a website.
+          Paste a URL in the chat to analyze and migrate a website.
         </p>
       </div>
     );
@@ -89,24 +87,16 @@ export function CopilotSiteOverview({
     return acc;
   }, {} as Record<PageCategory, DiscoveredPage[]>);
 
-  const selectedCount = siteStructure.pages.filter(p => p.status === 'pending').length;
+  const completedCount = siteStructure.pages.filter(p => p.status === 'completed').length;
+  const migratingCount = siteStructure.pages.filter(p => p.status === 'migrating').length;
   const totalCount = siteStructure.pages.length;
 
-  const selectAll = () => {
-    siteStructure.pages.forEach(p => {
-      if (p.status === 'skipped') onTogglePage(p.url);
-    });
-  };
-
-  const deselectAll = () => {
-    siteStructure.pages.forEach(p => {
-      if (p.status === 'pending') onTogglePage(p.url);
-    });
-  };
+  // Calculate progress percentage
+  const progressPercent = Math.round((completedCount / totalCount) * 100);
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
+      {/* Header - Progress Dashboard */}
       <div className="px-4 py-3 border-b bg-background/50">
         <div className="flex items-center gap-2 mb-2">
           <Globe className="h-4 w-4 text-primary" />
@@ -117,27 +107,30 @@ export function CopilotSiteOverview({
             </Badge>
           )}
         </div>
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span>{selectedCount} of {totalCount} selected</span>
-          <div className="flex gap-2">
-            <button 
-              onClick={selectAll}
-              className="hover:text-foreground transition-colors"
-            >
-              Select all
-            </button>
-            <span>•</span>
-            <button 
-              onClick={deselectAll}
-              className="hover:text-foreground transition-colors"
-            >
-              Clear
-            </button>
+        
+        {/* Progress bar */}
+        <div className="space-y-1">
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>Migration progress</span>
+            <span>{completedCount} of {totalCount} pages</span>
+          </div>
+          <div className="h-2 bg-muted rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-primary transition-all duration-300"
+              style={{ width: `${progressPercent}%` }}
+            />
           </div>
         </div>
+        
+        {migratingCount > 0 && (
+          <div className="flex items-center gap-1.5 mt-2 text-xs text-amber-600">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            <span>Migrating page...</span>
+          </div>
+        )}
       </div>
 
-      {/* Page tree */}
+      {/* Page tree - View only */}
       <ScrollArea className="flex-1">
         <div className="p-2">
           {(['page', 'blog', 'kb'] as PageCategory[]).map(category => {
@@ -147,7 +140,7 @@ export function CopilotSiteOverview({
             const config = CATEGORY_CONFIG[category];
             const Icon = config.icon;
             const isExpanded = expandedCategories.has(category);
-            const selectedInCategory = pages.filter(p => p.status === 'pending').length;
+            const completedInCategory = pages.filter(p => p.status === 'completed').length;
 
             return (
               <div key={category} className="mb-2">
@@ -163,7 +156,7 @@ export function CopilotSiteOverview({
                   <Icon className={cn('h-4 w-4', config.color)} />
                   <span className="text-sm font-medium">{config.label}</span>
                   <Badge variant="outline" className="ml-auto text-xs">
-                    {selectedInCategory}/{pages.length}
+                    {completedInCategory}/{pages.length}
                   </Badge>
                 </button>
 
@@ -185,25 +178,25 @@ export function CopilotSiteOverview({
         </div>
       </ScrollArea>
 
-      {/* Action footer */}
+      {/* Status footer - View only */}
       <div className="p-4 border-t bg-background/50">
-        <Button 
-          onClick={onStartMigration}
-          disabled={selectedCount === 0 || isLoading}
-          className="w-full"
-        >
-          {isLoading ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Migrating...
-            </>
-          ) : (
-            <>
-              <Play className="h-4 w-4 mr-2" />
-              Migrate {selectedCount} {selectedCount === 1 ? 'page' : 'pages'}
-            </>
+        <div className="text-center text-sm text-muted-foreground">
+          {discoveryStatus === 'migrating' && (
+            <div className="flex items-center justify-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              <span>AI is migrating your site...</span>
+            </div>
           )}
-        </Button>
+          {discoveryStatus === 'complete' && (
+            <div className="flex items-center justify-center gap-2 text-green-600">
+              <Check className="h-4 w-4" />
+              <span>Migration complete!</span>
+            </div>
+          )}
+          {discoveryStatus === 'ready' && completedCount === 0 && (
+            <span>Starting migration...</span>
+          )}
+        </div>
       </div>
     </div>
   );
