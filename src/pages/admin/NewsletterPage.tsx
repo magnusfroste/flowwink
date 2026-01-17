@@ -130,8 +130,8 @@ export default function NewsletterPage() {
       const { error } = await supabase.from("newsletters").insert(data);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["newsletters"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["newsletters"] });
       setNewNewsletter({ subject: "", content_html: "" });
       setIsCreateOpen(false);
       toast.success("Newsletter created");
@@ -150,8 +150,8 @@ export default function NewsletterPage() {
         .eq("id", data.id);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["newsletters"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["newsletters"] });
       setEditingNewsletter(null);
       toast.success("Newsletter updated");
     },
