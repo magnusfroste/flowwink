@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { MapBlockData } from '@/types/cms';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,7 +12,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { MapPin } from 'lucide-react';
+import { MapPin, Loader2 } from 'lucide-react';
+
+interface GeocodedLocation {
+  lat: number;
+  lon: number;
+}
 
 interface MapBlockEditorProps {
   data: MapBlockData;
@@ -32,15 +38,58 @@ const MAP_TYPE_OPTIONS = [
 ];
 
 export function MapBlockEditor({ data, onChange, isEditing }: MapBlockEditorProps) {
+  const [location, setLocation] = useState<GeocodedLocation | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
   const updateField = <K extends keyof MapBlockData>(field: K, value: MapBlockData[K]) => {
     onChange({ ...data, [field]: value });
   };
 
-  // Generate embed URL for preview
+  // Geocode address using Nominatim
+  useEffect(() => {
+    if (!data.address || data.address.length < 5) {
+      setLocation(null);
+      return;
+    }
+
+    const timeoutId = setTimeout(async () => {
+      setIsLoading(true);
+      try {
+        const query = encodeURIComponent(data.address);
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${query}&limit=1`
+        );
+        const results = await response.json();
+        if (results && results.length > 0) {
+          setLocation({
+            lat: parseFloat(results[0].lat),
+            lon: parseFloat(results[0].lon),
+          });
+        } else {
+          setLocation(null);
+        }
+      } catch {
+        setLocation(null);
+      } finally {
+        setIsLoading(false);
+      }
+    }, 500); // Debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [data.address]);
+
+  // Generate OpenStreetMap embed URL
   const getEmbedUrl = () => {
-    if (!data.address) return '';
-    const query = encodeURIComponent(data.address);
-    return `https://www.google.com/maps?q=${query}&z=${data.zoom}&t=${data.mapType === 'satellite' ? 'k' : 'm'}&output=embed`;
+    if (!location) return '';
+    const zoom = data.zoom || 16;
+    const delta = 0.01 / (zoom / 10);
+    const bbox = [
+      location.lon - delta,
+      location.lat - delta,
+      location.lon + delta,
+      location.lat + delta,
+    ].join(',');
+    return `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${location.lat},${location.lon}`;
   };
 
   const heightClasses: Record<string, string> = {
@@ -61,25 +110,28 @@ export function MapBlockEditor({ data, onChange, isEditing }: MapBlockEditorProp
           <p className="text-muted-foreground text-sm">{data.description}</p>
         )}
         <div
-          className={`relative ${heightClasses[data.height]} ${
+          className={`relative ${heightClasses[data.height || 'md']} ${
             data.showBorder ? 'border border-border' : ''
           } ${data.rounded ? 'rounded-lg overflow-hidden' : ''}`}
         >
-          {data.address ? (
+          {isLoading ? (
+            <div className="w-full h-full bg-muted flex items-center justify-center">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : location ? (
             <iframe
               src={getEmbedUrl()}
               className="w-full h-full"
               style={{ border: 0 }}
               allowFullScreen
               loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
               title={data.locationName || 'Map'}
             />
           ) : (
             <div className="w-full h-full bg-muted flex items-center justify-center">
               <div className="text-center text-muted-foreground">
                 <MapPin className="h-8 w-8 mx-auto mb-2" />
-                <p className="text-sm">No address specified</p>
+                <p className="text-sm">{data.address ? 'Address not found' : 'No address specified'}</p>
               </div>
             </div>
           )}
@@ -275,15 +327,27 @@ export function MapBlockEditor({ data, onChange, isEditing }: MapBlockEditorProp
               data.showBorder ? 'border border-border' : ''
             } ${data.rounded ? 'rounded-lg overflow-hidden' : ''}`}
           >
-            <iframe
-              src={getEmbedUrl()}
-              className="w-full h-full"
-              style={{ border: 0 }}
-              allowFullScreen
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              title="Map preview"
-            />
+            {isLoading ? (
+              <div className="w-full h-full bg-muted flex items-center justify-center">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : location ? (
+              <iframe
+                src={getEmbedUrl()}
+                className="w-full h-full"
+                style={{ border: 0 }}
+                allowFullScreen
+                loading="lazy"
+                title="Map preview"
+              />
+            ) : (
+              <div className="w-full h-full bg-muted flex items-center justify-center">
+                <div className="text-center text-muted-foreground">
+                  <MapPin className="h-6 w-6 mx-auto mb-1" />
+                  <p className="text-xs">Address not found</p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
