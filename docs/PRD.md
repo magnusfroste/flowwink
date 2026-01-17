@@ -448,6 +448,10 @@ FlowWink supports seamless escalation from AI to human agents:
 | **Screenshot Analysis** | Visual context for AI block mapping |
 | **22+ Block Types** | Hero, text, gallery, team, stats, testimonials, pricing, features, accordion, etc. |
 | **Local Storage** | Optional download of all images to media library |
+| **Smart Page Filtering** | Excludes pagination, archives, admin pages, search results, feed URLs |
+| **Date-based Filtering** | Filters out old content (lastmod > 24 months) from sitemap |
+| **Duplicate Detection** | URL normalization and slug deduplication prevents duplicate imports |
+| **Sitemap Limit** | Max 50 sitemap pages to focus on active content |
 
 **Usage:** Admin → Pages → Import Page → Enter URL → AI analyzes and maps to blocks
 
