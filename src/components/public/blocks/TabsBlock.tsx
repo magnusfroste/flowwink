@@ -85,7 +85,7 @@ export function TabsBlock({ data }: TabsBlockProps) {
         >
           <TabsList 
             className={cn(
-              'w-full justify-start',
+              'w-full justify-start relative z-10',
               variantStyles[variant].list,
               orientation === 'vertical' && 'flex-col h-auto w-auto items-stretch'
             )}
@@ -95,7 +95,7 @@ export function TabsBlock({ data }: TabsBlockProps) {
                 key={tab.id}
                 value={tab.id}
                 className={cn(
-                  'flex items-center gap-2 transition-all',
+                  'flex items-center gap-2 transition-all cursor-pointer',
                   variantStyles[variant].trigger
                 )}
               >
