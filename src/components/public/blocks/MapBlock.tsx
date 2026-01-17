@@ -32,7 +32,8 @@ export function MapBlock({ data }: MapBlockProps) {
   const getEmbedUrl = () => {
     const query = encodeURIComponent(data.address);
     const mapType = data.mapType === 'satellite' ? 'k' : 'm';
-    return `https://www.google.com/maps?q=${query}&z=${data.zoom}&t=${mapType}&output=embed`;
+    const zoom = data.zoom || 15;
+    return `https://maps.google.com/maps?q=${query}&z=${zoom}&t=${mapType}&ie=UTF8&output=embed`;
   };
 
   const containerClasses = `
