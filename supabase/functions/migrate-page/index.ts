@@ -501,6 +501,52 @@ function extractNavLinks(html: string, baseUrl: string): { label: string; url: s
 }
 
 // Fetch and parse sitemap.xml
+// Filter out URLs that look like archives, pagination, or low-value pages
+function shouldExcludeUrl(url: string, baseUrl: string): boolean {
+  const path = url.replace(baseUrl, '').toLowerCase();
+  
+  // Exclude pagination
+  if (/\/page\/\d+\/?$/.test(path)) return true;
+  
+  // Exclude archive pages (year/month archives without article)
+  if (/^\/\d{4}\/?$/.test(path)) return true; // /2023/
+  if (/^\/\d{4}\/\d{2}\/?$/.test(path)) return true; // /2023/05/
+  
+  // Exclude feed/rss URLs
+  if (/\/(feed|rss|atom)\/?/.test(path)) return true;
+  
+  // Exclude attachment/media pages
+  if (/\/attachment\//.test(path)) return true;
+  
+  // Exclude login/admin pages
+  if (/\/(wp-admin|wp-login|admin|login|logout|dashboard)\/?/.test(path)) return true;
+  
+  // Exclude search results
+  if (/\/search\//.test(path) || /[\?&]s=/.test(path)) return true;
+  
+  // Exclude print pages
+  if (/\/print\/?$/.test(path)) return true;
+  
+  // Exclude empty or single-char paths that aren't home
+  if (path.length > 0 && path !== '/' && path.length <= 2) return true;
+  
+  return false;
+}
+
+// Check if lastmod date is within acceptable range (last 2 years by default)
+function isRecentEnough(lastmod: string | undefined, maxAgeMonths: number = 24): boolean {
+  if (!lastmod) return true; // No date = include by default
+  
+  try {
+    const modDate = new Date(lastmod);
+    const cutoff = new Date();
+    cutoff.setMonth(cutoff.getMonth() - maxAgeMonths);
+    return modDate >= cutoff;
+  } catch {
+    return true; // Invalid date = include
+  }
+}
+
 async function fetchSitemap(baseUrl: string): Promise<{ url: string; title?: string; lastmod?: string }[]> {
   const pages: { url: string; title?: string; lastmod?: string }[] = [];
   
@@ -578,8 +624,8 @@ function extractUrlsFromSitemap(
     const url = match[1].trim();
     const lastmod = match[2]?.trim();
     
-    // Only include same-domain URLs
-    if (url.startsWith(baseUrl)) {
+    // Only include same-domain URLs that pass filters
+    if (url.startsWith(baseUrl) && !shouldExcludeUrl(url, baseUrl) && isRecentEnough(lastmod)) {
       pages.push({ url, lastmod });
     }
   }
@@ -654,41 +700,96 @@ async function analyzeSiteStructure(url: string, firecrawlKey: string): Promise<
   // Fetch sitemap
   const sitemapPages = await fetchSitemap(baseUrl);
   
-  // Combine and deduplicate
+  // Combine and deduplicate (normalize URLs)
   const allPages = new Map<string, { url: string; title: string; type: 'page' | 'blog' | 'kb'; source: 'nav' | 'sitemap' }>();
+  
+  // Helper to normalize URL (remove trailing slash, query params, anchors)
+  const normalizeUrl = (url: string): string => {
+    try {
+      const u = new URL(url);
+      // Remove query params and hash
+      u.search = '';
+      u.hash = '';
+      // Normalize trailing slash
+      let path = u.pathname;
+      if (path.length > 1 && path.endsWith('/')) {
+        path = path.slice(0, -1);
+      }
+      u.pathname = path;
+      return u.href;
+    } catch {
+      return url;
+    }
+  };
+  
+  // Track seen slugs to detect near-duplicates
+  const seenSlugs = new Map<string, string>(); // slug -> first URL
   
   // Add navigation links first (higher priority) - use platform for categorization
   for (const link of navLinks) {
+    // Skip if URL should be excluded
+    if (shouldExcludeUrl(link.url, baseUrl)) continue;
+    
+    const normalizedUrl = normalizeUrl(link.url);
     const type = categorizeUrl(link.url, baseUrl, platform);
-    allPages.set(link.url, { url: link.url, title: link.label, type, source: 'nav' });
+    
+    // Check for duplicate slugs
+    const pathParts = normalizedUrl.replace(baseUrl, '').split('/').filter(Boolean);
+    const slug = pathParts[pathParts.length - 1] || 'home';
+    
+    if (!allPages.has(normalizedUrl) && !seenSlugs.has(slug)) {
+      allPages.set(normalizedUrl, { url: normalizedUrl, title: link.label, type, source: 'nav' });
+      seenSlugs.set(slug, normalizedUrl);
+    }
   }
   
-  // Add sitemap pages
+  // Add sitemap pages (limit to reasonable count for migration)
+  const MAX_SITEMAP_PAGES = 50;
+  let sitemapCount = 0;
+  
   for (const page of sitemapPages) {
-    if (!allPages.has(page.url)) {
+    if (sitemapCount >= MAX_SITEMAP_PAGES) break;
+    
+    // Skip if URL should be excluded
+    if (shouldExcludeUrl(page.url, baseUrl)) continue;
+    
+    const normalizedUrl = normalizeUrl(page.url);
+    
+    if (!allPages.has(normalizedUrl)) {
       const type = categorizeUrl(page.url, baseUrl, platform);
       // Extract title from URL path
-      const pathParts = page.url.replace(baseUrl, '').split('/').filter(Boolean);
-      const title = pathParts[pathParts.length - 1]?.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || 'Home';
-      allPages.set(page.url, { url: page.url, title, type, source: 'sitemap' });
+      const pathParts = normalizedUrl.replace(baseUrl, '').split('/').filter(Boolean);
+      const slug = pathParts[pathParts.length - 1] || 'home';
+      
+      // Skip if we already have a page with this slug (near-duplicate)
+      if (seenSlugs.has(slug)) continue;
+      
+      const title = slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || 'Home';
+      allPages.set(normalizedUrl, { url: normalizedUrl, title, type, source: 'sitemap' });
+      seenSlugs.set(slug, normalizedUrl);
+      sitemapCount++;
     }
   }
   
   // Always include homepage if not present
-  if (!allPages.has(baseUrl) && !allPages.has(baseUrl + '/')) {
-    allPages.set(baseUrl, { url: baseUrl, title: 'Home', type: 'page', source: 'nav' });
+  const normalizedBaseUrl = normalizeUrl(baseUrl);
+  if (!allPages.has(normalizedBaseUrl) && !allPages.has(normalizedBaseUrl + '/')) {
+    allPages.set(normalizedBaseUrl, { url: normalizedBaseUrl, title: 'Home', type: 'page', source: 'nav' });
   }
   
   // Sort: homepage first, then navigation order, then sitemap
   const pages = Array.from(allPages.values()).sort((a, b) => {
-    const aIsHome = a.url === baseUrl || a.url === baseUrl + '/' || a.title.toLowerCase() === 'home' || a.title.toLowerCase() === 'hem';
-    const bIsHome = b.url === baseUrl || b.url === baseUrl + '/' || b.title.toLowerCase() === 'home' || b.title.toLowerCase() === 'hem';
+    const normalizedBase = normalizeUrl(baseUrl);
+    const aIsHome = a.url === normalizedBase || a.url === normalizedBase + '/' || a.title.toLowerCase() === 'home' || a.title.toLowerCase() === 'hem';
+    const bIsHome = b.url === normalizedBase || b.url === normalizedBase + '/' || b.title.toLowerCase() === 'home' || b.title.toLowerCase() === 'hem';
     if (aIsHome && !bIsHome) return -1;
     if (!aIsHome && bIsHome) return 1;
     if (a.source === 'nav' && b.source === 'sitemap') return -1;
     if (a.source === 'sitemap' && b.source === 'nav') return 1;
     return 0;
   });
+  
+  console.log(`Site analysis: Found ${navLinks.length} nav links, ${sitemapPages.length} sitemap pages, filtered to ${pages.length} unique pages`);
   const hasBlog = pages.some(p => p.type === 'blog');
   const hasKnowledgeBase = pages.some(p => p.type === 'kb');
   
