@@ -14,6 +14,8 @@ import {
   MessageSquareQuote, 
   Minus, 
   User,
+  Play,
+  Share2,
 } from 'lucide-react';
 
 interface NewsletterBlockSelectorProps {
@@ -58,6 +60,21 @@ const BLOCKS = [
           }).run();
         },
       },
+      {
+        name: 'Video',
+        icon: Play,
+        description: 'Video thumbnail with link',
+        action: (editor: Editor) => {
+          editor.chain().focus().insertContent({
+            type: 'videoThumbnail',
+            attrs: {
+              thumbnailUrl: '',
+              videoUrl: '',
+              caption: '',
+            },
+          }).run();
+        },
+      },
     ],
   },
   {
@@ -82,7 +99,7 @@ const BLOCKS = [
     ],
   },
   {
-    category: 'Signature',
+    category: 'Signature & Social',
     items: [
       {
         name: 'Author Block',
@@ -96,6 +113,21 @@ const BLOCKS = [
               role: '',
               imageUrl: '',
               bio: '',
+            },
+          }).run();
+        },
+      },
+      {
+        name: 'Social Follow',
+        icon: Share2,
+        description: 'Social media links',
+        action: (editor: Editor) => {
+          editor.chain().focus().insertContent({
+            type: 'socialFollow',
+            attrs: {
+              links: '[]',
+              style: 'icons',
+              alignment: 'center',
             },
           }).run();
         },

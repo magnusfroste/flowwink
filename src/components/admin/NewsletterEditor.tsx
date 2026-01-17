@@ -17,7 +17,9 @@ import {
   CTAButton, 
   CalloutBox, 
   Divider, 
-  AuthorBlock, 
+  AuthorBlock,
+  VideoThumbnail,
+  SocialFollow,
   NewsletterBlockSelector 
 } from '@/components/admin/newsletter';
 
@@ -49,6 +51,8 @@ export function NewsletterEditor({ content, onChange, placeholder = 'Write your 
       CalloutBox,
       Divider,
       AuthorBlock,
+      VideoThumbnail,
+      SocialFollow,
     ],
     content: content || '',
     onUpdate: ({ editor }) => {
