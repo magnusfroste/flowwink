@@ -1,16 +1,18 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import Link from '@tiptap/extension-link';
+import Image from '@tiptap/extension-image';
 import { Toggle } from '@/components/ui/toggle';
 import { Separator } from '@/components/ui/separator';
-import { Bold, Italic, List, ListOrdered, Quote, Heading1, Heading2, Link as LinkIcon } from 'lucide-react';
+import { Bold, Italic, List, ListOrdered, Quote, Heading1, Heading2, Link as LinkIcon, Image as ImageIcon } from 'lucide-react';
 import { AITiptapToolbar } from '@/components/admin/AITiptapToolbar';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Input } from '@/components/ui/input';
-import { useState } from 'react';
+import { MediaLibraryPicker } from '@/components/admin/MediaLibraryPicker';
+import { UnsplashPicker } from '@/components/admin/UnsplashPicker';
 
 interface NewsletterEditorProps {
   content: string;
@@ -21,6 +23,9 @@ interface NewsletterEditorProps {
 export function NewsletterEditor({ content, onChange, placeholder = 'Write your newsletter content...' }: NewsletterEditorProps) {
   const [linkUrl, setLinkUrl] = useState('');
   const [linkPopoverOpen, setLinkPopoverOpen] = useState(false);
+  const [imagePopoverOpen, setImagePopoverOpen] = useState(false);
+  const [mediaLibraryOpen, setMediaLibraryOpen] = useState(false);
+  const [unsplashOpen, setUnsplashOpen] = useState(false);
 
   const editor = useEditor({
     extensions: [
@@ -30,6 +35,11 @@ export function NewsletterEditor({ content, onChange, placeholder = 'Write your 
         openOnClick: false,
         HTMLAttributes: {
           class: 'text-primary underline',
+        },
+      }),
+      Image.configure({
+        HTMLAttributes: {
+          class: 'max-w-full h-auto rounded-lg',
         },
       }),
     ],
@@ -58,6 +68,13 @@ export function NewsletterEditor({ content, onChange, placeholder = 'Write your 
     if (editor) {
       editor.chain().focus().unsetLink().run();
       setLinkPopoverOpen(false);
+    }
+  };
+
+  const handleInsertImage = (url: string) => {
+    if (editor && url) {
+      editor.chain().focus().setImage({ src: url }).run();
+      setImagePopoverOpen(false);
     }
   };
 
@@ -167,12 +184,66 @@ export function NewsletterEditor({ content, onChange, placeholder = 'Write your 
           </PopoverContent>
         </Popover>
         
+        {/* Image Button */}
+        <Popover open={imagePopoverOpen} onOpenChange={setImagePopoverOpen}>
+          <PopoverTrigger asChild>
+            <Toggle
+              size="sm"
+              pressed={editor.isActive('image')}
+              aria-label="Add image"
+            >
+              <ImageIcon className="h-4 w-4" />
+            </Toggle>
+          </PopoverTrigger>
+          <PopoverContent className="w-64 p-3" align="start">
+            <div className="space-y-2">
+              <p className="text-sm font-medium mb-3">Insert image from</p>
+              <Button 
+                variant="outline" 
+                className="w-full justify-start" 
+                onClick={() => {
+                  setImagePopoverOpen(false);
+                  setMediaLibraryOpen(true);
+                }}
+              >
+                <ImageIcon className="h-4 w-4 mr-2" />
+                Media Library
+              </Button>
+              <Button 
+                variant="outline" 
+                className="w-full justify-start" 
+                onClick={() => {
+                  setImagePopoverOpen(false);
+                  setUnsplashOpen(true);
+                }}
+              >
+                <ImageIcon className="h-4 w-4 mr-2" />
+                Unsplash
+              </Button>
+            </div>
+          </PopoverContent>
+        </Popover>
+        
         <Separator orientation="vertical" className="h-6 mx-2" />
         <AITiptapToolbar editor={editor} context="newsletter email content" />
       </div>
       <EditorContent 
         editor={editor} 
         className="tiptap min-h-[200px] prose prose-sm max-w-none p-4" 
+      />
+      
+      {/* Media Library Dialog */}
+      <MediaLibraryPicker
+        open={mediaLibraryOpen}
+        onOpenChange={setMediaLibraryOpen}
+        onSelect={handleInsertImage}
+      />
+      
+      {/* Unsplash Dialog */}
+      <UnsplashPicker
+        open={unsplashOpen}
+        onOpenChange={setUnsplashOpen}
+        onSelect={handleInsertImage}
       />
     </div>
   );
