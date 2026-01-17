@@ -8,9 +8,12 @@ import {
   Clock,
   Sparkles,
   Edit,
-  Send
+  Send,
+  Rocket,
+  ExternalLink
 } from 'lucide-react';
-import { ContentProposal, ChannelType, useApproveProposal, useUpdateProposal } from '@/hooks/useContentProposals';
+import { ContentProposal, ChannelType, useApproveProposal } from '@/hooks/useContentProposals';
+import { usePublishProposalChannel, usePublishAllChannels } from '@/hooks/usePublishProposal';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -28,10 +31,15 @@ interface ContentProposalPreviewProps {
 export function ContentProposalPreview({ proposal, onClose, onRegenerate }: ContentProposalPreviewProps) {
   const [activeChannel, setActiveChannel] = useState<ChannelType>('blog');
   const approveProposal = useApproveProposal();
-  const updateProposal = useUpdateProposal();
+  const publishChannel = usePublishProposalChannel();
+  const publishAll = usePublishAllChannels();
 
   const activeChannels = ALL_CHANNELS.filter(
     (channel) => proposal.channel_variants?.[channel as ChannelType]
+  );
+
+  const unpublishedChannels = activeChannels.filter(
+    (channel) => !proposal.published_channels?.includes(channel)
   );
 
   const handleApprove = async () => {
@@ -39,14 +47,14 @@ export function ContentProposalPreview({ proposal, onClose, onRegenerate }: Cont
   };
 
   const handlePublishChannel = async (channel: ChannelType) => {
-    const currentPublished = proposal.published_channels || [];
-    if (!currentPublished.includes(channel)) {
-      await updateProposal.mutateAsync({
-        id: proposal.id,
-        published_channels: [...currentPublished, channel],
-      });
-    }
+    await publishChannel.mutateAsync({ proposal, channel });
   };
+
+  const handlePublishAll = async () => {
+    await publishAll.mutateAsync(proposal);
+  };
+
+  const isPublishing = publishChannel.isPending || publishAll.isPending;
 
   return (
     <div className="flex flex-col h-full">
@@ -87,7 +95,7 @@ export function ContentProposalPreview({ proposal, onClose, onRegenerate }: Cont
         </div>
 
         {/* Action buttons */}
-        <div className="flex items-center gap-2 mt-4">
+        <div className="flex items-center gap-2 mt-4 flex-wrap">
           {proposal.status === 'draft' && (
             <Button 
               onClick={handleApprove}
@@ -98,11 +106,36 @@ export function ContentProposalPreview({ proposal, onClose, onRegenerate }: Cont
               Approve Proposal
             </Button>
           )}
+          {proposal.status === 'approved' && unpublishedChannels.length > 0 && (
+            <Button 
+              onClick={handlePublishAll}
+              disabled={isPublishing}
+              className="gap-2"
+            >
+              <Rocket className="h-4 w-4" />
+              Publish All ({unpublishedChannels.length})
+            </Button>
+          )}
           <Button variant="outline" className="gap-2">
             <Edit className="h-4 w-4" />
             Edit Content
           </Button>
         </div>
+
+        {/* Published channels summary */}
+        {proposal.published_channels && proposal.published_channels.length > 0 && (
+          <div className="mt-3 flex items-center gap-2 text-sm">
+            <span className="text-muted-foreground">Published to:</span>
+            <div className="flex items-center gap-1">
+              {proposal.published_channels.map((channel) => (
+                <Badge key={channel} variant="secondary" className="gap-1 text-xs">
+                  <ChannelIcon channel={channel as ChannelType} size="sm" />
+                  {getChannelConfig(channel as ChannelType)?.label}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Pillar content */}
@@ -151,47 +184,77 @@ export function ContentProposalPreview({ proposal, onClose, onRegenerate }: Cont
 
         <ScrollArea className="flex-1">
           <div className="p-6">
-            {ALL_CHANNELS.map((channel) => (
-              <TabsContent key={channel} value={channel} className="m-0">
-                <div className="max-w-2xl mx-auto">
-                  {/* Channel actions */}
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-medium">
-                      {getChannelConfig(channel as ChannelType)?.label} Preview
-                    </h3>
-                    <div className="flex items-center gap-2">
-                      {onRegenerate && (
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="gap-1"
-                          onClick={() => onRegenerate(channel as ChannelType)}
-                        >
-                          <RefreshCw className="h-3 w-3" />
-                          Regenerate
-                        </Button>
-                      )}
-                      {proposal.status === 'approved' && !proposal.published_channels?.includes(channel) && (
-                        <Button 
-                          size="sm" 
-                          className="gap-1"
-                          onClick={() => handlePublishChannel(channel as ChannelType)}
-                        >
-                          <Send className="h-3 w-3" />
-                          Publish
-                        </Button>
-                      )}
+            {ALL_CHANNELS.map((channel) => {
+              const isPublished = proposal.published_channels?.includes(channel);
+              const channelConfig = getChannelConfig(channel as ChannelType);
+              
+              return (
+                <TabsContent key={channel} value={channel} className="m-0">
+                  <div className="max-w-2xl mx-auto">
+                    {/* Channel actions */}
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-medium">
+                          {channelConfig?.label} Preview
+                        </h3>
+                        {isPublished && (
+                          <Badge variant="outline" className="gap-1 text-xs text-emerald-600 border-emerald-200 bg-emerald-50">
+                            <CheckCircle2 className="h-3 w-3" />
+                            Published
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {onRegenerate && (
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="gap-1"
+                            onClick={() => onRegenerate(channel as ChannelType)}
+                            disabled={isPublishing}
+                          >
+                            <RefreshCw className="h-3 w-3" />
+                            Regenerate
+                          </Button>
+                        )}
+                        {proposal.status === 'approved' && !isPublished && (
+                          <Button 
+                            size="sm" 
+                            className="gap-1"
+                            onClick={() => handlePublishChannel(channel as ChannelType)}
+                            disabled={isPublishing}
+                          >
+                            <Send className="h-3 w-3" />
+                            {(channel === 'blog' || channel === 'newsletter') 
+                              ? 'Create Draft' 
+                              : 'Send via Webhook'}
+                          </Button>
+                        )}
+                        {isPublished && (channel === 'blog' || channel === 'newsletter') && (
+                          <Button 
+                            variant="outline"
+                            size="sm" 
+                            className="gap-1"
+                            asChild
+                          >
+                            <a href={channel === 'blog' ? '/admin/blog' : '/admin/newsletter'}>
+                              <ExternalLink className="h-3 w-3" />
+                              View in {channelConfig?.label}
+                            </a>
+                          </Button>
+                        )}
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Channel mockup */}
-                  <ChannelMockup 
-                    channel={channel as ChannelType} 
-                    variant={proposal.channel_variants?.[channel as ChannelType]}
-                  />
-                </div>
-              </TabsContent>
-            ))}
+                    {/* Channel mockup */}
+                    <ChannelMockup 
+                      channel={channel as ChannelType} 
+                      variant={proposal.channel_variants?.[channel as ChannelType]}
+                    />
+                  </div>
+                </TabsContent>
+              );
+            })}
           </div>
         </ScrollArea>
       </Tabs>
