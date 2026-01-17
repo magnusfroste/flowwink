@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, X, Edit3, SkipForward, Globe, ExternalLink, ChevronRight } from 'lucide-react';
+import { Check, X, Edit3, SkipForward, Globe, ExternalLink, ChevronRight, FileText, BookOpen, Library, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
-import type { CopilotBlock, MigrationState } from '@/hooks/useCopilot';
+import type { CopilotBlock, MigrationState, MigrationPhase } from '@/hooks/useCopilot';
 
 interface CopilotMigrationPreviewProps {
   migrationState: MigrationState;
@@ -15,6 +15,9 @@ interface CopilotMigrationPreviewProps {
   onSkip: () => void;
   onEdit: (feedback: string) => void;
   onMigrateNextPage: (url: string) => void;
+  onStartBlogMigration?: () => void;
+  onStartKbMigration?: () => void;
+  onSkipPhase?: () => void;
   isLoading?: boolean;
 }
 
@@ -140,19 +143,30 @@ function BlockPreviewContent({ block }: { block: CopilotBlock }) {
   }
 }
 
+const PHASE_CONFIG: Record<MigrationPhase, { label: string; icon: typeof FileText; color: string }> = {
+  idle: { label: 'Ready', icon: Zap, color: 'text-muted-foreground' },
+  pages: { label: 'Pages', icon: FileText, color: 'text-blue-600' },
+  blog: { label: 'Blog', icon: BookOpen, color: 'text-purple-600' },
+  knowledgeBase: { label: 'Knowledge Base', icon: Library, color: 'text-green-600' },
+  complete: { label: 'Complete', icon: Check, color: 'text-green-600' },
+};
+
 export function CopilotMigrationPreview({
   migrationState,
   onApprove,
   onSkip,
   onEdit,
   onMigrateNextPage,
+  onStartBlogMigration,
+  onStartKbMigration,
+  onSkipPhase,
   isLoading,
 }: CopilotMigrationPreviewProps) {
   const [editFeedback, setEditFeedback] = useState('');
   const [showEditInput, setShowEditInput] = useState(false);
   const [selectedPage, setSelectedPage] = useState<string | null>(null);
 
-  const { pendingBlocks, currentBlockIndex, discoveredLinks, sourceUrl, detectedPlatform, pageTitle } = migrationState;
+  const { pendingBlocks, currentBlockIndex, discoveredLinks, sourceUrl, detectedPlatform, pageTitle, phase, hasBlog, hasKnowledgeBase, blogUrls, kbUrls, pagesCompleted, pagesTotal } = migrationState;
   const currentBlock = pendingBlocks[currentBlockIndex];
   const isComplete = currentBlockIndex >= pendingBlocks.length;
   const progress = pendingBlocks.length > 0 ? Math.round((currentBlockIndex / pendingBlocks.length) * 100) : 0;

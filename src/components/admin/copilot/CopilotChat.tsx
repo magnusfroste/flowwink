@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from 'react';
-import { Sparkles, Check, X, ArrowUp, Loader2, CheckCircle2, Layout, Image, MessageSquare, Users, Wand2, Square, RotateCcw, AlertTriangle } from 'lucide-react';
+import { Zap, Check, X, ArrowUp, Loader2, CheckCircle2, Layout, Image, MessageSquare, Users, Wand2, Square, RotateCcw, AlertTriangle, Globe } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -17,7 +17,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
-import type { CopilotMessage, ModuleRecommendation, CopilotBlock } from '@/hooks/useCopilot';
+import type { CopilotMessage, ModuleRecommendation, CopilotBlock, MigrationState } from '@/hooks/useCopilot';
 import { defaultModulesSettings } from '@/hooks/useModules';
 import { CopilotMiniPreview } from './CopilotMiniPreview';
 
@@ -34,16 +34,17 @@ interface CopilotChatProps {
   moduleRecommendation: ModuleRecommendation | null;
   onAcceptModules: () => void;
   onRejectModules: () => void;
+  migrationState?: MigrationState;
 }
 
-const WELCOME_MESSAGE = `Tell me about your business and I'll help you build the perfect website — or share a URL to migrate an existing site!`;
+const WELCOME_MESSAGE = `👋 Hi! I'm FlowPilot, your AI migration assistant.\n\nPaste a URL and I'll migrate your entire website — all pages, blog posts, and knowledge base articles. I'll guide you through each step!`;
 
 const STARTER_PROMPTS = [
-  'Beauty salon',
-  'Consulting agency',
-  'Restaurant',
-  'Migrate my site',
+  { label: 'Migrate my site', icon: Globe },
+  { label: 'Build from scratch', icon: Wand2 },
 ];
+
+const MIGRATION_PHASES = ['pages', 'blog', 'knowledgeBase'] as const;
 
 const SUGGESTED_BLOCKS = [
   { id: 'features', label: 'Features', icon: Layout },
@@ -191,26 +192,30 @@ export function CopilotChat({
           {/* Welcome state */}
           {isEmpty && (
             <div className="space-y-4 py-6">
-              <div className="text-center space-y-1">
-                <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 mb-1">
-                  <Sparkles className="w-5 h-5 text-primary" />
+              <div className="text-center space-y-2">
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-1">
+                  <Zap className="w-6 h-6 text-primary" />
                 </div>
-                <h3 className="font-medium text-sm">What are we building?</h3>
-                <p className="text-xs text-muted-foreground max-w-xs mx-auto">
+                <h3 className="font-medium text-base">Welcome to FlowPilot</h3>
+                <p className="text-xs text-muted-foreground max-w-xs mx-auto whitespace-pre-line">
                   {WELCOME_MESSAGE}
                 </p>
               </div>
 
-              <div className="flex flex-wrap justify-center gap-1.5">
+              <div className="flex flex-col gap-2 max-w-xs mx-auto">
                 {STARTER_PROMPTS.map((prompt) => (
                   <Button
-                    key={prompt}
+                    key={prompt.label}
                     variant="outline"
                     size="sm"
-                    onClick={() => onSendMessage(`I run a ${prompt.toLowerCase()}`)}
-                    className="text-xs h-7 px-2.5"
+                    onClick={() => prompt.label.includes('Migrate') 
+                      ? onSendMessage('I want to migrate my existing website')
+                      : onSendMessage('I want to build a new website from scratch')
+                    }
+                    className="text-xs h-9 px-3 gap-2 justify-start"
                   >
-                    {prompt}
+                    <prompt.icon className="h-4 w-4" />
+                    {prompt.label}
                   </Button>
                 ))}
               </div>
@@ -422,7 +427,7 @@ function ModuleRecommendationCard({
       <div className="space-y-2.5">
         <div className="flex items-center gap-2">
           <div className="flex items-center justify-center w-6 h-6 rounded-md bg-primary/10">
-            <Sparkles className="h-3.5 w-3.5 text-primary" />
+            <Zap className="h-3.5 w-3.5 text-primary" />
           </div>
           <span className="font-medium text-sm">Recommended modules</span>
         </div>

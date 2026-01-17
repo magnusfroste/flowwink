@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bot, Sparkles, Wand2 } from 'lucide-react';
+import { Zap, Wand2 } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -26,15 +26,15 @@ export default function CopilotPage() {
         <div className="flex items-center justify-between px-6 py-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl bg-primary/10">
-              <Bot className="h-5 w-5 text-primary" />
+              <Zap className="h-5 w-5 text-primary" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-lg font-semibold">Copilot</h1>
-                <Badge variant="secondary" className="text-xs">AI-driven</Badge>
+                <h1 className="text-lg font-semibold">FlowPilot</h1>
+                <Badge variant="secondary" className="text-xs">AI Migration Agent</Badge>
               </div>
               <p className="text-sm text-muted-foreground">
-                Describe your business and I'll build pages and activate modules
+                I'll migrate your entire site — pages, blog, and knowledge base
               </p>
             </div>
           </div>
@@ -78,6 +78,9 @@ export default function CopilotPage() {
                 onSkip={copilot.skipMigrationBlock}
                 onEdit={copilot.editMigrationBlock}
                 onMigrateNextPage={copilot.migrateNextPage}
+                onStartBlogMigration={copilot.startBlogMigration}
+                onStartKbMigration={copilot.startKbMigration}
+                onSkipPhase={copilot.skipPhase}
                 isLoading={copilot.isLoading}
               />
             ) : (
