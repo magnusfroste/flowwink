@@ -3,7 +3,7 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import Link from '@tiptap/extension-link';
-import Image from '@tiptap/extension-image';
+import { ResizableImage } from '@/components/admin/ResizableImageExtension';
 import { Toggle } from '@/components/ui/toggle';
 import { Separator } from '@/components/ui/separator';
 import { Bold, Italic, List, ListOrdered, Quote, Heading1, Heading2, Link as LinkIcon, Image as ImageIcon } from 'lucide-react';
@@ -37,11 +37,7 @@ export function NewsletterEditor({ content, onChange, placeholder = 'Write your 
           class: 'text-primary underline',
         },
       }),
-      Image.configure({
-        HTMLAttributes: {
-          class: 'max-w-full h-auto rounded-lg',
-        },
-      }),
+      ResizableImage,
     ],
     content: content || '',
     onUpdate: ({ editor }) => {
@@ -73,7 +69,10 @@ export function NewsletterEditor({ content, onChange, placeholder = 'Write your 
 
   const handleInsertImage = (url: string) => {
     if (editor && url) {
-      editor.chain().focus().setImage({ src: url }).run();
+      editor.chain().focus().insertContent({
+        type: 'image',
+        attrs: { src: url, align: 'center' },
+      }).run();
       setImagePopoverOpen(false);
     }
   };
