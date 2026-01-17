@@ -31,10 +31,17 @@ export default function NewsletterManagePage() {
   const [requestSent, setRequestSent] = useState(false);
   const [isDeleted, setIsDeleted] = useState(false);
 
-  // Check for token in URL on mount
+  // Check for token or direct unsubscribe action in URL on mount
   useEffect(() => {
     const urlToken = searchParams.get("token");
     const urlEmail = searchParams.get("email");
+    const action = searchParams.get("action");
+    
+    // Handle direct unsubscribe from email link (no token required)
+    if (action === "unsubscribe" && urlEmail) {
+      handleDirectUnsubscribe(urlEmail);
+      return;
+    }
     
     if (urlToken && urlEmail) {
       setToken(urlToken);
@@ -42,6 +49,34 @@ export default function NewsletterManagePage() {
       verifyToken(urlEmail, urlToken);
     }
   }, [searchParams]);
+
+  // Handle direct unsubscribe from email link
+  const handleDirectUnsubscribe = async (emailToUnsubscribe: string) => {
+    setIsLoading(true);
+    setEmail(emailToUnsubscribe);
+    try {
+      const { error } = await supabase
+        .from("newsletter_subscribers")
+        .update({ 
+          status: "unsubscribed",
+          unsubscribed_at: new Date().toISOString()
+        })
+        .eq("email", emailToUnsubscribe);
+
+      if (error) {
+        console.error("Unsubscribe error:", error);
+        toast.error("Failed to unsubscribe. Please try again.");
+      } else {
+        setIsDeleted(true); // Reuse the deleted state to show success message
+        toast.success("You have been unsubscribed");
+      }
+    } catch (err) {
+      console.error("Unsubscribe error:", err);
+      toast.error("An error occurred. Please try again later.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const verifyToken = async (emailToVerify: string, tokenToVerify: string) => {
     setIsLoading(true);

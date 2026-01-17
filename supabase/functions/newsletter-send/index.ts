@@ -173,105 +173,53 @@ serve(async (req) => {
 
     console.log(`[newsletter-send] Sending to ${subscribers.length} subscribers`);
 
-    let sentCount = 0;
-    const unsubscribeUrl = `${supabaseUrl}/functions/v1/newsletter-subscribe?action=unsubscribe`;
-    const trackingBaseUrl = `${supabaseUrl}/functions/v1/newsletter-track`;
-    const linkTrackingBaseUrl = `${supabaseUrl}/functions/v1/newsletter-link`;
+    // Get site URL for proper domain-matching links (helps email deliverability)
+    const { data: siteUrlSetting } = await supabase
+      .from("site_settings")
+      .select("value")
+      .eq("key", "siteUrl")
+      .maybeSingle();
 
-    // Helper function to rewrite links for tracking
-    const rewriteLinksForTracking = async (
-      html: string, 
-      newsletterId: string, 
-      recipientEmail: string
-    ): Promise<string> => {
-      // Match all href attributes with http/https links
-      const linkRegex = /href=["'](https?:\/\/[^"']+)["']/gi;
-      const matches = [...html.matchAll(linkRegex)];
-      
-      let processedHtml = html;
-      
-      for (const match of matches) {
-        const originalUrl = match[1];
-        
-        // Skip unsubscribe links
-        if (originalUrl.includes('newsletter-subscribe')) {
-          continue;
-        }
-        
-        // Create link tracking record
-        const { data: linkRecord, error: linkError } = await supabase
-          .from("newsletter_link_clicks")
-          .insert({
-            newsletter_id: newsletterId,
-            recipient_email: recipientEmail,
-            original_url: originalUrl,
-          })
-          .select("link_id")
-          .single();
-        
-        if (linkError) {
-          console.error(`[newsletter-send] Failed to create link tracking:`, linkError);
-          continue;
-        }
-        
-        // Replace original URL with tracking URL
-        const trackingUrl = `${linkTrackingBaseUrl}?l=${linkRecord.link_id}`;
-        processedHtml = processedHtml.replace(
-          `href="${originalUrl}"`,
-          `href="${trackingUrl}"`
-        );
-        processedHtml = processedHtml.replace(
-          `href='${originalUrl}'`,
-          `href='${trackingUrl}'`
-        );
-      }
-      
-      return processedHtml;
-    };
+    // Use site URL if available, otherwise fall back to a default
+    const siteUrl = (siteUrlSetting?.value as string) || "";
+    
+    // IMPORTANT: Use site URL for unsubscribe links to avoid spam filters
+    // Gmail and other providers flag emails with mismatched domains
+    const unsubscribeUrl = siteUrl 
+      ? `${siteUrl}/newsletter/manage?action=unsubscribe`
+      : `${supabaseUrl}/functions/v1/newsletter-subscribe?action=unsubscribe`;
+    
+    console.log(`[newsletter-send] Using unsubscribe URL: ${unsubscribeUrl}`);
+
+    let sentCount = 0;
+    
+    // NOTE: Click tracking is DISABLED to improve email deliverability
+    // Rewriting links triggers spam filters, especially Gmail
 
     // Send emails in batches
     for (const subscriber of subscribers) {
       try {
-        // Create tracking record for this subscriber
-        const { data: trackingRecord, error: trackingError } = await supabase
-          .from("newsletter_email_opens")
-          .insert({
-            newsletter_id: newsletter_id,
-            recipient_email: subscriber.email,
-          })
-          .select("tracking_id")
-          .single();
-
-        if (trackingError) {
-          console.error(`[newsletter-send] Failed to create tracking for ${subscriber.email}:`, trackingError);
-        }
-
-        const personalUnsubscribe = `${unsubscribeUrl}&email=${encodeURIComponent(subscriber.email)}`;
+        // Build personalized unsubscribe link
+        const personalUnsubscribe = siteUrl
+          ? `${siteUrl}/newsletter/manage?action=unsubscribe&email=${encodeURIComponent(subscriber.email)}`
+          : `${supabaseUrl}/functions/v1/newsletter-subscribe?action=unsubscribe&email=${encodeURIComponent(subscriber.email)}`;
         
-        // Process content with link tracking
+        // Content without link rewriting (disabled for deliverability)
         const contentHtml = newsletter.content_html || "<p>No content</p>";
-        const processedContent = await rewriteLinksForTracking(
-          contentHtml, 
-          newsletter_id, 
-          subscriber.email
-        );
         
-        // Build tracking pixel HTML
-        const trackingPixel = trackingRecord 
-          ? `<img src="${trackingBaseUrl}?t=${trackingRecord.tracking_id}" width="1" height="1" alt="" style="display:none;" />`
-          : "";
+        // NOTE: Open tracking pixel is DISABLED to improve email deliverability
+        // Tracking pixels from different domains trigger spam filters
         
         await resend.emails.send({
           from: `${emailConfig.fromName} <${emailConfig.fromEmail}>`,
           to: [subscriber.email],
           subject: newsletter.subject,
           html: `
-            ${processedContent}
+            ${contentHtml}
             <hr style="margin-top: 40px; border: none; border-top: 1px solid #eee;" />
             <p style="font-size: 12px; color: #666; text-align: center;">
               <a href="${personalUnsubscribe}" style="color: #666;">Unsubscribe</a>
             </p>
-            ${trackingPixel}
           `,
         });
         
