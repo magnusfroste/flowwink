@@ -44,19 +44,28 @@ const CHANNEL_PROMPTS: Record<string, string> = {
 - seo_keywords: Array of 5-7 relevant long-tail keywords (include primary + secondary)
 - estimated_reading_time: Number in minutes`,
 
-  newsletter: `Create an engaging email newsletter with:
+  newsletter: `Create an engaging email newsletter with structured blocks:
 - subject: Compelling email subject line (40-50 chars). Use one of these formulas:
   * Curiosity gap: "The [unexpected thing] that changed my [outcome]"
   * FOMO: "Last chance: [benefit] expires [timeframe]"
   * Benefit-driven: "[Number] ways to [achieve desired outcome]"
   * Question: "Are you making this [topic] mistake?"
 - preview_text: Preview/preheader text that COMPLEMENTS (not repeats) subject (90-100 chars). Add context or tease the content.
-- headline: Main headline inside the email (clear value proposition)
-- intro: Personal greeting and hook (2-3 sentences). Start with "you" not "I/we".
-- body: Main content with clear value proposition (200-400 words). Mobile-first format (max 50-60 chars per line for readability).
-- cta_text: Primary call-to-action button text. Formula: Action verb + benefit (e.g., "Get your free guide", "Start saving today")
-- cta_url_placeholder: "[LINK]"
-- ps_line: P.S. line that reinforces urgency or adds a secondary offer (people often read P.S. first!)`,
+- blocks: Array of 6-10 content blocks in this format:
+  [
+    { "type": "heading", "content": "Main headline (clear value proposition)" },
+    { "type": "paragraph", "content": "Personal greeting and hook (2-3 sentences). Start with 'you' not 'I/we'." },
+    { "type": "paragraph", "content": "First key point or insight. Be specific, use examples." },
+    { "type": "bullet-list", "items": ["Point 1 with specific detail", "Point 2 with actionable tip", "Point 3 with example"] },
+    { "type": "paragraph", "content": "Deeper explanation or story that supports the main message." },
+    { "type": "callout", "content": "Key quote, statistic, or important highlight that stands out." },
+    { "type": "paragraph", "content": "Additional value or insight. Connect to reader's pain points." },
+    { "type": "cta", "text": "Action verb + benefit (e.g., 'Get your free guide')", "url": "[LINK]" },
+    { "type": "divider" },
+    { "type": "paragraph", "content": "P.S. line that reinforces urgency or adds a secondary offer" }
+  ]
+  Block types available: heading, paragraph, bullet-list, numbered-list, callout, cta, divider, image-placeholder
+  IMPORTANT: Generate at least 6 blocks for a complete newsletter. Include variety - mix paragraphs with lists, callouts, and CTAs.`,
 
   linkedin: `Create a professional LinkedIn post with:
 - text: Engaging professional post (1200-1500 chars) with:
