@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -57,12 +58,14 @@ export function TableBlockEditor({ data, onChange, isEditing }: TableBlockEditor
     onChange({ ...data, rows: [...rows, newRow] });
   };
 
-  const updateCell = (rowIndex: number, columnId: string, value: string) => {
-    const updated = rows.map((row, i) =>
-      i === rowIndex ? { ...row, [columnId]: value } : row
-    );
-    onChange({ ...data, rows: updated });
-  };
+  const updateCell = useCallback((rowIndex: number, columnId: string, value: string) => {
+    onChange({
+      ...data,
+      rows: (data.rows || []).map((row, i) =>
+        i === rowIndex ? { ...row, [columnId]: value } : row
+      ),
+    });
+  }, [data, onChange]);
 
   const removeRow = (index: number) => {
     onChange({ ...data, rows: rows.filter((_, i) => i !== index) });
