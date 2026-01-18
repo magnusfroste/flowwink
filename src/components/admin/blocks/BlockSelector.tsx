@@ -55,6 +55,7 @@ import {
   Video,
   Wand2,
   Search,
+  Clipboard,
 } from 'lucide-react';
 import { ContentBlockType } from '@/types/cms';
 
@@ -376,9 +377,10 @@ const BLOCK_GROUPS: BlockGroup[] = [
 
 interface BlockSelectorProps {
   onAdd: (type: ContentBlockType) => void;
+  onPaste?: () => void;
 }
 
-export function BlockSelector({ onAdd }: BlockSelectorProps) {
+export function BlockSelector({ onAdd, onPaste }: BlockSelectorProps) {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -402,13 +404,20 @@ export function BlockSelector({ onAdd }: BlockSelectorProps) {
   };
 
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
-        <Button variant="outline" className="w-full border-dashed">
-          <Plus className="h-4 w-4 mr-2" />
-          Add Block
-        </Button>
-      </SheetTrigger>
+    <div className="flex gap-2">
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetTrigger asChild>
+          <Button variant="outline" className="flex-1 border-dashed">
+            <Plus className="h-4 w-4 mr-2" />
+            Add Block
+          </Button>
+        </SheetTrigger>
+        {onPaste && (
+          <Button variant="outline" onClick={onPaste} className="border-dashed">
+            <Clipboard className="h-4 w-4 mr-2" />
+            Paste
+          </Button>
+        )}
       <SheetContent side="right" className="w-[400px] sm:w-[540px] p-0">
         <SheetHeader className="px-6 py-4 border-b bg-card space-y-3">
           <SheetTitle className="font-serif">Select Block Type</SheetTitle>
@@ -458,5 +467,6 @@ export function BlockSelector({ onAdd }: BlockSelectorProps) {
         </ScrollArea>
       </SheetContent>
     </Sheet>
+    </div>
   );
 }
