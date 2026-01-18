@@ -156,6 +156,7 @@ export interface AnalyzedBranding {
     primaryColor?: string;
     secondaryColor?: string;
     accentColor?: string;
+    backgroundColor?: string;
     headingFont?: string;
     bodyFont?: string;
     logo?: string;

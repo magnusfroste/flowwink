@@ -171,9 +171,63 @@ export function BrandGuideDialog({
             <div className="space-y-6 pt-4 border-t">
               <h3 className="font-medium">Extracted Results</h3>
               
-              {/* Colors */}
+              {/* Raw Colors from Firecrawl */}
               <div className="space-y-3">
-                <Label className="text-sm text-muted-foreground">Colors</Label>
+                <Label className="text-sm text-muted-foreground">Raw colors detected (from website CSS)</Label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {result.extracted.primaryColor && (
+                    <div className="space-y-1">
+                      <div 
+                        className="h-10 rounded-lg border shadow-sm"
+                        style={{ backgroundColor: result.extracted.primaryColor }}
+                      />
+                      <p className="text-[10px] text-center text-muted-foreground">
+                        Primary<br/><code className="text-[9px]">{result.extracted.primaryColor}</code>
+                      </p>
+                    </div>
+                  )}
+                  {result.extracted.secondaryColor && (
+                    <div className="space-y-1">
+                      <div 
+                        className="h-10 rounded-lg border shadow-sm"
+                        style={{ backgroundColor: result.extracted.secondaryColor }}
+                      />
+                      <p className="text-[10px] text-center text-muted-foreground">
+                        Secondary<br/><code className="text-[9px]">{result.extracted.secondaryColor}</code>
+                      </p>
+                    </div>
+                  )}
+                  {result.extracted.accentColor && (
+                    <div className="space-y-1">
+                      <div 
+                        className="h-10 rounded-lg border shadow-sm"
+                        style={{ backgroundColor: result.extracted.accentColor }}
+                      />
+                      <p className="text-[10px] text-center text-muted-foreground">
+                        Accent<br/><code className="text-[9px]">{result.extracted.accentColor}</code>
+                      </p>
+                    </div>
+                  )}
+                  {result.extracted.backgroundColor && (
+                    <div className="space-y-1">
+                      <div 
+                        className="h-10 rounded-lg border shadow-sm"
+                        style={{ backgroundColor: result.extracted.backgroundColor }}
+                      />
+                      <p className="text-[10px] text-center text-muted-foreground">
+                        Background<br/><code className="text-[9px]">{result.extracted.backgroundColor}</code>
+                      </p>
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-400 p-2 rounded">
+                  ⚠️ AI color detection may not be 100% accurate. Verify against the original website before applying.
+                </p>
+              </div>
+
+              {/* Mapped Colors (HSL) */}
+              <div className="space-y-3">
+                <Label className="text-sm text-muted-foreground">Mapped to theme (HSL converted)</Label>
                 <div className="grid grid-cols-3 gap-4">
                   {result.mapped.primaryColor && (
                     <div className="space-y-1">
