@@ -452,13 +452,22 @@ export function useCopilot(): UseCopilotReturn {
     });
   }, []);
 
-  // Helper: Find next pending page
+  // Helper: Find next pending page from selected pages
   const findNextPendingPage = useCallback(() => {
     if (!migrationState.siteStructure) return null;
-    return migrationState.siteStructure.pages.find(
-      p => p.status === 'pending' && p.type === 'page'
-    );
-  }, [migrationState.siteStructure]);
+    
+    // Find pages that are selected and still pending (not yet migrated)
+    const pendingPages = migrationState.siteStructure.pages.filter(p => {
+      const isSelected = p.selected !== false; // Include if selected or undefined
+      const isPending = p.status === 'pending' || p.status === undefined;
+      const isPage = p.suggestedType === 'page' || p.type === 'page';
+      const notCurrentPage = p.url !== migrationState.currentPageUrl;
+      return isSelected && isPending && isPage && notCurrentPage;
+    });
+    
+    console.log('[Copilot] findNextPendingPage - found:', pendingPages.length, 'pending pages');
+    return pendingPages[0] || null;
+  }, [migrationState.siteStructure, migrationState.currentPageUrl]);
 
   // Helper: Generate slug from title
   const generateSlug = (title: string): string => {
@@ -510,9 +519,26 @@ export function useCopilot(): UseCopilotReturn {
             status: 'draft',
           });
           
-          // Mark current page as completed in siteStructure
-          if (migrationState.currentPageUrl) {
-            updatePageStatusInStructure(migrationState.currentPageUrl, 'completed');
+          // Mark current page as completed and find next pending page atomically
+          const currentUrl = migrationState.currentPageUrl;
+          
+          // Calculate next page from current state (before React batches updates)
+          let nextPendingPage: DiscoveredPage | null = null;
+          if (migrationState.siteStructure) {
+            const pendingPages = migrationState.siteStructure.pages.filter(p => {
+              const isSelected = p.selected !== false;
+              const isPending = p.status === 'pending' || p.status === undefined;
+              const isPage = p.suggestedType === 'page' || p.type === 'page';
+              const notCurrentPage = p.url !== currentUrl;
+              return isSelected && isPending && isPage && notCurrentPage;
+            });
+            nextPendingPage = pendingPages[0] || null;
+            console.log('[Copilot] After save - pending pages remaining:', pendingPages.length);
+          }
+          
+          // Update state: mark current as completed
+          if (currentUrl) {
+            updatePageStatusInStructure(currentUrl, 'completed');
           }
           
           // Clear blocks for next page
@@ -522,23 +548,20 @@ export function useCopilot(): UseCopilotReturn {
           const newPagesCompleted = pagesCompleted + 1;
           setMigrationState(prev => ({ ...prev, pagesCompleted: newPagesCompleted }));
           
-          // Find next pending page
-          const nextPage = findNextPendingPage();
-          
-          if (nextPage && nextPage.status === 'pending') {
+          if (nextPendingPage) {
             // Auto-continue to next page
             const continueMessage: CopilotMessage = {
               id: generateId(),
               role: 'assistant',
-              content: `✅ **${pageTitle}** saved! (${newPagesCompleted}/${pagesTotal})\n\n➡️ Moving to: **${nextPage.title}**...`,
+              content: `✅ **${pageTitle}** saved! (${newPagesCompleted}/${pagesTotal})\n\n➡️ Moving to: **${nextPendingPage.suggestedName || nextPendingPage.title || 'next page'}**...`,
               createdAt: new Date(),
             };
             setMessages(prev => [...prev, continueMessage]);
             
             // Start next page migration after short delay
-            const fullUrl = nextPage.url.startsWith('http') 
-              ? nextPage.url 
-              : `${migrationState.baseDomain}${nextPage.url}`;
+            const fullUrl = nextPendingPage.url.startsWith('http') 
+              ? nextPendingPage.url 
+              : `${migrationState.baseDomain}${nextPendingPage.url}`;
             
             setTimeout(() => startMigration(fullUrl), 800);
           } else {
