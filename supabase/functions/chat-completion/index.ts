@@ -862,13 +862,23 @@ serve(async (req) => {
       if (tools.length > 0) {
         localRequestBody.tools = tools;
         localRequestBody.tool_choice = 'auto';
+        console.log('Local AI request with tools:', JSON.stringify({ url: fullUrl, tools: tools.map((t: any) => t.function?.name) }));
       }
 
+      console.log('Sending request to local AI:', fullUrl);
       response = await fetch(fullUrl, {
         method: 'POST',
         headers,
         body: JSON.stringify(localRequestBody),
       });
+      
+      console.log('Local AI response status:', response.status, response.statusText);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Local AI error response:', errorText);
+        throw new Error(`Local AI request failed: ${response.status} - ${errorText}`);
+      }
     } else if (aiProvider === 'n8n') {
       const n8nConfig = aiIntegrations?.n8n?.config || {};
       const webhookUrl = settings?.n8nWebhookUrl || n8nConfig?.webhookUrl;
