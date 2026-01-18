@@ -548,8 +548,18 @@ serve(async (req) => {
     const toolCallingSupported = aiProvider === 'openai' || 
       (aiProvider === 'local' && settings?.localSupportsToolCalling);
     
+    console.log('Tool calling check:', {
+      toolCallingEnabled: settings?.toolCallingEnabled,
+      toolCallingSupported,
+      aiProvider,
+      localSupportsToolCalling: settings?.localSupportsToolCalling,
+      firecrawlSearchEnabled: settings?.firecrawlSearchEnabled,
+      firecrawlIntegrationEnabled: aiIntegrations?.firecrawl?.enabled,
+    });
+    
     if (settings?.toolCallingEnabled && toolCallingSupported) {
       if (settings?.firecrawlSearchEnabled && aiIntegrations?.firecrawl?.enabled) {
+        console.log('Adding firecrawl_search tool');
         tools.push(AVAILABLE_TOOLS.firecrawl_search);
       }
       if (settings?.humanHandoffEnabled) {
