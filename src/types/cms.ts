@@ -455,6 +455,21 @@ export interface TwoColumnBlockData {
   imagePosition: 'left' | 'right';
   /** Which column should be sticky when scrolling */
   stickyColumn?: 'none' | 'image' | 'text';
+  // Design System 2026: Premium features
+  eyebrow?: string;
+  eyebrowColor?: string;
+  title?: string;
+  titleSize?: TextTitleSize;
+  accentText?: string;
+  accentPosition?: 'start' | 'end' | 'inline';
+  // CTA Link
+  ctaText?: string;
+  ctaUrl?: string;
+  // Second image for stacked effect
+  secondImageSrc?: string;
+  secondImageAlt?: string;
+  // Background
+  backgroundColor?: string;
 }
 
 export interface InfoBoxBlockData {

@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { TwoColumnBlockData, TiptapDocument } from '@/types/cms';
+import { TwoColumnBlockData, TiptapDocument, TextTitleSize } from '@/types/cms';
 import { Bold, Italic, List, ListOrdered, ArrowLeftRight, Pin, Heading1, Heading2, Quote } from 'lucide-react';
 import { ImageUploader } from '../ImageUploader';
 import { AITiptapToolbar } from '../AITiptapToolbar';
@@ -58,6 +58,151 @@ export function TwoColumnBlockEditor({ data, isEditing, onChange }: TwoColumnBlo
   if (isEditing) {
     return (
       <div className="space-y-4 p-4">
+        {/* Design System 2026: Premium Header Settings */}
+        <div className="rounded-lg border bg-muted/30 p-4 space-y-4">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            Design System 2026
+          </p>
+          
+          <div className="grid grid-cols-2 gap-4">
+            {/* Eyebrow */}
+            <div className="space-y-2">
+              <Label htmlFor="eyebrow" className="text-sm">Eyebrow Label</Label>
+              <Input
+                id="eyebrow"
+                value={data.eyebrow || ''}
+                onChange={(e) => onChange({ ...data, eyebrow: e.target.value })}
+                placeholder="e.g., ABOUT US, SERVICES"
+                className="text-sm"
+              />
+            </div>
+            
+            {/* Eyebrow Color */}
+            <div className="space-y-2">
+              <Label htmlFor="eyebrowColor" className="text-sm">Eyebrow Color</Label>
+              <Input
+                id="eyebrowColor"
+                type="color"
+                value={data.eyebrowColor || '#f97316'}
+                onChange={(e) => onChange({ ...data, eyebrowColor: e.target.value })}
+                className="h-9 w-full"
+              />
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            {/* Display Title */}
+            <div className="space-y-2">
+              <Label htmlFor="title" className="text-sm">Display Title</Label>
+              <Input
+                id="title"
+                value={data.title || ''}
+                onChange={(e) => onChange({ ...data, title: e.target.value })}
+                placeholder="Large heading above content"
+                className="text-sm"
+              />
+            </div>
+            
+            {/* Title Size */}
+            <div className="space-y-2">
+              <Label className="text-sm">Title Size</Label>
+              <Select
+                value={data.titleSize || 'default'}
+                onValueChange={(value: TextTitleSize) => onChange({ ...data, titleSize: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="default">Default</SelectItem>
+                  <SelectItem value="large">Large</SelectItem>
+                  <SelectItem value="display">Display (XL)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            {/* Accent Text */}
+            <div className="space-y-2">
+              <Label htmlFor="accentText" className="text-sm">Accent Text (Script Font)</Label>
+              <Input
+                id="accentText"
+                value={data.accentText || ''}
+                onChange={(e) => onChange({ ...data, accentText: e.target.value })}
+                placeholder="e.g., Excellence, Experience"
+                className="text-sm font-serif italic"
+              />
+            </div>
+            
+            {/* Accent Position */}
+            <div className="space-y-2">
+              <Label className="text-sm">Accent Position</Label>
+              <Select
+                value={data.accentPosition || 'end'}
+                onValueChange={(value: 'start' | 'end' | 'inline') => onChange({ ...data, accentPosition: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="start">Before Title</SelectItem>
+                  <SelectItem value="end">After Title</SelectItem>
+                  <SelectItem value="inline">Replace in Title</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            {/* CTA Text */}
+            <div className="space-y-2">
+              <Label htmlFor="ctaText" className="text-sm">CTA Link Text</Label>
+              <Input
+                id="ctaText"
+                value={data.ctaText || ''}
+                onChange={(e) => onChange({ ...data, ctaText: e.target.value })}
+                placeholder="e.g., MORE ABOUT US"
+                className="text-sm"
+              />
+            </div>
+            
+            {/* CTA URL */}
+            <div className="space-y-2">
+              <Label htmlFor="ctaUrl" className="text-sm">CTA Link URL</Label>
+              <Input
+                id="ctaUrl"
+                value={data.ctaUrl || ''}
+                onChange={(e) => onChange({ ...data, ctaUrl: e.target.value })}
+                placeholder="/about-us or https://..."
+                className="text-sm"
+              />
+            </div>
+          </div>
+
+          {/* Background Color */}
+          <div className="space-y-2">
+            <Label htmlFor="backgroundColor" className="text-sm">Section Background Color</Label>
+            <div className="flex gap-2">
+              <Input
+                id="backgroundColor"
+                type="color"
+                value={data.backgroundColor || '#ffffff'}
+                onChange={(e) => onChange({ ...data, backgroundColor: e.target.value })}
+                className="h-9 w-20"
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onChange({ ...data, backgroundColor: undefined })}
+              >
+                Clear
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Layout controls */}
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-2">
             <Label>Image position</Label>
@@ -91,7 +236,7 @@ export function TwoColumnBlockEditor({ data, isEditing, onChange }: TwoColumnBlo
             <ImageUploader
               value={data.imageSrc || ''}
               onChange={(url) => onChange({ ...data, imageSrc: url })}
-              label="Image"
+              label="Primary Image"
             />
             <div>
               <Label>Alt text</Label>
@@ -100,6 +245,25 @@ export function TwoColumnBlockEditor({ data, isEditing, onChange }: TwoColumnBlo
                 onChange={(e) => onChange({ ...data, imageAlt: e.target.value })}
                 placeholder="Description of the image"
               />
+            </div>
+
+            {/* Second Image for stacked effect */}
+            <div className="pt-4 border-t">
+              <ImageUploader
+                value={data.secondImageSrc || ''}
+                onChange={(url) => onChange({ ...data, secondImageSrc: url })}
+                label="Second Image (Stacked Effect)"
+              />
+              {data.secondImageSrc && (
+                <div className="mt-2">
+                  <Label>Second image alt text</Label>
+                  <Input
+                    value={data.secondImageAlt || ''}
+                    onChange={(e) => onChange({ ...data, secondImageAlt: e.target.value })}
+                    placeholder="Description of second image"
+                  />
+                </div>
+              )}
             </div>
           </div>
 
