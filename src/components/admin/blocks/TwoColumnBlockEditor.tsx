@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TwoColumnBlockData, TiptapDocument } from '@/types/cms';
-import { Bold, Italic, List, ListOrdered, ArrowLeftRight, Pin, Heading1, Heading2 } from 'lucide-react';
+import { Bold, Italic, List, ListOrdered, ArrowLeftRight, Pin, Heading1, Heading2, Quote } from 'lucide-react';
 import { ImageUploader } from '../ImageUploader';
 import { AITiptapToolbar } from '../AITiptapToolbar';
 import { renderToHtml, getEditorContent as getEditorContentFromUtils } from '@/lib/tiptap-utils';
@@ -107,7 +107,7 @@ export function TwoColumnBlockEditor({ data, isEditing, onChange }: TwoColumnBlo
             <Label>Text content</Label>
             {editor && (
               <>
-                <div className="flex gap-1 border-b pb-2 mb-2">
+                <div className="flex gap-1 border-b pb-2 mb-2 flex-wrap">
                   <Button
                     type="button"
                     variant={editor.isActive('bold') ? 'secondary' : 'ghost'}
@@ -126,6 +126,22 @@ export function TwoColumnBlockEditor({ data, isEditing, onChange }: TwoColumnBlo
                   </Button>
                   <Button
                     type="button"
+                    variant={editor.isActive('heading', { level: 1 }) ? 'secondary' : 'ghost'}
+                    size="sm"
+                    onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+                  >
+                    <Heading1 className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={editor.isActive('heading', { level: 2 }) ? 'secondary' : 'ghost'}
+                    size="sm"
+                    onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+                  >
+                    <Heading2 className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    type="button"
                     variant={editor.isActive('bulletList') ? 'secondary' : 'ghost'}
                     size="sm"
                     onClick={() => editor.chain().focus().toggleBulletList().run()}
@@ -139,6 +155,14 @@ export function TwoColumnBlockEditor({ data, isEditing, onChange }: TwoColumnBlo
                     onClick={() => editor.chain().focus().toggleOrderedList().run()}
                   >
                     <ListOrdered className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={editor.isActive('blockquote') ? 'secondary' : 'ghost'}
+                    size="sm"
+                    onClick={() => editor.chain().focus().toggleBlockquote().run()}
+                  >
+                    <Quote className="h-4 w-4" />
                   </Button>
                   <div className="flex-1" />
                   <AITiptapToolbar editor={editor} />
