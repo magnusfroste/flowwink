@@ -1,9 +1,26 @@
 import { cn } from '@/lib/utils';
 import { User, Bot, Copy, Check, Headphones } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { ChatFeedback } from './ChatFeedback';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+
+// Simple markdown parser for chat messages
+function parseMarkdown(text: string): string {
+  return text
+    // Code blocks (must be before inline code)
+    .replace(/```(\w*)\n?([\s\S]*?)```/g, '<pre><code class="language-$1">$2</code></pre>')
+    // Inline code
+    .replace(/`([^`]+)`/g, '<code class="bg-muted-foreground/20 px-1 py-0.5 rounded text-sm">$1</code>')
+    // Bold
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    // Italic
+    .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+    // Links
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-primary underline">$1</a>')
+    // Line breaks
+    .replace(/\n/g, '<br />');
+}
 
 interface AgentInfo {
   id: string;
@@ -40,6 +57,8 @@ export function ChatMessage({
 }: ChatMessageProps) {
   const [copied, setCopied] = useState(false);
   const isUser = role === 'user';
+
+  const parsedContent = useMemo(() => parseMarkdown(content), [content]);
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(content);
@@ -104,16 +123,15 @@ export function ChatMessage({
           ? 'bg-primary text-primary-foreground rounded-br-md' 
           : 'bg-muted rounded-bl-md'
       )}>
-        <div className={cn(
-          'prose prose-sm max-w-none',
-          isUser && 'prose-invert'
-        )}>
-          {content.split('\n').map((line, i) => (
-            <p key={i} className="mb-1 last:mb-0">
-              {line || '\u00A0'}
-            </p>
-          ))}
-        </div>
+        <div 
+          className={cn(
+            'prose prose-sm max-w-none',
+            isUser && 'prose-invert',
+            '[&_pre]:bg-muted-foreground/10 [&_pre]:p-2 [&_pre]:rounded [&_pre]:overflow-x-auto [&_pre]:my-2',
+            '[&_code]:text-inherit'
+          )}
+          dangerouslySetInnerHTML={{ __html: parsedContent }}
+        />
         
         {!isUser && content && (
           <div className="absolute -right-10 top-1 flex flex-col gap-1">
