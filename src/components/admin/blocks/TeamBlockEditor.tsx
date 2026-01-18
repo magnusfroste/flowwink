@@ -230,8 +230,15 @@ export function TeamBlockEditor({ data, onChange, isEditing }: TeamBlockEditorPr
                   <div className="space-y-2">
                     <Label>Photo</Label>
                     <ImagePickerField
+                      key={`photo-${member.id}`}
                       value={member.photo || ''}
-                      onChange={(url) => updateMember(member.id, { photo: url })}
+                      onChange={(url) => {
+                        const memberId = member.id;
+                        onChange({
+                          ...data,
+                          members: members.map((m) => (m.id === memberId ? { ...m, photo: url } : m)),
+                        });
+                      }}
                       placeholder="Team member photo URL"
                     />
                   </div>
