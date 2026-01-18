@@ -854,6 +854,31 @@ export default function ChatSettingsPage() {
             {/* Advanced / Tool Calling settings */}
             <TabsContent value="advanced">
               <div className="space-y-6">
+                {/* General Knowledge Toggle */}
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30">
+                          <Brain className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                        </div>
+                        <div>
+                          <CardTitle>Allow General Knowledge</CardTitle>
+                          <CardDescription>
+                            Let the AI use its own knowledge beyond page content. When disabled, AI only answers based on your website content.
+                          </CardDescription>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={formData.allowGeneralKnowledge ?? false}
+                        onCheckedChange={(allowGeneralKnowledge) => 
+                          setFormData({ ...formData, allowGeneralKnowledge })
+                        }
+                      />
+                    </div>
+                  </CardHeader>
+                </Card>
+
                 {/* Tool Calling Master Toggle */}
                 <Card>
                   <CardHeader>

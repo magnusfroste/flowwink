@@ -210,6 +210,9 @@ export interface ChatSettings {
   sentimentThreshold: number; // 0-10, triggers handoff when exceeded
   localSupportsToolCalling: boolean; // Whether local AI supports OpenAI-compatible tool calling
   
+  // General Knowledge
+  allowGeneralKnowledge: boolean; // Allow AI to use its own knowledge beyond page content
+  
   // Widget-inställningar
   widgetEnabled: boolean;
   widgetPosition: 'bottom-right' | 'bottom-left';
@@ -275,6 +278,7 @@ const defaultChatSettings: ChatSettings = {
   sentimentDetectionEnabled: true,
   sentimentThreshold: 7,
   localSupportsToolCalling: false,
+  allowGeneralKnowledge: false,
   widgetEnabled: false,
   widgetPosition: 'bottom-right',
   widgetButtonText: 'Chatta med oss',
