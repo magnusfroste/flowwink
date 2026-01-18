@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -39,12 +39,19 @@ export function TeamBlockEditor({ data, onChange, isEditing }: TeamBlockEditorPr
     setExpandedMember(newMember.id);
   };
 
-  const updateMember = (id: string, updates: Partial<TeamMember>) => {
+  const updateMember = useCallback((id: string, updates: Partial<TeamMember>) => {
     onChange({
       ...data,
-      members: members.map((m) => (m.id === id ? { ...m, ...updates } : m)),
+      members: (data.members || []).map((m) => (m.id === id ? { ...m, ...updates } : m)),
     });
-  };
+  }, [data, onChange]);
+
+  const updateMemberPhoto = useCallback((memberId: string, url: string) => {
+    onChange({
+      ...data,
+      members: (data.members || []).map((m) => (m.id === memberId ? { ...m, photo: url } : m)),
+    });
+  }, [data, onChange]);
 
   const removeMember = (id: string) => {
     onChange({ ...data, members: members.filter((m) => m.id !== id) });
@@ -232,13 +239,7 @@ export function TeamBlockEditor({ data, onChange, isEditing }: TeamBlockEditorPr
                     <ImagePickerField
                       key={`photo-${member.id}`}
                       value={member.photo || ''}
-                      onChange={(url) => {
-                        const memberId = member.id;
-                        onChange({
-                          ...data,
-                          members: members.map((m) => (m.id === memberId ? { ...m, photo: url } : m)),
-                        });
-                      }}
+                      onChange={(url) => updateMemberPhoto(member.id, url)}
                       placeholder="Team member photo URL"
                     />
                   </div>
