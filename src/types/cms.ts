@@ -387,6 +387,9 @@ export type RichTextContent = TiptapDocument | string;
 // BLOCK DATA TYPES
 // =============================================================================
 
+// Design System 2026: Text block title sizes
+export type TextTitleSize = 'default' | 'large' | 'display';
+
 export interface TextBlockData {
   /** 
    * Rich text content. TiptapDocument is the standard format.
@@ -394,6 +397,13 @@ export interface TextBlockData {
    */
   content: RichTextContent;
   backgroundColor?: string;
+  // Design System 2026: Premium typography features
+  eyebrow?: string;           // Small label above title (e.g., "SERVICES")
+  eyebrowColor?: string;      // Color for eyebrow text
+  title?: string;             // Display title above content
+  titleSize?: TextTitleSize;  // Title size variant
+  accentText?: string;        // Part of title in accent/script font
+  accentPosition?: 'start' | 'end' | 'inline'; // Where accent appears
 }
 
 export interface ImageBlockData {
