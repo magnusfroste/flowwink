@@ -567,6 +567,15 @@ serve(async (req) => {
         tools.push(AVAILABLE_TOOLS.create_escalation);
       }
     }
+    
+    // Add tool usage instructions to system prompt if tools are enabled
+    if (tools.length > 0) {
+      const toolNames = tools.map((t: any) => t.function?.name).filter(Boolean);
+      systemPrompt += `\n\nYou have access to the following tools: ${toolNames.join(', ')}. 
+When the user asks for current/live information (news, weather, prices, recent events, etc.), you MUST use the firecrawl_search tool to search the web.
+When the user asks about a specific website, use firecrawl_search with the website URL or domain in the query.
+Always use tools when they can help answer the user's question - do not say you cannot access the internet or current information.`;
+    }
 
     // Fallback: Keyword-based handoff detection for non-OpenAI providers
     if (settings?.humanHandoffEnabled && !toolCallingSupported) {
