@@ -1,22 +1,6 @@
 import { TwoColumnBlockData, TiptapDocument } from '@/types/cms';
-import { generateHTML } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import Link from '@tiptap/extension-link';
+import { renderToHtml } from '@/lib/tiptap-utils';
 import { cn } from '@/lib/utils';
-
-// Helper to check if content is Tiptap JSON
-function isTiptapDocument(content: unknown): content is TiptapDocument {
-  return typeof content === 'object' && content !== null && (content as TiptapDocument).type === 'doc';
-}
-
-// Render content as HTML (handles both legacy HTML strings and Tiptap JSON)
-function renderContent(content: string | TiptapDocument | undefined): string {
-  if (!content) return '';
-  if (isTiptapDocument(content)) {
-    return generateHTML(content, [StarterKit, Link]);
-  }
-  return content;
-}
 
 interface TwoColumnBlockProps {
   data: TwoColumnBlockData;
@@ -27,6 +11,9 @@ export function TwoColumnBlock({ data }: TwoColumnBlockProps) {
   const stickyColumn = data.stickyColumn || 'none';
 
   const stickyStyles = 'md:sticky md:top-24 md:self-start';
+  
+  // Use the shared tiptap-utils for consistent rendering
+  const htmlContent = renderToHtml(data.content);
 
   return (
     <section className="py-16 px-6">
@@ -51,10 +38,11 @@ export function TwoColumnBlock({ data }: TwoColumnBlockProps) {
           )}
           <div className={cn(
             'prose prose-lg dark:prose-invert max-w-none',
+            // Reset inherited direction for text column
             imageFirst ? '' : 'md:[direction:ltr]',
             stickyColumn === 'text' && stickyStyles
           )}>
-            <div dangerouslySetInnerHTML={{ __html: renderContent(data.content) }} />
+            <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
           </div>
         </div>
       </div>
