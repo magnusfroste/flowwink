@@ -34,15 +34,51 @@ interface FirecrawlBranding {
   };
 }
 
-// Convert HEX to HSL string
-export function hexToHsl(hex: string): string {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  if (!result) return '220 100% 26%';
+// Convert color string to HSL format
+// Handles HEX (#fff, #ffffff), rgb(), rgba(), and hsl() formats
+export function hexToHsl(color: string): string {
+  if (!color || typeof color !== 'string') return '220 100% 26%';
   
-  let r = parseInt(result[1], 16) / 255;
-  let g = parseInt(result[2], 16) / 255;
-  let b = parseInt(result[3], 16) / 255;
+  const trimmed = color.trim();
   
+  // Already HSL format? Extract values
+  const hslMatch = trimmed.match(/hsl\(\s*(\d+)\s*,?\s*([\d.]+)%?\s*,?\s*([\d.]+)%?\s*\)/i);
+  if (hslMatch) {
+    return `${Math.round(parseFloat(hslMatch[1]))} ${Math.round(parseFloat(hslMatch[2]))}% ${Math.round(parseFloat(hslMatch[3]))}%`;
+  }
+  
+  // RGB/RGBA format
+  const rgbMatch = trimmed.match(/rgba?\(\s*(\d+)\s*,?\s*(\d+)\s*,?\s*(\d+)/i);
+  if (rgbMatch) {
+    const r = parseInt(rgbMatch[1], 10) / 255;
+    const g = parseInt(rgbMatch[2], 10) / 255;
+    const b = parseInt(rgbMatch[3], 10) / 255;
+    return rgbToHsl(r, g, b);
+  }
+  
+  // HEX format (3 or 6 digits)
+  let hex = trimmed.replace('#', '');
+  
+  // Expand shorthand (#fff -> #ffffff)
+  if (hex.length === 3) {
+    hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+  }
+  
+  const result = /^([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if (!result) {
+    console.warn('Could not parse color:', color);
+    return '220 100% 26%'; // Default blue
+  }
+  
+  const r = parseInt(result[1], 16) / 255;
+  const g = parseInt(result[2], 16) / 255;
+  const b = parseInt(result[3], 16) / 255;
+  
+  return rgbToHsl(r, g, b);
+}
+
+// Helper: Convert RGB (0-1 range) to HSL string
+function rgbToHsl(r: number, g: number, b: number): string {
   const max = Math.max(r, g, b);
   const min = Math.min(r, g, b);
   let h = 0;
