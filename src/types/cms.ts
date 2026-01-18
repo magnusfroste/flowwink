@@ -678,6 +678,7 @@ export interface TeamBlockData {
   variant?: 'default' | 'cards' | 'compact';
   showBio?: boolean;
   showSocial?: boolean;
+  staggeredReveal?: boolean;
 }
 
 // Logo cloud block data
