@@ -16,7 +16,7 @@ export function AccordionBlock({ data }: AccordionBlockProps) {
 
   return (
     <section className="py-16 px-6">
-      <div className="container mx-auto max-w-3xl">
+      <div className="container mx-auto max-w-4xl">
         {data.title && (
           <h2 className="font-serif text-3xl font-bold mb-8 text-center">{data.title}</h2>
         )}
