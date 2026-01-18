@@ -104,3 +104,9 @@ verify_jwt = true
 
 [functions.generate-content-proposal]
 verify_jwt = true
+
+[functions.firecrawl-map]
+verify_jwt = true
+
+[functions.firecrawl-search]
+verify_jwt = true

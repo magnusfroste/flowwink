@@ -46,12 +46,19 @@ export interface CopilotMessage {
   };
 }
 
-// Site Discovery Types
+// Site Discovery Types - Updated for Firecrawl Map integration
 export interface DiscoveredPage {
   url: string;
-  title: string;
-  type: 'page' | 'blog' | 'kb';
-  source: 'navigation' | 'sitemap' | 'link';
+  path: string;
+  slug: string;
+  suggestedName: string;
+  suggestedType: 'page' | 'blog' | 'kb' | 'skip';
+  selected: boolean;
+  isDuplicate?: boolean;
+  // Legacy fields for compatibility
+  title?: string;
+  type?: 'page' | 'blog' | 'kb';
+  source?: 'navigation' | 'sitemap' | 'link' | 'firecrawl-map';
   status?: 'pending' | 'migrating' | 'completed' | 'skipped';
 }
 
@@ -63,9 +70,17 @@ export interface SiteStructure {
   navigation: string[];
   hasBlog: boolean;
   hasKnowledgeBase: boolean;
+  stats?: {
+    total: number;
+    pages: number;
+    blog: number;
+    kb: number;
+    skip: number;
+    selected: number;
+  };
 }
 
-export type DiscoveryStatus = 'idle' | 'analyzing' | 'ready' | 'migrating' | 'complete';
+export type DiscoveryStatus = 'idle' | 'analyzing' | 'selecting' | 'ready' | 'migrating' | 'complete';
 
 export interface CopilotBlock {
   id: string;
@@ -121,7 +136,12 @@ interface UseCopilotReturn {
   clearConversation: () => void;
   stopAutoContinue: () => void;
   approvedBlocks: CopilotBlock[];
-  // Site discovery
+  // Site discovery with Firecrawl Map
+  discoverPages: (url: string) => Promise<void>;
+  updateDiscoveredPages: (pages: DiscoveredPage[]) => void;
+  confirmPageSelection: () => Promise<void>;
+  cancelPageSelection: () => void;
+  // Legacy site discovery
   analyzeSite: (url: string) => Promise<void>;
   selectPageForMigration: (url: string) => void;
   togglePageSelection: (url: string) => void;
@@ -947,7 +967,162 @@ export function useCopilot(): UseCopilotReturn {
 
   const approvedBlocks = blocks.filter(b => b.status === 'approved');
 
-  // ==================== SITE DISCOVERY FUNCTIONS ====================
+  // ==================== FIRECRAWL MAP PAGE DISCOVERY ====================
+
+  // Discover pages using Firecrawl Map - returns all URLs for user selection
+  const discoverPages = useCallback(async (url: string) => {
+    setIsLoading(true);
+    setError(null);
+    setMigrationState(prev => ({ ...prev, discoveryStatus: 'analyzing', sourceUrl: url }));
+
+    const discoverMessage: CopilotMessage = {
+      id: generateId(),
+      role: 'assistant',
+      content: `🔍 Discovering pages on ${url}...\n\nUsing Firecrawl Map to find all URLs.`,
+      createdAt: new Date(),
+    };
+    setMessages(prev => [...prev, discoverMessage]);
+
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke('firecrawl-map', {
+        body: { url, options: { limit: 100 } },
+      });
+
+      if (fnError) throw new Error(fnError.message);
+      if (!data?.success) throw new Error(data?.error || 'Page discovery failed');
+
+      const siteStructure: SiteStructure = {
+        siteName: data.siteName || 'Unknown Site',
+        platform: data.platform || 'unknown',
+        baseUrl: data.baseUrl || url,
+        pages: data.pages || [],
+        navigation: [],
+        hasBlog: data.stats?.blog > 0,
+        hasKnowledgeBase: data.stats?.kb > 0,
+        stats: data.stats,
+      };
+
+      setMigrationState(prev => ({
+        ...prev,
+        siteStructure,
+        discoveryStatus: 'selecting',
+        baseDomain: siteStructure.baseUrl,
+        detectedPlatform: siteStructure.platform,
+        hasBlog: siteStructure.hasBlog,
+        hasKnowledgeBase: siteStructure.hasKnowledgeBase,
+        pagesTotal: data.stats?.selected || data.pages?.length || 0,
+        blogPostsDiscovered: data.stats?.blog || 0,
+        kbArticlesDiscovered: data.stats?.kb || 0,
+      }));
+
+      // Auto-enable modules based on detected platform
+      if (siteStructure.platform && siteStructure.platform !== 'unknown') {
+        const suggestedModules = detectModulesFromPlatform(siteStructure.platform);
+        for (const moduleId of suggestedModules) {
+          await autoEnableModule(moduleId);
+        }
+      }
+
+      const successMessage: CopilotMessage = {
+        id: generateId(),
+        role: 'assistant',
+        content: `✨ **${siteStructure.siteName}** - Found ${data.pages?.length || 0} pages!${siteStructure.platform !== 'unknown' ? ` (${siteStructure.platform})` : ''}\n\n📋 **${data.stats?.selected || 0}** pages pre-selected. Review and select which pages to migrate.`,
+        createdAt: new Date(),
+      };
+      setMessages(prev => [...prev, successMessage]);
+
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to discover pages';
+      setError(message);
+      setMigrationState(prev => ({ ...prev, discoveryStatus: 'idle' }));
+      toast.error(message);
+
+      const errorMessage: CopilotMessage = {
+        id: generateId(),
+        role: 'assistant',
+        content: `❌ I couldn't discover pages on that site. ${message}\n\nPlease check that:\n• The URL is correct and accessible\n• The site isn't password protected`,
+        createdAt: new Date(),
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [autoEnableModule]);
+
+  // Update discovered pages (for checkbox changes in UI)
+  const updateDiscoveredPages = useCallback((pages: DiscoveredPage[]) => {
+    setMigrationState(prev => {
+      if (!prev.siteStructure) return prev;
+      return {
+        ...prev,
+        siteStructure: { ...prev.siteStructure, pages },
+        pagesTotal: pages.filter(p => p.selected).length,
+      };
+    });
+  }, []);
+
+  // Confirm page selection and start migration
+  const confirmPageSelection = useCallback(async () => {
+    if (!migrationState.siteStructure) return;
+
+    const selectedPages = migrationState.siteStructure.pages.filter(p => p.selected);
+    
+    if (selectedPages.length === 0) {
+      toast.info('No pages selected for migration');
+      return;
+    }
+
+    setMigrationState(prev => ({ 
+      ...prev, 
+      discoveryStatus: 'migrating', 
+      phase: 'pages',
+      pagesTotal: selectedPages.length,
+      pagesCompleted: 0,
+    }));
+
+    const startMsg: CopilotMessage = {
+      id: generateId(),
+      role: 'assistant',
+      content: `🚀 Starting migration of ${selectedPages.length} pages...\n\nI'll process each page and show you the content for review.`,
+      createdAt: new Date(),
+    };
+    setMessages(prev => [...prev, startMsg]);
+
+    // Mark selected pages as pending
+    setMigrationState(prev => {
+      if (!prev.siteStructure) return prev;
+      return {
+        ...prev,
+        siteStructure: {
+          ...prev.siteStructure,
+          pages: prev.siteStructure.pages.map(p => ({
+            ...p,
+            status: p.selected ? 'pending' as const : 'skipped' as const,
+          })),
+        },
+      };
+    });
+
+    // Start with the first selected page
+    const firstPage = selectedPages[0];
+    if (firstPage) {
+      await startMigration(firstPage.url);
+    }
+  }, [migrationState.siteStructure, startMigration]);
+
+  // Cancel page selection
+  const cancelPageSelection = useCallback(() => {
+    setMigrationState(initialMigrationState);
+    const msg: CopilotMessage = {
+      id: generateId(),
+      role: 'assistant',
+      content: `Page selection cancelled. Let me know if you'd like to try a different site!`,
+      createdAt: new Date(),
+    };
+    setMessages(prev => [...prev, msg]);
+  }, []);
+
+  // ==================== LEGACY SITE DISCOVERY FUNCTIONS ====================
 
   const analyzeSite = useCallback(async (url: string) => {
     setIsLoading(true);
@@ -1144,7 +1319,12 @@ export function useCopilot(): UseCopilotReturn {
     clearConversation,
     stopAutoContinue,
     approvedBlocks,
-    // Site discovery
+    // Firecrawl Map page discovery
+    discoverPages,
+    updateDiscoveredPages,
+    confirmPageSelection,
+    cancelPageSelection,
+    // Legacy site discovery
     analyzeSite,
     selectPageForMigration,
     togglePageSelection,
