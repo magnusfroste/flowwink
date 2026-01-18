@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, X, Edit3, SkipForward, Globe, ExternalLink, ChevronRight, FileText, BookOpen, Library, Zap } from 'lucide-react';
+import { Check, X, Edit3, SkipForward, Globe, ExternalLink, ChevronRight, FileText, BookOpen, Library, Zap, Link2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
-import type { CopilotBlock, MigrationState, MigrationPhase } from '@/hooks/useCopilot';
+import type { CopilotBlock, MigrationState, MigrationPhase, DiscoveredPage } from '@/hooks/useCopilot';
+import { CopilotPageSelector, type DiscoveredPageItem } from './CopilotPageSelector';
 
 interface CopilotMigrationPreviewProps {
   migrationState: MigrationState;
@@ -18,6 +19,10 @@ interface CopilotMigrationPreviewProps {
   onStartBlogMigration?: () => void;
   onStartKbMigration?: () => void;
   onSkipPhase?: () => void;
+  // New page selection handlers
+  onPagesChange?: (pages: DiscoveredPage[]) => void;
+  onConfirmSelection?: () => void;
+  onCancelSelection?: () => void;
   isLoading?: boolean;
 }
 
@@ -160,13 +165,16 @@ export function CopilotMigrationPreview({
   onStartBlogMigration,
   onStartKbMigration,
   onSkipPhase,
+  onPagesChange,
+  onConfirmSelection,
+  onCancelSelection,
   isLoading,
 }: CopilotMigrationPreviewProps) {
   const [editFeedback, setEditFeedback] = useState('');
   const [showEditInput, setShowEditInput] = useState(false);
   const [selectedPage, setSelectedPage] = useState<string | null>(null);
 
-  const { pendingBlocks, currentBlockIndex, discoveredLinks, sourceUrl, detectedPlatform, pageTitle, phase, hasBlog, hasKnowledgeBase, blogUrls, kbUrls, pagesCompleted, pagesTotal } = migrationState;
+  const { pendingBlocks, currentBlockIndex, discoveredLinks, sourceUrl, detectedPlatform, pageTitle, phase, hasBlog, hasKnowledgeBase, blogUrls, kbUrls, pagesCompleted, pagesTotal, discoveryStatus, siteStructure, currentPageUrl } = migrationState;
   const currentBlock = pendingBlocks[currentBlockIndex];
   const isComplete = currentBlockIndex >= pendingBlocks.length;
   const progress = pendingBlocks.length > 0 ? Math.round((currentBlockIndex / pendingBlocks.length) * 100) : 0;
@@ -179,7 +187,22 @@ export function CopilotMigrationPreview({
     }
   };
 
-  if (!migrationState.isActive) {
+  // Show page selector when in 'selecting' discovery status
+  if (discoveryStatus === 'selecting' && siteStructure && onPagesChange && onConfirmSelection && onCancelSelection) {
+    return (
+      <CopilotPageSelector
+        pages={siteStructure.pages as DiscoveredPageItem[]}
+        siteName={siteStructure.siteName}
+        platform={siteStructure.platform}
+        onPagesChange={(pages) => onPagesChange(pages as DiscoveredPage[])}
+        onStartMigration={onConfirmSelection}
+        onCancel={onCancelSelection}
+        isLoading={isLoading}
+      />
+    );
+  }
+
+  if (!migrationState.isActive && discoveryStatus !== 'selecting') {
     return null;
   }
 
@@ -190,10 +213,33 @@ export function CopilotMigrationPreview({
         <div className="flex items-center gap-2 mb-2">
           <Globe className="h-4 w-4 text-primary" />
           <span className="font-medium text-sm">Migrating from</span>
-          <Badge variant="secondary" className="text-xs font-mono truncate max-w-[200px]">
-            {sourceUrl}
-          </Badge>
+          {sourceUrl && (
+            <a 
+              href={sourceUrl} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-xs font-mono text-muted-foreground hover:text-foreground transition-colors truncate max-w-[200px]"
+            >
+              {new URL(sourceUrl).host}
+              <ExternalLink className="h-3 w-3 shrink-0" />
+            </a>
+          )}
         </div>
+        
+        {/* Current page URL */}
+        {currentPageUrl && (
+          <div className="flex items-center gap-2 mb-2">
+            <Link2 className="h-3.5 w-3.5 text-muted-foreground" />
+            <a 
+              href={currentPageUrl} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-xs text-muted-foreground hover:text-foreground hover:underline transition-colors truncate"
+            >
+              {new URL(currentPageUrl).pathname || '/'}
+            </a>
+          </div>
+        )}
         
         {/* Progress bar */}
         <div className="space-y-1">
@@ -207,6 +253,13 @@ export function CopilotMigrationPreview({
               style={{ width: `${progress}%` }}
             />
           </div>
+          {/* Overall progress */}
+          {pagesTotal > 1 && (
+            <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
+              <span>Overall progress</span>
+              <span>{pagesCompleted} / {pagesTotal} pages</span>
+            </div>
+          )}
         </div>
 
         {detectedPlatform && (
