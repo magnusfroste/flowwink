@@ -190,6 +190,8 @@ export default function PublicPage() {
     },
     staleTime: 5 * 60 * 1000, // 5 min client-side cache
     retry: false, // Don't retry on errors
+    // Wait for generalSettings to load before fetching homepage (when no explicit slug)
+    enabled: slug !== undefined || generalSettings !== undefined,
   });
 
   // Check for connection error first
