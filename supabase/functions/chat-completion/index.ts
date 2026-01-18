@@ -451,6 +451,8 @@ serve(async (req) => {
       messageCount: messages.length, 
       provider: settings?.aiProvider,
       toolCallingEnabled: settings?.toolCallingEnabled,
+      allowGeneralKnowledge: settings?.allowGeneralKnowledge,
+      includeContentAsContext: settings?.includeContentAsContext,
       conversationId,
     });
 
@@ -511,9 +513,12 @@ serve(async (req) => {
     let systemPrompt = settings?.systemPrompt || 'You are a helpful AI assistant.';
 
     // Add knowledge base restriction or allowance
+    // IMPORTANT: allowGeneralKnowledge takes precedence - if true, AI can use its own knowledge
     if (settings?.allowGeneralKnowledge) {
-      systemPrompt += '\n\nYou may use your general knowledge to answer questions, but prioritize the website content when relevant.';
+      console.log('General knowledge ENABLED - AI may use its own knowledge');
+      systemPrompt += '\n\nYou have access to general knowledge and can answer questions on any topic. When the user asks about the website or its services, prioritize the website content provided below. For other topics (like math, science, history, etc.), feel free to use your general knowledge.';
     } else if (settings?.includeContentAsContext || settings?.includeKbArticles) {
+      console.log('General knowledge DISABLED - AI restricted to website content only');
       systemPrompt += '\n\nIMPORTANT: Only answer questions based on the website content provided below. If the answer is not in the content, politely say you can only help with questions about this website.';
     }
 
