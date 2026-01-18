@@ -163,7 +163,7 @@ export function FeaturesBlock({ data }: FeaturesBlockProps) {
 
   return (
     <section className="py-12">
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto px-4 max-w-6xl">
         {(data.title || data.subtitle) && (
           <div className={cn(
             "mb-12",

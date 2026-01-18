@@ -39,7 +39,7 @@ export function InfoBoxBlock({ data }: InfoBoxBlockProps) {
 
   return (
     <section className="py-8 px-6">
-      <div className="container mx-auto max-w-3xl">
+      <div className="container mx-auto max-w-4xl">
         <div className={`p-6 rounded-lg border ${style.bg} ${style.border}`}>
           <div className="flex items-start gap-4">
             <Icon className={`h-6 w-6 shrink-0 mt-0.5 ${style.icon}`} />

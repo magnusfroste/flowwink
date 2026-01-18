@@ -295,7 +295,7 @@ export function StatsBlock({ data }: StatsBlockProps) {
           </h2>
         )}
 
-        <div className={`grid ${gridCols} gap-8 max-w-5xl mx-auto`}>
+        <div className={`grid ${gridCols} gap-8 max-w-6xl mx-auto`}>
           {stats.map((stat, index) => (
             <div
               key={index}

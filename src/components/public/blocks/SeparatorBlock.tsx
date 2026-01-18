@@ -19,7 +19,7 @@ export function SeparatorBlock({ data }: SeparatorBlockProps) {
     switch (data.style) {
       case 'line':
         return (
-          <div className="container mx-auto px-4 max-w-4xl">
+          <div className="container mx-auto px-4 max-w-6xl">
             <div className="border-t border-border" />
           </div>
         );
@@ -35,7 +35,7 @@ export function SeparatorBlock({ data }: SeparatorBlockProps) {
       
       case 'ornament':
         return (
-          <div className="container mx-auto px-4 max-w-4xl">
+          <div className="container mx-auto px-4 max-w-6xl">
             <div className="flex items-center gap-4">
               <div className="flex-1 border-t border-border" />
               <Sparkles className="h-6 w-6 text-primary/60" />

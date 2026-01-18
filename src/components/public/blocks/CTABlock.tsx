@@ -64,7 +64,7 @@ export function CTABlock({ data }: CTABlockProps) {
   if (variant === 'minimal') {
     return (
       <section className="py-16 md:py-24 px-6">
-        <div className="container mx-auto text-center max-w-2xl">
+        <div className="container mx-auto text-center max-w-3xl">
           <h2 className="font-serif text-2xl md:text-3xl font-bold mb-4 text-foreground">
             {data.title}
           </h2>
@@ -112,7 +112,7 @@ export function CTABlock({ data }: CTABlockProps) {
         </div>
         
         {/* Content */}
-        <div className="relative container mx-auto text-center max-w-2xl">
+        <div className="relative container mx-auto text-center max-w-3xl">
           <h2 className="font-serif text-3xl md:text-4xl font-bold mb-4 text-white">
             {data.title}
           </h2>
@@ -154,7 +154,7 @@ export function CTABlock({ data }: CTABlockProps) {
           : 'bg-primary text-primary-foreground'
       )}
     >
-      <div className="container mx-auto text-center max-w-2xl">
+      <div className="container mx-auto text-center max-w-3xl">
         <h2 className="font-serif text-3xl font-bold mb-4">{data.title}</h2>
         {data.subtitle && <p className="text-lg opacity-90 mb-6">{data.subtitle}</p>}
         <div className="flex flex-wrap justify-center gap-4">
