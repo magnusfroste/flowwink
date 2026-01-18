@@ -1,5 +1,6 @@
 import { icons } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { StaggeredReveal } from '@/components/public/StaggeredReveal';
 
 interface TimelineStep {
   id: string;
@@ -16,6 +17,7 @@ interface TimelineBlockProps {
     steps?: TimelineStep[];
     variant?: 'vertical' | 'horizontal' | 'alternating';
     showDates?: boolean;
+    staggeredReveal?: boolean;
   };
 }
 
@@ -28,13 +30,18 @@ function StepIcon({ iconName, className }: { iconName: string; className?: strin
   return <IconComponent className={className} />;
 }
 
-function VerticalTimeline({ steps, showDates }: { steps: TimelineStep[]; showDates: boolean }) {
+function VerticalTimeline({ steps, showDates, staggered }: { steps: TimelineStep[]; showDates: boolean; staggered: boolean }) {
+  const Wrapper = staggered ? StaggeredReveal : 'div';
+  const wrapperProps = staggered 
+    ? { animation: 'slide-left' as const, delayBetween: 150, className: 'space-y-8' }
+    : { className: 'space-y-8' };
+
   return (
     <div className="relative">
       {/* Connecting line */}
       <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-border" />
       
-      <div className="space-y-8">
+      <Wrapper {...wrapperProps}>
         {steps.map((step, index) => (
           <div key={step.id} className="relative flex gap-6">
             {/* Icon circle */}
@@ -54,18 +61,23 @@ function VerticalTimeline({ steps, showDates }: { steps: TimelineStep[]; showDat
             </div>
           </div>
         ))}
-      </div>
+      </Wrapper>
     </div>
   );
 }
 
-function HorizontalTimeline({ steps, showDates }: { steps: TimelineStep[]; showDates: boolean }) {
+function HorizontalTimeline({ steps, showDates, staggered }: { steps: TimelineStep[]; showDates: boolean; staggered: boolean }) {
+  const Wrapper = staggered ? StaggeredReveal : 'div';
+  const wrapperProps = staggered 
+    ? { animation: 'fade-up' as const, delayBetween: 100, className: 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8' }
+    : { className: 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8' };
+
   return (
     <div className="relative">
       {/* Connecting line */}
       <div className="absolute left-0 right-0 top-6 h-0.5 bg-border" />
       
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+      <Wrapper {...wrapperProps}>
         {steps.map((step) => (
           <div key={step.id} className="relative text-center">
             {/* Icon circle */}
@@ -85,18 +97,23 @@ function HorizontalTimeline({ steps, showDates }: { steps: TimelineStep[]; showD
             </div>
           </div>
         ))}
-      </div>
+      </Wrapper>
     </div>
   );
 }
 
-function AlternatingTimeline({ steps, showDates }: { steps: TimelineStep[]; showDates: boolean }) {
+function AlternatingTimeline({ steps, showDates, staggered }: { steps: TimelineStep[]; showDates: boolean; staggered: boolean }) {
+  const Wrapper = staggered ? StaggeredReveal : 'div';
+  const wrapperProps = staggered 
+    ? { animation: 'scale-in' as const, delayBetween: 200, className: 'space-y-12' }
+    : { className: 'space-y-12' };
+
   return (
     <div className="relative">
       {/* Center line */}
       <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-border -translate-x-1/2" />
       
-      <div className="space-y-12">
+      <Wrapper {...wrapperProps}>
         {steps.map((step, index) => {
           const isLeft = index % 2 === 0;
           
@@ -123,7 +140,7 @@ function AlternatingTimeline({ steps, showDates }: { steps: TimelineStep[]; show
             </div>
           );
         })}
-      </div>
+      </Wrapper>
     </div>
   );
 }
@@ -132,6 +149,7 @@ export function TimelineBlock({ data }: TimelineBlockProps) {
   const steps = data.steps || [];
   const variant = data.variant || 'vertical';
   const showDates = data.showDates ?? false;
+  const staggered = data.staggeredReveal ?? false;
 
   if (steps.length === 0) return null;
 
@@ -153,13 +171,13 @@ export function TimelineBlock({ data }: TimelineBlockProps) {
 
         <div className="max-w-4xl mx-auto">
           {variant === 'vertical' && (
-            <VerticalTimeline steps={steps} showDates={showDates} />
+            <VerticalTimeline steps={steps} showDates={showDates} staggered={staggered} />
           )}
           {variant === 'horizontal' && (
-            <HorizontalTimeline steps={steps} showDates={showDates} />
+            <HorizontalTimeline steps={steps} showDates={showDates} staggered={staggered} />
           )}
           {variant === 'alternating' && (
-            <AlternatingTimeline steps={steps} showDates={showDates} />
+            <AlternatingTimeline steps={steps} showDates={showDates} staggered={staggered} />
           )}
         </div>
       </div>

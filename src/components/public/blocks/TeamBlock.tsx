@@ -10,6 +10,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from '@/components/ui/carousel';
+import { StaggeredReveal } from '@/components/public/StaggeredReveal';
 
 interface TeamBlockProps {
   data: TeamBlockData;
@@ -131,6 +132,7 @@ export function TeamBlock({ data }: TeamBlockProps) {
     variant = 'cards',
     showBio = true,
     showSocial = true,
+    staggeredReveal = false,
   } = data;
 
   if (members.length === 0) {
@@ -142,6 +144,11 @@ export function TeamBlock({ data }: TeamBlockProps) {
     3: 'sm:grid-cols-2 lg:grid-cols-3',
     4: 'sm:grid-cols-2 lg:grid-cols-4',
   };
+
+  const GridWrapper = staggeredReveal ? StaggeredReveal : 'div';
+  const gridProps = staggeredReveal 
+    ? { animation: 'fade-up' as const, delayBetween: 100, className: cn('grid gap-6 md:gap-8', gridCols[columns]) }
+    : { className: cn('grid gap-6 md:gap-8', gridCols[columns]) };
 
   return (
     <section className="py-12 md:py-16">
@@ -184,7 +191,7 @@ export function TeamBlock({ data }: TeamBlockProps) {
             <CarouselNext className="hidden md:flex -right-12" />
           </Carousel>
         ) : (
-          <div className={cn('grid gap-6 md:gap-8', gridCols[columns])}>
+          <GridWrapper {...gridProps}>
             {members.map((member) => (
               <TeamMemberCard
                 key={member.id}
@@ -194,7 +201,7 @@ export function TeamBlock({ data }: TeamBlockProps) {
                 showSocial={showSocial}
               />
             ))}
-          </div>
+          </GridWrapper>
         )}
       </div>
     </section>
