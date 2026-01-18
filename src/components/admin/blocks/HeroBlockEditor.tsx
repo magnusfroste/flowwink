@@ -469,6 +469,41 @@ export function HeroBlockEditor({ data, onChange, isEditing }: HeroBlockEditorPr
           </div>
         )}
 
+        {/* Design System 2026: Title Size */}
+        <div className="space-y-2">
+          <Label className="text-xs text-muted-foreground">Title Size</Label>
+          <div className="grid grid-cols-4 gap-2">
+            {[
+              { value: 'default', label: 'Default' },
+              { value: 'large', label: 'Large' },
+              { value: 'display', label: 'Display' },
+              { value: 'massive', label: 'Massive' },
+            ].map(({ value, label }) => (
+              <Button
+                key={value}
+                type="button"
+                variant={(localData.titleSize || 'default') === value ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => handleChange({ titleSize: value as HeroBlockData['titleSize'] })}
+              >
+                {label}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        {/* Design System 2026: Gradient Title */}
+        <div className="flex items-center justify-between">
+          <div>
+            <Label className="text-xs text-muted-foreground">Gradient Title</Label>
+            <p className="text-xs text-muted-foreground/70">Apply gradient effect to title</p>
+          </div>
+          <Switch
+            checked={localData.gradientTitle || false}
+            onCheckedChange={(checked) => handleChange({ gradientTitle: checked })}
+          />
+        </div>
+
         {/* Title Animation */}
         <div className="space-y-2">
           <Label className="text-xs text-muted-foreground">Title Animation</Label>

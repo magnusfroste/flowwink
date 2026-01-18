@@ -288,6 +288,54 @@ export function FeaturesBlockEditor({ data, onChange, isEditing }: FeaturesBlock
         />
       </div>
 
+      {/* Design System 2026: Premium Effects */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>Hover Effect</Label>
+          <Select
+            value={data.hoverEffect || 'none'}
+            onValueChange={(v) => onChange({ ...data, hoverEffect: v as 'none' | 'lift' | 'glow' | 'border' })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">None</SelectItem>
+              <SelectItem value="lift">Lift</SelectItem>
+              <SelectItem value="glow">Glow</SelectItem>
+              <SelectItem value="border">Border</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label>Card Style</Label>
+          <Select
+            value={data.cardStyle || 'default'}
+            onValueChange={(v) => onChange({ ...data, cardStyle: v as 'default' | 'glass' | 'gradient-border' })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="default">Default</SelectItem>
+              <SelectItem value="glass">Glass</SelectItem>
+              <SelectItem value="gradient-border">Gradient Border</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <div>
+          <Label>Staggered Reveal</Label>
+          <p className="text-xs text-muted-foreground">Animate cards one by one</p>
+        </div>
+        <Switch
+          checked={data.staggeredReveal || false}
+          onCheckedChange={(v) => onChange({ ...data, staggeredReveal: v })}
+        />
+      </div>
+
       {/* Features List */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">

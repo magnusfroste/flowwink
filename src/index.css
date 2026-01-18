@@ -77,6 +77,11 @@
     --shadow: 0 1px 3px 0 hsl(220 25% 12% / 0.1), 0 1px 2px -1px hsl(220 25% 12% / 0.1);
     --shadow-md: 0 4px 6px -1px hsl(220 25% 12% / 0.1), 0 2px 4px -2px hsl(220 25% 12% / 0.1);
     --shadow-lg: 0 10px 15px -3px hsl(220 25% 12% / 0.1), 0 4px 6px -4px hsl(220 25% 12% / 0.1);
+    
+    /* Design System 2026: Premium Shadows */
+    --shadow-premium: 0 25px 50px -12px hsl(220 25% 12% / 0.15);
+    --shadow-float: 0 10px 40px -10px hsl(var(--primary) / 0.3);
+    --shadow-glow: 0 0 40px hsl(var(--primary) / 0.15);
   }
 
   .dark {
@@ -236,4 +241,113 @@
 .sticky-save-bar {
   @apply shrink-0 bg-card/95 backdrop-blur-sm border-t border-border;
   @apply shadow-[0_-4px_6px_-1px_hsl(var(--foreground)/0.05)];
+}
+
+/* ============================================
+   DESIGN SYSTEM 2026: Premium Utilities
+   ============================================ */
+
+/* Gradient Text */
+.text-gradient {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-primary via-primary/80 to-primary/60;
+}
+
+.text-gradient-subtle {
+  @apply bg-clip-text text-transparent bg-gradient-to-b from-foreground to-foreground/70;
+}
+
+.text-gradient-vibrant {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent-foreground;
+}
+
+/* Glassmorphism */
+.glass {
+  @apply bg-background/80 backdrop-blur-md border border-border/50;
+}
+
+.glass-strong {
+  @apply bg-background/90 backdrop-blur-xl border border-border/30;
+  box-shadow: var(--shadow-lg);
+}
+
+.glass-primary {
+  @apply bg-primary/10 backdrop-blur-md border border-primary/20;
+}
+
+.glass-card {
+  @apply bg-card/80 backdrop-blur-md border border-border/50 rounded-xl;
+  box-shadow: var(--shadow-md);
+}
+
+/* Premium Card Styles */
+.card-hover-lift {
+  @apply transition-all duration-300 ease-premium;
+}
+.card-hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-premium);
+}
+
+.card-hover-glow {
+  @apply transition-all duration-300 ease-premium;
+}
+.card-hover-glow:hover {
+  box-shadow: var(--shadow-glow);
+}
+
+.card-hover-border {
+  @apply transition-all duration-300 ease-premium border-2 border-transparent;
+}
+.card-hover-border:hover {
+  @apply border-primary/50;
+}
+
+/* Gradient Border */
+.gradient-border {
+  position: relative;
+  background: hsl(var(--card));
+  border-radius: var(--radius);
+}
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: calc(var(--radius) + 1px);
+  background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent-foreground)));
+  z-index: -1;
+  opacity: 0.5;
+  transition: opacity 0.3s ease;
+}
+.gradient-border:hover::before {
+  opacity: 1;
+}
+
+/* Button Glow Effect */
+.btn-glow {
+  @apply relative overflow-hidden;
+}
+.btn-glow::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: var(--shadow-float);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.btn-glow:hover::after {
+  opacity: 1;
+}
+
+/* Premium Shadows as Classes */
+.shadow-premium {
+  box-shadow: var(--shadow-premium);
+}
+
+.shadow-float {
+  box-shadow: var(--shadow-float);
+}
+
+.shadow-glow {
+  box-shadow: var(--shadow-glow);
 }

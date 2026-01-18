@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { HeroBlockData } from '@/types/cms';
+import { HeroBlockData, HeroTitleSize } from '@/types/cms';
 import { cn } from '@/lib/utils';
 import { ChevronDown, Play, Pause, Volume2, VolumeX } from 'lucide-react';
 
@@ -31,6 +31,14 @@ const textAlignmentClasses: Record<string, string> = {
   left: 'text-left items-start',
   center: 'text-center items-center',
   right: 'text-right items-end',
+};
+
+// Design System 2026: Title size classes
+const titleSizeClasses: Record<HeroTitleSize, string> = {
+  default: 'text-4xl md:text-5xl',
+  large: 'text-5xl md:text-6xl',
+  display: 'text-6xl md:text-7xl lg:text-display',
+  massive: 'text-7xl md:text-8xl lg:text-display-lg xl:text-display-xl',
 };
 
 // Extract video ID from YouTube or Vimeo URL
@@ -276,14 +284,20 @@ export function HeroBlock({ data }: HeroBlockProps) {
             <div className="max-w-xl">
               <h1 
                 className={cn(
-                  "font-serif text-3xl md:text-4xl lg:text-5xl font-bold mb-6 text-foreground",
-                  titleAnimationClasses[data.titleAnimation || 'none']
+                  "font-serif font-bold mb-6 text-foreground",
+                  titleSizeClasses[data.titleSize || 'default'],
+                  titleAnimationClasses[data.titleAnimation || 'none'],
+                  data.gradientTitle && "text-gradient"
                 )}
               >
                 {data.title}
               </h1>
               {data.subtitle && (
-                <p className="text-lg md:text-xl text-muted-foreground mb-8">
+                <p className={cn(
+                  "text-lg md:text-xl text-muted-foreground mb-8",
+                  data.subtitleAnimation === 'fade-in' && "animate-fade-in",
+                  data.subtitleAnimation === 'slide-up' && "animate-slide-up"
+                )}>
                   {data.subtitle}
                 </p>
               )}
@@ -363,14 +377,24 @@ export function HeroBlock({ data }: HeroBlockProps) {
       )}>
         <h1 
           className={cn(
-            "font-serif text-5xl font-bold mb-6",
+            "font-serif font-bold mb-6",
+            titleSizeClasses[data.titleSize || 'default'],
             titleAnimationClasses[titleAnimation],
-            titleAnimation === 'typewriter' && "inline-block"
+            titleAnimation === 'typewriter' && "inline-block",
+            data.gradientTitle && "text-gradient"
           )}
         >
           {data.title}
         </h1>
-        {data.subtitle && <p className="text-xl opacity-90 mb-8">{data.subtitle}</p>}
+        {data.subtitle && (
+          <p className={cn(
+            "text-xl opacity-90 mb-8",
+            data.subtitleAnimation === 'fade-in' && "animate-fade-in [animation-delay:200ms]",
+            data.subtitleAnimation === 'slide-up' && "animate-slide-up [animation-delay:200ms]"
+          )}>
+            {data.subtitle}
+          </p>
+        )}
         <div className={cn(
           "flex gap-4 flex-wrap",
           textAlignment === 'center' && "justify-center",

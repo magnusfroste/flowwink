@@ -264,13 +264,28 @@ export interface BlockSpacing {
 }
 
 // Block animation configuration
-export type AnimationType = 'none' | 'fade-up' | 'fade-in' | 'slide-up' | 'scale-in' | 'slide-left' | 'slide-right';
+// Design System 2026: Extended animation types
+export type AnimationType = 
+  | 'none' 
+  | 'fade-up' 
+  | 'fade-in' 
+  | 'slide-up' 
+  | 'scale-in' 
+  | 'slide-left' 
+  | 'slide-right'
+  | 'zoom-in'    // 2026: Premium zoom effect
+  | 'blur-in'    // 2026: Premium blur fade
+  | 'rotate-in'; // 2026: Subtle rotation entry
+
 export type AnimationSpeed = 'fast' | 'normal' | 'slow';
+export type AnimationEasing = 'default' | 'premium' | 'bounce-soft' | 'elastic';
 
 export interface BlockAnimation {
   type: AnimationType;
   speed?: AnimationSpeed;
   delay?: number; // in ms
+  easing?: AnimationEasing; // 2026: Premium easing curves
+  staggerIndex?: number; // 2026: For staggered children animations
 }
 
 export interface ContentBlock {
@@ -285,6 +300,9 @@ export type HeroLayout = 'centered' | 'split-left' | 'split-right';
 export type HeroVideoType = 'direct' | 'youtube' | 'vimeo';
 export type HeroOverlayColor = 'dark' | 'light' | 'primary';
 export type HeroTextAlignment = 'left' | 'center' | 'right';
+
+// Design System 2026: Hero title size options
+export type HeroTitleSize = 'default' | 'large' | 'display' | 'massive';
 
 export interface HeroBlockData {
   title: string;
@@ -315,6 +333,12 @@ export interface HeroBlockData {
   // Buttons
   primaryButton?: { text: string; url: string };
   secondaryButton?: { text: string; url: string };
+  // Design System 2026: Premium Typography
+  titleSize?: HeroTitleSize;
+  gradientTitle?: boolean;
+  // Design System 2026: Premium Animations
+  subtitleAnimation?: 'none' | 'fade-in' | 'slide-up';
+  buttonAnimation?: 'none' | 'fade-in' | 'scale-in';
 }
 
 // =============================================================================
@@ -716,6 +740,10 @@ export interface FeatureItem {
   url?: string;
 }
 
+// Design System 2026: Premium hover effects
+export type FeatureHoverEffect = 'none' | 'lift' | 'glow' | 'border';
+export type FeatureCardStyle = 'default' | 'glass' | 'gradient-border';
+
 export interface FeaturesBlockData {
   title?: string;
   subtitle?: string;
@@ -725,6 +753,10 @@ export interface FeaturesBlockData {
   variant?: 'default' | 'cards' | 'minimal' | 'centered';
   iconStyle?: 'circle' | 'square' | 'none';
   showLinks?: boolean;
+  // Design System 2026: Premium Effects
+  staggeredReveal?: boolean;
+  hoverEffect?: FeatureHoverEffect;
+  cardStyle?: FeatureCardStyle;
 }
 
 // Workflow actions
