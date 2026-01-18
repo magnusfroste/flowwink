@@ -503,8 +503,9 @@ export function useCopilot(): UseCopilotReturn {
       if (approvedBlocks.length > 0) {
         const pageTitle = migrationState.pageTitle || 'Imported Page';
         const pageSlug = generateSlug(pageTitle);
-        const pagesCompleted = migrationState.pagesCompleted;
-        const pagesTotal = migrationState.pagesTotal;
+        
+        // Get pagesTotal from siteStructure (count of selected pages)
+        const pagesTotal = migrationState.siteStructure?.pages.filter(p => p.selected !== false).length || migrationState.pagesTotal || 1;
         
         try {
           // Auto-save page
@@ -544,8 +545,13 @@ export function useCopilot(): UseCopilotReturn {
           // Clear blocks for next page
           setBlocks([]);
           
-          // Update pages completed count
-          const newPagesCompleted = pagesCompleted + 1;
+          // Calculate completed pages count: pages already marked completed + current page
+          const alreadyCompletedCount = migrationState.siteStructure?.pages.filter(
+            p => p.status === 'completed'
+          ).length || 0;
+          // Add 1 for current page which we just completed
+          const newPagesCompleted = alreadyCompletedCount + 1;
+          
           setMigrationState(prev => ({ ...prev, pagesCompleted: newPagesCompleted }));
           
           if (nextPendingPage) {
