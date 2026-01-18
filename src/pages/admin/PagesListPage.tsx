@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Search, Filter, MoreHorizontal, Edit, Trash2, Copy, ArrowUpDown, Clock, LayoutTemplate } from 'lucide-react';
+import { Plus, Search, Filter, MoreHorizontal, Edit, Trash2, Copy, ArrowUpDown, Clock, LayoutTemplate, Home } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 import { AdminLayout } from '@/components/admin/AdminLayout';
@@ -37,7 +37,9 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { MigratePageDialog } from '@/components/admin/MigratePageDialog';
 import { usePages, useDeletePage, useCreatePage } from '@/hooks/usePages';
 import { useAuth } from '@/hooks/useAuth';
+import { useGeneralSettings, useUpdateGeneralSettings } from '@/hooks/useSiteSettings';
 import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from 'sonner';
 import type { PageStatus } from '@/types/cms';
 
 type SortField = 'title' | 'updated_at' | 'status';
@@ -62,6 +64,19 @@ export default function PagesListPage() {
   const deletePage = useDeletePage();
   const createPage = useCreatePage();
   const { isAdmin } = useAuth();
+  const { data: generalSettings } = useGeneralSettings();
+  const updateGeneralSettings = useUpdateGeneralSettings();
+  
+  const homepageSlug = generalSettings?.homepageSlug || 'home';
+
+  const handleSetAsHomepage = async (slug: string) => {
+    try {
+      await updateGeneralSettings.mutateAsync({ homepageSlug: slug });
+      toast.success(`"/${slug}" is now the homepage`);
+    } catch (err) {
+      toast.error('Failed to set homepage');
+    }
+  };
 
   const filteredAndSortedPages = useMemo(() => {
     const filtered = pages?.filter(page => {
@@ -237,7 +252,15 @@ export default function PagesListPage() {
                     >
                       <div className="flex items-center gap-4">
                         <div className="min-w-0 flex-1">
-                          <p className="font-medium truncate">{page.title}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium truncate">{page.title}</p>
+                            {page.slug === homepageSlug && (
+                              <span className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded">
+                                <Home className="h-3 w-3" />
+                                Home
+                              </span>
+                            )}
+                          </div>
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <span className="truncate">/{page.slug}</span>
                             <span className="hidden sm:inline">•</span>
@@ -277,6 +300,12 @@ export default function PagesListPage() {
                           <Copy className="h-4 w-4 mr-2" />
                           Duplicate
                         </DropdownMenuItem>
+                        {page.slug !== homepageSlug && (
+                          <DropdownMenuItem onClick={() => handleSetAsHomepage(page.slug)}>
+                            <Home className="h-4 w-4 mr-2" />
+                            Set as Homepage
+                          </DropdownMenuItem>
+                        )}
                         {isAdmin && (
                           <>
                             <DropdownMenuSeparator />
