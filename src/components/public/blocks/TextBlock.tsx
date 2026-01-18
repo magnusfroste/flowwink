@@ -1,5 +1,6 @@
 import { TextBlockData } from '@/types/cms';
 import { renderToHtml } from '@/lib/tiptap-utils';
+import { useBranding } from '@/providers/BrandingProvider';
 
 interface TextBlockProps {
   data: TextBlockData;
@@ -13,9 +14,13 @@ const titleSizeClasses: Record<string, string> = {
 };
 
 export function TextBlock({ data }: TextBlockProps) {
+  const { branding } = useBranding();
   const html = renderToHtml(data.content);
   const titleSize = data.titleSize || 'default';
   const hasHeader = data.eyebrow || data.title;
+  
+  // Default eyebrow color to brand primary, allow override
+  const eyebrowColor = data.eyebrowColor || (branding?.primaryColor ? `hsl(${branding.primaryColor})` : 'hsl(var(--primary))');
   
   // Build title with optional accent text
   const renderTitle = () => {
@@ -64,7 +69,7 @@ export function TextBlock({ data }: TextBlockProps) {
             {data.eyebrow && (
               <p 
                 className="text-sm font-semibold uppercase tracking-widest mb-4"
-                style={{ color: data.eyebrowColor || 'hsl(var(--primary))' }}
+                style={{ color: eyebrowColor }}
               >
                 {data.eyebrow}
               </p>

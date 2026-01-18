@@ -77,13 +77,27 @@ export function TextBlockEditor({ data, onChange, isEditing }: TextBlockEditorPr
             {/* Eyebrow Color */}
             <div className="space-y-2">
               <Label htmlFor="eyebrowColor" className="text-sm">Eyebrow Color</Label>
-              <Input
-                id="eyebrowColor"
-                type="color"
-                value={data.eyebrowColor || '#f97316'}
-                onChange={(e) => onChange({ ...data, eyebrowColor: e.target.value })}
-                className="h-9 w-full"
-              />
+              <div className="flex items-center gap-2">
+                <Input
+                  id="eyebrowColor"
+                  type="color"
+                  value={data.eyebrowColor || '#003d99'}
+                  onChange={(e) => onChange({ ...data, eyebrowColor: e.target.value })}
+                  className="h-9 w-16"
+                />
+                {data.eyebrowColor && (
+                  <button
+                    type="button"
+                    onClick={() => onChange({ ...data, eyebrowColor: undefined })}
+                    className="text-xs text-muted-foreground hover:text-foreground underline"
+                  >
+                    Use brand default
+                  </button>
+                )}
+                {!data.eyebrowColor && (
+                  <span className="text-xs text-muted-foreground">Using brand primary</span>
+                )}
+              </div>
             </div>
           </div>
           

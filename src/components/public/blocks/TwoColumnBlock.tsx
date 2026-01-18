@@ -3,6 +3,7 @@ import { renderToHtml } from '@/lib/tiptap-utils';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
+import { useBranding } from '@/providers/BrandingProvider';
 
 interface TwoColumnBlockProps {
   data: TwoColumnBlockData;
@@ -16,11 +17,15 @@ const titleSizeClasses: Record<string, string> = {
 };
 
 export function TwoColumnBlock({ data }: TwoColumnBlockProps) {
+  const { branding } = useBranding();
   const imageFirst = data.imagePosition === 'left';
   const stickyColumn = data.stickyColumn || 'none';
   const titleSize = data.titleSize || 'default';
   const hasHeader = data.eyebrow || data.title;
   const hasSecondImage = data.secondImageSrc;
+  
+  // Default eyebrow color to brand primary, allow override
+  const eyebrowColor = data.eyebrowColor || (branding?.primaryColor ? `hsl(${branding.primaryColor})` : 'hsl(var(--primary))');
 
   const stickyStyles = 'md:sticky md:top-24 md:self-start';
   
@@ -118,7 +123,7 @@ export function TwoColumnBlock({ data }: TwoColumnBlockProps) {
                 {data.eyebrow && (
                   <p 
                     className="text-sm font-semibold uppercase tracking-widest mb-4"
-                    style={{ color: data.eyebrowColor || 'hsl(var(--primary))' }}
+                    style={{ color: eyebrowColor }}
                   >
                     {data.eyebrow}
                   </p>
