@@ -1370,11 +1370,33 @@ Respond only with JSON.`;
       }
     }
 
-    // Ensure blocks have unique IDs
-    const blocks = (parsedBlocks.blocks || []).map((block: Record<string, unknown>, index: number) => ({
-      ...block,
-      id: block.id || `block-${Date.now()}-${index}`,
-    }));
+    // Ensure blocks have unique IDs and normalize field names
+    const blocks = (parsedBlocks.blocks || []).map((block: Record<string, unknown>, index: number) => {
+      const normalizedBlock: Record<string, unknown> = {
+        ...block,
+        id: block.id || `block-${Date.now()}-${index}`,
+      };
+      
+      // Normalize team block: AI returns 'image' but frontend expects 'photo'
+      if (normalizedBlock.type === 'team' && normalizedBlock.data) {
+        const data = normalizedBlock.data as Record<string, unknown>;
+        if (Array.isArray(data.members)) {
+          data.members = (data.members as Record<string, unknown>[]).map((member: Record<string, unknown>) => {
+            const normalizedMember: Record<string, unknown> = {
+              ...member,
+              id: member.id || `member-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+              photo: member.photo || member.image || '', // Map 'image' to 'photo'
+              role: member.role || '',
+            };
+            // Remove the old 'image' field if it exists
+            delete normalizedMember.image;
+            return normalizedMember;
+          });
+        }
+      }
+      
+      return normalizedBlock;
+    });
 
     console.log('Step 5: Successfully mapped', blocks.length, 'blocks');
     console.log('Block types:', blocks.map((b: Record<string, unknown>) => b.type).join(', '));
