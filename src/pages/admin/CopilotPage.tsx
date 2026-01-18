@@ -62,14 +62,14 @@ export default function CopilotPage() {
               onFinishPage={() => setShowCreateDialog(true)}
               onStopAutoContinue={copilot.stopAutoContinue}
               onReset={copilot.clearConversation}
-              onAnalyzeSite={copilot.analyzeSite}
+              onAnalyzeSite={copilot.discoverPages}
               discoveryStatus={copilot.migrationState.discoveryStatus}
             />
           </div>
 
           {/* Right panel - Preview or Migration */}
           <div className="w-1/2 flex flex-col bg-muted/30">
-            {copilot.migrationState.isActive ? (
+            {(copilot.migrationState.isActive || copilot.migrationState.discoveryStatus === 'selecting') ? (
               <CopilotMigrationPreview
                 migrationState={copilot.migrationState}
                 onApprove={copilot.approveMigrationBlock}
@@ -79,6 +79,9 @@ export default function CopilotPage() {
                 onStartBlogMigration={copilot.startBlogMigration}
                 onStartKbMigration={copilot.startKbMigration}
                 onSkipPhase={copilot.skipPhase}
+                onPagesChange={copilot.updateDiscoveredPages}
+                onConfirmSelection={copilot.confirmPageSelection}
+                onCancelSelection={copilot.cancelPageSelection}
                 isLoading={copilot.isLoading}
               />
             ) : (
