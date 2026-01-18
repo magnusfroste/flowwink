@@ -300,6 +300,8 @@ export type HeroLayout = 'centered' | 'split-left' | 'split-right';
 export type HeroVideoType = 'direct' | 'youtube' | 'vimeo';
 export type HeroOverlayColor = 'dark' | 'light' | 'primary';
 export type HeroTextAlignment = 'left' | 'center' | 'right';
+// Design System 2026: Text theme for contrast control
+export type HeroTextTheme = 'auto' | 'light' | 'dark';
 
 // Design System 2026: Hero title size options
 export type HeroTitleSize = 'default' | 'large' | 'display' | 'massive';
@@ -327,6 +329,8 @@ export interface HeroBlockData {
   textAlignment?: HeroTextAlignment;
   overlayOpacity?: number;
   overlayColor?: HeroOverlayColor;
+  // Design System 2026: Manual text theme override for contrast
+  textTheme?: HeroTextTheme;
   parallaxEffect?: boolean;
   titleAnimation?: 'none' | 'fade-in' | 'slide-up' | 'typewriter';
   showScrollIndicator?: boolean;

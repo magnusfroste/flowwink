@@ -112,8 +112,13 @@ export function HeroBlock({ data }: HeroBlockProps) {
     }
   };
   
-  // Get text color classes based on overlay
+  // Get text color classes based on textTheme (manual override) or overlay (auto)
+  const textTheme = data.textTheme || 'auto';
   const getTextColorClasses = () => {
+    // Manual override takes precedence
+    if (textTheme === 'light') return 'text-white';
+    if (textTheme === 'dark') return 'text-foreground';
+    // Auto: derive from overlay color
     switch (overlayColor) {
       case 'light': return 'text-foreground';
       case 'primary': return 'text-primary-foreground';

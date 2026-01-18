@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
-import { HeroBlockData, HeroLayout, HeroVideoType, HeroOverlayColor, HeroTextAlignment } from '@/types/cms';
+import { HeroBlockData, HeroLayout, HeroVideoType, HeroOverlayColor, HeroTextAlignment, HeroTextTheme } from '@/types/cms';
 import { ImageUploader } from '../ImageUploader';
 import { AITextAssistant } from '../AITextAssistant';
 import { 
@@ -36,6 +36,12 @@ const OVERLAY_COLOR_OPTIONS: { value: HeroOverlayColor; label: string; icon: typ
   { value: 'dark', label: 'Dark', icon: Moon },
   { value: 'light', label: 'Light', icon: Sun },
   { value: 'primary', label: 'Brand', icon: Paintbrush },
+];
+
+const TEXT_THEME_OPTIONS: { value: HeroTextTheme; label: string; description: string }[] = [
+  { value: 'auto', label: 'Auto', description: 'Based on overlay' },
+  { value: 'light', label: 'Light', description: 'White text' },
+  { value: 'dark', label: 'Dark', description: 'Dark text' },
 ];
 
 const TEXT_ALIGNMENT_OPTIONS: { value: HeroTextAlignment; label: string; icon: typeof AlignCenter }[] = [
@@ -399,6 +405,27 @@ export function HeroBlockEditor({ data, onChange, isEditing }: HeroBlockEditorPr
             {/* Overlay settings - only show when image or video */}
             {(backgroundType === 'image' || backgroundType === 'video') && (
               <>
+                {/* Text Theme - for contrast control */}
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">Text Color</Label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {TEXT_THEME_OPTIONS.map(({ value, label, description }) => (
+                      <Button
+                        key={value}
+                        type="button"
+                        variant={(localData.textTheme || 'auto') === value ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => handleChange({ textTheme: value })}
+                        className="flex flex-col items-center gap-0.5 h-auto py-2"
+                        title={description}
+                      >
+                        <span>{label}</span>
+                        <span className="text-[10px] opacity-70">{description}</span>
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              
                 {/* Overlay Color */}
                 <div className="space-y-2">
                   <Label className="text-xs text-muted-foreground">Overlay Color</Label>
