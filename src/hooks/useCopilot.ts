@@ -696,26 +696,8 @@ export function useCopilot(): UseCopilotReturn {
       }
     }
 
-    // Check if this is a migration request
-    const urlMatch = content.match(/https?:\/\/[^\s]+/);
-    const isMigrationRequest = content.toLowerCase().includes('migrate') || 
-                               content.toLowerCase().includes('import') ||
-                               content.toLowerCase().includes('clone');
-    
-    if (urlMatch && isMigrationRequest) {
-      // Add user message first
-      const userMessage: CopilotMessage = {
-        id: generateId(),
-        role: 'user',
-        content,
-        createdAt: new Date(),
-      };
-      setMessages(prev => [...prev, userMessage]);
-      
-      // Start migration directly
-      await startMigration(urlMatch[0]);
-      return;
-    }
+    // NOTE: URL-based migration requests are now handled by CopilotChat's
+    // onAnalyzeSite callback which routes to discoverPages for page selection
 
     // Add user message
     const userMessage: CopilotMessage = {
@@ -806,7 +788,7 @@ export function useCopilot(): UseCopilotReturn {
       setIsLoading(false);
       abortControllerRef.current = null;
     }
-  }, [messages, isLoading, currentModules, migrationState, startMigration, autoEnableModule, autoEnableModuleForBlock]);
+  }, [messages, isLoading, currentModules, migrationState, autoEnableModule, autoEnableModuleForBlock]);
 
   const approveBlock = useCallback(async (blockId: string) => {
     const block = blocks.find(b => b.id === blockId);
