@@ -177,16 +177,18 @@ export function analyzeBranding(branding: FirecrawlBranding): AnalyzedBranding {
   console.log('Firecrawl colors received:', colors);
   
   // Intelligent color extraction with fallbacks
-  // - Primary: The main brand color (usually buttons, links, accents)
-  // - Secondary: Often the text color or a contrasting color
-  // - Accent: Highlight color, can fall back to primary
-  const primaryColor = colors.primary;
+  // Firecrawl often misidentifies the primary color. We use textPrimary/accent as a better signal
+  // for the "main" brand color since it's usually the dominant color used for text/headings.
   
-  // Secondary: prefer explicit secondary, then textPrimary (often dark brand color), then accent
-  const secondaryColor = colors.secondary || colors.textPrimary || colors.accent;
+  // Primary: Prefer textPrimary or accent (often the dominant dark brand color), fall back to primary
+  // This fixes cases where Firecrawl picks a highlight color as "primary"
+  const primaryColor = colors.textPrimary || colors.accent || colors.primary;
   
-  // Accent: prefer explicit accent, then link color, then fall back to primary
-  const accentColor = colors.accent || colors.link || colors.primary;
+  // Secondary: Use Firecrawl's "primary" as secondary since it's often the accent/highlight color
+  const secondaryColor = colors.secondary || colors.primary;
+  
+  // Accent: Use what Firecrawl calls "primary" or "link" as accent since it's usually the highlight
+  const accentColor = colors.primary || colors.link || colors.accent;
   
   // Extract raw values for display
   const extracted = {
