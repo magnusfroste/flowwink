@@ -460,40 +460,92 @@ function extractImagesFromHtml(html: string): { src: string; alt?: string }[] {
   return images;
 }
 
-// Extract navigation links from HTML
-function extractNavLinks(html: string, baseUrl: string): { label: string; url: string }[] {
-  const links: { label: string; url: string }[] = [];
+// Extract navigation links from HTML - enhanced to include header, footer, and main nav
+function extractNavLinks(html: string, baseUrl: string): { label: string; url: string; source: 'nav' | 'header' | 'footer' }[] {
+  const links: { label: string; url: string; source: 'nav' | 'header' | 'footer' }[] = [];
   const seenUrls = new Set<string>();
   
-  // Find all <nav> elements and extract links
-  const navRegex = /<nav[^>]*>([\s\S]*?)<\/nav>/gi;
-  let navMatch;
-  while ((navMatch = navRegex.exec(html)) !== null) {
-    const navContent = navMatch[1];
-    
-    // Extract <a> tags from nav
-    const linkRegex = /<a[^>]+href=["']([^"'#]+)["'][^>]*>([^<]*(?:<[^/][^>]*>[^<]*)*)<\/a>/gi;
-    let linkMatch;
-    while ((linkMatch = linkRegex.exec(navContent)) !== null) {
-      let href = linkMatch[1].trim();
-      // Clean up label - remove HTML tags
-      const label = linkMatch[2].replace(/<[^>]*>/g, '').trim();
-      
-      if (!href || !label || href.startsWith('javascript:') || href.startsWith('mailto:') || href.startsWith('tel:')) {
-        continue;
+  // Helper to normalize URL for deduplication
+  const normalizeForDedup = (url: string): string => {
+    try {
+      const u = new URL(url);
+      u.search = '';
+      u.hash = '';
+      let path = u.pathname.toLowerCase();
+      if (path.length > 1 && path.endsWith('/')) {
+        path = path.slice(0, -1);
       }
+      u.pathname = path;
+      return u.href;
+    } catch {
+      return url.toLowerCase();
+    }
+  };
+  
+  // Helper to extract links from HTML content
+  const extractLinksFromContent = (content: string, source: 'nav' | 'header' | 'footer') => {
+    const linkRegex = /<a[^>]+href=["']([^"'#]+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+    let linkMatch;
+    while ((linkMatch = linkRegex.exec(content)) !== null) {
+      let href = linkMatch[1].trim();
+      // Clean up label - remove HTML tags and whitespace
+      const label = linkMatch[2].replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+      
+      // Skip invalid links
+      if (!href || !label || label.length < 2 || label.length > 100) continue;
+      if (href.startsWith('javascript:') || href.startsWith('mailto:') || href.startsWith('tel:')) continue;
+      if (href.startsWith('#')) continue;
+      
+      // Skip common non-content links
+      if (/\/(wp-login|wp-admin|feed|rss|login|logout|cart|checkout|account|search|privacy|cookie|gdpr)/i.test(href)) continue;
       
       // Convert relative URLs to absolute
       try {
         const absoluteUrl = new URL(href, baseUrl).href;
-        // Only include same-domain links
-        if (absoluteUrl.startsWith(baseUrl) && !seenUrls.has(absoluteUrl)) {
-          seenUrls.add(absoluteUrl);
-          links.push({ label, url: absoluteUrl });
+        const normalizedUrl = normalizeForDedup(absoluteUrl);
+        
+        // Only include same-domain links that haven't been seen
+        if (absoluteUrl.startsWith(baseUrl) && !seenUrls.has(normalizedUrl)) {
+          seenUrls.add(normalizedUrl);
+          links.push({ label, url: absoluteUrl, source });
         }
       } catch {
         // Invalid URL, skip
       }
+    }
+  };
+  
+  // 1. Extract from <nav> elements (highest priority - main navigation)
+  const navRegex = /<nav[^>]*>([\s\S]*?)<\/nav>/gi;
+  let navMatch;
+  while ((navMatch = navRegex.exec(html)) !== null) {
+    extractLinksFromContent(navMatch[1], 'nav');
+  }
+  
+  // 2. Extract from <header> elements (often contains main menu)
+  const headerRegex = /<header[^>]*>([\s\S]*?)<\/header>/gi;
+  let headerMatch;
+  while ((headerMatch = headerRegex.exec(html)) !== null) {
+    extractLinksFromContent(headerMatch[1], 'header');
+  }
+  
+  // 3. Extract from <footer> elements (often has important links)
+  const footerRegex = /<footer[^>]*>([\s\S]*?)<\/footer>/gi;
+  let footerMatch;
+  while ((footerMatch = footerRegex.exec(html)) !== null) {
+    extractLinksFromContent(footerMatch[1], 'footer');
+  }
+  
+  // 4. Look for common menu class patterns (WordPress, etc.)
+  const menuPatterns = [
+    /<(?:div|ul)[^>]*class="[^"]*(?:menu|navigation|nav-menu|main-menu|primary-menu)[^"]*"[^>]*>([\s\S]*?)<\/(?:div|ul)>/gi,
+    /<(?:div|ul)[^>]*id="[^"]*(?:menu|navigation|nav)[^"]*"[^>]*>([\s\S]*?)<\/(?:div|ul)>/gi,
+  ];
+  
+  for (const pattern of menuPatterns) {
+    let menuMatch;
+    while ((menuMatch = pattern.exec(html)) !== null) {
+      extractLinksFromContent(menuMatch[1], 'nav');
     }
   }
   
@@ -701,7 +753,8 @@ async function analyzeSiteStructure(url: string, firecrawlKey: string): Promise<
   const sitemapPages = await fetchSitemap(baseUrl);
   
   // Combine and deduplicate (normalize URLs)
-  const allPages = new Map<string, { url: string; title: string; type: 'page' | 'blog' | 'kb'; source: 'nav' | 'sitemap' }>();
+  type PageEntry = { url: string; title: string; type: 'page' | 'blog' | 'kb'; source: 'nav' | 'sitemap' };
+  const allPages = new Map<string, PageEntry>();
   
   // Helper to normalize URL (remove trailing slash, query params, anchors)
   const normalizeUrl = (url: string): string => {
@@ -722,25 +775,36 @@ async function analyzeSiteStructure(url: string, firecrawlKey: string): Promise<
     }
   };
   
+  // Helper to extract slug from URL
+  const getSlug = (url: string): string => {
+    const normalized = normalizeUrl(url);
+    const pathParts = normalized.replace(baseUrl, '').split('/').filter(Boolean);
+    return pathParts[pathParts.length - 1]?.toLowerCase() || 'home';
+  };
+  
   // Track seen slugs to detect near-duplicates
   const seenSlugs = new Map<string, string>(); // slug -> first URL
   
   // Add navigation links first (higher priority) - use platform for categorization
-  for (const link of navLinks) {
+  // Sort by source priority: nav > header > footer
+  const sortedNavLinks = [...navLinks].sort((a, b) => {
+    const priority = { nav: 0, header: 1, footer: 2 };
+    return priority[a.source] - priority[b.source];
+  });
+  
+  for (const link of sortedNavLinks) {
     // Skip if URL should be excluded
     if (shouldExcludeUrl(link.url, baseUrl)) continue;
     
     const normalizedUrl = normalizeUrl(link.url);
     const type = categorizeUrl(link.url, baseUrl, platform);
+    const slug = getSlug(link.url);
     
-    // Check for duplicate slugs
-    const pathParts = normalizedUrl.replace(baseUrl, '').split('/').filter(Boolean);
-    const slug = pathParts[pathParts.length - 1] || 'home';
+    // Skip if we already have this exact URL or slug
+    if (allPages.has(normalizedUrl) || seenSlugs.has(slug)) continue;
     
-    if (!allPages.has(normalizedUrl) && !seenSlugs.has(slug)) {
-      allPages.set(normalizedUrl, { url: normalizedUrl, title: link.label, type, source: 'nav' });
-      seenSlugs.set(slug, normalizedUrl);
-    }
+    allPages.set(normalizedUrl, { url: normalizedUrl, title: link.label, type, source: 'nav' });
+    seenSlugs.set(slug, normalizedUrl);
   }
   
   // Add sitemap pages (limit to reasonable count for migration)
@@ -754,34 +818,36 @@ async function analyzeSiteStructure(url: string, firecrawlKey: string): Promise<
     if (shouldExcludeUrl(page.url, baseUrl)) continue;
     
     const normalizedUrl = normalizeUrl(page.url);
+    const slug = getSlug(page.url);
     
-    if (!allPages.has(normalizedUrl)) {
-      const type = categorizeUrl(page.url, baseUrl, platform);
-      // Extract title from URL path
-      const pathParts = normalizedUrl.replace(baseUrl, '').split('/').filter(Boolean);
-      const slug = pathParts[pathParts.length - 1] || 'home';
-      
-      // Skip if we already have a page with this slug (near-duplicate)
-      if (seenSlugs.has(slug)) continue;
-      
-      const title = slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || 'Home';
-      allPages.set(normalizedUrl, { url: normalizedUrl, title, type, source: 'sitemap' });
-      seenSlugs.set(slug, normalizedUrl);
-      sitemapCount++;
-    }
+    // Skip if we already have this exact URL or slug (near-duplicate)
+    if (allPages.has(normalizedUrl) || seenSlugs.has(slug)) continue;
+    
+    const type = categorizeUrl(page.url, baseUrl, platform);
+    const title = slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || 'Home';
+    
+    allPages.set(normalizedUrl, { url: normalizedUrl, title, type, source: 'sitemap' });
+    seenSlugs.set(slug, normalizedUrl);
+    sitemapCount++;
   }
   
   // Always include homepage if not present
   const normalizedBaseUrl = normalizeUrl(baseUrl);
-  if (!allPages.has(normalizedBaseUrl) && !allPages.has(normalizedBaseUrl + '/')) {
+  const homeSlug = 'home';
+  if (!allPages.has(normalizedBaseUrl) && !allPages.has(normalizedBaseUrl + '/') && !seenSlugs.has(homeSlug)) {
     allPages.set(normalizedBaseUrl, { url: normalizedBaseUrl, title: 'Home', type: 'page', source: 'nav' });
+    seenSlugs.set(homeSlug, normalizedBaseUrl);
   }
   
   // Sort: homepage first, then navigation order, then sitemap
   const pages = Array.from(allPages.values()).sort((a, b) => {
     const normalizedBase = normalizeUrl(baseUrl);
-    const aIsHome = a.url === normalizedBase || a.url === normalizedBase + '/' || a.title.toLowerCase() === 'home' || a.title.toLowerCase() === 'hem';
-    const bIsHome = b.url === normalizedBase || b.url === normalizedBase + '/' || b.title.toLowerCase() === 'home' || b.title.toLowerCase() === 'hem';
+    const aIsHome = a.url === normalizedBase || a.url === normalizedBase + '/' || 
+                    a.title.toLowerCase() === 'home' || a.title.toLowerCase() === 'hem' ||
+                    a.title.toLowerCase() === 'start' || a.title.toLowerCase() === 'startsida';
+    const bIsHome = b.url === normalizedBase || b.url === normalizedBase + '/' || 
+                    b.title.toLowerCase() === 'home' || b.title.toLowerCase() === 'hem' ||
+                    b.title.toLowerCase() === 'start' || b.title.toLowerCase() === 'startsida';
     if (aIsHome && !bIsHome) return -1;
     if (!aIsHome && bIsHome) return 1;
     if (a.source === 'nav' && b.source === 'sitemap') return -1;
@@ -789,7 +855,9 @@ async function analyzeSiteStructure(url: string, firecrawlKey: string): Promise<
     return 0;
   });
   
-  console.log(`Site analysis: Found ${navLinks.length} nav links, ${sitemapPages.length} sitemap pages, filtered to ${pages.length} unique pages`);
+  console.log(`Site analysis: Found ${navLinks.length} nav links (nav/header/footer), ${sitemapPages.length} sitemap pages, filtered to ${pages.length} unique pages`);
+  console.log(`Nav sources: ${navLinks.filter(l => l.source === 'nav').length} nav, ${navLinks.filter(l => l.source === 'header').length} header, ${navLinks.filter(l => l.source === 'footer').length} footer`);
+  
   const hasBlog = pages.some(p => p.type === 'blog');
   const hasKnowledgeBase = pages.some(p => p.type === 'kb');
   
@@ -798,7 +866,7 @@ async function analyzeSiteStructure(url: string, firecrawlKey: string): Promise<
     platform,
     baseUrl,
     pages,
-    navigation: navLinks,
+    navigation: navLinks.map(l => ({ label: l.label, url: l.url })),
     hasBlog,
     hasKnowledgeBase,
   };
