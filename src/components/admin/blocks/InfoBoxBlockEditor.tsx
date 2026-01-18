@@ -107,14 +107,14 @@ export function InfoBoxBlockEditor({ data, isEditing, onChange }: InfoBoxBlockEd
           <div>
             <Label>Icon (optional)</Label>
             <Select 
-              value={data.icon || ''} 
-              onValueChange={(v) => onChange({ ...data, icon: v || undefined })}
+              value={data.icon || '__default__'} 
+              onValueChange={(v) => onChange({ ...data, icon: v === '__default__' ? undefined : v })}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Default icon" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Default icon</SelectItem>
+                <SelectItem value="__default__">Default icon</SelectItem>
                 {ICON_OPTIONS.map((iconName) => {
                   const IconComponent = icons[iconName as keyof typeof icons] as LucideIcon | undefined;
                   return (
