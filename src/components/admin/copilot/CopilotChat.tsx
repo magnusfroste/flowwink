@@ -147,8 +147,8 @@ export function CopilotChat({
             </div>
           )}
 
-          {/* Generate full page button - show when ready to build NEW sites, not during migration */}
-          {!isEmpty && !hasBlocks && !isLoading && discoveryStatus === 'idle' && (
+          {/* Generate full page button - show ONLY when building NEW sites from scratch, not during ANY migration phase */}
+          {!isEmpty && !hasBlocks && !isLoading && discoveryStatus === 'idle' && messages.some(m => m.content.toLowerCase().includes('from scratch') || m.content.toLowerCase().includes('new website')) && (
             <div className="py-3">
               <Button
                 onClick={() => onSendMessage(FULL_PAGE_PROMPT)}
