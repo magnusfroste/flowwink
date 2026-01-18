@@ -46,6 +46,8 @@ interface ChatSettings {
   sentimentDetectionEnabled?: boolean;
   sentimentThreshold?: number;
   localSupportsToolCalling?: boolean; // Whether local AI supports OpenAI-compatible tool calling (e.g., vLLM/Qwen3)
+  // General knowledge
+  allowGeneralKnowledge?: boolean; // Allow AI to use its own knowledge beyond page content
 }
 
 interface ChatRequest {
@@ -330,7 +332,7 @@ async function buildKnowledgeBase(
 
   console.log(`Built knowledge base: ~${estimatedTokens} tokens`);
   
-  return `\n\n## Website Content (Knowledge Base)\nUse this information to answer questions:\n\n${sections.join('\n\n')}`;
+  return `\n\n## Website Content (Knowledge Base)\n${sections.join('\n\n')}`;
 }
 
 // Execute tool calls
@@ -507,6 +509,13 @@ serve(async (req) => {
     }
 
     let systemPrompt = settings?.systemPrompt || 'You are a helpful AI assistant.';
+
+    // Add knowledge base restriction or allowance
+    if (settings?.allowGeneralKnowledge) {
+      systemPrompt += '\n\nYou may use your general knowledge to answer questions, but prioritize the website content when relevant.';
+    } else if (settings?.includeContentAsContext || settings?.includeKbArticles) {
+      systemPrompt += '\n\nIMPORTANT: Only answer questions based on the website content provided below. If the answer is not in the content, politely say you can only help with questions about this website.';
+    }
 
     // Add knowledge base if enabled
     if (settings?.includeContentAsContext || settings?.includeKbArticles) {
