@@ -8,30 +8,10 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TwoColumnBlockData, TiptapDocument } from '@/types/cms';
-import { Bold, Italic, List, ListOrdered, ArrowLeftRight, Pin } from 'lucide-react';
+import { Bold, Italic, List, ListOrdered, ArrowLeftRight, Pin, Heading1, Heading2 } from 'lucide-react';
 import { ImageUploader } from '../ImageUploader';
 import { AITiptapToolbar } from '../AITiptapToolbar';
-import { generateHTML } from '@tiptap/react';
-
-// Helper to check if content is Tiptap JSON
-function isTiptapDocument(content: unknown): content is TiptapDocument {
-  return typeof content === 'object' && content !== null && (content as TiptapDocument).type === 'doc';
-}
-
-// Extensions for generateHTML (single instance to avoid duplicates)
-const renderExtensions = [
-  StarterKit,
-  Link,
-];
-
-// Get initial content for editor (convert JSON to HTML for Tiptap)
-function getEditorContent(content: string | TiptapDocument | undefined): string {
-  if (!content) return '';
-  if (isTiptapDocument(content)) {
-    return generateHTML(content, renderExtensions);
-  }
-  return content;
-}
+import { renderToHtml, getEditorContent as getEditorContentFromUtils } from '@/lib/tiptap-utils';
 
 interface TwoColumnBlockEditorProps {
   data: TwoColumnBlockData;
@@ -40,13 +20,16 @@ interface TwoColumnBlockEditorProps {
 }
 
 export function TwoColumnBlockEditor({ data, isEditing, onChange }: TwoColumnBlockEditorProps) {
+  // Get editor content using shared utility
+  const initialContent = getEditorContentFromUtils(data.content);
+  
   const editor = useEditor({
     extensions: [
       StarterKit,
       Link.configure({ openOnClick: false }),
       Placeholder.configure({ placeholder: 'Write your content here...' }),
     ],
-    content: getEditorContent(data.content),
+    content: initialContent,
     editable: isEditing,
     onUpdate: ({ editor }) => {
       // Save as Tiptap JSON instead of HTML
@@ -71,15 +54,6 @@ export function TwoColumnBlockEditor({ data, isEditing, onChange }: TwoColumnBlo
       editor.commands.focus();
     }
   }, [editor, isEditing]);
-
-  // Helper to render content as HTML for preview
-  const renderContent = (): string => {
-    if (!data.content) return '<p>No content</p>';
-    if (isTiptapDocument(data.content)) {
-      return generateHTML(data.content, renderExtensions);
-    }
-    return data.content;
-  };
 
   if (isEditing) {
     return (
@@ -183,8 +157,9 @@ export function TwoColumnBlockEditor({ data, isEditing, onChange }: TwoColumnBlo
     );
   }
 
-  // Preview mode
+  // Preview mode - use shared renderToHtml utility
   const imageFirst = data.imagePosition === 'left';
+  const htmlContent = renderToHtml(data.content);
 
   return (
     <div className={`grid md:grid-cols-2 gap-8 p-6 ${imageFirst ? '' : 'md:[&>*:first-child]:order-2'}`}>
@@ -202,8 +177,8 @@ export function TwoColumnBlockEditor({ data, isEditing, onChange }: TwoColumnBlo
         )}
       </div>
       <div 
-        className="prose prose-sm max-w-none self-center"
-        dangerouslySetInnerHTML={{ __html: renderContent() }}
+        className="prose prose-lg dark:prose-invert max-w-none self-center"
+        dangerouslySetInnerHTML={{ __html: htmlContent || '<p>No content</p>' }}
       />
     </div>
   );
