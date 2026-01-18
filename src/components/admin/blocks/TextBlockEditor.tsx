@@ -8,18 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { Bold, Italic, List, ListOrdered, Quote, Heading1, Heading2 } from 'lucide-react';
 import { TextBlockData, TiptapDocument } from '@/types/cms';
 import { AITiptapToolbar } from '@/components/admin/AITiptapToolbar';
-
-// Helper to check if content is Tiptap JSON
-function isTiptapDocument(content: string | TiptapDocument): content is TiptapDocument {
-  return typeof content === 'object' && content !== null && content.type === 'doc';
-}
-
-// Convert content to editor-compatible format
-function getEditorContent(content: string | TiptapDocument | undefined): string | TiptapDocument {
-  if (!content) return '';
-  if (isTiptapDocument(content)) return content;
-  return content; // HTML string for legacy content
-}
+import { getEditorContent } from '@/lib/tiptap-utils';
 
 interface TextBlockEditorProps {
   data: TextBlockData;

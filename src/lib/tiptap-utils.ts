@@ -129,10 +129,17 @@ export function getEditorContent(content: string | TiptapDocument | undefined): 
 /**
  * Render Tiptap document to HTML for display.
  * Use this for public-facing content or headless API HTML output.
+ * Accepts unknown type to handle Supabase JSON fields.
  */
-export function renderToHtml(content: string | TiptapDocument | undefined): string {
+export function renderToHtml(content: unknown): string {
   if (!content) return '';
   
+  // Handle string content
+  if (typeof content === 'string') {
+    return content;
+  }
+  
+  // Handle Tiptap document
   if (isTiptapDocument(content)) {
     try {
       return generateHTML(content, [StarterKit, Link]);
@@ -142,8 +149,8 @@ export function renderToHtml(content: string | TiptapDocument | undefined): stri
     }
   }
   
-  // Legacy HTML string
-  return content;
+  // Unknown type - return empty
+  return '';
 }
 
 /**

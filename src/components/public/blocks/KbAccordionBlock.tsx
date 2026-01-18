@@ -8,10 +8,7 @@ import {
 } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { generateHTML } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import Link from '@tiptap/extension-link';
-import { TiptapDocument } from '@/types/cms';
+import { renderToHtml } from '@/lib/tiptap-utils';
 
 export interface KbAccordionBlockData {
   title?: string;
@@ -26,24 +23,6 @@ export interface KbAccordionBlockData {
 
 interface KbAccordionBlockProps {
   data: KbAccordionBlockData;
-}
-
-// Helper to check if content is Tiptap JSON
-function isTiptapDocument(content: unknown): content is TiptapDocument {
-  return typeof content === 'object' && content !== null && (content as TiptapDocument).type === 'doc';
-}
-
-// Render answer as HTML (handles both legacy plaintext and Tiptap JSON)
-function renderAnswer(answer: unknown): string {
-  if (!answer) return '';
-  if (isTiptapDocument(answer)) {
-    return generateHTML(answer, [StarterKit, Link]);
-  }
-  // Legacy plaintext - wrap in paragraph
-  if (typeof answer === 'string') {
-    return `<p>${answer}</p>`;
-  }
-  return '';
 }
 
 export function KbAccordionBlock({ data }: KbAccordionBlockProps) {
@@ -166,7 +145,7 @@ export function KbAccordionBlock({ data }: KbAccordionBlockProps) {
                   <div 
                     className="prose prose-sm dark:prose-invert max-w-none"
                     dangerouslySetInnerHTML={{ 
-                      __html: renderAnswer(article.answer_json || article.answer_text) 
+                      __html: renderToHtml(article.answer_json ?? article.answer_text) 
                     }}
                   />
                 </AccordionContent>
@@ -200,7 +179,7 @@ export function KbAccordionBlock({ data }: KbAccordionBlockProps) {
                   <div 
                     className="prose prose-sm dark:prose-invert max-w-none"
                     dangerouslySetInnerHTML={{ 
-                      __html: renderAnswer(article.answer_json || article.answer_text) 
+                      __html: renderToHtml(article.answer_json ?? article.answer_text) 
                     }}
                   />
                 </AccordionContent>

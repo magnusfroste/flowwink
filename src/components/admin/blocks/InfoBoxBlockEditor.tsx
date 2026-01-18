@@ -4,35 +4,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { InfoBoxBlockData, TiptapDocument } from '@/types/cms';
 import { Info, CheckCircle, AlertTriangle, Sparkles, icons, Bold, Italic, List, ListOrdered, LucideIcon } from 'lucide-react';
-import { useEditor, EditorContent, generateHTML } from '@tiptap/react';
+import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
 import { AITextAssistant } from '../AITextAssistant';
 import { AITiptapToolbar } from '../AITiptapToolbar';
-
-// Helper to check if content is Tiptap JSON
-function isTiptapDocument(content: unknown): content is TiptapDocument {
-  return typeof content === 'object' && content !== null && (content as TiptapDocument).type === 'doc';
-}
-
-// Get initial content for editor
-function getEditorContent(content: string | TiptapDocument | undefined): string {
-  if (!content) return '';
-  if (isTiptapDocument(content)) {
-    return generateHTML(content, [StarterKit, Link]);
-  }
-  return `<p>${content}</p>`;
-}
-
-// Render content as HTML
-function renderContent(content: string | TiptapDocument | undefined): string {
-  if (!content) return '';
-  if (isTiptapDocument(content)) {
-    return generateHTML(content, [StarterKit, Link]);
-  }
-  return `<p>${content}</p>`;
-}
+import { getEditorContent, renderToHtml } from '@/lib/tiptap-utils';
 
 const VARIANT_CONFIG = {
   default: {
@@ -225,8 +203,8 @@ export function InfoBoxBlockEditor({ data, isEditing, onChange }: InfoBoxBlockEd
             <div>
               <h4 className="font-semibold">{data.title || 'Title'}</h4>
               <div 
-                className="text-sm mt-1 opacity-90 prose prose-sm max-w-none"
-                dangerouslySetInnerHTML={{ __html: renderContent(data.content) || 'Content...' }}
+                className="text-sm mt-1 opacity-90 prose prose-sm dark:prose-invert max-w-none"
+                dangerouslySetInnerHTML={{ __html: renderToHtml(data.content) || 'Content...' }}
               />
             </div>
           </div>
@@ -243,8 +221,8 @@ export function InfoBoxBlockEditor({ data, isEditing, onChange }: InfoBoxBlockEd
         <div>
         <h4 className="font-semibold text-lg">{data.title || 'Important information'}</h4>
           <div 
-            className="mt-2 opacity-90 prose prose-sm max-w-none"
-            dangerouslySetInnerHTML={{ __html: renderContent(data.content) || 'No content' }}
+            className="mt-2 opacity-90 prose prose-sm dark:prose-invert max-w-none"
+            dangerouslySetInnerHTML={{ __html: renderToHtml(data.content) || 'No content' }}
           />
         </div>
       </div>
