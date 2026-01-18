@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useUpdateModules, useModules, type ModulesSettings, defaultModulesSettings } from '@/hooks/useModules';
 import { useCreatePage } from '@/hooks/usePages';
+import { useUpdateGeneralSettings } from '@/hooks/useSiteSettings';
 import { toast } from 'sonner';
 import type { ContentBlock, ContentBlockType } from '@/types/cms';
 
@@ -242,6 +243,7 @@ export function useCopilot(): UseCopilotReturn {
   const updateModules = useUpdateModules();
   const { data: currentModules } = useModules();
   const createPageMutation = useCreatePage();
+  const updateGeneralSettings = useUpdateGeneralSettings();
 
   // Persist state changes to localStorage
   useEffect(() => {
@@ -520,8 +522,25 @@ export function useCopilot(): UseCopilotReturn {
             status: 'draft',
           });
           
-          // Mark current page as completed and find next pending page atomically
+          // Check if this is the homepage (source URL ends with "/" or is the base domain)
           const currentUrl = migrationState.currentPageUrl;
+          const isHomepage = currentUrl && (
+            currentUrl === migrationState.baseDomain ||
+            currentUrl === migrationState.baseDomain + '/' ||
+            new URL(currentUrl).pathname === '/'
+          );
+          
+          // If this is the homepage, automatically set it as the site's homepage
+          if (isHomepage) {
+            try {
+              await updateGeneralSettings.mutateAsync({ homepageSlug: pageSlug });
+              console.log('[Copilot] Set homepage slug to:', pageSlug);
+            } catch (err) {
+              console.warn('[Copilot] Failed to set homepage slug:', err);
+            }
+          }
+          
+          // Mark current page as completed and find next pending page atomically
           
           // Calculate next page from current state (before React batches updates)
           let nextPendingPage: DiscoveredPage | null = null;
