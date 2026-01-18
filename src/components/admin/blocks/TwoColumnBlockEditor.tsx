@@ -1,3 +1,4 @@
+import { useEffect, useCallback } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
@@ -17,11 +18,17 @@ function isTiptapDocument(content: unknown): content is TiptapDocument {
   return typeof content === 'object' && content !== null && (content as TiptapDocument).type === 'doc';
 }
 
+// Extensions for generateHTML (single instance to avoid duplicates)
+const renderExtensions = [
+  StarterKit,
+  Link,
+];
+
 // Get initial content for editor (convert JSON to HTML for Tiptap)
 function getEditorContent(content: string | TiptapDocument | undefined): string {
   if (!content) return '';
   if (isTiptapDocument(content)) {
-    return generateHTML(content, [StarterKit, Link]);
+    return generateHTML(content, renderExtensions);
   }
   return content;
 }
@@ -47,15 +54,29 @@ export function TwoColumnBlockEditor({ data, isEditing, onChange }: TwoColumnBlo
     },
   });
 
+  // Update editable state when isEditing changes
+  useEffect(() => {
+    if (editor) {
+      editor.setEditable(isEditing);
+    }
+  }, [editor, isEditing]);
+
   const togglePosition = () => {
     onChange({ ...data, imagePosition: data.imagePosition === 'left' ? 'right' : 'left' });
   };
+
+  // Focus editor on click
+  const handleEditorClick = useCallback(() => {
+    if (editor && isEditing) {
+      editor.commands.focus();
+    }
+  }, [editor, isEditing]);
 
   // Helper to render content as HTML for preview
   const renderContent = (): string => {
     if (!data.content) return '<p>No content</p>';
     if (isTiptapDocument(data.content)) {
-      return generateHTML(data.content, [StarterKit, Link]);
+      return generateHTML(data.content, renderExtensions);
     }
     return data.content;
   };
@@ -148,10 +169,12 @@ export function TwoColumnBlockEditor({ data, isEditing, onChange }: TwoColumnBlo
                   <div className="flex-1" />
                   <AITiptapToolbar editor={editor} />
                 </div>
-                <EditorContent 
-                  editor={editor} 
-                  className="prose prose-sm max-w-none min-h-[200px] border rounded-md p-3 focus-within:ring-2 focus-within:ring-ring"
-                />
+                <div onClick={handleEditorClick} className="cursor-text">
+                  <EditorContent 
+                    editor={editor} 
+                    className="prose prose-sm max-w-none min-h-[200px] border rounded-md p-3 focus-within:ring-2 focus-within:ring-ring"
+                  />
+                </div>
               </>
             )}
           </div>
