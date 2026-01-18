@@ -12,8 +12,9 @@ interface FirecrawlBranding {
     background?: string;
     textPrimary?: string;
     textSecondary?: string;
+    link?: string; // Firecrawl also returns link color
   };
-  fonts?: Array<{ family: string }>;
+  fonts?: Array<{ family: string; count?: number }>;
   typography?: {
     fontFamilies?: {
       primary?: string;
@@ -171,17 +172,35 @@ export function analyzeBranding(branding: FirecrawlBranding): AnalyzedBranding {
   const images = branding.images || {};
   const spacing = branding.spacing || {};
   
-  // Extract raw values
+  // Debug log to help troubleshoot
+  console.log('Firecrawl colors received:', colors);
+  
+  // Intelligent color extraction with fallbacks
+  // - Primary: The main brand color (usually buttons, links, accents)
+  // - Secondary: Often the text color or a contrasting color
+  // - Accent: Highlight color, can fall back to primary
+  const primaryColor = colors.primary;
+  
+  // Secondary: prefer explicit secondary, then textPrimary (often dark brand color), then accent
+  const secondaryColor = colors.secondary || colors.textPrimary || colors.accent;
+  
+  // Accent: prefer explicit accent, then link color, then fall back to primary
+  const accentColor = colors.accent || colors.link || colors.primary;
+  
+  // Extract raw values for display
   const extracted = {
-    primaryColor: colors.primary,
-    secondaryColor: colors.secondary || colors.background,
-    accentColor: colors.accent,
+    primaryColor,
+    secondaryColor,
+    accentColor,
+    backgroundColor: colors.background,
     headingFont: typography.fontFamilies?.heading || typography.fontFamilies?.primary || fonts[0]?.family,
     bodyFont: typography.fontFamilies?.primary || fonts[1]?.family || fonts[0]?.family,
     logo: images.logo || branding.logo,
     favicon: images.favicon,
     borderRadius: spacing.borderRadius,
   };
+  
+  console.log('Extracted branding:', extracted);
   
   // Map to our BrandingSettings format
   const mapped: Partial<BrandingSettings> = {
@@ -202,6 +221,8 @@ export function analyzeBranding(branding: FirecrawlBranding): AnalyzedBranding {
       delete mapped[key as keyof typeof mapped];
     }
   });
+  
+  console.log('Mapped branding settings:', mapped);
   
   return { extracted, mapped };
 }
