@@ -114,8 +114,8 @@ export default {
           to: { opacity: "1", transform: "translateY(0)" },
         },
         "typewriter": {
-          from: { width: "0" },
-          to: { width: "100%" },
+          from: { opacity: "0", clipPath: "inset(0 100% 0 0)" },
+          to: { opacity: "1", clipPath: "inset(0 0 0 0)" },
         },
         "blink": {
           "0%, 100%": { borderColor: "transparent" },

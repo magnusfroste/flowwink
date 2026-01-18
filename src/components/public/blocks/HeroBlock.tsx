@@ -24,7 +24,7 @@ const titleAnimationClasses: Record<string, string> = {
   none: '',
   'fade-in': 'animate-fade-in',
   'slide-up': 'animate-slide-up',
-  typewriter: 'overflow-hidden whitespace-nowrap animate-typewriter border-r-2 border-current animate-blink',
+  typewriter: 'animate-typewriter',
 };
 
 const textAlignmentClasses: Record<string, string> = {
