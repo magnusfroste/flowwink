@@ -23,33 +23,11 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { useEditor, EditorContent, generateHTML } from '@tiptap/react';
+import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
-
-// Helper to check if content is Tiptap JSON
-function isTiptapDocument(content: unknown): content is TiptapDocument {
-  return typeof content === 'object' && content !== null && (content as TiptapDocument).type === 'doc';
-}
-
-// Get initial content for editor
-function getEditorContent(answer: string | TiptapDocument | undefined): string {
-  if (!answer) return '';
-  if (isTiptapDocument(answer)) {
-    return generateHTML(answer, [StarterKit, Link]);
-  }
-  return `<p>${answer}</p>`;
-}
-
-// Render answer as HTML
-function renderAnswer(answer: string | TiptapDocument | undefined): string {
-  if (!answer) return '';
-  if (isTiptapDocument(answer)) {
-    return generateHTML(answer, [StarterKit, Link]);
-  }
-  return `<p>${answer}</p>`;
-}
+import { getEditorContent, renderToHtml } from '@/lib/tiptap-utils';
 
 interface AccordionBlockEditorProps {
   data: AccordionBlockData;
@@ -241,8 +219,8 @@ export function AccordionBlockEditor({ data, onChange, canEdit }: AccordionBlock
           <div key={index} className="border border-border rounded-lg p-4">
             <p className="font-medium">{item.question || 'No question'}</p>
             <div 
-              className="text-sm text-muted-foreground mt-1 prose prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: renderAnswer(item.answer) || 'No answer' }}
+              className="text-sm text-muted-foreground mt-1 prose prose-sm dark:prose-invert max-w-none"
+              dangerouslySetInnerHTML={{ __html: renderToHtml(item.answer) || 'No answer' }}
             />
           </div>
         ))}

@@ -1,23 +1,6 @@
-import { InfoBoxBlockData, TiptapDocument } from '@/types/cms';
+import { InfoBoxBlockData } from '@/types/cms';
 import { Info, CheckCircle, AlertTriangle, Lightbulb } from 'lucide-react';
-import { generateHTML } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import Link from '@tiptap/extension-link';
-
-// Helper to check if content is Tiptap JSON
-function isTiptapDocument(content: unknown): content is TiptapDocument {
-  return typeof content === 'object' && content !== null && (content as TiptapDocument).type === 'doc';
-}
-
-// Render content as HTML (handles both legacy plaintext/HTML and Tiptap JSON)
-function renderContent(content: string | TiptapDocument | undefined): string {
-  if (!content) return '';
-  if (isTiptapDocument(content)) {
-    return generateHTML(content, [StarterKit, Link]);
-  }
-  // Legacy plaintext/HTML
-  return content.includes('<') ? content : `<p>${content}</p>`;
-}
+import { renderToHtml } from '@/lib/tiptap-utils';
 
 interface InfoBoxBlockProps {
   data: InfoBoxBlockData;
@@ -66,7 +49,7 @@ export function InfoBoxBlock({ data }: InfoBoxBlockProps) {
               )}
               <div 
                 className="prose prose-sm dark:prose-invert max-w-none"
-                dangerouslySetInnerHTML={{ __html: renderContent(data.content) }}
+                dangerouslySetInnerHTML={{ __html: renderToHtml(data.content) }}
               />
             </div>
           </div>
