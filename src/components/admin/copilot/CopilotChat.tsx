@@ -271,8 +271,8 @@ export function CopilotChat({
 
       {/* Input */}
       <div className="p-3 border-t bg-background space-y-2">
-        {/* Finish page button - show after 3+ blocks */}
-        {blocks.length >= 3 && !isLoading && (
+        {/* Finish page button - show after 3+ blocks, but NOT during migration (pages auto-save) */}
+        {blocks.length >= 3 && !isLoading && discoveryStatus === 'idle' && (
           <Button 
             onClick={onFinishPage}
             variant="secondary"
