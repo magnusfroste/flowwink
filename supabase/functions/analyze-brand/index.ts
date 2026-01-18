@@ -62,10 +62,16 @@ serve(async (req) => {
       );
     }
 
-    console.log('Brand analysis successful');
-    
     // Extract branding data from response
     const branding = data.data?.branding || data.branding || {};
+    
+    console.log('Brand analysis successful, extracted:', JSON.stringify({
+      hasColors: !!branding.colors,
+      primaryColor: branding.colors?.primary,
+      hasTypography: !!branding.typography,
+      headingFont: branding.typography?.fontFamilies?.heading,
+      hasLogo: !!(branding.images?.logo || branding.logo),
+    }));
     
     return new Response(
       JSON.stringify({ 
