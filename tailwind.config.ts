@@ -119,7 +119,7 @@ export default {
         "fade-in": "fade-in 0.3s ease-out",
         "slide-in-right": "slide-in-right 0.3s ease-out",
         "slide-up": "slide-up 0.6s ease-out",
-        "typewriter": "typewriter 2s steps(40) forwards",
+        "typewriter": "typewriter 3s steps(80) forwards",
         "blink": "blink 1s step-end infinite",
         "bounce-down": "bounce-down 1.5s ease-in-out infinite",
       },
