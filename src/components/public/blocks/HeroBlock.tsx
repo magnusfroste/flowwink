@@ -395,14 +395,14 @@ export function HeroBlock({ data }: HeroBlockProps) {
         </div>
       </div>
       
-      {/* Scroll indicator */}
+      {/* Scroll indicator - fixed position to always be visible above fold */}
       {data.showScrollIndicator && heightMode !== 'auto' && (
         <button
           onClick={() => window.scrollTo({ top: window.innerHeight, behavior: 'smooth' })}
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 opacity-80 hover:opacity-100 transition-opacity"
+          className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 opacity-80 hover:opacity-100 transition-opacity"
           aria-label="Scroll down"
         >
-          <ChevronDown className="h-8 w-8 animate-bounce-down" />
+          <ChevronDown className="h-8 w-8 animate-bounce-down text-foreground drop-shadow-lg" />
         </button>
       )}
     </section>
