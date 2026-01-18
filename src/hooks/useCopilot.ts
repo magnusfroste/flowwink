@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useUpdateModules, useModules, type ModulesSettings, defaultModulesSettings } from '@/hooks/useModules';
 import { useCreatePage } from '@/hooks/usePages';
@@ -185,19 +185,76 @@ const initialMigrationState: MigrationState = {
   currentPageUrl: null,
 };
 
+// LocalStorage keys for persistence
+const STORAGE_KEYS = {
+  messages: 'copilot_messages',
+  blocks: 'copilot_blocks',
+  migrationState: 'copilot_migration_state',
+} as const;
+
+// Helper to load persisted state
+function loadPersistedState<T>(key: string, defaultValue: T): T {
+  try {
+    const stored = localStorage.getItem(key);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      // Restore Date objects for messages
+      if (key === STORAGE_KEYS.messages && Array.isArray(parsed)) {
+        return parsed.map((m: CopilotMessage) => ({
+          ...m,
+          createdAt: new Date(m.createdAt),
+        })) as T;
+      }
+      return parsed;
+    }
+  } catch (e) {
+    console.warn(`Failed to load ${key} from localStorage:`, e);
+  }
+  return defaultValue;
+}
+
+// Helper to save state to localStorage
+function persistState<T>(key: string, value: T): void {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (e) {
+    console.warn(`Failed to save ${key} to localStorage:`, e);
+  }
+}
+
 export function useCopilot(): UseCopilotReturn {
-  const [messages, setMessages] = useState<CopilotMessage[]>([]);
-  const [blocks, setBlocks] = useState<CopilotBlock[]>([]);
+  // Initialize state from localStorage if available
+  const [messages, setMessages] = useState<CopilotMessage[]>(() => 
+    loadPersistedState(STORAGE_KEYS.messages, [])
+  );
+  const [blocks, setBlocks] = useState<CopilotBlock[]>(() => 
+    loadPersistedState(STORAGE_KEYS.blocks, [])
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isAutoContinue, setIsAutoContinue] = useState(false);
-  const [migrationState, setMigrationState] = useState<MigrationState>(initialMigrationState);
+  const [migrationState, setMigrationState] = useState<MigrationState>(() => 
+    loadPersistedState(STORAGE_KEYS.migrationState, initialMigrationState)
+  );
   const [enabledModulesCache, setEnabledModulesCache] = useState<Set<string>>(new Set());
   
   const abortControllerRef = useRef<AbortController | null>(null);
   const updateModules = useUpdateModules();
   const { data: currentModules } = useModules();
   const createPageMutation = useCreatePage();
+
+  // Persist state changes to localStorage
+  useEffect(() => {
+    persistState(STORAGE_KEYS.messages, messages);
+  }, [messages]);
+
+  useEffect(() => {
+    persistState(STORAGE_KEYS.blocks, blocks);
+  }, [blocks]);
+
+  useEffect(() => {
+    persistState(STORAGE_KEYS.migrationState, migrationState);
+  }, [migrationState]);
 
   // Helper to auto-enable a module silently
   const autoEnableModule = useCallback(async (moduleId: keyof ModulesSettings) => {
@@ -844,6 +901,11 @@ export function useCopilot(): UseCopilotReturn {
     setIsAutoContinue(false);
     setMigrationState(initialMigrationState);
     setEnabledModulesCache(new Set());
+    
+    // Clear localStorage
+    localStorage.removeItem(STORAGE_KEYS.messages);
+    localStorage.removeItem(STORAGE_KEYS.blocks);
+    localStorage.removeItem(STORAGE_KEYS.migrationState);
   }, []);
 
   // Phase control functions
