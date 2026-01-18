@@ -17,6 +17,19 @@ export default {
         sans: ['Inter', 'system-ui', 'sans-serif'],
         serif: ['PT Serif', 'Georgia', 'serif'],
       },
+      // Design System 2026: Display Typography Scale
+      fontSize: {
+        'display-sm': ['3rem', { lineHeight: '1.1', letterSpacing: '-0.02em' }],
+        'display': ['4rem', { lineHeight: '1.05', letterSpacing: '-0.02em' }],
+        'display-lg': ['5rem', { lineHeight: '1', letterSpacing: '-0.03em' }],
+        'display-xl': ['6rem', { lineHeight: '0.95', letterSpacing: '-0.03em' }],
+      },
+      // Design System 2026: Premium Easing Curves
+      transitionTimingFunction: {
+        'premium': 'cubic-bezier(0.16, 1, 0.3, 1)',
+        'bounce-soft': 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+        'elastic': 'cubic-bezier(0.68, -0.6, 0.32, 1.6)',
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -112,6 +125,23 @@ export default {
           "0%, 100%": { transform: "translateY(0)" },
           "50%": { transform: "translateY(8px)" },
         },
+        // Design System 2026: Premium Animations
+        "zoom-in": {
+          from: { opacity: "0", transform: "scale(0.95)" },
+          to: { opacity: "1", transform: "scale(1)" },
+        },
+        "blur-in": {
+          from: { opacity: "0", filter: "blur(8px)" },
+          to: { opacity: "1", filter: "blur(0)" },
+        },
+        "rotate-in": {
+          from: { opacity: "0", transform: "rotate(-3deg) scale(0.95)" },
+          to: { opacity: "1", transform: "rotate(0) scale(1)" },
+        },
+        "glow-pulse": {
+          "0%, 100%": { boxShadow: "0 0 20px hsl(var(--primary) / 0.3)" },
+          "50%": { boxShadow: "0 0 40px hsl(var(--primary) / 0.5)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -122,6 +152,11 @@ export default {
         "typewriter": "typewriter 3s steps(80) forwards",
         "blink": "blink 1s step-end infinite",
         "bounce-down": "bounce-down 1.5s ease-in-out infinite",
+        // Design System 2026
+        "zoom-in": "zoom-in 0.5s cubic-bezier(0.16, 1, 0.3, 1)",
+        "blur-in": "blur-in 0.6s cubic-bezier(0.16, 1, 0.3, 1)",
+        "rotate-in": "rotate-in 0.5s cubic-bezier(0.16, 1, 0.3, 1)",
+        "glow-pulse": "glow-pulse 2s ease-in-out infinite",
       },
     },
   },

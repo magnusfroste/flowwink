@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
-import { FeaturesBlockData } from '@/types/cms';
+import { FeaturesBlockData, FeatureHoverEffect, FeatureCardStyle } from '@/types/cms';
 import { icons } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { StaggeredReveal } from '@/components/public/StaggeredReveal';
 
 interface FeaturesBlockProps {
   data: FeaturesBlockData;
@@ -38,16 +39,35 @@ function FeatureIcon({
   );
 }
 
+// Design System 2026: Hover effect classes
+const hoverEffectClasses: Record<FeatureHoverEffect, string> = {
+  none: '',
+  lift: 'card-hover-lift',
+  glow: 'card-hover-glow',
+  border: 'card-hover-border',
+};
+
+// Design System 2026: Card style classes
+const cardStyleClasses: Record<FeatureCardStyle, string> = {
+  default: '',
+  glass: 'glass-card',
+  'gradient-border': 'gradient-border',
+};
+
 function FeatureCard({
   feature,
   variant,
   iconStyle,
   showLinks,
+  hoverEffect = 'none',
+  cardStyle = 'default',
 }: {
   feature: FeaturesBlockData['features'][0];
   variant: FeaturesBlockData['variant'];
   iconStyle: FeaturesBlockData['iconStyle'];
   showLinks: boolean;
+  hoverEffect?: FeatureHoverEffect;
+  cardStyle?: FeatureCardStyle;
 }) {
   const content = (
     <>
@@ -61,7 +81,12 @@ function FeatureCard({
 
   const baseClasses = cn(
     "group",
-    variant === 'cards' && "p-6 rounded-xl border bg-card hover:shadow-md transition-shadow",
+    variant === 'cards' && cn(
+      "p-6 rounded-xl border bg-card transition-all duration-300",
+      cardStyle === 'default' && hoverEffect === 'none' && "hover:shadow-md",
+      hoverEffectClasses[hoverEffect],
+      cardStyleClasses[cardStyle]
+    ),
     variant === 'minimal' && "text-left",
     variant === 'centered' && "text-center flex flex-col items-center",
     variant === 'default' && "text-left"
@@ -103,6 +128,10 @@ export function FeaturesBlock({ data }: FeaturesBlockProps) {
   const variant = data.variant || 'default';
   const iconStyle = data.iconStyle || 'circle';
   const showLinks = data.showLinks ?? true;
+  // Design System 2026
+  const staggeredReveal = data.staggeredReveal ?? false;
+  const hoverEffect = data.hoverEffect || 'none';
+  const cardStyle = data.cardStyle || 'default';
 
   if (features.length === 0) return null;
 
@@ -114,6 +143,22 @@ export function FeaturesBlock({ data }: FeaturesBlockProps) {
       'xl:grid-cols-4': columns === 4,
     },
     layout === 'list' && "space-y-6"
+  );
+
+  const renderFeatureCards = () => (
+    <>
+      {features.map((feature) => (
+        <FeatureCard
+          key={feature.id}
+          feature={feature}
+          variant={variant}
+          iconStyle={iconStyle}
+          showLinks={showLinks}
+          hoverEffect={hoverEffect}
+          cardStyle={cardStyle}
+        />
+      ))}
+    </>
   );
 
   return (
@@ -135,17 +180,20 @@ export function FeaturesBlock({ data }: FeaturesBlockProps) {
           </div>
         )}
 
-        <div className={gridClasses}>
-          {features.map((feature) => (
-            <FeatureCard
-              key={feature.id}
-              feature={feature}
-              variant={variant}
-              iconStyle={iconStyle}
-              showLinks={showLinks}
-            />
-          ))}
-        </div>
+        {staggeredReveal ? (
+          <StaggeredReveal 
+            className={gridClasses}
+            animation="fade-up"
+            easing="premium"
+            delayBetween={100}
+          >
+            {renderFeatureCards()}
+          </StaggeredReveal>
+        ) : (
+          <div className={gridClasses}>
+            {renderFeatureCards()}
+          </div>
+        )}
       </div>
     </section>
   );

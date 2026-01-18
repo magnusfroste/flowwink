@@ -1,33 +1,34 @@
-import { ReactNode } from 'react';
+import { ReactNode, Children, cloneElement, isValidElement } from 'react';
 import { useScrollAnimation } from '@/hooks/useScrollAnimation';
 import { cn } from '@/lib/utils';
 import { AnimationType, AnimationSpeed, AnimationEasing } from '@/types/cms';
 
-interface AnimatedBlockProps {
+interface StaggeredRevealProps {
   children: ReactNode;
   animation?: AnimationType;
   speed?: AnimationSpeed;
-  delay?: number;
   easing?: AnimationEasing;
-  staggerIndex?: number;
+  delayBetween?: number; // ms between each child
+  baseDelay?: number; // initial delay before first child
   className?: string;
 }
 
-export function AnimatedBlock({ 
-  children, 
+/**
+ * Design System 2026: Staggered Reveal Component
+ * Wraps children and animates them in sequence with a delay between each.
+ * Perfect for feature grids, card lists, and any repeated content.
+ */
+export function StaggeredReveal({
+  children,
   animation = 'fade-up',
   speed = 'normal',
-  delay = 0,
-  easing = 'default',
-  staggerIndex = 0,
-  className 
-}: AnimatedBlockProps) {
+  easing = 'premium',
+  delayBetween = 100,
+  baseDelay = 0,
+  className,
+}: StaggeredRevealProps) {
   const { ref, isVisible } = useScrollAnimation<HTMLDivElement>();
 
-  // Calculate actual delay including stagger
-  const actualDelay = delay + (staggerIndex * 100);
-
-  // Skip animation if type is 'none'
   if (animation === 'none') {
     return <div className={className}>{children}</div>;
   }
@@ -39,7 +40,6 @@ export function AnimatedBlock({
     'scale-in': 'scale-95 opacity-0',
     'slide-left': 'translate-x-12 opacity-0',
     'slide-right': '-translate-x-12 opacity-0',
-    // Design System 2026: Premium animations
     'zoom-in': 'scale-90 opacity-0',
     'blur-in': 'opacity-0 blur-sm',
     'rotate-in': 'rotate-[-3deg] scale-95 opacity-0',
@@ -51,7 +51,6 @@ export function AnimatedBlock({
     slow: 'duration-700',
   };
 
-  // Design System 2026: Premium easing curves
   const easingClasses: Record<AnimationEasing, string> = {
     default: 'ease-out',
     premium: 'ease-premium',
@@ -62,18 +61,26 @@ export function AnimatedBlock({
   const visibleClasses = 'translate-y-0 translate-x-0 scale-100 opacity-100 blur-0 rotate-0';
 
   return (
-    <div
-      ref={ref}
-      className={cn(
-        'transition-all',
-        speedDurations[speed],
-        easingClasses[easing],
-        isVisible ? visibleClasses : animationClasses[animation],
-        className
-      )}
-      style={{ transitionDelay: `${actualDelay}ms` }}
-    >
-      {children}
+    <div ref={ref} className={className}>
+      {Children.map(children, (child, index) => {
+        if (!isValidElement(child)) return child;
+
+        const delay = baseDelay + (index * delayBetween);
+
+        return cloneElement(child as React.ReactElement<{ className?: string; style?: React.CSSProperties }>, {
+          className: cn(
+            (child as React.ReactElement<{ className?: string }>).props.className,
+            'transition-all',
+            speedDurations[speed],
+            easingClasses[easing],
+            isVisible ? visibleClasses : animationClasses[animation]
+          ),
+          style: {
+            ...(child as React.ReactElement<{ style?: React.CSSProperties }>).props.style,
+            transitionDelay: `${delay}ms`,
+          },
+        });
+      })}
     </div>
   );
 }
