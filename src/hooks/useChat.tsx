@@ -393,6 +393,8 @@ export function useChat(options?: UseChatOptions) {
               sentimentDetectionEnabled: settings?.sentimentDetectionEnabled || false,
               sentimentThreshold: settings?.sentimentThreshold || 7,
               localSupportsToolCalling: settings?.localSupportsToolCalling || false,
+              // General knowledge
+              allowGeneralKnowledge: settings?.allowGeneralKnowledge || false,
             },
           }),
           signal: abortControllerRef.current.signal,
