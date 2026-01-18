@@ -1,11 +1,12 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, Trash2, Settings } from 'lucide-react';
+import { GripVertical, Trash2, Settings, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ContentBlock, ContentBlockType, BlockSpacing, BlockAnimation } from '@/types/cms';
 import { cn } from '@/lib/utils';
 import { BlockSpacingControl, getSpacingClasses } from './BlockSpacingControl';
 import { BlockAnimationControl } from './BlockAnimationControl';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 const BLOCK_LABELS: Record<ContentBlockType, string> = {
   hero: 'Hero',
@@ -65,6 +66,7 @@ interface BlockWrapperProps {
   isEditing: boolean;
   onEdit: () => void;
   onDelete: () => void;
+  onCopy?: () => void;
   onSpacingChange?: (spacing: BlockSpacing) => void;
   onAnimationChange?: (animation: BlockAnimation) => void;
   canEdit: boolean;
@@ -76,6 +78,7 @@ export function BlockWrapper({
   isEditing,
   onEdit,
   onDelete,
+  onCopy,
   onSpacingChange,
   onAnimationChange,
   canEdit,
@@ -126,14 +129,34 @@ export function BlockWrapper({
               {BLOCK_LABELS[block.type]}
             </span>
           </div>
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-7 w-7 bg-card"
-            onClick={onEdit}
-          >
-            <Settings className="h-3.5 w-3.5" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-7 w-7 bg-card"
+                onClick={onEdit}
+              >
+                <Settings className="h-3.5 w-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Edit</TooltipContent>
+          </Tooltip>
+          {onCopy && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-7 w-7 bg-card"
+                  onClick={onCopy}
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Copy block</TooltipContent>
+            </Tooltip>
+          )}
           {onSpacingChange && (
             <BlockSpacingControl
               spacing={block.spacing}
@@ -146,14 +169,19 @@ export function BlockWrapper({
               onChange={onAnimationChange}
             />
           )}
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-7 w-7 bg-card hover:bg-destructive hover:text-destructive-foreground hover:border-destructive"
-            onClick={onDelete}
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-7 w-7 bg-card hover:bg-destructive hover:text-destructive-foreground hover:border-destructive"
+                onClick={onDelete}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Delete</TooltipContent>
+          </Tooltip>
         </div>
       )}
 

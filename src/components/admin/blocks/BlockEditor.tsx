@@ -17,6 +17,8 @@ import {
 import { ContentBlock, ContentBlockType, HeroBlockData, TextBlockData, ImageBlockData, CTABlockData, ContactBlockData, LinkGridBlockData, TwoColumnBlockData, InfoBoxBlockData, AccordionBlockData, ArticleGridBlockData, YouTubeBlockData, QuoteBlockData, SeparatorBlockData, GalleryBlockData, StatsBlockData, ChatBlockData, MapBlockData, FormBlockData, PopupBlockData, BookingBlockData, PricingBlockData, TestimonialsBlockData, TeamBlockData, LogosBlockData, ComparisonBlockData, FeaturesBlockData, BlockSpacing, BlockAnimation } from '@/types/cms';
 import { BlockWrapper } from './BlockWrapper';
 import { BlockSelector } from './BlockSelector';
+import { useBlockClipboard } from '@/hooks/useBlockClipboard';
+import { toast } from 'sonner';
 import { HeroBlockEditor } from './HeroBlockEditor';
 import { TextBlockEditor } from './TextBlockEditor';
 import { ImageBlockEditor } from './ImageBlockEditor';
@@ -450,6 +452,21 @@ interface BlockEditorProps {
 
 export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
   const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
+  const { copyBlock, pasteBlock, hasBlock: hasClipboardBlock } = useBlockClipboard();
+
+  const handleCopyBlock = useCallback((block: ContentBlock) => {
+    copyBlock(block);
+    toast.success('Block copied! Paste it on any page.');
+  }, [copyBlock]);
+
+  const handlePasteBlock = useCallback(() => {
+    const block = pasteBlock();
+    if (block) {
+      onChange([...blocks, block]);
+      setEditingBlockId(block.id);
+      toast.success('Block pasted!');
+    }
+  }, [pasteBlock, blocks, onChange]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -917,6 +934,7 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
                 setEditingBlockId(editingBlockId === block.id ? null : block.id)
               }
               onDelete={() => handleDeleteBlock(block.id)}
+              onCopy={() => handleCopyBlock(block)}
               onSpacingChange={(spacing) => handleUpdateBlockSpacing(block.id, spacing)}
               onAnimationChange={(animation) => handleUpdateBlockAnimation(block.id, animation)}
               canEdit={canEdit}
@@ -929,7 +947,7 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
 
       {canEdit && (
         <div className="pt-4">
-          <BlockSelector onAdd={handleAddBlock} />
+          <BlockSelector onAdd={handleAddBlock} onPaste={hasClipboardBlock ? handlePasteBlock : undefined} />
         </div>
       )}
 
