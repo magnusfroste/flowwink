@@ -112,7 +112,8 @@ Available CMS block types:
     Data: { tabs: [{ title: string, content: string }] }
 
 28. table - Data table
-    Data: { title?: string, columns: [{ header: string }], rows: [{ [columnId]: value }] }
+    Data: { title?: string, columns: [{ id: string, header: string, align?: 'left'|'center'|'right' }], rows: [{ [columnId]: string }] }
+    IMPORTANT: Each column MUST have a unique 'id' field (e.g. 'col1', 'col2'). Each row is an object mapping column ids to cell values.
 
 29. countdown - Countdown timer
     Data: { title?: string, targetDate: string }
@@ -1393,6 +1394,61 @@ Respond only with JSON.`;
             return normalizedMember;
           });
         }
+      }
+      
+      // Normalize table block: ensure columns have ids and rows map correctly
+      if (normalizedBlock.type === 'table' && normalizedBlock.data) {
+        const data = normalizedBlock.data as Record<string, unknown>;
+        
+        // Ensure columns have unique ids
+        if (Array.isArray(data.columns)) {
+          data.columns = (data.columns as Record<string, unknown>[]).map((col, colIndex) => ({
+            id: col.id || `col${colIndex + 1}`,
+            header: col.header || col.name || col.title || `Column ${colIndex + 1}`,
+            align: col.align || 'left',
+          }));
+        } else {
+          data.columns = [];
+        }
+        
+        // Normalize rows - handle various AI output formats
+        if (Array.isArray(data.rows)) {
+          const columns = data.columns as Array<{ id: string; header: string }>;
+          data.rows = (data.rows as unknown[]).map((row) => {
+            // If row is already an object with column ids as keys
+            if (row && typeof row === 'object' && !Array.isArray(row)) {
+              const rowObj = row as Record<string, unknown>;
+              const normalizedRow: Record<string, string> = {};
+              columns.forEach((col) => {
+                // Try to find value by column id or header
+                normalizedRow[col.id] = String(rowObj[col.id] ?? rowObj[col.header] ?? '');
+              });
+              return normalizedRow;
+            }
+            // If row is an array of values
+            if (Array.isArray(row)) {
+              const normalizedRow: Record<string, string> = {};
+              columns.forEach((col, colIndex) => {
+                normalizedRow[col.id] = String(row[colIndex] ?? '');
+              });
+              return normalizedRow;
+            }
+            // Fallback: empty row
+            const normalizedRow: Record<string, string> = {};
+            columns.forEach((col) => {
+              normalizedRow[col.id] = '';
+            });
+            return normalizedRow;
+          });
+        } else {
+          data.rows = [];
+        }
+        
+        // Set defaults for styling
+        data.variant = data.variant || 'default';
+        data.size = data.size || 'md';
+        data.stickyHeader = data.stickyHeader ?? false;
+        data.highlightOnHover = data.highlightOnHover ?? true;
       }
       
       return normalizedBlock;
