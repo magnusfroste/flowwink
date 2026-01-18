@@ -103,6 +103,7 @@ export interface MigrationState {
   discoveredLinks: string[];
   isActive: boolean;
   pageTitle: string | null;
+  pageSlug: string | null; // Clean slug from discovered page URL
   // Full site migration phases
   phase: MigrationPhase;
   pagesCompleted: number;
@@ -169,6 +170,7 @@ const initialMigrationState: MigrationState = {
   discoveredLinks: [],
   isActive: false,
   pageTitle: null,
+  pageSlug: null,
   phase: 'idle',
   pagesCompleted: 0,
   pagesTotal: 0,
@@ -379,6 +381,26 @@ export function useCopilot(): UseCopilotReturn {
         baseDomain = new URL(url).origin;
       } catch {}
 
+      // Get slug from discovered page if available, otherwise generate from URL path
+      const discoveredPage = migrationState.siteStructure?.pages.find(p => p.url === url);
+      let pageSlug = discoveredPage?.slug;
+      if (!pageSlug) {
+        // Fallback: generate slug from URL path
+        try {
+          const path = new URL(url).pathname;
+          const segments = path.split('/').filter(Boolean);
+          const lastSegment = segments[segments.length - 1] || 'home';
+          pageSlug = lastSegment
+            .replace(/\.(html|php|aspx?)$/i, '')
+            .toLowerCase()
+            .replace(/[^a-z0-9-]/g, '-')
+            .replace(/-+/g, '-')
+            .replace(/^-|-$/g, '') || 'home';
+        } catch {
+          pageSlug = 'page';
+        }
+      }
+
       setMigrationState(prev => ({
         ...prev,
         sourceUrl: url,
@@ -390,6 +412,7 @@ export function useCopilot(): UseCopilotReturn {
         discoveredLinks: pageUrls,
         isActive: true,
         pageTitle: data.title || 'Untitled Page',
+        pageSlug, // Use clean slug from URL, not from title
         phase: 'pages',
         pagesCompleted: 1,
         pagesTotal: pageUrls.length + 1,
@@ -504,13 +527,14 @@ export function useCopilot(): UseCopilotReturn {
       
       if (approvedBlocks.length > 0) {
         const pageTitle = migrationState.pageTitle || 'Imported Page';
-        const pageSlug = generateSlug(pageTitle);
+        // Use clean slug from URL path (stored in migrationState), not generated from title
+        const pageSlug = migrationState.pageSlug || generateSlug(pageTitle);
         
         // Get pagesTotal from siteStructure (count of selected pages)
         const pagesTotal = migrationState.siteStructure?.pages.filter(p => p.selected !== false).length || migrationState.pagesTotal || 1;
         
         try {
-          // Auto-save page
+          // Auto-save page - show_in_menu: false by default, user can enable manually
           await createPageMutation.mutateAsync({
             title: pageTitle,
             slug: pageSlug,
@@ -520,6 +544,7 @@ export function useCopilot(): UseCopilotReturn {
               data: b.data 
             })) as ContentBlock[],
             status: 'draft',
+            show_in_menu: false, // Don't auto-add to menu
           });
           
           // Check if this is the homepage (source URL ends with "/" or is the base domain)
@@ -657,7 +682,8 @@ export function useCopilot(): UseCopilotReturn {
       if (approvedBlocks.length > 0) {
         // Auto-save with approved blocks
         const pageTitle = migrationState.pageTitle || 'Imported Page';
-        const pageSlug = generateSlug(pageTitle);
+        // Use clean slug from URL path (stored in migrationState), not generated from title
+        const pageSlug = migrationState.pageSlug || generateSlug(pageTitle);
         const pagesCompleted = migrationState.pagesCompleted;
         const pagesTotal = migrationState.pagesTotal;
         
@@ -671,6 +697,7 @@ export function useCopilot(): UseCopilotReturn {
               data: b.data 
             })) as ContentBlock[],
             status: 'draft',
+            show_in_menu: false, // Don't auto-add to menu
           });
           
           if (migrationState.currentPageUrl) {
