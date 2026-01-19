@@ -39,19 +39,19 @@ export function TeamBlockEditor({ data, onChange, isEditing }: TeamBlockEditorPr
     setExpandedMember(newMember.id);
   };
 
-  const updateMember = useCallback((id: string, updates: Partial<TeamMember>) => {
-    onChange({
-      ...data,
-      members: (data.members || []).map((m) => (m.id === id ? { ...m, ...updates } : m)),
-    });
-  }, [data, onChange]);
+  const updateMember = (id: string, updates: Partial<TeamMember>) => {
+    const updatedMembers = (data.members || []).map((m) => 
+      m.id === id ? { ...m, ...updates } : m
+    );
+    onChange({ ...data, members: updatedMembers });
+  };
 
-  const updateMemberPhoto = useCallback((memberId: string, url: string) => {
-    onChange({
-      ...data,
-      members: (data.members || []).map((m) => (m.id === memberId ? { ...m, photo: url } : m)),
-    });
-  }, [data, onChange]);
+  const createPhotoHandler = (memberId: string) => (url: string) => {
+    const updatedMembers = (data.members || []).map((m) => 
+      m.id === memberId ? { ...m, photo: url } : m
+    );
+    onChange({ ...data, members: updatedMembers });
+  };
 
   const removeMember = (id: string) => {
     onChange({ ...data, members: members.filter((m) => m.id !== id) });
@@ -239,7 +239,7 @@ export function TeamBlockEditor({ data, onChange, isEditing }: TeamBlockEditorPr
                     <ImagePickerField
                       key={`photo-${member.id}`}
                       value={member.photo || ''}
-                      onChange={(url) => updateMemberPhoto(member.id, url)}
+                      onChange={createPhotoHandler(member.id)}
                       placeholder="Team member photo URL"
                     />
                   </div>
