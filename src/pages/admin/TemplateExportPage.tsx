@@ -1,10 +1,12 @@
 /**
  * Template Export Page
  * 
- * Allows exporting the current site configuration as a reusable template.
+ * Allows exporting the current site configuration as a reusable template,
+ * and importing templates for modification.
  */
 
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
@@ -31,9 +33,13 @@ import {
   Layers,
   HelpCircle,
   Sparkles,
+  Upload,
 } from 'lucide-react';
 import { useTemplateExport } from '@/hooks/useTemplateExport';
 import { TemplateMetadata } from '@/lib/template-exporter';
+import { TemplateImportDialog } from '@/components/admin/templates/TemplateImportDialog';
+import { StarterTemplate } from '@/data/starter-templates';
+import { toast } from 'sonner';
 
 const CATEGORY_OPTIONS = [
   { value: 'startup', label: 'Startup', icon: Rocket },
@@ -50,19 +56,28 @@ const ICON_OPTIONS = [
 ];
 
 export default function TemplateExportPage() {
+  const navigate = useNavigate();
   const { isExporting, exportResult, exportTemplate, downloadJson, downloadCode, copyToClipboard } = useTemplateExport();
   
   const [metadata, setMetadata] = useState<TemplateMetadata>({
-    id: 'kristallen-dental',
-    name: 'Kristallen Dental Clinic',
-    description: 'Professional dental clinic template with booking, team showcase, and service presentation.',
+    id: 'my-template',
+    name: 'My Site Template',
+    description: 'A custom template exported from my site configuration.',
     category: 'enterprise',
-    icon: 'Heart',
-    tagline: 'Modern dental care with a personal touch',
+    icon: 'Sparkles',
+    tagline: 'Professional and customizable',
   });
 
   const handleExport = async () => {
     await exportTemplate(metadata);
+  };
+
+  const handleImportTemplate = (template: StarterTemplate) => {
+    // Navigate to new site page with the imported template
+    toast.success(`Template "${template.name}" imported successfully!`);
+    // Store template in sessionStorage for the new site page to pick up
+    sessionStorage.setItem('pendingTemplate', JSON.stringify(template));
+    navigate('/admin/new-site');
   };
 
   const getCategoryIcon = (category: string) => {
@@ -74,9 +89,19 @@ export default function TemplateExportPage() {
     <AdminLayout>
       <AdminPageContainer>
         <AdminPageHeader
-          title="Export as Template"
-          description="Create a reusable template from your current site configuration"
-        />
+          title="Template Manager"
+          description="Export your site as a template or import existing templates"
+        >
+          <TemplateImportDialog
+            trigger={
+              <Button variant="outline" className="gap-2">
+                <Upload className="h-4 w-4" />
+                Import Template
+              </Button>
+            }
+            onImport={handleImportTemplate}
+          />
+        </AdminPageHeader>
 
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Configuration Panel */}

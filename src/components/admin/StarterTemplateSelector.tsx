@@ -1,10 +1,11 @@
-import { useState, forwardRef } from 'react';
-import { Rocket, Building2, ShieldCheck, Sparkles, MessageSquare, Check, FileText, Settings, Palette, BookOpen, Bot, Layers } from 'lucide-react';
+import { useState, forwardRef, useEffect } from 'react';
+import { Rocket, Building2, ShieldCheck, Sparkles, MessageSquare, Check, FileText, Settings, Palette, BookOpen, Bot, Layers, Upload } from 'lucide-react';
 import { STARTER_TEMPLATES, StarterTemplate, HelpStyle } from '@/data/starter-templates';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { TemplateImportDialog } from '@/components/admin/templates/TemplateImportDialog';
 import { cn } from '@/lib/utils';
 
 const CATEGORY_COLORS = {
@@ -24,8 +25,8 @@ const CATEGORY_LABELS = {
 };
 
 const HELP_STYLE_LABELS: Record<HelpStyle, string> = {
-  'kb-classic': 'SEO-fokus',
-  'ai-hub': 'AI-chatt',
+  'kb-classic': 'SEO-focus',
+  'ai-hub': 'AI Chat',
   'hybrid': 'KB + AI',
   'none': '',
 };
@@ -42,15 +43,39 @@ const ICON_MAP = {
 interface StarterTemplateSelectorProps {
   onSelectTemplate: (template: StarterTemplate) => void;
   trigger?: React.ReactNode;
+  /** Check sessionStorage for pending imported template on mount */
+  checkPendingImport?: boolean;
 }
 
 export const StarterTemplateSelector = forwardRef<HTMLButtonElement, StarterTemplateSelectorProps>(
-  function StarterTemplateSelector({ onSelectTemplate, trigger }, ref) {
+  function StarterTemplateSelector({ onSelectTemplate, trigger, checkPendingImport = false }, ref) {
   const [open, setOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
+  // Check for pending imported template on mount
+  useEffect(() => {
+    if (checkPendingImport) {
+      const pendingJson = sessionStorage.getItem('pendingTemplate');
+      if (pendingJson) {
+        try {
+          const template = JSON.parse(pendingJson) as StarterTemplate;
+          sessionStorage.removeItem('pendingTemplate');
+          onSelectTemplate(template);
+        } catch (e) {
+          console.error('Failed to parse pending template:', e);
+          sessionStorage.removeItem('pendingTemplate');
+        }
+      }
+    }
+  }, [checkPendingImport, onSelectTemplate]);
+
   const handleSelect = (template: StarterTemplate) => {
     setSelectedId(template.id);
+    onSelectTemplate(template);
+    setOpen(false);
+  };
+
+  const handleImport = (template: StarterTemplate) => {
     onSelectTemplate(template);
     setOpen(false);
   };
@@ -77,9 +102,22 @@ export const StarterTemplateSelector = forwardRef<HTMLButtonElement, StarterTemp
             Site Templates
           </SheetTitle>
           <SheetDescription>
-            Choose a professionally designed template to create your complete website. Each template includes multiple pages, branding, and AI chat configuration.
+            Choose a professionally designed template or import a custom one. Each template includes multiple pages, branding, and AI chat configuration.
           </SheetDescription>
         </SheetHeader>
+
+        {/* Import button */}
+        <div className="mb-4">
+          <TemplateImportDialog
+            trigger={
+              <Button variant="outline" className="w-full gap-2">
+                <Upload className="h-4 w-4" />
+                Import Custom Template (JSON)
+              </Button>
+            }
+            onImport={handleImport}
+          />
+        </div>
 
         <div className="space-y-4">
           {STARTER_TEMPLATES.map((template) => {
