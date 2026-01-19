@@ -82,6 +82,49 @@ function BlogMockup({ variant, className }: { variant: ChannelVariant['blog']; c
   );
 }
 
+function NewsletterBlockPreview({ block }: { block: unknown }) {
+  const b = block as Record<string, unknown>;
+  
+  switch (b.type) {
+    case 'heading':
+      return <h2 className="text-lg font-bold text-foreground">{b.content as string}</h2>;
+      
+    case 'paragraph':
+      return <p className="text-sm text-foreground/90">{b.content as string}</p>;
+      
+    case 'bullet-list':
+      return (
+        <ul className="text-sm list-disc pl-5 space-y-1 text-foreground/90">
+          {(b.items as string[])?.map((item, i) => (
+            <li key={i}>{item}</li>
+          ))}
+        </ul>
+      );
+      
+    case 'callout':
+      return (
+        <div className="bg-primary/10 border-l-4 border-primary p-3 text-sm text-foreground/90 rounded-r">
+          {b.content as string}
+        </div>
+      );
+      
+    case 'cta':
+      return (
+        <div className="text-center py-2">
+          <span className="inline-block bg-primary text-primary-foreground px-4 py-2 rounded text-sm font-medium">
+            {b.text as string}
+          </span>
+        </div>
+      );
+      
+    case 'divider':
+      return <hr className="border-border my-2" />;
+      
+    default:
+      return <div className="text-xs text-muted-foreground italic">[{String(b.type)}]</div>;
+  }
+}
+
 function NewsletterMockup({ variant, className }: { variant: ChannelVariant['newsletter']; className?: string }) {
   if (!variant) return null;
   
@@ -94,11 +137,15 @@ function NewsletterMockup({ variant, className }: { variant: ChannelVariant['new
         <div className="text-xs text-muted-foreground mt-1">{variant.preview_text}</div>
       </div>
       
-      {/* Email body */}
-      <div className="p-6 max-h-64 overflow-y-auto">
-        <div className="text-sm text-muted-foreground">
-          {variant.blocks?.length || 0} content blocks configured
-        </div>
+      {/* Email body - render actual blocks */}
+      <div className="p-6 max-h-80 overflow-y-auto space-y-3">
+        {variant.blocks && variant.blocks.length > 0 ? (
+          variant.blocks.map((block, i) => (
+            <NewsletterBlockPreview key={i} block={block} />
+          ))
+        ) : (
+          <div className="text-sm text-muted-foreground">No content blocks</div>
+        )}
       </div>
     </div>
   );
