@@ -53,7 +53,7 @@ export function CountdownBlock({ data }: CountdownBlockProps) {
     title,
     subtitle,
     targetDate,
-    expiredMessage = 'Tiden har gått ut!',
+    expiredMessage = 'Time has expired!',
     showDays = true,
     showHours = true,
     showMinutes = true,
@@ -64,10 +64,10 @@ export function CountdownBlock({ data }: CountdownBlockProps) {
   } = data;
 
   const defaultLabels = {
-    days: labels.days || 'Dagar',
-    hours: labels.hours || 'Timmar',
-    minutes: labels.minutes || 'Minuter',
-    seconds: labels.seconds || 'Sekunder',
+    days: labels.days || 'Days',
+    hours: labels.hours || 'Hours',
+    minutes: labels.minutes || 'Minutes',
+    seconds: labels.seconds || 'Seconds',
   };
 
   const [timeLeft, setTimeLeft] = useState<TimeLeft>(() =>
@@ -118,7 +118,7 @@ export function CountdownBlock({ data }: CountdownBlockProps) {
     return (
       <section className="py-12">
         <div className="max-w-4xl mx-auto px-4 text-center text-muted-foreground">
-          Ange ett måldatum för nedräkningen
+          Please set a target date for the countdown
         </div>
       </section>
     );

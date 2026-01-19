@@ -10,7 +10,7 @@ interface ComparisonBlockProps {
 function CellValue({ value }: { value: boolean | string }) {
   if (typeof value === 'boolean') {
     return value ? (
-      <Check className="h-5 w-5 text-green-500 mx-auto" />
+      <Check className="h-5 w-5 text-success mx-auto" />
     ) : (
       <X className="h-5 w-5 text-muted-foreground/40 mx-auto" />
     );

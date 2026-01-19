@@ -203,7 +203,7 @@ export function BookingBlock({ data, blockId, pageId }: BookingBlockProps) {
     return (
       <section className={containerClasses}>
         <div className="max-w-md mx-auto text-center py-12">
-          <CheckCircle2 className="h-16 w-16 text-green-500 mx-auto mb-4" />
+          <CheckCircle2 className="h-16 w-16 text-success mx-auto mb-4" />
           <h3 className="text-xl font-semibold mb-2">Request Submitted!</h3>
           <p className="text-muted-foreground">
             {data.successMessage || "Thank you! We'll contact you to confirm your appointment."}

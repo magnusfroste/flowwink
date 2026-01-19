@@ -19,7 +19,7 @@ function StarRating({ rating }: { rating: number }) {
           className={cn(
             'h-4 w-4',
             star <= rating
-              ? 'text-yellow-500 fill-yellow-500'
+              ? 'text-warning fill-warning'
               : 'text-muted-foreground/30'
           )}
         />

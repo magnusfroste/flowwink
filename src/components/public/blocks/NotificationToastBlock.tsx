@@ -183,9 +183,9 @@ export function NotificationToastBlock({ data }: NotificationToastBlockProps) {
           ) : IconComponent ? (
             <div className={cn(
               'w-10 h-10 rounded-full flex items-center justify-center',
-              notification.type === 'purchase' && 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400',
-              notification.type === 'signup' && 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400',
-              notification.type === 'review' && 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400',
+              notification.type === 'purchase' && 'bg-success/10 text-success',
+              notification.type === 'signup' && 'bg-info/10 text-info',
+              notification.type === 'review' && 'bg-warning/10 text-warning',
               notification.type === 'custom' && 'bg-primary/10 text-primary'
             )}>
               <IconComponent className="w-5 h-5" />
