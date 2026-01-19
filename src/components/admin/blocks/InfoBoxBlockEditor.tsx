@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -6,12 +7,10 @@ import { InfoBoxBlockData, TiptapDocument } from '@/types/cms';
 import { Info, CheckCircle, AlertTriangle, Sparkles, icons, Bold, Italic, List, ListOrdered, LucideIcon } from 'lucide-react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
 import { AITextAssistant } from '../AITextAssistant';
 import { AITiptapToolbar } from '../AITiptapToolbar';
 import { getEditorContent, renderToHtml } from '@/lib/tiptap-utils';
-
 const VARIANT_CONFIG = {
   default: {
     label: 'Default',
@@ -63,7 +62,6 @@ export function InfoBoxBlockEditor({ data, isEditing, onChange }: InfoBoxBlockEd
   const editor = useEditor({
     extensions: [
       StarterKit,
-      Link.configure({ openOnClick: false }),
       Placeholder.configure({ placeholder: 'Write your message here...' }),
     ],
     content: getEditorContent(data.content),
@@ -72,6 +70,13 @@ export function InfoBoxBlockEditor({ data, isEditing, onChange }: InfoBoxBlockEd
       onChange({ ...data, content: editor.getJSON() as TiptapDocument });
     },
   });
+
+  // Sync editable state when isEditing changes
+  useEffect(() => {
+    if (editor) {
+      editor.setEditable(isEditing);
+    }
+  }, [editor, isEditing]);
 
   const renderIcon = () => {
     if (data.icon) {
