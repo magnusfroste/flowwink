@@ -11,6 +11,7 @@ import { WelcomeModal } from '@/components/admin/WelcomeModal';
 import { LeadsDashboardWidget } from '@/components/admin/LeadsDashboardWidget';
 import { AeoDashboardWidget } from '@/components/admin/AeoDashboardWidget';
 import { ChatFeedbackDashboardWidget } from '@/components/admin/ChatFeedbackDashboardWidget';
+import { ChatAnalyticsDashboardWidget } from '@/components/admin/ChatAnalyticsDashboardWidget';
 import { LiveSupportDashboardWidget } from '@/components/admin/LiveSupportDashboardWidget';
 import { usePages } from '@/hooks/usePages';
 import { useAuth } from '@/hooks/useAuth';
@@ -113,6 +114,8 @@ export default function AdminDashboard() {
         )}
 
         <AeoDashboardWidget />
+
+        <ChatAnalyticsDashboardWidget />
 
         <ChatFeedbackDashboardWidget />
 
