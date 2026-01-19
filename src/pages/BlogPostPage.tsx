@@ -12,6 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { useBlogPost, useBlogPosts } from "@/hooks/useBlogPosts";
 import { useBlogSettings } from "@/hooks/useSiteSettings";
 import { usePageViewTracker } from "@/hooks/usePageViewTracker";
+import { isTiptapDocument, renderToHtml } from "@/lib/tiptap-utils";
 import NotFound from "./NotFound";
 
 export default function BlogPostPage() {
@@ -174,9 +175,17 @@ export default function BlogPostPage() {
           
           {/* Content */}
           <div className="prose prose-lg dark:prose-invert max-w-none mb-12">
-            {post.content_json.map((block, index) => (
-              <BlockRenderer key={block.id || index} block={block} />
-            ))}
+            {Array.isArray(post.content_json) ? (
+              // Block-based content (standard blog posts)
+              post.content_json.map((block, index) => (
+                <BlockRenderer key={block.id || index} block={block} />
+              ))
+            ) : isTiptapDocument(post.content_json) ? (
+              // Tiptap document (from Content Campaigns)
+              <div dangerouslySetInnerHTML={{ __html: renderToHtml(post.content_json) }} />
+            ) : (
+              <p className="text-muted-foreground">No content available</p>
+            )}
           </div>
           
           {/* Tags */}
