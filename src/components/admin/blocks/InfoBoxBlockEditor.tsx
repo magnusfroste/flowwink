@@ -189,10 +189,12 @@ export function InfoBoxBlockEditor({ data, isEditing, onChange }: InfoBoxBlockEd
                 <div className="flex-1" />
                 <AITiptapToolbar editor={editor} />
               </div>
-              <EditorContent 
-                editor={editor} 
-                className="prose prose-sm max-w-none min-h-[100px] border rounded-md p-3 focus-within:ring-2 focus-within:ring-ring"
-              />
+              <div 
+                className="prose prose-sm max-w-none min-h-[100px] border rounded-md p-3 focus-within:ring-2 focus-within:ring-ring cursor-text"
+                onClick={() => editor.commands.focus()}
+              >
+                <EditorContent editor={editor} />
+              </div>
             </>
           )}
         </div>
