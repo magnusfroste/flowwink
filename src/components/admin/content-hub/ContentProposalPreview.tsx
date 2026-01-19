@@ -225,8 +225,10 @@ export function ContentProposalPreview({ proposal, onClose, onRegenerate }: Cont
                             disabled={isPublishing}
                           >
                             <Send className="h-3 w-3" />
-                            {(channel === 'blog' || channel === 'newsletter') 
-                              ? 'Create Draft' 
+                            {channel === 'blog' 
+                              ? 'Publish'
+                              : channel === 'newsletter'
+                              ? 'Create Draft'
                               : 'Send via Webhook'}
                           </Button>
                         )}

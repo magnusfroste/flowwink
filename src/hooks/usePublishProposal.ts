@@ -54,7 +54,8 @@ async function publishToBlog(
           keywords: variant.seo_keywords,
           proposal_id: proposal.id,
         },
-        status: 'draft', // Create as draft for review
+        status: 'published',
+        published_at: new Date().toISOString(),
         created_by: userId,
         updated_by: userId,
       })
