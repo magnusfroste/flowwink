@@ -5,6 +5,7 @@ import { useChatSettings, useUpdateChatSettings, ChatSettings, ChatAiProvider } 
 import { usePages } from '@/hooks/usePages';
 import { useKbArticles, useKbStats } from '@/hooks/useKnowledgeBase';
 import { useChatFeedbackStats, useChatFeedbackList, useKbArticlesNeedingImprovement, exportFeedbackForFineTuning } from '@/hooks/useChatFeedback';
+import { useChatAnalytics, useChatAnalyticsTrend } from '@/hooks/useChatAnalytics';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,16 +15,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, Save, Cloud, Server, Webhook, Shield, Database, BookOpen, FileText, HelpCircle, ExternalLink, ThumbsUp, ThumbsDown, Download, CheckCircle2, XCircle, AlertTriangle, Wrench, Globe, Headphones, Brain, Gauge } from 'lucide-react';
+import { Loader2, Save, Cloud, Server, Webhook, Shield, Database, BookOpen, FileText, HelpCircle, ExternalLink, ThumbsUp, ThumbsDown, Download, CheckCircle2, XCircle, AlertTriangle, Wrench, Globe, Headphones, Brain, Gauge, BarChart3, TrendingUp, Bot, Users, MessageSquare } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useUnsavedChanges, UnsavedChangesDialog } from '@/hooks/useUnsavedChanges';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useIsOpenAIConfigured, useIsGeminiConfigured } from '@/hooks/useIntegrationStatus';
 import { useIntegrations } from '@/hooks/useIntegrations';
 import { IntegrationWarning } from '@/components/admin/IntegrationWarning';
 import { toast } from 'sonner';
 import { IntegrationsSettings } from '@/hooks/useIntegrations';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 
 // Component to show which AI provider is currently active
 function ActiveProviderIndicator({ 
@@ -132,6 +134,12 @@ export default function ChatSettingsPage() {
   const isOpenAIConfigured = useIsOpenAIConfigured();
   const isGeminiConfigured = useIsGeminiConfigured();
   const { data: integrationSettings } = useIntegrations();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') || 'general';
+
+  const setActiveTab = (tab: string) => {
+    setSearchParams({ tab });
+  };
 
   useEffect(() => {
     if (settings) {
@@ -218,13 +226,14 @@ export default function ChatSettingsPage() {
         </Card>
 
         {formData.enabled && (
-          <Tabs defaultValue="general" className="space-y-6">
-            <TabsList className="grid grid-cols-7 w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            <TabsList className="grid grid-cols-8 w-full">
               <TabsTrigger value="general">General</TabsTrigger>
-              <TabsTrigger value="provider">AI Provider</TabsTrigger>
-              <TabsTrigger value="knowledge">Knowledge Base</TabsTrigger>
+              <TabsTrigger value="provider">Provider</TabsTrigger>
+              <TabsTrigger value="knowledge">Knowledge</TabsTrigger>
               <TabsTrigger value="advanced">Advanced</TabsTrigger>
               <TabsTrigger value="display">Display</TabsTrigger>
+              <TabsTrigger value="analytics">Analytics</TabsTrigger>
               <TabsTrigger value="feedback">Feedback</TabsTrigger>
               <TabsTrigger value="privacy">Privacy</TabsTrigger>
             </TabsList>
@@ -1085,6 +1094,11 @@ export default function ChatSettingsPage() {
               </div>
             </TabsContent>
 
+            {/* Analytics */}
+            <TabsContent value="analytics">
+              <AnalyticsTab saveConversations={formData.saveConversations} />
+            </TabsContent>
+
             {/* Feedback settings */}
             <TabsContent value="feedback">
               <FeedbackTab formData={formData} setFormData={setFormData} />
@@ -1349,6 +1363,249 @@ function KbArticlesInfo() {
             <ExternalLink className="h-3 w-3 ml-1" />
           </Link>
         </Button>
+      </div>
+    </div>
+  );
+}
+
+// Analytics Tab component
+const COLORS = ['#10b981', '#f59e0b', '#6b7280'];
+
+function AnalyticsTab({ saveConversations }: { saveConversations?: boolean }) {
+  const { data: analytics, isLoading: analyticsLoading } = useChatAnalytics(30);
+  const { data: trend, isLoading: trendLoading } = useChatAnalyticsTrend(14);
+
+  if (saveConversations === false) {
+    return (
+      <Alert>
+        <AlertTriangle className="h-4 w-4" />
+        <AlertTitle>Analytics Disabled</AlertTitle>
+        <AlertDescription>
+          Enable "Save Conversations" in the Privacy tab to track chat analytics.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  const pieData = analytics ? [
+    { name: 'AI Resolved', value: analytics.aiResolvedCount, color: '#10b981' },
+    { name: 'Escalated', value: analytics.escalatedCount, color: '#f59e0b' },
+    { name: 'Other', value: Math.max(0, analytics.totalConversations - analytics.aiResolvedCount - analytics.escalatedCount), color: '#6b7280' },
+  ].filter(d => d.value > 0) : [];
+
+  return (
+    <div className="space-y-6">
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <MessageSquare className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                {analyticsLoading ? (
+                  <div className="h-7 w-12 bg-muted animate-pulse rounded" />
+                ) : (
+                  <p className="text-2xl font-bold">{analytics?.totalConversations || 0}</p>
+                )}
+                <p className="text-xs text-muted-foreground">Total conversations</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-muted">
+                <TrendingUp className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div>
+                {analyticsLoading ? (
+                  <div className="h-7 w-12 bg-muted animate-pulse rounded" />
+                ) : (
+                  <p className="text-2xl font-bold">{analytics?.totalMessages || 0}</p>
+                )}
+                <p className="text-xs text-muted-foreground">Total messages</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/50">
+                <Bot className="h-5 w-5 text-green-600" />
+              </div>
+              <div>
+                {analyticsLoading ? (
+                  <div className="h-7 w-12 bg-muted animate-pulse rounded" />
+                ) : (
+                  <p className="text-2xl font-bold text-green-600">{analytics?.aiResolutionRate || 0}%</p>
+                )}
+                <p className="text-xs text-muted-foreground">AI resolution rate</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/50">
+                <Users className="h-5 w-5 text-amber-600" />
+              </div>
+              <div>
+                {analyticsLoading ? (
+                  <div className="h-7 w-12 bg-muted animate-pulse rounded" />
+                ) : (
+                  <p className="text-2xl font-bold text-amber-600">{analytics?.escalatedCount || 0}</p>
+                )}
+                <p className="text-xs text-muted-foreground">Escalated to agent</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Trend Chart */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5" />
+            Conversation Trend (14 days)
+          </CardTitle>
+          <CardDescription>Daily conversation volume and outcomes</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {trendLoading ? (
+            <div className="flex items-center justify-center h-64">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : trend && trend.length > 0 ? (
+            <ResponsiveContainer width="100%" height={280}>
+              <LineChart data={trend} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis dataKey="date" className="text-xs" tick={{ fontSize: 12 }} />
+                <YAxis className="text-xs" tick={{ fontSize: 12 }} />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'hsl(var(--background))', 
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px'
+                  }} 
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="conversations" 
+                  stroke="hsl(var(--primary))" 
+                  strokeWidth={2}
+                  dot={{ fill: 'hsl(var(--primary))' }}
+                  name="Conversations"
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="resolved" 
+                  stroke="#10b981" 
+                  strokeWidth={2}
+                  dot={{ fill: '#10b981' }}
+                  name="AI Resolved"
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="escalated" 
+                  stroke="#f59e0b" 
+                  strokeWidth={2}
+                  dot={{ fill: '#f59e0b' }}
+                  name="Escalated"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex items-center justify-center h-64 text-muted-foreground">
+              No data available yet
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Resolution Breakdown */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Resolution Breakdown</CardTitle>
+            <CardDescription>How conversations are being handled</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {analyticsLoading ? (
+              <div className="flex items-center justify-center h-48">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : pieData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={200}>
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={80}
+                    paddingAngle={2}
+                    dataKey="value"
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    labelLine={false}
+                  >
+                    {pieData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-48 text-muted-foreground">
+                No data available yet
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Conversation Stats</CardTitle>
+            <CardDescription>Additional metrics from the last 30 days</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {analyticsLoading ? (
+              <div className="space-y-3">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="h-12 bg-muted animate-pulse rounded" />
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 rounded-lg border">
+                  <span className="text-sm text-muted-foreground">Conversations today</span>
+                  <span className="text-lg font-semibold">{analytics?.conversationsToday || 0}</span>
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg border">
+                  <span className="text-sm text-muted-foreground">Conversations this week</span>
+                  <span className="text-lg font-semibold">{analytics?.conversationsThisWeek || 0}</span>
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg border">
+                  <span className="text-sm text-muted-foreground">Avg. messages per conversation</span>
+                  <span className="text-lg font-semibold">{analytics?.averageMessagesPerConversation || 0}</span>
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg border">
+                  <span className="text-sm text-muted-foreground">AI resolved count</span>
+                  <span className="text-lg font-semibold text-green-600">{analytics?.aiResolvedCount || 0}</span>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
