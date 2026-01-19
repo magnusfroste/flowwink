@@ -888,6 +888,119 @@ Always use tools when they can help answer the user's question - do not say you 
         console.error('Local AI error response:', errorText);
         throw new Error(`Local AI request failed: ${response.status} - ${errorText}`);
       }
+
+      // Handle tool calls for local AI (same as OpenAI)
+      if (tools.length > 0) {
+        const clonedResponse = response.clone();
+        const localReader = clonedResponse.body?.getReader();
+        const localDecoder = new TextDecoder();
+        let localFullContent = '';
+        let localToolCalls: ToolCall[] = [];
+
+        if (localReader) {
+          let localBuffer = '';
+          while (true) {
+            const { done, value } = await localReader.read();
+            if (done) break;
+            
+            localBuffer += localDecoder.decode(value, { stream: true });
+            const localLines = localBuffer.split('\n');
+            localBuffer = localLines.pop() || '';
+
+            for (const line of localLines) {
+              if (!line.startsWith('data: ') || line === 'data: [DONE]') continue;
+              try {
+                const parsed = JSON.parse(line.slice(6));
+                const delta = parsed.choices?.[0]?.delta;
+                
+                if (delta?.content) {
+                  localFullContent += delta.content;
+                }
+                
+                if (delta?.tool_calls) {
+                  for (const tc of delta.tool_calls) {
+                    if (tc.index !== undefined) {
+                      if (!localToolCalls[tc.index]) {
+                        localToolCalls[tc.index] = {
+                          id: tc.id || '',
+                          type: 'function',
+                          function: { name: '', arguments: '' }
+                        };
+                      }
+                      if (tc.id) localToolCalls[tc.index].id = tc.id;
+                      if (tc.function?.name) localToolCalls[tc.index].function.name = tc.function.name;
+                      if (tc.function?.arguments) localToolCalls[tc.index].function.arguments += tc.function.arguments;
+                    }
+                  }
+                }
+              } catch (e) {
+                // Ignore parse errors
+              }
+            }
+          }
+        }
+
+        // If there are tool calls, execute them and make another request
+        if (localToolCalls.length > 0 && localToolCalls[0]?.function?.name) {
+          console.log('Local AI tool calls detected:', localToolCalls);
+          
+          // Execute each tool call
+          const localToolResults: ChatMessage[] = [];
+          for (const tc of localToolCalls) {
+            try {
+              const args = JSON.parse(tc.function.arguments);
+              const result = await executeToolCall(
+                tc.function.name, 
+                args, 
+                conversationId,
+                customerEmail,
+                customerName
+              );
+              
+              localToolResults.push({
+                role: 'tool',
+                tool_call_id: tc.id,
+                content: result,
+              });
+            } catch (error) {
+              console.error('Local AI tool execution error:', error);
+              localToolResults.push({
+                role: 'tool',
+                tool_call_id: tc.id,
+                content: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              });
+            }
+          }
+
+          // Add assistant message with tool calls and tool results
+          const localAssistantMessage: ChatMessage = {
+            role: 'assistant',
+            content: localFullContent || '',
+            tool_calls: localToolCalls,
+          };
+
+          const localFollowUpMessages = [
+            ...fullMessages,
+            localAssistantMessage,
+            ...localToolResults,
+          ];
+
+          // Make follow-up request to local AI
+          const localFollowUpResponse = await fetch(fullUrl, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+              model,
+              messages: localFollowUpMessages,
+              stream: true,
+            }),
+          });
+
+          return new Response(localFollowUpResponse.body, {
+            headers: { ...corsHeaders, 'Content-Type': 'text/event-stream' },
+          });
+        }
+      }
     } else if (aiProvider === 'n8n') {
       const n8nConfig = aiIntegrations?.n8n?.config || {};
       const webhookUrl = settings?.n8nWebhookUrl || n8nConfig?.webhookUrl;
