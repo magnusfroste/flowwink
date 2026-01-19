@@ -106,32 +106,32 @@ export function CTABlock({ data }: CTABlockProps) {
             className="w-full h-full object-cover"
           />
           <div
-            className="absolute inset-0 bg-black"
+            className="absolute inset-0 bg-foreground"
             style={{ opacity: overlayOpacity }}
           />
         </div>
         
         {/* Content */}
         <div className="relative container mx-auto text-center max-w-3xl">
-          <h2 className="font-serif text-3xl md:text-4xl font-bold mb-4 text-white">
+          <h2 className="font-serif text-3xl md:text-4xl font-bold mb-4 text-background">
             {data.title}
           </h2>
           {data.subtitle && (
-            <p className="text-lg text-white/90 mb-8">
+            <p className="text-lg text-background/90 mb-8">
               {data.subtitle}
             </p>
           )}
           <div className="flex flex-wrap justify-center gap-4">
             <a
               href={data.buttonUrl}
-              className="inline-flex items-center justify-center px-8 py-3 bg-white text-black font-medium rounded-lg hover:bg-white/90 transition-colors"
+              className="inline-flex items-center justify-center px-8 py-3 bg-background text-foreground font-medium rounded-lg hover:bg-background/90 transition-colors"
             >
               {data.buttonText}
             </a>
             {data.secondaryButtonText && data.secondaryButtonUrl && (
               <a
                 href={data.secondaryButtonUrl}
-                className="inline-flex items-center justify-center px-8 py-3 border-2 border-white text-white font-medium rounded-lg hover:bg-white/10 transition-colors"
+                className="inline-flex items-center justify-center px-8 py-3 border-2 border-background text-background font-medium rounded-lg hover:bg-background/10 transition-colors"
               >
                 {data.secondaryButtonText}
               </a>

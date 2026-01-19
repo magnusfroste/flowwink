@@ -227,7 +227,7 @@ export function FormBlock({ data, blockId, pageId }: FormBlockProps) {
         <div className="container max-w-2xl mx-auto px-4">
           <Card className="text-center py-12">
             <CardContent>
-              <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+              <CheckCircle className="h-16 w-16 text-success mx-auto mb-4" />
               <p className="text-lg text-foreground whitespace-pre-line">
                 {data.successMessage || 'Thank you! Your message has been sent.'}
               </p>

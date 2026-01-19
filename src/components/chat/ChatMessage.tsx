@@ -83,20 +83,20 @@ export function ChatMessage({
           }
           // Fallback to person icon if no avatar URL
           return (
-            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center">
-              <User className="w-4 h-4 text-green-600 dark:text-green-400" />
+            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-success/10 flex items-center justify-center">
+              <User className="w-4 h-4 text-success" />
             </div>
           );
         case 'person':
           return (
-            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center">
-              <User className="w-4 h-4 text-green-600 dark:text-green-400" />
+            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-success/10 flex items-center justify-center">
+              <User className="w-4 h-4 text-success" />
             </div>
           );
         case 'headphones':
           return (
-            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center">
-              <Headphones className="w-4 h-4 text-green-600 dark:text-green-400" />
+            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-success/10 flex items-center justify-center">
+              <Headphones className="w-4 h-4 text-success" />
             </div>
           );
       }
@@ -138,11 +138,11 @@ export function ChatMessage({
             <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+              className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-foreground"
               onClick={handleCopy}
             >
               {copied ? (
-                <Check className="h-3.5 w-3.5 text-green-500" />
+                <Check className="h-3.5 w-3.5 text-success" />
               ) : (
                 <Copy className="h-3.5 w-3.5" />
               )}

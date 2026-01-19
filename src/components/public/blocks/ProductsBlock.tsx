@@ -25,7 +25,7 @@ export function ProductsBlock({ data }: ProductsBlockProps) {
   const { toast } = useToast();
 
   const columns = data.columns || 3;
-  const buttonText = data.buttonText || 'Lägg i varukorg';
+  const buttonText = data.buttonText || 'Add to cart';
 
   // Filter active products and optionally by type
   const filteredProducts = products
@@ -41,8 +41,8 @@ export function ProductsBlock({ data }: ProductsBlockProps) {
       imageUrl: product.image_url,
     });
     toast({
-      title: 'Tillagd i varukorgen',
-      description: `${product.name} har lagts till`,
+      title: 'Added to cart',
+      description: `${product.name} has been added`,
     });
   };
 
@@ -132,7 +132,7 @@ export function ProductsBlock({ data }: ProductsBlockProps) {
                   <span className="text-xl font-bold">
                     {formatPrice(product.price_cents, product.currency)}
                     {product.type === 'recurring' && (
-                      <span className="text-sm font-normal text-muted-foreground">/mån</span>
+                      <span className="text-sm font-normal text-muted-foreground">/mo</span>
                     )}
                   </span>
                   <Button

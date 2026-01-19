@@ -41,7 +41,7 @@ export function ContactBlock({ data }: ContactBlockProps) {
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <Clock className="h-5 w-5 text-primary" />
-                <span className="font-medium">Öppettider</span>
+                <span className="font-medium">Opening Hours</span>
               </div>
               <div className="space-y-2">
                 {data.hours.map((item, index) => (
