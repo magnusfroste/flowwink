@@ -12,26 +12,32 @@ export interface ChannelVariant {
     excerpt: string;
     body: string;
     seo_keywords: string[];
+    image_override?: string;
   };
   newsletter?: {
     subject: string;
     preview_text: string;
     blocks: unknown[];
+    image_override?: string;
   };
   linkedin?: {
     text: string;
     hashtags: string[];
+    image_override?: string;
   };
   instagram?: {
     caption: string;
     hashtags: string[];
     suggested_image_prompt: string;
+    image_override?: string;
   };
   twitter?: {
     thread: string[];
+    image_override?: string;
   };
   facebook?: {
     text: string;
+    image_override?: string;
   };
   print?: {
     format: string;
@@ -47,6 +53,7 @@ export interface ContentProposal {
   topic: string;
   source_research: Record<string, unknown>;
   pillar_content: string | null;
+  featured_image: string | null;
   channel_variants: ChannelVariant;
   scheduled_for: string | null;
   created_by: string | null;
@@ -55,9 +62,26 @@ export interface ContentProposal {
   published_channels: string[];
 }
 
+/**
+ * Get effective image for a channel with smart inheritance
+ * Returns channel-specific override if set, otherwise falls back to featured_image
+ */
+export function getChannelImage(
+  proposal: ContentProposal,
+  channel: ChannelType
+): string | null {
+  const variant = proposal.channel_variants?.[channel];
+  const override = variant && 'image_override' in variant
+    ? (variant as { image_override?: string }).image_override
+    : undefined;
+
+  return override || proposal.featured_image || null;
+}
+
 interface CreateProposalInput {
   topic: string;
   pillar_content?: string;
+  featured_image?: string | null;
   channel_variants?: ChannelVariant;
   scheduled_for?: string;
 }
@@ -67,6 +91,7 @@ interface UpdateProposalInput {
   topic?: string;
   status?: ProposalStatus;
   pillar_content?: string;
+  featured_image?: string | null;
   channel_variants?: ChannelVariant;
   scheduled_for?: string | null;
   approved_by?: string;
@@ -124,6 +149,7 @@ export function useCreateProposal() {
       const insertData = {
         topic: input.topic,
         pillar_content: input.pillar_content,
+        featured_image: input.featured_image,
         channel_variants: (input.channel_variants || {}) as unknown as Record<string, unknown>,
         scheduled_for: input.scheduled_for,
         created_by: user?.id,

@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/tooltip';
 import { useCreateProposal, ChannelType } from '@/hooks/useContentProposals';
 import { ChannelIcon, ALL_CHANNELS, getChannelConfig, INTERNAL_CHANNELS } from './ChannelIcon';
+import { FeaturedImagePicker } from './FeaturedImagePicker';
 import { useModules } from '@/hooks/useModules';
 import { cn } from '@/lib/utils';
 
@@ -33,6 +34,7 @@ interface CreateProposalDialogProps {
 export function CreateProposalDialog({ open, onOpenChange, onSuccess }: CreateProposalDialogProps) {
   const [topic, setTopic] = useState('');
   const [pillarContent, setPillarContent] = useState('');
+  const [featuredImage, setFeaturedImage] = useState<string | null>(null);
   const [selectedChannels, setSelectedChannels] = useState<ChannelType[]>(['blog', 'newsletter', 'linkedin']);
   const [useAI, setUseAI] = useState(true);
 
@@ -134,6 +136,7 @@ export function CreateProposalDialog({ open, onOpenChange, onSuccess }: CreatePr
     const result = await createProposal.mutateAsync({
       topic,
       pillar_content: pillarContent,
+      featured_image: featuredImage,
       channel_variants,
     });
 
@@ -141,6 +144,7 @@ export function CreateProposalDialog({ open, onOpenChange, onSuccess }: CreatePr
       onOpenChange(false);
       setTopic('');
       setPillarContent('');
+      setFeaturedImage(null);
       onSuccess?.(result.id);
     }
   };
@@ -188,6 +192,12 @@ export function CreateProposalDialog({ open, onOpenChange, onSuccess }: CreatePr
             />
           </div>
 
+          {/* Featured Image */}
+          <FeaturedImagePicker
+            value={featuredImage}
+            onChange={setFeaturedImage}
+            inheritedChannelCount={selectedChannels.length}
+          />
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label>Target Channels</Label>

@@ -10,9 +10,10 @@ import {
   Edit,
   Send,
   Rocket,
-  ExternalLink
+  ExternalLink,
+  Image
 } from 'lucide-react';
-import { ContentProposal, ChannelType, useApproveProposal } from '@/hooks/useContentProposals';
+import { ContentProposal, ChannelType, useApproveProposal, getChannelImage } from '@/hooks/useContentProposals';
 import { usePublishProposalChannel, usePublishAllChannels } from '@/hooks/usePublishProposal';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +21,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ChannelIcon, ALL_CHANNELS, getChannelConfig } from './ChannelIcon';
 import { ChannelMockup } from './ChannelMockup';
+import { ChannelImageOverride } from './FeaturedImagePicker';
 import { cn } from '@/lib/utils';
 
 interface ContentProposalPreviewProps {
@@ -138,6 +140,26 @@ export function ContentProposalPreview({ proposal, onClose, onRegenerate }: Cont
         )}
       </div>
 
+      {/* Featured Image */}
+      {proposal.featured_image && (
+        <div className="flex-shrink-0 border-b p-4 bg-muted/30">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium flex items-center gap-2">
+              <Image className="h-4 w-4" />
+              Featured Image
+            </h3>
+            <span className="text-xs text-muted-foreground">
+              Inherited by {activeChannels.length} channel{activeChannels.length !== 1 ? 's' : ''}
+            </span>
+          </div>
+          <img
+            src={proposal.featured_image}
+            alt="Featured"
+            className="w-full max-h-32 object-cover rounded-lg"
+          />
+        </div>
+      )}
+
       {/* Pillar content */}
       {proposal.pillar_content && (
         <div className="flex-shrink-0 border-b p-4 bg-muted/30">
@@ -252,6 +274,7 @@ export function ContentProposalPreview({ proposal, onClose, onRegenerate }: Cont
                     <ChannelMockup 
                       channel={channel as ChannelType} 
                       variant={proposal.channel_variants?.[channel as ChannelType]}
+                      imageUrl={getChannelImage(proposal, channel as ChannelType)}
                     />
                   </div>
                 </TabsContent>

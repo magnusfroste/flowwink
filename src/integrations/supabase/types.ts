@@ -682,6 +682,7 @@ export type Database = {
           channel_variants: Json | null
           created_at: string
           created_by: string | null
+          featured_image: string | null
           id: string
           pillar_content: string | null
           published_channels: string[] | null
@@ -697,6 +698,7 @@ export type Database = {
           channel_variants?: Json | null
           created_at?: string
           created_by?: string | null
+          featured_image?: string | null
           id?: string
           pillar_content?: string | null
           published_channels?: string[] | null
@@ -712,6 +714,7 @@ export type Database = {
           channel_variants?: Json | null
           created_at?: string
           created_by?: string | null
+          featured_image?: string | null
           id?: string
           pillar_content?: string | null
           published_channels?: string[] | null

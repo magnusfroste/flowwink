@@ -5,3 +5,4 @@ export { ContentProposalPreview } from './ContentProposalPreview';
 export { CreateProposalDialog } from './CreateProposalDialog';
 export { AIProposalDialog } from './AIProposalDialog';
 export { CampaignsDashboard } from './CampaignsDashboard';
+export { FeaturedImagePicker, ChannelImageOverride } from './FeaturedImagePicker';

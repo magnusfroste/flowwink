@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ContentProposal, ChannelType, ChannelVariant } from './useContentProposals';
+import { ContentProposal, ChannelType, ChannelVariant, getChannelImage } from './useContentProposals';
 import { moduleRegistry } from '@/lib/module-registry';
 import type { BlogModuleInput, BlogModuleOutput, NewsletterModuleInput, NewsletterModuleOutput } from '@/types/module-contracts';
 
@@ -26,11 +26,15 @@ async function publishToBlog(
   }
 
   try {
+    // Get the effective image for this channel (respects overrides)
+    const channelImage = getChannelImage(proposal, 'blog');
+    
     // Use Module Registry for validated, consistent publishing
     const input: BlogModuleInput = {
       title: variant.title,
       content: variant.body, // Module will wrap in Tiptap format
       excerpt: variant.excerpt,
+      featured_image: channelImage || undefined,
       meta: {
         source_module: 'content-campaign',
         source_id: proposal.id,
@@ -227,6 +231,9 @@ export function usePublishProposalChannel() {
       // Handle external channels (social media) via webhook
       // These will be sent to external systems like n8n for processing
       try {
+        // Get the effective image for this channel
+        const channelImage = getChannelImage(proposal, channel);
+        
         await supabase.functions.invoke('send-webhook', {
           body: {
             event: 'form.submitted', // Using existing event as workaround
@@ -236,6 +243,7 @@ export function usePublishProposalChannel() {
               proposal_id: proposal.id,
               topic: proposal.topic,
               content: variant,
+              image_url: channelImage,
               published_at: new Date().toISOString(),
             },
           },
@@ -308,6 +316,9 @@ export function usePublishAllChannels() {
         } else {
           // External channels via webhook
           try {
+            // Get the effective image for this channel
+            const channelImage = getChannelImage(proposal, channel);
+            
             await supabase.functions.invoke('send-webhook', {
               body: {
                 event: 'form.submitted',
@@ -317,6 +328,7 @@ export function usePublishAllChannels() {
                   proposal_id: proposal.id,
                   topic: proposal.topic,
                   content: variant,
+                  image_url: channelImage,
                   published_at: new Date().toISOString(),
                 },
               },
