@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
+import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
+import { StatCard } from '@/components/admin/StatCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -59,7 +61,7 @@ export default function DealsPage() {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <AdminPageContainer>
         <AdminPageHeader
           title="Deals"
           description="Manage your sales pipeline and opportunities"
@@ -87,65 +89,38 @@ export default function DealsPage() {
 
         {/* Stats Cards */}
         <div className="grid gap-4 md:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pipeline Value</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {stats ? formatPrice(stats.totalPipeline) : <Skeleton className="h-8 w-24" />}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Active opportunities
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">In Proposal</CardTitle>
-              <Briefcase className="h-4 w-4 text-blue-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {stats ? stats.proposal.count : <Skeleton className="h-8 w-12" />}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {stats ? formatPrice(stats.proposal.value) : ''}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">In Negotiation</CardTitle>
-              <Briefcase className="h-4 w-4 text-yellow-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {stats ? stats.negotiation.count : <Skeleton className="h-8 w-12" />}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {stats ? formatPrice(stats.negotiation.value) : ''}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Won This Period</CardTitle>
-              <Trophy className="h-4 w-4 text-green-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {stats ? stats.closed_won.count : <Skeleton className="h-8 w-12" />}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {stats ? formatPrice(stats.closed_won.value) : ''}
-              </p>
-            </CardContent>
-          </Card>
+          <StatCard
+            label="Pipeline Value"
+            value={stats ? formatPrice(stats.totalPipeline) : null}
+            icon={TrendingUp}
+            variant="primary"
+            isLoading={!stats}
+            subtext="Active opportunities"
+          />
+          <StatCard
+            label="In Proposal"
+            value={stats?.proposal.count}
+            icon={Briefcase}
+            variant="default"
+            isLoading={!stats}
+            subtext={stats ? formatPrice(stats.proposal.value) : ''}
+          />
+          <StatCard
+            label="In Negotiation"
+            value={stats?.negotiation.count}
+            icon={Briefcase}
+            variant="warning"
+            isLoading={!stats}
+            subtext={stats ? formatPrice(stats.negotiation.value) : ''}
+          />
+          <StatCard
+            label="Won This Period"
+            value={stats?.closed_won.count}
+            icon={Trophy}
+            variant="success"
+            isLoading={!stats}
+            subtext={stats ? formatPrice(stats.closed_won.value) : ''}
+          />
         </div>
 
         {/* Kanban View */}
@@ -294,12 +269,12 @@ export default function DealsPage() {
             )}
           </>
         )}
-      </div>
 
-      <CreateDealDialogWithLeadPicker
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-      />
+        <CreateDealDialogWithLeadPicker
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+        />
+      </AdminPageContainer>
     </AdminLayout>
   );
 }

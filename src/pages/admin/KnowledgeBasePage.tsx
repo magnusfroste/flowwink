@@ -1,14 +1,17 @@
 import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Folder, FileText, MessageSquare, Search, MoreHorizontal, Pencil, Trash2, Check, X } from "lucide-react";
+import { Plus, Folder, FileText, MessageSquare, Search, MoreHorizontal, Pencil, Trash2, Check, X, AlertTriangle } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { AdminPageContainer } from "@/components/admin/AdminPageContainer";
+import { StatCardCompact } from "@/components/admin/StatCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,6 +37,7 @@ import {
   useKbStats,
   useBulkUpdateKbArticlesChatStatus,
 } from "@/hooks/useKnowledgeBase";
+import { useIsModuleEnabled } from "@/hooks/useModules";
 import { KbCategoryDialog } from "@/components/admin/kb/KbCategoryDialog";
 
 export default function KnowledgeBasePage() {
@@ -98,9 +102,11 @@ export default function KnowledgeBasePage() {
     setDeleteDialog(null);
   };
 
+  const chatModuleEnabled = useIsModuleEnabled('chat');
+
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <AdminPageContainer>
         <AdminPageHeader
           title="Knowledge Base"
           description="Manage FAQ articles and categories for your help center and AI chat"
@@ -119,27 +125,21 @@ export default function KnowledgeBasePage() {
 
         {/* Stats */}
         <div className="grid gap-4 sm:grid-cols-3">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Categories</CardDescription>
-              <CardTitle className="text-2xl">{stats?.categories ?? '—'}</CardTitle>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Published Articles</CardDescription>
-              <CardTitle className="text-2xl">{stats?.articles ?? '—'}</CardTitle>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription className="flex items-center gap-1">
-                <MessageSquare className="h-3.5 w-3.5" />
-                In AI Chat Context
-              </CardDescription>
-              <CardTitle className="text-2xl">{stats?.chatArticles ?? '—'}</CardTitle>
-            </CardHeader>
-          </Card>
+          <StatCardCompact
+            label="Categories"
+            value={stats?.categories}
+            variant="default"
+          />
+          <StatCardCompact
+            label="Published Articles"
+            value={stats?.articles}
+            variant="default"
+          />
+          <StatCardCompact
+            label="In AI Chat Context"
+            value={stats?.chatArticles}
+            variant={chatModuleEnabled ? 'primary' : 'muted'}
+          />
         </div>
 
         <div className="grid gap-6 lg:grid-cols-4">
@@ -344,7 +344,7 @@ export default function KnowledgeBasePage() {
             )}
           </div>
         </div>
-      </div>
+      </AdminPageContainer>
 
       {/* Category Dialog */}
       <KbCategoryDialog

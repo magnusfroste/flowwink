@@ -5,6 +5,7 @@ import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Clock, User,
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
+import { StatCard } from '@/components/admin/StatCard';
 import { useBookings, useBookingServices, useUpdateBooking, useDeleteBooking, useBookingStats, type Booking } from '@/hooks/useBookings';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,10 +27,10 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
-  confirmed: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-  cancelled: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-  completed: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+  pending: 'bg-warning/10 text-warning dark:bg-warning/20',
+  confirmed: 'bg-success/10 text-success dark:bg-success/20',
+  cancelled: 'bg-destructive/10 text-destructive dark:bg-destructive/20',
+  completed: 'bg-primary/10 text-primary dark:bg-primary/20',
 };
 
 export default function BookingsPage() {
@@ -115,38 +116,30 @@ export default function BookingsPage() {
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">This Month</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats?.total || 0}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Upcoming</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats?.upcoming || 0}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Pending</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{stats?.pending || 0}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Cancelled</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">{stats?.cancelled || 0}</div>
-          </CardContent>
-        </Card>
+        <StatCard
+          label="This Month"
+          value={stats?.total || 0}
+          icon={CalendarIcon}
+          variant="default"
+        />
+        <StatCard
+          label="Upcoming"
+          value={stats?.upcoming || 0}
+          icon={Clock}
+          variant="success"
+        />
+        <StatCard
+          label="Pending"
+          value={stats?.pending || 0}
+          icon={Clock}
+          variant="warning"
+        />
+        <StatCard
+          label="Cancelled"
+          value={stats?.cancelled || 0}
+          icon={X}
+          variant="destructive"
+        />
       </div>
 
       {/* Toolbar */}
