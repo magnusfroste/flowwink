@@ -63,6 +63,33 @@ Each module declares its capabilities:
 
 ---
 
+## Module Dependencies
+
+Some modules have dependencies on other modules. When a parent module is disabled, dependent modules are automatically disabled as well. When enabling a dependent module, its parent is automatically enabled.
+
+| Dependent Module | Requires |
+|------------------|----------|
+| Orders | Products |
+| Deals | Leads |
+| Live Support | Chat |
+
+### Block-to-Module Mapping
+
+Certain content blocks require their associated module to be enabled. When the required module is disabled, the block remains visible in the Block Selector but shows a warning indicator. Users can still add the block, but it may not function correctly.
+
+| Block Type | Required Module |
+|------------|-----------------|
+| `article-grid` | Blog |
+| `chat` | AI Chat |
+| `newsletter` | Newsletter |
+| `booking` | Bookings |
+| `products`, `cart` | Products |
+| `kb-featured`, `kb-hub`, `kb-search`, `kb-accordion` | Knowledge Base |
+
+This "hybrid guard" approach provides visual feedback without blocking the user, keeping the system flexible while preventing silent errors.
+
+---
+
 ## Module Definitions
 
 ### Blog Module
