@@ -111,6 +111,17 @@ const navigationGroups: NavGroup[] = [
     ],
   },
   {
+    label: "Marketing",
+    adminOnly: true,
+    items: [
+      { name: "Newsletter", href: "/admin/newsletter", icon: Mail, moduleId: "newsletter" },
+      { name: "Form Submissions", href: "/admin/forms", icon: Inbox, moduleId: "forms" },
+      { name: "Campaigns", href: "/admin/campaigns", icon: Megaphone, moduleId: "contentApi" },
+      { name: "AI Chat", href: "/admin/chat", icon: MessageSquare, moduleId: "chat" },
+      { name: "Live Support", href: "/admin/live-support", icon: Headphones, moduleId: "liveSupport" },
+    ],
+  },
+  {
     label: "CRM",
     adminOnly: true,
     items: [
@@ -120,17 +131,6 @@ const navigationGroups: NavGroup[] = [
       { name: "Bookings", href: "/admin/bookings", icon: CalendarDays, moduleId: "bookings" },
       { name: "Products", href: "/admin/products", icon: Package, moduleId: "products" },
       { name: "Orders", href: "/admin/orders", icon: ShoppingCart, moduleId: "orders" },
-    ],
-  },
-  {
-    label: "Marketing",
-    adminOnly: true,
-    items: [
-      { name: "Newsletter", href: "/admin/newsletter", icon: Mail, moduleId: "newsletter" },
-      { name: "Form Submissions", href: "/admin/forms", icon: Inbox, moduleId: "forms" },
-      { name: "Campaigns", href: "/admin/campaigns", icon: Megaphone, moduleId: "contentApi" },
-      { name: "AI Chat", href: "/admin/chat", icon: MessageSquare, moduleId: "chat" },
-      { name: "Live Support", href: "/admin/live-support", icon: Headphones, moduleId: "liveSupport" },
     ],
   },
   {
