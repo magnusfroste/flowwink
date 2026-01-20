@@ -322,6 +322,202 @@ export const kbArticleModuleOutputSchema = z.object({
 export type KBArticleModuleOutput = z.infer<typeof kbArticleModuleOutputSchema>;
 
 // =============================================================================
+// Products Module
+// =============================================================================
+
+export const productModuleInputSchema = z.object({
+  // Required
+  name: z.string().min(1).max(200),
+  price_cents: z.number().min(0),
+  
+  // Optional
+  description: z.string().max(2000).optional(),
+  image_url: z.string().url().optional().or(z.literal('')),
+  currency: z.string().length(3).default('USD'),
+  type: z.enum(['one_time', 'recurring']).default('one_time'),
+  is_active: z.boolean().default(true),
+  stripe_price_id: z.string().optional(),
+  
+  // Metadata
+  meta: moduleMetaSchema.optional(),
+});
+
+export type ProductModuleInput = z.infer<typeof productModuleInputSchema>;
+
+export const productModuleOutputSchema = z.object({
+  success: z.boolean(),
+  id: z.string().uuid().optional(),
+  name: z.string().optional(),
+  price_cents: z.number().optional(),
+  error: z.string().optional(),
+});
+
+export type ProductModuleOutput = z.infer<typeof productModuleOutputSchema>;
+
+// =============================================================================
+// Booking Module
+// =============================================================================
+
+export const bookingModuleInputSchema = z.object({
+  // Required
+  customer_name: z.string().min(1).max(200),
+  customer_email: z.string().email(),
+  start_time: z.string().datetime(),
+  end_time: z.string().datetime(),
+  
+  // Optional
+  customer_phone: z.string().optional(),
+  service_id: z.string().uuid().optional(),
+  notes: z.string().max(1000).optional(),
+  status: z.enum(['pending', 'confirmed', 'cancelled', 'completed']).default('pending'),
+  
+  // Metadata
+  meta: moduleMetaSchema.optional(),
+});
+
+export type BookingModuleInput = z.infer<typeof bookingModuleInputSchema>;
+
+export const bookingModuleOutputSchema = z.object({
+  success: z.boolean(),
+  id: z.string().uuid().optional(),
+  status: z.string().optional(),
+  confirmation_sent: z.boolean().optional(),
+  error: z.string().optional(),
+});
+
+export type BookingModuleOutput = z.infer<typeof bookingModuleOutputSchema>;
+
+// =============================================================================
+// Global Blocks Module
+// =============================================================================
+
+export const globalBlockModuleInputSchema = z.object({
+  // Required
+  slot: z.enum(['header', 'footer', 'sidebar', 'announcement']),
+  type: z.string().min(1),
+  
+  // Content
+  data: z.record(z.unknown()),
+  
+  // Optional
+  is_active: z.boolean().default(true),
+  
+  // Metadata
+  meta: moduleMetaSchema.optional(),
+});
+
+export type GlobalBlockModuleInput = z.infer<typeof globalBlockModuleInputSchema>;
+
+export const globalBlockModuleOutputSchema = z.object({
+  success: z.boolean(),
+  id: z.string().uuid().optional(),
+  slot: z.string().optional(),
+  type: z.string().optional(),
+  error: z.string().optional(),
+});
+
+export type GlobalBlockModuleOutput = z.infer<typeof globalBlockModuleOutputSchema>;
+
+// =============================================================================
+// Media Module
+// =============================================================================
+
+export const mediaModuleInputSchema = z.object({
+  // Required
+  file_name: z.string().min(1),
+  file_path: z.string().min(1), // e.g., "pages/image.jpg"
+  
+  // Optional
+  alt_text: z.string().max(200).optional(),
+  folder: z.enum(['pages', 'imports', 'templates']).default('pages'),
+  
+  // Metadata
+  meta: moduleMetaSchema.optional(),
+});
+
+export type MediaModuleInput = z.infer<typeof mediaModuleInputSchema>;
+
+export const mediaModuleOutputSchema = z.object({
+  success: z.boolean(),
+  path: z.string().optional(),
+  public_url: z.string().optional(),
+  error: z.string().optional(),
+});
+
+export type MediaModuleOutput = z.infer<typeof mediaModuleOutputSchema>;
+
+// =============================================================================
+// Deals Module
+// =============================================================================
+
+export const dealModuleInputSchema = z.object({
+  // Required
+  lead_id: z.string().uuid(),
+  value_cents: z.number().min(0),
+  
+  // Optional
+  product_id: z.string().uuid().optional(),
+  stage: z.enum(['proposal', 'negotiation', 'closed_won', 'closed_lost']).default('proposal'),
+  expected_close: z.string().datetime().optional(),
+  notes: z.string().max(2000).optional(),
+  currency: z.string().length(3).default('USD'),
+  
+  // Metadata
+  meta: moduleMetaSchema.optional(),
+});
+
+export type DealModuleInput = z.infer<typeof dealModuleInputSchema>;
+
+export const dealModuleOutputSchema = z.object({
+  success: z.boolean(),
+  id: z.string().uuid().optional(),
+  stage: z.string().optional(),
+  value_cents: z.number().optional(),
+  error: z.string().optional(),
+});
+
+export type DealModuleOutput = z.infer<typeof dealModuleOutputSchema>;
+
+// =============================================================================
+// Companies Module
+// =============================================================================
+
+export const companyModuleInputSchema = z.object({
+  // Required
+  name: z.string().min(1).max(200),
+  
+  // Optional
+  domain: z.string().optional(),
+  website: z.string().url().optional().or(z.literal('')),
+  industry: z.string().optional(),
+  size: z.string().optional(),
+  phone: z.string().optional(),
+  address: z.string().optional(),
+  notes: z.string().max(2000).optional(),
+  
+  // Options
+  options: z.object({
+    auto_enrich: z.boolean().default(false), // Trigger AI enrichment
+  }).optional(),
+  
+  // Metadata
+  meta: moduleMetaSchema.optional(),
+});
+
+export type CompanyModuleInput = z.infer<typeof companyModuleInputSchema>;
+
+export const companyModuleOutputSchema = z.object({
+  success: z.boolean(),
+  id: z.string().uuid().optional(),
+  name: z.string().optional(),
+  domain: z.string().optional(),
+  enriched: z.boolean().optional(),
+  error: z.string().optional(),
+});
+
+export type CompanyModuleOutput = z.infer<typeof companyModuleOutputSchema>;
+
+// =============================================================================
 // Generic Module Error
 // =============================================================================
 

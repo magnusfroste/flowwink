@@ -32,6 +32,30 @@ import {
   KBArticleModuleOutput,
   kbArticleModuleInputSchema,
   kbArticleModuleOutputSchema,
+  ProductModuleInput,
+  ProductModuleOutput,
+  productModuleInputSchema,
+  productModuleOutputSchema,
+  BookingModuleInput,
+  BookingModuleOutput,
+  bookingModuleInputSchema,
+  bookingModuleOutputSchema,
+  GlobalBlockModuleInput,
+  GlobalBlockModuleOutput,
+  globalBlockModuleInputSchema,
+  globalBlockModuleOutputSchema,
+  MediaModuleInput,
+  MediaModuleOutput,
+  mediaModuleInputSchema,
+  mediaModuleOutputSchema,
+  DealModuleInput,
+  DealModuleOutput,
+  dealModuleInputSchema,
+  dealModuleOutputSchema,
+  CompanyModuleInput,
+  CompanyModuleOutput,
+  companyModuleInputSchema,
+  companyModuleOutputSchema,
   tiptapDocumentSchema,
 } from '@/types/module-contracts';
 import { triggerWebhook } from '@/lib/webhook-utils';
@@ -578,6 +602,400 @@ const kbModule: ModuleDefinition<KBArticleModuleInput, KBArticleModuleOutput> = 
 };
 
 // =============================================================================
+// Products Module Implementation
+// =============================================================================
+
+const productsModule: ModuleDefinition<ProductModuleInput, ProductModuleOutput> = {
+  id: 'products',
+  name: 'Products',
+  version: '1.0.0',
+  description: 'Create and manage e-commerce products',
+  capabilities: ['content:receive', 'data:write', 'webhook:trigger'],
+  inputSchema: productModuleInputSchema,
+  outputSchema: productModuleOutputSchema,
+
+  async publish(input: ProductModuleInput): Promise<ProductModuleOutput> {
+    try {
+      const validated = productModuleInputSchema.parse(input);
+      
+      const productData = {
+        name: validated.name,
+        description: validated.description || null,
+        price_cents: validated.price_cents,
+        currency: validated.currency,
+        image_url: validated.image_url || null,
+        type: validated.type,
+        is_active: validated.is_active,
+        stripe_price_id: validated.stripe_price_id || null,
+      };
+
+      const { data, error } = await supabase
+        .from('products')
+        .insert(productData)
+        .select('id, name, price_cents')
+        .single();
+
+      if (error) {
+        console.error('[ProductsModule] Insert error:', error);
+        return { success: false, error: error.message };
+      }
+
+      // Trigger webhook for product creation
+      try {
+        await triggerWebhook({
+          event: 'order.created', // Using closest available event
+          data: {
+            type: 'product_created',
+            id: data.id,
+            name: data.name,
+            price_cents: data.price_cents,
+            source_module: validated.meta?.source_module,
+          },
+        });
+      } catch (webhookError) {
+        console.warn('[ProductsModule] Webhook failed:', webhookError);
+      }
+
+      return {
+        success: true,
+        id: data.id,
+        name: data.name,
+        price_cents: data.price_cents,
+      };
+    } catch (error) {
+      console.error('[ProductsModule] Error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  },
+};
+
+// =============================================================================
+// Booking Module Implementation
+// =============================================================================
+
+const bookingModule: ModuleDefinition<BookingModuleInput, BookingModuleOutput> = {
+  id: 'booking',
+  name: 'Booking',
+  version: '1.0.0',
+  description: 'Create and manage bookings/appointments',
+  capabilities: ['content:receive', 'data:write', 'webhook:trigger'],
+  inputSchema: bookingModuleInputSchema,
+  outputSchema: bookingModuleOutputSchema,
+
+  async publish(input: BookingModuleInput): Promise<BookingModuleOutput> {
+    try {
+      const validated = bookingModuleInputSchema.parse(input);
+      
+      const bookingData = {
+        customer_name: validated.customer_name,
+        customer_email: validated.customer_email,
+        customer_phone: validated.customer_phone || null,
+        service_id: validated.service_id || null,
+        start_time: validated.start_time,
+        end_time: validated.end_time,
+        notes: validated.notes || null,
+        status: validated.status,
+      };
+
+      const { data, error } = await supabase
+        .from('bookings')
+        .insert(bookingData)
+        .select('id, status')
+        .single();
+
+      if (error) {
+        console.error('[BookingModule] Insert error:', error);
+        return { success: false, error: error.message };
+      }
+
+      // Trigger confirmation email
+      let confirmationSent = false;
+      try {
+        await supabase.functions.invoke('send-booking-confirmation', {
+          body: { bookingId: data.id },
+        });
+        confirmationSent = true;
+      } catch (e) {
+        console.warn('[BookingModule] Confirmation email failed:', e);
+      }
+
+      // Trigger webhook
+      try {
+        await triggerWebhook({
+          event: 'booking.submitted',
+          data: {
+            id: data.id,
+            customer_email: validated.customer_email,
+            customer_name: validated.customer_name,
+            start_time: validated.start_time,
+            source_module: validated.meta?.source_module,
+          },
+        });
+      } catch (webhookError) {
+        console.warn('[BookingModule] Webhook failed:', webhookError);
+      }
+
+      return {
+        success: true,
+        id: data.id,
+        status: data.status,
+        confirmation_sent: confirmationSent,
+      };
+    } catch (error) {
+      console.error('[BookingModule] Error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  },
+};
+
+// =============================================================================
+// Global Blocks Module Implementation
+// =============================================================================
+
+const globalBlocksModule: ModuleDefinition<GlobalBlockModuleInput, GlobalBlockModuleOutput> = {
+  id: 'global-blocks',
+  name: 'Global Blocks',
+  version: '1.0.0',
+  description: 'Create reusable global content blocks (header, footer, etc.)',
+  capabilities: ['content:receive', 'data:write'],
+  inputSchema: globalBlockModuleInputSchema,
+  outputSchema: globalBlockModuleOutputSchema,
+
+  async publish(input: GlobalBlockModuleInput): Promise<GlobalBlockModuleOutput> {
+    try {
+      const validated = globalBlockModuleInputSchema.parse(input);
+      
+      const blockData = {
+        slot: validated.slot,
+        type: validated.type,
+        data: validated.data as Json,
+        is_active: validated.is_active,
+      };
+
+      const { data, error } = await supabase
+        .from('global_blocks')
+        .insert(blockData)
+        .select('id, slot, type')
+        .single();
+
+      if (error) {
+        console.error('[GlobalBlocksModule] Insert error:', error);
+        return { success: false, error: error.message };
+      }
+
+      return {
+        success: true,
+        id: data.id,
+        slot: data.slot,
+        type: data.type,
+      };
+    } catch (error) {
+      console.error('[GlobalBlocksModule] Error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  },
+};
+
+// =============================================================================
+// Media Module Implementation
+// =============================================================================
+
+const mediaModule: ModuleDefinition<MediaModuleInput, MediaModuleOutput> = {
+  id: 'media',
+  name: 'Media Library',
+  version: '1.0.0',
+  description: 'Manage media assets and files',
+  capabilities: ['data:read', 'data:write'],
+  inputSchema: mediaModuleInputSchema,
+  outputSchema: mediaModuleOutputSchema,
+
+  async publish(input: MediaModuleInput): Promise<MediaModuleOutput> {
+    try {
+      const validated = mediaModuleInputSchema.parse(input);
+      
+      // Get public URL for the file path
+      const { data: urlData } = supabase.storage
+        .from('cms-images')
+        .getPublicUrl(validated.file_path);
+
+      return {
+        success: true,
+        path: validated.file_path,
+        public_url: urlData.publicUrl,
+      };
+    } catch (error) {
+      console.error('[MediaModule] Error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  },
+};
+
+// =============================================================================
+// Deals Module Implementation
+// =============================================================================
+
+const dealsModule: ModuleDefinition<DealModuleInput, DealModuleOutput> = {
+  id: 'deals',
+  name: 'Deals',
+  version: '1.0.0',
+  description: 'Create and manage sales deals/opportunities',
+  capabilities: ['content:receive', 'data:write', 'webhook:trigger'],
+  inputSchema: dealModuleInputSchema,
+  outputSchema: dealModuleOutputSchema,
+
+  async publish(input: DealModuleInput): Promise<DealModuleOutput> {
+    try {
+      const validated = dealModuleInputSchema.parse(input);
+      
+      const dealData: {
+        lead_id: string;
+        value_cents: number;
+        currency: string;
+        stage: 'proposal' | 'negotiation' | 'closed_won' | 'closed_lost';
+        product_id: string | null;
+        expected_close: string | null;
+        notes: string | null;
+      } = {
+        lead_id: validated.lead_id,
+        value_cents: validated.value_cents,
+        currency: validated.currency,
+        stage: validated.stage,
+        product_id: validated.product_id || null,
+        expected_close: validated.expected_close || null,
+        notes: validated.notes || null,
+      };
+
+      const { data, error } = await supabase
+        .from('deals')
+        .insert(dealData)
+        .select('id, stage, value_cents')
+        .single();
+
+      if (error) {
+        console.error('[DealsModule] Insert error:', error);
+        return { success: false, error: error.message };
+      }
+
+      // Update lead status to opportunity if still lead
+      try {
+        await supabase
+          .from('leads')
+          .update({ status: 'opportunity' })
+          .eq('id', validated.lead_id)
+          .eq('status', 'lead');
+      } catch (updateError) {
+        console.warn('[DealsModule] Lead status update failed:', updateError);
+      }
+
+      return {
+        success: true,
+        id: data.id,
+        stage: data.stage,
+        value_cents: data.value_cents,
+      };
+    } catch (error) {
+      console.error('[DealsModule] Error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  },
+};
+
+// =============================================================================
+// Companies Module Implementation
+// =============================================================================
+
+const companiesModule: ModuleDefinition<CompanyModuleInput, CompanyModuleOutput> = {
+  id: 'companies',
+  name: 'Companies',
+  version: '1.0.0',
+  description: 'Create and manage company records with optional AI enrichment',
+  capabilities: ['content:receive', 'data:write'],
+  inputSchema: companyModuleInputSchema,
+  outputSchema: companyModuleOutputSchema,
+
+  async publish(input: CompanyModuleInput): Promise<CompanyModuleOutput> {
+    try {
+      const validated = companyModuleInputSchema.parse(input);
+      
+      // Extract domain from website if not provided
+      let domain = validated.domain;
+      if (!domain && validated.website) {
+        try {
+          const url = new URL(validated.website);
+          domain = url.hostname.replace('www.', '');
+        } catch {
+          // Invalid URL, skip domain extraction
+        }
+      }
+
+      const companyData = {
+        name: validated.name,
+        domain: domain || null,
+        website: validated.website || null,
+        industry: validated.industry || null,
+        size: validated.size || null,
+        phone: validated.phone || null,
+        address: validated.address || null,
+        notes: validated.notes || null,
+      };
+
+      const { data, error } = await supabase
+        .from('companies')
+        .insert(companyData)
+        .select('id, name, domain')
+        .single();
+
+      if (error) {
+        console.error('[CompaniesModule] Insert error:', error);
+        return { success: false, error: error.message };
+      }
+
+      // Trigger AI enrichment if requested
+      let enriched = false;
+      if (validated.options?.auto_enrich && (domain || validated.website)) {
+        try {
+          await supabase.functions.invoke('enrich-company', {
+            body: { companyId: data.id },
+          });
+          enriched = true;
+        } catch (enrichError) {
+          console.warn('[CompaniesModule] Enrichment failed:', enrichError);
+        }
+      }
+
+      return {
+        success: true,
+        id: data.id,
+        name: data.name,
+        domain: data.domain || undefined,
+        enriched,
+      };
+    } catch (error) {
+      console.error('[CompaniesModule] Error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  },
+};
+
+// =============================================================================
 // Module Registry Class
 // =============================================================================
 
@@ -591,6 +1009,12 @@ class ModuleRegistry {
     this.register(crmModule as ModuleDefinition<unknown, unknown>);
     this.register(pagesModule as ModuleDefinition<unknown, unknown>);
     this.register(kbModule as ModuleDefinition<unknown, unknown>);
+    this.register(productsModule as ModuleDefinition<unknown, unknown>);
+    this.register(bookingModule as ModuleDefinition<unknown, unknown>);
+    this.register(globalBlocksModule as ModuleDefinition<unknown, unknown>);
+    this.register(mediaModule as ModuleDefinition<unknown, unknown>);
+    this.register(dealsModule as ModuleDefinition<unknown, unknown>);
+    this.register(companiesModule as ModuleDefinition<unknown, unknown>);
   }
 
   /**
