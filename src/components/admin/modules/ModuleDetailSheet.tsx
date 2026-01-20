@@ -170,6 +170,108 @@ const API_EXAMPLES: Record<string, { input: string; output: string }> = {
   url: "/kb/how-to-reset-password-abc"
 }`,
   },
+  products: {
+    input: `{
+  name: "Premium Widget",
+  price_cents: 9900,
+  description: "High-quality widget",
+  currency: "USD",
+  type: "one_time",
+  is_active: true,
+  meta: {
+    source_module: "ai-generator"
+  }
+}`,
+    output: `{
+  success: true,
+  id: "uuid",
+  name: "Premium Widget",
+  price_cents: 9900
+}`,
+  },
+  booking: {
+    input: `{
+  customer_name: "Jane Doe",
+  customer_email: "jane@example.com",
+  start_time: "2025-01-25T10:00:00Z",
+  end_time: "2025-01-25T11:00:00Z",
+  service_id: "uuid",
+  notes: "First consultation",
+  status: "confirmed"
+}`,
+    output: `{
+  success: true,
+  id: "uuid",
+  status: "confirmed",
+  confirmation_sent: true
+}`,
+  },
+  'global-blocks': {
+    input: `{
+  slot: "footer",
+  type: "footer",
+  data: {
+    companyName: "Acme Inc",
+    links: [...]
+  },
+  is_active: true
+}`,
+    output: `{
+  success: true,
+  id: "uuid",
+  slot: "footer",
+  type: "footer"
+}`,
+  },
+  media: {
+    input: `{
+  file_name: "hero-image.jpg",
+  file_path: "pages/hero-image.jpg",
+  alt_text: "Hero banner",
+  folder: "pages"
+}`,
+    output: `{
+  success: true,
+  path: "pages/hero-image.jpg",
+  public_url: "https://..."
+}`,
+  },
+  deals: {
+    input: `{
+  lead_id: "uuid",
+  value_cents: 500000,
+  currency: "USD",
+  stage: "proposal",
+  product_id: "uuid",
+  expected_close: "2025-02-15T00:00:00Z",
+  notes: "Enterprise license"
+}`,
+    output: `{
+  success: true,
+  id: "uuid",
+  stage: "proposal",
+  value_cents: 500000
+}`,
+  },
+  companies: {
+    input: `{
+  name: "Acme Corporation",
+  domain: "acme.com",
+  website: "https://acme.com",
+  industry: "Technology",
+  size: "100-500",
+  options: {
+    auto_enrich: true
+  }
+}`,
+    output: `{
+  success: true,
+  id: "uuid",
+  name: "Acme Corporation",
+  domain: "acme.com",
+  enriched: true
+}`,
+  },
 };
 
 export function ModuleDetailSheet({
