@@ -3,8 +3,7 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { 
   Globe, Smartphone, MessageSquare, Mail, Code2, Copy, Check, Play, Database, 
-  FileJson, Layers, Info, FileText, Rss, Settings2, Plus, Loader2, RefreshCw,
-  ExternalLink, ChevronRight, Megaphone,
+  FileJson, Layers, FileText, Rss, Settings2, Plus, Loader2, RefreshCw, ExternalLink,
   // Block icons
   LayoutTemplate, PanelTop, PanelBottom, Columns2, Minus, Type, 
   ChevronDown, AlertCircle, Quote, LayoutGrid, Image, Images, 
@@ -27,7 +26,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { useModules } from "@/hooks/useModules";
-import { CampaignsDashboard } from "@/components/admin/content-hub";
 
 // REST endpoint definitions
 interface RestEndpoint {
@@ -169,7 +167,7 @@ const BLOCK_TYPES: BlockType[] = [
   { type: "stats", name: "Statistics", category: "Data", icon: BarChart3 },
 ];
 
-export default function ContentHubPage() {
+export default function ContentApiPage() {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [graphqlQuery, setGraphqlQuery] = useState(GRAPHQL_EXAMPLES[0].query);
   const [graphqlResult, setGraphqlResult] = useState<string | null>(null);
@@ -397,8 +395,8 @@ export default async function Home() {
     <AdminLayout>
       <div className="space-y-8">
         <AdminPageHeader
-          title="Content Hub"
-          description="Your content, everywhere. Both head and headless."
+          title="Content API"
+          description="Developer tools for headless content delivery. REST & GraphQL."
         />
 
         {/* Hero Section */}
@@ -542,23 +540,6 @@ export default async function Home() {
                 </div>
               </div>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Content Campaigns Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Megaphone className="h-5 w-5" />
-              Content Campaigns
-              <Badge variant="secondary">AI-Powered</Badge>
-            </CardTitle>
-            <CardDescription>
-              Create content once, automatically adapted for all channels
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <CampaignsDashboard />
           </CardContent>
         </Card>
 
