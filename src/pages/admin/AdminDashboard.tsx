@@ -4,8 +4,10 @@ import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
 import { EmptyDashboard } from '@/components/admin/EmptyDashboard';
+import { StatCard } from '@/components/admin/StatCard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/StatusBadge';
 import { WelcomeModal } from '@/components/admin/WelcomeModal';
 import { LeadsDashboardWidget } from '@/components/admin/LeadsDashboardWidget';
@@ -16,7 +18,6 @@ import { LiveSupportDashboardWidget } from '@/components/admin/LiveSupportDashbo
 import { usePages } from '@/hooks/usePages';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsModuleEnabled } from '@/hooks/useModules';
-import { Skeleton } from '@/components/ui/skeleton';
 
 export default function AdminDashboard() {
   const { data: pages, isLoading } = usePages();
@@ -51,62 +52,35 @@ export default function AdminDashboard() {
           <>
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-lg bg-primary/10">
-                  <FileText className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{isLoading ? '-' : stats.total}</p>
-                  <p className="text-sm text-muted-foreground">Total pages</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-lg bg-muted">
-                  <Clock className="h-6 w-6 text-muted-foreground" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{isLoading ? '-' : stats.draft}</p>
-                  <p className="text-sm text-muted-foreground">Drafts</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-lg bg-warning/10">
-                  <AlertCircle className="h-6 w-6 text-warning" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{isLoading ? '-' : stats.reviewing}</p>
-                  <p className="text-sm text-muted-foreground">Pending review</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-lg bg-success/10">
-                  <CheckCircle className="h-6 w-6 text-success" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{isLoading ? '-' : stats.published}</p>
-                  <p className="text-sm text-muted-foreground">Published</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              <StatCard
+                label="Total pages"
+                value={stats.total}
+                icon={FileText}
+                variant="primary"
+                isLoading={isLoading}
+              />
+              <StatCard
+                label="Drafts"
+                value={stats.draft}
+                icon={Clock}
+                variant="muted"
+                isLoading={isLoading}
+              />
+              <StatCard
+                label="Pending review"
+                value={stats.reviewing}
+                icon={AlertCircle}
+                variant="warning"
+                isLoading={isLoading}
+              />
+              <StatCard
+                label="Published"
+                value={stats.published}
+                icon={CheckCircle}
+                variant="success"
+                isLoading={isLoading}
+              />
+            </div>
 
         {/* Leads Widget (if enabled) */}
         {leadsEnabled && (

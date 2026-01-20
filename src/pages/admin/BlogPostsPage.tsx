@@ -4,6 +4,7 @@ import { Plus, Search, Filter, MoreHorizontal, Clock, Star, Trash2, Edit, Eye, F
 import { formatDistanceToNow } from "date-fns";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { AdminPageContainer } from "@/components/admin/AdminPageContainer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -37,9 +38,9 @@ import { STATUS_LABELS, PageStatus } from "@/types/cms";
 
 const statusColors: Record<PageStatus, string> = {
   draft: "bg-muted text-muted-foreground",
-  reviewing: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-  published: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-  archived: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200",
+  reviewing: "bg-warning/10 text-warning dark:bg-warning/20",
+  published: "bg-success/10 text-success dark:bg-success/20",
+  archived: "bg-muted text-muted-foreground",
 };
 
 export default function BlogPostsPage() {
@@ -70,7 +71,7 @@ export default function BlogPostsPage() {
   
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <AdminPageContainer>
         <AdminPageHeader
           title="Blog Posts"
           description="Manage your blog posts and articles"
@@ -239,7 +240,7 @@ export default function BlogPostsPage() {
             ))}
           </div>
         )}
-      </div>
+      </AdminPageContainer>
       
       {/* Delete confirmation */}
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
