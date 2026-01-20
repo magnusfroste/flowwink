@@ -14,10 +14,11 @@ import {
 interface ChannelMockupProps {
   channel: ChannelType;
   variant: ChannelVariant[ChannelType];
+  imageUrl?: string | null;
   className?: string;
 }
 
-export function ChannelMockup({ channel, variant, className }: ChannelMockupProps) {
+export function ChannelMockup({ channel, variant, imageUrl, className }: ChannelMockupProps) {
   if (!variant) {
     return (
       <div className={cn('flex items-center justify-center h-64 bg-muted rounded-lg', className)}>
@@ -28,17 +29,17 @@ export function ChannelMockup({ channel, variant, className }: ChannelMockupProp
 
   switch (channel) {
     case 'blog':
-      return <BlogMockup variant={variant as ChannelVariant['blog']} className={className} />;
+      return <BlogMockup variant={variant as ChannelVariant['blog']} imageUrl={imageUrl} className={className} />;
     case 'newsletter':
-      return <NewsletterMockup variant={variant as ChannelVariant['newsletter']} className={className} />;
+      return <NewsletterMockup variant={variant as ChannelVariant['newsletter']} imageUrl={imageUrl} className={className} />;
     case 'linkedin':
-      return <LinkedInMockup variant={variant as ChannelVariant['linkedin']} className={className} />;
+      return <LinkedInMockup variant={variant as ChannelVariant['linkedin']} imageUrl={imageUrl} className={className} />;
     case 'instagram':
-      return <InstagramMockup variant={variant as ChannelVariant['instagram']} className={className} />;
+      return <InstagramMockup variant={variant as ChannelVariant['instagram']} imageUrl={imageUrl} className={className} />;
     case 'twitter':
-      return <TwitterMockup variant={variant as ChannelVariant['twitter']} className={className} />;
+      return <TwitterMockup variant={variant as ChannelVariant['twitter']} imageUrl={imageUrl} className={className} />;
     case 'facebook':
-      return <FacebookMockup variant={variant as ChannelVariant['facebook']} className={className} />;
+      return <FacebookMockup variant={variant as ChannelVariant['facebook']} imageUrl={imageUrl} className={className} />;
     case 'print':
       return <PrintMockup variant={variant as ChannelVariant['print']} className={className} />;
     default:
@@ -46,7 +47,7 @@ export function ChannelMockup({ channel, variant, className }: ChannelMockupProp
   }
 }
 
-function BlogMockup({ variant, className }: { variant: ChannelVariant['blog']; className?: string }) {
+function BlogMockup({ variant, imageUrl, className }: { variant: ChannelVariant['blog']; imageUrl?: string | null; className?: string }) {
   if (!variant) return null;
   
   return (
@@ -64,19 +65,24 @@ function BlogMockup({ variant, className }: { variant: ChannelVariant['blog']; c
       </div>
       
       {/* Content */}
-      <div className="p-6 max-h-80 overflow-y-auto">
-        <h1 className="text-2xl font-bold mb-2">{variant.title}</h1>
-        <p className="text-muted-foreground mb-4">{variant.excerpt}</p>
-        <div className="prose prose-sm dark:prose-invert">
-          <p>{variant.body?.slice(0, 300)}...</p>
-        </div>
-        {variant.seo_keywords?.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-4">
-            {variant.seo_keywords.map((kw, i) => (
-              <span key={i} className="text-xs bg-muted px-2 py-0.5 rounded">{kw}</span>
-            ))}
-          </div>
+      <div className="max-h-96 overflow-y-auto">
+        {imageUrl && (
+          <img src={imageUrl} alt="Featured" className="w-full h-40 object-cover" />
         )}
+        <div className="p-6">
+          <h1 className="text-2xl font-bold mb-2">{variant.title}</h1>
+          <p className="text-muted-foreground mb-4">{variant.excerpt}</p>
+          <div className="prose prose-sm dark:prose-invert">
+            <p>{variant.body?.slice(0, 300)}...</p>
+          </div>
+          {variant.seo_keywords?.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-4">
+              {variant.seo_keywords.map((kw, i) => (
+                <span key={i} className="text-xs bg-muted px-2 py-0.5 rounded">{kw}</span>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -125,7 +131,7 @@ function NewsletterBlockPreview({ block }: { block: unknown }) {
   }
 }
 
-function NewsletterMockup({ variant, className }: { variant: ChannelVariant['newsletter']; className?: string }) {
+function NewsletterMockup({ variant, imageUrl, className }: { variant: ChannelVariant['newsletter']; imageUrl?: string | null; className?: string }) {
   if (!variant) return null;
   
   return (
@@ -136,6 +142,11 @@ function NewsletterMockup({ variant, className }: { variant: ChannelVariant['new
         <div className="font-semibold">{variant.subject}</div>
         <div className="text-xs text-muted-foreground mt-1">{variant.preview_text}</div>
       </div>
+      
+      {/* Header image */}
+      {imageUrl && (
+        <img src={imageUrl} alt="Header" className="w-full h-32 object-cover" />
+      )}
       
       {/* Email body - render actual blocks */}
       <div className="p-6 max-h-80 overflow-y-auto space-y-3">
@@ -151,7 +162,7 @@ function NewsletterMockup({ variant, className }: { variant: ChannelVariant['new
   );
 }
 
-function LinkedInMockup({ variant, className }: { variant: ChannelVariant['linkedin']; className?: string }) {
+function LinkedInMockup({ variant, imageUrl, className }: { variant: ChannelVariant['linkedin']; imageUrl?: string | null; className?: string }) {
   if (!variant) return null;
   
   return (
@@ -178,6 +189,11 @@ function LinkedInMockup({ variant, className }: { variant: ChannelVariant['linke
         )}
       </div>
       
+      {/* Image */}
+      {imageUrl && (
+        <img src={imageUrl} alt="Post" className="w-full h-48 object-cover" />
+      )}
+      
       {/* Engagement */}
       <div className="px-4 py-2 border-t flex items-center gap-6 text-muted-foreground">
         <button className="flex items-center gap-1 text-sm hover:text-foreground">
@@ -194,7 +210,7 @@ function LinkedInMockup({ variant, className }: { variant: ChannelVariant['linke
   );
 }
 
-function InstagramMockup({ variant, className }: { variant: ChannelVariant['instagram']; className?: string }) {
+function InstagramMockup({ variant, imageUrl, className }: { variant: ChannelVariant['instagram']; imageUrl?: string | null; className?: string }) {
   if (!variant) return null;
   
   return (
@@ -206,12 +222,16 @@ function InstagramMockup({ variant, className }: { variant: ChannelVariant['inst
         <MoreHorizontal className="h-4 w-4 ml-auto" />
       </div>
       
-      {/* Image placeholder */}
-      <div className="aspect-square bg-gradient-to-br from-[#F58529]/20 via-[#DD2A7B]/20 to-[#8134AF]/20 flex items-center justify-center">
-        <p className="text-xs text-muted-foreground text-center px-4">
-          {variant.suggested_image_prompt || 'Image placeholder'}
-        </p>
-      </div>
+      {/* Image */}
+      {imageUrl ? (
+        <img src={imageUrl} alt="Post" className="aspect-square w-full object-cover" />
+      ) : (
+        <div className="aspect-square bg-gradient-to-br from-[#F58529]/20 via-[#DD2A7B]/20 to-[#8134AF]/20 flex items-center justify-center">
+          <p className="text-xs text-muted-foreground text-center px-4">
+            {variant.suggested_image_prompt || 'Image placeholder'}
+          </p>
+        </div>
+      )}
       
       {/* Actions */}
       <div className="p-3 flex items-center gap-4">
@@ -237,7 +257,7 @@ function InstagramMockup({ variant, className }: { variant: ChannelVariant['inst
   );
 }
 
-function TwitterMockup({ variant, className }: { variant: ChannelVariant['twitter']; className?: string }) {
+function TwitterMockup({ variant, imageUrl, className }: { variant: ChannelVariant['twitter']; imageUrl?: string | null; className?: string }) {
   if (!variant) return null;
   
   return (
@@ -253,6 +273,10 @@ function TwitterMockup({ variant, className }: { variant: ChannelVariant['twitte
                 <span className="text-muted-foreground text-sm">· Just now</span>
               </div>
               <p className="text-sm">{tweet}</p>
+              {/* Show image only on first tweet */}
+              {i === 0 && imageUrl && (
+                <img src={imageUrl} alt="Tweet" className="w-full h-40 object-cover rounded-lg mt-2" />
+              )}
               <div className="flex items-center gap-8 mt-3 text-muted-foreground">
                 <MessageCircle className="h-4 w-4" />
                 <Repeat2 className="h-4 w-4" />
@@ -267,7 +291,7 @@ function TwitterMockup({ variant, className }: { variant: ChannelVariant['twitte
   );
 }
 
-function FacebookMockup({ variant, className }: { variant: ChannelVariant['facebook']; className?: string }) {
+function FacebookMockup({ variant, imageUrl, className }: { variant: ChannelVariant['facebook']; imageUrl?: string | null; className?: string }) {
   if (!variant) return null;
   
   return (
@@ -282,6 +306,9 @@ function FacebookMockup({ variant, className }: { variant: ChannelVariant['faceb
       <div className="px-4 pb-4">
         <p className="text-sm">{variant.text}</p>
       </div>
+      {imageUrl && (
+        <img src={imageUrl} alt="Post" className="w-full h-48 object-cover" />
+      )}
       <div className="px-4 py-2 border-t flex items-center justify-around text-muted-foreground">
         <button className="flex items-center gap-2 text-sm">
           <ThumbsUp className="h-4 w-4" /> Like
