@@ -9,12 +9,29 @@ export type WebhookEventType =
   | 'blog_post.deleted'
   | 'form.submitted'
   | 'booking.submitted'
+  | 'booking.confirmed'
+  | 'booking.cancelled'
   | 'newsletter.subscribed'
   | 'newsletter.unsubscribed'
   | 'order.created'
   | 'order.paid'
   | 'order.cancelled'
-  | 'order.refunded';
+  | 'order.refunded'
+  | 'product.created'
+  | 'product.updated'
+  | 'product.deleted'
+  | 'deal.created'
+  | 'deal.updated'
+  | 'deal.stage_changed'
+  | 'deal.won'
+  | 'deal.lost'
+  | 'company.created'
+  | 'company.updated'
+  | 'media.uploaded'
+  | 'media.deleted'
+  | 'global_block.updated'
+  | 'kb_article.published'
+  | 'kb_article.updated';
 
 interface TriggerWebhookOptions {
   event: WebhookEventType;
@@ -230,6 +247,219 @@ export const webhookEvents = {
         amount_cents,
         currency,
         refunded_at: new Date().toISOString(),
+      } 
+    }),
+    
+  // Product events
+  productCreated: (product: { id: string; name: string; price_cents: number; currency: string }) => 
+    triggerWebhook({ 
+      event: 'product.created', 
+      data: { 
+        id: product.id,
+        name: product.name,
+        price_cents: product.price_cents,
+        currency: product.currency,
+        created_at: new Date().toISOString(),
+      } 
+    }),
+    
+  productUpdated: (product: { id: string; name: string; price_cents: number; currency: string }) => 
+    triggerWebhook({ 
+      event: 'product.updated', 
+      data: { 
+        id: product.id,
+        name: product.name,
+        price_cents: product.price_cents,
+        currency: product.currency,
+        updated_at: new Date().toISOString(),
+      } 
+    }),
+    
+  productDeleted: (productId: string) => 
+    triggerWebhook({ 
+      event: 'product.deleted', 
+      data: { 
+        id: productId,
+        deleted_at: new Date().toISOString(),
+      } 
+    }),
+    
+  // Booking events
+  bookingConfirmed: (booking: { 
+    id: string; 
+    customer_email: string; 
+    customer_name: string;
+    service_name?: string;
+    start_time: string;
+    end_time: string;
+  }) => 
+    triggerWebhook({ 
+      event: 'booking.confirmed', 
+      data: { 
+        id: booking.id,
+        customer_email: booking.customer_email,
+        customer_name: booking.customer_name,
+        service_name: booking.service_name,
+        start_time: booking.start_time,
+        end_time: booking.end_time,
+        confirmed_at: new Date().toISOString(),
+      } 
+    }),
+    
+  bookingCancelled: (bookingId: string, reason?: string) => 
+    triggerWebhook({ 
+      event: 'booking.cancelled', 
+      data: { 
+        id: bookingId,
+        reason,
+        cancelled_at: new Date().toISOString(),
+      } 
+    }),
+    
+  // Deal events
+  dealCreated: (deal: { 
+    id: string; 
+    lead_id: string; 
+    value_cents: number; 
+    currency: string;
+    stage: string;
+  }) => 
+    triggerWebhook({ 
+      event: 'deal.created', 
+      data: { 
+        id: deal.id,
+        lead_id: deal.lead_id,
+        value_cents: deal.value_cents,
+        currency: deal.currency,
+        stage: deal.stage,
+        created_at: new Date().toISOString(),
+      } 
+    }),
+    
+  dealUpdated: (deal: { id: string; value_cents: number; currency: string; stage: string }) => 
+    triggerWebhook({ 
+      event: 'deal.updated', 
+      data: { 
+        id: deal.id,
+        value_cents: deal.value_cents,
+        currency: deal.currency,
+        stage: deal.stage,
+        updated_at: new Date().toISOString(),
+      } 
+    }),
+    
+  dealStageChanged: (deal: { id: string; previous_stage: string; new_stage: string; value_cents: number }) => 
+    triggerWebhook({ 
+      event: 'deal.stage_changed', 
+      data: { 
+        id: deal.id,
+        previous_stage: deal.previous_stage,
+        new_stage: deal.new_stage,
+        value_cents: deal.value_cents,
+        changed_at: new Date().toISOString(),
+      } 
+    }),
+    
+  dealWon: (deal: { id: string; value_cents: number; currency: string }) => 
+    triggerWebhook({ 
+      event: 'deal.won', 
+      data: { 
+        id: deal.id,
+        value_cents: deal.value_cents,
+        currency: deal.currency,
+        won_at: new Date().toISOString(),
+      } 
+    }),
+    
+  dealLost: (deal: { id: string; reason?: string }) => 
+    triggerWebhook({ 
+      event: 'deal.lost', 
+      data: { 
+        id: deal.id,
+        reason: deal.reason,
+        lost_at: new Date().toISOString(),
+      } 
+    }),
+    
+  // Company events
+  companyCreated: (company: { id: string; name: string; domain?: string | null }) => 
+    triggerWebhook({ 
+      event: 'company.created', 
+      data: { 
+        id: company.id,
+        name: company.name,
+        domain: company.domain,
+        created_at: new Date().toISOString(),
+      } 
+    }),
+    
+  companyUpdated: (company: { id: string; name: string; domain?: string | null }) => 
+    triggerWebhook({ 
+      event: 'company.updated', 
+      data: { 
+        id: company.id,
+        name: company.name,
+        domain: company.domain,
+        updated_at: new Date().toISOString(),
+      } 
+    }),
+    
+  // Media events
+  mediaUploaded: (media: { id: string; filename: string; url: string; mime_type?: string }) => 
+    triggerWebhook({ 
+      event: 'media.uploaded', 
+      data: { 
+        id: media.id,
+        filename: media.filename,
+        url: media.url,
+        mime_type: media.mime_type,
+        uploaded_at: new Date().toISOString(),
+      } 
+    }),
+    
+  mediaDeleted: (mediaId: string, filename?: string) => 
+    triggerWebhook({ 
+      event: 'media.deleted', 
+      data: { 
+        id: mediaId,
+        filename,
+        deleted_at: new Date().toISOString(),
+      } 
+    }),
+    
+  // Global block events
+  globalBlockUpdated: (block: { id: string; slot: string; type: string }) => 
+    triggerWebhook({ 
+      event: 'global_block.updated', 
+      data: { 
+        id: block.id,
+        slot: block.slot,
+        type: block.type,
+        updated_at: new Date().toISOString(),
+      } 
+    }),
+    
+  // KB article events
+  kbArticlePublished: (article: { id: string; slug: string; title: string; category_id: string }) => 
+    triggerWebhook({ 
+      event: 'kb_article.published', 
+      data: { 
+        id: article.id,
+        slug: article.slug,
+        title: article.title,
+        category_id: article.category_id,
+        published_at: new Date().toISOString(),
+      } 
+    }),
+    
+  kbArticleUpdated: (article: { id: string; slug: string; title: string }) => 
+    triggerWebhook({ 
+      event: 'kb_article.updated', 
+      data: { 
+        id: article.id,
+        slug: article.slug,
+        title: article.title,
+        updated_at: new Date().toISOString(),
       } 
     }),
 };

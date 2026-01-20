@@ -11,12 +11,29 @@ export type WebhookEvent =
   | 'blog_post.deleted'
   | 'form.submitted'
   | 'booking.submitted'
+  | 'booking.confirmed'
+  | 'booking.cancelled'
   | 'newsletter.subscribed'
   | 'newsletter.unsubscribed'
   | 'order.created'
   | 'order.paid'
   | 'order.cancelled'
-  | 'order.refunded';
+  | 'order.refunded'
+  | 'product.created'
+  | 'product.updated'
+  | 'product.deleted'
+  | 'deal.created'
+  | 'deal.updated'
+  | 'deal.stage_changed'
+  | 'deal.won'
+  | 'deal.lost'
+  | 'company.created'
+  | 'company.updated'
+  | 'media.uploaded'
+  | 'media.deleted'
+  | 'global_block.updated'
+  | 'kb_article.published'
+  | 'kb_article.updated';
 
 export interface Webhook {
   id: string;
@@ -284,18 +301,39 @@ export const WEBHOOK_EVENT_LABELS: Record<WebhookEvent, string> = {
   'blog_post.deleted': 'Blog post deleted',
   'form.submitted': 'Form submitted',
   'booking.submitted': 'Booking submitted',
+  'booking.confirmed': 'Booking confirmed',
+  'booking.cancelled': 'Booking cancelled',
   'newsletter.subscribed': 'Newsletter subscription',
   'newsletter.unsubscribed': 'Newsletter unsubscription',
   'order.created': 'Order created',
   'order.paid': 'Order paid',
   'order.cancelled': 'Order cancelled',
   'order.refunded': 'Order refunded',
+  'product.created': 'Product created',
+  'product.updated': 'Product updated',
+  'product.deleted': 'Product deleted',
+  'deal.created': 'Deal created',
+  'deal.updated': 'Deal updated',
+  'deal.stage_changed': 'Deal stage changed',
+  'deal.won': 'Deal won',
+  'deal.lost': 'Deal lost',
+  'company.created': 'Company created',
+  'company.updated': 'Company updated',
+  'media.uploaded': 'Media uploaded',
+  'media.deleted': 'Media deleted',
+  'global_block.updated': 'Global block updated',
+  'kb_article.published': 'KB article published',
+  'kb_article.updated': 'KB article updated',
 };
 
 export const WEBHOOK_EVENT_CATEGORIES = {
   'Pages': ['page.published', 'page.updated', 'page.deleted'] as WebhookEvent[],
   'Blog': ['blog_post.published', 'blog_post.updated', 'blog_post.deleted'] as WebhookEvent[],
-  'Forms & Bookings': ['form.submitted', 'booking.submitted'] as WebhookEvent[],
+  'Knowledge Base': ['kb_article.published', 'kb_article.updated'] as WebhookEvent[],
+  'Forms & Bookings': ['form.submitted', 'booking.submitted', 'booking.confirmed', 'booking.cancelled'] as WebhookEvent[],
   'Newsletter': ['newsletter.subscribed', 'newsletter.unsubscribed'] as WebhookEvent[],
+  'Products': ['product.created', 'product.updated', 'product.deleted'] as WebhookEvent[],
   'Orders': ['order.created', 'order.paid', 'order.cancelled', 'order.refunded'] as WebhookEvent[],
+  'CRM': ['deal.created', 'deal.updated', 'deal.stage_changed', 'deal.won', 'deal.lost', 'company.created', 'company.updated'] as WebhookEvent[],
+  'Media & Blocks': ['media.uploaded', 'media.deleted', 'global_block.updated'] as WebhookEvent[],
 };
