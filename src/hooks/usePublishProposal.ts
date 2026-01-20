@@ -2,6 +2,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ContentProposal, ChannelType, ChannelVariant } from './useContentProposals';
+import { moduleRegistry } from '@/lib/module-registry';
+import type { BlogModuleInput, BlogModuleOutput, NewsletterModuleInput, NewsletterModuleOutput } from '@/types/module-contracts';
 
 interface PublishResult {
   channel: ChannelType;
@@ -12,77 +14,47 @@ interface PublishResult {
 }
 
 /**
- * Generates a URL-safe slug from a title
- */
-function generateSlug(title: string): string {
-  return title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)+/g, '')
-    .slice(0, 100) + '-' + Date.now().toString(36);
-}
-
-/**
- * Publish content from a proposal to the blog
+ * Publish content from a proposal to the blog using Module Registry
  */
 async function publishToBlog(
   proposal: ContentProposal,
   variant: ChannelVariant['blog'],
-  userId: string | undefined
+  _userId: string | undefined
 ): Promise<PublishResult> {
   if (!variant) {
     return { channel: 'blog', success: false, error: 'No blog content available' };
   }
 
   try {
-    const { data, error } = await supabase
-      .from('blog_posts')
-      .insert({
-        title: variant.title,
-        slug: generateSlug(variant.title),
-        excerpt: variant.excerpt,
-        content_json: {
-          type: 'doc',
-          content: [
-            {
-              type: 'paragraph',
-              content: [{ type: 'text', text: variant.body }]
-            }
-          ]
-        },
-        meta_json: {
-          keywords: variant.seo_keywords,
-          proposal_id: proposal.id,
-        },
-        status: 'published',
-        published_at: new Date().toISOString(),
-        created_by: userId,
-        updated_by: userId,
-      })
-      .select('id, slug, title')
-      .single();
-
-    if (error) throw error;
-
-    // Trigger webhook for blog post creation
-    await supabase.functions.invoke('send-webhook', {
-      body: {
-        event: 'blog_post.updated',
-        data: {
-          id: data.id,
-          slug: data.slug,
-          title: data.title,
-          source: 'content_proposal',
-          proposal_id: proposal.id,
-          created_at: new Date().toISOString(),
-        },
+    // Use Module Registry for validated, consistent publishing
+    const input: BlogModuleInput = {
+      title: variant.title,
+      content: variant.body, // Module will wrap in Tiptap format
+      excerpt: variant.excerpt,
+      meta: {
+        source_module: 'content-campaign',
+        source_id: proposal.id,
+        keywords: variant.seo_keywords,
       },
-    });
+      options: {
+        status: 'published',
+      },
+    };
+
+    const result = await moduleRegistry.publish<BlogModuleInput, BlogModuleOutput>('blog', input);
+
+    if (!result.success) {
+      return {
+        channel: 'blog',
+        success: false,
+        error: result.error || 'Failed to create blog post',
+      };
+    }
 
     return {
       channel: 'blog',
       success: true,
-      resourceId: data.id,
+      resourceId: result.id,
       resourceType: 'blog_post',
     };
   } catch (error) {
@@ -96,40 +68,97 @@ async function publishToBlog(
 }
 
 /**
- * Publish content from a proposal to newsletter
+ * Convert newsletter blocks to HTML for content_html field
+ */
+function newsletterBlocksToHtml(blocks: unknown[], previewText?: string): string {
+  if (!blocks || blocks.length === 0) {
+    return previewText ? `<p>${previewText}</p>` : '';
+  }
+
+  const htmlParts: string[] = [];
+  
+  for (const block of blocks) {
+    const b = block as Record<string, unknown>;
+    const type = b.type as string;
+    
+    switch (type) {
+      case 'heading':
+        htmlParts.push(`<h2 style="margin: 0 0 16px 0; font-size: 24px; font-weight: bold;">${b.content || ''}</h2>`);
+        break;
+      case 'paragraph':
+      case 'text':
+        htmlParts.push(`<p style="margin: 0 0 16px 0; line-height: 1.6;">${b.content || ''}</p>`);
+        break;
+      case 'image':
+        if (b.url || b.src) {
+          htmlParts.push(`<img src="${b.url || b.src}" alt="${b.alt || ''}" style="max-width: 100%; height: auto; margin: 16px 0;" />`);
+        }
+        break;
+      case 'button':
+      case 'cta':
+        htmlParts.push(`<p style="margin: 24px 0;"><a href="${b.url || b.href || '#'}" style="display: inline-block; padding: 12px 24px; background-color: #000; color: #fff; text-decoration: none; border-radius: 4px;">${b.text || b.label || 'Click here'}</a></p>`);
+        break;
+      case 'divider':
+        htmlParts.push('<hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />');
+        break;
+      case 'spacer':
+        htmlParts.push('<div style="height: 24px;"></div>');
+        break;
+      default:
+        // For unknown block types, try to extract content
+        if (b.content && typeof b.content === 'string') {
+          htmlParts.push(`<p style="margin: 0 0 16px 0;">${b.content}</p>`);
+        }
+    }
+  }
+  
+  return htmlParts.join('\n');
+}
+
+/**
+ * Publish content from a proposal to newsletter using Module Registry
  */
 async function publishToNewsletter(
   proposal: ContentProposal,
   variant: ChannelVariant['newsletter'],
-  userId: string | undefined
+  _userId: string | undefined
 ): Promise<PublishResult> {
   if (!variant) {
     return { channel: 'newsletter', success: false, error: 'No newsletter content available' };
   }
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase
-      .from('newsletters')
-      .insert({
-        subject: variant.subject,
-        content_json: JSON.parse(JSON.stringify({
-          preview_text: variant.preview_text,
-          blocks: variant.blocks || [],
-          proposal_id: proposal.id,
-        })),
+    // Convert blocks to HTML for proper rendering
+    const contentHtml = newsletterBlocksToHtml(variant.blocks || [], variant.preview_text);
+    
+    // Use Module Registry for validated, consistent publishing
+    const input: NewsletterModuleInput = {
+      subject: variant.subject,
+      content_html: contentHtml,
+      preview_text: variant.preview_text,
+      meta: {
+        source_module: 'content-campaign',
+        source_id: proposal.id,
+      },
+      options: {
         status: 'draft',
-        created_by: userId,
-      } as any) as any)
-      .select('id, subject')
-      .single();
+      },
+    };
 
-    if (error) throw error;
+    const result = await moduleRegistry.publish<NewsletterModuleInput, NewsletterModuleOutput>('newsletter', input);
+
+    if (!result.success) {
+      return {
+        channel: 'newsletter',
+        success: false,
+        error: result.error || 'Failed to create newsletter',
+      };
+    }
 
     return {
       channel: 'newsletter',
       success: true,
-      resourceId: data.id,
+      resourceId: result.id,
       resourceType: 'newsletter',
     };
   } catch (error) {
