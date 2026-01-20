@@ -1,7 +1,7 @@
 # Module API Documentation
 
-> **Version:** 1.0.0  
-> **Last Updated:** 2025-01-19
+> **Version:** 1.1.0  
+> **Last Updated:** 2025-01-20
 
 This document defines the formal API contracts for all FlowWink modules. Each module exposes a well-defined interface that enables loose coupling, extensibility, and third-party module development.
 
@@ -10,20 +10,21 @@ This document defines the formal API contracts for all FlowWink modules. Each mo
 ## Architecture Overview
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        MODULE REGISTRY                          │
-│                     (Central Coordinator)                       │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│   ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐       │
-│   │   Blog   │  │Newsletter│  │  Webhook │  │   CRM    │       │
-│   │  Module  │  │  Module  │  │  Module  │  │  Module  │       │
-│   └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘       │
-│        │             │             │             │              │
-│        └─────────────┴─────────────┴─────────────┘              │
-│                           │                                     │
-│                    Supabase Database                            │
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────┐
+│                          MODULE REGISTRY                                │
+│                       (Central Coordinator)                             │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│   ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐ │
+│   │   Blog   │  │Newsletter│  │   CRM    │  │  Pages   │  │    KB    │ │
+│   │  Module  │  │  Module  │  │  Module  │  │  Module  │  │  Module  │ │
+│   │  v1.0.0  │  │  v1.0.0  │  │  v1.0.0  │  │  v1.0.0  │  │  v1.0.0  │ │
+│   └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘ │
+│        │             │             │             │             │        │
+│        └─────────────┴─────────────┴─────────────┴─────────────┘        │
+│                                   │                                     │
+│                            Supabase Database                            │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Core Principles
@@ -47,6 +48,18 @@ Each module declares its capabilities:
 | `webhook:receive` | Can receive inbound webhooks |
 | `data:read` | Reads data from the database |
 | `data:write` | Writes data to the database |
+
+---
+
+## Registered Modules
+
+| Module | ID | Version | Capabilities |
+|--------|-----|---------|--------------|
+| Blog | `blog` | 1.0.0 | `content:receive`, `data:write`, `webhook:trigger` |
+| Newsletter | `newsletter` | 1.0.0 | `content:receive`, `data:write` |
+| CRM | `crm` | 1.0.0 | `content:receive`, `data:write`, `webhook:trigger` |
+| Pages | `pages` | 1.0.0 | `content:receive`, `data:write`, `webhook:trigger` |
+| Knowledge Base | `kb` | 1.0.0 | `content:receive`, `data:write` |
 
 ---
 
@@ -277,6 +290,145 @@ interface CRMLeadOutput {
   status: LeadStatus;
   error?: string;
 }
+```
+
+---
+
+### Pages Module
+
+**ID:** `pages`  
+**Capabilities:** `content:receive`, `data:write`, `webhook:trigger`
+
+#### Input Schema
+
+```typescript
+interface PageModuleInput {
+  // Required
+  title: string;                              // Page title (max 200 chars)
+  content: ContentBlock[] | TiptapDocument | string; // Page content
+  
+  // Optional
+  slug?: string;                              // Auto-generated if not provided
+  
+  // Metadata
+  meta?: {
+    source_module?: string;
+    source_id?: string;
+    seo_title?: string;                       // SEO title (max 60 chars)
+    seo_description?: string;                 // Meta description (max 160 chars)
+  };
+  
+  // Options
+  options?: {
+    status: 'draft' | 'published';            // Default: 'draft'
+    show_in_menu: boolean;                    // Default: false
+    menu_order?: number;
+    schedule_at?: string;                     // ISO 8601 datetime
+  };
+}
+```
+
+#### Output Schema
+
+```typescript
+interface PageModuleOutput {
+  success: boolean;
+  id: string;           // Created page UUID
+  slug: string;         // URL slug
+  url: string;          // Full URL path (e.g., "/about-us")
+  status: string;       // Final status
+  error?: string;
+}
+```
+
+#### Example Usage
+
+```typescript
+const result = await moduleRegistry.publish('pages', {
+  title: 'About Our Company',
+  content: [
+    { id: 'uuid', type: 'hero', data: { title: 'About Us', subtitle: 'Our story' } },
+    { id: 'uuid', type: 'text', data: { content: tiptapDoc } }
+  ],
+  meta: {
+    seo_title: 'About Us - Company Name',
+    seo_description: 'Learn about our company history and values.'
+  },
+  options: {
+    status: 'published',
+    show_in_menu: true,
+    menu_order: 2
+  }
+});
+```
+
+---
+
+### Knowledge Base Module
+
+**ID:** `kb`  
+**Capabilities:** `content:receive`, `data:write`
+
+#### Input Schema
+
+```typescript
+interface KBArticleModuleInput {
+  // Required
+  title: string;                    // Article title (max 200 chars)
+  question: string;                 // FAQ question (max 500 chars)
+  category_id: string;              // KB category UUID
+  answer: TiptapDocument | string;  // Answer content
+  
+  // Optional
+  slug?: string;                    // Auto-generated if not provided
+  
+  // Metadata
+  meta?: {
+    source_module?: string;
+    source_id?: string;
+    seo_title?: string;
+    seo_description?: string;
+  };
+  
+  // Options
+  options?: {
+    is_published: boolean;          // Default: true
+    is_featured: boolean;           // Default: false
+    include_in_chat: boolean;       // Include in AI chat context (Default: true)
+  };
+}
+```
+
+#### Output Schema
+
+```typescript
+interface KBArticleModuleOutput {
+  success: boolean;
+  id: string;           // Created article UUID
+  slug: string;         // URL slug
+  url: string;          // Full URL path (e.g., "/kb/how-to-reset-password")
+  error?: string;
+}
+```
+
+#### Example Usage
+
+```typescript
+const result = await moduleRegistry.publish('kb', {
+  title: 'Password Reset Guide',
+  question: 'How do I reset my password?',
+  category_id: 'category-uuid',
+  answer: {
+    type: 'doc',
+    content: [
+      { type: 'paragraph', content: [{ type: 'text', text: 'Follow these steps...' }] }
+    ]
+  },
+  options: {
+    is_published: true,
+    include_in_chat: true
+  }
+});
 ```
 
 ---

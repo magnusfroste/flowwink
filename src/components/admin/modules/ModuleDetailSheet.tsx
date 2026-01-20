@@ -71,23 +71,34 @@ const API_EXAMPLES: Record<string, { input: string; output: string }> = {
   blog: {
     input: `{
   title: "My Blog Post",
-  content: "<p>Content here...</p>",
+  content: "Content or TiptapDoc...",
   excerpt: "A brief summary",
+  meta: {
+    source_module: "content-campaign",
+    keywords: ["seo", "marketing"]
+  },
   options: {
-    status: "published"
+    status: "published",
+    author_id: "uuid"
   }
 }`,
     output: `{
   success: true,
   id: "uuid",
-  slug: "my-blog-post",
-  url: "/blog/my-blog-post"
+  slug: "my-blog-post-abc123",
+  url: "/blog/my-blog-post-abc123",
+  status: "published",
+  published_at: "2025-01-20T..."
 }`,
   },
   newsletter: {
     input: `{
   subject: "Weekly Update",
   content_html: "<p>Newsletter...</p>",
+  preview_text: "This week...",
+  meta: {
+    source_module: "content-campaign"
+  },
   options: {
     status: "draft"
   }
@@ -95,21 +106,68 @@ const API_EXAMPLES: Record<string, { input: string; output: string }> = {
     output: `{
   success: true,
   id: "uuid",
-  status: "draft"
+  status: "draft",
+  subscriber_count: 150
 }`,
   },
   crm: {
     input: `{
   email: "lead@example.com",
   name: "John Doe",
+  phone: "+46701234567",
   source: "website",
-  initial_score: 10
+  initial_score: 10,
+  meta: {
+    source_module: "form"
+  }
 }`,
     output: `{
   success: true,
   lead_id: "uuid",
   is_new: true,
-  score: 10
+  score: 10,
+  status: "lead"
+}`,
+  },
+  pages: {
+    input: `{
+  title: "About Us",
+  content: [/* ContentBlock[] */],
+  meta: {
+    seo_title: "About - Company",
+    seo_description: "Learn more..."
+  },
+  options: {
+    status: "published",
+    show_in_menu: true,
+    menu_order: 2
+  }
+}`,
+    output: `{
+  success: true,
+  id: "uuid",
+  slug: "about-us-xyz789",
+  url: "/about-us-xyz789",
+  status: "published"
+}`,
+  },
+  kb: {
+    input: `{
+  title: "How to reset password",
+  question: "How do I reset my password?",
+  category_id: "uuid",
+  answer: "TiptapDocument or string",
+  options: {
+    is_published: true,
+    is_featured: false,
+    include_in_chat: true
+  }
+}`,
+    output: `{
+  success: true,
+  id: "uuid",
+  slug: "how-to-reset-password-abc",
+  url: "/kb/how-to-reset-password-abc"
 }`,
   },
 };
