@@ -34,6 +34,8 @@ import {
   ArrowUpCircle,
   Headphones,
   Zap,
+  Megaphone,
+  Code2,
 } from "lucide-react";
 
 import { useAuth } from "@/hooks/useAuth";
@@ -126,6 +128,7 @@ const navigationGroups: NavGroup[] = [
     items: [
       { name: "Newsletter", href: "/admin/newsletter", icon: Mail, moduleId: "newsletter" },
       { name: "Form Submissions", href: "/admin/forms", icon: Inbox, moduleId: "forms" },
+      { name: "Campaigns", href: "/admin/campaigns", icon: Megaphone, moduleId: "contentApi" },
       { name: "AI Chat", href: "/admin/chat", icon: MessageSquare, moduleId: "chat" },
       { name: "Live Support", href: "/admin/live-support", icon: Headphones, moduleId: "liveSupport" },
     ],
@@ -136,7 +139,7 @@ const navigationGroups: NavGroup[] = [
     items: [
       { name: "Modules", href: "/admin/modules", icon: Puzzle },
       { name: "Integrations", href: "/admin/integrations", icon: Plug },
-      { name: "Content Hub", href: "/admin/content-hub", icon: Library, moduleId: "contentApi" },
+      { name: "Content API", href: "/admin/content-api", icon: Code2, moduleId: "contentApi" },
       { name: "Webhooks", href: "/admin/webhooks", icon: Webhook },
       { name: "Menu Order", href: "/admin/menu-order", icon: Menu },
       { name: "Users", href: "/admin/users", icon: Users },

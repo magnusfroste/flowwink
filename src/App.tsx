@@ -20,7 +20,8 @@ import SiteSettingsPage from "./pages/admin/SiteSettingsPage";
 import BrandingSettingsPage from "./pages/admin/BrandingSettingsPage";
 import MenuOrderPage from "./pages/admin/MenuOrderPage";
 import ChatSettingsPage from "./pages/admin/ChatSettingsPage";
-import ContentHubPage from "./pages/admin/ContentHubPage";
+import ContentApiPage from "./pages/admin/ContentApiPage";
+import ContentCampaignsPage from "./pages/admin/ContentCampaignsPage";
 import QuickStartPage from "./pages/admin/QuickStartPage";
 import NewSitePage from "./pages/admin/NewSitePage";
 import TemplateGalleryPage from "./pages/admin/TemplateGalleryPage";
@@ -104,7 +105,8 @@ const router = createBrowserRouter([
   { path: "/admin/branding", element: <BrandingSettingsPage /> },
   { path: "/admin/menu-order", element: <MenuOrderPage /> },
   { path: "/admin/chat", element: <ChatSettingsPage /> },
-  { path: "/admin/content-hub", element: <ContentHubPage /> },
+  { path: "/admin/content-api", element: <ContentApiPage /> },
+  { path: "/admin/campaigns", element: <ContentCampaignsPage /> },
   { path: "/admin/quick-start", element: <QuickStartPage /> },
   { path: "/admin/new-site", element: <NewSitePage /> },
   { path: "/admin/templates", element: <TemplateGalleryPage /> },
