@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Sparkles, Loader2 } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Sparkles, Loader2, AlertCircle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -13,8 +13,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { useCreateProposal, ChannelType } from '@/hooks/useContentProposals';
-import { ChannelIcon, ALL_CHANNELS, getChannelConfig } from './ChannelIcon';
+import { ChannelIcon, ALL_CHANNELS, getChannelConfig, INTERNAL_CHANNELS } from './ChannelIcon';
+import { useModules } from '@/hooks/useModules';
+import { cn } from '@/lib/utils';
 
 interface CreateProposalDialogProps {
   open: boolean;
@@ -29,13 +37,52 @@ export function CreateProposalDialog({ open, onOpenChange, onSuccess }: CreatePr
   const [useAI, setUseAI] = useState(true);
 
   const createProposal = useCreateProposal();
+  const { data: modules } = useModules();
+
+  // Determine which channels are available based on module status
+  const channelAvailability = useMemo(() => {
+    const availability: Record<ChannelType, { available: boolean; hint?: string }> = {} as any;
+    
+    ALL_CHANNELS.forEach((channel) => {
+      const config = getChannelConfig(channel);
+      if (!config) {
+        availability[channel] = { available: true };
+        return;
+      }
+      
+      // External channels are always available
+      if (!config.moduleId) {
+        availability[channel] = { available: true };
+        return;
+      }
+      
+      // Check if the required module is enabled
+      const isEnabled = modules?.[config.moduleId]?.enabled ?? false;
+      availability[channel] = {
+        available: isEnabled,
+        hint: isEnabled ? undefined : config.disabledHint,
+      };
+    });
+    
+    return availability;
+  }, [modules]);
+
+  // Count available internal channels
+  const availableInternalCount = INTERNAL_CHANNELS.filter(
+    (ch) => channelAvailability[ch]?.available
+  ).length;
 
   const handleCreate = async () => {
     if (!topic.trim()) return;
 
+    // Filter out unavailable channels
+    const validChannels = selectedChannels.filter(
+      (ch) => channelAvailability[ch]?.available
+    );
+
     // Create basic channel variants structure
     const channel_variants: Record<string, unknown> = {};
-    selectedChannels.forEach((channel) => {
+    validChannels.forEach((channel) => {
       switch (channel) {
         case 'blog':
           channel_variants.blog = {
@@ -99,6 +146,9 @@ export function CreateProposalDialog({ open, onOpenChange, onSuccess }: CreatePr
   };
 
   const toggleChannel = (channel: ChannelType) => {
+    // Don't allow selecting unavailable channels
+    if (!channelAvailability[channel]?.available) return;
+    
     setSelectedChannels((prev) =>
       prev.includes(channel)
         ? prev.filter((c) => c !== channel)
@@ -139,25 +189,73 @@ export function CreateProposalDialog({ open, onOpenChange, onSuccess }: CreatePr
           </div>
 
           <div className="space-y-2">
-            <Label>Target Channels</Label>
-            <div className="grid grid-cols-2 gap-2">
-              {ALL_CHANNELS.map((channel) => {
-                const config = getChannelConfig(channel as ChannelType);
-                return (
-                  <label
-                    key={channel}
-                    className="flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors"
-                  >
-                    <Checkbox
-                      checked={selectedChannels.includes(channel as ChannelType)}
-                      onCheckedChange={() => toggleChannel(channel as ChannelType)}
-                    />
-                    <ChannelIcon channel={channel as ChannelType} size="sm" />
-                    <span className="text-sm font-medium">{config?.label}</span>
-                  </label>
-                );
-              })}
+            <div className="flex items-center justify-between">
+              <Label>Target Channels</Label>
+              {availableInternalCount < INTERNAL_CHANNELS.length && (
+                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" />
+                  Some channels require module activation
+                </span>
+              )}
             </div>
+            <TooltipProvider>
+              <div className="grid grid-cols-2 gap-2">
+                {ALL_CHANNELS.map((channel) => {
+                  const config = getChannelConfig(channel);
+                  const { available, hint } = channelAvailability[channel] || { available: true };
+                  const isSelected = selectedChannels.includes(channel);
+                  
+                  const channelItem = (
+                    <label
+                      key={channel}
+                      className={cn(
+                        'flex items-center gap-3 p-3 rounded-lg border transition-colors',
+                        available 
+                          ? 'cursor-pointer hover:bg-muted/50' 
+                          : 'cursor-not-allowed opacity-60 bg-muted/30',
+                        isSelected && available && 'ring-2 ring-primary/20 border-primary/50'
+                      )}
+                    >
+                      <Checkbox
+                        checked={isSelected && available}
+                        onCheckedChange={() => toggleChannel(channel)}
+                        disabled={!available}
+                      />
+                      <ChannelIcon channel={channel} size="sm" disabled={!available} />
+                      <div className="flex-1 min-w-0">
+                        <span className={cn(
+                          'text-sm font-medium',
+                          !available && 'text-muted-foreground'
+                        )}>
+                          {config?.label}
+                        </span>
+                        {!available && (
+                          <p className="text-[10px] text-muted-foreground truncate">
+                            Module disabled
+                          </p>
+                        )}
+                      </div>
+                    </label>
+                  );
+                  
+                  // Wrap unavailable channels with tooltip
+                  if (!available && hint) {
+                    return (
+                      <Tooltip key={channel}>
+                        <TooltipTrigger asChild>
+                          {channelItem}
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-[200px]">
+                          <p className="text-xs">{hint}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    );
+                  }
+                  
+                  return channelItem;
+                })}
+              </div>
+            </TooltipProvider>
           </div>
 
           <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border">
