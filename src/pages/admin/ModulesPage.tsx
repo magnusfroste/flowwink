@@ -63,6 +63,8 @@ const CATEGORY_ORDER = ["content", "communication", "data", "insights", "system"
 // Module dependencies - key depends on value
 const MODULE_DEPENDENCIES: Partial<Record<keyof ModulesSettings, keyof ModulesSettings>> = {
   orders: 'products',
+  deals: 'leads',
+  liveSupport: 'chat',
 };
 
 export default function ModulesPage() {
@@ -88,20 +90,28 @@ export default function ModulesPage() {
       [moduleId]: { ...module, enabled },
     };
     
-    // If toggling Products, also toggle Orders
-    if (moduleId === 'products') {
-      updated = {
-        ...updated,
-        orders: { ...updated.orders, enabled },
-      };
+    // Handle cascading disables (when parent is disabled, disable dependents)
+    if (!enabled) {
+      // Find all modules that depend on this one and disable them
+      for (const [depId, parentId] of Object.entries(MODULE_DEPENDENCIES)) {
+        if (parentId === moduleId) {
+          updated = {
+            ...updated,
+            [depId]: { ...updated[depId as keyof ModulesSettings], enabled: false },
+          };
+        }
+      }
     }
     
-    // If enabling Orders, also enable Products
-    if (moduleId === 'orders' && enabled && !localModules.products.enabled) {
-      updated = {
-        ...updated,
-        products: { ...updated.products, enabled: true },
-      };
+    // Handle cascading enables (when dependent is enabled, enable parent)
+    if (enabled) {
+      const parentId = MODULE_DEPENDENCIES[moduleId];
+      if (parentId && !localModules[parentId].enabled) {
+        updated = {
+          ...updated,
+          [parentId]: { ...updated[parentId], enabled: true },
+        };
+      }
     }
     
     setLocalModules(updated);

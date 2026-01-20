@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import {
   Sheet,
   SheetContent,
@@ -9,6 +10,12 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { 
   Plus, 
   Layout, 
@@ -56,8 +63,10 @@ import {
   Wand2,
   Search,
   Clipboard,
+  AlertTriangle,
 } from 'lucide-react';
 import { ContentBlockType } from '@/types/cms';
+import { useAllBlockModuleStatus } from '@/hooks/useBlockModuleStatus';
 
 interface BlockOption {
   type: ContentBlockType;
@@ -383,6 +392,7 @@ interface BlockSelectorProps {
 export function BlockSelector({ onAdd, onPaste }: BlockSelectorProps) {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const blockModuleStatus = useAllBlockModuleStatus();
 
   const filteredGroups = useMemo(() => {
     if (!searchQuery.trim()) return BLOCK_GROUPS;
@@ -401,6 +411,12 @@ export function BlockSelector({ onAdd, onPaste }: BlockSelectorProps) {
     onAdd(type);
     setSearchQuery('');
     setOpen(false);
+  };
+
+  const getModuleWarning = (blockType: ContentBlockType): string | null => {
+    const status = blockModuleStatus[blockType];
+    if (!status || status.isAvailable) return null;
+    return `Requires ${status.requiredModuleName} module`;
   };
 
   return (
@@ -443,23 +459,51 @@ export function BlockSelector({ onAdd, onPaste }: BlockSelectorProps) {
                   {group.name}
                 </h3>
                 <div className="grid grid-cols-2 gap-3">
-                  {group.blocks.map((block) => (
-                    <button
-                      key={block.type}
-                      onClick={() => handleSelect(block.type)}
-                      className="flex items-start gap-3 p-4 rounded-lg border bg-card hover:bg-accent hover:border-primary/30 transition-all text-left group"
-                    >
-                      <div className="p-2 rounded-md bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                        {block.icon}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-sm">{block.label}</div>
-                        <div className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
-                          {block.description}
-                        </div>
-                      </div>
-                    </button>
-                  ))}
+                  {group.blocks.map((block) => {
+                    const moduleWarning = getModuleWarning(block.type);
+                    
+                    return (
+                      <TooltipProvider key={block.type}>
+                        <Tooltip delayDuration={300}>
+                          <TooltipTrigger asChild>
+                            <button
+                              onClick={() => handleSelect(block.type)}
+                              className={`flex items-start gap-3 p-4 rounded-lg border bg-card hover:bg-accent hover:border-primary/30 transition-all text-left group relative ${
+                                moduleWarning ? 'opacity-75' : ''
+                              }`}
+                            >
+                              {moduleWarning && (
+                                <div className="absolute top-2 right-2">
+                                  <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+                                </div>
+                              )}
+                              <div className={`p-2 rounded-md transition-colors ${
+                                moduleWarning 
+                                  ? 'bg-muted text-muted-foreground group-hover:bg-muted group-hover:text-muted-foreground' 
+                                  : 'bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground'
+                              }`}>
+                                {block.icon}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium text-sm">{block.label}</div>
+                                <div className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                                  {block.description}
+                                </div>
+                              </div>
+                            </button>
+                          </TooltipTrigger>
+                          {moduleWarning && (
+                            <TooltipContent side="top" className="max-w-xs">
+                              <div className="flex items-center gap-2 text-sm">
+                                <AlertTriangle className="h-4 w-4 text-amber-500 flex-shrink-0" />
+                                <span>{moduleWarning}. Enable it in Modules settings.</span>
+                              </div>
+                            </TooltipContent>
+                          )}
+                        </Tooltip>
+                      </TooltipProvider>
+                    );
+                  })}
                 </div>
               </div>
             ))}
