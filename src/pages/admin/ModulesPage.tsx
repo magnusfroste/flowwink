@@ -9,22 +9,26 @@ import {
   LayoutGrid, 
   Image,
   Sparkles,
-  Check,
   Lock,
-  Link2,
   UserCheck,
   Briefcase,
   Building2,
   Package,
   ShoppingCart,
+  Library,
+  Headphones,
+  CalendarDays,
+  BarChart3,
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useModules, useUpdateModules, defaultModulesSettings, type ModulesSettings } from "@/hooks/useModules";
+import { useModuleStats } from "@/hooks/useModuleStats";
+import { ModuleCard } from "@/components/admin/modules/ModuleCard";
+import { moduleRegistry } from "@/lib/module-registry";
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   FileText,
@@ -40,6 +44,10 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   Building2,
   Package,
   ShoppingCart,
+  Library,
+  Headphones,
+  CalendarDays,
+  BarChart3,
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -47,9 +55,10 @@ const CATEGORY_LABELS: Record<string, string> = {
   data: "Data",
   communication: "Communication",
   system: "System",
+  insights: "Insights",
 };
 
-const CATEGORY_ORDER = ["content", "communication", "data", "system"];
+const CATEGORY_ORDER = ["content", "communication", "data", "insights", "system"];
 
 // Module dependencies - key depends on value
 const MODULE_DEPENDENCIES: Partial<Record<keyof ModulesSettings, keyof ModulesSettings>> = {
@@ -58,6 +67,7 @@ const MODULE_DEPENDENCIES: Partial<Record<keyof ModulesSettings, keyof ModulesSe
 
 export default function ModulesPage() {
   const { data: modules, isLoading } = useModules();
+  const { data: stats } = useModuleStats();
   const updateModules = useUpdateModules();
   const [localModules, setLocalModules] = useState<ModulesSettings | null>(null);
 
@@ -113,6 +123,7 @@ export default function ModulesPage() {
     ? Object.values(localModules).filter(m => m.enabled).length 
     : 0;
   const totalCount = Object.keys(defaultModulesSettings).length;
+  const registeredModules = moduleRegistry.list();
 
   return (
     <AdminLayout>
@@ -122,26 +133,72 @@ export default function ModulesPage() {
           description="Enable and disable features as needed. Disabled modules are hidden from the sidebar."
         />
 
-        {/* Summary Card */}
-        <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                <Sparkles className="h-6 w-6 text-primary" />
+        {/* Summary Cards */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <Sparkles className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{enabledCount} / {totalCount}</p>
+                  <p className="text-sm text-muted-foreground">modules active</p>
+                </div>
               </div>
-              <div>
-                <p className="text-2xl font-bold">{enabledCount} / {totalCount}</p>
-                <p className="text-sm text-muted-foreground">modules active</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-muted">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center">
+                  <Database className="h-6 w-6 text-muted-foreground" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{registeredModules.length}</p>
+                  <p className="text-sm text-muted-foreground">with API contracts</p>
+                </div>
               </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-muted">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center">
+                  <Lock className="h-6 w-6 text-muted-foreground" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">
+                    {localModules ? Object.values(localModules).filter(m => m.core).length : 0}
+                  </p>
+                  <p className="text-sm text-muted-foreground">core modules</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Registry Info */}
+        <div className="rounded-lg border border-dashed border-muted-foreground/30 bg-muted/20 p-4">
+          <div className="flex items-start gap-3">
+            <Badge variant="outline" className="mt-0.5">Module Registry</Badge>
+            <div className="text-sm text-muted-foreground">
+              <p>
+                Modules with API contracts can receive content from Content Hub campaigns, 
+                external webhooks, and the programmatic registry API. 
+                See <code className="bg-muted px-1 py-0.5 rounded text-xs">docs/MODULE-API.md</code> for integration details.
+              </p>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Module Groups */}
         {isLoading ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-32" />
+              <Skeleton key={i} className="h-40" />
             ))}
           </div>
         ) : (
@@ -154,79 +211,22 @@ export default function ModulesPage() {
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {group.modules.map(module => {
                     const IconComponent = ICON_MAP[module.icon] || FileText;
-                    const isEnabled = module.enabled;
-                    const isCore = module.core;
+                    const dependency = MODULE_DEPENDENCIES[module.id];
                     
                     return (
-                      <Card 
+                      <ModuleCard
                         key={module.id}
-                        className={`relative transition-all duration-200 ${
-                          isEnabled 
-                            ? "border-primary/30 bg-primary/5 shadow-sm" 
-                            : "border-border/50 bg-muted/20"
-                        }`}
-                      >
-                        {isCore && (
-                          <Badge 
-                            variant="secondary" 
-                            className="absolute -top-2 right-3 text-xs"
-                          >
-                            <Lock className="h-3 w-3 mr-1" />
-                            Core
-                          </Badge>
-                        )}
-                        
-                        {MODULE_DEPENDENCIES[module.id] && (
-                          <Badge 
-                            variant="outline" 
-                            className="absolute -top-2 right-3 text-xs bg-background"
-                          >
-                            <Link2 className="h-3 w-3 mr-1" />
-                            {localModules?.[MODULE_DEPENDENCIES[module.id]!]?.name}
-                          </Badge>
-                        )}
-                        
-                        <CardHeader className="pb-3">
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="flex items-center gap-3">
-                              <div className={`h-10 w-10 rounded-lg flex items-center justify-center transition-colors ${
-                                isEnabled 
-                                  ? "bg-primary/10" 
-                                  : "bg-muted"
-                              }`}>
-                                <IconComponent className={`h-5 w-5 transition-colors ${
-                                  isEnabled 
-                                    ? "text-primary" 
-                                    : "text-muted-foreground"
-                                }`} />
-                              </div>
-                              <div>
-                                <CardTitle className="text-base">{module.name}</CardTitle>
-                              </div>
-                            </div>
-                            
-                            <Switch
-                              checked={isEnabled}
-                              onCheckedChange={(checked) => handleToggle(module.id, checked)}
-                              disabled={isCore || updateModules.isPending}
-                              className="data-[state=checked]:bg-primary"
-                            />
-                          </div>
-                        </CardHeader>
-                        
-                        <CardContent className="pt-0">
-                          <CardDescription className="text-sm">
-                            {module.description}
-                          </CardDescription>
-                          
-                          {isEnabled && (
-                            <div className="mt-3 flex items-center gap-1.5 text-xs text-primary">
-                              <Check className="h-3.5 w-3.5" />
-                              <span>Active</span>
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
+                        moduleId={module.id}
+                        config={module}
+                        isEnabled={module.enabled}
+                        isCore={!!module.core}
+                        dependsOn={dependency}
+                        dependsOnName={dependency ? localModules?.[dependency]?.name : undefined}
+                        stats={stats?.[module.id]}
+                        onToggle={(enabled) => handleToggle(module.id, enabled)}
+                        isUpdating={updateModules.isPending}
+                        IconComponent={IconComponent}
+                      />
                     );
                   })}
                 </div>
