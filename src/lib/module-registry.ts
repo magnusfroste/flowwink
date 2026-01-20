@@ -12,7 +12,6 @@ import type { Json } from '@/integrations/supabase/types';
 import {
   ModuleDefinition,
   ModuleCapability,
-  ModuleMeta,
   BlogModuleInput,
   BlogModuleOutput,
   blogModuleInputSchema,
@@ -21,13 +20,18 @@ import {
   NewsletterModuleOutput,
   newsletterModuleInputSchema,
   newsletterModuleOutputSchema,
-  WebhookModuleInput,
-  WebhookModuleOutput,
-  webhookModuleInputSchema,
   CRMLeadInput,
   CRMLeadOutput,
   crmLeadInputSchema,
   crmLeadOutputSchema,
+  PageModuleInput,
+  PageModuleOutput,
+  pageModuleInputSchema,
+  pageModuleOutputSchema,
+  KBArticleModuleInput,
+  KBArticleModuleOutput,
+  kbArticleModuleInputSchema,
+  kbArticleModuleOutputSchema,
   tiptapDocumentSchema,
 } from '@/types/module-contracts';
 import { triggerWebhook } from '@/lib/webhook-utils';
@@ -83,11 +87,11 @@ const blogModule: ModuleDefinition<BlogModuleInput, BlogModuleOutput> = {
       
       // Prepare content - convert to block array format (ContentBlock[])
       // Blog posts use block-based content, not Tiptap documents directly
-      let contentJson: Array<Record<string, unknown>>;
+      let contentJson: Json;
       
       if (Array.isArray(validated.content)) {
         // Already an array of blocks
-        contentJson = validated.content as Array<Record<string, unknown>>;
+        contentJson = validated.content as Json;
       } else if (typeof validated.content === 'string') {
         // Plain text - wrap in a Text block with Tiptap structure
         contentJson = [{
@@ -99,7 +103,7 @@ const blogModule: ModuleDefinition<BlogModuleInput, BlogModuleOutput> = {
               content: [{ type: 'paragraph', content: [{ type: 'text', text: validated.content }] }]
             }
           }
-        }];
+        }] as Json;
       } else if (isTiptapDocument(validated.content)) {
         // Tiptap document - wrap in a Text block
         contentJson = [{
@@ -108,7 +112,7 @@ const blogModule: ModuleDefinition<BlogModuleInput, BlogModuleOutput> = {
           data: {
             content: validated.content
           }
-        }];
+        }] as Json;
       } else {
         // Unknown format - wrap in a single text block
         const contentStr = typeof validated.content === 'object' 
@@ -123,7 +127,7 @@ const blogModule: ModuleDefinition<BlogModuleInput, BlogModuleOutput> = {
               content: [{ type: 'paragraph', content: [{ type: 'text', text: contentStr }] }]
             }
           }
-        }];
+        }] as Json;
       }
 
       // Prepare post data
@@ -381,6 +385,199 @@ const crmModule: ModuleDefinition<CRMLeadInput, CRMLeadOutput> = {
 };
 
 // =============================================================================
+// Pages Module Implementation
+// =============================================================================
+
+const pagesModule: ModuleDefinition<PageModuleInput, PageModuleOutput> = {
+  id: 'pages',
+  name: 'Pages',
+  version: '1.0.0',
+  description: 'Create and publish CMS pages',
+  capabilities: ['content:receive', 'data:write', 'webhook:trigger'],
+  inputSchema: pageModuleInputSchema,
+  outputSchema: pageModuleOutputSchema,
+
+  async publish(input: PageModuleInput): Promise<PageModuleOutput> {
+    try {
+      const validated = pageModuleInputSchema.parse(input);
+      
+      // Generate slug if not provided
+      const baseSlug = validated.slug || generateSlug(validated.title);
+      const timestamp = Date.now().toString(36);
+      const slug = validated.slug ? baseSlug : `${baseSlug}-${timestamp}`;
+      
+      // Prepare content as ContentBlock[]
+      let contentJson: Json;
+      
+      if (Array.isArray(validated.content)) {
+        contentJson = validated.content as Json;
+      } else if (typeof validated.content === 'string') {
+        contentJson = [{
+          id: crypto.randomUUID(),
+          type: 'text',
+          data: {
+            content: {
+              type: 'doc',
+              content: [{ type: 'paragraph', content: [{ type: 'text', text: validated.content }] }]
+            }
+          }
+        }] as Json;
+      } else if (isTiptapDocument(validated.content)) {
+        contentJson = [{
+          id: crypto.randomUUID(),
+          type: 'text',
+          data: { content: validated.content }
+        }] as Json;
+      } else {
+        contentJson = [] as Json;
+      }
+
+      const status = validated.options?.status || 'draft';
+      const pageData = {
+        title: validated.title,
+        slug,
+        content_json: contentJson as Json,
+        status,
+        show_in_menu: validated.options?.show_in_menu ?? false,
+        menu_order: validated.options?.menu_order ?? 0,
+        scheduled_at: validated.options?.schedule_at || null,
+        meta_json: validated.meta ? {
+          source_module: validated.meta.source_module,
+          source_id: validated.meta.source_id,
+          seo_title: validated.meta.seo_title,
+          seo_description: validated.meta.seo_description,
+        } as Json : null,
+      };
+
+      const { data, error } = await supabase
+        .from('pages')
+        .insert(pageData)
+        .select('id, slug, status')
+        .single();
+
+      if (error) {
+        console.error('[PagesModule] Insert error:', error);
+        return { success: false, error: error.message };
+      }
+
+      if (status === 'published') {
+        try {
+          await triggerWebhook({
+            event: 'page.published',
+            data: {
+              id: data.id,
+              title: validated.title,
+              slug: data.slug,
+              url: `/${data.slug}`,
+              source_module: validated.meta?.source_module,
+            },
+          });
+        } catch (webhookError) {
+          console.warn('[PagesModule] Webhook failed:', webhookError);
+        }
+      }
+
+      return {
+        success: true,
+        id: data.id,
+        slug: data.slug,
+        url: `/${data.slug}`,
+        status: data.status,
+      };
+    } catch (error) {
+      console.error('[PagesModule] Error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  },
+};
+
+// =============================================================================
+// Knowledge Base Module Implementation
+// =============================================================================
+
+const kbModule: ModuleDefinition<KBArticleModuleInput, KBArticleModuleOutput> = {
+  id: 'kb',
+  name: 'Knowledge Base',
+  version: '1.0.0',
+  description: 'Create knowledge base articles',
+  capabilities: ['content:receive', 'data:write'],
+  inputSchema: kbArticleModuleInputSchema,
+  outputSchema: kbArticleModuleOutputSchema,
+
+  async publish(input: KBArticleModuleInput): Promise<KBArticleModuleOutput> {
+    try {
+      const validated = kbArticleModuleInputSchema.parse(input);
+      
+      // Generate slug
+      const baseSlug = validated.slug || generateSlug(validated.title);
+      const timestamp = Date.now().toString(36);
+      const slug = validated.slug ? baseSlug : `${baseSlug}-${timestamp}`;
+      
+      // Prepare answer content
+      let answerJson: Record<string, unknown> | null = null;
+      let answerText: string | null = null;
+      
+      if (typeof validated.answer === 'string') {
+        answerText = validated.answer;
+        answerJson = {
+          type: 'doc',
+          content: [{ type: 'paragraph', content: [{ type: 'text', text: validated.answer }] }]
+        };
+      } else if (isTiptapDocument(validated.answer)) {
+        answerJson = validated.answer as Record<string, unknown>;
+        // Extract plain text for answerText
+        answerText = JSON.stringify(validated.answer);
+      }
+
+      const articleData = {
+        title: validated.title,
+        question: validated.question,
+        slug,
+        category_id: validated.category_id,
+        answer_json: answerJson as Json,
+        answer_text: answerText,
+        is_published: validated.options?.is_published ?? true,
+        is_featured: validated.options?.is_featured ?? false,
+        include_in_chat: validated.options?.include_in_chat ?? true,
+        meta_json: validated.meta ? {
+          source_module: validated.meta.source_module,
+          source_id: validated.meta.source_id,
+          seo_title: validated.meta.seo_title,
+          seo_description: validated.meta.seo_description,
+        } as Json : null,
+      };
+
+      const { data, error } = await supabase
+        .from('kb_articles')
+        .insert(articleData)
+        .select('id, slug')
+        .single();
+
+      if (error) {
+        console.error('[KBModule] Insert error:', error);
+        return { success: false, error: error.message };
+      }
+
+      return {
+        success: true,
+        id: data.id,
+        slug: data.slug,
+        url: `/kb/${data.slug}`,
+      };
+    } catch (error) {
+      console.error('[KBModule] Error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  },
+};
+
+// =============================================================================
 // Module Registry Class
 // =============================================================================
 
@@ -392,6 +589,8 @@ class ModuleRegistry {
     this.register(blogModule as ModuleDefinition<unknown, unknown>);
     this.register(newsletterModule as ModuleDefinition<unknown, unknown>);
     this.register(crmModule as ModuleDefinition<unknown, unknown>);
+    this.register(pagesModule as ModuleDefinition<unknown, unknown>);
+    this.register(kbModule as ModuleDefinition<unknown, unknown>);
   }
 
   /**

@@ -230,6 +230,98 @@ export const crmLeadOutputSchema = z.object({
 export type CRMLeadOutput = z.infer<typeof crmLeadOutputSchema>;
 
 // =============================================================================
+// Pages Module
+// =============================================================================
+
+export const pageModuleInputSchema = z.object({
+  // Required
+  title: z.string().min(1).max(200),
+  
+  // Content - supports both ContentBlock[] and Tiptap
+  content: z.union([
+    z.array(z.record(z.unknown())), // ContentBlock[]
+    tiptapDocumentSchema,
+    z.string(),
+  ]),
+  
+  // Optional
+  slug: z.string().max(100).optional(), // Auto-generated if not provided
+  
+  // Metadata
+  meta: z.object({
+    source_module: z.string().optional(),
+    source_id: z.string().optional(),
+    seo_title: z.string().max(60).optional(),
+    seo_description: z.string().max(160).optional(),
+  }).optional(),
+  
+  // Options
+  options: z.object({
+    status: z.enum(['draft', 'published']).default('draft'),
+    show_in_menu: z.boolean().default(false),
+    menu_order: z.number().optional(),
+    schedule_at: z.string().datetime().optional(),
+  }).optional(),
+});
+
+export type PageModuleInput = z.infer<typeof pageModuleInputSchema>;
+
+export const pageModuleOutputSchema = z.object({
+  success: z.boolean(),
+  id: z.string().uuid().optional(),
+  slug: z.string().optional(),
+  url: z.string().optional(),
+  status: z.string().optional(),
+  error: z.string().optional(),
+});
+
+export type PageModuleOutput = z.infer<typeof pageModuleOutputSchema>;
+
+// =============================================================================
+// Knowledge Base Module
+// =============================================================================
+
+export const kbArticleModuleInputSchema = z.object({
+  // Required
+  title: z.string().min(1).max(200),
+  question: z.string().min(1).max(500),
+  category_id: z.string().uuid(),
+  
+  // Content
+  answer: z.union([tiptapDocumentSchema, z.string()]),
+  
+  // Optional
+  slug: z.string().max(100).optional(),
+  
+  // Metadata
+  meta: z.object({
+    source_module: z.string().optional(),
+    source_id: z.string().optional(),
+    seo_title: z.string().optional(),
+    seo_description: z.string().optional(),
+  }).optional(),
+  
+  // Options
+  options: z.object({
+    is_published: z.boolean().default(true),
+    is_featured: z.boolean().default(false),
+    include_in_chat: z.boolean().default(true),
+  }).optional(),
+});
+
+export type KBArticleModuleInput = z.infer<typeof kbArticleModuleInputSchema>;
+
+export const kbArticleModuleOutputSchema = z.object({
+  success: z.boolean(),
+  id: z.string().uuid().optional(),
+  slug: z.string().optional(),
+  url: z.string().optional(),
+  error: z.string().optional(),
+});
+
+export type KBArticleModuleOutput = z.infer<typeof kbArticleModuleOutputSchema>;
+
+// =============================================================================
 // Generic Module Error
 // =============================================================================
 
