@@ -2019,6 +2019,23 @@ export type Database = {
         | "order.paid"
         | "order.cancelled"
         | "order.refunded"
+        | "product.created"
+        | "product.updated"
+        | "product.deleted"
+        | "booking.confirmed"
+        | "booking.cancelled"
+        | "deal.created"
+        | "deal.updated"
+        | "deal.stage_changed"
+        | "deal.won"
+        | "deal.lost"
+        | "company.created"
+        | "company.updated"
+        | "media.uploaded"
+        | "media.deleted"
+        | "global_block.updated"
+        | "kb_article.published"
+        | "kb_article.updated"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2166,6 +2183,23 @@ export const Constants = {
         "order.paid",
         "order.cancelled",
         "order.refunded",
+        "product.created",
+        "product.updated",
+        "product.deleted",
+        "booking.confirmed",
+        "booking.cancelled",
+        "deal.created",
+        "deal.updated",
+        "deal.stage_changed",
+        "deal.won",
+        "deal.lost",
+        "company.created",
+        "company.updated",
+        "media.uploaded",
+        "media.deleted",
+        "global_block.updated",
+        "kb_article.published",
+        "kb_article.updated",
       ],
     },
   },
