@@ -81,19 +81,49 @@ const blogModule: ModuleDefinition<BlogModuleInput, BlogModuleOutput> = {
       const timestamp = Date.now().toString(36);
       const slug = `${baseSlug}-${timestamp}`;
       
-      // Prepare content - convert to appropriate format
-      let contentJson: Record<string, unknown>;
-      if (typeof validated.content === 'string') {
-        // Plain text - wrap in Tiptap structure
-        contentJson = {
-          type: 'doc',
-          content: [{ type: 'paragraph', content: [{ type: 'text', text: validated.content }] }]
-        };
+      // Prepare content - convert to block array format (ContentBlock[])
+      // Blog posts use block-based content, not Tiptap documents directly
+      let contentJson: Array<Record<string, unknown>>;
+      
+      if (Array.isArray(validated.content)) {
+        // Already an array of blocks
+        contentJson = validated.content as Array<Record<string, unknown>>;
+      } else if (typeof validated.content === 'string') {
+        // Plain text - wrap in a Text block with Tiptap structure
+        contentJson = [{
+          id: crypto.randomUUID(),
+          type: 'text',
+          data: {
+            content: {
+              type: 'doc',
+              content: [{ type: 'paragraph', content: [{ type: 'text', text: validated.content }] }]
+            }
+          }
+        }];
       } else if (isTiptapDocument(validated.content)) {
-        // Already Tiptap format
-        contentJson = validated.content as Record<string, unknown>;
+        // Tiptap document - wrap in a Text block
+        contentJson = [{
+          id: crypto.randomUUID(),
+          type: 'text',
+          data: {
+            content: validated.content
+          }
+        }];
       } else {
-        contentJson = validated.content as Record<string, unknown>;
+        // Unknown format - wrap in a single text block
+        const contentStr = typeof validated.content === 'object' 
+          ? JSON.stringify(validated.content) 
+          : String(validated.content);
+        contentJson = [{
+          id: crypto.randomUUID(),
+          type: 'text',
+          data: {
+            content: {
+              type: 'doc',
+              content: [{ type: 'paragraph', content: [{ type: 'text', text: contentStr }] }]
+            }
+          }
+        }];
       }
 
       // Prepare post data
