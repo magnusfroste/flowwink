@@ -572,6 +572,34 @@ export function useUpdateAeoSettings() {
   return useUpdateSiteSettings<AeoSettings>('aeo', 'AEO settings have been updated.');
 }
 
+// System AI settings (internal AI tools: text generation, company enrichment, lead qualification, etc.)
+export type SystemAiProvider = 'openai' | 'gemini';
+
+export interface SystemAiSettings {
+  provider: SystemAiProvider;
+  openaiModel: 'gpt-4o' | 'gpt-4o-mini' | 'gpt-3.5-turbo';
+  geminiModel: 'gemini-2.0-flash-exp' | 'gemini-1.5-pro' | 'gemini-1.5-flash';
+  // Content generation preferences
+  defaultTone: 'professional' | 'friendly' | 'formal';
+  defaultLanguage: string;
+}
+
+const defaultSystemAiSettings: SystemAiSettings = {
+  provider: 'openai',
+  openaiModel: 'gpt-4o-mini',
+  geminiModel: 'gemini-2.0-flash-exp',
+  defaultTone: 'professional',
+  defaultLanguage: 'sv',
+};
+
+export function useSystemAiSettings() {
+  return useSiteSettings<SystemAiSettings>('system_ai', defaultSystemAiSettings);
+}
+
+export function useUpdateSystemAiSettings() {
+  return useUpdateSiteSettings<SystemAiSettings>('system_ai', 'System AI settings have been updated.');
+}
+
 // Re-export modules hooks for convenience
 export { useModules, useUpdateModules, useIsModuleEnabled, useEnabledModules } from './useModules';
 export type { ModulesSettings, ModuleConfig } from './useModules';
