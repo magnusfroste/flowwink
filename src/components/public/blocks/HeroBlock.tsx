@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { HeroBlockData, HeroTitleSize } from '@/types/cms';
 import { cn } from '@/lib/utils';
 import { ChevronDown, Play, Pause, Volume2, VolumeX } from 'lucide-react';
+import { handleAnchorClick, isAnchorLink } from '@/hooks/useAnchorScroll';
 
 interface HeroBlockProps {
   data: HeroBlockData;
@@ -310,6 +311,7 @@ export function HeroBlock({ data }: HeroBlockProps) {
                 {data.primaryButton?.text && data.primaryButton?.url && (
                   <a
                     href={data.primaryButton.url}
+                    onClick={(e) => isAnchorLink(data.primaryButton?.url) && handleAnchorClick(e, data.primaryButton!.url)}
                     className="inline-flex items-center justify-center px-6 py-3 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors"
                   >
                     {data.primaryButton.text}
@@ -318,6 +320,7 @@ export function HeroBlock({ data }: HeroBlockProps) {
                 {data.secondaryButton?.text && data.secondaryButton?.url && (
                   <a
                     href={data.secondaryButton.url}
+                    onClick={(e) => isAnchorLink(data.secondaryButton?.url) && handleAnchorClick(e, data.secondaryButton!.url)}
                     className="inline-flex items-center justify-center px-6 py-3 border border-border text-foreground font-medium rounded-lg hover:bg-muted transition-colors"
                   >
                     {data.secondaryButton.text}
@@ -407,7 +410,8 @@ export function HeroBlock({ data }: HeroBlockProps) {
         )}>
           {data.primaryButton?.text && data.primaryButton?.url && (
             <a 
-              href={data.primaryButton.url} 
+              href={data.primaryButton.url}
+              onClick={(e) => isAnchorLink(data.primaryButton?.url) && handleAnchorClick(e, data.primaryButton!.url)}
               className="bg-background text-foreground px-6 py-3 rounded-lg font-medium hover:opacity-90 transition-opacity"
             >
               {data.primaryButton.text}
@@ -415,7 +419,8 @@ export function HeroBlock({ data }: HeroBlockProps) {
           )}
           {data.secondaryButton?.text && data.secondaryButton?.url && (
             <a 
-              href={data.secondaryButton.url} 
+              href={data.secondaryButton.url}
+              onClick={(e) => isAnchorLink(data.secondaryButton?.url) && handleAnchorClick(e, data.secondaryButton!.url)}
               className="border border-current px-6 py-3 rounded-lg font-medium hover:bg-white/10 transition-colors"
             >
               {data.secondaryButton.text}

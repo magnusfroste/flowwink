@@ -107,8 +107,23 @@ FlowWink använder en modulär block-arkitektur för flexibel innehållshanterin
 - **Duplicera/Ta bort**: Snabb hantering
 - **Animationer**: Per-block animeringar (fade, slide, scale)
 - **Spacing**: Konfigurerbar padding och margin
+- **Anchor ID**: Sätt ett ID för in-page navigation (t.ex. `#kontakta-oss`)
 - **Förhandsgranskning**: Se ändringar i realtid
 - **Responsivt**: Alla block anpassas automatiskt
+
+#### Anchor-länkar (In-page Navigation)
+
+Varje block kan tilldelas ett **Anchor ID** för att möjliggöra in-page navigation:
+
+1. **Sätta Anchor ID**: Klicka på `#`-ikonen i block-toolbaren
+2. **Länka till block**: Använd URL:er som `#kontakta-oss` i knappar eller navigation
+3. **Smooth Scroll**: Automatisk mjuk scrollning vid klick på anchor-länkar
+4. **URL-stöd**: Direktlänkar som `/sida#kontakta-oss` fungerar vid sidladdning
+
+**Användningsfall:**
+- Navigation inom en lång sida (t.ex. hero → kontaktformulär)
+- Header-meny med snabblänkar till sektioner
+- CTA-knappar som scrollar till formulär
 
 ### 1.2 Mediabibliotek
 

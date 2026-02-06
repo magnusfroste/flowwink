@@ -532,6 +532,17 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
     [blocks, onChange]
   );
 
+  const handleUpdateBlockAnchor = useCallback(
+    (blockId: string, anchorId: string | undefined) => {
+      onChange(
+        blocks.map((block) =>
+          block.id === blockId ? { ...block, anchorId } : block
+        )
+      );
+    },
+    [blocks, onChange]
+  );
+
   const handleDeleteBlock = (blockId: string) => {
     onChange(blocks.filter((block) => block.id !== blockId));
     if (editingBlockId === blockId) {
@@ -937,6 +948,7 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
               onCopy={() => handleCopyBlock(block)}
               onSpacingChange={(spacing) => handleUpdateBlockSpacing(block.id, spacing)}
               onAnimationChange={(animation) => handleUpdateBlockAnimation(block.id, animation)}
+              onAnchorChange={(anchorId) => handleUpdateBlockAnchor(block.id, anchorId)}
               canEdit={canEdit}
             >
               {renderBlockContent(block, editingBlockId === block.id)}

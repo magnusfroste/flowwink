@@ -6,6 +6,7 @@ import { ContentBlock, ContentBlockType, BlockSpacing, BlockAnimation } from '@/
 import { cn } from '@/lib/utils';
 import { BlockSpacingControl, getSpacingClasses } from './BlockSpacingControl';
 import { BlockAnimationControl } from './BlockAnimationControl';
+import { BlockAnchorControl } from './BlockAnchorControl';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 const BLOCK_LABELS: Record<ContentBlockType, string> = {
@@ -69,6 +70,7 @@ interface BlockWrapperProps {
   onCopy?: () => void;
   onSpacingChange?: (spacing: BlockSpacing) => void;
   onAnimationChange?: (animation: BlockAnimation) => void;
+  onAnchorChange?: (anchorId: string | undefined) => void;
   canEdit: boolean;
 }
 
@@ -81,6 +83,7 @@ export function BlockWrapper({
   onCopy,
   onSpacingChange,
   onAnimationChange,
+  onAnchorChange,
   canEdit,
 }: BlockWrapperProps) {
   const {
@@ -167,6 +170,12 @@ export function BlockWrapper({
             <BlockAnimationControl
               animation={block.animation}
               onChange={onAnimationChange}
+            />
+          )}
+          {onAnchorChange && (
+            <BlockAnchorControl
+              anchorId={block.anchorId}
+              onChange={onAnchorChange}
             />
           )}
           <Tooltip>

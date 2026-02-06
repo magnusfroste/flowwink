@@ -1,5 +1,6 @@
 import { CTABlockData } from '@/types/cms';
 import { cn } from '@/lib/utils';
+import { handleAnchorClick, isAnchorLink } from '@/hooks/useAnchorScroll';
 
 interface CTABlockProps {
   data: CTABlockData;
@@ -41,6 +42,7 @@ export function CTABlock({ data }: CTABlockProps) {
             <div className="flex flex-wrap gap-4">
               <a
                 href={data.buttonUrl}
+                onClick={(e) => isAnchorLink(data.buttonUrl) && handleAnchorClick(e, data.buttonUrl)}
                 className="inline-flex items-center justify-center px-6 py-3 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors"
               >
                 {data.buttonText}
@@ -48,6 +50,7 @@ export function CTABlock({ data }: CTABlockProps) {
               {data.secondaryButtonText && data.secondaryButtonUrl && (
                 <a
                   href={data.secondaryButtonUrl}
+                  onClick={(e) => isAnchorLink(data.secondaryButtonUrl) && handleAnchorClick(e, data.secondaryButtonUrl!)}
                   className="inline-flex items-center justify-center px-6 py-3 border border-border text-foreground font-medium rounded-lg hover:bg-muted transition-colors"
                 >
                   {data.secondaryButtonText}
@@ -76,6 +79,7 @@ export function CTABlock({ data }: CTABlockProps) {
           <div className="flex flex-wrap justify-center gap-4">
             <a
               href={data.buttonUrl}
+              onClick={(e) => isAnchorLink(data.buttonUrl) && handleAnchorClick(e, data.buttonUrl)}
               className="inline-flex items-center justify-center px-6 py-3 bg-foreground text-background font-medium rounded-lg hover:bg-foreground/90 transition-colors"
             >
               {data.buttonText}
@@ -83,6 +87,7 @@ export function CTABlock({ data }: CTABlockProps) {
             {data.secondaryButtonText && data.secondaryButtonUrl && (
               <a
                 href={data.secondaryButtonUrl}
+                onClick={(e) => isAnchorLink(data.secondaryButtonUrl) && handleAnchorClick(e, data.secondaryButtonUrl!)}
                 className="inline-flex items-center justify-center px-6 py-3 text-foreground font-medium underline underline-offset-4 hover:no-underline transition-all"
               >
                 {data.secondaryButtonText}
@@ -124,6 +129,7 @@ export function CTABlock({ data }: CTABlockProps) {
           <div className="flex flex-wrap justify-center gap-4">
             <a
               href={data.buttonUrl}
+              onClick={(e) => isAnchorLink(data.buttonUrl) && handleAnchorClick(e, data.buttonUrl)}
               className="inline-flex items-center justify-center px-8 py-3 bg-background text-foreground font-medium rounded-lg hover:bg-background/90 transition-colors"
             >
               {data.buttonText}
@@ -131,6 +137,7 @@ export function CTABlock({ data }: CTABlockProps) {
             {data.secondaryButtonText && data.secondaryButtonUrl && (
               <a
                 href={data.secondaryButtonUrl}
+                onClick={(e) => isAnchorLink(data.secondaryButtonUrl) && handleAnchorClick(e, data.secondaryButtonUrl!)}
                 className="inline-flex items-center justify-center px-8 py-3 border-2 border-background text-background font-medium rounded-lg hover:bg-background/10 transition-colors"
               >
                 {data.secondaryButtonText}
@@ -160,6 +167,7 @@ export function CTABlock({ data }: CTABlockProps) {
         <div className="flex flex-wrap justify-center gap-4">
           <a
             href={data.buttonUrl}
+            onClick={(e) => isAnchorLink(data.buttonUrl) && handleAnchorClick(e, data.buttonUrl)}
             className="inline-flex items-center justify-center px-8 py-3 bg-background text-foreground font-medium rounded-lg hover:opacity-90 transition-opacity"
           >
             {data.buttonText}
@@ -167,6 +175,7 @@ export function CTABlock({ data }: CTABlockProps) {
           {data.secondaryButtonText && data.secondaryButtonUrl && (
             <a
               href={data.secondaryButtonUrl}
+              onClick={(e) => isAnchorLink(data.secondaryButtonUrl) && handleAnchorClick(e, data.secondaryButtonUrl!)}
               className="inline-flex items-center justify-center px-8 py-3 border-2 border-primary-foreground/30 text-primary-foreground font-medium rounded-lg hover:bg-primary-foreground/10 transition-colors"
             >
               {data.secondaryButtonText}
