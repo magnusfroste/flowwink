@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useRef, useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Loader2, Search, ImageIcon, Check, FolderOpen, Camera, ExternalLink, Crop } from 'lucide-react';
+import { Loader2, Search, ImageIcon, Check, FolderOpen, Camera, ExternalLink, Crop, Upload, X } from 'lucide-react';
 import { ImageCropper } from './ImageCropper';
 import { useToast } from '@/hooks/use-toast';
 
@@ -41,14 +41,21 @@ interface MediaLibraryPickerProps {
 }
 
 export function MediaLibraryPicker({ open, onOpenChange, onSelect }: MediaLibraryPickerProps) {
+  const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFile, setSelectedFile] = useState<{ folder: string; name: string } | null>(null);
-  const [activeTab, setActiveTab] = useState<'library' | 'unsplash'>('library');
+  const [activeTab, setActiveTab] = useState<'upload' | 'library' | 'unsplash'>('upload');
   
   // Unsplash state
   const [unsplashQuery, setUnsplashQuery] = useState('');
   const [debouncedUnsplashQuery, setDebouncedUnsplashQuery] = useState('');
   const [selectedUnsplashPhoto, setSelectedUnsplashPhoto] = useState<UnsplashPhoto | null>(null);
+  
+  // Upload state
+  const [dragActive, setDragActive] = useState(false);
+  const [uploadingFiles, setUploadingFiles] = useState<File[]>([]);
+  const [uploadProgress, setUploadProgress] = useState<Record<string, 'pending' | 'uploading' | 'done' | 'error'>>({});
   
   // Cropper state
   const [showCropper, setShowCropper] = useState(false);
@@ -177,7 +184,95 @@ export function MediaLibraryPicker({ open, onOpenChange, onSelect }: MediaLibrar
     setUnsplashQuery('');
     setDebouncedUnsplashQuery('');
     setShowCropper(false);
+    setUploadingFiles([]);
+    setUploadProgress({});
     onOpenChange(false);
+  };
+
+  // Upload handlers
+  const handleDrag = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true);
+    } else if (e.type === 'dragleave') {
+      setDragActive(false);
+    }
+  }, []);
+
+  const processFiles = async (files: FileList | File[]) => {
+    const imageFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+    if (imageFiles.length === 0) {
+      toast({
+        title: 'Invalid files',
+        description: 'Please select image files only',
+        variant: 'destructive',
+      });
+      return;
+    }
+    setUploadingFiles(imageFiles);
+    
+    const progress: Record<string, 'pending' | 'uploading' | 'done' | 'error'> = {};
+    imageFiles.forEach(f => { progress[f.name] = 'pending'; });
+    setUploadProgress(progress);
+
+    let lastUploadedUrl = '';
+
+    for (const file of imageFiles) {
+      setUploadProgress(prev => ({ ...prev, [file.name]: 'uploading' }));
+      
+      try {
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+        const filePath = `pages/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('cms-images')
+          .upload(filePath, file, { contentType: file.type });
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('cms-images')
+          .getPublicUrl(filePath);
+
+        lastUploadedUrl = publicUrl;
+        setUploadProgress(prev => ({ ...prev, [file.name]: 'done' }));
+      } catch (error) {
+        console.error('Upload error:', error);
+        setUploadProgress(prev => ({ ...prev, [file.name]: 'error' }));
+      }
+    }
+
+    // Invalidate cache
+    queryClient.invalidateQueries({ queryKey: ['media-library-picker'] });
+    queryClient.invalidateQueries({ queryKey: ['media-library'] });
+
+    // If single file, auto-select it
+    if (imageFiles.length === 1 && lastUploadedUrl) {
+      toast({ title: 'Uploaded', description: 'Image ready to use' });
+      onSelect(lastUploadedUrl);
+      handleClose();
+    } else {
+      toast({ title: 'Upload complete', description: `${imageFiles.length} images added to library` });
+      setActiveTab('library');
+      setUploadingFiles([]);
+      setUploadProgress({});
+    }
+  };
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      processFiles(e.dataTransfer.files);
+    }
+  }, []);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      processFiles(e.target.files);
+    }
   };
 
   const filteredFiles = files?.filter(file => 
@@ -192,17 +287,87 @@ export function MediaLibraryPicker({ open, onOpenChange, onSelect }: MediaLibrar
             <DialogTitle>Select image</DialogTitle>
           </DialogHeader>
 
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'library' | 'unsplash')} className="flex-1 flex flex-col">
-            <TabsList className="grid w-full grid-cols-2">
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'upload' | 'library' | 'unsplash')} className="flex-1 flex flex-col">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="upload" className="flex items-center gap-2">
+                <Upload className="h-4 w-4" />
+                Upload
+              </TabsTrigger>
               <TabsTrigger value="library" className="flex items-center gap-2">
                 <FolderOpen className="h-4 w-4" />
                 Library
               </TabsTrigger>
               <TabsTrigger value="unsplash" className="flex items-center gap-2">
                 <Camera className="h-4 w-4" />
-                Stock images
+                Stock
               </TabsTrigger>
             </TabsList>
+
+            {/* Upload tab */}
+            <TabsContent value="upload" className="flex-1 flex flex-col mt-4">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+              
+              {uploadingFiles.length > 0 ? (
+                <div className="flex-1 space-y-3 p-4">
+                  <p className="text-sm font-medium mb-4">Uploading {uploadingFiles.length} file(s)...</p>
+                  {uploadingFiles.map(file => (
+                    <div key={file.name} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                      <div className="h-10 w-10 bg-muted rounded flex items-center justify-center">
+                        <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{file.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {(file.size / 1024).toFixed(0)} KB
+                        </p>
+                      </div>
+                      <div>
+                        {uploadProgress[file.name] === 'uploading' && (
+                          <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                        )}
+                        {uploadProgress[file.name] === 'done' && (
+                          <Check className="h-4 w-4 text-success" />
+                        )}
+                        {uploadProgress[file.name] === 'error' && (
+                          <X className="h-4 w-4 text-destructive" />
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div
+                  onDragEnter={handleDrag}
+                  onDragLeave={handleDrag}
+                  onDragOver={handleDrag}
+                  onDrop={handleDrop}
+                  onClick={() => fileInputRef.current?.click()}
+                  className={`flex-1 min-h-[300px] border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer transition-colors ${
+                    dragActive 
+                      ? 'border-primary bg-primary/5' 
+                      : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/30'
+                  }`}
+                >
+                  <Upload className={`h-12 w-12 mb-4 ${dragActive ? 'text-primary' : 'text-muted-foreground'}`} />
+                  <h3 className="text-lg font-medium text-foreground mb-1">
+                    {dragActive ? 'Drop files here' : 'Drag & drop images'}
+                  </h3>
+                  <p className="text-muted-foreground text-sm mb-4">
+                    or click to browse from your computer
+                  </p>
+                  <Button type="button" variant="secondary" size="sm">
+                    Select files
+                  </Button>
+                </div>
+              )}
+            </TabsContent>
 
             <TabsContent value="library" className="flex-1 flex flex-col mt-4 space-y-4">
               {/* Search */}
