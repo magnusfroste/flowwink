@@ -81,7 +81,7 @@ export default function BlogPostPage() {
         ogImage={post.featured_image || undefined}
         canonicalUrl={canonicalUrl}
         pageType="article"
-        contentBlocks={post.content_json}
+        contentBlocks={Array.isArray(post.content_json) ? post.content_json : undefined}
         breadcrumbs={breadcrumbs}
         articleAuthor={post.author?.full_name || undefined}
         articlePublishedTime={publishedDate.toISOString()}
