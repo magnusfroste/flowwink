@@ -25,17 +25,22 @@ export interface ValidationWarning {
   message: string;
 }
 
-// Valid block types
+// Valid block types - keep in sync with ContentBlockType in cms.ts
 const VALID_BLOCK_TYPES: ContentBlockType[] = [
+  // Core content blocks
   'hero', 'text', 'image', 'two-column', 'cta', 'features', 'stats',
   'testimonials', 'pricing', 'accordion', 'form', 'logos', 'team',
   'gallery', 'timeline', 'quote', 'separator', 'chat', 'map',
   'newsletter', 'products', 'cart', 'booking', 'comparison',
   'article-grid', 'link-grid', 'youtube', 'info-box', 'popup',
   // Knowledge Base blocks
-  'kb-hub', 'kb-search', 'kb-featured',
-  // Contact block (alias for form)
-  'contact', 'footer', 'header'
+  'kb-hub', 'kb-search', 'kb-featured', 'kb-accordion',
+  // Contact and global blocks
+  'contact', 'footer', 'header',
+  // Advanced blocks (Design System 2026)
+  'marquee', 'progress', 'countdown', 'embed', 'lottie', 'tabs', 
+  'table', 'badge', 'social-proof', 'floating-cta', 
+  'notification-toast', 'announcement-bar'
 ];
 
 // Required fields per block type
@@ -73,10 +78,24 @@ const BLOCK_REQUIRED_FIELDS: Record<string, string[]> = {
   'kb-hub': [],
   'kb-search': [],
   'kb-featured': [],
-  // Other blocks
+  // Contact and global blocks
   contact: [],
   footer: [],
   header: [],
+  // Advanced blocks
+  marquee: [],
+  progress: [],
+  countdown: [],
+  embed: [],
+  lottie: [],
+  tabs: [],
+  table: [],
+  badge: [],
+  'social-proof': [],
+  'floating-cta': [],
+  'notification-toast': [],
+  'announcement-bar': [],
+  'kb-accordion': [],
 };
 
 /**
