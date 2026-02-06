@@ -157,10 +157,33 @@ export async function createLeadFromForm(options: {
         },
       });
 
+      // Progressive enrichment: update missing fields from form data
+      const updates: Record<string, string> = {};
+      if (name && !existingLead.name) updates.name = name;
+      if (phone && !existingLead.phone) updates.phone = phone;
+      
+      // Auto-link company if not already linked
+      if (!existingLead.company_id) {
+        const { companyId, isNew: isNewCompany } = await findOrCreateCompanyByDomain(email, company);
+        if (companyId) {
+          updates.company_id = companyId;
+          if (isNewCompany) {
+            triggerCompanyEnrichment(companyId);
+          }
+        }
+      }
+
+      if (Object.keys(updates).length > 0) {
+        await supabase
+          .from('leads')
+          .update(updates)
+          .eq('id', existingLead.id);
+      }
+
       // Trigger AI qualification
       qualifyLead(existingLead.id);
 
-      return { lead: existingLead as Lead, isNew: false, error: null };
+      return { lead: { ...existingLead, ...updates } as Lead, isNew: false, error: null };
     }
 
     // Auto-match or create company by email domain
