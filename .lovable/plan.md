@@ -1,120 +1,135 @@
 
-# Chat Launcher - ChatGPT/Claude-liknande Startupplevelse
 
-## Koncept
+# Plan: Full White-Label Social Sharing for Self-Hosted Instances
 
-Skapa en **diskret chat-launcher** på startsidan som vid första interaktion routar användaren till `/chat` - precis som ChatGPT, Claude och Grok gör. Detta blir ett alternativ till det befintliga "embedded block"-läget.
+## Summary
+Enable complete rebranding of social sharing metadata so self-hosted instances show their own company name, logo, and description when links are shared on social media - not FlowWink branding.
 
-```text
-+------------------------------------------+
-|  [Navigation]                            |
-+------------------------------------------+
-|                                          |
-|     [Hero Block - normal content]        |
-|                                          |
-+------------------------------------------+
-|                                          |
-|         What can I help you with?        |
-|                                          |
-|    +-------------------------------+     |
-|    |  Message AI Assistant...      | ->  |
-|    +-------------------------------+     |
-|                                          |
-|    [Quick Action] [Quick Action] [...]   |
-|                                          |
-+------------------------------------------+
-|     [Footer]                             |
-+------------------------------------------+
-```
+## The Core Problem
+Social media crawlers (Facebook, LinkedIn, Twitter) read the initial server-side HTML before JavaScript executes. The current `index.html` has hardcoded FlowWink branding that will appear when links are shared, even if the React `SeoHead` component renders the correct values client-side.
 
-Vid klick eller första meddelande -> navigerar till `/chat` med meddelandet förifyllt.
+## Solution Overview
+Two-pronged approach:
+1. **Server-side rendering for meta tags** - Create an edge function that serves dynamic HTML with proper OG tags based on CMS settings
+2. **Remove all hardcoded branding** - Clean up remaining FlowWink references and make them configurable
 
 ---
 
-## Flöde
+## Technical Implementation
 
-1. **Användaren ser launcher** - diskret sökfältsliknande komponent
-2. **Klickar/skriver** - navigeras direkt till `/chat`  
-3. **Om meddelande skrevs** - skickas automatiskt som första prompt
-4. **Meny finns i header** - enkelt att navigera tillbaka
+### Phase 1: Dynamic SSR Meta Tags via Edge Function
+
+**New edge function: `supabase/functions/render-page/index.ts`**
+
+This function will:
+1. Intercept requests from known social media crawlers (Facebook, Twitter, LinkedIn bots via User-Agent)
+2. Fetch SEO settings from the database
+3. Fetch page-specific meta data if a specific slug is requested
+4. Return a complete HTML document with correct OG tags pre-rendered
+
+```text
+Request Flow:
+                                                  
+  Social Bot Request                              
+  (User-Agent: facebookexternalhit)              
+           |                                      
+           v                                      
+  +------------------+                            
+  | Nginx/CDN        |                            
+  +------------------+                            
+           |                                      
+           v                                      
+  +------------------+     Yes    +----------------+
+  | Is Social Bot?   |---------->| Edge Function  |
+  +------------------+            | render-page    |
+           | No                   +----------------+
+           v                             |
+  +------------------+                   v
+  | Static SPA       |           +----------------+
+  | (index.html)     |           | Return HTML    |
+  +------------------+           | with dynamic   |
+                                 | OG tags        |
+                                 +----------------+
+```
+
+**Key features:**
+- Reads SEO settings (`siteTitle`, `ogImage`, `defaultDescription`)
+- Reads page-specific meta if slug is provided (title, description, featured image)
+- Returns fully formed HTML with correct meta tags for crawlers
+- Falls through to normal SPA for regular users
+
+### Phase 2: Clean Up Hardcoded Branding
+
+**Files to modify:**
+
+| File | Current State | Change |
+|------|--------------|--------|
+| `index.html` | Hardcoded FlowWink | Use generic placeholders that get replaced or leave minimal defaults |
+| `src/pages/AuthPage.tsx` | Hardcoded "FlowWink" | Use `branding.adminName` from settings |
+| `src/pages/PricingPage.tsx` | Hardcoded FlowWink in title | Use `seoSettings.siteTitle` |
+| `src/hooks/useSiteSettings.tsx` | `adminName: 'FlowWink'` default | Change to generic "CMS" or empty string |
+
+### Phase 3: Nginx Configuration Update
+
+**Modify `nginx.conf`** to route social bot requests to the edge function:
+
+```nginx
+# Detect social media crawlers
+map $http_user_agent $is_crawler {
+    default                             0;
+    "~*facebookexternalhit"             1;
+    "~*Twitterbot"                      1;
+    "~*LinkedInBot"                     1;
+    "~*WhatsApp"                        1;
+    "~*Slackbot"                        1;
+    "~*Discordbot"                      1;
+}
+
+server {
+    # ... existing config ...
+
+    location / {
+        # Route crawlers to SSR endpoint
+        if ($is_crawler) {
+            rewrite ^(.*)$ /functions/v1/render-page?path=$1 break;
+            proxy_pass https://YOUR_SUPABASE_URL;
+        }
+        
+        # Normal SPA routing
+        try_files $uri $uri/ /index.html;
+    }
+}
+```
+
+### Phase 4: Documentation Update
+
+**Update `docs/SETUP.md`** with:
+- Instructions for configuring branding before first deploy
+- How social sharing works
+- Testing OG tags with Facebook Sharing Debugger
 
 ---
 
-## Implementation
+## Files to Create/Modify
 
-### Ny komponent: `ChatLauncherBlock`
+### New Files
+1. `supabase/functions/render-page/index.ts` - SSR for social crawlers
 
-```text
-src/components/public/blocks/ChatLauncherBlock.tsx
-```
-
-- Modern, centrerad design (Apple-inspirerad)
-- Input-fält med placeholder
-- 2-4 snabbval (suggested prompts från Chat Settings)
-- Vid Enter/klick -> `navigate('/chat', { state: { initialMessage } })`
-
-### Ny blocktyp i CMS
-
-```text
-src/types/cms.ts - Lägg till 'chat-launcher' i ContentBlockType
-```
-
-**ChatLauncherBlockData:**
-- `title`: Rubrik (t.ex. "How can I help you today?")
-- `subtitle`: Underrubrik (valfri)
-- `placeholder`: Input placeholder
-- `showQuickActions`: boolean
-- `quickActionCount`: 2-4 (hur många prompts visas)
-- `variant`: 'minimal' | 'card' | 'hero-integrated'
-
-### Editor: `ChatLauncherBlockEditor`
-
-```text
-src/components/admin/blocks/ChatLauncherBlockEditor.tsx
-```
-
-### Uppdatera `/chat` för att ta emot initialMessage
-
-```text
-src/pages/ChatPage.tsx
-```
-
-- Läs `location.state?.initialMessage` 
-- Skicka automatiskt som första meddelande om det finns
-
-### Uppdatera BlockRenderer och BlockSelector
-
-Registrera den nya blocktypen.
+### Modified Files
+1. `index.html` - Remove hardcoded FlowWink branding
+2. `nginx.conf` - Add crawler detection and routing  
+3. `src/pages/AuthPage.tsx` - Use dynamic branding
+4. `src/pages/PricingPage.tsx` - Use dynamic site title
+5. `src/hooks/useSiteSettings.tsx` - Change default adminName
+6. `docs/SETUP.md` - Add branding configuration section
 
 ---
 
-## Konfiguration
+## User Benefit
 
-Använder befintliga **Chat Settings**:
-- `suggestedPrompts` - för quick actions
-- `title` / `welcomeMessage` - kan återanvändas
-- `landingPageEnabled` - måste vara `true` för att launcher ska fungera
+After implementation, when a self-hosted customer (e.g., "Acme Corp") shares a link on LinkedIn:
+- **Before**: Shows "FlowWink - Flow into Content Creation" with FlowWink's OG image
+- **After**: Shows "Acme Corp" with Acme's configured OG image from their SEO settings
 
----
-
-## Teknisk sammanfattning
-
-| Fil | Ändring |
-|-----|---------|
-| `src/types/cms.ts` | Ny blocktyp `chat-launcher` + `ChatLauncherBlockData` |
-| `src/components/public/blocks/ChatLauncherBlock.tsx` | **Ny** - renderar launcher UI |
-| `src/components/admin/blocks/ChatLauncherBlockEditor.tsx` | **Ny** - admin editor |
-| `src/components/admin/blocks/BlockSelector.tsx` | Registrera blocktypen |
-| `src/components/public/BlockRenderer.tsx` | Registrera rendering |
-| `src/pages/ChatPage.tsx` | Hantera `initialMessage` från navigation state |
-| `docs/PRD.md` | Dokumentera nya komponenten |
-
----
-
-## Fördelar
-
-- **Ingen extra route** - använder befintliga `/chat`
-- **Flexibelt** - kan placeras var som helst på sidan som ett block
-- **Konsistent** - delar inställningar med övriga chat-funktioner
-- **Modernt UX** - känns som ChatGPT/Claude
+The branding is 100% controlled via the admin UI with zero code changes required for rebranding.
 
