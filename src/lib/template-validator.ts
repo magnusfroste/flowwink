@@ -31,7 +31,7 @@ const VALID_BLOCK_TYPES: ContentBlockType[] = [
   'hero', 'text', 'image', 'two-column', 'cta', 'features', 'stats',
   'testimonials', 'pricing', 'accordion', 'form', 'logos', 'team',
   'gallery', 'timeline', 'quote', 'separator', 'chat', 'map',
-  'newsletter', 'products', 'cart', 'booking', 'comparison',
+  'newsletter', 'products', 'cart', 'booking', 'smart-booking', 'comparison',
   'article-grid', 'link-grid', 'youtube', 'info-box', 'popup',
   // Knowledge Base blocks
   'kb-hub', 'kb-search', 'kb-featured', 'kb-accordion',
@@ -68,6 +68,7 @@ const BLOCK_REQUIRED_FIELDS: Record<string, string[]> = {
   products: [],
   cart: [],
   booking: [],
+  'smart-booking': [],
   comparison: ['products', 'features'],
   'article-grid': [],
   'link-grid': ['links'],
