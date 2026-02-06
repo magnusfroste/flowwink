@@ -13,7 +13,11 @@ import {
   Check,
   X,
   AlertTriangle,
-  Eye
+  Eye,
+  Download,
+  Send,
+  ImageIcon,
+  Trash2
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -22,6 +26,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { StarterTemplate } from '@/data/starter-templates';
 import { cn } from '@/lib/utils';
 
@@ -36,6 +41,12 @@ export interface TemplateOverwriteOptions {
   kbContent: boolean;
   products: boolean;
   modules: boolean;
+  // Additional options
+  clearMedia: boolean;
+  downloadImages: boolean;
+  publishPages: boolean;
+  publishBlogPosts: boolean;
+  publishKbArticles: boolean;
 }
 
 interface ExistingContent {
@@ -43,6 +54,7 @@ interface ExistingContent {
   blogPostsCount: number;
   kbCategoriesCount: number;
   productsCount: number;
+  mediaCount: number;
   hasBranding: boolean;
   hasChatSettings: boolean;
   hasFooter: boolean;
@@ -55,6 +67,7 @@ interface TemplatePreviewDialogProps {
   onOpenChange: (open: boolean) => void;
   template: StarterTemplate;
   existingContent: ExistingContent;
+  templateImageCount: number;
   onApply: (options: TemplateOverwriteOptions) => void;
 }
 
@@ -126,11 +139,42 @@ function SettingRow({ icon, label, templateValue, existingValue, enabled, onTogg
   );
 }
 
+interface OptionRowProps {
+  icon: React.ReactNode;
+  label: string;
+  description: string;
+  enabled: boolean;
+  onToggle: (enabled: boolean) => void;
+  variant?: 'default' | 'destructive';
+}
+
+function OptionRow({ icon, label, description, enabled, onToggle, variant = 'default' }: OptionRowProps) {
+  return (
+    <div className="flex items-center justify-between py-2">
+      <div className="space-y-0.5">
+        <Label className={cn(
+          "text-sm font-medium flex items-center gap-2",
+          variant === 'destructive' && enabled && "text-destructive"
+        )}>
+          {icon}
+          {label}
+        </Label>
+        <p className="text-xs text-muted-foreground pl-6">{description}</p>
+      </div>
+      <Switch
+        checked={enabled}
+        onCheckedChange={onToggle}
+      />
+    </div>
+  );
+}
+
 export function TemplatePreviewDialog({
   open,
   onOpenChange,
   template,
   existingContent,
+  templateImageCount,
   onApply
 }: TemplatePreviewDialogProps) {
   const [options, setOptions] = useState<TemplateOverwriteOptions>({
@@ -144,6 +188,12 @@ export function TemplatePreviewDialog({
     kbContent: !!template.kbCategories?.length,
     products: !!template.products?.length,
     modules: !!template.requiredModules?.length,
+    // Additional options
+    clearMedia: false,
+    downloadImages: templateImageCount > 0,
+    publishPages: true,
+    publishBlogPosts: true,
+    publishKbArticles: true,
   });
 
   const updateOption = (key: keyof TemplateOverwriteOptions, value: boolean) => {
@@ -195,6 +245,17 @@ export function TemplatePreviewDialog({
     return { overwriteCount, newCount };
   }, [options, existingContent, template]);
 
+  // Count items being cleared
+  const clearCount = useMemo(() => {
+    let count = 0;
+    if (options.pages && existingContent.pagesCount > 0) count += existingContent.pagesCount;
+    if (options.blogPosts && existingContent.blogPostsCount > 0) count += existingContent.blogPostsCount;
+    if (options.kbContent && existingContent.kbCategoriesCount > 0) count += existingContent.kbCategoriesCount;
+    if (options.products && existingContent.productsCount > 0) count += existingContent.productsCount;
+    if (options.clearMedia && existingContent.mediaCount > 0) count += existingContent.mediaCount;
+    return count;
+  }, [options, existingContent]);
+
   const handleApply = () => {
     onApply(options);
     onOpenChange(false);
@@ -212,6 +273,11 @@ export function TemplatePreviewDialog({
       kbContent: !!template.kbCategories?.length,
       products: !!template.products?.length,
       modules: !!template.requiredModules?.length,
+      clearMedia: false,
+      downloadImages: templateImageCount > 0,
+      publishPages: true,
+      publishBlogPosts: true,
+      publishKbArticles: true,
     });
   };
 
@@ -227,15 +293,24 @@ export function TemplatePreviewDialog({
       kbContent: false,
       products: false,
       modules: false,
+      clearMedia: false,
+      downloadImages: false,
+      publishPages: false,
+      publishBlogPosts: false,
+      publishKbArticles: false,
     });
   };
 
   // Check if anything is selected
-  const hasSelection = Object.values(options).some(v => v);
+  const hasSelection = options.pages || options.branding || options.chatSettings || 
+    options.footerSettings || options.seoSettings || options.cookieBannerSettings ||
+    options.blogPosts || options.kbContent || options.products;
+
+  const kbArticleCount = template.kbCategories?.reduce((acc, cat) => acc + cat.articles.length, 0) || 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Eye className="h-5 w-5 text-primary" />
@@ -273,6 +348,11 @@ export function TemplatePreviewDialog({
 
         <ScrollArea className="flex-1 -mx-6 px-6">
           <div className="space-y-2">
+            {/* Content Settings Section */}
+            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide pb-1">
+              Content & Settings
+            </div>
+            
             {/* Pages */}
             <SettingRow
               icon={<FileText className="h-4 w-4" />}
@@ -377,19 +457,87 @@ export function TemplatePreviewDialog({
                 hasExisting={existingContent.productsCount > 0}
               />
             )}
+
+            {/* Additional Options Section */}
+            <Separator className="my-4" />
+            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide pb-1">
+              Additional Options
+            </div>
+
+            {/* Clear Media */}
+            {existingContent.mediaCount > 0 && (
+              <OptionRow
+                icon={<Trash2 className="h-4 w-4" />}
+                label={`Clear Media Library (${existingContent.mediaCount} files)`}
+                description="Remove all existing files from the media library"
+                enabled={options.clearMedia}
+                onToggle={(v) => updateOption('clearMedia', v)}
+                variant="destructive"
+              />
+            )}
+
+            {/* Download Images */}
+            {templateImageCount > 0 && (
+              <OptionRow
+                icon={<Download className="h-4 w-4" />}
+                label="Download Images to Media Library"
+                description={`Save ${templateImageCount} images locally instead of using external links`}
+                enabled={options.downloadImages}
+                onToggle={(v) => updateOption('downloadImages', v)}
+              />
+            )}
+
+            {/* Publish Pages */}
+            {options.pages && (
+              <OptionRow
+                icon={<Send className="h-4 w-4" />}
+                label="Publish Pages Immediately"
+                description={`Publish all ${template.pages.length} pages when creating the site`}
+                enabled={options.publishPages}
+                onToggle={(v) => updateOption('publishPages', v)}
+              />
+            )}
+
+            {/* Publish Blog Posts */}
+            {options.blogPosts && template.blogPosts && template.blogPosts.length > 0 && (
+              <OptionRow
+                icon={<Send className="h-4 w-4" />}
+                label="Publish Blog Posts Immediately"
+                description={`Publish all ${template.blogPosts.length} blog posts when creating`}
+                enabled={options.publishBlogPosts}
+                onToggle={(v) => updateOption('publishBlogPosts', v)}
+              />
+            )}
+
+            {/* Publish KB Articles */}
+            {options.kbContent && template.kbCategories && kbArticleCount > 0 && (
+              <OptionRow
+                icon={<Send className="h-4 w-4" />}
+                label="Publish KB Articles Immediately"
+                description={`Publish all ${kbArticleCount} knowledge base articles when creating`}
+                enabled={options.publishKbArticles}
+                onToggle={(v) => updateOption('publishKbArticles', v)}
+              />
+            )}
           </div>
         </ScrollArea>
 
         <Separator />
 
-        {/* Warning if overwriting */}
-        {stats.overwriteCount > 0 && (
-          <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg text-amber-800 dark:text-amber-200">
-            <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
-            <p className="text-sm">
-              {stats.overwriteCount} existing {stats.overwriteCount === 1 ? 'setting' : 'settings'} will be replaced. This cannot be undone.
-            </p>
-          </div>
+        {/* Warning if overwriting/clearing */}
+        {(stats.overwriteCount > 0 || clearCount > 0) && (
+          <Alert variant="destructive" className="py-2">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription className="text-sm">
+              {stats.overwriteCount > 0 && (
+                <span>{stats.overwriteCount} existing {stats.overwriteCount === 1 ? 'setting' : 'settings'} will be replaced. </span>
+              )}
+              {options.clearMedia && existingContent.mediaCount > 0 && (
+                <span>{existingContent.mediaCount} media files will be deleted. </span>
+              )}
+              <span className="font-medium">This cannot be undone.</span>
+            </AlertDescription>
+          </Alert>
         )}
 
         <DialogFooter className="gap-2 sm:gap-0">
