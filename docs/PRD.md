@@ -1126,6 +1126,35 @@ Se separat API-dokumentation för fullständig referens av:
 - Team profiles for medical staff
 - Emergency contact information
 
+### Template Export/Import System
+
+The Template Manager (`/admin/template-export`) provides comprehensive template portability:
+
+#### Export Formats
+| Format | Use Case | Includes |
+|--------|----------|----------|
+| **JSON** | Quick sharing, development | Template structure only |
+| **TypeScript** | Code integration | Typed template code |
+| **ZIP** | Cross-instance transfer | Template + all referenced images |
+
+#### ZIP Export Features
+- **Automatic Image Detection**: Scans all blocks, branding, header/footer for image URLs
+- **CORS-safe Download**: Uses edge function to fetch external images
+- **Local Path Mapping**: Rewrites URLs to relative paths in `images/` folder
+- **Manifest Included**: Contains original URLs for reference
+
+#### ZIP Import Features
+- **Image Upload**: Automatically uploads bundled images to storage
+- **URL Restoration**: Rewrites local paths to new storage URLs
+- **Progress Tracking**: Real-time feedback during import
+- **Backward Compatible**: Falls back to JSON-only import if no images
+
+#### Extracted Image Sources
+- Page block content (Hero backgrounds, Gallery images, Team photos)
+- Blog post featured images
+- Branding settings (Logo, Favicon, OG Image)
+- Header/Footer settings (Logo)
+
 ---
 
-*Dokumentet underhålls av FlowWink-teamet. Senast uppdaterad december 2024.*
+*Dokumentet underhålls av FlowWink-teamet. Senast uppdaterad februari 2026.*

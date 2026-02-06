@@ -12,6 +12,11 @@ import {
   SiteExportData,
   TemplateMetadata 
 } from '@/lib/template-exporter';
+import { 
+  exportTemplateAsZip, 
+  downloadZipBlob,
+  ZipExportProgress,
+} from '@/lib/template-zip';
 import { StarterTemplate } from '@/data/starter-templates';
 import { ContentBlock, PageMeta } from '@/types/cms';
 import { toast } from 'sonner';
@@ -27,9 +32,18 @@ interface ExportResult {
   };
 }
 
+interface ZipExportState {
+  isExporting: boolean;
+  progress: ZipExportProgress | null;
+}
+
 export function useTemplateExport() {
   const [isExporting, setIsExporting] = useState(false);
   const [exportResult, setExportResult] = useState<ExportResult | null>(null);
+  const [zipState, setZipState] = useState<ZipExportState>({
+    isExporting: false,
+    progress: null,
+  });
 
   const fetchSiteData = async (): Promise<SiteExportData | null> => {
     try {
@@ -197,6 +211,31 @@ export function useTemplateExport() {
     }
   };
 
+  /**
+   * Export template as ZIP file with all referenced images
+   */
+  const exportAsZip = async (template: StarterTemplate): Promise<void> => {
+    setZipState({ isExporting: true, progress: null });
+    
+    try {
+      const result = await exportTemplateAsZip(template, (progress) => {
+        setZipState({ isExporting: true, progress });
+      });
+      
+      if (result.success && result.blob) {
+        downloadZipBlob(result.blob, `${template.id}-template.zip`);
+        toast.success(`Template exported with ${result.imageCount} images`);
+      } else {
+        toast.error(result.error || 'Failed to create ZIP');
+      }
+    } catch (error) {
+      console.error('ZIP export failed:', error);
+      toast.error('Failed to export as ZIP');
+    } finally {
+      setZipState({ isExporting: false, progress: null });
+    }
+  };
+
   return {
     isExporting,
     exportResult,
@@ -205,5 +244,9 @@ export function useTemplateExport() {
     downloadCode,
     copyToClipboard,
     fetchSiteData,
+    // ZIP export
+    exportAsZip,
+    isZipExporting: zipState.isExporting,
+    zipProgress: zipState.progress,
   };
 }

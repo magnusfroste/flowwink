@@ -34,7 +34,11 @@ import {
   HelpCircle,
   Sparkles,
   Upload,
+  Archive,
+  Image,
+  Loader2,
 } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
 import { useTemplateExport } from '@/hooks/useTemplateExport';
 import { TemplateMetadata } from '@/lib/template-exporter';
 import { TemplateImportDialog } from '@/components/admin/templates/TemplateImportDialog';
@@ -57,7 +61,17 @@ const ICON_OPTIONS = [
 
 export default function TemplateExportPage() {
   const navigate = useNavigate();
-  const { isExporting, exportResult, exportTemplate, downloadJson, downloadCode, copyToClipboard } = useTemplateExport();
+  const { 
+    isExporting, 
+    exportResult, 
+    exportTemplate, 
+    downloadJson, 
+    downloadCode, 
+    copyToClipboard,
+    exportAsZip,
+    isZipExporting,
+    zipProgress,
+  } = useTemplateExport();
   
   const [metadata, setMetadata] = useState<TemplateMetadata>({
     id: 'my-template',
@@ -367,7 +381,7 @@ export default function TemplateExportPage() {
                       onClick={() => downloadJson(exportResult.template)}
                     >
                       <Download className="h-4 w-4 mr-2" />
-                      Download JSON
+                      JSON
                     </Button>
                     <Button
                       variant="outline"
@@ -375,10 +389,39 @@ export default function TemplateExportPage() {
                       onClick={() => downloadCode(exportResult.template)}
                     >
                       <Download className="h-4 w-4 mr-2" />
-                      Download TS
+                      TS
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => exportAsZip(exportResult.template)}
+                      disabled={isZipExporting}
+                      className="gap-2"
+                    >
+                      {isZipExporting ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Archive className="h-4 w-4" />
+                      )}
+                      ZIP + Images
                     </Button>
                   </div>
                 </div>
+
+                {/* ZIP Export Progress */}
+                {isZipExporting && zipProgress && (
+                  <div className="space-y-2 p-4 border rounded-lg bg-muted/30">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Image className="h-4 w-4 text-primary" />
+                      <span>{zipProgress.message}</span>
+                    </div>
+                    {zipProgress.total > 0 && (
+                      <Progress 
+                        value={(zipProgress.current / zipProgress.total) * 100} 
+                        className="h-2"
+                      />
+                    )}
+                  </div>
+                )}
 
                 <TabsContent value="json">
                   <ScrollArea className="h-[400px] rounded-md border bg-muted/30">

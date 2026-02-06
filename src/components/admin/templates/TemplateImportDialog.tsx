@@ -1,11 +1,24 @@
 /**
  * Template Import Dialog
  * 
- * Allows importing JSON template files for preview and application.
+ * Allows importing JSON or ZIP template files for preview and application.
  */
 
 import { useState, useCallback } from 'react';
-import { Upload, FileJson, CheckCircle, XCircle, AlertTriangle, Sparkles, FileText, Palette, MessageSquare } from 'lucide-react';
+import { 
+  Upload, 
+  FileJson, 
+  CheckCircle, 
+  XCircle, 
+  AlertTriangle, 
+  Sparkles, 
+  FileText, 
+  Palette, 
+  MessageSquare,
+  Archive,
+  Image,
+  Loader2,
+} from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,8 +27,10 @@ import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
+import { Progress } from '@/components/ui/progress';
 import { StarterTemplate } from '@/data/starter-templates';
 import { importTemplateFromFile, parseTemplateJson, modifyTemplate, generateTemplateId, ImportResult } from '@/lib/template-importer';
+import { importTemplateFromZip, ZipExportProgress, ZipImportResult } from '@/lib/template-zip';
 import { cn } from '@/lib/utils';
 
 interface TemplateImportDialogProps {
@@ -30,13 +45,52 @@ export function TemplateImportDialog({ trigger, onImport }: TemplateImportDialog
   const [editMode, setEditMode] = useState(false);
   const [editedTemplate, setEditedTemplate] = useState<StarterTemplate | null>(null);
   const [jsonInput, setJsonInput] = useState('');
+  const [isZipImporting, setIsZipImporting] = useState(false);
+  const [zipProgress, setZipProgress] = useState<ZipExportProgress | null>(null);
+  const [imageCount, setImageCount] = useState(0);
 
   const handleFileSelect = useCallback(async (file: File) => {
+    // Check if it's a ZIP file
+    if (file.name.endsWith('.zip') || file.type === 'application/zip') {
+      setIsZipImporting(true);
+      setZipProgress(null);
+      
+      try {
+        const result = await importTemplateFromZip(file, (progress) => {
+          setZipProgress(progress);
+        });
+        
+        if (result.success && result.template) {
+          setImportResult({
+            success: true,
+            template: result.template,
+            errors: result.errors,
+            warnings: result.warnings,
+          });
+          setEditedTemplate(result.template);
+          setImageCount(result.imageCount);
+        } else {
+          setImportResult({
+            success: false,
+            template: null,
+            errors: result.errors,
+            warnings: result.warnings,
+          });
+        }
+      } finally {
+        setIsZipImporting(false);
+        setZipProgress(null);
+      }
+      return;
+    }
+    
+    // JSON file
     const result = await importTemplateFromFile(file);
     setImportResult(result);
     if (result.template) {
       setEditedTemplate(result.template);
     }
+    setImageCount(0);
   }, []);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
@@ -44,7 +98,12 @@ export function TemplateImportDialog({ trigger, onImport }: TemplateImportDialog
     setIsDragging(false);
     
     const file = e.dataTransfer.files[0];
-    if (file && (file.type === 'application/json' || file.name.endsWith('.json'))) {
+    if (file && (
+      file.type === 'application/json' || 
+      file.name.endsWith('.json') ||
+      file.type === 'application/zip' ||
+      file.name.endsWith('.zip')
+    )) {
       handleFileSelect(file);
     }
   }, [handleFileSelect]);
@@ -72,6 +131,7 @@ export function TemplateImportDialog({ trigger, onImport }: TemplateImportDialog
     if (result.template) {
       setEditedTemplate(result.template);
     }
+    setImageCount(0);
   }, [jsonInput]);
 
   const handleModifyTemplate = useCallback((field: keyof StarterTemplate, value: string) => {
@@ -99,6 +159,9 @@ export function TemplateImportDialog({ trigger, onImport }: TemplateImportDialog
     setEditedTemplate(null);
     setEditMode(false);
     setJsonInput('');
+    setImageCount(0);
+    setIsZipImporting(false);
+    setZipProgress(null);
   }, []);
 
   const handleOpenChange = useCallback((newOpen: boolean) => {
@@ -126,14 +189,29 @@ export function TemplateImportDialog({ trigger, onImport }: TemplateImportDialog
             Import Template
           </DialogTitle>
           <DialogDescription>
-            Upload a JSON template file or paste JSON content to import and apply
+            Upload a JSON or ZIP template file to import and apply
           </DialogDescription>
         </DialogHeader>
 
         <ScrollArea className="flex-1 pr-4">
           <div className="space-y-4">
+            {/* ZIP Import Progress */}
+            {isZipImporting && (
+              <div className="space-y-3 p-4 border rounded-lg bg-muted/30">
+                <div className="flex items-center gap-2 text-sm">
+                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                  <span>{zipProgress?.message || 'Processing ZIP file...'}</span>
+                </div>
+                {zipProgress && zipProgress.total > 0 && (
+                  <Progress 
+                    value={(zipProgress.current / zipProgress.total) * 100} 
+                    className="h-2"
+                  />
+                )}
+              </div>
+            )}
             {/* File Upload / Paste Area */}
-            {!importResult && (
+            {!importResult && !isZipImporting && (
               <div className="space-y-4">
                 {/* Drag & Drop Zone */}
                 <div
@@ -145,16 +223,19 @@ export function TemplateImportDialog({ trigger, onImport }: TemplateImportDialog
                   onDragOver={handleDragOver}
                   onDragLeave={handleDragLeave}
                 >
-                  <Upload className="h-10 w-10 mx-auto mb-4 text-muted-foreground/50" />
+                  <div className="flex justify-center gap-2 mb-4">
+                    <FileJson className="h-8 w-8 text-muted-foreground/50" />
+                    <Archive className="h-8 w-8 text-muted-foreground/50" />
+                  </div>
                   <p className="text-sm font-medium mb-2">
-                    Drag & drop a JSON template file
+                    Drag & drop a template file
                   </p>
                   <p className="text-xs text-muted-foreground mb-4">
-                    or click to browse
+                    Supports JSON or ZIP (with images)
                   </p>
                   <input
                     type="file"
-                    accept=".json,application/json"
+                    accept=".json,.zip,application/json,application/zip"
                     onChange={handleFileInputChange}
                     className="hidden"
                     id="template-file-input"
@@ -312,7 +393,7 @@ export function TemplateImportDialog({ trigger, onImport }: TemplateImportDialog
                           </div>
 
                           {/* Stats */}
-                          <div className="grid grid-cols-3 gap-2 text-center pt-2">
+                          <div className={cn("grid gap-2 text-center pt-2", imageCount > 0 ? "grid-cols-4" : "grid-cols-3")}>
                             <div className="p-2 rounded bg-muted/50">
                               <div className="flex items-center justify-center gap-1 text-muted-foreground">
                                 <FileText className="h-3.5 w-3.5" />
@@ -338,6 +419,15 @@ export function TemplateImportDialog({ trigger, onImport }: TemplateImportDialog
                               </div>
                               <div className="text-xs text-muted-foreground">Chat</div>
                             </div>
+                            {imageCount > 0 && (
+                              <div className="p-2 rounded bg-muted/50">
+                                <div className="flex items-center justify-center gap-1 text-muted-foreground">
+                                  <Image className="h-3.5 w-3.5" />
+                                  <span className="text-sm font-medium">{imageCount}</span>
+                                </div>
+                                <div className="text-xs text-muted-foreground">Images</div>
+                              </div>
+                            )}
                           </div>
 
                           {/* Pages list */}
