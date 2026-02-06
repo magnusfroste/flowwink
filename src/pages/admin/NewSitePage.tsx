@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Loader2, Sparkles, Check, FileText, Palette, MessageSquare, Trash2, AlertTriangle, Send, Newspaper, BookOpen, ShieldCheck, AlertCircle, Package, Puzzle, ImageIcon, HardDrive, Download } from 'lucide-react';
+import { ArrowLeft, Loader2, Sparkles, Check, FileText, Palette, MessageSquare, Trash2, AlertTriangle, Send, Newspaper, BookOpen, ShieldCheck, AlertCircle, Package, Puzzle, ImageIcon, HardDrive, Download, Eye } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,11 +12,12 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { StarterTemplateSelector } from '@/components/admin/StarterTemplateSelector';
+import { TemplatePreviewDialog, TemplateOverwriteOptions } from '@/components/admin/templates/TemplatePreviewDialog';
 import { StarterTemplate } from '@/data/starter-templates';
 import { validateTemplate, ValidationResult } from '@/lib/template-validator';
 import { useCreatePage, usePages, useDeletePage } from '@/hooks/usePages';
-import { useUpdateBrandingSettings, useUpdateChatSettings, useUpdateGeneralSettings, useUpdateSeoSettings, useUpdateCookieBannerSettings } from '@/hooks/useSiteSettings';
-import { useUpdateFooterBlock } from '@/hooks/useGlobalBlocks';
+import { useUpdateBrandingSettings, useUpdateChatSettings, useUpdateGeneralSettings, useUpdateSeoSettings, useUpdateCookieBannerSettings, useBrandingSettings, useChatSettings, useSeoSettings, useCookieBannerSettings } from '@/hooks/useSiteSettings';
+import { useUpdateFooterBlock, useFooterBlock } from '@/hooks/useGlobalBlocks';
 import { useBlogPosts, useCreateBlogPost, useDeleteBlogPost } from '@/hooks/useBlogPosts';
 import { useKbCategories, useCreateKbCategory, useCreateKbArticle, useDeleteKbCategory } from '@/hooks/useKnowledgeBase';
 import { useModules, useUpdateModules, ModulesSettings, defaultModulesSettings } from '@/hooks/useModules';
@@ -56,6 +57,8 @@ export default function NewSitePage() {
   const [publishKbArticles, setPublishKbArticles] = useState(true);
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
   const [showValidationDialog, setShowValidationDialog] = useState(false);
+  const [showPreviewDialog, setShowPreviewDialog] = useState(false);
+  const [overwriteOptions, setOverwriteOptions] = useState<TemplateOverwriteOptions | null>(null);
   
   const navigate = useNavigate();
   const { data: existingPages } = usePages();
@@ -66,6 +69,14 @@ export default function NewSitePage() {
   const { count: mediaCount } = useMediaLibraryCount();
   const clearMediaLibrary = useClearMediaLibrary();
   const { data: currentModules } = useModules();
+  
+  // Fetch existing settings for comparison
+  const { data: existingBranding } = useBrandingSettings();
+  const { data: existingChatSettings } = useChatSettings();
+  const { data: existingFooter } = useFooterBlock();
+  const { data: existingSeo } = useSeoSettings();
+  const { data: existingCookieBanner } = useCookieBannerSettings();
+  
   const createPage = useCreatePage();
   const deletePage = useDeletePage();
   const deleteBlogPost = useDeleteBlogPost();
@@ -85,6 +96,32 @@ export default function NewSitePage() {
   const createProduct = useCreateProduct();
   const { toast } = useToast();
 
+  // Build existing content summary for preview dialog
+  const existingContent = useMemo(() => ({
+    pagesCount: existingPages?.length || 0,
+    blogPostsCount: existingBlogPosts?.length || 0,
+    kbCategoriesCount: existingKbCategories?.length || 0,
+    productsCount: existingProducts?.length || 0,
+    hasBranding: !!(existingBranding?.primaryColor || existingBranding?.logo),
+    hasChatSettings: !!existingChatSettings?.enabled,
+    hasFooter: !!(existingFooter?.data?.email || existingFooter?.data?.phone),
+    hasSeo: !!(existingSeo?.siteTitle || existingSeo?.defaultDescription),
+    hasCookieBanner: !!existingCookieBanner?.enabled,
+  }), [existingPages, existingBlogPosts, existingKbCategories, existingProducts, existingBranding, existingChatSettings, existingFooter, existingSeo, existingCookieBanner]);
+
+  // Check if there's any existing content
+  const hasExistingContent = useMemo(() => (
+    existingContent.pagesCount > 0 ||
+    existingContent.hasBranding ||
+    existingContent.hasChatSettings ||
+    existingContent.hasFooter ||
+    existingContent.hasSeo ||
+    existingContent.hasCookieBanner ||
+    existingContent.blogPostsCount > 0 ||
+    existingContent.kbCategoriesCount > 0 ||
+    existingContent.productsCount > 0
+  ), [existingContent]);
+
   // Calculate template image count
   const templateImageInfo = useMemo(() => {
     if (!selectedTemplate) return null;
@@ -94,6 +131,7 @@ export default function NewSitePage() {
   const handleTemplateSelect = (template: StarterTemplate) => {
     setSelectedTemplate(template);
     setValidationResult(null);
+    setOverwriteOptions(null);
   };
 
   const handleValidateTemplate = () => {
@@ -209,29 +247,57 @@ export default function NewSitePage() {
     });
   };
 
-  const handleCreateSite = async () => {
+  // Handler when user confirms from preview dialog
+  const handleApplyWithOptions = (options: TemplateOverwriteOptions) => {
+    setOverwriteOptions(options);
+    // Map overwrite options to clear states
+    setClearExistingPages(options.pages && existingContent.pagesCount > 0);
+    setClearBlogPosts(options.blogPosts && existingContent.blogPostsCount > 0);
+    setClearKbContent(options.kbContent && existingContent.kbCategoriesCount > 0);
+    setClearProducts(options.products && existingContent.productsCount > 0);
+    // Trigger creation with options
+    handleCreateSiteWithOptions(options);
+  };
+
+  const handleCreateSiteWithOptions = async (options?: TemplateOverwriteOptions) => {
     if (!selectedTemplate) return;
+
+    // Use provided options or default to all true
+    const opts = options || {
+      pages: true,
+      branding: true,
+      chatSettings: true,
+      footerSettings: true,
+      seoSettings: true,
+      cookieBannerSettings: true,
+      blogPosts: !!selectedTemplate.blogPosts?.length,
+      kbContent: !!selectedTemplate.kbCategories?.length,
+      products: !!selectedTemplate.products?.length,
+      modules: !!selectedTemplate.requiredModules?.length,
+    };
 
     setStep('creating');
     const pageIds: string[] = [];
 
     try {
       // Step 0a: Delete existing pages if option is selected
-      if (clearExistingPages && existingPages && existingPages.length > 0) {
-        setProgress({ currentPage: 0, totalPages: existingPages.length, currentStep: 'Clearing existing pages...' });
+      const shouldClearPages = opts.pages && existingPages && existingPages.length > 0;
+      if (shouldClearPages) {
+        setProgress({ currentPage: 0, totalPages: existingPages!.length, currentStep: 'Clearing existing pages...' });
         
-        for (let i = 0; i < existingPages.length; i++) {
+        for (let i = 0; i < existingPages!.length; i++) {
           setProgress({ 
             currentPage: i + 1, 
-            totalPages: existingPages.length, 
-            currentStep: `Removing page "${existingPages[i].title}"...` 
+            totalPages: existingPages!.length, 
+            currentStep: `Removing page "${existingPages![i].title}"...` 
           });
-          await deletePage.mutateAsync(existingPages[i].id);
+          await deletePage.mutateAsync(existingPages![i].id);
         }
       }
 
       // Step 0b: Delete existing blog posts if option is selected
-      if (clearBlogPosts && existingBlogPosts && existingBlogPosts.length > 0) {
+      const shouldClearBlog = opts.blogPosts && existingBlogPosts && existingBlogPosts.length > 0;
+      if (shouldClearBlog) {
         setProgress({ currentPage: 0, totalPages: existingBlogPosts.length, currentStep: 'Clearing existing blog posts...' });
         
         for (let i = 0; i < existingBlogPosts.length; i++) {
@@ -245,7 +311,8 @@ export default function NewSitePage() {
       }
 
       // Step 0c: Delete existing KB categories (cascades to articles) if option is selected
-      if (clearKbContent && existingKbCategories && existingKbCategories.length > 0) {
+      const shouldClearKb = opts.kbContent && existingKbCategories && existingKbCategories.length > 0;
+      if (shouldClearKb) {
         setProgress({ currentPage: 0, totalPages: existingKbCategories.length, currentStep: 'Clearing existing KB content...' });
         
         for (let i = 0; i < existingKbCategories.length; i++) {
@@ -259,16 +326,17 @@ export default function NewSitePage() {
       }
 
       // Step 0d: Delete existing products if option is selected and template has products
-      if (clearProducts && selectedTemplate.products && selectedTemplate.products.length > 0 && existingProducts && existingProducts.length > 0) {
-        setProgress({ currentPage: 0, totalPages: existingProducts.length, currentStep: 'Clearing existing products...' });
+      const shouldClearProducts = opts.products && selectedTemplate.products && selectedTemplate.products.length > 0 && existingProducts && existingProducts.length > 0;
+      if (shouldClearProducts) {
+        setProgress({ currentPage: 0, totalPages: existingProducts!.length, currentStep: 'Clearing existing products...' });
         
-        for (let i = 0; i < existingProducts.length; i++) {
+        for (let i = 0; i < existingProducts!.length; i++) {
           setProgress({ 
             currentPage: i + 1, 
-            totalPages: existingProducts.length, 
-            currentStep: `Removing product "${existingProducts[i].name}"...` 
+            totalPages: existingProducts!.length, 
+            currentStep: `Removing product "${existingProducts![i].name}"...` 
           });
-          await deleteProduct.mutateAsync(existingProducts[i].id);
+          await deleteProduct.mutateAsync(existingProducts![i].id);
         }
       }
 
@@ -334,140 +402,160 @@ export default function NewSitePage() {
         await updateModules.mutateAsync(updatedModules);
       }
 
-      // Step 2: Create all pages
-      setProgress({ currentPage: 0, totalPages: templatePages.length, currentStep: 'Creating pages...' });
-      
-      for (let i = 0; i < templatePages.length; i++) {
-        const templatePage = templatePages[i];
-        setProgress({ 
-          currentPage: i + 1, 
-          totalPages: templatePages.length, 
-          currentStep: `Creating "${templatePage.title}"...` 
-        });
-
-        const page = await createPage.mutateAsync({
-          title: templatePage.title,
-          slug: templatePage.slug,
-          content: templatePage.blocks,
-          meta: templatePage.meta,
-          menu_order: templatePage.menu_order,
-          show_in_menu: templatePage.showInMenu,
-          status: publishPages ? 'published' : 'draft',
-        });
+      // Step 2: Create all pages (if pages option enabled)
+      if (opts.pages) {
+        setProgress({ currentPage: 0, totalPages: templatePages.length, currentStep: 'Creating pages...' });
         
-        pageIds.push(page.id);
-      }
-
-      // Step 3: Apply branding
-      setProgress({ currentPage: selectedTemplate.pages.length, totalPages: selectedTemplate.pages.length, currentStep: 'Applying branding...' });
-      await updateBranding.mutateAsync(selectedTemplate.branding);
-
-      // Step 4: Apply chat settings
-      setProgress({ currentPage: selectedTemplate.pages.length, totalPages: selectedTemplate.pages.length, currentStep: 'Configuring AI chat...' });
-      await updateChat.mutateAsync(selectedTemplate.chatSettings as any);
-
-      // Step 5: Apply footer settings
-      setProgress({ currentPage: selectedTemplate.pages.length, totalPages: selectedTemplate.pages.length, currentStep: 'Applying footer...' });
-      await updateFooter.mutateAsync(selectedTemplate.footerSettings as any);
-
-      // Step 6: Apply SEO settings
-      setProgress({ currentPage: selectedTemplate.pages.length, totalPages: selectedTemplate.pages.length, currentStep: 'Configuring SEO...' });
-      await updateSeo.mutateAsync(selectedTemplate.seoSettings as any);
-
-      // Step 7: Apply Cookie Banner settings
-      setProgress({ currentPage: selectedTemplate.pages.length, totalPages: selectedTemplate.pages.length, currentStep: 'Configuring cookies...' });
-      await updateCookieBanner.mutateAsync(selectedTemplate.cookieBannerSettings as any);
-
-      // Step 8: Set homepage
-      setProgress({ currentPage: selectedTemplate.pages.length, totalPages: selectedTemplate.pages.length, currentStep: 'Finalizing...' });
-      await updateGeneral.mutateAsync({ homepageSlug: selectedTemplate.siteSettings.homepageSlug });
-
-      // Step 9: Create products if template has them
-      const productsToCreate = templateProducts || [];
-      if (productsToCreate.length > 0) {
-        for (let i = 0; i < productsToCreate.length; i++) {
-          const product = productsToCreate[i];
+        for (let i = 0; i < templatePages.length; i++) {
+          const templatePage = templatePages[i];
           setProgress({ 
             currentPage: i + 1, 
-            totalPages: productsToCreate.length, 
-            currentStep: `Creating product "${product.name}"...` 
+            totalPages: templatePages.length, 
+            currentStep: `Creating "${templatePage.title}"...` 
+          });
+
+          const page = await createPage.mutateAsync({
+            title: templatePage.title,
+            slug: templatePage.slug,
+            content: templatePage.blocks,
+            meta: templatePage.meta,
+            menu_order: templatePage.menu_order,
+            show_in_menu: templatePage.showInMenu,
+            status: publishPages ? 'published' : 'draft',
           });
           
-          await createProduct.mutateAsync({
-            name: product.name,
-            description: product.description,
-            price_cents: product.price_cents,
-            currency: product.currency,
-            type: product.type,
-            image_url: product.image_url || null,
-            is_active: product.is_active ?? true,
-            sort_order: i,
-            stripe_price_id: null,
-          });
+          pageIds.push(page.id);
         }
       }
 
-      // Step 10: Create blog posts if template has them
-      const postsToCreate = templateBlogPosts || [];
-      if (postsToCreate.length > 0) {
-        for (let i = 0; i < postsToCreate.length; i++) {
-          const post = postsToCreate[i];
-          setProgress({ 
-            currentPage: i + 1, 
-            totalPages: postsToCreate.length, 
-            currentStep: `Creating blog post "${post.title}"...` 
-          });
-          
-          await createBlogPost.mutateAsync({
-            title: post.title,
-            slug: post.slug,
-            excerpt: post.excerpt,
-            featured_image: post.featured_image,
-            content: post.content,
-            meta: post.meta,
-            status: publishBlogPosts ? 'published' : 'draft',
-          });
-        }
+      // Step 3: Apply branding (if branding option enabled)
+      if (opts.branding) {
+        setProgress({ currentPage: selectedTemplate.pages.length, totalPages: selectedTemplate.pages.length, currentStep: 'Applying branding...' });
+        await updateBranding.mutateAsync(selectedTemplate.branding);
       }
 
-      // Step 11: Create Knowledge Base categories and articles if template has them
-      const kbCategories = selectedTemplate.kbCategories || [];
-      let totalKbArticles = 0;
-      if (kbCategories.length > 0) {
-        for (let i = 0; i < kbCategories.length; i++) {
-          const category = kbCategories[i];
-          setProgress({ 
-            currentPage: i + 1, 
-            totalPages: kbCategories.length, 
-            currentStep: `Creating KB category "${category.name}"...` 
-          });
-          
-          // Create the category
-          const createdCategory = await createKbCategory.mutateAsync({
-            name: category.name,
-            slug: category.slug,
-            description: category.description,
-            icon: category.icon,
-            is_active: true,
-          });
+      // Step 4: Apply chat settings (if chatSettings option enabled)
+      if (opts.chatSettings) {
+        setProgress({ currentPage: selectedTemplate.pages.length, totalPages: selectedTemplate.pages.length, currentStep: 'Configuring AI chat...' });
+        await updateChat.mutateAsync(selectedTemplate.chatSettings as any);
+      }
 
-          // Create articles for this category
-          for (const article of category.articles) {
-            // Generate TiptapDocument from answer_text
-            const answerJson = createDocumentFromText(article.answer_text);
-            
-            await createKbArticle.mutateAsync({
-              category_id: createdCategory.id,
-              title: article.title,
-              slug: article.slug,
-              question: article.question,
-              answer_json: answerJson as any,
-              answer_text: article.answer_text,
-              is_published: publishKbArticles,
-              is_featured: article.is_featured,
-              include_in_chat: article.include_in_chat,
+      // Step 5: Apply footer settings (if footerSettings option enabled)
+      if (opts.footerSettings) {
+        setProgress({ currentPage: selectedTemplate.pages.length, totalPages: selectedTemplate.pages.length, currentStep: 'Applying footer...' });
+        await updateFooter.mutateAsync(selectedTemplate.footerSettings as any);
+      }
+
+      // Step 6: Apply SEO settings (if seoSettings option enabled)
+      if (opts.seoSettings) {
+        setProgress({ currentPage: selectedTemplate.pages.length, totalPages: selectedTemplate.pages.length, currentStep: 'Configuring SEO...' });
+        await updateSeo.mutateAsync(selectedTemplate.seoSettings as any);
+      }
+
+      // Step 7: Apply Cookie Banner settings (if cookieBannerSettings option enabled)
+      if (opts.cookieBannerSettings) {
+        setProgress({ currentPage: selectedTemplate.pages.length, totalPages: selectedTemplate.pages.length, currentStep: 'Configuring cookies...' });
+        await updateCookieBanner.mutateAsync(selectedTemplate.cookieBannerSettings as any);
+      }
+
+      // Step 8: Set homepage (always if pages were created)
+      if (opts.pages) {
+        setProgress({ currentPage: selectedTemplate.pages.length, totalPages: selectedTemplate.pages.length, currentStep: 'Finalizing...' });
+        await updateGeneral.mutateAsync({ homepageSlug: selectedTemplate.siteSettings.homepageSlug });
+      }
+
+      // Step 9: Create products if template has them (and products option enabled)
+      if (opts.products) {
+        const productsToCreate = templateProducts || [];
+        if (productsToCreate.length > 0) {
+          for (let i = 0; i < productsToCreate.length; i++) {
+            const product = productsToCreate[i];
+            setProgress({ 
+              currentPage: i + 1, 
+              totalPages: productsToCreate.length, 
+              currentStep: `Creating product "${product.name}"...` 
             });
-            totalKbArticles++;
+            
+            await createProduct.mutateAsync({
+              name: product.name,
+              description: product.description,
+              price_cents: product.price_cents,
+              currency: product.currency,
+              type: product.type,
+              image_url: product.image_url || null,
+              is_active: product.is_active ?? true,
+              sort_order: i,
+              stripe_price_id: null,
+            });
+          }
+        }
+      }
+
+      // Step 10: Create blog posts if template has them (and blogPosts option enabled)
+      if (opts.blogPosts) {
+        const postsToCreate = templateBlogPosts || [];
+        if (postsToCreate.length > 0) {
+          for (let i = 0; i < postsToCreate.length; i++) {
+            const post = postsToCreate[i];
+            setProgress({ 
+              currentPage: i + 1, 
+              totalPages: postsToCreate.length, 
+              currentStep: `Creating blog post "${post.title}"...` 
+            });
+            
+            await createBlogPost.mutateAsync({
+              title: post.title,
+              slug: post.slug,
+              excerpt: post.excerpt,
+              featured_image: post.featured_image,
+              content: post.content,
+              meta: post.meta,
+              status: publishBlogPosts ? 'published' : 'draft',
+            });
+          }
+        }
+      }
+
+      // Step 11: Create Knowledge Base categories and articles if template has them (and kbContent option enabled)
+      let totalKbArticles = 0;
+      if (opts.kbContent) {
+        const kbCategories = selectedTemplate.kbCategories || [];
+        if (kbCategories.length > 0) {
+          for (let i = 0; i < kbCategories.length; i++) {
+            const category = kbCategories[i];
+            setProgress({ 
+              currentPage: i + 1, 
+              totalPages: kbCategories.length, 
+              currentStep: `Creating KB category "${category.name}"...` 
+            });
+            
+            // Create the category
+            const createdCategory = await createKbCategory.mutateAsync({
+              name: category.name,
+              slug: category.slug,
+              description: category.description,
+              icon: category.icon,
+              is_active: true,
+            });
+
+            // Create articles for this category
+            for (const article of category.articles) {
+              // Generate TiptapDocument from answer_text
+              const answerJson = createDocumentFromText(article.answer_text);
+              
+              await createKbArticle.mutateAsync({
+                category_id: createdCategory.id,
+                title: article.title,
+                slug: article.slug,
+                question: article.question,
+                answer_json: answerJson as any,
+                answer_text: article.answer_text,
+                is_published: publishKbArticles,
+                is_featured: article.is_featured,
+                include_in_chat: article.include_in_chat,
+              });
+              totalKbArticles++;
+            }
           }
         }
       }
@@ -475,31 +563,34 @@ export default function NewSitePage() {
       setCreatedPageIds(pageIds);
       setStep('done');
       
-      const blogCount = postsToCreate.length;
-      const kbCount = totalKbArticles;
-      const productCount = productsToCreate.length;
+      const appliedPagesCount = opts.pages ? selectedTemplate.pages.length : 0;
+      const appliedBlogCount = opts.blogPosts ? (templateBlogPosts?.length || 0) : 0;
+      const appliedProductCount = opts.products ? (templateProducts?.length || 0) : 0;
       const moduleCount = selectedTemplate.requiredModules?.length || 0;
       
-      let description = `Created ${selectedTemplate.pages.length} pages`;
-      if (productCount > 0) description += `, ${productCount} products`;
-      if (blogCount > 0) description += `, ${blogCount} blog posts`;
-      if (kbCount > 0) description += `, ${kbCount} KB articles`;
+      let description = appliedPagesCount > 0 ? `Created ${appliedPagesCount} pages` : 'Applied settings';
+      if (appliedProductCount > 0) description += `, ${appliedProductCount} products`;
+      if (appliedBlogCount > 0) description += `, ${appliedBlogCount} blog posts`;
+      if (totalKbArticles > 0) description += `, ${totalKbArticles} KB articles`;
       if (moduleCount > 0) description += `. Enabled ${moduleCount} modules`;
       description += '.';
       
       toast({
-        title: 'Site created!',
+        title: 'Template applied!',
         description,
       });
     } catch (error) {
       toast({
         title: 'Error',
-        description: 'Failed to create site. Some pages may have been created.',
+        description: 'Failed to apply template. Some changes may have been applied.',
         variant: 'destructive',
       });
       setStep('select');
     }
   };
+
+  // Legacy handler for backward compatibility
+  const handleCreateSite = () => handleCreateSiteWithOptions();
 
   const progressPercent = progress.totalPages > 0 
     ? (progress.currentPage / (progress.totalPages + 2)) * 100 // +2 for branding and chat steps
@@ -812,13 +903,31 @@ export default function NewSitePage() {
                       <ShieldCheck className="h-4 w-4" />
                       Validate
                     </Button>
-                    <Button onClick={handleCreateSite} className="gap-2">
-                      <Sparkles className="h-4 w-4" />
-                      {clearExistingPages ? 'Replace Site' : 'Create Site'}
-                    </Button>
+                    {hasExistingContent ? (
+                      <Button onClick={() => setShowPreviewDialog(true)} className="gap-2">
+                        <Eye className="h-4 w-4" />
+                        Review Changes
+                      </Button>
+                    ) : (
+                      <Button onClick={() => handleCreateSiteWithOptions()} className="gap-2">
+                        <Sparkles className="h-4 w-4" />
+                        Create Site
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>
+            )}
+
+            {/* Template Preview Dialog */}
+            {selectedTemplate && (
+              <TemplatePreviewDialog
+                open={showPreviewDialog}
+                onOpenChange={setShowPreviewDialog}
+                template={selectedTemplate}
+                existingContent={existingContent}
+                onApply={handleApplyWithOptions}
+              />
             )}
 
             {/* Validation Results Dialog */}
@@ -939,7 +1048,7 @@ export default function NewSitePage() {
                     Close
                   </Button>
                   {validationResult?.valid && (
-                    <Button onClick={() => { setShowValidationDialog(false); handleCreateSite(); }} className="gap-2">
+                    <Button onClick={() => { setShowValidationDialog(false); handleCreateSiteWithOptions(); }} className="gap-2">
                       <Sparkles className="h-4 w-4" />
                       Create Site
                     </Button>
