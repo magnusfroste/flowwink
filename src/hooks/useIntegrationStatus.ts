@@ -40,7 +40,8 @@ export function useIntegrationStatus() {
       if (error) throw error;
       return data as IntegrationStatus;
     },
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    staleTime: 30 * 1000, // Cache for 30 seconds (allow quick refresh after adding secrets)
+    gcTime: 60 * 1000, // Keep in cache for 1 minute
     retry: 1,
   });
 }
