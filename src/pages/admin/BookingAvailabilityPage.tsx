@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { Plus, Trash2, CalendarOff } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Plus, Trash2, CalendarOff, ArrowLeft } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
@@ -30,6 +31,7 @@ const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Frida
 const WEEKDAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 export default function BookingAvailabilityPage() {
+  const navigate = useNavigate();
   const { data: availability, isLoading: loadingAvailability } = useAvailability();
   const { data: blockedDates, isLoading: loadingBlocked } = useBlockedDates();
   const { data: services } = useBookingServices();
@@ -93,6 +95,10 @@ export default function BookingAvailabilityPage() {
         <AdminPageHeader
           title="Availability"
           description="Set opening hours and block dates"
+          backAction={{
+            label: 'Bookings',
+            onClick: () => navigate('/admin/bookings'),
+          }}
         />
 
         <Tabs defaultValue="weekly" className="space-y-6">
