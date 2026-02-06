@@ -137,6 +137,22 @@ Varje block kan tilldelas ett **Anchor ID** för att möjliggöra in-page naviga
 - **Återanvändning**: Välj från biblioteket i alla block
 - **Alt-text**: WCAG-kompatibel bildhantering
 
+### 1.3 Editor-arkitektur
+
+FlowWink använder två olika editor-typer beroende på innehållstyp:
+
+| Innehållstyp | Editor | Fokus |
+|--------------|--------|-------|
+| **Pages** | Block-system | Layout-komponering (Hero, Features, CTA, etc.) |
+| **Blog** | Tiptap Rich Text | Dokument-fokus (text, bilder, citat) |
+| **Newsletter** | Tiptap Rich Text | Email-formaterat innehåll |
+
+**Fördelar:**
+- Blog och Newsletter delar samma editor-upplevelse
+- Content Campaigns kan publicera direkt till Blog utan konvertering
+- Enklare för skribenter - fokus på innehåll, inte layout
+- AI-genererat innehåll passar naturligt
+
 ---
 
 ## 2. Editorial Workflow

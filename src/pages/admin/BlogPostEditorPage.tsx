@@ -1,14 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Save, ArrowLeft, Send, Check, Star, StarOff, Eye, Settings2, Undo2, Redo2 } from "lucide-react";
+import { Save, ArrowLeft, Send, Check, Star, StarOff, Eye, Settings2 } from "lucide-react";
+import type { JSONContent } from "@tiptap/react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
-import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -26,13 +25,10 @@ import {
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { BlockEditor } from "@/components/admin/blocks/BlockEditor";
+import { BlogContentEditor } from "@/components/admin/BlogContentEditor";
 import { ImagePickerField } from "@/components/admin/ImagePickerField";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { useUndoRedo } from "@/hooks/useUndoRedo";
-import { useUndoRedoKeyboard } from "@/hooks/useUndoRedoKeyboard";
 import {
   useBlogPost,
   useCreateBlogPost,
@@ -43,7 +39,7 @@ import {
 import { useBlogCategories } from "@/hooks/useBlogCategories";
 import { useBlogTags, useGetOrCreateBlogTag } from "@/hooks/useBlogTags";
 import { useBlogSettings } from "@/hooks/useSiteSettings";
-import type { ContentBlock, PageStatus, BlogPostMeta } from "@/types/cms";
+import type { PageStatus, BlogPostMeta, TiptapDocument } from "@/types/cms";
 
 function generateSlug(title: string): string {
   return title
@@ -58,7 +54,7 @@ export default function BlogPostEditorPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, role, isAdmin, isApprover } = useAuth();
+  const { user, isAdmin, isApprover } = useAuth();
   const isNew = !id || id === "new";
   
   const { data: post, isLoading } = useBlogPost(isNew ? undefined : id);
@@ -86,30 +82,32 @@ export default function BlogPostEditorPage() {
   const [meta, setMeta] = useState<BlogPostMeta>({});
   const [newTagInput, setNewTagInput] = useState("");
   
+  // Content is now Tiptap JSON
+  const [content, setContent] = useState<JSONContent | null>(null);
+  
   const [hasChanges, setHasChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Undo/Redo for content blocks
-  const {
-    present: content,
-    set: setContent,
-    undo,
-    redo,
-    reset: resetContent,
-    canUndo,
-    canRedo,
-  } = useUndoRedo<ContentBlock[]>({ initialValue: [], maxHistory: 50 });
+  // Helper to check if content is Tiptap JSON
+  const isTiptapContent = (c: unknown): c is TiptapDocument => {
+    return c !== null && typeof c === 'object' && 'type' in c && (c as { type: string }).type === 'doc';
+  };
 
-  // Keyboard shortcuts for undo/redo
-  useUndoRedoKeyboard({ undo, redo, canUndo, canRedo });
-  
   // Load post data
   useEffect(() => {
     if (post) {
       setTitle(post.title);
       setSlug(post.slug);
       setExcerpt(post.excerpt || "");
-      resetContent(structuredClone(post.content_json));
+      
+      // Handle both legacy ContentBlock[] and new TiptapDocument
+      if (isTiptapContent(post.content_json)) {
+        setContent(post.content_json as JSONContent);
+      } else {
+        // Legacy block content or empty - start with empty Tiptap doc
+        setContent({ type: 'doc', content: [{ type: 'paragraph' }] });
+      }
+      
       setFeaturedImage(post.featured_image || "");
       setFeaturedImageAlt(post.featured_image_alt || "");
       setAuthorId(post.author_id || "");
@@ -120,16 +118,16 @@ export default function BlogPostEditorPage() {
       setMeta(post.meta_json || {});
     } else if (isNew && user) {
       setAuthorId(user.id);
+      // Initialize with empty Tiptap document
+      setContent({ type: 'doc', content: [{ type: 'paragraph' }] });
     }
   }, [post, isNew, user]);
   
   // Track changes
   useEffect(() => {
     if (isNew) {
-      // For new posts, any title means there are changes to save
       setHasChanges(title.trim().length > 0);
     } else if (post) {
-      // For existing posts, compare against saved values
       const changed =
         title !== post.title ||
         slug !== post.slug ||
@@ -169,7 +167,7 @@ export default function BlogPostEditorPage() {
         const newPost = await createMutation.mutateAsync({
           title,
           slug,
-          content,
+          content: content as TiptapDocument,
           excerpt: excerpt || undefined,
           featured_image: featuredImage || undefined,
           featured_image_alt: featuredImageAlt || undefined,
@@ -186,7 +184,7 @@ export default function BlogPostEditorPage() {
           title,
           slug,
           excerpt,
-          content_json: content,
+          content_json: content as TiptapDocument,
           featured_image: featuredImage,
           featured_image_alt: featuredImageAlt,
           author_id: authorId || undefined,
@@ -276,40 +274,6 @@ export default function BlogPostEditorPage() {
                     View
                   </a>
                 </Button>
-              )}
-              
-              {/* Undo/Redo buttons */}
-              {canEdit && (
-                <div className="flex items-center gap-1">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={undo}
-                        disabled={!canUndo}
-                        className="h-8 w-8"
-                      >
-                        <Undo2 className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Undo (Ctrl+Z)</TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={redo}
-                        disabled={!canRedo}
-                        className="h-8 w-8"
-                      >
-                        <Redo2 className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Redo (Ctrl+Shift+Z)</TooltipContent>
-                  </Tooltip>
-                </div>
               )}
 
               <Sheet>
@@ -610,10 +574,11 @@ export default function BlogPostEditorPage() {
                 <CardTitle className="text-base">Content</CardTitle>
               </CardHeader>
               <CardContent>
-                <BlockEditor
-                  blocks={content}
+                <BlogContentEditor
+                  content={content}
                   onChange={setContent}
-                  canEdit={canEdit}
+                  disabled={!canEdit}
+                  placeholder="Start writing your article..."
                 />
               </CardContent>
             </Card>

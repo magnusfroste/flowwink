@@ -854,12 +854,15 @@ export interface BlogPostMeta extends PageMeta {
   canonical_url?: string;
 }
 
+// Blog content can be either legacy ContentBlock[] or new TiptapDocument
+export type BlogContentFormat = ContentBlock[] | TiptapDocument | null;
+
 export interface BlogPost {
   id: string;
   slug: string;
   title: string;
   excerpt: string | null;
-  content_json: ContentBlock[];
+  content_json: BlogContentFormat;
   featured_image: string | null;
   featured_image_alt: string | null;
   

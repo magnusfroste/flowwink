@@ -1,10 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import type { BlogPost, PageStatus, ContentBlock, BlogPostMeta, BlogCategory, BlogTag } from '@/types/cms';
+import type { BlogPost, PageStatus, ContentBlock, BlogPostMeta, BlogCategory, BlogTag, BlogContentFormat, TiptapDocument } from '@/types/cms';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from './useAuth';
 import type { Json } from '@/integrations/supabase/types';
 import { webhookEvents } from '@/lib/webhook-utils';
+import { extractPlainText } from '@/lib/tiptap-utils';
 
 // Parse blog post from database
 function parseBlogPost(data: Record<string, unknown>): BlogPost {
@@ -32,35 +33,37 @@ function parseBlogPost(data: Record<string, unknown>): BlogPost {
   };
 }
 
-// Calculate reading time from content
-function calculateReadingTime(content: ContentBlock[]): number {
+// Calculate reading time from content (supports both ContentBlock[] and TiptapDocument)
+function calculateReadingTime(content: BlogContentFormat): number {
+  if (!content) return 1;
+  
   let wordCount = 0;
   
-  const extractText = (blocks: ContentBlock[]) => {
-    blocks.forEach(block => {
-      if (block.type === 'text' && block.data.content) {
-        const blockContent = block.data.content;
-        if (typeof blockContent === 'string') {
-          wordCount += blockContent.replace(/<[^>]*>/g, '').split(/\s+/).length;
-        } else if (typeof blockContent === 'object' && blockContent !== null) {
-          // Tiptap JSON
-          const tiptapContent = blockContent as { type?: string; content?: unknown[] };
-          if (tiptapContent.content) {
-            const extractFromTiptap = (nodes: unknown[]) => {
-              nodes.forEach((node: unknown) => {
-                const n = node as { text?: string; content?: unknown[] };
-                if (n.text) wordCount += n.text.split(/\s+/).length;
-                if (n.content) extractFromTiptap(n.content);
-              });
-            };
-            extractFromTiptap(tiptapContent.content);
+  // Handle TiptapDocument
+  if (!Array.isArray(content) && content.type === 'doc') {
+    const text = extractPlainText(content);
+    wordCount = text.split(/\s+/).filter(w => w.length > 0).length;
+    return Math.max(1, Math.ceil(wordCount / 200));
+  }
+  
+  // Handle ContentBlock[] (legacy)
+  if (Array.isArray(content)) {
+    const extractText = (blocks: ContentBlock[]) => {
+      blocks.forEach(block => {
+        if (block.type === 'text' && block.data.content) {
+          const blockContent = block.data.content;
+          if (typeof blockContent === 'string') {
+            wordCount += blockContent.replace(/<[^>]*>/g, '').split(/\s+/).length;
+          } else if (typeof blockContent === 'object' && blockContent !== null) {
+            const text = extractPlainText(blockContent);
+            wordCount += text.split(/\s+/).filter(w => w.length > 0).length;
           }
         }
-      }
-    });
-  };
+      });
+    };
+    extractText(content);
+  }
   
-  extractText(content);
   return Math.max(1, Math.ceil(wordCount / 200)); // 200 words per minute
 }
 
@@ -244,7 +247,7 @@ export function useCreateBlogPost() {
     }: { 
       title: string; 
       slug: string;
-      content?: ContentBlock[];
+      content?: BlogContentFormat;
       excerpt?: string;
       featured_image?: string;
       featured_image_alt?: string;
@@ -254,8 +257,7 @@ export function useCreateBlogPost() {
       tags?: string[];
       status?: PageStatus;
     }) => {
-      const contentBlocks = content || [];
-      const readingTime = calculateReadingTime(contentBlocks);
+      const readingTime = calculateReadingTime(content || null);
       const postStatus = status || 'draft';
       
       const { data, error } = await supabase
@@ -264,7 +266,7 @@ export function useCreateBlogPost() {
           title,
           slug,
           excerpt,
-          content_json: contentBlocks as unknown as Json,
+          content_json: (content || null) as unknown as Json,
           featured_image,
           featured_image_alt,
           author_id: author_id || user?.id,
@@ -354,7 +356,7 @@ export function useUpdateBlogPost() {
       title?: string;
       slug?: string;
       excerpt?: string;
-      content_json?: ContentBlock[];
+      content_json?: BlogContentFormat;
       featured_image?: string;
       featured_image_alt?: string;
       author_id?: string;
