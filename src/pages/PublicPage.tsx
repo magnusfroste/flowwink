@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { useEffect, useState } from 'react';
 import type { Page, ContentBlock } from '@/types/cms';
 import { usePageViewTracker } from '@/hooks/usePageViewTracker';
+import { useAnchorScroll } from '@/hooks/useAnchorScroll';
 
 // Special marker to distinguish connection errors from "page not found"
 const CONNECTION_ERROR = Symbol('CONNECTION_ERROR');
@@ -42,6 +43,9 @@ export default function PublicPage() {
   const [user, setUser] = useState<unknown>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [renderError, setRenderError] = useState<Error | null>(null);
+
+  // Handle smooth scrolling to anchors
+  useAnchorScroll();
 
   // Check for ?setup=true to force setup wizard (dev mode)
   const forceSetup = searchParams.get('setup') === 'true';

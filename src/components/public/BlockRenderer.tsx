@@ -236,9 +236,12 @@ export function BlockRenderer({ block, pageId, index = 0 }: BlockRendererProps) 
 
   const content = renderBlock();
   
-  // Wrap with spacing if any is applied
-  const wrappedContent = spacingClasses ? (
-    <div className={spacingClasses}>{content}</div>
+  // Get anchor ID if set
+  const anchorId = block.anchorId;
+  
+  // Wrap with spacing and anchor ID if any is applied
+  const wrappedContent = (spacingClasses || anchorId) ? (
+    <div id={anchorId} className={spacingClasses}>{content}</div>
   ) : content;
 
   // Skip animation for hero/separator unless explicitly configured

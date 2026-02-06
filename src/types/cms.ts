@@ -294,6 +294,8 @@ export interface ContentBlock {
   data: Record<string, unknown>;
   spacing?: BlockSpacing;
   animation?: BlockAnimation;
+  /** Optional anchor ID for in-page navigation (e.g., "contact-us" for #contact-us links) */
+  anchorId?: string;
 }
 
 export type HeroLayout = 'centered' | 'split-left' | 'split-right';
