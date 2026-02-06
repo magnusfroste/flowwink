@@ -1029,6 +1029,57 @@ För vårdorganisationer som kräver HIPAA:
 - **Table**: Structured data tables with styling options
 - **Announcement Bar**: Top banner for important messages
 
+#### Lead Generation Loop (Flowwink Loop)
+
+The Flowwink Loop is the unified lead capture and enrichment pipeline that automatically converts all visitor interactions into enriched CRM contacts:
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        LEAD GENERATION LOOP                             │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│   ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐               │
+│   │  Forms   │  │Newsletter│  │ Bookings │  │   Chat   │               │
+│   │  Block   │  │  Block   │  │  Block   │  │  Widget  │               │
+│   └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘               │
+│        │             │             │             │                      │
+│        └─────────────┴──────┬──────┴─────────────┘                      │
+│                             ▼                                           │
+│   ┌─────────────────────────────────────────────────────────────────┐  │
+│   │                    LEAD CAPTURE ENGINE                          │  │
+│   │  • Auto-create lead if new email                                │  │
+│   │  • Auto-match company by domain                                 │  │
+│   │  • Add activity with source + points                            │  │
+│   │  • Trigger enrichment if new company                            │  │
+│   │  • Trigger AI qualification                                     │  │
+│   └─────────────────────────────────────────────────────────────────┘  │
+│                             │                                           │
+│                             ▼                                           │
+│   ┌─────────────────────────────────────────────────────────────────┐  │
+│   │                    ENRICHMENT PIPELINE                          │  │
+│   │  • Company: Firecrawl + AI extraction                           │  │
+│   │  • Lead: AI qualification + scoring                             │  │
+│   └─────────────────────────────────────────────────────────────────┘  │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+**Activity Point Values**:
+| Source | Points | Intent Level |
+|--------|--------|--------------|
+| Form submission | 10 | High |
+| Booking | 10 | High |
+| Newsletter subscribe | 8 | Medium |
+| Link click | 5 | Medium |
+| Call logged | 5 | Medium |
+| Email open | 3 | Low |
+| Page visit | 2 | Low |
+
+**Automatic Enrichment**:
+- When a new company is created from email domain matching, the `enrich-company` edge function is triggered automatically
+- Company enrichment uses Firecrawl to scrape the website and AI to extract: industry, size, phone, address, description
+- Lead qualification uses AI to generate summaries and suggest status changes based on activity history
+
 ### Fas 4: Enterprise (Future)
 - SSO/SAML
 - Multi-site support

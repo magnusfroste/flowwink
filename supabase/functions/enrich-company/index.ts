@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.87.1";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -20,11 +21,55 @@ serve(async (req) => {
   }
 
   try {
-    const { domain } = await req.json();
+    const { domain, companyId } = await req.json();
     
-    if (!domain) {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Resolve domain from companyId if needed
+    let enrichDomain = domain;
+    let targetCompanyId = companyId;
+
+    if (!enrichDomain && companyId) {
+      // Fetch company's domain from database
+      const { data: company, error: companyError } = await supabase
+        .from('companies')
+        .select('id, domain, enriched_at')
+        .eq('id', companyId)
+        .single();
+
+      if (companyError || !company) {
+        console.error('Company not found:', companyError);
+        return new Response(
+          JSON.stringify({ error: 'Company not found' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      if (!company.domain) {
+        return new Response(
+          JSON.stringify({ error: 'Company has no domain to enrich' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Skip if already enriched
+      if (company.enriched_at) {
+        console.log(`Company ${companyId} already enriched at ${company.enriched_at}`);
+        return new Response(
+          JSON.stringify({ success: true, message: 'Already enriched', skipped: true }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      enrichDomain = company.domain;
+      targetCompanyId = company.id;
+    }
+    
+    if (!enrichDomain) {
       return new Response(
-        JSON.stringify({ error: 'Domain is required' }),
+        JSON.stringify({ error: 'Domain or companyId is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -52,7 +97,7 @@ serve(async (req) => {
     const useGemini = !openaiKey && geminiKey;
 
     // Normalize domain to URL
-    const url = domain.startsWith('http') ? domain : `https://${domain}`;
+    const url = enrichDomain.startsWith('http') ? enrichDomain : `https://${enrichDomain}`;
     console.log(`Scraping website: ${url}`);
 
     // Use Firecrawl to scrape the company website
@@ -195,8 +240,30 @@ Only return the JSON object, no other text.`
 
     console.log('Enrichment result:', JSON.stringify(enrichment));
 
+    // Update company record with enrichment data if we have a companyId
+    if (targetCompanyId) {
+      const { error: updateError } = await supabase
+        .from('companies')
+        .update({
+          industry: enrichment.industry || null,
+          size: enrichment.size || null,
+          website: enrichment.website || null,
+          phone: enrichment.phone || null,
+          address: enrichment.address || null,
+          notes: enrichment.description || null,
+          enriched_at: new Date().toISOString(),
+        })
+        .eq('id', targetCompanyId);
+
+      if (updateError) {
+        console.error('Failed to update company with enrichment:', updateError);
+      } else {
+        console.log(`Company ${targetCompanyId} enriched successfully`);
+      }
+    }
+
     return new Response(
-      JSON.stringify({ success: true, data: enrichment }),
+      JSON.stringify({ success: true, data: enrichment, companyId: targetCompanyId }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 

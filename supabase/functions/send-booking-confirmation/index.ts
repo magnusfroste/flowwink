@@ -60,6 +60,142 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    // === LEAD GENERATION: Create or update lead from booking ===
+    try {
+      const bookingDate = new Date(booking.start_time).toISOString();
+      const serviceName = booking.service?.name || 'Unknown Service';
+      
+      // Check if lead exists
+      const { data: existingLead } = await supabase
+        .from("leads")
+        .select("id, phone")
+        .eq("email", booking.customer_email)
+        .maybeSingle();
+
+      if (existingLead) {
+        // Add booking activity to existing lead
+        await supabase.from("lead_activities").insert({
+          lead_id: existingLead.id,
+          type: "booking",
+          points: 10,
+          metadata: {
+            booking_id: bookingId,
+            service_name: serviceName,
+            booking_date: bookingDate,
+          },
+        });
+
+        // Update score
+        const { data: activities } = await supabase
+          .from("lead_activities")
+          .select("points")
+          .eq("lead_id", existingLead.id);
+
+        if (activities) {
+          const totalScore = activities.reduce((sum: number, a: { points: number | null }) => sum + (a.points || 0), 0);
+          await supabase.from("leads").update({ score: totalScore }).eq("id", existingLead.id);
+        }
+
+        // Update phone if not set
+        if (booking.customer_phone && !existingLead.phone) {
+          await supabase
+            .from("leads")
+            .update({ phone: booking.customer_phone })
+            .eq("id", existingLead.id);
+        }
+
+        console.log(`[send-booking-confirmation] Updated existing lead: ${existingLead.id}`);
+
+        // Trigger AI qualification (fire-and-forget)
+        supabase.functions.invoke("qualify-lead", { body: { leadId: existingLead.id } })
+          .catch((err: unknown) => console.warn("[send-booking-confirmation] Lead qualification error:", err));
+      } else {
+        // Auto-match or create company by email domain
+        let companyId: string | null = null;
+        let isNewCompany = false;
+        const emailParts = booking.customer_email.toLowerCase().split("@");
+        
+        if (emailParts.length === 2) {
+          const domain = emailParts[1];
+          const personalDomains = ["gmail.com", "yahoo.com", "hotmail.com", "outlook.com", "icloud.com", "live.com", "msn.com", "aol.com"];
+          
+          if (!personalDomains.includes(domain)) {
+            // Try to find existing company by domain
+            const { data: existingCompany } = await supabase
+              .from("companies")
+              .select("id")
+              .eq("domain", domain)
+              .maybeSingle();
+
+            if (existingCompany) {
+              companyId = existingCompany.id;
+            } else {
+              // Create new company from domain
+              const companyName = domain.split(".")[0].charAt(0).toUpperCase() + domain.split(".")[0].slice(1);
+              const { data: newCompany } = await supabase
+                .from("companies")
+                .insert({ name: companyName, domain })
+                .select("id")
+                .single();
+
+              if (newCompany) {
+                companyId = newCompany.id;
+                isNewCompany = true;
+              }
+            }
+          }
+        }
+
+        // Create new lead
+        const { data: newLead } = await supabase
+          .from("leads")
+          .insert({
+            email: booking.customer_email,
+            name: booking.customer_name,
+            company_id: companyId,
+            phone: booking.customer_phone || null,
+            source: "booking",
+            source_id: bookingId,
+            status: "lead",
+            score: 10,
+            needs_review: false,
+          })
+          .select()
+          .single();
+
+        if (newLead) {
+          // Add initial booking activity
+          await supabase.from("lead_activities").insert({
+            lead_id: newLead.id,
+            type: "booking",
+            points: 10,
+            metadata: {
+              booking_id: bookingId,
+              service_name: serviceName,
+              booking_date: bookingDate,
+              is_initial: true,
+              auto_matched_company: !!companyId,
+            },
+          });
+
+          console.log(`[send-booking-confirmation] Created new lead: ${newLead.id}`);
+
+          // Trigger AI qualification (fire-and-forget)
+          supabase.functions.invoke("qualify-lead", { body: { leadId: newLead.id } })
+            .catch((err: unknown) => console.warn("[send-booking-confirmation] Lead qualification error:", err));
+
+          // Trigger company enrichment for new companies (fire-and-forget)
+          if (companyId && isNewCompany) {
+            supabase.functions.invoke("enrich-company", { body: { companyId } })
+              .catch((err: unknown) => console.warn("[send-booking-confirmation] Company enrichment error:", err));
+          }
+        }
+      }
+    } catch (leadError) {
+      console.warn("[send-booking-confirmation] Lead creation error:", leadError);
+      // Continue with email sending - don't fail the booking confirmation
+    }
+
     // Fetch site settings for branding and email config
     const { data: siteSettings } = await supabase
       .from("site_settings")
