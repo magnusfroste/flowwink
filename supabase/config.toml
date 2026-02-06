@@ -110,3 +110,6 @@ verify_jwt = true
 
 [functions.firecrawl-search]
 verify_jwt = true
+
+[functions.render-page]
+verify_jwt = false

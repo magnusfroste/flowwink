@@ -53,7 +53,28 @@ VITE_SUPABASE_PROJECT_ID=your-project-ref
 
 Copy these to your hosting platform (Easypanel, Railway, etc.) or `.env` file for local development.
 
-### 4. Deploy Frontend
+### 4. Configure Branding (White-Label)
+
+Before deploying, configure your organization's branding in the Admin panel:
+
+1. **Login** to the admin panel at `/admin`
+2. Go to **Settings → Branding**
+3. Configure:
+   - **Organization Name** - Your company name (appears in headers, emails)
+   - **Admin Name** - Name shown on login page (default: "CMS")
+   - **Logo** - Upload your logo
+   - **Favicon** - Upload your favicon
+   - **Colors** - Set your brand colors
+
+4. Go to **Settings → SEO**
+5. Configure:
+   - **Site Title** - Used in browser tabs and social sharing
+   - **Default Description** - Used when sharing links on social media
+   - **OG Image** - Image shown when links are shared on Facebook, LinkedIn, Twitter
+
+> **Important for Social Sharing**: When someone shares your site's links on social media, the `Site Title`, `Default Description`, and `OG Image` from SEO settings will be displayed. Make sure these are configured for proper branding!
+
+### 5. Deploy Frontend
 
 See [DEPLOYMENT.md](./DEPLOYMENT.md) for deploying to Easypanel or other platforms.
 
@@ -423,6 +444,54 @@ Test the functions after deployment:
 - Blog posts work: They use direct database queries
 - Pages fail: They require the `get-page` edge function for caching and performance
 - Once edge functions are deployed, pages will load correctly!
+
+---
+
+## Social Sharing / White-Label Configuration
+
+When links are shared on social media (Facebook, LinkedIn, Twitter, WhatsApp, Slack, etc.), these platforms use "social crawlers" to fetch metadata about your page. 
+
+### How It Works
+
+1. **Social crawlers** (e.g., `facebookexternalhit`, `Twitterbot`, `LinkedInBot`) request your page
+2. The **nginx configuration** detects these bots via User-Agent
+3. Bots are redirected to the **`render-page` edge function** which returns server-rendered HTML with proper OG tags
+4. Regular users get the normal SPA experience
+
+### Configuration Steps
+
+1. **Set SEO Settings** in Admin → Settings → SEO:
+   - `Site Title` - Your organization name
+   - `Default Description` - Brief description of your site
+   - `OG Image` - URL to your social sharing image (1200x630px recommended)
+   - `Twitter Handle` - Your Twitter/X handle (optional)
+
+2. **Configure nginx** (for production):
+   
+   Edit `nginx.conf` and uncomment the proxy configuration:
+   ```nginx
+   if ($is_social_crawler) {
+       rewrite ^(.*)$ /functions/v1/render-page?path=$1 break;
+       proxy_pass https://YOUR_PROJECT_REF.supabase.co;
+       proxy_set_header Host $proxy_host;
+       proxy_set_header X-Real-IP $remote_addr;
+   }
+   ```
+   
+   Replace `YOUR_PROJECT_REF.supabase.co` with your actual Supabase project URL.
+
+3. **Test with Facebook Debugger**:
+   - Go to [Facebook Sharing Debugger](https://developers.facebook.com/tools/debug/)
+   - Enter your page URL
+   - Verify the title, description, and image are correct
+
+### Per-Page Overrides
+
+Each page, blog post, and KB article can have its own meta tags that override the global defaults:
+
+- **Pages**: Edit page → SEO tab → Title, Description, OG Image
+- **Blog Posts**: Edit post → Meta fields
+- **KB Articles**: Edit article → Meta fields
 
 ---
 

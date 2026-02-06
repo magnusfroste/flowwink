@@ -1,5 +1,6 @@
 import { useProducts, formatPrice } from '@/hooks/useProducts';
 import { useCart } from '@/contexts/CartContext';
+import { useSeoSettings, useBrandingSettings } from '@/hooks/useSiteSettings';
 import { PublicNavigation } from '@/components/public/PublicNavigation';
 import { PublicFooter } from '@/components/public/PublicFooter';
 import { Button } from '@/components/ui/button';
@@ -32,6 +33,11 @@ const features = {
 export default function PricingPage() {
   const { data: products, isLoading } = useProducts({ activeOnly: true });
   const { addItem, items } = useCart();
+  const { data: seoSettings } = useSeoSettings();
+  const { data: brandingSettings } = useBrandingSettings();
+  
+  // Get site title from SEO settings or branding, fallback to generic
+  const siteTitle = seoSettings?.siteTitle || brandingSettings?.organizationName || 'Website';
 
   const hostingProduct = products?.find(p => p.type === 'recurring');
   const setupProduct = products?.find(p => p.type === 'one_time');
@@ -60,8 +66,8 @@ export default function PricingPage() {
   return (
     <>
       <Helmet>
-        <title>Pricing | FlowWink</title>
-        <meta name="description" content="Simple and transparent pricing for the FlowWink platform. Choose between monthly hosting or get started with professional setup." />
+        <title>Pricing | {siteTitle}</title>
+        <meta name="description" content={`Simple and transparent pricing for ${siteTitle}. Choose between monthly hosting or get started with professional setup.`} />
       </Helmet>
       
       <PublicNavigation />
