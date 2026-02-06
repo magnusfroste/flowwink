@@ -213,9 +213,23 @@ echo -e "${BLUE}╔════════════════════�
 echo -e "${BLUE}║   Configuration Complete!                                  ║${NC}"
 echo -e "${BLUE}╚════════════════════════════════════════════════════════════╝${NC}"
 echo ""
+
+# Redeploy check-secrets to pick up new secrets
+echo -e "${YELLOW}Redeploying check-secrets function to pick up new secrets...${NC}"
+if supabase functions deploy check-secrets 2>/dev/null; then
+    echo -e "${GREEN}✓ check-secrets redeployed${NC}"
+else
+    echo -e "${YELLOW}⚠ Failed to redeploy check-secrets (may need manual redeployment)${NC}"
+fi
+
+echo ""
 echo "Secrets configured! You can:"
 echo ""
 echo "  • View secrets: supabase secrets list"
 echo "  • Update secrets: supabase secrets set SECRET_NAME=value"
 echo "  • Check status in Admin → Settings → Integrations"
+echo ""
+echo "Note: Edge functions load secrets at deployment time."
+echo "If you add secrets later, redeploy check-secrets:"
+echo "  supabase functions deploy check-secrets"
 echo ""

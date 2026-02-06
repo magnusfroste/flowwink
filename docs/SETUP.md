@@ -36,7 +36,7 @@ cd flowwink
 The script will:
 1. Prompt you to login to Supabase CLI (if not logged in)
 2. Ask for your project ref
-3. **Deploy all 33 edge functions** (~60 seconds)
+3. **Deploy all edge functions** (~60 seconds)
 4. **Run database migrations** (creates tables, RLS policies)
 5. **Create your admin user** (prompts for email/password)
 6. **Output environment variables** ready to copy-paste
@@ -363,6 +363,21 @@ VITE_SUPABASE_ANON_KEY=<local-anon-key-from-supabase-start>
 
 ## Troubleshooting
 
+### Migration Conflicts
+
+If you see "Remote migration versions not found in local migrations directory", the script will automatically repair the migration history. If it fails:
+
+```bash
+# Check migration status
+supabase migration list --linked
+
+# If old migrations exist remotely, repair them
+supabase migration repair --status reverted <old-migration-versions>
+
+# Then push migrations
+supabase db push
+```
+
 ### "Permission denied" errors
 - Check that RLS policies are correctly applied
 - Verify the user has the correct role in `user_roles`
@@ -415,7 +430,7 @@ supabase functions deploy sitemap-xml
 
 **Deploy All Functions:**
 ```bash
-# Deploy all 36 functions at once
+# Deploy all functions at once
 for func in supabase/functions/*/; do
   func_name=$(basename "$func")
   echo "Deploying $func_name..."

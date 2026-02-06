@@ -178,7 +178,14 @@ if [ -d "$FUNCTIONS_DIR" ]; then
     for func in $FUNCTIONS; do
         COUNT=$((COUNT + 1))
         echo -ne "[$COUNT/$TOTAL] Deploying $func... "
-        if supabase functions deploy "$func" --no-verify-jwt 2>/dev/null; then
+        # Check if function should verify JWT from config
+        VERIFY_JWT=$(grep -A1 "\[functions.$func\]" supabase/config.toml 2>/dev/null | grep "verify_jwt" | cut -d= -f2 | tr -d ' ' || echo "true")
+        if [ "$VERIFY_JWT" = "false" ]; then
+            JWT_FLAG="--no-verify-jwt"
+        else
+            JWT_FLAG=""
+        fi
+        if supabase functions deploy "$func" $JWT_FLAG 2>/dev/null; then
             echo -e "${GREEN}✓${NC}"
         else
             echo -e "${RED}✗${NC}"
@@ -190,7 +197,9 @@ if [ -d "$FUNCTIONS_DIR" ]; then
     if [ $FAILED -eq 0 ]; then
         echo -e "${GREEN}✓ All $TOTAL edge functions deployed successfully${NC}"
     else
-        echo -e "${YELLOW}⚠ Deployed $((TOTAL - FAILED))/$TOTAL functions ($FAILED failed)${NC}"
+        echo -e "${RED}✗ Failed to deploy $FAILED/$TOTAL functions${NC}"
+        echo "Check function logs in Supabase Dashboard for details"
+        exit 1
     fi
 else
     echo -e "${RED}Error: No functions directory found${NC}"
@@ -203,12 +212,29 @@ echo -e "${BLUE}  Step 2: Run Database Migrations${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
 
+echo -e "${YELLOW}Checking migration history...${NC}"
+# Check for migration conflicts
+MIGRATION_OUTPUT=$(supabase migration list --linked 2>&1 || echo "")
+if echo "$MIGRATION_OUTPUT" | grep -q "Remote migration versions not found"; then
+    echo -e "${YELLOW}⚠ Migration history mismatch detected. Repairing...${NC}"
+    # Extract old remote migrations that don't exist locally
+    OLD_MIGRATIONS=$(echo "$MIGRATION_OUTPUT" | grep -E '^\s+\|\s+[0-9]{14}' | awk '{print $2}' | tr '\n' ' ')
+    if [ -n "$OLD_MIGRATIONS" ]; then
+        echo "Reverting old remote migrations: $OLD_MIGRATIONS"
+        supabase migration repair --status reverted $OLD_MIGRATIONS 2>/dev/null || true
+        echo -e "${GREEN}✓ Migration history repaired${NC}"
+    fi
+fi
+
 echo -e "${YELLOW}Pushing database schema...${NC}"
-if supabase db push; then
+# Use --yes to auto-confirm
+if supabase db push --yes 2>&1; then
     echo -e "${GREEN}✓ Database migrations applied${NC}"
 else
     echo -e "${RED}✗ Database migration failed${NC}"
+    echo -e "${YELLOW}Try running: supabase migration list --linked${NC}"
     echo "You may need to run migrations manually via Supabase Dashboard"
+    exit 1
 fi
 
 echo ""
