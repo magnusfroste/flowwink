@@ -336,8 +336,8 @@ export default function NewSitePage() {
         }
       }
 
-      // Step 0d: Delete existing products if option is selected and template has products
-      const shouldClearProducts = opts.products && selectedTemplate.products && selectedTemplate.products.length > 0 && existingProducts && existingProducts.length > 0;
+      // Step 0d: Delete existing products if option is selected (regardless of whether template has products)
+      const shouldClearProducts = opts.products && existingProducts && existingProducts.length > 0;
       if (shouldClearProducts) {
         setProgress({ currentPage: 0, totalPages: existingProducts!.length, currentStep: 'Clearing existing products...' });
         
