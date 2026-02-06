@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTheme } from 'next-themes';
+import { useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import type { BrandingSettings } from '@/hooks/useSiteSettings';
 
@@ -106,12 +107,32 @@ function applyBrandingToDocument(branding: BrandingSettings) {
   }
 }
 
+/**
+ * Reset branding CSS variables to their default values defined in index.css.
+ * This is used when entering admin routes to ensure consistent admin UI.
+ */
+function resetBrandingToDefaults() {
+  const root = document.documentElement;
+  
+  // Remove inline styles to let index.css defaults take over
+  root.style.removeProperty('--primary');
+  root.style.removeProperty('--secondary');
+  root.style.removeProperty('--accent');
+  root.style.removeProperty('--font-serif');
+  root.style.removeProperty('--font-sans');
+  root.style.removeProperty('--radius');
+}
+
 interface BrandingProviderProps {
   children: ReactNode;
 }
 
 export function BrandingProvider({ children }: BrandingProviderProps) {
   const { setTheme } = useTheme();
+  const location = useLocation();
+  
+  // Check if we're on an admin route - don't apply branding colors to admin
+  const isAdminRoute = location.pathname.startsWith('/admin');
   
   const { data: branding, isLoading } = useQuery({
     queryKey: ['site-settings', 'branding'],
@@ -129,7 +150,7 @@ export function BrandingProvider({ children }: BrandingProviderProps) {
   });
 
   useEffect(() => {
-    if (branding) {
+    if (branding && !isAdminRoute) {
       applyBrandingToDocument(branding);
       
       // Force theme when toggle is disabled
@@ -137,7 +158,12 @@ export function BrandingProvider({ children }: BrandingProviderProps) {
         setTheme(branding.defaultTheme);
       }
     }
-  }, [branding, setTheme]);
+    
+    // Reset to default CSS when entering admin
+    if (isAdminRoute) {
+      resetBrandingToDefaults();
+    }
+  }, [branding, setTheme, isAdminRoute]);
 
   return (
     <BrandingContext.Provider value={{ branding: branding || null, isLoading }}>
