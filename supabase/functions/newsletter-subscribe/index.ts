@@ -111,7 +111,17 @@ serve(async (req) => {
               points: 8,
               metadata: { is_initial: true },
             });
+
+            // Trigger AI qualification for new newsletter lead (fire-and-forget)
+            supabase.functions.invoke("qualify-lead", { body: { leadId: newLead.id } })
+              .catch((err: unknown) => console.warn("[newsletter-subscribe] Lead qualification error:", err));
           }
+        }
+
+        // Trigger AI qualification for existing leads too (fire-and-forget)
+        if (existingLead) {
+          supabase.functions.invoke("qualify-lead", { body: { leadId: existingLead.id } })
+            .catch((err: unknown) => console.warn("[newsletter-subscribe] Lead qualification error:", err));
         }
         console.log(`[newsletter-subscribe] Lead created/updated for: ${data.email}`);
       } catch (leadError) {
