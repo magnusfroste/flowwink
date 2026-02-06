@@ -102,12 +102,13 @@ export default function NewSitePage() {
     blogPostsCount: existingBlogPosts?.length || 0,
     kbCategoriesCount: existingKbCategories?.length || 0,
     productsCount: existingProducts?.length || 0,
+    mediaCount: mediaCount || 0,
     hasBranding: !!(existingBranding?.primaryColor || existingBranding?.logo),
     hasChatSettings: !!existingChatSettings?.enabled,
     hasFooter: !!(existingFooter?.data?.email || existingFooter?.data?.phone),
     hasSeo: !!(existingSeo?.siteTitle || existingSeo?.defaultDescription),
     hasCookieBanner: !!existingCookieBanner?.enabled,
-  }), [existingPages, existingBlogPosts, existingKbCategories, existingProducts, existingBranding, existingChatSettings, existingFooter, existingSeo, existingCookieBanner]);
+  }), [existingPages, existingBlogPosts, existingKbCategories, existingProducts, mediaCount, existingBranding, existingChatSettings, existingFooter, existingSeo, existingCookieBanner]);
 
   // Check if there's any existing content
   const hasExistingContent = useMemo(() => (
@@ -250,11 +251,16 @@ export default function NewSitePage() {
   // Handler when user confirms from preview dialog
   const handleApplyWithOptions = (options: TemplateOverwriteOptions) => {
     setOverwriteOptions(options);
-    // Map overwrite options to clear states
+    // Map overwrite options to local states
     setClearExistingPages(options.pages && existingContent.pagesCount > 0);
     setClearBlogPosts(options.blogPosts && existingContent.blogPostsCount > 0);
     setClearKbContent(options.kbContent && existingContent.kbCategoriesCount > 0);
     setClearProducts(options.products && existingContent.productsCount > 0);
+    setClearMedia(options.clearMedia);
+    setDownloadImages(options.downloadImages);
+    setPublishPages(options.publishPages);
+    setPublishBlogPosts(options.publishBlogPosts);
+    setPublishKbArticles(options.publishKbArticles);
     // Trigger creation with options
     handleCreateSiteWithOptions(options);
   };
@@ -274,6 +280,11 @@ export default function NewSitePage() {
       kbContent: !!selectedTemplate.kbCategories?.length,
       products: !!selectedTemplate.products?.length,
       modules: !!selectedTemplate.requiredModules?.length,
+      clearMedia: false,
+      downloadImages: !!(templateImageInfo && templateImageInfo.uniqueUrls.length > 0),
+      publishPages: true,
+      publishBlogPosts: true,
+      publishKbArticles: true,
     };
 
     setStep('creating');
@@ -341,7 +352,7 @@ export default function NewSitePage() {
       }
 
       // Step 0e: Clear media library if option is selected
-      if (clearMedia && mediaCount > 0) {
+      if (opts.clearMedia && mediaCount > 0) {
         setProgress({ currentPage: 0, totalPages: mediaCount, currentStep: 'Clearing media library...' });
         await clearMediaLibrary.mutateAsync((current, total, step) => {
           setProgress({ currentPage: current, totalPages: total, currentStep: step });
@@ -354,7 +365,7 @@ export default function NewSitePage() {
       let templateProducts = selectedTemplate.products;
 
       // Step 0f: Download images if option is selected
-      if (downloadImages && templateImageInfo && templateImageInfo.uniqueUrls.length > 0) {
+      if (opts.downloadImages && templateImageInfo && templateImageInfo.uniqueUrls.length > 0) {
         setProgress({ 
           currentPage: 0, 
           totalPages: templateImageInfo.uniqueUrls.length, 
@@ -421,7 +432,7 @@ export default function NewSitePage() {
             meta: templatePage.meta,
             menu_order: templatePage.menu_order,
             show_in_menu: templatePage.showInMenu,
-            status: publishPages ? 'published' : 'draft',
+            status: opts.publishPages ? 'published' : 'draft',
           });
           
           pageIds.push(page.id);
@@ -510,7 +521,7 @@ export default function NewSitePage() {
               featured_image: post.featured_image,
               content: post.content,
               meta: post.meta,
-              status: publishBlogPosts ? 'published' : 'draft',
+              status: opts.publishBlogPosts ? 'published' : 'draft',
             });
           }
         }
@@ -550,7 +561,7 @@ export default function NewSitePage() {
                 question: article.question,
                 answer_json: answerJson as any,
                 answer_text: article.answer_text,
-                is_published: publishKbArticles,
+                is_published: opts.publishKbArticles,
                 is_featured: article.is_featured,
                 include_in_chat: article.include_in_chat,
               });
@@ -724,178 +735,8 @@ export default function NewSitePage() {
                     </div>
                   </div>
 
-                  {/* Clear existing content options */}
-                  <div className="space-y-3 pt-2 border-t">
-                    <p className="text-sm font-medium flex items-center gap-2">
-                      <Trash2 className="h-4 w-4" />
-                      Clear existing content
-                    </p>
-                    
-                    {existingPages && existingPages.length > 0 && (
-                      <div className="flex items-center justify-between pl-6">
-                        <div className="space-y-0.5">
-                          <Label htmlFor="clear-pages" className="text-sm">
-                            Pages ({existingPages.length})
-                          </Label>
-                        </div>
-                        <Switch
-                          id="clear-pages"
-                          checked={clearExistingPages}
-                          onCheckedChange={setClearExistingPages}
-                        />
-                      </div>
-                    )}
 
-                    {selectedTemplate.products && selectedTemplate.products.length > 0 && existingProducts && existingProducts.length > 0 && (
-                      <div className="flex items-center justify-between pl-6">
-                        <div className="space-y-0.5">
-                          <Label htmlFor="clear-products" className="text-sm">
-                            Products ({existingProducts.length})
-                          </Label>
-                        </div>
-                        <Switch
-                          id="clear-products"
-                          checked={clearProducts}
-                          onCheckedChange={setClearProducts}
-                        />
-                      </div>
-                    )}
-
-                    {existingBlogPosts && existingBlogPosts.length > 0 && (
-                      <div className="flex items-center justify-between pl-6">
-                        <div className="space-y-0.5">
-                          <Label htmlFor="clear-blog" className="text-sm">
-                            Blog posts ({existingBlogPosts.length})
-                          </Label>
-                        </div>
-                        <Switch
-                          id="clear-blog"
-                          checked={clearBlogPosts}
-                          onCheckedChange={setClearBlogPosts}
-                        />
-                      </div>
-                    )}
-
-                    {existingKbCategories && existingKbCategories.length > 0 && (
-                      <div className="flex items-center justify-between pl-6">
-                        <div className="space-y-0.5">
-                          <Label htmlFor="clear-kb" className="text-sm">
-                            KB categories ({existingKbCategories.length})
-                          </Label>
-                        </div>
-                        <Switch
-                          id="clear-kb"
-                          checked={clearKbContent}
-                          onCheckedChange={setClearKbContent}
-                        />
-                      </div>
-                    )}
-
-                    {mediaCount > 0 && (
-                      <div className="flex items-center justify-between pl-6">
-                        <div className="space-y-0.5">
-                          <Label htmlFor="clear-media" className="text-sm flex items-center gap-2">
-                            <ImageIcon className="h-3 w-3" />
-                            Media library ({mediaCount} files)
-                          </Label>
-                        </div>
-                        <Switch
-                          id="clear-media"
-                          checked={clearMedia}
-                          onCheckedChange={setClearMedia}
-                        />
-                      </div>
-                    )}
-                    
-                    {(clearExistingPages || clearBlogPosts || clearKbContent || clearProducts || clearMedia) && (
-                      <Alert variant="destructive" className="py-2">
-                        <AlertTriangle className="h-4 w-4" />
-                        <AlertDescription className="text-xs">
-                          Selected content will be permanently deleted.
-                        </AlertDescription>
-                      </Alert>
-                    )}
-                  </div>
-
-                  {/* Download images option */}
-                  {templateImageInfo && templateImageInfo.uniqueUrls.length > 0 && (
-                    <div className="flex items-center justify-between pt-2 border-t">
-                      <div className="space-y-0.5">
-                        <Label htmlFor="download-images" className="text-sm font-medium flex items-center gap-2">
-                          <Download className="h-4 w-4" />
-                          Download images to Media Library
-                        </Label>
-                        <p className="text-xs text-muted-foreground">
-                          Save {templateImageInfo.uniqueUrls.length} images locally instead of using external links
-                        </p>
-                      </div>
-                      <Switch
-                        id="download-images"
-                        checked={downloadImages}
-                        onCheckedChange={setDownloadImages}
-                      />
-                    </div>
-                  )}
-
-                  {/* Publish pages option */}
-                  <div className="flex items-center justify-between pt-2 border-t">
-                    <div className="space-y-0.5">
-                      <Label htmlFor="publish-pages" className="text-sm font-medium flex items-center gap-2">
-                        <Send className="h-4 w-4" />
-                        Publish pages immediately
-                      </Label>
-                      <p className="text-xs text-muted-foreground">
-                        Publish all {selectedTemplate.pages.length} pages when creating the site
-                      </p>
-                    </div>
-                    <Switch
-                      id="publish-pages"
-                      checked={publishPages}
-                      onCheckedChange={setPublishPages}
-                    />
-                  </div>
-
-                  {/* Publish blog posts option */}
-                  {selectedTemplate.blogPosts && selectedTemplate.blogPosts.length > 0 && (
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label htmlFor="publish-blogs" className="text-sm font-medium flex items-center gap-2">
-                          <Send className="h-4 w-4" />
-                          Publish blog posts immediately
-                        </Label>
-                        <p className="text-xs text-muted-foreground">
-                          Publish all {selectedTemplate.blogPosts.length} blog posts when creating the site
-                        </p>
-                      </div>
-                      <Switch
-                        id="publish-blogs"
-                        checked={publishBlogPosts}
-                        onCheckedChange={setPublishBlogPosts}
-                      />
-                    </div>
-                  )}
-
-                  {/* Publish KB articles option */}
-                  {selectedTemplate.kbCategories && selectedTemplate.kbCategories.length > 0 && (
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label htmlFor="publish-kb" className="text-sm font-medium flex items-center gap-2">
-                          <Send className="h-4 w-4" />
-                          Publish KB articles immediately
-                        </Label>
-                        <p className="text-xs text-muted-foreground">
-                          Publish all {selectedTemplate.kbCategories.reduce((acc, cat) => acc + cat.articles.length, 0)} knowledge base articles when creating the site
-                        </p>
-                      </div>
-                      <Switch
-                        id="publish-kb"
-                        checked={publishKbArticles}
-                        onCheckedChange={setPublishKbArticles}
-                      />
-                    </div>
-                  )}
-
-                  <div className="flex gap-3 pt-4">
+                  <div className="flex gap-3 pt-4 border-t">
                     <Button variant="outline" onClick={() => navigate('/admin/pages')}>
                       Cancel
                     </Button>
@@ -926,6 +767,7 @@ export default function NewSitePage() {
                 onOpenChange={setShowPreviewDialog}
                 template={selectedTemplate}
                 existingContent={existingContent}
+                templateImageCount={templateImageInfo?.uniqueUrls.length || 0}
                 onApply={handleApplyWithOptions}
               />
             )}
