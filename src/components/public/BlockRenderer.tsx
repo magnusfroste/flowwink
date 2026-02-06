@@ -48,7 +48,9 @@ import {
   SocialProofBlock,
   NotificationToastBlock,
   FloatingCTABlock,
+  ChatLauncherBlock,
 } from './blocks';
+import type { ChatLauncherBlockData } from './blocks/ChatLauncherBlock';
 import type { KbHubBlockData } from './blocks/KbHubBlock';
 import type {
   HeroBlockData,
@@ -229,6 +231,8 @@ export function BlockRenderer({ block, pageId, index = 0 }: BlockRendererProps) 
         return <NotificationToastBlock data={block.data as unknown as NotificationToastBlockData} />;
       case 'floating-cta':
         return <FloatingCTABlock data={block.data as unknown as FloatingCTABlockData} />;
+      case 'chat-launcher':
+        return <ChatLauncherBlock data={block.data as unknown as ChatLauncherBlockData} />;
       default:
         return null;
     }

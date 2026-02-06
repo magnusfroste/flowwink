@@ -59,6 +59,7 @@ const BLOCK_LABELS: Record<ContentBlockType, string> = {
   'social-proof': 'Social Proof',
   'notification-toast': 'Notification Toast',
   'floating-cta': 'Floating CTA',
+  'chat-launcher': 'Chat Launcher',
 };
 
 interface BlockWrapperProps {

@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useChatSettings } from '@/hooks/useSiteSettings';
 import { ChatConversation } from '@/components/chat/ChatConversation';
 import { PublicNavigation } from '@/components/public/PublicNavigation';
@@ -19,11 +19,16 @@ interface Conversation {
 
 export default function ChatPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { data: settings, isLoading: settingsLoading } = useChatSettings();
   const { user } = useAuth();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | undefined>();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  
+  // Get initial message from navigation state (from ChatLauncherBlock)
+  const initialMessage = (location.state as { initialMessage?: string })?.initialMessage;
+  const initialMessageProcessed = useRef(false);
 
   // Check if landing page is enabled
   useEffect(() => {
@@ -148,6 +153,12 @@ export default function ChatPage() {
             conversationId={activeConversationId}
             onNewConversation={handleConversationCreated}
             className="flex-1 min-h-0"
+            initialMessage={!initialMessageProcessed.current ? initialMessage : undefined}
+            onInitialMessageSent={() => {
+              initialMessageProcessed.current = true;
+              // Clear the location state so refreshing doesn't resend
+              navigate(location.pathname, { replace: true, state: {} });
+            }}
           />
         </div>
       </main>

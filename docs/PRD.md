@@ -93,6 +93,7 @@ FlowWink använder en modulär block-arkitektur för flexibel innehållshanterin
 | **Kontakt** | Contact | Kontaktinformation med adress och öppettider |
 | | Map | Google Maps-embed med adress |
 | **Interaktivt** | Chat | Inbäddad AI-chatt med kontextmedvetenhet |
+| | Chat Launcher | ChatGPT-stil launcher som routar till /chat med initial prompt |
 | | Popup | Triggade popups (scroll/tid/exit-intent) |
 | **Knowledge Base** | KB Hub | Kunskapsbas-landningssida med kategorier |
 | | KB Search | Sökblock för kunskapsbas |

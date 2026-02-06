@@ -65,6 +65,7 @@ import { BadgeBlockEditor } from './BadgeBlockEditor';
 import { SocialProofBlockEditor } from './SocialProofBlockEditor';
 import { NotificationToastBlockEditor } from './NotificationToastBlockEditor';
 import { FloatingCTABlockEditor } from './FloatingCTABlockEditor';
+import { ChatLauncherBlockEditor } from './ChatLauncherBlockEditor';
 import { TemplateEmptyState } from '@/components/admin/StarterTemplateSelector';
 import { StarterTemplate } from '@/data/starter-templates';
 import type { ProductsBlockData } from '@/components/public/blocks/ProductsBlock';
@@ -84,6 +85,7 @@ import type { BadgeBlockData } from '@/components/public/blocks/BadgeBlock';
 import type { SocialProofBlockData } from '@/components/public/blocks/SocialProofBlock';
 import type { NotificationToastBlockData } from '@/components/public/blocks/NotificationToastBlock';
 import type { FloatingCTABlockData } from '@/components/public/blocks/FloatingCTABlock';
+import type { ChatLauncherBlockData } from '@/components/public/blocks/ChatLauncherBlock';
 
 interface NewsletterBlockData {
   title?: string;
@@ -141,6 +143,7 @@ type BlockDataMap = {
   'social-proof': SocialProofBlockData;
   'notification-toast': NotificationToastBlockData;
   'floating-cta': FloatingCTABlockData;
+  'chat-launcher': ChatLauncherBlockData;
 };
 
 const DEFAULT_BLOCK_DATA: BlockDataMap = {
@@ -441,6 +444,13 @@ const DEFAULT_BLOCK_DATA: BlockDataMap = {
     closePersistent: false,
     showScrollTop: false,
     animationType: 'slide',
+  },
+  'chat-launcher': {
+    title: 'What can I help you with?',
+    placeholder: 'Message AI Assistant...',
+    showQuickActions: true,
+    quickActionCount: 4,
+    variant: 'card',
   },
 };
 
@@ -918,6 +928,13 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
             data={block.data as unknown as FloatingCTABlockData}
             onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
             isEditing={isEditing}
+          />
+        );
+      case 'chat-launcher':
+        return (
+          <ChatLauncherBlockEditor
+            data={block.data as unknown as ChatLauncherBlockData}
+            onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
           />
         );
       default:
