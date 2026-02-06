@@ -1,135 +1,50 @@
-
-
 # Plan: Full White-Label Social Sharing for Self-Hosted Instances
+
+## Status: ✅ COMPLETED
 
 ## Summary
 Enable complete rebranding of social sharing metadata so self-hosted instances show their own company name, logo, and description when links are shared on social media - not FlowWink branding.
 
-## The Core Problem
-Social media crawlers (Facebook, LinkedIn, Twitter) read the initial server-side HTML before JavaScript executes. The current `index.html` has hardcoded FlowWink branding that will appear when links are shared, even if the React `SeoHead` component renders the correct values client-side.
+## Implementation Complete
 
-## Solution Overview
-Two-pronged approach:
-1. **Server-side rendering for meta tags** - Create an edge function that serves dynamic HTML with proper OG tags based on CMS settings
-2. **Remove all hardcoded branding** - Clean up remaining FlowWink references and make them configurable
+### Phase 1: Dynamic SSR Meta Tags ✅
+- Created `supabase/functions/render-page/index.ts`
+- Edge function detects page type (page, blog post, KB article)
+- Fetches SEO and branding settings from database
+- Returns fully rendered HTML with proper OG tags for social crawlers
 
----
+### Phase 2: Remove Hardcoded Branding ✅
+- `index.html` - Removed all FlowWink references, generic defaults only
+- `src/pages/AuthPage.tsx` - Uses `branding.adminName` dynamically
+- `src/pages/PricingPage.tsx` - Uses `seoSettings.siteTitle` dynamically
+- `src/hooks/useSiteSettings.tsx` - Changed default `adminName` from "FlowWink" to empty
 
-## Technical Implementation
+### Phase 3: Nginx Configuration ✅
+- Added social crawler detection via User-Agent mapping
+- Detects: Facebook, Twitter, LinkedIn, WhatsApp, Slack, Discord, Telegram, Pinterest, Google, Bing
+- Proxy configuration template ready (requires uncommenting with actual Supabase URL)
 
-### Phase 1: Dynamic SSR Meta Tags via Edge Function
+### Phase 4: Documentation ✅
+- Updated `docs/SETUP.md` with:
+  - Branding configuration section (step 4)
+  - Detailed social sharing / white-label configuration guide
+  - Testing instructions with Facebook Debugger
+  - Per-page override documentation
 
-**New edge function: `supabase/functions/render-page/index.ts`**
-
-This function will:
-1. Intercept requests from known social media crawlers (Facebook, Twitter, LinkedIn bots via User-Agent)
-2. Fetch SEO settings from the database
-3. Fetch page-specific meta data if a specific slug is requested
-4. Return a complete HTML document with correct OG tags pre-rendered
-
-```text
-Request Flow:
-                                                  
-  Social Bot Request                              
-  (User-Agent: facebookexternalhit)              
-           |                                      
-           v                                      
-  +------------------+                            
-  | Nginx/CDN        |                            
-  +------------------+                            
-           |                                      
-           v                                      
-  +------------------+     Yes    +----------------+
-  | Is Social Bot?   |---------->| Edge Function  |
-  +------------------+            | render-page    |
-           | No                   +----------------+
-           v                             |
-  +------------------+                   v
-  | Static SPA       |           +----------------+
-  | (index.html)     |           | Return HTML    |
-  +------------------+           | with dynamic   |
-                                 | OG tags        |
-                                 +----------------+
-```
-
-**Key features:**
-- Reads SEO settings (`siteTitle`, `ogImage`, `defaultDescription`)
-- Reads page-specific meta if slug is provided (title, description, featured image)
-- Returns fully formed HTML with correct meta tags for crawlers
-- Falls through to normal SPA for regular users
-
-### Phase 2: Clean Up Hardcoded Branding
-
-**Files to modify:**
-
-| File | Current State | Change |
-|------|--------------|--------|
-| `index.html` | Hardcoded FlowWink | Use generic placeholders that get replaced or leave minimal defaults |
-| `src/pages/AuthPage.tsx` | Hardcoded "FlowWink" | Use `branding.adminName` from settings |
-| `src/pages/PricingPage.tsx` | Hardcoded FlowWink in title | Use `seoSettings.siteTitle` |
-| `src/hooks/useSiteSettings.tsx` | `adminName: 'FlowWink'` default | Change to generic "CMS" or empty string |
-
-### Phase 3: Nginx Configuration Update
-
-**Modify `nginx.conf`** to route social bot requests to the edge function:
-
-```nginx
-# Detect social media crawlers
-map $http_user_agent $is_crawler {
-    default                             0;
-    "~*facebookexternalhit"             1;
-    "~*Twitterbot"                      1;
-    "~*LinkedInBot"                     1;
-    "~*WhatsApp"                        1;
-    "~*Slackbot"                        1;
-    "~*Discordbot"                      1;
-}
-
-server {
-    # ... existing config ...
-
-    location / {
-        # Route crawlers to SSR endpoint
-        if ($is_crawler) {
-            rewrite ^(.*)$ /functions/v1/render-page?path=$1 break;
-            proxy_pass https://YOUR_SUPABASE_URL;
-        }
-        
-        # Normal SPA routing
-        try_files $uri $uri/ /index.html;
-    }
-}
-```
-
-### Phase 4: Documentation Update
-
-**Update `docs/SETUP.md`** with:
-- Instructions for configuring branding before first deploy
-- How social sharing works
-- Testing OG tags with Facebook Sharing Debugger
-
----
-
-## Files to Create/Modify
-
-### New Files
-1. `supabase/functions/render-page/index.ts` - SSR for social crawlers
-
-### Modified Files
-1. `index.html` - Remove hardcoded FlowWink branding
-2. `nginx.conf` - Add crawler detection and routing  
-3. `src/pages/AuthPage.tsx` - Use dynamic branding
-4. `src/pages/PricingPage.tsx` - Use dynamic site title
-5. `src/hooks/useSiteSettings.tsx` - Change default adminName
-6. `docs/SETUP.md` - Add branding configuration section
-
----
+## Files Modified
+1. `supabase/functions/render-page/index.ts` - NEW
+2. `supabase/config.toml` - Added render-page function
+3. `index.html` - Removed FlowWink branding
+4. `nginx.conf` - Added crawler detection and proxy config
+5. `src/pages/AuthPage.tsx` - Dynamic branding
+6. `src/pages/PricingPage.tsx` - Dynamic site title
+7. `src/hooks/useSiteSettings.tsx` - Empty default adminName
+8. `docs/SETUP.md` - Added branding/social sharing docs
 
 ## User Benefit
+When a self-hosted customer shares a link on social media:
+- Shows their configured `Site Title` (not "FlowWink")
+- Shows their configured `OG Image` (not FlowWink's)
+- Shows their configured `Default Description`
 
-After implementation, when a self-hosted customer (e.g., "Acme Corp") shares a link on LinkedIn:
-- **Before**: Shows "FlowWink - Flow into Content Creation" with FlowWink's OG image
-- **After**: Shows "Acme Corp" with Acme's configured OG image from their SEO settings
-
-The branding is 100% controlled via the admin UI with zero code changes required for rebranding.
-
+All branding is 100% controlled via the Admin UI with zero code changes.
