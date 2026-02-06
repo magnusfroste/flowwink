@@ -1,7 +1,6 @@
-import { createContext, useContext, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTheme } from 'next-themes';
-import { useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import type { BrandingSettings } from '@/hooks/useSiteSettings';
 
@@ -129,10 +128,36 @@ interface BrandingProviderProps {
 
 export function BrandingProvider({ children }: BrandingProviderProps) {
   const { setTheme } = useTheme();
-  const location = useLocation();
+  const [pathname, setPathname] = useState(window.location.pathname);
+  
+  // Listen to URL changes (for SPA navigation)
+  useEffect(() => {
+    const handlePopState = () => setPathname(window.location.pathname);
+    window.addEventListener('popstate', handlePopState);
+    
+    // Also observe pushState/replaceState for react-router navigation
+    const originalPushState = history.pushState;
+    const originalReplaceState = history.replaceState;
+    
+    history.pushState = function(...args) {
+      originalPushState.apply(this, args);
+      setPathname(window.location.pathname);
+    };
+    
+    history.replaceState = function(...args) {
+      originalReplaceState.apply(this, args);
+      setPathname(window.location.pathname);
+    };
+    
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      history.pushState = originalPushState;
+      history.replaceState = originalReplaceState;
+    };
+  }, []);
   
   // Check if we're on an admin route - don't apply branding colors to admin
-  const isAdminRoute = location.pathname.startsWith('/admin');
+  const isAdminRoute = pathname.startsWith('/admin');
   
   const { data: branding, isLoading } = useQuery({
     queryKey: ['site-settings', 'branding'],
