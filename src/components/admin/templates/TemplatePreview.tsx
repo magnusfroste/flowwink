@@ -80,8 +80,31 @@ export function TemplatePreview({ template, open, onOpenChange, onSelect }: Temp
   const hasChat = template.chatSettings?.enabled !== false;
   const hasBlog = (template.blogPosts?.length || 0) > 0;
   const hasKb = (template.kbCategories?.length || 0) > 0;
-  const primaryColor = template.branding?.primaryColor || '#6366f1';
+  const primaryColor = template.branding?.primaryColor || '250 91% 64%';
+  const accentColor = template.branding?.accentColor || '180 100% 50%';
   const thumbnail = getTemplateThumbnail(template);
+  const isDarkTheme = template.branding?.defaultTheme === 'dark';
+  
+  // Convert HSL string to CSS color value
+  const hslToCssColor = (hsl: string) => {
+    // If already in format "hsl(...)" or "#..." return as-is
+    if (hsl.startsWith('hsl') || hsl.startsWith('#') || hsl.startsWith('rgb')) {
+      return hsl;
+    }
+    // Otherwise assume it's HSL values like "250 91% 64%"
+    return `hsl(${hsl})`;
+  };
+  
+  // Generate inline styles for template branding preview
+  const previewStyles: React.CSSProperties = {
+    '--primary': primaryColor,
+    '--primary-foreground': isDarkTheme ? '0 0% 100%' : '0 0% 100%',
+    '--background': isDarkTheme ? '222 47% 11%' : '0 0% 100%',
+    '--foreground': isDarkTheme ? '0 0% 100%' : '222 47% 11%',
+    '--muted': isDarkTheme ? '217 33% 17%' : '210 40% 96%',
+    '--muted-foreground': isDarkTheme ? '215 20% 65%' : '215 16% 47%',
+    '--accent': accentColor,
+  } as React.CSSProperties;
 
   const currentPage = template.pages?.[selectedPage];
 
@@ -303,10 +326,13 @@ export function TemplatePreview({ template, open, onOpenChange, onSelect }: Temp
 
           {/* Preview area */}
           <div className="flex-1 bg-muted/50 p-4 overflow-auto">
-            <div className={cn(
-              "mx-auto bg-background rounded-xl border shadow-xl overflow-hidden transition-all duration-300",
-              getDeviceWidth()
-            )}>
+            <div 
+              className={cn(
+                "mx-auto rounded-xl border shadow-xl overflow-hidden transition-all duration-300",
+                isDarkTheme ? "bg-slate-900" : "bg-white",
+                getDeviceWidth()
+              )}
+            >
               {/* Browser chrome */}
               <div className="h-8 bg-muted/80 border-b flex items-center gap-1.5 px-3">
                 <div className="flex gap-1">
@@ -321,17 +347,23 @@ export function TemplatePreview({ template, open, onOpenChange, onSelect }: Temp
                 </div>
               </div>
 
-              {/* Page content preview */}
+              {/* Page content preview - with template branding injected */}
               <ScrollArea className={cn(
                 isFullscreen ? "h-[calc(100vh-120px)]" : "h-[calc(90vh-180px)]"
               )}>
-                <div className="template-preview-content">
+                <div 
+                  className={cn(
+                    "template-preview-content",
+                    isDarkTheme && "dark"
+                  )}
+                  style={previewStyles}
+                >
                   {currentPage?.blocks?.map((block, index) => (
                     <TemplateBlockPreview 
                       key={block.id || index}
                       block={block as ContentBlock}
                       compact={deviceMode === 'mobile'}
-                      primaryColor={primaryColor}
+                      primaryColor={hslToCssColor(primaryColor)}
                     />
                   ))}
                   

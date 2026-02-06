@@ -77,9 +77,8 @@ function extractVideoId(url: string, type: 'youtube' | 'vimeo'): string | null {
 export function HeroBlock({ data }: HeroBlockProps) {
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(data.videoMuted !== false);
+  const [videoError, setVideoError] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
-  
-  if (!data.title) return null;
   
   const layout = data.layout || 'centered';
   const videoType = data.videoType || 'direct';
@@ -103,6 +102,8 @@ export function HeroBlock({ data }: HeroBlockProps) {
       videoRef.current.muted = isMuted;
     }
   }, [isMuted]);
+  
+  if (!data.title) return null;
   
   // Get overlay color classes
   const getOverlayClasses = () => {
@@ -130,7 +131,7 @@ export function HeroBlock({ data }: HeroBlockProps) {
   // Render video background based on type
   const renderVideoBackground = () => {
     const hasVideo = data.backgroundType === 'video' && data.videoUrl;
-    if (!hasVideo) return null;
+    if (!hasVideo || videoError) return null;
     
     if (videoType === 'youtube') {
       const videoId = extractVideoId(data.videoUrl!, 'youtube');
@@ -184,10 +185,19 @@ export function HeroBlock({ data }: HeroBlockProps) {
         playsInline
         className="absolute inset-0 w-full h-full object-cover"
         poster={data.videoPosterUrl}
+        onError={() => setVideoError(true)}
       >
         <source src={data.videoUrl} type="video/mp4" />
         {data.videoUrlWebm && <source src={data.videoUrlWebm} type="video/webm" />}
       </video>
+    );
+  };
+  
+  // Render video fallback (gradient background when video fails to load)
+  const renderVideoFallback = () => {
+    if (!videoError || data.backgroundType !== 'video') return null;
+    return (
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/80 to-primary" />
     );
   };
   
@@ -355,6 +365,9 @@ export function HeroBlock({ data }: HeroBlockProps) {
     >
       {/* Video Background */}
       {hasVideoBackground && renderVideoBackground()}
+      
+      {/* Video Fallback (gradient when video fails) */}
+      {hasVideoBackground && renderVideoFallback()}
       
       {/* Image Background */}
       {hasImageBackground && (
