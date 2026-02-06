@@ -315,6 +315,12 @@ const BLOCK_GROUPS: BlockGroup[] = [
         description: 'Embedded AI chat feature',
       },
       {
+        type: 'chat-launcher',
+        label: 'Chat Launcher',
+        icon: <MessageSquare className="h-5 w-5" />,
+        description: 'ChatGPT-style launcher that routes to /chat',
+      },
+      {
         type: 'form',
         label: 'Form',
         icon: <FileText className="h-5 w-5" />,

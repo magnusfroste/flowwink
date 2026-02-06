@@ -17,6 +17,10 @@ interface ChatConversationProps {
   onNewConversation?: (id: string) => void;
   maxPrompts?: number;
   compact?: boolean;
+  /** Initial message to send automatically (from ChatLauncherBlock) */
+  initialMessage?: string;
+  /** Callback when initial message has been sent */
+  onInitialMessageSent?: () => void;
 }
 
 export function ChatConversation({ 
@@ -26,8 +30,11 @@ export function ChatConversation({
   onNewConversation,
   maxPrompts,
   compact = false,
+  initialMessage,
+  onInitialMessageSent,
 }: ChatConversationProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const initialMessageSentRef = useRef(false);
   const { data: settings } = useChatSettings();
   
   const {
@@ -50,6 +57,15 @@ export function ChatConversation({
       });
     }
   }, [messages, isLoading]);
+
+  // Auto-send initial message from ChatLauncherBlock
+  useEffect(() => {
+    if (initialMessage && !initialMessageSentRef.current && !isLoading && messages.length === 0) {
+      initialMessageSentRef.current = true;
+      sendMessage(initialMessage);
+      onInitialMessageSent?.();
+    }
+  }, [initialMessage, isLoading, messages.length, sendMessage, onInitialMessageSent]);
 
   const handlePromptClick = (prompt: string) => {
     sendMessage(prompt);
