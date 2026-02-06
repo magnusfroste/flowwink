@@ -115,7 +115,7 @@ const navigationGroups: NavGroup[] = [
     adminOnly: true,
     items: [
       { name: "Newsletter", href: "/admin/newsletter", icon: Mail, moduleId: "newsletter" },
-      { name: "Form Submissions", href: "/admin/forms", icon: Inbox, moduleId: "forms" },
+      { name: "Forms", href: "/admin/forms", icon: Inbox, moduleId: "forms" },
       { name: "Campaigns", href: "/admin/campaigns", icon: Megaphone, moduleId: "contentApi" },
       { name: "AI Chat", href: "/admin/chat", icon: MessageSquare, moduleId: "chat" },
       { name: "Live Support", href: "/admin/live-support", icon: Headphones, moduleId: "liveSupport" },
