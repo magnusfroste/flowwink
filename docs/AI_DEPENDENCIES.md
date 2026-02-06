@@ -74,7 +74,36 @@ GEMINI_API_KEY=...
 
 ---
 
-### 2. AI Text Generation (Editor Toolbar)
+### 2. System AI (Internal Admin Tools)
+**Location:** Admin panel - text editors, CRM, content tools
+
+**Purpose:** Powers internal admin tools for content creation and automation. Separate from visitor-facing Chat.
+
+**Features:**
+- **Text Generation** - Expand, improve, summarize, translate, continue text in editors
+- **Company Enrichment** - Auto-extract company info from websites in CRM
+- **Lead Qualification** - AI-powered lead scoring and summaries
+- **Content Migration** - Import pages from external websites
+
+**Edge Functions:**
+- `generate-text` (text generation)
+- `enrich-company` (company enrichment)
+- `qualify-lead` (lead qualification)
+- `migrate-page` (content migration)
+
+**Configuration:**
+- Admin → Site Settings → System AI tab
+- Choose provider (OpenAI or Gemini)
+- Select model
+- Set default tone and language
+
+**API Keys Used:**
+- `OPENAI_API_KEY` (if using OpenAI)
+- `GEMINI_API_KEY` (if using Gemini)
+
+---
+
+### 3. AI Text Generation (Editor Toolbar)
 **Location:** All text editors (Tiptap) throughout admin panel
 
 **Purpose:** Generate, improve, expand, summarize, translate, and continue text content.
@@ -89,7 +118,7 @@ GEMINI_API_KEY=...
 - **Translate** - Translate to other languages
 
 **Configuration:**
-- Uses the same AI provider as Chat Settings
+- Uses the System AI settings (Site Settings → System AI)
 - No separate configuration needed
 
 **API Keys Used:**

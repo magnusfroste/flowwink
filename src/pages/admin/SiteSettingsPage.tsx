@@ -24,6 +24,8 @@ import {
   useUpdateGeneralSettings,
   useAeoSettings,
   useUpdateAeoSettings,
+  useSystemAiSettings,
+  useUpdateSystemAiSettings,
   SeoSettings,
   PerformanceSettings,
   CustomScriptsSettings,
@@ -31,11 +33,13 @@ import {
   MaintenanceSettings,
   GeneralSettings,
   AeoSettings,
+  SystemAiSettings,
   SchemaOrgType,
 } from '@/hooks/useSiteSettings';
 import { usePages } from '@/hooks/usePages';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Save, Globe, Zap, ImageIcon, X, AlertTriangle, Code, Cookie, Info, Wrench, Home, Search, Lock, Clock, CheckCircle2, Circle, Bot, FileText, Building2, ExternalLink, Trash2 } from 'lucide-react';
+import { Loader2, Save, Globe, Zap, ImageIcon, X, AlertTriangle, Code, Cookie, Info, Wrench, Home, Search, Lock, Clock, CheckCircle2, Circle, Bot, FileText, Building2, ExternalLink, Trash2, Sparkles } from 'lucide-react';
+import { SystemAiSettingsTab } from '@/components/admin/SystemAiSettingsTab';
 import { MediaLibraryPicker } from '@/components/admin/MediaLibraryPicker';
 import { CodeEditor } from '@/components/admin/CodeEditor';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -100,6 +104,7 @@ export default function SiteSettingsPage() {
   const { data: maintenanceSettings, isLoading: maintenanceLoading } = useMaintenanceSettings();
   const { data: generalSettings, isLoading: generalLoading } = useGeneralSettings();
   const { data: aeoSettings, isLoading: aeoLoading } = useAeoSettings();
+  const { data: systemAiSettings, isLoading: systemAiLoading } = useSystemAiSettings();
   const { data: allPages } = usePages();
   
   const updateSeo = useUpdateSeoSettings();
@@ -109,6 +114,7 @@ export default function SiteSettingsPage() {
   const updateMaintenance = useUpdateMaintenanceSettings();
   const updateGeneral = useUpdateGeneralSettings();
   const updateAeo = useUpdateAeoSettings();
+  const updateSystemAi = useUpdateSystemAiSettings();
 
   const [generalData, setGeneralData] = useState<GeneralSettings>({
     homepageSlug: 'hem',
@@ -185,6 +191,14 @@ export default function SiteSettingsPage() {
     sitemapPriority: 0.5,
   });
 
+  const [systemAiData, setSystemAiData] = useState<SystemAiSettings>({
+    provider: 'openai',
+    openaiModel: 'gpt-4o-mini',
+    geminiModel: 'gemini-2.0-flash-exp',
+    defaultTone: 'professional',
+    defaultLanguage: 'sv',
+  });
+
   useEffect(() => {
     if (seoSettings) setSeoData(seoSettings);
   }, [seoSettings]);
@@ -213,12 +227,16 @@ export default function SiteSettingsPage() {
     if (aeoSettings) setAeoData(aeoSettings);
   }, [aeoSettings]);
 
-  const isLoading = seoLoading || performanceLoading || scriptsLoading || cookieLoading || maintenanceLoading || generalLoading || aeoLoading;
-  const isSaving = updateSeo.isPending || updatePerformance.isPending || updateScripts.isPending || updateCookieBanner.isPending || updateMaintenance.isPending || updateGeneral.isPending || updateAeo.isPending;
+  useEffect(() => {
+    if (systemAiSettings) setSystemAiData(systemAiSettings);
+  }, [systemAiSettings]);
+
+  const isLoading = seoLoading || performanceLoading || scriptsLoading || cookieLoading || maintenanceLoading || generalLoading || aeoLoading || systemAiLoading;
+  const isSaving = updateSeo.isPending || updatePerformance.isPending || updateScripts.isPending || updateCookieBanner.isPending || updateMaintenance.isPending || updateGeneral.isPending || updateAeo.isPending || updateSystemAi.isPending;
 
   // Track unsaved changes
   const hasChanges = useMemo(() => {
-    if (!seoSettings || !performanceSettings || !customScriptsSettings || !cookieBannerSettings || !maintenanceSettings || !generalSettings || !aeoSettings) return false;
+    if (!seoSettings || !performanceSettings || !customScriptsSettings || !cookieBannerSettings || !maintenanceSettings || !generalSettings || !aeoSettings || !systemAiSettings) return false;
     return (
       JSON.stringify(seoData) !== JSON.stringify(seoSettings) ||
       JSON.stringify(performanceData) !== JSON.stringify(performanceSettings) ||
@@ -226,9 +244,10 @@ export default function SiteSettingsPage() {
       JSON.stringify(cookieData) !== JSON.stringify(cookieBannerSettings) ||
       JSON.stringify(maintenanceData) !== JSON.stringify(maintenanceSettings) ||
       JSON.stringify(generalData) !== JSON.stringify(generalSettings) ||
-      JSON.stringify(aeoData) !== JSON.stringify(aeoSettings)
+      JSON.stringify(aeoData) !== JSON.stringify(aeoSettings) ||
+      JSON.stringify(systemAiData) !== JSON.stringify(systemAiSettings)
     );
-  }, [seoData, performanceData, scriptsData, cookieData, maintenanceData, generalData, aeoData, seoSettings, performanceSettings, customScriptsSettings, cookieBannerSettings, maintenanceSettings, generalSettings, aeoSettings]);
+  }, [seoData, performanceData, scriptsData, cookieData, maintenanceData, generalData, aeoData, systemAiData, seoSettings, performanceSettings, customScriptsSettings, cookieBannerSettings, maintenanceSettings, generalSettings, aeoSettings, systemAiSettings]);
 
   const { blocker } = useUnsavedChanges({ hasChanges });
 
@@ -241,6 +260,7 @@ export default function SiteSettingsPage() {
       updateCookieBanner.mutateAsync(cookieData),
       updatePerformance.mutateAsync(performanceData),
       updateAeo.mutateAsync(aeoData),
+      updateSystemAi.mutateAsync(systemAiData),
     ]);
   };
 
@@ -269,10 +289,14 @@ export default function SiteSettingsPage() {
         </AdminPageHeader>
 
         <Tabs defaultValue="general" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7 max-w-5xl">
+          <TabsList className="grid w-full grid-cols-8 max-w-6xl">
             <TabsTrigger value="general" className="flex items-center gap-2">
               <Home className="h-4 w-4" />
               <span className="hidden sm:inline">General</span>
+            </TabsTrigger>
+            <TabsTrigger value="system-ai" className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4" />
+              <span className="hidden sm:inline">System AI</span>
             </TabsTrigger>
             <TabsTrigger value="seo" className="flex items-center gap-2">
               <Globe className="h-4 w-4" />
@@ -362,6 +386,14 @@ export default function SiteSettingsPage() {
           </TabsContent>
 
           <ResetSiteDialog open={showResetDialog} onOpenChange={setShowResetDialog} />
+
+          {/* System AI Tab */}
+          <TabsContent value="system-ai" className="space-y-6">
+            <SystemAiSettingsTab
+              data={systemAiData}
+              onChange={setSystemAiData}
+            />
+          </TabsContent>
 
           {/* SEO Tab */}
           <TabsContent value="seo" className="space-y-6">
