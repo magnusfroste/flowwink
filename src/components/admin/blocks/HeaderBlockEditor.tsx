@@ -68,18 +68,14 @@ function SimpleNavItem({
         />
       </div>
 
-      <div className="flex items-center gap-2">
+      {/* Open in new tab toggle */}
+      <div className="flex items-center gap-1" title="Öppna i ny flik">
         <Switch
           checked={item.openInNewTab}
           onCheckedChange={(checked) => onUpdate({ ...item, openInNewTab: checked })}
         />
         <ExternalLink className="h-4 w-4 text-muted-foreground" />
       </div>
-
-      <Switch
-        checked={item.enabled}
-        onCheckedChange={(checked) => onUpdate({ ...item, enabled: checked })}
-      />
 
       <Button
         variant="ghost"
