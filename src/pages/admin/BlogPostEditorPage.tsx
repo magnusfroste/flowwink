@@ -101,11 +101,11 @@ export default function BlogPostEditorPage() {
       setSlug(post.slug);
       setExcerpt(post.excerpt || "");
       
-      // Handle both legacy ContentBlock[] and new TiptapDocument
+      // Content is always Tiptap JSON now
       if (isTiptapContent(post.content_json)) {
         setContent(post.content_json as JSONContent);
       } else {
-        // Legacy block content or empty - start with empty Tiptap doc
+        // Fallback to empty document
         setContent({ type: 'doc', content: [{ type: 'paragraph' }] });
       }
       
@@ -119,7 +119,6 @@ export default function BlogPostEditorPage() {
       setMeta(post.meta_json || {});
     } else if (isNew && user) {
       setAuthorId(user.id);
-      // Initialize with empty Tiptap document
       setContent({ type: 'doc', content: [{ type: 'paragraph' }] });
     }
   }, [post, isNew, user]);

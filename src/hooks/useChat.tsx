@@ -37,6 +37,16 @@ export function useChat(options?: UseChatOptions) {
   const { data: settings } = useChatSettings();
   const { user } = useAuth();
 
+  // Sync conversationId from options prop
+  useEffect(() => {
+    if (options?.conversationId !== conversationId) {
+      setConversationId(options?.conversationId);
+      // Clear messages when switching conversations
+      setMessages([]);
+      setError(null);
+    }
+  }, [options?.conversationId, conversationId]);
+
   const getSessionId = useCallback(() => {
     let sessionId = localStorage.getItem('chat-session-id');
     if (!sessionId) {

@@ -176,12 +176,8 @@ export default function BlogPostPage() {
           {/* Content */}
           <div
             className="prose prose-lg dark:prose-invert max-w-none mb-12"
-            dangerouslySetInnerHTML={{ __html: isTiptapDocument(post.content_json) ? renderToHtml(post.content_json) : '' }}
-          >
-            {Array.isArray(post.content_json) && post.content_json.map((block, index) => (
-              <BlockRenderer key={block.id || index} block={block} />
-            ))}
-          </div>
+            dangerouslySetInnerHTML={{ __html: renderToHtml(post.content_json) }}
+          />
           
           {/* Tags */}
           {post.tags && post.tags.length > 0 && (

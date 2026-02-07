@@ -109,57 +109,15 @@ const blogModule: ModuleDefinition<BlogModuleInput, BlogModuleOutput> = {
       const timestamp = Date.now().toString(36);
       const slug = `${baseSlug}-${timestamp}`;
       
-      // Prepare content - convert to block array format (ContentBlock[])
-      // Blog posts use block-based content, not Tiptap documents directly
-      let contentJson: Json;
-      
-      if (Array.isArray(validated.content)) {
-        // Already an array of blocks
-        contentJson = validated.content as Json;
-      } else if (typeof validated.content === 'string') {
-        // Plain text - wrap in a Text block with Tiptap structure
-        contentJson = [{
-          id: crypto.randomUUID(),
-          type: 'text',
-          data: {
-            content: {
-              type: 'doc',
-              content: [{ type: 'paragraph', content: [{ type: 'text', text: validated.content }] }]
-            }
-          }
-        }] as Json;
-      } else if (isTiptapDocument(validated.content)) {
-        // Tiptap document - wrap in a Text block
-        contentJson = [{
-          id: crypto.randomUUID(),
-          type: 'text',
-          data: {
-            content: validated.content
-          }
-        }] as Json;
-      } else {
-        // Unknown format - wrap in a single text block
-        const contentStr = typeof validated.content === 'object' 
-          ? JSON.stringify(validated.content) 
-          : String(validated.content);
-        contentJson = [{
-          id: crypto.randomUUID(),
-          type: 'text',
-          data: {
-            content: {
-              type: 'doc',
-              content: [{ type: 'paragraph', content: [{ type: 'text', text: contentStr }] }]
-            }
-          }
-        }] as Json;
-      }
+      // Content is always Tiptap JSON now - no wrapping needed
+      const contentJson = validated.content as Json;
 
       // Prepare post data
       const status = validated.options?.status || 'draft';
       const postData = {
         title: validated.title,
         slug,
-        content_json: contentJson as Json,
+        content_json: contentJson,
         excerpt: validated.excerpt || null,
         featured_image: validated.featured_image || null,
         featured_image_alt: validated.featured_image_alt || null,
