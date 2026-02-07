@@ -27,6 +27,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { BlogContentEditor } from "@/components/admin/BlogContentEditor";
 import { ImagePickerField } from "@/components/admin/ImagePickerField";
+import { AITextAssistant } from "@/components/admin/AITextAssistant";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import {
