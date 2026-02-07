@@ -14,10 +14,24 @@ FROM node:20-alpine AS builder
 # Build arguments for Vite environment variables
 ARG VITE_SUPABASE_URL
 ARG VITE_SUPABASE_PUBLISHABLE_KEY
+ARG VITE_SUPABASE_PROJECT_ID
 
 # Set as environment variables for the build process
 ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL
 ENV VITE_SUPABASE_PUBLISHABLE_KEY=$VITE_SUPABASE_PUBLISHABLE_KEY
+ENV VITE_SUPABASE_PROJECT_ID=$VITE_SUPABASE_PROJECT_ID
+
+# Validate that all required credentials are set
+RUN if [ -z "$VITE_SUPABASE_URL" ] || [ -z "$VITE_SUPABASE_PUBLISHABLE_KEY" ] || [ -z "$VITE_SUPABASE_PROJECT_ID" ]; then \
+      echo "ERROR: Missing required Supabase credentials"; \
+      echo "Please set these build arguments:"; \
+      echo "  VITE_SUPABASE_URL"; \
+      echo "  VITE_SUPABASE_PUBLISHABLE_KEY"; \
+      echo "  VITE_SUPABASE_PROJECT_ID"; \
+      echo ""; \
+      echo "Get these from your Supabase project: Settings → API"; \
+      exit 1; \
+    fi
 
 WORKDIR /app
 

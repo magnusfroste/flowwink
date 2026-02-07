@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 interface IntegrationStatus {
   core: {
@@ -33,16 +34,23 @@ interface IntegrationsSettings {
 }
 
 export function useIntegrationStatus() {
+  const { user } = useAuth();
+  
   return useQuery({
-    queryKey: ['integration-status'],
+    queryKey: ['integration-status', user?.id],
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke('check-secrets');
-      if (error) throw error;
+      if (error) {
+        console.error('[useIntegrationStatus] Error:', error);
+        return null;
+      }
       return data as IntegrationStatus;
     },
-    staleTime: 30 * 1000, // Cache for 30 seconds (allow quick refresh after adding secrets)
-    gcTime: 60 * 1000, // Keep in cache for 1 minute
-    retry: 1,
+    staleTime: 30 * 1000,
+    gcTime: 60 * 1000,
+    retry: 0,
+    refetchOnWindowFocus: false,
+    enabled: !!user,
   });
 }
 

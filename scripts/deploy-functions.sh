@@ -126,7 +126,7 @@ FAILED_FUNCTIONS=()
 for func in "${FUNCTIONS[@]}"; do
     echo -n "Deploying $func... "
     
-    if supabase functions deploy "$func" &> /tmp/deploy-$func.log; then
+    if supabase functions deploy "$func" --no-verify-jwt &> /tmp/deploy-$func.log; then
         echo -e "${GREEN}✓${NC}"
         ((SUCCESS_COUNT++))
     else

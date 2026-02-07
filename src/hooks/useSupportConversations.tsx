@@ -44,7 +44,7 @@ export function useSupportConversations() {
         .from('support_agents')
         .select('id')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (!agent) return [];
 
@@ -127,9 +127,10 @@ export function useSupportConversations() {
         .from('support_agents')
         .select('id, current_conversations')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (agentError) throw agentError;
+      if (!agent) throw new Error('No agent record found');
 
       // Update conversation
       const { error: convError } = await supabase
@@ -171,9 +172,10 @@ export function useSupportConversations() {
         .from('support_agents')
         .select('id, current_conversations')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (agentError) throw agentError;
+      if (!agent) throw new Error('No agent record found');
 
       // Update conversation
       const { error: convError } = await supabase

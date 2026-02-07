@@ -117,6 +117,31 @@ cp .env.example .env
 npm run dev
 ```
 
+### Connecting to Your Own Supabase
+
+The entire purpose of this project is to allow you to clone it from GitHub and connect it to **your own Supabase instance**. Here's how:
+
+1. **Create a Supabase Project**
+   - Go to [supabase.com](https://supabase.com/) and create a new project
+   - Note your **project ref** (e.g., `trpejhoieysrwiuhskkm`) from the URL
+
+2. **Get Your Credentials**
+   - Go to Supabase Dashboard → Settings → API
+   - Copy these three values:
+     - **Project URL** → `VITE_SUPABASE_URL`
+     - **Anon/Public key** → `VITE_SUPABASE_PUBLISHABLE_KEY`
+     - **Project ref** → `VITE_SUPABASE_PROJECT_ID`
+
+3. **Set Environment Variables**
+   - For local development: Edit `.env` file
+   - For deployment: Pass as build arguments (see DEPLOYMENT.md)
+
+4. **Run Setup Script** (optional but recommended)
+   ```bash
+   ./scripts/setup-supabase.sh
+   ```
+   This deploys edge functions and runs migrations automatically.
+
 ### Detailed Setup
 
 See **[docs/SETUP.md](docs/SETUP.md)** for complete self-hosting instructions including:

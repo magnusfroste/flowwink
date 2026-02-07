@@ -4,16 +4,16 @@ project_id = "rzhjotxffjfsdlhrdkpj"
 verify_jwt = false
 
 [functions.analyze-brand]
-verify_jwt = true
+verify_jwt = false
 
 [functions.publish-scheduled-pages]
 verify_jwt = false
 
 [functions.migrate-page]
-verify_jwt = true
+verify_jwt = false
 
 [functions.process-image]
-verify_jwt = true
+verify_jwt = false
 
 [functions.chat-completion]
 verify_jwt = false
@@ -22,28 +22,28 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.invalidate-cache]
-verify_jwt = true
+verify_jwt = false
 
 [functions.content-api]
 verify_jwt = false
 
 [functions.generate-text]
-verify_jwt = true
+verify_jwt = false
 
 [functions.blog-rss]
 verify_jwt = false
 
 [functions.unsplash-search]
-verify_jwt = true
+verify_jwt = false
 
 [functions.newsletter-subscribe]
 verify_jwt = false
 
 [functions.newsletter-send]
-verify_jwt = true
+verify_jwt = false
 
 [functions.send-webhook]
-verify_jwt = true
+verify_jwt = false
 
 [functions.newsletter-track]
 verify_jwt = false
@@ -52,16 +52,16 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.newsletter-export]
-verify_jwt = true
+verify_jwt = false
 
 [functions.newsletter-gdpr]
 verify_jwt = false
 
 [functions.qualify-lead]
-verify_jwt = true
+verify_jwt = false
 
 [functions.enrich-company]
-verify_jwt = true
+verify_jwt = false
 
 [functions.llms-txt]
 verify_jwt = false
@@ -76,19 +76,19 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.send-order-confirmation]
-verify_jwt = true
+verify_jwt = false
 
 [functions.track-page-view]
 verify_jwt = false
 
 [functions.check-secrets]
-verify_jwt = true
+verify_jwt = false
 
 [functions.send-booking-confirmation]
-verify_jwt = true
+verify_jwt = false
 
 [functions.copilot-action]
-verify_jwt = true
+verify_jwt = false
 
 [functions.update-kb-feedback]
 verify_jwt = false
@@ -97,19 +97,19 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.test-ai-connection]
-verify_jwt = true
+verify_jwt = false
 
 [functions.research-content]
-verify_jwt = true
+verify_jwt = false
 
 [functions.generate-content-proposal]
-verify_jwt = true
+verify_jwt = false
 
 [functions.firecrawl-map]
-verify_jwt = true
+verify_jwt = false
 
 [functions.firecrawl-search]
-verify_jwt = true
+verify_jwt = false
 
 [functions.render-page]
 verify_jwt = false
