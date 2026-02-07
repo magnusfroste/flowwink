@@ -101,11 +101,21 @@ export default function BlogPostEditorPage() {
       setSlug(post.slug);
       setExcerpt(post.excerpt || "");
       
-      // Content is always Tiptap JSON now
+      // Handle different content formats
       if (isTiptapContent(post.content_json)) {
+        // Direct Tiptap document
         setContent(post.content_json as JSONContent);
+      } else if (Array.isArray(post.content_json) && post.content_json.length > 0) {
+        // Wrapped content from campaigns - extract Tiptap document
+        const firstBlock = post.content_json[0];
+        if (firstBlock?.type === 'text' && firstBlock?.data?.content) {
+          setContent(firstBlock.data.content as JSONContent);
+        } else {
+          // Unknown format - empty document
+          setContent({ type: 'doc', content: [{ type: 'paragraph' }] });
+        }
       } else {
-        // Fallback to empty document
+        // Empty or unknown format
         setContent({ type: 'doc', content: [{ type: 'paragraph' }] });
       }
       
