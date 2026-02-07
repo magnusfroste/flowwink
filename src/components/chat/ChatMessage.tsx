@@ -174,7 +174,7 @@ export function ChatMessage({
         )}
       </div>
 
-      {isUser && (
+      {isUser && showIcons && (
         <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center">
           <User className="w-4 h-4 text-primary-foreground" />
         </div>
