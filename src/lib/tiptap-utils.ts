@@ -149,6 +149,18 @@ export function renderToHtml(content: unknown): string {
     }
   }
   
+  // Handle array of blocks (legacy format) - extract Tiptap content from text blocks
+  if (Array.isArray(content) && content.length > 0) {
+    const firstBlock = content[0];
+    if (firstBlock?.type === 'text' && firstBlock?.data?.content) {
+      try {
+        return generateHTML(firstBlock.data.content, [StarterKit, Link]);
+      } catch (e) {
+        console.error('Failed to render wrapped Tiptap content:', e);
+      }
+    }
+  }
+  
   // Unknown type - return empty
   return '';
 }
