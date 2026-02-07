@@ -325,6 +325,22 @@ export function useChat(options?: UseChatOptions) {
     return data.id;
   }, [user?.id, getSessionId, options]);
 
+  const updateConversationTitle = useCallback(async (convId: string, content: string) => {
+    // Extract first few words from content
+    const words = content.trim().split(/\s+/).slice(0, 5);
+    let title = words.join(' ');
+    
+    // Truncate with ellipsis if too long
+    if (content.length > 50) {
+      title = content.substring(0, 47) + '...';
+    }
+    
+    await supabase
+      .from('chat_conversations')
+      .update({ title })
+      .eq('id', convId);
+  }, []);
+
   const sendMessage = useCallback(async (content: string) => {
     if (!content.trim() || isLoading) return;
     
@@ -343,8 +359,14 @@ export function useChat(options?: UseChatOptions) {
 
     // Ensure we have a conversation
     let convId = conversationId;
+    const isFirstMessage = messages.length === 0;
     if (!convId && settings?.saveConversations) {
       convId = await createConversation();
+    }
+
+    // Update conversation title on first message
+    if (isFirstMessage && convId) {
+      await updateConversationTitle(convId, content.trim());
     }
 
     // Save user message
@@ -493,7 +515,7 @@ export function useChat(options?: UseChatOptions) {
       setIsLoading(false);
       abortControllerRef.current = null;
     }
-  }, [messages, conversationId, settings, user?.id, getSessionId, createConversation, saveMessage]);
+  }, [messages, conversationId, settings, getSessionId, createConversation, saveMessage, isLoading, updateConversationTitle]);
 
   const cancelRequest = useCallback(() => {
     abortControllerRef.current?.abort();
