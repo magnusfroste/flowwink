@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { AI_MODELS } from '../shared/ai-models.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -56,7 +57,7 @@ serve(async (req) => {
       result = { 
         success: true, 
         provider: 'openai', 
-        model: data.model || 'gpt-4o-mini'
+        model: data.model || AI_MODELS.openai.default
       };
 
     } else if (provider === 'gemini') {
@@ -70,7 +71,7 @@ serve(async (req) => {
 
       // Make a minimal request to Gemini to verify the key works
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/${AI_MODELS.gemini.default}:generateContent?key=${apiKey}`,
         {
           method: 'POST',
           headers: {
@@ -99,7 +100,7 @@ serve(async (req) => {
       result = { 
         success: true, 
         provider: 'gemini', 
-        model: 'gemini-1.5-flash'
+        model: AI_MODELS.gemini.default
       };
 
     } else if (provider === 'local_llm') {

@@ -76,6 +76,7 @@ export function ChatConversation({
   const showFeedback = settings?.feedbackEnabled ?? true;
   const showLiveAgentBanner = (settings?.showLiveAgentBanner ?? true) && isWithLiveAgent;
   const liveAgentIconStyle = settings?.liveAgentIconStyle ?? 'avatar';
+  const showChatIcons = settings?.showChatIcons ?? true;
 
   return (
     <div className={cn(
@@ -118,6 +119,7 @@ export function ChatConversation({
                   agentInfo={agentInfo}
                   isFromAgent={message.isFromAgent}
                   liveAgentIconStyle={liveAgentIconStyle}
+                  showIcons={showChatIcons}
                 />
               );
             })}

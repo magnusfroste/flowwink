@@ -41,6 +41,7 @@ interface ChatMessageProps {
   agentInfo?: AgentInfo | null;
   isFromAgent?: boolean; // True if this specific message is from a live agent
   liveAgentIconStyle?: LiveAgentIconStyle;
+  showIcons?: boolean; // Whether to show avatars/icons in chat
 }
 
 export function ChatMessage({ 
@@ -54,6 +55,7 @@ export function ChatMessage({
   agentInfo,
   isFromAgent = false,
   liveAgentIconStyle = 'avatar',
+  showIcons = true,
 }: ChatMessageProps) {
   const [copied, setCopied] = useState(false);
   const isUser = role === 'user';
@@ -115,13 +117,13 @@ export function ChatMessage({
       'flex gap-3 py-4 px-4 group',
       isUser ? 'justify-end' : 'justify-start'
     )}>
-      {!isUser && renderAssistantAvatar()}
+      {!isUser && showIcons && renderAssistantAvatar()}
       
       <div className={cn(
         'relative max-w-[80%] rounded-2xl px-4 py-3',
         isUser 
           ? 'bg-primary text-primary-foreground rounded-br-md' 
-          : 'bg-muted rounded-bl-md'
+          : 'rounded-bl-md'
       )}>
         <div 
           className={cn(
