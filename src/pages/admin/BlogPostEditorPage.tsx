@@ -123,6 +123,14 @@ export default function BlogPostEditorPage() {
       setContent({ type: 'doc', content: [{ type: 'paragraph' }] });
     }
   }, [post, isNew, user]);
+
+  // Sync editor content when content state changes
+  useEffect(() => {
+    if (editor && content) {
+      editor.commands.setContent(content);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [content]);
   
   // Track changes
   useEffect(() => {

@@ -174,18 +174,13 @@ export default function BlogPostPage() {
           )}
           
           {/* Content */}
-          <div className="prose prose-lg dark:prose-invert max-w-none mb-12">
-            {Array.isArray(post.content_json) ? (
-              // Block-based content (standard blog posts)
-              post.content_json.map((block, index) => (
-                <BlockRenderer key={block.id || index} block={block} />
-              ))
-            ) : isTiptapDocument(post.content_json) ? (
-              // Tiptap document (from Content Campaigns)
-              <div dangerouslySetInnerHTML={{ __html: renderToHtml(post.content_json) }} />
-            ) : (
-              <p className="text-muted-foreground">No content available</p>
-            )}
+          <div
+            className="prose prose-lg dark:prose-invert max-w-none mb-12"
+            dangerouslySetInnerHTML={{ __html: isTiptapDocument(post.content_json) ? renderToHtml(post.content_json) : '' }}
+          >
+            {Array.isArray(post.content_json) && post.content_json.map((block, index) => (
+              <BlockRenderer key={block.id || index} block={block} />
+            ))}
           </div>
           
           {/* Tags */}
