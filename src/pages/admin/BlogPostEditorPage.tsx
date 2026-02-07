@@ -532,7 +532,16 @@ export default function BlogPostEditorPage() {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label>Excerpt</Label>
+                  <div className="flex items-center justify-between">
+                    <Label>Excerpt</Label>
+                    <AITextAssistant
+                      value={excerpt}
+                      onChange={setExcerpt}
+                      context={content ? `Blog post titled: ${title}` : undefined}
+                      actions={['summarize', 'improve']}
+                      compact
+                    />
+                  </div>
                   <Textarea
                     value={excerpt}
                     onChange={(e) => setExcerpt(e.target.value)}
