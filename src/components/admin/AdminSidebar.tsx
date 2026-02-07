@@ -36,6 +36,7 @@ import {
   Zap,
   Megaphone,
   Code2,
+  ChevronRight,
 } from "lucide-react";
 
 import { useAuth } from "@/hooks/useAuth";
@@ -58,6 +59,13 @@ import {
   SidebarSeparator,
   useSidebar,
 } from "@/components/ui/sidebar";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   CommandDialog,
@@ -81,13 +89,28 @@ type NavItem = {
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   moduleId?: keyof ModulesSettings;
+  setupOnly?: boolean;
 };
 
 type NavGroup = {
   label: string;
   items: NavItem[];
   adminOnly?: boolean;
+  collapsible?: boolean;
 };
+
+function useSiteSetupComplete() {
+  return useQuery({
+    queryKey: ['site-setup-complete'],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from('pages')
+        .select('id', { count: 'exact', head: true });
+      return (count ?? 0) > 0;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+}
 
 const navigationGroups: NavGroup[] = [
   {
@@ -95,9 +118,6 @@ const navigationGroups: NavGroup[] = [
     items: [
       { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
       { name: "Analytics", href: "/admin/analytics", icon: BarChart3, moduleId: "analytics" },
-      { name: "FlowPilot", href: "/admin/copilot", icon: Zap },
-      { name: "Quick Start", href: "/admin/quick-start", icon: Rocket },
-      { name: "Templates", href: "/admin/templates", icon: Puzzle },
     ],
   },
   {
@@ -105,9 +125,9 @@ const navigationGroups: NavGroup[] = [
     items: [
       { name: "Pages", href: "/admin/pages", icon: FileText, moduleId: "pages" },
       { name: "Blog", href: "/admin/blog", icon: BookOpen, moduleId: "blog" },
+      { name: "Campaigns", href: "/admin/campaigns", icon: Megaphone, moduleId: "contentApi" },
       { name: "Knowledge Base", href: "/admin/knowledge-base", icon: Library, moduleId: "knowledgeBase" },
       { name: "Media Library", href: "/admin/media", icon: Image, moduleId: "mediaLibrary" },
-      { name: "Global Elements", href: "/admin/global-blocks", icon: LayoutGrid, moduleId: "globalElements" },
     ],
   },
   {
@@ -116,7 +136,12 @@ const navigationGroups: NavGroup[] = [
     items: [
       { name: "Newsletter", href: "/admin/newsletter", icon: Mail, moduleId: "newsletter" },
       { name: "Forms", href: "/admin/forms", icon: Inbox, moduleId: "forms" },
-      { name: "Campaigns", href: "/admin/campaigns", icon: Megaphone, moduleId: "contentApi" },
+    ],
+  },
+  {
+    label: "Support",
+    adminOnly: true,
+    items: [
       { name: "AI Chat", href: "/admin/chat", icon: MessageSquare, moduleId: "chat" },
       { name: "Live Support", href: "/admin/live-support", icon: Headphones, moduleId: "liveSupport" },
     ],
@@ -134,16 +159,21 @@ const navigationGroups: NavGroup[] = [
     ],
   },
   {
-    label: "System",
+    label: "Setup",
     adminOnly: true,
+    collapsible: true,
     items: [
+      { name: "Quick Start", href: "/admin/quick-start", icon: Rocket, setupOnly: true },
+      { name: "Templates", href: "/admin/templates", icon: Puzzle, setupOnly: true },
+      { name: "FlowPilot", href: "/admin/copilot", icon: Zap },
+      { name: "Branding", href: "/admin/branding", icon: Palette },
+      { name: "Global Elements", href: "/admin/global-blocks", icon: LayoutGrid, moduleId: "globalElements" },
       { name: "Modules", href: "/admin/modules", icon: Puzzle },
       { name: "Integrations", href: "/admin/integrations", icon: Plug },
       { name: "Content API", href: "/admin/content-api", icon: Code2, moduleId: "contentApi" },
       { name: "Webhooks", href: "/admin/webhooks", icon: Webhook },
       { name: "Menu Order", href: "/admin/menu-order", icon: Menu },
       { name: "Users", href: "/admin/users", icon: Users },
-      { name: "Branding", href: "/admin/branding", icon: Palette },
       { name: "Settings", href: "/admin/settings", icon: Settings },
     ],
   },
@@ -156,6 +186,7 @@ export function AdminSidebar() {
   const { state } = useSidebar();
   const { data: modules } = useModules();
   const { data: branding } = useBrandingSettings();
+  const { data: siteSetupComplete } = useSiteSetupComplete();
   const { currentVersion, latestVersion, latestReleaseUrl, hasUpdate } = useVersionCheck();
   const isCollapsed = state === "collapsed";
   const [searchOpen, setSearchOpen] = useState(false);
@@ -169,11 +200,13 @@ export function AdminSidebar() {
   // Filter by admin role
   const roleFilteredGroups = navigationGroups.filter((group) => !group.adminOnly || isAdmin);
   
-  // Filter by enabled modules
+  // Filter by enabled modules and setup status
   const filteredGroups = useMemo(() => roleFilteredGroups
     .map(group => ({
       ...group,
       items: group.items.filter(item => {
+        // Hide setup-only items after site is set up
+        if (item.setupOnly && siteSetupComplete) return false;
         // If no moduleId, always show
         if (!item.moduleId) return true;
         // If modules not loaded yet, show all
@@ -182,7 +215,7 @@ export function AdminSidebar() {
         return modules[item.moduleId]?.enabled ?? true;
       }),
     }))
-    .filter(group => group.items.length > 0), [roleFilteredGroups, modules]);
+    .filter(group => group.items.length > 0), [roleFilteredGroups, modules, siteSetupComplete]);
 
   // Flatten all items for search
   const allSearchItems = useMemo(() => 
@@ -267,40 +300,81 @@ export function AdminSidebar() {
 
         {/* Navigation */}
         <SidebarContent className="px-2 py-2">
-          {filteredGroups.map((group, index) => (
-          <div key={group.label}>
-            {index > 0 && <SidebarSeparator className="my-2" />}
-            <SidebarGroup>
-              {!isCollapsed && (
-                <SidebarGroupLabel className="text-[10px] text-sidebar-foreground/40 uppercase tracking-widest font-normal mb-1 transition-colors hover:text-sidebar-foreground/60">
-                  {group.label}
-                </SidebarGroupLabel>
-              )}
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {group.items.map((item) => {
-                    const isActive = isItemActive(item.href);
-                    return (
-                      <SidebarMenuItem key={item.name}>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <SidebarMenuButton asChild isActive={isActive} tooltip={item.name}>
-                              <Link to={item.href}>
-                                <item.icon className="h-4 w-4" />
-                                <span>{item.name}</span>
-                              </Link>
-                            </SidebarMenuButton>
-                          </TooltipTrigger>
-                          {isCollapsed && <TooltipContent side="right">{item.name}</TooltipContent>}
-                        </Tooltip>
-                      </SidebarMenuItem>
-                    );
-                  })}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-            </div>
-          ))}
+          {filteredGroups.map((group, index) => {
+            const hasActiveItem = group.items.some(item => isItemActive(item.href));
+
+            if (group.collapsible && !isCollapsed) {
+              return (
+                <div key={group.label}>
+                  {index > 0 && <SidebarSeparator className="my-2" />}
+                  <Collapsible defaultOpen={hasActiveItem}>
+                    <SidebarGroup>
+                      <CollapsibleTrigger className="flex items-center w-full group/collapsible">
+                        <SidebarGroupLabel className="text-[10px] text-sidebar-foreground/40 uppercase tracking-widest font-normal mb-1 transition-colors hover:text-sidebar-foreground/60 flex-1 text-left cursor-pointer">
+                          {group.label}
+                        </SidebarGroupLabel>
+                        <ChevronRight className="h-3 w-3 text-sidebar-foreground/40 transition-transform group-data-[state=open]/collapsible:rotate-90 mr-1" />
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <SidebarGroupContent>
+                          <SidebarMenu>
+                            {group.items.map((item) => {
+                              const isActive = isItemActive(item.href);
+                              return (
+                                <SidebarMenuItem key={item.name}>
+                                  <SidebarMenuButton asChild isActive={isActive} tooltip={item.name}>
+                                    <Link to={item.href}>
+                                      <item.icon className="h-4 w-4" />
+                                      <span>{item.name}</span>
+                                    </Link>
+                                  </SidebarMenuButton>
+                                </SidebarMenuItem>
+                              );
+                            })}
+                          </SidebarMenu>
+                        </SidebarGroupContent>
+                      </CollapsibleContent>
+                    </SidebarGroup>
+                  </Collapsible>
+                </div>
+              );
+            }
+
+            return (
+              <div key={group.label}>
+                {index > 0 && <SidebarSeparator className="my-2" />}
+                <SidebarGroup>
+                  {!isCollapsed && (
+                    <SidebarGroupLabel className="text-[10px] text-sidebar-foreground/40 uppercase tracking-widest font-normal mb-1 transition-colors hover:text-sidebar-foreground/60">
+                      {group.label}
+                    </SidebarGroupLabel>
+                  )}
+                  <SidebarGroupContent>
+                    <SidebarMenu>
+                      {group.items.map((item) => {
+                        const isActive = isItemActive(item.href);
+                        return (
+                          <SidebarMenuItem key={item.name}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <SidebarMenuButton asChild isActive={isActive} tooltip={item.name}>
+                                  <Link to={item.href}>
+                                    <item.icon className="h-4 w-4" />
+                                    <span>{item.name}</span>
+                                  </Link>
+                                </SidebarMenuButton>
+                              </TooltipTrigger>
+                              {isCollapsed && <TooltipContent side="right">{item.name}</TooltipContent>}
+                            </Tooltip>
+                          </SidebarMenuItem>
+                        );
+                      })}
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </SidebarGroup>
+              </div>
+            );
+          })}
         </SidebarContent>
 
         {/* User section */}
