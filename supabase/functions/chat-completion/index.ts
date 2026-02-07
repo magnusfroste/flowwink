@@ -512,6 +512,9 @@ serve(async (req) => {
 
     let systemPrompt = settings?.systemPrompt || 'You are a helpful AI assistant.';
 
+    // Always respond in the user's language
+    systemPrompt += '\n\nIMPORTANT: Always respond in the same language as the user writes in. If the user writes in Swedish, respond in Swedish. If in English, respond in English. Match the user\'s language automatically.';
+
     // Add knowledge base restriction or allowance
     // IMPORTANT: allowGeneralKnowledge takes precedence - if true, AI can use its own knowledge
     if (settings?.allowGeneralKnowledge) {

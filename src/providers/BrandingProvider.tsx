@@ -184,9 +184,10 @@ export function BrandingProvider({ children }: BrandingProviderProps) {
       }
     }
     
-    // Reset to default CSS when entering admin
+    // Reset to default CSS and theme when entering admin
     if (isAdminRoute) {
       resetBrandingToDefaults();
+      setTheme('light');
     }
   }, [branding, setTheme, isAdminRoute]);
 

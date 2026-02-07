@@ -15,26 +15,34 @@ interface GenerateRequest {
   tone?: 'professional' | 'friendly' | 'formal';
 }
 
-function getSystemPrompt(action: AIAction, context?: string, targetLanguage?: string, tone?: string): string {
+function getSystemPrompt(action: AIAction, context?: string, targetLanguage?: string, tone?: string, language?: string): string {
   const toneInstruction = tone === 'friendly' 
     ? 'Use a warm, approachable tone.' 
     : tone === 'formal' 
     ? 'Use a formal, professional tone.'
-    : 'Use a clear, professional tone suitable for healthcare communication.';
+    : 'Use a clear, professional tone.';
 
   const contextInstruction = context 
     ? `Context: This is for a page about "${context}". ` 
     : '';
 
+  const LANG_NAMES: Record<string, string> = {
+    sv: 'Swedish', en: 'English', no: 'Norwegian', da: 'Danish', fi: 'Finnish', de: 'German',
+  };
+  const langName = language ? LANG_NAMES[language] || language : null;
+  const languageInstruction = langName 
+    ? `IMPORTANT: Write ALL output in ${langName}.` 
+    : 'Keep the language the same as the input.';
+
   const prompts: Record<AIAction, string> = {
-    expand: `You are a professional content writer for a Swedish healthcare organization. ${contextInstruction}${toneInstruction}
+    expand: `You are a professional content writer. ${contextInstruction}${toneInstruction}
 Take the provided keywords or short text and expand it into a well-written paragraph. 
-Keep the language the same as the input (Swedish or English).
+${languageInstruction}
 Only output the expanded text, no explanations or quotes.`,
     
-    improve: `You are a professional editor for a Swedish healthcare organization. ${contextInstruction}${toneInstruction}
+    improve: `You are a professional editor. ${contextInstruction}${toneInstruction}
 Improve the provided text for clarity, grammar, and flow while preserving its meaning.
-Keep the language the same as the input.
+${languageInstruction}
 Only output the improved text, no explanations or quotes.`,
     
     translate: `You are a professional translator. ${contextInstruction}
@@ -44,12 +52,13 @@ Only output the translation, no explanations or quotes.`,
     
     summarize: `You are a professional editor. ${contextInstruction}${toneInstruction}
 Summarize the provided text in 1-2 concise sentences.
-Keep the language the same as the input.
+${languageInstruction}
 Only output the summary, no explanations or quotes.`,
     
-    continue: `You are a professional content writer for a Swedish healthcare organization. ${contextInstruction}${toneInstruction}
+    continue: `You are a professional content writer. ${contextInstruction}${toneInstruction}
 Continue the provided text naturally with 2-3 more sentences.
-Keep the same style, tone, and language as the input.
+Keep the same style and tone as the input.
+${languageInstruction}
 Only output the continuation (not the original text), no explanations or quotes.`
   };
 
@@ -153,9 +162,10 @@ serve(async (req) => {
       }
     }
 
-    // Use tone from request or fall back to system settings
+    // Use tone and language from request or fall back to system settings
     const effectiveTone = tone || systemAiSettings.defaultTone || 'professional';
-    const systemPrompt = getSystemPrompt(action, context, targetLanguage, effectiveTone);
+    const effectiveLanguage = systemAiSettings.defaultLanguage || undefined;
+    const systemPrompt = getSystemPrompt(action, context, targetLanguage, effectiveTone, effectiveLanguage);
     
     // Get model from settings
     const geminiModel = systemAiSettings.geminiModel || 'gemini-2.0-flash-exp';

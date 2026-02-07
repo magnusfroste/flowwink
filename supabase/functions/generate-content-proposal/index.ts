@@ -255,7 +255,7 @@ async function generateWithLocalLLM(
   return data;
 }
 
-function buildSystemPrompt(request: GenerateRequest): string {
+function buildSystemPrompt(request: GenerateRequest, contentLanguage?: string | null): string {
   const toneDescription = TONE_DESCRIPTIONS[request.tone_level || 3];
   const goalsText = request.content_goals?.length 
     ? request.content_goals.join(", ") 
@@ -305,6 +305,8 @@ CRITICAL RULES - FOLLOW EXACTLY
 6. CTAs MATTER: Every piece needs a clear, platform-appropriate call-to-action. Not generic "click here" but specific, benefit-driven actions.
 
 7. AVOID: Clichés ("In today's fast-paced world"), passive voice, filler phrases, generic openings ("Are you looking to..."), clickbait without substance.
+
+${contentLanguage ? `8. LANGUAGE: CRITICAL - Write ALL content in ${contentLanguage}. Every piece of content across all channels MUST be in ${contentLanguage}.` : ''}
 
 ═══════════════════════════════════════════════════════
 OUTPUT FORMAT
@@ -421,8 +423,28 @@ serve(async (req) => {
       });
     }
 
+    // Get system AI settings for language preference
+    const { data: systemAiRow } = await supabase
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'system_ai')
+      .maybeSingle();
+
+    const systemAiSettings = systemAiRow?.value as {
+      provider?: 'openai' | 'gemini';
+      defaultTone?: string;
+      defaultLanguage?: string;
+    } || {};
+
+    const LANG_NAMES: Record<string, string> = {
+      sv: 'Swedish', en: 'English', no: 'Norwegian', da: 'Danish', fi: 'Finnish', de: 'German',
+    };
+    const contentLanguage = systemAiSettings.defaultLanguage 
+      ? LANG_NAMES[systemAiSettings.defaultLanguage] || systemAiSettings.defaultLanguage
+      : null;
+
     // Build enhanced system prompt
-    const systemPrompt = buildSystemPrompt(requestData);
+    const systemPrompt = buildSystemPrompt(requestData, contentLanguage);
 
     // Build channel-specific instructions
     const channelInstructions = target_channels

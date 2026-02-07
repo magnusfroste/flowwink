@@ -111,6 +111,167 @@ export function createDocumentFromText(text: string): TiptapDocument {
 }
 
 /**
+ * Create a TiptapDocument from markdown text.
+ * Parses headings, paragraphs, bold, italic, links, lists, blockquotes, and code blocks.
+ */
+export function createDocumentFromMarkdown(markdown: string): TiptapDocument {
+  if (!markdown || !markdown.trim()) return createEmptyDocument();
+
+  const lines = markdown.split('\n');
+  const nodes: TiptapNode[] = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    // Skip empty lines
+    if (!line.trim()) {
+      i++;
+      continue;
+    }
+
+    // Headings
+    const headingMatch = line.match(/^(#{1,6})\s+(.+)$/);
+    if (headingMatch) {
+      const level = headingMatch[1].length;
+      nodes.push({
+        type: 'heading',
+        attrs: { level },
+        content: parseInlineMarks(headingMatch[2].trim()),
+      });
+      i++;
+      continue;
+    }
+
+    // Code blocks
+    if (line.trim().startsWith('```')) {
+      const codeLines: string[] = [];
+      i++;
+      while (i < lines.length && !lines[i].trim().startsWith('```')) {
+        codeLines.push(lines[i]);
+        i++;
+      }
+      i++; // skip closing ```
+      nodes.push({
+        type: 'codeBlock',
+        content: [{ type: 'text', text: codeLines.join('\n') }],
+      });
+      continue;
+    }
+
+    // Blockquote
+    if (line.trim().startsWith('>')) {
+      const quoteLines: string[] = [];
+      while (i < lines.length && lines[i].trim().startsWith('>')) {
+        quoteLines.push(lines[i].replace(/^>\s?/, ''));
+        i++;
+      }
+      nodes.push({
+        type: 'blockquote',
+        content: [{
+          type: 'paragraph',
+          content: parseInlineMarks(quoteLines.join(' ').trim()),
+        }],
+      });
+      continue;
+    }
+
+    // Unordered list
+    if (line.match(/^\s*[-*]\s+/)) {
+      const items: TiptapNode[] = [];
+      while (i < lines.length && lines[i].match(/^\s*[-*]\s+/)) {
+        const itemText = lines[i].replace(/^\s*[-*]\s+/, '').trim();
+        items.push({
+          type: 'listItem',
+          content: [{
+            type: 'paragraph',
+            content: parseInlineMarks(itemText),
+          }],
+        });
+        i++;
+      }
+      nodes.push({ type: 'bulletList', content: items });
+      continue;
+    }
+
+    // Ordered list
+    if (line.match(/^\s*\d+\.\s+/)) {
+      const items: TiptapNode[] = [];
+      while (i < lines.length && lines[i].match(/^\s*\d+\.\s+/)) {
+        const itemText = lines[i].replace(/^\s*\d+\.\s+/, '').trim();
+        items.push({
+          type: 'listItem',
+          content: [{
+            type: 'paragraph',
+            content: parseInlineMarks(itemText),
+          }],
+        });
+        i++;
+      }
+      nodes.push({ type: 'orderedList', content: items });
+      continue;
+    }
+
+    // Horizontal rule
+    if (line.match(/^---+$/)) {
+      nodes.push({ type: 'horizontalRule' });
+      i++;
+      continue;
+    }
+
+    // Regular paragraph
+    nodes.push({
+      type: 'paragraph',
+      content: parseInlineMarks(line.trim()),
+    });
+    i++;
+  }
+
+  return { type: 'doc', content: nodes.length > 0 ? nodes : [{ type: 'paragraph' }] };
+}
+
+/**
+ * Parse inline markdown marks (bold, italic, links, code) into Tiptap nodes.
+ */
+function parseInlineMarks(text: string): TiptapNode[] {
+  const nodes: TiptapNode[] = [];
+  // Regex for: **bold**, *italic*, `code`, [text](url)
+  const regex = /(\*\*(.+?)\*\*|\*(.+?)\*|`(.+?)`|\[(.+?)\]\((.+?)\))/g;
+  let lastIndex = 0;
+  let match;
+
+  while ((match = regex.exec(text)) !== null) {
+    // Add text before match
+    if (match.index > lastIndex) {
+      nodes.push({ type: 'text', text: text.slice(lastIndex, match.index) });
+    }
+
+    if (match[2]) {
+      // Bold
+      nodes.push({ type: 'text', text: match[2], marks: [{ type: 'bold' }] });
+    } else if (match[3]) {
+      // Italic
+      nodes.push({ type: 'text', text: match[3], marks: [{ type: 'italic' }] });
+    } else if (match[4]) {
+      // Code
+      nodes.push({ type: 'text', text: match[4], marks: [{ type: 'code' }] });
+    } else if (match[5] && match[6]) {
+      // Link
+      nodes.push({ type: 'text', text: match[5], marks: [{ type: 'link', attrs: { href: match[6] } }] });
+    }
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  // Add remaining text
+  if (lastIndex < text.length) {
+    nodes.push({ type: 'text', text: text.slice(lastIndex) });
+  }
+
+  return nodes.length > 0 ? nodes : [{ type: 'text', text }];
+}
+
+/**
  * Get content suitable for initializing a Tiptap editor.
  * Handles: undefined, Tiptap JSON, or legacy HTML strings.
  * 
@@ -134,9 +295,15 @@ export function getEditorContent(content: string | TiptapDocument | undefined): 
 export function renderToHtml(content: unknown): string {
   if (!content) return '';
   
-  // Handle string content
+  // Handle string content - convert markdown to Tiptap JSON, then render
   if (typeof content === 'string') {
-    return content;
+    const doc = createDocumentFromMarkdown(content);
+    try {
+      return generateHTML(doc, [StarterKit, Link]);
+    } catch (e) {
+      console.error('Failed to render markdown content to HTML:', e);
+      return '';
+    }
   }
   
   // Handle Tiptap document

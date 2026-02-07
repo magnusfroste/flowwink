@@ -155,7 +155,7 @@
 
 /* Tiptap Editor Styles */
 .tiptap {
-  @apply outline-none min-h-[300px] p-4;
+  @apply outline-none min-h-[300px] p-4 text-foreground;
 }
 
 .tiptap p {

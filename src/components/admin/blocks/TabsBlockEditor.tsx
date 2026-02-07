@@ -5,12 +5,15 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
 import { useBlockEditor } from '@/hooks/useBlockEditor';
-import { Plus, Trash2, GripVertical, Layers } from 'lucide-react';
+import { Plus, Trash2, GripVertical, Layers, Bold, Italic, List, ListOrdered } from 'lucide-react';
 import { IconPicker } from '../IconPicker';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import type { TabsBlockData, TabItem } from '@/components/public/blocks/TabsBlock';
 import type { TiptapDocument } from '@/types/cms';
+import { AITiptapToolbar } from '../AITiptapToolbar';
+import { Toggle } from '@/components/ui/toggle';
+import { Separator } from '@/components/ui/separator';
 
 interface TabsBlockEditorProps {
   data: TabsBlockData;
@@ -54,8 +57,27 @@ function TabItemEditor({
           <Trash2 className="h-4 w-4 text-destructive" />
         </Button>
       </div>
-      <div className="prose-editor border rounded-lg p-3 min-h-[100px]">
-        <EditorContent editor={editor} className="prose prose-sm dark:prose-invert max-w-none" />
+      <div className="border rounded-lg overflow-hidden">
+        {editor && (
+          <div className="border-b px-2 py-1.5 flex items-center gap-1 bg-muted/30">
+            <Toggle size="sm" pressed={editor.isActive('bold')} onPressedChange={() => editor.chain().focus().toggleBold().run()}>
+              <Bold className="h-3.5 w-3.5" />
+            </Toggle>
+            <Toggle size="sm" pressed={editor.isActive('italic')} onPressedChange={() => editor.chain().focus().toggleItalic().run()}>
+              <Italic className="h-3.5 w-3.5" />
+            </Toggle>
+            <Separator orientation="vertical" className="h-5 mx-1" />
+            <Toggle size="sm" pressed={editor.isActive('bulletList')} onPressedChange={() => editor.chain().focus().toggleBulletList().run()}>
+              <List className="h-3.5 w-3.5" />
+            </Toggle>
+            <Toggle size="sm" pressed={editor.isActive('orderedList')} onPressedChange={() => editor.chain().focus().toggleOrderedList().run()}>
+              <ListOrdered className="h-3.5 w-3.5" />
+            </Toggle>
+            <Separator orientation="vertical" className="h-5 mx-1" />
+            <AITiptapToolbar editor={editor} context="tab content" />
+          </div>
+        )}
+        <EditorContent editor={editor} className="tiptap prose prose-sm max-w-none p-3 min-h-[100px]" />
       </div>
     </Card>
   );

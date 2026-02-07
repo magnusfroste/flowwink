@@ -9,6 +9,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import type { Json } from '@/integrations/supabase/types';
+import { createDocumentFromMarkdown } from '@/lib/tiptap-utils';
 import {
   ModuleDefinition,
   ModuleCapability,
@@ -109,8 +110,15 @@ const blogModule: ModuleDefinition<BlogModuleInput, BlogModuleOutput> = {
       const timestamp = Date.now().toString(36);
       const slug = `${baseSlug}-${timestamp}`;
       
-      // Content is always Tiptap JSON now - no wrapping needed
-      const contentJson = validated.content as Json;
+      // Ensure content is Tiptap JSON - convert markdown strings
+      let contentJson: Json;
+      if (isTiptapDocument(validated.content)) {
+        contentJson = validated.content as Json;
+      } else if (typeof validated.content === 'string') {
+        contentJson = createDocumentFromMarkdown(validated.content) as unknown as Json;
+      } else {
+        contentJson = validated.content as Json;
+      }
 
       // Prepare post data
       const status = validated.options?.status || 'draft';
