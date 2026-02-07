@@ -28,6 +28,7 @@ import {
   useUpdateKbArticle,
 } from "@/hooks/useKnowledgeBase";
 import { extractPlainText } from "@/lib/tiptap-utils";
+import { AITiptapToolbar } from "@/components/admin/AITiptapToolbar";
 
 export default function KbArticleEditorPage() {
   const { id } = useParams();
@@ -227,7 +228,10 @@ export default function KbArticleEditorPage() {
                 </div>
 
                 <div>
-                  <Label>Answer</Label>
+                  <div className="flex items-center justify-between mb-2">
+                    <Label>Answer</Label>
+                    {editor && <AITiptapToolbar editor={editor} context="Knowledge base article" />}
+                  </div>
                   <div className="border rounded-lg overflow-hidden bg-background">
                     <EditorContent editor={editor} />
                   </div>

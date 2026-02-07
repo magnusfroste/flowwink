@@ -22,6 +22,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { ChannelIcon, ALL_CHANNELS, getChannelConfig } from './ChannelIcon';
 import { ChannelMockup } from './ChannelMockup';
 import { ChannelImageOverride } from './FeaturedImagePicker';
+import { EditProposalDialog } from './EditProposalDialog';
 import { cn } from '@/lib/utils';
 
 interface ContentProposalPreviewProps {
@@ -32,6 +33,7 @@ interface ContentProposalPreviewProps {
 
 export function ContentProposalPreview({ proposal, onClose, onRegenerate }: ContentProposalPreviewProps) {
   const [activeChannel, setActiveChannel] = useState<ChannelType>('blog');
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const approveProposal = useApproveProposal();
   const publishChannel = usePublishProposalChannel();
   const publishAll = usePublishAllChannels();
@@ -118,7 +120,11 @@ export function ContentProposalPreview({ proposal, onClose, onRegenerate }: Cont
               Publish All ({unpublishedChannels.length})
             </Button>
           )}
-          <Button variant="outline" className="gap-2">
+          <Button 
+            variant="outline" 
+            className="gap-2"
+            onClick={() => setShowEditDialog(true)}
+          >
             <Edit className="h-4 w-4" />
             Edit Content
           </Button>
@@ -283,6 +289,17 @@ export function ContentProposalPreview({ proposal, onClose, onRegenerate }: Cont
           </div>
         </ScrollArea>
       </Tabs>
+
+      {/* Edit Dialog */}
+      <EditProposalDialog
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        proposal={proposal}
+        onSuccess={() => {
+          // Refresh the proposal data
+          window.location.reload();
+        }}
+      />
     </div>
   );
 }
