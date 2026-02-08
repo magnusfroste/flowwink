@@ -1,6 +1,7 @@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { cn } from '@/lib/utils';
 import {
   Select,
   SelectContent,
@@ -18,20 +19,52 @@ interface CountdownBlockEditorProps {
 
 export function CountdownBlockEditor({ data, onChange, isEditing }: CountdownBlockEditorProps) {
   if (!isEditing) {
+    const variant = data.variant || 'default';
+    const size = data.size || 'md';
+    const sizeClasses = size === 'lg' ? 'text-4xl' : size === 'sm' ? 'text-xl' : 'text-3xl';
+    const boxSize = size === 'lg' ? 'w-20 h-20' : size === 'sm' ? 'w-12 h-12' : 'w-16 h-16';
+    const labelSize = size === 'lg' ? 'text-xs' : 'text-[10px]';
+    const units = [
+      { value: 12, label: data.labels?.days || 'Days', show: data.showDays !== false },
+      { value: 8, label: data.labels?.hours || 'Hours', show: data.showHours !== false },
+      { value: 34, label: data.labels?.minutes || 'Minutes', show: data.showMinutes !== false },
+      { value: 56, label: data.labels?.seconds || 'Seconds', show: data.showSeconds !== false },
+    ].filter(u => u.show);
+
     return (
-      <div className="p-4 text-center text-muted-foreground">
-        <p className="font-medium">{data.title || 'Nedräkning'}</p>
-        <p className="text-sm">
-          {data.targetDate
-            ? new Date(data.targetDate).toLocaleDateString('sv-SE', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-              })
-            : 'Inget datum valt'}
-        </p>
+      <div className="py-6 text-center">
+        {data.title && <h3 className="font-serif text-2xl font-bold mb-1">{data.title}</h3>}
+        {data.subtitle && <p className="text-sm text-muted-foreground mb-4">{data.subtitle}</p>}
+        <div className="flex items-center justify-center gap-3">
+          {units.map((unit, i) => (
+            <div key={i} className="flex items-center gap-3">
+              <div className={cn(
+                'flex flex-col items-center justify-center',
+                variant === 'cards' && `${boxSize} rounded-xl border bg-card shadow-sm`,
+                variant === 'hero' && `${boxSize} rounded-xl bg-primary text-primary-foreground`,
+              )}>
+                <span className={cn('font-bold tabular-nums', sizeClasses)}>
+                  {String(unit.value).padStart(2, '0')}
+                </span>
+                {variant !== 'minimal' && (
+                  <span className={cn(labelSize, 'text-muted-foreground uppercase tracking-wider',
+                    variant === 'hero' && 'text-primary-foreground/70'
+                  )}>{unit.label}</span>
+                )}
+              </div>
+              {i < units.length - 1 && variant === 'minimal' && (
+                <span className={cn('font-bold', sizeClasses)}>:</span>
+              )}
+            </div>
+          ))}
+        </div>
+        {variant === 'minimal' && (
+          <div className="flex justify-center gap-12 mt-1">
+            {units.map((unit, i) => (
+              <span key={i} className={cn(labelSize, 'text-muted-foreground uppercase tracking-wider')}>{unit.label}</span>
+            ))}
+          </div>
+        )}
       </div>
     );
   }

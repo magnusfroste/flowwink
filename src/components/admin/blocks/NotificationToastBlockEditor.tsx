@@ -4,7 +4,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Plus, Trash2, GripVertical, ShoppingCart, User, Star, MessageCircle, Heart, Bell, Check } from 'lucide-react';
+import { Plus, Trash2, GripVertical, ShoppingCart, User, Star, MessageCircle, Heart, Bell, Check, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { ImagePickerField } from '../ImagePickerField';
 import type { NotificationToastBlockData, NotificationItem } from '@/components/public/blocks/NotificationToastBlock';
 
@@ -58,12 +59,46 @@ export function NotificationToastBlockEditor({ data, onChange, isEditing }: Noti
   };
 
   if (!isEditing) {
+    const ICONS_MAP: Record<string, React.ElementType> = {
+      cart: ShoppingCart, user: User, star: Star, message: MessageCircle, heart: Heart, bell: Bell, check: Check,
+    };
+
+    if (notifications.length === 0) {
+      return (
+        <div className="p-6 text-center border-2 border-dashed rounded-lg bg-muted/30">
+          <Bell className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
+          <p className="text-sm text-muted-foreground">No notifications configured</p>
+        </div>
+      );
+    }
+
+    const position = data.position || 'bottom-left';
+    const sample = notifications[0];
+    const IconComp = ICONS_MAP[sample.icon || 'bell'] || Bell;
+
     return (
-      <div className="p-4 bg-muted/30 rounded-lg">
-        <h3 className="font-medium mb-2">Notification Toast</h3>
-        <p className="text-sm text-muted-foreground">
-          {notifications.length} notifications configured
+      <div className="py-6 px-4">
+        <p className="text-[10px] text-muted-foreground text-center mb-3 uppercase tracking-wider">
+          Notification Toast — {position} • {notifications.length} notification{notifications.length !== 1 ? 's' : ''}
         </p>
+        <div className={cn(
+          'mx-auto max-w-xs',
+          position.includes('right') ? 'ml-auto mr-4' : 'mr-auto ml-4'
+        )}>
+          <div className="bg-card border rounded-xl shadow-lg p-3 flex items-start gap-3 relative">
+            <div className="h-9 w-9 rounded-full bg-accent/50 flex items-center justify-center shrink-0">
+              <IconComp className="h-4 w-4 text-accent-foreground" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate">{sample.title}</p>
+              <p className="text-xs text-muted-foreground truncate">{sample.message}</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">2 min ago</p>
+            </div>
+            {data.showCloseButton !== false && (
+              <X className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            )}
+          </div>
+        </div>
       </div>
     );
   }

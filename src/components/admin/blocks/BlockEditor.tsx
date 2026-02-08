@@ -945,6 +945,7 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
           <ChatLauncherBlockEditor
             data={block.data as unknown as ChatLauncherBlockData}
             onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+            isEditing={isEditing}
           />
         );
       default:

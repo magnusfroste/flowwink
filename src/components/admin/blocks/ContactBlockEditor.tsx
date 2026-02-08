@@ -116,43 +116,60 @@ export function ContactBlockEditor({ data, onChange, isEditing }: ContactBlockEd
     );
   }
 
-  // Preview mode
+  // Preview mode — match public ContactBlock layout
+  const hasContactInfo = localData.phone || localData.email || localData.address;
+  const hasHours = localData.hours && localData.hours.length > 0;
+
+  if (!hasContactInfo && !hasHours) {
+    return (
+      <div className="p-6 text-center border-2 border-dashed rounded-lg bg-muted/30">
+        <Phone className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
+        <p className="text-sm text-muted-foreground">No contact information added yet</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="rounded-lg border bg-card p-6">
-      <h3 className="text-xl font-bold mb-4">{localData.title || 'Contact'}</h3>
-      <div className="grid gap-3 text-sm">
-        {localData.phone && (
-          <div className="flex items-center gap-3">
-            <Phone className="h-4 w-4 text-accent-foreground" />
-            <span>{localData.phone}</span>
-          </div>
-        )}
-        {localData.email && (
-          <div className="flex items-center gap-3">
-            <Mail className="h-4 w-4 text-accent-foreground" />
-            <span>{localData.email}</span>
-          </div>
-        )}
-        {localData.address && (
-          <div className="flex items-center gap-3">
-            <MapPin className="h-4 w-4 text-accent-foreground" />
-            <span>{localData.address}</span>
-          </div>
-        )}
-        {localData.hours && localData.hours.length > 0 && (
-          <div className="flex items-start gap-3">
-            <Clock className="h-4 w-4 text-accent-foreground mt-0.5" />
-            <div className="space-y-1">
-              {localData.hours.map((hour, index) => (
-                <div key={index}>
-                  <span className="font-medium">{hour.day}:</span> {hour.time}
+    <div className="py-6 px-6 bg-muted/30 rounded-lg">
+      {localData.title && (
+        <h3 className="font-serif text-2xl font-bold mb-6 text-center">{localData.title}</h3>
+      )}
+      <div className="grid md:grid-cols-2 gap-6">
+        <div className="space-y-3">
+          {localData.phone && (
+            <div className="flex items-center gap-3">
+              <Phone className="h-5 w-5 text-accent-foreground" />
+              <span className="text-sm">{localData.phone}</span>
+            </div>
+          )}
+          {localData.email && (
+            <div className="flex items-center gap-3">
+              <Mail className="h-5 w-5 text-accent-foreground" />
+              <span className="text-sm">{localData.email}</span>
+            </div>
+          )}
+          {localData.address && (
+            <div className="flex items-start gap-3">
+              <MapPin className="h-5 w-5 text-accent-foreground shrink-0 mt-0.5" />
+              <span className="text-sm whitespace-pre-line">{localData.address}</span>
+            </div>
+          )}
+        </div>
+        {hasHours && (
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <Clock className="h-5 w-5 text-accent-foreground" />
+              <span className="font-medium text-sm">Opening Hours</span>
+            </div>
+            <div className="space-y-1.5">
+              {localData.hours!.map((hour, index) => (
+                <div key={index} className="flex justify-between text-sm">
+                  <span>{hour.day}</span>
+                  <span className="text-muted-foreground">{hour.time}</span>
                 </div>
               ))}
             </div>
           </div>
-        )}
-        {!localData.phone && !localData.email && !localData.address && (
-          <p className="text-muted-foreground">Add contact information</p>
         )}
       </div>
     </div>

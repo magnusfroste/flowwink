@@ -3,18 +3,69 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Info } from 'lucide-react';
+import { Info, Sparkles, ArrowRight } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import type { ChatLauncherBlockData } from '@/components/public/blocks/ChatLauncherBlock';
 
 interface ChatLauncherBlockEditorProps {
   data: ChatLauncherBlockData;
   onChange: (data: ChatLauncherBlockData) => void;
+  isEditing?: boolean;
 }
 
-export function ChatLauncherBlockEditor({ data, onChange }: ChatLauncherBlockEditorProps) {
+export function ChatLauncherBlockEditor({ data, onChange, isEditing }: ChatLauncherBlockEditorProps) {
   const handleChange = (key: keyof ChatLauncherBlockData, value: unknown) => {
     onChange({ ...data, [key]: value });
   };
+
+  // Preview mode — match public ChatLauncherBlock
+  if (!isEditing) {
+    const variant = data.variant || 'card';
+    const title = data.title || 'What can I help you with?';
+    const placeholder = data.placeholder || 'Message AI Assistant...';
+    const showActions = data.showQuickActions !== false;
+    const actionCount = data.quickActionCount || 4;
+    const mockActions = ['Tell me about your services', 'How does pricing work?', 'Book a consultation', 'Contact support'].slice(0, actionCount);
+
+    return (
+      <div className="py-6 px-4">
+        <div className={cn(
+          'w-full max-w-xl mx-auto',
+          variant === 'card' && 'bg-card rounded-2xl border shadow-lg p-6',
+          variant === 'hero-integrated' && 'py-8',
+          variant === 'minimal' && 'py-4'
+        )}>
+          <div className="text-center mb-4">
+            <h3 className={cn(
+              'font-serif tracking-tight',
+              variant === 'hero-integrated' ? 'text-3xl' : 'text-xl'
+            )}>
+              {title}
+            </h3>
+            {data.subtitle && (
+              <p className="text-muted-foreground mt-1 text-sm">{data.subtitle}</p>
+            )}
+          </div>
+          <div className="relative flex items-center gap-2 rounded-xl border bg-background px-4 py-3">
+            <Sparkles className="h-4 w-4 text-muted-foreground shrink-0" />
+            <span className="flex-1 text-sm text-muted-foreground">{placeholder}</span>
+            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
+              <ArrowRight className="h-4 w-4 text-primary-foreground" />
+            </div>
+          </div>
+          {showActions && (
+            <div className="mt-4 flex flex-wrap justify-center gap-2">
+              {mockActions.map((action, i) => (
+                <span key={i} className="px-3 py-1 rounded-full border text-[11px] text-muted-foreground">
+                  {action}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

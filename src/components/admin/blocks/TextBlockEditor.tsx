@@ -167,6 +167,45 @@ export function TextBlockEditor({ data, onChange, isEditing }: TextBlockEditorPr
         </div>
       )}
       
+      {/* Preview header (eyebrow + title) when not editing */}
+      {!isEditing && (data.eyebrow || data.title) && (
+        <div className="mb-4">
+          {data.eyebrow && (
+            <p
+              className="text-[10px] font-semibold uppercase tracking-widest mb-2 text-accent-foreground"
+              style={data.eyebrowColor ? { color: data.eyebrowColor } : undefined}
+            >
+              {data.eyebrow}
+            </p>
+          )}
+          {data.title && (
+            <h3 className={`font-bold tracking-tight leading-tight ${
+              data.titleSize === 'display' ? 'text-3xl' : data.titleSize === 'large' ? 'text-2xl' : 'text-xl'
+            }`}>
+              {(() => {
+                const accentText = data.accentText;
+                const accentPosition = data.accentPosition || 'end';
+                if (!accentText) return <span>{data.title}</span>;
+                const accentSpan = (
+                  <span className="font-serif italic" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
+                    {accentText}
+                  </span>
+                );
+                switch (accentPosition) {
+                  case 'start': return <>{accentSpan} {data.title}</>;
+                  case 'inline': {
+                    const parts = data.title.split(accentText);
+                    if (parts.length > 1) return <>{parts[0]}{accentSpan}{parts.slice(1).join(accentText)}</>;
+                    return <>{data.title} {accentSpan}</>;
+                  }
+                  default: return <>{data.title} {accentSpan}</>;
+                }
+              })()}
+            </h3>
+          )}
+        </div>
+      )}
+
       {/* Rich Text Editor */}
       <div className="rounded-lg border bg-card">
         {isEditing && (

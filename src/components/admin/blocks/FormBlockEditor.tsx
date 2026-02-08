@@ -253,14 +253,109 @@ export function FormBlockEditor({ data, onChange, isEditing }: FormBlockEditorPr
   };
 
   if (!isEditing) {
-    return (
-      <Card className="p-4">
-        <div className="text-sm text-muted-foreground">
-          <strong>{data.title || 'Contact Form'}</strong>
-          <span className="mx-2">•</span>
-          {data.fields.length} fields
+    const fields = data.fields || [];
+    const variant = data.variant || 'default';
+
+    if (fields.length === 0) {
+      return (
+        <div className="p-6 text-center border-2 border-dashed rounded-lg bg-muted/30">
+          <AlignLeft className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
+          <p className="text-sm text-muted-foreground">No form fields added yet</p>
         </div>
-      </Card>
+      );
+    }
+
+    const formPreview = (
+      <div className="space-y-5">
+        <div className="grid grid-cols-2 gap-4">
+          {fields.map((field) => {
+            const fieldClasses = cn(
+              field.width === 'half' ? 'col-span-1' : 'col-span-2',
+              'space-y-2'
+            );
+
+            if (field.type === 'checkbox') {
+              return (
+                <div key={field.id} className={cn(fieldClasses, 'flex items-start gap-3 pt-2')}>
+                  <div className="h-4 w-4 rounded border border-input shrink-0 mt-0.5" />
+                  <span className="text-sm leading-relaxed">
+                    {field.label}
+                    {field.required && <span className="text-destructive ml-0.5">*</span>}
+                  </span>
+                </div>
+              );
+            }
+
+            if (field.type === 'textarea') {
+              return (
+                <div key={field.id} className={fieldClasses}>
+                  <p className="text-sm font-medium">
+                    {field.label}
+                    {field.required && <span className="text-destructive ml-0.5">*</span>}
+                  </p>
+                  <div className="h-24 rounded-md border border-input bg-background px-3 py-2">
+                    <span className="text-sm text-muted-foreground">{field.placeholder}</span>
+                  </div>
+                </div>
+              );
+            }
+
+            return (
+              <div key={field.id} className={fieldClasses}>
+                <p className="text-sm font-medium">
+                  {field.label}
+                  {field.required && <span className="text-destructive ml-0.5">*</span>}
+                </p>
+                <div className="h-10 rounded-md border border-input bg-background px-3 flex items-center">
+                  <span className="text-sm text-muted-foreground">{field.placeholder}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="h-10 rounded-md bg-primary flex items-center justify-center">
+          <span className="text-sm font-medium text-primary-foreground">
+            {data.submitButtonText || 'Send Message'}
+          </span>
+        </div>
+      </div>
+    );
+
+    if (variant === 'card') {
+      return (
+        <div className="py-6">
+          <Card className="max-w-2xl mx-auto">
+            {(data.title || data.description) && (
+              <div className="p-6 pb-0">
+                {data.title && <h3 className="font-serif text-xl font-semibold">{data.title}</h3>}
+                {data.description && <p className="text-sm text-muted-foreground mt-1">{data.description}</p>}
+              </div>
+            )}
+            <div className="p-6">{formPreview}</div>
+          </Card>
+        </div>
+      );
+    }
+
+    if (variant === 'minimal') {
+      return (
+        <div className="py-6 max-w-2xl mx-auto">
+          {data.title && <h3 className="text-xl font-serif font-semibold mb-1">{data.title}</h3>}
+          {data.description && <p className="text-sm text-muted-foreground mb-6">{data.description}</p>}
+          {formPreview}
+        </div>
+      );
+    }
+
+    // Default variant
+    return (
+      <div className="py-6 bg-muted/30 rounded-lg">
+        <div className="max-w-2xl mx-auto px-6">
+          {data.title && <h3 className="text-2xl font-serif font-bold text-center mb-2">{data.title}</h3>}
+          {data.description && <p className="text-sm text-muted-foreground text-center mb-6">{data.description}</p>}
+          <Card className="p-6">{formPreview}</Card>
+        </div>
+      </div>
     );
   }
 

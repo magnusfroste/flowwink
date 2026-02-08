@@ -13,20 +13,68 @@ interface ChatBlockEditorProps {
 }
 
 export function ChatBlockEditor({ data, onChange, isEditing }: ChatBlockEditorProps) {
-  // Preview mode
+  // Preview mode — mock chat UI matching public ChatBlock
   if (!isEditing) {
-    return (
-      <div className="p-6 text-center border-2 border-dashed rounded-lg bg-muted/30">
-        <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-        <h3 className="font-medium text-lg">{data.title || "AI Chat Assistant"}</h3>
-        <p className="text-sm text-muted-foreground mt-1">
-          {data.variant === 'card' ? 'Card style' : 'Embedded'} • {data.height || 'md'} height
-          {data.showSidebar && ' • With history'}
-        </p>
-        <div className="mt-4 max-w-sm mx-auto">
-          <div className="h-24 rounded-lg border bg-background flex items-center justify-center text-muted-foreground text-sm">
-            Chat interface preview
+    const heightMap = { sm: 'h-[160px]', md: 'h-[220px]', lg: 'h-[280px]', full: 'h-[280px]' };
+    const h = heightMap[data.height || 'md'];
+    const isCard = data.variant === 'card';
+
+    const chatMockup = (
+      <div className={`${h} flex flex-col rounded-lg overflow-hidden border bg-background`}>
+        {/* Messages area */}
+        <div className="flex-1 p-3 space-y-2 overflow-hidden">
+          <div className="flex justify-start">
+            <div className="bg-muted rounded-lg px-3 py-1.5 max-w-[70%]">
+              <p className="text-[11px] text-muted-foreground">
+                {data.initialPrompt || 'Hi! How can I help you today?'}
+              </p>
+            </div>
           </div>
+          <div className="flex justify-end">
+            <div className="bg-primary/10 rounded-lg px-3 py-1.5 max-w-[70%]">
+              <p className="text-[11px] text-muted-foreground">Tell me more about your services</p>
+            </div>
+          </div>
+          <div className="flex justify-start">
+            <div className="bg-muted rounded-lg px-3 py-1.5 max-w-[70%]">
+              <p className="text-[11px] text-muted-foreground">Of course! We offer a wide range of...</p>
+            </div>
+          </div>
+        </div>
+        {/* Input area */}
+        <div className="border-t p-2 flex gap-2">
+          <div className="flex-1 h-8 rounded-md border border-input bg-background px-3 flex items-center">
+            <span className="text-[11px] text-muted-foreground">Type a message...</span>
+          </div>
+          <div className="h-8 w-8 rounded-md bg-primary flex items-center justify-center">
+            <MessageSquare className="h-3.5 w-3.5 text-primary-foreground" />
+          </div>
+        </div>
+      </div>
+    );
+
+    if (isCard) {
+      return (
+        <div className="py-6">
+          <div className="max-w-lg mx-auto">
+            {data.title && (
+              <h3 className="text-xl font-serif font-semibold text-center mb-4">{data.title}</h3>
+            )}
+            <div className="rounded-xl shadow-lg overflow-hidden border">
+              {chatMockup}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="py-6">
+        <div className="max-w-lg mx-auto">
+          {data.title && (
+            <h3 className="text-xl font-serif font-semibold text-center mb-4">{data.title}</h3>
+          )}
+          {chatMockup}
         </div>
       </div>
     );

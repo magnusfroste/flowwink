@@ -2,6 +2,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
+import { cn } from '@/lib/utils';
 import {
   Select,
   SelectContent,
@@ -19,11 +20,43 @@ interface FloatingCTABlockEditorProps {
 
 export function FloatingCTABlockEditor({ data, onChange, isEditing }: FloatingCTABlockEditorProps) {
   if (!isEditing) {
+    const variant = data.variant || 'bar';
+    const title = data.title || 'Untitled';
+
     return (
-      <div className="py-8 px-6 text-center bg-muted/30 rounded-lg border-2 border-dashed">
-        <p className="text-muted-foreground text-sm">
-          Floating CTA: "{data.title || 'Untitled'}" – visas efter {data.showAfterScroll || 25}% scroll
+      <div className="py-6 px-4">
+        <p className="text-[10px] text-muted-foreground text-center mb-3 uppercase tracking-wider">
+          Floating CTA — appears after {data.showAfterScroll || 25}% scroll
         </p>
+        <div className={cn(
+          'mx-auto',
+          variant === 'pill' ? 'max-w-xs' : 'max-w-lg'
+        )}>
+          <div className={cn(
+            'flex items-center gap-3 bg-card border shadow-lg',
+            variant === 'bar' && 'rounded-xl px-5 py-3 justify-between',
+            variant === 'card' && 'rounded-xl p-4 flex-col text-center',
+            variant === 'minimal' && 'rounded-lg px-4 py-2.5 justify-between',
+            variant === 'pill' && 'rounded-full px-5 py-2.5 justify-center',
+          )}>
+            <div className={cn(variant === 'card' && 'mb-1')}>
+              <p className="font-semibold text-sm">{title}</p>
+              {data.subtitle && variant !== 'pill' && (
+                <p className="text-xs text-muted-foreground">{data.subtitle}</p>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {data.secondaryButtonText && (
+                <div className="h-8 px-3 rounded-md border text-xs font-medium flex items-center">
+                  {data.secondaryButtonText}
+                </div>
+              )}
+              <div className="h-8 px-4 rounded-md bg-primary text-primary-foreground text-xs font-medium flex items-center">
+                {data.buttonText || 'Click here'}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

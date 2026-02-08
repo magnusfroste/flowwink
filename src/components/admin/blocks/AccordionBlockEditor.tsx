@@ -1,7 +1,8 @@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Plus, Trash2, GripVertical, Bold, Italic, List, ListOrdered } from 'lucide-react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Plus, Trash2, GripVertical, Bold, Italic, List, ListOrdered, HelpCircle } from 'lucide-react';
 import { AccordionBlockData, TiptapDocument } from '@/types/cms';
 import { ImagePickerField } from '@/components/admin/ImagePickerField';
 import { AITextAssistant } from '@/components/admin/AITextAssistant';
@@ -212,21 +213,39 @@ export function AccordionBlockEditor({ data, onChange, canEdit }: AccordionBlock
   };
 
   if (!canEdit) {
+    if (data.items.length === 0) {
+      return (
+        <div className="p-6 text-center border-2 border-dashed rounded-lg bg-muted/30">
+          <HelpCircle className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
+          <p className="text-sm text-muted-foreground">No questions added yet</p>
+        </div>
+      );
+    }
+
     return (
-      <div className="space-y-3">
-        {data.title && <h3 className="font-semibold text-lg">{data.title}</h3>}
-        {data.items.map((item, index) => (
-          <div key={index} className="border border-border rounded-lg p-4">
-            <p className="font-medium">{item.question || 'No question'}</p>
-            <div 
-              className="text-sm text-muted-foreground mt-1 prose prose-sm dark:prose-invert max-w-none"
-              dangerouslySetInnerHTML={{ __html: renderToHtml(item.answer) || 'No answer' }}
-            />
-          </div>
-        ))}
-        {data.items.length === 0 && (
-          <p className="text-muted-foreground text-sm">No questions added</p>
+      <div className="py-6">
+        {data.title && (
+          <h3 className="font-serif text-2xl font-bold mb-6 text-center">{data.title}</h3>
         )}
+        <Accordion type="single" collapsible className="space-y-2 max-w-2xl mx-auto">
+          {data.items.map((item, index) => (
+            <AccordionItem
+              key={index}
+              value={`item-${index}`}
+              className="bg-card border border-border rounded-lg px-4"
+            >
+              <AccordionTrigger className="text-left text-sm font-medium hover:no-underline">
+                {item.question || 'Untitled question'}
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground">
+                <div
+                  className="prose prose-sm dark:prose-invert max-w-none text-xs"
+                  dangerouslySetInnerHTML={{ __html: renderToHtml(item.answer) || '<p>No answer</p>' }}
+                />
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
       </div>
     );
   }

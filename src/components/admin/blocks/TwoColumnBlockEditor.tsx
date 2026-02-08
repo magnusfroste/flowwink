@@ -359,29 +359,84 @@ export function TwoColumnBlockEditor({ data, isEditing, onChange }: TwoColumnBlo
     );
   }
 
-  // Preview mode - use shared renderToHtml utility
+  // Preview mode - match public TwoColumnBlock layout
   const imageFirst = data.imagePosition === 'left';
   const htmlContent = renderToHtml(data.content);
+  const hasHeader = data.eyebrow || data.title;
+
+  const renderAccentTitle = () => {
+    if (!data.title) return null;
+    const accentText = data.accentText;
+    const accentPosition = data.accentPosition || 'end';
+    if (!accentText) return <span>{data.title}</span>;
+    const accentSpan = (
+      <span className="font-serif italic" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
+        {accentText}
+      </span>
+    );
+    switch (accentPosition) {
+      case 'start': return <>{accentSpan} {data.title}</>;
+      case 'inline': {
+        const parts = data.title.split(accentText);
+        if (parts.length > 1) return <>{parts[0]}{accentSpan}{parts.slice(1).join(accentText)}</>;
+        return <>{data.title} {accentSpan}</>;
+      }
+      default: return <>{data.title} {accentSpan}</>;
+    }
+  };
 
   return (
-    <div className={`grid md:grid-cols-2 gap-8 p-6 ${imageFirst ? '' : 'md:[&>*:first-child]:order-2'}`}>
-      <div className="aspect-video md:aspect-auto rounded-lg overflow-hidden bg-muted">
-        {data.imageSrc ? (
-          <img 
-            src={data.imageSrc} 
-            alt={data.imageAlt || ''} 
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-            No image selected
-          </div>
-        )}
+    <div
+      className="py-6 px-6 rounded-lg"
+      style={data.backgroundColor ? { backgroundColor: data.backgroundColor } : undefined}
+    >
+      <div className={`grid md:grid-cols-2 gap-6 ${imageFirst ? '' : 'md:[&>*:first-child]:order-2'}`}>
+        <div className="relative aspect-video md:aspect-auto rounded-lg overflow-hidden bg-muted">
+          {data.imageSrc ? (
+            <img
+              src={data.imageSrc}
+              alt={data.imageAlt || ''}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full min-h-[120px] flex items-center justify-center text-muted-foreground text-sm">
+              No image selected
+            </div>
+          )}
+          {data.secondImageSrc && (
+            <div className="absolute -bottom-3 -right-3 w-1/2 rounded-lg overflow-hidden border-4 border-background shadow-lg">
+              <img src={data.secondImageSrc} alt={data.secondImageAlt || ''} className="w-full h-full object-cover" />
+            </div>
+          )}
+        </div>
+        <div className="self-center space-y-3">
+          {hasHeader && (
+            <div>
+              {data.eyebrow && (
+                <p className="text-[10px] font-semibold uppercase tracking-widest mb-2 text-accent-foreground">
+                  {data.eyebrow}
+                </p>
+              )}
+              {data.title && (
+                <h3 className="text-xl font-bold tracking-tight leading-tight">
+                  {renderAccentTitle()}
+                </h3>
+              )}
+            </div>
+          )}
+          {htmlContent && (
+            <div
+              className="prose prose-sm dark:prose-invert max-w-none text-xs"
+              dangerouslySetInnerHTML={{ __html: htmlContent }}
+            />
+          )}
+          {data.ctaText && (
+            <p className="text-xs font-semibold uppercase tracking-wider text-primary">
+              {data.ctaText} →
+            </p>
+          )}
+        </div>
       </div>
-      <div 
-        className="prose prose-lg dark:prose-invert max-w-none self-center"
-        dangerouslySetInnerHTML={{ __html: htmlContent || '<p>No content</p>' }}
-      />
     </div>
   );
 }

@@ -25,24 +25,62 @@ export function NewsletterBlockEditor({ data, onChange, isEditing }: NewsletterB
     onChange({ ...data, ...updates });
   };
 
-  // Preview mode
+  // Preview mode — match public NewsletterBlock
   if (!isEditing) {
-    return (
-      <div className="p-6 text-center border-2 border-dashed rounded-lg bg-muted/30">
-        <Mail className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-        <h3 className="font-medium text-lg">{data.title || "Subscribe to our newsletter"}</h3>
-        <p className="text-sm text-muted-foreground mt-1 max-w-md mx-auto">
-          {data.description || "Get the latest updates delivered to your inbox."}
-        </p>
-        <div className="mt-4 flex justify-center gap-2 max-w-sm mx-auto">
-          {data.showNameField && (
-            <div className="h-9 w-24 rounded-md border bg-background" />
-          )}
-          <div className="h-9 flex-1 rounded-md border bg-background" />
-          <div className="h-9 px-4 rounded-md bg-primary text-primary-foreground text-sm flex items-center">
-            {data.buttonText || "Subscribe"}
+    const variant = data.variant || 'default';
+    const title = data.title || 'Subscribe to our newsletter';
+    const description = data.description || 'Get the latest updates delivered to your inbox.';
+    const buttonText = data.buttonText || 'Subscribe';
+
+    const formMockup = (
+      <div className="space-y-3 max-w-md mx-auto">
+        {data.showNameField && (
+          <div className="h-10 rounded-md border border-input bg-background px-3 flex items-center">
+            <span className="text-sm text-muted-foreground">Your name (optional)</span>
+          </div>
+        )}
+        <div className="flex gap-2">
+          <div className="h-10 flex-1 rounded-md border border-input bg-background px-3 flex items-center">
+            <span className="text-sm text-muted-foreground">Enter your email</span>
+          </div>
+          <div className="h-10 px-5 rounded-md bg-primary text-primary-foreground text-sm font-medium flex items-center">
+            {buttonText}
           </div>
         </div>
+      </div>
+    );
+
+    if (variant === 'card') {
+      return (
+        <div className="py-6">
+          <div className="max-w-lg mx-auto rounded-lg border bg-card p-6 text-center">
+            <div className="mx-auto mb-3 h-12 w-12 rounded-full bg-accent/50 flex items-center justify-center">
+              <Mail className="h-6 w-6 text-accent-foreground" />
+            </div>
+            <h3 className="font-serif text-xl font-semibold">{title}</h3>
+            <p className="text-sm text-muted-foreground mt-1 mb-4">{description}</p>
+            {formMockup}
+          </div>
+        </div>
+      );
+    }
+
+    if (variant === 'minimal') {
+      return (
+        <div className="py-6 max-w-lg mx-auto text-center">
+          <h3 className="font-serif text-xl font-semibold">{title}</h3>
+          <p className="text-sm text-muted-foreground mt-1 mb-4">{description}</p>
+          {formMockup}
+        </div>
+      );
+    }
+
+    // Default variant
+    return (
+      <div className="py-6 bg-muted/30 rounded-lg text-center px-6">
+        <h3 className="font-serif text-2xl font-bold">{title}</h3>
+        <p className="text-sm text-muted-foreground mt-1 mb-5 max-w-md mx-auto">{description}</p>
+        {formMockup}
       </div>
     );
   }
