@@ -88,8 +88,9 @@ type NavItem = {
   name: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
-  moduleId?: keyof ModulesSettings;
+  moduleId?: string;
   setupOnly?: boolean;
+  searchOnly?: boolean;
 };
 
 type NavGroup = {
@@ -175,6 +176,7 @@ const navigationGroups: NavGroup[] = [
       { name: "Menu Order", href: "/admin/menu-order", icon: Menu },
       { name: "Users", href: "/admin/users", icon: Users },
       { name: "Settings", href: "/admin/settings", icon: Settings },
+      { name: "Developer Tools", href: "/admin/developer-tools", icon: Code2, searchOnly: true },
     ],
   },
 ];
@@ -205,6 +207,8 @@ export function AdminSidebar() {
     .map(group => ({
       ...group,
       items: group.items.filter(item => {
+        // Hide search-only items from sidebar (but keep for search)
+        if (item.searchOnly) return false;
         // Hide setup-only items after site is set up
         if (item.setupOnly && siteSetupComplete) return false;
         // If no moduleId, always show
@@ -217,11 +221,26 @@ export function AdminSidebar() {
     }))
     .filter(group => group.items.length > 0), [roleFilteredGroups, modules, siteSetupComplete]);
 
-  // Flatten all items for search
+  // Flatten all items for search (includes searchOnly items)
   const allSearchItems = useMemo(() => 
-    filteredGroups.flatMap(group => 
-      group.items.map(item => ({ ...item, group: group.label }))
-    ), [filteredGroups]);
+    roleFilteredGroups
+      .map(group => ({
+        ...group,
+        items: group.items.filter(item => {
+          // Hide setup-only items after site is set up
+          if (item.setupOnly && siteSetupComplete) return false;
+          // If no moduleId, always show
+          if (!item.moduleId) return true;
+          // If modules not loaded yet, show all
+          if (!modules) return true;
+          // Check if module is enabled
+          return modules[item.moduleId]?.enabled ?? true;
+        }),
+      }))
+      .filter(group => group.items.length > 0)
+      .flatMap(group => 
+        group.items.map(item => ({ ...item, group: group.label }))
+      ), [roleFilteredGroups, modules, siteSetupComplete]);
 
   const handleSearchSelect = (href: string) => {
     setSearchOpen(false);

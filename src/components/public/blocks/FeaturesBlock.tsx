@@ -173,7 +173,10 @@ export function FeaturesBlock({ data }: FeaturesBlockProps) {
               <h2 className="text-3xl font-bold tracking-tight">{data.title}</h2>
             )}
             {data.subtitle && (
-              <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
+              <p className={cn(
+                "mt-4 text-lg text-muted-foreground",
+                variant === 'centered' && "max-w-2xl mx-auto"
+              )}>
                 {data.subtitle}
               </p>
             )}

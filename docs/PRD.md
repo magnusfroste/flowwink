@@ -1,8 +1,8 @@
 # FlowWink - Product Requirements Document (PRD)
 
-> **Version:** 2.1  
-> **Last Updated:** January 2025  
-> **Status:** Core Modules + Conversion Blocks Complete
+> **Version:** 2.2  
+> **Last Updated:** February 2026  
+> **Status:** Block Editor Previews Complete
 
 ---
 
@@ -54,29 +54,29 @@ FlowWink använder en modulär block-arkitektur för flexibel innehållshanterin
 
 | Kategori | Block | Beskrivning |
 |----------|-------|-------------|
-| **Text & Media** | Text | Rik text med Tiptap-editor |
+| **Text & Media** | Text | Rik text med Tiptap-editor (eyebrow, titel, accent text) |
 | | Image | Bild med alt-text och bildtext |
 | | Gallery | Galleri med grid/carousel/masonry + lightbox |
 | | Quote | Citat med författare och källa |
 | | YouTube | Inbäddad YouTube-video med autoplay-inställningar |
 | | Embed | Anpassad iframe/HTML-embed med aspektförhållande |
 | | Table | Strukturerad data med kolumner och rader |
-| **Layout** | Two-Column | Tvåkolumnslayout med text och bild |
+| **Layout** | Two-Column | Tvåkolumnslayout med text, bild, eyebrow, titel, accent text, CTA |
 | | Separator | Visuell avdelare (linje/punkter/ornament/mellanrum) |
 | | Tabs | Flikbaserat innehåll med ikoner och varianter |
 | **Navigation** | Link Grid | Rutnät med länkkort och ikoner |
 | | Hero | Sidhuvud med bakgrund (bild/video/färg), titel och CTA |
 | | Announcement Bar | Toppbanner för meddelanden och erbjudanden |
 | **Information** | Info Box | Informationsblock med variant (info/success/warning/highlight) |
-| | Stats | Nyckeltal och statistik med ikoner |
-| | Accordion | Expanderbar FAQ/innehåll med bilder |
+| | Stats | Nyckeltal och statistik med ikoner och cards |
+| | Accordion | Expanderbar FAQ/innehåll med bilder (Tiptap rich text) |
 | | Article Grid | Rutnät med artikelkort |
-| | Features | Funktioner/tjänster med ikoner och beskrivningar |
-| | Timeline | Stegvis process eller historik |
+| | Features | Funktioner/tjänster med ikoner, hover effects, card styles |
+| | Timeline | Stegvis process eller historik med ikoner och beskrivningar |
 | | Progress | Framstegsindikatorer och progress bars |
-| | Countdown | Nedräkningstimer till specifikt datum |
+| | Countdown | Nedräkningstimer till specifikt datum (cards/hero/minimal) |
 | | Marquee | Rullande text/ikoner för uppmärksamhet |
-| **Social Proof** | Testimonials | Kundrecensioner med stjärnbetyg, carousel/grid-layout |
+| **Social Proof** | Testimonials | Kundrecensioner med stjärnbetyg, citat, avatar |
 | | Logos | Kundlogotyper/partners med gråskale-/scroll-variant |
 | | Team | Teammedlemmar med bio, foto och sociala länkar |
 | | Badge | Certifieringar och förtroendeikoner (SOC2, GDPR, etc.) |
@@ -86,9 +86,9 @@ FlowWink använder en modulär block-arkitektur för flexibel innehållshanterin
 | | Comparison | Jämförelsetabell för produkter/planer |
 | | Booking | Bokningsformulär eller embed (Calendly/Cal.com/HubSpot) |
 | | Smart Booking | Inbyggt bokningssystem med tjänster, tillgänglighet och kalender |
-| | Form | Anpassningsbart formulär med fältvalidering |
-| | Newsletter | Nyhetsbrev-anmälan med GDPR-samtycke |
-| | Floating CTA | Scroll-triggad CTA som dyker upp vid scroll |
+| | Form | Anpassningsbart formulär med fältvalidering (default/card/minimal) |
+| | Newsletter | Nyhetsbrev-anmälan med GDPR-samtycke (default/card/minimal) |
+| | Floating CTA | Scroll-triggad CTA som dyker upp vid scroll (bar/card/pill) |
 | | Notification Toast | Dynamiska aktivitetsnotifieringar (köp, registreringar) |
 | **Kontakt** | Contact | Kontaktinformation med adress och öppettider |
 | | Map | Google Maps-embed med adress |
@@ -109,8 +109,51 @@ FlowWink använder en modulär block-arkitektur för flexibel innehållshanterin
 - **Animationer**: Per-block animeringar (fade, slide, scale)
 - **Spacing**: Konfigurerbar padding och margin
 - **Anchor ID**: Sätt ett ID för in-page navigation (t.ex. `#kontakta-oss`)
-- **Förhandsgranskning**: Se ändringar i realtid
+- **Hide/Show**: Dölj block från publika sidan utan att ta bort (Webflow-stil)
+- **Rich Previews**: Block editors visar realistiska previews som matchar publik rendering
 - **Responsivt**: Alla block anpassas automatiskt
+
+#### Hide/Show Block (Webflow-stil)
+
+Varje block kan döljas från publika sidan utan att tas bort:
+
+**Funktioner:**
+- **Toggle-knapp**: Ögon-ikon i block-toolbaren (👁/🙈)
+- **Visuell feedback**: Dolda block visas med 40% opacity och "Hidden" badge i editorn
+- **Persistens**: `hidden`-egenskapen sparas i blockets JSON
+- **Public rendering**: Dolda block renderas inte alls på publika sidor
+
+**Användningsfall:**
+- Dölj block som inte är klara för publicering
+- Testa olika block-kombinationer utan att radera
+- Behåll block för framtida användning
+
+#### Block Editor Previews
+
+Alla block editors visar rika previews som matchar den publika renderingen:
+
+**Förbättrade Block (Feb 2026):**
+- **FormBlockEditor** — Visar fält, labels, submit-knapp, variant-stöd
+- **AccordionBlockEditor** — Riktiga Accordion-komponenter med expand/collapse
+- **TwoColumnBlockEditor** — Eyebrow, titel med accent text, CTA, andra bilden
+- **TextBlockEditor** — Eyebrow, titel med accent/storlek i preview
+- **ChatBlockEditor** — Meddelandebubblor, input-fält, send-knapp
+- **ChatLauncherBlockEditor** — Sparkles-input, quick action pills
+- **NewsletterBlockEditor** — Email-input, subscribe-knapp, variant-stöd
+- **CountdownBlockEditor** — Nedräkningsrutor med siffror, variant-stöd
+- **FloatingCTABlockEditor** — CTA-bar/card/pill med knappar
+- **NotificationToastBlockEditor** — Toast-mockup med ikon, titel, meddelande
+- **FeaturesBlockEditor** — Rich preview med ikoner, hover effects
+- **TestimonialsBlockEditor** — Citat, avatar, stjärnbetyg
+- **PricingBlockEditor** — Priskort, features, badges
+- **TimelineBlockEditor** — Stegvis process med ikoner
+- **SocialProofBlockEditor** — Liveräknare, betyg
+- **StatsBlockEditor** — Statistik med ikoner och cards
+- **TeamBlockEditor** — Teammedlemmar med bio, foto
+- **ContactBlockEditor** — Kontaktinfo, öppettider, 2-kolumns
+
+**Övriga Block:**
+- Alla andra block har redan rika previews eller är DB-beroende (kan inte visa statisk preview)
 
 #### Anchor-länkar (In-page Navigation)
 
@@ -203,23 +246,54 @@ FlowWink använder två olika editor-typer beroende på innehållstyp:
 
 ## 3. Branding & Design System
 
-### 3.1 Fördefinierade Teman
+### 3.1 Templates (Complete Packages)
 
-| Tema | Beskrivning |
-|------|-------------|
-| **Klassisk Sjukvård** | Traditionell medicinsk blå/vit |
-| **Modern Minimalist** | Ren, avskalad estetik |
-| **Varm & Välkomnande** | Varma, inbjudande toner |
-| **Professionell & Pålitlig** | Förtroendeingivande färger |
+Templates är kompletta paket som innehåller:
+- **Förkonfigurerade sidor** (startsida, om oss, tjänster, kontakt, etc.)
+- **Block-innehåll** (redan ifyllda med relevant text och bilder)
+- **Branding-inställningar** (färger, typografi, logotyp, etc.)
 
-### 3.2 Anpassningsmöjligheter
+| Template | Kategori | Sidor | Målgrupp |
+|----------|----------|-------|----------|
+| **Launchpad** | Startup | 5 | SaaS/Tech startups |
+| **TrustCorp** | Enterprise | 5 | B2B companies |
+| **SecureHealth** | Compliance | 7 | Healthcare providers |
+| **FlowWink Platform** | Platform | 5 | CMS showcase |
 
-#### Färger (HSL-format)
-- Primärfärg
-- Sekundärfärg  
-- Accentfärg
-- Bakgrundsfärg
-- Förgrundsfärg
+#### Template Selection
+Varje template har sina egna branding-inställningar. När du väljer en template:
+- Alla sidor skapas automatiskt med förkonfigurerat innehåll
+- Branding-inställningar appliceras (färger, typografi, logotyp)
+- Du kan anpassa allt efter behov (ändra block, färger, innehåll)
+
+#### Reset to Template Defaults
+BrandingSettingsPage visar vilken template som är aktiv och erbjuder "Reset to Template Defaults"-knapp för att återställa branding till template-standarden.
+
+### 3.2 Custom Themes (Brand Guide Assistant)
+
+**Funktion**: Analysera befintlig webbplats och extrahera branding automatiskt.
+
+**Process**:
+1. Ange URL till befintlig webbplats
+2. AI analyserar färger, typografi, logotyper
+3. Granska mappning mot CMS-variabler
+4. Applicera direkt eller spara som eget tema
+
+**Kräver**: FIRECRAWL_API_KEY
+
+### 3.3 Anpassningsmöjligheter
+
+#### Färger (HSL-format med WCAG-validering)
+- **Primärfärg** — med kontrastvalidering (AA/AAA)
+- **Sekundärfärg** — med kontrastvalidering
+- **Accentfärg** — med kontrastvalidering
+- **Bakgrundsfärg**
+- **Förgrundsfärg**
+
+**WCAG Color Contrast Validation:**
+- Alla färgpickers har inbyggd kontrastvalidering
+- Visuell indikator för AA (4.5:1) och AAA (7:1) kompatibilitet
+- Hjälp-text visar kontrastförhållande och status
 
 #### Typografi
 - Rubrikfont (Google Fonts)
@@ -230,18 +304,6 @@ FlowWink använder två olika editor-typer beroende på innehållstyp:
 - Kantradier (rounded corners)
 - Skuggintensitet
 - Mörkt/Ljust läge
-
-### 3.3 AI Brand Guide Assistant
-
-**Funktion**: Analyserar befintlig webbplats och extraherar branding automatiskt.
-
-**Process**:
-1. Ange URL till befintlig webbplats
-2. AI analyserar färger, typografi, logotyper
-3. Granska mappning mot CMS-variabler
-4. Applicera direkt eller spara som eget tema
-
-**Kräver**: FIRECRAWL_API_KEY
 
 ---
 
@@ -293,6 +355,33 @@ Request → Edge Cache Hit?
 ---
 
 ## 5. Public Site Features
+
+### 5.0 Developer Tools (Hidden)
+
+Developer Tools är en dold sektion för utvecklare att testa och debugga:
+
+**Åtkomst:** `/admin/developer-tools` eller sök med `#developer-tools`
+
+**Not synlig i side panel** - Endast direkt URL-åtkomst eller sökbar via `#`
+
+#### Webhook Logger
+- Logga webhooks istället för att skicka till externa API:er
+- Visa payload-struktur
+- Testa event triggers
+- Inga externa API-anrop
+
+#### Block Previewer
+- Förhandsgranska custom blocks utan att skapa sidor
+- Testa olika varianter
+- Hot reload support
+- Mock data generator
+
+#### Mock Data Generator
+- Generera test data för utveckling
+- Test sidor, blocks, webhooks
+- Anpassningsbara data sets
+
+---
 
 ### 5.1 Dynamisk Navigation
 
@@ -1028,6 +1117,31 @@ För vårdorganisationer som kräver HIPAA:
 - **Embed**: Custom iframe/HTML embeds with aspect ratio control
 - **Table**: Structured data tables with styling options
 - **Announcement Bar**: Top banner for important messages
+
+#### Block Editor Previews (February 2026)
+**Objective**: Ensure all block editors show rich previews matching public rendering
+
+**Completed Blocks (18)**:
+- FormBlockEditor — Fields, labels, submit button, variant support
+- AccordionBlockEditor — Real Accordion components with expand/collapse
+- TwoColumnBlockEditor — Eyebrow, title with accent text, CTA, second image
+- TextBlockEditor — Eyebrow, title with accent/size in preview
+- ChatBlockEditor — Message bubbles, input field, send button
+- ChatLauncherBlockEditor — Sparkles input, quick action pills
+- NewsletterBlockEditor — Email input, subscribe button, variant support
+- CountdownBlockEditor — Countdown boxes with numbers, variant support
+- FloatingCTABlockEditor — CTA bar/card/pill with buttons
+- NotificationToastBlockEditor — Toast mockup with icon, title, message
+- FeaturesBlockEditor — Rich preview with icons, hover effects
+- TestimonialsBlockEditor — Quotes, avatar, star ratings
+- PricingBlockEditor — Pricing cards, features, badges
+- TimelineBlockEditor — Step-by-step process with icons
+- SocialProofBlockEditor — Live counters, ratings
+- StatsBlockEditor — Stats with icons and cards
+- TeamBlockEditor — Team members with bio, photo
+- ContactBlockEditor — Contact info, opening hours, 2-column layout
+
+**Other Blocks**: Already have rich previews or are DB-dependent (Booking, Cart, Products, KB blocks, etc.)
 
 #### Lead Generation Loop (Flowwink Loop)
 
