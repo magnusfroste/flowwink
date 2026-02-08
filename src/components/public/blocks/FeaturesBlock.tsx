@@ -19,7 +19,7 @@ function FeatureIcon({
   
   if (!LucideIcon) return null;
 
-  const baseClasses = "h-6 w-6 text-primary";
+  const baseClasses = "h-6 w-6 text-accent-foreground";
   
   if (iconStyle === 'none') {
     return <LucideIcon className={cn(baseClasses, "h-8 w-8")} />;
@@ -29,7 +29,7 @@ function FeatureIcon({
     "flex items-center justify-center w-12 h-12",
     iconStyle === 'circle' && "rounded-full",
     iconStyle === 'square' && "rounded-lg",
-    "bg-primary/10"
+    "bg-accent/50"
   );
 
   return (

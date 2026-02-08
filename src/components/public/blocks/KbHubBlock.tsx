@@ -297,7 +297,7 @@ export function KbHubBlock({ data }: KbHubBlockProps) {
                           >
                             <span className="mt-0.5 shrink-0">
                               {isExpanded ? (
-                                <ChevronDown className="h-5 w-5 text-primary" />
+                                <ChevronDown className="h-5 w-5 text-accent-foreground" />
                               ) : (
                                 <ChevronRight className="h-5 w-5 text-muted-foreground" />
                               )}

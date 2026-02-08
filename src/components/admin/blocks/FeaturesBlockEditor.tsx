@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent } from '@/components/ui/card';
-import { Plus, Trash2, GripVertical, ExternalLink, Zap } from 'lucide-react';
+import { Plus, Trash2, GripVertical, ExternalLink, Zap, icons } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { IconPicker } from '../IconPicker';
 import { FeaturesBlockData, FeatureItem } from '@/types/cms';
 import {
@@ -131,34 +132,82 @@ export function FeaturesBlockEditor({ data, onChange, isEditing }: FeaturesBlock
   const features = data.features || [];
   const showLinks = data.showLinks ?? true;
 
-  // Preview mode
-  if (!isEditing) {
-    return (
-      <div className="p-6 text-center border-2 border-dashed rounded-lg bg-muted/30">
-        <Zap className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-        <h3 className="font-medium text-lg">{data.title || "Features"}</h3>
-        <p className="text-sm text-muted-foreground mt-1">
-          {features.length} feature{features.length !== 1 ? 's' : ''} • {data.columns || 3} columns • {data.layout || 'grid'}
-        </p>
-        {features.length > 0 && (
-          <div className="mt-4 grid grid-cols-3 gap-2 max-w-xs mx-auto">
-            {features.slice(0, 3).map((f) => (
-              <div key={f.id} className="p-2 rounded bg-background border text-xs truncate">
-                {f.title || 'Feature'}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }
-
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
+
+  // Preview mode — render like the public FeaturesBlock
+  if (!isEditing) {
+    const columns = data.columns || 3;
+    const variant = data.variant || 'default';
+    const iconStyle = data.iconStyle || 'circle';
+    const layout = data.layout || 'grid';
+
+    const gridClasses = cn(
+      layout === 'grid' && {
+        'grid gap-6': true,
+        'sm:grid-cols-2': columns >= 2,
+        'lg:grid-cols-3': columns >= 3,
+        'xl:grid-cols-4': columns === 4,
+      },
+      layout === 'list' && 'space-y-4'
+    );
+
+    const renderIcon = (iconName: string) => {
+      const LucideIcon = icons[iconName as keyof typeof icons];
+      if (!LucideIcon) return null;
+      if (iconStyle === 'none') return <LucideIcon className="h-7 w-7 text-accent-foreground" />;
+      return (
+        <div className={cn(
+          'flex items-center justify-center w-10 h-10 bg-accent/50',
+          iconStyle === 'circle' ? 'rounded-full' : 'rounded-lg'
+        )}>
+          <LucideIcon className="h-5 w-5 text-accent-foreground" />
+        </div>
+      );
+    };
+
+    if (features.length === 0) {
+      return (
+        <div className="p-6 text-center border-2 border-dashed rounded-lg bg-muted/30">
+          <Zap className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
+          <p className="text-sm text-muted-foreground">No features added yet</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="py-6">
+        {(data.title || data.subtitle) && (
+          <div className={cn('mb-6', variant === 'centered' && 'text-center')}>
+            {data.title && <h3 className="text-xl font-bold tracking-tight">{data.title}</h3>}
+            {data.subtitle && <p className="mt-1 text-sm text-muted-foreground">{data.subtitle}</p>}
+          </div>
+        )}
+        <div className={gridClasses}>
+          {features.map((f) => (
+            <div
+              key={f.id}
+              className={cn(
+                variant === 'cards' && 'p-4 rounded-xl border bg-card',
+                variant === 'centered' && 'text-center flex flex-col items-center',
+                (variant === 'default' || variant === 'minimal') && 'text-left'
+              )}
+            >
+              {renderIcon(f.icon)}
+              <h4 className="mt-3 font-semibold text-sm">{f.title || 'Untitled'}</h4>
+              {f.description && (
+                <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{f.description}</p>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   const addFeature = () => {
     const newFeature: FeatureItem = {

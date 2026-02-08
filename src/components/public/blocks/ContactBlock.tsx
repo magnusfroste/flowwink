@@ -8,7 +8,7 @@ interface ContactBlockProps {
 export function ContactBlock({ data }: ContactBlockProps) {
   return (
     <section className="py-16 px-6 bg-muted/30">
-      <div className="container mx-auto max-w-4xl">
+      <div className="container mx-auto max-w-6xl">
         {data.title && (
           <h2 className="font-serif text-3xl font-bold mb-8 text-center">{data.title}</h2>
         )}
@@ -16,7 +16,7 @@ export function ContactBlock({ data }: ContactBlockProps) {
           <div className="space-y-4">
             {data.phone && (
               <div className="flex items-center gap-3">
-                <Phone className="h-5 w-5 text-primary" />
+                <Phone className="h-5 w-5 text-accent-foreground" />
                 <a href={`tel:${data.phone}`} className="hover:text-primary transition-colors">
                   {data.phone}
                 </a>
@@ -24,7 +24,7 @@ export function ContactBlock({ data }: ContactBlockProps) {
             )}
             {data.email && (
               <div className="flex items-center gap-3">
-                <Mail className="h-5 w-5 text-primary" />
+                <Mail className="h-5 w-5 text-accent-foreground" />
                 <a href={`mailto:${data.email}`} className="hover:text-primary transition-colors">
                   {data.email}
                 </a>
@@ -32,7 +32,7 @@ export function ContactBlock({ data }: ContactBlockProps) {
             )}
             {data.address && (
               <div className="flex items-start gap-3">
-                <MapPin className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                <MapPin className="h-5 w-5 text-accent-foreground shrink-0 mt-0.5" />
                 <span className="whitespace-pre-line">{data.address}</span>
               </div>
             )}
@@ -40,7 +40,7 @@ export function ContactBlock({ data }: ContactBlockProps) {
           {data.hours && data.hours.length > 0 && (
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <Clock className="h-5 w-5 text-primary" />
+                <Clock className="h-5 w-5 text-accent-foreground" />
                 <span className="font-medium">Opening Hours</span>
               </div>
               <div className="space-y-2">

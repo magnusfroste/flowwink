@@ -53,7 +53,7 @@ function TestimonialCard({
       variant === 'minimal' && 'border-0 shadow-none bg-transparent'
     )}>
       {/* Quote Icon */}
-      <Quote className="h-8 w-8 text-primary/20 mb-4" />
+      <Quote className="h-8 w-8 text-accent-foreground/20 mb-4" />
       
       {/* Rating */}
       {showRating && testimonial.rating && (
@@ -72,7 +72,7 @@ function TestimonialCard({
         {showAvatar && (
           <Avatar className="h-10 w-10">
             <AvatarImage src={testimonial.avatar} alt={testimonial.author} />
-            <AvatarFallback className="bg-primary/10 text-primary text-sm">
+            <AvatarFallback className="bg-accent/50 text-accent-foreground text-sm">
               {initials}
             </AvatarFallback>
           </Avatar>
@@ -174,7 +174,7 @@ export function TestimonialsBlock({ data }: TestimonialsBlockProps) {
               variant === 'cards' && 'shadow-xl',
               variant === 'minimal' && 'border-0 shadow-none bg-transparent'
             )}>
-              <Quote className="h-12 w-12 text-primary/20 mx-auto mb-6" />
+              <Quote className="h-12 w-12 text-accent-foreground/20 mx-auto mb-6" />
               
               {showRating && testimonials[currentIndex].rating && (
                 <div className="flex justify-center mb-4">
@@ -193,7 +193,7 @@ export function TestimonialsBlock({ data }: TestimonialsBlockProps) {
                       src={testimonials[currentIndex].avatar} 
                       alt={testimonials[currentIndex].author} 
                     />
-                    <AvatarFallback className="bg-primary/10 text-primary">
+                    <AvatarFallback className="bg-accent/50 text-accent-foreground">
                       {testimonials[currentIndex].author
                         .split(' ')
                         .map(n => n[0])
@@ -260,7 +260,7 @@ export function TestimonialsBlock({ data }: TestimonialsBlockProps) {
                         variant === 'cards' && 'shadow-lg',
                         variant === 'minimal' && 'border-0 shadow-none bg-transparent'
                       )}>
-                        <Quote className="h-10 w-10 text-primary/20 mx-auto mb-4" />
+                        <Quote className="h-10 w-10 text-accent-foreground/20 mx-auto mb-4" />
                         
                         {showRating && testimonial.rating && (
                           <div className="flex justify-center mb-4">
@@ -276,7 +276,7 @@ export function TestimonialsBlock({ data }: TestimonialsBlockProps) {
                           {showAvatar && (
                             <Avatar className="h-12 w-12">
                               <AvatarImage src={testimonial.avatar} alt={testimonial.author} />
-                              <AvatarFallback className="bg-primary/10 text-primary">
+                              <AvatarFallback className="bg-accent/50 text-accent-foreground">
                                 {testimonial.author
                                   .split(' ')
                                   .map(n => n[0])

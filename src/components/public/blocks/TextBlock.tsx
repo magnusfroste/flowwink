@@ -6,11 +6,16 @@ interface TextBlockProps {
   data: TextBlockData;
 }
 
-// Title size classes for Design System 2026
-const titleSizeClasses: Record<string, string> = {
-  default: 'text-3xl md:text-4xl',
-  large: 'text-4xl md:text-5xl',
-  display: 'text-5xl md:text-6xl lg:text-7xl',
+// Shared typography scale for consistency across all blocks (Webflow-style)
+const typographyScale = {
+  // h1 - Hero/Display titles
+  h1: 'text-5xl md:text-6xl lg:text-7xl',
+  h1Large: 'text-6xl md:text-7xl lg:text-8xl',
+  // h2 - Section titles
+  h2: 'text-3xl md:text-4xl',
+  h2Large: 'text-4xl md:text-5xl',
+  // h3 - Subtitles
+  h3: 'text-2xl md:text-3xl',
 };
 
 export function TextBlock({ data }: TextBlockProps) {
@@ -19,8 +24,17 @@ export function TextBlock({ data }: TextBlockProps) {
   const titleSize = data.titleSize || 'default';
   const hasHeader = data.eyebrow || data.title;
   
-  // Default eyebrow color to brand primary, allow override
-  const eyebrowColor = data.eyebrowColor || (branding?.primaryColor ? `hsl(${branding.primaryColor})` : 'hsl(var(--primary))');
+  // Map titleSize to typography scale
+  const getTitleSize = () => {
+    switch (titleSize) {
+      case 'large': return typographyScale.h2Large;
+      case 'display': return typographyScale.h1;
+      default: return typographyScale.h2;
+    }
+  };
+  
+  // Default eyebrow color to accent, allow override
+  const eyebrowColor = data.eyebrowColor || (branding?.accentColor ? `hsl(${branding.accentColor})` : 'hsl(var(--accent-foreground))');
   
   // Build title with optional accent text
   const renderTitle = () => {
@@ -60,8 +74,8 @@ export function TextBlock({ data }: TextBlockProps) {
   };
   
   return (
-    <section className="py-12 px-6" style={{ backgroundColor: data.backgroundColor }}>
-      <div className="container mx-auto max-w-4xl">
+    <section className="py-16 px-6" style={{ backgroundColor: data.backgroundColor }}>
+      <div className="container mx-auto max-w-6xl">
         {/* Design System 2026: Premium Header */}
         {hasHeader && (
           <div className="mb-8 md:mb-12">
@@ -77,7 +91,7 @@ export function TextBlock({ data }: TextBlockProps) {
             
             {/* Display title with optional accent */}
             {data.title && (
-              <h2 className={`font-bold tracking-tight leading-tight ${titleSizeClasses[titleSize]}`}>
+              <h2 className={`font-bold tracking-tight leading-tight mb-6 ${getTitleSize()}`}>
                 {renderTitle()}
               </h2>
             )}

@@ -66,7 +66,7 @@ export function CTABlock({ data }: CTABlockProps) {
   // Minimal variant - clean, understated design
   if (variant === 'minimal') {
     return (
-      <section className="py-16 md:py-24 px-6">
+      <section className="py-16 px-6">
         <div className="container mx-auto text-center max-w-3xl">
           <h2 className="font-serif text-2xl md:text-3xl font-bold mb-4 text-foreground">
             {data.title}
@@ -102,7 +102,7 @@ export function CTABlock({ data }: CTABlockProps) {
   // With-image variant - full background image with overlay
   if (variant === 'with-image' && data.backgroundImage) {
     return (
-      <section className="relative py-20 md:py-28 px-6">
+      <section className="relative py-16 px-6">
         {/* Background image */}
         <div className="absolute inset-0">
           <img

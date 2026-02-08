@@ -118,7 +118,7 @@ export function KbFeaturedBlock({ data }: KbFeaturedBlockProps) {
                     <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2 mb-2">
                       {article.question}
                     </h3>
-                    <div className="flex items-center text-sm text-primary font-medium mt-auto">
+                    <div className="flex items-center text-sm text-accent-foreground font-medium mt-auto">
                       Läs mer
                       <ChevronRight className="h-4 w-4 ml-1 transition-transform group-hover:translate-x-1" />
                     </div>
@@ -136,7 +136,7 @@ export function KbFeaturedBlock({ data }: KbFeaturedBlockProps) {
                 className="group block"
               >
                 <div className="flex items-center gap-4 p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
-                  <HelpCircle className="h-5 w-5 text-primary shrink-0" />
+                  <HelpCircle className="h-5 w-5 text-accent-foreground shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-foreground group-hover:text-primary transition-colors truncate">
                       {article.question}

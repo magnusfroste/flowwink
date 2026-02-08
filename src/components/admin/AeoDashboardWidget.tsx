@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { usePages } from '@/hooks/usePages';
 import { useAeoSettings } from '@/hooks/useSiteSettings';
 import type { ContentBlock, PageMeta } from '@/types/cms';
+import { renderToHtml } from '@/lib/tiptap-utils';
 
 interface PageScore {
   id: string;
@@ -52,9 +53,9 @@ function calculatePageScore(
   let faqCount = 0;
   for (const block of blocks) {
     if (block.type === 'accordion' && block.data) {
-      const items = block.data.items as Array<{ title?: string; content?: string }> | undefined;
+      const items = block.data.items as Array<{ question?: string; answer?: unknown }> | undefined;
       if (Array.isArray(items)) {
-        faqCount += items.filter(item => item.title && item.content).length;
+        faqCount += items.filter(item => item.question && item.answer).length;
       }
     }
   }
@@ -65,7 +66,8 @@ function calculatePageScore(
   let wordCount = 0;
   for (const block of blocks) {
     if (block.type === 'text' && block.data?.content) {
-      const text = String(block.data.content).replace(/<[^>]*>/g, ' ');
+      const html = renderToHtml(block.data.content);
+      const text = html.replace(/<[^>]*>/g, ' ');
       wordCount += text.split(/\s+/).filter(w => w.length > 0).length;
     }
     if (block.type === 'hero' && block.data) {
@@ -80,7 +82,8 @@ function calculatePageScore(
   let hasHeadings = false;
   for (const block of blocks) {
     if (block.type === 'text' && block.data?.content) {
-      if (/<h[1-6][^>]*>/i.test(String(block.data.content))) hasHeadings = true;
+      const html = renderToHtml(block.data.content);
+      if (/<h[1-6][^>]*>/i.test(html)) hasHeadings = true;
     }
     if (block.type === 'hero') hasHeadings = true;
   }

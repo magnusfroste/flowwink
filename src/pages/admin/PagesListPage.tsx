@@ -138,6 +138,12 @@ export default function PagesListPage() {
           description="Manage and edit your pages"
         >
           <MigratePageDialog />
+          <Button variant="ghost" size="sm" asChild>
+            <Link to="/admin/pages/trash">
+              <Trash2 className="h-4 w-4 mr-2" />
+              Trash
+            </Link>
+          </Button>
           <Button variant="outline" asChild>
             <Link to="/admin/new-site">
               <LayoutTemplate className="h-4 w-4 mr-2" />
@@ -334,7 +340,7 @@ export default function PagesListPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. The page will be permanently deleted.
+              The page will be moved to trash. You can restore it later from the trash.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -343,7 +349,7 @@ export default function PagesListPage() {
               onClick={handleDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete
+              Move to Trash
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

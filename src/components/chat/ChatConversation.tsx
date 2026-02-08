@@ -17,6 +17,7 @@ interface ChatConversationProps {
   onNewConversation?: (id: string) => void;
   maxPrompts?: number;
   compact?: boolean;
+  skipRestore?: boolean;
   /** Initial message to send automatically (from ChatLauncherBlock) */
   initialMessage?: string;
   /** Callback when initial message has been sent */
@@ -30,6 +31,7 @@ export function ChatConversation({
   onNewConversation,
   maxPrompts,
   compact = false,
+  skipRestore = false,
   initialMessage,
   onInitialMessageSent,
 }: ChatConversationProps) {
@@ -45,7 +47,7 @@ export function ChatConversation({
     agentInfo,
     sendMessage,
     cancelRequest,
-  } = useChat({ conversationId, onNewConversation });
+  } = useChat({ conversationId, onNewConversation, skipRestore });
 
   // Auto-scroll within the chat container (not the whole page)
   useEffect(() => {

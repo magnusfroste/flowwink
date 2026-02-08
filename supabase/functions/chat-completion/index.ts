@@ -797,6 +797,25 @@ Always use tools when they can help answer the user's question - do not say you 
             headers: { ...corsHeaders, 'Content-Type': 'text/event-stream' },
           });
         }
+
+        // No tool calls — re-stream the already-collected content
+        // (original response body may be consumed by clone, so reconstruct SSE from fullContent)
+        if (fullContent) {
+          const enc = new TextEncoder();
+          const reStream = new ReadableStream({
+            start(controller) {
+              const data = JSON.stringify({
+                choices: [{ delta: { content: fullContent }, finish_reason: 'stop' }]
+              });
+              controller.enqueue(enc.encode(`data: ${data}\n\n`));
+              controller.enqueue(enc.encode('data: [DONE]\n\n'));
+              controller.close();
+            }
+          });
+          return new Response(reStream, {
+            headers: { ...corsHeaders, 'Content-Type': 'text/event-stream' },
+          });
+        }
       }
 
     } else if (aiProvider === 'gemini') {
@@ -822,7 +841,7 @@ Always use tools when they can help answer the user's question - do not say you 
         });
       }
 
-      response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?key=${apiKey}`, {
+      const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${apiKey}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -834,6 +853,69 @@ Always use tools when they can help answer the user's question - do not say you 
             maxOutputTokens: 2048,
           }
         }),
+      });
+
+      if (!geminiResponse.ok) {
+        const errorText = await geminiResponse.text();
+        console.error('Gemini error:', geminiResponse.status, errorText);
+        return new Response(JSON.stringify({ error: 'Gemini AI service error.' }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Convert Gemini SSE to OpenAI-compatible SSE format
+      const geminiReader = geminiResponse.body?.getReader();
+      if (!geminiReader) {
+        throw new Error('No response body from Gemini');
+      }
+
+      const encoder = new TextEncoder();
+      const geminiDecoder = new TextDecoder();
+      const geminiStream = new ReadableStream({
+        async start(controller) {
+          let buffer = '';
+          try {
+            while (true) {
+              const { done, value } = await geminiReader.read();
+              if (done) break;
+
+              buffer += geminiDecoder.decode(value, { stream: true });
+              let newlineIndex: number;
+              while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
+                let line = buffer.slice(0, newlineIndex);
+                buffer = buffer.slice(newlineIndex + 1);
+                if (line.endsWith('\r')) line = line.slice(0, -1);
+                if (!line.startsWith('data: ') || line.trim() === '') continue;
+
+                const jsonStr = line.slice(6).trim();
+                if (!jsonStr) continue;
+
+                try {
+                  const parsed = JSON.parse(jsonStr);
+                  const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
+                  if (text) {
+                    const sseData = JSON.stringify({
+                      choices: [{ delta: { content: text }, finish_reason: null }]
+                    });
+                    controller.enqueue(encoder.encode(`data: ${sseData}\n\n`));
+                  }
+                } catch {
+                  // skip malformed chunks
+                }
+              }
+            }
+            controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+            controller.close();
+          } catch (err) {
+            console.error('Gemini stream error:', err);
+            controller.close();
+          }
+        }
+      });
+
+      return new Response(geminiStream, {
+        headers: { ...corsHeaders, 'Content-Type': 'text/event-stream' },
       });
     } else if (aiProvider === 'local') {
       const localConfig = aiIntegrations?.local_llm?.config || {};
@@ -1000,6 +1082,24 @@ Always use tools when they can help answer the user's question - do not say you 
           });
 
           return new Response(localFollowUpResponse.body, {
+            headers: { ...corsHeaders, 'Content-Type': 'text/event-stream' },
+          });
+        }
+
+        // No tool calls — re-stream collected content (clone may have consumed original body)
+        if (localFullContent) {
+          const enc = new TextEncoder();
+          const reStream = new ReadableStream({
+            start(controller) {
+              const data = JSON.stringify({
+                choices: [{ delta: { content: localFullContent }, finish_reason: 'stop' }]
+              });
+              controller.enqueue(enc.encode(`data: ${data}\n\n`));
+              controller.enqueue(enc.encode('data: [DONE]\n\n'));
+              controller.close();
+            }
+          });
+          return new Response(reStream, {
             headers: { ...corsHeaders, 'Content-Type': 'text/event-stream' },
           });
         }

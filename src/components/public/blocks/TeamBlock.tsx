@@ -36,7 +36,7 @@ function SocialLinks({ social }: { social?: TeamMember['social'] }) {
           href={isEmail ? `mailto:${url}` : url}
           target={isEmail ? undefined : '_blank'}
           rel="noopener noreferrer"
-          className="p-2 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+          className="p-2 rounded-full text-muted-foreground hover:text-accent-foreground hover:bg-accent/50 transition-colors"
           aria-label={label}
         >
           <Icon className="h-4 w-4" />
@@ -69,7 +69,7 @@ function TeamMemberCard({
       <div className="flex items-center gap-4 p-4">
         <Avatar className="h-12 w-12">
           <AvatarImage src={member.photo} alt={member.name} />
-          <AvatarFallback className="bg-primary/10 text-primary">
+          <AvatarFallback className="bg-accent/50 text-accent-foreground">
             {initials || <User className="h-5 w-5" />}
           </AvatarFallback>
         </Avatar>
@@ -88,12 +88,12 @@ function TeamMemberCard({
         <CardContent className="p-6 text-center">
           <Avatar className="h-24 w-24 mx-auto mb-4">
             <AvatarImage src={member.photo} alt={member.name} />
-            <AvatarFallback className="bg-primary/10 text-primary text-2xl">
+            <AvatarFallback className="bg-accent/50 text-accent-foreground text-2xl">
               {initials || <User className="h-10 w-10" />}
             </AvatarFallback>
           </Avatar>
           <h4 className="font-semibold text-lg">{member.name}</h4>
-          <p className="text-sm text-primary font-medium mt-1">{member.role}</p>
+          <p className="text-sm text-accent-foreground font-medium mt-1">{member.role}</p>
           {showBio && member.bio && (
             <p className="text-sm text-muted-foreground mt-3 line-clamp-3">{member.bio}</p>
           )}
@@ -108,12 +108,12 @@ function TeamMemberCard({
     <div className="text-center">
       <Avatar className="h-32 w-32 mx-auto mb-4 ring-4 ring-background shadow-lg">
         <AvatarImage src={member.photo} alt={member.name} />
-        <AvatarFallback className="bg-primary/10 text-primary text-3xl">
+        <AvatarFallback className="bg-accent/50 text-accent-foreground text-3xl">
           {initials || <User className="h-12 w-12" />}
         </AvatarFallback>
       </Avatar>
       <h4 className="font-semibold text-lg">{member.name}</h4>
-      <p className="text-sm text-primary font-medium">{member.role}</p>
+      <p className="text-sm text-accent-foreground font-medium">{member.role}</p>
       {showBio && member.bio && (
         <p className="text-sm text-muted-foreground mt-2 max-w-xs mx-auto">{member.bio}</p>
       )}

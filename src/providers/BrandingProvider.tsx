@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTheme } from 'next-themes';
 import { supabase } from '@/integrations/supabase/client';
@@ -129,6 +129,7 @@ interface BrandingProviderProps {
 export function BrandingProvider({ children }: BrandingProviderProps) {
   const { setTheme } = useTheme();
   const [pathname, setPathname] = useState(window.location.pathname);
+  const themeSetRef = useRef(false);
   
   // Listen to URL changes (for SPA navigation)
   useEffect(() => {
@@ -177,6 +178,7 @@ export function BrandingProvider({ children }: BrandingProviderProps) {
   useEffect(() => {
     if (branding && !isAdminRoute) {
       applyBrandingToDocument(branding);
+      themeSetRef.current = false;
       
       // Force theme when toggle is disabled
       if (branding.allowThemeToggle === false && branding.defaultTheme) {
@@ -184,10 +186,11 @@ export function BrandingProvider({ children }: BrandingProviderProps) {
       }
     }
     
-    // Reset to default CSS and theme when entering admin
-    if (isAdminRoute) {
+    // Reset to default CSS and theme when entering admin (only once)
+    if (isAdminRoute && !themeSetRef.current) {
       resetBrandingToDefaults();
       setTheme('light');
+      themeSetRef.current = true;
     }
   }, [branding, setTheme, isAdminRoute]);
 

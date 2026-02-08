@@ -39,8 +39,8 @@ export function LinkGridBlock({ data }: LinkGridBlockProps) {
                 className="group p-6 bg-card rounded-lg border border-border hover:border-primary hover:shadow-md transition-all"
               >
                 <div className="flex items-start gap-4">
-                  <div className="p-2 bg-primary/10 rounded-lg shrink-0">
-                    {renderIcon(link.icon, "h-6 w-6 text-primary")}
+                  <div className="p-2 bg-accent/50 rounded-lg shrink-0">
+                    {renderIcon(link.icon, "h-6 w-6 text-accent-foreground")}
                   </div>
                   <div className="flex-1">
                     <h3 className="font-semibold mb-1 group-hover:text-primary transition-colors">

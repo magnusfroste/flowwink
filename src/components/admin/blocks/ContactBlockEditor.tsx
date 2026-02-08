@@ -123,25 +123,25 @@ export function ContactBlockEditor({ data, onChange, isEditing }: ContactBlockEd
       <div className="grid gap-3 text-sm">
         {localData.phone && (
           <div className="flex items-center gap-3">
-            <Phone className="h-4 w-4 text-primary" />
+            <Phone className="h-4 w-4 text-accent-foreground" />
             <span>{localData.phone}</span>
           </div>
         )}
         {localData.email && (
           <div className="flex items-center gap-3">
-            <Mail className="h-4 w-4 text-primary" />
+            <Mail className="h-4 w-4 text-accent-foreground" />
             <span>{localData.email}</span>
           </div>
         )}
         {localData.address && (
           <div className="flex items-center gap-3">
-            <MapPin className="h-4 w-4 text-primary" />
+            <MapPin className="h-4 w-4 text-accent-foreground" />
             <span>{localData.address}</span>
           </div>
         )}
         {localData.hours && localData.hours.length > 0 && (
           <div className="flex items-start gap-3">
-            <Clock className="h-4 w-4 text-primary mt-0.5" />
+            <Clock className="h-4 w-4 text-accent-foreground mt-0.5" />
             <div className="space-y-1">
               {localData.hours.map((hour, index) => (
                 <div key={index}>

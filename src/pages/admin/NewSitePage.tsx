@@ -469,10 +469,13 @@ export default function NewSitePage() {
         await updateCookieBanner.mutateAsync(selectedTemplate.cookieBannerSettings as any);
       }
 
-      // Step 8: Set homepage (always if pages were created)
+      // Step 8: Set homepage and selected template (always if pages were created)
       if (opts.pages) {
         setProgress({ currentPage: selectedTemplate.pages.length, totalPages: selectedTemplate.pages.length, currentStep: 'Finalizing...' });
-        await updateGeneral.mutateAsync({ homepageSlug: selectedTemplate.siteSettings.homepageSlug });
+        await updateGeneral.mutateAsync({ 
+          homepageSlug: selectedTemplate.siteSettings.homepageSlug,
+          selectedTemplate: selectedTemplate.id
+        });
       }
 
       // Step 9: Create products if template has them (and products option enabled)

@@ -120,15 +120,15 @@ export function ChatMessage({
       {!isUser && showIcons && renderAssistantAvatar()}
       
       <div className={cn(
-        'relative max-w-[80%] rounded-2xl px-4 py-3',
+        'relative max-w-[80%]',
         isUser 
-          ? 'bg-primary text-primary-foreground rounded-br-md' 
-          : 'rounded-bl-md'
+          ? 'bg-primary text-primary-foreground rounded-2xl rounded-br-md px-4 py-3' 
+          : 'text-foreground'
       )}>
         <div 
           className={cn(
             'prose prose-sm max-w-none',
-            isUser && 'prose-invert',
+            isUser ? 'prose-invert' : 'prose-neutral dark:prose-invert',
             '[&_pre]:bg-muted-foreground/10 [&_pre]:p-2 [&_pre]:rounded [&_pre]:overflow-x-auto [&_pre]:my-2',
             '[&_code]:text-inherit'
           )}
@@ -154,7 +154,7 @@ export function ChatMessage({
 
         {/* Feedback buttons for assistant messages */}
         {!isUser && content && showFeedback && messageId && (
-          <div className="mt-2 pt-2 border-t border-border/50">
+          <div className="mt-2 pt-2 border-t border-border/30">
             <ChatFeedback
               messageId={messageId}
               conversationId={conversationId}

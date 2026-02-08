@@ -1578,6 +1578,8 @@ export type Database = {
           content_json: Json | null
           created_at: string
           created_by: string | null
+          deleted_at: string | null
+          deleted_by: string | null
           id: string
           menu_order: number
           meta_json: Json | null
@@ -1593,6 +1595,8 @@ export type Database = {
           content_json?: Json | null
           created_at?: string
           created_by?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
           id?: string
           menu_order?: number
           meta_json?: Json | null
@@ -1608,6 +1612,8 @@ export type Database = {
           content_json?: Json | null
           created_at?: string
           created_by?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
           id?: string
           menu_order?: number
           meta_json?: Json | null

@@ -252,6 +252,8 @@ export default function PageEditorPage() {
                 meta={meta} 
                 onMetaChange={handleMetaChange}
                 disabled={!canEdit}
+                pageTitle={title}
+                blocks={blocks}
               />
               {id && <VersionHistoryPanel pageId={id} onRestore={handleVersionRestore} />}
               <Button variant="outline" size="sm" onClick={handlePreview}>

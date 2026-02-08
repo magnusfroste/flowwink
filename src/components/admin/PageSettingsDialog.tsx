@@ -1,4 +1,4 @@
-import { Settings } from 'lucide-react';
+import { Settings, Sparkles, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -13,15 +13,47 @@ import { Switch } from '@/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
-import type { PageMeta } from '@/types/cms';
+import type { PageMeta, ContentBlock } from '@/types/cms';
+import { extractPlainText } from '@/lib/tiptap-utils';
+import { useAITextGeneration } from '@/hooks/useAITextGeneration';
 
 interface PageSettingsDialogProps {
   meta: PageMeta;
   onMetaChange: (meta: PageMeta) => void;
   disabled?: boolean;
+  pageTitle?: string;
+  blocks?: ContentBlock[];
 }
 
-export function PageSettingsDialog({ meta, onMetaChange, disabled }: PageSettingsDialogProps) {
+export function PageSettingsDialog({ meta, onMetaChange, disabled, pageTitle, blocks }: PageSettingsDialogProps) {
+  const { generate, isLoading: aiLoading } = useAITextGeneration();
+
+  const handleGenerateDescription = async () => {
+    if (!blocks || blocks.length === 0) return;
+    
+    // Extract plain text from all blocks
+    const parts: string[] = [];
+    if (pageTitle) parts.push(pageTitle);
+    for (const block of blocks) {
+      if (block.data?.content) {
+        const text = extractPlainText(block.data.content);
+        if (text) parts.push(text);
+      }
+      if (block.data?.title) parts.push(String(block.data.title));
+      if (block.data?.subtitle) parts.push(String(block.data.subtitle));
+    }
+    const pageText = parts.join('\n').slice(0, 2000);
+    if (!pageText.trim()) return;
+
+    const result = await generate({
+      text: pageText,
+      action: 'summarize',
+      context: 'Write a concise meta description for this web page. It should be 120-160 characters, compelling, and summarize the page content for search engines. Return ONLY the meta description text, nothing else.',
+    });
+    if (result) {
+      onMetaChange({ ...meta, description: result });
+    }
+  };
   const showTitle = meta.showTitle !== false;
   const titleAlignment = meta.titleAlignment || 'left';
   const seoTitle = meta.seoTitle || '';
@@ -103,6 +135,40 @@ export function PageSettingsDialog({ meta, onMetaChange, disabled }: PageSetting
               />
               <p className="text-xs text-muted-foreground">
                 Displayed in search results and browser tab
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="description">Meta Description</Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs gap-1.5 text-muted-foreground hover:text-primary"
+                  onClick={handleGenerateDescription}
+                  disabled={aiLoading || !blocks || blocks.length === 0}
+                >
+                  {aiLoading ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-3 w-3" />
+                  )}
+                  Generate from content
+                </Button>
+              </div>
+              <textarea
+                id="description"
+                className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                value={meta.description || ''}
+                onChange={(e) => updateMeta({ description: e.target.value })}
+                placeholder="A concise summary of this page (120-160 characters recommended)"
+              />
+              <p className="text-xs text-muted-foreground">
+                {(meta.description?.length || 0)} characters
+                {(meta.description?.length || 0) > 0 && (meta.description?.length || 0) < 120 && ' — too short'}
+                {(meta.description?.length || 0) >= 120 && (meta.description?.length || 0) <= 160 && ' — ideal length'}
+                {(meta.description?.length || 0) > 160 && ' — too long'}
               </p>
             </div>
           </div>

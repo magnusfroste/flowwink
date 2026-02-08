@@ -57,12 +57,12 @@ export function ImageBlock({ data }: ImageBlockProps) {
 
   return (
     <section className={cn(
-      fullBleed ? 'w-full' : 'py-12 px-6'
+      fullBleed ? 'w-full' : 'py-16 px-6'
     )}>
       <figure 
         className={cn(
           'relative overflow-hidden group',
-          !fullBleed && 'container mx-auto max-w-5xl',
+          !fullBleed && 'container mx-auto max-w-6xl',
           rounded && !fullBleed && 'rounded-xl',
           shadowMap[shadow],
           hoverEffect === 'lift' && 'hover:-translate-y-1 hover:shadow-xl transition-all duration-300',

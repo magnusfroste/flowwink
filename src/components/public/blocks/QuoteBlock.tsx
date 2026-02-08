@@ -19,14 +19,14 @@ export function QuoteBlock({ data }: QuoteBlockProps) {
           )}
         >
           {isStyled && (
-            <Quote className="absolute top-6 left-6 h-12 w-12 text-primary/20" />
+            <Quote className="absolute top-6 left-6 h-12 w-12 text-accent-foreground/20" />
           )}
           
           <div className={cn(isStyled && 'pl-8')}>
             <p
               className={cn(
                 'text-xl md:text-2xl lg:text-3xl font-serif italic leading-relaxed',
-                isStyled ? 'text-foreground' : 'text-foreground/90 border-l-4 border-primary pl-6'
+                isStyled ? 'text-foreground' : 'text-foreground/90 border-l-4 border-accent-foreground pl-6'
               )}
             >
               {data.text}

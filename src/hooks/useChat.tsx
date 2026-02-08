@@ -20,6 +20,7 @@ export interface AgentInfo {
 interface UseChatOptions {
   conversationId?: string;
   onNewConversation?: (id: string) => void;
+  skipRestore?: boolean;
 }
 
 const CONVERSATION_STORAGE_KEY = 'chat-conversation-id';
@@ -58,7 +59,10 @@ export function useChat(options?: UseChatOptions) {
 
   // Restore conversation from localStorage on mount
   useEffect(() => {
-    if (initialized || options?.conversationId) return;
+    if (initialized || options?.conversationId || options?.skipRestore) {
+      if (options?.skipRestore && !initialized) setInitialized(true);
+      return;
+    }
     
     const restoreConversation = async () => {
       // First try to get stored conversation ID
@@ -110,7 +114,7 @@ export function useChat(options?: UseChatOptions) {
     } else {
       setInitialized(true);
     }
-  }, [settings?.saveConversations, user?.id, getSessionId, options?.conversationId, initialized]);
+  }, [settings?.saveConversations, user?.id, getSessionId, options?.conversationId, options?.skipRestore, initialized]);
 
   // Load existing messages when conversationId is set
   useEffect(() => {

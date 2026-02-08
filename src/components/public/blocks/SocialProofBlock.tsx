@@ -223,7 +223,7 @@ export function SocialProofBlock({ data }: SocialProofBlockProps) {
       <>
         {showIcons && IconComponent && (
           <div className={cn(
-            'text-primary',
+            'text-accent-foreground',
             variant === 'cards' && 'mb-2'
           )}>
             <IconComponent className={sizeClasses[size].icon} />

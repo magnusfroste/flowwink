@@ -63,8 +63,8 @@ export function TabsBlock({ data }: TabsBlockProps) {
   };
 
   return (
-    <section className="py-12 px-6">
-      <div className="container mx-auto max-w-5xl">
+    <section className="py-16 px-6">
+      <div className="container mx-auto max-w-6xl">
         {(data.title || data.subtitle) && (
           <div className="text-center mb-8">
             {data.title && (

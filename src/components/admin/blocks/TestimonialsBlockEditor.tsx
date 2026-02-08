@@ -54,13 +54,55 @@ export function TestimonialsBlockEditor({ data, onChange, isEditing }: Testimoni
   // Preview for non-editing mode
   if (!isEditing) {
     const testimonials = data.testimonials || [];
+    const variant = data.variant || 'default';
+
+    if (testimonials.length === 0) {
+      return (
+        <div className="p-6 text-center border-2 border-dashed rounded-lg bg-muted/30">
+          <MessageSquareQuote className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
+          <p className="text-sm text-muted-foreground">No testimonials added yet</p>
+        </div>
+      );
+    }
+
     return (
-      <div className="p-6 text-center border-2 border-dashed rounded-lg bg-muted/30">
-        <MessageSquareQuote className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-        <h3 className="font-medium text-lg">{data.title || 'Testimonials'}</h3>
-        <p className="text-sm text-muted-foreground mt-1">
-          {testimonials.length} testimonial{testimonials.length !== 1 ? 's' : ''} • {data.layout} layout
-        </p>
+      <div className="py-6">
+        {(data.title || data.subtitle) && (
+          <div className="text-center mb-6">
+            {data.title && <h3 className="text-xl font-bold">{data.title}</h3>}
+            {data.subtitle && <p className="mt-1 text-sm text-muted-foreground">{data.subtitle}</p>}
+          </div>
+        )}
+        <div className={cn(
+          'grid gap-4',
+          testimonials.length === 1 ? 'grid-cols-1 max-w-lg mx-auto' :
+          testimonials.length === 2 ? 'grid-cols-2' : 'grid-cols-3'
+        )}>
+          {testimonials.slice(0, 3).map((t) => {
+            const initials = t.author?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+            return (
+              <div key={t.id} className={cn(
+                'p-4 rounded-lg',
+                variant === 'cards' ? 'border bg-card shadow-sm' : 'bg-muted/30'
+              )}>
+                <MessageSquareQuote className="h-5 w-5 text-accent-foreground/20 mb-2" />
+                <p className="text-xs text-muted-foreground line-clamp-3 mb-3">"{t.content}"</p>
+                <div className="flex items-center gap-2">
+                  <div className="h-7 w-7 rounded-full bg-accent/50 flex items-center justify-center text-[10px] font-medium text-accent-foreground">
+                    {initials}
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium">{t.author}</p>
+                    {t.role && <p className="text-[10px] text-muted-foreground">{t.role}</p>}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        {testimonials.length > 3 && (
+          <p className="text-xs text-muted-foreground text-center mt-3">+{testimonials.length - 3} more</p>
+        )}
       </div>
     );
   }

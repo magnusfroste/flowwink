@@ -88,7 +88,7 @@ export function BadgeBlock({ data }: BadgeBlockProps) {
           <IconComponent 
             className={cn(
               config.icon,
-              'text-primary',
+              'text-accent-foreground',
               grayscale && 'opacity-50 hover:opacity-100 transition-opacity duration-300'
             )} 
           />

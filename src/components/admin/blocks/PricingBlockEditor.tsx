@@ -83,16 +83,64 @@ export function PricingBlockEditor({ data, onChange, isEditing }: PricingBlockEd
   // Preview for non-editing mode
   if (!isEditing) {
     const tiers = data.tiers || [];
+
+    if (data.useProducts || tiers.length === 0) {
+      return (
+        <div className="p-6 text-center border-2 border-dashed rounded-lg bg-muted/30">
+          <CreditCard className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
+          <h3 className="font-medium text-lg">{data.title || 'Pricing'}</h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            {data.useProducts ? 'Showing products from database' : 'No pricing plans added yet'}
+          </p>
+        </div>
+      );
+    }
+
     return (
-      <div className="p-6 text-center border-2 border-dashed rounded-lg bg-muted/30">
-        <CreditCard className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-        <h3 className="font-medium text-lg">{data.title || 'Pricing'}</h3>
-        <p className="text-sm text-muted-foreground mt-1">
-          {data.useProducts 
-            ? `Showing products from database${data.productType && data.productType !== 'all' ? ` (${data.productType === 'recurring' ? 'subscriptions' : 'one-time'})` : ''}`
-            : `${tiers.length} pricing plan${tiers.length !== 1 ? 's' : ''}`
-          }
-        </p>
+      <div className="py-6">
+        {(data.title || data.subtitle) && (
+          <div className="text-center mb-6">
+            {data.title && <h3 className="text-xl font-bold">{data.title}</h3>}
+            {data.subtitle && <p className="mt-1 text-sm text-muted-foreground">{data.subtitle}</p>}
+          </div>
+        )}
+        <div className={cn(
+          'grid gap-4',
+          tiers.length === 1 ? 'grid-cols-1 max-w-sm mx-auto' :
+          tiers.length === 2 ? 'grid-cols-2' : 'grid-cols-3'
+        )}>
+          {tiers.slice(0, 3).map((tier) => (
+            <div
+              key={tier.id}
+              className={cn(
+                'p-4 rounded-lg border text-center relative',
+                tier.highlighted ? 'border-primary shadow-md ring-1 ring-primary' : 'bg-card'
+              )}
+            >
+              {tier.badge && (
+                <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary text-primary-foreground">
+                  {tier.badge}
+                </span>
+              )}
+              <h4 className="font-semibold text-sm">{tier.name}</h4>
+              <div className="text-2xl font-bold mt-1">{tier.price}</div>
+              {tier.period && <p className="text-[10px] text-muted-foreground">{tier.period}</p>}
+              {tier.features && tier.features.length > 0 && (
+                <ul className="mt-3 space-y-1 text-left">
+                  {tier.features.slice(0, 3).map((f, i) => (
+                    <li key={i} className="flex items-center gap-1.5 text-[11px]">
+                      <Star className="h-3 w-3 text-accent-foreground shrink-0" />
+                      <span className="truncate">{f}</span>
+                    </li>
+                  ))}
+                  {tier.features.length > 3 && (
+                    <li className="text-[10px] text-muted-foreground pl-4">+{tier.features.length - 3} more</li>
+                  )}
+                </ul>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
     );
   }

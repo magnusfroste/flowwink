@@ -59,12 +59,35 @@ export function SocialProofBlockEditor({ data, onChange, isEditing }: SocialProo
   };
 
   if (!isEditing) {
+    if (items.length === 0) {
+      return (
+        <div className="p-6 text-center border-2 border-dashed rounded-lg bg-muted/30">
+          <Users className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
+          <p className="text-sm text-muted-foreground">No social proof items added yet</p>
+        </div>
+      );
+    }
+
     return (
-      <div className="p-4 bg-muted/30 rounded-lg">
-        <h3 className="font-medium mb-2">{data.title || 'Social Proof'}</h3>
-        <p className="text-sm text-muted-foreground">
-          {items.length} proof items configured
-        </p>
+      <div className="py-6">
+        {data.title && <h3 className="text-xl font-bold text-center mb-4">{data.title}</h3>}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {items.slice(0, 4).map((item, i) => {
+            const IconComp = ICON_OPTIONS.find(o => o.value === item.icon)?.icon || Users;
+            return (
+              <div key={item.id || i} className="text-center p-3 rounded-lg bg-card border">
+                <IconComp className="h-5 w-5 mx-auto text-accent-foreground mb-1" />
+                <div className="text-lg font-bold">
+                  {item.prefix}{item.value}{item.suffix}
+                </div>
+                <p className="text-[11px] text-muted-foreground">{item.label}</p>
+              </div>
+            );
+          })}
+        </div>
+        {items.length > 4 && (
+          <p className="text-xs text-muted-foreground text-center mt-2">+{items.length - 4} more</p>
+        )}
       </div>
     );
   }

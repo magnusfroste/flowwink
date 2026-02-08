@@ -78,6 +78,7 @@ export function HeroBlock({ data }: HeroBlockProps) {
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(data.videoMuted !== false);
   const [videoError, setVideoError] = useState(false);
+  const [scrollOpacity, setScrollOpacity] = useState(1);
   const videoRef = useRef<HTMLVideoElement>(null);
   
   const layout = data.layout || 'centered';
@@ -102,6 +103,22 @@ export function HeroBlock({ data }: HeroBlockProps) {
       videoRef.current.muted = isMuted;
     }
   }, [isMuted]);
+
+  // Fade out scroll indicator on scroll (Webflow-style)
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+      const heroHeight = window.innerHeight;
+      // Fade out gradually as user scrolls, hide completely after 50% of hero
+      const opacity = Math.max(0, 1 - (scrollY / (heroHeight * 0.5)));
+      setScrollOpacity(opacity);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll(); // Initial check
+
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
   
   if (!data.title) return null;
   
@@ -442,11 +459,12 @@ export function HeroBlock({ data }: HeroBlockProps) {
         </div>
       </div>
       
-      {/* Scroll indicator - fixed position to always be visible above fold */}
-      {data.showScrollIndicator && heightMode !== 'auto' && (
+      {/* Scroll indicator - fades out on scroll (Webflow-style) */}
+      {data.showScrollIndicator && heightMode !== 'auto' && scrollOpacity > 0 && (
         <button
           onClick={() => window.scrollTo({ top: window.innerHeight, behavior: 'smooth' })}
-          className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 opacity-80 hover:opacity-100 transition-opacity"
+          className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 transition-opacity"
+          style={{ opacity: scrollOpacity * 0.8 }}
           aria-label="Scroll down"
         >
           <ChevronDown className="h-8 w-8 animate-bounce-down text-foreground drop-shadow-lg" />

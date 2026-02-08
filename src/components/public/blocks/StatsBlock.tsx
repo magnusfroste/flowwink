@@ -302,7 +302,7 @@ export function StatsBlock({ data }: StatsBlockProps) {
               className="text-center p-6 bg-background rounded-xl shadow-sm"
             >
               {stat.icon && (
-                <div className="flex justify-center mb-4 text-primary">
+                <div className="flex justify-center mb-4 text-accent-foreground">
                   {getIcon(stat.icon)}
                 </div>
               )}

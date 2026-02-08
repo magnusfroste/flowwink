@@ -9,11 +9,16 @@ interface TwoColumnBlockProps {
   data: TwoColumnBlockData;
 }
 
-// Title size classes for Design System 2026
-const titleSizeClasses: Record<string, string> = {
-  default: 'text-3xl md:text-4xl',
-  large: 'text-4xl md:text-5xl',
-  display: 'text-5xl md:text-6xl lg:text-7xl',
+// Shared typography scale for consistency across all blocks (Webflow-style)
+const typographyScale = {
+  // h1 - Hero/Display titles
+  h1: 'text-5xl md:text-6xl lg:text-7xl',
+  h1Large: 'text-6xl md:text-7xl lg:text-8xl',
+  // h2 - Section titles
+  h2: 'text-3xl md:text-4xl',
+  h2Large: 'text-4xl md:text-5xl',
+  // h3 - Subtitles
+  h3: 'text-2xl md:text-3xl',
 };
 
 export function TwoColumnBlock({ data }: TwoColumnBlockProps) {
@@ -24,8 +29,17 @@ export function TwoColumnBlock({ data }: TwoColumnBlockProps) {
   const hasHeader = data.eyebrow || data.title;
   const hasSecondImage = data.secondImageSrc;
   
-  // Default eyebrow color to brand primary, allow override
-  const eyebrowColor = data.eyebrowColor || (branding?.primaryColor ? `hsl(${branding.primaryColor})` : 'hsl(var(--primary))');
+  // Default eyebrow color to accent, allow override
+  const eyebrowColor = data.eyebrowColor || (branding?.accentColor ? `hsl(${branding.accentColor})` : 'hsl(var(--accent-foreground))');
+
+  // Map titleSize to typography scale
+  const getTitleSize = () => {
+    switch (titleSize) {
+      case 'large': return typographyScale.h2Large;
+      case 'display': return typographyScale.h1;
+      default: return typographyScale.h2;
+    }
+  };
 
   const stickyStyles = 'md:sticky md:top-24 md:self-start';
   
@@ -131,7 +145,7 @@ export function TwoColumnBlock({ data }: TwoColumnBlockProps) {
                 
                 {/* Display title with optional accent */}
                 {data.title && (
-                  <h2 className={`font-bold tracking-tight leading-tight mb-6 ${titleSizeClasses[titleSize]}`}>
+                  <h2 className={`font-bold tracking-tight leading-tight mb-6 ${getTitleSize()}`}>
                     {renderTitle()}
                   </h2>
                 )}

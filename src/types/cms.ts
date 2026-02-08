@@ -33,6 +33,8 @@ export interface Page {
   created_at: string;
   updated_at: string;
   scheduled_at: string | null;
+  deleted_at: string | null;
+  deleted_by: string | null;
 }
 
 export interface PageVersion {

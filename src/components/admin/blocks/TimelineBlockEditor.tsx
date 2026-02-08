@@ -3,7 +3,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, GripVertical, GitBranch } from "lucide-react";
+import { Plus, Trash2, GripVertical, GitBranch, icons } from "lucide-react";
+import { cn } from '@/lib/utils';
 import { IconPicker } from "../IconPicker";
 
 interface TimelineStep {
@@ -34,27 +35,38 @@ export function TimelineBlockEditor({ data, onChange, isEditing }: TimelineBlock
 
   // Preview mode
   if (!isEditing) {
+    if (steps.length === 0) {
+      return (
+        <div className="p-6 text-center border-2 border-dashed rounded-lg bg-muted/30">
+          <GitBranch className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
+          <p className="text-sm text-muted-foreground">No timeline steps added yet</p>
+        </div>
+      );
+    }
+
+    const renderIcon = (iconName: string) => {
+      const LucideIcon = icons[iconName as keyof typeof icons];
+      return LucideIcon ? <LucideIcon className="h-4 w-4" /> : <span className="text-xs font-bold">{steps.indexOf(steps.find(s => s.icon === iconName)!) + 1}</span>;
+    };
+
     return (
-      <div className="p-6 text-center border-2 border-dashed rounded-lg bg-muted/30">
-        <GitBranch className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-        <h3 className="font-medium text-lg">{data.title || "Timeline"}</h3>
-        <p className="text-sm text-muted-foreground mt-1">
-          {steps.length} step{steps.length !== 1 ? 's' : ''} • {variant} layout
-        </p>
-        {steps.length > 0 && (
-          <div className="mt-4 flex justify-center gap-2">
-            {steps.slice(0, 4).map((step, i) => (
-              <div key={step.id} className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium">
-                {i + 1}
+      <div className="py-6">
+        {data.title && <h3 className="text-xl font-bold text-center mb-6">{data.title}</h3>}
+        <div className="relative space-y-4 pl-8">
+          <div className="absolute left-[15px] top-2 bottom-2 w-0.5 bg-border" />
+          {steps.map((step, i) => (
+            <div key={step.id} className="relative flex gap-4">
+              <div className="absolute left-[-25px] z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm text-xs">
+                {renderIcon(step.icon)}
               </div>
-            ))}
-            {steps.length > 4 && (
-              <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-xs">
-                +{steps.length - 4}
+              <div className="pt-1">
+                <h4 className="font-semibold text-sm">{step.title}</h4>
+                {step.date && <p className="text-[10px] text-accent-foreground font-medium">{step.date}</p>}
+                {step.description && <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{step.description}</p>}
               </div>
-            )}
-          </div>
-        )}
+            </div>
+          ))}
+        </div>
       </div>
     );
   }

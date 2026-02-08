@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { Plus } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -66,8 +67,6 @@ import { SocialProofBlockEditor } from './SocialProofBlockEditor';
 import { NotificationToastBlockEditor } from './NotificationToastBlockEditor';
 import { FloatingCTABlockEditor } from './FloatingCTABlockEditor';
 import { ChatLauncherBlockEditor } from './ChatLauncherBlockEditor';
-import { TemplateEmptyState } from '@/components/admin/StarterTemplateSelector';
-import { StarterTemplate } from '@/data/starter-templates';
 import type { ProductsBlockData } from '@/components/public/blocks/ProductsBlock';
 import type { CartBlockData } from '@/components/public/blocks/CartBlock';
 import type { KbFeaturedBlockData } from '@/components/public/blocks/KbFeaturedBlock';
@@ -981,18 +980,13 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
       )}
 
       {blocks.length === 0 && canEdit && (
-        <TemplateEmptyState 
-          onSelectTemplate={(template: StarterTemplate) => {
-            // Apply first page's blocks to the current page
-            const homePage = template.pages.find(p => p.isHomePage) || template.pages[0];
-            if (homePage) {
-              onChange(homePage.blocks.map(block => ({
-                ...block,
-                id: `block-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-              })));
-            }
-          }}
-        />
+        <div className="text-center py-12 px-4 border-2 border-dashed border-muted-foreground/20 rounded-xl">
+          <Plus className="h-8 w-8 mx-auto mb-3 text-muted-foreground/40" />
+          <h3 className="text-base font-medium mb-1">Add your first block</h3>
+          <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+            Use the <strong>+ Add Block</strong> button above to start building your page with text, images, heroes, and more.
+          </p>
+        </div>
       )}
 
       {blocks.length === 0 && !canEdit && (

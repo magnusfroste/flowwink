@@ -101,7 +101,7 @@ export function NewsletterBlock({ data }: NewsletterBlockProps) {
       <Card className="max-w-lg mx-auto">
         <CardHeader className="text-center">
           <div className="mx-auto mb-2 h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-            <Mail className="h-6 w-6 text-primary" />
+            <Mail className="h-6 w-6 text-accent-foreground" />
           </div>
           <CardTitle>{title}</CardTitle>
           <CardDescription>{description}</CardDescription>
@@ -145,7 +145,7 @@ export function NewsletterBlock({ data }: NewsletterBlockProps) {
     <div className="py-12 px-6 bg-gradient-to-br from-primary/5 to-primary/10 rounded-2xl">
       <div className="max-w-xl mx-auto text-center">
         <div className="mx-auto mb-4 h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
-          <Mail className="h-7 w-7 text-primary" />
+          <Mail className="h-7 w-7 text-accent-foreground" />
         </div>
         <h3 className="text-2xl font-bold mb-2">{title}</h3>
         <p className="text-muted-foreground mb-6">{description}</p>

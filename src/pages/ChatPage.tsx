@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useChatSettings } from '@/hooks/useSiteSettings';
 import { ChatConversation } from '@/components/chat/ChatConversation';
@@ -24,6 +24,7 @@ export default function ChatPage() {
   const { user } = useAuth();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | undefined>();
+  const [chatKey, setChatKey] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   
   // Get initial message from navigation state (from ChatLauncherBlock)
@@ -37,46 +38,43 @@ export default function ChatPage() {
     }
   }, [settings, settingsLoading, navigate]);
 
-  // Load conversations
-  useEffect(() => {
-    const loadConversations = async () => {
-      const sessionId = localStorage.getItem('chat-session-id');
-      
-      const query = supabase
-        .from('chat_conversations')
-        .select('id, title, created_at')
-        .order('created_at', { ascending: false });
+  const loadConversations = useCallback(async () => {
+    const sessionId = localStorage.getItem('chat-session-id');
+    
+    const query = supabase
+      .from('chat_conversations')
+      .select('id, title, created_at')
+      .order('created_at', { ascending: false });
 
-      if (user?.id) {
-        query.eq('user_id', user.id);
-      } else if (sessionId) {
-        query.eq('session_id', sessionId);
-      }
+    if (user?.id) {
+      query.eq('user_id', user.id);
+    } else if (sessionId) {
+      query.eq('session_id', sessionId);
+    }
 
-      const { data } = await query;
-      if (data) {
-        setConversations(data);
-      }
-    };
-
-    loadConversations();
+    const { data } = await query;
+    if (data) {
+      setConversations(data);
+    }
   }, [user?.id]);
 
+  // Load conversations on mount
+  useEffect(() => {
+    loadConversations();
+  }, [loadConversations]);
+
   const handleNewConversation = () => {
+    localStorage.removeItem('chat-conversation-id');
     setActiveConversationId(undefined);
+    setChatKey(k => k + 1);
   };
 
   const handleConversationCreated = (id: string) => {
     setActiveConversationId(id);
-    // Reload conversations
-    const sessionId = localStorage.getItem('chat-session-id');
-    supabase
-      .from('chat_conversations')
-      .select('id, title, created_at')
-      .order('created_at', { ascending: false })
-      .then(({ data }) => {
-        if (data) setConversations(data);
-      });
+    // Reload immediately to show the new conversation
+    loadConversations();
+    // Reload again after a short delay so the title update from useChat has time to persist
+    setTimeout(() => loadConversations(), 1500);
   };
 
   const handleDeleteConversation = async (id: string, e: React.MouseEvent) => {
@@ -149,9 +147,11 @@ export default function ChatPage() {
         {/* Main chat area */}
         <div className="flex-1 flex flex-col min-h-0 min-w-0">
           <ChatConversation
+            key={chatKey}
             mode="landing"
             conversationId={activeConversationId}
             onNewConversation={handleConversationCreated}
+            skipRestore={chatKey > 0}
             className="flex-1 min-h-0"
             initialMessage={!initialMessageProcessed.current ? initialMessage : undefined}
             onInitialMessageSent={() => {

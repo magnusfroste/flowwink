@@ -6,6 +6,7 @@ import type { Json } from '@/integrations/supabase/types';
 
 export interface GeneralSettings {
   homepageSlug: string;
+  selectedTemplate?: string;
 }
 
 const defaultGeneralSettings: GeneralSettings = {

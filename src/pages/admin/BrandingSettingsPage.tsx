@@ -2,99 +2,62 @@ import { useState, useEffect, useMemo } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ImagePickerField } from '@/components/admin/ImagePickerField';
-import { useBrandingSettings, useUpdateBrandingSettings, type BrandingSettings } from '@/hooks/useSiteSettings';
+import { useBrandingSettings, useUpdateBrandingSettings, useGeneralSettings, useUpdateGeneralSettings, type BrandingSettings } from '@/hooks/useSiteSettings';
 import { AVAILABLE_HEADING_FONTS, AVAILABLE_BODY_FONTS } from '@/providers/BrandingProvider';
 import { BrandGuideDialog } from '@/components/admin/BrandGuideDialog';
-import { Loader2, Palette, Type, Image, LayoutGrid, Sparkles, Globe, Trash2 } from 'lucide-react';
+import { Loader2, Palette, Type, Image, LayoutGrid, Sparkles, Globe, Trash2, CheckCircle, XCircle, AlertCircle, RotateCcw } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useUnsavedChanges, UnsavedChangesDialog } from '@/hooks/useUnsavedChanges';
 import type { Json } from '@/integrations/supabase/types';
+import { STARTER_TEMPLATES } from '@/data/starter-templates';
 
 interface CustomTheme {
   id: string;
   name: string;
   settings: Partial<BrandingSettings>;
-}
-
-// Predefined design themes
-const DESIGN_THEMES: { id: string; name: string; description: string; settings: Partial<BrandingSettings> }[] = [
-  {
-    id: 'healthcare-classic',
-    name: 'Classic Healthcare',
-    description: 'Traditional medical blue with serif fonts',
-    settings: {
-      primaryColor: '220 100% 26%',
-      secondaryColor: '210 25% 95%',
-      accentColor: '180 45% 40%',
-      headingFont: 'PT Serif',
-      bodyFont: 'Inter',
-      borderRadius: 'md',
-      shadowIntensity: 'subtle',
-      heroOverlayOpacity: 'medium',
-    },
-  },
-  {
-    id: 'modern-minimalist',
-    name: 'Modern Minimalist',
-    description: 'Clean, stripped-down design with sharp edges',
-    settings: {
-      primaryColor: '220 15% 20%',
-      secondaryColor: '0 0% 98%',
-      accentColor: '220 90% 55%',
-      headingFont: 'Inter',
-      bodyFont: 'Inter',
-      borderRadius: 'none',
-      shadowIntensity: 'none',
-      heroOverlayOpacity: 'light',
-    },
-  },
-  {
-    id: 'warm-welcoming',
-    name: 'Warm & Welcoming',
-    description: 'Soft colors and rounded shapes',
-    settings: {
-      primaryColor: '25 75% 47%',
-      secondaryColor: '35 30% 96%',
-      accentColor: '160 50% 45%',
-      headingFont: 'Merriweather',
-      bodyFont: 'Open Sans',
-      borderRadius: 'lg',
-      shadowIntensity: 'medium',
-      heroOverlayOpacity: 'light',
-    },
-  },
-  {
-    id: 'professional-trust',
-    name: 'Professional & Trustworthy',
-    description: 'Conservative design that signals trust',
-    settings: {
-      primaryColor: '210 70% 35%',
-      secondaryColor: '210 20% 96%',
-      accentColor: '45 90% 50%',
-      headingFont: 'Libre Baskerville',
-      bodyFont: 'Source Sans 3',
-      borderRadius: 'sm',
-      shadowIntensity: 'subtle',
-      heroOverlayOpacity: 'strong',
-    },
-  },
-];
+};
 
 export default function BrandingSettingsPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: savedSettings, isLoading } = useBrandingSettings();
+  const { data: generalSettings } = useGeneralSettings();
   const updateSettings = useUpdateBrandingSettings();
+  const updateGeneral = useUpdateGeneralSettings();
   const [settings, setSettings] = useState<BrandingSettings>({});
   const [brandGuideOpen, setBrandGuideOpen] = useState(false);
+
+  // Get current template
+  const currentTemplate = useMemo(() => {
+    const selectedTemplateId = generalSettings?.selectedTemplate;
+    if (!selectedTemplateId || selectedTemplateId === 'custom') return null;
+    return STARTER_TEMPLATES.find(t => t.id === selectedTemplateId);
+  }, [generalSettings?.selectedTemplate]);
+
+  // Check if branding is custom (differs from template defaults)
+  const isCustomBranding = useMemo(() => {
+    if (!currentTemplate || !savedSettings) return false;
+    const templateBranding = currentTemplate.branding;
+    const currentBranding = savedSettings;
+    
+    // Compare key branding properties
+    const keysToCompare = ['primaryColor', 'secondaryColor', 'accentColor', 'headingFont', 'bodyFont', 'borderRadius', 'shadowIntensity'] as const;
+    
+    return keysToCompare.some(key => {
+      const templateValue = templateBranding[key];
+      const currentValue = currentBranding[key];
+      return templateValue !== currentValue;
+    });
+  }, [currentTemplate, savedSettings]);
 
   // Fetch custom themes
   const { data: customThemes = [] } = useQuery({
@@ -204,14 +167,70 @@ export default function BrandingSettingsPage() {
     return `${Math.round(h)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
   };
 
-  const applyTheme = (themeId: string) => {
-    const theme = DESIGN_THEMES.find((t) => t.id === themeId);
-    if (theme) {
-      setSettings((prev) => ({
-        ...prev,
-        ...theme.settings,
-      }));
-    }
+  // Calculate luminance from HSL for contrast calculation
+  const getLuminance = (hsl: string): number => {
+    const [h, s, l] = hsl.split(' ').map((v) => parseFloat(v));
+    const sDecimal = s / 100;
+    const lDecimal = l / 100;
+    const c = (1 - Math.abs(2 * lDecimal - 1)) * sDecimal;
+    const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+    const m = lDecimal - c / 2;
+    let r = 0, g = 0, b = 0;
+    if (h < 60) { r = c; g = x; }
+    else if (h < 120) { r = x; g = c; }
+    else if (h < 180) { g = c; b = x; }
+    else if (h < 240) { g = x; b = c; }
+    else if (h < 300) { r = x; b = c; }
+    else { r = c; b = x; }
+    const toLinear = (n: number) => {
+      const n2 = n + m;
+      return n2 <= 0.03928 ? n2 / 12.92 : Math.pow((n2 + 0.055) / 1.055, 2.4);
+    };
+    return 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
+  };
+
+  // Calculate WCAG contrast ratio
+  const getContrastRatio = (hsl1: string, hsl2: string): number => {
+    const lum1 = getLuminance(hsl1);
+    const lum2 = getLuminance(hsl2);
+    const lighter = Math.max(lum1, lum2);
+    const darker = Math.min(lum1, lum2);
+    return (lighter + 0.05) / (darker + 0.05);
+  };
+
+  // Check WCAG compliance
+  const checkContrastCompliance = (ratio: number) => {
+    const aaNormal = ratio >= 4.5;
+    const aaLarge = ratio >= 3.0;
+    const aaaNormal = ratio >= 7.0;
+    const aaaLarge = ratio >= 4.5;
+    return { aaNormal, aaLarge, aaaNormal, aaaLarge, ratio };
+  };
+
+  // Get contrast badge component
+  const ContrastBadge = ({ ratio }: { ratio: number }) => {
+    const { aaNormal, aaLarge, aaaNormal, aaaLarge } = checkContrastCompliance(ratio);
+    return (
+      <div className="flex items-center gap-2">
+        {aaaNormal ? (
+          <div className="flex items-center gap-1 text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-1 rounded">
+            <CheckCircle className="h-3 w-3" />
+            <span>AAA</span>
+          </div>
+        ) : aaNormal ? (
+          <div className="flex items-center gap-1 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-2 py-1 rounded">
+            <CheckCircle className="h-3 w-3" />
+            <span>AA</span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1 text-xs bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 px-2 py-1 rounded">
+            <AlertCircle className="h-3 w-3" />
+            <span>Fail</span>
+          </div>
+        )}
+        <span className="text-xs text-muted-foreground">{ratio.toFixed(2)}:1</span>
+      </div>
+    );
   };
 
   const applyCustomTheme = (theme: CustomTheme) => {
@@ -226,6 +245,17 @@ export default function BrandingSettingsPage() {
       ...prev,
       ...brandingSettings,
     }));
+  };
+
+  // Reset to template defaults
+  const handleResetToTemplateDefaults = () => {
+    if (currentTemplate) {
+      setSettings(currentTemplate.branding as BrandingSettings);
+      toast({
+        title: 'Reset to Template Defaults',
+        description: `Branding reset to ${currentTemplate.name} defaults`,
+      });
+    }
   };
 
   const handleSaveAsTheme = (name: string, themeSettings: Partial<BrandingSettings>) => {
@@ -276,6 +306,57 @@ export default function BrandingSettingsPage() {
             Save changes
           </Button>
         </AdminPageHeader>
+
+        {/* Current Template Indicator */}
+        <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg border">
+          <div className="flex items-center gap-3">
+            <div>
+              <p className="text-sm text-muted-foreground">Current Template</p>
+              {currentTemplate ? (
+                <p className="text-lg font-semibold">{currentTemplate.name}</p>
+              ) : generalSettings?.selectedTemplate === 'custom' ? (
+                <p className="text-lg font-semibold">Custom</p>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <p className="text-lg font-semibold text-muted-foreground">Not set</p>
+                  <Select
+                    value=""
+                    onValueChange={(value) => {
+                      updateGeneral.mutateAsync({ 
+                        homepageSlug: generalSettings?.homepageSlug || 'home',
+                        selectedTemplate: value 
+                      });
+                    }}
+                  >
+                    <SelectTrigger className="w-48 h-8">
+                      <SelectValue placeholder="Select template..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {STARTER_TEMPLATES.map((t) => (
+                        <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                      ))}
+                      <SelectItem value="custom">Custom (built from scratch)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+            {currentTemplate && isCustomBranding && (
+              <Badge variant="secondary" className="ml-2">Custom</Badge>
+            )}
+          </div>
+          {currentTemplate && isCustomBranding && (
+            <Button 
+              onClick={handleResetToTemplateDefaults} 
+              variant="outline" 
+              size="sm"
+              className="gap-2"
+            >
+              <RotateCcw className="h-4 w-4" />
+              Reset to Template Defaults
+            </Button>
+          )}
+        </div>
 
         <Tabs defaultValue="themes" className="space-y-6">
           <TabsList className="grid w-full grid-cols-5 max-w-2xl">
@@ -390,63 +471,6 @@ export default function BrandingSettingsPage() {
                 </Card>
               )}
 
-              {/* Predefined Themes */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Predefined Themes</CardTitle>
-                  <CardDescription>Choose a theme as a starting point, then fine-tune in the other tabs</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {DESIGN_THEMES.map((theme) => {
-                      const colors = getThemePreviewColors(theme.settings);
-                      return (
-                        <button
-                          key={theme.id}
-                          onClick={() => applyTheme(theme.id)}
-                          className="text-left p-4 rounded-lg border-2 hover:border-primary/50 transition-all group"
-                        >
-                          <div className="flex items-start gap-4">
-                            <div className="flex flex-col gap-1">
-                              <div
-                                className="h-8 w-8 rounded-md"
-                                style={{ backgroundColor: colors.primary }}
-                              />
-                              <div className="flex gap-1">
-                                <div
-                                  className="h-3 w-3 rounded-sm"
-                                  style={{ backgroundColor: colors.secondary }}
-                                />
-                                <div
-                                  className="h-3 w-3 rounded-sm"
-                                  style={{ backgroundColor: colors.accent }}
-                                />
-                              </div>
-                            </div>
-                            <div className="flex-1">
-                              <h3 className="font-semibold group-hover:text-primary transition-colors">
-                                {theme.name}
-                              </h3>
-                              <p className="text-sm text-muted-foreground mt-1">
-                                {theme.description}
-                              </p>
-                              <div className="flex gap-2 mt-2">
-                                <span className="text-xs bg-muted px-2 py-0.5 rounded">
-                                  {theme.settings.headingFont}
-                                </span>
-                                <span className="text-xs bg-muted px-2 py-0.5 rounded">
-                                  {theme.settings.borderRadius === 'none' ? 'Sharp' : 
-                                   theme.settings.borderRadius === 'lg' ? 'Rounded' : 'Standard'}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
             </div>
           </TabsContent>
 
@@ -655,6 +679,9 @@ export default function BrandingSettingsPage() {
                         <p className="text-xs text-muted-foreground">Buttons, links, header</p>
                       </div>
                     </div>
+                    {/* Contrast: white text on primary background */}
+                    <div className="text-xs text-muted-foreground">vs white text</div>
+                    <ContrastBadge ratio={getContrastRatio(settings.primaryColor || '220 100% 26%', '0 0% 100%')} />
                   </div>
                   
                   <div className="space-y-3">
@@ -671,6 +698,9 @@ export default function BrandingSettingsPage() {
                         <p className="text-xs text-muted-foreground">Sections, cards</p>
                       </div>
                     </div>
+                    {/* Contrast: dark text on secondary background */}
+                    <div className="text-xs text-muted-foreground">vs dark text</div>
+                    <ContrastBadge ratio={getContrastRatio(settings.secondaryColor || '210 40% 96%', '0 0% 10%')} />
                   </div>
                   
                   <div className="space-y-3">
@@ -687,6 +717,9 @@ export default function BrandingSettingsPage() {
                         <p className="text-xs text-muted-foreground">Hover, focus states</p>
                       </div>
                     </div>
+                    {/* Contrast: white text on accent background */}
+                    <div className="text-xs text-muted-foreground">vs white text</div>
+                    <ContrastBadge ratio={getContrastRatio(settings.accentColor || '199 89% 48%', '0 0% 100%')} />
                   </div>
                 </div>
 

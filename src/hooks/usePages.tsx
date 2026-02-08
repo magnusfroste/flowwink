@@ -19,6 +19,8 @@ function parsePage(data: {
   created_at: string;
   updated_at: string;
   scheduled_at?: string | null;
+  deleted_at?: string | null;
+  deleted_by?: string | null;
 }): Page {
   return {
     ...data,
@@ -26,6 +28,8 @@ function parsePage(data: {
     content_json: (data.content_json || []) as unknown as ContentBlock[],
     meta_json: (data.meta_json || {}) as unknown as PageMeta,
     scheduled_at: data.scheduled_at ?? null,
+    deleted_at: data.deleted_at ?? null,
+    deleted_by: data.deleted_by ?? null,
   };
 }
 
@@ -36,6 +40,7 @@ export function usePages(status?: PageStatus) {
       let query = supabase
         .from('pages')
         .select('*')
+        .is('deleted_at', null)
         .order('updated_at', { ascending: false });
       
       if (status) {
@@ -318,7 +323,7 @@ export function useDeletePage() {
     mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('pages')
-        .delete()
+        .update({ deleted_at: new Date().toISOString(), deleted_by: user?.id })
         .eq('id', id);
       
       if (error) throw error;
@@ -337,9 +342,106 @@ export function useDeletePage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pages'] });
+      queryClient.invalidateQueries({ queryKey: ['deleted-pages'] });
       toast({
-        title: 'Page deleted',
-        description: 'Page has been permanently deleted.',
+        title: 'Page moved to trash',
+        description: 'You can restore it from the trash.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+}
+
+export function useDeletedPages() {
+  return useQuery({
+    queryKey: ['deleted-pages'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('pages')
+        .select('*')
+        .not('deleted_at', 'is', null)
+        .order('deleted_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      return (data || []).map(parsePage);
+    },
+  });
+}
+
+export function useRestorePage() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const { user } = useAuth();
+  
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('pages')
+        .update({ deleted_at: null, deleted_by: null })
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      await supabase.from('audit_logs').insert({
+        action: 'restore_page',
+        entity_type: 'page',
+        entity_id: id,
+        user_id: user?.id,
+        metadata: {} as unknown as Json,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pages'] });
+      queryClient.invalidateQueries({ queryKey: ['deleted-pages'] });
+      toast({
+        title: 'Page restored',
+        description: 'The page has been restored from trash.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+}
+
+export function usePermanentDeletePage() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const { user } = useAuth();
+  
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('pages')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      await supabase.from('audit_logs').insert({
+        action: 'permanent_delete_page',
+        entity_type: 'page',
+        entity_id: id,
+        user_id: user?.id,
+        metadata: {} as unknown as Json,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['deleted-pages'] });
+      toast({
+        title: 'Page permanently deleted',
+        description: 'This action cannot be undone.',
       });
     },
     onError: (error: Error) => {

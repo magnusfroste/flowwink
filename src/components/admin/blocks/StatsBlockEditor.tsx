@@ -21,7 +21,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, GripVertical, Trash2, TrendingUp } from 'lucide-react';
+import { Plus, GripVertical, Trash2, TrendingUp, icons } from 'lucide-react';
 import { IconPicker } from '../IconPicker';
 import { cn } from '@/lib/utils';
 
@@ -134,18 +134,38 @@ export function StatsBlockEditor({ data, onChange, canEdit }: StatsBlockEditorPr
   };
 
   if (!canEdit) {
+    if (stats.length === 0) {
+      return (
+        <div className="p-6 text-center border-2 border-dashed rounded-lg bg-muted/30">
+          <TrendingUp className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
+          <p className="text-sm text-muted-foreground">No stats added yet</p>
+        </div>
+      );
+    }
+
     return (
-      <div className="p-6">
+      <div className="py-6">
         {data.title && (
-          <h3 className="text-lg font-semibold mb-4 text-center">{data.title}</h3>
+          <h3 className="text-xl font-bold mb-6 text-center">{data.title}</h3>
         )}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {stats.map((stat, index) => (
-            <div key={index} className="text-center">
-              <div className="text-3xl font-bold text-primary">{stat.value || '—'}</div>
-              <div className="text-sm text-muted-foreground mt-1">{stat.label}</div>
-            </div>
-          ))}
+        <div className={cn(
+          'grid gap-6',
+          stats.length <= 2 ? 'grid-cols-2' : stats.length === 3 ? 'grid-cols-3' : 'grid-cols-4'
+        )}>
+          {stats.map((stat, index) => {
+            const StatIcon = stat.icon ? icons[stat.icon as keyof typeof icons] : null;
+            return (
+              <div key={index} className="text-center p-4 bg-card rounded-xl border">
+                {StatIcon && (
+                  <div className="flex justify-center mb-2">
+                    <StatIcon className="h-5 w-5 text-accent-foreground" />
+                  </div>
+                )}
+                <div className="text-2xl font-bold text-primary">{stat.value || '—'}</div>
+                <div className="text-xs text-muted-foreground mt-1">{stat.label}</div>
+              </div>
+            );
+          })}
         </div>
       </div>
     );

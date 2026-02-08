@@ -58,32 +58,37 @@ export function TeamBlockEditor({ data, onChange, isEditing }: TeamBlockEditorPr
   };
 
   if (!isEditing) {
-    return (
-      <div className="p-6 bg-muted/30 rounded-lg">
-        <div className="text-center mb-6">
-          {data.title && <h3 className="text-xl font-semibold">{data.title}</h3>}
-          {data.subtitle && <p className="text-muted-foreground mt-1">{data.subtitle}</p>}
+    if (members.length === 0) {
+      return (
+        <div className="p-6 text-center border-2 border-dashed rounded-lg bg-muted/30">
+          <User className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
+          <p className="text-sm text-muted-foreground">No team members added yet</p>
         </div>
+      );
+    }
+
+    return (
+      <div className="py-6">
+        {(data.title || data.subtitle) && (
+          <div className="text-center mb-6">
+            {data.title && <h3 className="text-xl font-bold">{data.title}</h3>}
+            {data.subtitle && <p className="mt-1 text-sm text-muted-foreground">{data.subtitle}</p>}
+          </div>
+        )}
         <div className={`grid gap-4 grid-cols-${columns}`}>
-          {members.length === 0 ? (
-            <p className="text-muted-foreground col-span-full text-center py-8">
-              No team members added yet
-            </p>
-          ) : (
-            members.map((member) => (
-              <div key={member.id} className="p-4 bg-card rounded-lg border text-center">
-                <div className="w-16 h-16 mx-auto rounded-full bg-muted flex items-center justify-center mb-3 overflow-hidden">
-                  {member.photo ? (
-                    <img src={member.photo} alt={member.name} className="w-full h-full object-cover" />
-                  ) : (
-                    <User className="h-8 w-8 text-muted-foreground" />
-                  )}
-                </div>
-                <h4 className="font-medium">{member.name}</h4>
-                <p className="text-sm text-muted-foreground">{member.role}</p>
+          {members.map((member) => (
+            <div key={member.id} className="p-4 bg-card rounded-lg border text-center">
+              <div className="w-14 h-14 mx-auto rounded-full bg-accent/50 flex items-center justify-center mb-3 overflow-hidden">
+                {member.photo ? (
+                  <img src={member.photo} alt={member.name} className="w-full h-full object-cover" />
+                ) : (
+                  <User className="h-6 w-6 text-accent-foreground" />
+                )}
               </div>
-            ))
-          )}
+              <h4 className="font-semibold text-sm">{member.name}</h4>
+              <p className="text-xs text-accent-foreground">{member.role}</p>
+            </div>
+          ))}
         </div>
       </div>
     );

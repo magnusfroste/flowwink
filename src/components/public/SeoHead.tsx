@@ -1,5 +1,6 @@
 import { Helmet } from 'react-helmet-async';
 import { useSeoSettings, usePerformanceSettings, useCustomScriptsSettings, useAeoSettings } from '@/hooks/useSiteSettings';
+import { renderToHtml } from '@/lib/tiptap-utils';
 
 interface ContentBlock {
   id: string;
@@ -36,15 +37,16 @@ function extractFaqItems(blocks: ContentBlock[]): Array<{ question: string; answ
   
   for (const block of blocks) {
     if (block.type === 'accordion' && block.data) {
-      const items = block.data.items as Array<{ title?: string; content?: string }> | undefined;
+      const items = block.data.items as Array<{ question?: string; answer?: unknown }> | undefined;
       if (Array.isArray(items)) {
         for (const item of items) {
-          if (item.title && item.content) {
-            // Strip HTML tags from content
-            const cleanContent = item.content.replace(/<[^>]*>/g, '').trim();
+          if (item.question && item.answer) {
+            // Convert TiptapDocument or string to plain text
+            const html = renderToHtml(item.answer as string | Record<string, unknown>);
+            const cleanContent = html.replace(/<[^>]*>/g, '').trim();
             if (cleanContent) {
               faqItems.push({
-                question: item.title,
+                question: item.question,
                 answer: cleanContent
               });
             }

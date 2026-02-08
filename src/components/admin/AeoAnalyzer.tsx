@@ -19,12 +19,8 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 import { ContentBlock, PageMeta } from '@/types/cms';
+import { renderToHtml } from '@/lib/tiptap-utils';
 
 interface AeoAnalyzerProps {
   title: string;
@@ -37,6 +33,7 @@ interface AnalysisItem {
   id: string;
   label: string;
   description: string;
+  action?: string;
   status: 'pass' | 'warn' | 'fail';
   points: number;
   maxPoints: number;
@@ -47,9 +44,9 @@ function extractFaqCount(blocks: ContentBlock[]): number {
   let count = 0;
   for (const block of blocks) {
     if (block.type === 'accordion' && block.data) {
-      const items = block.data.items as Array<{ title?: string; content?: string }> | undefined;
+      const items = block.data.items as Array<{ question?: string; answer?: unknown }> | undefined;
       if (Array.isArray(items)) {
-        count += items.filter(item => item.title && item.content).length;
+        count += items.filter(item => item.question && item.answer).length;
       }
     }
   }
@@ -61,8 +58,8 @@ function countWords(blocks: ContentBlock[]): number {
   
   for (const block of blocks) {
     if (block.type === 'text' && block.data?.content) {
-      // Strip HTML and count words
-      const text = String(block.data.content).replace(/<[^>]*>/g, ' ');
+      const html = renderToHtml(block.data.content);
+      const text = html.replace(/<[^>]*>/g, ' ');
       wordCount += text.split(/\s+/).filter(w => w.length > 0).length;
     }
     if (block.type === 'hero' && block.data) {
@@ -77,8 +74,8 @@ function countWords(blocks: ContentBlock[]): number {
 function hasHeadings(blocks: ContentBlock[]): boolean {
   for (const block of blocks) {
     if (block.type === 'text' && block.data?.content) {
-      const content = String(block.data.content);
-      if (/<h[1-6][^>]*>/i.test(content)) return true;
+      const html = renderToHtml(block.data.content);
+      if (/<h[1-6][^>]*>/i.test(html)) return true;
     }
     if (block.type === 'hero') return true;
   }
@@ -101,6 +98,7 @@ export function AeoAnalyzer({ title, blocks, meta, slug }: AeoAnalyzerProps) {
       description: aeoEnabled 
         ? 'Structured data is generated automatically' 
         : 'Enable AEO in site settings',
+      action: aeoEnabled ? undefined : 'Go to Settings → AEO and enable it',
       status: aeoEnabled ? 'pass' : 'fail',
       points: aeoEnabled ? 20 : 0,
       maxPoints: 20,
@@ -117,6 +115,7 @@ export function AeoAnalyzer({ title, blocks, meta, slug }: AeoAnalyzerProps) {
       description: hasOrg 
         ? `${aeoSettings?.organizationName}` 
         : 'Add organization info in AEO settings',
+      action: hasOrg ? undefined : 'Go to Settings → AEO → Organization name & description',
       status: hasOrg ? 'pass' : 'warn',
       points: hasOrg ? 15 : 0,
       maxPoints: 15,
@@ -134,6 +133,7 @@ export function AeoAnalyzer({ title, blocks, meta, slug }: AeoAnalyzerProps) {
       description: hasDescription 
         ? `${descLength} characters (recommended: 120-160)` 
         : 'Add a descriptive meta text (at least 50 characters)',
+      action: hasDescription ? undefined : 'Click ⚙ Page Settings → Meta Description',
       status: hasDescription 
         ? (descLength >= 120 && descLength <= 160 ? 'pass' : 'warn') 
         : 'fail',
@@ -153,6 +153,7 @@ export function AeoAnalyzer({ title, blocks, meta, slug }: AeoAnalyzerProps) {
       description: faqCount > 0 
         ? `${faqCount} questions found (recommended: at least 3)` 
         : 'Add accordion block with frequently asked questions',
+      action: hasFaq ? undefined : 'Add an Accordion block with 3+ Q&A items to this page',
       status: hasFaq ? 'pass' : (faqCount > 0 ? 'warn' : 'fail'),
       points: hasFaq ? 20 : (faqCount > 0 ? faqCount * 5 : 0),
       maxPoints: 20,
@@ -168,6 +169,7 @@ export function AeoAnalyzer({ title, blocks, meta, slug }: AeoAnalyzerProps) {
       id: 'content-depth',
       label: 'Content depth',
       description: `${wordCount} words (recommended: at least 300)`,
+      action: hasGoodContent ? undefined : 'Add more text content to this page (Text blocks)',
       status: hasGoodContent ? 'pass' : (wordCount >= 100 ? 'warn' : 'fail'),
       points: hasGoodContent ? 15 : (wordCount >= 100 ? 8 : 0),
       maxPoints: 15,
@@ -184,6 +186,7 @@ export function AeoAnalyzer({ title, blocks, meta, slug }: AeoAnalyzerProps) {
       description: hasHeadingStructure 
         ? 'Headings found for better structure' 
         : 'Add headings (H1-H6) for clear structure',
+      action: hasHeadingStructure ? undefined : 'Use H2/H3 headings in your Text blocks',
       status: hasHeadingStructure ? 'pass' : 'warn',
       points: hasHeadingStructure ? 10 : 0,
       maxPoints: 10,
@@ -201,6 +204,7 @@ export function AeoAnalyzer({ title, blocks, meta, slug }: AeoAnalyzerProps) {
       description: inLlmsTxt
         ? 'Page is included in llms.txt' 
         : 'Page is excluded or llms.txt is disabled',
+      action: inLlmsTxt ? undefined : 'Go to Settings → AEO → Enable llms.txt',
       status: inLlmsTxt ? 'pass' : 'warn',
       points: inLlmsTxt ? 5 : 0,
       maxPoints: 5,
@@ -267,24 +271,24 @@ export function AeoAnalyzer({ title, blocks, meta, slug }: AeoAnalyzerProps) {
             className="h-2 mb-4"
           />
           
-          <div className="space-y-2">
+          <div className="space-y-1">
             {analysis.items.map((item) => (
-              <Tooltip key={item.id}>
-                <TooltipTrigger asChild>
-                  <div className="flex items-center justify-between py-1.5 px-2 rounded hover:bg-muted/50 cursor-help">
-                    <div className="flex items-center gap-2">
-                      {getStatusIcon(item.status)}
-                      <span className="text-sm">{item.label}</span>
-                    </div>
-                    <span className="text-xs text-muted-foreground">
-                      {item.points}/{item.maxPoints}
-                    </span>
+              <div key={item.id} className="py-1.5 px-2 rounded hover:bg-muted/50">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {getStatusIcon(item.status)}
+                    <span className="text-sm">{item.label}</span>
                   </div>
-                </TooltipTrigger>
-                <TooltipContent side="left" className="max-w-xs">
-                  <p>{item.description}</p>
-                </TooltipContent>
-              </Tooltip>
+                  <span className="text-xs text-muted-foreground">
+                    {item.points}/{item.maxPoints}
+                  </span>
+                </div>
+                {item.action && (
+                  <p className="text-xs text-muted-foreground mt-0.5 ml-6">
+                    → {item.action}
+                  </p>
+                )}
+              </div>
             ))}
           </div>
           
