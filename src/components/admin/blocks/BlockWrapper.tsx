@@ -1,6 +1,6 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, Trash2, Settings, Copy } from 'lucide-react';
+import { GripVertical, Trash2, Settings, Copy, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ContentBlock, ContentBlockType, BlockSpacing, BlockAnimation } from '@/types/cms';
 import { cn } from '@/lib/utils';
@@ -72,6 +72,7 @@ interface BlockWrapperProps {
   onSpacingChange?: (spacing: BlockSpacing) => void;
   onAnimationChange?: (animation: BlockAnimation) => void;
   onAnchorChange?: (anchorId: string | undefined) => void;
+  onToggleHidden?: (hidden: boolean) => void;
   canEdit: boolean;
 }
 
@@ -85,6 +86,7 @@ export function BlockWrapper({
   onSpacingChange,
   onAnimationChange,
   onAnchorChange,
+  onToggleHidden,
   canEdit,
 }: BlockWrapperProps) {
   const {
@@ -111,6 +113,7 @@ export function BlockWrapper({
         'relative group rounded-lg border-2 transition-all',
         isDragging ? 'opacity-50 border-primary shadow-lg z-50' : 'border-transparent',
         isEditing ? 'border-primary bg-primary/5' : 'hover:border-border',
+        block.hidden && 'opacity-40',
         !canEdit && 'pointer-events-none'
       )}
     >
@@ -179,6 +182,21 @@ export function BlockWrapper({
               onChange={onAnchorChange}
             />
           )}
+          {onToggleHidden && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className={cn('h-7 w-7 bg-card', block.hidden && 'text-warning border-warning/50')}
+                  onClick={() => onToggleHidden(!block.hidden)}
+                >
+                  {block.hidden ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{block.hidden ? 'Show block' : 'Hide block'}</TooltipContent>
+            </Tooltip>
+          )}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -192,6 +210,14 @@ export function BlockWrapper({
             </TooltipTrigger>
             <TooltipContent>Delete</TooltipContent>
           </Tooltip>
+        </div>
+      )}
+
+      {/* Hidden indicator */}
+      {block.hidden && (
+        <div className="absolute top-2 right-2 z-10 flex items-center gap-1 px-2 py-1 bg-warning/10 border border-warning/30 rounded text-warning text-xs font-medium">
+          <EyeOff className="h-3 w-3" />
+          Hidden
         </div>
       )}
 

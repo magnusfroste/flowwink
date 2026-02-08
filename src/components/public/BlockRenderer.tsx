@@ -127,6 +127,9 @@ function getSpacingClasses(spacing?: BlockSpacing): string {
 }
 
 export function BlockRenderer({ block, pageId, index = 0 }: BlockRendererProps) {
+  // Skip hidden blocks on public site
+  if (block.hidden) return null;
+
   const spacingClasses = getSpacingClasses(block.spacing);
   
   // Get animation settings from block or use defaults

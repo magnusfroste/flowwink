@@ -299,6 +299,8 @@ export interface ContentBlock {
   animation?: BlockAnimation;
   /** Optional anchor ID for in-page navigation (e.g., "contact-us" for #contact-us links) */
   anchorId?: string;
+  /** Hide block from public site without deleting it */
+  hidden?: boolean;
 }
 
 export type HeroLayout = 'centered' | 'split-left' | 'split-right';
