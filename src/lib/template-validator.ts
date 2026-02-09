@@ -99,6 +99,8 @@ const BLOCK_REQUIRED_FIELDS: Record<string, string[]> = {
   'notification-toast': [],
   'announcement-bar': [],
   'kb-accordion': [],
+  'chat-launcher': [],
+  'webinar': [],
 };
 
 /**
