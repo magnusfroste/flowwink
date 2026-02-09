@@ -1578,6 +1578,8 @@ export type Database = {
           content_json: Json | null
           created_at: string
           created_by: string | null
+          deleted_at: string | null
+          deleted_by: string | null
           id: string
           menu_order: number
           meta_json: Json | null
@@ -1593,6 +1595,8 @@ export type Database = {
           content_json?: Json | null
           created_at?: string
           created_by?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
           id?: string
           menu_order?: number
           meta_json?: Json | null
@@ -1608,6 +1612,8 @@ export type Database = {
           content_json?: Json | null
           created_at?: string
           created_by?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
           id?: string
           menu_order?: number
           meta_json?: Json | null
@@ -1952,6 +1958,111 @@ export type Database = {
           secret?: string | null
           updated_at?: string
           url?: string
+        }
+        Relationships: []
+      }
+      webinar_registrations: {
+        Row: {
+          attended: boolean
+          email: string
+          follow_up_sent: boolean
+          id: string
+          lead_id: string | null
+          name: string
+          phone: string | null
+          registered_at: string
+          webinar_id: string
+        }
+        Insert: {
+          attended?: boolean
+          email: string
+          follow_up_sent?: boolean
+          id?: string
+          lead_id?: string | null
+          name: string
+          phone?: string | null
+          registered_at?: string
+          webinar_id: string
+        }
+        Update: {
+          attended?: boolean
+          email?: string
+          follow_up_sent?: boolean
+          id?: string
+          lead_id?: string | null
+          name?: string
+          phone?: string | null
+          registered_at?: string
+          webinar_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webinar_registrations_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "webinar_registrations_webinar_id_fkey"
+            columns: ["webinar_id"]
+            isOneToOne: false
+            referencedRelation: "webinars"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      webinars: {
+        Row: {
+          agenda: string | null
+          cover_image: string | null
+          created_at: string
+          created_by: string | null
+          date: string
+          description: string | null
+          duration_minutes: number
+          id: string
+          max_attendees: number | null
+          meeting_url: string | null
+          platform: string
+          recording_url: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          agenda?: string | null
+          cover_image?: string | null
+          created_at?: string
+          created_by?: string | null
+          date: string
+          description?: string | null
+          duration_minutes?: number
+          id?: string
+          max_attendees?: number | null
+          meeting_url?: string | null
+          platform?: string
+          recording_url?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          agenda?: string | null
+          cover_image?: string | null
+          created_at?: string
+          created_by?: string | null
+          date?: string
+          description?: string | null
+          duration_minutes?: number
+          id?: string
+          max_attendees?: number | null
+          meeting_url?: string | null
+          platform?: string
+          recording_url?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
         }
         Relationships: []
       }

@@ -60,6 +60,7 @@ const BLOCK_LABELS: Record<ContentBlockType, string> = {
   'notification-toast': 'Notification Toast',
   'floating-cta': 'Floating CTA',
   'chat-launcher': 'Chat Launcher',
+  webinar: 'Webinar',
 };
 
 interface BlockWrapperProps {
