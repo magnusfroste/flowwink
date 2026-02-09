@@ -30,7 +30,7 @@ const VALID_BLOCK_TYPES: ContentBlockType[] = [
   // Core content blocks
   'hero', 'text', 'image', 'two-column', 'cta', 'features', 'stats',
   'testimonials', 'pricing', 'accordion', 'form', 'logos', 'team',
-  'gallery', 'timeline', 'quote', 'separator', 'chat', 'map',
+  'gallery', 'timeline', 'quote', 'separator', 'chat', 'chat-launcher', 'map',
   'newsletter', 'products', 'cart', 'booking', 'smart-booking', 'comparison',
   'article-grid', 'link-grid', 'youtube', 'info-box', 'popup',
   // Knowledge Base blocks
@@ -40,7 +40,9 @@ const VALID_BLOCK_TYPES: ContentBlockType[] = [
   // Advanced blocks (Design System 2026)
   'marquee', 'progress', 'countdown', 'embed', 'lottie', 'tabs', 
   'table', 'badge', 'social-proof', 'floating-cta', 
-  'notification-toast', 'announcement-bar'
+  'notification-toast', 'announcement-bar',
+  // Module-specific blocks
+  'webinar'
 ];
 
 // Required fields per block type
