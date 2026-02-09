@@ -217,6 +217,11 @@ export function ActivityTimeline({
                         {metadata.url as string}
                       </p>
                     )}
+                    {activity.type === 'webinar_register' && metadata?.webinar_title && (
+                      <p className="text-sm text-muted-foreground">
+                        Registered for: {metadata.webinar_title as string}
+                      </p>
+                    )}
 
                     <div className="flex items-center gap-2 mt-1">
                       <p className="text-xs text-muted-foreground">

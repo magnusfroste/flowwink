@@ -9,6 +9,7 @@ import { SeoHead, HeadScripts } from '@/components/public/SeoHead';
 import { BodyScripts } from '@/components/public/BodyScripts';
 import { CookieBanner } from '@/components/public/CookieBanner';
 import { ChatWidget } from '@/components/public/ChatWidget';
+import { TrackingScripts } from '@/components/public/TrackingScripts';
 import { ComingSoonPage } from '@/components/public/ComingSoonPage';
 import { SetupRequiredPage } from '@/components/public/SetupRequiredPage';
 import { cn } from '@/lib/utils';
@@ -378,6 +379,7 @@ export default function PublicPage() {
         <ChatWidget />
       </div>
 
+      <TrackingScripts />
       <BodyScripts position="end" />
     </>
   );

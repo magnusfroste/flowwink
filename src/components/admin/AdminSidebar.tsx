@@ -37,6 +37,7 @@ import {
   Megaphone,
   Code2,
   ChevronRight,
+  Video,
 } from "lucide-react";
 
 import { useAuth } from "@/hooks/useAuth";
@@ -136,6 +137,7 @@ const navigationGroups: NavGroup[] = [
     adminOnly: true,
     items: [
       { name: "Newsletter", href: "/admin/newsletter", icon: Mail, moduleId: "newsletter" },
+      { name: "Webinars", href: "/admin/webinars", icon: Video, moduleId: "webinars" },
       { name: "Forms", href: "/admin/forms", icon: Inbox, moduleId: "forms" },
     ],
   },

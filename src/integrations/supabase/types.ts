@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "13.0.5"
+    PostgrestVersion: "14.1"
   }
   public: {
     Tables: {
@@ -1952,6 +1952,111 @@ export type Database = {
           secret?: string | null
           updated_at?: string
           url?: string
+        }
+        Relationships: []
+      }
+      webinar_registrations: {
+        Row: {
+          attended: boolean
+          email: string
+          follow_up_sent: boolean
+          id: string
+          lead_id: string | null
+          name: string
+          phone: string | null
+          registered_at: string
+          webinar_id: string
+        }
+        Insert: {
+          attended?: boolean
+          email: string
+          follow_up_sent?: boolean
+          id?: string
+          lead_id?: string | null
+          name: string
+          phone?: string | null
+          registered_at?: string
+          webinar_id: string
+        }
+        Update: {
+          attended?: boolean
+          email?: string
+          follow_up_sent?: boolean
+          id?: string
+          lead_id?: string | null
+          name?: string
+          phone?: string | null
+          registered_at?: string
+          webinar_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webinar_registrations_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "webinar_registrations_webinar_id_fkey"
+            columns: ["webinar_id"]
+            isOneToOne: false
+            referencedRelation: "webinars"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      webinars: {
+        Row: {
+          agenda: string | null
+          cover_image: string | null
+          created_at: string
+          created_by: string | null
+          date: string
+          description: string | null
+          duration_minutes: number
+          id: string
+          max_attendees: number | null
+          meeting_url: string | null
+          platform: string
+          recording_url: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          agenda?: string | null
+          cover_image?: string | null
+          created_at?: string
+          created_by?: string | null
+          date: string
+          description?: string | null
+          duration_minutes?: number
+          id?: string
+          max_attendees?: number | null
+          meeting_url?: string | null
+          platform?: string
+          recording_url?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          agenda?: string | null
+          cover_image?: string | null
+          created_at?: string
+          created_by?: string | null
+          date?: string
+          description?: string | null
+          duration_minutes?: number
+          id?: string
+          max_attendees?: number | null
+          meeting_url?: string | null
+          platform?: string
+          recording_url?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
         }
         Relationships: []
       }

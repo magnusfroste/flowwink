@@ -11,9 +11,34 @@ FlowWink is a modern, open-source Content Management System built for organizati
 
 - ✅ A complete website without developers
 - ✅ Headless API for multi-channel delivery
-- ✅ AI-powered content tools
+- ✅ **AI chat with your content as context** — Instant value, no training needed
 - ✅ GDPR and WCAG compliance built-in
 - ✅ Full control with self-hosting
+
+### Killer Feature: AI Chat with Multi-Module Context
+
+**First system to use all your content as AI context:**
+
+- Pages, blog posts, knowledge base articles
+- Instant answers from your own content
+- No training required — works immediately
+- Saves hours of customer support time
+
+### Use Case: Outreach-Focused Teams
+
+For teams building their digital presence and lead generation:
+
+```
+AI → Blog (content) → Pages (landings) → Forms (capture)
+→ Leads (nurture) → Newsletter (email) → Analytics (measure)
+```
+
+**5 modules = complete outreach loop:**
+- **Pages** — Landings pages for campaigns
+- **Blog** — Content marketing, SEO, thought leadership
+- **Leads** — Capture leads from forms
+- **Newsletter** — Nurture leads via email
+- **AI** — Generate content 10x faster
 
 ### Head + Headless
 

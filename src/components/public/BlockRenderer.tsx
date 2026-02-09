@@ -49,6 +49,7 @@ import {
   NotificationToastBlock,
   FloatingCTABlock,
   ChatLauncherBlock,
+  WebinarBlock,
 } from './blocks';
 import type { ChatLauncherBlockData } from './blocks/ChatLauncherBlock';
 import type { KbHubBlockData } from './blocks/KbHubBlock';
@@ -236,6 +237,8 @@ export function BlockRenderer({ block, pageId, index = 0 }: BlockRendererProps) 
         return <FloatingCTABlock data={block.data as unknown as FloatingCTABlockData} />;
       case 'chat-launcher':
         return <ChatLauncherBlock data={block.data as unknown as ChatLauncherBlockData} />;
+      case 'webinar':
+        return <WebinarBlock data={block.data as Record<string, unknown>} blockId={block.id} pageId={pageId} />;
       default:
         return null;
     }

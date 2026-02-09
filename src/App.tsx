@@ -69,6 +69,7 @@ import CheckoutPage from "./pages/CheckoutPage";
 import CheckoutSuccessPage from "./pages/CheckoutSuccessPage";
 import PricingPage from "./pages/PricingPage";
 import DeveloperToolsPage from "./pages/admin/DeveloperToolsPage";
+import WebinarsPage from "./pages/admin/WebinarsPage";
 
 const queryClient = new QueryClient();
 
@@ -137,6 +138,7 @@ const router = createBrowserRouter([
   { path: "/admin/live-support", element: <LiveSupportPage /> },
   { path: "/admin/template-export", element: <TemplateExportPage /> },
   { path: "/admin/developer-tools", element: <DeveloperToolsPage /> },
+  { path: "/admin/webinars", element: <WebinarsPage /> },
   { path: "/preview/:id", element: <PreviewPage /> },
   { path: "/:slug", element: <PublicPage /> },
 ]);

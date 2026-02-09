@@ -386,6 +386,12 @@ const BLOCK_GROUPS: BlockGroup[] = [
         icon: <HelpCircle className="h-5 w-5" />,
         description: 'KB articles as expandable FAQ items',
       },
+      {
+        type: 'webinar',
+        label: 'Webinar',
+        icon: <Video className="h-5 w-5" />,
+        description: 'Upcoming and past webinars with registration',
+      },
     ],
   },
 ];

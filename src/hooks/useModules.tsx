@@ -30,6 +30,7 @@ export interface ModulesSettings {
   contentApi: ModuleConfig;
   globalElements: ModuleConfig;
   mediaLibrary: ModuleConfig;
+  webinars: ModuleConfig;
 }
 
 export const defaultModulesSettings: ModulesSettings = {
@@ -154,6 +155,13 @@ export const defaultModulesSettings: ModulesSettings = {
     category: 'data',
     core: true,
   },
+  webinars: {
+    enabled: false,
+    name: 'Webinars',
+    description: 'Plan, promote and follow up webinars and online events',
+    icon: 'Video',
+    category: 'communication',
+  },
 };
 
 // Map sidebar items to module IDs
@@ -175,6 +183,7 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/content-hub': 'contentApi',
   '/admin/global-blocks': 'globalElements',
   '/admin/media': 'mediaLibrary',
+  '/admin/webinars': 'webinars',
 };
 
 export function useModules() {

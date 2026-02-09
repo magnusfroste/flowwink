@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { updateLeadStatus, addLeadActivity } from '@/lib/lead-utils';
+import { notifyDealWon } from '@/lib/slack-notify';
 import type { Product } from './useProducts';
 
 export type DealStage = 'proposal' | 'negotiation' | 'closed_won' | 'closed_lost';
@@ -119,37 +121,30 @@ export function useUpdateDeal() {
 
       if (error) throw error;
 
-      // If closed_won, update lead status to customer
+      // If closed_won, update lead status to customer via contract
       if (updates.stage === 'closed_won' && data) {
-        await supabase
-          .from('leads')
-          .update({ 
-            status: 'customer',
-            converted_at: new Date().toISOString()
-          })
-          .eq('id', data.lead_id);
-
-        // Add activity
-        await supabase
-          .from('lead_activities')
-          .insert({
-            lead_id: data.lead_id,
-            type: 'deal_closed_won',
-            points: 50,
-            metadata: { deal_id: data.id, value_cents: data.value_cents }
-          });
+        await updateLeadStatus(data.lead_id, 'customer', { convertedAt: true });
+        await addLeadActivity({
+          leadId: data.lead_id,
+          type: 'deal_closed_won',
+          metadata: { deal_id: data.id, value_cents: data.value_cents },
+        });
+        // Slack notification (fire-and-forget)
+        notifyDealWon({
+          dealName: data.product?.name || `Deal ${data.id.slice(0, 8)}`,
+          contactName: data.lead_id,
+          valueCents: data.value_cents || 0,
+          leadId: data.lead_id,
+        });
       }
 
-      // If closed_lost, add activity
+      // If closed_lost, add activity via contract
       if (updates.stage === 'closed_lost' && data) {
-        await supabase
-          .from('lead_activities')
-          .insert({
-            lead_id: data.lead_id,
-            type: 'deal_closed_lost',
-            points: 0,
-            metadata: { deal_id: data.id, value_cents: data.value_cents }
-          });
+        await addLeadActivity({
+          leadId: data.lead_id,
+          type: 'deal_closed_lost',
+          metadata: { deal_id: data.id, value_cents: data.value_cents },
+        });
       }
 
       return data;

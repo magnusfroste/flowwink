@@ -656,6 +656,19 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
       { name: 'closePersistent', type: 'boolean', required: false, description: 'Remember closed state', default: true },
     ],
   },
+  {
+    type: 'webinar',
+    name: 'Webinar',
+    description: 'Display upcoming and past webinars with registration and recording links.',
+    category: 'interactive',
+    fields: [
+      { name: 'title', type: 'string', required: false, description: 'Section title' },
+      { name: 'description', type: 'string', required: false, description: 'Section description' },
+      { name: 'maxItems', type: 'number', required: false, description: 'Max webinars to show', default: 5 },
+      { name: 'showPast', type: 'boolean', required: false, description: 'Show past webinars with recordings', default: true },
+      { name: 'variant', type: 'string', required: false, description: 'Display style', default: 'default', options: ['default', 'card', 'minimal'] },
+    ],
+  },
 ];
 
 /**

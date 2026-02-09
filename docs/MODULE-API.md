@@ -85,6 +85,7 @@ Certain content blocks require their associated module to be enabled. When the r
 | `booking` | Bookings |
 | `products`, `cart` | Products |
 | `kb-featured`, `kb-hub`, `kb-search`, `kb-accordion` | Knowledge Base |
+| `webinar` | Webinars |
 
 This "hybrid guard" approach provides visual feedback without blocking the user, keeping the system flexible while preventing silent errors.
 
@@ -512,6 +513,96 @@ The Content Campaign module orchestrates publishing to multiple channels:
 │  - status          │
 └────────────────────┘
 ```
+
+---
+
+## Data Layer Contracts
+
+Beyond the Module Registry, FlowWink enforces **data ownership boundaries** at the database level. Shared tables (like `leads` and `lead_activities`) have a single owner module that exposes utility functions. Other modules **must** use these functions — never write directly.
+
+### Table Ownership
+
+| Table | Owner | Contract File |
+|-------|-------|---------------|
+| `leads` | CRM | `src/lib/lead-utils.ts` |
+| `lead_activities` | CRM | `src/lib/lead-utils.ts` |
+| `companies` | CRM | `src/lib/lead-utils.ts` |
+| `blog_posts` | Blog | `src/lib/module-registry.ts` (blog module) |
+| `pages` | Pages | `src/lib/module-registry.ts` (pages module) |
+
+### Lead Utils Contract (`src/lib/lead-utils.ts`)
+
+All modules that interact with leads **must** use these functions:
+
+| Function | Purpose | Used By |
+|----------|---------|---------|
+| `createLeadFromForm()` | Create/update lead from form submission | FormBlock |
+| `createLeadFromBooking()` | Create/update lead from booking | BookingBlock |
+| `createLeadFromWebinar()` | Create/update lead from webinar registration | WebinarBlock, useWebinars |
+| `addLeadActivity()` | Log activity on a lead | All modules via createLeadFrom*, Deals |
+| `updateLeadStatus()` | Change lead status | Deals module |
+| `trackNewsletterActivity()` | Track email opens/clicks | Newsletter |
+| `qualifyLead()` | Trigger AI qualification | Called internally by createLeadFrom* |
+
+Each `createLeadFrom*` function handles:
+1. Find or create lead by email
+2. Auto-match company by email domain
+3. Trigger company enrichment for new companies
+4. Log activity with correct points
+5. Trigger AI qualification
+
+### Activity Points
+
+Defined in `ACTIVITY_POINTS` within `lead-utils.ts`:
+
+| Activity | Points |
+|----------|--------|
+| `webinar_register` | 15 |
+| `form_submit` | 10 |
+| `booking` | 10 |
+| `newsletter_subscribe` | 8 |
+| `link_click` | 5 |
+| `call` | 5 |
+| `email_open` | 3 |
+| `page_visit` | 2 |
+
+### Rules
+
+1. **Never** write directly to `leads` or `lead_activities` from hooks or components outside CRM
+2. **Never** import `supabase` and query `leads` table from a non-CRM module — use the contract functions
+3. **Reading** shared tables for analytics/display is OK (e.g., `useAnalytics.ts`)
+4. When adding a new lead source, create a `createLeadFrom*()` function in `lead-utils.ts`
+5. When a module needs to change lead status, use `updateLeadStatus()` — not a direct update
+
+### Anti-Patterns
+
+```typescript
+// ❌ BAD — Direct write from webinar module
+await supabase.from('leads').insert({ email, source: 'webinar' });
+await supabase.from('lead_activities').insert({ lead_id, type: 'webinar_register' });
+
+// ✅ GOOD — Via contract
+import { createLeadFromWebinar } from '@/lib/lead-utils';
+const { leadId } = await createLeadFromWebinar({ email, name, webinarId, webinarTitle });
+
+// ❌ BAD — Direct status update from deals module
+await supabase.from('leads').update({ status: 'customer' }).eq('id', leadId);
+
+// ✅ GOOD — Via contract
+import { updateLeadStatus } from '@/lib/lead-utils';
+await updateLeadStatus(leadId, 'customer', { convertedAt: true });
+```
+
+### Allowed Direct Access
+
+These files **may** access `leads`/`lead_activities` directly because they are CRM-owned:
+
+- `src/hooks/useLeads.ts` — CRM CRUD hooks
+- `src/hooks/useActivities.ts` — CRM activity hooks
+- `src/components/admin/CreateLeadDialog.tsx` — Admin manual creation (uses `addLeadActivity`)
+- `src/hooks/useCsvImportExport.ts` — Bulk import
+- `src/components/admin/ResetSiteDialog.tsx` — System reset (delete all)
+- `src/lib/module-registry.ts` (CRM module only) — CRM module's publish()
 
 ---
 

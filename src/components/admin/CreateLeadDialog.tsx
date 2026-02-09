@@ -8,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 import { Building } from 'lucide-react';
-import type { LeadStatus } from '@/lib/lead-utils';
+import { addLeadActivity, type LeadStatus } from '@/lib/lead-utils';
 
 interface CreateLeadDialogProps {
   open: boolean;
@@ -79,11 +79,10 @@ export function CreateLeadDialog({
 
       if (error) throw error;
 
-      // Add initial activity
-      await supabase.from('lead_activities').insert({
-        lead_id: newLead.id,
+      // Add initial activity via contract
+      await addLeadActivity({
+        leadId: newLead.id,
         type: 'note',
-        points: 0,
         metadata: { text: defaultCompanyId ? `Contact added to company` : 'Contact created manually' },
       });
 

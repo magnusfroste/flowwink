@@ -24,6 +24,9 @@ export const BLOCK_TO_MODULE: Partial<Record<ContentBlockType, keyof ModulesSett
   'kb-hub': 'knowledgeBase',
   'kb-search': 'knowledgeBase',
   'kb-accordion': 'knowledgeBase',
+
+  // Webinars
+  'webinar': 'webinars',
 };
 
 interface BlockModuleStatus {

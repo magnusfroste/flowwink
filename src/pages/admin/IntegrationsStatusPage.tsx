@@ -32,6 +32,9 @@ import {
   Webhook,
   ChevronDown,
   Save,
+  BarChart3,
+  Target,
+  MessageSquare,
 } from "lucide-react";
 import { useUnsavedChanges, UnsavedChangesDialog } from "@/hooks/useUnsavedChanges";
 import {
@@ -55,6 +58,9 @@ const iconMap = {
   Flame,
   Server,
   Webhook,
+  BarChart3,
+  Target,
+  MessageSquare,
 };
 
 type IntegrationStatus = 'active' | 'disabled' | 'not_configured';
@@ -399,6 +405,92 @@ function IntegrationConfigPanel({
     );
   }
 
+  if (integrationKey === 'google_analytics') {
+    return (
+      <div className="space-y-3 pt-3 border-t">
+        <div className="space-y-2">
+          <Label htmlFor="ga4-id" className="text-xs">Measurement ID *</Label>
+          <Input
+            id="ga4-id"
+            value={config?.measurementId || ''}
+            onChange={(e) => handleChange({ measurementId: e.target.value })}
+            placeholder="G-XXXXXXXXXX"
+            className="h-8 text-sm"
+          />
+          <p className="text-xs text-muted-foreground">
+            Found in Google Analytics → Admin → Data Streams → Web
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (integrationKey === 'meta_pixel') {
+    return (
+      <div className="space-y-3 pt-3 border-t">
+        <div className="space-y-2">
+          <Label htmlFor="pixel-id" className="text-xs">Pixel ID *</Label>
+          <Input
+            id="pixel-id"
+            value={config?.pixelId || ''}
+            onChange={(e) => handleChange({ pixelId: e.target.value })}
+            placeholder="123456789012345"
+            className="h-8 text-sm"
+          />
+          <p className="text-xs text-muted-foreground">
+            Found in Meta Events Manager → Data Sources → Your Pixel
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (integrationKey === 'slack') {
+    return (
+      <div className="space-y-3 pt-3 border-t">
+        <div className="space-y-2">
+          <Label htmlFor="slack-webhook" className="text-xs">Webhook URL *</Label>
+          <Input
+            id="slack-webhook"
+            value={config?.webhookUrl || ''}
+            onChange={(e) => handleChange({ webhookUrl: e.target.value })}
+            placeholder="https://hooks.slack.com/services/..."
+            className="h-8 text-sm"
+          />
+          <p className="text-xs text-muted-foreground">
+            Also works with Microsoft Teams incoming webhooks
+          </p>
+        </div>
+        <div className="space-y-2 pt-2">
+          <Label className="text-xs font-medium">Notify on</Label>
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 text-sm">
+              <Switch
+                checked={config?.notifyOnNewLead ?? true}
+                onCheckedChange={(checked) => handleChange({ notifyOnNewLead: checked })}
+              />
+              New contact created
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <Switch
+                checked={config?.notifyOnDealWon ?? true}
+                onCheckedChange={(checked) => handleChange({ notifyOnDealWon: checked })}
+              />
+              Deal won
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <Switch
+                checked={config?.notifyOnFormSubmit ?? false}
+                onCheckedChange={(checked) => handleChange({ notifyOnFormSubmit: checked })}
+              />
+              Form submission
+            </label>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (integrationKey === 'resend') {
     const emailConfig = config?.emailConfig || { fromEmail: 'onboarding@resend.dev', fromName: 'Newsletter' };
     const newsletterTracking = config?.newsletterTracking || { enableOpenTracking: false, enableClickTracking: false };
@@ -713,14 +805,15 @@ export default function IntegrationsStatusPage() {
                 <div className="grid gap-4 md:grid-cols-2">
                   {categoryIntegrations.map((integration) => {
                     const key = integration.key;
-                    // For local_llm and n8n, no secret required - just need config
-                    const requiresSecret = key !== 'local_llm' && key !== 'n8n';
+                    // For these integrations, no vault secret required - just need config
+                    const noSecretNeeded = ['local_llm', 'n8n', 'google_analytics', 'meta_pixel', 'slack'];
+                    const requiresSecret = !noSecretNeeded.includes(key);
                     const hasKey = requiresSecret ? (secretsStatus?.integrations?.[key] ?? false) : true;
                     const isEnabled = integrationSettings?.[key]?.enabled ?? false;
                     const status: IntegrationStatus = !hasKey ? 'not_configured' : isEnabled ? 'active' : 'disabled';
                     const IconComponent = iconMap[integration.icon as keyof typeof iconMap] || Bot;
                     const currentConfig = getDisplayConfig(key) || integration.config;
-                    const hasConfigSection = ['openai', 'gemini', 'local_llm', 'n8n', 'resend'].includes(key);
+                    const hasConfigSection = ['openai', 'gemini', 'local_llm', 'n8n', 'resend', 'google_analytics', 'meta_pixel', 'slack'].includes(key);
                     const isExpanded = expandedCards.has(key);
 
                     return (

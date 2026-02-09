@@ -517,7 +517,22 @@ Koppla chatten till N8N för avancerade AI-agenter med verktyg:
 
 #### Context Augmented Generation (CAG)
 
-- **Kunskapsbas**: Publicerade sidor som kontext
+**Killer Feature: Multi-Module Context**
+
+Första systemet som använder **alla modulers innehåll som AI-kontext:**
+
+- **Pages** — Landings pages och kampanjsidor
+- **Blog** — Blogginlägg med SEO
+- **Knowledge Base** — Kunskapsbas-artiklar
+- **Forms** — Formulär och leads
+
+**Värde:**
+- Omedelbara svar från eget innehåll
+- Ingen träning krävs — fungerar direkt
+- Spara timmar med kundsupport
+- AI chat ger värde från dag 1
+
+**Kunskapsbas**: Publicerade sidor som kontext
 - **Selektiv**: Välj vilka sidor som inkluderas
 - **Token-limit**: Konfigurerbar maxgräns
 - **Per-sida toggle**: Inkludera/exkludera specifika sidor

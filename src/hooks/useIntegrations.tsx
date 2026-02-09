@@ -33,6 +33,14 @@ export interface IntegrationProviderConfig {
   emailConfig?: EmailConfig;
   // Newsletter tracking (for resend integration)
   newsletterTracking?: NewsletterTrackingConfig;
+  // Google Analytics
+  measurementId?: string;
+  // Meta Pixel
+  pixelId?: string;
+  // Slack / Teams notifications
+  notifyOnNewLead?: boolean;
+  notifyOnDealWon?: boolean;
+  notifyOnFormSubmit?: boolean;
 }
 
 // Integration configuration type
@@ -41,7 +49,7 @@ export interface IntegrationConfig {
   name: string;
   description: string;
   icon: string;
-  category: 'payments' | 'communication' | 'ai' | 'media' | 'automation';
+  category: 'payments' | 'communication' | 'ai' | 'media' | 'automation' | 'analytics' | 'notifications';
   features: string[];
   secretName: string;
   docsUrl: string;
@@ -62,6 +70,9 @@ export interface IntegrationsSettings {
   firecrawl: IntegrationConfig;
   local_llm: IntegrationConfig;
   n8n: IntegrationConfig;
+  google_analytics: IntegrationConfig;
+  meta_pixel: IntegrationConfig;
+  slack: IntegrationConfig;
 }
 
 // Default settings - all disabled by default, requiring explicit activation
@@ -181,6 +192,51 @@ export const defaultIntegrationsSettings: IntegrationsSettings = {
     docsUrl: 'https://unsplash.com/developers',
     docsLabel: 'Get API key',
   },
+  google_analytics: {
+    enabled: false,
+    name: 'Google Analytics',
+    description: 'Website traffic & attribution',
+    icon: 'BarChart3',
+    category: 'analytics',
+    features: ['Page views', 'Events', 'Conversions', 'Attribution'],
+    secretName: '',
+    docsUrl: 'https://support.google.com/analytics/answer/9539598',
+    docsLabel: 'Find Measurement ID',
+    config: {
+      measurementId: '',
+    },
+  },
+  meta_pixel: {
+    enabled: false,
+    name: 'Meta Pixel',
+    description: 'Facebook/Instagram ad tracking',
+    icon: 'Target',
+    category: 'analytics',
+    features: ['Ad conversions', 'Retargeting', 'Lookalike audiences'],
+    secretName: '',
+    docsUrl: 'https://www.facebook.com/business/help/952192354843755',
+    docsLabel: 'Find Pixel ID',
+    config: {
+      pixelId: '',
+    },
+  },
+  slack: {
+    enabled: false,
+    name: 'Slack',
+    description: 'Team notifications',
+    icon: 'MessageSquare',
+    category: 'notifications',
+    features: ['New lead alerts', 'Deal won alerts', 'Form submission alerts'],
+    secretName: '',
+    docsUrl: 'https://api.slack.com/messaging/webhooks',
+    docsLabel: 'Create webhook',
+    config: {
+      webhookUrl: '',
+      notifyOnNewLead: true,
+      notifyOnDealWon: true,
+      notifyOnFormSubmit: false,
+    },
+  },
   firecrawl: {
     enabled: false,
     name: 'Firecrawl',
@@ -201,6 +257,8 @@ export const INTEGRATION_CATEGORIES = {
   ai: { label: 'AI Providers', order: 3 },
   automation: { label: 'Automation', order: 4 },
   media: { label: 'Media & Tools', order: 5 },
+  analytics: { label: 'Analytics & Attribution', order: 6 },
+  notifications: { label: 'Notifications', order: 7 },
 } as const;
 
 // Fetch integrations settings

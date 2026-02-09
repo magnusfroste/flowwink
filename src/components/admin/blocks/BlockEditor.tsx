@@ -67,6 +67,7 @@ import { SocialProofBlockEditor } from './SocialProofBlockEditor';
 import { NotificationToastBlockEditor } from './NotificationToastBlockEditor';
 import { FloatingCTABlockEditor } from './FloatingCTABlockEditor';
 import { ChatLauncherBlockEditor } from './ChatLauncherBlockEditor';
+import { WebinarBlockEditor } from './WebinarBlockEditor';
 import type { ProductsBlockData } from '@/components/public/blocks/ProductsBlock';
 import type { CartBlockData } from '@/components/public/blocks/CartBlock';
 import type { KbFeaturedBlockData } from '@/components/public/blocks/KbFeaturedBlock';
@@ -143,6 +144,7 @@ type BlockDataMap = {
   'notification-toast': NotificationToastBlockData;
   'floating-cta': FloatingCTABlockData;
   'chat-launcher': ChatLauncherBlockData;
+  webinar: Record<string, unknown>;
 };
 
 const DEFAULT_BLOCK_DATA: BlockDataMap = {
@@ -450,6 +452,13 @@ const DEFAULT_BLOCK_DATA: BlockDataMap = {
     showQuickActions: true,
     quickActionCount: 4,
     variant: 'card',
+  },
+  webinar: {
+    title: 'Upcoming Webinars',
+    description: 'Join our live sessions and watch recordings',
+    maxItems: 5,
+    showPast: true,
+    variant: 'default',
   },
 };
 
@@ -945,6 +954,14 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
           <ChatLauncherBlockEditor
             data={block.data as unknown as ChatLauncherBlockData}
             onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+            isEditing={isEditing}
+          />
+        );
+      case 'webinar':
+        return (
+          <WebinarBlockEditor
+            data={block.data as Record<string, unknown>}
+            onChange={(data) => handleUpdateBlock(block.id, data as Record<string, unknown>)}
             isEditing={isEditing}
           />
         );

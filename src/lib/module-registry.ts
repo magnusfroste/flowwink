@@ -10,6 +10,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { Json } from '@/integrations/supabase/types';
 import { createDocumentFromMarkdown } from '@/lib/tiptap-utils';
+import { updateLeadStatus } from '@/lib/lead-utils';
 import {
   ModuleDefinition,
   ModuleCapability,
@@ -854,13 +855,9 @@ const dealsModule: ModuleDefinition<DealModuleInput, DealModuleOutput> = {
         return { success: false, error: error.message };
       }
 
-      // Update lead status to opportunity if still lead
+      // Update lead status to opportunity if still lead (via contract)
       try {
-        await supabase
-          .from('leads')
-          .update({ status: 'opportunity' })
-          .eq('id', validated.lead_id)
-          .eq('status', 'lead');
+        await updateLeadStatus(validated.lead_id, 'opportunity', { onlyIfCurrentStatus: 'lead' });
       } catch (updateError) {
         console.warn('[DealsModule] Lead status update failed:', updateError);
       }

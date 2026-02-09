@@ -1,5 +1,8 @@
 # FlowWink Security Architecture
 
+> **Audience:** Security Review / Developers
+> **Last Updated:** February 2026
+
 This document describes the authentication and authorization architecture used in FlowWink, intended for security review and developer reference.
 
 ---

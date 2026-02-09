@@ -1,6 +1,6 @@
 # FlowWink Developer Guide
 
-> **Version:** 1.0.0  
+> **Audience:** Developers
 > **Last Updated:** February 2026
 
 This guide helps developers understand FlowWink's architecture and how to extend it with new features, integrations, and blocks.

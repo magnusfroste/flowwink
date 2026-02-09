@@ -18,6 +18,9 @@ interface IntegrationStatus {
     gemini: boolean;
     local_llm: boolean;
     n8n: boolean;
+    google_analytics: boolean;
+    meta_pixel: boolean;
+    slack: boolean;
   };
 }
 
@@ -31,6 +34,9 @@ interface IntegrationsSettings {
   firecrawl?: { enabled: boolean };
   local_llm?: { enabled: boolean; config?: { endpoint?: string; model?: string } };
   n8n?: { enabled: boolean; config?: { webhookUrl?: string; webhookType?: string; triggerMode?: string; triggerKeywords?: string[] } };
+  google_analytics?: { enabled: boolean; config?: { measurementId?: string } };
+  meta_pixel?: { enabled: boolean; config?: { pixelId?: string } };
+  slack?: { enabled: boolean; config?: { webhookUrl?: string; notifyOnNewLead?: boolean; notifyOnDealWon?: boolean; notifyOnFormSubmit?: boolean } };
 }
 
 export function useIntegrationStatus() {

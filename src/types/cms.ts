@@ -120,7 +120,8 @@ export type ContentBlockType =
   | 'social-proof'
   | 'notification-toast'
   | 'floating-cta'
-  | 'chat-launcher';
+  | 'chat-launcher'
+  | 'webinar';
 
 // Form field types
 export type FormFieldType = 'text' | 'email' | 'phone' | 'textarea' | 'checkbox';

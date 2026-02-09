@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { Json } from '@/integrations/supabase/types';
+import { notifyNewLead } from '@/lib/slack-notify';
 
 export type LeadStatus = 'lead' | 'opportunity' | 'customer' | 'lost';
 
@@ -54,48 +55,27 @@ async function triggerCompanyEnrichment(companyId: string): Promise<void> {
 }
 
 /**
- * Find or create company by email domain
- * Returns companyId and whether it was newly created (for enrichment trigger)
+ * Match company by email domain (never auto-creates)
+ * Returns companyId if an existing company matches the domain, null otherwise.
+ * Admin can manually create and link companies from the contact detail page.
  */
-async function findOrCreateCompanyByDomain(
-  email: string, 
-  companyName?: string
-): Promise<{ companyId: string | null; isNew: boolean }> {
+async function findCompanyByDomain(
+  email: string
+): Promise<{ companyId: string | null }> {
   const domain = extractDomain(email);
-  if (!domain) return { companyId: null, isNew: false };
+  if (!domain) return { companyId: null };
 
   try {
-    // Try to find existing company by domain
     const { data: existingCompany } = await supabase
       .from('companies')
       .select('id')
       .eq('domain', domain)
       .maybeSingle();
 
-    if (existingCompany) {
-      return { companyId: existingCompany.id, isNew: false };
-    }
-
-    // Create new company from domain
-    const name = companyName || domain.split('.')[0].charAt(0).toUpperCase() + domain.split('.')[0].slice(1);
-    const { data: newCompany, error } = await supabase
-      .from('companies')
-      .insert({
-        name,
-        domain,
-      })
-      .select('id')
-      .single();
-
-    if (error) {
-      console.warn('Could not create company:', error);
-      return { companyId: null, isNew: false };
-    }
-
-    return { companyId: newCompany.id, isNew: true };
+    return { companyId: existingCompany?.id || null };
   } catch (error) {
-    console.warn('findOrCreateCompanyByDomain error:', error);
-    return { companyId: null, isNew: false };
+    console.warn('findCompanyByDomain error:', error);
+    return { companyId: null };
   }
 }
 
@@ -116,6 +96,7 @@ const ACTIVITY_POINTS: Record<string, number> = {
   link_click: 5,
   page_visit: 2,
   newsletter_subscribe: 8,
+  webinar_register: 15,
   status_change: 0,
   note: 0,
   call: 5,
@@ -164,12 +145,9 @@ export async function createLeadFromForm(options: {
       
       // Auto-link company if not already linked
       if (!existingLead.company_id) {
-        const { companyId, isNew: isNewCompany } = await findOrCreateCompanyByDomain(email, company);
+        const { companyId } = await findCompanyByDomain(email);
         if (companyId) {
           updates.company_id = companyId;
-          if (isNewCompany) {
-            triggerCompanyEnrichment(companyId);
-          }
         }
       }
 
@@ -186,13 +164,8 @@ export async function createLeadFromForm(options: {
       return { lead: { ...existingLead, ...updates } as Lead, isNew: false, error: null };
     }
 
-    // Auto-match or create company by email domain
-    const { companyId, isNew: isNewCompany } = await findOrCreateCompanyByDomain(email, company);
-
-    // Trigger background enrichment for newly created companies
-    if (companyId && isNewCompany) {
-      triggerCompanyEnrichment(companyId);
-    }
+    // Auto-match company by email domain (never auto-create)
+    const { companyId } = await findCompanyByDomain(email);
 
     // Create new lead with company_id link
     const { data: newLead, error: insertError } = await supabase
@@ -232,6 +205,9 @@ export async function createLeadFromForm(options: {
 
     // Trigger AI qualification (async, don't wait)
     qualifyLead(newLead.id);
+
+    // Slack notification (fire-and-forget)
+    notifyNewLead({ name: name || '', email, source: 'form', score: ACTIVITY_POINTS.form_submit, leadId: newLead.id });
 
     return { lead: newLead as Lead, isNew: true, error: null };
   } catch (error) {
@@ -288,13 +264,8 @@ export async function createLeadFromBooking(options: {
       return { lead: existingLead as Lead, isNew: false, error: null };
     }
 
-    // Auto-match or create company by email domain
-    const { companyId, isNew: isNewCompany } = await findOrCreateCompanyByDomain(email);
-
-    // Trigger background enrichment for newly created companies
-    if (companyId && isNewCompany) {
-      triggerCompanyEnrichment(companyId);
-    }
+    // Auto-match company by email domain (never auto-create)
+    const { companyId } = await findCompanyByDomain(email);
 
     // Create new lead with company_id link
     const { data: newLead, error: insertError } = await supabase
@@ -334,10 +305,105 @@ export async function createLeadFromBooking(options: {
     // Trigger AI qualification (async, don't wait)
     qualifyLead(newLead.id);
 
+    // Slack notification (fire-and-forget)
+    notifyNewLead({ name: name || '', email, source: 'booking', score: ACTIVITY_POINTS.booking, leadId: newLead.id });
+
     return { lead: newLead as Lead, isNew: true, error: null };
   } catch (error) {
     console.error('createLeadFromBooking error:', error);
     return { lead: null, isNew: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}
+
+/**
+ * Create or update a lead from webinar registration
+ */
+export async function createLeadFromWebinar(options: {
+  email: string;
+  name: string;
+  phone?: string;
+  webinarId: string;
+  webinarTitle: string;
+}): Promise<{ leadId: string | null; isNew: boolean; error: string | null }> {
+  const { email, name, phone, webinarId, webinarTitle } = options;
+
+  try {
+    // Check if lead exists
+    const { data: existingLead } = await supabase
+      .from('leads')
+      .select('id, phone')
+      .eq('email', email)
+      .maybeSingle();
+
+    if (existingLead) {
+      // Lead exists — add webinar activity
+      await addLeadActivity({
+        leadId: existingLead.id,
+        type: 'webinar_register',
+        metadata: {
+          webinar_id: webinarId,
+          webinar_title: webinarTitle,
+        },
+      });
+
+      // Update phone if not set
+      if (phone && !existingLead.phone) {
+        await supabase
+          .from('leads')
+          .update({ phone })
+          .eq('id', existingLead.id);
+      }
+
+      return { leadId: existingLead.id, isNew: false, error: null };
+    }
+
+    // Auto-match company by email domain (never auto-create)
+    const { companyId } = await findCompanyByDomain(email);
+
+    // Create new lead
+    const { data: newLead, error: insertError } = await supabase
+      .from('leads')
+      .insert({
+        email,
+        name: name || null,
+        company_id: companyId,
+        phone: phone || null,
+        source: 'webinar',
+        source_id: webinarId,
+        status: 'lead',
+        score: ACTIVITY_POINTS.webinar_register,
+        needs_review: false,
+      })
+      .select('id')
+      .single();
+
+    if (insertError) {
+      console.error('Failed to create lead from webinar:', insertError);
+      return { leadId: null, isNew: false, error: insertError.message };
+    }
+
+    // Add initial webinar activity
+    await addLeadActivity({
+      leadId: newLead.id,
+      type: 'webinar_register',
+      metadata: {
+        webinar_id: webinarId,
+        webinar_title: webinarTitle,
+        is_initial: true,
+        auto_matched_company: !!companyId,
+      },
+    });
+
+    // Trigger AI qualification
+    qualifyLead(newLead.id);
+
+    // Slack notification (fire-and-forget)
+    notifyNewLead({ name: name || '', email, source: 'webinar', score: ACTIVITY_POINTS.webinar_register, leadId: newLead.id });
+
+    return { leadId: newLead.id, isNew: true, error: null };
+  } catch (error) {
+    console.error('createLeadFromWebinar error:', error);
+    return { leadId: null, isNew: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
 
@@ -384,6 +450,40 @@ export async function addLeadActivity(options: {
     return { success: true, error: null };
   } catch (error) {
     console.error('addLeadActivity error:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}
+
+/**
+ * Update lead status (used by Deals module when deal stage changes)
+ */
+export async function updateLeadStatus(
+  leadId: string,
+  status: LeadStatus,
+  options?: { onlyIfCurrentStatus?: LeadStatus; convertedAt?: boolean }
+): Promise<{ success: boolean; error: string | null }> {
+  try {
+    let query = supabase
+      .from('leads')
+      .update({
+        status,
+        ...(options?.convertedAt ? { converted_at: new Date().toISOString() } : {}),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', leadId);
+
+    if (options?.onlyIfCurrentStatus) {
+      query = query.eq('status', options.onlyIfCurrentStatus);
+    }
+
+    const { error } = await query;
+    if (error) {
+      console.error('updateLeadStatus error:', error);
+      return { success: false, error: error.message };
+    }
+    return { success: true, error: null };
+  } catch (error) {
+    console.error('updateLeadStatus error:', error);
     return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }

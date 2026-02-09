@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Json } from '@/integrations/supabase/types';
 
-export type ActivityType = 'call' | 'email' | 'meeting' | 'note' | 'form_submit' | 'email_open' | 'link_click' | 'status_change';
+export type ActivityType = 'call' | 'email' | 'meeting' | 'note' | 'form_submit' | 'email_open' | 'link_click' | 'status_change' | 'webinar_register';
 
 export interface LeadActivity {
   id: string;
@@ -226,6 +226,7 @@ export function getActivityTypeInfo(type: string): { label: string; icon: string
     status_change: { label: 'Status Changed', icon: 'RefreshCw', color: 'text-yellow-500' },
     deal_closed_won: { label: 'Deal Won', icon: 'Trophy', color: 'text-green-500' },
     deal_closed_lost: { label: 'Deal Lost', icon: 'XCircle', color: 'text-red-500' },
+    webinar_register: { label: 'Webinar Registration', icon: 'Users', color: 'text-indigo-500' },
   };
   return types[type] || { label: type, icon: 'Activity', color: 'text-muted-foreground' };
 }

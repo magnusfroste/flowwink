@@ -1,5 +1,8 @@
 # Supabase Backend Setup
 
+> **Audience:** Developers
+> **Last Updated:** February 2026
+
 This guide covers setting up the Supabase backend for FlowWink self-hosting.
 
 > **After completing this guide**, proceed to:

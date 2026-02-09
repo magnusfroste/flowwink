@@ -512,7 +512,16 @@ export default function LeadDetailPage() {
                             <CommandSeparator />
                             <CommandGroup>
                               <CommandItem
-                                onSelect={() => setShowNewCompanyForm(true)}
+                                onSelect={() => {
+                                  setShowNewCompanyForm(true);
+                                  // Auto-fill domain from contact email
+                                  const emailDomain = lead.email.split('@')[1];
+                                  const personalDomains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com', 'live.com', 'msn.com', 'aol.com'];
+                                  if (emailDomain && !personalDomains.includes(emailDomain)) {
+                                    setNewCompanyDomain(emailDomain);
+                                    setNewCompanyName(emailDomain.split('.')[0].charAt(0).toUpperCase() + emailDomain.split('.')[0].slice(1));
+                                  }
+                                }}
                                 className="text-primary"
                               >
                                 <Plus className="mr-2 h-4 w-4" />
