@@ -2973,7 +2973,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
     aiChatPosition: 'Embedded assistant for product questions',
     blogPosts: flowwinkBlogPosts,
     kbCategories: flowwinkKbCategories,
-    requiredModules: ['blog', 'knowledgeBase', 'chat', 'newsletter', 'leads', 'forms', 'products', 'orders'],
+    requiredModules: ['blog', 'knowledgeBase', 'chat', 'newsletter', 'leads', 'forms', 'products', 'orders', 'bookings', 'analytics'],
     pages: [
       // ===== HOME PAGE =====
       {
@@ -2988,6 +2988,19 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
           titleAlignment: 'center',
         },
         blocks: [
+          // ANNOUNCEMENT BAR - Top banner for new features
+          {
+            id: 'announcement-flowwink-loop',
+            type: 'announcement-bar',
+            data: {
+              message: '🔄 New: Flowwink Loop - Automatic Lead Enrichment & AI Qualification',
+              linkText: 'Learn more',
+              linkUrl: '/features',
+              variant: 'gradient',
+              dismissable: true,
+              sticky: false,
+            },
+          },
           // HERO - Main value proposition
           {
             id: 'hero-main',
@@ -3273,6 +3286,26 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
               autoplaySpeed: 5,
             },
           },
+          // SOCIAL PROOF - Live metrics
+          {
+            id: 'social-proof-live',
+            type: 'social-proof',
+            data: {
+              title: 'Trusted by Growing Teams',
+              subtitle: 'Join hundreds of organizations using FlowWink to power their digital presence.',
+              items: [
+                { id: 'sp1', type: 'counter', label: 'Sites Running', value: 1200, icon: 'globe' },
+                { id: 'sp2', type: 'rating', label: 'Average Rating', value: 4.9, maxRating: 5 },
+                { id: 'sp3', type: 'counter', label: 'Pages Published', value: 28500, icon: 'file' },
+                { id: 'sp4', type: 'counter', label: 'GitHub Stars', value: 1450, icon: 'star' },
+              ],
+              variant: 'cards',
+              layout: 'horizontal',
+              size: 'lg',
+              animated: true,
+              showLiveIndicator: true,
+            },
+          },
           // COMPARISON - How we compare
           {
             id: 'comparison-competitors',
@@ -3305,6 +3338,48 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
               showPrices: false,
               showButtons: false,
               stickyHeader: true,
+            },
+          },
+          // BADGE - Trust indicators
+          {
+            id: 'badge-trust',
+            type: 'badge',
+            data: {
+              title: 'Built with Security & Compliance in Mind',
+              subtitle: 'Enterprise-ready from day one.',
+              badges: [
+                { id: 'b1', title: 'Open Source', subtitle: 'MIT License', icon: 'star' },
+                { id: 'b2', title: 'GDPR Ready', subtitle: 'Privacy First', icon: 'shield' },
+                { id: 'b3', title: 'Self-Hostable', subtitle: 'Your Data', icon: 'check' },
+                { id: 'b4', title: 'SOC 2', subtitle: 'Compliant', icon: 'award' },
+              ],
+              variant: 'cards',
+              columns: 4,
+              size: 'md',
+              showTitles: true,
+              grayscale: false,
+            },
+          },
+          // MARQUEE - Technologies and partners
+          {
+            id: 'marquee-tech',
+            type: 'marquee',
+            data: {
+              items: [
+                { id: 'mq1', text: 'React', icon: '⚛️' },
+                { id: 'mq2', text: 'TypeScript', icon: '📘' },
+                { id: 'mq3', text: 'Supabase', icon: '⚡' },
+                { id: 'mq4', text: 'Tailwind CSS', icon: '🎨' },
+                { id: 'mq5', text: 'OpenAI', icon: '🤖' },
+                { id: 'mq6', text: 'Gemini', icon: '✨' },
+                { id: 'mq7', text: 'Docker', icon: '🐳' },
+                { id: 'mq8', text: 'Stripe', icon: '💳' },
+              ],
+              speed: 'normal',
+              direction: 'left',
+              pauseOnHover: true,
+              variant: 'default',
+              separator: '•',
             },
           },
           // FEATURES - Compliance & Security
@@ -3489,6 +3564,264 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
               gradient: true,
             },
           },
+          // FLOATING CTA - Scroll-triggered conversion
+          {
+            id: 'floating-cta-demo',
+            type: 'floating-cta',
+            data: {
+              title: 'Try FlowWink Now',
+              subtitle: 'See all features in action',
+              buttonText: 'Launch Demo',
+              buttonUrl: '/demo',
+              showAfterScroll: 30,
+              hideOnScrollUp: false,
+              position: 'bottom-right',
+              variant: 'card',
+              size: 'md',
+              showCloseButton: true,
+              closePersistent: true,
+              animationType: 'slide',
+            },
+          },
+        ],
+      },
+      // ===== DEMO PAGE (NEW) - Interactive Playground =====
+      {
+        title: 'Demo',
+        slug: 'demo',
+        menu_order: 2,
+        showInMenu: true,
+        meta: {
+          description: 'Experience FlowWink live. Try our booking system, product showcase, AI chat, and knowledge base search.',
+          showTitle: false,
+          titleAlignment: 'center',
+        },
+        blocks: [
+          // Hero
+          {
+            id: 'hero-demo',
+            type: 'hero',
+            data: {
+              title: 'Experience FlowWink Live',
+              subtitle: 'Try our interactive modules below. Book meetings, browse products, search the knowledge base, or chat with our AI assistant.',
+              backgroundType: 'color',
+              heightMode: 'auto',
+              contentAlignment: 'center',
+              overlayOpacity: 0,
+              primaryButton: { text: 'Self-Host Free', url: 'https://github.com/flowwink/flowwink' },
+              secondaryButton: { text: 'Start Trial', url: '/contact' },
+            },
+          },
+          // Separator - Booking
+          {
+            id: 'sep-booking-demo',
+            type: 'separator',
+            data: {
+              variant: 'text',
+              text: 'Smart Booking System',
+              icon: 'Calendar',
+            },
+          },
+          // SMART BOOKING - Live booking demo
+          {
+            id: 'booking-demo-live',
+            type: 'booking',
+            data: {
+              title: 'Book a Demo Call',
+              description: 'Select a service and time that works for you. This is a live booking system – your appointment will be confirmed.',
+              mode: 'smart',
+              submitButtonText: 'Confirm Booking',
+              successMessage: 'Your booking is confirmed! Check your email for details.',
+              showPhoneField: true,
+              variant: 'card',
+            },
+          },
+          // Separator - Products
+          {
+            id: 'sep-products-demo',
+            type: 'separator',
+            data: {
+              variant: 'text',
+              text: 'E-commerce Module',
+              icon: 'ShoppingCart',
+            },
+          },
+          // PRODUCTS - Live product showcase
+          {
+            id: 'products-demo-live',
+            type: 'products',
+            data: {
+              title: 'Product Showcase',
+              subtitle: 'Products are fetched from the database. Add to cart and checkout with Stripe integration.',
+              columns: 3,
+              productType: 'all',
+              showDescription: true,
+              buttonText: 'Add to Cart',
+            },
+          },
+          // CART - Shopping cart
+          {
+            id: 'cart-demo',
+            type: 'cart',
+            data: {
+              title: 'Your Shopping Cart',
+              showImage: true,
+              showQuantity: true,
+              checkoutButtonText: 'Proceed to Checkout',
+              emptyCartMessage: 'Your cart is empty. Add products above to see the cart in action.',
+            },
+          },
+          // Separator - AI Features
+          {
+            id: 'sep-ai-demo',
+            type: 'separator',
+            data: {
+              variant: 'text',
+              text: 'AI-Powered Features',
+              icon: 'Sparkles',
+            },
+          },
+          // CHAT LAUNCHER - AI assistant entry point
+          {
+            id: 'chat-launcher-demo',
+            type: 'chat-launcher',
+            data: {
+              title: 'Ask Our AI Assistant',
+              subtitle: 'The AI reads all our content to provide accurate answers.',
+              placeholder: 'What would you like to know about FlowWink?',
+              showQuickActions: true,
+              quickActionCount: 4,
+              variant: 'card',
+            },
+          },
+          // Separator - Knowledge Base
+          {
+            id: 'sep-kb-demo',
+            type: 'separator',
+            data: {
+              variant: 'text',
+              text: 'Knowledge Base Search',
+              icon: 'BookOpen',
+            },
+          },
+          // KB SEARCH - Knowledge base demo
+          {
+            id: 'kb-search-demo',
+            type: 'kb-search',
+            data: {
+              title: 'Search Our Help Center',
+              subtitle: 'Full-text search across all knowledge base articles.',
+              placeholder: 'Search for help articles...',
+              showResults: true,
+              maxResults: 5,
+            },
+          },
+          // Separator - Forms & Newsletter
+          {
+            id: 'sep-forms-demo',
+            type: 'separator',
+            data: {
+              variant: 'text',
+              text: 'Lead Capture',
+              icon: 'UserPlus',
+            },
+          },
+          // Two Column - Form and Newsletter side by side
+          {
+            id: 'twocol-forms',
+            type: 'two-column',
+            data: {
+              leftColumn: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: '📧 Newsletter Signup' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Newsletter signups automatically create leads in the CRM with activity scoring. Double opt-in, GDPR compliant.' }] },
+                ],
+              },
+              rightColumn: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: '📝 Contact Form' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Form submissions are saved to the database, create leads, trigger webhooks, and can be exported. Full automation support.' }] },
+                ],
+              },
+              layout: '50-50',
+            },
+          },
+          // Newsletter
+          {
+            id: 'newsletter-demo',
+            type: 'newsletter',
+            data: {
+              title: 'Get Product Updates',
+              description: 'Subscribe to our newsletter for tips, updates, and early access to new features.',
+              buttonText: 'Subscribe',
+              successMessage: 'Check your inbox to confirm your subscription!',
+              variant: 'default',
+              showNameField: true,
+            },
+          },
+          // FORM - Contact form
+          {
+            id: 'form-demo',
+            type: 'form',
+            data: {
+              title: 'Contact Us',
+              formName: 'Demo Contact Form',
+              fields: [
+                { id: 'field-name', type: 'text', label: 'Your Name', placeholder: 'Enter your name', required: true },
+                { id: 'field-email', type: 'email', label: 'Email', placeholder: 'your@email.com', required: true },
+                { id: 'field-message', type: 'textarea', label: 'Message', placeholder: 'How can we help?', required: true },
+              ],
+              submitButtonText: 'Send Message',
+              successMessage: 'Thank you! We will respond within 24 hours.',
+            },
+          },
+          // Separator - Flowwink Loop
+          {
+            id: 'sep-loop',
+            type: 'separator',
+            data: {
+              variant: 'text',
+              text: 'The Flowwink Loop',
+              icon: 'RefreshCw',
+            },
+          },
+          // Info Box - Flowwink Loop explanation
+          {
+            id: 'info-flowwink-loop',
+            type: 'info-box',
+            data: {
+              variant: 'highlight',
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: '🔄 Automatic Lead Pipeline' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Every interaction above (booking, form, newsletter) automatically creates or updates a lead in the CRM. The Flowwink Loop then:' }] },
+                  { type: 'orderedList', content: [
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Scores the lead' }, { type: 'text', text: ' – 10 pts for booking, 8 pts for newsletter, 10 pts for form' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Matches company' }, { type: 'text', text: ' – Auto-links to company via email domain' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'AI enrichment' }, { type: 'text', text: ' – Scrapes company website for industry, size, description' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'AI qualification' }, { type: 'text', text: ' – Generates qualification summary and next steps' }] }] },
+                  ] },
+                ],
+              },
+            },
+          },
+          // CTA
+          {
+            id: 'cta-demo',
+            type: 'cta',
+            data: {
+              title: 'Ready to Get Started?',
+              subtitle: 'Self-host for free or let us manage everything for €49/month.',
+              buttonText: 'Self-Host Free',
+              buttonUrl: 'https://github.com/flowwink/flowwink',
+              secondaryButtonText: 'Start Free Trial',
+              secondaryButtonUrl: '/contact',
+              gradient: true,
+            },
+          },
         ],
       },
       // ===== FEATURES PAGE =====
@@ -3584,6 +3917,86 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
               ],
               orientation: 'horizontal',
               variant: 'boxed',
+            },
+          },
+          // Separator - Flowwink Loop
+          {
+            id: 'sep-flowwink-loop',
+            type: 'separator',
+            data: {
+              variant: 'text',
+              text: 'The Flowwink Loop',
+              icon: 'RefreshCw',
+            },
+          },
+          // TIMELINE - Flowwink Loop Pipeline
+          {
+            id: 'timeline-flowwink-loop',
+            type: 'timeline',
+            data: {
+              title: 'Automatic Lead Generation Pipeline',
+              subtitle: 'Every visitor interaction triggers an intelligent automation that converts anonymous visitors to qualified leads.',
+              items: [
+                {
+                  id: 'loop-1',
+                  title: 'Visitor Interacts',
+                  description: 'Form submission, booking, newsletter signup, or chat conversation. Any touchpoint starts the loop.',
+                  icon: 'MousePointer',
+                },
+                {
+                  id: 'loop-2',
+                  title: 'Lead Created & Scored',
+                  description: 'Automatic lead creation with activity scoring: 10 pts booking, 10 pts form, 8 pts newsletter, 5 pts link click.',
+                  icon: 'UserPlus',
+                },
+                {
+                  id: 'loop-3',
+                  title: 'Company Matched',
+                  description: 'Email domain auto-links to company. Creates company record if new, updates existing if known.',
+                  icon: 'Building2',
+                },
+                {
+                  id: 'loop-4',
+                  title: 'AI Enrichment',
+                  description: 'Firecrawl scrapes company website for industry, size, description. All automated.',
+                  icon: 'Brain',
+                },
+                {
+                  id: 'loop-5',
+                  title: 'AI Qualification',
+                  description: 'LLM generates qualification summary, potential value, and recommended next steps.',
+                  icon: 'CheckCircle',
+                },
+                {
+                  id: 'loop-6',
+                  title: 'Sales Ready',
+                  description: 'Complete lead profile ready in CRM. No manual data entry required.',
+                  icon: 'Target',
+                },
+              ],
+              layout: 'vertical',
+              staggeredReveal: true,
+            },
+          },
+          // Progress - Module maturity
+          {
+            id: 'progress-modules',
+            type: 'progress',
+            data: {
+              title: 'Module Maturity',
+              subtitle: 'Our commitment to quality. All modules are production-ready.',
+              items: [
+                { id: 'prog-cms', label: 'CMS & Pages', value: 100, color: 'primary' },
+                { id: 'prog-blog', label: 'Blog & KB', value: 100 },
+                { id: 'prog-crm', label: 'CRM & Leads', value: 95 },
+                { id: 'prog-ecom', label: 'E-commerce', value: 90 },
+                { id: 'prog-ai', label: 'AI Features', value: 85 },
+              ],
+              variant: 'default',
+              size: 'md',
+              showLabels: true,
+              showPercentage: true,
+              animated: true,
             },
           },
           // Stats - Updated numbers
@@ -4998,6 +5411,23 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
               overlayOpacity: 0,
             },
           },
+          // COUNTDOWN - Early access offer
+          {
+            id: 'countdown-launch',
+            type: 'countdown',
+            data: {
+              title: 'Early Adopter Offer',
+              subtitle: 'Get 30% off managed cloud for life – limited time',
+              targetDate: '2026-03-31T23:59:59',
+              expiredMessage: 'Early adopter pricing has ended',
+              variant: 'cards',
+              size: 'lg',
+              showDays: true,
+              showHours: true,
+              showMinutes: true,
+              showSeconds: true,
+            },
+          },
           {
             id: 'pricing-detailed',
             type: 'pricing',
@@ -5061,6 +5491,39 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
               ],
               columns: 3,
               variant: 'cards',
+            },
+          },
+          // TABLE - Feature comparison matrix
+          {
+            id: 'table-comparison',
+            type: 'table',
+            data: {
+              title: 'Detailed Feature Comparison',
+              caption: 'See exactly what\'s included in each plan.',
+              columns: [
+                { id: 'col1', header: 'Feature', align: 'left' },
+                { id: 'col2', header: 'Self-Hosted', align: 'center' },
+                { id: 'col3', header: 'Managed Cloud', align: 'center' },
+                { id: 'col4', header: 'Enterprise', align: 'center' },
+              ],
+              rows: [
+                ['Pages & Content', 'Unlimited', 'Unlimited', 'Unlimited'],
+                ['Users & Roles', 'Unlimited', 'Unlimited', 'Unlimited'],
+                ['API Access', '✅', '✅', '✅'],
+                ['AI Chat Widget', '✅', '✅', '✅'],
+                ['Private LLM Support', '✅', '✅', '✅'],
+                ['Automatic Updates', '❌', '✅', '✅'],
+                ['Managed Backups', '❌', '✅ Daily', '✅ Hourly'],
+                ['SSL & CDN', '❌', '✅', '✅'],
+                ['Uptime SLA', '❌', '99.9%', 'Custom'],
+                ['SSO (SAML/OIDC)', '❌', '❌', '✅'],
+                ['Dedicated Infrastructure', '❌', '❌', '✅'],
+                ['Support', 'Community', 'Priority Email', 'Dedicated Manager'],
+              ],
+              variant: 'striped',
+              size: 'md',
+              stickyHeader: true,
+              highlightOnHover: true,
             },
           },
           {
