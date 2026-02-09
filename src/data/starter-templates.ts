@@ -4560,14 +4560,14 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
           },
         ],
       },
-      // ===== DEMO PAGE =====
+      // ===== BLOCKS SHOWCASE PAGE =====
       {
-        title: 'Demo',
-        slug: 'demo',
+        title: 'Blocks',
+        slug: 'blocks',
         menu_order: 3,
         showInMenu: true,
         meta: {
-          description: 'Try FlowWink live - Explore the visual editor, content blocks, and publishing workflow. No signup required.',
+          description: 'Explore all 43+ block types available in FlowWink - from content blocks to interactive elements and AI-powered features.',
           showTitle: true,
           titleAlignment: 'center',
         },
