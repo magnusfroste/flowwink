@@ -1,4 +1,4 @@
-project_id = "trpejhoieysrwiuhskkm"
+project_id = "rzhjotxffjfsdlhrdkpj"
 
 [functions.create-user]
 verify_jwt = false
@@ -112,4 +112,10 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.render-page]
+verify_jwt = false
+
+[functions.support-router]
+verify_jwt = false
+
+[functions.fetch-image]
 verify_jwt = false
