@@ -259,6 +259,34 @@ const launchpadPages: TemplatePage[] = [
           showTitles: true,
         },
       },
+      // CHAT LAUNCHER - AI-powered quick assistance
+      {
+        id: 'chat-launcher-home',
+        type: 'chat-launcher',
+        data: {
+          title: 'Have a Question?',
+          subtitle: 'Our AI knows everything about our platform',
+          placeholder: 'Ask about features, pricing, or getting started...',
+          showQuickActions: true,
+          quickActionCount: 4,
+          variant: 'card',
+        },
+      },
+      // ACCORDION - Common Questions for AEO
+      {
+        id: 'accordion-home-faq',
+        type: 'accordion',
+        data: {
+          title: 'Common Questions',
+          items: [
+            { question: 'What is LaunchPad?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'LaunchPad is a modern development platform that helps teams build, deploy, and scale applications faster. We handle the infrastructure complexity so you can focus on building your product.' }] }] } },
+            { question: 'How do I get started?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Getting started is easy! Sign up for a free account, connect your code repository, and deploy your first application in minutes. No credit card required for the free tier.' }] }] } },
+            { question: 'What does it cost?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'We offer a generous free tier that includes 1 project and 1,000 API calls per month. Pro plans start at $49/month with unlimited projects and 100,000 API calls. Enterprise pricing is available for larger organizations.' }] }] } },
+            { question: 'Is my data secure?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Yes! We are SOC 2 Type II certified and GDPR compliant. All data is encrypted at rest and in transit. Enterprise plans include additional security features like SSO and audit logs.' }] }] } },
+            { question: 'Can I try before I buy?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Absolutely! Our free tier includes everything you need to get started and test the platform. No credit card required, and you can upgrade anytime as your needs grow.' }] }] } },
+          ],
+        },
+      },
       // NEWSLETTER - Email subscription
       {
         id: 'newsletter-1',
@@ -1011,6 +1039,34 @@ const trustcorpPages: TemplatePage[] = [
           imagePosition: 'left',
         },
       },
+      // CHAT LAUNCHER - Enterprise AI assistant
+      {
+        id: 'chat-launcher-home',
+        type: 'chat-launcher',
+        data: {
+          title: 'Have Questions?',
+          subtitle: 'Our AI assistant understands your enterprise needs',
+          placeholder: 'Ask about security, compliance, or enterprise features...',
+          showQuickActions: true,
+          quickActionCount: 4,
+          variant: 'card',
+        },
+      },
+      // ACCORDION - Enterprise FAQ for AEO
+      {
+        id: 'accordion-home-faq',
+        type: 'accordion',
+        data: {
+          title: 'Enterprise FAQ',
+          items: [
+            { question: 'How do you ensure data security?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'TrustCorp maintains SOC 2 Type II certification, ISO 27001 compliance, and offers HIPAA-compliant options. All data is encrypted at rest and in transit, with optional on-premise deployment for maximum data sovereignty.' }] }] } },
+            { question: 'What deployment options are available?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'We offer flexible deployment options including managed cloud, private cloud, and on-premise installations. Your data can stay entirely within your infrastructure if required by compliance.' }] }] } },
+            { question: 'Do you offer enterprise SLAs?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Yes, enterprise customers receive guaranteed 99.9% uptime SLA with dedicated support channels, named account managers, and 24/7 priority response times.' }] }] } },
+            { question: 'Can you integrate with our existing systems?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Absolutely. We offer pre-built integrations for major enterprise systems plus full REST API access for custom integrations. Our solutions team assists with complex integration requirements.' }] }] } },
+            { question: 'How does AI keep data private?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Our AI assistant can run entirely on your infrastructure using private LLM endpoints. Your conversations and data never leave your network – full data sovereignty guaranteed.' }] }] } },
+          ],
+        },
+      },
       {
         id: 'info-box-1',
         type: 'info-box',
@@ -1582,6 +1638,34 @@ const securehealthPages: TemplatePage[] = [
             { value: '<15min', label: 'Average Wait Time', icon: 'Clock' },
             { value: '25+', label: 'Specialists On Staff', icon: 'UserCheck' },
             { value: '10K+', label: 'Patients Annually', icon: 'Users' },
+          ],
+        },
+      },
+      // CHAT LAUNCHER - HIPAA-compliant AI assistant
+      {
+        id: 'chat-launcher-home',
+        type: 'chat-launcher',
+        data: {
+          title: 'Questions? Ask Our Private AI',
+          subtitle: 'HIPAA-compliant – your data never leaves our servers',
+          placeholder: 'Ask about services, booking, or patient resources...',
+          showQuickActions: true,
+          quickActionCount: 4,
+          variant: 'card',
+        },
+      },
+      // ACCORDION - Healthcare FAQ for AEO
+      {
+        id: 'accordion-home-faq',
+        type: 'accordion',
+        data: {
+          title: 'Patient FAQ',
+          items: [
+            { question: 'Is the AI assistant private?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Yes! Unlike cloud-based AI services, our Private AI runs entirely on our own HIPAA-compliant servers. Your conversations and health questions never leave our secure infrastructure.' }] }] } },
+            { question: 'How do I book an appointment?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'You can book appointments online 24/7 using our booking system. Simply select your service, choose an available time, and confirm. You\'ll receive an email confirmation immediately.' }] }] } },
+            { question: 'What insurance do you accept?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'We accept most major insurance plans including Medicare, Blue Cross Blue Shield, Aetna, Cigna, and United Healthcare. Contact us to verify your specific coverage before your visit.' }] }] } },
+            { question: 'What are your office hours?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Our primary care is available Monday-Friday 8am-6pm, with Saturday morning hours available. Our 24/7 emergency care line is always available for urgent medical questions.' }] }] } },
+            { question: 'How do I access my medical records?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'You can access your medical records through our secure patient portal. We use two-factor authentication and encrypted connections to protect your privacy.' }] }] } },
           ],
         },
       },
@@ -2501,6 +2585,18 @@ const momentumPages: TemplatePage[] = [
           author: 'Alex Chen',
           source: 'Co-founder, Series A Startup',
           variant: 'styled',
+        },
+      },
+      // CHAT LAUNCHER - Minimalist AI entry point
+      {
+        id: 'chat-launcher-home',
+        type: 'chat-launcher',
+        data: {
+          title: 'Quick Question?',
+          placeholder: 'Ask about features, pricing, or getting started...',
+          showQuickActions: true,
+          quickActionCount: 3,
+          variant: 'minimal',
         },
       },
       // Section 7: Accordion (FAQ section)
@@ -3518,6 +3614,34 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
               ],
               variant: 'vertical',
               showDates: true,
+            },
+          },
+          // CHAT LAUNCHER - AI entry point on Home
+          {
+            id: 'chat-launcher-home',
+            type: 'chat-launcher',
+            data: {
+              title: 'What Can We Help You With?',
+              subtitle: 'Our AI knows everything about FlowWink',
+              placeholder: 'Ask about features, pricing, or self-hosting...',
+              showQuickActions: true,
+              quickActionCount: 4,
+              variant: 'hero-integrated',
+            },
+          },
+          // ACCORDION - Platform FAQ for AEO
+          {
+            id: 'accordion-home-faq',
+            type: 'accordion',
+            data: {
+              title: 'Platform FAQ',
+              items: [
+                { question: 'What is FlowWink?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'FlowWink is an open-source CMS platform that combines visual website editing with headless API access. Self-host for free or use our managed cloud service.' }] }] } },
+                { question: 'Is FlowWink really free?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Yes! FlowWink is open source under MIT license. Self-host on your own servers at no cost. We also offer managed cloud hosting starting at €49/month for those who prefer not to manage infrastructure.' }] }] } },
+                { question: 'Can I use my own AI model?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Absolutely. FlowWink supports OpenAI, local LLMs via Ollama, or any OpenAI-compatible endpoint. Your data stays on your infrastructure for complete privacy and compliance.' }] }] } },
+                { question: 'How does the AI chat work?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'The AI chat reads all your CMS content (pages, blog, knowledge base) to answer visitor questions accurately. It\'s like having a 24/7 support agent that knows everything about your website.' }] }] } },
+                { question: 'Who is FlowWink for?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'FlowWink is built for startups needing speed, growing businesses wanting all-in-one solutions, and enterprises requiring data sovereignty and compliance.' }] }] } },
+              ],
             },
           },
           // FEATURES - Who it's for
@@ -7557,6 +7681,34 @@ const serviceProPages: TemplatePage[] = [
           animationDuration: 2000,
         },
       },
+      // CHAT LAUNCHER - Quick AI assistance
+      {
+        id: 'chat-launcher-home',
+        type: 'chat-launcher',
+        data: {
+          title: 'Quick Questions? Ask Our AI',
+          subtitle: 'Get instant answers about our services',
+          placeholder: 'Ask about services, availability, or booking...',
+          showQuickActions: true,
+          quickActionCount: 4,
+          variant: 'card',
+        },
+      },
+      // ACCORDION - Service FAQ for AEO
+      {
+        id: 'accordion-home-faq',
+        type: 'accordion',
+        data: {
+          title: 'Service FAQ',
+          items: [
+            { question: 'How do I book an appointment?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Booking is easy! Use our online booking system to select your service, choose an available time slot, and confirm your appointment. You\'ll receive an email confirmation immediately.' }] }] } },
+            { question: 'What is your cancellation policy?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'We require 24 hours notice for cancellations to avoid a cancellation fee. You can reschedule your appointment online at any time before this deadline.' }] }] } },
+            { question: 'What services do you offer?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'We offer a range of professional services from basic consultations to comprehensive VIP packages. Visit our Services page to see all options with pricing and descriptions.' }] }] } },
+            { question: 'Do you offer recurring appointments?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Yes! Our Monthly Retainer package includes 4 sessions per month, priority booking, and unlimited email support. Perfect for ongoing needs.' }] }] } },
+            { question: 'What are your hours?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'We\'re open Monday-Friday 9am-6pm and Saturday 10am-4pm. VIP clients have access to priority scheduling and extended hours when needed.' }] }] } },
+          ],
+        },
+      },
       {
         id: 'cta-1',
         type: 'cta',
@@ -8601,6 +8753,34 @@ const flowwinkAgencyPages: TemplatePage[] = [
           layout: 'grid',
           variant: 'cards',
           iconStyle: 'circle',
+        },
+      },
+      // CHAT LAUNCHER - Agency-focused AI assistant
+      {
+        id: 'chat-launcher-home',
+        type: 'chat-launcher',
+        data: {
+          title: 'Questions About FlowWink for Agencies?',
+          subtitle: 'Get instant answers about pricing, deployment, and features',
+          placeholder: 'Ask about white-labeling, pricing, or self-hosting...',
+          showQuickActions: true,
+          quickActionCount: 4,
+          variant: 'card',
+        },
+      },
+      // ACCORDION - Agency FAQ for AEO
+      {
+        id: 'accordion-home-faq',
+        type: 'accordion',
+        data: {
+          title: 'Agency FAQ',
+          items: [
+            { question: 'How much can I really save?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'A single €20/month VPS can host 20-50 client sites. Compare that to €20-200 per site per month with Webflow or Squarespace. Most agencies see 90%+ cost reduction.' }] }] } },
+            { question: 'Is it really white-label?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Yes! FlowWink runs on your domain with your branding. Your clients never see "FlowWink" anywhere. Custom logos, colors, and even custom email domains.' }] }] } },
+            { question: 'How long does setup take?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'From zero to production in 5 minutes with Docker. Clone the repo, run docker-compose, and you\'re live. We also offer managed hosting if you prefer not to handle infrastructure.' }] }] } },
+            { question: 'What about client support?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'FlowWink is designed for non-technical users. The admin interface is clean and intuitive. Built-in AI chat can also help your clients with common questions automatically.' }] }] } },
+            { question: 'Can clients break their sites?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'No! Role-based permissions mean clients can only edit content within the blocks you allow. They cannot touch code, delete pages accidentally, or break layouts. Plus every change is versioned.' }] }] } },
+          ],
         },
       },
       // CTA
