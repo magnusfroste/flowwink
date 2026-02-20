@@ -61,13 +61,13 @@ export function ChatFeedback({
       setSubmitted(rating);
       
       if (rating === 'positive') {
-        toast.success('Tack för din feedback!');
+        toast.success('Thanks for your feedback!');
       } else {
-        toast.success('Tack! Vi använder detta för att förbättra.');
+        toast.success('Thanks! We\'ll use this to improve.');
       }
     } catch (error) {
       logger.error('Failed to submit feedback:', error);
-      toast.error('Kunde inte spara feedback');
+      toast.error('Could not save feedback');
     } finally {
       setIsSubmitting(false);
     }
@@ -81,7 +81,7 @@ export function ChatFeedback({
         ) : (
           <ThumbsDown className="h-3 w-3 text-destructive fill-destructive" />
         )}
-        <span>Tack!</span>
+        <span>Thanks!</span>
       </div>
     );
   }

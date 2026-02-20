@@ -29,9 +29,11 @@ services:
     image: ghcr.io/magnusfroste/flowwink:latest
     ports:
       - "80:80"
-    environment:
-      - VITE_SUPABASE_URL=https://your-project.supabase.co
-      - VITE_SUPABASE_ANON_KEY=your-anon-key
+    build:
+      args:
+        - VITE_SUPABASE_URL=https://your-project.supabase.co
+        - VITE_SUPABASE_PUBLISHABLE_KEY=your-anon-key
+        - VITE_SUPABASE_PROJECT_ID=your-project-id
     restart: unless-stopped
 ```
 
@@ -62,7 +64,8 @@ Your content stays safe in Supabase - only the application code updates.
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `VITE_SUPABASE_URL` | Yes | Your Supabase project URL |
-| `VITE_SUPABASE_ANON_KEY` | Yes | Your Supabase anon/public key |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | Yes | Your Supabase anon/public key |
+| `VITE_SUPABASE_PROJECT_ID` | Yes | Your Supabase project ID |
 
 ## Platform-Specific Guides
 

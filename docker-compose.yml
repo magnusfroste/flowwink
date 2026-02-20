@@ -14,13 +14,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        - VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
+        - VITE_SUPABASE_PUBLISHABLE_KEY=${VITE_SUPABASE_PUBLISHABLE_KEY}
+        - VITE_SUPABASE_PROJECT_ID=${VITE_SUPABASE_PROJECT_ID}
     ports:
       - "3000:80"
-    environment:
-      # These are build-time variables baked into the static files
-      # For production, set these in Easypanel environment variables
-      - VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
-      - VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
@@ -33,5 +32,6 @@ services:
 # Notes:
 # - Environment variables must be set in .env file or exported before running
 # - Vite bakes env vars into the build, so changes require rebuild
-# - For production deployment, use Easypanel's environment variable settings
+# - Variables are passed as build ARGS (not runtime environment)
+# - For production deployment, use Easypanel's build argument settings
 # =============================================================================

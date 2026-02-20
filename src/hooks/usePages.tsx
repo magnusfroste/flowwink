@@ -62,8 +62,10 @@ export function usePages(status?: PageStatus) {
 }
 
 export function usePage(id: string | undefined) {
+  const { loading: authLoading, session } = useAuth();
+  
   return useQuery({
-    queryKey: ['page', id],
+    queryKey: ['page', id, session?.user?.id ?? 'anon'],
     queryFn: async () => {
       if (!id) return null;
       
@@ -78,7 +80,7 @@ export function usePage(id: string | undefined) {
       
       return parsePage(data);
     },
-    enabled: !!id,
+    enabled: !!id && !authLoading,
     refetchOnMount: 'always',
     staleTime: 0,
   });
@@ -364,8 +366,10 @@ export function useDeletePage() {
 }
 
 export function useDeletedPages() {
+  const { loading: authLoading, session } = useAuth();
+  
   return useQuery({
-    queryKey: ['deleted-pages'],
+    queryKey: ['deleted-pages', session?.user?.id ?? 'anon'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('pages')
@@ -377,6 +381,7 @@ export function useDeletedPages() {
       
       return (data || []).map(parsePage);
     },
+    enabled: !authLoading && !!session,
   });
 }
 
@@ -460,8 +465,10 @@ export function usePermanentDeletePage() {
 }
 
 export function usePageVersions(pageId: string | undefined) {
+  const { loading: authLoading, session } = useAuth();
+  
   return useQuery({
-    queryKey: ['page-versions', pageId],
+    queryKey: ['page-versions', pageId, session?.user?.id ?? 'anon'],
     queryFn: async () => {
       if (!pageId) return [];
       
@@ -476,6 +483,6 @@ export function usePageVersions(pageId: string | undefined) {
       
       return data;
     },
-    enabled: !!pageId,
+    enabled: !!pageId && !authLoading,
   });
 }
