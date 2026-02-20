@@ -213,6 +213,16 @@ export function HeroBlock({ data }: HeroBlockProps) {
   // Render video fallback (gradient background when video fails to load)
   const renderVideoFallback = () => {
     if (!videoError || data.backgroundType !== 'video') return null;
+    // Prefer poster image as fallback, then background image, then gradient
+    const fallbackImage = data.videoPosterUrl || data.backgroundImage;
+    if (fallbackImage) {
+      return (
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: `url(${fallbackImage})` }}
+        />
+      );
+    }
     return (
       <div className="absolute inset-0 bg-gradient-to-br from-primary/80 to-primary" />
     );
