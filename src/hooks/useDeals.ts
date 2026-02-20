@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -95,7 +96,7 @@ export function useCreateDeal() {
       toast.success('Deal created');
     },
     onError: (error) => {
-      console.error('Create deal error:', error);
+      logger.error('Create deal error:', error);
       toast.error('Could not create deal');
     },
   });
@@ -158,7 +159,7 @@ export function useUpdateDeal() {
       toast.success('Deal updated');
     },
     onError: (error) => {
-      console.error('Update deal error:', error);
+      logger.error('Update deal error:', error);
       toast.error('Could not update deal');
     },
   });

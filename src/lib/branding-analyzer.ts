@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { AVAILABLE_HEADING_FONTS, AVAILABLE_BODY_FONTS } from '@/providers/BrandingProvider';
 import type { BrandingSettings } from '@/hooks/useSiteSettings';
 
@@ -67,7 +68,7 @@ export function hexToHsl(color: string): string {
   
   const result = /^([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   if (!result) {
-    console.warn('Could not parse color:', color);
+    logger.warn('Could not parse color:', color);
     return '220 100% 26%'; // Default blue
   }
   
@@ -174,7 +175,7 @@ export function analyzeBranding(branding: FirecrawlBranding): AnalyzedBranding {
   const spacing = branding.spacing || {};
   
   // Debug log to help troubleshoot
-  console.log('Firecrawl colors received:', colors);
+  logger.log('Firecrawl colors received:', colors);
   
   // Intelligent color extraction with fallbacks
   // Firecrawl often misidentifies the primary color. We use textPrimary/accent as a better signal
@@ -203,7 +204,7 @@ export function analyzeBranding(branding: FirecrawlBranding): AnalyzedBranding {
     borderRadius: spacing.borderRadius,
   };
   
-  console.log('Extracted branding:', extracted);
+  logger.log('Extracted branding:', extracted);
   
   // Map to our BrandingSettings format
   const mapped: Partial<BrandingSettings> = {
@@ -225,7 +226,7 @@ export function analyzeBranding(branding: FirecrawlBranding): AnalyzedBranding {
     }
   });
   
-  console.log('Mapped branding settings:', mapped);
+  logger.log('Mapped branding settings:', mapped);
   
   return { extracted, mapped };
 }

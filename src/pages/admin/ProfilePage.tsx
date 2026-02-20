@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
@@ -78,7 +79,7 @@ export default function ProfilePage() {
       setAvatarUrl(publicUrl);
       toast.success('Avatar uploaded');
     } catch (error) {
-      console.error('Upload error:', error);
+      logger.error('Upload error:', error);
       toast.error('Failed to upload avatar');
     } finally {
       setUploading(false);
@@ -109,7 +110,7 @@ export default function ProfilePage() {
 
       toast.success('Profile updated');
     } catch (error) {
-      console.error('Save error:', error);
+      logger.error('Save error:', error);
       toast.error('Failed to update profile');
     } finally {
       setLoading(false);
@@ -151,7 +152,7 @@ export default function ProfilePage() {
       setConfirmPassword('');
       toast.success('Password updated successfully');
     } catch (error: any) {
-      console.error('Password change error:', error);
+      logger.error('Password change error:', error);
       toast.error(error.message || 'Failed to update password');
     } finally {
       setChangingPassword(false);

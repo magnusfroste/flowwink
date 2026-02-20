@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -78,7 +79,7 @@ export function useCreateProduct() {
       toast.success('Product created');
     },
     onError: (error) => {
-      console.error('Create product error:', error);
+      logger.error('Create product error:', error);
       toast.error('Could not create product');
     },
   });
@@ -105,7 +106,7 @@ export function useUpdateProduct() {
       toast.success('Product updated');
     },
     onError: (error) => {
-      console.error('Update product error:', error);
+      logger.error('Update product error:', error);
       toast.error('Could not update product');
     },
   });
@@ -128,7 +129,7 @@ export function useDeleteProduct() {
       toast.success('Product deleted');
     },
     onError: (error) => {
-      console.error('Delete product error:', error);
+      logger.error('Delete product error:', error);
       toast.error('Could not delete product');
     },
   });

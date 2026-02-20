@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -103,7 +104,7 @@ export function useClearMediaLibrary() {
           .remove(batch);
 
         if (error) {
-          console.error('Error deleting batch:', error);
+          logger.error('Error deleting batch:', error);
           throw error;
         }
 
@@ -121,7 +122,7 @@ export function useClearMediaLibrary() {
       });
     },
     onError: (error) => {
-      console.error('Error clearing media library:', error);
+      logger.error('Error clearing media library:', error);
       toast({
         title: 'Error',
         description: 'Failed to clear media library. Please try again.',

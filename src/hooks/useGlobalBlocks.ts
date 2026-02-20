@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -219,7 +220,7 @@ export function useUpdateGlobalBlock<T = Record<string, unknown>>(slot: GlobalBl
         description: 'Failed to save global block.',
         variant: 'destructive',
       });
-      console.error(`Failed to update global block ${slot}:`, error);
+      logger.error(`Failed to update global block ${slot}:`, error);
     },
   });
 }

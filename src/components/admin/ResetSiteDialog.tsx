@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState } from 'react';
 import {
   Dialog,
@@ -330,7 +331,7 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : 'Unknown error';
         updateProgress(task.label, 'error', errorMsg);
-        console.error(`Error in ${task.label}:`, error);
+        logger.error(`Error in ${task.label}:`, error);
       }
     }
 

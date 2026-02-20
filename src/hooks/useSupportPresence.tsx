@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -123,10 +124,10 @@ export function useSupportPresence() {
         setOnlineAgents(agents);
       })
       .on('presence', { event: 'join' }, ({ key, newPresences }) => {
-        console.log('Agent joined:', key);
+        logger.log('Agent joined:', key);
       })
       .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
-        console.log('Agent left:', key);
+        logger.log('Agent left:', key);
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {

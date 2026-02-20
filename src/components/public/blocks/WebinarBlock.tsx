@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState } from 'react';
 import { format, isFuture, isPast, differenceInDays } from 'date-fns';
 import { Video, Calendar, Clock, Users, Play, CheckCircle, Loader2, ExternalLink } from 'lucide-react';
@@ -225,7 +226,7 @@ function WebinarCard({
       setRegistered(true);
       toast.success('Successfully registered!');
     } catch (error) {
-      console.error('Registration error:', error);
+      logger.error('Registration error:', error);
       toast.error('Failed to register. Please try again.');
     } finally {
       setIsSubmitting(false);

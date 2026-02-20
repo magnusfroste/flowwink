@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { generateHTML } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
@@ -301,7 +302,7 @@ export function renderToHtml(content: unknown): string {
     try {
       return generateHTML(doc, [StarterKit, Link]);
     } catch (e) {
-      console.error('Failed to render markdown content to HTML:', e);
+      logger.error('Failed to render markdown content to HTML:', e);
       return '';
     }
   }
@@ -311,7 +312,7 @@ export function renderToHtml(content: unknown): string {
     try {
       return generateHTML(content, [StarterKit, Link]);
     } catch (e) {
-      console.error('Failed to render Tiptap content to HTML:', e);
+      logger.error('Failed to render Tiptap content to HTML:', e);
       return '';
     }
   }
@@ -323,7 +324,7 @@ export function renderToHtml(content: unknown): string {
       try {
         return generateHTML(firstBlock.data.content, [StarterKit, Link]);
       } catch (e) {
-        console.error('Failed to render wrapped Tiptap content:', e);
+        logger.error('Failed to render wrapped Tiptap content:', e);
       }
     }
   }

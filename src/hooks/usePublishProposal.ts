@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -62,7 +63,7 @@ async function publishToBlog(
       resourceType: 'blog_post',
     };
   } catch (error) {
-    console.error('[publishToBlog] Error:', error);
+    logger.error('[publishToBlog] Error:', error);
     return {
       channel: 'blog',
       success: false,
@@ -166,7 +167,7 @@ async function publishToNewsletter(
       resourceType: 'newsletter',
     };
   } catch (error) {
-    console.error('[publishToNewsletter] Error:', error);
+    logger.error('[publishToNewsletter] Error:', error);
     return {
       channel: 'newsletter',
       success: false,
@@ -263,7 +264,7 @@ export function usePublishProposalChannel() {
           success: true,
         };
       } catch (error) {
-        console.error(`[publishTo${channel}] Error:`, error);
+        logger.error(`[publishTo${channel}] Error:`, error);
         return {
           channel,
           success: false,

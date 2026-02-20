@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState } from 'react';
 import { Wand2, Loader2 } from 'lucide-react';
 import {
@@ -79,7 +80,7 @@ export function CreateFromCopilotDialog({
       toast.success('Page created!');
       onSuccess();
     } catch (error) {
-      console.error('Failed to create page:', error);
+      logger.error('Failed to create page:', error);
       toast.error('Could not create page');
     } finally {
       setIsCreating(false);

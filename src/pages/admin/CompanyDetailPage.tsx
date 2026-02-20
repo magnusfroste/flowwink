@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
@@ -136,7 +137,7 @@ export default function CompanyDetailPage() {
         toast.error('Could not fetch company information');
       }
     } catch (error) {
-      console.error('Enrichment failed:', error);
+      logger.error('Enrichment failed:', error);
       toast.error('Could not fetch company information');
     } finally {
       setIsEnriching(false);

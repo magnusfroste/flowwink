@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -96,7 +97,7 @@ export function CreateLeadDialog({
       resetForm();
       onOpenChange(false);
     } catch (error) {
-      console.error('Failed to create lead:', error);
+      logger.error('Failed to create lead:', error);
       toast.error('Could not create contact');
     } finally {
       setIsSubmitting(false);

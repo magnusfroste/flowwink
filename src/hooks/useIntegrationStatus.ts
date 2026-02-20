@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -47,7 +48,7 @@ export function useIntegrationStatus() {
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke('check-secrets');
       if (error) {
-        console.error('[useIntegrationStatus] Error:', error);
+        logger.error('[useIntegrationStatus] Error:', error);
         return null;
       }
       return data as IntegrationStatus;

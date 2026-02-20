@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -74,9 +75,9 @@ export function ImageUploader({
           uploadBlob = await convertToWebP(file, 0.85);
           fileName = getWebPFileName(file.name);
           contentType = 'image/webp';
-          console.log(`Converted to WebP: ${file.size} → ${uploadBlob.size} bytes`);
+          logger.log(`Converted to WebP: ${file.size} → ${uploadBlob.size} bytes`);
         } catch (conversionError) {
-          console.warn('WebP conversion failed, using original:', conversionError);
+          logger.warn('WebP conversion failed, using original:', conversionError);
           // Fall back to original if conversion fails
         }
       }
@@ -107,7 +108,7 @@ export function ImageUploader({
           : 'Image has been uploaded',
       });
     } catch (error) {
-      console.error('Upload error:', error);
+      logger.error('Upload error:', error);
       toast({
         title: 'Upload failed',
         description: 'Could not upload image. Please try again.',

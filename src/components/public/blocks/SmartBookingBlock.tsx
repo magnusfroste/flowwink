@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -129,7 +130,7 @@ export function SmartBookingBlock({ data, blockId, pageId }: SmartBookingBlockPr
       setStep('confirmed');
       toast.success('Booking request submitted!');
     } catch (error) {
-      console.error('Error submitting booking:', error);
+      logger.error('Error submitting booking:', error);
       toast.error('Failed to submit booking');
     } finally {
       setIsSubmitting(false);

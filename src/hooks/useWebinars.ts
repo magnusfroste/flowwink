@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -124,7 +125,7 @@ export function useCreateWebinar() {
     },
     onError: (error) => {
       toast({ title: 'Error', description: 'Could not create webinar.', variant: 'destructive' });
-      console.error('Create webinar error:', error);
+      logger.error('Create webinar error:', error);
     },
   });
 }
@@ -152,7 +153,7 @@ export function useUpdateWebinar() {
     },
     onError: (error) => {
       toast({ title: 'Error', description: 'Could not update webinar.', variant: 'destructive' });
-      console.error('Update webinar error:', error);
+      logger.error('Update webinar error:', error);
     },
   });
 }
@@ -172,7 +173,7 @@ export function useDeleteWebinar() {
     },
     onError: (error) => {
       toast({ title: 'Error', description: 'Could not delete webinar.', variant: 'destructive' });
-      console.error('Delete webinar error:', error);
+      logger.error('Delete webinar error:', error);
     },
   });
 }

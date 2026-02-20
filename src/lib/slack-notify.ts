@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { supabase } from '@/integrations/supabase/client';
 
 interface SlackNotification {
@@ -71,7 +72,7 @@ export async function sendSlackNotification(notification: SlackNotification): Pr
     });
   } catch (error) {
     // Fire-and-forget — log but never throw
-    console.warn('[SlackNotify] Failed to send notification:', error);
+    logger.warn('[SlackNotify] Failed to send notification:', error);
   }
 }
 

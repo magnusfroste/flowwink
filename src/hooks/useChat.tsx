@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useChatSettings } from './useSiteSettings';
 import { supabase } from '@/integrations/supabase/client';
@@ -310,7 +311,7 @@ export function useChat(options?: UseChatOptions) {
         content,
       });
     } catch (err) {
-      console.error('Failed to save message:', err);
+      logger.error('Failed to save message:', err);
     }
   }, [settings?.saveConversations]);
 
@@ -328,7 +329,7 @@ export function useChat(options?: UseChatOptions) {
       .single();
 
     if (error) {
-      console.error('Failed to create conversation:', error);
+      logger.error('Failed to create conversation:', error);
       return null;
     }
 
@@ -447,7 +448,7 @@ export function useChat(options?: UseChatOptions) {
       if (contentType?.includes('application/json')) {
         const jsonData = await response.json();
         if (jsonData.skipped) {
-          console.log('AI response skipped:', jsonData.reason);
+          logger.log('AI response skipped:', jsonData.reason);
           // Don't add an assistant message - live agent will respond
           setIsLoading(false);
           return;
@@ -521,7 +522,7 @@ export function useChat(options?: UseChatOptions) {
         // User cancelled
         return;
       }
-      console.error('Chat error:', err);
+      logger.error('Chat error:', err);
       setError(err instanceof Error ? err.message : 'An error occurred');
       // Remove empty assistant message on error
       setMessages(prev => prev.filter(m => m.id !== assistantMessageId));

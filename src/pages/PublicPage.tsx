@@ -1,4 +1,5 @@
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { logger } from '@/lib/logger';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Lock, Wrench } from 'lucide-react';
@@ -80,13 +81,13 @@ export default function PublicPage() {
           .eq('status', 'published');
         
         if (error) {
-          console.error('[PublicPage] Error checking for pages:', error);
+          logger.error('[PublicPage] Error checking for pages:', error);
           return false;
         }
         
         return (count ?? 0) > 0;
       } catch (e) {
-        console.error('[PublicPage] Error checking for pages:', e);
+        logger.error('[PublicPage] Error checking for pages:', e);
         return false;
       }
     },
@@ -97,32 +98,32 @@ export default function PublicPage() {
   const { data: page, isLoading } = useQuery({
     queryKey: ['public-page', pageSlug],
     queryFn: async (): Promise<Page | null | typeof CONNECTION_ERROR> => {
-      console.log('[PublicPage] Fetching page:', pageSlug);
+      logger.log('[PublicPage] Fetching page:', pageSlug);
       
       // Check if Supabase URL is configured
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       if (!supabaseUrl || supabaseUrl === 'undefined' || supabaseUrl === '') {
-        console.error('[PublicPage] Supabase URL not configured');
+        logger.error('[PublicPage] Supabase URL not configured');
         return CONNECTION_ERROR;
       }
 
       try {
         // Use edge function for fetching (handles caching internally)
         const edgeFunctionUrl = `${supabaseUrl}/functions/v1/get-page?slug=${encodeURIComponent(pageSlug)}`;
-        console.log('[PublicPage] Trying edge function:', edgeFunctionUrl);
+        logger.log('[PublicPage] Trying edge function:', edgeFunctionUrl);
         
         const response = await fetch(edgeFunctionUrl);
-        console.log('[PublicPage] Edge function response status:', response.status);
+        logger.log('[PublicPage] Edge function response status:', response.status);
         
         // If edge function returns 404, page doesn't exist - return null (not an error)
         if (response.status === 404) {
-          console.log('[PublicPage] Page not found via edge function:', pageSlug);
+          logger.log('[PublicPage] Page not found via edge function:', pageSlug);
           return null;
         }
         
         if (response.ok) {
           const pageData = await response.json();
-          console.log('[PublicPage] Edge function returned data:', { 
+          logger.log('[PublicPage] Edge function returned data:', { 
             hasError: !!pageData.error, 
             hasContent: !!pageData.content_json,
             contentLength: pageData.content_json?.length 
@@ -130,22 +131,22 @@ export default function PublicPage() {
           
           if (!pageData.error) {
             const parsed = parseContent(pageData);
-            console.log('[PublicPage] Successfully parsed page data');
+            logger.log('[PublicPage] Successfully parsed page data');
             return parsed;
           }
           // Edge function returned data with error field - treat as not found
-          console.log('[PublicPage] Edge function returned error:', pageData.error);
+          logger.log('[PublicPage] Edge function returned error:', pageData.error);
           return null;
         }
         
         // Other error status codes - fall through to direct DB query
-        console.log('[PublicPage] Edge function returned status:', response.status, '- falling back to DB');
+        logger.log('[PublicPage] Edge function returned status:', response.status, '- falling back to DB');
       } catch (e) {
-        console.log('[PublicPage] Edge function unavailable, using direct DB query', e);
+        logger.log('[PublicPage] Edge function unavailable, using direct DB query', e);
       }
 
       // Fallback to direct DB query
-      console.log('[PublicPage] Using direct DB query for:', pageSlug);
+      logger.log('[PublicPage] Using direct DB query for:', pageSlug);
       try {
         const { data: dbData, error: dbError } = await supabase
           .from('pages')
@@ -155,7 +156,7 @@ export default function PublicPage() {
           .maybeSingle();
 
         if (dbError) {
-          console.error('[PublicPage] DB query error:', dbError);
+          logger.error('[PublicPage] DB query error:', dbError);
           
           // Check for connection-related errors
           const errorMessage = dbError.message?.toLowerCase() || '';
@@ -168,7 +169,7 @@ export default function PublicPage() {
             dbError.code === '42P01'; // Relation does not exist (table missing)
           
           if (isConnectionError) {
-            console.error('[PublicPage] Database connection error:', dbError);
+            logger.error('[PublicPage] Database connection error:', dbError);
             return CONNECTION_ERROR;
           }
           
@@ -176,20 +177,20 @@ export default function PublicPage() {
         }
         
         if (!dbData) {
-          console.log('[PublicPage] No page found in DB for slug:', pageSlug);
+          logger.log('[PublicPage] No page found in DB for slug:', pageSlug);
           return null;
         }
 
-        console.log('[PublicPage] DB query successful:', {
+        logger.log('[PublicPage] DB query successful:', {
           hasContent: !!dbData.content_json,
           contentLength: Array.isArray(dbData.content_json) ? dbData.content_json.length : 'not-array'
         });
         
         const parsed = parseContent(dbData);
-        console.log('[PublicPage] Successfully parsed DB data');
+        logger.log('[PublicPage] Successfully parsed DB data');
         return parsed;
       } catch (e) {
-        console.error('[PublicPage] Unexpected error:', e);
+        logger.error('[PublicPage] Unexpected error:', e);
         return CONNECTION_ERROR;
       }
     },
@@ -360,7 +361,7 @@ export default function PublicPage() {
               try {
                 return <BlockRenderer key={block.id} block={block} pageId={pageData.id} index={index} />;
               } catch (err) {
-                console.error('[PublicPage] Error rendering block:', block.type, err);
+                logger.error('[PublicPage] Error rendering block:', block.type, err);
                 setRenderError(err as Error);
                 return null;
               }

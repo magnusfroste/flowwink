@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState } from 'react';
 import {
   Dialog,
@@ -60,7 +61,7 @@ export function BrandGuideDialog({
         description: 'The brand profile has been extracted from the website.',
       });
     } catch (error) {
-      console.error('Brand analysis error:', error);
+      logger.error('Brand analysis error:', error);
       toast({
         title: 'Analysis error',
         description: error instanceof Error ? error.message : 'Could not analyze the website',

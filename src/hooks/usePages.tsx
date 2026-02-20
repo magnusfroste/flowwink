@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Page, PageStatus, ContentBlock, PageMeta } from '@/types/cms';
@@ -277,9 +278,9 @@ export function useUpdatePageStatus() {
           await supabase.functions.invoke('invalidate-cache', {
             body: { slug: data.slug },
           });
-          console.log(`[usePages] Cache invalidated for: ${data.slug}`);
+          logger.log(`[usePages] Cache invalidated for: ${data.slug}`);
         } catch (cacheError) {
-          console.warn('[usePages] Cache invalidation failed:', cacheError);
+          logger.warn('[usePages] Cache invalidation failed:', cacheError);
         }
         
         // Trigger webhook for page published

@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -64,14 +65,14 @@ export default function NewsletterManagePage() {
         .eq("email", emailToUnsubscribe);
 
       if (error) {
-        console.error("Unsubscribe error:", error);
+        logger.error("Unsubscribe error:", error);
         toast.error("Failed to unsubscribe. Please try again.");
       } else {
         setIsDeleted(true); // Reuse the deleted state to show success message
         toast.success("You have been unsubscribed");
       }
     } catch (err) {
-      console.error("Unsubscribe error:", err);
+      logger.error("Unsubscribe error:", err);
       toast.error("An error occurred. Please try again later.");
     } finally {
       setIsLoading(false);

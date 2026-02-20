@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -299,11 +300,11 @@ export function useConversationMessages(conversationId: string | null) {
   const sendMessage = useMutation({
     mutationFn: async (content: string) => {
       if (!conversationId) {
-        console.error('sendMessage: No conversation ID');
+        logger.error('sendMessage: No conversation ID');
         throw new Error('No conversation selected');
       }
 
-      console.log('sendMessage: Sending to conversation', conversationId, 'content:', content);
+      logger.log('sendMessage: Sending to conversation', conversationId, 'content:', content);
 
       const { data, error } = await supabase.from('chat_messages').insert({
         conversation_id: conversationId,
@@ -312,18 +313,18 @@ export function useConversationMessages(conversationId: string | null) {
       }).select();
 
       if (error) {
-        console.error('sendMessage: Error inserting message', error);
+        logger.error('sendMessage: Error inserting message', error);
         throw error;
       }
 
-      console.log('sendMessage: Message sent successfully', data);
+      logger.log('sendMessage: Message sent successfully', data);
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['conversation-messages', conversationId] });
     },
     onError: (error) => {
-      console.error('sendMessage mutation error:', error);
+      logger.error('sendMessage mutation error:', error);
     },
   });
 

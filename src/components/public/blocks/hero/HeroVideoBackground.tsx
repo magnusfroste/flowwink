@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useRef, useEffect, useState, useCallback } from 'react';
 
 interface HeroVideoBackgroundProps {
@@ -103,7 +104,7 @@ export function HeroVideoBackground({
       if (el) {
         iframeTimeoutRef.current = setTimeout(() => {
           if (!iframeLoaded) {
-            console.warn('Video iframe load timeout, falling back');
+            logger.warn('Video iframe load timeout, falling back');
             onError();
           }
         }, 8000);

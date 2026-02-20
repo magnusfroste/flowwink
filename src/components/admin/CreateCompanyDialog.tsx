@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -82,7 +83,7 @@ export function CreateCompanyDialog({ trigger, onCreated }: CreateCompanyDialogP
         toast.error('Could not fetch company information');
       }
     } catch (error) {
-      console.error('Enrichment error:', error);
+      logger.error('Enrichment error:', error);
       toast.error('Could not fetch company information');
     } finally {
       setIsEnriching(false);

@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -95,7 +96,7 @@ export function UnsplashPicker({ open, onOpenChange, onSelect }: UnsplashPickerP
       });
       handleClose();
     } catch (error) {
-      console.error('Upload error:', error);
+      logger.error('Upload error:', error);
       toast({
         title: 'Upload failed',
         description: 'Could not upload image. Please try again.',

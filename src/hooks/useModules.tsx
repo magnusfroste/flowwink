@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -264,7 +265,7 @@ export function useUpdateModules() {
         description: 'Could not save module settings.',
         variant: 'destructive',
       });
-      console.error('Failed to update modules:', error);
+      logger.error('Failed to update modules:', error);
     },
   });
 }

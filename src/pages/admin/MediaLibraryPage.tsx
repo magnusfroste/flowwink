@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -171,7 +172,7 @@ export default function MediaLibraryPage() {
         if (error) throw error;
         successCount++;
       } catch (error) {
-        console.error('Upload error:', error);
+        logger.error('Upload error:', error);
         failCount++;
       }
     }
@@ -251,7 +252,7 @@ export default function MediaLibraryPage() {
       });
       refetch();
     } catch (error) {
-      console.error('Delete error:', error);
+      logger.error('Delete error:', error);
       toast({
         title: 'Could not delete image',
         description: 'An error occurred. Please try again.',
@@ -284,7 +285,7 @@ export default function MediaLibraryPage() {
       setSelectedFiles(new Set());
       refetch();
     } catch (error) {
-      console.error('Bulk delete error:', error);
+      logger.error('Bulk delete error:', error);
       toast({
         title: 'Could not delete images',
         description: 'An error occurred. Please try again.',
@@ -648,7 +649,7 @@ export default function MediaLibraryPage() {
             });
             refetch();
           } catch (error) {
-            console.error('Save error:', error);
+            logger.error('Save error:', error);
             toast({
               title: 'Save failed',
               description: 'Could not save edited image',

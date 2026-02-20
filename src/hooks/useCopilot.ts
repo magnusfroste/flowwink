@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useUpdateModules, useModules, type ModulesSettings, defaultModulesSettings } from '@/hooks/useModules';
@@ -211,7 +212,7 @@ function loadPersistedState<T>(key: string, defaultValue: T): T {
       return parsed;
     }
   } catch (e) {
-    console.warn(`Failed to load ${key} from localStorage:`, e);
+    logger.warn(`Failed to load ${key} from localStorage:`, e);
   }
   return defaultValue;
 }
@@ -221,7 +222,7 @@ function persistState<T>(key: string, value: T): void {
   try {
     localStorage.setItem(key, JSON.stringify(value));
   } catch (e) {
-    console.warn(`Failed to save ${key} to localStorage:`, e);
+    logger.warn(`Failed to save ${key} to localStorage:`, e);
   }
 }
 
@@ -283,7 +284,7 @@ export function useCopilot(): UseCopilotReturn {
         duration: 4000,
       });
     } catch (err) {
-      console.error('Failed to auto-enable module:', moduleId, err);
+      logger.error('Failed to auto-enable module:', moduleId, err);
     }
   }, [currentModules, updateModules, enabledModulesCache]);
 
@@ -490,7 +491,7 @@ export function useCopilot(): UseCopilotReturn {
       return isSelected && isPending && isPage && notCurrentPage;
     });
     
-    console.log('[Copilot] findNextPendingPage - found:', pendingPages.length, 'pending pages');
+    logger.log('[Copilot] findNextPendingPage - found:', pendingPages.length, 'pending pages');
     return pendingPages[0] || null;
   }, [migrationState.siteStructure, migrationState.currentPageUrl]);
 
@@ -559,9 +560,9 @@ export function useCopilot(): UseCopilotReturn {
           if (isHomepage) {
             try {
               await updateGeneralSettings.mutateAsync({ homepageSlug: pageSlug });
-              console.log('[Copilot] Set homepage slug to:', pageSlug);
+              logger.log('[Copilot] Set homepage slug to:', pageSlug);
             } catch (err) {
-              console.warn('[Copilot] Failed to set homepage slug:', err);
+              logger.warn('[Copilot] Failed to set homepage slug:', err);
             }
           }
           
@@ -578,7 +579,7 @@ export function useCopilot(): UseCopilotReturn {
               return isSelected && isPending && isPage && notCurrentPage;
             });
             nextPendingPage = pendingPages[0] || null;
-            console.log('[Copilot] After save - pending pages remaining:', pendingPages.length);
+            logger.log('[Copilot] After save - pending pages remaining:', pendingPages.length);
           }
           
           // Update state: mark current as completed
@@ -641,7 +642,7 @@ export function useCopilot(): UseCopilotReturn {
             setMigrationState(prev => ({ ...prev, discoveryStatus: 'complete', phase: 'complete' }));
           }
         } catch (err) {
-          console.error('Failed to save page:', err);
+          logger.error('Failed to save page:', err);
           toast.error('Failed to save page');
           
           const errorMessage: CopilotMessage = {
@@ -736,7 +737,7 @@ export function useCopilot(): UseCopilotReturn {
             setMigrationState(prev => ({ ...prev, discoveryStatus: 'complete', phase: 'complete' }));
           }
         } catch (err) {
-          console.error('Failed to save page:', err);
+          logger.error('Failed to save page:', err);
           toast.error('Failed to save page');
         }
       } else {

@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useRef, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -160,7 +161,7 @@ export function MediaLibraryPicker({ open, onOpenChange, onSelect }: MediaLibrar
       });
       handleClose();
     } catch (error) {
-      console.error('Upload error:', error);
+      logger.error('Upload error:', error);
       toast({
         title: 'Upload failed',
         description: 'Could not upload image. Please try again.',
@@ -238,7 +239,7 @@ export function MediaLibraryPicker({ open, onOpenChange, onSelect }: MediaLibrar
         lastUploadedUrl = publicUrl;
         setUploadProgress(prev => ({ ...prev, [file.name]: 'done' }));
       } catch (error) {
-        console.error('Upload error:', error);
+        logger.error('Upload error:', error);
         setUploadProgress(prev => ({ ...prev, [file.name]: 'error' }));
       }
     }

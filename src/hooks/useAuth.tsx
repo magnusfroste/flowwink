@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -82,7 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       setRole(roleData?.role as AppRole | null);
     } catch (error) {
-      console.error('Error fetching user data:', error);
+      logger.error('Error fetching user data:', error);
     } finally {
       setLoading(false);
     }

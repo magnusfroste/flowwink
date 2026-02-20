@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -64,7 +65,7 @@ export function PricingBlock({ data }: PricingBlockProps) {
       } else {
         // Product not found - show error
         toast.error('Produkten kunde inte hittas');
-        console.error('Product not found for productId:', tier.productId, 'Available products:', products);
+        logger.error('Product not found for productId:', tier.productId, 'Available products:', products);
         return;
       }
     }

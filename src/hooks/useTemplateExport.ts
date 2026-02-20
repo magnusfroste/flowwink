@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 /**
  * Hook for exporting current site as a template
  */
@@ -124,7 +125,7 @@ export function useTemplateExport() {
         })),
       };
     } catch (error) {
-      console.error('Failed to fetch site data:', error);
+      logger.error('Failed to fetch site data:', error);
       toast.error('Failed to fetch site data');
       return null;
     }
@@ -166,7 +167,7 @@ export function useTemplateExport() {
 
       return result;
     } catch (error) {
-      console.error('Template export failed:', error);
+      logger.error('Template export failed:', error);
       toast.error('Failed to export template');
       return null;
     } finally {
@@ -229,7 +230,7 @@ export function useTemplateExport() {
         toast.error(result.error || 'Failed to create ZIP');
       }
     } catch (error) {
-      console.error('ZIP export failed:', error);
+      logger.error('ZIP export failed:', error);
       toast.error('Failed to export as ZIP');
     } finally {
       setZipState({ isExporting: false, progress: null });

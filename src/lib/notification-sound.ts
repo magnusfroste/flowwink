@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 // Notification sound utility for Live Support
 // Uses a simple synthesized beep sound via Web Audio API
 
@@ -39,7 +40,7 @@ export function playNotificationSound() {
     oscillator.start(ctx.currentTime);
     oscillator.stop(ctx.currentTime + 0.3);
   } catch (error) {
-    console.warn('Could not play notification sound:', error);
+    logger.warn('Could not play notification sound:', error);
   }
 }
 
@@ -71,6 +72,6 @@ export function playUrgentNotificationSound() {
       oscillator.stop(ctx.currentTime + delay + 0.15);
     });
   } catch (error) {
-    console.warn('Could not play urgent notification sound:', error);
+    logger.warn('Could not play urgent notification sound:', error);
   }
 }

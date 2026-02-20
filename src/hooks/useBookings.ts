@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -111,7 +112,7 @@ export function useCreateService() {
     },
     onError: (error) => {
       toast({ title: 'Could not create service', variant: 'destructive' });
-      console.error(error);
+      logger.error(error);
     },
   });
 }
@@ -137,7 +138,7 @@ export function useUpdateService() {
     },
     onError: (error) => {
       toast({ title: 'Could not update service', variant: 'destructive' });
-      console.error(error);
+      logger.error(error);
     },
   });
 }
@@ -157,7 +158,7 @@ export function useDeleteService() {
     },
     onError: (error) => {
       toast({ title: 'Could not delete service', variant: 'destructive' });
-      console.error(error);
+      logger.error(error);
     },
   });
 }
@@ -198,7 +199,7 @@ export function useCreateAvailability() {
     },
     onError: (error) => {
       toast({ title: 'Could not add availability', variant: 'destructive' });
-      console.error(error);
+      logger.error(error);
     },
   });
 }
@@ -224,7 +225,7 @@ export function useUpdateAvailability() {
     },
     onError: (error) => {
       toast({ title: 'Could not update availability', variant: 'destructive' });
-      console.error(error);
+      logger.error(error);
     },
   });
 }
@@ -244,7 +245,7 @@ export function useDeleteAvailability() {
     },
     onError: (error) => {
       toast({ title: 'Could not delete availability', variant: 'destructive' });
-      console.error(error);
+      logger.error(error);
     },
   });
 }
@@ -307,7 +308,7 @@ export function useCreateBooking() {
           body: { bookingId: data.id },
         });
       } catch (e) {
-        console.warn('Could not send confirmation email:', e);
+        logger.warn('Could not send confirmation email:', e);
       }
 
       return data;
@@ -318,7 +319,7 @@ export function useCreateBooking() {
     },
     onError: (error) => {
       toast({ title: 'Could not create booking', variant: 'destructive' });
-      console.error(error);
+      logger.error(error);
     },
   });
 }
@@ -348,7 +349,7 @@ export function useUpdateBooking() {
     },
     onError: (error) => {
       toast({ title: 'Could not update booking', variant: 'destructive' });
-      console.error(error);
+      logger.error(error);
     },
   });
 }
@@ -368,7 +369,7 @@ export function useDeleteBooking() {
     },
     onError: (error) => {
       toast({ title: 'Could not delete booking', variant: 'destructive' });
-      console.error(error);
+      logger.error(error);
     },
   });
 }
@@ -408,7 +409,7 @@ export function useCreateBlockedDate() {
     },
     onError: (error) => {
       toast({ title: 'Could not add blocked date', variant: 'destructive' });
-      console.error(error);
+      logger.error(error);
     },
   });
 }
@@ -428,7 +429,7 @@ export function useDeleteBlockedDate() {
     },
     onError: (error) => {
       toast({ title: 'Could not remove blocked date', variant: 'destructive' });
-      console.error(error);
+      logger.error(error);
     },
   });
 }

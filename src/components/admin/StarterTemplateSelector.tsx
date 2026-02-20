@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, forwardRef, useEffect } from 'react';
 import { Rocket, Building2, ShieldCheck, Sparkles, MessageSquare, Check, FileText, Settings, Palette, BookOpen, Bot, Layers, Upload } from 'lucide-react';
 import { STARTER_TEMPLATES, StarterTemplate, HelpStyle } from '@/data/starter-templates';
@@ -62,7 +63,7 @@ export const StarterTemplateSelector = forwardRef<HTMLButtonElement, StarterTemp
           sessionStorage.removeItem('pendingTemplate');
           onSelectTemplate(template);
         } catch (e) {
-          console.error('Failed to parse pending template:', e);
+          logger.error('Failed to parse pending template:', e);
           sessionStorage.removeItem('pendingTemplate');
         }
       }

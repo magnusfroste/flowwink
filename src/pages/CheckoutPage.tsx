@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '@/contexts/CartContext';
@@ -74,7 +75,7 @@ export default function CheckoutPage() {
         throw new Error('Ingen checkout-URL mottagen');
       }
     } catch (error: any) {
-      console.error('Checkout error:', error);
+      logger.error('Checkout error:', error);
       toast.error(error.message || 'Kunde inte starta betalning');
     } finally {
       setIsLoading(false);

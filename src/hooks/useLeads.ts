@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -110,7 +111,7 @@ export function useUpdateLead() {
       toast.success('Contact updated');
     },
     onError: (error) => {
-      console.error('Update lead error:', error);
+      logger.error('Update lead error:', error);
       toast.error('Could not update contact');
     },
   });
@@ -137,7 +138,7 @@ export function useAddLeadNote() {
       toast.success('Note saved');
     },
     onError: (error) => {
-      console.error('Add note error:', error);
+      logger.error('Add note error:', error);
       toast.error('Could not save note');
     },
   });
@@ -161,7 +162,7 @@ export function useQualifyLead() {
       toast.success('Contact qualified with AI');
     },
     onError: (error) => {
-      console.error('Qualify lead error:', error);
+      logger.error('Qualify lead error:', error);
       toast.error('Could not qualify contact');
     },
   });

@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState } from 'react';
 import { ThumbsUp, ThumbsDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -65,7 +66,7 @@ export function ChatFeedback({
         toast.success('Tack! Vi använder detta för att förbättra.');
       }
     } catch (error) {
-      console.error('Failed to submit feedback:', error);
+      logger.error('Failed to submit feedback:', error);
       toast.error('Kunde inte spara feedback');
     } finally {
       setIsSubmitting(false);

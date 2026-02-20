@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useEffect, useRef } from 'react';
 
 interface PageViewData {
@@ -85,7 +86,7 @@ export function usePageViewTracker({ pageId, pageSlug, pageTitle }: PageViewData
         });
       } catch (error) {
         // Silently fail - don't disrupt user experience
-        console.error('Failed to track page view:', error);
+        logger.error('Failed to track page view:', error);
       }
     };
 

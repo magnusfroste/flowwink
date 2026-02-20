@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -209,16 +210,16 @@ export function MigratePageDialog() {
         });
         
         if (error) {
-          console.warn(`Failed to process image ${url}:`, error);
+          logger.warn(`Failed to process image ${url}:`, error);
           continue;
         }
         
         if (data.success && data.url) {
           updatedBlocks = updateBlockAtPath(updatedBlocks, blockIndex, path, data.url);
-          console.log(`Processed image: ${url} → ${data.url}`);
+          logger.log(`Processed image: ${url} → ${data.url}`);
         }
       } catch (err) {
-        console.warn(`Error processing image ${url}:`, err);
+        logger.warn(`Error processing image ${url}:`, err);
         // Continue with other images even if one fails
       }
     }
@@ -258,7 +259,7 @@ export function MigratePageDialog() {
       setStep('preview');
 
     } catch (err) {
-      console.error('Migration error:', err);
+      logger.error('Migration error:', err);
       setError(err instanceof Error ? err.message : 'An error occurred');
       setStep('input');
     }
@@ -302,7 +303,7 @@ export function MigratePageDialog() {
       }, 1500);
 
     } catch (err) {
-      console.error('Save error:', err);
+      logger.error('Save error:', err);
       setError(err instanceof Error ? err.message : 'Could not save the page');
       setStep('preview');
     }

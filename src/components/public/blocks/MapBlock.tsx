@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useEffect } from 'react';
 import { MapBlockData } from '@/types/cms';
 import { MapPin, Cookie, Loader2, MapPinOff } from 'lucide-react';
@@ -65,7 +66,7 @@ export function MapBlock({ data }: MapBlockProps) {
           setError(true);
         }
       } catch (err) {
-        console.error('Geocoding error:', err);
+        logger.error('Geocoding error:', err);
         setError(true);
       } finally {
         setIsLoading(false);

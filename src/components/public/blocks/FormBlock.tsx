@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState } from 'react';
 import { FormBlockData, FormField } from '@/types/cms';
 import { Button } from '@/components/ui/button';
@@ -128,7 +129,7 @@ export function FormBlock({ data, blockId, pageId }: FormBlockProps) {
       setIsSubmitted(true);
       setFormData({});
     } catch (error) {
-      console.error('Form submission error:', error);
+      logger.error('Form submission error:', error);
       toast({
         title: 'Error',
         description: 'Failed to submit form. Please try again.',

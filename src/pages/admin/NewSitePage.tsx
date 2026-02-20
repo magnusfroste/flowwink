@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Loader2, Sparkles, Check, FileText, Palette, MessageSquare, Trash2, AlertTriangle, Send, Newspaper, BookOpen, ShieldCheck, AlertCircle, Package, Puzzle, ImageIcon, HardDrive, Download, Eye } from 'lucide-react';
@@ -167,16 +168,16 @@ export default function NewSitePage() {
           });
           
           if (error) {
-            console.warn(`Failed to process image ${url}:`, error);
+            logger.warn(`Failed to process image ${url}:`, error);
             return;
           }
           
           if (data.success && data.url) {
             urlMap.set(url, data.url);
-            console.log(`Processed: ${url.substring(0, 50)}... → local`);
+            logger.log(`Processed: ${url.substring(0, 50)}... → local`);
           }
         } catch (err) {
-          console.warn(`Error processing image ${url}:`, err);
+          logger.warn(`Error processing image ${url}:`, err);
         }
       }));
     }
@@ -408,7 +409,7 @@ export default function NewSitePage() {
           templateBlogPosts = applyImageMappingToBlogPosts(templateBlogPosts, templateImageInfo, urlMap);
           templateProducts = applyImageMappingToProducts(templateProducts, templateImageInfo, urlMap);
           
-          console.log(`Downloaded ${urlMap.size} images to media library`);
+          logger.log(`Downloaded ${urlMap.size} images to media library`);
         }
       }
 

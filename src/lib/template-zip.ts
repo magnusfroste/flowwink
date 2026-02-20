@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 /**
  * Template ZIP Utilities
  * 
@@ -49,7 +50,7 @@ async function downloadImage(url: string): Promise<ArrayBuffer | null> {
     });
     
     if (error) {
-      console.error('Error fetching image:', url, error);
+      logger.error('Error fetching image:', url, error);
       return null;
     }
     
@@ -65,7 +66,7 @@ async function downloadImage(url: string): Promise<ArrayBuffer | null> {
     
     return null;
   } catch (err) {
-    console.error('Failed to download image:', url, err);
+    logger.error('Failed to download image:', url, err);
     return null;
   }
 }
@@ -159,7 +160,7 @@ export async function exportTemplateAsZip(
       imageCount: successfulImages.length,
     };
   } catch (err) {
-    console.error('ZIP export failed:', err);
+    logger.error('ZIP export failed:', err);
     return {
       success: false,
       error: err instanceof Error ? err.message : 'Unknown error',
@@ -187,7 +188,7 @@ async function uploadImage(
       });
     
     if (uploadError) {
-      console.error('Upload error:', uploadError);
+      logger.error('Upload error:', uploadError);
       return null;
     }
     
@@ -197,7 +198,7 @@ async function uploadImage(
     
     return urlData.publicUrl;
   } catch (err) {
-    console.error('Failed to upload image:', err);
+    logger.error('Failed to upload image:', err);
     return null;
   }
 }
@@ -342,7 +343,7 @@ export async function importTemplateFromZip(
       imageCount: uploadedCount,
     };
   } catch (err) {
-    console.error('ZIP import failed:', err);
+    logger.error('ZIP import failed:', err);
     return {
       success: false,
       errors: [err instanceof Error ? err.message : 'Unknown error'],

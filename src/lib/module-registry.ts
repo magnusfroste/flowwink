@@ -8,6 +8,7 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 import type { Json } from '@/integrations/supabase/types';
 import { createDocumentFromMarkdown } from '@/lib/tiptap-utils';
 import { updateLeadStatus } from '@/lib/lead-utils';
@@ -150,7 +151,7 @@ const blogModule: ModuleDefinition<BlogModuleInput, BlogModuleOutput> = {
         .single();
 
       if (error) {
-        console.error('[BlogModule] Insert error:', error);
+        logger.error('[BlogModule] Insert error:', error);
         return {
           success: false,
           error: error.message,
@@ -172,7 +173,7 @@ const blogModule: ModuleDefinition<BlogModuleInput, BlogModuleOutput> = {
             },
           });
         } catch (webhookError) {
-          console.warn('[BlogModule] Webhook trigger failed:', webhookError);
+          logger.warn('[BlogModule] Webhook trigger failed:', webhookError);
           // Don't fail the operation for webhook errors
         }
       }
@@ -186,7 +187,7 @@ const blogModule: ModuleDefinition<BlogModuleInput, BlogModuleOutput> = {
         published_at: data.published_at || undefined,
       };
     } catch (error) {
-      console.error('[BlogModule] Error:', error);
+      logger.error('[BlogModule] Error:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -244,7 +245,7 @@ const newsletterModule: ModuleDefinition<NewsletterModuleInput, NewsletterModule
         .single();
 
       if (error) {
-        console.error('[NewsletterModule] Insert error:', error);
+        logger.error('[NewsletterModule] Insert error:', error);
         return {
           success: false,
           error: error.message,
@@ -257,7 +258,7 @@ const newsletterModule: ModuleDefinition<NewsletterModuleInput, NewsletterModule
         status: data.status,
       };
     } catch (error) {
-      console.error('[NewsletterModule] Error:', error);
+      logger.error('[NewsletterModule] Error:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -335,7 +336,7 @@ const crmModule: ModuleDefinition<CRMLeadInput, CRMLeadOutput> = {
         .single();
 
       if (error) {
-        console.error('[CRMModule] Insert error:', error);
+        logger.error('[CRMModule] Insert error:', error);
         return {
           success: false,
           error: error.message,
@@ -355,7 +356,7 @@ const crmModule: ModuleDefinition<CRMLeadInput, CRMLeadOutput> = {
           },
         });
       } catch (webhookError) {
-        console.warn('[CRMModule] Webhook trigger failed:', webhookError);
+        logger.warn('[CRMModule] Webhook trigger failed:', webhookError);
       }
 
       return {
@@ -366,7 +367,7 @@ const crmModule: ModuleDefinition<CRMLeadInput, CRMLeadOutput> = {
         status: data.status,
       };
     } catch (error) {
-      console.error('[CRMModule] Error:', error);
+      logger.error('[CRMModule] Error:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -447,7 +448,7 @@ const pagesModule: ModuleDefinition<PageModuleInput, PageModuleOutput> = {
         .single();
 
       if (error) {
-        console.error('[PagesModule] Insert error:', error);
+        logger.error('[PagesModule] Insert error:', error);
         return { success: false, error: error.message };
       }
 
@@ -464,7 +465,7 @@ const pagesModule: ModuleDefinition<PageModuleInput, PageModuleOutput> = {
             },
           });
         } catch (webhookError) {
-          console.warn('[PagesModule] Webhook failed:', webhookError);
+          logger.warn('[PagesModule] Webhook failed:', webhookError);
         }
       }
 
@@ -476,7 +477,7 @@ const pagesModule: ModuleDefinition<PageModuleInput, PageModuleOutput> = {
         status: data.status,
       };
     } catch (error) {
-      console.error('[PagesModule] Error:', error);
+      logger.error('[PagesModule] Error:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -548,7 +549,7 @@ const kbModule: ModuleDefinition<KBArticleModuleInput, KBArticleModuleOutput> = 
         .single();
 
       if (error) {
-        console.error('[KBModule] Insert error:', error);
+        logger.error('[KBModule] Insert error:', error);
         return { success: false, error: error.message };
       }
 
@@ -559,7 +560,7 @@ const kbModule: ModuleDefinition<KBArticleModuleInput, KBArticleModuleOutput> = 
         url: `/kb/${data.slug}`,
       };
     } catch (error) {
-      console.error('[KBModule] Error:', error);
+      logger.error('[KBModule] Error:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -603,7 +604,7 @@ const productsModule: ModuleDefinition<ProductModuleInput, ProductModuleOutput> 
         .single();
 
       if (error) {
-        console.error('[ProductsModule] Insert error:', error);
+        logger.error('[ProductsModule] Insert error:', error);
         return { success: false, error: error.message };
       }
 
@@ -620,7 +621,7 @@ const productsModule: ModuleDefinition<ProductModuleInput, ProductModuleOutput> 
           },
         });
       } catch (webhookError) {
-        console.warn('[ProductsModule] Webhook failed:', webhookError);
+        logger.warn('[ProductsModule] Webhook failed:', webhookError);
       }
 
       return {
@@ -630,7 +631,7 @@ const productsModule: ModuleDefinition<ProductModuleInput, ProductModuleOutput> 
         price_cents: data.price_cents,
       };
     } catch (error) {
-      console.error('[ProductsModule] Error:', error);
+      logger.error('[ProductsModule] Error:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -674,7 +675,7 @@ const bookingModule: ModuleDefinition<BookingModuleInput, BookingModuleOutput> =
         .single();
 
       if (error) {
-        console.error('[BookingModule] Insert error:', error);
+        logger.error('[BookingModule] Insert error:', error);
         return { success: false, error: error.message };
       }
 
@@ -686,7 +687,7 @@ const bookingModule: ModuleDefinition<BookingModuleInput, BookingModuleOutput> =
         });
         confirmationSent = true;
       } catch (e) {
-        console.warn('[BookingModule] Confirmation email failed:', e);
+        logger.warn('[BookingModule] Confirmation email failed:', e);
       }
 
       // Trigger webhook
@@ -702,7 +703,7 @@ const bookingModule: ModuleDefinition<BookingModuleInput, BookingModuleOutput> =
           },
         });
       } catch (webhookError) {
-        console.warn('[BookingModule] Webhook failed:', webhookError);
+        logger.warn('[BookingModule] Webhook failed:', webhookError);
       }
 
       return {
@@ -712,7 +713,7 @@ const bookingModule: ModuleDefinition<BookingModuleInput, BookingModuleOutput> =
         confirmation_sent: confirmationSent,
       };
     } catch (error) {
-      console.error('[BookingModule] Error:', error);
+      logger.error('[BookingModule] Error:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -752,7 +753,7 @@ const globalBlocksModule: ModuleDefinition<GlobalBlockModuleInput, GlobalBlockMo
         .single();
 
       if (error) {
-        console.error('[GlobalBlocksModule] Insert error:', error);
+        logger.error('[GlobalBlocksModule] Insert error:', error);
         return { success: false, error: error.message };
       }
 
@@ -763,7 +764,7 @@ const globalBlocksModule: ModuleDefinition<GlobalBlockModuleInput, GlobalBlockMo
         type: data.type,
       };
     } catch (error) {
-      console.error('[GlobalBlocksModule] Error:', error);
+      logger.error('[GlobalBlocksModule] Error:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -800,7 +801,7 @@ const mediaModule: ModuleDefinition<MediaModuleInput, MediaModuleOutput> = {
         public_url: urlData.publicUrl,
       };
     } catch (error) {
-      console.error('[MediaModule] Error:', error);
+      logger.error('[MediaModule] Error:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -851,7 +852,7 @@ const dealsModule: ModuleDefinition<DealModuleInput, DealModuleOutput> = {
         .single();
 
       if (error) {
-        console.error('[DealsModule] Insert error:', error);
+        logger.error('[DealsModule] Insert error:', error);
         return { success: false, error: error.message };
       }
 
@@ -859,7 +860,7 @@ const dealsModule: ModuleDefinition<DealModuleInput, DealModuleOutput> = {
       try {
         await updateLeadStatus(validated.lead_id, 'opportunity', { onlyIfCurrentStatus: 'lead' });
       } catch (updateError) {
-        console.warn('[DealsModule] Lead status update failed:', updateError);
+        logger.warn('[DealsModule] Lead status update failed:', updateError);
       }
 
       return {
@@ -869,7 +870,7 @@ const dealsModule: ModuleDefinition<DealModuleInput, DealModuleOutput> = {
         value_cents: data.value_cents,
       };
     } catch (error) {
-      console.error('[DealsModule] Error:', error);
+      logger.error('[DealsModule] Error:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -924,7 +925,7 @@ const companiesModule: ModuleDefinition<CompanyModuleInput, CompanyModuleOutput>
         .single();
 
       if (error) {
-        console.error('[CompaniesModule] Insert error:', error);
+        logger.error('[CompaniesModule] Insert error:', error);
         return { success: false, error: error.message };
       }
 
@@ -937,7 +938,7 @@ const companiesModule: ModuleDefinition<CompanyModuleInput, CompanyModuleOutput>
           });
           enriched = true;
         } catch (enrichError) {
-          console.warn('[CompaniesModule] Enrichment failed:', enrichError);
+          logger.warn('[CompaniesModule] Enrichment failed:', enrichError);
         }
       }
 
@@ -949,7 +950,7 @@ const companiesModule: ModuleDefinition<CompanyModuleInput, CompanyModuleOutput>
         enriched,
       };
     } catch (error) {
-      console.error('[CompaniesModule] Error:', error);
+      logger.error('[CompaniesModule] Error:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -985,10 +986,10 @@ class ModuleRegistry {
    */
   register<TInput, TOutput>(module: ModuleDefinition<TInput, TOutput>): void {
     if (this.modules.has(module.id)) {
-      console.warn(`[ModuleRegistry] Module '${module.id}' already registered, overwriting`);
+      logger.warn(`[ModuleRegistry] Module '${module.id}' already registered, overwriting`);
     }
     this.modules.set(module.id, module as ModuleDefinition<unknown, unknown>);
-    console.log(`[ModuleRegistry] Registered module: ${module.id} v${module.version}`);
+    logger.log(`[ModuleRegistry] Registered module: ${module.id} v${module.version}`);
   }
 
   /**
@@ -1033,7 +1034,7 @@ class ModuleRegistry {
     // Validate input against schema
     const validationResult = module.inputSchema.safeParse(input);
     if (!validationResult.success) {
-      console.error(`[ModuleRegistry] Validation failed for ${moduleId}:`, validationResult.error);
+      logger.error(`[ModuleRegistry] Validation failed for ${moduleId}:`, validationResult.error);
       return {
         success: false,
         error: 'Validation failed',
@@ -1045,13 +1046,13 @@ class ModuleRegistry {
     }
 
     // Execute module
-    console.log(`[ModuleRegistry] Publishing to ${moduleId}...`);
+    logger.log(`[ModuleRegistry] Publishing to ${moduleId}...`);
     const result = await module.publish(validationResult.data);
     
     // Validate output
     const outputValidation = module.outputSchema.safeParse(result);
     if (!outputValidation.success) {
-      console.warn(`[ModuleRegistry] Output validation failed for ${moduleId}:`, outputValidation.error);
+      logger.warn(`[ModuleRegistry] Output validation failed for ${moduleId}:`, outputValidation.error);
     }
 
     return result as TOutput;

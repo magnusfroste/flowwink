@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { supabase } from '@/integrations/supabase/client';
 
 export type WebhookEventType = 
@@ -44,20 +45,20 @@ interface TriggerWebhookOptions {
  */
 export async function triggerWebhook({ event, data }: TriggerWebhookOptions): Promise<void> {
   try {
-    console.log(`[triggerWebhook] Triggering event: ${event}`);
+    logger.log(`[triggerWebhook] Triggering event: ${event}`);
     
     const { error } = await supabase.functions.invoke('send-webhook', {
       body: { event, data },
     });
     
     if (error) {
-      console.warn(`[triggerWebhook] Failed to trigger ${event}:`, error);
+      logger.warn(`[triggerWebhook] Failed to trigger ${event}:`, error);
     } else {
-      console.log(`[triggerWebhook] Successfully triggered: ${event}`);
+      logger.log(`[triggerWebhook] Successfully triggered: ${event}`);
     }
   } catch (err) {
     // Don't throw - webhooks should not block the main operation
-    console.warn(`[triggerWebhook] Error triggering ${event}:`, err);
+    logger.warn(`[triggerWebhook] Error triggering ${event}:`, err);
   }
 }
 

@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 import type { Json } from '@/integrations/supabase/types';
 import { notifyNewLead } from '@/lib/slack-notify';
 
@@ -47,10 +48,10 @@ async function triggerCompanyEnrichment(companyId: string): Promise<void> {
       body: { companyId },
     });
     if (error) {
-      console.warn('Company enrichment failed:', error);
+      logger.warn('Company enrichment failed:', error);
     }
   } catch (error) {
-    console.warn('triggerCompanyEnrichment error:', error);
+    logger.warn('triggerCompanyEnrichment error:', error);
   }
 }
 
@@ -74,7 +75,7 @@ async function findCompanyByDomain(
 
     return { companyId: existingCompany?.id || null };
   } catch (error) {
-    console.warn('findCompanyByDomain error:', error);
+    logger.warn('findCompanyByDomain error:', error);
     return { companyId: null };
   }
 }
@@ -186,7 +187,7 @@ export async function createLeadFromForm(options: {
       .single();
 
     if (insertError) {
-      console.error('Failed to create lead:', insertError);
+      logger.error('Failed to create lead:', insertError);
       return { lead: null, isNew: false, error: insertError.message };
     }
 
@@ -211,7 +212,7 @@ export async function createLeadFromForm(options: {
 
     return { lead: newLead as Lead, isNew: true, error: null };
   } catch (error) {
-    console.error('createLeadFromForm error:', error);
+    logger.error('createLeadFromForm error:', error);
     return { lead: null, isNew: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
@@ -285,7 +286,7 @@ export async function createLeadFromBooking(options: {
       .single();
 
     if (insertError) {
-      console.error('Failed to create lead from booking:', insertError);
+      logger.error('Failed to create lead from booking:', insertError);
       return { lead: null, isNew: false, error: insertError.message };
     }
 
@@ -310,7 +311,7 @@ export async function createLeadFromBooking(options: {
 
     return { lead: newLead as Lead, isNew: true, error: null };
   } catch (error) {
-    console.error('createLeadFromBooking error:', error);
+    logger.error('createLeadFromBooking error:', error);
     return { lead: null, isNew: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
@@ -378,7 +379,7 @@ export async function createLeadFromWebinar(options: {
       .single();
 
     if (insertError) {
-      console.error('Failed to create lead from webinar:', insertError);
+      logger.error('Failed to create lead from webinar:', insertError);
       return { leadId: null, isNew: false, error: insertError.message };
     }
 
@@ -402,7 +403,7 @@ export async function createLeadFromWebinar(options: {
 
     return { leadId: newLead.id, isNew: true, error: null };
   } catch (error) {
-    console.error('createLeadFromWebinar error:', error);
+    logger.error('createLeadFromWebinar error:', error);
     return { leadId: null, isNew: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
@@ -429,7 +430,7 @@ export async function addLeadActivity(options: {
       }]);
 
     if (error) {
-      console.error('Failed to add lead activity:', error);
+      logger.error('Failed to add lead activity:', error);
       return { success: false, error: error.message };
     }
 
@@ -449,7 +450,7 @@ export async function addLeadActivity(options: {
 
     return { success: true, error: null };
   } catch (error) {
-    console.error('addLeadActivity error:', error);
+    logger.error('addLeadActivity error:', error);
     return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
@@ -478,12 +479,12 @@ export async function updateLeadStatus(
 
     const { error } = await query;
     if (error) {
-      console.error('updateLeadStatus error:', error);
+      logger.error('updateLeadStatus error:', error);
       return { success: false, error: error.message };
     }
     return { success: true, error: null };
   } catch (error) {
-    console.error('updateLeadStatus error:', error);
+    logger.error('updateLeadStatus error:', error);
     return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
@@ -514,7 +515,7 @@ export async function trackNewsletterActivity(options: {
       });
     }
   } catch (error) {
-    console.error('trackNewsletterActivity error:', error);
+    logger.error('trackNewsletterActivity error:', error);
   }
 }
 
@@ -528,10 +529,10 @@ export async function qualifyLead(leadId: string): Promise<void> {
     });
 
     if (error) {
-      console.warn('Lead qualification failed:', error);
+      logger.warn('Lead qualification failed:', error);
     }
   } catch (error) {
-    console.warn('qualifyLead error:', error);
+    logger.warn('qualifyLead error:', error);
   }
 }
 

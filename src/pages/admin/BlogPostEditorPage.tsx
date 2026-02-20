@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Save, ArrowLeft, Send, Check, Star, StarOff, Eye, Settings2 } from "lucide-react";
@@ -229,7 +230,7 @@ export default function BlogPostEditorPage() {
       }
       setNewTagInput("");
     } catch (error) {
-      console.error("Failed to create tag:", error);
+      logger.error("Failed to create tag:", error);
     }
   };
   
