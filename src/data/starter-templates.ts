@@ -8,6 +8,8 @@ import {
   momentumBlogPosts, 
   flowwinkBlogPosts,
   agencyBlogPosts,
+  serviceProBlogPosts,
+  digitalShopBlogPosts,
 } from './template-blog-posts';
 import { 
   flowwinkKbCategories, 
@@ -7863,6 +7865,19 @@ const serviceProPages: TemplatePage[] = [
           animated: true,
         },
       },
+      // ARTICLE GRID - Latest blog posts
+      {
+        id: 'article-grid-blog',
+        type: 'article-grid',
+        data: {
+          title: 'Tips & Insights',
+          subtitle: 'Expert advice to help you get the most from our services',
+          columns: 3,
+          limit: 3,
+          showExcerpt: true,
+          showImage: true,
+        },
+      },
       // CHAT LAUNCHER - Quick AI assistance
       {
         id: 'chat-launcher-home',
@@ -8225,7 +8240,8 @@ const serviceProTemplate: StarterTemplate = {
   helpStyle: 'none',
   pages: serviceProPages,
   // Modules to enable for service businesses
-  requiredModules: ['bookings', 'products', 'orders', 'forms', 'chat', 'leads'],
+  requiredModules: ['bookings', 'products', 'orders', 'forms', 'chat', 'leads', 'blog'],
+  blogPosts: serviceProBlogPosts,
   // Example services as products
   products: serviceProProducts,
   branding: {
@@ -8507,6 +8523,19 @@ const digitalShopPages: TemplatePage[] = [
           animationType: 'slide',
         },
       },
+      // ARTICLE GRID - Blog content marketing
+      {
+        id: 'article-grid-blog',
+        type: 'article-grid',
+        data: {
+          title: 'From the Blog',
+          subtitle: 'Tips, strategies, and guides for digital product creators',
+          columns: 3,
+          limit: 3,
+          showExcerpt: true,
+          showImage: true,
+        },
+      },
       // FAQ - Common questions
       {
         id: 'faq-shop',
@@ -8713,7 +8742,8 @@ const digitalShopTemplate: StarterTemplate = {
   aiChatPosition: 'Widget for customer support',
   helpStyle: 'none',
   pages: digitalShopPages,
-  requiredModules: ['products', 'orders', 'chat', 'forms'],
+  requiredModules: ['products', 'orders', 'chat', 'forms', 'blog'],
+  blogPosts: digitalShopBlogPosts,
   products: digitalShopProducts,
   branding: {
     organizationName: 'Digital Shop',
