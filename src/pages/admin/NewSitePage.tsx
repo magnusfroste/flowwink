@@ -294,83 +294,7 @@ export default function NewSitePage() {
     const pageIds: string[] = [];
 
     try {
-      // Step 0a: Permanently delete existing pages if option is selected (to avoid slug conflicts)
-      const shouldClearPages = opts.pages && existingPages && existingPages.length > 0;
-      if (shouldClearPages) {
-        setProgress({ currentPage: 0, totalPages: existingPages!.length, currentStep: 'Clearing existing pages...' });
-        
-        for (let i = 0; i < existingPages!.length; i++) {
-          setProgress({ 
-            currentPage: i + 1, 
-            totalPages: existingPages!.length, 
-            currentStep: `Removing page "${existingPages![i].title}"...` 
-          });
-          await permanentDeletePage.mutateAsync(existingPages![i].id);
-        }
-      }
-
-      // Step 0a2: Also permanently delete any soft-deleted (trashed) pages whose slugs conflict with template pages
-      if (opts.pages && deletedPages && deletedPages.length > 0 && selectedTemplate) {
-        const templateSlugs = new Set(selectedTemplate.pages.map(p => p.slug));
-        const conflicting = deletedPages.filter(p => templateSlugs.has(p.slug));
-        if (conflicting.length > 0) {
-          for (const page of conflicting) {
-            setProgress({ 
-              currentPage: 0, 
-              totalPages: conflicting.length, 
-              currentStep: `Cleaning up trashed page "${page.title}"...` 
-            });
-            await permanentDeletePage.mutateAsync(page.id);
-          }
-        }
-      }
-
-      // Step 0b: Delete existing blog posts if option is selected
-      const shouldClearBlog = opts.blogPosts && existingBlogPosts && existingBlogPosts.length > 0;
-      if (shouldClearBlog) {
-        setProgress({ currentPage: 0, totalPages: existingBlogPosts.length, currentStep: 'Clearing existing blog posts...' });
-        
-        for (let i = 0; i < existingBlogPosts.length; i++) {
-          setProgress({ 
-            currentPage: i + 1, 
-            totalPages: existingBlogPosts.length, 
-            currentStep: `Removing blog post "${existingBlogPosts[i].title}"...` 
-          });
-          await deleteBlogPost.mutateAsync(existingBlogPosts[i].id);
-        }
-      }
-
-      // Step 0c: Delete existing KB categories (cascades to articles) if option is selected
-      const shouldClearKb = opts.kbContent && existingKbCategories && existingKbCategories.length > 0;
-      if (shouldClearKb) {
-        setProgress({ currentPage: 0, totalPages: existingKbCategories.length, currentStep: 'Clearing existing KB content...' });
-        
-        for (let i = 0; i < existingKbCategories.length; i++) {
-          setProgress({ 
-            currentPage: i + 1, 
-            totalPages: existingKbCategories.length, 
-            currentStep: `Removing KB category "${existingKbCategories[i].name}"...` 
-          });
-          await deleteKbCategory.mutateAsync(existingKbCategories[i].id);
-        }
-      }
-
-      // Step 0d: Delete existing products if option is selected (regardless of whether template has products)
-      const shouldClearProducts = opts.products && existingProducts && existingProducts.length > 0;
-      if (shouldClearProducts) {
-        setProgress({ currentPage: 0, totalPages: existingProducts!.length, currentStep: 'Clearing existing products...' });
-        
-        for (let i = 0; i < existingProducts!.length; i++) {
-          setProgress({ 
-            currentPage: i + 1, 
-            totalPages: existingProducts!.length, 
-            currentStep: `Removing product "${existingProducts![i].name}"...` 
-          });
-          await deleteProduct.mutateAsync(existingProducts![i].id);
-        }
-      }
-
-      // Step 0e: Clear media library if option is selected
+      // Step 0e: Clear media library if option is selected (safe — doesn't affect pages)
       if (opts.clearMedia && mediaCount > 0) {
         setProgress({ currentPage: 0, totalPages: mediaCount, currentStep: 'Clearing media library...' });
         await clearMediaLibrary.mutateAsync((current, total, step) => {
@@ -432,9 +356,9 @@ export default function NewSitePage() {
         await updateModules.mutateAsync(updatedModules);
       }
 
-      // Step 2: Create all pages (if pages option enabled)
+      // Step 2: Create new pages FIRST with temporary slugs (safe swap — old pages kept until new ones succeed)
       if (opts.pages) {
-        setProgress({ currentPage: 0, totalPages: templatePages.length, currentStep: 'Creating pages...' });
+        setProgress({ currentPage: 0, totalPages: templatePages.length, currentStep: 'Creating new pages...' });
         
         for (let i = 0; i < templatePages.length; i++) {
           const templatePage = templatePages[i];
@@ -444,9 +368,10 @@ export default function NewSitePage() {
             currentStep: `Creating "${templatePage.title}"...` 
           });
 
+          const tempSlug = `_new_${templatePage.slug}_${Date.now()}`;
           const page = await createPage.mutateAsync({
             title: templatePage.title,
-            slug: templatePage.slug,
+            slug: tempSlug,
             content: templatePage.blocks,
             meta: templatePage.meta,
             menu_order: templatePage.menu_order,
@@ -455,6 +380,99 @@ export default function NewSitePage() {
           });
           
           pageIds.push(page.id);
+        }
+      }
+
+      // Step 2b: All new pages created successfully — NOW safe to delete old content
+      const shouldClearPages = opts.pages && existingPages && existingPages.length > 0;
+      if (shouldClearPages) {
+        setProgress({ currentPage: 0, totalPages: existingPages!.length, currentStep: 'Removing old pages...' });
+        
+        for (let i = 0; i < existingPages!.length; i++) {
+          setProgress({ 
+            currentPage: i + 1, 
+            totalPages: existingPages!.length, 
+            currentStep: `Removing page "${existingPages![i].title}"...` 
+          });
+          await permanentDeletePage.mutateAsync(existingPages![i].id);
+        }
+      }
+
+      // Step 2c: Clean up trashed pages with conflicting slugs
+      if (opts.pages && deletedPages && deletedPages.length > 0 && selectedTemplate) {
+        const templateSlugs = new Set(selectedTemplate.pages.map(p => p.slug));
+        const conflicting = deletedPages.filter(p => templateSlugs.has(p.slug));
+        if (conflicting.length > 0) {
+          for (const page of conflicting) {
+            setProgress({ 
+              currentPage: 0, 
+              totalPages: conflicting.length, 
+              currentStep: `Cleaning up trashed page "${page.title}"...` 
+            });
+            await permanentDeletePage.mutateAsync(page.id);
+          }
+        }
+      }
+
+      // Step 2d: Update new pages from temporary slugs to final slugs
+      if (opts.pages && pageIds.length > 0) {
+        setProgress({ currentPage: 0, totalPages: pageIds.length, currentStep: 'Finalizing page slugs...' });
+        
+        for (let i = 0; i < pageIds.length; i++) {
+          const templatePage = templatePages[i];
+          const { error: slugError } = await supabase
+            .from('pages')
+            .update({ slug: templatePage.slug })
+            .eq('id', pageIds[i]);
+          
+          if (slugError) {
+            logger.error(`Failed to update slug for page ${pageIds[i]}:`, slugError);
+          }
+        }
+      }
+
+      // Step 2e: Delete existing blog posts
+      const shouldClearBlog = opts.blogPosts && existingBlogPosts && existingBlogPosts.length > 0;
+      if (shouldClearBlog) {
+        setProgress({ currentPage: 0, totalPages: existingBlogPosts.length, currentStep: 'Clearing existing blog posts...' });
+        
+        for (let i = 0; i < existingBlogPosts.length; i++) {
+          setProgress({ 
+            currentPage: i + 1, 
+            totalPages: existingBlogPosts.length, 
+            currentStep: `Removing blog post "${existingBlogPosts[i].title}"...` 
+          });
+          await deleteBlogPost.mutateAsync(existingBlogPosts[i].id);
+        }
+      }
+
+      // Step 2f: Delete existing KB categories
+      const shouldClearKb = opts.kbContent && existingKbCategories && existingKbCategories.length > 0;
+      if (shouldClearKb) {
+        setProgress({ currentPage: 0, totalPages: existingKbCategories.length, currentStep: 'Clearing existing KB content...' });
+        
+        for (let i = 0; i < existingKbCategories.length; i++) {
+          setProgress({ 
+            currentPage: i + 1, 
+            totalPages: existingKbCategories.length, 
+            currentStep: `Removing KB category "${existingKbCategories[i].name}"...` 
+          });
+          await deleteKbCategory.mutateAsync(existingKbCategories[i].id);
+        }
+      }
+
+      // Step 2g: Delete existing products
+      const shouldClearProducts = opts.products && existingProducts && existingProducts.length > 0;
+      if (shouldClearProducts) {
+        setProgress({ currentPage: 0, totalPages: existingProducts!.length, currentStep: 'Clearing existing products...' });
+        
+        for (let i = 0; i < existingProducts!.length; i++) {
+          setProgress({ 
+            currentPage: i + 1, 
+            totalPages: existingProducts!.length, 
+            currentStep: `Removing product "${existingProducts![i].name}"...` 
+          });
+          await deleteProduct.mutateAsync(existingProducts![i].id);
         }
       }
 

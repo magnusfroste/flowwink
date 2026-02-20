@@ -2,23 +2,23 @@
 
 > **Version:** 2.2  
 > **Last Updated:** February 2026  
-> **Status:** Block Editor Previews Complete
+> **Status:** Blockseditorpreviews Complete
 
 ---
 
 ## Executive Summary
 
-**FlowWink** är ett modernt Content Management System byggt specifikt för svenska vårdgivare och organisationer som behöver:
+**FlowWink** is a modernt Content Management System byggt specific for svenska vårdgivare and organisationer that/which behöver:
 
-- ✅ En komplett webbplats utan utvecklare
-- ✅ Headless API för multi-kanal distribution
-- ✅ AI-drivna verktyg för innehållshantering
-- ✅ GDPR- och WCAG-efterlevnad inbyggd
-- ✅ Svenskt språkstöd och lokalisering
+- ✅ a komplett webbplats without utvecklare
+- ✅ Headless API for multi-kanal distribution
+- ✅ AI-drivna verktyg for innehållshantering
+- ✅ GDPR- and WCAG-efterlevnad built-in
+- ✅ Svenskt språkstöd and lokalisering
 
 ### Unik Positionering: "Head + Headless"
 
-Till skillnad från traditionella CMS (som bara levererar webbplats) eller rena headless-lösningar (som kräver separat frontend-utveckling), erbjuder FlowWink **båda**:
+to skillnad from traditionella CMS (that/which bara levererar webbplats) or rena headless-lösningar (that/which require separate frontend development), offers FlowWink **båda**:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -46,156 +46,156 @@ Till skillnad från traditionella CMS (som bara levererar webbplats) eller rena 
 
 ## 1. Content Management
 
-### 1.1 Block-baserad Sidbyggare
+### 1.1 Blocks-based page builder
 
-FlowWink använder en modulär block-arkitektur för flexibel innehållshantering:
+FlowWink uses a modular Blocks-architecture for flexible innehållshantering:
 
-#### Tillgängliga Block (50+ typer)
+#### available Blocks (50+ types)
 
-| Kategori | Block | Beskrivning |
+| category | Blocks | description |
 |----------|-------|-------------|
-| **Text & Media** | Text | Rik text med Tiptap-editor (eyebrow, titel, accent text) |
-| | Image | Bild med alt-text och bildtext |
-| | Gallery | Galleri med grid/carousel/masonry + lightbox |
-| | Quote | Citat med författare och källa |
-| | YouTube | Inbäddad YouTube-video med autoplay-inställningar |
-| | Embed | Anpassad iframe/HTML-embed med aspektförhållande |
-| | Table | Strukturerad data med kolumner och rader |
-| **Layout** | Two-Column | Tvåkolumnslayout med text, bild, eyebrow, titel, accent text, CTA |
-| | Separator | Visuell avdelare (linje/punkter/ornament/mellanrum) |
-| | Tabs | Flikbaserat innehåll med ikoner och varianter |
-| **Navigation** | Link Grid | Rutnät med länkkort och ikoner |
-| | Hero | Sidhuvud med bakgrund (bild/video/färg), titel och CTA |
-| | Announcement Bar | Toppbanner för meddelanden och erbjudanden |
-| **Information** | Info Box | Informationsblock med variant (info/success/warning/highlight) |
-| | Stats | Nyckeltal och statistik med ikoner och cards |
-| | Accordion | Expanderbar FAQ/innehåll med bilder (Tiptap rich text) |
-| | Article Grid | Rutnät med artikelkort |
-| | Features | Funktioner/tjänster med ikoner, hover effects, card styles |
-| | Timeline | Stegvis process eller historik med ikoner och beskrivningar |
-| | Progress | Framstegsindikatorer och progress bars |
-| | Countdown | Nedräkningstimer till specifikt datum (cards/hero/minimal) |
-| | Marquee | Rullande text/ikoner för uppmärksamhet |
-| **Social Proof** | Testimonials | Kundrecensioner med stjärnbetyg, citat, avatar |
-| | Logos | Kundlogotyper/partners med gråskale-/scroll-variant |
-| | Team | Teammedlemmar med bio, foto och sociala länkar |
-| | Badge | Certifieringar och förtroendeikoner (SOC2, GDPR, etc.) |
-| | Social Proof | Liveräknare, betyg och aktivitetsnotifieringar |
-| **Konvertering** | CTA | Call-to-action med knappar och gradient |
-| | Pricing | Pristabell med tiers, features och badges |
-| | Comparison | Jämförelsetabell för produkter/planer |
-| | Booking | Bokningsformulär eller embed (Calendly/Cal.com/HubSpot) |
-| | Smart Booking | Inbyggt bokningssystem med tjänster, tillgänglighet och kalender |
-| | Form | Anpassningsbart formulär med fältvalidering (default/card/minimal) |
-| | Newsletter | Nyhetsbrev-anmälan med GDPR-samtycke (default/card/minimal) |
-| | Floating CTA | Scroll-triggad CTA som dyker upp vid scroll (bar/card/pill) |
-| | Notification Toast | Dynamiska aktivitetsnotifieringar (köp, registreringar) |
-| **Kontakt** | Contact | Kontaktinformation med adress och öppettider |
-| | Map | Google Maps-embed med adress |
-| **Interaktivt** | Chat | Inbäddad AI-chatt med kontextmedvetenhet |
-| | Chat Launcher | ChatGPT-stil launcher som routar till /chat med initial prompt |
-| | Popup | Triggade popups (scroll/tid/exit-intent) |
-| **Knowledge Base** | KB Hub | Kunskapsbas-landningssida med kategorier |
-| | KB Search | Sökblock för kunskapsbas |
-| | KB Featured | Utvalda KB-artiklar |
-| | KB Accordion | FAQ i accordion-format |
-| **E-commerce** | Products | Produktrutnät från databas med varukorg |
-| | Cart | Varukorg med summering och checkout |
+| **text & Media** | text | richtext with Tiptap-editor (eyebrow, title, accenttext) |
+| | Image | image with alttext and caption |
+| | Gallery | gallery with grid/carousel/masonry + lightbox |
+| | Quote | quote with author and source |
+| | YouTube | embedded YouTube-video with autoplay-inställningar |
+| | embed | Anpassad iframe/HTML-embed with aspect ratio |
+| | Table | structured data with columns and rows |
+| **layout** | Two-Column | Tvåkolumnslayout withtext, image, eyebrow, title, accenttext, CTA |
+| | Separator | visual divider (line/dots/ornament/spacing) |
+| | Tabs | tab-based content with icons and variants |
+| **navigation** | Link Grid | grid with link cards and icons |
+| | Hero | page header with background (image/video/color), title and CTA |
+| | Announcement Bar | top banner for messages and offers |
+| **Information** | Info Box | info box withvariant (info/success/warning/highlight) |
+| | Stats | key metrics and statistics with icons and cards |
+| | Accordion | expandable FAQ/content with bilder (Tiptap richtext) |
+| | Article Grid | grid with article cards |
+| | Features | features/services with icons, hovereffects, card styles |
+| | Timeline | step-by-stepprocess or history with icons and Descriptionar |
+| | Progress | progress indicators and progress bars |
+| | Countdown | countdown timer to specific date (cards/hero/minimal) |
+| | Marquee | scrollingtext/icons for attention |
+| **Social Proof** | Testimonials | Kundrecensioner with star ratings, quote, avatar |
+| | Logos | Kundlogotyper/partners with grayscale-/scroll-variant |
+| | Team | team members withbio, photo and social links |
+| | Badge | certifications and trust icons (SOC2, GDPR, etc.) |
+| | Social Proof | live counters, ratings and activity notifications |
+| **conversion** | CTA | Call-to-action with buttons andgradient |
+| | Pricing | pricing table withtiers, features andbadges |
+| | Comparison | comparison table for products/plans |
+| | Booking | booking form orembed (Calendly/Cal.com/HubSpot) |
+| | Smart Booking | built-in bokningssystem with services, availability and calendar |
+| | Form | customizable form with field validation (default/card/minimal) |
+| | Newsletter | newsletter-signup with GDPR-consent (default/card/minimal) |
+| | Floating CTA | scroll-triggered CTA that/which appears upp vidscroll (bar/card/pill) |
+| | Notificationtoast | dynamic activity notifications (purchases, registrations) |
+| **Kontakt** | Contact | contact information with address and opening hours |
+| | Map | Google Maps-embed with address |
+| **interactive** | Chat | embedded AI-chat with context-aware |
+| | Chatlauncher | ChatGPT-stillauncher that/which routes to /chat withinitialprompt |
+| | Popup | triggered popups (scroll/time/exit intent) |
+| **Knowledge Base** | KB Hub | knowledge base-landing page with categories |
+| | KB Search | SökBlock for knowledge base |
+| | KB Featured | featured KB-articles |
+| | KB Accordion | FAQ in accordion-format |
+| **E-commerce** | Products | product grid from databas with cart |
+| | Cart | cart with summary and checkout |
 
-#### Block-funktioner
+#### Blocks-features
 
-- **Drag & Drop**: Omordna block fritt med @dnd-kit
-- **Duplicera/Ta bort**: Snabb hantering
-- **Animationer**: Per-block animeringar (fade, slide, scale)
-- **Spacing**: Konfigurerbar padding och margin
-- **Anchor ID**: Sätt ett ID för in-page navigation (t.ex. `#kontakta-oss`)
-- **Hide/Show**: Dölj block från publika sidan utan att ta bort (Webflow-stil)
-- **Rich Previews**: Block editors visar realistiska previews som matchar publik rendering
-- **Responsivt**: Alla block anpassas automatiskt
+- **drag & drop**: Omordna Blocks fritt with @dnd-kit
+- **duplicate/remove**: Snabb handling
+- **animations**: Per-Blocks animeringar (fade, slide, scale)
+- **Spacing**: configurablepadding andmargin
+- **Anchor ID**: Sätt a ID for in-pagenavigation (t.ex. `#kontakta-oss`)
+- **Hide/Show**: Dölj Blocks from publika sidan without att remove (Webflow-stil)
+- **Richpreviews**: Blocks editors shows realistiskapreviews that/which matches public rendering
+- **Responsivt**: Alla Blocks anpassas automatiskt
 
-#### Hide/Show Block (Webflow-stil)
+#### Hide/Show Blocks (Webflow-stil)
 
-Varje block kan döljas från publika sidan utan att tas bort:
+Varje Blocks can döljas from publika sidan without att tas bort:
 
-**Funktioner:**
-- **Toggle-knapp**: Ögon-ikon i block-toolbaren (👁/🙈)
-- **Visuell feedback**: Dolda block visas med 40% opacity och "Hidden" badge i editorn
-- **Persistens**: `hidden`-egenskapen sparas i blockets JSON
-- **Public rendering**: Dolda block renderas inte alls på publika sidor
-
-**Användningsfall:**
-- Dölj block som inte är klara för publicering
-- Testa olika block-kombinationer utan att radera
-- Behåll block för framtida användning
-
-#### Block Editor Previews
-
-Alla block editors visar rika previews som matchar den publika renderingen:
-
-**Förbättrade Block (Feb 2026):**
-- **FormBlockEditor** — Visar fält, labels, submit-knapp, variant-stöd
-- **AccordionBlockEditor** — Riktiga Accordion-komponenter med expand/collapse
-- **TwoColumnBlockEditor** — Eyebrow, titel med accent text, CTA, andra bilden
-- **TextBlockEditor** — Eyebrow, titel med accent/storlek i preview
-- **ChatBlockEditor** — Meddelandebubblor, input-fält, send-knapp
-- **ChatLauncherBlockEditor** — Sparkles-input, quick action pills
-- **NewsletterBlockEditor** — Email-input, subscribe-knapp, variant-stöd
-- **CountdownBlockEditor** — Nedräkningsrutor med siffror, variant-stöd
-- **FloatingCTABlockEditor** — CTA-bar/card/pill med knappar
-- **NotificationToastBlockEditor** — Toast-mockup med ikon, titel, meddelande
-- **FeaturesBlockEditor** — Rich preview med ikoner, hover effects
-- **TestimonialsBlockEditor** — Citat, avatar, stjärnbetyg
-- **PricingBlockEditor** — Priskort, features, badges
-- **TimelineBlockEditor** — Stegvis process med ikoner
-- **SocialProofBlockEditor** — Liveräknare, betyg
-- **StatsBlockEditor** — Statistik med ikoner och cards
-- **TeamBlockEditor** — Teammedlemmar med bio, foto
-- **ContactBlockEditor** — Kontaktinfo, öppettider, 2-kolumns
-
-**Övriga Block:**
-- Alla andra block har redan rika previews eller är DB-beroende (kan inte visa statisk preview)
-
-#### Anchor-länkar (In-page Navigation)
-
-Varje block kan tilldelas ett **Anchor ID** för att möjliggöra in-page navigation:
-
-1. **Sätta Anchor ID**: Klicka på `#`-ikonen i block-toolbaren
-2. **Länka till block**: Använd URL:er som `#kontakta-oss` i knappar eller navigation
-3. **Smooth Scroll**: Automatisk mjuk scrollning vid klick på anchor-länkar
-4. **URL-stöd**: Direktlänkar som `/sida#kontakta-oss` fungerar vid sidladdning
+**features:**
+- **Toggle-knapp**: Ögon-icon in Blocks-toolbaren (👁/🙈)
+- **visual feedback**: Dolda Blocks visas with 40% opacity and "Hidden" badge in editorn
+- **Persistens**: `hidden`-egenskapen sparas in Blockets JSON
+- **Public rendering**: Dolda Blocks renderas not alls on publika sidor
 
 **Användningsfall:**
-- Navigation inom en lång sida (t.ex. hero → kontaktformulär)
-- Header-meny med snabblänkar till sektioner
-- CTA-knappar som scrollar till formulär
+- Dölj Blocks that/which not is klara for publicering
+- Testa olika Blocks-kombinationer without att delete
+- Behåll Blocks for framtida usage
+
+#### Blockseditorpreviews
+
+Alla Blocks editors shows rikapreviews that/which matches the publika renderingen:
+
+**enhanced Blocks (Feb 2026):**
+- **FormBlockEditor** — shows fields, labels, submit button, variant-support
+- **AccordionBlockEditor** — rich Accordion-components withexpand/collapse
+- **TwoColumnBlockEditor** — eyebrow, title with accenttext, CTA, andra bilden
+- **TextBlockEditor** — eyebrow, title with accent/size inpreview
+- **ChatBlockEditor** — message bubbles, input-fields, send button
+- **ChatLauncherBlockEditor** — sparkles-input, quick actionpills
+- **NewsletterBlockEditor** — email-input, subscribe button, variant-support
+- **CountdownBlockEditor** — countdown boxes with numbers, variant-support
+- **FloatingCTABlockEditor** — CTA bar/card/pill with buttons
+- **NotificationToastBlockEditor** — toast-mockup with icon, title, meddelande
+- **FeaturesBlockEditor** — Richpreview with icons, hovereffects
+- **TestimonialsBlockEditor** — quote, avatar, star ratings
+- **PricingBlockEditor** — pricing cards, features, badges
+- **TimelineBlockEditor** — step-by-stepprocess with icons
+- **SocialProofBlockEditor** — live counters, ratings
+- **StatsBlockEditor** — statistics with icons and cards
+- **TeamBlockEditor** — team members withbio, photo
+- **ContactBlockEditor** — Kontaktinfo, opening hours, 2-column
+
+**Övriga Blocks:**
+- Alla andra Blocks has already rikapreviews or is DB-beroende (can not show staticpreview)
+
+#### Anchor-links (in-pagenavigation)
+
+Varje Blocks can assigned a **Anchor ID** for att enable in-pagenavigation:
+
+1. **set Anchor ID**: click on `#`-ikonen in Blocks-toolbaren
+2. **Länka to Blocks**: useURL:er that/which `#kontakta-oss` in buttons ornavigation
+3. **Smoothscroll**: automatic smooth scrolling vid klick on anchor-links
+4. **URL-support**: direct links that/which `/page#kontakta-oss` fungerar vid page load
+
+**Användningsfall:**
+- navigation inom a long page (t.ex. hero → kontaktformulär)
+- Header-menu with quick links to sektioner
+- CTA-buttons that/which scrollar to form
 
 ### 1.2 Mediabibliotek
 
-- **Uppladdning**: Drag & drop eller filväljare
-- **WebP-konvertering**: Automatisk optimering
-- **Unsplash-integration**: Sök och använd stockbilder
-- **Mappar**: Automatisk organisering (pages/imports)
-- **Sök & Filter**: Hitta bilder snabbt med folder-tabs
-- **Bulk-hantering**: Markera flera, radera samtidigt
-- **Lightbox**: Fullskärmsvisning med tangentbordsnavigering
-- **Återanvändning**: Välj från biblioteket i alla block
-- **Alt-text**: WCAG-kompatibel bildhantering
+- **upload**: drag & drop or file picker
+- **WebP-conversion**: automatic optimization
+- **Unsplash-integration**: search and use stock photos
+- **folders**: automatic organization (pages/imports)
+- **search & filter**: find bilder quickly with folder tabs
+- **Bulk-handling**: mark multiple, delete simultaneously
+- **Lightbox**: Fullskärmsvisning with tangentbordsnavigering
+- **Återanvändning**: Välj from biblioteket in alla Blocks
+- **alttext**: WCAG-compatible image handling
 
-### 1.3 Editor-arkitektur
+### 1.3editor-architecture
 
-FlowWink använder två olika editor-typer beroende på innehållstyp:
+FlowWink uses två olikaeditor-types beroende on innehållstyp:
 
-| Innehållstyp | Editor | Fokus |
+| Innehållstyp | editor | Focus |
 |--------------|--------|-------|
-| **Pages** | Block-system | Layout-komponering (Hero, Features, CTA, etc.) |
-| **Blog** | Tiptap Rich Text | Dokument-fokus (text, bilder, citat) |
-| **Newsletter** | Tiptap Rich Text | Email-formaterat innehåll |
+| **Pages** | Blocks-system | Layout composition (Hero, Features, CTA, etc.) |
+| **Blog** | Tiptap Richtext | Document-focused (text, bilder, quote) |
+| **Newsletter** | Tiptap Richtext | email-formaterat content |
 
 **Fördelar:**
-- Blog och Newsletter delar samma editor-upplevelse
-- Content Campaigns kan publicera direkt till Blog utan konvertering
-- Enklare för skribenter - fokus på innehåll, inte layout
-- AI-genererat innehåll passar naturligt
+- Blog and Newsletter delar sammaeditor-upplevelse
+- Content Campaigns can publish direkt to Blog without conversion
+- Enklare for skribenter - Focus on content, notlayout
+- AI-genererat content passar naturligt
 
 ---
 
@@ -205,42 +205,42 @@ FlowWink använder två olika editor-typer beroende på innehållstyp:
 
 | Roll | Rättigheter |
 |------|-------------|
-| **Writer** | Skapa utkast, redigera egna sidor, skicka för granskning |
-| **Approver** | Allt Writer + Granska, godkänn/avvisa, publicera |
-| **Admin** | Full åtkomst + Användarhantering, systeminställningar |
+| **Writer** | Create drafts, edit own pages, skicka for granskning |
+| **Approver** | Everything Writer + Review, approve/reject, publish |
+| **Admin** | Full access + User management, system settings |
 
 ### 2.2 Statusflöde
 
 ```
 ┌─────────┐     ┌───────────┐     ┌───────────┐
 │  DRAFT  │ ──► │ REVIEWING │ ──► │ PUBLISHED │
-│ (Utkast)│     │(Granskas) │     │(Publicerad)│
+│ (Draft)│     │(Reviewing) │     │(Published)│
 └─────────┘     └───────────┘     └───────────┘
       ▲               │
-      │               │ Avvisad
+      │               │ Rejected
       └───────────────┘
 ```
 
 ### 2.3 Versionshantering
 
-- **Automatiska versioner**: Skapas vid publicering
-- **Versionshistorik**: Se alla tidigare versioner
-- **Återställning**: Återgå till tidigare version
-- **Jämförelse**: Se skillnader mellan versioner
+- **Automatic versions**: Created on publish
+- **Version history**: View all previous versions
+- **Restoration**: Återgå to tidigare version
+- **Comparison**: View differences between versions
 
-### 2.4 Schemalagd Publicering
+### 2.4 Scheduled Publishing
 
-- **Framtida publicering**: Välj datum och tid
-- **Automatisk aktivering**: Cron-jobb publicerar vid rätt tid
-- **Visuell indikator**: Klocka visar schemalagda sidor
-- **Avbryt/Ändra**: Justera eller ta bort schema
+- **Future publishing**: Välj date and time
+- **automatic aktivering**: Cron-jobb publishr vid rätt time
+- **visual indikator**: Klocka shows schemalagda sidor
+- **Cancel/Change**: Justera or remove schema
 
-### 2.5 Förhandsgranskning
+### 2.5 Preview
 
-- **Live Preview**: Se sidan innan publicering
-- **Nytt fönster**: Öppnas separat från admin
-- **Tidsbegränsad**: Data raderas efter 1 timme
-- **Banner**: Tydlig markering "FÖRHANDSGRANSKNING"
+- **Livepreview**: View page before publishing
+- **New window**: Öppnas separat from admin
+- **Time-limited**: data deleted after 1 hour
+- **Banner**: Clear marking "Preview"
 
 ---
 
@@ -248,12 +248,12 @@ FlowWink använder två olika editor-typer beroende på innehållstyp:
 
 ### 3.1 Templates (Complete Packages)
 
-Templates är kompletta paket som innehåller:
-- **Förkonfigurerade sidor** (startsida, om oss, tjänster, kontakt, etc.)
-- **Block-innehåll** (redan ifyllda med relevant text och bilder)
-- **Branding-inställningar** (färger, typografi, logotyp, etc.)
+Templates is kompletta paket that/which contains:
+- **Pre-configured pages** (homepage, about us, services, contact, etc.)
+- **Blocks-content** (already ifyllda with relevanttext and bilder)
+- **Branding settings** (colors, typography, logo, etc.)
 
-| Template | Kategori | Sidor | Målgrupp |
+| Template | category | Sidor | Target audience |
 |----------|----------|-------|----------|
 | **Launchpad** | Startup | 5 | SaaS/Tech startups |
 | **TrustCorp** | Enterprise | 5 | B2B companies |
@@ -261,39 +261,39 @@ Templates är kompletta paket som innehåller:
 | **FlowWink Platform** | Platform | 5 | CMS showcase |
 
 #### Template Selection
-Varje template har sina egna branding-inställningar. När du väljer en template:
-- Alla sidor skapas automatiskt med förkonfigurerat innehåll
-- Branding-inställningar appliceras (färger, typografi, logotyp)
-- Du kan anpassa allt efter behov (ändra block, färger, innehåll)
+Varje template has sina egna Branding settings. När du väljer a template:
+- All pages are created automatically with förkonfigurerat content
+- Branding settings applied (colors, typography, logo)
+- Du can anpassa allt efter behov (ändra Blocks, Colors, content)
 
 #### Reset to Template Defaults
-BrandingSettingsPage visar vilken template som är aktiv och erbjuder "Reset to Template Defaults"-knapp för att återställa branding till template-standarden.
+BrandingSettingsPage shows vilken template that/which is aktiv and offers "Reset to Template Defaults"-knapp for att återställa branding to template-standarden.
 
 ### 3.2 Custom Themes (Brand Guide Assistant)
 
-**Funktion**: Analysera befintlig webbplats och extrahera branding automatiskt.
+**function**: Analysera befintlig webbplats and extrahera branding automatiskt.
 
-**Process**:
-1. Ange URL till befintlig webbplats
-2. AI analyserar färger, typografi, logotyper
-3. Granska mappning mot CMS-variabler
-4. Applicera direkt eller spara som eget tema
+**process**:
+1. AngeURL to befintlig webbplats
+2. AI analyserar Colors, typografi, logos
+3. Review mapping to CMS variables
+4. Applicera direkt or spara that/which eget tema
 
-**Kräver**: FIRECRAWL_API_KEY
+**Requires**: FIRECRAWL_API_KEY
 
-### 3.3 Anpassningsmöjligheter
+### 3.3 Customization options
 
-#### Färger (HSL-format med WCAG-validering)
-- **Primärfärg** — med kontrastvalidering (AA/AAA)
-- **Sekundärfärg** — med kontrastvalidering
-- **Accentfärg** — med kontrastvalidering
-- **Bakgrundsfärg**
+#### Colors (HSL-format with WCAG-validering)
+- **Primärfärg** — with kontrastvalidering (AA/AAA)
+- **Sekundärfärg** — with kontrastvalidering
+- **Accentfärg** — with kontrastvalidering
+- **Background color**
 - **Förgrundsfärg**
 
 **WCAG Color Contrast Validation:**
-- Alla färgpickers har inbyggd kontrastvalidering
-- Visuell indikator för AA (4.5:1) och AAA (7:1) kompatibilitet
-- Hjälp-text visar kontrastförhållande och status
+- Alla färgpickers has built-in kontrastvalidering
+- visual indikator for AA (4.5:1) and AAA (7:1) kompatibilitet
+- Hjälp-text shows kontrastförhållande and status
 
 #### Typografi
 - Rubrikfont (Google Fonts)
@@ -311,30 +311,30 @@ BrandingSettingsPage visar vilken template som är aktiv och erbjuder "Reset to 
 
 ### 4.1 Globala SEO-inställningar
 
-| Inställning | Beskrivning |
+| Inställning | description |
 |-------------|-------------|
-| Site Title Template | Mall för sidtitlar (t.ex. "%s | Företagsnamn") |
-| Default Meta Description | Standardbeskrivning för sidor |
-| Open Graph Image | Standardbild för delning i sociala medier |
-| Twitter Handle | @användarnamn för Twitter Cards |
-| Google Verification | Verifieringskod för Search Console |
+| Site Title Template | Mall for sidtitlar (t.ex. "%s | Företagsnamn") |
+| default Meta Description | StandardDescription for sidor |
+| Open Graph Image | Standardbild for delning in social medier |
+| Twitter Handle | @användarnamn for Twitter Cards |
+| Google Verification | Verifieringskod for Search Console |
 | Robots Indexing | Global indexeringsinställning |
 
-### 4.2 Per-sida SEO
+### 4.2 Per-page SEO
 
-- **Anpassad titel**: Override för specifik sida
-- **Meta description**: Unik beskrivning per sida
-- **noindex/nofollow**: Exkludera från sökmotorer
-- **Canonical URL**: Förhindra duplicerat innehåll
+- **Anpassad title**: Override for specifik page
+- **Meta description**: Unik description per page
+- **noindex/nofollow**: Exkludera from sökmotorer
+- **CanonicalURL**: Förhindra duplicerat content
 
-### 4.3 Performance-optimering
+### 4.3 Performance-optimization
 
-| Funktion | Beskrivning |
+| function | description |
 |----------|-------------|
-| **Edge Caching** | In-memory cache med konfigurerbar TTL |
-| **Lazy Loading** | Bilder laddas vid scroll |
-| **WebP-konvertering** | Automatisk bildoptimering |
-| **Link Prefetching** | Förladdning av länkar |
+| **Edge Caching** | In-memory cache with configurable TTL |
+| **Lazy Loading** | Bilder laddas vidscroll |
+| **WebP-conversion** | automatic bildoptimering |
+| **Link Prefetching** | Förladdning of links |
 
 ### 4.4 Cache-strategi
 
@@ -349,8 +349,8 @@ Request → Edge Cache Hit?
               → Return
 ```
 
-**TTL**: Konfigurerbar (standard 5 minuter)  
-**Invalidering**: Automatisk vid publicering/avpublicering
+**TTL**: configurable (standard 5 minuter)  
+**Invalidering**: automatic vid publicering/avpublicering
 
 ---
 
@@ -358,73 +358,73 @@ Request → Edge Cache Hit?
 
 ### 5.0 Developer Tools (Hidden)
 
-Developer Tools är en dold sektion för utvecklare att testa och debugga:
+Developer Tools is a dold sektion for utvecklare att testa and debugga:
 
-**Åtkomst:** `/admin/developer-tools` eller sök med `#developer-tools`
+**Åtkomst:** `/admin/developer-tools` or search with `#developer-tools`
 
-**Not synlig i side panel** - Endast direkt URL-åtkomst eller sökbar via `#`
+**Not synlig in side panel** - Endast direktURL-åtkomst or sökbar via `#`
 
 #### Webhook Logger
-- Logga webhooks istället för att skicka till externa API:er
-- Visa payload-struktur
+- Logga webhooks istället for att skicka to externa API:er
+- show payload-struktur
 - Testa event triggers
 - Inga externa API-anrop
 
-#### Block Previewer
-- Förhandsgranska custom blocks utan att skapa sidor
-- Testa olika varianter
+#### Blocks Previewer
+- FörhandsReview custom Blocks without att skapa sidor
+- Testa olika variants
 - Hot reload support
 - Mock data generator
 
-#### Mock Data Generator
-- Generera test data för utveckling
-- Test sidor, blocks, webhooks
+#### Mock data Generator
+- Generera test data for utveckling
+- Test sidor, Blocks, webhooks
 - Anpassningsbara data sets
 
 ---
 
-### 5.1 Dynamisk Navigation
+### 5.1 Dynamisknavigation
 
-- **Automatisk meny**: Baserat på publicerade sidor
-- **Menyordning**: Drag & drop i admin
-- **Visa/Dölj**: Kontrollera synlighet per sida
-- **Mobil-meny**: Responsiv hamburger-meny
-- **Konfigurerbar startsida**: Valfri sida som hem
+- **automatic menu**: based on Publishede sidor
+- **Menyordning**: drag & drop in admin
+- **show/Dölj**: Kontrollera synlighet per page
+- **Mobil-menu**: Responsiv hamburger-menu
+- **configurable startsida**: Valfri page that/which hem
 
 ### 5.2 Footer
 
 #### Anpassningsbara Sektioner
 - Varumärke & Logotyp
-- Snabblänkar
-- Kontaktinformation
-- Öppettider
+- quick links
+- contact information
+- opening hours
 
-#### Funktioner
-- Drag & drop-ordning
-- Visa/dölj sektioner
-- Sociala medier-länkar (Facebook, Instagram, LinkedIn, Twitter, YouTube)
-- Dynamiska juridiska länkar
+#### features
+- drag & drop-ordning
+- show/dölj sektioner
+- social medier-links (Facebook, Instagram, LinkedIn, Twitter, YouTube)
+- dynamic juridiska links
 
 ### 5.3 Cookie Banner (GDPR)
 
-- **Samtycke**: "Acceptera alla" / "Endast nödvändiga"
-- **Lagring**: localStorage med status
-- **Anpassningsbar**: Text, knappar, länk till policy
+- **consent**: "Acceptera alla" / "Endast nödvändiga"
+- **Lagring**: localStorage with status
+- **Anpassningsbar**: text, buttons, link to policy
 - **Standardpolicy**: Svensk GDPR-mall inkluderad
 
 ### 5.4 Underhållslägen
 
 | Läge | Effekt |
 |------|--------|
-| **Blockera sökmotorer** | noindex/nofollow på alla sidor |
-| **Kräv inloggning** | Blockerar all publik åtkomst |
-| **Underhållsläge** | Visar underhållsmeddelande med förväntad sluttid |
+| **Blockera sökmotorer** | noindex/nofollow on alla sidor |
+| **Kräv inloggning** | Blockerar all public åtkomst |
+| **Underhållsläge** | shows underhållsmeddelande with förväntad sluttid |
 
 ### 5.5 Mörkt Läge
 
 - **Tema-växlare**: Ljus/Mörk/System
-- **Alternativ logotyp**: Separat logo för mörkt läge
-- **CSS-variabler**: Automatisk anpassning
+- **Alternativ logotyp**: Separat logo for mörkt läge
+- **CSS-variabler**: automatic anpassning
 - **Persistence**: Sparas mellan sessioner
 
 ---
@@ -433,28 +433,28 @@ Developer Tools är en dold sektion för utvecklare att testa och debugga:
 
 ### 6.1 AI Chat System
 
-#### Multi-Provider Arkitektur
+#### Multi-Provider architecture
 
-FlowWink stödjer fem olika AI-providers för maximal flexibilitet:
+FlowWink stödjer fem olika AI-providers for maximal flexibilitet:
 
-| Provider | Användning | Data Location | Setup |
+| Provider | usage | data Location | Setup |
 |----------|------------|---------------|-------|
 | **Lovable AI** | Standard molntjänst, ingen setup krävs | Moln (EU) | Ingen API-nyckel behövs |
-| **OpenAI** | GPT-modeller med anpassad konfiguration | OpenAI Cloud | API-nyckel (secret) |
+| **OpenAI** | GPT-modeller with anpassad konfiguration | OpenAI Cloud | API-nyckel (secret) |
 | **Google Gemini** | Google AI-modeller | Google Cloud | API-nyckel (secret) |
-| **Private LLM** | Självhostad OpenAI-kompatibel endpoint | On-premise/Privat | Endpoint URL, valfri API-nyckel |
-| **N8N Webhook** | Agentic workflows med AI-agent | Konfigurerbart | Webhook URL |
+| **Private LLM** | Självhostad OpenAI-kompatibel endpoint | On-premise/Privat | EndpointURL, valfri API-nyckel |
+| **N8N Webhook** | Agentic workflows with AI-agent | Konfigurerbart | WebhookURL |
 
-#### Integration Testing
+#### integration Testing
 
-Alla AI-providers har inbyggda testfunktioner:
+Alla AI-providers has built-in testfunktioner:
 - **Test Connection**: Verifiera att anslutningen fungerar
-- **Active Provider Indicator**: Visa vilken provider som är aktiv
+- **Active Provider Indicator**: show vilken provider that/which is aktiv
 - **Error Handling**: Tydliga felmeddelanden vid konfigurationsproblem
 
 #### Private/Local LLM (HIPAA-kompatibel)
 
-För organisationer med strikta datakrav (HIPAA, GDPR, interna policies):
+for organisationer with strikta datakrav (HIPAA, GDPR, interna policies):
 
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
@@ -473,24 +473,24 @@ För organisationer med strikta datakrav (HIPAA, GDPR, interna policies):
 ```
 
 **Konfiguration**:
-- **Endpoint**: OpenAI-kompatibel URL (t.ex. `https://api.autoversio.ai/v1`)
+- **Endpoint**: OpenAI-kompatibelURL (t.ex. `https://api.autoversio.ai/v1`)
 - **Model**: Modellnamn (t.ex. `llama3`, `mistral`, custom)
 - **API Key**: Valfri autentisering
 
 **Fördelar**:
-- ✅ Data lämnar aldrig din infrastruktur
-- ✅ Full kontroll över modell och inferens
+- ✅ data lämnar aldrig din infrastruktur
+- ✅ Full kontroll över modell and inferens
 - ✅ HIPAA/GDPR-kompatibel by design
 - ✅ Ingen vendor lock-in
 
-#### N8N AI Agent Integration
+#### N8N AI Agentintegration
 
-Koppla chatten till N8N för avancerade AI-agenter med verktyg:
+Koppla chatten to N8N for avancerade AI-agenter with verktyg:
 
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
 │   User Chat     │ ──► │  Edge Function  │ ──► │  N8N Workflow   │
-│   "Boka tid"    │     │ + sessionId     │     │  AI Agent Node  │
+│   "Boka time"    │     │ + sessionId     │     │  AI Agent Node  │
 └─────────────────┘     └─────────────────┘     └─────────────────┘
                                                         │
                                                         ▼
@@ -498,44 +498,44 @@ Koppla chatten till N8N för avancerade AI-agenter med verktyg:
                                               │   Agent Tools   │
                                               │ - Cal.com       │
                                               │ - Google Sheets │
-                                              │ - Email         │
+                                              │ - email         │
                                               │ - Custom APIs   │
                                               └─────────────────┘
 ```
 
 **Webhook Types**:
-- **Chat Webhook**: N8N Chat node med session memory (rekommenderad)
-- **Generic Webhook**: OpenAI-kompatibelt format med full historik
+- **Chat Webhook**: N8N Chat node with session memory (rekommenderad)
+- **Generic Webhook**: OpenAI-kompatibeltformat with full history
 
-**Session Memory**: SessionId skickas automatiskt för konversationsminne i N8N.
+**Session Memory**: SessionId skickas automatiskt for konversationsminne in N8N.
 
 #### Leveranslägen
 
-- **Dedikerad sida**: /chat
-- **CMS-block**: Inbäddat i sidor
-- **Floating Widget**: Flytande ikon på alla sidor
+- **Dedikerad page**: /chat
+- **CMS-Blocks**: Inbäddat in sidor
+- **Floating Widget**: Flytande icon on alla sidor
 
 #### Context Augmented Generation (CAG)
 
 **Killer Feature: Multi-Module Context**
 
-Första systemet som använder **alla modulers innehåll som AI-kontext:**
+Första systemet that/which uses **alla modulers content that/which AI-kontext:**
 
-- **Pages** — Landings pages och kampanjsidor
-- **Blog** — Blogginlägg med SEO
-- **Knowledge Base** — Kunskapsbas-artiklar
-- **Forms** — Formulär och leads
+- **Pages** — Landings pages and kampanjsidor
+- **Blog** — Blogginlägg with SEO
+- **Knowledge Base** — knowledge base-articles
+- **Forms** — form and leads
 
 **Värde:**
-- Omedelbara svar från eget innehåll
+- Omedelbara svar from eget content
 - Ingen träning krävs — fungerar direkt
-- Spara timmar med kundsupport
-- AI chat ger värde från dag 1
+- Spara timmar with kundsupport
+- AI chat ger värde from dag 1
 
-**Kunskapsbas**: Publicerade sidor som kontext
-- **Selektiv**: Välj vilka sidor som inkluderas
-- **Token-limit**: Konfigurerbar maxgräns
-- **Per-sida toggle**: Inkludera/exkludera specifika sidor
+**knowledge base**: Publishede sidor that/which kontext
+- **Selektiv**: Välj vilka sidor that/which inkluderas
+- **Token-limit**: configurable maxgräns
+- **Per-page toggle**: Inkludera/exkludera specifika sidor
 
 #### Human Handoff & Live Agent Support
 
@@ -574,28 +574,28 @@ FlowWink supports seamless escalation from AI to human agents:
 
 ### 6.2 AI-driven Page Import
 
-**Intelligent Content Migration** från valfri webbplats:
+**Intelligent Content Migration** from valfri webbplats:
 
 | Feature | Description |
 |---------|-------------|
 | **Platform Detection** | Auto-detects WordPress, Wix, Squarespace, Webflow, Shopify, Ghost, HubSpot, Drupal, SiteVision, Episerver |
-| **Video Extraction** | YouTube, Vimeo and embedded iframes |
+| **video Extraction** | YouTube, Vimeo and embedded iframes |
 | **Image Extraction** | Regular images, lazy-loaded, background-images |
-| **Screenshot Analysis** | Visual context for AI block mapping |
-| **22+ Block Types** | Hero, text, gallery, team, stats, testimonials, pricing, features, accordion, etc. |
+| **Screenshot Analysis** | Visual context for AI Blocks mapping |
+| **22+ Blocks Types** | Hero, text, gallery, team, stats, testimonials, pricing, features, accordion, etc. |
 | **Local Storage** | Optional download of all images to media library |
 | **Smart Page Filtering** | Excludes pagination, archives, admin pages, search results, feed URLs |
 | **Date-based Filtering** | Filters out old content (lastmod > 24 months) from sitemap |
 | **Duplicate Detection** | URL normalization and slug deduplication prevents duplicate imports |
 | **Sitemap Limit** | Max 50 sitemap pages to focus on active content |
 
-**Usage:** Admin → Pages → Import Page → Enter URL → AI analyzes and maps to blocks
+**Usage:** Admin → Pages → Import Page → EnterURL → AI analyzes and maps to Blocks
 
 ## 7. Headless Content API
 
 ### 7.1 REST Endpoints
 
-#### Lista alla publicerade sidor
+#### Lista alla Publishede sidor
 ```bash
 GET /content-api/pages
 ```
@@ -610,13 +610,13 @@ GET /content-api/pages
       "slug": "hem",
       "status": "published",
       "meta": { ... },
-      "blocks": [ ... ]
+      "Blocks": [ ... ]
     }
   ]
 }
 ```
 
-#### Hämta specifik sida
+#### Hämta specifik page
 ```bash
 GET /content-api/page/:slug
 ```
@@ -632,7 +632,7 @@ POST /content-api/graphql
 type Query {
   pages: [Page!]!
   page(slug: String!): Page
-  blocks(pageSlug: String!, type: String): [Block!]!
+  Blocks(pageSlug: String!, type: String): [Blocks!]!
 }
 
 type Page {
@@ -641,10 +641,10 @@ type Page {
   slug: String!
   status: String!
   meta: JSON
-  blocks: [Block!]!
+  Blocks: [Blocks!]!
 }
 
-type Block {
+type Blocks {
   id: ID!
   type: String!
   data: JSON!
@@ -656,7 +656,7 @@ type Block {
 query {
   page(slug: "hem") {
     title
-    blocks {
+    Blocks {
       type
       data
     }
@@ -664,9 +664,9 @@ query {
 }
 ```
 
-### 7.3 Rich Text Format
+### 7.3 Richtextformat
 
-Alla rich text-fält (Text, Two-Column, Accordion, InfoBox) serialiseras som **Tiptap JSON** för maximal portabilitet:
+Alla richtext-fields (text, Two-Column, Accordion, InfoBox) serialiseras that/which **Tiptap JSON** for maximal portabilitet:
 
 ```json
 {
@@ -688,7 +688,7 @@ Alla rich text-fält (Text, Two-Column, Accordion, InfoBox) serialiseras som **T
 
 ### 8.1 Multi-Channel Visualization
 
-Visuellt diagram som demonstrerar innehållsflöde från CMS till olika kanaler:
+Visuellt diagram that/which demonstrerar innehållsflöde from CMS to olika kanaler:
 
 - ✅ **Website** (Live)
 - ✅ **AI Chat** (Live)
@@ -706,16 +706,16 @@ Visuellt diagram som demonstrerar innehållsflöde från CMS till olika kanaler:
 
 ### 8.3 Content Model Overview
 
-Översikt av alla 50+ block-typer med:
-- Antal instanser i publicerade sidor
-- JSON-preview av block-struktur
-- Dokumentation av data-format
+Översikt of alla 50+ Blocks-types with:
+- Antal instanser in Publishede sidor
+- JSON-preview of Blocks-struktur
+- Dokumentation of data-format
 
-### 8.4 Block Data Structures
+### 8.4 Blocks data Structures
 
-#### Konverteringsblock
+#### KonverteringsBlock
 
-**Testimonials Block**
+**Testimonials Blocks**
 ```typescript
 interface TestimonialsBlockData {
   title?: string;
@@ -739,7 +739,7 @@ interface TestimonialsBlockData {
 }
 ```
 
-**Pricing Block**
+**Pricing Blocks**
 ```typescript
 interface PricingBlockData {
   title?: string;
@@ -761,7 +761,7 @@ interface PricingBlockData {
 }
 ```
 
-**Comparison Block**
+**Comparison Blocks**
 ```typescript
 interface ComparisonBlockData {
   title?: string;
@@ -783,13 +783,13 @@ interface ComparisonBlockData {
 }
 ```
 
-**Booking Block (Enhanced)**
+**Booking Blocks (Enhanced)**
 ```typescript
 interface BookingBlockData {
   title?: string;
   description?: string;
   mode: 'embed' | 'form';
-  // Embed mode
+  // embed mode
   provider?: 'calendly' | 'cal' | 'hubspot' | 'custom';
   embedUrl?: string;
   height?: 'sm' | 'md' | 'lg' | 'xl';
@@ -806,15 +806,15 @@ interface BookingBlockData {
     description?: string;
   }[];
   showServiceSelector?: boolean;
-  // Webhook integration
+  // Webhookintegration
   triggerWebhook?: boolean;
   variant?: 'default' | 'card' | 'minimal';
 }
 ```
 
-#### Social Proof Block
+#### Social Proof Blocks
 
-**Team Block**
+**Team Blocks**
 ```typescript
 interface TeamBlockData {
   title?: string;
@@ -839,7 +839,7 @@ interface TeamBlockData {
 }
 ```
 
-**Logos Block**
+**Logos Blocks**
 ```typescript
 interface LogosBlockData {
   title?: string;
@@ -848,7 +848,7 @@ interface LogosBlockData {
     id: string;
     name: string;
     logo: string;
-    url?: string;
+    URL?: string;
   }[];
   columns?: 3 | 4 | 5 | 6;
   layout?: 'grid' | 'carousel' | 'scroll';
@@ -857,7 +857,7 @@ interface LogosBlockData {
 }
 ```
 
-**Features Block**
+**Features Blocks**
 ```typescript
 interface FeaturesBlockData {
   title?: string;
@@ -867,7 +867,7 @@ interface FeaturesBlockData {
     icon: string;
     title: string;
     description: string;
-    url?: string;
+    URL?: string;
   }[];
   columns?: 2 | 3 | 4;
   layout?: 'grid' | 'list';
@@ -876,7 +876,7 @@ interface FeaturesBlockData {
 }
 ```
 
-**Timeline Block**
+**Timeline Blocks**
 ```typescript
 interface TimelineBlockData {
   title?: string;
@@ -899,35 +899,35 @@ interface TimelineBlockData {
 
 ### 9.1 GDPR
 
-| Funktion | Implementation |
+| function | Implementation |
 |----------|----------------|
 | **Audit Logging** | Alla användaråtgärder loggas |
-| **Cookie Consent** | Samtyckesbanner med val |
-| **Data Retention** | Konfigurerbar lagringstid |
-| **Privacy Policy** | Mall för integritetspolicy |
-| **Right to Erasure** | Stöd för radering av data |
+| **Cookie Consent** | Samtyckesbanner with val |
+| **data Retention** | configurable lagringstid |
+| **Privacy Policy** | Mall for integritetspolicy |
+| **Right to Erasure** | support for radering of data |
 
 ### 9.2 WCAG 2.1 AA
 
-- **Semantisk HTML**: Korrekt användning av element
-- **Alt-text**: Obligatorisk för bilder
+- **Semantisk HTML**: Korrekt usage of element
+- **alttext**: Obligatorisk for bilder
 - **Kontrastförhållanden**: Verifierade färgkombinationer
-- **Tangentbordsnavigering**: Full stöd
-- **Focus States**: Synliga fokusindikatorer
+- **Tangentbordsnavigering**: Full support
+- **Focus States**: Synliga Focusindikatorer
 
 ### 9.3 Row Level Security (RLS)
 
 Supabase RLS säkerställer dataåtkomst per användare:
 
 ```sql
--- Endast publicerade sidor för anonyma användare
+-- Endast Publishede sidor for anonyma användare
 CREATE POLICY "Public can view published pages" 
 ON public.pages 
 FOR SELECT 
 TO anon 
 USING (status = 'published');
 
--- Writers kan bara redigera sina utkast
+-- Writers can bara redigera sina Draft
 CREATE POLICY "Writers can edit own drafts"
 ON public.pages
 FOR UPDATE
@@ -939,11 +939,11 @@ USING (
 
 ### 9.4 HIPAA-kompatibilitet
 
-För vårdorganisationer som kräver HIPAA:
+for vårdorganisationer that/which Requires HIPAA:
 
 - **Lokal AI**: Självhostad OpenAI-kompatibel endpoint
-- **Ingen molndata**: Chatt-konversationer stannar lokalt
-- **Audit Trail**: Komplett loggning av åtkomst
+- **Ingen molndata**: chat-konversationer stannar lokalt
+- **Audit Trail**: Komplett loggning of åtkomst
 
 ---
 
@@ -988,65 +988,65 @@ För vårdorganisationer som kräver HIPAA:
 
 #### Core Tables
 
-| Tabell | Beskrivning |
+| Tabell | description |
 |--------|-------------|
-| `pages` | Sidor med content_json, meta_json, status |
-| `page_versions` | Versionshistorik för sidor |
+| `pages` | Sidor with content_json, meta_json, status |
+| `page_versions` | Version history for sidor |
 | `profiles` | Användarprofiler |
 | `user_roles` | Roll-tilldelningar (writer/approver/admin) |
 | `site_settings` | Globala inställningar (key-value) |
-| `audit_logs` | Händelselogg för GDPR |
+| `audit_logs` | Händelselogg for GDPR |
 | `chat_conversations` | AI-chattkonversationer |
-| `chat_messages` | Meddelanden i konversationer |
+| `chat_messages` | messages in konversationer |
 
 ### 10.3 Key Dependencies
 
-| Paket | Användning |
+| Paket | usage |
 |-------|------------|
-| `@tiptap/*` | Rich text editor |
-| `@dnd-kit/*` | Drag and drop |
-| `@tanstack/react-query` | Data fetching & caching |
+| `@tiptap/*` | Richtexteditor |
+| `@dnd-kit/*` | drag anddrop |
+| `@tanstack/react-query` | data fetching & caching |
 | `react-helmet-async` | SEO meta tags |
 | `next-themes` | Dark mode |
 | `lucide-react` | Icons |
-| `sonner` | Toast notifications |
+| `sonner` | toast notifications |
 
 ---
 
 ## 11. Unique Selling Points
 
-### 11.1 Jämfört med Contentful/Sanity
+### 11.1 Jämfört with Contentful/Sanity
 
 | FlowWink | Contentful/Sanity |
 |--------|-------------------|
-| ✅ Inbyggd webbplats | ❌ Kräver separat frontend |
+| ✅ built-in webbplats | ❌ Requires separat frontend |
 | ✅ Svensk lokalisering | ❌ Engelska UI |
-| ✅ Vårdfokuserad | ❌ Generisk |
-| ✅ Ingen utvecklare behövs | ❌ Kräver utvecklare |
+| ✅ VårdFocuserad | ❌ Generisk |
+| ✅ Ingen utvecklare behövs | ❌ Requires utvecklare |
 
-### 11.2 Jämfört med WordPress
+### 11.2 Jämfört with WordPress
 
 | FlowWink | WordPress |
 |--------|-----------|
 | ✅ Modern React-stack | ❌ PHP/Legacy |
-| ✅ Block-baserat native | ❌ Gutenberg addon |
-| ✅ Headless API inbyggt | ❌ REST API begränsat |
-| ✅ GDPR/WCAG inbyggt | ❌ Kräver plugins |
+| ✅ Blocks-based native | ❌ Gutenberg addon |
+| ✅ Headless API built-in | ❌ REST API begränsat |
+| ✅ GDPR/WCAG built-in | ❌ Requires plugins |
 
-### 11.3 Jämfört med Strapi
+### 11.3 Jämfört with Strapi
 
 | FlowWink | Strapi |
 |--------|--------|
 | ✅ Komplett lösning | ❌ Bara backend |
-| ✅ Zero-config | ❌ Kräver hosting |
-| ✅ AI-funktioner | ❌ Ingen AI |
+| ✅ Zero-config | ❌ Requires hosting |
+| ✅ AI-features | ❌ Ingen AI |
 | ✅ Managed | ❌ Self-hosted |
 
 ---
 
 ## 12. Target Users
 
-### 12.1 Primär Målgrupp
+### 12.1 Primär Target audience
 
 **Svenska vårdgivare**
 - Vårdcentraler
@@ -1056,17 +1056,17 @@ För vårdorganisationer som kräver HIPAA:
 
 **Krav**:
 - GDPR-efterlevnad
-- WCAG-tillgänglighet
+- WCAG-availability
 - Svenskt språk
 - Professionell design
 - Enkel administration
 
-### 12.2 Sekundär Målgrupp
+### 12.2 Sekundär Target audience
 
-**Organisationer med liknande behov**
+**Organisationer with liknande behov**
 - Non-profit organisationer
 - Utbildningsinstitutioner
-- Myndigheter och kommuner
+- Myndigheter and kommuner
 - Professionella tjänsteföretag
 
 ---
@@ -1074,7 +1074,7 @@ För vårdorganisationer som kräver HIPAA:
 ## Appendix A: Roadmap
 
 ### Fas 1: MVP ✅ (Complete)
-- Block-baserad sidbyggare (46 block types)
+- Blocks-based page builder (46 Blocks types)
 - Editorial workflow (Draft → Review → Published)
 - Branding & SEO
 - AI Chat & Import
@@ -1083,9 +1083,9 @@ För vårdorganisationer som kräver HIPAA:
 ### Fas 2: Core Modules ✅ (Complete)
 - **Blog Module** — Posts, categories, tags, author profiles, RSS feed
 - **Newsletter Module** — Subscribers, campaigns, open/click tracking, GDPR export
-- **Integration Module** — Webhooks, N8N templates, event system
+- **integration Module** — Webhooks, N8N templates, event system
 
-### Fas 3: Process Automation ✅ (Complete)
+### Fas 3: process Automation ✅ (Complete)
 
 | Module | Priority | Synergy | Status |
 |--------|----------|---------|--------|
@@ -1096,12 +1096,12 @@ För vårdorganisationer som kräver HIPAA:
 
 #### Booking Module Features
 
-**Basic Booking Block**:
+**Basic Booking Blocks**:
 - **Form Mode**: Built-in appointment request form
-- **Embed Mode**: Calendly, Cal.com, HubSpot integration
+- **embed Mode**: Calendly, Cal.com, HubSpotintegration
 - **Webhook Trigger**: Automatic `booking.submitted` event for n8n workflows
 
-**Smart Booking Block** (Native System):
+**Smart Booking Blocks** (Native System):
 - **Service Management**: Create services with name, duration, price, description
 - **Availability Calendar**: Configure available days and time slots per service
 - **Multi-step Flow**: Service selection → Date/time picker → Customer details → Confirmation
@@ -1109,54 +1109,54 @@ För vårdorganisationer som kräver HIPAA:
 - **Real-time Availability**: Shows only bookable time slots
 - **Admin Dashboard**: View, manage, and track all bookings
 - **Status Tracking**: Pending, confirmed, cancelled, completed
-- **Webhook Integration**: Triggers `booking.created` event for automation
+- **Webhookintegration**: Triggers `booking.created` event for automation
 
 #### Conversion Blocks Added
 - **Testimonials**: Customer reviews with star ratings, carousel/grid layouts
 - **Pricing**: Tiered pricing tables with features and CTA buttons
 - **Comparison**: Feature comparison tables for plans/products
 - **Team**: Staff profiles with photos, bio, and social links
-- **Logos**: Client/partner logos with grayscale and scroll variants
+- **Logos**: Client/partner logos with grayscale andscroll variants
 - **Features**: Service/feature grids with icons
-- **Timeline**: Step-by-step process visualization
+- **Timeline**: Step-by-stepprocess visualization
 
 #### Interactive Blocks Added (January 2025)
-- **Badge**: Trust badges and certifications (SOC2, GDPR, ISO)
+- **Badge**: Trustbadges and certifications (SOC2, GDPR, ISO)
 - **Social Proof**: Live counters, ratings, and activity indicators
-- **Notification Toast**: Dynamic activity notifications (purchases, signups)
-- **Floating CTA**: Scroll-triggered call-to-action bars
-- **Marquee**: Scrolling text/icons for announcements
+- **Notificationtoast**: Dynamic activity notifications (purchases, signups)
+- **Floating CTA**: scroll-triggered call-to-action bars
+- **Marquee**: Scrollingtext/icons for announcements
 - **Tabs**: Tabbed content with multiple orientations and variants
-- **Countdown**: Live countdown timers with customizable labels
+- **Countdown**: Live countdown timers with customizablelabels
 - **Progress**: Progress bars and circular indicators
-- **Embed**: Custom iframe/HTML embeds with aspect ratio control
+- **embed**: Custom iframe/HTML embeds with aspect ratio control
 - **Table**: Structured data tables with styling options
 - **Announcement Bar**: Top banner for important messages
 
-#### Block Editor Previews (February 2026)
-**Objective**: Ensure all block editors show rich previews matching public rendering
+#### Blockseditorpreviews (February 2026)
+**Objective**: Ensure all Blocks editors show richpreviews matching public rendering
 
 **Completed Blocks (18)**:
 - FormBlockEditor — Fields, labels, submit button, variant support
-- AccordionBlockEditor — Real Accordion components with expand/collapse
-- TwoColumnBlockEditor — Eyebrow, title with accent text, CTA, second image
-- TextBlockEditor — Eyebrow, title with accent/size in preview
+- AccordionBlockEditor — Real Accordion components withexpand/collapse
+- TwoColumnBlockEditor — eyebrow, title with accenttext, CTA, second image
+- TextBlockEditor — eyebrow, title with accent/size inpreview
 - ChatBlockEditor — Message bubbles, input field, send button
-- ChatLauncherBlockEditor — Sparkles input, quick action pills
-- NewsletterBlockEditor — Email input, subscribe button, variant support
+- ChatLauncherBlockEditor — sparkles input, quick actionpills
+- NewsletterBlockEditor — email input, subscribe button, variant support
 - CountdownBlockEditor — Countdown boxes with numbers, variant support
 - FloatingCTABlockEditor — CTA bar/card/pill with buttons
-- NotificationToastBlockEditor — Toast mockup with icon, title, message
-- FeaturesBlockEditor — Rich preview with icons, hover effects
+- NotificationToastBlockEditor — toastmockup with icon, title, message
+- FeaturesBlockEditor — Richpreview with icons, hovereffects
 - TestimonialsBlockEditor — Quotes, avatar, star ratings
 - PricingBlockEditor — Pricing cards, features, badges
-- TimelineBlockEditor — Step-by-step process with icons
+- TimelineBlockEditor — Step-by-stepprocess with icons
 - SocialProofBlockEditor — Live counters, ratings
 - StatsBlockEditor — Stats with icons and cards
-- TeamBlockEditor — Team members with bio, photo
-- ContactBlockEditor — Contact info, opening hours, 2-column layout
+- TeamBlockEditor — Team members withbio, photo
+- ContactBlockEditor — Contact info, opening hours, 2-columnlayout
 
-**Other Blocks**: Already have rich previews or are DB-dependent (Booking, Cart, Products, KB blocks, etc.)
+**Other Blocks**: Already have richpreviews or are DB-dependent (Booking, Cart, Products, KB Blocks, etc.)
 
 #### Lead Generation Loop (Flowwink Loop)
 
@@ -1169,14 +1169,14 @@ The Flowwink Loop is the unified lead capture and enrichment pipeline that autom
 │                                                                         │
 │   ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐               │
 │   │  Forms   │  │Newsletter│  │ Bookings │  │   Chat   │               │
-│   │  Block   │  │  Block   │  │  Block   │  │  Widget  │               │
+│   │  Blocks   │  │  Blocks   │  │  Blocks   │  │  Widget  │               │
 │   └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘               │
 │        │             │             │             │                      │
 │        └─────────────┴──────┬──────┴─────────────┘                      │
 │                             ▼                                           │
 │   ┌─────────────────────────────────────────────────────────────────┐  │
 │   │                    LEAD CAPTURE ENGINE                          │  │
-│   │  • Auto-create lead if new email                                │  │
+│   │  • Auto-create lead if newemail                                │  │
 │   │  • Auto-match company by domain                                 │  │
 │   │  • Add activity with source + points                            │  │
 │   │  • Trigger enrichment if new company                            │  │
@@ -1201,11 +1201,11 @@ The Flowwink Loop is the unified lead capture and enrichment pipeline that autom
 | Newsletter subscribe | 8 | Medium |
 | Link click | 5 | Medium |
 | Call logged | 5 | Medium |
-| Email open | 3 | Low |
+| email open | 3 | Low |
 | Page visit | 2 | Low |
 
 **Automatic Enrichment**:
-- When a new company is created from email domain matching, the `enrich-company` edge function is triggered automatically
+- When a new company is created fromemail domain matching, the `enrich-company` edge function is triggered automatically
 - Company enrichment uses Firecrawl to scrape the website and AI to extract: industry, size, phone, address, description
 - Lead qualification uses AI to generate summaries and suggest status changes based on activity history
 
@@ -1216,9 +1216,9 @@ The Flowwink Loop is the unified lead capture and enrichment pipeline that autom
 - API rate limiting
 - Dedicated support SLA
 
-### Backlog: Account & Data Management
+### Backlog: Account & data Management
 
-#### Account Deletion with Data Preservation
+#### Account Deletion with data Preservation
 **Priority**: Medium  
 **Complexity**: High  
 **GDPR Relevance**: Critical
@@ -1233,7 +1233,7 @@ The Flowwink Loop is the unified lead capture and enrichment pipeline that autom
 - `newsletters` (created_by)
 - `companies` (created_by)
 - `deals` (created_by)
-- `global_blocks` (created_by, updated_by)
+- `global_Blocks` (created_by, updated_by)
 
 **Proposed Strategies** (to be decided):
 1. **Soft Delete**: Add `deleted_at` and `is_deleted` to profiles. Hide from UI, preserve content with original author. Account restorable by admin.
@@ -1242,7 +1242,7 @@ The Flowwink Loop is the unified lead capture and enrichment pipeline that autom
 4. **Full Cascade Delete**: Delete user AND all their content. Simple but destructive.
 
 **Implementation Considerations**:
-- Add `deleted_at TIMESTAMP` and `is_deleted BOOLEAN DEFAULT false` to profiles table
+- Add `deleted_at TIMESTAMP` and `is_deleted BOOLEAN default false` to profiles table
 - Create edge function for cascading soft-delete/anonymization
 - Update all queries to filter out deleted users
 - Admin UI for viewing/restoring deleted accounts
@@ -1262,7 +1262,7 @@ The Flowwink Loop is the unified lead capture and enrichment pipeline that autom
 | `blog_post.published` | Blog post published | id, slug, title, excerpt, published_at |
 | `blog_post.updated` | Blog post updated | id, slug, title, updated_at |
 | `blog_post.deleted` | Blog post deleted | id, deleted_at |
-| `form.submitted` | Form submitted | form_name, block_id, page_id, submission_data |
+| `form.submitted` | Form submitted | form_name, Block_id, page_id, submission_data |
 | `booking.submitted` | Booking request | service, customer, preferred_date/time, message |
 | `newsletter.subscribed` | Newsletter signup | email, name, subscribed_at |
 | `newsletter.unsubscribed` | Newsletter unsubscribe | email, unsubscribed_at |
@@ -1278,7 +1278,7 @@ The Flowwink Loop is the unified lead capture and enrichment pipeline that autom
 
 ## Appendix C: API Reference
 
-Se separat API-dokumentation för fullständig referens av:
+Se separat API-dokumentation for fullständig referens of:
 - REST endpoints
 - GraphQL schema
 - Authentication
@@ -1302,7 +1302,7 @@ Se separat API-dokumentation för fullständig referens av:
 - HIPAA-compliant messaging
 - Dedicated Appointments page (`/boka`)
 - Service-based booking with 5 pre-configured medical services
-- Webhook integration for n8n calendar sync
+- Webhookintegration for n8n calendar sync
 - Patient resources and FAQ
 - Team profiles for medical staff
 - Emergency contact information
@@ -1312,14 +1312,14 @@ Se separat API-dokumentation för fullständig referens av:
 The Template Manager (`/admin/template-export`) provides comprehensive template portability:
 
 #### Export Formats
-| Format | Use Case | Includes |
+| format | Use Case | Includes |
 |--------|----------|----------|
 | **JSON** | Quick sharing, development | Template structure only |
-| **TypeScript** | Code integration | Typed template code |
+| **TypeScript** | Codeintegration | Typed template code |
 | **ZIP** | Cross-instance transfer | Template + all referenced images |
 
 #### ZIP Export Features
-- **Automatic Image Detection**: Scans all blocks, branding, header/footer for image URLs
+- **Automatic Image Detection**: Scans all Blocks, branding, header/footer for image URLs
 - **CORS-safe Download**: Uses edge function to fetch external images
 - **Local Path Mapping**: Rewrites URLs to relative paths in `images/` folder
 - **Manifest Included**: Contains original URLs for reference
@@ -1331,11 +1331,11 @@ The Template Manager (`/admin/template-export`) provides comprehensive template 
 - **Backward Compatible**: Falls back to JSON-only import if no images
 
 #### Extracted Image Sources
-- Page block content (Hero backgrounds, Gallery images, Team photos)
+- Page Blocks content (Hero backgrounds, Gallery images, Team photos)
 - Blog post featured images
 - Branding settings (Logo, Favicon, OG Image)
 - Header/Footer settings (Logo)
 
 ---
 
-*Dokumentet underhålls av FlowWink-teamet. Senast uppdaterad februari 2026.*
+*Dokumentet underhålls of FlowWink-teamet. Senast uppdaterad februari 2026.*

@@ -77,6 +77,7 @@ Deno.serve(async (req) => {
       .select('*')
       .eq('slug', slug)
       .eq('status', 'published')
+      .is('deleted_at', null)
       .maybeSingle()
 
     if (error) {
