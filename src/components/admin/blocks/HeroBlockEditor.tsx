@@ -7,11 +7,12 @@ import { Slider } from '@/components/ui/slider';
 import { HeroBlockData, HeroLayout, HeroVideoType, HeroOverlayColor, HeroTextAlignment, HeroTextTheme } from '@/types/cms';
 import { ImageUploader } from '../ImageUploader';
 import { AITextAssistant } from '../AITextAssistant';
+import { findBestVideo } from '@/data/hero-video-library';
 import { 
   Image, Video, Palette, Maximize, AlignVerticalJustifyStart, AlignVerticalJustifyCenter, 
   AlignVerticalJustifyEnd, Type, MoveUp, Sparkles, ChevronDown, LayoutTemplate, 
   PanelLeftInactive, PanelRightInactive, AlignCenter, AlignLeft, AlignRight,
-  Youtube, FileVideo, Moon, Sun, Paintbrush
+  Youtube, FileVideo, Moon, Sun, Paintbrush, Shuffle
 } from 'lucide-react';
 
 interface HeroBlockEditorProps {
@@ -235,24 +236,47 @@ export function HeroBlockEditor({ data, onChange, isEditing }: HeroBlockEditorPr
               <Label htmlFor="video-url">
                 {videoType === 'youtube' ? 'YouTube URL' : videoType === 'vimeo' ? 'Vimeo URL' : 'Video URL (MP4)'}
               </Label>
-              <Input
-                id="video-url"
-                value={localData.videoUrl || ''}
-                onChange={(e) => handleChange({ videoUrl: e.target.value })}
-                placeholder={
-                  videoType === 'youtube' 
-                    ? 'https://youtube.com/watch?v=... or video ID' 
-                    : videoType === 'vimeo' 
-                    ? 'https://vimeo.com/... or video ID'
-                    : 'https://example.com/video.mp4'
-                }
-              />
+              <div className="flex gap-2">
+                <Input
+                  id="video-url"
+                  value={localData.videoUrl || ''}
+                  onChange={(e) => handleChange({ videoUrl: e.target.value })}
+                  placeholder={
+                    videoType === 'youtube' 
+                      ? 'https://youtube.com/watch?v=... or video ID' 
+                      : videoType === 'vimeo' 
+                      ? 'https://vimeo.com/... or video ID'
+                      : 'https://example.com/video.mp4'
+                  }
+                  className="flex-1"
+                />
+                {videoType === 'direct' && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    title="Pick a random video based on your title"
+                    onClick={() => {
+                      const context = `${localData.title || ''} ${localData.subtitle || ''}`;
+                      const video = findBestVideo(context, localData.videoUrl);
+                      handleChange({
+                        videoUrl: video.url,
+                        videoPosterUrl: localData.videoPosterUrl || video.posterUrl,
+                        videoType: 'direct',
+                        backgroundType: 'video',
+                      });
+                    }}
+                  >
+                    <Shuffle className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
               <p className="text-xs text-muted-foreground">
                 {videoType === 'youtube' 
                   ? 'Paste a YouTube URL or video ID'
                   : videoType === 'vimeo'
                   ? 'Paste a Vimeo URL or video ID'
-                  : 'Use a direct link to an MP4 file or CDN URL'
+                  : 'Use a direct link to an MP4 file, or click the shuffle button to pick a free stock video'
                 }
               </p>
             </div>
