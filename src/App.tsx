@@ -70,7 +70,7 @@ import CheckoutSuccessPage from "./pages/CheckoutSuccessPage";
 import PricingPage from "./pages/PricingPage";
 import DeveloperToolsPage from "./pages/admin/DeveloperToolsPage";
 import WebinarsPage from "./pages/admin/WebinarsPage";
-import PagesDebugPage from "./pages/admin/PagesDebugPage";
+
 
 const queryClient = new QueryClient();
 
@@ -140,7 +140,7 @@ const router = createBrowserRouter([
   { path: "/admin/template-export", element: <TemplateExportPage /> },
   { path: "/admin/developer-tools", element: <DeveloperToolsPage /> },
   { path: "/admin/webinars", element: <WebinarsPage /> },
-  { path: "/admin/pages-debug", element: <PagesDebugPage /> },
+  
   { path: "/preview/:id", element: <PreviewPage /> },
   { path: "/:slug", element: <PublicPage /> },
 ]);
