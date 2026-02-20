@@ -9,13 +9,14 @@ This document describes each FlowWink module from a user perspective: what it do
 
 ---
 
-## All Modules (17 total)
+## All Modules (18 total)
 
 ### Core Modules (always enabled)
 
 | Module | Description | Status |
 |--------|-------------|--------|
 | Pages | Create and manage web pages with block editor | Core |
+| Media Library | Media assets and file management | Core |
 
 ### Content Modules
 
@@ -32,6 +33,7 @@ This document describes each FlowWink module from a user perspective: what it do
 | Newsletter | Email campaigns and subscriber management via Resend | Disabled |
 | AI Chat | Intelligent chatbot with Context-Augmented Generation | Disabled |
 | Live Support | Human agent support with AI handoff and escalation | Disabled |
+| Webinars | Plan, promote and follow up webinars and online events | Disabled |
 
 ### Data Modules
 
@@ -56,7 +58,6 @@ This document describes each FlowWink module from a user perspective: what it do
 |--------|-------------|---------|
 | Content Hub | REST and GraphQL API for headless CMS | Disabled |
 | Global Elements | Header, footer and other reusable components | Enabled |
-| Media Library | Media assets and file management | Enabled |
 
 ---
 
