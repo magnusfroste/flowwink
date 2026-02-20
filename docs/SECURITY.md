@@ -225,7 +225,30 @@ Even public functions use `verify_jwt = false` because:
 
 3. **No rate limiting on edge functions** — Supabase provides basic rate limiting, but no custom per-function limits are implemented.
 
-## 9. Security Checklist for Contributors
+## 9. Logging & Debugging
+
+### Production-Safe Logging
+
+FlowWink uses a custom logger utility that automatically disables debug logging in production:
+
+```typescript
+import { logger } from '@/lib/logger';
+
+// Only logs in development
+logger.log('Debug info');
+logger.warn('Warning message');
+
+// Always logs (even in production)
+logger.error('Critical error');
+```
+
+**Why this matters:**
+- Debug logs (`log`, `warn`, `debug`) are **silent in production**
+- Error logs (`error`) are always active for critical issues
+- No sensitive data leaks through console output
+- Improved performance (no unnecessary string interpolation in production)
+
+### Security Checklist for Contributors
 
 When creating new edge functions:
 

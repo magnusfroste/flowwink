@@ -102,6 +102,7 @@ Unlike traditional CMS (website only) or pure headless solutions (API only, requ
 - **GDPR** — Audit logging, cookie consent, privacy by design
 - **WCAG 2.1 AA** — Accessibility built into every component
 - **Row Level Security** — Powered by Supabase RLS
+- **Security Hardening** — Regular dependency audits, production-safe logging
 
 ### Headless API
 - **REST API** — `/content-api/pages`, `/content-api/page/:slug`

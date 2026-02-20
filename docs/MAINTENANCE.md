@@ -222,6 +222,20 @@ If using Cloudflare:
 - Update Supabase CLI regularly
 - Monitor Supabase security advisories
 - Update hosting platform security patches
+- Run `npm audit fix` regularly to address vulnerabilities
+- Review and update dependencies quarterly
+
+### Dependency Management
+```bash
+# Check for vulnerabilities
+npm audit
+
+# Fix automatically (non-breaking)
+npm audit fix
+
+# Review breaking changes before force update
+npm audit fix --force
+```
 
 ### Security Scanning
 ```bash
