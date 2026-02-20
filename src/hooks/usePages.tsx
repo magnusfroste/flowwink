@@ -50,6 +50,15 @@ export function usePages(status?: PageStatus) {
       
       const { data, error } = await query;
       
+      // DEBUG: Temporary logging to diagnose 0 pages issue
+      console.warn('[usePages] DEBUG:', { 
+        rowCount: data?.length, 
+        error: error?.message, 
+        status,
+        firstPageSlug: data?.[0]?.slug,
+        allSlugs: data?.map((p: any) => p.slug),
+      });
+      
       if (error) throw error;
       
       return (data || []).map(parsePage);
