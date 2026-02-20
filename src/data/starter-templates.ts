@@ -3159,7 +3159,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
     aiChatPosition: 'Embedded assistant for product questions',
     blogPosts: flowwinkBlogPosts,
     kbCategories: flowwinkKbCategories,
-    requiredModules: ['blog', 'knowledgeBase', 'chat', 'newsletter', 'leads', 'forms', 'products', 'orders', 'bookings', 'analytics'],
+    requiredModules: ['blog', 'knowledgeBase', 'chat', 'liveSupport', 'newsletter', 'leads', 'deals', 'companies', 'forms', 'products', 'orders', 'bookings', 'analytics', 'contentApi', 'webinars'],
     pages: [
       // ===== HOME PAGE =====
       {
@@ -3350,6 +3350,36 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
                   icon: 'Webhook',
                   title: 'Webhooks & API',
                   description: 'Connect to any service with webhooks. N8N templates included for common automations.',
+                },
+                {
+                  id: 'mod-livesupport',
+                  icon: 'Headphones',
+                  title: 'Live Support',
+                  description: 'Human agent support with AI-to-human handoff, sentiment detection, and escalation rules.',
+                },
+                {
+                  id: 'mod-deals',
+                  icon: 'Briefcase',
+                  title: 'Deal Pipeline',
+                  description: 'Kanban-style sales pipeline. Track deals from lead to close with value forecasting.',
+                },
+                {
+                  id: 'mod-companies',
+                  icon: 'Building2',
+                  title: 'Companies',
+                  description: 'Organization management with AI enrichment. Auto-link contacts via email domain.',
+                },
+                {
+                  id: 'mod-contentapi',
+                  icon: 'Database',
+                  title: 'Content Hub API',
+                  description: 'Full REST API for headless delivery. Power any frontend with structured content.',
+                },
+                {
+                  id: 'mod-webinars',
+                  icon: 'Video',
+                  title: 'Webinars',
+                  description: 'Plan, promote, and follow up webinars and online events with registration and reminders.',
                 },
               ],
               columns: 4,
@@ -3921,6 +3951,25 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
               placeholder: 'Search for help articles...',
               showResults: true,
               maxResults: 5,
+            },
+          },
+          // Separator - Webinars
+          {
+            id: 'sep-webinar-demo',
+            type: 'separator',
+            data: {
+              variant: 'text',
+              text: 'Webinars Module',
+              icon: 'Video',
+            },
+          },
+          // WEBINAR - Live webinar demo
+          {
+            id: 'webinar-demo-live',
+            type: 'webinar',
+            data: {
+              title: 'Upcoming Webinars',
+              subtitle: 'Register for live sessions. The Webinars module handles registration, reminders, and follow-up automatically.',
             },
           },
           // Separator - Forms & Newsletter
@@ -5532,6 +5581,132 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
                 content: [
                   { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: '📌 Floating CTA Block' }] },
                   { type: 'paragraph', content: [{ type: 'text', text: 'A call-to-action that appears when users scroll down. Sticky bars, floating buttons, or slide-in panels. Configurable trigger points and positions. This block only appears on scroll, so it cannot be fully demonstrated in a static showcase.' }] },
+                ],
+              },
+            },
+          },
+          // Separator - Knowledge Base Blocks
+          {
+            id: 'sep-kb-blocks',
+            type: 'separator',
+            data: {
+              variant: 'text',
+              text: 'Knowledge Base Blocks',
+              icon: 'BookOpen',
+            },
+          },
+          // KB Hub Block
+          {
+            id: 'demo-kb-hub',
+            type: 'kb-hub',
+            data: {
+              title: 'KB Hub Block',
+              subtitle: 'Full knowledge base landing page with categories and search. Pulls content from your KB module.',
+            },
+          },
+          // KB Featured Block
+          {
+            id: 'demo-kb-featured',
+            type: 'kb-featured',
+            data: {
+              title: 'KB Featured Block',
+              subtitle: 'Highlight your most important help articles. Great for homepage or support pages.',
+              maxArticles: 3,
+            },
+          },
+          // KB Accordion Block
+          {
+            id: 'demo-kb-accordion',
+            type: 'kb-accordion',
+            data: {
+              title: 'KB Accordion Block',
+              subtitle: 'Display KB articles as expandable FAQ items. Perfect for inline help sections.',
+            },
+          },
+          // KB Search Block (already on Demo page, but show here too)
+          {
+            id: 'demo-kb-search',
+            type: 'kb-search',
+            data: {
+              title: 'KB Search Block',
+              subtitle: 'Standalone search bar for your knowledge base. Add it anywhere on your site.',
+              placeholder: 'Search help articles...',
+              showResults: true,
+              maxResults: 3,
+            },
+          },
+          // Separator - More Blocks
+          {
+            id: 'sep-more-blocks',
+            type: 'separator',
+            data: {
+              variant: 'text',
+              text: 'More Block Types',
+              icon: 'LayoutGrid',
+            },
+          },
+          // Chat Launcher Block
+          {
+            id: 'demo-chat-launcher',
+            type: 'chat-launcher',
+            data: {
+              title: 'Chat Launcher Block',
+              subtitle: 'ChatGPT-style launcher that routes visitors to the /chat page. Shows quick action buttons and a search-like input.',
+              placeholder: 'Ask anything about FlowWink...',
+              showQuickActions: true,
+              quickActionCount: 4,
+              variant: 'card',
+            },
+          },
+          // Article Grid Block
+          {
+            id: 'demo-article-grid',
+            type: 'article-grid',
+            data: {
+              title: 'Article Grid Block',
+              subtitle: 'Display blog posts or articles in a responsive card grid. Pulls from your blog module automatically.',
+              columns: 3,
+              maxArticles: 3,
+              showExcerpt: true,
+              showDate: true,
+              showAuthor: true,
+            },
+          },
+          // Webinar Block
+          {
+            id: 'demo-webinar',
+            type: 'webinar',
+            data: {
+              title: 'Webinar Block',
+              subtitle: 'Promote upcoming webinars and online events with registration forms. Integrates with the Webinars module.',
+            },
+          },
+          // Popup Block (Info Box since it requires interaction)
+          {
+            id: 'info-popup',
+            type: 'info-box',
+            data: {
+              variant: 'highlight',
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: '🎯 Popup Block' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Trigger popups based on scroll position, time on page, or exit intent. Configure content, timing, and display rules. Perfect for lead capture, announcements, and promotions. This block triggers dynamically and cannot be fully demonstrated in a static showcase.' }] },
+                ],
+              },
+            },
+          },
+          // Lottie Block (Info Box since it requires external animation file)
+          {
+            id: 'info-lottie',
+            type: 'info-box',
+            data: {
+              variant: 'info',
+              content: {
+                type: 'doc',
+                content: [
+                  { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: '✨ Lottie Animation Block' }] },
+                  { type: 'paragraph', content: [{ type: 'text', text: 'Embed lightweight vector animations from LottieFiles. Supports autoplay, loop, hover triggers, and speed control. Perfect for hero sections, loading states, and micro-interactions. Just paste a Lottie JSON URL to get started.' }] },
                 ],
               },
             },
