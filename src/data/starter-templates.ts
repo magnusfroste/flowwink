@@ -962,6 +962,56 @@ const trustcorpPages: TemplatePage[] = [
           showIcons: true,
         },
       },
+      // BADGE - Enterprise certifications
+      {
+        id: 'badge-enterprise',
+        type: 'badge',
+        data: {
+          title: 'Certifications & Compliance',
+          badges: [
+            { id: 'b1', title: 'SOC 2 Type II', icon: 'shield' },
+            { id: 'b2', title: 'ISO 27001', icon: 'check' },
+            { id: 'b3', title: 'GDPR Compliant', icon: 'check' },
+            { id: 'b4', title: 'HIPAA Ready', icon: 'shield' },
+          ],
+          variant: 'default',
+          columns: 4,
+          size: 'md',
+          showTitles: true,
+          grayscale: false,
+        },
+      },
+      // TABS - Solutions by industry
+      {
+        id: 'tabs-industries',
+        type: 'tabs',
+        data: {
+          title: 'Solutions by Industry',
+          subtitle: 'Tailored enterprise solutions for every sector',
+          orientation: 'horizontal',
+          variant: 'boxed',
+          tabs: [
+            {
+              id: 'tab-finance',
+              title: 'Financial Services',
+              icon: 'Landmark',
+              content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Secure, compliant solutions for banks, insurance, and investment firms. SOC 2 and PCI DSS certified with real-time fraud detection and regulatory reporting.' }] }] },
+            },
+            {
+              id: 'tab-healthcare',
+              title: 'Healthcare',
+              icon: 'Heart',
+              content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'HIPAA-compliant platforms for hospitals, clinics, and pharma. Patient data privacy, clinical workflow automation, and interoperability built in.' }] }] },
+            },
+            {
+              id: 'tab-manufacturing',
+              title: 'Manufacturing',
+              icon: 'Factory',
+              content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'IoT-connected supply chain management, predictive maintenance, and quality control. Reduce downtime by 40% with AI-powered operations.' }] }] },
+            },
+          ],
+        },
+      },
       {
         id: 'cta-1',
         type: 'cta',
@@ -2466,6 +2516,19 @@ const momentumPages: TemplatePage[] = [
       titleAlignment: 'center',
     },
     blocks: [
+      // ANNOUNCEMENT BAR - Launch highlight
+      {
+        id: 'announcement-launch',
+        type: 'announcement-bar',
+        data: {
+          message: '🚀 Now in public beta — Start building free today',
+          linkText: 'Get Started',
+          linkUrl: '#pricing',
+          variant: 'gradient',
+          dismissable: true,
+          sticky: false,
+        },
+      },
       // Section 1: Hero (viewport height, video background)
       {
         id: 'hero-1',
@@ -2578,6 +2641,23 @@ const momentumPages: TemplatePage[] = [
           imageSrc: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=800',
           imageAlt: 'Server infrastructure',
           imagePosition: 'left',
+        },
+      },
+      // SOCIAL PROOF - Live developer metrics
+      {
+        id: 'social-proof-dev',
+        type: 'social-proof',
+        data: {
+          title: 'Developer Activity',
+          items: [
+            { id: 'sp1', type: 'counter', icon: 'users', label: 'Active Developers', value: '50K', suffix: '+' },
+            { id: 'sp2', type: 'rating', icon: 'star', label: 'Developer Rating', value: '4.9', maxRating: 5, rating: 4.9 },
+            { id: 'sp3', type: 'activity', icon: 'eye', label: 'Deploys Today', text: '12,847 deploys in the last 24h' },
+          ],
+          variant: 'minimal',
+          layout: 'horizontal',
+          size: 'md',
+          animated: true,
         },
       },
       // Section 6: Quote (testimonial)
@@ -7312,6 +7392,49 @@ const hybridHelpPages: TemplatePage[] = [
       titleAlignment: 'center',
     },
     blocks: [
+      // ANNOUNCEMENT BAR - Service status / updates
+      {
+        id: 'announcement-status',
+        type: 'announcement-bar',
+        data: {
+          message: '✅ All systems operational — Check our new AI-powered search',
+          linkText: 'Status Page',
+          linkUrl: '/status',
+          variant: 'default',
+          dismissable: true,
+          sticky: false,
+        },
+      },
+      // TABS - Help topics quick nav
+      {
+        id: 'tabs-help-topics',
+        type: 'tabs',
+        data: {
+          title: '',
+          orientation: 'horizontal',
+          variant: 'pills',
+          tabs: [
+            {
+              id: 'tab-getting-started',
+              title: 'Getting Started',
+              icon: 'Rocket',
+              content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'New here? Start with our quick setup guide, connect your account, and explore the platform in under 5 minutes.' }] }] },
+            },
+            {
+              id: 'tab-billing',
+              title: 'Billing & Plans',
+              icon: 'CreditCard',
+              content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Manage your subscription, update payment methods, view invoices, and compare plan features.' }] }] },
+            },
+            {
+              id: 'tab-troubleshooting',
+              title: 'Troubleshooting',
+              icon: 'Wrench',
+              content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Having issues? Check common solutions for login problems, performance issues, and integration errors.' }] }] },
+            },
+          ],
+        },
+      },
       {
         id: 'kb-search-1',
         type: 'kb-search',
@@ -7548,6 +7671,19 @@ const serviceProPages: TemplatePage[] = [
       titleAlignment: 'center',
     },
     blocks: [
+      // ANNOUNCEMENT BAR - Booking promotion
+      {
+        id: 'announcement-booking',
+        type: 'announcement-bar',
+        data: {
+          message: '📅 New clients: 20% off your first appointment — Book online today',
+          linkText: 'Book Now',
+          linkUrl: '/book',
+          variant: 'gradient',
+          dismissable: true,
+          sticky: false,
+        },
+      },
       {
         id: 'hero-1',
         type: 'hero',
@@ -7689,6 +7825,42 @@ const serviceProPages: TemplatePage[] = [
           showLabels: true,
           animated: true,
           animationDuration: 2000,
+        },
+      },
+      // BADGE - Trust & certification badges
+      {
+        id: 'badge-service',
+        type: 'badge',
+        data: {
+          title: 'Certified & Trusted',
+          badges: [
+            { id: 'b1', title: 'Licensed', icon: 'check' },
+            { id: 'b2', title: 'Insured', icon: 'shield' },
+            { id: 'b3', title: '5-Star Rated', icon: 'star' },
+            { id: 'b4', title: 'Award Winner', icon: 'award' },
+          ],
+          variant: 'minimal',
+          columns: 4,
+          size: 'md',
+          showTitles: true,
+          grayscale: false,
+        },
+      },
+      // SOCIAL PROOF - Live activity
+      {
+        id: 'social-proof-service',
+        type: 'social-proof',
+        data: {
+          title: 'Live Client Activity',
+          items: [
+            { id: 'sp1', type: 'counter', icon: 'users', label: 'Clients This Month', value: '340', suffix: '+' },
+            { id: 'sp2', type: 'rating', icon: 'star', label: 'Average Rating', value: '4.9', maxRating: 5, rating: 4.9 },
+            { id: 'sp3', type: 'activity', icon: 'eye', label: 'Booking Now', text: '23 people booking right now' },
+          ],
+          variant: 'cards',
+          layout: 'horizontal',
+          size: 'md',
+          animated: true,
         },
       },
       // CHAT LAUNCHER - Quick AI assistance
@@ -8134,6 +8306,19 @@ const digitalShopPages: TemplatePage[] = [
       titleAlignment: 'center',
     },
     blocks: [
+      // ANNOUNCEMENT BAR - Sale / promo
+      {
+        id: 'announcement-sale',
+        type: 'announcement-bar',
+        data: {
+          message: '🔥 Summer Sale: 30% off all products — Use code SUMMER30',
+          linkText: 'Shop Now',
+          linkUrl: '#products',
+          variant: 'gradient',
+          dismissable: true,
+          sticky: false,
+        },
+      },
       // HERO - Shop hero
       {
         id: 'hero-shop',
@@ -8265,6 +8450,61 @@ const digitalShopPages: TemplatePage[] = [
           showRating: true,
           showAvatar: false,
           variant: 'cards',
+        },
+      },
+      // BADGE - Payment trust seals
+      {
+        id: 'badge-payment',
+        type: 'badge',
+        data: {
+          title: 'Secure & Trusted',
+          badges: [
+            { id: 'b1', title: 'Stripe Verified', icon: 'shield' },
+            { id: 'b2', title: 'SSL Encrypted', icon: 'check' },
+            { id: 'b3', title: '30-Day Guarantee', icon: 'award' },
+            { id: 'b4', title: 'Instant Delivery', icon: 'check' },
+          ],
+          variant: 'minimal',
+          columns: 4,
+          size: 'sm',
+          showTitles: true,
+          grayscale: false,
+        },
+      },
+      // SOCIAL PROOF - Purchase activity
+      {
+        id: 'social-proof-shop',
+        type: 'social-proof',
+        data: {
+          title: '',
+          items: [
+            { id: 'sp1', type: 'counter', icon: 'users', label: 'Happy Customers', value: '10K', suffix: '+' },
+            { id: 'sp2', type: 'rating', icon: 'star', label: 'Average Rating', value: '4.9', maxRating: 5, rating: 4.9 },
+            { id: 'sp3', type: 'activity', icon: 'eye', label: 'Recently Purchased', text: '47 purchases in the last hour' },
+          ],
+          variant: 'minimal',
+          layout: 'horizontal',
+          size: 'sm',
+          animated: true,
+        },
+      },
+      // NOTIFICATION TOAST - Purchase notifications
+      {
+        id: 'notification-purchases',
+        type: 'notification-toast',
+        data: {
+          notifications: [
+            { id: 'n1', type: 'purchase', title: 'New Purchase', message: 'Sarah from NYC bought Business Template Pack' },
+            { id: 'n2', type: 'purchase', title: 'New Purchase', message: 'James from London bought UI Design Kit Pro' },
+            { id: 'n3', type: 'purchase', title: 'New Purchase', message: 'Emma from Sydney bought Marketing Mastery Course' },
+            { id: 'n4', type: 'signup', title: 'New Member', message: 'A new Pro Member just joined from Berlin' },
+          ],
+          variant: 'default',
+          position: 'bottom-left',
+          displayDuration: 4000,
+          delayBetween: 10000,
+          initialDelay: 5000,
+          animationType: 'slide',
         },
       },
       // FAQ - Common questions
