@@ -7283,9 +7283,15 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
     chatSettings: {
       enabled: true,
       aiProvider: 'openai',
+      n8nWebhookUrl: '',
       widgetEnabled: true,
       widgetPosition: 'bottom-right',
+      widgetStyle: 'pill',
+      widgetSize: 'md',
+      widgetMaxPrompts: 3,
+      widgetShowOnMobile: true,
       blockEnabled: true,
+      landingPageEnabled: true,
       welcomeMessage: 'Hi! I can answer questions about FlowWink. What would you like to know?',
       systemPrompt: 'You are the FlowWink assistant. Help users understand the product, features, and pricing. Be helpful, concise, and friendly. FlowWink is a complete CMS with both traditional website features and headless API capabilities.',
       suggestedPrompts: [
@@ -7294,6 +7300,12 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
         'Can I self-host FlowWink?',
         'Does it support headless API?',
       ],
+      // Enable content-aware AI - key USP
+      includeContentAsContext: true,
+      contentContextMaxTokens: 50000,
+      includedPageSlugs: ['*'],  // Include ALL pages
+      includeKbArticles: true,   // Include entire Knowledge Base
+      showContextIndicator: true, // Show "X pages • Y articles" badge
     },
     headerSettings: {
       variant: 'sticky',
