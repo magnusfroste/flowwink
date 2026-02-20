@@ -518,6 +518,89 @@ export const companyModuleOutputSchema = z.object({
 export type CompanyModuleOutput = z.infer<typeof companyModuleOutputSchema>;
 
 // =============================================================================
+// Forms Module
+// =============================================================================
+
+export const formSubmissionModuleInputSchema = z.object({
+  form_name: z.string().min(1).max(200),
+  block_id: z.string().min(1),
+  data: z.record(z.unknown()),
+  page_id: z.string().uuid().optional(),
+  meta: moduleMetaSchema.optional(),
+});
+
+export type FormSubmissionModuleInput = z.infer<typeof formSubmissionModuleInputSchema>;
+
+export const formSubmissionModuleOutputSchema = z.object({
+  success: z.boolean(),
+  id: z.string().uuid().optional(),
+  lead_created: z.boolean().optional(),
+  error: z.string().optional(),
+});
+
+export type FormSubmissionModuleOutput = z.infer<typeof formSubmissionModuleOutputSchema>;
+
+// =============================================================================
+// Orders Module
+// =============================================================================
+
+export const orderModuleInputSchema = z.object({
+  customer_email: z.string().email(),
+  customer_name: z.string().optional(),
+  items: z.array(z.object({
+    product_id: z.string().uuid().optional(),
+    product_name: z.string().min(1),
+    quantity: z.number().min(1).default(1),
+    price_cents: z.number().min(0),
+  })).min(1),
+  currency: z.string().length(3).default('SEK'),
+  stripe_checkout_id: z.string().optional(),
+  stripe_payment_intent: z.string().optional(),
+  meta: moduleMetaSchema.optional(),
+});
+
+export type OrderModuleInput = z.infer<typeof orderModuleInputSchema>;
+
+export const orderModuleOutputSchema = z.object({
+  success: z.boolean(),
+  id: z.string().uuid().optional(),
+  total_cents: z.number().optional(),
+  status: z.string().optional(),
+  error: z.string().optional(),
+});
+
+export type OrderModuleOutput = z.infer<typeof orderModuleOutputSchema>;
+
+// =============================================================================
+// Webinars Module
+// =============================================================================
+
+export const webinarModuleInputSchema = z.object({
+  title: z.string().min(1).max(200),
+  description: z.string().optional(),
+  agenda: z.string().optional(),
+  date: z.string().datetime(),
+  duration_minutes: z.number().min(5).default(60),
+  platform: z.enum(['google_meet', 'zoom', 'teams', 'other']).default('google_meet'),
+  meeting_url: z.string().url().optional(),
+  cover_image: z.string().url().optional().or(z.literal('')),
+  max_attendees: z.number().optional(),
+  status: z.enum(['draft', 'published', 'live', 'completed', 'cancelled']).default('draft'),
+  meta: moduleMetaSchema.optional(),
+});
+
+export type WebinarModuleInput = z.infer<typeof webinarModuleInputSchema>;
+
+export const webinarModuleOutputSchema = z.object({
+  success: z.boolean(),
+  id: z.string().uuid().optional(),
+  status: z.string().optional(),
+  error: z.string().optional(),
+});
+
+export type WebinarModuleOutput = z.infer<typeof webinarModuleOutputSchema>;
+
+// =============================================================================
 // Generic Module Error
 // =============================================================================
 

@@ -60,6 +60,15 @@ Each module declares its capabilities:
 | CRM | `crm` | 1.0.0 | `content:receive`, `data:write`, `webhook:trigger` |
 | Pages | `pages` | 1.0.0 | `content:receive`, `data:write`, `webhook:trigger` |
 | Knowledge Base | `kb` | 1.0.0 | `content:receive`, `data:write` |
+| Products | `products` | 1.0.0 | `content:receive`, `data:write`, `webhook:trigger` |
+| Booking | `booking` | 1.0.0 | `content:receive`, `data:write`, `webhook:trigger` |
+| Global Blocks | `global-blocks` | 1.0.0 | `content:receive`, `data:write` |
+| Media Library | `media` | 1.0.0 | `data:read`, `data:write` |
+| Deals | `deals` | 1.0.0 | `content:receive`, `data:write`, `webhook:trigger` |
+| Companies | `companies` | 1.0.0 | `content:receive`, `data:write` |
+| Forms | `forms` | 1.0.0 | `content:receive`, `data:write`, `webhook:trigger` |
+| Orders | `orders` | 1.0.0 | `content:receive`, `data:write`, `webhook:trigger` |
+| Webinars | `webinars` | 1.0.0 | `content:receive`, `data:write` |
 
 ---
 
