@@ -3205,6 +3205,19 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
               secondaryButton: { text: 'Self-Host Free', url: 'https://github.com/flowwink/flowwink' },
             },
           },
+          // AI CHAT - Primary USP, right after hero
+          {
+            id: 'chat-hero-usp',
+            type: 'chat-launcher',
+            data: {
+              title: 'AI That Actually Knows Your Content',
+              subtitle: 'Unlike generic chatbots, our AI reads every page, blog post, and KB article on your site. Try it — ask anything about FlowWink.',
+              placeholder: 'Ask about features, pricing, self-hosting...',
+              showQuickActions: true,
+              quickActionCount: 4,
+              variant: 'hero-integrated',
+            },
+          },
           // STATS - Key numbers upfront
           {
             id: 'stats-hero',
@@ -3280,44 +3293,6 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
               layout: 'grid',
               variant: 'centered',
               iconStyle: 'circle',
-            },
-          },
-          // CHAT INTRO + DEMO
-          {
-            id: 'chat-intro',
-            type: 'text',
-            data: {
-              content: {
-                type: 'doc',
-                content: [
-                  {
-                    type: 'heading',
-                    attrs: { level: 2 },
-                    content: [{ type: 'text', text: 'AI That Actually Knows Your Content' }]
-                  },
-                  {
-                    type: 'paragraph',
-                    content: [
-                      { type: 'text', text: 'Unlike generic chat widgets, our AI assistant reads your ' },
-                      { type: 'text', marks: [{ type: 'bold' }], text: 'actual content' },
-                      { type: 'text', text: ' – every page, blog post, and knowledge base article. Try it now.' },
-                    ]
-                  },
-                ],
-              },
-              alignment: 'center',
-            },
-          },
-          {
-            id: 'chat-hero',
-            type: 'chat-launcher',
-            data: {
-              title: 'Ask Anything About FlowWink',
-              subtitle: 'Get instant answers from our AI',
-              placeholder: 'What would you like to know?',
-              showQuickActions: true,
-              quickActionCount: 4,
-              variant: 'card',
             },
           },
           // FEATURES - Complete CMS modules
@@ -3709,17 +3684,32 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
               showDates: true,
             },
           },
-          // CHAT LAUNCHER - AI entry point on Home
+          // NEWSLETTER - Showcase newsletter module
           {
-            id: 'chat-launcher-home',
-            type: 'chat-launcher',
+            id: 'newsletter-home',
+            type: 'newsletter',
             data: {
-              title: 'What Can We Help You With?',
-              subtitle: 'Our AI knows everything about FlowWink',
-              placeholder: 'Ask about features, pricing, or self-hosting...',
-              showQuickActions: true,
-              quickActionCount: 4,
-              variant: 'hero-integrated',
+              title: 'Stay in the Loop',
+              subtitle: 'Get product updates, new features, and self-hosting tips. No spam, unsubscribe anytime.',
+              buttonText: 'Subscribe',
+              placeholder: 'your@email.com',
+              variant: 'card',
+              showGdprConsent: true,
+              consentText: 'I agree to receive emails. Unsubscribe anytime.',
+            },
+          },
+          // BOOKING - Showcase booking module
+          {
+            id: 'booking-home',
+            type: 'booking',
+            data: {
+              title: 'Book a Live Demo',
+              subtitle: 'See FlowWink in action with a personalized walkthrough.',
+              services: [
+                { id: 'demo-30', name: '30-min Product Demo', duration: 30, description: 'Quick overview of all features and modules.' },
+                { id: 'demo-60', name: '60-min Deep Dive', duration: 60, description: 'Full walkthrough including self-hosting setup and API integration.' },
+              ],
+              variant: 'card',
             },
           },
           // ACCORDION - Platform FAQ for AEO
