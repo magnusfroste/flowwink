@@ -15,7 +15,7 @@ import { StarterTemplateSelector } from '@/components/admin/StarterTemplateSelec
 import { TemplatePreviewDialog, TemplateOverwriteOptions } from '@/components/admin/templates/TemplatePreviewDialog';
 import { StarterTemplate } from '@/data/starter-templates';
 import { validateTemplate, ValidationResult } from '@/lib/template-validator';
-import { useCreatePage, usePages, useDeletePage } from '@/hooks/usePages';
+import { useCreatePage, usePages, useDeletePage, usePermanentDeletePage, useDeletedPages } from '@/hooks/usePages';
 import { useUpdateBrandingSettings, useUpdateChatSettings, useUpdateGeneralSettings, useUpdateSeoSettings, useUpdateCookieBannerSettings, useBrandingSettings, useChatSettings, useSeoSettings, useCookieBannerSettings } from '@/hooks/useSiteSettings';
 import { useUpdateFooterBlock, useFooterBlock } from '@/hooks/useGlobalBlocks';
 import { useBlogPosts, useCreateBlogPost, useDeleteBlogPost } from '@/hooks/useBlogPosts';
@@ -62,6 +62,7 @@ export default function NewSitePage() {
   
   const navigate = useNavigate();
   const { data: existingPages } = usePages();
+  const { data: deletedPages } = useDeletedPages();
   const { data: existingBlogPostsData } = useBlogPosts();
   const existingBlogPosts = existingBlogPostsData?.posts || [];
   const { data: existingKbCategories } = useKbCategories();
@@ -79,6 +80,7 @@ export default function NewSitePage() {
   
   const createPage = useCreatePage();
   const deletePage = useDeletePage();
+  const permanentDeletePage = usePermanentDeletePage();
   const deleteBlogPost = useDeleteBlogPost();
   const deleteKbCategory = useDeleteKbCategory();
   const deleteProduct = useDeleteProduct();
@@ -291,7 +293,7 @@ export default function NewSitePage() {
     const pageIds: string[] = [];
 
     try {
-      // Step 0a: Delete existing pages if option is selected
+      // Step 0a: Permanently delete existing pages if option is selected (to avoid slug conflicts)
       const shouldClearPages = opts.pages && existingPages && existingPages.length > 0;
       if (shouldClearPages) {
         setProgress({ currentPage: 0, totalPages: existingPages!.length, currentStep: 'Clearing existing pages...' });
@@ -302,7 +304,23 @@ export default function NewSitePage() {
             totalPages: existingPages!.length, 
             currentStep: `Removing page "${existingPages![i].title}"...` 
           });
-          await deletePage.mutateAsync(existingPages![i].id);
+          await permanentDeletePage.mutateAsync(existingPages![i].id);
+        }
+      }
+
+      // Step 0a2: Also permanently delete any soft-deleted (trashed) pages whose slugs conflict with template pages
+      if (opts.pages && deletedPages && deletedPages.length > 0 && selectedTemplate) {
+        const templateSlugs = new Set(selectedTemplate.pages.map(p => p.slug));
+        const conflicting = deletedPages.filter(p => templateSlugs.has(p.slug));
+        if (conflicting.length > 0) {
+          for (const page of conflicting) {
+            setProgress({ 
+              currentPage: 0, 
+              totalPages: conflicting.length, 
+              currentStep: `Cleaning up trashed page "${page.title}"...` 
+            });
+            await permanentDeletePage.mutateAsync(page.id);
+          }
         }
       }
 
