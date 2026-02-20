@@ -1,53 +1,93 @@
 
 
-# Plan: Template AEO + Chat Launcher Enhancement
+# Fix: Pages Not Visible in Docker/Easypanel Admin
 
-**STATUS: ✅ IMPLEMENTED**
+## Problem Analysis
 
-## Bakgrund
+The pages list in `/admin/pages` appears empty after Docker deployment, even though template generation succeeds and pages exist in the database. Pages created manually also don't appear in admin but DO show on the public site.
 
-Templates ska vara **produktionsfärdiga** med:
+### Root Cause
 
-1. **Chat Launcher** - En av plattformens USPs där CMS-innehållet blir AI-kontext
-2. **Accordion/FAQ** - Kritiskt för AEO (Answer Engine Optimization)
-3. **Kompletta meta-descriptions** på alla sidor
+This is an **authentication timing issue**, not a nginx/JWT proxy problem. The Supabase JS client communicates directly with the Supabase API -- nginx never handles those requests.
 
-## Implementerade förändringar
+When the app loads in a Docker container (different domain, cold start), the Supabase auth session takes longer to restore from localStorage. During this window, queries execute as `anon` instead of `authenticated`. The RLS policy for `anon` only returns published pages, making drafts invisible.
 
-| Template | Chat Launcher | Accordion FAQ | Status |
-|----------|---------------|---------------|--------|
-| LaunchPad | ✅ Home | ✅ 5 Q&A | Klar |
-| TrustCorp | ✅ Home | ✅ 5 enterprise Q&A | Klar |
-| SecureHealth | ✅ Home | ✅ 5 patient Q&A | Klar |
-| Flowwink | ✅ Home + Demo | ✅ 5 platform Q&A | Klar |
-| ServicePro | ✅ Home | ✅ 5 service Q&A | Klar |
-| Momentum | ✅ Home | ✅ (befintlig FAQ) | Klar |
-| Agency | ✅ Home | ✅ 5 agency Q&A | Klar |
+The existing `usePages` fix (`enabled: !authLoading`) is correct but incomplete -- several other hooks lack the same guard. Additionally, `docker-compose.yml` has configuration bugs.
 
-## Block-konfiguration per Template
+## Plan
 
-Varje template fick anpassad `chat-launcher` med:
-- **LaunchPad**: "Have a Question?" - card variant
-- **TrustCorp**: "Have Questions?" - enterprise focus
-- **SecureHealth**: "Questions? Ask Our Private AI" - HIPAA-compliant messaging
-- **Flowwink**: "What Can We Help You With?" - hero-integrated variant
-- **ServicePro**: "Quick Questions? Ask Our AI" - card variant
-- **Momentum**: "Quick Question?" - minimal variant
-- **Agency**: "Questions About FlowWink for Agencies?" - card variant
+### 1. Fix docker-compose.yml configuration
 
-## FAQ-struktur per Template
+Move Vite variables from runtime `environment` to build-time `args` (Vite bakes env vars at build time). Fix variable naming to match what the Dockerfile expects.
 
-Varje Home-sida har nu 4-5 FAQ-items som täcker:
-1. Vad verksamheten gör / erbjuder
-2. Hur det fungerar (bokning/process/onboarding)
-3. Priser / kostnad
-4. Hur man kommer igång
-5. Säkerhet/compliance (där relevant)
+**Before:**
+```yaml
+environment:
+  - VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
+  - VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}
+```
 
-## Resultat
+**After:**
+```yaml
+build:
+  context: .
+  dockerfile: Dockerfile
+  args:
+    - VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
+    - VITE_SUPABASE_PUBLISHABLE_KEY=${VITE_SUPABASE_PUBLISHABLE_KEY}
+    - VITE_SUPABASE_PROJECT_ID=${VITE_SUPABASE_PROJECT_ID}
+```
 
-- ✅ Alla 7 templates levereras med 80%+ AEO-score från start
-- ✅ Chat Launcher synlig på alla landningssidor
-- ✅ Användare behöver inte lägga till FAQ manuellt
-- ✅ Plattformens AI-USP demonstreras direkt
+### 2. Add auth guards to ALL admin query hooks in usePages.tsx
+
+Currently only `usePages` waits for auth. These hooks also need the guard:
+
+- `usePage` -- single page fetch (used in page editor)
+- `useDeletedPages` -- trash view
+- `usePageVersions` -- version history
+
+Pattern applied to each:
+```typescript
+export function useDeletedPages() {
+  const { loading: authLoading, session } = useAuth();
+  return useQuery({
+    queryKey: ['deleted-pages', session?.user?.id ?? 'anon'],
+    enabled: !authLoading,
+    // ...existing queryFn
+  });
+}
+```
+
+### 3. Fix ChatFeedback Swedish text
+
+`ChatFeedback.tsx` has hardcoded Swedish strings. Change to English per project requirements:
+- "Tack for din feedback!" -> "Thanks for your feedback!"
+- "Tack! Vi anvander detta for att forbattra." -> "Thanks! We'll use this to improve."
+- "Kunde inte spara feedback" -> "Could not save feedback"
+- "Tack!" -> "Thanks!"
+
+### 4. Update Docker quickstart docs
+
+Update `docs/DOCKER-QUICKSTART.md` to use correct variable name (`VITE_SUPABASE_PUBLISHABLE_KEY` not `VITE_SUPABASE_ANON_KEY`) and add `VITE_SUPABASE_PROJECT_ID`.
+
+## Files Modified
+
+| File | Change |
+|------|--------|
+| `docker-compose.yml` | Fix build args, variable names |
+| `src/hooks/usePages.tsx` | Add auth guards to `usePage`, `useDeletedPages`, `usePageVersions` |
+| `src/components/chat/ChatFeedback.tsx` | English text |
+| `docs/DOCKER-QUICKSTART.md` | Correct env var names |
+
+## Important Note for Easypanel
+
+If Easypanel passes the env vars as runtime environment variables rather than Docker build arguments, the Vite build won't pick them up. In Easypanel's settings, ensure these are configured as **build arguments**, not just environment variables. The variable names must be exactly:
+
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_PUBLISHABLE_KEY`
+- `VITE_SUPABASE_PROJECT_ID`
+
+## Edge Functions Consideration
+
+Edge functions deployed to Lovable Cloud (`rzhjotxffjfsdlhrdkpj`) are NOT available on the Docker Supabase (`urjdzmenjvkergjrzjvs`). Features like AI chat, brand analysis, image processing, and webhooks will not work in Docker unless edge functions are also deployed to the production Supabase. This is a separate concern and does not affect the pages visibility issue.
 
