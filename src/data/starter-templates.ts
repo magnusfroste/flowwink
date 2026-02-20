@@ -579,13 +579,14 @@ const launchpadPages: TemplatePage[] = [
       },
       {
         id: 'chat-1',
-        type: 'chat',
+        type: 'chat-launcher',
         data: {
           title: 'Quick Questions? Ask AI',
-          height: 'sm',
-          showSidebar: false,
+          subtitle: 'Get instant answers about our platform',
+          placeholder: 'Ask about features, pricing, or getting started...',
+          showQuickActions: true,
+          quickActionCount: 4,
           variant: 'card',
-          initialPrompt: 'Hi! I\'m here to help you learn about our platform. What would you like to know?',
         },
       },
       // BOOKING - Schedule a demo
@@ -1294,13 +1295,14 @@ const trustcorpPages: TemplatePage[] = [
       },
       {
         id: 'chat-1',
-        type: 'chat',
+        type: 'chat-launcher',
         data: {
           title: 'Private Enterprise Assistant',
-          height: 'lg',
-          showSidebar: false,
+          subtitle: 'All conversations are processed on your infrastructure',
+          placeholder: 'Ask about our enterprise solutions...',
+          showQuickActions: true,
+          quickActionCount: 4,
           variant: 'card',
-          initialPrompt: 'Welcome to TrustCorp. I\'m your private AI assistant — all conversations are processed on your infrastructure. How can I help you today?',
         },
       },
       {
@@ -1975,13 +1977,14 @@ const securehealthPages: TemplatePage[] = [
       },
       {
         id: 'chat-1',
-        type: 'chat',
+        type: 'chat-launcher',
         data: {
           title: 'Private AI Health Assistant',
-          height: 'lg',
-          showSidebar: false,
+          subtitle: 'HIPAA-compliant — all conversations stay private',
+          placeholder: 'Ask about appointments, services, or health information...',
+          showQuickActions: true,
+          quickActionCount: 4,
           variant: 'card',
-          initialPrompt: 'Hello! I\'m your private health assistant. I can help you book appointments, answer questions about our services, or provide general health information. All conversations are HIPAA-compliant. How can I help you today?',
         },
       },
       {
@@ -2131,13 +2134,14 @@ const securehealthPages: TemplatePage[] = [
       },
       {
         id: 'chat-1',
-        type: 'chat',
+        type: 'chat-launcher',
         data: {
           title: 'Book with AI Assistant',
-          height: 'md',
-          showSidebar: false,
+          subtitle: 'Private and HIPAA-compliant',
+          placeholder: 'Ask about booking, services, or availability...',
+          showQuickActions: true,
+          quickActionCount: 4,
           variant: 'card',
-          initialPrompt: 'Hi! I can help you book an appointment or answer questions about our services. All conversations are private and HIPAA-compliant. How can I help?',
         },
       },
       // BOOKING - Appointment form
@@ -3220,11 +3224,14 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
           },
           {
             id: 'chat-hero',
-            type: 'chat',
+            type: 'chat-launcher',
             data: {
               title: 'Ask Anything About FlowWink',
+              subtitle: 'Get instant answers from our AI',
+              placeholder: 'What would you like to know?',
+              showQuickActions: true,
+              quickActionCount: 4,
               variant: 'card',
-              height: 'md',
             },
           },
           // FEATURES - Complete CMS modules
@@ -6433,13 +6440,14 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
           },
           {
             id: 'chat-support',
-            type: 'chat',
+            type: 'chat-launcher',
             data: {
               title: 'Quick Questions? Ask AI',
-              height: 'sm',
-              showSidebar: false,
+              subtitle: 'Get instant answers about FlowWink',
+              placeholder: 'Ask about features, pricing, or deployment...',
+              showQuickActions: true,
+              quickActionCount: 4,
               variant: 'card',
-              initialPrompt: 'Hi! I can answer questions about FlowWink features, pricing, and deployment options. What would you like to know?',
             },
           },
           {
@@ -7316,13 +7324,14 @@ const hybridHelpPages: TemplatePage[] = [
       },
       {
         id: 'chat-1',
-        type: 'chat',
+        type: 'chat-launcher',
         data: {
           title: 'Can\'t find what you need? Ask AI',
-          height: 'sm',
-          showSidebar: false,
-          variant: 'embedded',
-          initialPrompt: 'Hi! I can help you find answers quickly. What would you like to know?',
+          subtitle: 'Get instant answers from our knowledge base',
+          placeholder: 'Type your question...',
+          showQuickActions: true,
+          quickActionCount: 4,
+          variant: 'card',
         },
       },
       {
@@ -7401,13 +7410,14 @@ const hybridHelpPages: TemplatePage[] = [
       },
       {
         id: 'chat-1',
-        type: 'chat',
+        type: 'chat-launcher',
         data: {
           title: 'Quick Question? Ask AI',
-          height: 'sm',
-          showSidebar: false,
+          subtitle: 'Get instant help from our assistant',
+          placeholder: 'How can we help you today?',
+          showQuickActions: true,
+          quickActionCount: 4,
           variant: 'card',
-          initialPrompt: 'Hi! How can I help you today?',
         },
       },
       {
@@ -9379,13 +9389,14 @@ const flowwinkAgencyPages: TemplatePage[] = [
       // CHAT - Quick questions
       {
         id: 'chat-agency',
-        type: 'chat',
+        type: 'chat-launcher',
         data: {
           title: 'Quick Questions? Ask AI',
-          height: 'sm',
-          showSidebar: false,
+          subtitle: 'Get answers about pricing, white-labeling, and more',
+          placeholder: 'Ask about FlowWink for agencies...',
+          showQuickActions: true,
+          quickActionCount: 4,
           variant: 'card',
-          initialPrompt: 'Hi! I can answer questions about FlowWink for agencies, pricing, white-labeling, and technical requirements. What would you like to know?',
         },
       },
       // CONTACT - Other ways
