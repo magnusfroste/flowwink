@@ -821,3 +821,173 @@ export const agencyBlogPosts: TemplateBlogPost[] = [
     meta: { description: 'Master white-label website delivery with this comprehensive guide covering branding, domains, customization, and common pitfalls to avoid.' },
   },
 ];
+
+// =====================================================
+// SERVICEPRO - Service Business Blog Posts
+// =====================================================
+export const serviceProBlogPosts: TemplateBlogPost[] = [
+  {
+    title: '5 Ways to Reduce No-Shows and Fill Your Calendar',
+    slug: '5-ways-reduce-no-shows-fill-calendar',
+    excerpt: 'No-shows cost service businesses thousands every year. Here are proven strategies to keep your schedule full and your clients committed.',
+    featured_image: 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=1200',
+    featured_image_alt: 'Calendar with appointments marked',
+    is_featured: true,
+    content: [
+      createTextBlock({
+        type: 'doc',
+        content: [
+          p('Every empty slot in your calendar is lost revenue. For service businesses, no-shows can account for up to 20% of bookings. The good news? Most no-shows are preventable with the right systems in place.'),
+          h2('1. Automate Confirmation Emails'),
+          p('Send a confirmation immediately after booking and a reminder 24 hours before the appointment. Automated reminders alone can reduce no-shows by up to 40%.'),
+          h2('2. Offer Easy Rescheduling'),
+          p('Make it simple for clients to reschedule rather than skip. A quick link in your reminder email lets them pick a new time without the friction of calling.'),
+          h2('3. Implement a Cancellation Policy'),
+          p('A clear, fair cancellation policy sets expectations. Requiring 24 hours notice is standard and shows clients you value your time and theirs.'),
+          h2('4. Build a Waitlist'),
+          p('When a client cancels, having a waitlist means you can fill that slot quickly. This turns cancellations from lost revenue into opportunities.'),
+          h2('5. Follow Up After No-Shows'),
+          p('A friendly follow-up message after a no-show keeps the relationship warm and often results in a rescheduled appointment. Most people feel bad about missing and will rebook.'),
+          h2('The Bottom Line'),
+          p('Reducing no-shows is about making it easy to show up and hard to forget. With automated reminders and smart scheduling, you can reclaim thousands in lost revenue each year.'),
+        ],
+      }),
+    ],
+    meta: { description: 'Proven strategies to reduce no-shows for service businesses. Learn how automated reminders, smart scheduling, and cancellation policies keep your calendar full.' },
+  },
+  {
+    title: 'How to Price Your Services for Profitability',
+    slug: 'how-to-price-services-profitability',
+    excerpt: 'Pricing is the hardest decision for service businesses. Learn value-based pricing strategies that attract clients and grow your bottom line.',
+    featured_image: 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=1200',
+    featured_image_alt: 'Business charts and financial planning',
+    content: [
+      createTextBlock({
+        type: 'doc',
+        content: [
+          p('Most service businesses undercharge. They price based on what competitors charge or what feels comfortable, rather than the value they deliver. Here is how to fix that.'),
+          h2('Understand Your True Costs'),
+          p('Before setting prices, calculate your fully loaded cost per hour. Include rent, insurance, tools, marketing, admin time, and your desired salary. Most service providers are shocked by the real number.'),
+          h2('Price for Value, Not Time'),
+          p('Clients do not buy your time. They buy outcomes. A plumber who fixes a burst pipe in 15 minutes delivers the same value as one who takes 2 hours. Price the outcome, not the minutes.'),
+          h2('Offer Tiered Packages'),
+          p('Three-tier pricing works because it gives clients choice while anchoring value. Your middle tier should be the one most clients pick, and your premium tier makes it look like a deal.'),
+          h2('Raise Prices Annually'),
+          p('If you have not raised prices in over a year, you are effectively giving yourself a pay cut. Inflation, experience, and improved skills all justify regular increases.'),
+        ],
+      }),
+    ],
+    meta: { description: 'A guide to pricing services for profitability. Learn value-based pricing, tiered packages, and when to raise your rates.' },
+  },
+  {
+    title: 'Building Client Trust Before the First Appointment',
+    slug: 'building-client-trust-before-first-appointment',
+    excerpt: 'Trust starts long before a client walks through your door. Here is how your online presence can build confidence and convert browsers into bookings.',
+    featured_image: 'https://images.unsplash.com/photo-1556745757-8d76bdb6984b?w=1200',
+    featured_image_alt: 'Professional handshake between client and service provider',
+    content: [
+      createTextBlock({
+        type: 'doc',
+        content: [
+          p('In service businesses, trust is everything. Clients are buying a promise that you will deliver. Your website, reviews, and online presence are your first impression.'),
+          h2('Showcase Real Results'),
+          p('Before-and-after photos, case studies, and testimonials are your most powerful trust builders. Real results from real clients speak louder than any marketing copy.'),
+          h2('Be Transparent About Pricing'),
+          p('Nothing kills trust faster than hidden fees. Display your pricing clearly, even if it is a starting-from price. Clients appreciate knowing what to expect.'),
+          h2('Make Booking Effortless'),
+          p('A smooth online booking experience signals professionalism. If clients can see availability, pick a time, and confirm in under a minute, you are already ahead of 80% of competitors.'),
+          h2('Respond Quickly'),
+          p('Speed of response correlates directly with conversion. An AI chatbot that answers common questions instantly keeps potential clients engaged while you focus on your current appointments.'),
+        ],
+      }),
+    ],
+    meta: { description: 'How to build client trust online before the first appointment. Tips on testimonials, transparent pricing, and effortless booking experiences.' },
+  },
+];
+
+// =====================================================
+// DIGITAL SHOP - E-commerce Blog Posts
+// =====================================================
+export const digitalShopBlogPosts: TemplateBlogPost[] = [
+  {
+    title: 'The Complete Guide to Selling Digital Products Online',
+    slug: 'complete-guide-selling-digital-products-online',
+    excerpt: 'Digital products offer unlimited scalability with near-zero marginal cost. Here is everything you need to know to start selling successfully.',
+    featured_image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1200',
+    featured_image_alt: 'Digital workspace with laptop showing online store',
+    is_featured: true,
+    content: [
+      createTextBlock({
+        type: 'doc',
+        content: [
+          p('Digital products are the ultimate business model. No inventory, no shipping, no manufacturing. Once created, they can be sold infinitely with almost zero additional cost. But success requires strategy.'),
+          h2('Choose the Right Product Type'),
+          p('Templates, courses, ebooks, software tools, and design assets are the top-performing digital product categories. Pick one that matches your expertise and has proven demand.'),
+          h2('Price Based on Transformation'),
+          p('A template that saves someone 40 hours of work is worth far more than the time it took to create. Price based on the value your customer receives, not your production cost.'),
+          h2('Invest in Product Pages'),
+          p('Your product page is your salesperson. Include detailed descriptions, preview images, feature lists, and social proof. Every element should answer the question: why should I buy this?'),
+          h2('Build an Email List from Day One'),
+          p('Email subscribers convert at 3-5x the rate of social media followers. Offer a free sample or resource in exchange for an email address and nurture those relationships.'),
+          h2('Iterate Based on Feedback'),
+          p('Your first version does not need to be perfect. Launch, collect feedback, and improve. The best digital products evolve based on real customer needs.'),
+        ],
+      }),
+    ],
+    meta: { description: 'Everything you need to know about selling digital products online. From choosing products to pricing strategies and building an audience.' },
+  },
+  {
+    title: 'How to Create Product Bundles That Sell',
+    slug: 'how-to-create-product-bundles-that-sell',
+    excerpt: 'Product bundles increase average order value and give customers more perceived value. Learn the psychology and strategy behind effective bundling.',
+    featured_image: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1200',
+    featured_image_alt: 'Curated product collection on display',
+    content: [
+      createTextBlock({
+        type: 'doc',
+        content: [
+          p('Bundling is one of the simplest ways to increase revenue. By combining complementary products at a slight discount, you give customers more value while increasing your average order value.'),
+          h2('The Psychology of Bundling'),
+          p('Customers love feeling like they got a deal. A bundle priced at 20-30% less than buying items individually triggers the value perception that drives purchases.'),
+          h2('Complementary, Not Random'),
+          p('The best bundles solve a complete problem. A design template pack with matching social media graphics and brand guidelines feels like a complete solution, not a random assortment.'),
+          h2('Create Urgency'),
+          p('Limited-time bundles or seasonal collections create urgency. When customers know a bundle will not be available forever, they are more likely to buy now rather than later.'),
+          h2('Test and Optimize'),
+          p('Track which bundles sell best and experiment with different combinations and price points. Small changes in bundle composition can significantly impact conversion rates.'),
+        ],
+      }),
+    ],
+    meta: { description: 'Learn how to create digital product bundles that increase average order value. Psychology, strategy, and optimization tips for effective bundling.' },
+  },
+  {
+    title: '7 Mistakes to Avoid When Launching Your Online Store',
+    slug: '7-mistakes-avoid-launching-online-store',
+    excerpt: 'Most online stores fail in the first year. Avoid these common mistakes to give your digital shop the best chance of success.',
+    featured_image: 'https://images.unsplash.com/photo-1556742031-c6961e8560b0?w=1200',
+    featured_image_alt: 'Entrepreneur working on laptop in creative workspace',
+    content: [
+      createTextBlock({
+        type: 'doc',
+        content: [
+          p('Launching an online store is exciting, but enthusiasm without strategy leads to costly mistakes. Here are the seven most common pitfalls and how to avoid them.'),
+          h2('1. Too Many Products at Launch'),
+          p('Start with 3-5 strong products rather than 50 mediocre ones. Quality and focus beat breadth every time. You can always expand later based on what sells.'),
+          h2('2. Ignoring SEO'),
+          p('Your product titles, descriptions, and images should be optimized for search. Organic traffic is free and compounds over time. Invest in SEO from day one.'),
+          h2('3. No Email Capture Strategy'),
+          p('Not every visitor is ready to buy today. Capture emails with a lead magnet so you can nurture them until they are ready. This is your most valuable marketing channel.'),
+          h2('4. Poor Product Photography'),
+          p('In digital commerce, images are everything. Invest in high-quality mockups and previews that show your product in context. People buy what they can visualize.'),
+          h2('5. Complicated Checkout'),
+          p('Every extra step in checkout costs you conversions. Keep it simple: product, cart, payment. No account registration required.'),
+          h2('6. No Social Proof'),
+          p('Reviews, testimonials, and download counts build trust. Even early on, reach out to beta users for honest feedback you can display.'),
+          h2('7. Giving Up Too Early'),
+          p('Most stores need 6-12 months to gain traction. Consistency in content, marketing, and product improvement is what separates successful stores from failed ones.'),
+        ],
+      }),
+    ],
+    meta: { description: 'Avoid these 7 common mistakes when launching your online store. From product strategy to SEO and checkout optimization.' },
+  },
+];
