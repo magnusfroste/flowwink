@@ -1,5 +1,6 @@
 import { logger } from '@/lib/logger';
 import { useState, useEffect, useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Loader2, Sparkles, Check, FileText, Palette, MessageSquare, Trash2, AlertTriangle, Send, Newspaper, BookOpen, ShieldCheck, AlertCircle, Package, Puzzle, ImageIcon, HardDrive, Download, Eye } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
@@ -98,6 +99,7 @@ export default function NewSitePage() {
   const createKbArticle = useCreateKbArticle();
   const createProduct = useCreateProduct();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Build existing content summary for preview dialog
   const existingContent = useMemo(() => ({
@@ -356,37 +358,10 @@ export default function NewSitePage() {
         await updateModules.mutateAsync(updatedModules);
       }
 
-      // Step 2: Create new pages FIRST with temporary slugs (safe swap — old pages kept until new ones succeed)
-      if (opts.pages) {
-        setProgress({ currentPage: 0, totalPages: templatePages.length, currentStep: 'Creating new pages...' });
-        
-        for (let i = 0; i < templatePages.length; i++) {
-          const templatePage = templatePages[i];
-          setProgress({ 
-            currentPage: i + 1, 
-            totalPages: templatePages.length, 
-            currentStep: `Creating "${templatePage.title}"...` 
-          });
-
-          const tempSlug = `_new_${templatePage.slug}_${Date.now()}`;
-          const page = await createPage.mutateAsync({
-            title: templatePage.title,
-            slug: tempSlug,
-            content: templatePage.blocks,
-            meta: templatePage.meta,
-            menu_order: templatePage.menu_order,
-            show_in_menu: templatePage.showInMenu,
-            status: opts.publishPages ? 'published' : 'draft',
-          });
-          
-          pageIds.push(page.id);
-        }
-      }
-
-      // Step 2b: All new pages created successfully — NOW safe to delete old content
+      // Step 2a: Delete existing pages to free up slugs
       const shouldClearPages = opts.pages && existingPages && existingPages.length > 0;
       if (shouldClearPages) {
-        setProgress({ currentPage: 0, totalPages: existingPages!.length, currentStep: 'Removing old pages...' });
+        setProgress({ currentPage: 0, totalPages: existingPages!.length, currentStep: 'Clearing existing pages...' });
         
         for (let i = 0; i < existingPages!.length; i++) {
           setProgress({ 
@@ -398,7 +373,7 @@ export default function NewSitePage() {
         }
       }
 
-      // Step 2c: Clean up trashed pages with conflicting slugs
+      // Step 2b: Clean up trashed pages with conflicting slugs
       if (opts.pages && deletedPages && deletedPages.length > 0 && selectedTemplate) {
         const templateSlugs = new Set(selectedTemplate.pages.map(p => p.slug));
         const conflicting = deletedPages.filter(p => templateSlugs.has(p.slug));
@@ -414,24 +389,33 @@ export default function NewSitePage() {
         }
       }
 
-      // Step 2d: Update new pages from temporary slugs to final slugs
-      if (opts.pages && pageIds.length > 0) {
-        setProgress({ currentPage: 0, totalPages: pageIds.length, currentStep: 'Finalizing page slugs...' });
+      // Step 2c: Create all new pages
+      if (opts.pages) {
+        setProgress({ currentPage: 0, totalPages: templatePages.length, currentStep: 'Creating pages...' });
         
-        for (let i = 0; i < pageIds.length; i++) {
+        for (let i = 0; i < templatePages.length; i++) {
           const templatePage = templatePages[i];
-          const { error: slugError } = await supabase
-            .from('pages')
-            .update({ slug: templatePage.slug })
-            .eq('id', pageIds[i]);
+          setProgress({ 
+            currentPage: i + 1, 
+            totalPages: templatePages.length, 
+            currentStep: `Creating "${templatePage.title}"...` 
+          });
+
+          const page = await createPage.mutateAsync({
+            title: templatePage.title,
+            slug: templatePage.slug,
+            content: templatePage.blocks,
+            meta: templatePage.meta,
+            menu_order: templatePage.menu_order,
+            show_in_menu: templatePage.showInMenu,
+            status: opts.publishPages ? 'published' : 'draft',
+          });
           
-          if (slugError) {
-            logger.error(`Failed to update slug for page ${pageIds[i]}:`, slugError);
-          }
+          pageIds.push(page.id);
         }
       }
 
-      // Step 2e: Delete existing blog posts
+      // Step 2d: Delete existing blog posts
       const shouldClearBlog = opts.blogPosts && existingBlogPosts && existingBlogPosts.length > 0;
       if (shouldClearBlog) {
         setProgress({ currentPage: 0, totalPages: existingBlogPosts.length, currentStep: 'Clearing existing blog posts...' });
@@ -626,6 +610,14 @@ export default function NewSitePage() {
       if (moduleCount > 0) description += `. Enabled ${moduleCount} modules`;
       description += '.';
       
+      // Force refresh all caches to ensure admin UI shows new data
+      await queryClient.invalidateQueries({ queryKey: ['pages'] });
+      await queryClient.invalidateQueries({ queryKey: ['deleted-pages'] });
+      await queryClient.invalidateQueries({ queryKey: ['blog-posts'] });
+      await queryClient.invalidateQueries({ queryKey: ['kb-categories'] });
+      await queryClient.invalidateQueries({ queryKey: ['products'] });
+      await queryClient.invalidateQueries({ queryKey: ['site-settings'] });
+
       toast({
         title: 'Template applied!',
         description,
