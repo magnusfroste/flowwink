@@ -277,7 +277,18 @@ export function AdminSidebar() {
         <CommandInput placeholder="Search pages..." />
         <CommandList>
           <CommandEmpty>No results found.</CommandEmpty>
-          {filteredGroups.map((group) => (
+          {roleFilteredGroups
+            .map(group => ({
+              ...group,
+              items: group.items.filter(item => {
+                if (item.setupOnly && siteSetupComplete) return false;
+                if (!item.moduleId) return true;
+                if (!modules) return true;
+                return modules[item.moduleId]?.enabled ?? true;
+              }),
+            }))
+            .filter(group => group.items.length > 0)
+            .map((group) => (
             <CommandGroup key={group.label} heading={group.label}>
               {group.items.map((item) => (
                 <CommandItem
