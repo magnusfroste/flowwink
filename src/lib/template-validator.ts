@@ -62,7 +62,7 @@ const BLOCK_REQUIRED_FIELDS: Record<string, string[]> = {
   team: ['members'],
   gallery: ['images'],
   timeline: [], // steps is optional
-  quote: ['quote'],
+  quote: [], // quote text is optional - editor provides defaults
   separator: [],
   chat: [],
   map: [], // address is optional - can use coordinates
