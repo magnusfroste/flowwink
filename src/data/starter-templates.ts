@@ -2917,6 +2917,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
       enabled: true,
       aiProvider: 'n8n',
       n8nWebhookUrl: 'https://your-n8n-instance.com/webhook/chat',
+      landingPageEnabled: true,
       widgetEnabled: false,
       blockEnabled: true,
       welcomeMessage: 'Welcome to TrustCorp. How can I assist you today?',
@@ -3049,6 +3050,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
       aiProvider: 'local',
       localEndpoint: 'https://your-local-llm.internal/v1',
       n8nWebhookUrl: '',
+      landingPageEnabled: true,
       widgetEnabled: true,
       widgetPosition: 'bottom-right',
       welcomeMessage: 'Hello! I\'m your private health assistant. How can I help?',
@@ -7510,6 +7512,7 @@ export const BLANK_TEMPLATE: StarterTemplate = {
   // ===== Chat Settings =====
   chatSettings: {
     enabled: true,
+    landingPageEnabled: true,
     widgetPosition: 'bottom-right',
     welcomeMessage: 'Hi! How can I help you today?',
     placeholder: 'Type your message...',
@@ -7805,6 +7808,7 @@ const helpCenterTemplate: StarterTemplate = {
   chatSettings: {
     enabled: true,
     aiProvider: 'openai',
+    landingPageEnabled: true,
     widgetEnabled: true,
     widgetPosition: 'bottom-right',
     welcomeMessage: 'Hi! Search our help center or ask me anything.',
@@ -8457,6 +8461,7 @@ const serviceProTemplate: StarterTemplate = {
   chatSettings: {
     enabled: true,
     aiProvider: 'openai',
+    landingPageEnabled: true,
     widgetEnabled: true,
     widgetPosition: 'bottom-right',
     welcomeMessage: 'Hi! How can we help you today?',
@@ -8963,6 +8968,7 @@ const digitalShopTemplate: StarterTemplate = {
   chatSettings: {
     enabled: true,
     aiProvider: 'openai',
+    landingPageEnabled: true,
     widgetEnabled: true,
     widgetPosition: 'bottom-right',
     welcomeMessage: 'Hi! Need help finding the perfect product?',
@@ -9924,6 +9930,7 @@ const flowwinkAgencyTemplate: StarterTemplate = {
   chatSettings: {
     enabled: true,
     aiProvider: 'openai',
+    landingPageEnabled: true,
     widgetEnabled: true,
     widgetPosition: 'bottom-right',
     welcomeMessage: 'Hi! I help web agencies understand how FlowWink can save money and time. Ask me anything!',
