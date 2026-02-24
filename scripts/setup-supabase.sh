@@ -187,10 +187,20 @@ check_admin_exists() {
 check_secrets_configured() {
     local secrets
     secrets=$(supabase secrets list --project-ref "$PROJECT_REF" 2>/dev/null || echo "")
-    if echo "$secrets" | grep -q "OPENAI_API_KEY\|GEMINI_API_KEY"; then
-        echo "yes"
+    
+    # Count how many key secrets are configured
+    local count=0
+    echo "$secrets" | grep -q "OPENAI_API_KEY" && count=$((count + 1))
+    echo "$secrets" | grep -q "GEMINI_API_KEY" && count=$((count + 1))
+    echo "$secrets" | grep -q "ANTHROPIC_API_KEY" && count=$((count + 1))
+    echo "$secrets" | grep -q "RESEND_API_KEY" && count=$((count + 1))
+    
+    if [ "$count" -eq 0 ]; then
+        echo "none"
+    elif [ "$count" -ge 3 ]; then
+        echo "full"
     else
-        echo "no"
+        echo "partial:$count"
     fi
 }
 
@@ -449,8 +459,12 @@ show_menu() {
 
     echo -e "  4) Show Environment Variables"
 
-    if [ "$secrets_ok" = "yes" ]; then
+    if [ "$secrets_ok" = "full" ]; then
         echo -e "  5) Configure Secrets (AI, etc.)  ${GREEN}✓ Configured${NC}"
+    elif [[ "$secrets_ok" == partial:* ]]; then
+        local secret_count
+        secret_count=$(echo "$secrets_ok" | cut -d: -f2)
+        echo -e "  5) Configure Secrets (AI, etc.)  ${CYAN}◐ Partially configured (${secret_count}/4)${NC}"
     else
         echo -e "  5) Configure Secrets (AI, etc.)  ${YELLOW}○ Not configured${NC}"
     fi
