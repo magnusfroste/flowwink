@@ -226,12 +226,17 @@ serve(async (req) => {
 
     // Process all URLs - NO FILTERING, just categorize
     const seenSlugs = new Set<string>();
+    
+    // Normalize host for comparison (remove www prefix)
+    const normalizeHost = (host: string) => host.replace(/^www\./, '');
+    const baseHost = normalizeHost(urlObj.host);
+    
     const pages = allLinks
       .filter(link => {
-        // Only include same-domain URLs
+        // Only include same-domain URLs (ignoring www prefix)
         try {
           const linkUrl = new URL(link);
-          return linkUrl.host === urlObj.host;
+          return normalizeHost(linkUrl.host) === baseHost;
         } catch {
           return false;
         }
