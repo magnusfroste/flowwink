@@ -112,10 +112,10 @@ serve(async (req) => {
     const urlObj = new URL(formattedUrl);
     const baseUrl = `${urlObj.protocol}//${urlObj.host}`;
 
-    console.log('Mapping site URLs:', formattedUrl);
+    console.log('Crawling site:', formattedUrl);
 
-    // Call Firecrawl Map API
-    const response = await fetch('https://api.firecrawl.dev/v1/map', {
+    // Use Firecrawl Crawl API (better for SPAs and gets content in one go)
+    const crawlResponse = await fetch('https://api.firecrawl.dev/v1/crawl', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
@@ -123,23 +123,42 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         url: formattedUrl,
-        limit: options?.limit || 100,
-        includeSubdomains: options?.includeSubdomains ?? false,
+        limit: options?.limit || 500, // Increased from 100
+        scrapeOptions: {
+          formats: ['html'],
+          onlyMainContent: false,
+          waitFor: 3000, // Wait for JS to render (important for SPAs)
+          includeTags: ['title', 'meta', 'h1', 'h2'],
+        },
+        excludePaths: [
+          '/wp-admin/*',
+          '/admin/*',
+          '/login',
+          '/logout',
+          '*/feed',
+          '*/rss',
+          '*/atom',
+          '/search/*',
+          '/cart',
+          '/checkout',
+        ],
       }),
     });
 
-    const data = await response.json();
+    const crawlData = await crawlResponse.json();
 
-    if (!response.ok) {
-      console.error('Firecrawl Map API error:', data);
+    if (!crawlResponse.ok) {
+      console.error('Firecrawl Crawl API error:', crawlData);
       return new Response(
-        JSON.stringify({ success: false, error: data.error || `Request failed with status ${response.status}` }),
-        { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ success: false, error: crawlData.error || `Request failed with status ${crawlResponse.status}` }),
+        { status: crawlResponse.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const allLinks: string[] = data.links || [];
-    console.log(`Firecrawl Map found ${allLinks.length} URLs`);
+    // Extract URLs from crawl results
+    const crawlResults = crawlData.data || [];
+    const allLinks: string[] = crawlResults.map((r: any) => r.url || r.metadata?.sourceURL).filter(Boolean);
+    console.log(`Firecrawl Crawl found ${allLinks.length} URLs`);
 
     // Process all URLs - NO FILTERING, just categorize
     const seenSlugs = new Set<string>();
@@ -203,29 +222,19 @@ serve(async (req) => {
         return a.path.localeCompare(b.path);
       });
 
-    // Also scrape homepage to get site metadata
+    // Extract site metadata from crawl results (homepage)
     let siteName = urlObj.host;
     let platform = 'unknown';
     
     try {
-      const homeScrape = await fetch('https://api.firecrawl.dev/v1/scrape', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          url: baseUrl,
-          formats: ['html'],
-          onlyMainContent: false,
-          waitFor: 2000,
-        }),
+      const homePage = crawlResults.find((r: any) => {
+        const pageUrl = r.url || r.metadata?.sourceURL || '';
+        return pageUrl === baseUrl || pageUrl === `${baseUrl}/` || pageUrl === formattedUrl;
       });
       
-      if (homeScrape.ok) {
-        const homeData = await homeScrape.json();
-        const metadata = homeData.data?.metadata || {};
-        const html = (homeData.data?.html || '').toLowerCase();
+      if (homePage) {
+        const metadata = homePage.metadata || {};
+        const html = (homePage.html || '').toLowerCase();
         
         siteName = metadata.title?.split(' - ')[0]?.split(' | ')[0] || siteName;
         
@@ -240,10 +249,12 @@ serve(async (req) => {
           platform = 'shopify';
         } else if (html.includes('webflow.com')) {
           platform = 'webflow';
+        } else if (html.includes('react') || html.includes('vue') || html.includes('angular')) {
+          platform = 'spa';
         }
       }
     } catch (e) {
-      console.log('Could not fetch homepage metadata:', e);
+      console.log('Could not extract homepage metadata:', e);
     }
 
     const stats = {
