@@ -144,33 +144,65 @@ serve(async (req) => {
     let allLinks: string[] = data.links || [];
     console.log(`Firecrawl Map found ${allLinks.length} URLs`);
 
-    // If we only got sitemap files, try parsing them directly
-    if (allLinks.length <= 5 && allLinks.some(link => link.includes('sitemap'))) {
-      console.log('Only found sitemap files, attempting to parse them...');
-      const sitemapUrls = new Set<string>();
+    // Check if we got mostly/only sitemap files
+    const sitemapLinks = allLinks.filter(link => link.toLowerCase().includes('sitemap'));
+    const nonSitemapLinks = allLinks.filter(link => !link.toLowerCase().includes('sitemap'));
+    
+    console.log(`Found ${sitemapLinks.length} sitemap files and ${nonSitemapLinks.length} regular pages`);
+
+    // If we have sitemaps and very few regular pages, parse the sitemaps
+    if (sitemapLinks.length > 0 && nonSitemapLinks.length < 10) {
+      console.log('Parsing sitemap files to extract URLs...');
+      const sitemapUrls = new Set<string>(nonSitemapLinks); // Keep existing non-sitemap URLs
       
-      for (const sitemapUrl of allLinks.filter(link => link.includes('sitemap'))) {
+      for (const sitemapUrl of sitemapLinks) {
         try {
+          console.log(`Fetching sitemap: ${sitemapUrl}`);
           const sitemapResponse = await fetch(sitemapUrl);
           if (sitemapResponse.ok) {
             const sitemapXml = await sitemapResponse.text();
-            // Extract URLs from sitemap XML
-            const urlMatches = sitemapXml.matchAll(/<loc>(.*?)<\/loc>/g);
+            console.log(`Sitemap XML length: ${sitemapXml.length} chars`);
+            
+            // Extract URLs from sitemap XML (handles both <loc> and nested sitemaps)
+            const urlMatches = sitemapXml.matchAll(/<loc>\s*([^<]+)\s*<\/loc>/g);
+            let extractedCount = 0;
             for (const match of urlMatches) {
               const url = match[1].trim();
-              if (url && !url.includes('sitemap')) {
+              // If it's another sitemap, fetch it recursively (one level only)
+              if (url.toLowerCase().includes('sitemap') && url.toLowerCase().endsWith('.xml')) {
+                try {
+                  const nestedResponse = await fetch(url);
+                  if (nestedResponse.ok) {
+                    const nestedXml = await nestedResponse.text();
+                    const nestedMatches = nestedXml.matchAll(/<loc>\s*([^<]+)\s*<\/loc>/g);
+                    for (const nestedMatch of nestedMatches) {
+                      const nestedUrl = nestedMatch[1].trim();
+                      if (nestedUrl && !nestedUrl.toLowerCase().includes('sitemap')) {
+                        sitemapUrls.add(nestedUrl);
+                        extractedCount++;
+                      }
+                    }
+                  }
+                } catch (e) {
+                  console.log(`Failed to fetch nested sitemap ${url}:`, e);
+                }
+              } else if (url && !url.toLowerCase().includes('sitemap')) {
                 sitemapUrls.add(url);
+                extractedCount++;
               }
             }
+            console.log(`Extracted ${extractedCount} URLs from ${sitemapUrl}`);
+          } else {
+            console.log(`Failed to fetch sitemap ${sitemapUrl}: ${sitemapResponse.status}`);
           }
         } catch (e) {
-          console.log(`Failed to parse sitemap ${sitemapUrl}:`, e);
+          console.log(`Error parsing sitemap ${sitemapUrl}:`, e);
         }
       }
       
-      if (sitemapUrls.size > 0) {
+      if (sitemapUrls.size > nonSitemapLinks.length) {
         allLinks = Array.from(sitemapUrls);
-        console.log(`Extracted ${allLinks.length} URLs from sitemaps`);
+        console.log(`Successfully extracted ${allLinks.length} total URLs from sitemaps`);
       }
     }
 
