@@ -58,6 +58,16 @@ ALTER TABLE public.webinars ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.webinar_registrations ENABLE ROW LEVEL SECURITY;
 
 -- ============================================
+-- Drop existing policies (idempotent)
+-- ============================================
+DROP POLICY IF EXISTS "Public can view published webinars" ON public.webinars;
+DROP POLICY IF EXISTS "Staff can manage webinars" ON public.webinars;
+DROP POLICY IF EXISTS "Staff can view registrations" ON public.webinar_registrations;
+DROP POLICY IF EXISTS "Anyone can register for webinars" ON public.webinar_registrations;
+DROP POLICY IF EXISTS "Staff can update registrations" ON public.webinar_registrations;
+DROP POLICY IF EXISTS "Staff can delete registrations" ON public.webinar_registrations;
+
+-- ============================================
 -- Webinars policies
 -- ============================================
 -- Anyone can view published webinars

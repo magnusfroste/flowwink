@@ -42,6 +42,13 @@ CREATE INDEX IF NOT EXISTS idx_webinar_registrations_lead_id ON public.webinar_r
 ALTER TABLE public.webinars ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.webinar_registrations ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies to make migration idempotent
+DROP POLICY IF EXISTS "Admins can manage webinars" ON public.webinars;
+DROP POLICY IF EXISTS "Public can read published webinars" ON public.webinars;
+DROP POLICY IF EXISTS "Admins can manage registrations" ON public.webinar_registrations;
+DROP POLICY IF EXISTS "Anyone can register for webinars" ON public.webinar_registrations;
+DROP POLICY IF EXISTS "Registrants can read own registrations" ON public.webinar_registrations;
+
 -- Webinars: admins can do everything, public can read published
 CREATE POLICY "Admins can manage webinars" ON public.webinars
   FOR ALL USING (
