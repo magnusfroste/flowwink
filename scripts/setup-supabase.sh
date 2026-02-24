@@ -157,9 +157,13 @@ check_functions_deployed() {
 }
 
 check_migrations_applied() {
-    local pending
-    pending=$(supabase migration list --linked 2>&1 | grep -c "Not applied" || echo "0")
-    echo "$pending"
+    local migration_output
+    migration_output=$(supabase migration list --linked 2>/dev/null)
+    local total
+    total=$(echo "$migration_output" | tail -n +4 | grep -c "^" || echo "0")
+    local applied
+    applied=$(echo "$migration_output" | tail -n +4 | grep -v "Not applied" | grep -c "^" || echo "0")
+    echo "${applied}:${total}"
 }
 
 check_admin_exists() {
@@ -403,8 +407,13 @@ show_menu() {
     # Detect status
     local func_count
     func_count=$(check_functions_deployed)
-    local pending_migrations
-    pending_migrations=$(check_migrations_applied)
+    local migration_status
+    migration_status=$(check_migrations_applied)
+    local applied_migrations
+    applied_migrations=$(echo "$migration_status" | cut -d: -f1)
+    local total_migrations
+    total_migrations=$(echo "$migration_status" | cut -d: -f2)
+    local pending_migrations=$((total_migrations - applied_migrations))
     local admin_count
     admin_count=$(check_admin_exists)
     local secrets_ok
@@ -422,10 +431,12 @@ show_menu() {
         echo -e "  1) Deploy Edge Functions        ${YELLOW}○ Not deployed${NC}"
     fi
 
-    if [ "$pending_migrations" = "0" ]; then
-        echo -e "  2) Run Database Migrations      ${GREEN}✓ Up to date${NC}"
+    if [ "$pending_migrations" = "0" ] && [ "$applied_migrations" -gt 0 ] 2>/dev/null; then
+        echo -e "  2) Run Database Migrations      ${GREEN}✓ ${applied_migrations} applied${NC}"
+    elif [ "$pending_migrations" -gt 0 ] 2>/dev/null; then
+        echo -e "  2) Run Database Migrations      ${YELLOW}○ ${applied_migrations}/${total_migrations} applied, ${pending_migrations} pending${NC}"
     else
-        echo -e "  2) Run Database Migrations      ${YELLOW}○ ${pending_migrations} pending${NC}"
+        echo -e "  2) Run Database Migrations      ${YELLOW}○ 0 applied${NC}"
     fi
 
     if [ "$admin_count" = "unknown" ]; then
