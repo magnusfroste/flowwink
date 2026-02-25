@@ -22,15 +22,14 @@ interface DealSectionProps {
 
 export function DealSection({ leadId }: DealSectionProps) {
   const isDealsEnabled = useIsModuleEnabled('deals');
+  const { data: deals = [], isLoading } = useDeals(leadId);
+  const updateDeal = useUpdateDeal();
+  const [dialogOpen, setDialogOpen] = useState(false);
   
   // Early return if deals module is disabled
   if (!isDealsEnabled) {
     return null;
   }
-  
-  const { data: deals = [], isLoading } = useDeals(leadId);
-  const updateDeal = useUpdateDeal();
-  const [dialogOpen, setDialogOpen] = useState(false);
 
   const activeDeals = deals.filter(d => d.stage === 'proposal' || d.stage === 'negotiation');
   const closedDeals = deals.filter(d => d.stage === 'closed_won' || d.stage === 'closed_lost');
