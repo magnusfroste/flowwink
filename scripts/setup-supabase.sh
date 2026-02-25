@@ -371,6 +371,10 @@ step_show_env() {
         echo "VITE_SUPABASE_PROJECT_ID=${PROJECT_REF}"
         echo -e "${BLUE}└────────────────────────────────────────────────────────────┘${NC}"
     fi
+    
+    echo ""
+    echo -e "${YELLOW}Press Enter to continue...${NC}"
+    read -r
 }
 
 step_configure_secrets() {
