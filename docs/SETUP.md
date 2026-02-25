@@ -85,6 +85,21 @@ See [DEPLOYMENT.md](./DEPLOYMENT.md) for deploying to Easypanel or other platfor
 
 Visit your deployed site and login with the admin credentials you created in step 2.
 
+### 6. Configure System AI Settings (Recommended)
+
+After first login, configure your AI preferences:
+
+1. Go to **Admin → Settings → System AI**
+2. Set your preferred:
+   - **AI Provider** (OpenAI or Gemini)
+   - **Model** (gpt-4o-mini recommended for cost)
+   - **Default Tone** (professional, friendly, formal)
+   - **Default Language** (English, Swedish, Norwegian, Danish, Finnish, German)
+
+> **Important:** The language setting affects ALL AI-generated content including Campaign Manager, blog posts, text generation, and content migration. Default is English.
+
+See [AI_DEPENDENCIES.md](./AI_DEPENDENCIES.md) for detailed AI configuration.
+
 ---
 
 ## Optional: Configure Integrations

@@ -95,7 +95,10 @@ GEMINI_API_KEY=...
 - Admin → Site Settings → System AI tab
 - Choose provider (OpenAI or Gemini)
 - Select model
-- Set default tone and language
+- Set default tone (professional, friendly, formal)
+- Set default language (English, Swedish, Norwegian, Danish, Finnish, German)
+  - **Important:** This language setting affects ALL AI-generated content including Campaign Manager, blog posts, text generation, and content migration
+  - Default: English
 
 **API Keys Used:**
 - `OPENAI_API_KEY` (if using OpenAI)
