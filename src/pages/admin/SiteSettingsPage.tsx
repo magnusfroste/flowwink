@@ -173,7 +173,7 @@ export default function SiteSettingsPage() {
     organizationName: '',
     shortDescription: '',
     contactEmail: '',
-    primaryLanguage: 'sv',
+    primaryLanguage: 'en',
     llmsTxtEnabled: true,
     llmsTxtExcludedSlugs: [],
     llmsFullTxtEnabled: true,
@@ -196,7 +196,7 @@ export default function SiteSettingsPage() {
     openaiModel: 'gpt-4o-mini',
     geminiModel: 'gemini-2.0-flash-exp',
     defaultTone: 'professional',
-    defaultLanguage: 'sv',
+    defaultLanguage: 'en',
   });
 
   useEffect(() => {

@@ -552,7 +552,7 @@ const defaultAeoSettings: AeoSettings = {
   organizationName: '',
   shortDescription: '',
   contactEmail: '',
-  primaryLanguage: 'sv',
+  primaryLanguage: 'en',
   llmsTxtEnabled: true,
   llmsTxtExcludedSlugs: [],
   llmsFullTxtEnabled: true,
@@ -595,7 +595,7 @@ const defaultSystemAiSettings: SystemAiSettings = {
   openaiModel: 'gpt-4o-mini',
   geminiModel: 'gemini-2.0-flash-exp',
   defaultTone: 'professional',
-  defaultLanguage: 'sv',
+  defaultLanguage: 'en',
 };
 
 export function useSystemAiSettings() {
