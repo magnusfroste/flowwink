@@ -317,7 +317,7 @@ export function AdminSidebar() {
         </SidebarHeader>
 
         {/* Search Button */}
-        <div className="px-2 py-2">
+        <div className="px-2 pt-1.5 pb-0.5">
           <Tooltip>
             <TooltipTrigger asChild>
               <button
@@ -340,7 +340,7 @@ export function AdminSidebar() {
         </div>
 
         {/* Navigation */}
-        <SidebarContent className="px-2 py-2">
+        <SidebarContent className="px-2 pt-1 pb-2">
           {filteredGroups.map((group, index) => {
             const hasActiveItem = group.items.some(item => isItemActive(item.href));
 
