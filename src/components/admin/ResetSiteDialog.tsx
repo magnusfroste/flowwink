@@ -277,14 +277,21 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
         key: 'media',
         label: 'Clearing media library',
         fn: async () => {
-          // List all files in the bucket
-          const { data: files, error: listError } = await supabase.storage.from('cms-images').list('', { limit: 1000 });
-          if (listError) throw listError;
-          
-          if (files && files.length > 0) {
-            const filePaths = files.map(f => f.name);
-            const { error: deleteError } = await supabase.storage.from('cms-images').remove(filePaths);
-            if (deleteError) throw deleteError;
+          // List files from all subfolders
+          const folders = ['pages', 'imports', 'templates'];
+          for (const folder of folders) {
+            const { data: files, error: listError } = await supabase.storage
+              .from('cms-images')
+              .list(folder, { limit: 1000 });
+            if (listError) throw listError;
+            
+            if (files && files.length > 0) {
+              const filePaths = files.map(f => `${folder}/${f.name}`);
+              const { error: deleteError } = await supabase.storage
+                .from('cms-images')
+                .remove(filePaths);
+              if (deleteError) throw deleteError;
+            }
           }
         }
       });
