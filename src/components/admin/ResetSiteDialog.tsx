@@ -145,10 +145,19 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
     if (options.newsletters) {
       tasks.push({
         key: 'newsletters',
-        label: 'Clearing newsletter subscribers',
+        label: 'Clearing newsletters & subscribers',
         fn: async () => {
-          const { error } = await supabase.from('newsletter_subscribers').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-          if (error) throw error;
+          // Delete tracking data first (foreign keys reference newsletters)
+          const { error: clicksError } = await supabase.from('newsletter_link_clicks').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (clicksError) throw clicksError;
+          const { error: opensError } = await supabase.from('newsletter_email_opens').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (opensError) throw opensError;
+          // Delete newsletters
+          const { error: nlError } = await supabase.from('newsletters').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (nlError) throw nlError;
+          // Delete subscribers
+          const { error: subError } = await supabase.from('newsletter_subscribers').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (subError) throw subError;
         }
       });
     }
