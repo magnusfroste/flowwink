@@ -639,9 +639,9 @@ export default function SiteSettingsPage() {
                 <CardHeader>
                   <CardTitle className="font-serif flex items-center gap-2">
                     <Bot className="h-5 w-5" />
-                    AEO-inställningar
+                    AEO Settings
                   </CardTitle>
-                  <CardDescription>Grundläggande inställningar för AI-optimering</CardDescription>
+                  <CardDescription>Core settings for AI optimization</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between p-3 rounded-lg border bg-card">
@@ -649,10 +649,10 @@ export default function SiteSettingsPage() {
                       <Bot className={`h-5 w-5 ${aeoData.enabled ? 'text-emerald-600' : 'text-muted-foreground'}`} />
                       <div>
                         <Label className={aeoData.enabled ? 'text-emerald-700 dark:text-emerald-300' : ''}>
-                          Aktivera AEO
+                          Enable AEO
                         </Label>
                         <p className="text-xs text-muted-foreground">
-                          Generera llms.txt och strukturerad data
+                          Generate llms.txt and structured data
                         </p>
                       </div>
                     </div>
@@ -665,16 +665,16 @@ export default function SiteSettingsPage() {
                   {aeoData.enabled && (
                     <>
                       <div className="space-y-2">
-                        <Label htmlFor="aeoOrgName">Organisationsnamn</Label>
+                        <Label htmlFor="aeoOrgName">Organization name</Label>
                         <Input
                           id="aeoOrgName"
                           value={aeoData.organizationName}
                           onChange={(e) => setAeoData(prev => ({ ...prev, organizationName: e.target.value }))}
-                          placeholder="Min Organisation AB"
+                          placeholder="My Organization Inc."
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="aeoDescription">Kort beskrivning (för AI-agenter)</Label>
+                        <Label htmlFor="aeoDescription">Short description (for AI agents)</Label>
                         <Textarea
                           id="aeoDescription"
                           value={aeoData.shortDescription}
@@ -682,10 +682,10 @@ export default function SiteSettingsPage() {
                           placeholder="A short description of your business that AI agents can use..."
                           rows={3}
                         />
-                        <p className="text-xs text-muted-foreground">Max 200 tecken rekommenderas</p>
+                        <p className="text-xs text-muted-foreground">Max 200 characters recommended</p>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="aeoEmail">Kontakt-email</Label>
+                        <Label htmlFor="aeoEmail">Contact email</Label>
                         <Input
                           id="aeoEmail"
                           type="email"
@@ -695,7 +695,7 @@ export default function SiteSettingsPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="aeoLang">Primärt språk</Label>
+                        <Label htmlFor="aeoLang">Primary language</Label>
                         <Select
                           value={aeoData.primaryLanguage}
                           onValueChange={(value) => setAeoData(prev => ({ ...prev, primaryLanguage: value }))}
@@ -704,12 +704,12 @@ export default function SiteSettingsPage() {
                             <SelectValue placeholder="Select language" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="sv">Svenska</SelectItem>
-                            <SelectItem value="en">Engelska</SelectItem>
-                            <SelectItem value="no">Norska</SelectItem>
-                            <SelectItem value="da">Danska</SelectItem>
-                            <SelectItem value="fi">Finska</SelectItem>
-                            <SelectItem value="de">Tyska</SelectItem>
+                            <SelectItem value="sv">Swedish</SelectItem>
+                            <SelectItem value="en">English</SelectItem>
+                            <SelectItem value="no">Norwegian</SelectItem>
+                            <SelectItem value="da">Danish</SelectItem>
+                            <SelectItem value="fi">Finnish</SelectItem>
+                            <SelectItem value="de">German</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -734,14 +734,14 @@ export default function SiteSettingsPage() {
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 ml-2 text-primary hover:underline"
                         >
-                          Läs mer <ExternalLink className="h-3 w-3" />
+                          Learn more <ExternalLink className="h-3 w-3" />
                         </a>
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div className="flex items-center justify-between">
                         <div>
-                          <Label>Generera /llms.txt</Label>
+                          <Label>Generate /llms.txt</Label>
                           <p className="text-xs text-muted-foreground">Brief overview for AI agents</p>
                         </div>
                         <Switch
@@ -751,7 +751,7 @@ export default function SiteSettingsPage() {
                       </div>
                       <div className="flex items-center justify-between">
                         <div>
-                          <Label>Generera /llms-full.txt</Label>
+                          <Label>Generate /llms-full.txt</Label>
                           <p className="text-xs text-muted-foreground">Full content in markdown</p>
                         </div>
                         <Switch
@@ -785,13 +785,13 @@ export default function SiteSettingsPage() {
                         <Building2 className="h-5 w-5" />
                         Schema.org / JSON-LD
                       </CardTitle>
-                      <CardDescription>Strukturerad data för rich snippets och AI</CardDescription>
+                      <CardDescription>Structured data for rich snippets and AI</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div className="flex items-center justify-between">
                         <div>
-                          <Label>Aktivera Schema.org</Label>
-                          <p className="text-xs text-muted-foreground">Lägg till JSON-LD på alla sidor</p>
+                          <Label>Enable Schema.org</Label>
+                          <p className="text-xs text-muted-foreground">Add JSON-LD to all pages</p>
                         </div>
                         <Switch
                           checked={aeoData.schemaOrgEnabled}
@@ -802,7 +802,7 @@ export default function SiteSettingsPage() {
                       {aeoData.schemaOrgEnabled && (
                         <>
                           <div className="space-y-2">
-                            <Label htmlFor="schemaType">Organisationstyp</Label>
+                            <Label htmlFor="schemaType">Organization type</Label>
                             <Select
                               value={aeoData.schemaOrgType}
                               onValueChange={(value: SchemaOrgType) => setAeoData(prev => ({ ...prev, schemaOrgType: value }))}
@@ -811,12 +811,12 @@ export default function SiteSettingsPage() {
                                 <SelectValue placeholder="Select type" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="Organization">Organisation</SelectItem>
-                                <SelectItem value="LocalBusiness">Lokalt företag</SelectItem>
-                                <SelectItem value="MedicalOrganization">Vårdorganisation</SelectItem>
-                                <SelectItem value="EducationalOrganization">Utbildningsorganisation</SelectItem>
-                                <SelectItem value="GovernmentOrganization">Myndighet</SelectItem>
-                                <SelectItem value="Corporation">Aktiebolag</SelectItem>
+                                <SelectItem value="Organization">Organization</SelectItem>
+                                <SelectItem value="LocalBusiness">Local Business</SelectItem>
+                                <SelectItem value="MedicalOrganization">Medical Organization</SelectItem>
+                                <SelectItem value="EducationalOrganization">Educational Organization</SelectItem>
+                                <SelectItem value="GovernmentOrganization">Government Organization</SelectItem>
+                                <SelectItem value="Corporation">Corporation</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
@@ -824,7 +824,7 @@ export default function SiteSettingsPage() {
                           <div className="flex items-center justify-between">
                             <div>
                               <Label>FAQ Schema</Label>
-                              <p className="text-xs text-muted-foreground">Auto-generera från accordion-block</p>
+                              <p className="text-xs text-muted-foreground">Auto-generate from accordion blocks</p>
                             </div>
                             <Switch
                               checked={aeoData.faqSchemaEnabled}
@@ -835,7 +835,7 @@ export default function SiteSettingsPage() {
                           <div className="flex items-center justify-between">
                             <div>
                               <Label>Article Schema</Label>
-                              <p className="text-xs text-muted-foreground">För bloggposter</p>
+                              <p className="text-xs text-muted-foreground">For blog posts</p>
                             </div>
                             <Switch
                               checked={aeoData.articleSchemaEnabled}
@@ -853,13 +853,13 @@ export default function SiteSettingsPage() {
                         <Globe className="h-5 w-5" />
                         Sitemap
                       </CardTitle>
-                      <CardDescription>Dynamisk sitemap.xml för sökmotorer</CardDescription>
+                      <CardDescription>Dynamic sitemap.xml for search engines</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div className="flex items-center justify-between">
                         <div>
-                          <Label>Generera /sitemap.xml</Label>
-                          <p className="text-xs text-muted-foreground">Automatisk sitemap från publicerade sidor</p>
+                          <Label>Generate /sitemap.xml</Label>
+                          <p className="text-xs text-muted-foreground">Automatic sitemap from published pages</p>
                         </div>
                         <Switch
                           checked={aeoData.sitemapEnabled}
@@ -870,7 +870,7 @@ export default function SiteSettingsPage() {
                       {aeoData.sitemapEnabled && (
                         <>
                           <div className="space-y-2">
-                            <Label htmlFor="changefreq">Ändringsfrekvens</Label>
+                            <Label htmlFor="changefreq">Change frequency</Label>
                             <Select
                               value={aeoData.sitemapChangefreq}
                               onValueChange={(value: AeoSettings['sitemapChangefreq']) => setAeoData(prev => ({ ...prev, sitemapChangefreq: value }))}
@@ -879,15 +879,15 @@ export default function SiteSettingsPage() {
                                 <SelectValue placeholder="Select frequency" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="daily">Dagligen</SelectItem>
-                                <SelectItem value="weekly">Veckovis</SelectItem>
-                                <SelectItem value="monthly">Månadsvis</SelectItem>
-                                <SelectItem value="yearly">Årligen</SelectItem>
+                                <SelectItem value="daily">Daily</SelectItem>
+                                <SelectItem value="weekly">Weekly</SelectItem>
+                                <SelectItem value="monthly">Monthly</SelectItem>
+                                <SelectItem value="yearly">Yearly</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="priority">Standardprioritet</Label>
+                            <Label htmlFor="priority">Default priority</Label>
                             <Input
                               id="priority"
                               type="number"
@@ -900,7 +900,7 @@ export default function SiteSettingsPage() {
                                 sitemapPriority: Math.max(0, Math.min(1, parseFloat(e.target.value) || 0.5)) 
                               }))}
                             />
-                            <p className="text-xs text-muted-foreground">0.0-1.0, startsidan får alltid 1.0</p>
+                            <p className="text-xs text-muted-foreground">0.0–1.0, homepage always gets 1.0</p>
                           </div>
                         </>
                       )}
@@ -909,22 +909,22 @@ export default function SiteSettingsPage() {
 
                   <Card className="md:col-span-2">
                     <CardHeader>
-                      <CardTitle className="font-serif text-base">Vad är AEO?</CardTitle>
+                      <CardTitle className="font-serif text-base">What is AEO?</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="grid md:grid-cols-2 gap-6">
                         <div>
                           <h4 className="font-medium mb-2">SEO vs AEO</h4>
                           <ul className="text-sm text-muted-foreground space-y-1">
-                            <li>• <strong>SEO:</strong> Ranking i sökresultat</li>
-                            <li>• <strong>AEO:</strong> Bli citerad som källa av AI</li>
+                            <li>• <strong>SEO:</strong> Ranking in search results</li>
+                            <li>• <strong>AEO:</strong> Being cited as a source by AI</li>
                           </ul>
                         </div>
                         <div>
-                          <h4 className="font-medium mb-2">AI-sökmotorer som stöds</h4>
+                          <h4 className="font-medium mb-2">Supported AI search engines</h4>
                           <ul className="text-sm text-muted-foreground space-y-1">
                             <li>• Perplexity AI</li>
-                            <li>• ChatGPT (med Browse)</li>
+                            <li>• ChatGPT (with Browse)</li>
                             <li>• Google AI Overviews</li>
                             <li>• Bing Copilot</li>
                           </ul>
