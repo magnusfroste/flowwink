@@ -150,6 +150,7 @@ type BlockDataMap = {
   'chat-launcher': ChatLauncherBlockData;
   webinar: Record<string, unknown>;
   'parallax-section': ParallaxSectionBlockData;
+  'bento-grid': BentoGridBlockData;
 };
 
 const DEFAULT_BLOCK_DATA: BlockDataMap = {
