@@ -61,6 +61,7 @@ const BLOCK_LABELS: Record<ContentBlockType, string> = {
   'floating-cta': 'Floating CTA',
   'chat-launcher': 'Chat Launcher',
   webinar: 'Webinar',
+  'parallax-section': 'Parallax Section',
 };
 
 interface BlockWrapperProps {
