@@ -141,7 +141,7 @@ export function BlockRenderer({ block, pageId, index = 0 }: BlockRendererProps) 
   const animationDelay = block.animation?.delay ?? (index * 100);
   
   // Hero and separator blocks skip animation by default unless explicitly set
-  const skipAnimation = (block.type === 'hero' || block.type === 'separator') && !block.animation?.type;
+  const skipAnimation = (block.type === 'hero' || block.type === 'separator' || block.type === 'parallax-section') && !block.animation?.type;
   
   const renderBlock = () => {
     switch (block.type) {
