@@ -3230,6 +3230,15 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
               variant: 'hero-integrated',
             },
           },
+          // SECTION DIVIDER - Visual transition from hero to content
+          {
+            id: 'divider-hero-stats',
+            type: 'section-divider',
+            data: {
+              shape: 'wave',
+              height: 'md',
+            },
+          },
           // STATS - Key numbers upfront
           {
             id: 'stats-hero',
