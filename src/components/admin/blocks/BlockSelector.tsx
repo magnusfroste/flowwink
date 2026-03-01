@@ -53,6 +53,7 @@ import {
    MoveHorizontal,
    Mountain,
    LayoutGrid,
+   Waves,
   Code2,
   Table2,
   Timer,
