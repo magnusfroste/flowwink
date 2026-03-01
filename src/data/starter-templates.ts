@@ -9137,7 +9137,7 @@ const flowwinkAgencyPages: TemplatePage[] = [
               id: 'tab-team',
               title: 'For Your Team',
               icon: 'Users',
-              content: '<h3>Faster Development</h3><ul><li>Visual block editor with 43+ components</li><li>Reusable templates across clients</li><li>Version history and approval workflows</li><li>One platform to learn, use everywhere</li></ul>',
+              content: '<h3>Faster Development</h3><ul><li>Visual block editor with 47+ components</li><li>Reusable templates across clients</li><li>Version history and approval workflows</li><li>One platform to learn, use everywhere</li></ul>',
             },
             {
               id: 'tab-clients',
