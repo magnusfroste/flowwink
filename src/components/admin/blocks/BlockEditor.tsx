@@ -156,6 +156,7 @@ type BlockDataMap = {
   'parallax-section': ParallaxSectionBlockData;
   'bento-grid': BentoGridBlockData;
   'section-divider': SectionDividerBlockData;
+  'featured-carousel': FeaturedCarouselBlockData;
 };
 
 const DEFAULT_BLOCK_DATA: BlockDataMap = {
