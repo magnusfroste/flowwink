@@ -3,7 +3,7 @@ import { ALL_TEMPLATES } from '@/data/templates';
 import { validateTemplate } from '@/lib/template-validator';
 
 describe('All starter templates pass validation', () => {
-  STARTER_TEMPLATES.forEach((template) => {
+  ALL_TEMPLATES.forEach((template) => {
     it(`${template.id} (${template.name}) should have no validation errors`, () => {
       const result = validateTemplate(template);
       
