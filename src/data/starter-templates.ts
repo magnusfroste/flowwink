@@ -152,6 +152,15 @@ const launchpadPages: TemplatePage[] = [
           secondaryButton: { text: 'Learn More', url: '/product' },
         },
       },
+      // SECTION DIVIDER - Polished transition from hero
+      {
+        id: 'divider-hero-stats',
+        type: 'section-divider',
+        data: {
+          shape: 'wave',
+          height: 'sm',
+        },
+      },
       {
         id: 'stats-1',
         type: 'stats',
@@ -863,6 +872,15 @@ const trustcorpPages: TemplatePage[] = [
           secondaryButton: { text: 'Our Services', url: '/services' },
         },
       },
+      // SECTION DIVIDER - Premium transition from hero to logos
+      {
+        id: 'divider-hero-logos',
+        type: 'section-divider',
+        data: {
+          shape: 'curved',
+          height: 'sm',
+        },
+      },
       // LOGOS - Enterprise clients
       {
         id: 'logos-1',
@@ -883,16 +901,20 @@ const trustcorpPages: TemplatePage[] = [
           logoSize: 'md',
         },
       },
+      // BENTO GRID - Enterprise services (replaces flat link-grid)
       {
-        id: 'link-grid-1',
-        type: 'link-grid',
+        id: 'bento-services',
+        type: 'bento-grid',
         data: {
           columns: 4,
-          links: [
-            { icon: 'Briefcase', title: 'Consulting', description: 'Strategic advisory services', url: '/services' },
-            { icon: 'Server', title: 'Technology', description: 'Enterprise infrastructure', url: '/services' },
-            { icon: 'BarChart3', title: 'Analytics', description: 'Data-driven insights', url: '/services' },
-            { icon: 'HeadphonesIcon', title: 'Support', description: '24/7 dedicated assistance', url: '/contact' },
+          variant: 'bordered',
+          gap: 'md',
+          staggeredReveal: true,
+          items: [
+            { id: 'bg1', title: 'Consulting', description: 'Strategic advisory services for digital transformation.', icon: 'Briefcase', accentColor: '#1E40AF', linkUrl: '/services' },
+            { id: 'bg2', title: 'Technology', description: 'Enterprise infrastructure built for scale and security.', icon: 'Server', span: 'wide', accentColor: '#0F766E', linkUrl: '/services' },
+            { id: 'bg3', title: 'Analytics', description: 'Data-driven insights for smarter decisions.', icon: 'BarChart3', accentColor: '#7C3AED', linkUrl: '/services' },
+            { id: 'bg4', title: 'Support', description: '24/7 dedicated assistance from expert teams.', icon: 'HeadphonesIcon', accentColor: '#DC2626', linkUrl: '/contact' },
           ],
         },
       },
@@ -1644,6 +1666,15 @@ const securehealthPages: TemplatePage[] = [
           titleAnimation: 'fade-in',
           primaryButton: { text: 'Book Appointment', url: '/book' },
           secondaryButton: { text: 'Our Services', url: '/services' },
+        },
+      },
+      // SECTION DIVIDER - Clean clinical transition
+      {
+        id: 'divider-hero-badges',
+        type: 'section-divider',
+        data: {
+          shape: 'wave',
+          height: 'sm',
         },
       },
       // BADGE - Trust indicators
@@ -2553,6 +2584,17 @@ const momentumPages: TemplatePage[] = [
           secondaryButton: { text: 'Watch Demo', url: '#features' },
         },
       },
+      // SECTION DIVIDER - Dramatic transition from hero
+      {
+        id: 'divider-hero',
+        type: 'section-divider',
+        data: {
+          shape: 'diagonal',
+          height: 'md',
+          color: 'hsl(240, 10%, 10%)',
+          bgColor: 'transparent',
+        },
+      },
       // Section 2: Stats (social proof)
       {
         id: 'stats-1',
@@ -2587,19 +2629,22 @@ const momentumPages: TemplatePage[] = [
           separator: '•',
         },
       },
-      // Section 3: Link-Grid (features as bento-style cards)
+      // BENTO GRID - Features as asymmetric glass cards (replaces flat link-grid)
       {
-        id: 'link-grid-1',
-        type: 'link-grid',
+        id: 'bento-features',
+        type: 'bento-grid',
         data: {
           columns: 3,
-          links: [
-            { icon: 'Sparkles', title: 'AI Copilot', description: 'Code suggestions powered by the latest AI models. Write better code, faster.', url: '#features' },
-            { icon: 'Rocket', title: 'Instant Deploy', description: 'Push to production in one click. Zero configuration, infinite possibilities.', url: '#features' },
-            { icon: 'Shield', title: 'Enterprise Security', description: 'SOC 2 Type II, GDPR, and HIPAA compliant from day one.', url: '#features' },
-            { icon: 'Blocks', title: 'Modular APIs', description: 'Build anything with composable blocks. Mix, match, and extend.', url: '#features' },
-            { icon: 'Globe', title: 'Global Edge', description: '300+ edge locations worldwide. Your users get speed, everywhere.', url: '#features' },
-            { icon: 'Users', title: 'Team Collaboration', description: 'Real-time editing, branching, and reviews. Built for modern teams.', url: '#features' },
+          variant: 'glass',
+          gap: 'md',
+          staggeredReveal: true,
+          items: [
+            { id: 'bg1', title: 'AI Copilot', description: 'Code suggestions powered by the latest AI models. Write better code, faster.', icon: 'Sparkles', span: 'wide', accentColor: '#A855F7' },
+            { id: 'bg2', title: 'Instant Deploy', description: 'Push to production in one click. Zero configuration, infinite possibilities.', icon: 'Rocket', accentColor: '#F97316' },
+            { id: 'bg3', title: 'Enterprise Security', description: 'SOC 2 Type II, GDPR, and HIPAA compliant from day one.', icon: 'Shield', accentColor: '#22C55E' },
+            { id: 'bg4', title: 'Modular APIs', description: 'Build anything with composable blocks. Mix, match, and extend.', icon: 'Blocks', accentColor: '#3B82F6' },
+            { id: 'bg5', title: 'Global Edge', description: '300+ edge locations worldwide. Your users get speed, everywhere.', icon: 'Globe', span: 'wide', accentColor: '#06B6D4' },
+            { id: 'bg6', title: 'Team Collaboration', description: 'Real-time editing, branching, and reviews. Built for modern teams.', icon: 'Users', accentColor: '#EC4899' },
           ],
         },
       },
@@ -2647,6 +2692,20 @@ const momentumPages: TemplatePage[] = [
           imageSrc: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=800',
           imageAlt: 'Server infrastructure',
           imagePosition: 'left',
+        },
+      },
+      // PARALLAX SECTION - Visual break between feature deep-dives
+      {
+        id: 'parallax-tech',
+        type: 'parallax-section',
+        data: {
+          backgroundImage: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=1920',
+          title: 'Built for the Future',
+          subtitle: 'Infrastructure that scales from your first user to your first million.',
+          height: 'sm',
+          textColor: 'light',
+          overlayOpacity: 70,
+          contentAlignment: 'center',
         },
       },
       // SOCIAL PROOF - Live developer metrics
@@ -3230,13 +3289,22 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
               variant: 'hero-integrated',
             },
           },
+          // SECTION DIVIDER - Visual transition from hero to content
+          {
+            id: 'divider-hero-stats',
+            type: 'section-divider',
+            data: {
+              shape: 'wave',
+              height: 'md',
+            },
+          },
           // STATS - Key numbers upfront
           {
             id: 'stats-hero',
             type: 'stats',
             data: {
               items: [
-                { id: 's1', value: '43+', label: 'Block Types' },
+                { id: 's1', value: '47+', label: 'Block Types' },
                 { id: 's2', value: '16', label: 'Built-in Modules' },
                 { id: 's3', value: '5', label: 'AI Providers' },
                 { id: 's4', value: '∞', label: 'Self-Host Free' },
@@ -3262,7 +3330,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
                 {
                   id: 'hw-2',
                   title: 'Create',
-                  description: 'Use the visual editor to build pages with 43+ blocks. No coding needed.',
+                  description: 'Use the visual editor to build pages with 47+ blocks. No coding needed.',
                   icon: 'Blocks',
                 },
                 {
@@ -3307,97 +3375,49 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
               iconStyle: 'circle',
             },
           },
-          // FEATURES - Complete CMS modules
+          // BENTO GRID - Core modules showcase (replaces flat features grid)
           {
-            id: 'features-modules',
-            type: 'features',
+            id: 'bento-modules',
+            type: 'bento-grid',
             data: {
               title: 'Everything You Need',
               subtitle: 'A complete content platform with built-in modules that just work.',
-              features: [
-                {
-                  id: 'mod-blog',
-                  icon: 'FileText',
-                  title: 'Blog Module',
-                  description: 'Full-featured blog with categories, tags, authors, and SEO optimization. RSS feeds included.',
-                },
-                {
-                  id: 'mod-newsletter',
-                  icon: 'Mail',
-                  title: 'Newsletter Module',
-                  description: 'Built-in subscriber management, GDPR compliance, and email campaigns. No third-party needed.',
-                },
-                {
-                  id: 'mod-crm',
-                  icon: 'Users',
-                  title: 'CRM Module',
-                  description: 'Lead management, company tracking, and deal pipeline. Convert visitors to customers.',
-                },
-                {
-                  id: 'mod-kb',
-                  icon: 'Library',
-                  title: 'Knowledge Base',
-                  description: 'Structured FAQ with categories, full-text search, and AI chat integration for instant answers.',
-                },
-                {
-                  id: 'mod-ecommerce',
-                  icon: 'ShoppingCart',
-                  title: 'E-commerce',
-                  description: 'Products, orders, and Stripe checkout. Sell subscriptions or one-time purchases.',
-                },
-                {
-                  id: 'mod-forms',
-                  icon: 'ClipboardList',
-                  title: 'Form Builder',
-                  description: 'Drag-and-drop forms with validation, submissions tracking, and webhook integration.',
-                },
-                {
-                  id: 'mod-media',
-                  icon: 'Image',
-                  title: 'Media Library',
-                  description: 'Centralized asset management with image optimization, cropping, and Unsplash integration.',
-                },
-                {
-                  id: 'mod-webhooks',
-                  icon: 'Webhook',
-                  title: 'Webhooks & API',
-                  description: 'Connect to any service with webhooks. N8N templates included for common automations.',
-                },
-                {
-                  id: 'mod-livesupport',
-                  icon: 'Headphones',
-                  title: 'Live Support',
-                  description: 'Human agent support with AI-to-human handoff, sentiment detection, and escalation rules.',
-                },
-                {
-                  id: 'mod-deals',
-                  icon: 'Briefcase',
-                  title: 'Deal Pipeline',
-                  description: 'Kanban-style sales pipeline. Track deals from lead to close with value forecasting.',
-                },
-                {
-                  id: 'mod-companies',
-                  icon: 'Building2',
-                  title: 'Companies',
-                  description: 'Organization management with AI enrichment. Auto-link contacts via email domain.',
-                },
-                {
-                  id: 'mod-contentapi',
-                  icon: 'Database',
-                  title: 'Content Hub API',
-                  description: 'Full REST API for headless delivery. Power any frontend with structured content.',
-                },
-                {
-                  id: 'mod-webinars',
-                  icon: 'Video',
-                  title: 'Webinars',
-                  description: 'Plan, promote, and follow up webinars and online events with registration and reminders.',
-                },
+              eyebrow: 'PLATFORM',
+              columns: 3,
+              variant: 'default',
+              gap: 'md',
+              staggeredReveal: true,
+              items: [
+                { id: 'bg-cms', title: 'Visual Page Builder', description: '47+ drag-and-drop blocks. Build any layout without touching code.', icon: 'Layout', span: 'wide', accentColor: '#3B82F6' },
+                { id: 'bg-chat', title: 'AI Chat Widget', description: 'Content-aware AI that reads your pages and KB to answer visitor questions 24/7. Private LLM support.', icon: 'MessageCircle', span: 'large', accentColor: '#8B5CF6' },
+                { id: 'bg-blog', title: 'Blog & Newsletter', description: 'Full blog with categories, tags, and built-in email campaigns with GDPR compliance.', icon: 'FileText', accentColor: '#F59E0B' },
+                { id: 'bg-crm', title: 'CRM & Leads', description: 'Lead capture, deal pipeline, company tracking, and AI qualification.', icon: 'Users', accentColor: '#10B981' },
+                { id: 'bg-ecommerce', title: 'E-commerce', description: 'Products, orders, and Stripe checkout. Sell subscriptions or one-time purchases.', icon: 'ShoppingCart', accentColor: '#EC4899' },
+                { id: 'bg-kb', title: 'Knowledge Base', description: 'Hierarchical FAQ with full-text search and chat integration.', icon: 'Library', span: 'wide', accentColor: '#06B6D4' },
               ],
-              columns: 4,
-              layout: 'grid',
-              variant: 'cards',
-              iconStyle: 'square',
+            },
+          },
+          // SECTION DIVIDER - Transition to pillars
+          {
+            id: 'divider-before-pillars',
+            type: 'section-divider',
+            data: {
+              shape: 'curved',
+              height: 'sm',
+            },
+          },
+          // PARALLAX SECTION - Platform vision
+          {
+            id: 'parallax-vision',
+            type: 'parallax-section',
+            data: {
+              backgroundImage: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1920',
+              title: 'Head + FlowWink + Headless',
+              subtitle: 'Beautiful website included. Powerful API built in. No compromises.',
+              height: 'md',
+              textColor: 'light',
+              overlayOpacity: 60,
+              contentAlignment: 'center',
             },
           },
           // FEATURES - AI-First Platform
@@ -4132,7 +4152,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
                   content: {
                     type: 'doc',
                     content: [
-                      { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Visual Editor & 43+ Blocks' }] },
+                      { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Visual Editor & 47+ Blocks' }] },
                       { type: 'paragraph', content: [{ type: 'text', text: 'Drag-and-drop page building with real-time preview. No coding required.' }] },
                       { type: 'bulletList', content: [
                         { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Rich Text Editor' }, { type: 'text', text: ' – Full formatting, links, images, and embedded media' }] }] },
@@ -4274,7 +4294,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
             data: {
               title: '',
               items: [
-                { id: 'stat-blocks', value: '43+', label: 'Content Blocks' },
+                { id: 'stat-blocks', value: '47+', label: 'Content Blocks' },
                 { id: 'stat-roles', value: '3', label: 'Editorial Roles' },
                 { id: 'stat-modules', value: '16', label: 'Built-in Modules' },
                 { id: 'stat-api', value: '100%', label: 'API Coverage' },
@@ -4711,7 +4731,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
         menu_order: 3,
         showInMenu: true,
         meta: {
-          description: 'Explore all 43+ block types available in FlowWink - from content blocks to interactive elements and AI-powered features.',
+          description: 'Explore all 47+ block types available in FlowWink - from content blocks to interactive elements and AI-powered features.',
           showTitle: true,
           titleAlignment: 'center',
         },
@@ -4722,7 +4742,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
             type: 'hero',
             data: {
               title: 'See FlowWink in Action',
-              subtitle: 'This page is built with FlowWink. Explore 43+ block types organized by category below.',
+              subtitle: 'This page is built with FlowWink. Explore 47+ block types organized by category below.',
               backgroundType: 'color',
               heightMode: 'auto',
               contentAlignment: 'center',
@@ -4737,7 +4757,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
             type: 'stats',
             data: {
               items: [
-                { id: 'ds1', value: '43+', label: 'Block Types' },
+                { id: 'ds1', value: '47+', label: 'Block Types' },
                 { id: 'ds2', value: '16', label: 'Modules' },
                 { id: 'ds3', value: '5', label: 'AI Providers' },
                 { id: 'ds4', value: '3', label: 'User Roles' },
@@ -4768,7 +4788,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
                   { type: 'paragraph', content: [{ type: 'text', text: 'The visual editor is the heart of FlowWink. Add blocks, arrange them, edit content – all in real-time with instant preview.' }] },
                   { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'How It Works' }] },
                   { type: 'orderedList', content: [
-                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Add a Block' }, { type: 'text', text: ' – Click the + button and choose from 43+ block types' }] }] },
+                    { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Add a Block' }, { type: 'text', text: ' – Click the + button and choose from 47+ block types' }] }] },
                     { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Edit Content' }, { type: 'text', text: ' – Click any text to edit. Upload images. Configure settings.' }] }] },
                     { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Rearrange' }, { type: 'text', text: ' – Drag blocks to reorder. Move sections around freely.' }] }] },
                     { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Preview' }, { type: 'text', text: ' – See exactly how it looks on desktop, tablet, and mobile.' }] }] },
@@ -4814,7 +4834,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
             id: 'demo-block-overview',
             type: 'features',
             data: {
-              title: '43+ Block Types Available',
+              title: '47+ Block Types Available',
               subtitle: 'From simple text to complex e-commerce – build any page with drag-and-drop blocks.',
               features: [
                 { id: 'cat-content', icon: 'FileText', title: 'Content', description: 'Hero, Text, Image, Quote, Separator, Two-Column, Info Box' },
@@ -7627,7 +7647,16 @@ const hybridHelpPages: TemplatePage[] = [
               icon: 'CreditCard',
               content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Manage your subscription, update payment methods, view invoices, and compare plan features.' }] }] },
             },
-            {
+      // SECTION DIVIDER - Between search and categories
+      {
+        id: 'divider-search-categories',
+        type: 'section-divider',
+        data: {
+          shape: 'curved',
+          height: 'sm',
+        },
+      },
+      {
               id: 'tab-troubleshooting',
               title: 'Troubleshooting',
               icon: 'Wrench',
@@ -7905,6 +7934,55 @@ const serviceProPages: TemplatePage[] = [
           titleAnimation: 'fade-in',
           primaryButton: { text: 'Book Now', url: '/book' },
           secondaryButton: { text: 'Our Services', url: '/services' },
+        },
+      },
+      // SECTION DIVIDER - Transition to services
+      {
+        id: 'divider-stats-services',
+        type: 'section-divider',
+        data: {
+          shape: 'wave',
+          height: 'sm',
+        },
+      },
+      // FEATURED CAROUSEL - Service showcase
+      {
+        id: 'carousel-services',
+        type: 'featured-carousel',
+        data: {
+          slides: [
+            {
+              id: 'slide-consult',
+              title: 'Expert Consultation',
+              description: 'Get personalized advice from our team of experienced professionals.',
+              image: 'https://images.unsplash.com/photo-1573497620053-ea5300f94f21?w=1920',
+              ctaText: 'Book Now',
+              ctaUrl: '/book',
+              textAlignment: 'left',
+            },
+            {
+              id: 'slide-service',
+              title: 'Premium Services',
+              description: 'Quality craftsmanship delivered on time, every time.',
+              image: 'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=1920',
+              ctaText: 'View Services',
+              ctaUrl: '/services',
+              textAlignment: 'left',
+            },
+            {
+              id: 'slide-team',
+              title: 'Dedicated Team',
+              description: 'Skilled professionals committed to exceeding your expectations.',
+              image: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=1920',
+              ctaText: 'Meet the Team',
+              ctaUrl: '/about',
+              textAlignment: 'left',
+            },
+          ],
+          autoPlay: true,
+          interval: 5000,
+          height: 'md',
+          transition: 'fade',
         },
       },
       {
@@ -8546,6 +8624,46 @@ const digitalShopPages: TemplatePage[] = [
           sticky: false,
         },
       },
+      // FEATURED CAROUSEL - Product category banners
+      {
+        id: 'carousel-categories',
+        type: 'featured-carousel',
+        data: {
+          slides: [
+            {
+              id: 'slide-templates',
+              title: 'Premium Templates',
+              description: 'Professional designs for presentations, websites, and more.',
+              image: 'https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=1920',
+              ctaText: 'Shop Templates',
+              ctaUrl: '#products',
+              textAlignment: 'center',
+            },
+            {
+              id: 'slide-courses',
+              title: 'Online Courses',
+              description: 'Learn from industry experts with step-by-step video lessons.',
+              image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=1920',
+              ctaText: 'Browse Courses',
+              ctaUrl: '#products',
+              textAlignment: 'center',
+            },
+            {
+              id: 'slide-tools',
+              title: 'Design Tools',
+              description: 'UI kits, icon packs, and design systems for modern teams.',
+              image: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=1920',
+              ctaText: 'View Tools',
+              ctaUrl: '#products',
+              textAlignment: 'center',
+            },
+          ],
+          autoPlay: true,
+          interval: 4000,
+          height: 'md',
+          transition: 'slide',
+        },
+      },
       // HERO - Shop hero
       {
         id: 'hero-shop',
@@ -9065,6 +9183,15 @@ const flowwinkAgencyPages: TemplatePage[] = [
           secondaryButton: { text: 'See Product Demo', url: 'https://demo.flowwink.com' },
         },
       },
+      // SECTION DIVIDER - Transition from hero
+      {
+        id: 'divider-hero-stats',
+        type: 'section-divider',
+        data: {
+          shape: 'diagonal',
+          height: 'sm',
+        },
+      },
       // STATS - Agency metrics
       {
         id: 'stats-agency',
@@ -9076,6 +9203,24 @@ const flowwinkAgencyPages: TemplatePage[] = [
             { value: '5 min', label: 'Deploy Time', icon: 'Zap' },
             { value: '∞', label: 'Client Sites', icon: 'Layers' },
             { value: '€0', label: 'Platform Fees', icon: 'Ban' },
+          ],
+        },
+      },
+      // BENTO GRID - Agency benefits (replaces flat features)
+      {
+        id: 'bento-benefits',
+        type: 'bento-grid',
+        data: {
+          eyebrow: 'WHY FLOWWINK',
+          columns: 3,
+          variant: 'default',
+          gap: 'md',
+          staggeredReveal: true,
+          items: [
+            { id: 'ab1', title: 'White Label', description: 'Your brand, your domain. Clients never see FlowWink.', icon: 'Palette', span: 'wide', accentColor: '#8B5CF6' },
+            { id: 'ab2', title: 'Unlimited Sites', description: 'One VPS hosts 20-50 client sites. Scale without limits.', icon: 'Layers', accentColor: '#3B82F6' },
+            { id: 'ab3', title: 'Zero Fees', description: 'No per-site, per-user, or per-page charges. Ever.', icon: 'Ban', accentColor: '#10B981' },
+            { id: 'ab4', title: 'Full API', description: 'Headless delivery for custom React, Vue, or mobile apps.', icon: 'Code', span: 'wide', accentColor: '#F59E0B' },
           ],
         },
       },
@@ -9137,7 +9282,7 @@ const flowwinkAgencyPages: TemplatePage[] = [
               id: 'tab-team',
               title: 'For Your Team',
               icon: 'Users',
-              content: '<h3>Faster Development</h3><ul><li>Visual block editor with 43+ components</li><li>Reusable templates across clients</li><li>Version history and approval workflows</li><li>One platform to learn, use everywhere</li></ul>',
+              content: '<h3>Faster Development</h3><ul><li>Visual block editor with 47+ components</li><li>Reusable templates across clients</li><li>Version history and approval workflows</li><li>One platform to learn, use everywhere</li></ul>',
             },
             {
               id: 'tab-clients',
@@ -9234,7 +9379,7 @@ const flowwinkAgencyPages: TemplatePage[] = [
           title: 'Complete Suite Included',
           subtitle: 'Everything your clients need, nothing they do not.',
           features: [
-            { id: 'f1', icon: 'Layout', title: 'Visual Page Builder', description: '43+ blocks for any layout. Clients can edit, you control what they can touch.' },
+            { id: 'f1', icon: 'Layout', title: 'Visual Page Builder', description: '47+ blocks for any layout. Clients can edit, you control what they can touch.' },
             { id: 'f2', icon: 'PenTool', title: 'Blog & Newsletter', description: 'Built-in blog with categories, tags, and email newsletter. No plugins needed.' },
             { id: 'f3', icon: 'MessageCircle', title: 'AI Chat Widget', description: 'Train on client content. Answers visitor questions 24/7.' },
             { id: 'f4', icon: 'ClipboardList', title: 'Forms & CRM', description: 'Contact forms, lead capture, and basic CRM. All data stays in your control.' },
@@ -9585,7 +9730,7 @@ const flowwinkAgencyPages: TemplatePage[] = [
               id: 'tab-content',
               title: 'Content Management',
               icon: 'FileText',
-              content: '<h3>Visual Block Editor</h3><p>43+ block types for any layout. Drag-and-drop interface that clients can actually use.</p><ul><li>Hero, features, testimonials, pricing blocks</li><li>Version history with one-click restore</li><li>Approval workflow for quality control</li><li>Schedule publishing in advance</li></ul>',
+              content: '<h3>Visual Block Editor</h3><p>47+ block types for any layout. Drag-and-drop interface that clients can actually use.</p><ul><li>Hero, features, testimonials, pricing blocks</li><li>Version history with one-click restore</li><li>Approval workflow for quality control</li><li>Schedule publishing in advance</li></ul>',
             },
             {
               id: 'tab-clients',
@@ -9706,7 +9851,7 @@ const flowwinkAgencyPages: TemplatePage[] = [
               description: 'Full platform, your infrastructure.',
               features: [
                 'Unlimited client sites',
-                'All 43+ block types',
+                'All 47+ block types',
                 'Blog, newsletter, forms, CRM',
                 'AI chat widget',
                 'Headless API access',

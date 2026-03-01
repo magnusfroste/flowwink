@@ -1,124 +1,93 @@
 
-# Template Revision: Upgrade All Templates with New Blocks
 
-## Summary
-Systematic upgrade of all 9 starter templates to incorporate the 4 new block types (Bento Grid, Featured Carousel, Section Divider, Parallax Section) where they add real design value. Plus documentation updates.
+# Fix: Pages Not Visible in Docker/Easypanel Admin
 
----
+## Problem Analysis
 
-## Template-by-Template Analysis & Changes
+The pages list in `/admin/pages` appears empty after Docker deployment, even though template generation succeeds and pages exist in the database. Pages created manually also don't appear in admin but DO show on the public site.
 
-### 1. FlowWink Platform (Primary -- needs most attention)
+### Root Cause
 
-**Home page:**
-- Replace the flat `features-modules` block (13 features in a 4-col grid) with a **Bento Grid** showcasing the 6 most important modules with icons, accent colors, and mixed span sizes (wide for CMS, large for AI Chat)
-- Add a **Section Divider** (wave) between Hero+Chat section and the Stats section for visual separation
-- Add a **Section Divider** (curved) before the Pricing section
-- Replace or supplement `features-pillars` (Head/FlowWink/Headless) with a **Parallax Section** featuring a background image and the three pillars as overlay text
+This is an **authentication timing issue**, not a nginx/JWT proxy problem. The Supabase JS client communicates directly with the Supabase API -- nginx never handles those requests.
 
-**Features page:**
-- Add **Section Dividers** between major content sections (Editorial Workflow, Knowledge Base, etc.)
-- Add a **Bento Grid** for the "Built for Every Role" section as an alternative visual to tabs
+When the app loads in a Docker container (different domain, cold start), the Supabase auth session takes longer to restore from localStorage. During this window, queries execute as `anon` instead of `authenticated`. The RLS policy for `anon` only returns published pages, making drafts invisible.
 
-**Blocks showcase page (/blocks):**
-- Add examples of all 4 new blocks: Bento Grid, Featured Carousel, Section Divider, Parallax Section
-- Update stats from "43+" to "47+" block types
+The existing `usePages` fix (`enabled: !authLoading`) is correct but incomplete -- several other hooks lack the same guard. Additionally, `docker-compose.yml` has configuration bugs.
 
-**Demo page:** No changes needed (functional demos, not design showcase)
+## Plan
 
----
+### 1. Fix docker-compose.yml configuration
 
-### 2. Momentum (Single-page, dark YC-style)
+Move Vite variables from runtime `environment` to build-time `args` (Vite bakes env vars at build time). Fix variable naming to match what the Dockerfile expects.
 
-- Replace `link-grid-1` (6 features) with a **Bento Grid** using `glass` variant -- perfect fit for dark, modern aesthetic with asymmetric layout
-- Add a **Section Divider** (diagonal, using dark colors) between Hero and Stats for dramatic transition
-- Add a **Parallax Section** between the two Two-Column blocks as a visual break with a dark tech image
+**Before:**
+```yaml
+environment:
+  - VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
+  - VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}
+```
 
----
+**After:**
+```yaml
+build:
+  context: .
+  dockerfile: Dockerfile
+  args:
+    - VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
+    - VITE_SUPABASE_PUBLISHABLE_KEY=${VITE_SUPABASE_PUBLISHABLE_KEY}
+    - VITE_SUPABASE_PROJECT_ID=${VITE_SUPABASE_PROJECT_ID}
+```
 
-### 3. LaunchPad (Startup SaaS)
+### 2. Add auth guards to ALL admin query hooks in usePages.tsx
 
-- Add **Section Divider** (wave) between Hero and Stats for polished flow
-- Replace the single `two-col-1` on the home page with a **Featured Carousel** showing 3 feature highlights with images and CTAs (Built for Speed, Security First, Scale Without Limits)
-- Add a **Bento Grid** on the Product page to replace the 6-item features grid with a more visually interesting asymmetric layout
+Currently only `usePages` waits for auth. These hooks also need the guard:
 
----
+- `usePage` -- single page fetch (used in page editor)
+- `useDeletedPages` -- trash view
+- `usePageVersions` -- version history
 
-### 4. TrustCorp (Enterprise)
+Pattern applied to each:
+```typescript
+export function useDeletedPages() {
+  const { loading: authLoading, session } = useAuth();
+  return useQuery({
+    queryKey: ['deleted-pages', session?.user?.id ?? 'anon'],
+    enabled: !authLoading,
+    // ...existing queryFn
+  });
+}
+```
 
-- Add **Section Divider** (curved) between Hero and Logos for premium feel
-- Replace `link-grid-1` with a **Bento Grid** using `bordered` variant for the professional enterprise aesthetic
-- Add a **Parallax Section** before the Certifications section with a corporate building/skyline image
+### 3. Fix ChatFeedback Swedish text
 
----
+`ChatFeedback.tsx` has hardcoded Swedish strings. Change to English per project requirements:
+- "Tack for din feedback!" -> "Thanks for your feedback!"
+- "Tack! Vi anvander detta for att forbattra." -> "Thanks! We'll use this to improve."
+- "Kunde inte spara feedback" -> "Could not save feedback"
+- "Tack!" -> "Thanks!"
 
-### 5. SecureHealth (Healthcare/Compliance)
+### 4. Update Docker quickstart docs
 
-- Add **Section Divider** (wave, soft blue) between major sections for clinical, clean transitions
-- Add a **Bento Grid** for compliance certifications/features as an upgrade from simple badge/feature blocks
-- Keep overall conservative design -- minimal use of new blocks to maintain trust/credibility aesthetic
+Update `docs/DOCKER-QUICKSTART.md` to use correct variable name (`VITE_SUPABASE_PUBLISHABLE_KEY` not `VITE_SUPABASE_ANON_KEY`) and add `VITE_SUPABASE_PROJECT_ID`.
 
----
+## Files Modified
 
-### 6. HelpCenter
+| File | Change |
+|------|--------|
+| `docker-compose.yml` | Fix build args, variable names |
+| `src/hooks/usePages.tsx` | Add auth guards to `usePage`, `useDeletedPages`, `usePageVersions` |
+| `src/components/chat/ChatFeedback.tsx` | English text |
+| `docs/DOCKER-QUICKSTART.md` | Correct env var names |
 
-- Add **Section Divider** (curved) between KB search and FAQ sections
-- No Bento Grid or Carousel -- this template should stay focused and minimal for support UX
+## Important Note for Easypanel
 
----
+If Easypanel passes the env vars as runtime environment variables rather than Docker build arguments, the Vite build won't pick them up. In Easypanel's settings, ensure these are configured as **build arguments**, not just environment variables. The variable names must be exactly:
 
-### 7. ServicePro (Service Business)
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_PUBLISHABLE_KEY`
+- `VITE_SUPABASE_PROJECT_ID`
 
-- Add a **Featured Carousel** for service showcases -- rotating slides showing different services with images and booking CTAs
-- Add **Section Dividers** (wave) between major content sections
-- Add a **Parallax Section** with team/workshop image before the testimonials
+## Edge Functions Consideration
 
----
+Edge functions deployed to Lovable Cloud (`rzhjotxffjfsdlhrdkpj`) are NOT available on the Docker Supabase (`urjdzmenjvkergjrzjvs`). Features like AI chat, brand analysis, image processing, and webhooks will not work in Docker unless edge functions are also deployed to the production Supabase. This is a separate concern and does not affect the pages visibility issue.
 
-### 8. Digital Shop (E-commerce)
-
-- Add a **Featured Carousel** as a hero-adjacent element -- rotating product category banners with "Shop Now" CTAs
-- Add **Section Dividers** (gradient) between product sections and features
-- Add a **Bento Grid** for "Why Choose Us" features to replace flat feature cards
-
----
-
-### 9. FlowWink Agency
-
-- Add a **Bento Grid** for agency benefits (White Label, Unlimited Sites, Zero Fees, Full API) with mixed spans
-- Add **Section Dividers** between major sections
-- Add a **Featured Carousel** for client case studies / portfolio slides
-
----
-
-## Documentation Updates
-
-### docs/TEMPLATE-AUTHORING.md
-- Add block reference entries for all 4 new blocks:
-  - `parallax-section` with backgroundImage, title, subtitle, height, overlayOpacity
-  - `bento-grid` with items array, columns, variant, gap
-  - `section-divider` with shape, color, bgColor, height, flip, invert
-  - `featured-carousel` with slides array, autoPlay, interval, height, transition
-- Update the "16 Modules" overview table (if block count reference exists)
-- Update block count references from "43+" to "47+"
-
----
-
-## Technical Details
-
-### Files to modify:
-1. **`src/data/starter-templates.ts`** -- All template page block arrays (bulk of work)
-2. **`docs/TEMPLATE-AUTHORING.md`** -- Add 4 new block type references
-3. **`src/data/starter-templates.ts`** -- Update any "43+" references to "47+"
-
-### Block count references to update:
-- FlowWink Platform: `stats-hero` item "43+ Block Types" -> "47+"
-- FlowWink Platform: `stats-blocks` item "43+ Content Blocks" -> "47+"
-- FlowWink Platform: Features tab "43+ Blocks" text references
-
-### Design principles:
-- Section Dividers: Use sparingly (1-3 per home page) to avoid visual noise
-- Bento Grid: Best suited to replace flat feature grids with 4+ items
-- Featured Carousel: Use for hero-adjacent showcases or service highlights
-- Parallax Section: Maximum 1 per page for impact, never consecutive
-- Respect each template's existing aesthetic (dark for Momentum, conservative for SecureHealth, etc.)
