@@ -872,6 +872,15 @@ const trustcorpPages: TemplatePage[] = [
           secondaryButton: { text: 'Our Services', url: '/services' },
         },
       },
+      // SECTION DIVIDER - Premium transition from hero to logos
+      {
+        id: 'divider-hero-logos',
+        type: 'section-divider',
+        data: {
+          shape: 'curved',
+          height: 'sm',
+        },
+      },
       // LOGOS - Enterprise clients
       {
         id: 'logos-1',
@@ -892,16 +901,20 @@ const trustcorpPages: TemplatePage[] = [
           logoSize: 'md',
         },
       },
+      // BENTO GRID - Enterprise services (replaces flat link-grid)
       {
-        id: 'link-grid-1',
-        type: 'link-grid',
+        id: 'bento-services',
+        type: 'bento-grid',
         data: {
           columns: 4,
-          links: [
-            { icon: 'Briefcase', title: 'Consulting', description: 'Strategic advisory services', url: '/services' },
-            { icon: 'Server', title: 'Technology', description: 'Enterprise infrastructure', url: '/services' },
-            { icon: 'BarChart3', title: 'Analytics', description: 'Data-driven insights', url: '/services' },
-            { icon: 'HeadphonesIcon', title: 'Support', description: '24/7 dedicated assistance', url: '/contact' },
+          variant: 'bordered',
+          gap: 'md',
+          staggeredReveal: true,
+          items: [
+            { id: 'bg1', title: 'Consulting', description: 'Strategic advisory services for digital transformation.', icon: 'Briefcase', accentColor: '#1E40AF', linkUrl: '/services' },
+            { id: 'bg2', title: 'Technology', description: 'Enterprise infrastructure built for scale and security.', icon: 'Server', span: 'wide', accentColor: '#0F766E', linkUrl: '/services' },
+            { id: 'bg3', title: 'Analytics', description: 'Data-driven insights for smarter decisions.', icon: 'BarChart3', accentColor: '#7C3AED', linkUrl: '/services' },
+            { id: 'bg4', title: 'Support', description: '24/7 dedicated assistance from expert teams.', icon: 'HeadphonesIcon', accentColor: '#DC2626', linkUrl: '/contact' },
           ],
         },
       },
