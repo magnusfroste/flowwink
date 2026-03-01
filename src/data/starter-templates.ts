@@ -2553,6 +2553,17 @@ const momentumPages: TemplatePage[] = [
           secondaryButton: { text: 'Watch Demo', url: '#features' },
         },
       },
+      // SECTION DIVIDER - Dramatic transition from hero
+      {
+        id: 'divider-hero',
+        type: 'section-divider',
+        data: {
+          shape: 'diagonal',
+          height: 'md',
+          color: 'hsl(240, 10%, 10%)',
+          bgColor: 'transparent',
+        },
+      },
       // Section 2: Stats (social proof)
       {
         id: 'stats-1',
@@ -2587,19 +2598,22 @@ const momentumPages: TemplatePage[] = [
           separator: '•',
         },
       },
-      // Section 3: Link-Grid (features as bento-style cards)
+      // BENTO GRID - Features as asymmetric glass cards (replaces flat link-grid)
       {
-        id: 'link-grid-1',
-        type: 'link-grid',
+        id: 'bento-features',
+        type: 'bento-grid',
         data: {
           columns: 3,
-          links: [
-            { icon: 'Sparkles', title: 'AI Copilot', description: 'Code suggestions powered by the latest AI models. Write better code, faster.', url: '#features' },
-            { icon: 'Rocket', title: 'Instant Deploy', description: 'Push to production in one click. Zero configuration, infinite possibilities.', url: '#features' },
-            { icon: 'Shield', title: 'Enterprise Security', description: 'SOC 2 Type II, GDPR, and HIPAA compliant from day one.', url: '#features' },
-            { icon: 'Blocks', title: 'Modular APIs', description: 'Build anything with composable blocks. Mix, match, and extend.', url: '#features' },
-            { icon: 'Globe', title: 'Global Edge', description: '300+ edge locations worldwide. Your users get speed, everywhere.', url: '#features' },
-            { icon: 'Users', title: 'Team Collaboration', description: 'Real-time editing, branching, and reviews. Built for modern teams.', url: '#features' },
+          variant: 'glass',
+          gap: 'md',
+          staggeredReveal: true,
+          items: [
+            { id: 'bg1', title: 'AI Copilot', description: 'Code suggestions powered by the latest AI models. Write better code, faster.', icon: 'Sparkles', span: 'wide', accentColor: '#A855F7' },
+            { id: 'bg2', title: 'Instant Deploy', description: 'Push to production in one click. Zero configuration, infinite possibilities.', icon: 'Rocket', accentColor: '#F97316' },
+            { id: 'bg3', title: 'Enterprise Security', description: 'SOC 2 Type II, GDPR, and HIPAA compliant from day one.', icon: 'Shield', accentColor: '#22C55E' },
+            { id: 'bg4', title: 'Modular APIs', description: 'Build anything with composable blocks. Mix, match, and extend.', icon: 'Blocks', accentColor: '#3B82F6' },
+            { id: 'bg5', title: 'Global Edge', description: '300+ edge locations worldwide. Your users get speed, everywhere.', icon: 'Globe', span: 'wide', accentColor: '#06B6D4' },
+            { id: 'bg6', title: 'Team Collaboration', description: 'Real-time editing, branching, and reviews. Built for modern teams.', icon: 'Users', accentColor: '#EC4899' },
           ],
         },
       },
