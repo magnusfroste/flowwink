@@ -4814,7 +4814,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
             id: 'demo-block-overview',
             type: 'features',
             data: {
-              title: '43+ Block Types Available',
+              title: '47+ Block Types Available',
               subtitle: 'From simple text to complex e-commerce – build any page with drag-and-drop blocks.',
               features: [
                 { id: 'cat-content', icon: 'FileText', title: 'Content', description: 'Hero, Text, Image, Quote, Separator, Two-Column, Info Box' },
