@@ -96,6 +96,7 @@ import type { FloatingCTABlockData } from './blocks/FloatingCTABlock';
 import type { ParallaxSectionBlockData } from './blocks/ParallaxSectionBlock';
 import type { BentoGridBlockData } from './blocks/BentoGridBlock';
 import type { SectionDividerBlockData } from './blocks/SectionDividerBlock';
+import type { FeaturedCarouselBlockData } from './blocks/FeaturedCarouselBlock';
 
 interface BlockRendererProps {
   block: ContentBlock;
