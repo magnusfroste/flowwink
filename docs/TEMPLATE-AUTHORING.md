@@ -759,6 +759,108 @@ Scroll-triggered call-to-action.
 
 ---
 
+## New Block Types (Layout & Visual)
+
+### Parallax Section Block
+Full-width section with parallax background image and overlay text.
+
+```typescript
+{
+  id: 'parallax-1',
+  type: 'parallax-section',
+  data: {
+    backgroundImage: 'https://...',  // Required
+    title: 'Section Title',
+    subtitle: 'Supporting text',
+    height: 'md',                    // sm | md | lg | xl
+    textColor: 'light',             // light | dark
+    overlayOpacity: 50,             // 0-100
+    contentAlignment: 'center',     // left | center | right
+  },
+}
+```
+
+### Bento Grid Block
+Asymmetric grid layout for showcasing features with mixed-size cards.
+
+```typescript
+{
+  id: 'bento-1',
+  type: 'bento-grid',
+  data: {
+    title: 'Our Platform',
+    subtitle: 'Everything you need',
+    eyebrow: 'FEATURES',
+    eyebrowColor: '#3B82F6',        // Optional custom color
+    columns: 3,                      // 3 | 4
+    variant: 'default',             // default | glass | bordered
+    gap: 'md',                      // sm | md | lg
+    staggeredReveal: true,
+    items: [
+      {
+        id: 'bg1',
+        title: 'Feature',
+        description: 'Description text',
+        icon: 'Zap',               // Lucide icon name
+        span: 'wide',              // normal | wide | tall | large
+        accentColor: '#3B82F6',
+        linkUrl: '/features',
+        linkLabel: 'Learn more',
+      },
+      // ... more items
+    ],
+  },
+}
+```
+
+### Section Divider Block
+Decorative SVG shape between content sections.
+
+```typescript
+{
+  id: 'divider-1',
+  type: 'section-divider',
+  data: {
+    shape: 'wave',                  // wave | diagonal | curved | zigzag | triangle
+    color: '#ffffff',               // Shape fill color (optional)
+    bgColor: 'transparent',        // Background color (optional)
+    height: 'md',                   // sm | md | lg
+    flip: false,                    // Flip horizontally
+    invert: false,                  // Flip vertically (upside down)
+  },
+}
+```
+
+### Featured Carousel Block
+Auto-rotating content carousel with configurable slides and CTA buttons.
+
+```typescript
+{
+  id: 'carousel-1',
+  type: 'featured-carousel',
+  data: {
+    slides: [
+      {
+        id: 'slide-1',
+        title: 'Slide Title',
+        description: 'Slide description text',
+        image: 'https://...',
+        ctaText: 'Learn More',
+        ctaUrl: '/about',
+        textAlignment: 'center',    // left | center | right
+      },
+      // ... more slides
+    ],
+    autoPlay: true,
+    interval: 5000,                 // ms between slides
+    height: 'md',                   // sm | md | lg | full
+    transition: 'fade',            // fade | slide
+  },
+}
+```
+
+---
+
 ## Hero Block - Advanced Options
 
 The Hero block now supports video backgrounds with multiple sources:
