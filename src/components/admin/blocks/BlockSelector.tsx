@@ -169,6 +169,12 @@ const BLOCK_GROUPS: BlockGroup[] = [
         icon: <Mountain className="h-5 w-5" />,
         description: 'Full-width section with parallax background',
       },
+      {
+        type: 'bento-grid',
+        label: 'Bento Grid',
+        icon: <LayoutGrid className="h-5 w-5" />,
+        description: 'Asymmetric grid layout for features',
+      },
     ],
   },
   {

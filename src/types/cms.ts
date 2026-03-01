@@ -122,7 +122,8 @@ export type ContentBlockType =
   | 'floating-cta'
   | 'chat-launcher'
   | 'webinar'
-  | 'parallax-section';
+  | 'parallax-section'
+  | 'bento-grid';
 
 // Form field types
 export type FormFieldType = 'text' | 'email' | 'phone' | 'textarea' | 'checkbox';

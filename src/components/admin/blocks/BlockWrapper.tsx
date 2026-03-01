@@ -62,6 +62,7 @@ const BLOCK_LABELS: Record<ContentBlockType, string> = {
   'chat-launcher': 'Chat Launcher',
   webinar: 'Webinar',
   'parallax-section': 'Parallax Section',
+  'bento-grid': 'Bento Grid',
 };
 
 interface BlockWrapperProps {
