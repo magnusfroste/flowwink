@@ -3236,7 +3236,7 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
             type: 'stats',
             data: {
               items: [
-                { id: 's1', value: '43+', label: 'Block Types' },
+                { id: 's1', value: '47+', label: 'Block Types' },
                 { id: 's2', value: '16', label: 'Built-in Modules' },
                 { id: 's3', value: '5', label: 'AI Providers' },
                 { id: 's4', value: '∞', label: 'Self-Host Free' },
