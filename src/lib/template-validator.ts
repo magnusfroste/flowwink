@@ -103,6 +103,11 @@ const BLOCK_REQUIRED_FIELDS: Record<string, string[]> = {
   'kb-accordion': [],
   'chat-launcher': [],
   'webinar': [],
+  // Layout blocks
+  'section-divider': [],
+  'bento-grid': [],
+  'parallax-section': [],
+  'featured-carousel': [],
 };
 
 /**
