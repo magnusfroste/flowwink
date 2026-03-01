@@ -253,6 +253,8 @@ export function BlockRenderer({ block, pageId, index = 0 }: BlockRendererProps) 
         return <BentoGridBlock data={block.data as unknown as BentoGridBlockData} />;
       case 'section-divider':
         return <SectionDividerBlock data={block.data as unknown as SectionDividerBlockData} />;
+      case 'featured-carousel':
+        return <FeaturedCarouselBlock data={block.data as unknown as FeaturedCarouselBlockData} />;
       default:
         return null;
     }

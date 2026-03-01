@@ -124,7 +124,8 @@ export type ContentBlockType =
   | 'webinar'
   | 'parallax-section'
   | 'bento-grid'
-  | 'section-divider';
+  | 'section-divider'
+  | 'featured-carousel';
 
 // Form field types
 export type FormFieldType = 'text' | 'email' | 'phone' | 'textarea' | 'checkbox';

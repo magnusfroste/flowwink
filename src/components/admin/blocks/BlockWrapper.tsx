@@ -64,6 +64,7 @@ const BLOCK_LABELS: Record<ContentBlockType, string> = {
   'parallax-section': 'Parallax Section',
   'bento-grid': 'Bento Grid',
   'section-divider': 'Section Divider',
+  'featured-carousel': 'Featured Carousel',
 };
 
 interface BlockWrapperProps {

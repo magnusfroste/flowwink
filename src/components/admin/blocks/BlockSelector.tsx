@@ -183,6 +183,12 @@ const BLOCK_GROUPS: BlockGroup[] = [
         icon: <Waves className="h-5 w-5" />,
         description: 'Decorative SVG shape between sections',
       },
+      {
+        type: 'featured-carousel',
+        label: 'Featured Carousel',
+        icon: <GalleryHorizontalEnd className="h-5 w-5" />,
+        description: 'Auto-rotating slides with images and CTA',
+      },
     ],
   },
   {
