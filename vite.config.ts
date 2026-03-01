@@ -13,6 +13,7 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "@templates": path.resolve(__dirname, "./templates"),
     },
   },
 }));
