@@ -4,10 +4,13 @@ This guide helps content managers create new site templates for FlowWink. No Typ
 
 ## Quick Start
 
-1. **Copy the blank template** from `src/data/starter-templates.ts`
+1. **Create a new file** in `src/data/templates/` (copy `blank.ts` as a starting point)
 2. **Edit the basic info** (name, description, category)
 3. **Add your pages** using the block reference below
-4. **Test by importing** in Admin → Settings → Quick Start
+4. **Register** in `src/data/templates/index.ts`
+5. **Validate** by running `bun run test -- template-validation`
+
+> See `src/data/templates/README.md` for the full contribution guide.
 
 ## Template Structure
 
