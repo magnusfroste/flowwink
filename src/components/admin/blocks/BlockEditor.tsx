@@ -153,6 +153,7 @@ type BlockDataMap = {
   webinar: Record<string, unknown>;
   'parallax-section': ParallaxSectionBlockData;
   'bento-grid': BentoGridBlockData;
+  'section-divider': SectionDividerBlockData;
 };
 
 const DEFAULT_BLOCK_DATA: BlockDataMap = {
