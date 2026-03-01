@@ -94,6 +94,7 @@ import type { NotificationToastBlockData } from './blocks/NotificationToastBlock
 import type { FloatingCTABlockData } from './blocks/FloatingCTABlock';
 import type { ParallaxSectionBlockData } from './blocks/ParallaxSectionBlock';
 import type { BentoGridBlockData } from './blocks/BentoGridBlock';
+import type { SectionDividerBlockData } from './blocks/SectionDividerBlock';
 
 interface BlockRendererProps {
   block: ContentBlock;
