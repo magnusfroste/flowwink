@@ -463,6 +463,15 @@ const DEFAULT_BLOCK_DATA: BlockDataMap = {
     showPast: true,
     variant: 'default',
   },
+  'parallax-section': {
+    title: 'Your headline here',
+    subtitle: '',
+    backgroundImage: '',
+    height: 'md',
+    textColor: 'light',
+    overlayOpacity: 50,
+    contentAlignment: 'center',
+  },
 };
 
 interface BlockEditorProps {
