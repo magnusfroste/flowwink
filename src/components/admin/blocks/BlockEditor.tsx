@@ -93,6 +93,7 @@ import type { ChatLauncherBlockData } from '@/components/public/blocks/ChatLaunc
 import type { ParallaxSectionBlockData } from '@/components/public/blocks/ParallaxSectionBlock';
 import type { BentoGridBlockData } from '@/components/public/blocks/BentoGridBlock';
 import type { SectionDividerBlockData } from '@/components/public/blocks/SectionDividerBlock';
+import type { FeaturedCarouselBlockData } from '@/components/public/blocks/FeaturedCarouselBlock';
 
 interface NewsletterBlockData {
   title?: string;
