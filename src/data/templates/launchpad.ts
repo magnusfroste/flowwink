@@ -270,32 +270,42 @@ const launchpadPages: StarterTemplate['pages'] = [
         id: 'two-col-1',
         type: 'two-column',
         data: {
+          eyebrow: 'DX FIRST',
+          title: 'Developer Experience',
+          accentText: 'First',
+          accentPosition: 'end',
           content: {
             type: 'doc',
             content: [
-              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Developer Experience First' }] },
               { type: 'paragraph', content: [{ type: 'text', text: 'We obsess over the details so you can focus on building. Every feature is designed to reduce friction and increase velocity.' }] },
             ],
           },
           imageSrc: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800',
           imageAlt: 'Dashboard analytics',
           imagePosition: 'left',
+          ctaText: 'Explore Docs →',
+          ctaUrl: '/docs',
         },
       },
       {
         id: 'two-col-2',
         type: 'two-column',
         data: {
+          eyebrow: 'SCALABILITY',
+          title: 'Scale Without',
+          accentText: 'Limits',
+          accentPosition: 'end',
           content: {
             type: 'doc',
             content: [
-              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Scale Without Limits' }] },
               { type: 'paragraph', content: [{ type: 'text', text: 'From your first 100 users to your first million. Our platform grows with you, automatically handling traffic spikes.' }] },
             ],
           },
           imageSrc: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800',
           imageAlt: 'Growth chart',
           imagePosition: 'right',
+          ctaText: 'View Pricing →',
+          ctaUrl: '/pricing',
         },
       },
       {

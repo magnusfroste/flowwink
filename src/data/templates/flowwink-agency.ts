@@ -525,10 +525,13 @@ const flowwinkAgencyPages: TemplatePage[] = [
         id: 'twocol-headless',
         type: 'two-column',
         data: {
+          eyebrow: 'ARCHITECTURE',
+          title: 'Head + Headless:',
+          accentText: 'Best of Both',
+          accentPosition: 'end',
           content: {
             type: 'doc',
             content: [
-              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Head + Headless: Best of Both' }] },
               { type: 'paragraph', content: [{ type: 'text', text: 'Unlike pure headless CMS platforms, FlowWink includes a beautiful built-in website. But when clients need custom frontends or mobile apps, the full API is available.' }] },
               { type: 'bulletList', content: [
                 { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Use the visual site for standard clients' }] }] },
@@ -540,6 +543,8 @@ const flowwinkAgencyPages: TemplatePage[] = [
           imageSrc: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800',
           imageAlt: 'Code editor showing API',
           imagePosition: 'right',
+          ctaText: 'View API Docs →',
+          ctaUrl: '/docs',
         },
       },
       {
