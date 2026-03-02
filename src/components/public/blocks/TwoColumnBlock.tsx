@@ -135,7 +135,9 @@ export function TwoColumnBlock({ data }: TwoColumnBlockProps) {
                 src={data.imageSrc}
                 alt={data.imageAlt || ''}
                 className={cn(
-                  "w-full h-auto rounded-lg shadow-md",
+                  "w-full shadow-md",
+                  imageAspectClass ? `${imageAspectClass} ${imageFitClass}` : 'h-auto',
+                  imageRoundedClass,
                   hasSecondImage && "relative z-10"
                 )}
               />
