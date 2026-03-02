@@ -121,10 +121,12 @@ export function WebinarBlock({ data, blockId, pageId }: WebinarBlockProps) {
   return (
     <section className={containerClasses}>
       {data.title && (
-        <h2 className="text-2xl font-bold mb-2">{data.title}</h2>
-      )}
-      {data.description && (
-        <p className="text-muted-foreground mb-6">{data.description}</p>
+        <div className="text-center mb-6">
+          <h2 className="text-2xl font-bold mb-2">{data.title}</h2>
+          {data.description && (
+            <p className="text-muted-foreground">{data.description}</p>
+          )}
+        </div>
       )}
 
       {/* Upcoming */}
