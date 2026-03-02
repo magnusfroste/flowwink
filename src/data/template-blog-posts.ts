@@ -1,4 +1,4 @@
-import { TemplateBlogPost } from './starter-templates';
+import { TemplateBlogPost } from './templates';
 
 // Helper to create TipTap content
 const createTextBlock = (content: { type: string; content: unknown[] }) => ({

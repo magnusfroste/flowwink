@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { StarterTemplate, HelpStyle } from "@/data/starter-templates";
+import { StarterTemplate, HelpStyle } from "@/data/templates";
 import { 
   Dialog,
   DialogContent,
