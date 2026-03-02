@@ -42,7 +42,7 @@ import { Progress } from '@/components/ui/progress';
 import { useTemplateExport } from '@/hooks/useTemplateExport';
 import { TemplateMetadata } from '@/lib/template-exporter';
 import { TemplateImportDialog } from '@/components/admin/templates/TemplateImportDialog';
-import { StarterTemplate } from '@/data/starter-templates';
+import { StarterTemplate } from '@/data/templates';
 import { toast } from 'sonner';
 
 const CATEGORY_OPTIONS = [
