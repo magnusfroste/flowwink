@@ -408,8 +408,8 @@ export function TemplateBlockPreview({ block, compact, primaryColor = '#6366f1' 
           <BlockPlaceholder 
             type="booking" 
             icon={Calendar} 
-            label="Bokningssystem"
-            description="Kalender & tidsbokning"
+            label="Booking System"
+            description="Calendar & time booking"
             primaryColor={primaryColor}
             variant="booking"
           />
