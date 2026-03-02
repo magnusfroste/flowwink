@@ -112,10 +112,13 @@ const momentumPages: StarterTemplate['pages'] = [
         id: 'two-col-1',
         type: 'two-column',
         data: {
+          eyebrow: 'DEVELOPMENT',
+          title: 'AI-Powered',
+          accentText: 'Development',
+          accentPosition: 'end',
           content: {
             type: 'doc',
             content: [
-              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'AI-Powered Development' }] },
               { type: 'paragraph', content: [{ type: 'text', text: 'Stop writing boilerplate. Our AI understands your codebase and generates production-ready code that actually works.' }] },
               { type: 'bulletList', content: [
                 { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Context-aware code completion' }] }] },
@@ -128,16 +131,21 @@ const momentumPages: StarterTemplate['pages'] = [
           imageSrc: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800',
           imageAlt: 'Code on screen',
           imagePosition: 'right',
+          ctaText: 'Explore AI Features →',
+          ctaUrl: '/features',
         },
       },
       {
         id: 'two-col-2',
         type: 'two-column',
         data: {
+          eyebrow: 'INFRASTRUCTURE',
+          title: 'Enterprise-Grade',
+          accentText: 'Infrastructure',
+          accentPosition: 'end',
           content: {
             type: 'doc',
             content: [
-              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Enterprise-Grade Infrastructure' }] },
               { type: 'paragraph', content: [{ type: 'text', text: 'From your first 100 users to your first 100 million. Auto-scaling, self-healing infrastructure that just works.' }] },
               { type: 'bulletList', content: [
                 { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Auto-scaling compute' }] }] },
@@ -150,6 +158,8 @@ const momentumPages: StarterTemplate['pages'] = [
           imageSrc: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=800',
           imageAlt: 'Server infrastructure',
           imagePosition: 'left',
+          ctaText: 'View Architecture →',
+          ctaUrl: '/features',
         },
       },
       {
