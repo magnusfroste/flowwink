@@ -1,58 +1,93 @@
 
 
-## Template Preview Quality Upgrade
+# Fix: Pages Not Visible in Docker/Easypanel Admin
 
-### Problem Summary
-Two issues found:
+## Problem Analysis
 
-1. **SecureHealth** has 2 two-column blocks using old data format (title embedded in rich text `content` instead of dedicated `eyebrow`/`title` fields)
-2. **Preview CSS isolation** is broken -- templates with different design systems (Momentum dark theme, Service Pro colors) render incorrectly because CSS variables and the `dark` class leak into/from the admin context
+The pages list in `/admin/pages` appears empty after Docker deployment, even though template generation succeeds and pages exist in the database. Pages created manually also don't appear in admin but DO show on the public site.
 
-### Plan
+### Root Cause
 
-#### Task 1: Upgrade SecureHealth two-column blocks
+This is an **authentication timing issue**, not a nginx/JWT proxy problem. The Supabase JS client communicates directly with the Supabase API -- nginx never handles those requests.
 
-Migrate 2 blocks in `src/data/templates/securehealth.ts`:
+When the app loads in a Docker container (different domain, cold start), the Supabase auth session takes longer to restore from localStorage. During this window, queries execute as `anon` instead of `authenticated`. The RLS policy for `anon` only returns published pages, making drafts invisible.
 
-- **Services page** (line 85): Extract "Primary Care" heading to `title` field, add `eyebrow: 'SERVICES'`
-- **About page** (line 98): Extract "Our Story" heading to `title` field, add `eyebrow: 'OUR PRACTICE'`
+The existing `usePages` fix (`enabled: !authLoading`) is correct but incomplete -- several other hooks lack the same guard. Additionally, `docker-compose.yml` has configuration bugs.
 
-Remove the `heading` nodes from the `content` field in both cases.
+## Plan
 
-#### Task 2: Fix FlowWink Platform old-format two-column
+### 1. Fix docker-compose.yml configuration
 
-Line 1165 uses `leftColumn`/`rightColumn` format which is a different block variant. Verify this renders correctly -- if not, migrate to standard `content` + `eyebrow`/`title` format.
+Move Vite variables from runtime `environment` to build-time `args` (Vite bakes env vars at build time). Fix variable naming to match what the Dockerfile expects.
 
-#### Task 3: Improve preview CSS isolation
+**Before:**
+```yaml
+environment:
+  - VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
+  - VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}
+```
 
-The current preview applies CSS variables as inline styles and adds a `dark` class, but this is insufficient:
+**After:**
+```yaml
+build:
+  context: .
+  dockerfile: Dockerfile
+  args:
+    - VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
+    - VITE_SUPABASE_PUBLISHABLE_KEY=${VITE_SUPABASE_PUBLISHABLE_KEY}
+    - VITE_SUPABASE_PROJECT_ID=${VITE_SUPABASE_PROJECT_ID}
+```
 
-**Current problem:**
-- Dark-themed templates (Momentum) don't get proper dark-mode styling because the `dark` class on a div doesn't cascade to Tailwind's `dark:` variants properly (Tailwind looks for `dark` class on the root element by default)
-- CSS variables like `--primary`, `--background`, `--foreground` are set but don't override the admin theme properly
-- Hero video backgrounds, parallax sections, and full-width blocks render oddly inside the constrained preview container
+### 2. Add auth guards to ALL admin query hooks in usePages.tsx
 
-**Solution: Scoped CSS isolation in TemplatePreview.tsx**
+Currently only `usePages` waits for auth. These hooks also need the guard:
 
-1. Add a `<style>` tag scoped to `.template-preview-content` that overrides all necessary CSS custom properties from the template's branding
-2. Force `color-scheme` and `background-color`/`color` on the preview container based on the template theme
-3. Add `isolation: isolate` and `contain: content` CSS properties to prevent style leakage
-4. For dark templates, set explicit background/foreground colors on the container rather than relying on Tailwind's `dark:` class strategy
-5. Apply the template's font families (headingFont, bodyFont) directly on the preview container
+- `usePage` -- single page fetch (used in page editor)
+- `useDeletedPages` -- trash view
+- `usePageVersions` -- version history
 
-**Key changes to `TemplatePreview.tsx`:**
-- Inject a scoped `<style>` block that maps all template branding values to CSS custom properties within `.template-preview-content`
-- Set `backgroundColor` and `color` explicitly based on `isDarkTheme`
-- Add `overflow: hidden` to prevent full-viewport hero blocks from breaking the layout
+Pattern applied to each:
+```typescript
+export function useDeletedPages() {
+  const { loading: authLoading, session } = useAuth();
+  return useQuery({
+    queryKey: ['deleted-pages', session?.user?.id ?? 'anon'],
+    enabled: !authLoading,
+    // ...existing queryFn
+  });
+}
+```
 
-This approach keeps the live component rendering (no screenshots needed) while properly isolating the template's visual identity from the admin shell.
+### 3. Fix ChatFeedback Swedish text
 
-#### Task 4: Run template validation tests
+`ChatFeedback.tsx` has hardcoded Swedish strings. Change to English per project requirements:
+- "Tack for din feedback!" -> "Thanks for your feedback!"
+- "Tack! Vi anvander detta for att forbattra." -> "Thanks! We'll use this to improve."
+- "Kunde inte spara feedback" -> "Could not save feedback"
+- "Tack!" -> "Thanks!"
 
-Verify all 9 templates still pass validation after data changes.
+### 4. Update Docker quickstart docs
 
-### Files to modify
-- `src/data/templates/securehealth.ts` -- migrate 2 two-column blocks
-- `src/components/admin/templates/TemplatePreview.tsx` -- improve CSS isolation with scoped styles
-- `src/data/templates/flowwink-platform.ts` -- verify/fix old-format two-column (if needed)
+Update `docs/DOCKER-QUICKSTART.md` to use correct variable name (`VITE_SUPABASE_PUBLISHABLE_KEY` not `VITE_SUPABASE_ANON_KEY`) and add `VITE_SUPABASE_PROJECT_ID`.
+
+## Files Modified
+
+| File | Change |
+|------|--------|
+| `docker-compose.yml` | Fix build args, variable names |
+| `src/hooks/usePages.tsx` | Add auth guards to `usePage`, `useDeletedPages`, `usePageVersions` |
+| `src/components/chat/ChatFeedback.tsx` | English text |
+| `docs/DOCKER-QUICKSTART.md` | Correct env var names |
+
+## Important Note for Easypanel
+
+If Easypanel passes the env vars as runtime environment variables rather than Docker build arguments, the Vite build won't pick them up. In Easypanel's settings, ensure these are configured as **build arguments**, not just environment variables. The variable names must be exactly:
+
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_PUBLISHABLE_KEY`
+- `VITE_SUPABASE_PROJECT_ID`
+
+## Edge Functions Consideration
+
+Edge functions deployed to Lovable Cloud (`rzhjotxffjfsdlhrdkpj`) are NOT available on the Docker Supabase (`urjdzmenjvkergjrzjvs`). Features like AI chat, brand analysis, image processing, and webhooks will not work in Docker unless edge functions are also deployed to the production Supabase. This is a separate concern and does not affect the pages visibility issue.
 

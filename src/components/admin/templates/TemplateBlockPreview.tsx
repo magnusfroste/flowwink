@@ -147,7 +147,7 @@ function BlockPlaceholder({
               className="rounded-xl p-3 text-sm text-white"
               style={{ backgroundColor: primaryColor }}
             >
-              <p className="opacity-90">Hej! Hur kan jag hjälpa dig idag?</p>
+              <p className="opacity-90">Hi! How can I help you today?</p>
             </div>
             <div className="flex gap-2">
               <div className="flex-1 h-9 bg-muted rounded-lg" />
@@ -248,16 +248,16 @@ function BlockPlaceholder({
             <p className="font-semibold text-xl mb-2">{label}</p>
             <div className="max-w-md mx-auto">
               <div className="flex items-center gap-2 bg-muted/50 rounded-xl border px-4 py-3">
-                <Search className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Sök i kunskapsbasen...</span>
+                 <Search className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Search the knowledge base...</span>
               </div>
             </div>
           </div>
           <div className="grid md:grid-cols-3 gap-4">
             {[
-              { icon: BookOpen, title: 'Kom igång' },
-              { icon: Sparkles, title: 'Funktioner' },
-              { icon: MessageSquare, title: 'Vanliga frågor' },
+              { icon: BookOpen, title: 'Getting Started' },
+              { icon: Sparkles, title: 'Features' },
+              { icon: MessageSquare, title: 'FAQ' },
             ].map((cat, i) => (
               <div 
                 key={i}
@@ -270,7 +270,7 @@ function BlockPlaceholder({
                   <cat.icon className="h-5 w-5" />
                 </div>
                 <p className="font-medium mb-1">{cat.title}</p>
-                <p className="text-xs text-muted-foreground">12 artiklar</p>
+                <p className="text-xs text-muted-foreground">12 articles</p>
               </div>
             ))}
           </div>
@@ -397,8 +397,8 @@ export function TemplateBlockPreview({ block, compact, primaryColor = '#6366f1' 
           <BlockPlaceholder 
             type="chat" 
             icon={MessageSquare} 
-            label="AI Chatt"
-            description="Interaktiv AI-chattwidget"
+            label="AI Chat"
+            description="Interactive AI chat widget"
             primaryColor={primaryColor}
             variant="chat"
           />
@@ -408,8 +408,8 @@ export function TemplateBlockPreview({ block, compact, primaryColor = '#6366f1' 
           <BlockPlaceholder 
             type="booking" 
             icon={Calendar} 
-            label="Bokningssystem"
-            description="Kalender & tidsbokning"
+            label="Booking System"
+            description="Calendar & time booking"
             primaryColor={primaryColor}
             variant="booking"
           />
@@ -429,8 +429,8 @@ export function TemplateBlockPreview({ block, compact, primaryColor = '#6366f1' 
           <BlockPlaceholder 
             type="products" 
             icon={Package} 
-            label="Produktgrid"
-            description="Visar produkter från databasen"
+            label="Product Grid"
+            description="Displays products from the database"
             primaryColor={primaryColor}
             variant="products"
           />
@@ -440,8 +440,8 @@ export function TemplateBlockPreview({ block, compact, primaryColor = '#6366f1' 
           <BlockPlaceholder 
             type="cart" 
             icon={ShoppingCart} 
-            label="Varukorg"
-            description="E-handel varukorg"
+            label="Shopping Cart"
+            description="E-commerce cart"
             primaryColor={primaryColor}
           />
         );
@@ -450,8 +450,8 @@ export function TemplateBlockPreview({ block, compact, primaryColor = '#6366f1' 
           <BlockPlaceholder 
             type="kb-hub" 
             icon={Layers} 
-            label="Kunskapsbas"
-            description="Kategoriöversikt för hjälpartiklar"
+            label="Knowledge Base"
+            description="Help article categories"
             primaryColor={primaryColor}
             variant="kb"
           />
@@ -461,8 +461,8 @@ export function TemplateBlockPreview({ block, compact, primaryColor = '#6366f1' 
           <BlockPlaceholder 
             type="kb-search" 
             icon={Search} 
-            label="KB Sök"
-            description="Sök i kunskapsbasen"
+            label="KB Search"
+            description="Search the knowledge base"
             primaryColor={primaryColor}
           />
         );
@@ -471,8 +471,8 @@ export function TemplateBlockPreview({ block, compact, primaryColor = '#6366f1' 
           <BlockPlaceholder 
             type="kb-featured" 
             icon={FileText} 
-            label="Utvalda artiklar"
-            description="Visar utvalda KB-artiklar"
+            label="Featured Articles"
+            description="Displays featured KB articles"
             primaryColor={primaryColor}
           />
         );
@@ -523,7 +523,7 @@ export function TemplateBlockPreview({ block, compact, primaryColor = '#6366f1' 
             type="notification-toast" 
             icon={Bell} 
             label="Notification Toast"
-            description="Animerade notifikationer"
+            description="Animated notifications"
             primaryColor={primaryColor}
           />
         );
@@ -533,7 +533,7 @@ export function TemplateBlockPreview({ block, compact, primaryColor = '#6366f1' 
             type="floating-cta" 
             icon={MousePointer} 
             label="Floating CTA"
-            description="Sticky call-to-action vid scroll"
+            description="Sticky call-to-action on scroll"
             primaryColor={primaryColor}
           />
         );
@@ -546,8 +546,8 @@ export function TemplateBlockPreview({ block, compact, primaryColor = '#6366f1' 
           <BlockPlaceholder 
             type="stats" 
             icon={LayoutGrid} 
-            label="Statistik"
-            description="Siffror & nyckeltal"
+            label="Statistics"
+            description="Numbers & key metrics"
             primaryColor={primaryColor}
           />
         );

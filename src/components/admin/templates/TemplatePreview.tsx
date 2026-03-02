@@ -96,16 +96,51 @@ export function TemplatePreview({ template, open, onOpenChange, onSelect }: Temp
     return `hsl(${hsl})`;
   };
   
-  // Generate inline styles for template branding preview
-  const previewStyles: React.CSSProperties = {
-    '--primary': primaryColor,
-    '--primary-foreground': isDarkTheme ? '0 0% 100%' : '0 0% 100%',
-    '--background': isDarkTheme ? '222 47% 11%' : '0 0% 100%',
-    '--foreground': isDarkTheme ? '0 0% 100%' : '222 47% 11%',
-    '--muted': isDarkTheme ? '217 33% 17%' : '210 40% 96%',
-    '--muted-foreground': isDarkTheme ? '215 20% 65%' : '215 16% 47%',
-    '--accent': accentColor,
-  } as React.CSSProperties;
+  // Generate scoped CSS for template branding isolation
+  const scopedStyles = `
+    .template-preview-content {
+      --primary: ${primaryColor};
+      --primary-foreground: ${isDarkTheme ? '0 0% 100%' : '0 0% 100%'};
+      --background: ${isDarkTheme ? '222 47% 11%' : '0 0% 100%'};
+      --foreground: ${isDarkTheme ? '0 0% 100%' : '222 47% 11%'};
+      --muted: ${isDarkTheme ? '217 33% 17%' : '210 40% 96%'};
+      --muted-foreground: ${isDarkTheme ? '215 20% 65%' : '215 16% 47%'};
+      --accent: ${accentColor};
+      --accent-foreground: ${isDarkTheme ? '0 0% 100%' : '222 47% 11%'};
+      --card: ${isDarkTheme ? '222 47% 13%' : '0 0% 100%'};
+      --card-foreground: ${isDarkTheme ? '0 0% 100%' : '222 47% 11%'};
+      --border: ${isDarkTheme ? '217 33% 20%' : '214 32% 91%'};
+      --input: ${isDarkTheme ? '217 33% 20%' : '214 32% 91%'};
+      --ring: ${primaryColor};
+      --secondary: ${isDarkTheme ? '217 33% 17%' : '210 40% 96%'};
+      --secondary-foreground: ${isDarkTheme ? '0 0% 100%' : '222 47% 11%'};
+      --destructive: 0 84% 60%;
+      --destructive-foreground: 0 0% 100%;
+      --popover: ${isDarkTheme ? '222 47% 13%' : '0 0% 100%'};
+      --popover-foreground: ${isDarkTheme ? '0 0% 100%' : '222 47% 11%'};
+      
+      background-color: hsl(${isDarkTheme ? '222 47% 11%' : '0 0% 100%'});
+      color: hsl(${isDarkTheme ? '0 0% 100%' : '222 47% 11%'});
+      isolation: isolate;
+      contain: content;
+      overflow: hidden;
+      ${template.branding?.headingFont ? `--heading-font: '${template.branding.headingFont}', serif;` : ''}
+      ${template.branding?.bodyFont ? `--body-font: '${template.branding.bodyFont}', sans-serif;` : ''}
+      ${template.branding?.headingFont ? `font-family: '${template.branding.bodyFont || 'Inter'}', sans-serif;` : ''}
+    }
+    .template-preview-content h1,
+    .template-preview-content h2,
+    .template-preview-content h3,
+    .template-preview-content h4 {
+      ${template.branding?.headingFont ? `font-family: '${template.branding.headingFont}', serif;` : ''}
+    }
+    ${isDarkTheme ? `
+    .template-preview-content .dark\\:text-white { color: white; }
+    .template-preview-content .dark\\:bg-slate-900 { background-color: rgb(15 23 42); }
+    .template-preview-content [class*="dark:"] { color-scheme: dark; }
+    ` : ''}
+  `;
+
 
   const currentPage = template.pages?.[selectedPage];
 
@@ -232,7 +267,7 @@ export function TemplatePreview({ template, open, onOpenChange, onSelect }: Temp
 
               <Button onClick={handleSelect} size="sm" className="gap-1.5 h-8">
                 <Sparkles className="h-3.5 w-3.5" />
-                Använd
+                Use Template
               </Button>
             </div>
           </div>
@@ -247,22 +282,22 @@ export function TemplatePreview({ template, open, onOpenChange, onSelect }: Temp
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div className="flex items-center gap-1.5 text-muted-foreground">
                     <FileText className="h-3.5 w-3.5" />
-                    <span>{pageCount} sidor</span>
+                    <span>{pageCount} pages</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-muted-foreground">
                     <LayoutGrid className="h-3.5 w-3.5" />
-                    <span>{blockCount} block</span>
+                    <span>{blockCount} blocks</span>
                   </div>
                   {hasChat && (
                     <div className="flex items-center gap-1.5 text-cyan-600">
                       <MessageSquare className="h-3.5 w-3.5" />
-                      <span>AI-chatt</span>
+                      <span>AI Chat</span>
                     </div>
                   )}
                   {hasBlog && (
                     <div className="flex items-center gap-1.5 text-amber-600">
                       <BookOpen className="h-3.5 w-3.5" />
-                      <span>Blogg</span>
+                      <span>Blog</span>
                     </div>
                   )}
                 </div>
@@ -270,7 +305,7 @@ export function TemplatePreview({ template, open, onOpenChange, onSelect }: Temp
 
               {/* Page list */}
               <div className="p-3 border-b flex-1 min-h-0">
-                <h4 className="text-xs font-medium mb-2 text-muted-foreground uppercase tracking-wide">Sidor</h4>
+                <h4 className="text-xs font-medium mb-2 text-muted-foreground uppercase tracking-wide">Pages</h4>
                 <ScrollArea className="h-full max-h-48">
                   <div className="space-y-0.5 pr-2">
                     {template.pages?.map((page, index) => (
@@ -300,14 +335,14 @@ export function TemplatePreview({ template, open, onOpenChange, onSelect }: Temp
               <div className="p-3">
                 <h4 className="text-xs font-medium mb-2 flex items-center gap-1.5 text-muted-foreground uppercase tracking-wide">
                   <Palette className="h-3 w-3" />
-                  Färger
+                  Colors
                 </h4>
                 <div className="flex gap-2">
                   <div className="flex items-center gap-2">
                     <div 
                       className="h-6 w-6 rounded border shadow-sm"
                       style={{ backgroundColor: template.branding?.primaryColor }}
-                      title={`Primär: ${template.branding?.primaryColor}`}
+                      title={`Primary: ${template.branding?.primaryColor}`}
                     />
                     <div 
                       className="h-6 w-6 rounded border shadow-sm"
@@ -352,14 +387,9 @@ export function TemplatePreview({ template, open, onOpenChange, onSelect }: Temp
               <ScrollArea className={cn(
                 isFullscreen ? "h-[calc(100vh-120px)]" : "h-[calc(90vh-180px)]"
               )}>
+                <style dangerouslySetInnerHTML={{ __html: scopedStyles }} />
                 <TemplateBrandingProvider branding={template.branding || {}}>
-                  <div 
-                    className={cn(
-                      "template-preview-content",
-                      isDarkTheme && "dark"
-                    )}
-                    style={previewStyles}
-                  >
+                  <div className="template-preview-content">
                     {currentPage?.blocks?.map((block, index) => (
                       <TemplateBlockPreview 
                         key={block.id || index}
@@ -372,7 +402,7 @@ export function TemplatePreview({ template, open, onOpenChange, onSelect }: Temp
                     {(!currentPage?.blocks || currentPage.blocks.length === 0) && (
                       <div className="p-12 text-center text-muted-foreground">
                         <LayoutGrid className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                        <p>Denna sida har inga block</p>
+                        <p>This page has no blocks</p>
                       </div>
                     )}
                   </div>
