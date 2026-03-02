@@ -92,6 +92,7 @@ export default function NewSitePage() {
   const updateFooter = useUpdateFooterBlock();
   const updateSeo = useUpdateSeoSettings();
   const updateCookieBanner = useUpdateCookieBannerSettings();
+  const updateAeo = useUpdateAeoSettings();
   const updateModules = useUpdateModules();
   
   const createBlogPost = useCreateBlogPost();
