@@ -68,7 +68,7 @@ for client in "${CLIENTS[@]}"; do
         echo "✅ Linked to $name"
         
         # Run migrations
-        if npx supabase db push; then
+        if supabase db push; then
             echo "✅ Migrations completed for $name"
             ((SUCCESS_COUNT++))
         else

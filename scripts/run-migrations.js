@@ -37,7 +37,7 @@ console.log('📦 Checking for pending database migrations...');
 try {
   // Check if supabase CLI is available
   try {
-    execSync('npx supabase --version', { stdio: 'pipe' });
+    execSync('supabase --version', { stdio: 'pipe' });
   } catch (error) {
     console.log('ℹ️  Supabase CLI not available, skipping migrations');
     console.log('   Install with: npm install -g supabase');
@@ -48,7 +48,7 @@ try {
   console.log('🔄 Running database migrations...');
   
   try {
-    execSync('npx supabase db push', {
+    execSync('supabase db push', {
       stdio: 'inherit',
       cwd: projectRoot
     });
@@ -57,10 +57,10 @@ try {
     console.log('⚠️  Could not run migrations automatically');
     console.log('   This is normal if:');
     console.log('   - You are using a cloud Supabase instance (run migrations manually)');
-    console.log('   - You need to link your project first: npx supabase link');
+    console.log('   - You need to link your project first: supabase link');
     console.log('');
     console.log('   To run migrations manually:');
-    console.log('   npx supabase db push');
+    console.log('   supabase db push');
     console.log('');
     // Don't exit with error - allow dev server to start anyway
   }
