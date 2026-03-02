@@ -198,10 +198,12 @@ const launchpadPages: TemplatePage[] = [
         id: 'two-col-1',
         type: 'two-column',
         data: {
+          eyebrow: 'PERFORMANCE',
+          title: 'Built for Speed',
+          titleSize: 'large',
           content: {
             type: 'doc',
             content: [
-              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Built for Speed' }] },
               { type: 'paragraph', content: [{ type: 'text', text: 'Deploy in seconds, not hours. Our streamlined infrastructure means your ideas go live the moment they\'re ready.' }] },
               { type: 'bulletList', content: [
                 { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'One-click deployments' }] }] },
@@ -394,10 +396,12 @@ const launchpadPages: TemplatePage[] = [
         id: 'two-col-1',
         type: 'two-column',
         data: {
+          eyebrow: 'DEVELOPER TOOLS',
+          title: 'Developer Experience First',
+          titleSize: 'large',
           content: {
             type: 'doc',
             content: [
-              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Developer Experience First' }] },
               { type: 'paragraph', content: [{ type: 'text', text: 'We obsess over the details so you can focus on building. Every feature is designed to reduce friction and increase velocity.' }] },
             ],
           },
@@ -410,10 +414,12 @@ const launchpadPages: TemplatePage[] = [
         id: 'two-col-2',
         type: 'two-column',
         data: {
+          eyebrow: 'SCALABILITY',
+          title: 'Scale Without Limits',
+          titleSize: 'large',
           content: {
             type: 'doc',
             content: [
-              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Scale Without Limits' }] },
               { type: 'paragraph', content: [{ type: 'text', text: 'From your first 100 users to your first million. Our platform grows with you, automatically handling traffic spikes.' }] },
             ],
           },
