@@ -90,6 +90,7 @@ export default function NewSitePage() {
   const updateChat = useUpdateChatSettings();
   const updateGeneral = useUpdateGeneralSettings();
   const updateFooter = useUpdateFooterBlock();
+  const updateHeader = useUpdateHeaderBlock();
   const updateSeo = useUpdateSeoSettings();
   const updateCookieBanner = useUpdateCookieBannerSettings();
   const updateAeo = useUpdateAeoSettings();
