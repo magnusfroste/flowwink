@@ -305,7 +305,7 @@ export function TemplatePreview({ template, open, onOpenChange, onSelect }: Temp
 
               {/* Page list */}
               <div className="p-3 border-b flex-1 min-h-0">
-                <h4 className="text-xs font-medium mb-2 text-muted-foreground uppercase tracking-wide">Sidor</h4>
+                <h4 className="text-xs font-medium mb-2 text-muted-foreground uppercase tracking-wide">Pages</h4>
                 <ScrollArea className="h-full max-h-48">
                   <div className="space-y-0.5 pr-2">
                     {template.pages?.map((page, index) => (
