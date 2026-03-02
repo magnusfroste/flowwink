@@ -1050,10 +1050,13 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
           id: 'twocol-versions',
           type: 'two-column',
           data: {
+            eyebrow: 'VERSION CONTROL',
+            title: 'Version History &',
+            accentText: 'Rollback',
+            accentPosition: 'end',
             leftColumn: {
               type: 'doc',
               content: [
-                { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Version History & Rollback' }] },
                 { type: 'paragraph', content: [{ type: 'text', text: 'Every save creates a version. Every version is accessible forever.' }] },
                 { type: 'bulletList', content: [
                   { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Compare any two versions side-by-side' }] }] },
