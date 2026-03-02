@@ -280,6 +280,7 @@ export default function NewSitePage() {
       pages: true,
       branding: true,
       chatSettings: true,
+      headerSettings: true,
       footerSettings: true,
       seoSettings: true,
       cookieBannerSettings: true,
