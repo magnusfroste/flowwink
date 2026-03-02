@@ -1,4 +1,4 @@
-import { TwoColumnBlockData, TiptapDocument } from '@/types/cms';
+import { TwoColumnBlockData, TiptapDocument, ImageAspectRatio, ImageRounded } from '@/types/cms';
 import { renderToHtml } from '@/lib/tiptap-utils';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
@@ -28,6 +28,9 @@ export function TwoColumnBlock({ data }: TwoColumnBlockProps) {
   const titleSize = data.titleSize || 'default';
   const hasHeader = data.eyebrow || data.title;
   const hasSecondImage = data.secondImageSrc;
+  const imageAspect = data.imageAspect || 'auto';
+  const imageFit = data.imageFit || 'cover';
+  const imageRounded = data.imageRounded || 'lg';
   
   // Default eyebrow color to accent, allow override
   const eyebrowColor = data.eyebrowColor || (branding?.accentColor ? `hsl(${branding.accentColor})` : 'hsl(var(--accent-foreground))');
@@ -42,6 +45,29 @@ export function TwoColumnBlock({ data }: TwoColumnBlockProps) {
   };
 
   const stickyStyles = 'md:sticky md:top-24 md:self-start';
+
+  // Aspect ratio CSS mapping
+  const aspectRatioMap: Record<ImageAspectRatio, string> = {
+    'auto': '',
+    '1:1': 'aspect-square',
+    '4:3': 'aspect-[4/3]',
+    '3:2': 'aspect-[3/2]',
+    '16:9': 'aspect-video',
+    '21:9': 'aspect-[21/9]',
+  };
+
+  // Border-radius mapping
+  const roundedMap: Record<ImageRounded, string> = {
+    'none': 'rounded-none',
+    'sm': 'rounded-sm',
+    'md': 'rounded-md',
+    'lg': 'rounded-lg',
+    'full': 'rounded-2xl',
+  };
+
+  const imageAspectClass = aspectRatioMap[imageAspect];
+  const imageRoundedClass = roundedMap[imageRounded];
+  const imageFitClass = imageFit === 'contain' ? 'object-contain' : 'object-cover';
   
   // Use the shared tiptap-utils for consistent rendering
   const htmlContent = renderToHtml(data.content);
@@ -109,7 +135,9 @@ export function TwoColumnBlock({ data }: TwoColumnBlockProps) {
                 src={data.imageSrc}
                 alt={data.imageAlt || ''}
                 className={cn(
-                  "w-full h-auto rounded-lg shadow-md",
+                  "w-full shadow-md",
+                  imageAspectClass ? `${imageAspectClass} ${imageFitClass}` : 'h-auto',
+                  imageRoundedClass,
                   hasSecondImage && "relative z-10"
                 )}
               />

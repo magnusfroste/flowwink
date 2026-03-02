@@ -460,6 +460,10 @@ export interface LinkGridBlockData {
   columns: 2 | 3 | 4;
 }
 
+export type ImageAspectRatio = 'auto' | '1:1' | '4:3' | '3:2' | '16:9' | '21:9';
+export type ImageFit = 'cover' | 'contain';
+export type ImageRounded = 'none' | 'sm' | 'md' | 'lg' | 'full';
+
 export interface TwoColumnBlockData {
   /** 
    * Rich text content. TiptapDocument is the standard format.
@@ -471,6 +475,10 @@ export interface TwoColumnBlockData {
   imagePosition: 'left' | 'right';
   /** Which column should be sticky when scrolling */
   stickyColumn?: 'none' | 'image' | 'text';
+  // Image sizing controls (Webflow/Squarespace parity)
+  imageAspect?: ImageAspectRatio;
+  imageFit?: ImageFit;
+  imageRounded?: ImageRounded;
   // Design System 2026: Premium features
   eyebrow?: string;
   eyebrowColor?: string;

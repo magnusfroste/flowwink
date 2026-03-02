@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { TwoColumnBlockData, TiptapDocument, TextTitleSize } from '@/types/cms';
+import { TwoColumnBlockData, TiptapDocument, TextTitleSize, ImageAspectRatio, ImageFit, ImageRounded } from '@/types/cms';
 import { Bold, Italic, List, ListOrdered, ArrowLeftRight, Pin, Heading1, Heading2, Quote } from 'lucide-react';
 import { ImageUploader } from '../ImageUploader';
 import { AITiptapToolbar } from '../AITiptapToolbar';
@@ -242,6 +242,67 @@ export function TwoColumnBlockEditor({ data, isEditing, onChange }: TwoColumnBlo
                 <SelectItem value="text">Text</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+        </div>
+
+        {/* Image Sizing Controls */}
+        <div className="rounded-lg border bg-muted/30 p-4 space-y-4">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            Image Settings
+          </p>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label className="text-sm">Aspect Ratio</Label>
+              <Select
+                value={data.imageAspect || 'auto'}
+                onValueChange={(value: ImageAspectRatio) => onChange({ ...data, imageAspect: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="auto">Auto</SelectItem>
+                  <SelectItem value="1:1">Square (1:1)</SelectItem>
+                  <SelectItem value="4:3">Landscape (4:3)</SelectItem>
+                  <SelectItem value="3:2">Photo (3:2)</SelectItem>
+                  <SelectItem value="16:9">Widescreen (16:9)</SelectItem>
+                  <SelectItem value="21:9">Cinematic (21:9)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm">Image Fit</Label>
+              <Select
+                value={data.imageFit || 'cover'}
+                onValueChange={(value: ImageFit) => onChange({ ...data, imageFit: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cover">Cover (fill & crop)</SelectItem>
+                  <SelectItem value="contain">Contain (show all)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm">Corner Radius</Label>
+              <Select
+                value={data.imageRounded || 'lg'}
+                onValueChange={(value: ImageRounded) => onChange({ ...data, imageRounded: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sharp</SelectItem>
+                  <SelectItem value="sm">Subtle</SelectItem>
+                  <SelectItem value="md">Medium</SelectItem>
+                  <SelectItem value="lg">Rounded</SelectItem>
+                  <SelectItem value="full">Extra Rounded</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
 
