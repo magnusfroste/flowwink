@@ -397,8 +397,8 @@ export function TemplateBlockPreview({ block, compact, primaryColor = '#6366f1' 
           <BlockPlaceholder 
             type="chat" 
             icon={MessageSquare} 
-            label="AI Chatt"
-            description="Interaktiv AI-chattwidget"
+            label="AI Chat"
+            description="Interactive AI chat widget"
             primaryColor={primaryColor}
             variant="chat"
           />
