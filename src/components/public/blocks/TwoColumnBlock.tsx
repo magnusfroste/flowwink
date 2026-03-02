@@ -28,6 +28,9 @@ export function TwoColumnBlock({ data }: TwoColumnBlockProps) {
   const titleSize = data.titleSize || 'default';
   const hasHeader = data.eyebrow || data.title;
   const hasSecondImage = data.secondImageSrc;
+  const imageAspect = data.imageAspect || 'auto';
+  const imageFit = data.imageFit || 'cover';
+  const imageRounded = data.imageRounded || 'lg';
   
   // Default eyebrow color to accent, allow override
   const eyebrowColor = data.eyebrowColor || (branding?.accentColor ? `hsl(${branding.accentColor})` : 'hsl(var(--accent-foreground))');
