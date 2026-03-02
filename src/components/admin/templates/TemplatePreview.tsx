@@ -387,14 +387,9 @@ export function TemplatePreview({ template, open, onOpenChange, onSelect }: Temp
               <ScrollArea className={cn(
                 isFullscreen ? "h-[calc(100vh-120px)]" : "h-[calc(90vh-180px)]"
               )}>
+                <style dangerouslySetInnerHTML={{ __html: scopedStyles }} />
                 <TemplateBrandingProvider branding={template.branding || {}}>
-                  <div 
-                    className={cn(
-                      "template-preview-content",
-                      isDarkTheme && "dark"
-                    )}
-                    style={previewStyles}
-                  >
+                  <div className="template-preview-content">
                     {currentPage?.blocks?.map((block, index) => (
                       <TemplateBlockPreview 
                         key={block.id || index}
@@ -407,7 +402,7 @@ export function TemplatePreview({ template, open, onOpenChange, onSelect }: Temp
                     {(!currentPage?.blocks || currentPage.blocks.length === 0) && (
                       <div className="p-12 text-center text-muted-foreground">
                         <LayoutGrid className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                        <p>Denna sida har inga block</p>
+                        <p>This page has no blocks</p>
                       </div>
                     )}
                   </div>
