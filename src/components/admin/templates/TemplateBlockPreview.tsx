@@ -40,6 +40,11 @@ import { CountdownBlock } from '@/components/public/blocks/CountdownBlock';
 import { ProgressBlock } from '@/components/public/blocks/ProgressBlock';
 import { BadgeBlock } from '@/components/public/blocks/BadgeBlock';
 import { SocialProofBlock } from '@/components/public/blocks/SocialProofBlock';
+import { ParallaxSectionBlock } from '@/components/public/blocks/ParallaxSectionBlock';
+import { BentoGridBlock } from '@/components/public/blocks/BentoGridBlock';
+import { SectionDividerBlock } from '@/components/public/blocks/SectionDividerBlock';
+import { FeaturedCarouselBlock } from '@/components/public/blocks/FeaturedCarouselBlock';
+import { ChatLauncherBlock } from '@/components/public/blocks/ChatLauncherBlock';
 
 import type {
   HeroBlockData,
