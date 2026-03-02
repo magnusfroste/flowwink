@@ -97,10 +97,13 @@ const launchpadPages: StarterTemplate['pages'] = [
         id: 'two-col-1',
         type: 'two-column',
         data: {
+          eyebrow: 'SPEED',
+          title: 'Built for',
+          accentText: 'Speed',
+          accentPosition: 'end',
           content: {
             type: 'doc',
             content: [
-              { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Built for Speed' }] },
               { type: 'paragraph', content: [{ type: 'text', text: 'Deploy in seconds, not hours. Our streamlined infrastructure means your ideas go live the moment they\'re ready.' }] },
               { type: 'bulletList', content: [
                 { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'One-click deployments' }] }] },
@@ -112,6 +115,8 @@ const launchpadPages: StarterTemplate['pages'] = [
           imageSrc: 'https://images.unsplash.com/photo-1551434678-e076c223a692?w=800',
           imageAlt: 'Team collaborating on laptop',
           imagePosition: 'right',
+          ctaText: 'See How It Works →',
+          ctaUrl: '/features',
         },
       },
       {
