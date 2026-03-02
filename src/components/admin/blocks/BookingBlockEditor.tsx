@@ -86,7 +86,7 @@ export function BookingBlockEditor({ data, onChange, isEditing }: BookingBlockEd
   }
 
   return (
-    <div className="space-y-6 p-4 border rounded-lg bg-card">
+    <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
       <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
         <Calendar className="h-4 w-4" />
         Booking Block Settings
