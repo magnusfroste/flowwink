@@ -184,8 +184,12 @@ export function useUpdatePage() {
         .from('pages')
         .update(updates)
         .eq('id', id)
-        .select()
-        .single();
+        .select();
+      
+      if (error) throw error;
+      if (!data || data.length === 0) throw new Error('Page not found or access denied');
+      
+      const row = data[0];
       
       if (error) throw error;
       
