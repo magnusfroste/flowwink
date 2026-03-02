@@ -9,7 +9,7 @@ interface BrandingContextValue {
   isLoading: boolean;
 }
 
-const BrandingContext = createContext<BrandingContextValue>({
+export const BrandingContext = createContext<BrandingContextValue>({
   branding: null,
   isLoading: true,
 });
