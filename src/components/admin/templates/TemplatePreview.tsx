@@ -297,7 +297,7 @@ export function TemplatePreview({ template, open, onOpenChange, onSelect }: Temp
                   {hasBlog && (
                     <div className="flex items-center gap-1.5 text-amber-600">
                       <BookOpen className="h-3.5 w-3.5" />
-                      <span>Blogg</span>
+                      <span>Blog</span>
                     </div>
                   )}
                 </div>
