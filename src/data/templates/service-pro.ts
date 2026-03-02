@@ -650,7 +650,7 @@ export const serviceProTemplate: StarterTemplate = {
     organizationName: 'ServicePro',
     brandTagline: 'Professional Services You Can Trust',
     primaryColor: '220 70% 50%',
-    headingFont: 'Plus Jakarta Sans',
+    headingFont: 'Libre Franklin',
     bodyFont: 'Inter',
     borderRadius: 'md',
     shadowIntensity: 'medium',

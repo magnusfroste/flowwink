@@ -227,7 +227,7 @@ export const helpCenterTemplate: StarterTemplate = {
     organizationName: 'Help Center',
     brandTagline: 'Answers made easy',
     primaryColor: '220 70% 50%',
-    headingFont: 'Inter',
+    headingFont: 'Outfit',
     bodyFont: 'Inter',
     borderRadius: 'md',
     shadowIntensity: 'medium',
