@@ -45,6 +45,29 @@ export function TwoColumnBlock({ data }: TwoColumnBlockProps) {
   };
 
   const stickyStyles = 'md:sticky md:top-24 md:self-start';
+
+  // Aspect ratio CSS mapping
+  const aspectRatioMap: Record<ImageAspectRatio, string> = {
+    'auto': '',
+    '1:1': 'aspect-square',
+    '4:3': 'aspect-[4/3]',
+    '3:2': 'aspect-[3/2]',
+    '16:9': 'aspect-video',
+    '21:9': 'aspect-[21/9]',
+  };
+
+  // Border-radius mapping
+  const roundedMap: Record<ImageRounded, string> = {
+    'none': 'rounded-none',
+    'sm': 'rounded-sm',
+    'md': 'rounded-md',
+    'lg': 'rounded-lg',
+    'full': 'rounded-2xl',
+  };
+
+  const imageAspectClass = aspectRatioMap[imageAspect];
+  const imageRoundedClass = roundedMap[imageRounded];
+  const imageFitClass = imageFit === 'contain' ? 'object-contain' : 'object-cover';
   
   // Use the shared tiptap-utils for consistent rendering
   const htmlContent = renderToHtml(data.content);
