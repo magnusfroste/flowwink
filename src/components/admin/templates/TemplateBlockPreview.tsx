@@ -255,9 +255,9 @@ function BlockPlaceholder({
           </div>
           <div className="grid md:grid-cols-3 gap-4">
             {[
-              { icon: BookOpen, title: 'Kom igång' },
-              { icon: Sparkles, title: 'Funktioner' },
-              { icon: MessageSquare, title: 'Vanliga frågor' },
+              { icon: BookOpen, title: 'Getting Started' },
+              { icon: Sparkles, title: 'Features' },
+              { icon: MessageSquare, title: 'FAQ' },
             ].map((cat, i) => (
               <div 
                 key={i}
