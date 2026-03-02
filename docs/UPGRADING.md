@@ -36,55 +36,90 @@ Look for the ⚠️ **BREAKING** label in the changelog. These require manual ac
 
 ## Upgrade Process
 
-### Quick Upgrade (Automated Script)
+There are **three different workflows** depending on what you're upgrading:
 
-The easiest way to upgrade is using the included upgrade script:
+### Option 1: Full Code Update (upgrade.sh)
+
+**Use when:** You want to update your local FlowWink codebase from GitHub
 
 ```bash
-# Make the script executable (first time only)
-chmod +x scripts/upgrade.sh
-
-# Run the upgrade
 ./scripts/upgrade.sh
 ```
 
-The script will:
-1. ✓ Remind you to backup
-2. ✓ Stash any local changes
-3. ✓ Pull latest code from GitHub
-4. ✓ Install new dependencies
-5. ✓ Run database migrations
-6. ✓ Deploy edge functions
+**What it does:**
+1. ✓ Pulls latest code from GitHub (`git pull`)
+2. ✓ Installs new dependencies (`npm install`)
+3. ✓ Runs database migrations (`supabase db push`)
+4. ✓ Deploys edge functions
+5. ✓ Rebuilds the application
 
-### Manual Upgrade
+**Perfect for:** Keeping your development environment up to date
 
-If you prefer manual control:
+---
+
+### Option 2: Client Database Update (Manual)
+
+**Use when:** You only need to update a client's Supabase instance (no code changes)
 
 ```bash
-# 1. Navigate to your project directory
-cd your-flowwink-directory
+# 1. Link to the client's project
+supabase link
+# → Select the client's project from the list
 
-# 2. Fetch latest changes
-git fetch origin
-
-# 3. Check what will change
-git log HEAD..origin/main --oneline
-
-# 4. Pull the changes
-git pull origin main
-
-# 5. Install any new dependencies
-npm install
-
-# 6. Run database migrations
+# 2. Run migrations
 supabase db push
 
-# 7. Deploy edge functions (if any changed)
-supabase functions deploy --all
-
-# 8. Restart your application
-npm run build
+# 3. Deploy edge functions (if needed)
+./scripts/deploy-functions.sh
 ```
+
+**What it does:**
+- ✓ Updates the client's database schema
+- ✓ Deploys latest edge functions
+- ✗ Does NOT update your local code
+
+**Perfect for:** Updating client Supabase instances without touching your local codebase
+
+---
+
+### Option 3: Multi-Client Update (migrate-all-clients.sh)
+
+**Use when:** You manage multiple clients and want to update all their databases at once
+
+```bash
+# 1. Edit scripts/migrate-all-clients.sh with your client project refs
+CLIENTS=(
+  "Client1:abcdefghijklmnop"
+  "Client2:qrstuvwxyzabcdef"
+  ...
+)
+
+# 2. Run migrations for all clients
+./scripts/migrate-all-clients.sh
+```
+
+**What it does:**
+- ✓ Runs migrations on all clients in the list
+- ✗ Does NOT deploy edge functions (must be done separately per client)
+- ✗ Does NOT update your local code
+
+**Perfect for:** Agencies managing 5+ client installations
+
+**Note:** Edge functions must still be deployed manually per client:
+```bash
+supabase link --project-ref <client-ref>
+./scripts/deploy-functions.sh
+```
+
+---
+
+### Quick Reference
+
+| Scenario | Command | Updates Code | Updates DB | Updates Functions |
+|----------|---------|--------------|------------|-------------------|
+| **Update my dev environment** | `./scripts/upgrade.sh` | ✓ | ✓ | ✓ |
+| **Update one client** | `supabase link` + `supabase db push` + `./scripts/deploy-functions.sh` | ✗ | ✓ | ✓ |
+| **Update many clients** | `./scripts/migrate-all-clients.sh` | ✗ | ✓ | ✗ |
 
 ---
 
