@@ -389,6 +389,17 @@ export function TemplatePreviewDialog({
               hasExisting={existingContent.hasChatSettings}
             />
 
+            {/* Header */}
+            <SettingRow
+              icon={<Settings className="h-4 w-4" />}
+              label="Header / Navigation"
+              templateValue={template.headerSettings?.variant || 'Default'}
+              existingValue="Custom header"
+              enabled={options.headerSettings}
+              onToggle={(v) => updateOption('headerSettings', v)}
+              hasExisting={false}
+            />
+
             {/* Footer */}
             <SettingRow
               icon={<Settings className="h-4 w-4" />}
