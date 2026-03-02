@@ -14,6 +14,131 @@ export type Database = {
   }
   public: {
     Tables: {
+      agent_activity: {
+        Row: {
+          agent: Database["public"]["Enums"]["agent_type"]
+          conversation_id: string | null
+          created_at: string
+          duration_ms: number | null
+          error_message: string | null
+          id: string
+          input: Json | null
+          output: Json | null
+          skill_id: string | null
+          skill_name: string | null
+          status: Database["public"]["Enums"]["agent_activity_status"]
+        }
+        Insert: {
+          agent?: Database["public"]["Enums"]["agent_type"]
+          conversation_id?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          input?: Json | null
+          output?: Json | null
+          skill_id?: string | null
+          skill_name?: string | null
+          status?: Database["public"]["Enums"]["agent_activity_status"]
+        }
+        Update: {
+          agent?: Database["public"]["Enums"]["agent_type"]
+          conversation_id?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          input?: Json | null
+          output?: Json | null
+          skill_id?: string | null
+          skill_name?: string | null
+          status?: Database["public"]["Enums"]["agent_activity_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_activity_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "agent_skills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_memory: {
+        Row: {
+          category: Database["public"]["Enums"]["agent_memory_category"]
+          created_at: string
+          created_by: Database["public"]["Enums"]["agent_type"]
+          expires_at: string | null
+          id: string
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["agent_memory_category"]
+          created_at?: string
+          created_by?: Database["public"]["Enums"]["agent_type"]
+          expires_at?: string | null
+          id?: string
+          key: string
+          updated_at?: string
+          value?: Json
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["agent_memory_category"]
+          created_at?: string
+          created_by?: Database["public"]["Enums"]["agent_type"]
+          expires_at?: string | null
+          id?: string
+          key?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
+      }
+      agent_skills: {
+        Row: {
+          category: Database["public"]["Enums"]["agent_skill_category"]
+          created_at: string
+          description: string | null
+          enabled: boolean
+          handler: string
+          id: string
+          name: string
+          requires_approval: boolean
+          scope: Database["public"]["Enums"]["agent_scope"]
+          tool_definition: Json
+          updated_at: string
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["agent_skill_category"]
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          handler: string
+          id?: string
+          name: string
+          requires_approval?: boolean
+          scope?: Database["public"]["Enums"]["agent_scope"]
+          tool_definition?: Json
+          updated_at?: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["agent_skill_category"]
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          handler?: string
+          id?: string
+          name?: string
+          requires_approval?: boolean
+          scope?: Database["public"]["Enums"]["agent_scope"]
+          tool_definition?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string
@@ -2113,6 +2238,22 @@ export type Database = {
       }
     }
     Enums: {
+      agent_activity_status:
+        | "success"
+        | "failed"
+        | "pending_approval"
+        | "approved"
+        | "rejected"
+      agent_memory_category: "preference" | "context" | "fact"
+      agent_scope: "internal" | "external" | "both"
+      agent_skill_category:
+        | "content"
+        | "crm"
+        | "communication"
+        | "automation"
+        | "search"
+        | "analytics"
+      agent_type: "flowpilot" | "chat"
       app_role: "writer" | "approver" | "admin"
       deal_stage: "proposal" | "negotiation" | "closed_won" | "closed_lost"
       lead_status: "lead" | "opportunity" | "customer" | "lost"
@@ -2277,6 +2418,24 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      agent_activity_status: [
+        "success",
+        "failed",
+        "pending_approval",
+        "approved",
+        "rejected",
+      ],
+      agent_memory_category: ["preference", "context", "fact"],
+      agent_scope: ["internal", "external", "both"],
+      agent_skill_category: [
+        "content",
+        "crm",
+        "communication",
+        "automation",
+        "search",
+        "analytics",
+      ],
+      agent_type: ["flowpilot", "chat"],
       app_role: ["writer", "approver", "admin"],
       deal_stage: ["proposal", "negotiation", "closed_won", "closed_lost"],
       lead_status: ["lead", "opportunity", "customer", "lost"],
