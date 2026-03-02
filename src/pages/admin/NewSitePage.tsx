@@ -19,7 +19,7 @@ import { StarterTemplate } from '@/data/starter-templates';
 import { validateTemplate, ValidationResult } from '@/lib/template-validator';
 import { useCreatePage, usePages, useDeletePage, usePermanentDeletePage, useDeletedPages } from '@/hooks/usePages';
 import { useUpdateBrandingSettings, useUpdateChatSettings, useUpdateGeneralSettings, useUpdateSeoSettings, useUpdateCookieBannerSettings, useUpdateAeoSettings, useBrandingSettings, useChatSettings, useSeoSettings, useCookieBannerSettings } from '@/hooks/useSiteSettings';
-import { useUpdateFooterBlock, useFooterBlock } from '@/hooks/useGlobalBlocks';
+import { useUpdateFooterBlock, useFooterBlock, useUpdateHeaderBlock } from '@/hooks/useGlobalBlocks';
 import { useBlogPosts, useCreateBlogPost, useDeleteBlogPost } from '@/hooks/useBlogPosts';
 import { useKbCategories, useCreateKbCategory, useCreateKbArticle, useDeleteKbCategory } from '@/hooks/useKnowledgeBase';
 import { useModules, useUpdateModules, ModulesSettings, defaultModulesSettings } from '@/hooks/useModules';
