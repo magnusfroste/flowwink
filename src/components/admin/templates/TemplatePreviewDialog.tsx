@@ -34,6 +34,7 @@ export interface TemplateOverwriteOptions {
   pages: boolean;
   branding: boolean;
   chatSettings: boolean;
+  headerSettings: boolean;
   footerSettings: boolean;
   seoSettings: boolean;
   cookieBannerSettings: boolean;
@@ -181,6 +182,7 @@ export function TemplatePreviewDialog({
     pages: true,
     branding: true,
     chatSettings: true,
+    headerSettings: true,
     footerSettings: true,
     seoSettings: true,
     cookieBannerSettings: true,
@@ -266,6 +268,7 @@ export function TemplatePreviewDialog({
       pages: true,
       branding: true,
       chatSettings: true,
+      headerSettings: true,
       footerSettings: true,
       seoSettings: true,
       cookieBannerSettings: true,
@@ -286,6 +289,7 @@ export function TemplatePreviewDialog({
       pages: false,
       branding: false,
       chatSettings: false,
+      headerSettings: false,
       footerSettings: false,
       seoSettings: false,
       cookieBannerSettings: false,
@@ -303,7 +307,7 @@ export function TemplatePreviewDialog({
 
   // Check if anything is selected
   const hasSelection = options.pages || options.branding || options.chatSettings || 
-    options.footerSettings || options.seoSettings || options.cookieBannerSettings ||
+    options.headerSettings || options.footerSettings || options.seoSettings || options.cookieBannerSettings ||
     options.blogPosts || options.kbContent || options.products;
 
   const kbArticleCount = template.kbCategories?.reduce((acc, cat) => acc + cat.articles.length, 0) || 0;
@@ -384,6 +388,17 @@ export function TemplatePreviewDialog({
               enabled={options.chatSettings}
               onToggle={(v) => updateOption('chatSettings', v)}
               hasExisting={existingContent.hasChatSettings}
+            />
+
+            {/* Header */}
+            <SettingRow
+              icon={<Settings className="h-4 w-4" />}
+              label="Header / Navigation"
+              templateValue={template.headerSettings?.variant || 'Default'}
+              existingValue="Custom header"
+              enabled={options.headerSettings}
+              onToggle={(v) => updateOption('headerSettings', v)}
+              hasExisting={false}
             />
 
             {/* Footer */}

@@ -19,7 +19,7 @@ import { StarterTemplate } from '@/data/starter-templates';
 import { validateTemplate, ValidationResult } from '@/lib/template-validator';
 import { useCreatePage, usePages, useDeletePage, usePermanentDeletePage, useDeletedPages } from '@/hooks/usePages';
 import { useUpdateBrandingSettings, useUpdateChatSettings, useUpdateGeneralSettings, useUpdateSeoSettings, useUpdateCookieBannerSettings, useUpdateAeoSettings, useBrandingSettings, useChatSettings, useSeoSettings, useCookieBannerSettings } from '@/hooks/useSiteSettings';
-import { useUpdateFooterBlock, useFooterBlock } from '@/hooks/useGlobalBlocks';
+import { useUpdateFooterBlock, useFooterBlock, useUpdateHeaderBlock } from '@/hooks/useGlobalBlocks';
 import { useBlogPosts, useCreateBlogPost, useDeleteBlogPost } from '@/hooks/useBlogPosts';
 import { useKbCategories, useCreateKbCategory, useCreateKbArticle, useDeleteKbCategory } from '@/hooks/useKnowledgeBase';
 import { useModules, useUpdateModules, ModulesSettings, defaultModulesSettings } from '@/hooks/useModules';
@@ -90,6 +90,7 @@ export default function NewSitePage() {
   const updateChat = useUpdateChatSettings();
   const updateGeneral = useUpdateGeneralSettings();
   const updateFooter = useUpdateFooterBlock();
+  const updateHeader = useUpdateHeaderBlock();
   const updateSeo = useUpdateSeoSettings();
   const updateCookieBanner = useUpdateCookieBannerSettings();
   const updateAeo = useUpdateAeoSettings();
@@ -279,6 +280,7 @@ export default function NewSitePage() {
       pages: true,
       branding: true,
       chatSettings: true,
+      headerSettings: true,
       footerSettings: true,
       seoSettings: true,
       cookieBannerSettings: true,
@@ -471,6 +473,12 @@ export default function NewSitePage() {
       if (opts.chatSettings) {
         setProgress({ currentPage: selectedTemplate.pages.length, totalPages: selectedTemplate.pages.length, currentStep: 'Configuring AI chat...' });
         await updateChat.mutateAsync(selectedTemplate.chatSettings as any);
+      }
+
+      // Step 4b: Apply header settings (if headerSettings option enabled)
+      if (opts.headerSettings && selectedTemplate.headerSettings) {
+        setProgress({ currentPage: selectedTemplate.pages.length, totalPages: selectedTemplate.pages.length, currentStep: 'Applying header...' });
+        await updateHeader.mutateAsync(selectedTemplate.headerSettings as any);
       }
 
       // Step 5: Apply footer settings (if footerSettings option enabled)
