@@ -40,6 +40,11 @@ import { CountdownBlock } from '@/components/public/blocks/CountdownBlock';
 import { ProgressBlock } from '@/components/public/blocks/ProgressBlock';
 import { BadgeBlock } from '@/components/public/blocks/BadgeBlock';
 import { SocialProofBlock } from '@/components/public/blocks/SocialProofBlock';
+import { ParallaxSectionBlock } from '@/components/public/blocks/ParallaxSectionBlock';
+import { BentoGridBlock } from '@/components/public/blocks/BentoGridBlock';
+import { SectionDividerBlock } from '@/components/public/blocks/SectionDividerBlock';
+import { FeaturedCarouselBlock } from '@/components/public/blocks/FeaturedCarouselBlock';
+import { ChatLauncherBlock } from '@/components/public/blocks/ChatLauncherBlock';
 
 import type {
   HeroBlockData,
@@ -74,6 +79,12 @@ import type {
   BadgeBlockData,
   SocialProofBlockData,
 } from '@/types/cms';
+
+import type { ParallaxSectionBlockData } from '@/components/public/blocks/ParallaxSectionBlock';
+import type { BentoGridBlockData } from '@/components/public/blocks/BentoGridBlock';
+import type { SectionDividerBlockData } from '@/components/public/blocks/SectionDividerBlock';
+import type { FeaturedCarouselBlockData } from '@/components/public/blocks/FeaturedCarouselBlock';
+import type { ChatLauncherBlockData } from '@/components/public/blocks/ChatLauncherBlock';
 
 import {
   LayoutGrid,
@@ -369,6 +380,16 @@ export function TemplateBlockPreview({ block, compact, primaryColor = '#6366f1' 
         return <BadgeBlock data={block.data as any} />;
       case 'social-proof':
         return <SocialProofBlock data={block.data as any} />;
+      case 'parallax-section':
+        return <ParallaxSectionBlock data={block.data as unknown as ParallaxSectionBlockData} />;
+      case 'bento-grid':
+        return <BentoGridBlock data={block.data as unknown as BentoGridBlockData} />;
+      case 'section-divider':
+        return <SectionDividerBlock data={block.data as unknown as SectionDividerBlockData} />;
+      case 'featured-carousel':
+        return <FeaturedCarouselBlock data={block.data as unknown as FeaturedCarouselBlockData} />;
+      case 'chat-launcher':
+        return <ChatLauncherBlock data={block.data as unknown as ChatLauncherBlockData} />;
 
       // Blocks that require database context - show enhanced placeholders
       case 'chat':
@@ -453,6 +474,37 @@ export function TemplateBlockPreview({ block, compact, primaryColor = '#6366f1' 
             label="Utvalda artiklar"
             description="Visar utvalda KB-artiklar"
             primaryColor={primaryColor}
+          />
+        );
+      case 'kb-accordion':
+        return (
+          <BlockPlaceholder 
+            type="kb-accordion" 
+            icon={BookOpen} 
+            label="KB Accordion"
+            description="KB articles as expandable FAQ"
+            primaryColor={primaryColor}
+          />
+        );
+      case 'webinar':
+        return (
+          <BlockPlaceholder 
+            type="webinar" 
+            icon={Calendar} 
+            label="Webinar"
+            description="Upcoming webinars & registration"
+            primaryColor={primaryColor}
+          />
+        );
+      case 'smart-booking':
+        return (
+          <BlockPlaceholder 
+            type="smart-booking" 
+            icon={Calendar} 
+            label="Smart Booking"
+            description="AI-powered booking assistant"
+            primaryColor={primaryColor}
+            variant="booking"
           />
         );
       case 'popup':
