@@ -205,11 +205,11 @@ export function useUpdatePage() {
       });
       
       // Trigger webhook for page updated (only if page is published)
-      if (data.status === 'published') {
-        webhookEvents.pageUpdated({ id, slug: data.slug, title: data.title });
+      if (row.status === 'published') {
+        webhookEvents.pageUpdated({ id, slug: row.slug, title: row.title });
       }
       
-      return parsePage(data);
+      return parsePage(row);
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['pages'] });
