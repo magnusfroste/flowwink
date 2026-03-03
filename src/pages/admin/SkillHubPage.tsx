@@ -68,7 +68,7 @@ export default function SkillHubPage() {
         <TabsList>
           <TabsTrigger value="skills">Skills</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
-          <TabsTrigger value="objectives" disabled>
+          <TabsTrigger value="objectives">
             Objectives
           </TabsTrigger>
         </TabsList>
