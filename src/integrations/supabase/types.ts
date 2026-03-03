@@ -64,6 +64,71 @@ export type Database = {
           },
         ]
       }
+      agent_automations: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          enabled: boolean
+          id: string
+          last_error: string | null
+          last_triggered_at: string | null
+          name: string
+          next_run_at: string | null
+          run_count: number
+          skill_arguments: Json
+          skill_id: string | null
+          skill_name: string | null
+          trigger_config: Json
+          trigger_type: Database["public"]["Enums"]["automation_trigger_type"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          last_error?: string | null
+          last_triggered_at?: string | null
+          name: string
+          next_run_at?: string | null
+          run_count?: number
+          skill_arguments?: Json
+          skill_id?: string | null
+          skill_name?: string | null
+          trigger_config?: Json
+          trigger_type?: Database["public"]["Enums"]["automation_trigger_type"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          last_error?: string | null
+          last_triggered_at?: string | null
+          name?: string
+          next_run_at?: string | null
+          run_count?: number
+          skill_arguments?: Json
+          skill_id?: string | null
+          skill_name?: string | null
+          trigger_config?: Json
+          trigger_type?: Database["public"]["Enums"]["automation_trigger_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_automations_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "agent_skills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agent_memory: {
         Row: {
           category: Database["public"]["Enums"]["agent_memory_category"]
@@ -2328,6 +2393,7 @@ export type Database = {
         | "analytics"
       agent_type: "flowpilot" | "chat"
       app_role: "writer" | "approver" | "admin"
+      automation_trigger_type: "cron" | "event" | "signal"
       deal_stage: "proposal" | "negotiation" | "closed_won" | "closed_lost"
       lead_status: "lead" | "opportunity" | "customer" | "lost"
       page_status: "draft" | "reviewing" | "published" | "archived"
@@ -2511,6 +2577,7 @@ export const Constants = {
       ],
       agent_type: ["flowpilot", "chat"],
       app_role: ["writer", "approver", "admin"],
+      automation_trigger_type: ["cron", "event", "signal"],
       deal_stage: ["proposal", "negotiation", "closed_won", "closed_lost"],
       lead_status: ["lead", "opportunity", "customer", "lost"],
       page_status: ["draft", "reviewing", "published", "archived"],
