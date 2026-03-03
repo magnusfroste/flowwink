@@ -1,75 +1,84 @@
+# FlowPilot Agentic Architecture
 
+## Phase 1: Skill Registry + Unified Tool Engine ✅ DONE
 
-# Objectives Layer — Data Model + Integration Plan
+### Completed
+- **Database tables**: `agent_skills`, `agent_memory`, `agent_activity` with RLS policies
+- **Enums**: `agent_scope`, `agent_skill_category`, `agent_activity_status`, `agent_type`, `agent_memory_category`
+- **11 built-in skills** seeded: migrate_url, create_page_block, write_blog_post, send_newsletter, create_campaign, add_lead, search_web, book_appointment, check_order, update_settings, analyze_analytics
+- **`agent-execute` edge function**: Unified skill executor with scope validation, approval checks, handler routing (edge/module/db/webhook), and activity logging
+- **TypeScript types**: `src/types/agent.ts` with full type coverage
 
-## Concept
+### Verified
+- Direct execution works (analyze_analytics returns real page view data)
+- Scope validation works (internal skills blocked from chat agent)
+- Approval gating works (send_newsletter returns 202 pending_approval)
 
-Objectives are high-level goals ("Increase newsletter signups by 20%", "Publish 3 blog posts this week") that FlowPilot tracks across multiple skill executions. Unlike predefined workflows, the agent autonomously picks skills — objectives just define **what** to achieve, not **how**.
+## Phase 2: FlowPilot "Operate" Mode ✅ DONE
 
-## Database Design
+### Completed
+- Mode switcher (Operate | Migrate) in CopilotPage header using Tabs
+- OperateChat component — chat with quick actions, skill badges, and inline results
+- ActivityFeed sidebar — shows recent actions with status, duration, approve button
+- `agent-operate` edge function — AI router that picks skills via tool calling, executes via agent-execute, summarizes results
+- `useAgentOperate` hook — manages messages, skills, activity, and approval flow
 
-### New enum: `agent_objective_status`
+### TODO (refinement)
+- [ ] Refactor copilot-action to load tool definitions from agent_skills table
 
-```sql
-'active' | 'completed' | 'paused' | 'failed'
+## Phase 2.5: Active Memory ✅ DONE
+
+### Completed
+- **agent-operate** loads all `agent_memory` entries into system prompt before each AI call
+- **memory_write** built-in tool — FlowPilot saves preferences, facts, context to DB
+- **memory_read** built-in tool — FlowPilot searches memory by key/category
+- Memory tools handled locally in agent-operate (no round-trip to agent-execute)
+- Two new skills registered in `agent_skills` table (memory_write, memory_read)
+- FlowPilot proactively saves useful info when it learns something new
+
+## Phase 3.5: Skill Hub Admin UI ✅ DONE
+
+### Completed
+- **SkillHubPage** (`/admin/skills`) with Skills, Activity, and Objectives (placeholder) tabs
+- **SkillCard** — card grid with inline enable/disable toggle, scope/category/handler badges
+- **SkillEditorSheet** — full CRUD sheet with JSON tool definition editor (CodeMirror)
+- **ActivityTable** — filterable activity log with expand for input/output JSON, approve/reject
+- **useSkillHub** hook — CRUD for skills, activity queries, approval mutations
+- **Sidebar** — "Skill Hub" added to Main group with Bot icon
+
+## Phase 3: Public Chat Gets Skills ✅ DONE
+
+### Completed
+- **chat-completion** loads external/both skills from `agent_skills` table as OpenAI-compatible tools
+- Skills are routed through `agent-execute` edge function (scope validation, approval gating, activity logging)
+- `agentSkillNames` map tracks which tool calls are agent skills vs built-in tools
+- System prompt dynamically extended with skill usage instructions
+- Works for both OpenAI and local AI providers (when tool calling is supported)
+- Approval-gated skills return friendly "pending approval" messages to visitors
+
+## Phase 4: Automation Layer
+
+### TODO
+- [ ] Create agent_automations table (schedule/event/signal triggers)
+- [ ] Cron-based skill execution
+- [ ] Signal integration from webhook events
+- [ ] Proactive suggestions (heartbeat system)
+
+## Architecture Reference
+
+```
+skill.handler routing:
+  edge:function-name  →  supabase.functions.invoke()
+  module:name         →  Direct DB operations (blog, crm, booking, etc.)
+  db:table            →  DB read/write (settings, analytics)
+  webhook:n8n         →  External webhook POST
 ```
 
-### New table: `agent_objectives`
-
-| Column | Type | Notes |
-|--------|------|-------|
-| `id` | uuid PK | |
-| `goal` | text | Natural language goal |
-| `status` | agent_objective_status | Default `'active'` |
-| `constraints` | jsonb | Guardrails: max budget, excluded skills, deadlines, etc. |
-| `success_criteria` | jsonb | Measurable conditions for auto-completion |
-| `progress` | jsonb | Running state updated by FlowPilot (e.g. `{posts_published: 2, target: 3}`) |
-| `created_by` | uuid | User who created it |
-| `completed_at` | timestamptz | Null until done |
-| `created_at` | timestamptz | |
-| `updated_at` | timestamptz | |
-
-### New join table: `agent_objective_activities`
-
-Links objectives to the activity entries the agent produced while working toward them.
-
-| Column | Type |
-|--------|------|
-| `objective_id` | uuid FK → agent_objectives |
-| `activity_id` | uuid FK → agent_activity |
-| `created_at` | timestamptz |
-
-Primary key: `(objective_id, activity_id)`
-
-### RLS Policies
-
-- Admins: full CRUD on both tables
-- System (service role): can insert into `agent_objective_activities` and update `agent_objectives.progress/status`
-
-## Integration Points
-
-### 1. `agent-operate` edge function
-- Load active objectives into system prompt alongside memories
-- After each skill execution, if it relates to an objective, insert a row into `agent_objective_activities` and update `progress` jsonb
-- New built-in tools: `objective_update_progress`, `objective_complete`
-
-### 2. Skill Hub UI — Objectives tab
-- Replace the placeholder tab with a list/card view of objectives
-- Each objective shows: goal text, status badge, progress bar (derived from `progress` jsonb), linked activity count
-- Create/edit sheet for new objectives with goal, constraints, and success criteria fields
-
-### 3. Types (`src/types/agent.ts`)
-- Add `AgentObjectiveStatus`, `AgentObjective`, `AgentObjectiveActivity` interfaces
-
-## Files to Create/Edit
-
-| File | Action |
-|------|--------|
-| Migration SQL | Create enum, tables, RLS, join table |
-| `src/types/agent.ts` | Add objective types |
-| `src/hooks/useObjectives.ts` | Create — CRUD hooks for objectives |
-| `src/components/admin/skills/ObjectivesPanel.tsx` | Create — objectives list + create/edit UI |
-| `src/pages/admin/SkillHubPage.tsx` | Edit — wire Objectives tab |
-| `supabase/functions/agent-operate/index.ts` | Edit — load objectives, link activities |
-| `.lovable/plan.md` | Update with Phase 4.5 |
-
+## Key Files
+| File | Purpose |
+|------|---------|
+| `supabase/functions/agent-execute/index.ts` | Unified skill executor |
+| `src/types/agent.ts` | TypeScript types for skill engine |
+| `src/lib/module-registry.ts` | Existing module registry (14 modules) |
+| `supabase/functions/copilot-action/index.ts` | Current FlowPilot (to be refactored) |
+| `supabase/functions/chat-completion/index.ts` | Current public chat (to integrate skills) |

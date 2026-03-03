@@ -97,6 +97,78 @@ export type Database = {
         }
         Relationships: []
       }
+      agent_objective_activities: {
+        Row: {
+          activity_id: string
+          created_at: string
+          objective_id: string
+        }
+        Insert: {
+          activity_id: string
+          created_at?: string
+          objective_id: string
+        }
+        Update: {
+          activity_id?: string
+          created_at?: string
+          objective_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_objective_activities_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "agent_activity"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_objective_activities_objective_id_fkey"
+            columns: ["objective_id"]
+            isOneToOne: false
+            referencedRelation: "agent_objectives"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_objectives: {
+        Row: {
+          completed_at: string | null
+          constraints: Json
+          created_at: string
+          created_by: string | null
+          goal: string
+          id: string
+          progress: Json
+          status: Database["public"]["Enums"]["agent_objective_status"]
+          success_criteria: Json
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          constraints?: Json
+          created_at?: string
+          created_by?: string | null
+          goal: string
+          id?: string
+          progress?: Json
+          status?: Database["public"]["Enums"]["agent_objective_status"]
+          success_criteria?: Json
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          constraints?: Json
+          created_at?: string
+          created_by?: string | null
+          goal?: string
+          id?: string
+          progress?: Json
+          status?: Database["public"]["Enums"]["agent_objective_status"]
+          success_criteria?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       agent_skills: {
         Row: {
           category: Database["public"]["Enums"]["agent_skill_category"]
@@ -2245,6 +2317,7 @@ export type Database = {
         | "approved"
         | "rejected"
       agent_memory_category: "preference" | "context" | "fact"
+      agent_objective_status: "active" | "completed" | "paused" | "failed"
       agent_scope: "internal" | "external" | "both"
       agent_skill_category:
         | "content"
@@ -2426,6 +2499,7 @@ export const Constants = {
         "rejected",
       ],
       agent_memory_category: ["preference", "context", "fact"],
+      agent_objective_status: ["active", "completed", "paused", "failed"],
       agent_scope: ["internal", "external", "both"],
       agent_skill_category: [
         "content",

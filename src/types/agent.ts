@@ -10,6 +10,7 @@ export type AgentSkillCategory = 'content' | 'crm' | 'communication' | 'automati
 export type AgentActivityStatus = 'success' | 'failed' | 'pending_approval' | 'approved' | 'rejected';
 export type AgentType = 'flowpilot' | 'chat';
 export type AgentMemoryCategory = 'preference' | 'context' | 'fact';
+export type AgentObjectiveStatus = 'active' | 'completed' | 'paused' | 'failed';
 
 // =============================================================================
 // Skill
@@ -56,6 +57,29 @@ export interface AgentMemory {
   expires_at: string | null;
   created_at: string;
   updated_at: string;
+}
+
+// =============================================================================
+// Objective
+// =============================================================================
+
+export interface AgentObjective {
+  id: string;
+  goal: string;
+  status: AgentObjectiveStatus;
+  constraints: Record<string, unknown>;
+  success_criteria: Record<string, unknown>;
+  progress: Record<string, unknown>;
+  created_by: string | null;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AgentObjectiveActivity {
+  objective_id: string;
+  activity_id: string;
+  created_at: string;
 }
 
 // =============================================================================

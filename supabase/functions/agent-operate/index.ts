@@ -50,7 +50,50 @@ async function handleMemoryRead(supabase: any, args: { key?: string; category?: 
   return { memories: data || [] };
 }
 
-// ─── Built-in memory tool definitions ─────────────────────────────────────────
+// ─── Objectives helpers ───────────────────────────────────────────────────────
+
+async function loadObjectives(supabase: any): Promise<string> {
+  const { data } = await supabase
+    .from('agent_objectives')
+    .select('id, goal, status, constraints, success_criteria, progress')
+    .eq('status', 'active')
+    .order('created_at', { ascending: false })
+    .limit(10);
+
+  if (!data || data.length === 0) return '';
+
+  const lines = data.map((o: any) =>
+    `- [${o.id.slice(0, 8)}] "${o.goal}" | progress: ${JSON.stringify(o.progress)} | criteria: ${JSON.stringify(o.success_criteria)} | constraints: ${JSON.stringify(o.constraints)}`
+  );
+  return `\n\nYour active objectives (high-level goals to work toward):\n${lines.join('\n')}`;
+}
+
+async function handleObjectiveUpdateProgress(supabase: any, args: { objective_id: string; progress: any }) {
+  const { error } = await supabase
+    .from('agent_objectives')
+    .update({ progress: args.progress })
+    .eq('id', args.objective_id);
+  if (error) return { status: 'error', error: error.message };
+  return { status: 'updated', objective_id: args.objective_id };
+}
+
+async function handleObjectiveComplete(supabase: any, args: { objective_id: string }) {
+  const { error } = await supabase
+    .from('agent_objectives')
+    .update({ status: 'completed', completed_at: new Date().toISOString() })
+    .eq('id', args.objective_id);
+  if (error) return { status: 'error', error: error.message };
+  return { status: 'completed', objective_id: args.objective_id };
+}
+
+async function linkActivityToObjective(supabase: any, objectiveId: string, activityId: string) {
+  await supabase.from('agent_objective_activities').insert({
+    objective_id: objectiveId,
+    activity_id: activityId,
+  });
+}
+
+// ─── Built-in tool definitions ────────────────────────────────────────────────
 
 const memoryTools = [
   {
@@ -80,6 +123,38 @@ const memoryTools = [
           key: { type: 'string', description: 'Search term to find in memory keys' },
           category: { type: 'string', enum: ['preference', 'context', 'fact'], description: 'Filter by category' },
         },
+      },
+    },
+  },
+];
+
+const objectiveTools = [
+  {
+    type: 'function',
+    function: {
+      name: 'objective_update_progress',
+      description: 'Update progress on an active objective. Call this after completing a skill execution that contributes to an objective.',
+      parameters: {
+        type: 'object',
+        properties: {
+          objective_id: { type: 'string', description: 'The objective ID (first 8 chars shown in your context)' },
+          progress: { type: 'object', description: 'Updated progress object, e.g. {"posts_published": 2, "target": 3}' },
+        },
+        required: ['objective_id', 'progress'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'objective_complete',
+      description: 'Mark an objective as completed when all success criteria have been met.',
+      parameters: {
+        type: 'object',
+        properties: {
+          objective_id: { type: 'string', description: 'The objective ID to mark as completed' },
+        },
+        required: ['objective_id'],
       },
     },
   },
@@ -135,8 +210,11 @@ serve(async (req) => {
       });
     }
 
-    // Load memories for context
-    const memoryContext = await loadMemories(supabase);
+    // Load context in parallel
+    const [memoryContext, objectiveContext] = await Promise.all([
+      loadMemories(supabase),
+      loadObjectives(supabase),
+    ]);
 
     const systemPrompt = `You are FlowPilot in Operate mode — an AI assistant that controls a CMS platform.
 
@@ -151,6 +229,14 @@ MEMORY GUIDELINES:
 - Use category "preference" for likes/dislikes, "fact" for objective info, "context" for situational data
 ${memoryContext}
 
+OBJECTIVES:
+You have active objectives — high-level goals to work toward across conversations.
+- After executing a skill that contributes to an objective, use objective_update_progress to track progress.
+- When all success_criteria are met, use objective_complete to mark it done.
+- Respect the constraints defined on each objective (budgets, rate limits, excluded skills).
+- Proactively mention relevant objectives when they relate to the user's request.
+${objectiveContext}
+
 RULES:
 - When the user asks you to do something, USE the appropriate tool immediately.
 - After using a tool, summarize what you did in a friendly, concise way.
@@ -160,8 +246,8 @@ RULES:
 - If a task requires multiple steps, explain your plan first.
 - Proactively save useful information to memory when you learn it.`;
 
-    // Merge memory tools with available skills
-    const allTools = [...memoryTools, ...(available_skills || [])];
+    // Merge all tools
+    const allTools = [...memoryTools, ...objectiveTools, ...(available_skills || [])];
 
     // Call AI with tool calling
     const aiResponse = await fetch(apiUrl, {
@@ -206,11 +292,15 @@ RULES:
 
       let executeResult: any;
 
-      // Handle built-in memory tools locally
+      // Handle built-in tools locally
       if (fnName === 'memory_write') {
         executeResult = await handleMemoryWrite(supabase, fnArgs);
       } else if (fnName === 'memory_read') {
         executeResult = await handleMemoryRead(supabase, fnArgs);
+      } else if (fnName === 'objective_update_progress') {
+        executeResult = await handleObjectiveUpdateProgress(supabase, fnArgs);
+      } else if (fnName === 'objective_complete') {
+        executeResult = await handleObjectiveComplete(supabase, fnArgs);
       } else {
         // Execute skill through agent-execute
         const executeResponse = await fetch(`${supabaseUrl}/functions/v1/agent-execute`, {
@@ -226,6 +316,9 @@ RULES:
           }),
         });
         executeResult = await executeResponse.json();
+
+        // If skill execution produced an activity_id and there's an objective context,
+        // the AI should use objective_update_progress explicitly — no auto-linking here
       }
 
       // Get AI to summarize the result
