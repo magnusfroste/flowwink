@@ -1118,7 +1118,8 @@ When the user asks about a specific website, use firecrawl_search with the websi
                 args, 
                 conversationId,
                 customerEmail,
-                customerName
+                customerName,
+                agentSkillNames,
               );
               
               localToolResults.push({
