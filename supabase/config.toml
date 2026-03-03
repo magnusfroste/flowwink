@@ -119,3 +119,9 @@ verify_jwt = false
 
 [functions.fetch-image]
 verify_jwt = false
+
+[functions.agent-execute]
+verify_jwt = false
+
+[functions.agent-operate]
+verify_jwt = false
