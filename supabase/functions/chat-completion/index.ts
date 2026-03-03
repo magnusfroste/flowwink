@@ -608,6 +608,7 @@ serve(async (req) => {
 
     // Build tools array based on settings
     const tools: any[] = [];
+    let agentSkillNames = new Map<string, string>(); // tool function name -> skill name
     // OpenAI always supports tool calling; local providers support it if explicitly enabled (e.g., vLLM/Qwen3)
     const toolCallingSupported = aiProvider === 'openai' || 
       (aiProvider === 'local' && settings?.localSupportsToolCalling);
@@ -630,15 +631,31 @@ serve(async (req) => {
         tools.push(AVAILABLE_TOOLS.handoff_to_human);
         tools.push(AVAILABLE_TOOLS.create_escalation);
       }
+
+      // Load agent skills (external/both scope) as additional tools
+      const { tools: skillTools, skillMap } = await loadAgentSkillTools(supabase);
+      if (skillTools.length > 0) {
+        tools.push(...skillTools);
+        agentSkillNames = skillMap;
+      }
     }
     
     // Add tool usage instructions to system prompt if tools are enabled
     if (tools.length > 0) {
       const toolNames = tools.map((t: any) => t.function?.name).filter(Boolean);
-      systemPrompt += `\n\nYou have access to the following tools: ${toolNames.join(', ')}. 
-When the user asks for current/live information (news, weather, prices, recent events, etc.), you MUST use the firecrawl_search tool to search the web.
-When the user asks about a specific website, use firecrawl_search with the website URL or domain in the query.
-Always use tools when they can help answer the user's question - do not say you cannot access the internet or current information.`;
+      let toolInstructions = `\n\nYou have access to the following tools: ${toolNames.join(', ')}.`;
+      
+      if (settings?.firecrawlSearchEnabled) {
+        toolInstructions += `\nWhen the user asks for current/live information (news, weather, prices, recent events, etc.), you MUST use the firecrawl_search tool to search the web.
+When the user asks about a specific website, use firecrawl_search with the website URL or domain in the query.`;
+      }
+      
+      if (agentSkillNames.size > 0) {
+        toolInstructions += `\nYou can also perform actions like booking appointments, checking orders, and adding contact information. Use the appropriate tool when the user requests these actions. Always confirm the action result with the user.`;
+      }
+      
+      toolInstructions += `\nAlways use tools when they can help answer the user's question - do not say you cannot access the internet or current information.`;
+      systemPrompt += toolInstructions;
     }
 
     // Fallback: Keyword-based handoff detection for non-OpenAI providers
