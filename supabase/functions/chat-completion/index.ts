@@ -335,18 +335,79 @@ async function buildKnowledgeBase(
   return `\n\n## Website Content (Knowledge Base)\n${sections.join('\n\n')}`;
 }
 
-// Execute tool calls
+// Load external/both agent skills as tools
+async function loadAgentSkillTools(supabase: ReturnType<typeof createClient>): Promise<{tools: any[], skillMap: Map<string, string>}> {
+  const { data: skills, error } = await supabase
+    .from('agent_skills')
+    .select('id, name, scope, tool_definition, handler')
+    .eq('enabled', true)
+    .in('scope', ['external', 'both']);
+
+  if (error || !skills?.length) {
+    return { tools: [], skillMap: new Map() };
+  }
+
+  const tools: any[] = [];
+  const skillMap = new Map<string, string>(); // tool function name -> skill name
+
+  for (const skill of skills) {
+    const toolDef = skill.tool_definition as any;
+    if (toolDef?.type === 'function' && toolDef.function) {
+      tools.push(toolDef);
+      skillMap.set(toolDef.function.name, skill.name);
+    }
+  }
+
+  console.log(`Loaded ${tools.length} agent skills for public chat:`, [...skillMap.keys()]);
+  return { tools, skillMap };
+}
+
+// Execute tool calls — handles built-in tools + agent skills via agent-execute
 async function executeToolCall(
   toolName: string, 
   args: Record<string, any>,
   conversationId: string | undefined,
   customerEmail: string | undefined,
-  customerName: string | undefined
+  customerName: string | undefined,
+  agentSkillNames?: Map<string, string>,
 ): Promise<string> {
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
   console.log(`Executing tool: ${toolName}`, args);
+
+  // Check if this is an agent skill
+  if (agentSkillNames?.has(toolName)) {
+    const skillName = agentSkillNames.get(toolName)!;
+    try {
+      const response = await fetch(`${supabaseUrl}/functions/v1/agent-execute`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          skill_name: skillName,
+          arguments: args,
+          agent_type: 'chat',
+          conversation_id: conversationId,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.status === 'pending_approval') {
+        return `This action requires admin approval. Your request has been submitted and will be processed shortly.`;
+      }
+      if (data.error) {
+        return `Could not complete this action: ${data.error}`;
+      }
+      return JSON.stringify(data.result || data, null, 2);
+    } catch (error) {
+      console.error('Agent skill execution error:', error);
+      return `Action failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
+    }
+  }
 
   switch (toolName) {
     case 'firecrawl_search': {
@@ -547,6 +608,7 @@ serve(async (req) => {
 
     // Build tools array based on settings
     const tools: any[] = [];
+    let agentSkillNames = new Map<string, string>(); // tool function name -> skill name
     // OpenAI always supports tool calling; local providers support it if explicitly enabled (e.g., vLLM/Qwen3)
     const toolCallingSupported = aiProvider === 'openai' || 
       (aiProvider === 'local' && settings?.localSupportsToolCalling);
@@ -569,15 +631,31 @@ serve(async (req) => {
         tools.push(AVAILABLE_TOOLS.handoff_to_human);
         tools.push(AVAILABLE_TOOLS.create_escalation);
       }
+
+      // Load agent skills (external/both scope) as additional tools
+      const { tools: skillTools, skillMap } = await loadAgentSkillTools(supabase);
+      if (skillTools.length > 0) {
+        tools.push(...skillTools);
+        agentSkillNames = skillMap;
+      }
     }
     
     // Add tool usage instructions to system prompt if tools are enabled
     if (tools.length > 0) {
       const toolNames = tools.map((t: any) => t.function?.name).filter(Boolean);
-      systemPrompt += `\n\nYou have access to the following tools: ${toolNames.join(', ')}. 
-When the user asks for current/live information (news, weather, prices, recent events, etc.), you MUST use the firecrawl_search tool to search the web.
-When the user asks about a specific website, use firecrawl_search with the website URL or domain in the query.
-Always use tools when they can help answer the user's question - do not say you cannot access the internet or current information.`;
+      let toolInstructions = `\n\nYou have access to the following tools: ${toolNames.join(', ')}.`;
+      
+      if (settings?.firecrawlSearchEnabled) {
+        toolInstructions += `\nWhen the user asks for current/live information (news, weather, prices, recent events, etc.), you MUST use the firecrawl_search tool to search the web.
+When the user asks about a specific website, use firecrawl_search with the website URL or domain in the query.`;
+      }
+      
+      if (agentSkillNames.size > 0) {
+        toolInstructions += `\nYou can also perform actions like booking appointments, checking orders, and adding contact information. Use the appropriate tool when the user requests these actions. Always confirm the action result with the user.`;
+      }
+      
+      toolInstructions += `\nAlways use tools when they can help answer the user's question - do not say you cannot access the internet or current information.`;
+      systemPrompt += toolInstructions;
     }
 
     // Fallback: Keyword-based handoff detection for non-OpenAI providers
@@ -748,7 +826,8 @@ Always use tools when they can help answer the user's question - do not say you 
                 args, 
                 conversationId,
                 customerEmail,
-                customerName
+                customerName,
+                agentSkillNames,
               );
               
               toolResults.push({
@@ -1039,7 +1118,8 @@ Always use tools when they can help answer the user's question - do not say you 
                 args, 
                 conversationId,
                 customerEmail,
-                customerName
+                customerName,
+                agentSkillNames,
               );
               
               localToolResults.push({

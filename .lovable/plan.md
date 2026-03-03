@@ -27,12 +27,15 @@
 - [ ] Refactor copilot-action to load tool definitions from agent_skills table
 - [ ] Agent memory read/write from FlowPilot conversations
 
-## Phase 3: Public Chat Gets Skills
+## Phase 3: Public Chat Gets Skills ✅ DONE
 
-### TODO
-- [ ] Integrate agent-execute into chat-completion edge function
-- [ ] Filter skills by scope=external/both for public chat
-- [ ] Add skill execution results to chat message rendering
+### Completed
+- **chat-completion** loads external/both skills from `agent_skills` table as OpenAI-compatible tools
+- Skills are routed through `agent-execute` edge function (scope validation, approval gating, activity logging)
+- `agentSkillNames` map tracks which tool calls are agent skills vs built-in tools
+- System prompt dynamically extended with skill usage instructions
+- Works for both OpenAI and local AI providers (when tool calling is supported)
+- Approval-gated skills return friendly "pending approval" messages to visitors
 
 ## Phase 4: Automation Layer
 
