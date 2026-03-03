@@ -1,93 +1,58 @@
+# FlowPilot Agentic Architecture
 
+## Phase 1: Skill Registry + Unified Tool Engine ✅ DONE
 
-# Fix: Pages Not Visible in Docker/Easypanel Admin
+### Completed
+- **Database tables**: `agent_skills`, `agent_memory`, `agent_activity` with RLS policies
+- **Enums**: `agent_scope`, `agent_skill_category`, `agent_activity_status`, `agent_type`, `agent_memory_category`
+- **11 built-in skills** seeded: migrate_url, create_page_block, write_blog_post, send_newsletter, create_campaign, add_lead, search_web, book_appointment, check_order, update_settings, analyze_analytics
+- **`agent-execute` edge function**: Unified skill executor with scope validation, approval checks, handler routing (edge/module/db/webhook), and activity logging
+- **TypeScript types**: `src/types/agent.ts` with full type coverage
 
-## Problem Analysis
+### Verified
+- Direct execution works (analyze_analytics returns real page view data)
+- Scope validation works (internal skills blocked from chat agent)
+- Approval gating works (send_newsletter returns 202 pending_approval)
 
-The pages list in `/admin/pages` appears empty after Docker deployment, even though template generation succeeds and pages exist in the database. Pages created manually also don't appear in admin but DO show on the public site.
+## Phase 2: FlowPilot "Operate" Mode — NEXT
 
-### Root Cause
+### TODO
+- [ ] Add mode switcher to CopilotPage: Migration | Operate | Automate
+- [ ] Create OperateChat component — chat interface that uses agent-execute
+- [ ] Refactor copilot-action to load tool definitions from agent_skills table
+- [ ] Activity feed sidebar showing recent agent actions
+- [ ] Agent memory read/write from FlowPilot conversations
 
-This is an **authentication timing issue**, not a nginx/JWT proxy problem. The Supabase JS client communicates directly with the Supabase API -- nginx never handles those requests.
+## Phase 3: Public Chat Gets Skills
 
-When the app loads in a Docker container (different domain, cold start), the Supabase auth session takes longer to restore from localStorage. During this window, queries execute as `anon` instead of `authenticated`. The RLS policy for `anon` only returns published pages, making drafts invisible.
+### TODO
+- [ ] Integrate agent-execute into chat-completion edge function
+- [ ] Filter skills by scope=external/both for public chat
+- [ ] Add skill execution results to chat message rendering
 
-The existing `usePages` fix (`enabled: !authLoading`) is correct but incomplete -- several other hooks lack the same guard. Additionally, `docker-compose.yml` has configuration bugs.
+## Phase 4: Automation Layer
 
-## Plan
+### TODO
+- [ ] Create agent_automations table (schedule/event/signal triggers)
+- [ ] Cron-based skill execution
+- [ ] Signal integration from webhook events
+- [ ] Proactive suggestions (heartbeat system)
 
-### 1. Fix docker-compose.yml configuration
+## Architecture Reference
 
-Move Vite variables from runtime `environment` to build-time `args` (Vite bakes env vars at build time). Fix variable naming to match what the Dockerfile expects.
-
-**Before:**
-```yaml
-environment:
-  - VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
-  - VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}
+```
+skill.handler routing:
+  edge:function-name  →  supabase.functions.invoke()
+  module:name         →  Direct DB operations (blog, crm, booking, etc.)
+  db:table            →  DB read/write (settings, analytics)
+  webhook:n8n         →  External webhook POST
 ```
 
-**After:**
-```yaml
-build:
-  context: .
-  dockerfile: Dockerfile
-  args:
-    - VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
-    - VITE_SUPABASE_PUBLISHABLE_KEY=${VITE_SUPABASE_PUBLISHABLE_KEY}
-    - VITE_SUPABASE_PROJECT_ID=${VITE_SUPABASE_PROJECT_ID}
-```
-
-### 2. Add auth guards to ALL admin query hooks in usePages.tsx
-
-Currently only `usePages` waits for auth. These hooks also need the guard:
-
-- `usePage` -- single page fetch (used in page editor)
-- `useDeletedPages` -- trash view
-- `usePageVersions` -- version history
-
-Pattern applied to each:
-```typescript
-export function useDeletedPages() {
-  const { loading: authLoading, session } = useAuth();
-  return useQuery({
-    queryKey: ['deleted-pages', session?.user?.id ?? 'anon'],
-    enabled: !authLoading,
-    // ...existing queryFn
-  });
-}
-```
-
-### 3. Fix ChatFeedback Swedish text
-
-`ChatFeedback.tsx` has hardcoded Swedish strings. Change to English per project requirements:
-- "Tack for din feedback!" -> "Thanks for your feedback!"
-- "Tack! Vi anvander detta for att forbattra." -> "Thanks! We'll use this to improve."
-- "Kunde inte spara feedback" -> "Could not save feedback"
-- "Tack!" -> "Thanks!"
-
-### 4. Update Docker quickstart docs
-
-Update `docs/DOCKER-QUICKSTART.md` to use correct variable name (`VITE_SUPABASE_PUBLISHABLE_KEY` not `VITE_SUPABASE_ANON_KEY`) and add `VITE_SUPABASE_PROJECT_ID`.
-
-## Files Modified
-
-| File | Change |
-|------|--------|
-| `docker-compose.yml` | Fix build args, variable names |
-| `src/hooks/usePages.tsx` | Add auth guards to `usePage`, `useDeletedPages`, `usePageVersions` |
-| `src/components/chat/ChatFeedback.tsx` | English text |
-| `docs/DOCKER-QUICKSTART.md` | Correct env var names |
-
-## Important Note for Easypanel
-
-If Easypanel passes the env vars as runtime environment variables rather than Docker build arguments, the Vite build won't pick them up. In Easypanel's settings, ensure these are configured as **build arguments**, not just environment variables. The variable names must be exactly:
-
-- `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_PUBLISHABLE_KEY`
-- `VITE_SUPABASE_PROJECT_ID`
-
-## Edge Functions Consideration
-
-Edge functions deployed to Lovable Cloud (`rzhjotxffjfsdlhrdkpj`) are NOT available on the Docker Supabase (`urjdzmenjvkergjrzjvs`). Features like AI chat, brand analysis, image processing, and webhooks will not work in Docker unless edge functions are also deployed to the production Supabase. This is a separate concern and does not affect the pages visibility issue.
-
+## Key Files
+| File | Purpose |
+|------|---------|
+| `supabase/functions/agent-execute/index.ts` | Unified skill executor |
+| `src/types/agent.ts` | TypeScript types for skill engine |
+| `src/lib/module-registry.ts` | Existing module registry (14 modules) |
+| `supabase/functions/copilot-action/index.ts` | Current FlowPilot (to be refactored) |
+| `supabase/functions/chat-completion/index.ts` | Current public chat (to integrate skills) |
