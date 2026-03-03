@@ -56,7 +56,7 @@ export default function SkillHubPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Skill Hub</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Manage agent skills, monitor activity, and define objectives.
+            Manage agent skills, monitor activity, define objectives, and configure automations.
           </p>
         </div>
         <Badge variant="secondary" className="text-xs">
