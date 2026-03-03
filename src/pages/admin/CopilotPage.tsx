@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Zap, Wand2, Terminal, Bot, ArrowRightLeft } from 'lucide-react';
+import { Zap, Wand2, Terminal, ArrowRightLeft, Globe } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,8 +13,9 @@ import { CopilotMigrationPreview } from '@/components/admin/copilot/CopilotMigra
 import { CreateFromCopilotDialog } from '@/components/admin/copilot/CreateFromCopilotDialog';
 import { OperateChat } from '@/components/admin/copilot/OperateChat';
 import { ActivityFeed } from '@/components/admin/copilot/ActivityFeed';
+import { PublicChatAdmin } from '@/components/admin/copilot/PublicChatAdmin';
 
-type FlowPilotMode = 'migrate' | 'operate';
+type FlowPilotMode = 'operate' | 'migrate' | 'public';
 
 export default function CopilotPage() {
   const navigate = useNavigate();
@@ -46,12 +47,14 @@ export default function CopilotPage() {
               <div className="flex items-center gap-2">
                 <h1 className="text-lg font-semibold">FlowPilot</h1>
                 <Badge variant="secondary" className="text-xs">
-                  {mode === 'migrate' ? 'Migration' : 'Operate'}
+                  {mode === 'migrate' ? 'Migration' : mode === 'public' ? 'Public Chat' : 'Operate'}
                 </Badge>
               </div>
               <p className="text-sm text-muted-foreground">
                 {mode === 'migrate'
                   ? "I'll migrate your entire site — pages, blog, and knowledge base"
+                  : mode === 'public'
+                  ? 'Test the public chat agent as your visitors see it'
                   : 'Tell me what to do — I operate your CMS'}
               </p>
             </div>
@@ -64,6 +67,10 @@ export default function CopilotPage() {
                 <TabsTrigger value="operate" className="text-xs gap-1.5">
                   <Terminal className="h-3.5 w-3.5" />
                   Operate
+                </TabsTrigger>
+                <TabsTrigger value="public" className="text-xs gap-1.5">
+                  <Globe className="h-3.5 w-3.5" />
+                  Public
                 </TabsTrigger>
                 <TabsTrigger value="migrate" className="text-xs gap-1.5">
                   <ArrowRightLeft className="h-3.5 w-3.5" />
@@ -84,7 +91,29 @@ export default function CopilotPage() {
 
         {/* Main content */}
         <div className="flex-1 flex overflow-hidden">
-          {mode === 'migrate' ? (
+          {mode === 'operate' ? (
+            <>
+              {/* Operate mode — chat + activity feed */}
+              <div className="flex-1 border-r flex flex-col">
+                <OperateChat
+                  messages={operate.messages}
+                  skills={operate.skills}
+                  isLoading={operate.isLoading}
+                  onSendMessage={operate.sendMessage}
+                  onReset={operate.clearMessages}
+                />
+              </div>
+              <div className="w-80 flex flex-col bg-muted/30">
+                <ActivityFeed
+                  activities={operate.activities}
+                  onApprove={operate.approveAction}
+                  onRefresh={operate.loadActivity}
+                />
+              </div>
+            </>
+          ) : mode === 'public' ? (
+            <PublicChatAdmin />
+          ) : (
             <>
               {/* Migration mode — existing layout */}
               <div className="w-1/2 border-r flex flex-col">
@@ -129,26 +158,6 @@ export default function CopilotPage() {
                     isLoading={copilot.isLoading}
                   />
                 )}
-              </div>
-            </>
-          ) : (
-            <>
-              {/* Operate mode — chat + activity feed */}
-              <div className="flex-1 border-r flex flex-col">
-                <OperateChat
-                  messages={operate.messages}
-                  skills={operate.skills}
-                  isLoading={operate.isLoading}
-                  onSendMessage={operate.sendMessage}
-                  onReset={operate.clearMessages}
-                />
-              </div>
-              <div className="w-80 flex flex-col bg-muted/30">
-                <ActivityFeed
-                  activities={operate.activities}
-                  onApprove={operate.approveAction}
-                  onRefresh={operate.loadActivity}
-                />
               </div>
             </>
           )}
