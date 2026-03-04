@@ -125,3 +125,9 @@ verify_jwt = false
 
 [functions.agent-operate]
 verify_jwt = false
+
+[functions.gmail-oauth-callback]
+verify_jwt = false
+
+[functions.gmail-inbox-scan]
+verify_jwt = false

@@ -790,6 +790,16 @@ export default function IntegrationsStatusPage() {
           </div>
         </div>
 
+        {/* Gmail Signal Integration (standalone card) */}
+        <div className="space-y-3">
+          <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+            Email Signals
+          </h3>
+          <div className="grid gap-4 md:grid-cols-2">
+            <GmailIntegrationCard />
+          </div>
+        </div>
+
         {/* Integration Cards by Category */}
         <TooltipProvider>
           {sortedCategories.map((categoryKey) => {
