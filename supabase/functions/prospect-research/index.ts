@@ -317,7 +317,7 @@ ${hunterContacts.length > 0 ? JSON.stringify(hunterContacts.slice(0, 5), null, 2
 
     const result = {
       success: true,
-      company: company || { name: company_name },
+      company: companyRecord || { name: company_name },
       contacts: createdLeads,
       hunter_contacts_found: hunterContacts.length,
       questions_and_answers: aiResult.qualifying_questions || [],
