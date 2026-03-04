@@ -24,6 +24,7 @@ const DEFAULT_WIDGET_ORDER = [
   'chat-analytics',
   'chat-feedback',
   'aeo',
+  'automation-health',
   'recent-pages',
   'quick-actions',
 ];

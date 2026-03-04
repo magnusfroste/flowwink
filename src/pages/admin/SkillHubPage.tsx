@@ -138,6 +138,11 @@ export default function SkillHubPage() {
           <ActivityTable />
         </TabsContent>
 
+        {/* Health Tab */}
+        <TabsContent value="health">
+          <AutomationHealthPanel />
+        </TabsContent>
+
         {/* Objectives Tab */}
         <TabsContent value="objectives">
           <ObjectivesPanel />
