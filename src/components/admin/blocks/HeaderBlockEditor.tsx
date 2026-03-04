@@ -616,7 +616,7 @@ export function HeaderBlockEditor({ data, onChange }: HeaderBlockEditorProps) {
         <Card>
           <CardContent className="pt-6 space-y-4">
             <div className="space-y-2">
-              <Label>Navigeringsjustering</Label>
+              <Label>Navigation alignment</Label>
               <Select
                 value={data.navAlignment || 'right'}
                 onValueChange={(value: 'left' | 'center' | 'right') => onChange({ ...data, navAlignment: value })}
@@ -625,9 +625,9 @@ export function HeaderBlockEditor({ data, onChange }: HeaderBlockEditorProps) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="left">Vänster (efter logotyp)</SelectItem>
-                  <SelectItem value="center">Centrerad</SelectItem>
-                  <SelectItem value="right">Höger</SelectItem>
+                  <SelectItem value="left">Left (after logo)</SelectItem>
+                  <SelectItem value="center">Centered</SelectItem>
+                  <SelectItem value="right">Right</SelectItem>
                 </SelectContent>
               </Select>
             </div>
