@@ -38,6 +38,7 @@ import {
   Code2,
   ChevronRight,
   Video,
+  Target,
 } from "lucide-react";
 
 import { useAuth } from "@/hooks/useAuth";
@@ -157,6 +158,7 @@ const navigationGroups: NavGroup[] = [
     items: [
       { name: "Contacts", href: "/admin/contacts", icon: UserCheck, moduleId: "leads" },
       { name: "Companies", href: "/admin/companies", icon: Building2, moduleId: "companies" },
+      { name: "Sales Intelligence", href: "/admin/sales-intelligence", icon: Target, moduleId: "salesIntelligence" },
       { name: "Deals", href: "/admin/deals", icon: Briefcase, moduleId: "deals" },
       { name: "Bookings", href: "/admin/bookings", icon: CalendarDays, moduleId: "bookings" },
       { name: "Products", href: "/admin/products", icon: Package, moduleId: "products" },

@@ -32,6 +32,7 @@ export interface ModulesSettings {
   globalElements: ModuleConfig;
   mediaLibrary: ModuleConfig;
   webinars: ModuleConfig;
+  salesIntelligence: ModuleConfig;
 }
 
 export const defaultModulesSettings: ModulesSettings = {
@@ -163,6 +164,13 @@ export const defaultModulesSettings: ModulesSettings = {
     icon: 'Video',
     category: 'communication',
   },
+  salesIntelligence: {
+    enabled: false,
+    name: 'Sales Intelligence',
+    description: 'Prospect research, fit analysis, and AI-powered introduction letters',
+    icon: 'Target',
+    category: 'data',
+  },
 };
 
 // Map sidebar items to module IDs
@@ -185,6 +193,7 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/global-blocks': 'globalElements',
   '/admin/media': 'mediaLibrary',
   '/admin/webinars': 'webinars',
+  '/admin/sales-intelligence': 'salesIntelligence',
 };
 
 export function useModules() {

@@ -71,6 +71,7 @@ import CheckoutSuccessPage from "./pages/CheckoutSuccessPage";
 import PricingPage from "./pages/PricingPage";
 import DeveloperToolsPage from "./pages/admin/DeveloperToolsPage";
 import WebinarsPage from "./pages/admin/WebinarsPage";
+import SalesIntelligencePage from "./pages/admin/SalesIntelligencePage";
 
 const TemplateGalleryPage = lazy(() => import("./pages/admin/TemplateGalleryPage"));
 const SkillHubPage = lazy(() => import("./pages/admin/SkillHubPage"));
@@ -158,6 +159,7 @@ const router = createBrowserRouter([
   { path: "/admin/template-export", element: <TemplateExportPage /> },
   { path: "/admin/developer-tools", element: <DeveloperToolsPage /> },
   { path: "/admin/webinars", element: <WebinarsPage /> },
+  { path: "/admin/sales-intelligence", element: <SalesIntelligencePage /> },
   
   { path: "/preview/:id", element: <PreviewPage /> },
   { path: "/:slug", element: <PublicPage /> },
