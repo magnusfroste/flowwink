@@ -407,9 +407,9 @@ export function HeaderBlockEditor({ data, onChange }: HeaderBlockEditorProps) {
   };
 
   const variantDescriptions: Record<HeaderVariant, string> = {
-    clean: 'Minimalistisk transparent header för kreativa sidor',
-    sticky: 'Fast header med blur-effekt som följer vid scroll',
-    'mega-menu': 'Kraftfull header med dropdown mega-menyer',
+    clean: 'Minimalist transparent header for creative pages',
+    sticky: 'Fixed header with blur effect that follows on scroll',
+    'mega-menu': 'Powerful header with dropdown mega menus',
   };
 
   const variantIcons: Record<HeaderVariant, React.ReactNode> = {
