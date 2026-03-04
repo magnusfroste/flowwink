@@ -66,9 +66,13 @@
 - **agent-execute** updated with `module:objectives` and `module:automations` handlers
 - **5 seed automations** and **4 seed objectives** for onboarding
 
+### Runtime
+- **`automation-dispatcher` edge function** — reads due cron automations, executes via agent-execute, updates run metadata
+- **pg_cron** runs dispatcher every minute via pg_net HTTP POST
+- Simple cron parser calculates `next_run_at` for common patterns (*/N, daily, weekly)
+
 ### TODO
-- [ ] Cron-based skill execution runtime (pg_cron + dispatcher edge function)
-- [ ] Signal integration from webhook events
+- [ ] Signal integration from webhook events (match incoming events to signal-type automations)
 
 ## Architecture Reference
 
