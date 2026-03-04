@@ -74,6 +74,7 @@ export interface IntegrationsSettings {
   google_analytics: IntegrationConfig;
   meta_pixel: IntegrationConfig;
   slack: IntegrationConfig;
+  hunter: IntegrationConfig;
 }
 
 // Default settings - all disabled by default, requiring explicit activation
