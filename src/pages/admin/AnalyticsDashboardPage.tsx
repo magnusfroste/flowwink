@@ -619,19 +619,19 @@ export default function AnalyticsDashboardPage() {
                   </div>
                   <div className="text-center p-4 rounded-lg bg-yellow-500/10">
                     <p className="text-2xl font-bold text-yellow-600">{bookingStats?.pending || 0}</p>
-                    <p className="text-xs text-muted-foreground">Väntande</p>
+                    <p className="text-xs text-muted-foreground">Pending</p>
                   </div>
                   <div className="text-center p-4 rounded-lg bg-green-500/10">
                     <p className="text-2xl font-bold text-green-600">{bookingStats?.confirmed || 0}</p>
-                    <p className="text-xs text-muted-foreground">Bekräftade</p>
+                    <p className="text-xs text-muted-foreground">Confirmed</p>
                   </div>
                   <div className="text-center p-4 rounded-lg bg-blue-500/10">
                     <p className="text-2xl font-bold text-blue-600">{bookingStats?.completed || 0}</p>
-                    <p className="text-xs text-muted-foreground">Slutförda</p>
+                    <p className="text-xs text-muted-foreground">Completed</p>
                   </div>
                   <div className="text-center p-4 rounded-lg bg-primary/10">
                     <p className="text-2xl font-bold text-primary">{bookingStats?.upcoming || 0}</p>
-                    <p className="text-xs text-muted-foreground">Kommande</p>
+                    <p className="text-xs text-muted-foreground">Upcoming</p>
                   </div>
                 </div>
               )}
