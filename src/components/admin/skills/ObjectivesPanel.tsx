@@ -242,13 +242,15 @@ function ObjectiveEditorSheet({
   const [constraintsText, setConstraintsText] = useState('');
   const [criteriaText, setCriteriaText] = useState('');
 
-  // Reset form when sheet opens
-  const handleOpenChange = (isOpen: boolean) => {
-    if (isOpen) {
+  useEffect(() => {
+    if (open) {
       setGoal(objective?.goal ?? '');
       setConstraintsText(objective?.constraints ? JSON.stringify(objective.constraints, null, 2) : '{}');
       setCriteriaText(objective?.success_criteria ? JSON.stringify(objective.success_criteria, null, 2) : '{}');
     }
+  }, [open, objective]);
+
+  const handleOpenChange = (isOpen: boolean) => {
     if (!isOpen) onClose();
   };
 
