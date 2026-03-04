@@ -24,6 +24,7 @@ interface IntegrationStatus {
     google_analytics: boolean;
     meta_pixel: boolean;
     slack: boolean;
+    hunter: boolean;
   };
 }
 

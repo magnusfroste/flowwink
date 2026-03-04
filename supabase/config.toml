@@ -131,3 +131,9 @@ verify_jwt = false
 
 [functions.gmail-inbox-scan]
 verify_jwt = false
+
+[functions.prospect-research]
+verify_jwt = false
+
+[functions.prospect-fit-analysis]
+verify_jwt = false
