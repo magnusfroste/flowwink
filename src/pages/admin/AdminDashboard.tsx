@@ -249,6 +249,9 @@ export default function AdminDashboard() {
       case 'aeo':
         return <AeoDashboardWidget key={widgetId} />;
 
+      case 'automation-health':
+        return <AutomationHealthDashboardWidget key={widgetId} />;
+
       case 'recent-pages':
         return (
           <Card key={widgetId}>
