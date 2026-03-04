@@ -568,9 +568,9 @@ export function HeaderBlockEditor({ data, onChange }: HeaderBlockEditorProps) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="default">Standard</SelectItem>
-                  <SelectItem value="primary">Primärfärg</SelectItem>
-                  <SelectItem value="muted">Subtil</SelectItem>
-                  <SelectItem value="contrast">Hög kontrast</SelectItem>
+                  <SelectItem value="primary">Primary</SelectItem>
+                  <SelectItem value="muted">Muted</SelectItem>
+                  <SelectItem value="contrast">High Contrast</SelectItem>
                 </SelectContent>
               </Select>
             </div>
