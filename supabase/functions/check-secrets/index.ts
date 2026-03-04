@@ -20,6 +20,8 @@ interface SecretsStatus {
     firecrawl: boolean;
     openai: boolean;
     gemini: boolean;
+    google_client_id: boolean;
+    google_client_secret: boolean;
   };
 }
 
