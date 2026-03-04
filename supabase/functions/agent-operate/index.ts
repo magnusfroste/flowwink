@@ -98,7 +98,6 @@ async function handleSkillCreate(supabase: any, args: {
   requires_approval?: boolean;
   tool_definition: any;
 }) {
-  // Prevent duplicate names
   const { data: existing } = await supabase
     .from('agent_skills').select('id').eq('name', args.name).maybeSingle();
   if (existing) return { status: 'error', error: `Skill "${args.name}" already exists (id: ${existing.id})` };
@@ -109,7 +108,7 @@ async function handleSkillCreate(supabase: any, args: {
     handler: args.handler,
     category: args.category || 'automation',
     scope: args.scope || 'internal',
-    requires_approval: args.requires_approval ?? true, // Default: require approval for agent-created skills
+    requires_approval: args.requires_approval ?? true,
     enabled: true,
     tool_definition: args.tool_definition,
   }).select('id, name, handler, enabled').single();
@@ -122,7 +121,6 @@ async function handleSkillUpdate(supabase: any, args: {
   skill_name: string;
   updates: Record<string, any>;
 }) {
-  // Only allow safe fields to be updated
   const safeFields = ['description', 'handler', 'category', 'scope', 'requires_approval', 'enabled', 'tool_definition'];
   const filtered: Record<string, any> = {};
   for (const [k, v] of Object.entries(args.updates)) {
@@ -130,7 +128,6 @@ async function handleSkillUpdate(supabase: any, args: {
   }
 
   if (Object.keys(filtered).length === 0) return { status: 'error', error: 'No valid fields to update' };
-
   filtered.updated_at = new Date().toISOString();
 
   const { data, error } = await supabase
@@ -175,7 +172,6 @@ async function handleAutomationCreate(supabase: any, args: {
   skill_arguments?: any;
   enabled?: boolean;
 }) {
-  // Resolve skill_id
   const { data: skill } = await supabase
     .from('agent_skills').select('id').eq('name', args.skill_name).eq('enabled', true).maybeSingle();
 
@@ -187,7 +183,7 @@ async function handleAutomationCreate(supabase: any, args: {
     skill_id: skill?.id || null,
     skill_name: args.skill_name,
     skill_arguments: args.skill_arguments || {},
-    enabled: args.enabled ?? false, // Default disabled — user can enable
+    enabled: args.enabled ?? false,
   }).select('id, name, trigger_type, enabled').single();
 
   if (error) return { status: 'error', error: error.message };
@@ -204,7 +200,6 @@ async function handleAutomationList(supabase: any, args: { enabled_only?: boolea
 // ─── Reflection: Analyze patterns ─────────────────────────────────────────────
 
 async function handleReflect(supabase: any, args: { focus?: string }) {
-  // Gather recent activity stats
   const since = new Date();
   since.setDate(since.getDate() - 7);
 
@@ -217,7 +212,6 @@ async function handleReflect(supabase: any, args: { focus?: string }) {
 
   const activities = recentActivity || [];
 
-  // Aggregate by skill
   const skillStats: Record<string, { count: number; errors: number; avg_ms: number; last_error?: string }> = {};
   for (const a of activities) {
     const name = a.skill_name || 'unknown';
@@ -234,15 +228,10 @@ async function handleReflect(supabase: any, args: { focus?: string }) {
     }
   }
 
-  // Get current skill count
   const { data: allSkills } = await supabase
     .from('agent_skills').select('name, category, handler, enabled').order('category');
-
-  // Get current automations
   const { data: automations } = await supabase
     .from('agent_automations').select('name, trigger_type, skill_name, enabled, run_count');
-
-  // Get objectives status
   const { data: objectives } = await supabase
     .from('agent_objectives').select('goal, status, progress');
 
@@ -267,33 +256,25 @@ function generateSuggestions(
   automations: any[],
 ): string[] {
   const suggestions: string[] = [];
-
-  // High-error skills
   for (const [name, s] of Object.entries(stats)) {
     if (s.errors > 2) {
       suggestions.push(`Skill "${name}" has ${s.errors} failures — consider debugging or updating its handler.`);
     }
   }
-
-  // Frequently used skills without automation
   const automatedSkills = new Set(automations.map((a: any) => a.skill_name));
   for (const [name, s] of Object.entries(stats)) {
     if (s.count >= 5 && !automatedSkills.has(name)) {
       suggestions.push(`"${name}" was used ${s.count} times manually — consider creating an automation for it.`);
     }
   }
-
-  // Skills that are registered but never used
   const usedSkills = new Set(Object.keys(stats));
   const unusedSkills = skills.filter(s => s.enabled && !usedSkills.has(s.name));
   if (unusedSkills.length > 3) {
     suggestions.push(`${unusedSkills.length} skills have never been used. Consider disabling unused ones or promoting them in your workflow.`);
   }
-
   if (suggestions.length === 0) {
     suggestions.push('System is running well. No immediate improvements suggested.');
   }
-
   return suggestions;
 }
 
@@ -486,7 +467,6 @@ async function executeToolCall(
   fnName: string,
   fnArgs: any,
 ): Promise<any> {
-  // Built-in tools
   switch (fnName) {
     case 'memory_write': return handleMemoryWrite(supabase, fnArgs);
     case 'memory_read': return handleMemoryRead(supabase, fnArgs);
@@ -501,7 +481,6 @@ async function executeToolCall(
     case 'reflect': return handleReflect(supabase, fnArgs);
   }
 
-  // External skill via agent-execute
   const response = await fetch(`${supabaseUrl}/functions/v1/agent-execute`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceKey}` },
@@ -510,7 +489,14 @@ async function executeToolCall(
   return response.json();
 }
 
-// ─── Main handler ─────────────────────────────────────────────────────────────
+// ─── SSE helpers ──────────────────────────────────────────────────────────────
+
+function sseEvent(writer: WritableStreamDefaultWriter, encoder: TextEncoder, event: string, data: any) {
+  const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+  return writer.write(encoder.encode(payload));
+}
+
+// ─── Main handler (streaming) ─────────────────────────────────────────────────
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -605,115 +591,236 @@ RULES:
 
     const allTools = [...memoryTools, ...objectiveTools, ...selfModTools, ...(available_skills || [])];
 
-    // ─── Iterative tool-call loop ───────────────────────────────────────
-    let conversationMessages: any[] = [
-      { role: 'system', content: systemPrompt },
-      ...messages,
-    ];
+    // ─── Set up SSE stream ────────────────────────────────────────────
+    const { readable, writable } = new TransformStream();
+    const writer = writable.getWriter();
+    const encoder = new TextEncoder();
 
-    const allSkillResults: any[] = [];
-
-    for (let iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration++) {
-      const aiResponse = await fetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model,
-          messages: conversationMessages,
-          tools: allTools.length > 0 ? allTools : undefined,
-          tool_choice: allTools.length > 0 ? 'auto' : undefined,
-        }),
-      });
-
-      if (!aiResponse.ok) {
-        const errText = await aiResponse.text();
-        console.error('AI error:', aiResponse.status, errText);
-        return new Response(JSON.stringify({ error: 'AI provider error', message: 'Could not process your request.' }), {
-          status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-
-      const aiData = await aiResponse.json();
-      const choice = aiData.choices?.[0];
-
-      if (!choice) {
-        return new Response(JSON.stringify({ message: 'No response from AI' }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-
-      const assistantMessage = choice.message;
-
-      // No tool calls — final text response
-      if (!assistantMessage.tool_calls?.length) {
-        return new Response(JSON.stringify({
-          message: assistantMessage.content || "Done.",
-          skill_results: allSkillResults.length > 0 ? allSkillResults : undefined,
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-
-      // Process ALL tool calls in parallel
-      conversationMessages.push(assistantMessage);
-
-      const toolResults = await Promise.all(
-        assistantMessage.tool_calls.map(async (tc: any) => {
-          const fnName = tc.function.name;
-          let fnArgs: any;
-          try {
-            fnArgs = JSON.parse(tc.function.arguments || '{}');
-          } catch {
-            fnArgs = {};
-          }
-
-          let result: any;
-          try {
-            result = await executeToolCall(supabase, supabaseUrl, serviceKey, fnName, fnArgs);
-          } catch (err: any) {
-            result = { error: err.message };
-          }
-
-          // Track non-built-in skill results
-          if (!BUILT_IN_TOOL_NAMES.includes(fnName)) {
-            allSkillResults.push({
-              skill: fnName,
-              status: result?.status || 'success',
-              result: result?.result || result,
-            });
-          }
-
-          return {
-            role: 'tool' as const,
-            tool_call_id: tc.id,
-            content: JSON.stringify(result),
-          };
-        })
-      );
-
-      conversationMessages.push(...toolResults);
-    }
-
-    // Max iterations reached — final summary
-    const finalResponse = await fetch(apiUrl, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model, messages: conversationMessages }),
-    });
-    const finalData = await finalResponse.json();
-    const finalText = finalData.choices?.[0]?.message?.content || 'Completed all actions.';
-
-    return new Response(JSON.stringify({
-      message: finalText,
-      skill_results: allSkillResults.length > 0 ? allSkillResults : undefined,
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    const response = new Response(readable, {
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
     });
 
-  } catch (err) {
+    // Run the agent loop in background
+    (async () => {
+      try {
+        let conversationMessages: any[] = [
+          { role: 'system', content: systemPrompt },
+          ...messages,
+        ];
+
+        const allSkillResults: any[] = [];
+
+        for (let iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration++) {
+          // Non-streaming AI call for tool-calling iterations
+          const aiResponse = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              model,
+              messages: conversationMessages,
+              tools: allTools.length > 0 ? allTools : undefined,
+              tool_choice: allTools.length > 0 ? 'auto' : undefined,
+            }),
+          });
+
+          if (!aiResponse.ok) {
+            const errText = await aiResponse.text();
+            console.error('AI error:', aiResponse.status, errText);
+            await sseEvent(writer, encoder, 'error', { message: 'AI provider error' });
+            break;
+          }
+
+          const aiData = await aiResponse.json();
+          const choice = aiData.choices?.[0];
+
+          if (!choice) {
+            await sseEvent(writer, encoder, 'error', { message: 'No response from AI' });
+            break;
+          }
+
+          const assistantMessage = choice.message;
+
+          // No tool calls — stream the final text response
+          if (!assistantMessage.tool_calls?.length) {
+            // Send skill results metadata first
+            if (allSkillResults.length > 0) {
+              await sseEvent(writer, encoder, 'skill_results', allSkillResults);
+            }
+
+            // Now stream the final answer
+            const finalContent = assistantMessage.content || 'Done.';
+            await streamFinalResponse(apiUrl, apiKey, model, conversationMessages, allTools, writer, encoder, finalContent);
+            break;
+          }
+
+          // Tool calls — execute them and notify client
+          conversationMessages.push(assistantMessage);
+
+          // Send status event for each tool being executed
+          const toolNames = assistantMessage.tool_calls.map((tc: any) => tc.function.name);
+          await sseEvent(writer, encoder, 'tool_start', { 
+            iteration: iteration + 1,
+            tools: toolNames,
+          });
+
+          const toolResults = await Promise.all(
+            assistantMessage.tool_calls.map(async (tc: any) => {
+              const fnName = tc.function.name;
+              let fnArgs: any;
+              try {
+                fnArgs = JSON.parse(tc.function.arguments || '{}');
+              } catch {
+                fnArgs = {};
+              }
+
+              let result: any;
+              try {
+                result = await executeToolCall(supabase, supabaseUrl, serviceKey, fnName, fnArgs);
+              } catch (err: any) {
+                result = { error: err.message };
+              }
+
+              if (!BUILT_IN_TOOL_NAMES.includes(fnName)) {
+                allSkillResults.push({
+                  skill: fnName,
+                  status: result?.status || 'success',
+                  result: result?.result || result,
+                });
+              }
+
+              return {
+                role: 'tool' as const,
+                tool_call_id: tc.id,
+                content: JSON.stringify(result),
+              };
+            })
+          );
+
+          conversationMessages.push(...toolResults);
+
+          await sseEvent(writer, encoder, 'tool_done', {
+            iteration: iteration + 1,
+            tools: toolNames,
+            results_count: toolResults.length,
+          });
+        }
+      } catch (err: any) {
+        console.error('agent-operate stream error:', err);
+        try {
+          await sseEvent(writer, encoder, 'error', { message: err.message || 'Internal error' });
+        } catch { /* writer may be closed */ }
+      } finally {
+        try {
+          await writer.close();
+        } catch { /* already closed */ }
+      }
+    })();
+
+    return response;
+
+  } catch (err: any) {
     console.error('agent-operate error:', err);
     return new Response(JSON.stringify({ error: err.message || 'Internal error' }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
 });
+
+// ─── Stream final AI response token-by-token ─────────────────────────────────
+
+async function streamFinalResponse(
+  apiUrl: string,
+  apiKey: string,
+  model: string,
+  conversationMessages: any[],
+  _allTools: any[],
+  writer: WritableStreamDefaultWriter,
+  encoder: TextEncoder,
+  fallbackContent: string,
+) {
+  try {
+    // Try streaming the response
+    const streamResponse = await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model,
+        messages: conversationMessages,
+        stream: true,
+      }),
+    });
+
+    if (!streamResponse.ok || !streamResponse.body) {
+      // Fallback: send the already-available content as a single delta
+      await sseEvent(writer, encoder, 'delta', { content: fallbackContent });
+      await sseEvent(writer, encoder, 'done', {});
+      return;
+    }
+
+    const reader = streamResponse.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+
+      let newlineIndex: number;
+      while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
+        let line = buffer.slice(0, newlineIndex);
+        buffer = buffer.slice(newlineIndex + 1);
+
+        if (line.endsWith('\r')) line = line.slice(0, -1);
+        if (!line.startsWith('data: ')) continue;
+
+        const jsonStr = line.slice(6).trim();
+        if (jsonStr === '[DONE]') {
+          await sseEvent(writer, encoder, 'done', {});
+          return;
+        }
+
+        try {
+          const parsed = JSON.parse(jsonStr);
+          const content = parsed.choices?.[0]?.delta?.content;
+          if (content) {
+            await sseEvent(writer, encoder, 'delta', { content });
+          }
+        } catch {
+          // Partial JSON, put back
+          buffer = line + '\n' + buffer;
+          break;
+        }
+      }
+    }
+
+    // Flush remaining
+    if (buffer.trim()) {
+      for (let raw of buffer.split('\n')) {
+        if (!raw) continue;
+        if (raw.endsWith('\r')) raw = raw.slice(0, -1);
+        if (!raw.startsWith('data: ')) continue;
+        const jsonStr = raw.slice(6).trim();
+        if (jsonStr === '[DONE]') continue;
+        try {
+          const parsed = JSON.parse(jsonStr);
+          const content = parsed.choices?.[0]?.delta?.content;
+          if (content) {
+            await sseEvent(writer, encoder, 'delta', { content });
+          }
+        } catch { /* ignore */ }
+      }
+    }
+
+    await sseEvent(writer, encoder, 'done', {});
+  } catch (err) {
+    console.error('Stream error, falling back:', err);
+    await sseEvent(writer, encoder, 'delta', { content: fallbackContent });
+    await sseEvent(writer, encoder, 'done', {});
+  }
+}
