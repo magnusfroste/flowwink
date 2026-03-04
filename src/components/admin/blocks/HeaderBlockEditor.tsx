@@ -508,9 +508,9 @@ export function HeaderBlockEditor({ data, onChange }: HeaderBlockEditorProps) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="compact">Kompakt (48px)</SelectItem>
+                  <SelectItem value="compact">Compact (48px)</SelectItem>
                   <SelectItem value="default">Standard (64px)</SelectItem>
-                  <SelectItem value="tall">Hög (80px)</SelectItem>
+                  <SelectItem value="tall">Tall (80px)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
