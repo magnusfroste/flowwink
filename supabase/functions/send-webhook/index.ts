@@ -234,7 +234,78 @@ Deno.serve(async (req) => {
     const successful = results.filter((r: { success: boolean }) => r.success).length
     const failed = results.filter((r: { success: boolean }) => !r.success).length
 
-    console.log(`[send-webhook] Completed: ${successful} successful, ${failed} failed`)
+    // ── Event-triggered automations ──────────────────────────────────────
+    let automationsDispatched = 0
+    try {
+      const { data: eventAutomations } = await supabase
+        .from('agent_automations')
+        .select('id, name, skill_id, skill_name, skill_arguments, trigger_config')
+        .eq('enabled', true)
+        .eq('trigger_type', 'event')
+
+      const matching = (eventAutomations || []).filter((a: any) => {
+        const eventName = a.trigger_config?.event_name
+        return eventName === event
+      })
+
+      if (matching.length > 0) {
+        console.log(`[send-webhook] Found ${matching.length} event automation(s) for: ${event}`)
+        
+        await Promise.all(matching.map(async (auto: any) => {
+          try {
+            // Merge event data into skill arguments
+            const mergedArgs = { ...auto.skill_arguments, event_data: data }
+            
+            await fetch(`${supabaseUrl}/functions/v1/agent-execute`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${supabaseServiceKey}`,
+              },
+              body: JSON.stringify({
+                skill_id: auto.skill_id,
+                skill_name: auto.skill_name,
+                arguments: mergedArgs,
+                agent_type: 'flowpilot',
+              }),
+            })
+
+            // Update automation metadata
+            await supabase
+              .from('agent_automations')
+              .update({
+                last_triggered_at: new Date().toISOString(),
+                run_count: supabase.rpc ? undefined : undefined, // handled below
+              })
+              .eq('id', auto.id)
+
+            // Increment run_count
+            const { data: current } = await supabase
+              .from('agent_automations')
+              .select('run_count')
+              .eq('id', auto.id)
+              .single()
+            
+            await supabase
+              .from('agent_automations')
+              .update({ run_count: (current?.run_count || 0) + 1 })
+              .eq('id', auto.id)
+
+            automationsDispatched++
+          } catch (err) {
+            console.error(`[send-webhook] Automation ${auto.name} failed:`, err)
+            await supabase
+              .from('agent_automations')
+              .update({ last_error: err instanceof Error ? err.message : 'Unknown error' })
+              .eq('id', auto.id)
+          }
+        }))
+      }
+    } catch (autoErr) {
+      console.error('[send-webhook] Event automation dispatch error:', autoErr)
+    }
+
+    console.log(`[send-webhook] Completed: ${successful} successful, ${failed} failed, ${automationsDispatched} automations`)
 
     return new Response(
       JSON.stringify({ 
@@ -242,6 +313,7 @@ Deno.serve(async (req) => {
         webhooks_triggered: webhooks.length,
         successful,
         failed,
+        automations_dispatched: automationsDispatched,
         results: results.map((r: { success: boolean; status?: number; error?: string; duration: number; attempts: number }, i: number) => ({
           webhook: webhooks[i].name,
           ...r
