@@ -194,16 +194,22 @@ export function GmailIntegrationCard() {
               Connect a Gmail account to scan incoming emails for signals — topics, leads, and opportunities
               that can trigger automations.
             </p>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <span>Requires: GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET</span>
-              <a
-                href="https://console.cloud.google.com/apis/credentials"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary hover:underline inline-flex items-center gap-1"
-              >
-                Google Cloud Console <ExternalLink className="h-3 w-3" />
-              </a>
+            <div className="space-y-2 text-xs text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <span>Requires: GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET</span>
+                <a
+                  href="https://console.cloud.google.com/apis/credentials"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline inline-flex items-center gap-1"
+                >
+                  Google Cloud Console <ExternalLink className="h-3 w-3" />
+                </a>
+              </div>
+              <div className="rounded-md bg-muted px-3 py-2 font-mono text-xs break-all select-all">
+                <span className="text-muted-foreground font-sans font-medium mr-1.5">Redirect URI:</span>
+                {`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/gmail-oauth-callback`}
+              </div>
             </div>
             <Button onClick={handleConnect} className="gap-2">
               <Mail className="h-4 w-4" />
