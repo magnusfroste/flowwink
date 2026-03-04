@@ -791,6 +791,16 @@ export default function IntegrationsStatusPage() {
           </div>
         </div>
 
+        {/* Company Profile for Sales Intelligence */}
+        <div className="space-y-3">
+          <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+            Sales Intelligence
+          </h3>
+          <div className="grid gap-4 md:grid-cols-2">
+            <CompanyProfileCard />
+          </div>
+        </div>
+
         {/* Gmail Signal Integration (standalone card) */}
         <div className="space-y-3">
           <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
