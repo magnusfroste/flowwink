@@ -56,13 +56,19 @@
 - Works for both OpenAI and local AI providers (when tool calling is supported)
 - Approval-gated skills return friendly "pending approval" messages to visitors
 
-## Phase 4: Automation Layer
+## Phase 4: Automation Layer ✅ DONE
+
+### Completed
+- **agent_automations table** with cron/event/signal trigger types and RLS policies
+- **AutomationsPanel** — full CRUD UI with trigger-type badges, skill linking, JSON config editor
+- **ObjectivesPanel** — full CRUD UI with status management, progress tracking, constraint/criteria JSON
+- **FlowPilot skills**: `create_objective` and `create_automation` registered in agent_skills
+- **agent-execute** updated with `module:objectives` and `module:automations` handlers
+- **5 seed automations** and **4 seed objectives** for onboarding
 
 ### TODO
-- [ ] Create agent_automations table (schedule/event/signal triggers)
-- [ ] Cron-based skill execution
+- [ ] Cron-based skill execution runtime (pg_cron + dispatcher edge function)
 - [ ] Signal integration from webhook events
-- [ ] Proactive suggestions (heartbeat system)
 
 ## Architecture Reference
 
