@@ -773,7 +773,7 @@ export function HeaderBlockEditor({ data, onChange }: HeaderBlockEditorProps) {
                 </div>
                 <Button variant="outline" size="sm" onClick={addNavItem}>
                   <Plus className="h-4 w-4 mr-2" />
-                  Lägg till menygrupp
+                  Add menu group
                 </Button>
               </div>
             </CardHeader>

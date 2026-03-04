@@ -672,19 +672,19 @@ export default function AnalyticsDashboardPage() {
                           <p className="font-medium truncate">{newsletter.subject}</p>
                           <p className="text-sm text-muted-foreground">
                             {newsletter.sent_at
-                              ? new Date(newsletter.sent_at).toLocaleDateString('sv-SE')
-                              : 'Ej skickat'}
+                              ? new Date(newsletter.sent_at).toLocaleDateString('en-US')
+                              : 'Not sent'}
                           </p>
                         </div>
                         <div className="flex flex-wrap gap-2">
                           <Badge variant="secondary">
-                            {newsletter.sent_count} skickade
+                            {newsletter.sent_count} sent
                           </Badge>
                           <Badge variant="outline" className="text-green-600 border-green-600/30">
-                            {openRate}% öppnade
+                            {openRate}% opened
                           </Badge>
                           <Badge variant="outline" className="text-blue-600 border-blue-600/30">
-                            {clickRate}% klickade
+                            {clickRate}% clicked
                           </Badge>
                         </div>
                       </div>
