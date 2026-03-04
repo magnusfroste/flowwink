@@ -164,6 +164,13 @@ export const defaultModulesSettings: ModulesSettings = {
     icon: 'Video',
     category: 'communication',
   },
+  salesIntelligence: {
+    enabled: false,
+    name: 'Sales Intelligence',
+    description: 'Prospect research, fit analysis, and AI-powered introduction letters',
+    icon: 'Target',
+    category: 'data',
+  },
 };
 
 // Map sidebar items to module IDs
