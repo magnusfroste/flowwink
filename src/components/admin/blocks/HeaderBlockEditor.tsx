@@ -599,8 +599,8 @@ export function HeaderBlockEditor({ data, onChange }: HeaderBlockEditorProps) {
 
             <div className="flex items-center justify-between">
               <div>
-                <Label>Visa tema-växlare</Label>
-                <p className="text-sm text-muted-foreground">Låt besökare byta mellan mörkt/ljust läge</p>
+                <Label>Show theme toggle</Label>
+                <p className="text-sm text-muted-foreground">Let visitors switch between dark/light mode</p>
               </div>
               <Switch
                 checked={data.showThemeToggle !== false}
