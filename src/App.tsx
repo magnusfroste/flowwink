@@ -159,6 +159,7 @@ const router = createBrowserRouter([
   { path: "/admin/template-export", element: <TemplateExportPage /> },
   { path: "/admin/developer-tools", element: <DeveloperToolsPage /> },
   { path: "/admin/webinars", element: <WebinarsPage /> },
+  { path: "/admin/sales-intelligence", element: <SalesIntelligencePage /> },
   
   { path: "/preview/:id", element: <PreviewPage /> },
   { path: "/:slug", element: <PublicPage /> },
