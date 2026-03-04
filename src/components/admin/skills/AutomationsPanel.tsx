@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import {
   Plus, Timer, Zap, Radio, Trash2, AlertCircle,
@@ -226,8 +226,8 @@ function AutomationEditorSheet({
   const [selectedSkillId, setSelectedSkillId] = useState('');
   const [argsText, setArgsText] = useState('{}');
 
-  const handleOpenChange = (isOpen: boolean) => {
-    if (isOpen) {
+  useEffect(() => {
+    if (open) {
       setName(automation?.name ?? '');
       setDescription(automation?.description ?? '');
       setTriggerType(automation?.trigger_type ?? 'cron');
@@ -238,6 +238,9 @@ function AutomationEditorSheet({
       setSelectedSkillId(automation?.skill_id ?? '');
       setArgsText(automation?.skill_arguments ? JSON.stringify(automation.skill_arguments, null, 2) : '{}');
     }
+  }, [open, automation]);
+
+  const handleOpenChange = (isOpen: boolean) => {
     if (!isOpen) onClose();
   };
 
