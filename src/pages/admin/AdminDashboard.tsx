@@ -384,7 +384,7 @@ export default function AdminDashboard() {
   };
 
   // Group widgets that should be in 2-col grid
-  const pairedWidgets = new Set(['leads', 'live-support', 'chat-analytics', 'chat-feedback', 'recent-pages', 'quick-actions']);
+  const pairedWidgets = new Set(['leads', 'live-support', 'chat-analytics', 'chat-feedback', 'automation-health', 'recent-pages', 'quick-actions']);
 
   // Render widgets in order, grouping paired ones
   const renderOrderedWidgets = () => {
