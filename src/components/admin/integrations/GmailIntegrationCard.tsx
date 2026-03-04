@@ -17,6 +17,8 @@ import {
   Settings,
   ChevronDown,
   Inbox,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
