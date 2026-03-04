@@ -1,0 +1,193 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+/**
+ * Automation Dispatcher
+ *
+ * Called by pg_cron every minute. Finds cron-based automations that are due,
+ * executes them via agent-execute, and updates run metadata.
+ *
+ * Flow:
+ *   1. Query enabled cron automations where next_run_at <= now
+ *   2. For each: invoke agent-execute with the skill + arguments
+ *   3. Update last_triggered_at, next_run_at, run_count, last_error
+ */
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+};
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const supabase = createClient(supabaseUrl, serviceKey);
+
+  try {
+    // 1. Find due cron automations
+    const now = new Date().toISOString();
+    const { data: dueAutomations, error: queryError } = await supabase
+      .from("agent_automations")
+      .select("*")
+      .eq("enabled", true)
+      .eq("trigger_type", "cron")
+      .lte("next_run_at", now);
+
+    if (queryError) throw queryError;
+    if (!dueAutomations?.length) {
+      return new Response(
+        JSON.stringify({ dispatched: 0, message: "No automations due" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const results: Array<{
+      id: string;
+      name: string;
+      status: string;
+      error?: string;
+    }> = [];
+
+    // 2. Execute each
+    for (const auto of dueAutomations) {
+      let status = "success";
+      let lastError: string | null = null;
+
+      try {
+        const executeResponse = await fetch(
+          `${supabaseUrl}/functions/v1/agent-execute`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${serviceKey}`,
+            },
+            body: JSON.stringify({
+              skill_id: auto.skill_id,
+              skill_name: auto.skill_name,
+              arguments: auto.skill_arguments || {},
+              agent_type: "flowpilot",
+              conversation_id: null,
+            }),
+          }
+        );
+
+        const executeResult = await executeResponse.json();
+
+        if (!executeResponse.ok || executeResult.error) {
+          status = "failed";
+          lastError =
+            executeResult.error || `HTTP ${executeResponse.status}`;
+        }
+      } catch (err) {
+        status = "failed";
+        lastError = err.message || "Execution error";
+      }
+
+      // 3. Calculate next_run_at from cron expression
+      const nextRun = calculateNextRun(
+        (auto.trigger_config as any)?.expression
+      );
+
+      // 4. Update automation metadata
+      await supabase
+        .from("agent_automations")
+        .update({
+          last_triggered_at: now,
+          next_run_at: nextRun,
+          run_count: (auto.run_count || 0) + 1,
+          last_error: lastError,
+        })
+        .eq("id", auto.id);
+
+      results.push({ id: auto.id, name: auto.name, status, error: lastError ?? undefined });
+    }
+
+    console.log(`Dispatcher: executed ${results.length} automations`, results);
+
+    return new Response(
+      JSON.stringify({ dispatched: results.length, results }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  } catch (err) {
+    console.error("automation-dispatcher error:", err);
+    return new Response(
+      JSON.stringify({ error: err.message || "Internal error" }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
+  }
+});
+
+// =============================================================================
+// Cron expression → next run time (simple parser for common patterns)
+// =============================================================================
+
+function calculateNextRun(cronExpr?: string): string {
+  if (!cronExpr) {
+    // Default: 1 hour from now
+    return new Date(Date.now() + 60 * 60 * 1000).toISOString();
+  }
+
+  const parts = cronExpr.trim().split(/\s+/);
+  if (parts.length < 5) {
+    return new Date(Date.now() + 60 * 60 * 1000).toISOString();
+  }
+
+  const [minute, hour, dayOfMonth, month, dayOfWeek] = parts;
+  const now = new Date();
+
+  // Simple common patterns
+  // Every N minutes: */N * * * *
+  if (minute.startsWith("*/") && hour === "*") {
+    const interval = parseInt(minute.replace("*/", ""), 10) || 5;
+    return new Date(now.getTime() + interval * 60 * 1000).toISOString();
+  }
+
+  // Every N hours: 0 */N * * *
+  if (hour.startsWith("*/")) {
+    const interval = parseInt(hour.replace("*/", ""), 10) || 1;
+    return new Date(now.getTime() + interval * 60 * 60 * 1000).toISOString();
+  }
+
+  // Daily at specific time: M H * * *
+  if (
+    dayOfMonth === "*" &&
+    month === "*" &&
+    dayOfWeek === "*" &&
+    !minute.includes("*") &&
+    !hour.includes("*")
+  ) {
+    const nextDate = new Date(now);
+    nextDate.setUTCHours(parseInt(hour, 10), parseInt(minute, 10), 0, 0);
+    if (nextDate <= now) nextDate.setUTCDate(nextDate.getUTCDate() + 1);
+    return nextDate.toISOString();
+  }
+
+  // Weekly: M H * * D
+  if (
+    dayOfMonth === "*" &&
+    month === "*" &&
+    dayOfWeek !== "*" &&
+    !minute.includes("*") &&
+    !hour.includes("*")
+  ) {
+    const targetDay = parseInt(dayOfWeek, 10);
+    const nextDate = new Date(now);
+    nextDate.setUTCHours(parseInt(hour, 10), parseInt(minute, 10), 0, 0);
+    let daysAhead = targetDay - now.getUTCDay();
+    if (daysAhead < 0 || (daysAhead === 0 && nextDate <= now)) daysAhead += 7;
+    nextDate.setUTCDate(nextDate.getUTCDate() + daysAhead);
+    return nextDate.toISOString();
+  }
+
+  // Fallback: 1 hour
+  return new Date(now.getTime() + 60 * 60 * 1000).toISOString();
+}
