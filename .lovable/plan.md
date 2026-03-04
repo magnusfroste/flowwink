@@ -95,6 +95,15 @@
 - **automation_create/list** — Create and view automations
 - **reflect** — Introspection: 7-day activity analysis, error rates, improvement suggestions
 
+## Phase 7: Weekly Business Digest ✅ DONE
+
+### Completed
+- **`business-digest` edge function** — queries 7-day data across all modules (page views, leads, bookings, orders, blog posts, newsletters, chat conversations, form submissions, subscribers)
+- **Structured + markdown output** — metrics table, top pages, hot leads, device/referrer breakdown, actionable callouts
+- **`weekly_business_digest` skill** — registered in agent_skills with `edge:business-digest` handler
+- **Cron automation** — "Weekly Business Digest" scheduled Monday 9:00 AM (disabled by default for safety)
+- **Actionable callouts** — hot leads needing follow-up, pending bookings, unpublished drafts, low sentiment alerts
+
 ## Architecture Reference
 
 ```
