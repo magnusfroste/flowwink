@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { GmailIntegrationCard } from "@/components/admin/integrations/GmailIntegrationCard";
+import { CompanyProfileCard } from "@/components/admin/integrations/CompanyProfileCard";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminPageContainer } from "@/components/admin/AdminPageContainer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -787,6 +788,16 @@ export default function IntegrationsStatusPage() {
               {activeCount} of {integrationKeys.length} active
               {configuredCount > activeCount && ` (${configuredCount} configured)`}
             </p>
+          </div>
+        </div>
+
+        {/* Company Profile for Sales Intelligence */}
+        <div className="space-y-3">
+          <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+            Sales Intelligence
+          </h3>
+          <div className="grid gap-4 md:grid-cols-2">
+            <CompanyProfileCard />
           </div>
         </div>
 
