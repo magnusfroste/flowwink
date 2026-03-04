@@ -589,7 +589,7 @@ export function HeaderBlockEditor({ data, onChange }: HeaderBlockEditorProps) {
             <div className="flex items-center justify-between">
               <div>
                 <Label>Sticky header</Label>
-                <p className="text-sm text-muted-foreground">Header följer med vid scroll</p>
+                <p className="text-sm text-muted-foreground">Header stays visible on scroll</p>
               </div>
               <Switch
                 checked={data.stickyHeader !== false}
