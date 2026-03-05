@@ -53,8 +53,19 @@ serve(async (req) => {
       error?: string;
     }> = [];
 
-    // 2. Execute each
+    // 2. Execute each (skip NULL next_run_at — just initialize them)
     for (const auto of dueAutomations) {
+      // If next_run_at was NULL, just initialize it and skip execution
+      if (!auto.next_run_at) {
+        const nextRun = calculateNextRun((auto.trigger_config as any)?.expression);
+        await supabase
+          .from("agent_automations")
+          .update({ next_run_at: nextRun })
+          .eq("id", auto.id);
+        results.push({ id: auto.id, name: auto.name, status: "initialized", error: undefined });
+        continue;
+      }
+
       let status = "success";
       let lastError: string | null = null;
 
