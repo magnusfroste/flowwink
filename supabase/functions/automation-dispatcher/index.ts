@@ -29,14 +29,14 @@ serve(async (req) => {
   const supabase = createClient(supabaseUrl, serviceKey);
 
   try {
-    // 1. Find due cron automations
+    // 1. Find due cron automations (including ones with NULL next_run_at that need initialization)
     const now = new Date().toISOString();
     const { data: dueAutomations, error: queryError } = await supabase
       .from("agent_automations")
       .select("*")
       .eq("enabled", true)
       .eq("trigger_type", "cron")
-      .lte("next_run_at", now);
+      .or(`next_run_at.lte.${now},next_run_at.is.null`);
 
     if (queryError) throw queryError;
     if (!dueAutomations?.length) {
@@ -53,8 +53,19 @@ serve(async (req) => {
       error?: string;
     }> = [];
 
-    // 2. Execute each
+    // 2. Execute each (skip NULL next_run_at — just initialize them)
     for (const auto of dueAutomations) {
+      // If next_run_at was NULL, just initialize it and skip execution
+      if (!auto.next_run_at) {
+        const nextRun = calculateNextRun((auto.trigger_config as any)?.expression);
+        await supabase
+          .from("agent_automations")
+          .update({ next_run_at: nextRun })
+          .eq("id", auto.id);
+        results.push({ id: auto.id, name: auto.name, status: "initialized", error: undefined });
+        continue;
+      }
+
       let status = "success";
       let lastError: string | null = null;
 

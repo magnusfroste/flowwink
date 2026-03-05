@@ -116,12 +116,17 @@ serve(async (req) => {
     }
 
     // 5. Log activity
-    await logActivity(supabase, {
+    const activityId = await logActivity(supabase, {
       agent: agent_type, skill_id: skill.id, skill_name: skill.name,
       input: args, output: result as Record<string, unknown>,
       status: 'success', conversation_id,
       duration_ms: Date.now() - startTime,
     });
+
+    // 6. Auto-track objective progress
+    if (activityId) {
+      await trackObjectiveProgress(supabase, skill.name, activityId);
+    }
 
     return new Response(JSON.stringify({ status: 'success', result }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -370,4 +375,77 @@ async function logActivity(
 
   if (error) console.error('Failed to log activity:', error);
   return data?.id || null;
+}
+
+// =============================================================================
+// Objective progress auto-tracking
+// =============================================================================
+
+// Maps skill names to objective keywords they contribute to
+const SKILL_OBJECTIVE_MAP: Record<string, string[]> = {
+  write_blog_post: ['blog', 'content', 'publish', 'article'],
+  create_page_block: ['page', 'content', 'website'],
+  send_newsletter: ['newsletter', 'email', 'subscriber', 'engagement'],
+  add_lead: ['lead', 'crm', 'sales', 'pipeline'],
+  prospect_research: ['prospect', 'research', 'sales', 'lead'],
+  prospect_fit_analysis: ['prospect', 'fit', 'sales', 'pipeline'],
+  create_campaign: ['campaign', 'marketing', 'engagement'],
+  book_appointment: ['booking', 'appointment', 'calendar'],
+  analyze_analytics: ['analytics', 'traffic', 'performance', 'growth'],
+  weekly_business_digest: ['digest', 'report', 'overview'],
+  search_web: ['research', 'content'],
+};
+
+async function trackObjectiveProgress(
+  supabase: ReturnType<typeof createClient>,
+  skillName: string,
+  activityId: string,
+): Promise<void> {
+  try {
+    // Find active objectives
+    const { data: objectives } = await supabase
+      .from('agent_objectives')
+      .select('id, goal, progress')
+      .eq('status', 'active');
+
+    if (!objectives?.length) return;
+
+    const keywords = SKILL_OBJECTIVE_MAP[skillName] || [];
+    if (!keywords.length) return;
+
+    for (const obj of objectives) {
+      const goalLower = obj.goal.toLowerCase();
+      const matches = keywords.some(kw => goalLower.includes(kw));
+      if (!matches) continue;
+
+      // Link activity to objective
+      await supabase.from('agent_objective_activities').insert({
+        objective_id: obj.id,
+        activity_id: activityId,
+      }).select().maybeSingle();
+
+      // Increment progress counter
+      const progress = (obj.progress as Record<string, unknown>) || {};
+      const skillCount = ((progress[skillName] as number) || 0) + 1;
+      const totalActions = ((progress.total_actions as number) || 0) + 1;
+
+      await supabase
+        .from('agent_objectives')
+        .update({
+          progress: {
+            ...progress,
+            [skillName]: skillCount,
+            total_actions: totalActions,
+            last_skill: skillName,
+            last_action_at: new Date().toISOString(),
+          },
+        })
+        .eq('id', obj.id);
+
+      console.log(`[objective-tracker] Linked skill '${skillName}' to objective '${obj.goal}' (actions: ${totalActions})`);
+    }
+  } catch (err) {
+    console.error('[objective-tracker] Error:', err);
+    // Non-fatal — don't break skill execution
+  }
 }

@@ -2362,6 +2362,16 @@ export type Database = {
       }
     }
     Functions: {
+      dispatch_automation_event: {
+        Args: {
+          entity_id?: string
+          entity_type?: string
+          event_name: string
+          payload: Json
+          signal_name: string
+        }
+        Returns: undefined
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
