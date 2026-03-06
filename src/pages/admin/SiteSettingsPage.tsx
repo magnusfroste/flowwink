@@ -38,7 +38,7 @@ import {
 } from '@/hooks/useSiteSettings';
 import { usePages } from '@/hooks/usePages';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Save, Globe, Zap, ImageIcon, X, AlertTriangle, Code, Cookie, Info, Wrench, Home, Search, Lock, Clock, CheckCircle2, Circle, Bot, FileText, Building2, ExternalLink, Trash2, Sparkles } from 'lucide-react';
+import { Loader2, Save, Globe, Zap, ImageIcon, X, AlertTriangle, Code, Cookie, Info, Wrench, Home, Search, Lock, Clock, CheckCircle2, Circle, Bot, FileText, Building2, ExternalLink, Trash2, Sparkles, Server, Copy, Check } from 'lucide-react';
 import { SystemAiSettingsTab } from '@/components/admin/SystemAiSettingsTab';
 import { MediaLibraryPicker } from '@/components/admin/MediaLibraryPicker';
 import { CodeEditor } from '@/components/admin/CodeEditor';
@@ -46,6 +46,64 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useUnsavedChanges, UnsavedChangesDialog } from '@/hooks/useUnsavedChanges';
 import { ResetSiteDialog } from '@/components/admin/ResetSiteDialog';
 
+
+function EnvironmentInfoCard() {
+  const [copied, setCopied] = useState<string | null>(null);
+
+  const envVars = [
+    { key: 'VITE_SUPABASE_URL', value: import.meta.env.VITE_SUPABASE_URL || '—' },
+    { key: 'VITE_SUPABASE_PROJECT_ID', value: import.meta.env.VITE_SUPABASE_PROJECT_ID || '—' },
+    { key: 'VITE_SUPABASE_PUBLISHABLE_KEY', value: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ? `${(import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string).slice(0, 20)}…` : '—' },
+  ];
+
+  const handleCopy = (key: string, value: string) => {
+    // Copy full value, not truncated
+    const fullValue = key === 'VITE_SUPABASE_PUBLISHABLE_KEY' 
+      ? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY 
+      : value;
+    navigator.clipboard.writeText(fullValue || '');
+    setCopied(key);
+    setTimeout(() => setCopied(null), 2000);
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="font-serif flex items-center gap-2">
+          <Server className="h-5 w-5" />
+          Environment
+        </CardTitle>
+        <CardDescription>
+          Configured environment variables for this instance
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-3">
+          {envVars.map(({ key, value }) => (
+            <div key={key} className="flex items-center justify-between gap-4 p-3 rounded-lg bg-muted/50 border">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-medium text-muted-foreground">{key}</p>
+                <p className="text-sm font-mono truncate">{value}</p>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 shrink-0"
+                onClick={() => handleCopy(key, value)}
+              >
+                {copied === key ? (
+                  <Check className="h-4 w-4 text-green-600" />
+                ) : (
+                  <Copy className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 function OgImagePicker({ value, onChange }: { value: string; onChange: (url: string) => void }) {
   const [showPicker, setShowPicker] = useState(false);
@@ -355,6 +413,9 @@ export default function SiteSettingsPage() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Environment Info */}
+            <EnvironmentInfoCard />
 
             {/* Danger Zone */}
             <Card className="border-destructive/50">
