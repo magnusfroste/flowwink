@@ -20,6 +20,7 @@ import { AeoDashboardWidget } from '@/components/admin/AeoDashboardWidget';
 import { ChatFeedbackDashboardWidget } from '@/components/admin/ChatFeedbackDashboardWidget';
 import { ChatAnalyticsDashboardWidget } from '@/components/admin/ChatAnalyticsDashboardWidget';
 import { AutomationHealthDashboardWidget } from '@/components/admin/AutomationHealthDashboardWidget';
+import { FlowPilotDashboardWidget } from '@/components/admin/FlowPilotDashboardWidget';
 import { LiveSupportDashboardWidget } from '@/components/admin/LiveSupportDashboardWidget';
 import { usePages } from '@/hooks/usePages';
 import { useAuth } from '@/hooks/useAuth';
