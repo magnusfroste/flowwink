@@ -698,5 +698,16 @@ export const trustcorpTemplate: StarterTemplate = {
     llmsFullTxtEnabled: true,
   },
   cookieBannerSettings: { enabled: true },
+  flowpilot: {
+    objectives: [
+      { goal: 'Build a comprehensive knowledge base with 20+ articles', success_criteria: { kb_articles: 20 }, constraints: { tone: 'enterprise-formal', compliance_focused: true } },
+      { goal: 'Qualify and route incoming leads within 24 hours', success_criteria: { avg_response_time_hours: 24 } },
+    ],
+    prioritySkills: ['add_lead', 'analyze_analytics', 'write_blog_post'],
+    soul: {
+      purpose: 'I manage this enterprise platform with precision — qualifying leads, maintaining knowledge, and ensuring compliance.',
+      tone: 'Professional, precise, trust-building. Enterprise-grade communication.',
+    },
+  },
   siteSettings: { homepageSlug: 'home' },
 };

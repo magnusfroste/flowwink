@@ -393,7 +393,14 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { service_role_key, supabase_url, seed_skills = true, seed_soul = true } = body;
+    const { 
+      service_role_key, 
+      supabase_url, 
+      seed_skills = true, 
+      seed_soul = true,
+      // Template-aware configuration
+      template_flowpilot,
+    } = body;
 
     if (!service_role_key) {
       return new Response(
@@ -504,11 +511,16 @@ Deno.serve(async (req) => {
       console.log(`[setup-flowpilot] Seeded ${skillsSeeded} skills`);
     }
 
-    // 4. Seed soul & identity
+    // 4. Seed soul & identity (with template overrides)
     let soulSeeded = false;
     if (seed_soul) {
       console.log('[setup-flowpilot] Seeding soul & identity...');
       
+      // Merge template soul overrides with defaults
+      const soulData = template_flowpilot?.soul
+        ? { ...DEFAULT_SOUL, ...template_flowpilot.soul }
+        : DEFAULT_SOUL;
+
       const { data: existingSoul } = await supabase
         .from('agent_memory')
         .select('id')
@@ -518,7 +530,7 @@ Deno.serve(async (req) => {
       if (!existingSoul) {
         await supabase.from('agent_memory').insert({
           key: 'soul',
-          value: DEFAULT_SOUL,
+          value: soulData,
           category: 'preference',
           created_by: 'flowpilot',
         });
@@ -541,6 +553,27 @@ Deno.serve(async (req) => {
       }
     }
 
+    // 5. Seed initial objectives from template
+    let objectivesSeeded = 0;
+    if (template_flowpilot?.objectives?.length) {
+      console.log('[setup-flowpilot] Seeding template objectives...');
+      for (const obj of template_flowpilot.objectives) {
+        const { error } = await supabase.from('agent_objectives').insert({
+          goal: obj.goal,
+          success_criteria: obj.success_criteria || {},
+          constraints: obj.constraints || {},
+          status: 'active',
+          progress: {},
+        });
+        if (error) {
+          console.error(`[setup-flowpilot] Failed to seed objective:`, error);
+        } else {
+          objectivesSeeded++;
+        }
+      }
+      console.log(`[setup-flowpilot] Seeded ${objectivesSeeded} objectives`);
+    }
+
     console.log('[setup-flowpilot] Bootstrap complete!');
 
     return new Response(
@@ -550,7 +583,9 @@ Deno.serve(async (req) => {
         details: {
           skills_seeded: skillsSeeded,
           soul_seeded: soulSeeded,
+          objectives_seeded: objectivesSeeded,
           total_default_skills: DEFAULT_SKILLS.length,
+          template_configured: !!template_flowpilot,
         },
         next_steps: [
           'Configure AI provider in Site Settings → System AI',

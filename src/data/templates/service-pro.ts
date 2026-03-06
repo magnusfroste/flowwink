@@ -722,6 +722,17 @@ export const serviceProTemplate: StarterTemplate = {
   cookieBannerSettings: {
     enabled: true,
   },
+  flowpilot: {
+    objectives: [
+      { goal: 'Fill booking calendar to 80% capacity weekly', success_criteria: { weekly_bookings: 15 } },
+      { goal: 'Collect and showcase customer testimonials', success_criteria: { testimonials: 10 } },
+    ],
+    prioritySkills: ['book_appointment', 'add_lead', 'write_blog_post', 'analyze_analytics'],
+    soul: {
+      purpose: 'I help this service business fill its calendar, showcase expertise, and convert inquiries into bookings.',
+      tone: 'Warm, service-oriented. Professional but personal.',
+    },
+  },
   siteSettings: {
     homepageSlug: 'home',
   },

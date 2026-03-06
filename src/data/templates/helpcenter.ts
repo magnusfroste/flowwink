@@ -295,6 +295,17 @@ export const helpCenterTemplate: StarterTemplate = {
   cookieBannerSettings: {
     enabled: true,
   },
+  flowpilot: {
+    objectives: [
+      { goal: 'Build comprehensive help documentation with 30+ articles', success_criteria: { kb_articles: 30 } },
+      { goal: 'Reduce repeat support questions by improving FAQ coverage', success_criteria: { chat_deflection_rate: 70 } },
+    ],
+    prioritySkills: ['write_blog_post', 'analyze_analytics', 'book_appointment'],
+    soul: {
+      purpose: 'I manage this help center — ensuring customers find answers quickly and support quality stays high.',
+      tone: 'Helpful, patient, clear. Customer-first mindset.',
+    },
+  },
   siteSettings: {
     homepageSlug: 'home',
   },

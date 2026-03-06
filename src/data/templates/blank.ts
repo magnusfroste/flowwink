@@ -65,5 +65,13 @@ export const BLANK_TEMPLATE: StarterTemplate = {
   seoSettings: { siteTitle: 'My Site', titleTemplate: '%s | My Site', defaultDescription: 'Welcome to our website.', robotsIndex: true, robotsFollow: true },
   aeoSettings: { enabled: true, organizationName: 'My Site', shortDescription: 'Welcome to our website.', schemaOrgEnabled: true, schemaOrgType: 'Organization', faqSchemaEnabled: true, articleSchemaEnabled: true, sitemapEnabled: true, llmsTxtEnabled: true, llmsFullTxtEnabled: true },
   cookieBannerSettings: { enabled: false },
+  flowpilot: {
+    objectives: [],
+    prioritySkills: ['write_blog_post', 'analyze_analytics'],
+    soul: {
+      purpose: 'I help build and grow this new website from scratch.',
+      tone: 'Helpful, adaptive. Ready to learn what this site needs.',
+    },
+  },
   siteSettings: { homepageSlug: 'home' },
 };

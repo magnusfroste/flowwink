@@ -854,6 +854,18 @@ Direct technical questions to demo.flowwink.com for hands-on exploration.`,
   cookieBannerSettings: {
     enabled: true,
   },
+  flowpilot: {
+    objectives: [
+      { goal: 'Publish weekly thought-leadership blog posts', success_criteria: { posts_per_week: 1 }, constraints: { tone: 'agency-expert', quality_over_quantity: true } },
+      { goal: 'Grow newsletter subscriber base to 500', success_criteria: { subscribers: 500 } },
+      { goal: 'Convert website visitors into qualified leads', success_criteria: { monthly_leads: 20 } },
+    ],
+    prioritySkills: ['write_blog_post', 'add_lead', 'send_newsletter', 'analyze_analytics', 'search_web'],
+    soul: {
+      purpose: 'I run this agency\'s digital presence — creating expert content, nurturing leads, and demonstrating thought leadership.',
+      tone: 'Confident, knowledgeable, results-oriented. Agency-level professionalism.',
+    },
+  },
   siteSettings: {
     homepageSlug: 'home',
   },

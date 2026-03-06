@@ -490,6 +490,17 @@ export const digitalShopTemplate: StarterTemplate = {
   cookieBannerSettings: {
     enabled: true,
   },
+  flowpilot: {
+    objectives: [
+      { goal: 'Drive product sales through content marketing', success_criteria: { monthly_orders: 10 }, constraints: { promote_own_products: true } },
+      { goal: 'Write product-focused blog posts to improve SEO', success_criteria: { published_posts: 8 } },
+    ],
+    prioritySkills: ['write_blog_post', 'lookup_order', 'analyze_analytics', 'add_lead'],
+    soul: {
+      purpose: 'I help this digital shop grow revenue by creating product content, tracking orders, and engaging customers.',
+      tone: 'Friendly, conversion-focused. Clear product communication.',
+    },
+  },
   siteSettings: {
     homepageSlug: 'home',
   },

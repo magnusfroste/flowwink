@@ -84,6 +84,24 @@ export interface StarterTemplate {
   aeoSettings?: Partial<AeoSettings>;
   cookieBannerSettings?: Partial<CookieBannerSettings>;
   
+  // FlowPilot agentic configuration
+  flowpilot?: {
+    /** Initial objectives FlowPilot should work toward */
+    objectives?: Array<{
+      goal: string;
+      success_criteria?: Record<string, unknown>;
+      constraints?: Record<string, unknown>;
+    }>;
+    /** Which default skills to prioritize (others still seeded but deprioritized) */
+    prioritySkills?: string[];
+    /** Initial soul overrides (tone, purpose) */
+    soul?: {
+      purpose?: string;
+      tone?: string;
+      values?: string[];
+    };
+  };
+  
   // General settings
   siteSettings: {
     homepageSlug: string;

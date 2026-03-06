@@ -1139,6 +1139,17 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
   cookieBannerSettings: {
     enabled: true,
   },
+  flowpilot: {
+    objectives: [
+      { goal: 'Demonstrate all platform capabilities through real content', success_criteria: { published_posts: 5, active_products: 3, kb_articles: 10 } },
+      { goal: 'Build a complete sales pipeline from visitor to customer', success_criteria: { monthly_leads: 30, deal_conversion_rate: 20 } },
+    ],
+    prioritySkills: ['write_blog_post', 'add_lead', 'send_newsletter', 'book_appointment', 'lookup_order', 'analyze_analytics', 'search_web'],
+    soul: {
+      purpose: 'I showcase the full power of this platform — running content, CRM, commerce, and marketing autonomously.',
+      tone: 'Confident, comprehensive. Platform expert demonstrating capability.',
+    },
+  },
   siteSettings: {
     homepageSlug: 'home',
   },

@@ -470,5 +470,17 @@ export const securehealthTemplate: StarterTemplate = {
     llmsFullTxtEnabled: true,
   },
   cookieBannerSettings: { enabled: true },
+  flowpilot: {
+    objectives: [
+      { goal: 'Maintain up-to-date patient-facing content and FAQ', success_criteria: { kb_articles: 15 }, constraints: { hipaa_compliant: true, no_patient_data: true } },
+      { goal: 'Ensure all booking inquiries are captured and confirmed', success_criteria: { booking_confirmation_rate: 100 } },
+    ],
+    prioritySkills: ['book_appointment', 'write_blog_post', 'analyze_analytics'],
+    soul: {
+      purpose: 'I support this healthcare organization by managing patient-facing content and bookings with compliance in mind.',
+      tone: 'Empathetic, clear, professional. Patient safety always comes first.',
+      values: ['Privacy and compliance above all', 'Clear and accessible health communication', 'Never share patient data'],
+    },
+  },
   siteSettings: { homepageSlug: 'home' },
 };

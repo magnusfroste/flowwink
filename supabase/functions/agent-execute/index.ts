@@ -100,6 +100,8 @@ serve(async (req) => {
     } else if (handler.startsWith('module:')) {
       // Module registry — route through the module's table
       const moduleName = handler.replace('module:', '');
+      // Auto-activate module if not enabled
+      await autoActivateModule(supabase, moduleName);
       result = await executeModuleAction(supabase, moduleName, skill.name, args);
 
     } else if (handler.startsWith('db:')) {
@@ -139,6 +141,58 @@ serve(async (req) => {
     });
   }
 });
+
+// =============================================================================
+// Auto-activate module when FlowPilot uses it
+// =============================================================================
+
+// Maps handler module names to site_settings module keys
+const MODULE_HANDLER_TO_SETTING: Record<string, string> = {
+  blog: 'blog',
+  crm: 'leads',
+  booking: 'bookings',
+  newsletter: 'newsletter',
+  orders: 'orders',
+  objectives: 'analytics', // objectives relate to analytics/insights
+  products: 'products',
+};
+
+async function autoActivateModule(
+  supabase: ReturnType<typeof createClient>,
+  moduleName: string,
+): Promise<void> {
+  const settingKey = MODULE_HANDLER_TO_SETTING[moduleName];
+  if (!settingKey) return;
+
+  try {
+    const { data: existing } = await supabase
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'modules')
+      .maybeSingle();
+
+    if (!existing?.value) return;
+
+    const modules = existing.value as Record<string, any>;
+    const moduleConfig = modules[settingKey];
+    
+    // Already enabled or doesn't exist in settings
+    if (!moduleConfig || moduleConfig.enabled) return;
+
+    // Enable the module
+    modules[settingKey] = { ...moduleConfig, enabled: true };
+    
+    await supabase
+      .from('site_settings')
+      .update({ value: modules })
+      .eq('key', 'modules');
+
+    console.log(`[agent-execute] Auto-activated module: ${settingKey} (triggered by handler module:${moduleName})`);
+  } catch (err) {
+    // Non-fatal — don't break skill execution
+    console.error(`[agent-execute] Failed to auto-activate module ${settingKey}:`, err);
+  }
+}
 
 // =============================================================================
 // Handler implementations

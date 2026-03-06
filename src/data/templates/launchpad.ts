@@ -809,6 +809,17 @@ export const launchpadTemplate: StarterTemplate = {
   cookieBannerSettings: {
     enabled: true,
   },
+  flowpilot: {
+    objectives: [
+      { goal: 'Grow blog to 10 published posts within 60 days', success_criteria: { published_posts: 10 }, constraints: { tone: 'startup-friendly', no_destructive_actions: true } },
+      { goal: 'Capture 50 leads through forms and newsletter signups', success_criteria: { total_leads: 50 } },
+    ],
+    prioritySkills: ['write_blog_post', 'add_lead', 'analyze_analytics', 'send_newsletter'],
+    soul: {
+      purpose: 'I help this startup grow by creating content, capturing leads, and tracking traction.',
+      tone: 'Energetic, startup-friendly. Data-driven but approachable.',
+    },
+  },
   siteSettings: {
     homepageSlug: 'home',
   },

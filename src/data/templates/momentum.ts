@@ -321,6 +321,16 @@ export const momentumTemplate: StarterTemplate = {
   cookieBannerSettings: {
     enabled: true,
   },
+  flowpilot: {
+    objectives: [
+      { goal: 'Convert landing page visitors into form submissions', success_criteria: { monthly_submissions: 30 } },
+    ],
+    prioritySkills: ['add_lead', 'analyze_analytics'],
+    soul: {
+      purpose: 'I optimize this single-page site for maximum conversion — tracking visitors and capturing leads.',
+      tone: 'Minimal, focused. Let the data speak.',
+    },
+  },
   siteSettings: {
     homepageSlug: 'home',
   },
