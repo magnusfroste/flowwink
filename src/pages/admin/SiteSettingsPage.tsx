@@ -105,6 +105,7 @@ function EnvironmentInfoCard() {
   );
 }
 
+function OgImagePicker({ value, onChange }: { value: string; onChange: (url: string) => void }) {
   const [showPicker, setShowPicker] = useState(false);
 
   return (
