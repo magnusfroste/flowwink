@@ -147,6 +147,23 @@ export function SkillEditorSheet({ skill, open, onClose, onSave, onDelete }: Ski
             />
           </div>
 
+          {/* Instructions (SKILL.md equivalent) */}
+          <div className="space-y-1.5">
+            <Label htmlFor="instructions">
+              Instructions
+              <span className="text-muted-foreground font-normal ml-1.5 text-[11px]">
+                (knowledge injected into agent prompt)
+              </span>
+            </Label>
+            <Textarea
+              id="instructions"
+              {...form.register('instructions')}
+              placeholder="Context, examples, edge cases, best practices — like a SKILL.md..."
+              rows={4}
+              className="font-mono text-xs"
+            />
+          </div>
+
           {/* Category + Scope */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
