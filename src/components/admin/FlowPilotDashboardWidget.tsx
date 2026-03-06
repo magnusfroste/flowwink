@@ -45,7 +45,7 @@ function useFlowPilotSummary() {
 
       const activities = activityRes.data || [];
       const objectives = objectivesRes.data || [];
-      const errors = activities.filter(a => a.status === 'error').length;
+      const errors = activities.filter(a => a.status === 'failed').length;
 
       return {
         recentActions: activities.slice(0, 5),
