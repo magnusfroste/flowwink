@@ -143,3 +143,6 @@ verify_jwt = false
 
 [functions.setup-flowpilot]
 verify_jwt = false
+
+[functions.flowpilot-learn]
+verify_jwt = false
