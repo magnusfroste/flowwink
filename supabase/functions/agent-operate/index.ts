@@ -84,6 +84,20 @@ async function handleMemoryRead(supabase: any, args: { key?: string; category?: 
   return { memories: data || [] };
 }
 
+// ─── Skill instructions loader ────────────────────────────────────────────────
+
+async function loadSkillInstructions(supabase: any): Promise<string> {
+  const { data } = await supabase
+    .from('agent_skills')
+    .select('name, instructions')
+    .eq('enabled', true)
+    .not('instructions', 'is', null);
+
+  if (!data || data.length === 0) return '';
+  const lines = data.map((s: any) => `### ${s.name}\n${s.instructions}`);
+  return `\n\nSKILL KNOWLEDGE (instructions you've written for your skills):\n${lines.join('\n\n')}`;
+}
+
 // ─── Objectives helpers ───────────────────────────────────────────────────────
 
 async function loadObjectives(supabase: any): Promise<string> {
