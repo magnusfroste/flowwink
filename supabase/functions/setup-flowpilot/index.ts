@@ -1,0 +1,573 @@
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+// =============================================================================
+// FlowPilot Agentic Layer Schema
+// =============================================================================
+
+const AGENTIC_SCHEMA = `
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- FLOWPILOT AGENTIC LAYER — Self-hosted bootstrap
+-- ═══════════════════════════════════════════════════════════════════════════════
+
+-- Enums
+DO $$ BEGIN CREATE TYPE public.agent_type AS ENUM ('flowpilot', 'chat'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN CREATE TYPE public.agent_scope AS ENUM ('internal', 'external', 'both'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN CREATE TYPE public.agent_skill_category AS ENUM ('content', 'crm', 'communication', 'automation', 'search', 'analytics'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN CREATE TYPE public.agent_memory_category AS ENUM ('preference', 'context', 'fact'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN CREATE TYPE public.agent_objective_status AS ENUM ('active', 'completed', 'paused', 'failed'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN CREATE TYPE public.agent_activity_status AS ENUM ('success', 'failed', 'pending_approval'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN CREATE TYPE public.automation_trigger_type AS ENUM ('cron', 'event', 'signal'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+
+-- Agent Skills
+CREATE TABLE IF NOT EXISTS public.agent_skills (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  description TEXT,
+  handler TEXT NOT NULL,
+  instructions TEXT,
+  category agent_skill_category NOT NULL DEFAULT 'content',
+  scope agent_scope NOT NULL DEFAULT 'internal',
+  tool_definition JSONB NOT NULL DEFAULT '{}'::jsonb,
+  requires_approval BOOLEAN NOT NULL DEFAULT false,
+  enabled BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Agent Memory
+CREATE TABLE IF NOT EXISTS public.agent_memory (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  key TEXT NOT NULL UNIQUE,
+  value JSONB NOT NULL DEFAULT '{}'::jsonb,
+  category agent_memory_category NOT NULL DEFAULT 'context',
+  created_by agent_type NOT NULL DEFAULT 'flowpilot',
+  expires_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Agent Activity (audit log)
+CREATE TABLE IF NOT EXISTS public.agent_activity (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  agent agent_type NOT NULL DEFAULT 'flowpilot',
+  skill_id UUID REFERENCES public.agent_skills(id),
+  skill_name TEXT,
+  input JSONB DEFAULT '{}'::jsonb,
+  output JSONB DEFAULT '{}'::jsonb,
+  status agent_activity_status NOT NULL DEFAULT 'success',
+  error_message TEXT,
+  conversation_id UUID,
+  duration_ms INTEGER,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Agent Objectives
+CREATE TABLE IF NOT EXISTS public.agent_objectives (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  goal TEXT NOT NULL,
+  status agent_objective_status NOT NULL DEFAULT 'active',
+  constraints JSONB NOT NULL DEFAULT '{}'::jsonb,
+  success_criteria JSONB NOT NULL DEFAULT '{}'::jsonb,
+  progress JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_by UUID,
+  completed_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Agent Objective ↔ Activity (join table)
+CREATE TABLE IF NOT EXISTS public.agent_objective_activities (
+  objective_id UUID NOT NULL REFERENCES public.agent_objectives(id) ON DELETE CASCADE,
+  activity_id UUID NOT NULL REFERENCES public.agent_activity(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (objective_id, activity_id)
+);
+
+-- Agent Automations
+CREATE TABLE IF NOT EXISTS public.agent_automations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  description TEXT,
+  trigger_type automation_trigger_type NOT NULL DEFAULT 'cron',
+  trigger_config JSONB NOT NULL DEFAULT '{}'::jsonb,
+  skill_id UUID REFERENCES public.agent_skills(id),
+  skill_name TEXT,
+  skill_arguments JSONB NOT NULL DEFAULT '{}'::jsonb,
+  enabled BOOLEAN NOT NULL DEFAULT true,
+  last_triggered_at TIMESTAMPTZ,
+  next_run_at TIMESTAMPTZ,
+  run_count INTEGER NOT NULL DEFAULT 0,
+  last_error TEXT,
+  created_by UUID,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- RLS
+-- ═══════════════════════════════════════════════════════════════════════════════
+
+ALTER TABLE public.agent_skills ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.agent_memory ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.agent_activity ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.agent_objectives ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.agent_objective_activities ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.agent_automations ENABLE ROW LEVEL SECURITY;
+
+-- agent_skills
+DROP POLICY IF EXISTS "Admins can manage skills" ON public.agent_skills;
+CREATE POLICY "Admins can manage skills" ON public.agent_skills FOR ALL TO authenticated USING (has_role(auth.uid(), 'admin'::app_role));
+DROP POLICY IF EXISTS "Authenticated can view enabled skills" ON public.agent_skills;
+CREATE POLICY "Authenticated can view enabled skills" ON public.agent_skills FOR SELECT TO authenticated USING (enabled = true);
+
+-- agent_memory
+DROP POLICY IF EXISTS "Admins can manage agent memory" ON public.agent_memory;
+CREATE POLICY "Admins can manage agent memory" ON public.agent_memory FOR ALL TO authenticated USING (has_role(auth.uid(), 'admin'::app_role));
+DROP POLICY IF EXISTS "Authenticated can view agent memory" ON public.agent_memory;
+CREATE POLICY "Authenticated can view agent memory" ON public.agent_memory FOR SELECT TO authenticated USING (true);
+DROP POLICY IF EXISTS "System can insert agent memory" ON public.agent_memory;
+CREATE POLICY "System can insert agent memory" ON public.agent_memory FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "System can update agent memory" ON public.agent_memory;
+CREATE POLICY "System can update agent memory" ON public.agent_memory FOR UPDATE USING (true);
+
+-- agent_activity
+DROP POLICY IF EXISTS "Admins can view agent activity" ON public.agent_activity;
+CREATE POLICY "Admins can view agent activity" ON public.agent_activity FOR SELECT TO authenticated USING (has_role(auth.uid(), 'admin'::app_role));
+DROP POLICY IF EXISTS "Admins can update agent activity" ON public.agent_activity;
+CREATE POLICY "Admins can update agent activity" ON public.agent_activity FOR UPDATE TO authenticated USING (has_role(auth.uid(), 'admin'::app_role));
+DROP POLICY IF EXISTS "System can insert agent activity" ON public.agent_activity;
+CREATE POLICY "System can insert agent activity" ON public.agent_activity FOR INSERT WITH CHECK (true);
+
+-- agent_objectives
+DROP POLICY IF EXISTS "Admins can manage objectives" ON public.agent_objectives;
+CREATE POLICY "Admins can manage objectives" ON public.agent_objectives FOR ALL TO authenticated USING (has_role(auth.uid(), 'admin'::app_role));
+DROP POLICY IF EXISTS "Authenticated can view objectives" ON public.agent_objectives;
+CREATE POLICY "Authenticated can view objectives" ON public.agent_objectives FOR SELECT TO authenticated USING (true);
+DROP POLICY IF EXISTS "System can insert objectives" ON public.agent_objectives;
+CREATE POLICY "System can insert objectives" ON public.agent_objectives FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "System can update objectives" ON public.agent_objectives;
+CREATE POLICY "System can update objectives" ON public.agent_objectives FOR UPDATE USING (true);
+
+-- agent_objective_activities
+DROP POLICY IF EXISTS "Admins can manage objective activities" ON public.agent_objective_activities;
+CREATE POLICY "Admins can manage objective activities" ON public.agent_objective_activities FOR ALL TO authenticated USING (has_role(auth.uid(), 'admin'::app_role));
+DROP POLICY IF EXISTS "Authenticated can view objective activities" ON public.agent_objective_activities;
+CREATE POLICY "Authenticated can view objective activities" ON public.agent_objective_activities FOR SELECT TO authenticated USING (true);
+DROP POLICY IF EXISTS "System can insert objective activities" ON public.agent_objective_activities;
+CREATE POLICY "System can insert objective activities" ON public.agent_objective_activities FOR INSERT WITH CHECK (true);
+
+-- agent_automations
+DROP POLICY IF EXISTS "Admins can manage automations" ON public.agent_automations;
+CREATE POLICY "Admins can manage automations" ON public.agent_automations FOR ALL TO authenticated USING (has_role(auth.uid(), 'admin'::app_role));
+DROP POLICY IF EXISTS "Authenticated can view automations" ON public.agent_automations;
+CREATE POLICY "Authenticated can view automations" ON public.agent_automations FOR SELECT TO authenticated USING (true);
+DROP POLICY IF EXISTS "System can update automations" ON public.agent_automations;
+CREATE POLICY "System can update automations" ON public.agent_automations FOR UPDATE USING (true);
+`;
+
+// =============================================================================
+// Default Skill Seed Data
+// =============================================================================
+
+const DEFAULT_SKILLS = [
+  {
+    name: 'write_blog_post',
+    description: 'Create a draft blog post with title, topic, and tone.',
+    handler: 'module:blog',
+    category: 'content',
+    scope: 'internal',
+    requires_approval: false,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'write_blog_post',
+        description: 'Create a draft blog post.',
+        parameters: {
+          type: 'object',
+          properties: {
+            title: { type: 'string', description: 'Blog post title' },
+            topic: { type: 'string', description: 'Topic or brief for the post' },
+            tone: { type: 'string', enum: ['professional', 'casual', 'technical', 'storytelling'], description: 'Writing tone' },
+            language: { type: 'string', description: 'Language code (en, sv, etc.)' },
+          },
+          required: ['title', 'topic'],
+        },
+      },
+    },
+  },
+  {
+    name: 'add_lead',
+    description: 'Add a new lead to the CRM.',
+    handler: 'module:crm',
+    category: 'crm',
+    scope: 'both',
+    requires_approval: false,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'add_lead',
+        description: 'Add a lead to the CRM system.',
+        parameters: {
+          type: 'object',
+          properties: {
+            email: { type: 'string', description: 'Lead email' },
+            name: { type: 'string', description: 'Lead name' },
+            phone: { type: 'string', description: 'Phone number' },
+            source: { type: 'string', description: 'Lead source (chat, form, manual)' },
+          },
+          required: ['email'],
+        },
+      },
+    },
+  },
+  {
+    name: 'book_appointment',
+    description: 'Create a booking for a customer.',
+    handler: 'module:booking',
+    category: 'crm',
+    scope: 'both',
+    requires_approval: false,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'book_appointment',
+        description: 'Book an appointment for a customer.',
+        parameters: {
+          type: 'object',
+          properties: {
+            customer_name: { type: 'string' },
+            customer_email: { type: 'string' },
+            date: { type: 'string', description: 'Date in YYYY-MM-DD format' },
+            time: { type: 'string', description: 'Time in HH:MM format' },
+            service_id: { type: 'string', description: 'Optional service ID' },
+          },
+          required: ['customer_name', 'customer_email', 'date', 'time'],
+        },
+      },
+    },
+  },
+  {
+    name: 'analyze_analytics',
+    description: 'Get page view analytics for a given period.',
+    handler: 'db:page_views',
+    category: 'analytics',
+    scope: 'internal',
+    requires_approval: false,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'analyze_analytics',
+        description: 'Analyze site traffic and page views.',
+        parameters: {
+          type: 'object',
+          properties: {
+            period: { type: 'string', enum: ['today', 'week', 'month', 'quarter'], description: 'Time period' },
+          },
+        },
+      },
+    },
+  },
+  {
+    name: 'send_newsletter',
+    description: 'Create a newsletter draft.',
+    handler: 'module:newsletter',
+    category: 'communication',
+    scope: 'internal',
+    requires_approval: true,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'send_newsletter',
+        description: 'Create a newsletter draft or schedule for sending.',
+        parameters: {
+          type: 'object',
+          properties: {
+            subject: { type: 'string', description: 'Newsletter subject line' },
+            content: { type: 'string', description: 'HTML content' },
+            schedule_at: { type: 'string', description: 'ISO datetime to schedule (optional)' },
+          },
+          required: ['subject', 'content'],
+        },
+      },
+    },
+  },
+  {
+    name: 'create_objective',
+    description: 'Create a new high-level objective for FlowPilot to work toward.',
+    handler: 'module:objectives',
+    category: 'automation',
+    scope: 'internal',
+    requires_approval: false,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'create_objective',
+        description: 'Create a goal for autonomous operation.',
+        parameters: {
+          type: 'object',
+          properties: {
+            goal: { type: 'string', description: 'The objective goal text' },
+            constraints: { type: 'object', description: 'Guardrails for the objective' },
+            success_criteria: { type: 'object', description: 'How to measure completion' },
+          },
+          required: ['goal'],
+        },
+      },
+    },
+  },
+  {
+    name: 'search_web',
+    description: 'Search the web for research or content ideas.',
+    handler: 'edge:firecrawl-search',
+    category: 'search',
+    scope: 'internal',
+    requires_approval: false,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'search_web',
+        description: 'Search the web for information.',
+        parameters: {
+          type: 'object',
+          properties: {
+            query: { type: 'string', description: 'Search query' },
+            limit: { type: 'number', description: 'Max results (default 5)' },
+          },
+          required: ['query'],
+        },
+      },
+    },
+  },
+  {
+    name: 'lookup_order',
+    description: 'Look up order status by order ID or customer email.',
+    handler: 'module:orders',
+    category: 'crm',
+    scope: 'both',
+    requires_approval: false,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'lookup_order',
+        description: 'Look up order information.',
+        parameters: {
+          type: 'object',
+          properties: {
+            order_id: { type: 'string', description: 'Order ID' },
+            email: { type: 'string', description: 'Customer email' },
+          },
+        },
+      },
+    },
+  },
+];
+
+// Default Soul & Identity
+const DEFAULT_SOUL = {
+  purpose: 'I help run this website autonomously — managing content, leads, and growth so the owner can focus on their business.',
+  values: ['Be helpful and proactive', 'Never take destructive actions without approval', 'Learn from every interaction', 'Prioritize quality over quantity'],
+  tone: 'Professional but approachable. Concise. Action-oriented.',
+  philosophy: 'I aim to make this website run itself while keeping the human in the loop for important decisions.',
+};
+
+const DEFAULT_IDENTITY = {
+  name: 'FlowPilot',
+  role: 'Autonomous CMS operator',
+  capabilities: ['Content creation', 'Lead management', 'Analytics review', 'Newsletter drafting', 'Booking management', 'Self-improvement'],
+  boundaries: ['Cannot send newsletters without approval', 'Cannot delete data', 'Cannot modify authentication or security settings'],
+};
+
+// =============================================================================
+// Main Handler
+// =============================================================================
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const body = await req.json();
+    const { service_role_key, supabase_url, seed_skills = true, seed_soul = true } = body;
+
+    if (!service_role_key) {
+      return new Response(
+        JSON.stringify({ error: 'service_role_key is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const url = supabase_url || Deno.env.get('SUPABASE_URL');
+    if (!url) {
+      return new Response(
+        JSON.stringify({ error: 'supabase_url is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('[setup-flowpilot] Starting agentic layer bootstrap...');
+
+    const supabase = createClient(url, service_role_key, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+
+    // 1. Check if already set up
+    const { error: checkError } = await supabase
+      .from('agent_skills')
+      .select('id')
+      .limit(1);
+
+    if (!checkError) {
+      // Table exists — check if it has data
+      const { data: existingSkills } = await supabase
+        .from('agent_skills')
+        .select('id')
+        .limit(1);
+
+      if (existingSkills && existingSkills.length > 0) {
+        console.log('[setup-flowpilot] Already set up with skills');
+        return new Response(
+          JSON.stringify({
+            success: true,
+            message: 'FlowPilot agentic layer is already configured.',
+            already_setup: true,
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
+    // 2. Run schema migration via SQL
+    console.log('[setup-flowpilot] Running schema migration...');
+    
+    // We can't run raw SQL via REST API easily, so we check if tables exist
+    // and create them via the Supabase management API or direct SQL
+    // For self-hosted: the schema SQL should be run manually or via supabase db push
+    // This function focuses on seeding data after schema is in place.
+    
+    // Check if the core tables exist by trying to query them
+    const tableChecks = await Promise.all([
+      supabase.from('agent_skills').select('id').limit(0),
+      supabase.from('agent_memory').select('id').limit(0),
+      supabase.from('agent_activity').select('id').limit(0),
+      supabase.from('agent_objectives').select('id').limit(0),
+      supabase.from('agent_automations').select('id').limit(0),
+    ]);
+
+    const missingTables = ['agent_skills', 'agent_memory', 'agent_activity', 'agent_objectives', 'agent_automations']
+      .filter((_, i) => tableChecks[i].error);
+
+    if (missingTables.length > 0) {
+      console.log('[setup-flowpilot] Missing tables:', missingTables);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Agentic tables not found. Run the schema migration first.',
+          missing_tables: missingTables,
+          manual_required: true,
+          schema_sql: AGENTIC_SCHEMA,
+          instructions: [
+            '1. Connect to your Supabase SQL editor or run: supabase db push',
+            '2. Execute the schema_sql provided in this response',
+            '3. Call this endpoint again to seed the default skills and soul',
+          ],
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // 3. Seed skills
+    let skillsSeeded = 0;
+    if (seed_skills) {
+      console.log('[setup-flowpilot] Seeding default skills...');
+      for (const skill of DEFAULT_SKILLS) {
+        const { data: existing } = await supabase
+          .from('agent_skills')
+          .select('id')
+          .eq('name', skill.name)
+          .maybeSingle();
+
+        if (!existing) {
+          const { error } = await supabase.from('agent_skills').insert(skill);
+          if (error) {
+            console.error(`[setup-flowpilot] Failed to seed skill ${skill.name}:`, error);
+          } else {
+            skillsSeeded++;
+          }
+        }
+      }
+      console.log(`[setup-flowpilot] Seeded ${skillsSeeded} skills`);
+    }
+
+    // 4. Seed soul & identity
+    let soulSeeded = false;
+    if (seed_soul) {
+      console.log('[setup-flowpilot] Seeding soul & identity...');
+      
+      const { data: existingSoul } = await supabase
+        .from('agent_memory')
+        .select('id')
+        .eq('key', 'soul')
+        .maybeSingle();
+
+      if (!existingSoul) {
+        await supabase.from('agent_memory').insert({
+          key: 'soul',
+          value: DEFAULT_SOUL,
+          category: 'preference',
+          created_by: 'flowpilot',
+        });
+        soulSeeded = true;
+      }
+
+      const { data: existingIdentity } = await supabase
+        .from('agent_memory')
+        .select('id')
+        .eq('key', 'identity')
+        .maybeSingle();
+
+      if (!existingIdentity) {
+        await supabase.from('agent_memory').insert({
+          key: 'identity',
+          value: DEFAULT_IDENTITY,
+          category: 'preference',
+          created_by: 'flowpilot',
+        });
+      }
+    }
+
+    console.log('[setup-flowpilot] Bootstrap complete!');
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: 'FlowPilot agentic layer bootstrapped successfully!',
+        details: {
+          skills_seeded: skillsSeeded,
+          soul_seeded: soulSeeded,
+          total_default_skills: DEFAULT_SKILLS.length,
+        },
+        next_steps: [
+          'Configure AI provider in Site Settings → System AI',
+          'Set OPENAI_API_KEY or GEMINI_API_KEY as secrets',
+          'Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in vault for heartbeat self-invocation',
+          'Deploy edge functions: agent-execute, agent-operate, flowpilot-heartbeat',
+          'Open /admin/copilot to start using FlowPilot',
+        ],
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
+  } catch (error) {
+    console.error('[setup-flowpilot] Error:', error);
+    return new Response(
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+});

@@ -140,3 +140,6 @@ verify_jwt = false
 
 [functions.flowpilot-heartbeat]
 verify_jwt = false
+
+[functions.setup-flowpilot]
+verify_jwt = false

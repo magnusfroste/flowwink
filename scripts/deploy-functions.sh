@@ -26,6 +26,7 @@ NC='\033[0m' # No Color
 # Essential functions for basic CMS functionality (hardcoded for safety)
 MINIMAL_FUNCTIONS=(
   "setup-database"
+  "setup-flowpilot"
   "get-page"
   "track-page-view"
 )

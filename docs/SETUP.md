@@ -325,6 +325,7 @@ See **[DEPLOYMENT.md](./DEPLOYMENT.md)** for deploying to Easypanel, Railway, or
 | `send-order-confirmation` | Send order confirmations | Yes | `RESEND_API_KEY` |
 | `send-webhook` | Trigger webhooks for events | Yes | - |
 | `setup-database` | Database setup/initialization | Yes (Admin) | - |
+| `setup-flowpilot` | Bootstrap agentic layer (skills, soul, identity) | Yes (Admin) | - |
 | `sitemap-xml` | Generate sitemap | No | - |
 | `stripe-webhook` | Handle Stripe webhooks | No | `STRIPE_WEBHOOK_SECRET` |
 | `support-router` | Route support requests | No | - |
