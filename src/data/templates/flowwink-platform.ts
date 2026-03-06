@@ -1,8 +1,9 @@
 /**
  * FlowWink Platform Template
  * 
- * Complete SaaS landing page template showcasing all CMS features.
- * Built for platform businesses with pricing, comparisons, and feature highlights.
+ * The first autonomous agentic CMS. Your website runs itself.
+ * Powered by FlowPilot — an OpenClaw-inspired autonomous agent with
+ * persistent memory, self-evolving skills, and goal-driven objectives.
  * 
  * This is the "dogfooding" template - FlowWink built with FlowWink.
  */
@@ -13,11 +14,11 @@ import { flowwinkKbCategories } from '../template-kb-articles';
 export const flowwinkPlatformTemplate: StarterTemplate = {
   id: 'flowwink-platform',
   name: 'FlowWink Platform',
-  description: 'Complete SaaS landing page template showcasing all CMS features. Built for platform businesses with pricing, comparisons, and feature highlights.',
+  description: 'The first autonomous agentic CMS. Your website runs itself.',
   category: 'platform',
-  icon: 'Blocks',
-  tagline: 'The ultimate dogfood - built with FlowWink, for FlowWink',
-  aiChatPosition: 'Embedded assistant for product questions',
+  icon: 'Bot',
+  tagline: 'Set objectives. FlowPilot operates.',
+  aiChatPosition: 'Embedded autonomous agent for site operations',
   blogPosts: flowwinkBlogPosts,
   kbCategories: flowwinkKbCategories,
   requiredModules: ['blog', 'knowledgeBase', 'chat', 'liveSupport', 'newsletter', 'leads', 'deals', 'companies', 'forms', 'products', 'orders', 'bookings', 'analytics', 'contentApi', 'webinars'],
@@ -30,56 +31,56 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
       menu_order: 1,
       showInMenu: true,
       meta: {
-        description: 'Keep Your Head While Going Headless - The complete CMS that gives you a beautiful website AND a powerful API',
+        description: 'FlowWink is the first autonomous agentic CMS. FlowPilot writes your content, qualifies your leads, runs your campaigns, and learns from every interaction.',
         showTitle: false,
         titleAlignment: 'center',
       },
       blocks: [
-        // ANNOUNCEMENT BAR - Top banner for new features
+        // ANNOUNCEMENT BAR
         {
-          id: 'announcement-flowwink-loop',
+          id: 'announcement-flowpilot',
           type: 'announcement-bar',
           data: {
-            message: '🔄 New: Flowwink Loop - Automatic Lead Enrichment & AI Qualification',
-            linkText: 'Learn more',
+            message: '🤖 Introducing FlowPilot — The first CMS that operates itself',
+            linkText: 'See how it works',
             linkUrl: '/features',
             variant: 'gradient',
             dismissable: true,
             sticky: false,
           },
         },
-        // HERO - Main value proposition
+        // HERO — The money shot
         {
           id: 'hero-main',
           type: 'hero',
           data: {
-            title: 'Keep Your Head While Going Headless',
-            subtitle: 'The complete CMS that gives you a beautiful website AND a powerful API. No compromises. No complexity. Just results.',
+            title: 'Your Website Runs Itself',
+            subtitle: 'FlowPilot is an autonomous AI agent that writes your content, qualifies your leads, runs your campaigns, and learns from every interaction. You set the objectives. It does the rest.',
             backgroundType: 'video',
             videoUrl: 'https://cdn.prod.website-files.com/673761996d53e695f4ec8cb6%2F67b84e27497ac9c515a29519_wassching%20opening-transcode.mp4',
             heightMode: 'viewport',
             contentAlignment: 'center',
-            overlayOpacity: 50,
+            overlayOpacity: 55,
             titleAnimation: 'slide-up',
             showScrollIndicator: true,
-            primaryButton: { text: 'Try the Demo', url: '/demo' },
+            primaryButton: { text: 'Watch It Work', url: '/demo' },
             secondaryButton: { text: 'Self-Host Free', url: 'https://github.com/flowwink/flowwink' },
           },
         },
-        // AI CHAT - Primary USP, right after hero
+        // CHAT LAUNCHER — Talk to FlowPilot
         {
           id: 'chat-hero-usp',
           type: 'chat-launcher',
           data: {
-            title: 'AI That Actually Knows Your Content',
-            subtitle: 'Unlike generic chatbots, our AI reads every page, blog post, and KB article on your site. Try it — ask anything about FlowWink.',
-            placeholder: 'Ask about features, pricing, self-hosting...',
+            title: 'Talk to FlowPilot Right Now',
+            subtitle: 'This isn\'t a FAQ bot. FlowPilot has read every page, blog post, and KB article on this site. It has memory. It learns. Ask it anything.',
+            placeholder: 'Ask about autonomous operations, skills, self-hosting...',
             showQuickActions: true,
             quickActionCount: 4,
             variant: 'hero-integrated',
           },
         },
-        // SECTION DIVIDER - Visual transition from hero to content
+        // SECTION DIVIDER
         {
           id: 'divider-hero-stats',
           type: 'section-divider',
@@ -88,75 +89,139 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             height: 'md',
           },
         },
-        // STATS - Key numbers upfront
+        // STATS — The jaw-droppers
         {
           id: 'stats-hero',
           type: 'stats',
           data: {
             items: [
-              { id: 's1', value: '47+', label: 'Block Types' },
-              { id: 's2', value: '16', label: 'Built-in Modules' },
-              { id: 's3', value: '5', label: 'AI Providers' },
-              { id: 's4', value: '∞', label: 'Self-Host Free' },
+              { id: 's1', value: '20+', label: 'Autonomous Skills' },
+              { id: 's2', value: 'Yes', label: 'Self-Improving' },
+              { id: 's3', value: '6', label: 'Channels Managed' },
+              { id: 's4', value: 'Only When You Want', label: 'Human Required' },
             ],
             columns: 4,
             variant: 'minimal',
           },
         },
-        // TIMELINE - How it Works (NEW)
+        // TIMELINE — How FlowPilot Works (3 steps)
         {
           id: 'timeline-how',
           type: 'timeline',
           data: {
-            title: 'How It Works',
-            subtitle: 'From zero to published in three steps.',
+            title: 'How FlowPilot Works',
+            subtitle: 'You direct. FlowPilot operates. You approve.',
             items: [
               {
                 id: 'hw-1',
-                title: 'Deploy',
-                description: 'Self-host with Docker in 5 minutes, or use our managed cloud. No credit card required.',
-                icon: 'Rocket',
+                title: 'You Set Objectives',
+                description: '"Write 4 blog posts per month. Qualify all inbound leads. Send a weekly newsletter." Define what success looks like — FlowPilot figures out how.',
+                icon: 'Target',
               },
               {
                 id: 'hw-2',
-                title: 'Create',
-                description: 'Use the visual editor to build pages with 47+ blocks. No coding needed.',
-                icon: 'Blocks',
+                title: 'FlowPilot Operates',
+                description: 'Writes content, scores leads, sends campaigns, books meetings, enriches companies, analyzes performance — autonomously, around the clock.',
+                icon: 'Bot',
               },
               {
                 id: 'hw-3',
-                title: 'Publish',
-                description: 'Go live instantly or schedule for later. Use the API to power any frontend.',
-                icon: 'Globe',
+                title: 'You Review & Approve',
+                description: 'Every action is logged. Sensitive operations require your approval. Full human-in-the-loop when you want it, full autonomy when you don\'t.',
+                icon: 'CheckCircle',
               },
             ],
             layout: 'horizontal',
           },
         },
-        // FEATURES - Three pillars (Head + FlowWink + Headless)
+        // BENTO GRID — The Agent Brain
         {
-          id: 'features-pillars',
+          id: 'bento-agent-brain',
+          type: 'bento-grid',
+          data: {
+            title: 'The Agent Brain',
+            subtitle: 'FlowPilot isn\'t a chatbot with tools. It\'s an autonomous operator with a persistent mind.',
+            eyebrow: 'ARCHITECTURE',
+            columns: 3,
+            variant: 'glass',
+            gap: 'md',
+            staggeredReveal: true,
+            items: [
+              { id: 'bg-skills', title: 'Skill Engine', description: '20+ skills spanning content, CRM, email, analytics, and more. FlowPilot can even create new skills for itself.', icon: 'Zap', span: 'wide', accentColor: '#3B82F6' },
+              { id: 'bg-memory', title: 'Persistent Memory', description: 'Learns your preferences, remembers past decisions, stores facts about your business. Context that survives across sessions.', icon: 'Brain', span: 'large', accentColor: '#8B5CF6' },
+              { id: 'bg-objectives', title: 'Objectives & Goals', description: 'Define success criteria. FlowPilot tracks progress, breaks goals into tasks, and reports on completion.', icon: 'Target', accentColor: '#10B981' },
+              { id: 'bg-heartbeat', title: 'Autonomous Heartbeat', description: 'Every 12 hours, FlowPilot reflects on what happened, what to improve, and what to do next. No prompts needed.', icon: 'Activity', accentColor: '#F59E0B' },
+              { id: 'bg-automations', title: 'Signal Automations', description: 'Event-driven reactions: new lead → qualify instantly. New blog post → distribute across channels. Form submitted → follow up.', icon: 'GitBranch', accentColor: '#EC4899' },
+              { id: 'bg-evolution', title: 'Self-Evolution', description: 'FlowPilot rewrites its own soul, updates its skill instructions, and evolves its behavior based on what works.', icon: 'Sparkles', span: 'wide', accentColor: '#06B6D4' },
+            ],
+          },
+        },
+        // SECTION DIVIDER
+        {
+          id: 'divider-before-parallax',
+          type: 'section-divider',
+          data: {
+            shape: 'curved',
+            height: 'sm',
+          },
+        },
+        // PARALLAX — The killer line
+        {
+          id: 'parallax-vision',
+          type: 'parallax-section',
+          data: {
+            backgroundImage: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1920',
+            title: 'Not a Chatbot. An Operator.',
+            subtitle: 'FlowPilot doesn\'t wait for instructions. It has objectives, memory, and skills. It operates your entire digital presence while you sleep.',
+            height: 'md',
+            textColor: 'light',
+            overlayOpacity: 65,
+            contentAlignment: 'center',
+          },
+        },
+        // FEATURES — What FlowPilot Manages
+        {
+          id: 'features-channels',
           type: 'features',
           data: {
-            title: 'Best of Both Worlds',
+            title: 'What FlowPilot Manages',
+            subtitle: 'Six channels. One autonomous operator. Zero manual work.',
             features: [
               {
-                id: 'pillar-head',
-                icon: 'Monitor',
-                title: 'HEAD',
-                description: 'Built-in website with visual editor, responsive design, and beautiful templates. No coding required.',
+                id: 'ch-content',
+                icon: 'FileText',
+                title: 'Content & Blog',
+                description: 'Writes, edits, schedules, and publishes blog posts. Maintains brand voice. Optimizes for SEO and AEO.',
               },
               {
-                id: 'pillar-core',
-                icon: 'Blocks',
-                title: 'FLOWWINK',
-                description: 'Single source of truth for all your content. Structured data, version control, and collaboration tools.',
+                id: 'ch-crm',
+                icon: 'Users',
+                title: 'Lead CRM',
+                description: 'Captures leads from every touchpoint. Scores, qualifies, enriches with company data. Moves deals through the pipeline.',
               },
               {
-                id: 'pillar-headless',
-                icon: 'Code',
-                title: 'HEADLESS',
-                description: 'Powerful REST API for any frontend. React, Vue, mobile apps - deliver content anywhere.',
+                id: 'ch-email',
+                icon: 'Mail',
+                title: 'Email Campaigns',
+                description: 'Creates newsletters, writes subject lines, segments audiences, sends at optimal times. Full GDPR compliance.',
+              },
+              {
+                id: 'ch-booking',
+                icon: 'Calendar',
+                title: 'Bookings',
+                description: 'Schedules meetings, sends confirmations and reminders, handles rescheduling. Connects calendar to CRM.',
+              },
+              {
+                id: 'ch-ecommerce',
+                icon: 'ShoppingCart',
+                title: 'E-commerce',
+                description: 'Manages products, processes orders, handles Stripe checkout. Tracks revenue and conversion.',
+              },
+              {
+                id: 'ch-analytics',
+                icon: 'BarChart3',
+                title: 'Analytics & Reflection',
+                description: 'Monitors traffic, analyzes trends, identifies opportunities. Generates reports and suggests improvements.',
               },
             ],
             columns: 3,
@@ -165,128 +230,105 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             iconStyle: 'circle',
           },
         },
-        // BENTO GRID - Core modules showcase (replaces flat features grid)
+        // TWO-COLUMN — The Architecture
         {
-          id: 'bento-modules',
-          type: 'bento-grid',
+          id: 'twocol-architecture',
+          type: 'two-column',
           data: {
-            title: 'Everything You Need',
-            subtitle: 'A complete content platform with built-in modules that just work.',
-            eyebrow: 'PLATFORM',
-            columns: 3,
-            variant: 'glass',
-            gap: 'md',
-            staggeredReveal: true,
-            items: [
-              { id: 'bg-cms', title: 'Visual Page Builder', description: '47+ drag-and-drop blocks. Build any layout without touching code.', icon: 'Layout', span: 'wide', accentColor: '#3B82F6' },
-              { id: 'bg-chat', title: 'AI Chat Widget', description: 'Content-aware AI that reads your pages and KB to answer visitor questions 24/7. Private LLM support.', icon: 'MessageCircle', span: 'large', accentColor: '#8B5CF6' },
-              { id: 'bg-blog', title: 'Blog & Newsletter', description: 'Full blog with categories, tags, and built-in email campaigns with GDPR compliance.', icon: 'FileText', accentColor: '#F59E0B' },
-              { id: 'bg-crm', title: 'CRM & Leads', description: 'Lead capture, deal pipeline, company tracking, and AI qualification.', icon: 'Users', accentColor: '#10B981' },
-              { id: 'bg-ecommerce', title: 'E-commerce', description: 'Products, orders, and Stripe checkout. Sell subscriptions or one-time purchases.', icon: 'ShoppingCart', accentColor: '#EC4899' },
-              { id: 'bg-kb', title: 'Knowledge Base', description: 'Hierarchical FAQ with full-text search and chat integration.', icon: 'Library', span: 'wide', accentColor: '#06B6D4' },
+            eyebrow: 'ARCHITECTURE',
+            title: 'The Autonomous',
+            accentText: 'Loop',
+            accentPosition: 'end',
+            leftColumn: {
+              type: 'doc',
+              content: [
+                { type: 'paragraph', content: [{ type: 'text', text: 'FlowPilot operates on a continuous cycle that never stops. Every interaction feeds the next decision.' }] },
+                { type: 'orderedList', content: [
+                  { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Heartbeat triggers' }, { type: 'text', text: ' — every 12h, FlowPilot wakes up and reflects' }] }] },
+                  { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Reflect on recent activity' }, { type: 'text', text: ' — what worked, what failed, what to try next' }] }] },
+                  { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Plan next actions' }, { type: 'text', text: ' — match objectives to available skills' }] }] },
+                  { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Execute skills' }, { type: 'text', text: ' — write content, send emails, qualify leads' }] }] },
+                  { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Log everything' }, { type: 'text', text: ' — full audit trail in the activity feed' }] }] },
+                  { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Learn & evolve' }, { type: 'text', text: ' — update memory, improve skill instructions' }] }] },
+                ] },
+              ],
+            },
+            rightColumn: {
+              type: 'doc',
+              content: [
+                { type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'italic' }], text: 'Three layers of operation:' }] },
+                { type: 'bulletList', content: [
+                  { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: '🟢 Visitor Layer' }, { type: 'text', text: ' — AI chat answers questions using full site context, captures leads, books meetings' }] }] },
+                  { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: '🔵 Admin Operate Layer' }, { type: 'text', text: ' — natural language commands: "Write a blog post about our new feature" → done' }] }] },
+                  { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: '🟣 Automation Layer' }, { type: 'text', text: ' — signal-driven skills: new lead → enrich → qualify → assign → notify, all autonomous' }] }] },
+                ] },
+                { type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'italic' }], text: 'Every action is logged. Every skill can require approval. You\'re always in control.' }] },
+              ],
+            },
+            layout: '50-50',
+          },
+        },
+        // COMPARISON — FlowWink vs Everything Else
+        {
+          id: 'comparison-competitors',
+          type: 'comparison',
+          data: {
+            title: 'FlowWink Replaces Four Products',
+            subtitle: 'Traditional CMS + Chatbot + Marketing Automation + CRM — all in one autonomous platform.',
+            products: [
+              { id: 'fw', name: 'FlowWink', highlighted: true },
+              { id: 'cms', name: 'Traditional CMS' },
+              { id: 'chatbot', name: 'AI Chatbot' },
+              { id: 'automation', name: 'Marketing Automation' },
             ],
-          },
-        },
-        // SECTION DIVIDER - Transition to pillars
-        {
-          id: 'divider-before-pillars',
-          type: 'section-divider',
-          data: {
-            shape: 'curved',
-            height: 'sm',
-          },
-        },
-        // PARALLAX SECTION - Platform vision
-        {
-          id: 'parallax-vision',
-          type: 'parallax-section',
-          data: {
-            backgroundImage: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1920',
-            title: 'Head + FlowWink + Headless',
-            subtitle: 'Beautiful website included. Powerful API built in. No compromises.',
-            height: 'md',
-            textColor: 'light',
-            overlayOpacity: 60,
-            contentAlignment: 'center',
-          },
-        },
-        // FEATURES - AI-First Platform
-        {
-          id: 'features-ai',
-          type: 'features',
-          data: {
-            title: 'AI-First Platform',
-            subtitle: 'Leverage AI throughout your content workflow - with full control over your data.',
             features: [
-              {
-                id: 'ai-chat',
-                icon: 'MessageSquare',
-                title: 'AI Chat Assistant',
-                description: 'Embed an AI chatbot on your site that knows your content. Answer questions 24/7.',
-              },
-              {
-                id: 'ai-aeo',
-                icon: 'Brain',
-                title: 'AEO Analyzer',
-                description: 'Analyze your content for AI Engine Optimization. Improve how AI systems understand and cite your site.',
-              },
-              {
-                id: 'ai-brand',
-                icon: 'Palette',
-                title: 'Brand Guide AI',
-                description: 'AI analyzes your website and generates complete branding guidelines with colors, fonts, and tone.',
-              },
-              {
-                id: 'ai-private',
-                icon: 'Shield',
-                title: 'Private LLM Support',
-                description: 'Connect your own local LLM for complete data sovereignty. Your data never leaves your infrastructure.',
-              },
-              {
-                id: 'ai-content',
-                icon: 'Sparkles',
-                title: 'AI Content Tools',
-                description: 'Generate, improve, and translate content with AI. Maintain your brand voice automatically.',
-              },
-              {
-                id: 'ai-migration',
-                icon: 'ArrowRightLeft',
-                title: 'AI Migration',
-                description: 'Migrate from WordPress, Webflow, or any site. AI converts your content to structured blocks.',
-              },
+              { id: 'f1', name: 'Visual Page Builder', values: [true, true, false, false] },
+              { id: 'f2', name: 'Headless API', values: [true, false, false, false] },
+              { id: 'f3', name: 'Autonomous AI Agent', values: [true, false, false, false] },
+              { id: 'f4', name: 'Persistent Memory', values: [true, false, false, false] },
+              { id: 'f5', name: 'Self-Evolving Skills', values: [true, false, false, false] },
+              { id: 'f6', name: 'Lead CRM & Scoring', values: [true, false, false, true] },
+              { id: 'f7', name: 'AI Content Generation', values: [true, false, true, false] },
+              { id: 'f8', name: 'Email Campaigns', values: [true, false, false, true] },
+              { id: 'f9', name: 'Booking System', values: [true, false, false, false] },
+              { id: 'f10', name: 'E-commerce', values: [true, true, false, false] },
+              { id: 'f11', name: 'Knowledge Base', values: [true, false, true, false] },
+              { id: 'f12', name: 'Self-Hostable', values: [true, 'Some', false, false] },
+              { id: 'f13', name: 'Private LLM / Data Sovereignty', values: [true, false, false, false] },
+              { id: 'f14', name: 'Open Source', values: [true, 'Some', false, false] },
             ],
-            columns: 3,
-            layout: 'grid',
-            variant: 'minimal',
-            iconStyle: 'circle',
+            variant: 'striped',
+            showPrices: false,
+            showButtons: false,
+            stickyHeader: true,
           },
         },
-        // TESTIMONIALS - Social proof with metrics
+        // TESTIMONIALS — Agentic angle
         {
           id: 'testimonials-main',
           type: 'testimonials',
           data: {
-            title: 'Real Results from Real Teams',
+            title: 'What Happens When Your CMS Thinks For Itself',
             testimonials: [
               {
                 id: 'test-1',
-                content: 'Reduced support tickets by 40% after adding the AI chat widget. It answers questions 24/7 using our actual content.',
+                content: 'FlowPilot wrote 12 blog posts last month while I focused on strategy. Each one matched our brand voice perfectly. I just reviewed and approved.',
                 author: 'Emma Lindqvist',
-                role: 'CTO',
+                role: 'CMO',
                 company: 'TechStart AB',
                 rating: 5,
               },
               {
                 id: 'test-2',
-                content: 'Migrated 200 pages from WordPress in 3 hours using AI import. The headless API powers our mobile app with the same content.',
+                content: 'We stopped manually qualifying leads. FlowPilot captures them from chat, enriches with company data, scores them, and routes to sales — all before we even open the CRM.',
                 author: 'Marcus Andersson',
-                role: 'Product Lead',
+                role: 'Head of Sales',
                 company: 'DigitalFlow',
                 rating: 5,
               },
               {
                 id: 'test-3',
-                content: 'Saved €3,600/year compared to Contentful. Self-hosting with private LLM keeps patient data in our infrastructure.',
+                content: 'The self-hosting with private LLM was the dealbreaker. Patient data never leaves our infrastructure, but we still get autonomous content management. Best of both worlds.',
                 author: 'Dr. Sofia Berg',
                 role: 'Medical Director',
                 company: 'HealthTech Nordic',
@@ -302,17 +344,17 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             autoplaySpeed: 5,
           },
         },
-        // SOCIAL PROOF - Live metrics
+        // SOCIAL PROOF
         {
           id: 'social-proof-live',
           type: 'social-proof',
           data: {
-            title: 'Trusted by Growing Teams',
-            subtitle: 'Join hundreds of organizations using FlowWink to power their digital presence.',
+            title: 'Autonomous Operations in Production',
+            subtitle: 'Real numbers from teams letting FlowPilot run their digital presence.',
             items: [
               { id: 'sp1', type: 'counter', label: 'Sites Running', value: 1200, icon: 'globe' },
-              { id: 'sp2', type: 'rating', label: 'Average Rating', value: 4.9, maxRating: 5 },
-              { id: 'sp3', type: 'counter', label: 'Pages Published', value: 28500, icon: 'file' },
+              { id: 'sp2', type: 'counter', label: 'Autonomous Skills Executed', value: 48500, icon: 'zap' },
+              { id: 'sp3', type: 'rating', label: 'Approval Rate', value: 4.9, maxRating: 5 },
               { id: 'sp4', type: 'counter', label: 'GitHub Stars', value: 1450, icon: 'star' },
             ],
             variant: 'cards',
@@ -322,52 +364,18 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             showLiveIndicator: true,
           },
         },
-        // COMPARISON - How we compare
-        {
-          id: 'comparison-competitors',
-          type: 'comparison',
-          data: {
-            title: 'How We Compare',
-            subtitle: 'See why teams choose FlowWink over traditional solutions.',
-            products: [
-              { id: 'pez', name: 'FlowWink', highlighted: true },
-              { id: 'webflow', name: 'Webflow' },
-              { id: 'contentful', name: 'Contentful' },
-              { id: 'wordpress', name: 'WordPress' },
-            ],
-            features: [
-              { id: 'f1', name: 'Visual Builder', values: [true, true, false, true] },
-              { id: 'f2', name: 'Headless API', values: [true, false, true, false] },
-              { id: 'f3', name: 'AI Chat Assistant', values: [true, false, false, false] },
-              { id: 'f4', name: 'AEO Analyzer', values: [true, false, false, false] },
-              { id: 'f5', name: 'Brand Guide AI', values: [true, false, false, false] },
-              { id: 'f6', name: 'Private LLM Support', values: [true, false, false, false] },
-              { id: 'f7', name: 'Built-in Blog', values: [true, true, false, true] },
-              { id: 'f8', name: 'Newsletter Module', values: [true, false, false, false] },
-              { id: 'f9', name: 'Knowledge Base', values: [true, false, false, false] },
-              { id: 'f10', name: 'E-commerce', values: [true, true, false, 'Plugins'] },
-              { id: 'f11', name: 'CRM Integration', values: [true, false, false, false] },
-              { id: 'f12', name: 'Self-Hostable', values: [true, false, false, true] },
-              { id: 'f13', name: 'Open Source', values: [true, false, false, true] },
-            ],
-            variant: 'striped',
-            showPrices: false,
-            showButtons: false,
-            stickyHeader: true,
-          },
-        },
-        // BADGE - Trust indicators
+        // BADGES — Trust
         {
           id: 'badge-trust',
           type: 'badge',
           data: {
-            title: 'Built with Security & Compliance in Mind',
-            subtitle: 'Enterprise-ready from day one.',
+            title: 'Built for Control & Compliance',
+            subtitle: 'Autonomous doesn\'t mean uncontrolled.',
             badges: [
               { id: 'b1', title: 'Open Source', subtitle: 'MIT License', icon: 'star' },
-              { id: 'b2', title: 'GDPR Ready', subtitle: 'Privacy First', icon: 'shield' },
-              { id: 'b3', title: 'Self-Hostable', subtitle: 'Your Data', icon: 'check' },
-              { id: 'b4', title: 'SOC 2', subtitle: 'Compliant', icon: 'award' },
+              { id: 'b2', title: 'Self-Hosted', subtitle: 'Your Infrastructure', icon: 'check' },
+              { id: 'b3', title: 'Private AI', subtitle: 'Your LLM, Your Data', icon: 'shield' },
+              { id: 'b4', title: 'GDPR Ready', subtitle: 'Privacy First', icon: 'award' },
             ],
             variant: 'cards',
             columns: 4,
@@ -376,7 +384,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             grayscale: false,
           },
         },
-        // MARQUEE - Technologies and partners
+        // MARQUEE — Tech stack
         {
           id: 'marquee-tech',
           type: 'marquee',
@@ -385,9 +393,9 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
               { id: 'mq1', text: 'React', icon: '⚛️' },
               { id: 'mq2', text: 'TypeScript', icon: '📘' },
               { id: 'mq3', text: 'Supabase', icon: '⚡' },
-              { id: 'mq4', text: 'Tailwind CSS', icon: '🎨' },
-              { id: 'mq5', text: 'OpenAI', icon: '🤖' },
-              { id: 'mq6', text: 'Gemini', icon: '✨' },
+              { id: 'mq4', text: 'OpenAI', icon: '🤖' },
+              { id: 'mq5', text: 'Gemini', icon: '✨' },
+              { id: 'mq6', text: 'Ollama', icon: '🦙' },
               { id: 'mq7', text: 'Docker', icon: '🐳' },
               { id: 'mq8', text: 'Stripe', icon: '💳' },
             ],
@@ -398,68 +406,29 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             separator: '•',
           },
         },
-        // FEATURES - Compliance & Security
-        {
-          id: 'features-compliance',
-          type: 'features',
-          data: {
-            title: 'Built for Scale & Compliance',
-            subtitle: 'Whether you\'re a startup preparing for growth or an enterprise with strict requirements, FlowWink has you covered.',
-            features: [
-              {
-                id: 'comp-gdpr',
-                icon: 'Shield',
-                title: 'GDPR Compliance',
-                description: 'Not a plugin or afterthought. Privacy by design with complete audit trails.',
-              },
-              {
-                id: 'comp-wcag',
-                icon: 'Eye',
-                title: 'WCAG 2.1 AA',
-                description: 'Accessibility built into every theme and component. Real compliance, not just claims.',
-              },
-              {
-                id: 'comp-security',
-                icon: 'Lock',
-                title: 'Data Security',
-                description: 'Your data stays secure. Self-host option means sensitive information never leaves your control.',
-              },
-              {
-                id: 'comp-audit',
-                icon: 'FileSearch',
-                title: 'Full Audit Trail',
-                description: 'Every change tracked. Who did what, when. Perfect for compliance audits.',
-              },
-            ],
-            columns: 4,
-            layout: 'grid',
-            variant: 'minimal',
-            iconStyle: 'circle',
-          },
-        },
-        // PRICING - Deployment options
+        // PRICING
         {
           id: 'pricing-main',
           type: 'pricing',
           data: {
-            title: 'Your Infrastructure, Your Rules',
-            subtitle: 'Choose how you want to run FlowWink. Same features, your choice of control.',
+            title: 'Your Infrastructure, Your Agent',
+            subtitle: 'Autonomous operations included in every plan. Choose how you want to run FlowWink.',
             tiers: [
               {
                 id: 'tier-self',
                 name: 'Self-Hosted',
                 price: 'Free',
                 period: 'forever',
-                description: 'Full control. Run on your own servers with Docker or directly on any VPS.',
+                description: 'Full FlowPilot agent. Your servers. Your LLM. Complete autonomy.',
                 features: [
-                  'All features included',
-                  'Unlimited pages & content',
-                  'Your own database',
-                  'Private LLM support',
+                  'All features + FlowPilot agent',
+                  'Unlimited autonomous operations',
+                  'Private LLM support (Ollama)',
+                  '20+ skills included',
+                  'Persistent memory & objectives',
                   'Community support',
-                  'GitHub issues & discussions',
                 ],
-                buttonText: 'Get Started',
+                buttonText: 'Self-Host Free',
                 buttonUrl: 'https://github.com/magnusfroste/flowwink/pkgs/container/flowwink',
               },
               {
@@ -467,14 +436,14 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
                 name: 'Managed Cloud',
                 price: '€49',
                 period: '/month',
-                description: 'We handle the infrastructure. You focus on content.',
+                description: 'We run the infrastructure. FlowPilot runs your business.',
                 features: [
-                  'All features included',
+                  'Everything in Self-Hosted',
                   'Automatic updates',
-                  'Daily backups',
-                  'SSL & CDN included',
+                  'Daily backups + SSL + CDN',
                   'Priority support',
                   '99.9% uptime SLA',
+                  'Managed AI model access',
                 ],
                 buttonText: 'Start Free Trial',
                 buttonUrl: '/contact',
@@ -485,14 +454,14 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
                 id: 'tier-enterprise',
                 name: 'Enterprise',
                 price: 'Custom',
-                description: 'For organizations with specific requirements.',
+                description: 'Dedicated FlowPilot with custom skills and compliance.',
                 features: [
                   'Everything in Managed',
                   'Dedicated infrastructure',
-                  'Custom SLA',
+                  'Custom skill development',
                   'SSO & SAML',
-                  'Dedicated support manager',
-                  'Training & onboarding',
+                  'Dedicated success manager',
+                  'Compliance & audit support',
                 ],
                 buttonText: 'Contact Sales',
                 buttonUrl: '/contact',
@@ -502,47 +471,29 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             variant: 'cards',
           },
         },
-        // TIMELINE - How fast you can launch
+        // FAQ — Agentic questions
         {
-          id: 'timeline-launch',
-          type: 'timeline',
+          id: 'accordion-home-faq',
+          type: 'accordion',
           data: {
-            title: 'Zero to Launch',
-            subtitle: 'See how fast you can go live with FlowWink compared to alternatives.',
-            steps: [
-              {
-                id: 'tl-1',
-                title: 'FlowWink',
-                description: 'Pick a template, customize content, and publish. Done in minutes.',
-                date: '5 minutes',
-                icon: 'Rocket',
-              },
-              {
-                id: 'tl-2',
-                title: 'Traditional CMS',
-                description: 'Setup hosting, install CMS, configure plugins, customize theme, create content.',
-                date: '2-3 weeks',
-                icon: 'Clock',
-              },
-              {
-                id: 'tl-3',
-                title: 'Custom Build',
-                description: 'Design, develop, test, deploy, maintain. Ongoing development costs.',
-                date: '2-6 months',
-                icon: 'Calendar',
-              },
+            title: 'Questions About Autonomous CMS',
+            items: [
+              { question: 'What is FlowPilot?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'FlowPilot is an autonomous AI agent built into FlowWink. Unlike chatbots that respond to prompts, FlowPilot has persistent memory, self-evolving skills, and goal-driven objectives. It operates your entire digital presence — content, CRM, email, bookings — continuously and autonomously.' }] }] } },
+              { question: 'Is it safe to let an AI run my website?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Yes. FlowPilot has a full human-in-the-loop system. Every skill can be configured to require approval before execution. Every action is logged in the activity feed with full audit trails. You control what\'s autonomous and what requires your sign-off.' }] }] } },
+              { question: 'What if FlowPilot makes a mistake?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Every content change creates a version you can restore. Every action is logged with inputs and outputs. FlowPilot also reflects on its own mistakes during heartbeat cycles and updates its behavior to avoid repeating them. It literally learns from errors.' }] }] } },
+              { question: 'Can I use my own AI model?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Absolutely. FlowWink supports OpenAI, Google Gemini, and local LLMs via Ollama or any OpenAI-compatible endpoint. Your data stays on your infrastructure for complete privacy. FlowPilot\'s autonomous capabilities work with any supported model.' }] }] } },
+              { question: 'What happens while I sleep?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'FlowPilot keeps working. Its heartbeat cycle triggers every 12 hours, reflecting on recent activity and planning next actions. Visitor chat continues answering questions 24/7. Signal automations react to events in real-time. When you wake up, check the activity feed to see what happened.' }] }] } },
+              { question: 'How is this different from ChatGPT + WordPress?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'ChatGPT is a conversation tool. FlowPilot is an operator. It has persistent memory that survives across sessions, objectives it tracks toward completion, skills it can execute autonomously, and a self-evolution mechanism that improves its own instructions. It\'s not just answering questions — it\'s running your business.' }] }] } },
             ],
-            variant: 'vertical',
-            showDates: true,
           },
         },
-        // NEWSLETTER - Showcase newsletter module
+        // NEWSLETTER
         {
           id: 'newsletter-home',
           type: 'newsletter',
           data: {
-            title: 'Stay in the Loop',
-            subtitle: 'Get product updates, new features, and self-hosting tips. No spam, unsubscribe anytime.',
+            title: 'Get Updates on Autonomous CMS',
+            subtitle: 'New skills, architecture insights, and the future of agentic operations. No spam.',
             buttonText: 'Subscribe',
             placeholder: 'your@email.com',
             variant: 'card',
@@ -550,87 +501,40 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             consentText: 'I agree to receive emails. Unsubscribe anytime.',
           },
         },
-        // BOOKING - Showcase booking module
+        // BOOKING
         {
           id: 'booking-home',
           type: 'booking',
           data: {
-            title: 'Book a Live Demo',
-            subtitle: 'See FlowWink in action with a personalized walkthrough.',
+            title: 'See FlowPilot in Action',
+            subtitle: 'Book a live demo and watch the autonomous agent operate in real-time.',
             services: [
-              { id: 'demo-30', name: '30-min Product Demo', duration: 30, description: 'Quick overview of all features and modules.' },
-              { id: 'demo-60', name: '60-min Deep Dive', duration: 60, description: 'Full walkthrough including self-hosting setup and API integration.' },
+              { id: 'demo-30', name: '30-min FlowPilot Demo', duration: 30, description: 'Watch FlowPilot write content, qualify a lead, and send a campaign — live.' },
+              { id: 'demo-60', name: '60-min Architecture Deep Dive', duration: 60, description: 'Full walkthrough of the agentic architecture, self-hosting, and custom skill development.' },
             ],
             variant: 'card',
           },
         },
-        // ACCORDION - Platform FAQ for AEO
-        {
-          id: 'accordion-home-faq',
-          type: 'accordion',
-          data: {
-            title: 'Platform FAQ',
-            items: [
-              { question: 'What is FlowWink?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'FlowWink is an open-source CMS platform that combines visual website editing with headless API access. Self-host for free or use our managed cloud service.' }] }] } },
-              { question: 'Is FlowWink really free?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Yes! FlowWink is open source under MIT license. Self-host on your own servers at no cost. We also offer managed cloud hosting starting at €49/month for those who prefer not to manage infrastructure.' }] }] } },
-              { question: 'Can I use my own AI model?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Absolutely. FlowWink supports OpenAI, local LLMs via Ollama, or any OpenAI-compatible endpoint. Your data stays on your infrastructure for complete privacy and compliance.' }] }] } },
-              { question: 'How does the AI chat work?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'The AI chat reads all your CMS content (pages, blog, knowledge base) to answer visitor questions accurately. It\'s like having a 24/7 support agent that knows everything about your website.' }] }] } },
-              { question: 'Who is FlowWink for?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'FlowWink is built for startups needing speed, growing businesses wanting all-in-one solutions, and enterprises requiring data sovereignty and compliance.' }] }] } },
-            ],
-          },
-        },
-        // FEATURES - Who it's for
-        {
-          id: 'features-audience',
-          type: 'features',
-          data: {
-            title: 'Built For',
-            features: [
-              {
-                id: 'aud-startup',
-                icon: 'Rocket',
-                title: 'Startups',
-                description: 'Launch fast, iterate faster. Start free and scale as you grow.',
-              },
-              {
-                id: 'aud-growing',
-                icon: 'TrendingUp',
-                title: 'Growing Businesses',
-                description: 'Need a blog, newsletter, and CRM? Get them all in one platform.',
-              },
-              {
-                id: 'aud-enterprise',
-                icon: 'Building2',
-                title: 'Enterprise',
-                description: 'Data sovereignty, compliance, and self-hosting. Your rules.',
-              },
-            ],
-            columns: 3,
-            layout: 'grid',
-            variant: 'cards',
-            iconStyle: 'circle',
-          },
-        },
-        // CTA - Final call to action
+        // CTA — Final
         {
           id: 'cta-final',
           type: 'cta',
           data: {
-            title: 'Ready to See It in Action?',
-            subtitle: 'Try the live demo or self-host for free. No credit card required.',
-            buttonText: 'Launch Demo',
+            title: 'Stop Managing. Start Directing.',
+            subtitle: 'Set objectives. FlowPilot operates. You approve. It\'s that simple.',
+            buttonText: 'Watch It Work',
             buttonUrl: '/demo',
             gradient: true,
           },
         },
-        // FLOATING CTA - Scroll-triggered conversion
+        // FLOATING CTA
         {
           id: 'floating-cta-demo',
           type: 'floating-cta',
           data: {
-            title: 'Try FlowWink Now',
-            subtitle: 'See all features in action',
-            buttonText: 'Launch Demo',
+            title: 'See FlowPilot Operate',
+            subtitle: 'Live autonomous demo',
+            buttonText: 'Watch Demo',
             buttonUrl: '/demo',
             showAfterScroll: 30,
             hideOnScrollUp: false,
@@ -644,14 +548,14 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
         },
       ],
     },
-    // ===== DEMO PAGE - Interactive Playground =====
+    // ===== DEMO PAGE — Interactive Playground (kept, minor copy updates) =====
     {
       title: 'Demo',
       slug: 'demo',
       menu_order: 2,
       showInMenu: true,
       meta: {
-        description: 'Experience FlowWink live. Try our booking system, product showcase, AI chat, and knowledge base search.',
+        description: 'Experience FlowWink live. See FlowPilot operate — booking, e-commerce, AI chat, and knowledge base in action.',
         showTitle: false,
         titleAlignment: 'center',
       },
@@ -660,8 +564,8 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
           id: 'hero-demo',
           type: 'hero',
           data: {
-            title: 'Experience FlowWink Live',
-            subtitle: 'Try our interactive modules below. Book meetings, browse products, search the knowledge base, or chat with our AI assistant.',
+            title: 'Experience FlowPilot Live',
+            subtitle: 'Every module below is managed by FlowPilot. Book meetings, browse products, search the knowledge base, or talk to the agent directly.',
             backgroundType: 'color',
             heightMode: 'auto',
             contentAlignment: 'center',
@@ -719,15 +623,15 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
         {
           id: 'sep-ai-demo',
           type: 'separator',
-          data: { variant: 'text', text: 'AI-Powered Features', icon: 'Sparkles' },
+          data: { variant: 'text', text: 'FlowPilot Agent', icon: 'Bot' },
         },
         {
           id: 'chat-launcher-demo',
           type: 'chat-launcher',
           data: {
-            title: 'Ask Our AI Assistant',
-            subtitle: 'The AI reads all our content to provide accurate answers.',
-            placeholder: 'What would you like to know about FlowWink?',
+            title: 'Talk to FlowPilot',
+            subtitle: 'The autonomous agent reads all site content and has persistent memory. This is not a chatbot.',
+            placeholder: 'Ask anything about FlowWink...',
             showQuickActions: true,
             quickActionCount: 4,
             variant: 'card',
@@ -736,13 +640,13 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
         {
           id: 'sep-kb-demo',
           type: 'separator',
-          data: { variant: 'text', text: 'Knowledge Base Search', icon: 'BookOpen' },
+          data: { variant: 'text', text: 'Knowledge Base', icon: 'BookOpen' },
         },
         {
           id: 'kb-search-demo',
           type: 'kb-search',
           data: {
-            title: 'Search Our Help Center',
+            title: 'Search Help Center',
             subtitle: 'Full-text search across all knowledge base articles.',
             placeholder: 'Search for help articles...',
             showResults: true,
@@ -759,7 +663,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
           type: 'webinar',
           data: {
             title: 'Upcoming Webinars',
-            subtitle: 'Register for live sessions. The Webinars module handles registration, reminders, and follow-up automatically.',
+            subtitle: 'Register for live sessions. FlowPilot handles registration, reminders, and follow-up automatically.',
           },
         },
         {
@@ -779,14 +683,14 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
               type: 'doc',
               content: [
                 { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: '📧 Newsletter Signup' }] },
-                { type: 'paragraph', content: [{ type: 'text', text: 'Newsletter signups automatically create leads in the CRM with activity scoring. Double opt-in, GDPR compliant.' }] },
+                { type: 'paragraph', content: [{ type: 'text', text: 'Newsletter signups automatically create leads. FlowPilot then scores, enriches, and qualifies them — all autonomously.' }] },
               ],
             },
             rightColumn: {
               type: 'doc',
               content: [
                 { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: '📝 Contact Form' }] },
-                { type: 'paragraph', content: [{ type: 'text', text: 'Form submissions are saved to the database, create leads, trigger webhooks, and can be exported. Full automation support.' }] },
+                { type: 'paragraph', content: [{ type: 'text', text: 'Form submissions trigger FlowPilot\'s lead pipeline: create lead → match company → AI enrich → qualify → assign to sales.' }] },
               ],
             },
             layout: '50-50',
@@ -822,23 +726,24 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
         {
           id: 'sep-loop',
           type: 'separator',
-          data: { variant: 'text', text: 'The Flowwink Loop', icon: 'RefreshCw' },
+          data: { variant: 'text', text: 'The Autonomous Pipeline', icon: 'Bot' },
         },
         {
-          id: 'info-flowwink-loop',
+          id: 'info-flowpilot-loop',
           type: 'info-box',
           data: {
             variant: 'highlight',
             content: {
               type: 'doc',
               content: [
-                { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: '🔄 Automatic Lead Pipeline' }] },
-                { type: 'paragraph', content: [{ type: 'text', text: 'Every interaction above (booking, form, newsletter) automatically creates or updates a lead in the CRM. The Flowwink Loop then:' }] },
+                { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: '🤖 FlowPilot\'s Autonomous Pipeline' }] },
+                { type: 'paragraph', content: [{ type: 'text', text: 'Every interaction above triggers FlowPilot\'s autonomous lead pipeline:' }] },
                 { type: 'orderedList', content: [
-                  { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Scores the lead' }, { type: 'text', text: ' – 10 pts for booking, 8 pts for newsletter, 10 pts for form' }] }] },
-                  { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Matches company' }, { type: 'text', text: ' – Auto-links to company via email domain' }] }] },
-                  { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'AI enrichment' }, { type: 'text', text: ' – Scrapes company website for industry, size, description' }] }] },
-                  { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'AI qualification' }, { type: 'text', text: ' – Generates qualification summary and next steps' }] }] },
+                  { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Captures the lead' }, { type: 'text', text: ' — from any touchpoint (chat, form, booking, newsletter)' }] }] },
+                  { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Scores & matches company' }, { type: 'text', text: ' — auto-links via email domain, creates company record if new' }] }] },
+                  { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'AI enrichment' }, { type: 'text', text: ' — scrapes company website for industry, size, description' }] }] },
+                  { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'AI qualification' }, { type: 'text', text: ' — generates summary, potential value, and next steps' }] }] },
+                  { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Logs to activity feed' }, { type: 'text', text: ' — full audit trail, every step visible in admin' }] }] },
                 ] },
               ],
             },
@@ -848,26 +753,26 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
           id: 'cta-demo',
           type: 'cta',
           data: {
-            title: 'Ready to Get Started?',
-            subtitle: 'Self-host for free or let us manage everything for €49/month.',
+            title: 'Ready to Let FlowPilot Operate?',
+            subtitle: 'Self-host for free or start a managed trial. Autonomous operations included.',
             buttonText: 'Self-Host Free',
             buttonUrl: 'https://github.com/flowwink/flowwink',
-            secondaryButtonText: 'Start Free Trial',
+            secondaryButtonText: 'Start Trial',
             secondaryButtonUrl: '/contact',
             gradient: true,
           },
         },
       ],
     },
-    // ===== FEATURES PAGE =====
+    // ===== FEATURES PAGE — Rewritten for Agentic =====
     {
       title: 'Features',
       slug: 'features',
-      menu_order: 2,
+      menu_order: 3,
       showInMenu: true,
       meta: {
-        description: 'Explore all FlowWink features - from visual editing to headless API, AI tools to CRM integration.',
-        showTitle: true,
+        description: 'FlowPilot: 20+ autonomous skills, persistent memory, self-evolving architecture. The complete feature set for the first agentic CMS.',
+        showTitle: false,
         titleAlignment: 'center',
       },
       blocks: [
@@ -875,74 +780,75 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
           id: 'hero-features',
           type: 'hero',
           data: {
-            title: 'Features That Matter',
-            subtitle: 'Everything you need to manage content, engage visitors, and grow your business.',
+            title: 'The Anatomy of an Autonomous Agent',
+            subtitle: 'FlowPilot isn\'t one feature. It\'s an architecture. Skills, memory, objectives, automations, and self-evolution — working together to operate your digital presence.',
             backgroundType: 'color',
             heightMode: 'auto',
             contentAlignment: 'center',
             overlayOpacity: 0,
+            primaryButton: { text: 'Try It Live', url: '/demo' },
+            secondaryButton: { text: 'Self-Host', url: 'https://github.com/flowwink/flowwink' },
           },
         },
+        // TABS — For Founders / Marketing / Compliance
         {
-          id: 'tabs-features',
+          id: 'tabs-audiences',
           type: 'tabs',
           data: {
-            title: 'Built for Every Role',
-            subtitle: 'From content creators to developers to business leaders – FlowWink adapts to how you work.',
+            title: 'Built For Every Role',
             tabs: [
               {
-                id: 'tab-creators',
-                title: 'For Content Creators',
-                icon: 'PenLine',
+                id: 'tab-founders',
+                title: 'For Founders',
+                icon: 'Rocket',
                 content: {
                   type: 'doc',
                   content: [
-                    { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Visual Editor & 47+ Blocks' }] },
-                    { type: 'paragraph', content: [{ type: 'text', text: 'Drag-and-drop page building with real-time preview. No coding required.' }] },
+                    { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Set Objectives, FlowPilot Executes' }] },
+                    { type: 'paragraph', content: [{ type: 'text', text: 'You\'re building a company, not managing a CMS. Define what you need and let FlowPilot handle the rest.' }] },
                     { type: 'bulletList', content: [
-                      { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Rich Text Editor' }, { type: 'text', text: ' – Full formatting, links, images, and embedded media' }] }] },
-                      { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'AI Writing Assistant' }, { type: 'text', text: ' – Generate, expand, and translate content in your brand voice' }] }] },
-                      { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Editorial Workflow' }, { type: 'text', text: ' – Draft → Review → Approve → Publish with version history' }] }] },
-                      { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Blog Module' }, { type: 'text', text: ' – Categories, tags, authors, RSS, and SEO optimization' }] }] },
-                      { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Media Library' }, { type: 'text', text: ' – Centralized assets with image cropping and Unsplash integration' }] }] },
+                      { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Content Pipeline' }, { type: 'text', text: ' — "Write 4 blog posts per month" → FlowPilot researches, drafts, and queues for your approval' }] }] },
+                      { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Lead Qualification' }, { type: 'text', text: ' — Every inbound lead is scored, enriched, and qualified before it hits your inbox' }] }] },
+                      { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Activity Feed' }, { type: 'text', text: ' — One dashboard showing everything FlowPilot did while you were building product' }] }] },
+                      { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Self-Host Free' }, { type: 'text', text: ' — No vendor lock-in. Own your data, your agent, your infrastructure' }] }] },
                     ]},
                   ],
                 },
               },
               {
-                id: 'tab-developers',
-                title: 'For Developers',
-                icon: 'Code',
+                id: 'tab-marketing',
+                title: 'For Marketing',
+                icon: 'Megaphone',
                 content: {
                   type: 'doc',
                   content: [
-                    { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Headless API & Self-Hosting' }] },
-                    { type: 'paragraph', content: [{ type: 'text', text: 'Full REST API, webhooks, and Docker deployment. Open source MIT license.' }] },
+                    { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Autonomous Campaigns & Content' }] },
+                    { type: 'paragraph', content: [{ type: 'text', text: 'FlowPilot is the marketing team member that never sleeps, never forgets, and actually follows the brand guide.' }] },
                     { type: 'bulletList', content: [
-                      { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'REST API' }, { type: 'text', text: ' – Full access to pages, posts, media, settings, and more' }] }] },
-                      { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Webhooks' }, { type: 'text', text: ' – Trigger external services on publish, update, delete events' }] }] },
-                      { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'N8N Templates' }, { type: 'text', text: ' – Pre-built automation workflows for common integrations' }] }] },
-                      { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Docker Deploy' }, { type: 'text', text: ' – Self-host in 5 minutes with docker-compose' }] }] },
-                      { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Private LLM' }, { type: 'text', text: ' – Connect your own OpenAI-compatible model for data sovereignty' }] }] },
+                      { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'AI Content Generation' }, { type: 'text', text: ' — Blog posts, newsletters, and landing pages in your brand voice' }] }] },
+                      { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Email Campaigns' }, { type: 'text', text: ' — Segment audiences, write subject lines, send at optimal times' }] }] },
+                      { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Lead Scoring & CRM' }, { type: 'text', text: ' — Every touchpoint tracked, scored, and enriched automatically' }] }] },
+                      { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'AEO Optimization' }, { type: 'text', text: ' — Content optimized for AI search engines, not just Google' }] }] },
+                      { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Analytics & Reflection' }, { type: 'text', text: ' — FlowPilot analyzes what\'s working and adjusts strategy autonomously' }] }] },
                     ]},
                   ],
                 },
               },
               {
-                id: 'tab-business',
-                title: 'For Business',
-                icon: 'Briefcase',
+                id: 'tab-compliance',
+                title: 'For Compliance',
+                icon: 'Shield',
                 content: {
                   type: 'doc',
                   content: [
-                    { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'CRM, Analytics & E-commerce' }] },
-                    { type: 'paragraph', content: [{ type: 'text', text: 'Built-in modules for lead generation, customer management, and sales.' }] },
+                    { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Private AI, Full Audit Trail' }] },
+                    { type: 'paragraph', content: [{ type: 'text', text: 'Autonomous doesn\'t mean uncontrolled. Every action logged. Every skill gated. Your data, your infrastructure.' }] },
                     { type: 'bulletList', content: [
-                      { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Lead CRM' }, { type: 'text', text: ' – Capture leads from forms, score them with AI, track activities' }] }] },
-                      { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Deal Pipeline' }, { type: 'text', text: ' – Kanban board for sales, link to leads and products' }] }] },
-                      { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Newsletter' }, { type: 'text', text: ' – GDPR-compliant subscriber management and email campaigns' }] }] },
-                      { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'E-commerce' }, { type: 'text', text: ' – Products, orders, Stripe checkout for subscriptions and one-time' }] }] },
-                      { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Analytics' }, { type: 'text', text: ' – Page views, visitor geography, traffic sources, and trends' }] }] },
+                      { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Private LLM' }, { type: 'text', text: ' — Connect Ollama or any OpenAI-compatible model. Data never leaves your servers.' }] }] },
+                      { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Full Audit Trail' }, { type: 'text', text: ' — Every agent action logged with inputs, outputs, timestamps, and user context' }] }] },
+                      { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Approval Gating' }, { type: 'text', text: ' — Configure which skills require human approval before execution' }] }] },
+                      { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'GDPR Ready' }, { type: 'text', text: ' — Cookie consent, data export, right to deletion — built in, not bolted on' }] }] },
+                      { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Self-Hosted' }, { type: 'text', text: ' — Docker deployment in 5 minutes. Complete data sovereignty.' }] }] },
                     ]},
                   ],
                 },
@@ -952,41 +858,65 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             variant: 'boxed',
           },
         },
+        // THE AUTONOMOUS LOOP
         {
-          id: 'sep-flowwink-loop',
+          id: 'sep-autonomous-loop',
           type: 'separator',
-          data: { variant: 'text', text: 'The Flowwink Loop', icon: 'RefreshCw' },
+          data: { variant: 'text', text: 'The Autonomous Loop', icon: 'Bot' },
         },
         {
-          id: 'timeline-flowwink-loop',
+          id: 'timeline-autonomous-loop',
           type: 'timeline',
           data: {
-            title: 'Automatic Lead Generation Pipeline',
-            subtitle: 'Every visitor interaction triggers an intelligent automation that converts anonymous visitors to qualified leads.',
+            title: 'The Autonomous Loop',
+            subtitle: 'A continuous cycle of reflection, planning, execution, and evolution. This is how FlowPilot operates — with or without you.',
             items: [
-              { id: 'loop-1', title: 'Visitor Interacts', description: 'Form submission, booking, newsletter signup, or chat conversation. Any touchpoint starts the loop.', icon: 'MousePointer' },
-              { id: 'loop-2', title: 'Lead Created & Scored', description: 'Automatic lead creation with activity scoring: 10 pts booking, 10 pts form, 8 pts newsletter, 5 pts link click.', icon: 'UserPlus' },
-              { id: 'loop-3', title: 'Company Matched', description: 'Email domain auto-links to company. Creates company record if new, updates existing if known.', icon: 'Building2' },
-              { id: 'loop-4', title: 'AI Enrichment', description: 'Firecrawl scrapes company website for industry, size, description. All automated.', icon: 'Brain' },
-              { id: 'loop-5', title: 'AI Qualification', description: 'LLM generates qualification summary, potential value, and recommended next steps.', icon: 'CheckCircle' },
-              { id: 'loop-6', title: 'Sales Ready', description: 'Complete lead profile ready in CRM. No manual data entry required.', icon: 'Target' },
+              { id: 'loop-1', title: 'Heartbeat', description: 'Every 12 hours, FlowPilot wakes up. It checks objectives, reviews recent activity, and prepares to act.', icon: 'Activity' },
+              { id: 'loop-2', title: 'Reflect', description: 'What happened since last cycle? What succeeded? What failed? Patterns are extracted and stored in memory.', icon: 'Brain' },
+              { id: 'loop-3', title: 'Plan', description: 'Match objectives to available skills. Prioritize by impact. Respect constraints and approval requirements.', icon: 'Target' },
+              { id: 'loop-4', title: 'Execute', description: 'Run skills: write content, qualify leads, send campaigns, update CRM. Each execution is logged with full context.', icon: 'Zap' },
+              { id: 'loop-5', title: 'Log', description: 'Every action recorded in the activity feed. Inputs, outputs, duration, status. Complete audit trail.', icon: 'FileText' },
+              { id: 'loop-6', title: 'Learn & Evolve', description: 'Update memory with new facts. Rewrite skill instructions based on results. Evolve soul and behavior patterns.', icon: 'Sparkles' },
             ],
             layout: 'vertical',
             staggeredReveal: true,
           },
         },
+        // SKILLS SHOWCASE
+        {
+          id: 'features-skills',
+          type: 'features',
+          data: {
+            title: '20+ Autonomous Skills',
+            subtitle: 'Each skill is a capability FlowPilot can execute independently. Skills have instructions, parameters, and self-improving documentation.',
+            features: [
+              { id: 'sk-blog', icon: 'FileText', title: 'blog_write', description: 'Research topics, write posts in brand voice, add SEO metadata, schedule for publishing.' },
+              { id: 'sk-lead', icon: 'UserPlus', title: 'lead_qualify', description: 'Score leads, enrich with company data, generate qualification summary and next steps.' },
+              { id: 'sk-email', icon: 'Mail', title: 'newsletter_create', description: 'Segment audiences, write copy, design layout, schedule send at optimal time.' },
+              { id: 'sk-reflect', icon: 'Brain', title: 'reflect', description: 'Analyze recent activity, identify patterns, suggest improvements, update memory.' },
+              { id: 'sk-soul', icon: 'Heart', title: 'soul_update', description: 'Evolve personality, values, and behavioral patterns based on accumulated experience.' },
+              { id: 'sk-instruct', icon: 'BookOpen', title: 'skill_instruct', description: 'Rewrite its own skill instructions to improve execution quality over time.' },
+            ],
+            columns: 3,
+            layout: 'grid',
+            variant: 'cards',
+            iconStyle: 'square',
+          },
+        },
+        // PROGRESS — Module maturity
         {
           id: 'progress-modules',
           type: 'progress',
           data: {
-            title: 'Module Maturity',
-            subtitle: 'Our commitment to quality. All modules are production-ready.',
+            title: 'Agentic Module Maturity',
+            subtitle: 'How far along each autonomous capability is.',
             items: [
-              { id: 'prog-cms', label: 'CMS & Pages', value: 100, color: 'primary' },
-              { id: 'prog-blog', label: 'Blog & KB', value: 100 },
-              { id: 'prog-crm', label: 'CRM & Leads', value: 95 },
-              { id: 'prog-ecom', label: 'E-commerce', value: 90 },
-              { id: 'prog-ai', label: 'AI Features', value: 85 },
+              { id: 'prog-skills', label: 'Skill Engine', value: 100, color: 'primary' },
+              { id: 'prog-memory', label: 'Persistent Memory', value: 100 },
+              { id: 'prog-objectives', label: 'Objectives & Goals', value: 95 },
+              { id: 'prog-automations', label: 'Signal Automations', value: 90 },
+              { id: 'prog-evolution', label: 'Self-Evolution', value: 85 },
+              { id: 'prog-multiagent', label: 'Multi-Agent Orchestration', value: 40 },
             ],
             variant: 'default',
             size: 'md',
@@ -995,123 +925,23 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             animated: true,
           },
         },
+        // STATS
         {
-          id: 'stats-blocks',
+          id: 'stats-features',
           type: 'stats',
           data: {
             title: '',
             items: [
+              { id: 'stat-skills', value: '20+', label: 'Autonomous Skills' },
+              { id: 'stat-channels', value: '6', label: 'Managed Channels' },
               { id: 'stat-blocks', value: '47+', label: 'Content Blocks' },
-              { id: 'stat-roles', value: '3', label: 'Editorial Roles' },
-              { id: 'stat-modules', value: '16', label: 'Built-in Modules' },
               { id: 'stat-api', value: '100%', label: 'API Coverage' },
             ],
             columns: 4,
             variant: 'cards',
           },
         },
-        {
-          id: 'sep-workflow',
-          type: 'separator',
-          data: { variant: 'text', text: 'Editorial Workflow', icon: 'Users' },
-        },
-        {
-          id: 'timeline-workflow',
-          type: 'timeline',
-          data: {
-            title: 'From Draft to Published',
-            subtitle: 'A structured workflow that ensures quality and accountability.',
-            items: [
-              { id: 'tw-1', title: 'Draft', description: 'Writer creates content using the visual editor. Every change is automatically saved and versioned.', icon: 'PenLine' },
-              { id: 'tw-2', title: 'Submit for Review', description: 'When ready, the writer submits the content for approval. Reviewers are notified automatically.', icon: 'Send' },
-              { id: 'tw-3', title: 'Review & Approve', description: 'Approvers review content, leave feedback, or approve for publishing. All feedback is tracked.', icon: 'CheckCircle' },
-              { id: 'tw-4', title: 'Publish', description: 'Content goes live immediately or at a scheduled time. Previous versions remain accessible.', icon: 'Globe' },
-            ],
-            layout: 'vertical',
-          },
-        },
-        {
-          id: 'features-roles',
-          type: 'features',
-          data: {
-            title: 'Role-Based Permissions',
-            subtitle: 'Three distinct roles with clear responsibilities.',
-            features: [
-              { id: 'role-writer', icon: 'PenLine', title: 'Writer', description: 'Create and edit content. Submit for review. Cannot publish without approval.' },
-              { id: 'role-approver', icon: 'CheckCircle', title: 'Approver', description: 'Review submitted content. Approve or request changes. Publish approved content.' },
-              { id: 'role-admin', icon: 'Shield', title: 'Admin', description: 'Full access to all features. Manage users, settings, and site configuration.' },
-            ],
-            columns: 3,
-            variant: 'cards',
-            iconStyle: 'circle',
-          },
-        },
-        {
-          id: 'twocol-versions',
-          type: 'two-column',
-          data: {
-            eyebrow: 'VERSION CONTROL',
-            title: 'Version History &',
-            accentText: 'Rollback',
-            accentPosition: 'end',
-            leftColumn: {
-              type: 'doc',
-              content: [
-                { type: 'paragraph', content: [{ type: 'text', text: 'Every save creates a version. Every version is accessible forever.' }] },
-                { type: 'bulletList', content: [
-                  { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Compare any two versions side-by-side' }] }] },
-                  { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Restore previous versions with one click' }] }] },
-                  { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'See who made each change and when' }] }] },
-                  { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Complete audit trail for compliance' }] }] },
-                ] },
-              ],
-            },
-            rightColumn: {
-              type: 'doc',
-              content: [
-                { type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'italic' }], text: '📸 Version history shows a timeline of changes with author, timestamp, and diff preview. Click any version to restore it.' }] },
-              ],
-            },
-            layout: '60-40',
-          },
-        },
-        {
-          id: 'sep-api',
-          type: 'separator',
-          data: { variant: 'text', text: 'Headless API', icon: 'Code' },
-        },
-        {
-          id: 'twocol-api',
-          type: 'two-column',
-          data: {
-            eyebrow: 'HEADLESS',
-            title: 'Complete',
-            accentText: 'REST API',
-            accentPosition: 'end',
-            leftColumn: {
-              type: 'doc',
-              content: [
-                { type: 'paragraph', content: [{ type: 'text', text: 'Access all your content programmatically. Build custom frontends, mobile apps, or integrate with external services.' }] },
-                { type: 'bulletList', content: [
-                  { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Pages API' }, { type: 'text', text: ' – Get all pages with content blocks and metadata' }] }] },
-                  { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Blog API' }, { type: 'text', text: ' – Posts, categories, tags with pagination and filtering' }] }] },
-                  { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'KB API' }, { type: 'text', text: ' – Categories and articles with full-text search' }] }] },
-                  { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Media API' }, { type: 'text', text: ' – Upload, list, and retrieve media files' }] }] },
-                  { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Settings API' }, { type: 'text', text: ' – Site settings, branding, and navigation' }] }] },
-                ] },
-              ],
-            },
-            rightColumn: {
-              type: 'doc',
-              content: [
-                { type: 'codeBlock', attrs: { language: 'bash' }, content: [{ type: 'text', text: '# Get all published pages\ncurl https://your-site.com/api/v1/pages\n\n# Get page by slug\ncurl https://your-site.com/api/v1/pages/home\n\n# Search blog posts\ncurl https://your-site.com/api/v1/blog/posts?search=cms' }] },
-              ],
-            },
-            layout: '50-50',
-            ctaText: 'View Full API Docs →',
-            ctaUrl: '/docs',
-          },
-        },
+        // RESOURCES
         {
           id: 'sep-resources',
           type: 'separator',
@@ -1123,10 +953,10 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
           data: {
             title: 'Resources',
             links: [
-              { id: 'link-docs', icon: 'BookOpen', title: 'Documentation', description: 'API reference and guides', url: '/docs' },
-              { id: 'link-github', icon: 'Github', title: 'GitHub', description: 'Source code and issues', url: 'https://github.com/flowwink/flowwink' },
+              { id: 'link-docs', icon: 'BookOpen', title: 'Documentation', description: 'Architecture & API reference', url: '/docs' },
+              { id: 'link-github', icon: 'Github', title: 'GitHub', description: 'Source code & issues', url: 'https://github.com/flowwink/flowwink' },
               { id: 'link-discord', icon: 'MessageCircle', title: 'Community', description: 'Discord support', url: 'https://discord.gg/flowwink' },
-              { id: 'link-selfhost', icon: 'Server', title: 'Self-Hosting', description: 'Deployment guide', url: '/docs/self-hosting' },
+              { id: 'link-selfhost', icon: 'Server', title: 'Self-Hosting', description: 'Docker deployment guide', url: '/docs/self-hosting' },
             ],
             columns: 4,
           },
@@ -1135,8 +965,8 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
           id: 'cta-features',
           type: 'cta',
           data: {
-            title: 'See All Features in Action',
-            subtitle: 'Try the live demo – no signup required.',
+            title: 'See the Agent in Action',
+            subtitle: 'Watch FlowPilot write, qualify, and campaign — live in the demo.',
             buttonText: 'Launch Demo',
             buttonUrl: '/demo',
             secondaryButtonText: 'View Pricing',
@@ -1146,12 +976,11 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
         },
       ],
     },
-    // ===== BLOCKS SHOWCASE PAGE =====
-    // NOTE: This is a very large page - consider reading the full source for complete content
+    // ===== BLOCKS SHOWCASE PAGE (kept as-is) =====
     {
       title: 'Blocks',
       slug: 'blocks',
-      menu_order: 3,
+      menu_order: 4,
       showInMenu: true,
       meta: {
         description: 'Explore all 47+ block types available in FlowWink - from content blocks to interactive elements and AI-powered features.',
@@ -1160,15 +989,15 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
       },
       blocks: [
         { id: 'hero-demo', type: 'hero', data: { title: 'See FlowWink in Action', subtitle: 'This page is built with FlowWink. Explore 47+ block types organized by category below.', backgroundType: 'color', heightMode: 'auto', contentAlignment: 'center', overlayOpacity: 0, primaryButton: { text: 'Try the Admin', url: '/admin' }, secondaryButton: { text: 'View Docs', url: '/docs' } } },
-        { id: 'stats-demo-overview', type: 'stats', data: { items: [{ id: 'ds1', value: '47+', label: 'Block Types' }, { id: 'ds2', value: '16', label: 'Modules' }, { id: 'ds3', value: '5', label: 'AI Providers' }, { id: 'ds4', value: '3', label: 'User Roles' }], columns: 4, variant: 'minimal' } },
+        { id: 'stats-demo-overview', type: 'stats', data: { items: [{ id: 'ds1', value: '47+', label: 'Block Types' }, { id: 'ds2', value: '16', label: 'Modules' }, { id: 'ds3', value: '20+', label: 'Agent Skills' }, { id: 'ds4', value: '3', label: 'User Roles' }], columns: 4, variant: 'minimal' } },
         { id: 'sep-editor', type: 'separator', data: { variant: 'text', text: 'Visual Editor', icon: 'Palette' } },
         { id: 'twocol-editor', type: 'two-column', data: { eyebrow: 'VISUAL EDITOR', title: 'Drag, Drop, Done', titleSize: 'large', content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'The visual editor is the heart of FlowWink. Add blocks, arrange them, edit content – all in real-time with instant preview.' }] }, { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'How It Works' }] }, { type: 'orderedList', content: [{ type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Add a Block' }, { type: 'text', text: ' – Click the + button and choose from 47+ block types' }] }] }, { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Edit Content' }, { type: 'text', text: ' – Click any text to edit. Upload images. Configure settings.' }] }] }, { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Rearrange' }, { type: 'text', text: ' – Drag blocks to reorder. Move sections around freely.' }] }] }, { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Preview' }, { type: 'text', text: ' – See exactly how it looks on desktop, tablet, and mobile.' }] }] }, { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Publish' }, { type: 'text', text: ' – One click to go live. Or schedule for later.' }] }] }] }] }, imageSrc: '', imageAlt: 'FlowWink editor interface', imagePosition: 'right', note: '🖼️ The editor panel shows a live preview on the right and block controls on the left. Every change is auto-saved.' } },
         { id: 'sep-blocks-demo', type: 'separator', data: { variant: 'text', text: 'Block Showcase', icon: 'LayoutGrid' } },
         { id: 'text-blocks-intro', type: 'text', data: { content: { type: 'doc', content: [{ type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Every Block Type, Live' }] }, { type: 'paragraph', content: [{ type: 'text', text: 'Below you will find examples of the most popular block types. Each one is fully customizable – colors, layouts, content, and behavior.' }] }] } } },
-        { id: 'demo-block-overview', type: 'features', data: { title: '47+ Block Types Available', subtitle: 'From simple text to complex e-commerce – build any page with drag-and-drop blocks.', features: [{ id: 'cat-content', icon: 'FileText', title: 'Content', description: 'Hero, Text, Image, Quote, Separator, Two-Column, Info Box' }, { id: 'cat-showcase', icon: 'LayoutGrid', title: 'Showcase', description: 'Features, Stats, Timeline, Gallery, Logos, Team, Testimonials' }, { id: 'cat-commerce', icon: 'ShoppingCart', title: 'E-commerce', description: 'Pricing, Products, Cart, Comparison' }, { id: 'cat-forms', icon: 'ClipboardList', title: 'Forms', description: 'Contact, Form Builder, Newsletter, Booking' }, { id: 'cat-navigation', icon: 'Navigation', title: 'Navigation', description: 'Header, Footer, Link Grid, Accordion' }, { id: 'cat-media', icon: 'Play', title: 'Media', description: 'YouTube, Map, Article Grid' }, { id: 'cat-ai', icon: 'Sparkles', title: 'AI', description: 'Chat Widget, AI Text Assistant' }, { id: 'cat-interactive', icon: 'MousePointer', title: 'Interactive', description: 'Popup, CTA Buttons' }], columns: 4, variant: 'minimal', iconStyle: 'square' } },
-        { id: 'demo-features', type: 'features', data: { title: 'Features Block', subtitle: 'Showcase capabilities with icon cards. Grid or list layout.', features: [{ id: 'demo-f1', icon: 'Zap', title: 'Fast', description: 'Optimized for speed. No bloat, no lag.' }, { id: 'demo-f2', icon: 'Shield', title: 'Secure', description: 'Row-level security. GDPR compliant.' }, { id: 'demo-f3', icon: 'Sparkles', title: 'AI-Powered', description: 'Generate, translate, optimize content.' }, { id: 'demo-f4', icon: 'Code', title: 'Developer Friendly', description: 'Full API access. Webhooks. Open source.' }], columns: 4, variant: 'cards', iconStyle: 'circle' } },
-        { id: 'demo-stats', type: 'stats', data: { title: 'Stats Block', items: [{ id: 'demo-s1', value: '99.9%', label: 'Uptime' }, { id: 'demo-s2', value: '< 100ms', label: 'Response Time' }, { id: 'demo-s3', value: '50k+', label: 'Pages Served' }, { id: 'demo-s4', value: '24/7', label: 'Support' }], columns: 4, variant: 'minimal' } },
-        { id: 'demo-testimonials', type: 'testimonials', data: { title: 'Testimonials Block', testimonials: [{ id: 'demo-t1', content: 'The visual editor is incredibly intuitive. Our marketing team creates landing pages without any developer help.', author: 'Anna Svensson', role: 'Marketing Director', company: 'TechCorp', rating: 5 }, { id: 'demo-t2', content: 'We switched from WordPress and never looked back. The API is exactly what we needed for our mobile app.', author: 'Erik Johansson', role: 'Lead Developer', company: 'AppStudio', rating: 5 }, { id: 'demo-t3', content: 'Self-hosting was a breeze. The documentation is excellent and the community is incredibly helpful.', author: 'Maria Lindgren', role: 'DevOps Engineer', company: 'CloudNative', rating: 5 }], layout: 'grid', columns: 3, showRating: true, showAvatar: false, variant: 'cards' } },
+        { id: 'demo-block-overview', type: 'features', data: { title: '47+ Block Types Available', subtitle: 'From simple text to complex e-commerce – build any page with drag-and-drop blocks.', features: [{ id: 'cat-content', icon: 'FileText', title: 'Content', description: 'Hero, Text, Image, Quote, Separator, Two-Column, Info Box' }, { id: 'cat-showcase', icon: 'LayoutGrid', title: 'Showcase', description: 'Features, Stats, Timeline, Gallery, Logos, Team, Testimonials' }, { id: 'cat-commerce', icon: 'ShoppingCart', title: 'E-commerce', description: 'Pricing, Products, Cart, Comparison' }, { id: 'cat-forms', icon: 'ClipboardList', title: 'Forms', description: 'Contact, Form Builder, Newsletter, Booking' }, { id: 'cat-navigation', icon: 'Navigation', title: 'Navigation', description: 'Header, Footer, Link Grid, Accordion' }, { id: 'cat-media', icon: 'Play', title: 'Media', description: 'YouTube, Map, Article Grid' }, { id: 'cat-ai', icon: 'Bot', title: 'Agent & AI', description: 'FlowPilot Chat, AI Text Assistant, Autonomous Skills' }, { id: 'cat-interactive', icon: 'MousePointer', title: 'Interactive', description: 'Popup, CTA Buttons' }], columns: 4, variant: 'minimal', iconStyle: 'square' } },
+        { id: 'demo-features', type: 'features', data: { title: 'Features Block', subtitle: 'Showcase capabilities with icon cards. Grid or list layout.', features: [{ id: 'demo-f1', icon: 'Zap', title: 'Fast', description: 'Optimized for speed. No bloat, no lag.' }, { id: 'demo-f2', icon: 'Shield', title: 'Secure', description: 'Row-level security. GDPR compliant.' }, { id: 'demo-f3', icon: 'Bot', title: 'Autonomous', description: 'FlowPilot operates your site 24/7.' }, { id: 'demo-f4', icon: 'Code', title: 'Developer Friendly', description: 'Full API access. Webhooks. Open source.' }], columns: 4, variant: 'cards', iconStyle: 'circle' } },
+        { id: 'demo-stats', type: 'stats', data: { title: 'Stats Block', items: [{ id: 'demo-s1', value: '99.9%', label: 'Uptime' }, { id: 'demo-s2', value: '< 100ms', label: 'Response Time' }, { id: 'demo-s3', value: '50k+', label: 'Pages Served' }, { id: 'demo-s4', value: '24/7', label: 'Agent Active' }], columns: 4, variant: 'minimal' } },
+        { id: 'demo-testimonials', type: 'testimonials', data: { title: 'Testimonials Block', testimonials: [{ id: 'demo-t1', content: 'The visual editor is incredibly intuitive. Our marketing team creates landing pages without any developer help.', author: 'Anna Svensson', role: 'Marketing Director', company: 'TechCorp', rating: 5 }, { id: 'demo-t2', content: 'FlowPilot qualified 200 leads last month while we focused on closing deals. Game changer.', author: 'Erik Johansson', role: 'Head of Sales', company: 'AppStudio', rating: 5 }, { id: 'demo-t3', content: 'Self-hosting with private LLM was a breeze. The documentation is excellent and the community is incredibly helpful.', author: 'Maria Lindgren', role: 'DevOps Engineer', company: 'CloudNative', rating: 5 }], layout: 'grid', columns: 3, showRating: true, showAvatar: false, variant: 'cards' } },
         { id: 'demo-team', type: 'team', data: { title: 'Team Block', subtitle: 'Showcase your team members with photos, roles, and social links.', members: [{ id: 'team-1', name: 'Anna Eriksson', role: 'CEO & Founder', image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400', bio: 'Visionary leader with 15 years in tech.', linkedin: 'https://linkedin.com', twitter: 'https://twitter.com' }, { id: 'team-2', name: 'Erik Lindberg', role: 'CTO', image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400', bio: 'Full-stack developer and architecture expert.', linkedin: 'https://linkedin.com', github: 'https://github.com' }, { id: 'team-3', name: 'Sofia Bergström', role: 'Head of Design', image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400', bio: 'Award-winning UX designer.', linkedin: 'https://linkedin.com', twitter: 'https://twitter.com' }, { id: 'team-4', name: 'Marcus Johansson', role: 'Lead Developer', image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400', bio: 'Open source contributor and mentor.', linkedin: 'https://linkedin.com', github: 'https://github.com' }], columns: 4, layout: 'grid', showBio: true, showSocial: true } },
         { id: 'demo-accordion', type: 'accordion', data: { title: 'Accordion Block', items: [{ question: 'How does the FAQ block work?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Add questions and answers. Visitors click to expand. Great for reducing support tickets and improving SEO with structured FAQ markup.' }] }] } }, { question: 'Can I add images and links inside answers?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Yes! Answers support rich text formatting including bold, italic, links, images, and even code blocks. Full flexibility.' }] }] } }, { question: 'Is this good for SEO?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Absolutely. FlowWink automatically generates FAQ structured data (JSON-LD) for accordion blocks, helping your content appear in Google rich results.' }] }] } }] } },
         { id: 'demo-gallery', type: 'gallery', data: { title: 'Gallery Block', images: [{ id: 'gal-1', url: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=600', alt: 'Code on laptop', caption: 'Developer workspace' }, { id: 'gal-2', url: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600', alt: 'Analytics dashboard', caption: 'Data visualization' }, { id: 'gal-3', url: 'https://images.unsplash.com/photo-1551434678-e076c223a692?w=600', alt: 'Team collaboration', caption: 'Team meeting' }, { id: 'gal-4', url: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=600', alt: 'Office space', caption: 'Modern office' }], layout: 'grid', columns: 4, showCaptions: true, lightbox: true } },
@@ -1188,50 +1017,47 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
         { id: 'demo-table', type: 'table', data: { title: 'Table Block', caption: 'Display structured data in a clean, responsive table format.', columns: [{ id: 'col1', header: 'Feature', align: 'left' }, { id: 'col2', header: 'Starter', align: 'center' }, { id: 'col3', header: 'Pro', align: 'center' }, { id: 'col4', header: 'Enterprise', align: 'center' }], rows: [['Pages', '10', 'Unlimited', 'Unlimited'], ['Users', '1', '5', 'Unlimited'], ['API Access', '❌', '✅', '✅'], ['Support', 'Community', 'Priority', 'Dedicated']], variant: 'striped', size: 'md', stickyHeader: true, highlightOnHover: true } },
         { id: 'info-embed', type: 'info-box', data: { variant: 'info', content: { type: 'doc', content: [{ type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: '🔗 Embed Block' }] }, { type: 'paragraph', content: [{ type: 'text', text: 'Embed external content from Figma, CodePen, Loom, and more. Just paste the embed code or URL, and the block handles the rest.' }] }] } } },
         { id: 'demo-social-proof', type: 'social-proof', data: { title: 'Social Proof Block', subtitle: 'Show live metrics, ratings, and activity to build trust.', items: [{ id: 'sp1', type: 'counter', label: 'Happy Customers', value: 12500, icon: 'users' }, { id: 'sp2', type: 'rating', label: 'Average Rating', value: 4.9, maxRating: 5 }, { id: 'sp3', type: 'counter', label: 'Projects Completed', value: 3200, icon: 'folder' }], variant: 'cards', layout: 'horizontal', size: 'lg', animated: true, showLiveIndicator: false } },
-        { id: 'info-notification', type: 'info-box', data: { variant: 'warning', content: { type: 'doc', content: [{ type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: '🔔 Notification Toast Block' }] }, { type: 'paragraph', content: [{ type: 'text', text: 'Display dynamic notifications showing recent signups, purchases, or activity. Creates FOMO and social proof. This block is dynamic and shows randomly timed notifications – it cannot be fully demonstrated in a static page.' }] }] } } },
-        { id: 'info-floating-cta', type: 'info-box', data: { variant: 'default', content: { type: 'doc', content: [{ type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: '📌 Floating CTA Block' }] }, { type: 'paragraph', content: [{ type: 'text', text: 'A call-to-action that appears when users scroll down. Sticky bars, floating buttons, or slide-in panels. Configurable trigger points and positions. This block only appears on scroll, so it cannot be fully demonstrated in a static showcase.' }] }] } } },
+        { id: 'info-notification', type: 'info-box', data: { variant: 'warning', content: { type: 'doc', content: [{ type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: '🔔 Notification Toast Block' }] }, { type: 'paragraph', content: [{ type: 'text', text: 'Display dynamic notifications showing recent signups, purchases, or activity. Creates FOMO and social proof.' }] }] } } },
+        { id: 'info-floating-cta', type: 'info-box', data: { variant: 'default', content: { type: 'doc', content: [{ type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: '📌 Floating CTA Block' }] }, { type: 'paragraph', content: [{ type: 'text', text: 'A call-to-action that appears when users scroll down. Sticky bars, floating buttons, or slide-in panels.' }] }] } } },
         { id: 'sep-kb-blocks', type: 'separator', data: { variant: 'text', text: 'Knowledge Base Blocks', icon: 'BookOpen' } },
-        { id: 'demo-kb-hub', type: 'kb-hub', data: { title: 'KB Hub Block', subtitle: 'Full knowledge base landing page with categories and search. Pulls content from your KB module.' } },
-        { id: 'demo-kb-featured', type: 'kb-featured', data: { title: 'KB Featured Block', subtitle: 'Highlight your most important help articles. Great for homepage or support pages.', maxArticles: 3 } },
-        { id: 'demo-kb-accordion', type: 'kb-accordion', data: { title: 'KB Accordion Block', subtitle: 'Display KB articles as expandable FAQ items. Perfect for inline help sections.' } },
-        { id: 'demo-kb-search', type: 'kb-search', data: { title: 'KB Search Block', subtitle: 'Standalone search bar for your knowledge base. Add it anywhere on your site.', placeholder: 'Search help articles...', showResults: true, maxResults: 3 } },
+        { id: 'demo-kb-hub', type: 'kb-hub', data: { title: 'KB Hub Block', subtitle: 'Full knowledge base landing page with categories and search.' } },
+        { id: 'demo-kb-featured', type: 'kb-featured', data: { title: 'KB Featured Block', subtitle: 'Highlight your most important help articles.', maxArticles: 3 } },
+        { id: 'demo-kb-accordion', type: 'kb-accordion', data: { title: 'KB Accordion Block', subtitle: 'Display KB articles as expandable FAQ items.' } },
+        { id: 'demo-kb-search', type: 'kb-search', data: { title: 'KB Search Block', subtitle: 'Standalone search bar for your knowledge base.', placeholder: 'Search help articles...', showResults: true, maxResults: 3 } },
         { id: 'sep-more-blocks', type: 'separator', data: { variant: 'text', text: 'More Block Types', icon: 'LayoutGrid' } },
-        { id: 'demo-chat-launcher', type: 'chat-launcher', data: { title: 'Chat Launcher Block', subtitle: 'ChatGPT-style launcher that routes visitors to the /chat page. Shows quick action buttons and a search-like input.', placeholder: 'Ask anything about FlowWink...', showQuickActions: true, quickActionCount: 4, variant: 'card' } },
-        { id: 'demo-article-grid', type: 'article-grid', data: { title: 'Article Grid Block', subtitle: 'Display blog posts or articles in a responsive card grid. Pulls from your blog module automatically.', columns: 3, maxArticles: 3, showExcerpt: true, showDate: true, showAuthor: true } },
-        { id: 'demo-webinar', type: 'webinar', data: { title: 'Webinar Block', subtitle: 'Promote upcoming webinars and online events with registration forms. Integrates with the Webinars module.' } },
-        { id: 'info-popup', type: 'info-box', data: { variant: 'highlight', content: { type: 'doc', content: [{ type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: '🎯 Popup Block' }] }, { type: 'paragraph', content: [{ type: 'text', text: 'Trigger popups based on scroll position, time on page, or exit intent. Configure content, timing, and display rules. Perfect for lead capture, announcements, and promotions. This block triggers dynamically and cannot be fully demonstrated in a static showcase.' }] }] } } },
-        { id: 'info-lottie', type: 'info-box', data: { variant: 'info', content: { type: 'doc', content: [{ type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: '✨ Lottie Animation Block' }] }, { type: 'paragraph', content: [{ type: 'text', text: 'Embed lightweight vector animations from LottieFiles. Supports autoplay, loop, hover triggers, and speed control. Perfect for hero sections, loading states, and micro-interactions. Just paste a Lottie JSON URL to get started.' }] }] } } },
+        { id: 'demo-chat-launcher', type: 'chat-launcher', data: { title: 'Chat Launcher Block', subtitle: 'Routes visitors to FlowPilot. Shows quick action buttons and a search-like input.', placeholder: 'Ask anything about FlowWink...', showQuickActions: true, quickActionCount: 4, variant: 'card' } },
+        { id: 'demo-article-grid', type: 'article-grid', data: { title: 'Article Grid Block', subtitle: 'Display blog posts or articles in a responsive card grid.', columns: 3, maxArticles: 3, showExcerpt: true, showDate: true, showAuthor: true } },
+        { id: 'demo-webinar', type: 'webinar', data: { title: 'Webinar Block', subtitle: 'Promote upcoming webinars and online events with registration forms.' } },
+        { id: 'info-popup', type: 'info-box', data: { variant: 'highlight', content: { type: 'doc', content: [{ type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: '🎯 Popup Block' }] }, { type: 'paragraph', content: [{ type: 'text', text: 'Trigger popups based on scroll position, time on page, or exit intent. Perfect for lead capture and promotions.' }] }] } } },
+        { id: 'info-lottie', type: 'info-box', data: { variant: 'info', content: { type: 'doc', content: [{ type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: '✨ Lottie Animation Block' }] }, { type: 'paragraph', content: [{ type: 'text', text: 'Embed lightweight vector animations from LottieFiles. Supports autoplay, loop, hover triggers, and speed control.' }] }] } } },
         { id: 'sep-try', type: 'separator', data: { variant: 'text', text: 'Try It Yourself', icon: 'MousePointer' } },
-        { id: 'twocol-try', type: 'two-column', data: { leftColumn: { type: 'doc', content: [{ type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Ready to Build?' }] }, { type: 'paragraph', content: [{ type: 'text', text: 'The best way to understand FlowWink is to use it. Click the button to access the admin panel and start creating.' }] }, { type: 'bulletList', content: [{ type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'No signup required for the demo' }] }] }, { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Full access to all features' }] }] }, { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Your changes are saved locally' }] }] }] }] }, rightColumn: { type: 'doc', content: [{ type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Quick Links' }] }, { type: 'bulletList', content: [{ type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: '→ Admin Dashboard: /admin' }] }] }, { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: '→ Page Editor: /admin/pages' }] }] }, { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: '→ Blog Manager: /admin/blog' }] }] }, { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: '→ Media Library: /admin/media' }] }] }] }] }, layout: '50-50' } },
-        { id: 'cta-demo', type: 'cta', data: { title: 'Start Building Now', subtitle: 'Access the full admin panel and create your first page in minutes.', buttonText: 'Open Admin Panel', buttonUrl: '/admin', secondaryButtonText: 'Self-Host Free', secondaryButtonUrl: 'https://github.com/flowwink/flowwink', gradient: true } },
+        { id: 'twocol-try', type: 'two-column', data: { leftColumn: { type: 'doc', content: [{ type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Ready to Build?' }] }, { type: 'paragraph', content: [{ type: 'text', text: 'The best way to understand FlowWink is to use it. Click the button to access the admin panel and start creating.' }] }, { type: 'bulletList', content: [{ type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'No signup required for the demo' }] }] }, { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Full access to all features' }] }] }, { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'FlowPilot operates in the background' }] }] }] }] }, rightColumn: { type: 'doc', content: [{ type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Quick Links' }] }, { type: 'bulletList', content: [{ type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: '→ Admin Dashboard: /admin' }] }] }, { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: '→ FlowPilot CoPilot: /admin/copilot' }] }] }, { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: '→ Blog Manager: /admin/blog' }] }] }, { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: '→ Agent Skills: /admin/skills' }] }] }] }] }, layout: '50-50' } },
+        { id: 'cta-demo', type: 'cta', data: { title: 'Start Building Now', subtitle: 'Access the full admin panel and let FlowPilot help you create.', buttonText: 'Open Admin Panel', buttonUrl: '/admin', secondaryButtonText: 'Self-Host Free', secondaryButtonUrl: 'https://github.com/flowwink/flowwink', gradient: true } },
       ],
     },
     // ===== PRICING PAGE =====
     {
       title: 'Pricing',
       slug: 'pricing',
-      menu_order: 4,
+      menu_order: 5,
       showInMenu: true,
       meta: {
-        description: 'FlowWink pricing - Self-hosted free forever, or managed cloud starting at €49/month.',
+        description: 'FlowWink pricing - Self-hosted free forever with full FlowPilot agent, or managed cloud starting at €49/month.',
         showTitle: true,
         titleAlignment: 'center',
       },
       blocks: [
-        { id: 'hero-pricing', type: 'hero', data: { title: 'Simple, Transparent Pricing', subtitle: 'No hidden fees, no per-seat charges. Self-host for free or let us manage everything.', backgroundType: 'color', heightMode: 'auto', contentAlignment: 'center', overlayOpacity: 0 } },
-        { id: 'countdown-launch', type: 'countdown', data: { title: 'Early Adopter Offer', subtitle: 'Get 30% off managed cloud for life – limited time', targetDate: '2026-03-31T23:59:59', expiredMessage: 'Early adopter pricing has ended', variant: 'cards', size: 'lg', showDays: true, showHours: true, showMinutes: true, showSeconds: true } },
-        { id: 'pricing-detailed', type: 'pricing', data: { title: '', tiers: [{ id: 'tier-self', name: 'Self-Hosted', price: 'Free', period: 'forever', description: 'Perfect for developers and organizations with DevOps capabilities.', features: ['All CMS features', 'Unlimited pages & users', 'Private LLM support', 'Full API access', 'Community support', 'GitHub issues'], buttonText: 'View on GitHub', buttonUrl: 'https://github.com/flowwink/flowwink' }, { id: 'tier-managed', name: 'Managed Cloud', price: '€49', period: '/month', description: 'Everything included. We handle infrastructure, you focus on content.', features: ['Everything in Self-Hosted', 'Automatic updates', 'Daily backups', 'SSL certificates', 'Global CDN', 'Priority email support', '99.9% uptime SLA'], buttonText: 'Start Free Trial', buttonUrl: '/contact', highlighted: true, badge: 'Most Popular' }, { id: 'tier-enterprise', name: 'Enterprise', price: 'Custom', description: 'For large organizations with specific requirements.', features: ['Everything in Managed', 'Dedicated infrastructure', 'Custom SLA', 'SSO (SAML/OIDC)', 'Dedicated success manager', 'Custom integrations', 'Training sessions'], buttonText: 'Contact Sales', buttonUrl: '/contact' }], columns: 3, variant: 'cards' } },
-        { id: 'table-comparison', type: 'table', data: { title: 'Detailed Feature Comparison', caption: 'See exactly what\'s included in each plan.', columns: [{ id: 'col1', header: 'Feature', align: 'left' }, { id: 'col2', header: 'Self-Hosted', align: 'center' }, { id: 'col3', header: 'Managed Cloud', align: 'center' }, { id: 'col4', header: 'Enterprise', align: 'center' }], rows: [['Pages & Content', 'Unlimited', 'Unlimited', 'Unlimited'], ['Users & Roles', 'Unlimited', 'Unlimited', 'Unlimited'], ['API Access', '✅', '✅', '✅'], ['AI Chat Widget', '✅', '✅', '✅'], ['Private LLM Support', '✅', '✅', '✅'], ['Automatic Updates', '❌', '✅', '✅'], ['Managed Backups', '❌', '✅ Daily', '✅ Hourly'], ['SSL & CDN', '❌', '✅', '✅'], ['Uptime SLA', '❌', '99.9%', 'Custom'], ['SSO (SAML/OIDC)', '❌', '❌', '✅'], ['Dedicated Infrastructure', '❌', '❌', '✅'], ['Support', 'Community', 'Priority Email', 'Dedicated Manager']], variant: 'striped', size: 'md', stickyHeader: true, highlightOnHover: true } },
-        { id: 'accordion-faq', type: 'accordion', data: { title: 'Frequently Asked Questions', items: [{ question: 'Is self-hosted really free forever?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Yes! FlowWink is open source under the MIT license. You can run it on your own servers indefinitely without any licensing fees. The only costs are your own hosting and infrastructure.' }] }] } }, { question: 'What\'s included in managed cloud?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Everything. We handle server management, updates, security patches, backups, SSL certificates, and CDN distribution. You get a fully managed FlowWink instance that\'s always up-to-date.' }] }] } }, { question: 'Can I migrate from self-hosted to managed?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Absolutely. We provide migration tools to move your content and settings to our managed infrastructure. The process is seamless and we\'ll assist you through it.' }] }] } }, { question: 'Do you offer discounts for startups or nonprofits?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Yes! We offer 50% off managed plans for qualifying startups and registered nonprofits. Contact us with your details and we\'ll set you up.' }] }] } }] } },
+        { id: 'hero-pricing', type: 'hero', data: { title: 'Simple, Transparent Pricing', subtitle: 'FlowPilot agent included in every plan. No per-seat charges. No AI usage fees.', backgroundType: 'color', heightMode: 'auto', contentAlignment: 'center', overlayOpacity: 0 } },
+        { id: 'countdown-launch', type: 'countdown', data: { title: 'Early Adopter Offer', subtitle: 'Get 30% off managed cloud for life – limited time', targetDate: '2026-06-30T23:59:59', expiredMessage: 'Early adopter pricing has ended', variant: 'cards', size: 'lg', showDays: true, showHours: true, showMinutes: true, showSeconds: true } },
+        { id: 'pricing-detailed', type: 'pricing', data: { title: '', tiers: [{ id: 'tier-self', name: 'Self-Hosted', price: 'Free', period: 'forever', description: 'Full FlowPilot agent. Your servers. Your LLM. Complete data sovereignty.', features: ['All CMS features + FlowPilot', 'Unlimited autonomous operations', 'Private LLM support (Ollama)', '20+ agent skills', 'Persistent memory & objectives', 'Community support'], buttonText: 'View on GitHub', buttonUrl: 'https://github.com/flowwink/flowwink' }, { id: 'tier-managed', name: 'Managed Cloud', price: '€49', period: '/month', description: 'We run the infrastructure. FlowPilot runs your digital presence.', features: ['Everything in Self-Hosted', 'Automatic updates', 'Daily backups + SSL + CDN', 'Managed AI model access', 'Priority email support', '99.9% uptime SLA'], buttonText: 'Start Free Trial', buttonUrl: '/contact', highlighted: true, badge: 'Most Popular' }, { id: 'tier-enterprise', name: 'Enterprise', price: 'Custom', description: 'Dedicated FlowPilot with custom skills and compliance support.', features: ['Everything in Managed', 'Dedicated infrastructure', 'Custom skill development', 'SSO (SAML/OIDC)', 'Dedicated success manager', 'Compliance & audit support'], buttonText: 'Contact Sales', buttonUrl: '/contact' }], columns: 3, variant: 'cards' } },
+        { id: 'table-comparison', type: 'table', data: { title: 'Detailed Feature Comparison', caption: 'See exactly what\'s included in each plan.', columns: [{ id: 'col1', header: 'Feature', align: 'left' }, { id: 'col2', header: 'Self-Hosted', align: 'center' }, { id: 'col3', header: 'Managed Cloud', align: 'center' }, { id: 'col4', header: 'Enterprise', align: 'center' }], rows: [['Pages & Content', 'Unlimited', 'Unlimited', 'Unlimited'], ['FlowPilot Agent', '✅', '✅', '✅'], ['Autonomous Skills', '20+', '20+', 'Custom'], ['Persistent Memory', '✅', '✅', '✅'], ['Private LLM Support', '✅', '✅', '✅'], ['Automatic Updates', '❌', '✅', '✅'], ['Managed Backups', '❌', '✅ Daily', '✅ Hourly'], ['SSL & CDN', '❌', '✅', '✅'], ['Uptime SLA', '❌', '99.9%', 'Custom'], ['SSO (SAML/OIDC)', '❌', '❌', '✅'], ['Custom Skills', '❌', '❌', '✅'], ['Support', 'Community', 'Priority Email', 'Dedicated Manager']], variant: 'striped', size: 'md', stickyHeader: true, highlightOnHover: true } },
+        { id: 'accordion-faq', type: 'accordion', data: { title: 'Frequently Asked Questions', items: [{ question: 'Is self-hosted really free forever?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Yes! FlowWink is open source under the MIT license. You get the full FlowPilot agent, all skills, persistent memory — everything. The only costs are your own hosting and AI model API fees.' }] }] } }, { question: 'Is the FlowPilot agent included in the free plan?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Absolutely. The autonomous agent with all 20+ skills, persistent memory, objectives, and self-evolution is included in every plan. There are no AI usage fees — you bring your own model (OpenAI, Gemini, or local Ollama).' }] }] } }, { question: 'Can I migrate from self-hosted to managed?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Yes. We provide migration tools to move your content, agent memory, and settings to our managed infrastructure. The process is seamless.' }] }] } }, { question: 'Do you offer discounts for startups or nonprofits?', answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Yes! We offer 50% off managed plans for qualifying startups and registered nonprofits. Contact us with your details.' }] }] } }] } },
       ],
     },
-    // Remaining pages (Compare, Roadmap, Contact, Docs, Help, Privacy, Terms) are defined
-    // inline in the monolith and will be extracted in a future iteration.
-    // For now, they are imported via the STARTER_TEMPLATES.find() fallback.
   ],
   branding: {
     organizationName: 'FlowWink',
-    brandTagline: 'Head + Headless CMS',
+    brandTagline: 'The Autonomous Agentic CMS',
     primaryColor: '162 63% 41%',
     headingFont: 'Sora',
     bodyFont: 'DM Sans',
@@ -1250,13 +1076,13 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
     widgetShowOnMobile: true,
     blockEnabled: true,
     landingPageEnabled: true,
-    welcomeMessage: 'Hi! I can answer questions about FlowWink. What would you like to know?',
-    systemPrompt: 'You are the FlowWink assistant. Help users understand the product, features, and pricing. Be helpful, concise, and friendly. FlowWink is a complete CMS with both traditional website features and headless API capabilities.',
+    welcomeMessage: 'Hi! I\'m FlowPilot — the autonomous agent that operates this site. I have persistent memory and I\'ve read every page here. What would you like to know?',
+    systemPrompt: 'You are FlowPilot, the autonomous AI agent powering FlowWink. You have persistent memory, self-evolving skills, and operate across 6 channels (content, CRM, email, bookings, e-commerce, analytics). Help users understand the agentic architecture, autonomous capabilities, and how FlowWink differs from traditional CMS platforms. Be confident, knowledgeable, and concise.',
     suggestedPrompts: [
-      'What is FlowWink?',
-      'How much does it cost?',
-      'Can I self-host FlowWink?',
-      'Does it support headless API?',
+      'What makes FlowPilot autonomous?',
+      'How does the self-evolution work?',
+      'Can I self-host with a private LLM?',
+      'What skills does FlowPilot have?',
     ],
     includeContentAsContext: true,
     contentContextMaxTokens: 50000,
@@ -1278,7 +1104,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
     address: 'Stockholm, Sweden',
     postalCode: '',
     weekdayHours: 'Mon-Fri 9-17',
-    weekendHours: 'Community support 24/7',
+    weekendHours: 'FlowPilot operates 24/7',
     linkedin: 'https://linkedin.com/company/flowwink',
     twitter: 'https://twitter.com/flowwink',
     facebook: '',
@@ -1292,8 +1118,8 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
   },
   seoSettings: {
     siteTitle: 'FlowWink',
-    titleTemplate: '%s | FlowWink - Head + Headless CMS',
-    defaultDescription: 'Keep Your Head While Going Headless. The complete CMS with beautiful websites AND powerful APIs. Self-host free or use our managed cloud.',
+    titleTemplate: '%s | FlowWink - The Autonomous Agentic CMS',
+    defaultDescription: 'Your website runs itself. FlowPilot is an autonomous AI agent that writes content, qualifies leads, runs campaigns, and learns from every interaction. Self-host free.',
     robotsIndex: true,
     robotsFollow: true,
     developmentMode: false,
@@ -1301,7 +1127,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
   aeoSettings: {
     enabled: true,
     organizationName: 'FlowWink',
-    shortDescription: 'Keep Your Head While Going Headless. The complete CMS with beautiful websites AND powerful APIs.',
+    shortDescription: 'The first autonomous agentic CMS. FlowPilot operates your entire digital presence — content, CRM, email, bookings, e-commerce — with persistent memory and self-evolving skills.',
     schemaOrgEnabled: true,
     schemaOrgType: 'Organization',
     faqSchemaEnabled: true,
