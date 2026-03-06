@@ -610,6 +610,22 @@ export default function NewSitePage() {
         }
       }
 
+      // Step 12: Bootstrap FlowPilot agentic layer with template context
+      try {
+        setProgress({ currentPage: 1, totalPages: 1, currentStep: 'Bootstrapping FlowPilot...' });
+        await supabase.functions.invoke('setup-flowpilot', {
+          body: {
+            template_flowpilot: selectedTemplate.flowpilot || {},
+            template_id: selectedTemplate.id,
+            template_name: selectedTemplate.name,
+          },
+        });
+        logger.info('[NewSite] FlowPilot bootstrapped for template:', selectedTemplate.id);
+      } catch (fpError) {
+        // Non-fatal: FlowPilot bootstrap failure shouldn't block site creation
+        logger.warn('[NewSite] FlowPilot bootstrap failed (non-fatal):', fpError);
+      }
+
       setCreatedPageIds(pageIds);
       setStep('done');
       
@@ -623,7 +639,7 @@ export default function NewSitePage() {
       if (appliedBlogCount > 0) description += `, ${appliedBlogCount} blog posts`;
       if (totalKbArticles > 0) description += `, ${totalKbArticles} KB articles`;
       if (moduleCount > 0) description += `. Enabled ${moduleCount} modules`;
-      description += '.';
+      description += '. FlowPilot initialized.';
       
       // Force refresh all caches to ensure admin UI shows new data
       await queryClient.invalidateQueries({ queryKey: ['pages'] });
