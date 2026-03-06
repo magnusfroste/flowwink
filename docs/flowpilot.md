@@ -1,94 +1,192 @@
-# FlowPilot — Agentic Intelligence Framework
+# FlowPilot — The First Autonomous Agentic CMS
 
-> FlowPilot is the platform's "helicopter brain" — a dual-agent architecture that transforms a modular CMS into an autonomous, AI-operated business platform. It combines a unified skill engine, persistent memory, goal-driven objectives, and a reactive automation layer into a single coherent system.
+> **Your website runs itself.** FlowPilot is not a chatbot. It is an autonomous AI agent that writes your content, qualifies your leads, runs your campaigns, and learns from every interaction. You set the objectives. It does the rest.
 
 ---
 
-## 1. Executive Summary
+## 1. What FlowPilot Is
 
-FlowPilot is not a chatbot. It is an **operational intelligence layer** that sits above the entire CMS — content, CRM, bookings, newsletters, analytics, knowledge base — and orchestrates them through a database-driven skill registry.
+FlowPilot is an **autonomous digital operator** — an OpenClaw-inspired agent with persistent memory, self-evolving skills, goal-driven objectives, and a reactive automation layer. It sits above the entire platform — content, CRM, bookings, newsletters, analytics, knowledge base, e-commerce — and orchestrates them continuously, with or without a human present.
 
-Two agents share the same engine:
+### The Paradigm Shift
+
+| Traditional CMS | FlowPilot |
+|-----------------|-----------|
+| You manage pages | FlowPilot manages your digital presence |
+| You write content | FlowPilot writes, you approve |
+| You qualify leads | FlowPilot scores, enriches, and routes them |
+| You send newsletters | FlowPilot segments, writes, and sends |
+| You check analytics | FlowPilot reflects, learns, and adapts |
+| Nothing happens while you sleep | FlowPilot keeps working |
+
+### Two Agents, One Engine
 
 | Agent | Audience | Purpose |
 |-------|----------|---------|
-| **Public Chat** | Website visitors | Intelligent concierge grounded in all site content, KB articles, and blog posts. Can book appointments, check orders, search the web, and submit leads. |
-| **FlowPilot Operate** | Admins & employees | Autonomous CMS operator with memory, objectives, self-improvement, multi-tool chaining, and human-in-the-loop approval gating. |
+| **Public Chat** | Website visitors | Intelligent concierge grounded in all site content, KB articles, and blog posts. Books appointments, captures leads, searches the web, checks orders. |
+| **FlowPilot Operate** | Admins & employees | Autonomous operator with memory, objectives, self-improvement, multi-tool chaining, and human-in-the-loop approval gating. |
 
-Both agents invoke skills through the same `agent-execute` edge function, share the same activity log, and respect the same scope and approval rules. The difference is **who sees what**: scope controls which skills are available to each agent.
-
----
-
-## 2. Value Proposition — The Three Pillars
-
-### 2.1 For Visitors: Intelligent Business Concierge
-
-The public chat is **not a generic AI**. It is grounded in:
-
-- **All published pages** — extracted from Tiptap JSON content blocks (hero, text, accordion, CTA, contact, stats, etc.)
-- **Knowledge Base articles** — Q&A pairs marked `include_in_chat = true`
-- **Blog posts** — full content indexed for context
-- **Agent skills** — booking, order lookup, lead capture, web search
-
-This means a visitor asking "What services do you offer?" gets an answer derived from the actual site content, not hallucinated. A visitor saying "I'd like to book an appointment" triggers the real booking system. A visitor asking "Where's my order?" queries the actual orders table.
-
-**Result**: Every business gets a smart, content-aware assistant that knows their exact offerings, policies, and FAQ — out of the box.
-
-### 2.2 For Admin & Employees: Business Central
-
-FlowPilot Operate mode turns the admin panel into a **command center**:
-
-- **Natural language operations** — "Write a blog post about our new service" → creates a draft in the blog module
-- **Persistent memory** — remembers preferences ("preferred tone: conversational"), context, and facts across sessions
-- **Goal tracking** — set objectives like "Increase blog output to 4 posts/month" with progress tracking and success criteria
-- **Self-improvement** — reflects on its own activity, identifies failing skills, suggests automations for repetitive tasks
-- **Approval gating** — destructive or sensitive actions (send newsletter, delete content) require explicit admin approval
-- **Activity feed** — real-time visibility into every action taken, with duration, I/O, and status
-
-### 2.3 For the Business: Autonomous Operations
-
-The automation layer runs the platform even when no one is logged in:
-
-- **Cron automations** — scheduled tasks (daily analytics digest, weekly content freshness check)
-- **Event automations** — triggered by system events (new form submission → create lead → qualify)
-- **Signal automations** — dynamic condition evaluation (lead score > 50 → send notification)
-
-All automations execute through the same skill engine, producing the same audit trail, with the same approval rules.
+Both agents invoke skills through the same `agent-execute` edge function, share the same activity log, and respect the same scope and approval rules.
 
 ---
 
-## 3. OpenClaw Architecture Mapping
+## 2. The Autonomous Loop
 
-FlowPilot implements the [OpenClaw](https://github.com/openclaw) agentic framework concepts with a pragmatic, database-first approach:
+FlowPilot operates on a continuous cycle that never stops. This is the core value proposition — the machine that runs your business:
 
-| OpenClaw Concept | FlowPilot Implementation | Storage |
-|------------------|--------------------------|---------|
-| **Skill Registry** | `agent_skills` table — DB-driven, hot-reloadable | PostgreSQL |
-| **Tool Definition** | OpenAI function-calling JSON format (`tool_definition` column) | JSONB |
-| **Tool Router** | `agent-execute` edge function — unified dispatcher | Edge Function |
-| **Handler Routing** | `edge:`, `module:`, `db:`, `webhook:` prefixes | String convention |
-| **Scope Model** | `internal`, `external`, `both` enum on each skill | DB enum |
-| **Approval Gate** | `requires_approval` boolean → pending_approval status | DB flag |
-| **Memory** | `agent_memory` table — persistent K-V with categories | PostgreSQL |
-| **Objectives** | `agent_objectives` table — goals with progress + criteria | PostgreSQL |
-| **Activity Log** | `agent_activity` table — full I/O audit trail | PostgreSQL |
-| **Automations** | `agent_automations` table — cron/event/signal triggers | PostgreSQL |
-| **Self-Modification** | `skill_create/update/disable` + `automation_create` + `reflect` built-in tools | In-process |
-| **Multi-Tool Loop** | Up to 6 iterations per conversation turn, parallel tool_calls per round | Runtime |
+```
+┌─────────────┐
+│  HEARTBEAT  │ ← Triggers every 12 hours (configurable)
+└──────┬──────┘
+       ▼
+┌─────────────┐
+│   REFLECT   │ ← What happened since last cycle? What succeeded, what failed?
+└──────┬──────┘
+       ▼
+┌─────────────┐
+│    PLAN     │ ← Match objectives to available skills. Prioritize by impact.
+└──────┬──────┘
+       ▼
+┌─────────────┐
+│   EXECUTE   │ ← Write content, qualify leads, send campaigns, update CRM.
+└──────┬──────┘
+       ▼
+┌─────────────┐
+│     LOG     │ ← Every action recorded with full I/O audit trail.
+└──────┬──────┘
+       ▼
+┌─────────────┐
+│ LEARN/EVOLVE│ ← Update memory. Rewrite skill instructions. Evolve soul.
+└──────┬──────┘
+       │
+       └──────────────▶ (repeat)
+```
 
-### 3.1 Key Architectural Decisions
+### Three Layers of Operation
 
-1. **Database-driven, not code-driven** — Skills are defined in the database, not hardcoded. This means FlowPilot can create new skills at runtime without redeployment.
-
-2. **Unified execution path** — Both agents use `agent-execute`. There is no separate code path for public vs internal actions. Scope validation happens at the executor level.
-
-3. **Handler abstraction** — The handler string (`edge:qualify-lead`, `module:blog`, `db:page_views`, `webhook:n8n`) decouples skill definitions from implementation. A skill can be moved from a webhook to a native module without changing the skill registry entry.
-
-4. **Approval as first-class concept** — Not bolted on. The approval gate is checked before execution, and pending actions are re-executed automatically when approved.
+| Layer | Trigger | Example |
+|-------|---------|---------|
+| **🟢 Visitor Layer** | User message in public chat | "Book me a demo" → books appointment via skill |
+| **🔵 Admin Operate Layer** | Admin command in FlowPilot | "Write a blog post about our new feature" → drafts post |
+| **🟣 Automation Layer** | System event or scheduled tick | New form submission → create lead → qualify → notify |
 
 ---
 
-## 4. Architecture Diagram
+## 3. The Agent Brain — Six Core Capabilities
+
+### 3.1 Skill Engine (20+ Skills)
+
+Every capability is a **skill** — a database-driven, hot-reloadable tool definition in OpenAI function-calling format. FlowPilot can even create new skills for itself at runtime.
+
+```json
+{
+  "name": "book_appointment",
+  "description": "Book an appointment for a customer",
+  "category": "automation",
+  "scope": "both",
+  "handler": "module:booking",
+  "requires_approval": false,
+  "instructions": "When booking, always confirm timezone...",
+  "tool_definition": { ... }
+}
+```
+
+**Handler routing** — the `handler` string decouples skill definition from implementation:
+
+| Prefix | Route | Example |
+|--------|-------|---------|
+| `edge:` | Edge Function | `edge:qualify-lead` |
+| `module:` | Module handler | `module:blog` |
+| `db:` | Direct DB query | `db:page_views` |
+| `webhook:` | External | `webhook:n8n` |
+
+**Scope model** — controls who can invoke what:
+
+| Scope | Access |
+|-------|--------|
+| `internal` | Only FlowPilot (admin) |
+| `external` | Only Public Chat (visitors) |
+| `both` | Either agent |
+
+### 3.2 Persistent Memory
+
+FlowPilot maintains a key-value memory store (`agent_memory`) that survives across sessions:
+
+| Category | Purpose | Example |
+|----------|---------|---------|
+| `preference` | Learned preferences | `preferred_blog_tone: "conversational"` |
+| `context` | Operational context | `last_campaign_date: "2025-01-15"` |
+| `fact` | Learned facts & patterns | `lesson:reflect_2025-05-20: { learnings: [...] }` |
+| `soul` | Agent personality & values | `purpose, values, tone, philosophy` |
+| `identity` | Agent identity & boundaries | `name, role, boundaries` |
+
+Memory is loaded into the system prompt at every conversation start. Built-in `memory_write` and `memory_read` tools let FlowPilot proactively save useful information.
+
+### 3.3 Objectives & Goals
+
+Objectives are high-level goals with structured tracking and success criteria:
+
+```json
+{
+  "goal": "Increase blog output to 4 posts per month",
+  "status": "active",
+  "constraints": { "max_posts_per_week": 2, "tone": "professional" },
+  "success_criteria": { "posts_per_month": 4 },
+  "progress": { "posts_this_month": 2, "last_post_date": "2025-01-20" }
+}
+```
+
+Active objectives are injected into every FlowPilot prompt. During heartbeat cycles, FlowPilot autonomously reviews progress and takes action to advance them.
+
+### 3.4 Autonomous Heartbeat
+
+The `flowpilot-heartbeat` edge function is the engine that drives autonomous operation. Every 12 hours (configurable), FlowPilot wakes up without any human prompt and:
+
+1. **Calls `reflect`** to analyze the past 7 days of activity
+2. **Reviews active objectives** — updates progress based on current data
+3. **Takes autonomous actions** — writes blog posts, qualifies leads, sends campaigns
+4. **Saves learnings** — persists new facts and patterns to memory
+5. **Logs a summary** — full heartbeat report in the activity feed
+
+```
+HEARTBEAT PROTOCOL:
+1. REFLECT — analyze performance and patterns
+2. OBJECTIVES — review each goal, update progress, mark complete if criteria met
+3. ACT — execute skills to advance objectives
+4. REMEMBER — save new learnings to memory
+5. SUMMARIZE — report what happened
+```
+
+### 3.5 Signal Automations
+
+Event-driven reactions that execute through the same skill engine:
+
+| Trigger Type | Mechanism | Example |
+|-------------|-----------|---------|
+| **Cron** | `pg_cron` → `automation-dispatcher` | Daily analytics digest |
+| **Event** | `send-webhook` → event match | Form submitted → create lead → qualify |
+| **Signal** | `signal-dispatcher` → condition eval | Lead score ≥ 50 → send notification |
+
+Signal conditions support: `score_threshold`, `count_threshold`, `status_change`, `field_match`, and `compound` (AND/OR combinations).
+
+### 3.6 Self-Evolution
+
+The most radical capability. FlowPilot can modify its own behavior:
+
+| Tool | What It Does |
+|------|-------------|
+| `soul_update` | Evolves personality, values, tone, and philosophy based on accumulated experience |
+| `skill_instruct` | Rewrites skill instructions (the SKILL.md equivalent) — context, examples, edge cases that make execution smarter |
+| `skill_create` | Registers entirely new skills at runtime (defaults to `requires_approval = true`) |
+| `skill_update` | Modifies existing skill definitions, handlers, or scope |
+| `skill_disable` | Disables problematic or unused skills |
+| `reflect` | Analyzes performance, identifies patterns, auto-persists learnings to memory |
+
+**Safety**: Newly created skills default to `requires_approval = true`. New automations default to `enabled = false`. Every modification is logged in the activity feed.
+
+---
+
+## 4. Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -108,6 +206,7 @@ FlowPilot implements the [OpenClaw](https://github.com/openclaw) agentic framewo
 │            ▼          ▼       ▼        ▼          ▼             │
 │        edge:fn    module:x   db:tbl  webhook:url  local         │
 │     (edge func)  (DB ops)  (queries) (external)  (memory/       │
+│                                                   soul/         │
 │                                                   objectives)   │
 └─────────────────────────────────────────────────────────────────┘
                            │
@@ -121,9 +220,10 @@ FlowPilot implements the [OpenClaw](https://github.com/openclaw) agentic framewo
 │ • Content-grounded│            │ • Multi-tool loop (6x) │
 │ • External skills │            │ • Memory + Objectives  │
 │ • Web search     │             │ • Self-modification    │
-│ • Human handoff  │             │ • Reflection           │
-│ • Sentiment      │             │ • Approval gating      │
-└──────────────────┘             └──────────────────────┘
+│ • Human handoff  │             │ • Soul + Identity      │
+│ • Sentiment      │             │ • Reflection           │
+└──────────────────┘             │ • Approval gating      │
+                                 └──────────────────────┘
                            │
 ┌──────────────────────────┼──────────────────────────────────────┐
 │                   AUTOMATION LAYER                                │
@@ -136,76 +236,51 @@ FlowPilot implements the [OpenClaw](https://github.com/openclaw) agentic framewo
 │  │  → agent-execute │  │                  │  │    evaluation    │ │
 │  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
 │                                                                  │
-│  Signal Sources:                                                 │
-│  • qualify-lead → lead_score_updated, lead_status_changed        │
-│  • send-webhook → form.submitted, booking.submitted, ...         │
-│  • gmail-inbox-scan → email signals                              │
+│  ┌─────────────────────────────────────────────────────────────┐ │
+│  │  HEARTBEAT (flowpilot-heartbeat)                             │ │
+│  │  Scheduled autonomous loop — reflect, plan, execute, learn   │ │
+│  └─────────────────────────────────────────────────────────────┘ │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
+### OpenClaw Architecture Mapping
+
+| OpenClaw Concept | FlowPilot Implementation | Storage |
+|------------------|--------------------------|---------|
+| **Skill Registry** | `agent_skills` table — DB-driven, hot-reloadable | PostgreSQL |
+| **Tool Definition** | OpenAI function-calling JSON format | JSONB |
+| **Tool Router** | `agent-execute` edge function — unified dispatcher | Edge Function |
+| **Handler Routing** | `edge:`, `module:`, `db:`, `webhook:` prefixes | String convention |
+| **Scope Model** | `internal`, `external`, `both` enum on each skill | DB enum |
+| **Approval Gate** | `requires_approval` boolean → pending_approval status | DB flag |
+| **Memory** | `agent_memory` table — persistent K-V with categories | PostgreSQL |
+| **Soul / Identity** | `agent_memory` entries with keys `soul` and `identity` | JSONB |
+| **Skill Knowledge** | `instructions` column on `agent_skills` — the SKILL.md | Text |
+| **Objectives** | `agent_objectives` table — goals with progress + criteria | PostgreSQL |
+| **Activity Log** | `agent_activity` table — full I/O audit trail | PostgreSQL |
+| **Automations** | `agent_automations` table — cron/event/signal triggers | PostgreSQL |
+| **Self-Modification** | `soul_update`, `skill_instruct`, `skill_create/update/disable`, `reflect` | In-process |
+| **Heartbeat** | `flowpilot-heartbeat` edge function — scheduled autonomous loop | Edge Function |
+| **Multi-Tool Loop** | Up to 6 iterations per turn, parallel tool_calls per round | Runtime |
+
 ---
 
-## 5. Skill Engine Deep Dive
+## 5. What FlowPilot Manages — Six Channels
 
-### 5.1 Skill Definition
+| Channel | Skills | What FlowPilot Does |
+|---------|--------|---------------------|
+| **Content & Blog** | `blog_write`, `blog_list` | Writes posts in brand voice, optimizes SEO/AEO, schedules publishing |
+| **Lead CRM** | `lead_qualify`, `lead_enrich`, `company_enrich` | Captures from any touchpoint, scores, enriches with company data, routes to sales |
+| **Email Campaigns** | `newsletter_create` | Segments audiences, writes copy, sends at optimal times, GDPR-compliant |
+| **Bookings** | `book_appointment`, `availability_check` | Schedules meetings, sends confirmations and reminders, syncs with CRM |
+| **E-commerce** | `order_lookup`, `product_search` | Manages products, processes orders, tracks revenue and conversion |
+| **Analytics** | `analytics_query`, `reflect` | Monitors traffic, identifies trends, generates reports, suggests improvements |
 
-Every skill is a row in `agent_skills`:
+---
 
-```json
-{
-  "name": "book_appointment",
-  "description": "Book an appointment for a customer",
-  "category": "automation",
-  "scope": "both",
-  "handler": "module:booking",
-  "requires_approval": false,
-  "enabled": true,
-  "tool_definition": {
-    "type": "function",
-    "function": {
-      "name": "book_appointment",
-      "description": "Book an appointment for a customer",
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "customer_name": { "type": "string" },
-          "customer_email": { "type": "string" },
-          "date": { "type": "string", "description": "YYYY-MM-DD" },
-          "time": { "type": "string", "description": "HH:MM" }
-        },
-        "required": ["customer_name", "customer_email", "date", "time"]
-      }
-    }
-  }
-}
-```
+## 6. Approval Gating & Human-in-the-Loop
 
-### 5.2 Handler Routing
-
-The `handler` string determines execution path:
-
-| Prefix | Route | Example | What Happens |
-|--------|-------|---------|--------------|
-| `edge:` | Edge Function | `edge:qualify-lead` | `POST /functions/v1/qualify-lead` with args as body |
-| `module:` | Module handler | `module:blog` | Switch on module name → direct DB operations (insert/update/query) |
-| `db:` | Direct DB | `db:page_views` | Switch on table name → specialized query logic |
-| `webhook:` | External | `webhook:n8n` | POST to first active webhook URL with args as body |
-
-Module handlers currently support: `blog`, `crm`, `booking`, `newsletter`, `orders`, `objectives`, `automations`.
-
-### 5.3 Scope Model
-
-```
-internal  → Only FlowPilot (admin) can invoke
-external  → Only Public Chat (visitors) can invoke
-both      → Either agent can invoke
-```
-
-Scope is validated at execution time in `agent-execute`. A chat agent attempting to invoke an `internal` skill gets a 403.
-
-### 5.4 Approval Gating
-
-Skills with `requires_approval = true` follow this flow:
+Autonomous doesn't mean uncontrolled. Every skill can be configured for approval:
 
 1. Agent calls skill → `agent-execute` intercepts
 2. Activity logged with status `pending_approval`
@@ -214,9 +289,7 @@ Skills with `requires_approval = true` follow this flow:
 5. Admin approves → original args re-executed automatically
 6. Result returned to conversation (if still active)
 
-### 5.5 Activity Logging
-
-Every skill execution produces an `agent_activity` row:
+**Activity logging** — every execution produces an `agent_activity` row:
 
 ```
 agent         → 'flowpilot' | 'chat'
@@ -232,140 +305,19 @@ error_message → if failed
 
 ---
 
-## 6. Autonomous Capabilities
+## 7. Content as Knowledge — The Public Chat
 
-### 6.1 Persistent Memory
-
-FlowPilot maintains a key-value memory store (`agent_memory`) with three categories:
-
-| Category | Purpose | Example |
-|----------|---------|---------|
-| `preference` | User/site preferences | `preferred_blog_tone: "conversational"` |
-| `context` | Operational context | `last_campaign_date: "2025-01-15"` |
-| `fact` | Learned facts | `business_hours: "Mon-Fri 9-17"` |
-
-Memory is loaded into the system prompt at the start of every FlowPilot conversation. Built-in `memory_write` and `memory_read` tools let FlowPilot proactively save useful information.
-
-### 6.2 Objectives
-
-Objectives are high-level goals with structured tracking:
-
-```json
-{
-  "goal": "Increase blog output to 4 posts per month",
-  "status": "active",
-  "constraints": { "max_posts_per_week": 2, "tone": "professional" },
-  "success_criteria": { "posts_per_month": 4 },
-  "progress": { "posts_this_month": 2, "last_post_date": "2025-01-20" }
-}
-```
-
-Active objectives are injected into FlowPilot's system prompt. Built-in tools: `objective_update_progress`, `objective_complete`.
-
-### 6.3 Reflection
-
-The `reflect` built-in tool analyzes 7 days of activity data:
-
-- **Skill usage statistics** — call counts, error rates, average duration
-- **Unused skill detection** — enabled skills that have never been invoked
-- **Automation suggestions** — frequently-used manual skills that could be automated
-- **Improvement recommendations** — based on error patterns and usage trends
-
-### 6.4 Self-Modification
-
-FlowPilot can modify its own capabilities:
-
-| Tool | Purpose |
-|------|---------|
-| `skill_create` | Register a new skill in the registry |
-| `skill_update` | Modify an existing skill's definition, handler, or scope |
-| `skill_disable` | Disable a problematic or unused skill |
-| `skill_list` | List all registered skills with filters |
-| `automation_create` | Create a new automation (disabled by default for safety) |
-| `automation_list` | View all automations with run counts and status |
-
-Safety: newly created skills default to `requires_approval = true` and automations default to `enabled = false`.
-
-### 6.5 Multi-Tool Chaining
-
-FlowPilot Operate supports up to **6 tool-calling iterations** per conversation turn. Each iteration can execute **multiple tool_calls in parallel**. This enables complex multi-step operations:
-
-```
-User: "Analyze our blog performance and create a post about our most popular topic"
-
-Iteration 1: analyze_analytics({ period: "month", focus: "blog" })
-Iteration 2: memory_read({ key: "preferred_blog_tone" })
-Iteration 3: write_blog_post({ title: "...", topic: "...", tone: "conversational" })
-Iteration 4: memory_write({ key: "last_blog_topic", value: "..." })
-```
-
----
-
-## 7. Signal & Automation Layer
-
-### 7.1 Cron Automations
-
-Dispatched by `automation-dispatcher` edge function, triggered every minute via `pg_cron`:
-
-1. Query `agent_automations` where `trigger_type = 'cron'` and `next_run_at <= now()`
-2. Execute each via `agent-execute`
-3. Calculate next run from cron expression
-4. Update metadata (run_count, last_triggered_at, next_run_at, last_error)
-
-Supported cron patterns: `*/N` minutes, `*/N` hours, daily at `H:M`, weekly on day `D`.
-
-### 7.2 Event Automations
-
-Triggered by `send-webhook` edge function when system events occur:
-
-- `form.submitted` — new form submission
-- `booking.submitted` — new booking created
-- `lead.created` — new lead captured
-- Any custom webhook event
-
-The webhook handler checks `agent_automations` for matching `event_name` in `trigger_config` and executes the linked skill with event data merged into arguments.
-
-### 7.3 Signal Automations
-
-The most powerful trigger type. `signal-dispatcher` evaluates dynamic conditions against incoming data:
-
-| Condition Type | Config | Example |
-|---------------|--------|---------|
-| `score_threshold` | `{ min_score: N }` | Fire when lead score ≥ 50 |
-| `count_threshold` | `{ min_count: N }` | Fire when entity count ≥ 100 |
-| `status_change` | `{ from?: string, to: string }` | Fire on lead status change to "qualified" |
-| `field_match` | `{ field, operator, value }` | Fire when `source == "referral"` |
-| `compound` | `{ all: [...] }` or `{ any: [...] }` | Combine multiple conditions with AND/OR |
-
-Signal sources in the platform:
-- `qualify-lead` → emits `lead_score_updated` and `lead_status_changed`
-- `send-webhook` → emits every webhook event as a signal
-- `gmail-inbox-scan` → emits email-related signals
-
----
-
-## 8. Content as Knowledge — The Public Chat Advantage
-
-### 8.1 Knowledge Base Construction
+### Knowledge Base Construction
 
 The `buildKnowledgeBase` function in `chat-completion` constructs the AI's context:
 
-```
 1. Fetch published pages (optionally filtered by slug whitelist)
-2. Extract text from every content block type:
-   - hero (title, subtitle, CTA)
-   - text (Tiptap JSON → plain text)
-   - accordion (Q&A pairs)
-   - contact (phone, email, address)
-   - stats, article-grid, link-grid, etc.
-3. Fetch KB articles where include_in_chat = true
+2. Extract text from every content block type (hero, text, accordion, contact, stats, etc.)
+3. Fetch KB articles where `include_in_chat = true`
 4. Combine into structured sections with token budget
 5. Inject as system prompt context
-```
 
-### 8.2 Configurable Context
-
-Administrators control what the AI knows:
+### Configurable Context
 
 | Setting | Effect |
 |---------|--------|
@@ -375,22 +327,20 @@ Administrators control what the AI knows:
 | `includeKbArticles` | Include KB Q&A pairs |
 | `allowGeneralKnowledge` | Let AI use its own knowledge beyond site content |
 
-### 8.3 AI Provider Flexibility
-
-The public chat supports multiple AI providers:
+### AI Provider Flexibility
 
 | Provider | Configuration | Tool Calling |
 |----------|---------------|--------------|
 | **OpenAI** | API key + model + optional base URL | ✅ Native |
 | **Gemini** | API key + model | ✅ Native |
-| **Local AI** | Endpoint + model + optional API key | ✅ If OpenAI-compatible (vLLM, Qwen3) |
+| **Local AI** | Endpoint + model + optional API key | ✅ If OpenAI-compatible (vLLM, Qwen3, Ollama) |
 | **n8n** | Webhook URL | Via webhook response |
 
-All providers receive the same knowledge base context and skill definitions.
+**Private AI first** — self-host with Ollama or any OpenAI-compatible endpoint. Data never leaves your infrastructure.
 
 ---
 
-## 9. Data Flow Summary
+## 8. Data Flow Summary
 
 ### Visitor Journey
 ```
@@ -405,12 +355,23 @@ Visitor asks question
 ### Admin Operation
 ```
 Admin gives instruction in FlowPilot Operate
-  → agent-operate loads memory + objectives + skills
+  → agent-operate loads soul + identity + memory + objectives + skill instructions
   → AI plans multi-step execution
   → Each skill invoked via agent-execute
   → Approval-gated actions pause for admin
   → Activity feed shows real-time progress
   → Memory updated with new learnings
+```
+
+### Heartbeat (Autonomous)
+```
+Scheduled trigger fires (every 12h)
+  → flowpilot-heartbeat loads objectives + stats + skills
+  → FlowPilot reflects on past 7 days
+  → Reviews each active objective
+  → Takes autonomous actions to advance goals
+  → Persists learnings to memory
+  → Logs heartbeat summary to activity feed
 ```
 
 ### Automated Operation
@@ -424,52 +385,75 @@ Trigger fires (cron tick / webhook event / signal condition)
 
 ---
 
-## 10. Key Files Reference
+## 9. Key Files Reference
 
 | File | Purpose |
 |------|---------|
 | **Edge Functions** | |
 | `supabase/functions/agent-execute/index.ts` | Unified skill executor — routing, scope, approval, logging |
-| `supabase/functions/agent-operate/index.ts` | FlowPilot Operate — multi-tool loop, memory, objectives, self-mod |
+| `supabase/functions/agent-operate/index.ts` | FlowPilot Operate — soul/identity, memory, objectives, multi-tool loop, self-evolution |
 | `supabase/functions/chat-completion/index.ts` | Public chat — knowledge base, skill loading, AI provider routing |
+| `supabase/functions/flowpilot-heartbeat/index.ts` | Autonomous heartbeat — scheduled reflect/plan/execute/learn cycle |
 | `supabase/functions/automation-dispatcher/index.ts` | Cron automation executor (pg_cron → agent-execute) |
 | `supabase/functions/signal-dispatcher/index.ts` | Signal condition evaluator (dynamic conditions → agent-execute) |
 | `supabase/functions/qualify-lead/index.ts` | Lead scoring — emits signals for automation |
 | `supabase/functions/gmail-inbox-scan/index.ts` | Gmail integration — email signals |
 | **Types & Config** | |
 | `src/types/agent.ts` | TypeScript types for skills, memory, objectives, activity, automations |
+| `docs/flowpilot.md` | This document — definitive architecture reference |
 | `.lovable/plan.md` | Phase-by-phase implementation log |
 | **Frontend** | |
 | `src/pages/CopilotPage.tsx` | FlowPilot UI — Operate/Migrate mode switcher |
 | `src/components/copilot/OperateChat.tsx` | Chat interface with quick actions and skill badges |
 | `src/components/copilot/ActivityFeed.tsx` | Real-time activity sidebar with approve/reject |
 | `src/pages/admin/SkillHubPage.tsx` | Skill registry admin — CRUD, activity log, objectives |
+| `src/components/admin/skills/SkillEditorSheet.tsx` | Skill editor with instructions field |
 | `src/hooks/useAgentOperate.ts` | React hook — messages, skills, activity, approval flow |
 | `src/hooks/useSkillHub.ts` | React hook — skill CRUD, activity queries |
 | **Database Tables** | |
-| `agent_skills` | Skill registry (name, handler, scope, tool_definition) |
-| `agent_memory` | Persistent key-value memory |
-| `agent_objectives` | Goal tracking with progress |
+| `agent_skills` | Skill registry (name, handler, scope, instructions, tool_definition) |
+| `agent_memory` | Persistent key-value memory (incl. soul & identity) |
+| `agent_objectives` | Goal tracking with progress and success criteria |
 | `agent_activity` | Full execution audit trail |
 | `agent_automations` | Cron/event/signal trigger definitions |
 | `agent_objective_activities` | Join table linking objectives to activities |
 
 ---
 
-## 11. Comparison: Traditional CMS vs FlowPilot-Powered CMS
+## 10. FlowWink Replaces Four Products
 
-| Capability | Traditional CMS | FlowPilot CMS |
-|-----------|----------------|---------------|
-| Visitor chat | Generic FAQ bot or none | Content-grounded concierge with real actions |
-| Content operations | Manual, per-page editing | Natural language: "Write a blog post about X" |
-| Lead management | Static forms → email | Auto-qualify, score, route, and notify |
-| Booking | Separate booking page | Chat-initiated: "Book me for Tuesday at 3" |
-| Analytics insight | Dashboard viewing | "How did our blog perform last month?" → analysis |
-| Automation | None or external tools | Built-in cron/event/signal → skill execution |
-| Memory | None | Persistent across sessions — learns preferences |
-| Self-improvement | None | Reflects on usage, suggests optimizations |
-| Transparency | Black box | Full activity audit trail with I/O and duration |
+| Capability | Traditional CMS | AI Chatbot | Marketing Automation | CRM | **FlowWink** |
+|-----------|----------------|-----------|---------------------|-----|-------------|
+| Visual Page Builder | ✅ | ❌ | ❌ | ❌ | ✅ |
+| Headless API | Some | ❌ | ❌ | ❌ | ✅ |
+| Autonomous AI Agent | ❌ | ❌ | ❌ | ❌ | ✅ |
+| Persistent Memory | ❌ | ❌ | ❌ | ❌ | ✅ |
+| Self-Evolving Skills | ❌ | ❌ | ❌ | ❌ | ✅ |
+| Lead CRM & Scoring | ❌ | ❌ | ✅ | ✅ | ✅ |
+| AI Content Generation | ❌ | ✅ | ❌ | ❌ | ✅ |
+| Email Campaigns | ❌ | ❌ | ✅ | ❌ | ✅ |
+| Booking System | ❌ | ❌ | ❌ | ❌ | ✅ |
+| E-commerce | ✅ | ❌ | ❌ | ❌ | ✅ |
+| Knowledge Base | ❌ | ✅ | ❌ | ❌ | ✅ |
+| Self-Hostable | Some | ❌ | ❌ | ❌ | ✅ |
+| Private LLM | ❌ | ❌ | ❌ | ❌ | ✅ |
+| Open Source | Some | ❌ | ❌ | ❌ | ✅ |
 
 ---
+
+## 11. Maturity Roadmap
+
+| Capability | Status |
+|-----------|--------|
+| Skill Engine | ✅ 100% |
+| Persistent Memory | ✅ 100% |
+| Objectives & Goals | ✅ 95% |
+| Signal Automations | ✅ 90% |
+| Self-Evolution (soul, skill_instruct) | ✅ 85% |
+| Multi-Agent Orchestration | 🔧 40% |
+
+---
+
+*Stop managing. Start directing. — FlowPilot operates your entire digital presence so you can focus on what matters.*
 
 *This document is the definitive reference for the FlowPilot agentic framework. Update it when new skills, handlers, or architectural changes are introduced.*
