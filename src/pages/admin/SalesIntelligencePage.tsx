@@ -6,43 +6,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import {
-  Search,
-  Loader2,
-  Building2,
-  Users,
-  MessageSquare,
-  CheckCircle2,
-  Target,
-  ExternalLink,
-} from "lucide-react";
-
-interface ResearchResult {
-  success: boolean;
-  company: { id?: string; name: string; domain?: string };
-  contacts: Array<{ id: string; email: string; name?: string }>;
-  hunter_contacts_found: number;
-  questions_and_answers: Array<{ question: string; answer: string; relevance_score: number }>;
-  company_summary: {
-    name?: string;
-    industry?: string;
-    size_estimate?: string;
-    main_offerings?: string[];
-    potential_pain_points?: string[];
-  };
-  error?: string;
-}
+import { Search, Loader2, Target, Sparkles } from "lucide-react";
+import { ResearchResultCards } from "@/components/admin/sales-intelligence/ResearchResultCards";
+import { FitAnalysisCard } from "@/components/admin/sales-intelligence/FitAnalysisCard";
+import type { ResearchResult, FitAnalysisResult } from "@/components/admin/sales-intelligence/types";
 
 export default function SalesIntelligencePage() {
   const [companyName, setCompanyName] = useState("");
   const [companyUrl, setCompanyUrl] = useState("");
   const [isResearching, setIsResearching] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<ResearchResult | null>(null);
+  const [fitResult, setFitResult] = useState<FitAnalysisResult | null>(null);
 
   const handleResearch = async () => {
     if (!companyName.trim()) {
@@ -52,6 +29,7 @@ export default function SalesIntelligencePage() {
 
     setIsResearching(true);
     setResult(null);
+    setFitResult(null);
 
     try {
       const { data, error } = await supabase.functions.invoke("prospect-research", {
@@ -62,18 +40,45 @@ export default function SalesIntelligencePage() {
       });
 
       if (error) throw error;
-
       if (data?.error) {
         toast.error(data.error);
         return;
       }
 
       setResult(data as ResearchResult);
-      toast.success(`Research complete for ${companyName}`);
+      toast.success(`Research complete — saved to CRM`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Research failed");
     } finally {
       setIsResearching(false);
+    }
+  };
+
+  const handleFitAnalysis = async () => {
+    if (!result?.company?.id) {
+      toast.error("No company to analyze");
+      return;
+    }
+
+    setIsAnalyzing(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke("prospect-fit-analysis", {
+        body: { company_id: result.company.id },
+      });
+
+      if (error) throw error;
+      if (data?.error) {
+        toast.error(data.error);
+        return;
+      }
+
+      setFitResult(data as FitAnalysisResult);
+      toast.success(`Fit score: ${data.fit_score}/100`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Fit analysis failed");
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
@@ -93,7 +98,7 @@ export default function SalesIntelligencePage() {
               Prospect Research
             </CardTitle>
             <CardDescription>
-              Enter a company name to research using Jina Search, web scraping, and Hunter.io
+              Enter a company name to research and save to CRM
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -133,122 +138,43 @@ export default function SalesIntelligencePage() {
           </CardContent>
         </Card>
 
-        {/* Results */}
+        {/* Research Results */}
         {result && result.success && (
-          <div className="space-y-4">
-            {/* Company Summary */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Building2 className="h-4 w-4" />
-                  {result.company_summary.name || result.company.name}
-                  {result.company_summary.industry && (
-                    <Badge variant="secondary" className="text-xs font-normal">
-                      {result.company_summary.industry}
-                    </Badge>
-                  )}
-                </CardTitle>
-                {result.company_summary.size_estimate && (
-                  <CardDescription>Size: {result.company_summary.size_estimate}</CardDescription>
-                )}
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {result.company_summary.main_offerings && result.company_summary.main_offerings.length > 0 && (
+          <>
+            <ResearchResultCards result={result} />
+
+            {/* Fit Analysis Action */}
+            {!fitResult && (
+              <Card className="border-dashed">
+                <CardContent className="py-6 flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-medium text-muted-foreground mb-1.5">Main Offerings</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {result.company_summary.main_offerings.map((o, i) => (
-                        <Badge key={i} variant="outline" className="text-xs font-normal">{o}</Badge>
-                      ))}
-                    </div>
+                    <p className="text-sm font-medium">Next step: Run Fit Analysis</p>
+                    <p className="text-xs text-muted-foreground">
+                      Score this prospect, map problems to your services, and generate an intro letter
+                    </p>
                   </div>
-                )}
-                {result.company_summary.potential_pain_points && result.company_summary.potential_pain_points.length > 0 && (
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground mb-1.5">Potential Pain Points</p>
-                    <ul className="text-sm space-y-1">
-                      {result.company_summary.potential_pain_points.map((p, i) => (
-                        <li key={i} className="flex items-start gap-2">
-                          <span className="text-primary mt-0.5">•</span>
-                          {p}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {result.company.domain && (
-                  <a
-                    href={`https://${result.company.domain}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                  <Button
+                    onClick={handleFitAnalysis}
+                    disabled={isAnalyzing}
+                    variant="default"
+                    className="gap-2"
                   >
-                    {result.company.domain}
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Contacts Found */}
-            {result.contacts.length > 0 && (
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Users className="h-4 w-4" />
-                    Contacts Found
-                    <Badge variant="default" className="text-xs">{result.hunter_contacts_found}</Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {result.contacts.map((contact) => (
-                      <div key={contact.id} className="flex items-center justify-between p-2 rounded-md bg-muted/50">
-                        <div>
-                          <p className="text-sm font-medium">{contact.name || "Unknown"}</p>
-                          <p className="text-xs text-muted-foreground">{contact.email}</p>
-                        </div>
-                        <CheckCircle2 className="h-4 w-4 text-primary" />
-                      </div>
-                    ))}
-                  </div>
+                    {isAnalyzing ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-4 w-4" />
+                    )}
+                    {isAnalyzing ? "Analyzing..." : "Run Fit Analysis"}
+                  </Button>
                 </CardContent>
               </Card>
             )}
 
-            {/* Qualifying Questions */}
-            {result.questions_and_answers.length > 0 && (
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <MessageSquare className="h-4 w-4" />
-                    Qualifying Analysis
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ScrollArea className="max-h-[500px]">
-                    <div className="space-y-4">
-                      {result.questions_and_answers.map((qa, i) => (
-                        <div key={i} className="space-y-1.5">
-                          <div className="flex items-start justify-between gap-2">
-                            <p className="text-sm font-medium">{qa.question}</p>
-                            <Badge
-                              variant={qa.relevance_score >= 7 ? "default" : qa.relevance_score >= 4 ? "secondary" : "outline"}
-                              className="text-xs shrink-0"
-                            >
-                              {qa.relevance_score}/10
-                            </Badge>
-                          </div>
-                          <p className="text-sm text-muted-foreground">{qa.answer}</p>
-                          {i < result.questions_and_answers.length - 1 && <Separator />}
-                        </div>
-                      ))}
-                    </div>
-                  </ScrollArea>
-                </CardContent>
-              </Card>
+            {/* Fit Analysis Results */}
+            {fitResult && fitResult.success && (
+              <FitAnalysisCard result={fitResult} />
             )}
-          </div>
+          </>
         )}
       </AdminPageContainer>
     </AdminLayout>
