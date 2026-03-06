@@ -326,6 +326,8 @@ See **[DEPLOYMENT.md](./DEPLOYMENT.md)** for deploying to Easypanel, Railway, or
 | `send-webhook` | Trigger webhooks for events | Yes | - |
 | `setup-database` | Database setup/initialization | Yes (Admin) | - |
 | `setup-flowpilot` | Bootstrap agentic layer (skills, soul, identity) | Yes (Admin) | - |
+| `flowpilot-heartbeat` | Autonomous heartbeat loop (runs every 12h) | No | AI API keys |
+| `flowpilot-learn` | Analyze usage data → agent memory | No | - |
 | `sitemap-xml` | Generate sitemap | No | - |
 | `stripe-webhook` | Handle Stripe webhooks | No | `STRIPE_WEBHOOK_SECRET` |
 | `support-router` | Route support requests | No | - |
