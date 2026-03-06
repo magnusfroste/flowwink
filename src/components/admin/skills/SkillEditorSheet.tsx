@@ -54,6 +54,7 @@ export function SkillEditorSheet({ skill, open, onClose, onSave, onDelete }: Ski
     defaultValues: {
       name: '',
       description: '',
+      instructions: '',
       category: 'content',
       scope: 'internal',
       handler: '',
