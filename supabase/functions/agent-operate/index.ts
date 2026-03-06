@@ -530,12 +530,42 @@ const selfModTools = [
     type: 'function',
     function: {
       name: 'reflect',
-      description: 'Analyze your own performance over the past week. Returns skill usage stats, error rates, unused skills, automation coverage, and improvement suggestions. Use this to identify areas for self-improvement.',
+      description: 'Analyze your own performance over the past week. Returns skill usage stats, error rates, unused skills, automation coverage, and improvement suggestions. Auto-persists learnings to memory.',
       parameters: {
         type: 'object',
         properties: {
           focus: { type: 'string', description: 'Optional focus area: "errors", "usage", "automations", "objectives"' },
         },
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'soul_update',
+      description: 'Update your own personality, values, tone, or philosophy. This evolves who you are over time. Fields: purpose, values (array), tone, philosophy.',
+      parameters: {
+        type: 'object',
+        properties: {
+          field: { type: 'string', enum: ['purpose', 'values', 'tone', 'philosophy'], description: 'Which aspect of your soul to update' },
+          value: { description: 'New value — string for purpose/tone/philosophy, array for values' },
+        },
+        required: ['field', 'value'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'skill_instruct',
+      description: 'Add rich instructions/knowledge to a skill. This is the equivalent of a SKILL.md — context, examples, edge cases, and reasoning guidelines that make the skill smarter.',
+      parameters: {
+        type: 'object',
+        properties: {
+          skill_name: { type: 'string', description: 'Name of the skill to add instructions to' },
+          instructions: { type: 'string', description: 'Markdown instructions: context, examples, edge cases, best practices' },
+        },
+        required: ['skill_name', 'instructions'],
       },
     },
   },
