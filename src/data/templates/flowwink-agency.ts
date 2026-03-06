@@ -498,7 +498,7 @@ const flowwinkAgencyPages: TemplatePage[] = [
     menu_order: 4,
     showInMenu: true,
     meta: {
-      description: 'FlowWink features for agencies - Visual editor, headless API, AI chat, blog, forms, CRM, and more.',
+      description: 'FlowWink features for agencies - Visual editor, Content API, autonomous AI agent, blog, forms, CRM, and more.',
       showTitle: true,
       titleAlignment: 'center',
     },
