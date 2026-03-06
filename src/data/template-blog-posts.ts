@@ -708,7 +708,7 @@ export const agencyBlogPosts: TemplateBlogPost[] = [
             'Exposing raw platform URLs in emails or links'
           ),
           h2('Tools That Support White-Labeling'),
-          p('Not all platforms are equal. Self-hosted solutions like FlowWink give you complete control. SaaS platforms vary—some offer white-labeling only on expensive enterprise plans.'),
+          p('Not all platforms are equal. Self-hosted solutions like FlowWink give you complete control — including FlowPilot, an autonomous agent that can operate client sites for you. SaaS platforms vary—some offer white-labeling only on expensive enterprise plans.'),
         ],
       }),
     ],
