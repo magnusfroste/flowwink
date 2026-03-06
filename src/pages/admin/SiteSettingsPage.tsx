@@ -47,7 +47,64 @@ import { useUnsavedChanges, UnsavedChangesDialog } from '@/hooks/useUnsavedChang
 import { ResetSiteDialog } from '@/components/admin/ResetSiteDialog';
 
 
-function OgImagePicker({ value, onChange }: { value: string; onChange: (url: string) => void }) {
+function EnvironmentInfoCard() {
+  const [copied, setCopied] = useState<string | null>(null);
+
+  const envVars = [
+    { key: 'VITE_SUPABASE_URL', value: import.meta.env.VITE_SUPABASE_URL || '—' },
+    { key: 'VITE_SUPABASE_PROJECT_ID', value: import.meta.env.VITE_SUPABASE_PROJECT_ID || '—' },
+    { key: 'VITE_SUPABASE_PUBLISHABLE_KEY', value: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ? `${(import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string).slice(0, 20)}…` : '—' },
+  ];
+
+  const handleCopy = (key: string, value: string) => {
+    // Copy full value, not truncated
+    const fullValue = key === 'VITE_SUPABASE_PUBLISHABLE_KEY' 
+      ? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY 
+      : value;
+    navigator.clipboard.writeText(fullValue || '');
+    setCopied(key);
+    setTimeout(() => setCopied(null), 2000);
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="font-serif flex items-center gap-2">
+          <Server className="h-5 w-5" />
+          Environment
+        </CardTitle>
+        <CardDescription>
+          Configured environment variables for this instance
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-3">
+          {envVars.map(({ key, value }) => (
+            <div key={key} className="flex items-center justify-between gap-4 p-3 rounded-lg bg-muted/50 border">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-medium text-muted-foreground">{key}</p>
+                <p className="text-sm font-mono truncate">{value}</p>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 shrink-0"
+                onClick={() => handleCopy(key, value)}
+              >
+                {copied === key ? (
+                  <Check className="h-4 w-4 text-green-600" />
+                ) : (
+                  <Copy className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
   const [showPicker, setShowPicker] = useState(false);
 
   return (
