@@ -127,6 +127,33 @@
 "Research Acme Corp and prepare an introduction if fit score > 70" → chained execution
 ```
 
+## Phase 9: Autonomous Wiring ✅ DONE
+
+### Completed
+- **Cron scheduling fix** — dispatcher picks up NULL `next_run_at` automations and initializes them
+- **DB triggers** — Postgres triggers on `leads`, `blog_posts`, `bookings`, `form_submissions`, `orders` fire events + signals via `pg_net`
+- **Objective progress auto-tracking** — `agent-execute` links successful skills to matching objectives
+
+## Phase 10: Agent Self-Evolution ✅ DONE
+
+### Completed
+- **SOUL/IDENTITY layer** — persistent personality stored in `agent_memory` (soul: purpose/values/tone/philosophy, identity: name/role/capabilities/boundaries), injected into every system prompt
+- **`soul_update` tool** — FlowPilot can evolve its own personality, values, and tone over time
+- **`instructions` field on `agent_skills`** — rich markdown knowledge (equivalent to OpenClaw's SKILL.md) injected into prompts when skills load
+- **`skill_instruct` tool** — FlowPilot can write knowledge/context/examples into any skill, making it smarter
+- **Reflect → auto-persist** — `reflect` tool now auto-saves error learnings and suggestions to `agent_memory` as lessons
+- **Skill Hub UI** — Instructions field added to SkillEditorSheet for manual editing
+- **Memory filtering** — soul/identity excluded from general memory list to avoid duplication in prompts
+
+### OpenClaw/NanoClaw Parity
+| Concept | OpenClaw | NanoClaw | FlowPilot |
+|---------|----------|----------|-----------|
+| Personality | SOUL.md file | SOUL.md + IDENTITY.md | `agent_memory` soul + identity entries |
+| Skill knowledge | SKILL.md markdown | .claude/skills/SKILL.md | `instructions` column on `agent_skills` |
+| Self-modification | Terminal (code rewrite) | Claude Code rewrite | DB tools (skill_create/update/instruct, soul_update) |
+| Heartbeat | HEARTBEAT.md config | task-scheduler.ts | `flowpilot-heartbeat` edge fn + pg_cron |
+| Learning loop | Manual | Implicit via Claude | reflect → auto-persist to memory |
+
 ## Architecture Reference
 
 ```
@@ -140,10 +167,12 @@ skill.handler routing:
 ## Key Files
 | File | Purpose |
 |------|---------|
-| `supabase/functions/agent-execute/index.ts` | Unified skill executor |
+| `supabase/functions/agent-execute/index.ts` | Unified skill executor + objective tracker |
+| `supabase/functions/agent-operate/index.ts` | FlowPilot operate mode with SOUL/IDENTITY |
+| `supabase/functions/flowpilot-heartbeat/index.ts` | Autonomous 12h heartbeat loop |
+| `supabase/functions/automation-dispatcher/index.ts` | Cron automation executor |
+| `supabase/functions/signal-dispatcher/index.ts` | Signal condition evaluator |
 | `supabase/functions/prospect-research/index.ts` | Sales research pipeline |
 | `supabase/functions/prospect-fit-analysis/index.ts` | Fit scoring + intro drafting |
 | `src/types/agent.ts` | TypeScript types for skill engine |
-| `src/lib/module-registry.ts` | Existing module registry (14 modules) |
-| `supabase/functions/copilot-action/index.ts` | Current FlowPilot (to be refactored) |
-| `supabase/functions/chat-completion/index.ts` | Current public chat (to integrate skills) |
+| `src/components/admin/skills/SkillEditorSheet.tsx` | Skill editor with instructions field |
