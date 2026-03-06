@@ -100,6 +100,8 @@ serve(async (req) => {
     } else if (handler.startsWith('module:')) {
       // Module registry — route through the module's table
       const moduleName = handler.replace('module:', '');
+      // Auto-activate module if not enabled
+      await autoActivateModule(supabase, moduleName);
       result = await executeModuleAction(supabase, moduleName, skill.name, args);
 
     } else if (handler.startsWith('db:')) {
