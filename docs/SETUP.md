@@ -326,6 +326,8 @@ See **[DEPLOYMENT.md](./DEPLOYMENT.md)** for deploying to Easypanel, Railway, or
 | `send-webhook` | Trigger webhooks for events | Yes | - |
 | `setup-database` | Database setup/initialization | Yes (Admin) | - |
 | `setup-flowpilot` | Bootstrap agentic layer (skills, soul, identity) | Yes (Admin) | - |
+| `flowpilot-heartbeat` | Autonomous heartbeat loop (runs every 12h) | No | AI API keys |
+| `flowpilot-learn` | Analyze usage data → agent memory | No | - |
 | `sitemap-xml` | Generate sitemap | No | - |
 | `stripe-webhook` | Handle Stripe webhooks | No | `STRIPE_WEBHOOK_SECRET` |
 | `support-router` | Route support requests | No | - |
@@ -352,6 +354,36 @@ SELECT cron.schedule(
     url := 'https://YOUR_PROJECT_REF.supabase.co/functions/v1/publish-scheduled-pages',
     headers := '{"Authorization": "Bearer YOUR_SERVICE_ROLE_KEY"}'::jsonb
   );
+  $$
+);
+```
+
+### FlowPilot Autonomous Loop
+
+```sql
+-- Heartbeat every 12 hours (00:00, 12:00 UTC)
+SELECT cron.schedule(
+  'flowpilot-heartbeat',
+  '0 0,12 * * *',
+  $$
+  SELECT net.http_post(
+    url := 'https://YOUR_PROJECT_REF.supabase.co/functions/v1/flowpilot-heartbeat',
+    headers := '{"Content-Type": "application/json", "Authorization": "Bearer YOUR_ANON_KEY"}'::jsonb,
+    body := concat('{"time": "', now(), '"}')::jsonb
+  ) AS request_id;
+  $$
+);
+
+-- Learn from usage data daily at 03:00 UTC
+SELECT cron.schedule(
+  'flowpilot-learn',
+  '0 3 * * *',
+  $$
+  SELECT net.http_post(
+    url := 'https://YOUR_PROJECT_REF.supabase.co/functions/v1/flowpilot-learn',
+    headers := '{"Content-Type": "application/json", "Authorization": "Bearer YOUR_ANON_KEY"}'::jsonb,
+    body := concat('{"time": "', now(), '"}')::jsonb
+  ) AS request_id;
   $$
 );
 ```
