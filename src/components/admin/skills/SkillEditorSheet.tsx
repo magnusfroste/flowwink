@@ -29,6 +29,7 @@ import { Trash2 } from 'lucide-react';
 const schema = z.object({
   name: z.string().min(1, 'Required'),
   description: z.string().optional(),
+  instructions: z.string().optional(),
   category: z.enum(['content', 'crm', 'communication', 'automation', 'search', 'analytics']),
   scope: z.enum(['internal', 'external', 'both']),
   handler: z.string().min(1, 'Required'),
@@ -53,6 +54,7 @@ export function SkillEditorSheet({ skill, open, onClose, onSave, onDelete }: Ski
     defaultValues: {
       name: '',
       description: '',
+      instructions: '',
       category: 'content',
       scope: 'internal',
       handler: '',
@@ -67,6 +69,7 @@ export function SkillEditorSheet({ skill, open, onClose, onSave, onDelete }: Ski
       form.reset({
         name: skill.name,
         description: skill.description ?? '',
+        instructions: skill.instructions ?? '',
         category: skill.category,
         scope: skill.scope,
         handler: skill.handler,
@@ -78,6 +81,7 @@ export function SkillEditorSheet({ skill, open, onClose, onSave, onDelete }: Ski
       form.reset({
         name: '',
         description: '',
+        instructions: '',
         category: 'content',
         scope: 'internal',
         handler: '',
@@ -101,6 +105,7 @@ export function SkillEditorSheet({ skill, open, onClose, onSave, onDelete }: Ski
       id: skill?.id,
       name: values.name,
       description: values.description || null,
+      instructions: values.instructions || null,
       category: values.category,
       scope: values.scope,
       handler: values.handler,
@@ -139,6 +144,23 @@ export function SkillEditorSheet({ skill, open, onClose, onSave, onDelete }: Ski
               {...form.register('description')}
               placeholder="What does this skill do?"
               rows={2}
+            />
+          </div>
+
+          {/* Instructions (SKILL.md equivalent) */}
+          <div className="space-y-1.5">
+            <Label htmlFor="instructions">
+              Instructions
+              <span className="text-muted-foreground font-normal ml-1.5 text-[11px]">
+                (knowledge injected into agent prompt)
+              </span>
+            </Label>
+            <Textarea
+              id="instructions"
+              {...form.register('instructions')}
+              placeholder="Context, examples, edge cases, best practices — like a SKILL.md..."
+              rows={4}
+              className="font-mono text-xs"
             />
           </div>
 

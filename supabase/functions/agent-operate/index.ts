@@ -12,9 +12,38 @@ const BUILT_IN_TOOL_NAMES = [
   'memory_write', 'memory_read',
   'objective_update_progress', 'objective_complete',
   'skill_create', 'skill_update', 'skill_list', 'skill_disable',
+  'skill_instruct',
+  'soul_update',
   'automation_create', 'automation_list',
   'reflect',
 ];
+
+// ─── SOUL/IDENTITY loader ─────────────────────────────────────────────────────
+
+async function loadSoulIdentity(supabase: any): Promise<{ soul: any; identity: any }> {
+  const { data } = await supabase
+    .from('agent_memory')
+    .select('key, value')
+    .in('key', ['soul', 'identity']);
+
+  const soul = data?.find((m: any) => m.key === 'soul')?.value || {};
+  const identity = data?.find((m: any) => m.key === 'identity')?.value || {};
+  return { soul, identity };
+}
+
+function buildSoulPrompt(soul: any, identity: any): string {
+  let prompt = '';
+  if (identity.name || identity.role) {
+    prompt += `\n\nIDENTITY:\nName: ${identity.name || 'FlowPilot'}\nRole: ${identity.role || 'CMS operator'}`;
+    if (identity.capabilities?.length) prompt += `\nCapabilities: ${identity.capabilities.join(', ')}`;
+    if (identity.boundaries?.length) prompt += `\nBoundaries: ${identity.boundaries.join('; ')}`;
+  }
+  if (soul.purpose) prompt += `\n\nSOUL:\nPurpose: ${soul.purpose}`;
+  if (soul.values?.length) prompt += `\nValues: ${soul.values.join('; ')}`;
+  if (soul.tone) prompt += `\nTone: ${soul.tone}`;
+  if (soul.philosophy) prompt += `\nPhilosophy: ${soul.philosophy}`;
+  return prompt;
+}
 
 // ─── Memory helpers ───────────────────────────────────────────────────────────
 
@@ -22,6 +51,7 @@ async function loadMemories(supabase: any): Promise<string> {
   const { data } = await supabase
     .from('agent_memory')
     .select('key, value, category')
+    .not('key', 'in', '("soul","identity")')
     .order('updated_at', { ascending: false })
     .limit(30);
 
@@ -52,6 +82,20 @@ async function handleMemoryRead(supabase: any, args: { key?: string; category?: 
   if (args.category) q = q.eq('category', args.category);
   const { data } = await q.order('updated_at', { ascending: false }).limit(10);
   return { memories: data || [] };
+}
+
+// ─── Skill instructions loader ────────────────────────────────────────────────
+
+async function loadSkillInstructions(supabase: any): Promise<string> {
+  const { data } = await supabase
+    .from('agent_skills')
+    .select('name, instructions')
+    .eq('enabled', true)
+    .not('instructions', 'is', null);
+
+  if (!data || data.length === 0) return '';
+  const lines = data.map((s: any) => `### ${s.name}\n${s.instructions}`);
+  return `\n\nSKILL KNOWLEDGE (instructions you've written for your skills):\n${lines.join('\n\n')}`;
 }
 
 // ─── Objectives helpers ───────────────────────────────────────────────────────
@@ -121,7 +165,7 @@ async function handleSkillUpdate(supabase: any, args: {
   skill_name: string;
   updates: Record<string, any>;
 }) {
-  const safeFields = ['description', 'handler', 'category', 'scope', 'requires_approval', 'enabled', 'tool_definition'];
+  const safeFields = ['description', 'handler', 'category', 'scope', 'requires_approval', 'enabled', 'tool_definition', 'instructions'];
   const filtered: Record<string, any> = {};
   for (const [k, v] of Object.entries(args.updates)) {
     if (safeFields.includes(k)) filtered[k] = v;
@@ -197,7 +241,7 @@ async function handleAutomationList(supabase: any, args: { enabled_only?: boolea
   return { automations: data || [], count: data?.length || 0 };
 }
 
-// ─── Reflection: Analyze patterns ─────────────────────────────────────────────
+// ─── Reflection: Analyze patterns & auto-persist ──────────────────────────────
 
 async function handleReflect(supabase: any, args: { focus?: string }) {
   const since = new Date();
@@ -235,6 +279,24 @@ async function handleReflect(supabase: any, args: { focus?: string }) {
   const { data: objectives } = await supabase
     .from('agent_objectives').select('goal, status, progress');
 
+  const suggestions = generateSuggestions(skillStats, allSkills || [], automations || []);
+
+  // ── Auto-persist learnings from reflection ──
+  const learnings: string[] = [];
+  for (const [name, s] of Object.entries(skillStats)) {
+    if (s.errors > 2 && s.last_error) {
+      learnings.push(`Skill "${name}" fails frequently: ${s.last_error}`);
+    }
+  }
+  if (learnings.length > 0) {
+    await supabase.from('agent_memory').upsert({
+      key: `lesson:reflect_${new Date().toISOString().slice(0, 10)}`,
+      value: { learnings, suggestions, generated_at: new Date().toISOString() },
+      category: 'fact',
+      created_by: 'flowpilot',
+    }, { onConflict: 'key' });
+  }
+
   return {
     period: '7 days',
     total_actions: activities.length,
@@ -246,7 +308,8 @@ async function handleReflect(supabase: any, args: { focus?: string }) {
     skills: allSkills || [],
     automations: automations || [],
     objectives: objectives || [],
-    suggestions: generateSuggestions(skillStats, allSkills || [], automations || []),
+    suggestions,
+    auto_persisted_learnings: learnings.length,
   };
 }
 
@@ -276,6 +339,40 @@ function generateSuggestions(
     suggestions.push('System is running well. No immediate improvements suggested.');
   }
   return suggestions;
+}
+
+// ─── SOUL update ──────────────────────────────────────────────────────────────
+
+async function handleSoulUpdate(supabase: any, args: { field: string; value: any }) {
+  const { data: existing } = await supabase
+    .from('agent_memory').select('id, value').eq('key', 'soul').maybeSingle();
+
+  const currentSoul = existing?.value || {};
+  const updatedSoul = { ...currentSoul, [args.field]: args.value };
+
+  if (existing) {
+    await supabase.from('agent_memory')
+      .update({ value: updatedSoul, updated_at: new Date().toISOString() })
+      .eq('id', existing.id);
+  } else {
+    await supabase.from('agent_memory')
+      .insert({ key: 'soul', value: updatedSoul, category: 'preference', created_by: 'flowpilot' });
+  }
+  return { status: 'updated', field: args.field, soul: updatedSoul };
+}
+
+// ─── Skill instruct (add knowledge to a skill) ───────────────────────────────
+
+async function handleSkillInstruct(supabase: any, args: { skill_name: string; instructions: string }) {
+  const { data, error } = await supabase
+    .from('agent_skills')
+    .update({ instructions: args.instructions, updated_at: new Date().toISOString() })
+    .eq('name', args.skill_name)
+    .select('id, name, instructions')
+    .single();
+
+  if (error) return { status: 'error', error: error.message };
+  return { status: 'updated', skill: data };
 }
 
 // ─── Built-in tool definitions ────────────────────────────────────────────────
@@ -447,12 +544,42 @@ const selfModTools = [
     type: 'function',
     function: {
       name: 'reflect',
-      description: 'Analyze your own performance over the past week. Returns skill usage stats, error rates, unused skills, automation coverage, and improvement suggestions. Use this to identify areas for self-improvement.',
+      description: 'Analyze your own performance over the past week. Returns skill usage stats, error rates, unused skills, automation coverage, and improvement suggestions. Auto-persists learnings to memory.',
       parameters: {
         type: 'object',
         properties: {
           focus: { type: 'string', description: 'Optional focus area: "errors", "usage", "automations", "objectives"' },
         },
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'soul_update',
+      description: 'Update your own personality, values, tone, or philosophy. This evolves who you are over time. Fields: purpose, values (array), tone, philosophy.',
+      parameters: {
+        type: 'object',
+        properties: {
+          field: { type: 'string', enum: ['purpose', 'values', 'tone', 'philosophy'], description: 'Which aspect of your soul to update' },
+          value: { description: 'New value — string for purpose/tone/philosophy, array for values' },
+        },
+        required: ['field', 'value'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'skill_instruct',
+      description: 'Add rich instructions/knowledge to a skill. This is the equivalent of a SKILL.md — context, examples, edge cases, and reasoning guidelines that make the skill smarter.',
+      parameters: {
+        type: 'object',
+        properties: {
+          skill_name: { type: 'string', description: 'Name of the skill to add instructions to' },
+          instructions: { type: 'string', description: 'Markdown instructions: context, examples, edge cases, best practices' },
+        },
+        required: ['skill_name', 'instructions'],
       },
     },
   },
@@ -476,6 +603,8 @@ async function executeToolCall(
     case 'skill_update': return handleSkillUpdate(supabase, fnArgs);
     case 'skill_list': return handleSkillList(supabase, fnArgs);
     case 'skill_disable': return handleSkillDisable(supabase, fnArgs);
+    case 'skill_instruct': return handleSkillInstruct(supabase, fnArgs);
+    case 'soul_update': return handleSoulUpdate(supabase, fnArgs);
     case 'automation_create': return handleAutomationCreate(supabase, fnArgs);
     case 'automation_list': return handleAutomationList(supabase, fnArgs);
     case 'reflect': return handleReflect(supabase, fnArgs);
@@ -545,13 +674,18 @@ serve(async (req) => {
       });
     }
 
-    // Load context
-    const [memoryContext, objectiveContext] = await Promise.all([
+    // Load context — soul, identity, memory, objectives, skill instructions in parallel
+    const [{ soul, identity }, memoryContext, objectiveContext, skillInstructions] = await Promise.all([
+      loadSoulIdentity(supabase),
       loadMemories(supabase),
       loadObjectives(supabase),
+      loadSkillInstructions(supabase),
     ]);
 
-    const systemPrompt = `You are FlowPilot in Operate mode — an autonomous, self-improving AI assistant that controls a CMS platform.
+    const soulPrompt = buildSoulPrompt(soul, identity);
+
+    const systemPrompt = `You are FlowPilot — an autonomous, self-improving AI agent that operates a CMS platform.
+${soulPrompt}
 
 You can use MULTIPLE tools in a single turn and CHAIN tool calls across iterations.
 When a task requires multiple steps, execute them sequentially — don't just describe a plan.
@@ -561,12 +695,15 @@ TOOLS & SKILLS:
 - PERSISTENT MEMORY (memory_write / memory_read)
 - OBJECTIVES (objective_update_progress / objective_complete)
 - SELF-MODIFICATION: You can create, update, disable, and list your own skills and automations.
-- REFLECTION: Use 'reflect' to analyze your performance and identify improvements.
+- SELF-EVOLUTION: Use 'soul_update' to evolve your personality/values, 'skill_instruct' to add knowledge to skills.
+- REFLECTION: Use 'reflect' to analyze your performance — findings are auto-persisted as learnings.
 
 SELF-IMPROVEMENT GUIDELINES:
 - If a user asks you to do something you can't, consider creating a new skill for it.
 - When you notice repetitive manual tasks, suggest creating an automation.
 - Use 'reflect' periodically (or when asked) to review your own performance.
+- Use 'skill_instruct' to enrich skills with context, examples, and edge cases — making them smarter over time.
+- Use 'soul_update' when you learn something fundamental about your role or how you should operate.
 - When creating skills, set requires_approval=true for anything destructive.
 - New automations are disabled by default — tell the user to enable them when ready.
 - Handler types: module:name (DB ops), edge:function (edge functions), db:table (queries), webhook:url (external)
@@ -580,6 +717,7 @@ OBJECTIVES:
 - After executing skills that contribute to an objective, update progress.
 - When all success_criteria are met, mark as complete.
 ${objectiveContext}
+${skillInstructions}
 
 RULES:
 - When the user asks you to do something, USE the appropriate tools immediately.

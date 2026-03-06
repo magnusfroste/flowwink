@@ -242,6 +242,7 @@ export type Database = {
           enabled: boolean
           handler: string
           id: string
+          instructions: string | null
           name: string
           requires_approval: boolean
           scope: Database["public"]["Enums"]["agent_scope"]
@@ -255,6 +256,7 @@ export type Database = {
           enabled?: boolean
           handler: string
           id?: string
+          instructions?: string | null
           name: string
           requires_approval?: boolean
           scope?: Database["public"]["Enums"]["agent_scope"]
@@ -268,6 +270,7 @@ export type Database = {
           enabled?: boolean
           handler?: string
           id?: string
+          instructions?: string | null
           name?: string
           requires_approval?: boolean
           scope?: Database["public"]["Enums"]["agent_scope"]

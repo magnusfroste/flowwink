@@ -1,0 +1,1 @@
+ALTER TABLE public.agent_skills ADD COLUMN IF NOT EXISTS instructions text DEFAULT NULL;
