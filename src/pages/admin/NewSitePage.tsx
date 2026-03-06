@@ -1008,6 +1008,10 @@ export default function NewSitePage() {
                 <Button variant="outline" onClick={() => navigate('/admin/pages')}>
                   View All Pages
                 </Button>
+                <Button variant="outline" onClick={() => setShowOnboardingWizard(true)} className="gap-2">
+                  <Sparkles className="h-4 w-4" />
+                  Set Business Goals
+                </Button>
                 {createdPageIds[0] && (
                   <Button onClick={() => navigate(`/admin/pages/${createdPageIds[0]}`)}>
                     Edit Homepage
@@ -1016,6 +1020,12 @@ export default function NewSitePage() {
               </div>
             </CardContent>
           </Card>
+
+          <FlowPilotOnboardingWizard
+            open={showOnboardingWizard}
+            onOpenChange={setShowOnboardingWizard}
+            templateName={selectedTemplate?.name}
+          />
         )}
       </div>
     </AdminLayout>
