@@ -356,6 +356,9 @@ export default function SiteSettingsPage() {
               </CardContent>
             </Card>
 
+            {/* Environment Info */}
+            <EnvironmentInfoCard />
+
             {/* Danger Zone */}
             <Card className="border-destructive/50">
               <CardHeader>
