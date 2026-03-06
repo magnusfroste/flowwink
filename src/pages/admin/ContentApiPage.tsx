@@ -396,7 +396,7 @@ export default async function Home() {
       <div className="space-y-8">
         <AdminPageHeader
           title="Content API"
-          description="Developer tools for headless content delivery. REST & GraphQL."
+          description="Developer tools for multi-channel content delivery. REST & GraphQL."
         />
 
         {/* Hero Section */}
