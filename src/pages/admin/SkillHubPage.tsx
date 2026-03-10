@@ -85,7 +85,7 @@ export default function SkillHubPage() {
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="skills">
+      <Tabs defaultValue={defaultTab}>
         <TabsList>
           <TabsTrigger value="skills">Skills</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
