@@ -291,6 +291,10 @@ async function executeModuleAction(
       return { objective_id: data.id, goal: data.goal, status: data.status };
     }
 
+    case 'analytics': {
+      return await executeAnalyticsAction(supabase, skillName, args);
+    }
+
     case 'automations': {
       const { name, description, trigger_type = 'cron', trigger_config = {}, skill_name: targetSkill, skill_arguments = {}, enabled = false } = args as any;
       if (!name || !targetSkill) throw new Error('name and skill_name are required');
