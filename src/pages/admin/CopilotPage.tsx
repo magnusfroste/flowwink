@@ -44,79 +44,78 @@ export default function CopilotPage() {
 
   return (
     <AdminLayout>
-      <div className="flex h-full">
-        {/* Chat history sidebar */}
-        <aside className="hidden md:flex w-64 lg:w-72 border-r bg-muted/30 flex-col shrink-0">
-          <div className="p-3 border-b">
-            <Button onClick={handleNewChat} className="w-full gap-2" size="sm">
-              <Plus className="h-4 w-4" />
-              New chat
-            </Button>
-          </div>
-          <ScrollArea className="flex-1">
-            <div className="p-2 space-y-0.5">
-              {operate.conversations.map((conv) => (
-                <button
-                  key={conv.id}
-                  onClick={() => handleSwitchConversation(conv.id)}
-                  className={cn(
-                    'w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm group transition-colors',
-                    'hover:bg-muted',
-                    operate.conversationId === conv.id && 'bg-muted'
-                  )}
-                >
-                  <Zap className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <span className="block truncate text-foreground">
-                      {conv.title || 'Untitled'}
-                    </span>
-                    <span className="block text-[10px] text-muted-foreground">
-                      {formatDistanceToNow(new Date(conv.updated_at), { addSuffix: true })}
-                    </span>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 opacity-0 group-hover:opacity-100 shrink-0"
-                    onClick={(e) => handleDeleteConversation(conv.id, e)}
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
-                </button>
-              ))}
-
-              {operate.conversations.length === 0 && (
-                <div className="flex flex-col items-center gap-2 py-8 px-4 text-muted-foreground">
-                  <MessageSquare className="h-8 w-8 opacity-30" />
-                  <p className="text-xs text-center">No previous chats</p>
+      {/* Chat history sidebar — full height */}
+      <aside className="hidden md:flex w-64 lg:w-72 border-r bg-muted/30 flex-col shrink-0">
+        <div className="p-3 border-b">
+          <Button onClick={handleNewChat} className="w-full gap-2" size="sm">
+            <Plus className="h-4 w-4" />
+            New chat
+          </Button>
+        </div>
+        <ScrollArea className="flex-1">
+          <div className="p-2 space-y-0.5">
+            {operate.conversations.map((conv) => (
+              <button
+                key={conv.id}
+                onClick={() => handleSwitchConversation(conv.id)}
+                className={cn(
+                  'w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm group transition-colors',
+                  'hover:bg-muted',
+                  operate.conversationId === conv.id && 'bg-muted'
+                )}
+              >
+                <Zap className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <span className="block truncate text-foreground">
+                    {conv.title || 'Untitled'}
+                  </span>
+                  <span className="block text-[10px] text-muted-foreground">
+                    {formatDistanceToNow(new Date(conv.updated_at), { addSuffix: true })}
+                  </span>
                 </div>
-              )}
-            </div>
-          </ScrollArea>
-        </aside>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 opacity-0 group-hover:opacity-100 shrink-0"
+                  onClick={(e) => handleDeleteConversation(conv.id, e)}
+                >
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </button>
+            ))}
 
-        {/* Main chat + context */}
-        <div className="flex-1 flex flex-col min-w-0">
-          <div className="flex-1 flex overflow-hidden relative">
-            <div className="flex-1 min-w-0 border-r flex flex-col">
-              <UnifiedChat
-                key={chatKey}
-                scope="admin"
-                messages={operate.messages}
-                skills={operate.skills}
-                isLoading={operate.isLoading}
-                onSendMessage={handleSendMessage}
-                onReset={operate.clearMessages}
-                onCancel={operate.cancelRequest}
-              />
-            </div>
-            <div className="hidden lg:flex w-72 xl:w-80 shrink-0 flex-col bg-muted/30 overflow-hidden">
-              <ContextPanel
-                activities={operate.activities}
-                onApprove={operate.approveAction}
-                onRefresh={operate.loadActivity}
-              />
-            </div>
+            {operate.conversations.length === 0 && (
+              <div className="flex flex-col items-center gap-2 py-8 px-4 text-muted-foreground">
+                <MessageSquare className="h-8 w-8 opacity-30" />
+                <p className="text-xs text-center">No previous chats</p>
+              </div>
+            )}
+          </div>
+        </ScrollArea>
+      </aside>
+
+      {/* Right column: header + chat + context */}
+      <div className="flex-1 flex flex-col min-w-0">
+        <AdminContentHeader />
+        <div className="flex-1 flex overflow-hidden">
+          <div className="flex-1 min-w-0 border-r flex flex-col">
+            <UnifiedChat
+              key={chatKey}
+              scope="admin"
+              messages={operate.messages}
+              skills={operate.skills}
+              isLoading={operate.isLoading}
+              onSendMessage={handleSendMessage}
+              onReset={operate.clearMessages}
+              onCancel={operate.cancelRequest}
+            />
+          </div>
+          <div className="hidden lg:flex w-72 xl:w-80 shrink-0 flex-col bg-muted/30 overflow-hidden">
+            <ContextPanel
+              activities={operate.activities}
+              onApprove={operate.approveAction}
+              onRefresh={operate.loadActivity}
+            />
           </div>
         </div>
       </div>
