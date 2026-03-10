@@ -11,6 +11,7 @@ import { useBrandingSettings } from '@/hooks/useSiteSettings';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import {
+import {
   Sidebar,
   SidebarHeader,
   SidebarContent,
@@ -26,6 +27,7 @@ import {
 export default function CopilotPage() {
   const operate = useAgentOperate();
   const [chatKey, setChatKey] = useState(0);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const { data: branding } = useBrandingSettings();
   const { searchOpen, setSearchOpen } = useAdminSearch();
   const adminName = branding?.adminName || 'FlowWink';
