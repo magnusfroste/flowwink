@@ -153,8 +153,9 @@ const MODULE_HANDLER_TO_SETTING: Record<string, string> = {
   booking: 'bookings',
   newsletter: 'newsletter',
   orders: 'orders',
-  objectives: 'analytics', // objectives relate to analytics/insights
+  objectives: 'analytics',
   products: 'products',
+  media: 'media',
 };
 
 async function autoActivateModule(
