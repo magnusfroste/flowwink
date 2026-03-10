@@ -1,5 +1,5 @@
 import { ReactNode, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { AdminSidebar } from './AdminSidebar';
 import { AdminContentHeader } from './AdminContentHeader';
@@ -13,6 +13,9 @@ interface AdminLayoutProps {
 export function AdminLayout({ children }: AdminLayoutProps) {
   const { user, loading, isWriter } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const isCopilotMode = location.pathname === '/admin/copilot';
 
   useEffect(() => {
     if (!loading && !user) {
@@ -51,6 +54,22 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           </p>
         </div>
       </div>
+    );
+  }
+
+  // In copilot mode: no sidebar, just header + full-width content
+  if (isCopilotMode) {
+    return (
+      <SidebarProvider>
+        <div className="flex h-screen w-full bg-background">
+          <div className="flex-1 flex flex-col min-w-0">
+            <AdminContentHeader />
+            <main className="flex-1 overflow-hidden animate-fade-in">
+              {children}
+            </main>
+          </div>
+        </div>
+      </SidebarProvider>
     );
   }
 

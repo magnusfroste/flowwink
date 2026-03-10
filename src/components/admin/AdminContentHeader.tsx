@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, BarChart3, FileText, Users, Settings, BookOpen, Image, Mail,
   Puzzle, Webhook, UserCheck, Briefcase, Building2, Package, Library, ShoppingCart,
@@ -30,10 +30,13 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 
 export function AdminContentHeader() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, profile, signOut } = useAuth();
   const { pins, removePin } = usePinnedPages(user?.id);
   const { currentVersion, latestVersion, latestReleaseUrl, hasUpdate } = useVersionCheck();
   const GITHUB_RELEASES_URL = 'https://github.com/magnusfroste/flowwink/releases';
+
+  const isCopilotMode = location.pathname === '/admin/copilot';
 
   const initials =
     profile?.full_name?.charAt(0)?.toUpperCase() ||
@@ -42,54 +45,87 @@ export function AdminContentHeader() {
 
   return (
     <div className="h-10 flex items-center gap-1 px-2 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shrink-0">
-      {/* Sidebar trigger */}
-      <SidebarTrigger className="h-7 w-7 shrink-0" />
+      {/* Sidebar trigger — only in dashboard mode */}
+      {!isCopilotMode && <SidebarTrigger className="h-7 w-7 shrink-0" />}
 
-      {/* Pinned favorites */}
-      <div className="flex-1 flex items-center gap-0.5 overflow-x-auto scrollbar-none min-w-0 ml-1">
-        {pins.map((pin) => {
-          const Icon = iconMap[pin.icon];
-          const isActive =
-            location.pathname === pin.href ||
-            (pin.href !== '/admin' && location.pathname.startsWith(pin.href));
-
-          return (
-            <Tooltip key={pin.href}>
-              <TooltipTrigger asChild>
-                <Link
-                  to={pin.href}
-                  className={cn(
-                    'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-colors',
-                    isActive
-                      ? 'bg-accent text-accent-foreground'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-muted',
-                  )}
-                >
-                  {Icon && <Icon className="h-3.5 w-3.5 shrink-0" />}
-                  <span className="hidden sm:inline">{pin.name}</span>
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="flex items-center gap-2">
-                {pin.name}
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    removePin(pin.href);
-                  }}
-                  className="text-muted-foreground hover:text-destructive"
-                >
-                  <PinOff className="h-3 w-3" />
-                </button>
-              </TooltipContent>
-            </Tooltip>
-          );
-        })}
-        {pins.length === 0 && (
-          <span className="text-xs text-muted-foreground/50 ml-1 select-none">
-            Pin pages here for quick access
-          </span>
-        )}
+      {/* Mode toggle pills */}
+      <div className="flex items-center bg-muted/50 rounded-lg p-0.5 gap-0.5 ml-1 shrink-0">
+        <button
+          onClick={() => navigate('/admin')}
+          className={cn(
+            'flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors',
+            !isCopilotMode
+              ? 'bg-background text-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground',
+          )}
+        >
+          <LayoutDashboard className="h-3.5 w-3.5" />
+          Dashboard
+        </button>
+        <button
+          onClick={() => navigate('/admin/copilot')}
+          className={cn(
+            'flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors',
+            isCopilotMode
+              ? 'bg-background text-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground',
+          )}
+        >
+          <Zap className="h-3.5 w-3.5" />
+          FlowPilot
+        </button>
       </div>
+
+      {/* Pinned favorites — only in dashboard mode */}
+      {!isCopilotMode && (
+        <div className="flex-1 flex items-center gap-0.5 overflow-x-auto scrollbar-none min-w-0 ml-1">
+          {pins.map((pin) => {
+            const Icon = iconMap[pin.icon];
+            const isActive =
+              location.pathname === pin.href ||
+              (pin.href !== '/admin' && location.pathname.startsWith(pin.href));
+
+            return (
+              <Tooltip key={pin.href}>
+                <TooltipTrigger asChild>
+                  <Link
+                    to={pin.href}
+                    className={cn(
+                      'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-colors',
+                      isActive
+                        ? 'bg-accent text-accent-foreground'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted',
+                    )}
+                  >
+                    {Icon && <Icon className="h-3.5 w-3.5 shrink-0" />}
+                    <span className="hidden sm:inline">{pin.name}</span>
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="flex items-center gap-2">
+                  {pin.name}
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      removePin(pin.href);
+                    }}
+                    className="text-muted-foreground hover:text-destructive"
+                  >
+                    <PinOff className="h-3 w-3" />
+                  </button>
+                </TooltipContent>
+              </Tooltip>
+            );
+          })}
+          {pins.length === 0 && (
+            <span className="text-xs text-muted-foreground/50 ml-1 select-none">
+              Pin pages here for quick access
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Spacer in copilot mode */}
+      {isCopilotMode && <div className="flex-1" />}
 
       {/* Profile */}
       <DropdownMenu>
