@@ -147,10 +147,11 @@ export default function ChatSettingsPage() {
     }
   }, [settings]);
 
-  // Track unsaved changes
+  // Track unsaved changes — compare against settings WITH defaults merged
   const hasChanges = useMemo(() => {
     if (!settings || !formData) return false;
-    return JSON.stringify(formData) !== JSON.stringify(settings);
+    const baseline = { ...defaultChatSettings, ...settings };
+    return JSON.stringify(formData) !== JSON.stringify(baseline);
   }, [formData, settings]);
 
   const { blocker } = useUnsavedChanges({ hasChanges });
