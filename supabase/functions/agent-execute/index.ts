@@ -373,6 +373,10 @@ async function executeModuleAction(
       return { error: `Unknown media action: ${action}` };
     }
 
+    case 'resume': {
+      return await executeResumeAction(supabase, skillName, args);
+    }
+
     default:
       return { error: `Unknown module: ${moduleName}` };
   }
