@@ -228,27 +228,27 @@ export function ContextPanel({ activities, onApprove, onRefresh }: ContextPanelP
       </ScrollArea>
 
       {/* Cross-navigation footer */}
-      <div className="border-t p-3 space-y-1">
+      <div className="border-t p-2 space-y-0.5">
         <Button 
-          variant="ghost" size="sm" className="w-full justify-start gap-2 h-8 text-xs"
+          variant="ghost" size="sm" className="w-full justify-start gap-2 h-7 text-xs"
           onClick={() => navigate('/admin/skills')}
         >
-          <Settings2 className="h-3.5 w-3.5" />
-          Manage Skills
+          <Settings2 className="h-3.5 w-3.5 shrink-0" />
+          <span className="truncate">Skills</span>
         </Button>
         <Button 
-          variant="ghost" size="sm" className="w-full justify-start gap-2 h-8 text-xs"
+          variant="ghost" size="sm" className="w-full justify-start gap-2 h-7 text-xs"
           onClick={() => navigate('/admin/skills?tab=automations')}
         >
-          <Workflow className="h-3.5 w-3.5" />
-          Automations
+          <Workflow className="h-3.5 w-3.5 shrink-0" />
+          <span className="truncate">Automations</span>
         </Button>
         <Button 
-          variant="ghost" size="sm" className="w-full justify-start gap-2 h-8 text-xs"
+          variant="ghost" size="sm" className="w-full justify-start gap-2 h-7 text-xs"
           onClick={() => navigate('/admin/skills?tab=evolution')}
         >
-          <TrendingUp className="h-3.5 w-3.5" />
-          Evolution
+          <TrendingUp className="h-3.5 w-3.5 shrink-0" />
+          <span className="truncate">Evolution</span>
         </Button>
       </div>
     </div>

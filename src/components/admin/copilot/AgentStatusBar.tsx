@@ -81,38 +81,38 @@ export function AgentStatusBar() {
     : '0';
 
   return (
-    <div className="flex items-center gap-4 px-4 py-2.5 rounded-lg bg-card border text-xs">
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 px-3 py-2 rounded-lg bg-card border text-xs">
       {/* Mode indicator */}
       <div className="flex items-center gap-1.5">
-        <span className={cn('h-2 w-2 rounded-full', modeCfg.dot, status.mode === 'executing' && 'animate-pulse')} />
-        <span className={cn('font-medium', modeCfg.color)}>{modeCfg.label}</span>
+        <span className={cn('h-2 w-2 rounded-full shrink-0', modeCfg.dot, status.mode === 'executing' && 'animate-pulse')} />
+        <span className={cn('font-medium whitespace-nowrap', modeCfg.color)}>{modeCfg.label}</span>
       </div>
 
-      <span className="h-3 w-px bg-border" />
+      <span className="h-3 w-px bg-border hidden sm:block" />
 
       {/* Active skills */}
-      <div className="flex items-center gap-1 text-muted-foreground">
-        <Zap className="h-3 w-3" />
+      <div className="flex items-center gap-1 text-muted-foreground whitespace-nowrap">
+        <Zap className="h-3 w-3 shrink-0" />
         <span>{status.activeSkills} skills</span>
       </div>
 
-      <span className="h-3 w-px bg-border" />
+      <span className="h-3 w-px bg-border hidden sm:block" />
 
       {/* Error rate */}
       <div className={cn(
-        'flex items-center gap-1',
+        'flex items-center gap-1 whitespace-nowrap',
         Number(errorRate) > 10 ? 'text-destructive' : 'text-muted-foreground'
       )}>
-        <AlertTriangle className="h-3 w-3" />
-        <span>{errorRate}% errors (24h)</span>
+        <AlertTriangle className="h-3 w-3 shrink-0" />
+        <span>{errorRate}%</span>
       </div>
 
-      <span className="h-3 w-px bg-border" />
+      <span className="h-3 w-px bg-border hidden sm:block" />
 
       {/* Last heartbeat */}
-      <div className="flex items-center gap-1 text-muted-foreground">
-        <Activity className="h-3 w-3" />
-        <span>
+      <div className="flex items-center gap-1 text-muted-foreground whitespace-nowrap">
+        <Activity className="h-3 w-3 shrink-0" />
+        <span className="truncate max-w-[8rem]">
           {status.lastActivity
             ? formatDistanceToNow(new Date(status.lastActivity), { addSuffix: true })
             : 'No activity'}
