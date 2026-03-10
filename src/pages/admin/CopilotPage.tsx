@@ -6,13 +6,28 @@ import { Button } from '@/components/ui/button';
 import { UnifiedChat } from '@/components/chat/UnifiedChat';
 import { ContextPanel } from '@/components/admin/copilot/ContextPanel';
 import { useAgentOperate } from '@/hooks/useAgentOperate';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { useBrandingSettings } from '@/hooks/useSiteSettings';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
+import {
+  Sidebar,
+  SidebarHeader,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarGroupContent,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarTrigger,
+} from '@/components/ui/sidebar';
 
 export default function CopilotPage() {
   const operate = useAgentOperate();
   const [chatKey, setChatKey] = useState(0);
+  const { data: branding } = useBrandingSettings();
+  const adminName = branding?.adminName || 'FlowWink';
 
   useEffect(() => {
     operate.loadSkills();
@@ -23,7 +38,6 @@ export default function CopilotPage() {
   const handleNewChat = () => {
     operate.clearMessages();
     setChatKey(k => k + 1);
-    // Reload conversations after a delay so the new one appears
     setTimeout(() => operate.loadConversations(), 500);
   };
 
@@ -37,7 +51,6 @@ export default function CopilotPage() {
     await operate.deleteConversation(id);
   };
 
-  // Reload conversation list when a message is sent
   const handleSendMessage = async (content: string) => {
     await operate.sendMessage(content);
     setTimeout(() => operate.loadConversations(), 1500);
@@ -45,55 +58,77 @@ export default function CopilotPage() {
 
   return (
     <AdminLayout>
-      {/* Chat history sidebar — full height */}
-      <aside className="hidden md:flex w-64 lg:w-72 border-r bg-muted/30 flex-col shrink-0">
-        <div className="p-3 border-b">
-          <Button onClick={handleNewChat} className="w-full gap-2" size="sm">
+      {/* Chat history sidebar — mirrors AdminSidebar structure */}
+      <Sidebar collapsible="none" className="border-r border-sidebar-border">
+        {/* Header — matches AdminSidebar header */}
+        <SidebarHeader className="border-b border-sidebar-border px-3 py-3">
+          <div className="flex items-center justify-between gap-2">
+            <span className="font-serif font-bold text-base truncate">{adminName}</span>
+          </div>
+        </SidebarHeader>
+
+        {/* New chat button */}
+        <div className="px-2 pt-2 pb-1">
+          <Button onClick={handleNewChat} variant="outline" className="w-full gap-2 justify-start text-sm h-8" size="sm">
             <Plus className="h-4 w-4" />
             New chat
           </Button>
         </div>
-        <ScrollArea className="flex-1">
-          <div className="p-2 space-y-0.5">
-            {operate.conversations.map((conv) => (
-              <button
-                key={conv.id}
-                onClick={() => handleSwitchConversation(conv.id)}
-                className={cn(
-                  'w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm group transition-colors',
-                  'hover:bg-muted',
-                  operate.conversationId === conv.id && 'bg-muted'
-                )}
-              >
-                <Zap className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <span className="block truncate text-foreground">
-                    {conv.title || 'Untitled'}
-                  </span>
-                  <span className="block text-[10px] text-muted-foreground">
-                    {formatDistanceToNow(new Date(conv.updated_at), { addSuffix: true })}
-                  </span>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 opacity-0 group-hover:opacity-100 shrink-0"
-                  onClick={(e) => handleDeleteConversation(conv.id, e)}
-                >
-                  <Trash2 className="h-3 w-3" />
-                </Button>
-              </button>
-            ))}
 
-            {operate.conversations.length === 0 && (
-              <div className="flex flex-col items-center gap-2 py-8 px-4 text-muted-foreground">
-                <MessageSquare className="h-8 w-8 opacity-30" />
-                <p className="text-xs text-center">No previous chats</p>
-              </div>
-            )}
+        {/* Chat history */}
+        <SidebarContent className="px-2 pt-1 pb-2">
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-[10px] text-sidebar-foreground/40 uppercase tracking-widest font-normal mb-1">
+              Recent chats
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {operate.conversations.map((conv) => (
+                  <SidebarMenuItem key={conv.id} className="group/chat">
+                    <SidebarMenuButton
+                      isActive={operate.conversationId === conv.id}
+                      onClick={() => handleSwitchConversation(conv.id)}
+                      className="w-full"
+                    >
+                      <Zap className="h-4 w-4" />
+                      <div className="flex-1 min-w-0">
+                        <span className="block truncate text-sm">
+                          {conv.title || 'Untitled'}
+                        </span>
+                        <span className="block text-[10px] text-sidebar-foreground/50">
+                          {formatDistanceToNow(new Date(conv.updated_at), { addSuffix: true })}
+                        </span>
+                      </div>
+                    </SidebarMenuButton>
+                    <button
+                      onClick={(e) => handleDeleteConversation(conv.id, e)}
+                      className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover/chat:opacity-100 transition-opacity p-1 rounded hover:bg-sidebar-accent"
+                      title="Delete chat"
+                    >
+                      <Trash2 className="h-3 w-3 text-sidebar-foreground/60" />
+                    </button>
+                  </SidebarMenuItem>
+                ))}
+
+                {operate.conversations.length === 0 && (
+                  <div className="flex flex-col items-center gap-2 py-8 px-4 text-sidebar-foreground/40">
+                    <MessageSquare className="h-8 w-8 opacity-30" />
+                    <p className="text-xs text-center">No previous chats</p>
+                  </div>
+                )}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </SidebarContent>
+
+        {/* Footer — matches AdminSidebar footer spacing */}
+        <SidebarFooter className="border-t border-sidebar-border p-3">
+          <div className="flex items-center gap-2 text-sidebar-foreground/50">
+            <Zap className="h-3.5 w-3.5" />
+            <span className="text-xs">{operate.skills.length} skills available</span>
           </div>
-        </ScrollArea>
-      </aside>
+        </SidebarFooter>
+      </Sidebar>
 
       {/* Right column: header + chat + context */}
       <div className="flex-1 flex flex-col min-w-0">
