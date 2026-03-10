@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback, KeyboardEvent } from 'react';
-import { ArrowUp, X, RotateCcw, Paperclip, FileText, Loader2 } from 'lucide-react';
+import { ArrowUp, X, Paperclip, FileText, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { CommandPalette } from './CommandPalette';
