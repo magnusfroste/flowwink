@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, BarChart3, FileText, Users, Settings, BookOpen, Image, Mail,
   Puzzle, Webhook, UserCheck, Briefcase, Building2, Package, Library, ShoppingCart,
@@ -30,10 +30,13 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 
 export function AdminContentHeader() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, profile, signOut } = useAuth();
   const { pins, removePin } = usePinnedPages(user?.id);
   const { currentVersion, latestVersion, latestReleaseUrl, hasUpdate } = useVersionCheck();
   const GITHUB_RELEASES_URL = 'https://github.com/magnusfroste/flowwink/releases';
+
+  const isCopilotMode = location.pathname === '/admin/copilot';
 
   const initials =
     profile?.full_name?.charAt(0)?.toUpperCase() ||
