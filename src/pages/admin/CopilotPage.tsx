@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 
 export default function CopilotPage() {
   const operate = useAgentOperate();
+  const queryClient = useQueryClient();
   const [chatKey, setChatKey] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const { data: branding } = useBrandingSettings();
