@@ -262,27 +262,32 @@ export default function CopilotPage() {
       {/* Right column: header + chat + context */}
       <div className="flex-1 flex flex-col min-w-0">
         <AdminContentHeader />
-        <div className="flex-1 flex overflow-hidden">
-          <div className="flex-1 min-w-0 border-r flex flex-col">
-            <UnifiedChat
-              key={chatKey}
-              scope="admin"
-              messages={operate.messages}
-              skills={operate.skills}
-              isLoading={operate.isLoading}
-              onSendMessage={handleSendMessage}
-              onReset={operate.clearMessages}
-              onCancel={operate.cancelRequest}
-            />
-          </div>
-          <div className="hidden lg:flex w-72 xl:w-80 shrink-0 flex-col bg-muted/30 overflow-hidden">
-            <ContextPanel
-              activities={operate.activities}
-              onApprove={operate.approveAction}
-              onRefresh={operate.loadActivity}
-            />
-          </div>
-        </div>
+        <ResizablePanelGroup direction="horizontal" className="flex-1 overflow-hidden">
+          <ResizablePanel defaultSize={70} minSize={40}>
+            <div className="h-full flex flex-col">
+              <UnifiedChat
+                key={chatKey}
+                scope="admin"
+                messages={operate.messages}
+                skills={operate.skills}
+                isLoading={operate.isLoading}
+                onSendMessage={handleSendMessage}
+                onReset={operate.clearMessages}
+                onCancel={operate.cancelRequest}
+              />
+            </div>
+          </ResizablePanel>
+          <ResizableHandle className="hidden lg:flex" />
+          <ResizablePanel defaultSize={30} minSize={20} maxSize={45} className="hidden lg:flex">
+            <div className="h-full flex flex-col bg-muted/30 overflow-hidden">
+              <ContextPanel
+                activities={operate.activities}
+                onApprove={operate.approveAction}
+                onRefresh={operate.loadActivity}
+              />
+            </div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
       </div>
     </AdminLayout>
   );
