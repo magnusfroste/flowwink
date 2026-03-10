@@ -54,6 +54,9 @@ export default function SkillHubPage() {
   return (
     <AdminLayout>
     <div className="space-y-6">
+      {/* Self-healing alerts */}
+      <SelfHealingAlert />
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
