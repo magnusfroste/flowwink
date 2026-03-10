@@ -123,9 +123,9 @@ export default function CopilotPage() {
           </div>
         </div>
       ) : (
-        <div className="shrink-0 flex flex-col border-r border-sidebar-border bg-sidebar">
+        <div className="shrink-0 flex flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
           <div className="flex items-center justify-center h-10 shrink-0 border-b border-sidebar-border">
-            <button onClick={() => setSidebarOpen(true)} className="h-7 w-7 inline-flex items-center justify-center rounded-md hover:bg-sidebar-accent transition-colors">
+            <button onClick={() => setSidebarOpen(true)} className="h-7 w-7 inline-flex items-center justify-center rounded-md text-sidebar-foreground hover:bg-sidebar-accent transition-colors">
               <PanelLeft className="h-4 w-4" />
             </button>
           </div>
