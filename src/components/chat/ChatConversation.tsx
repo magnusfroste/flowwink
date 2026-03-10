@@ -1,14 +1,11 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useChat } from '@/hooks/useChat';
 import { useChatSettings } from '@/hooks/useSiteSettings';
-import { ChatMessage } from './ChatMessage';
-import { ChatInput } from './ChatInput';
-import { ChatEmptyState } from './ChatEmptyState';
-import { ChatTypingIndicator } from './ChatTypingIndicator';
+import { UnifiedChat } from './UnifiedChat';
 import { LiveAgentIndicator } from './LiveAgentIndicator';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
+import type { AgentSkill } from '@/types/agent';
 
 interface ChatConversationProps {
   mode?: 'landing' | 'block' | 'widget';
@@ -18,9 +15,7 @@ interface ChatConversationProps {
   maxPrompts?: number;
   compact?: boolean;
   skipRestore?: boolean;
-  /** Initial message to send automatically (from ChatLauncherBlock) */
   initialMessage?: string;
-  /** Callback when initial message has been sent */
   onInitialMessageSent?: () => void;
 }
 
@@ -35,9 +30,9 @@ export function ChatConversation({
   initialMessage,
   onInitialMessageSent,
 }: ChatConversationProps) {
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const initialMessageSentRef = useRef(false);
   const { data: settings } = useChatSettings();
+  const [visitorSkills, setVisitorSkills] = useState<AgentSkill[]>([]);
   
   const {
     messages,
@@ -49,18 +44,20 @@ export function ChatConversation({
     cancelRequest,
   } = useChat({ conversationId, onNewConversation, skipRestore });
 
-  // Auto-scroll within the chat container (not the whole page)
+  // Load visitor-scoped skills for @-commands
   useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (container) {
-      container.scrollTo({
-        top: container.scrollHeight,
-        behavior: 'smooth',
-      });
-    }
-  }, [messages, isLoading]);
+    const loadSkills = async () => {
+      const { data } = await supabase
+        .from('agent_skills')
+        .select('*')
+        .eq('enabled', true)
+        .in('scope', ['external', 'both']);
+      if (data) setVisitorSkills(data as unknown as AgentSkill[]);
+    };
+    loadSkills();
+  }, []);
 
-  // Auto-send initial message from ChatLauncherBlock
+  // Auto-send initial message
   useEffect(() => {
     if (initialMessage && !initialMessageSentRef.current && !isLoading && messages.length === 0) {
       initialMessageSentRef.current = true;
@@ -69,16 +66,12 @@ export function ChatConversation({
     }
   }, [initialMessage, isLoading, messages.length, sendMessage, onInitialMessageSent]);
 
-  const handlePromptClick = (prompt: string) => {
-    sendMessage(prompt);
-  };
-
-  const showEmptyState = messages.length === 0 && !isLoading;
-  const showTypingIndicator = isLoading && messages[messages.length - 1]?.role === 'user';
-  const showFeedback = settings?.feedbackEnabled ?? true;
   const showLiveAgentBanner = (settings?.showLiveAgentBanner ?? true) && isWithLiveAgent;
-  const liveAgentIconStyle = settings?.liveAgentIconStyle ?? 'avatar';
-  const showChatIcons = settings?.showChatIcons ?? true;
+
+  // Limit prompts if needed
+  const suggestedPrompts = maxPrompts 
+    ? settings?.suggestedPrompts?.slice(0, maxPrompts) 
+    : settings?.suggestedPrompts;
 
   return (
     <div className={cn(
@@ -86,67 +79,34 @@ export function ChatConversation({
       mode === 'widget' && 'rounded-t-xl',
       className
     )}>
-      {/* Live agent indicator */}
       {showLiveAgentBanner && <LiveAgentIndicator />}
       
-      {/* Messages area */}
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
-        {showEmptyState ? (
-          <ChatEmptyState
-            title={settings?.title}
-            welcomeMessage={settings?.welcomeMessage}
-            suggestedPrompts={settings?.suggestedPrompts}
-            onPromptClick={handlePromptClick}
-            maxPrompts={maxPrompts}
-            compact={compact}
-          />
-        ) : (
-          <div className="py-2">
-            {messages.map((message, index) => {
-              // Find the previous user message for context
-              const previousUserMessage = message.role === 'assistant' 
-                ? messages.slice(0, index).reverse().find(m => m.role === 'user')?.content
-                : undefined;
-              
-              return (
-                <ChatMessage
-                  key={message.id}
-                  role={message.role}
-                  content={message.content}
-                  createdAt={message.createdAt}
-                  messageId={message.id}
-                  conversationId={conversationId}
-                  previousUserMessage={previousUserMessage}
-                  showFeedback={showFeedback && message.role === 'assistant' && !!message.content}
-                  agentInfo={agentInfo}
-                  isFromAgent={message.isFromAgent}
-                  liveAgentIconStyle={liveAgentIconStyle}
-                  showIcons={showChatIcons}
-                />
-              );
-            })}
-            {showTypingIndicator && <ChatTypingIndicator />}
-          </div>
-        )}
-      </div>
-
-      {/* Error display */}
-      {error && (
-        <div className="px-4 pb-2">
-          <Alert variant="destructive" className="py-2">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        </div>
-      )}
-
-      {/* Input area */}
-      <ChatInput
-        onSend={sendMessage}
-        onCancel={cancelRequest}
-        isLoading={isLoading}
-        placeholder={settings?.placeholder}
-        disabled={!settings?.enabled}
+      <UnifiedChat
+        scope="visitor"
+        skills={visitorSkills}
+        visitorChat={{
+          messages: messages.map(m => ({
+            id: m.id,
+            role: m.role,
+            content: m.content,
+            createdAt: m.createdAt,
+            isFromAgent: m.isFromAgent,
+          })),
+          isLoading,
+          error,
+          sendMessage,
+          cancelRequest,
+        }}
+        visitorSettings={{
+          title: settings?.title,
+          welcomeMessage: settings?.welcomeMessage,
+          suggestedPrompts,
+          placeholder: settings?.placeholder,
+          enabled: settings?.enabled,
+          feedbackEnabled: settings?.feedbackEnabled ?? true,
+        }}
+        conversationId={conversationId}
+        compact={compact}
       />
     </div>
   );
