@@ -156,6 +156,7 @@ const MODULE_HANDLER_TO_SETTING: Record<string, string> = {
   objectives: 'analytics',
   products: 'products',
   media: 'media',
+  resume: 'resume',
 };
 
 async function autoActivateModule(
