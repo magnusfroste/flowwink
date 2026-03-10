@@ -511,6 +511,12 @@ export function useAgentOperate() {
     }
   }, [conversationId]);
 
+  const clearMessages = useCallback(() => {
+    setMessages([]);
+    localStorage.removeItem(FLOWPILOT_CONVERSATION_KEY);
+    setConversationId(null);
+  }, []);
+
   return {
     messages,
     isLoading,
