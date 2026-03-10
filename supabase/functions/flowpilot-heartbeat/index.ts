@@ -6,19 +6,22 @@ import {
   buildSoulPrompt,
   loadMemories,
   loadObjectives,
-  loadSkillInstructions,
   loadSkillTools,
   getBuiltInTools,
   executeBuiltInTool,
-  isBuiltInTool,
+  runSelfHealing,
 } from "../agent-reason/index.ts";
 
 /**
- * FlowPilot Heartbeat — Thin wrapper around agent-reason
+ * FlowPilot Heartbeat — Enhanced Autonomous Loop
  *
- * Scheduled autonomous loop that wakes FlowPilot every N hours.
- * Gathers system context, builds heartbeat-specific prompt, then
- * delegates the full reasoning loop to agent-reason.
+ * Ported from ClawCMS magnet-heartbeat with:
+ * - Self-healing (auto-disable failing skills)
+ * - Plan decomposition + advance_plan chaining
+ * - Priority-scored objectives
+ * - Proactive objective proposals
+ * - Automation execution with next_run_at tracking
+ * - Enhanced system prompt with full heartbeat protocol
  */
 
 const corsHeaders = {
@@ -67,6 +70,23 @@ async function loadSiteStats(supabase: any): Promise<string> {
 - Total confirmed subscribers: ${subscribers.count ?? 0}`;
 }
 
+async function loadLinkedAutomations(supabase: any): Promise<string> {
+  const { data } = await supabase
+    .from('agent_automations')
+    .select('id, name, skill_name, trigger_type, trigger_config, skill_arguments, enabled, last_triggered_at, next_run_at, run_count, last_error')
+    .eq('enabled', true)
+    .order('created_at', { ascending: false });
+  if (!data?.length) return '\nNo enabled automations.';
+
+  const now = new Date();
+  let out = '\n\nEnabled automations:';
+  for (const a of data) {
+    const due = a.next_run_at && new Date(a.next_run_at) <= now ? ' ⏰ DUE' : '';
+    out += `\n-${due} [${a.id.slice(0, 8)}] "${a.name}" → skill: ${a.skill_name} | runs: ${a.run_count} | last_error: ${a.last_error || 'none'}`;
+  }
+  return out;
+}
+
 // ─── Main handler ─────────────────────────────────────────────────────────────
 
 serve(async (req) => {
@@ -81,13 +101,15 @@ serve(async (req) => {
   const startTime = Date.now();
 
   try {
-    // 1. Gather context in parallel
-    const [{ soul, identity }, memoryCtx, objectiveCtx, activityCtx, statsCtx] = await Promise.all([
+    // 1. Gather context + run self-healing in parallel
+    const [{ soul, identity }, memoryCtx, objectiveCtx, activityCtx, statsCtx, automationCtx, healingReport] = await Promise.all([
       loadSoulIdentity(supabase),
       loadMemories(supabase),
       loadObjectives(supabase),
       loadRecentActivity(supabase),
       loadSiteStats(supabase),
+      loadLinkedAutomations(supabase),
+      runSelfHealing(supabase),
     ]);
 
     const soulPrompt = buildSoulPrompt(soul, identity);
@@ -95,42 +117,67 @@ serve(async (req) => {
     // 2. Resolve AI config
     const { apiKey, apiUrl, model } = await resolveAiConfig(supabase);
 
-    // 3. Load tools
-    const builtInTools = getBuiltInTools(['memory', 'objectives', 'reflect']);
+    // 3. Load tools — include planning + automation execution
+    const builtInTools = getBuiltInTools(['memory', 'objectives', 'reflect', 'planning', 'automations-exec']);
     const skillTools = await loadSkillTools(supabase, 'internal');
     const allTools = [...builtInTools, ...skillTools];
 
-    // 4. Build heartbeat system prompt
-    const systemPrompt = `You are FlowPilot running in AUTONOMOUS HEARTBEAT mode. This is a scheduled check-in — no human is watching.
+    // 4. Build enhanced heartbeat system prompt
+    const systemPrompt = `You are FlowPilot running in AUTONOMOUS HEARTBEAT mode. No human is watching.
 ${soulPrompt}
 
-Your mission: Review the state of the system, advance active objectives, and take any needed actions.
+Your mission: Review system state, advance objectives via multi-step plans, proactively identify opportunities, and self-heal.
 
 CONTEXT:
 ${memoryCtx}
 ${objectiveCtx}
+${automationCtx}
 ${activityCtx}
 ${statsCtx}
+${healingReport}
 
 HEARTBEAT PROTOCOL:
-1. REFLECT — Use the 'reflect' tool to analyze the past 7 days.
-2. OBJECTIVES — Review each active objective. Update progress based on current site stats. If criteria are met, mark as complete.
-3. ACT — If any objective needs action and you have the skill for it, DO IT.
-4. REMEMBER — If you learn anything new, save it to memory.
-5. SUMMARIZE — Write a brief heartbeat report of what you found and did.
+1. PROACTIVE REASONING — Analyze site stats + activity patterns. If you spot a trend, gap, or opportunity NOT covered by existing objectives, use propose_objective to create one. Max 1 new objective per heartbeat.
+2. PLAN — For each active objective WITHOUT a plan (no progress.plan), call decompose_objective to create a step-by-step plan.
+3. ADVANCE — Objectives are pre-sorted by priority score. Advance them IN ORDER (highest score first). Use advance_plan with chain=true to execute multiple steps per objective.
+4. AUTOMATIONS — Check DUE (⏰) automations. Execute them via execute_automation.
+5. REFLECT — Use 'reflect' to analyze the past 7 days.
+6. REMEMBER — Save learnings to memory.
+7. SUMMARIZE — Brief heartbeat report including plan progress and any new proposals.
+
+PRIORITY SCORING (automatic, shown as [score:N]):
+- Deadline proximity: overdue +50, <1 day +40, <3 days +25, <7 days +10
+- Priority field: critical +35, high +20, medium +10
+- Momentum: in-progress plans +15, near completion (>70%) +10
+- Staleness: no update >3 days +8, >7 days +12
+- Failures: plan has failed steps +10
+Advance the HIGHEST scored objectives first.
+
+MULTI-STEP PLANNING RULES:
+- Each objective should have a plan (3-7 steps). Use decompose_objective to create one.
+- advance_plan auto-chains up to 4 steps per call. Use it — don't call advance_plan repeatedly for the same objective.
+- If a step fails, note it but continue to the next objective.
+- If ALL steps are done, mark the objective as completed via objective_complete.
+- Plans persist between heartbeats. FlowPilot picks up where it left off.
+
+PROACTIVE REASONING RULES:
+- Only propose objectives when stats or activity clearly warrant action
+- Never duplicate existing active objectives (checked automatically)
+- Include a clear "reason" explaining what data drove the proposal
+- Keep goals specific and actionable
+- When proposing, set constraints.priority ('critical'|'high'|'medium'|'low')
 
 CONSTRAINTS:
-- Maximum ${MAX_ITERATIONS} tool iterations
-- Do NOT send newsletters or do destructive actions without approval
-- Be efficient: only act when progress is needed
-- If everything is on track, just update progress and report "all clear"
+- Max ${MAX_ITERATIONS} tool iterations per heartbeat
+- Skills marked requires_approval will be BLOCKED and logged for admin review
+- PRIORITIZE: high-score objectives > DUE automations > proposals
+- Self-healing auto-disables skills with 3+ consecutive failures
+- Be efficient: use chaining, focus on top 2-3 objectives per heartbeat`;
 
-IMPORTANT: Always call 'reflect' first to understand current state before taking action.`;
-
-    // 5. Run the reasoning loop (non-streaming, via agent-reason's shared logic)
+    // 5. Run the reasoning loop
     const messages: any[] = [
       { role: "system", content: systemPrompt },
-      { role: "user", content: `Heartbeat triggered at ${new Date().toISOString()}. Review objectives and system health, then take any needed autonomous actions.` },
+      { role: "user", content: `Heartbeat triggered at ${new Date().toISOString()}. Review objectives, advance plans, execute due automations, and report system health.` },
     ];
 
     let finalResponse = "";

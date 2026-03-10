@@ -18,6 +18,7 @@ import { ObjectivesPanel } from '@/components/admin/skills/ObjectivesPanel';
 import { AutomationsPanel } from '@/components/admin/skills/AutomationsPanel';
 import { AutomationHealthPanel } from '@/components/admin/skills/AutomationHealthPanel';
 import { EvolutionPanel } from '@/components/admin/skills/EvolutionPanel';
+import { SelfHealingAlert } from '@/components/admin/skills/SelfHealingAlert';
 import { useSkills, useToggleSkill, useUpsertSkill, useDeleteSkill } from '@/hooks/useSkillHub';
 import type { AgentSkill } from '@/types/agent';
 
@@ -53,6 +54,9 @@ export default function SkillHubPage() {
   return (
     <AdminLayout>
     <div className="space-y-6">
+      {/* Self-healing alerts */}
+      <SelfHealingAlert />
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

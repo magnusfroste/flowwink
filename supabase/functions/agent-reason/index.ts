@@ -9,7 +9,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
  *   - chat-completion delegates skill execution here too
  *
  * Consolidates: AI config, built-in tools, tool loop, memory/objectives,
- * soul/identity, reflection, self-modification, and agent-execute delegation.
+ * soul/identity, reflection, self-modification, plan decomposition,
+ * self-healing, and agent-execute delegation.
  *
  * NOT a serve() handler — this is an importable module.
  */
@@ -17,32 +18,25 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface ReasonConfig {
-  /** Which skill scopes to load: 'internal' | 'external' | 'both' */
   scope: 'internal' | 'external';
-  /** Maximum tool-call iterations */
   maxIterations?: number;
-  /** System prompt override (appended after soul/identity/memory/objectives) */
   systemPromptOverride?: string;
-  /** Extra context sections to inject (e.g., site stats, activity) */
   extraContext?: string;
-  /** Which built-in tool groups to include */
-  builtInToolGroups?: Array<'memory' | 'objectives' | 'self-mod' | 'reflect' | 'soul'>;
-  /** Additional tools (e.g., skills already loaded by the caller) */
+  builtInToolGroups?: Array<'memory' | 'objectives' | 'self-mod' | 'reflect' | 'soul' | 'planning' | 'automations-exec'>;
   additionalTools?: any[];
 }
 
 export interface ReasonResult {
-  /** Final text response from the LLM */
   response: string;
-  /** Tool names that were executed */
   actionsExecuted: string[];
-  /** Skill results (non-built-in tools) */
   skillResults: Array<{ skill: string; status: string; result: any }>;
-  /** Duration in ms */
   durationMs: number;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
+
+const SELF_HEAL_THRESHOLD = 3;
+const MAX_CHAIN_DEPTH = 4;
 
 const BUILT_IN_TOOL_NAMES = new Set([
   'memory_write', 'memory_read',
@@ -52,6 +46,7 @@ const BUILT_IN_TOOL_NAMES = new Set([
   'soul_update',
   'automation_create', 'automation_list',
   'reflect',
+  'decompose_objective', 'advance_plan', 'propose_objective', 'execute_automation',
 ]);
 
 // ─── AI Config Resolution ─────────────────────────────────────────────────────
@@ -163,16 +158,65 @@ async function handleMemoryRead(supabase: any, args: { key?: string; category?: 
 export async function loadObjectives(supabase: any): Promise<string> {
   const { data } = await supabase
     .from('agent_objectives')
-    .select('id, goal, status, constraints, success_criteria, progress')
+    .select('id, goal, status, constraints, success_criteria, progress, created_at, updated_at')
     .eq('status', 'active')
     .order('created_at', { ascending: false })
     .limit(10);
 
-  if (!data || data.length === 0) return '';
-  const lines = data.map((o: any) =>
-    `- [${o.id.slice(0, 8)}] "${o.goal}" | progress: ${JSON.stringify(o.progress)} | criteria: ${JSON.stringify(o.success_criteria)} | constraints: ${JSON.stringify(o.constraints)}`
-  );
-  return `\n\nYour active objectives (high-level goals to work toward):\n${lines.join('\n')}`;
+  if (!data || data.length === 0) return '\nNo active objectives.';
+
+  // Priority scoring (ported from ClawCMS)
+  const scored = data.map((o: any) => {
+    let score = 0;
+    const plan = o.progress?.plan;
+    const constraints = o.constraints || {};
+    const now = Date.now();
+
+    // Urgency: deadline proximity
+    if (constraints.deadline) {
+      const daysLeft = (new Date(constraints.deadline).getTime() - now) / 86_400_000;
+      if (daysLeft < 0) score += 50;
+      else if (daysLeft < 1) score += 40;
+      else if (daysLeft < 3) score += 25;
+      else if (daysLeft < 7) score += 10;
+    }
+
+    // Priority field
+    if (constraints.priority === 'critical') score += 35;
+    else if (constraints.priority === 'high') score += 20;
+    else if (constraints.priority === 'medium') score += 10;
+
+    // Momentum: in-progress plan
+    if (plan?.steps?.length) {
+      const done = plan.steps.filter((s: any) => s.status === 'done').length;
+      const pct = done / plan.steps.length;
+      if (pct > 0 && pct < 1) score += 15;
+      if (pct >= 0.7) score += 10;
+    } else {
+      score += 5; // needs plan
+    }
+
+    // Staleness
+    const daysSinceUpdate = (now - new Date(o.updated_at).getTime()) / 86_400_000;
+    if (daysSinceUpdate > 3) score += 8;
+    if (daysSinceUpdate > 7) score += 12;
+
+    if (plan?.has_failures) score += 10;
+
+    return { ...o, _priority_score: score };
+  });
+
+  scored.sort((a: any, b: any) => b._priority_score - a._priority_score);
+
+  return '\n\nActive objectives (sorted by priority ⬆️):\n' + scored.map((o: any, i: number) => {
+    const plan = o.progress?.plan;
+    const planInfo = plan
+      ? ` | plan: ${plan.steps?.filter((s: any) => s.status === 'done').length}/${plan.total_steps} steps done`
+      : ' | NO PLAN (needs decompose_objective)';
+    const deadline = o.constraints?.deadline ? ` | ⏰ deadline: ${o.constraints.deadline}` : '';
+    const priority = o.constraints?.priority ? ` | priority: ${o.constraints.priority}` : '';
+    return `- #${i + 1} [score:${o._priority_score}] [${o.id.slice(0, 8)}] "${o.goal}"${planInfo}${deadline}${priority} | progress: ${JSON.stringify(o.progress)} | criteria: ${JSON.stringify(o.success_criteria)}`;
+  }).join('\n');
 }
 
 async function handleObjectiveUpdateProgress(supabase: any, args: { objective_id: string; progress: any }) {
@@ -189,6 +233,343 @@ async function handleObjectiveComplete(supabase: any, args: { objective_id: stri
     .eq('id', args.objective_id);
   if (error) return { status: 'error', error: error.message };
   return { status: 'completed', objective_id: args.objective_id };
+}
+
+// ─── Plan Decomposition (ported from ClawCMS) ─────────────────────────────────
+
+async function decomposeObjectiveIntoPlan(
+  objective: { id: string; goal: string; constraints: any; success_criteria: any },
+  supabase: any,
+): Promise<{ steps: any[]; total_steps: number }> {
+  const { data: skills } = await supabase.from('agent_skills')
+    .select('name, description, category, handler')
+    .eq('enabled', true);
+
+  const skillList = (skills || []).map((s: any) => `- ${s.name}: ${s.description} (${s.handler})`).join('\n');
+
+  const { apiKey, apiUrl, model } = await resolveAiConfig(supabase);
+  const aiResp = await fetch(apiUrl, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model,
+      messages: [
+        {
+          role: 'system',
+          content: `You are a planning agent. Decompose an objective into 3-7 concrete, sequential steps. Each step should map to an available skill when possible.
+
+Available skills:
+${skillList}
+
+Return ONLY a JSON array, no markdown. Each step:
+{"id":"s1","order":1,"description":"What to do","skill_name":"skill_name_or_null","skill_args":{},"status":"pending"}
+
+Rules:
+- Steps should be ordered logically (research before drafting, drafting before publishing)
+- Use actual skill names from the list above when applicable
+- Set skill_args with sensible defaults based on the objective
+- If no skill matches, set skill_name to null (manual step)
+- Keep descriptions short and actionable`,
+        },
+        {
+          role: 'user',
+          content: `Objective: "${objective.goal}"
+Constraints: ${JSON.stringify(objective.constraints || {})}
+Success criteria: ${JSON.stringify(objective.success_criteria || {})}`,
+        },
+      ],
+    }),
+  });
+
+  const data = await aiResp.json();
+  const raw = data.choices?.[0]?.message?.content || '[]';
+  const cleaned = raw.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
+  let steps: any[];
+  try {
+    steps = JSON.parse(cleaned);
+    if (!Array.isArray(steps)) steps = [];
+  } catch {
+    steps = [{ id: 's1', order: 1, description: objective.goal, skill_name: null, skill_args: {}, status: 'pending' }];
+  }
+
+  steps = steps.map((s: any, i: number) => ({
+    id: s.id || `s${i + 1}`,
+    order: s.order || i + 1,
+    description: s.description || `Step ${i + 1}`,
+    skill_name: s.skill_name || null,
+    skill_args: s.skill_args || {},
+    status: 'pending',
+  }));
+
+  return { steps, total_steps: steps.length };
+}
+
+async function handleDecomposeObjective(supabase: any, args: { objective_id: string }) {
+  const { data: obj, error } = await supabase.from('agent_objectives')
+    .select('id, goal, constraints, success_criteria, progress')
+    .eq('id', args.objective_id).single();
+  if (error || !obj) return { status: 'error', error: error?.message || 'Objective not found' };
+
+  const plan = await decomposeObjectiveIntoPlan(obj, supabase);
+  const progress = (obj.progress as Record<string, any>) || {};
+  progress.plan = { ...plan, current_step: 0, created_at: new Date().toISOString() };
+
+  await supabase.from('agent_objectives').update({ progress }).eq('id', args.objective_id);
+  return { status: 'planned', objective_id: args.objective_id, steps: plan.steps.length, plan: plan.steps };
+}
+
+async function handleAdvancePlan(supabase: any, supabaseUrl: string, serviceKey: string, args: { objective_id: string; chain?: boolean }) {
+  const { objective_id, chain = true } = args;
+  const maxSteps = chain ? MAX_CHAIN_DEPTH : 1;
+  const chainResults: any[] = [];
+
+  for (let depth = 0; depth < maxSteps; depth++) {
+    const { data: obj, error } = await supabase.from('agent_objectives')
+      .select('id, goal, progress')
+      .eq('id', objective_id).single();
+    if (error || !obj) return { status: 'error', error: error?.message || 'Objective not found' };
+
+    const progress = (obj.progress as Record<string, any>) || {};
+    const plan = progress.plan;
+    if (!plan?.steps?.length) return { status: 'no_plan', message: 'No plan found. Use decompose_objective first.', chain_results: chainResults };
+
+    const nextStep = plan.steps.find((s: any) => s.status === 'pending');
+    if (!nextStep) {
+      if (!plan.completed) {
+        plan.completed = true;
+        progress.plan = plan;
+        progress.last_updated = new Date().toISOString();
+        await supabase.from('agent_objectives').update({ progress }).eq('id', objective_id);
+      }
+      return { status: 'all_done', message: 'All plan steps completed.', chain_results: chainResults };
+    }
+
+    nextStep.status = 'running';
+    plan.current_step = nextStep.order;
+    await supabase.from('agent_objectives').update({ progress }).eq('id', objective_id);
+
+    let result: any = { status: 'manual', message: 'No skill mapped — requires manual action.' };
+    if (nextStep.skill_name) {
+      try {
+        const resp = await fetch(`${supabaseUrl}/functions/v1/agent-execute`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceKey}` },
+          body: JSON.stringify({
+            skill_name: nextStep.skill_name,
+            arguments: nextStep.skill_args || {},
+            agent_type: 'flowpilot',
+          }),
+        });
+        result = await resp.json();
+      } catch (err: any) {
+        result = { error: err.message };
+      }
+    }
+
+    const success = !result.error && result.status !== 'failed';
+    nextStep.status = success ? 'done' : 'failed';
+    nextStep.result = result;
+    nextStep.completed_at = new Date().toISOString();
+
+    const allDone = plan.steps.every((s: any) => s.status === 'done');
+    const anyFailed = plan.steps.some((s: any) => s.status === 'failed');
+    plan.completed = allDone;
+    plan.has_failures = anyFailed;
+
+    progress.plan = plan;
+    progress.total_runs = (progress.total_runs || 0) + 1;
+    progress.last_updated = new Date().toISOString();
+    await supabase.from('agent_objectives').update({ progress }).eq('id', objective_id);
+
+    const remaining = plan.steps.filter((s: any) => s.status === 'pending').length;
+    chainResults.push({
+      step: nextStep.description,
+      skill: nextStep.skill_name,
+      status: success ? 'done' : 'failed',
+      remaining_steps: remaining,
+    });
+
+    if (!success || !nextStep.skill_name || allDone) break;
+  }
+
+  const lastResult = chainResults[chainResults.length - 1];
+  return {
+    status: chainResults.some(r => r.status === 'failed') ? 'chain_partial' : 'chain_completed',
+    steps_executed: chainResults.length,
+    remaining_steps: lastResult?.remaining_steps ?? 0,
+    plan_completed: chainResults.length > 0 && lastResult?.remaining_steps === 0,
+    chain_results: chainResults,
+  };
+}
+
+async function handleProposeObjective(supabase: any, args: { goal: string; reason: string; constraints?: any; success_criteria?: any }) {
+  const { goal, reason, constraints, success_criteria } = args;
+
+  // Duplicate check
+  const { data: existing } = await supabase.from('agent_objectives')
+    .select('id, goal').eq('status', 'active');
+  const isDuplicate = (existing || []).some((o: any) =>
+    o.goal.toLowerCase().includes(goal.toLowerCase().slice(0, 20)) ||
+    goal.toLowerCase().includes(o.goal.toLowerCase().slice(0, 20))
+  );
+  if (isDuplicate) {
+    return { status: 'skipped', reason: 'Similar objective already active' };
+  }
+
+  const { data: newObj, error } = await supabase.from('agent_objectives')
+    .insert({
+      goal,
+      constraints: constraints || {},
+      success_criteria: success_criteria || {},
+      progress: { proposed_by: 'flowpilot', reason: reason || 'proactive', proposed_at: new Date().toISOString() },
+      status: 'active',
+    })
+    .select('id').single();
+  if (error) return { status: 'error', error: error.message };
+
+  await supabase.from('agent_activity').insert({
+    agent: 'flowpilot', skill_name: 'propose_objective',
+    input: { goal, reason },
+    output: { objective_id: newObj.id },
+    status: 'success',
+  });
+
+  return { status: 'proposed', objective_id: newObj.id, goal };
+}
+
+// ─── Cron helpers ─────────────────────────────────────────────────────────────
+
+function calculateNextRun(cronExpr: string): string | null {
+  try {
+    const parts = cronExpr.trim().split(/\s+/);
+    if (parts.length < 5) return null;
+    const now = new Date();
+    const [min, hour, dayOfMonth] = parts;
+
+    if (min === '*' && hour === '*') return new Date(now.getTime() + 60_000).toISOString();
+    if (min.startsWith('*/')) return new Date(now.getTime() + parseInt(min.slice(2), 10) * 60_000).toISOString();
+    if (hour.startsWith('*/')) return new Date(now.getTime() + parseInt(hour.slice(2), 10) * 3600_000).toISOString();
+    if (hour !== '*' && min !== '*') {
+      const next = new Date(now);
+      next.setHours(parseInt(hour, 10), parseInt(min, 10), 0, 0);
+      if (next <= now) next.setDate(next.getDate() + 1);
+      if (dayOfMonth !== '*') {
+        next.setDate(parseInt(dayOfMonth, 10));
+        if (next <= now) next.setMonth(next.getMonth() + 1);
+      }
+      return next.toISOString();
+    }
+    return new Date(now.getTime() + 12 * 3600_000).toISOString();
+  } catch {
+    return new Date(Date.now() + 12 * 3600_000).toISOString();
+  }
+}
+
+async function handleExecuteAutomation(supabase: any, supabaseUrl: string, serviceKey: string, args: { automation_id: string }) {
+  const { data: auto, error: fetchErr } = await supabase.from('agent_automations')
+    .select('*').eq('id', args.automation_id).maybeSingle();
+  if (fetchErr || !auto) return { status: 'error', error: fetchErr?.message || 'Automation not found' };
+
+  // Check if linked skill requires approval
+  if (auto.skill_name) {
+    const { data: skill } = await supabase.from('agent_skills')
+      .select('requires_approval').eq('name', auto.skill_name).maybeSingle();
+    if (skill?.requires_approval) {
+      await supabase.from('agent_activity').insert({
+        agent: 'flowpilot', skill_name: auto.skill_name,
+        input: { automation_id: args.automation_id, arguments: auto.skill_arguments },
+        output: { reason: 'Skill requires admin approval before execution' },
+        status: 'pending_approval',
+      });
+      return { status: 'pending_approval', skill: auto.skill_name };
+    }
+  }
+
+  let skillResult: any;
+  try {
+    const resp = await fetch(`${supabaseUrl}/functions/v1/agent-execute`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceKey}` },
+      body: JSON.stringify({
+        skill_name: auto.skill_name,
+        arguments: auto.skill_arguments || {},
+        agent_type: 'flowpilot',
+      }),
+    });
+    skillResult = await resp.json();
+  } catch (err: any) {
+    skillResult = { error: err.message };
+  }
+
+  let nextRun: string | null = null;
+  if (auto.trigger_type === 'cron' && auto.trigger_config?.cron) {
+    nextRun = calculateNextRun(auto.trigger_config.cron);
+  }
+
+  const updatePayload: Record<string, any> = {
+    last_triggered_at: new Date().toISOString(),
+    run_count: (auto.run_count || 0) + 1,
+    last_error: skillResult.error || null,
+  };
+  if (nextRun) updatePayload.next_run_at = nextRun;
+  await supabase.from('agent_automations').update(updatePayload).eq('id', args.automation_id);
+
+  return {
+    status: skillResult.error ? 'failed' : 'success',
+    automation: auto.name,
+    skill: auto.skill_name,
+    next_run_at: nextRun,
+    result: skillResult,
+  };
+}
+
+// ─── Self-Healing (ported from ClawCMS) ───────────────────────────────────────
+
+export async function runSelfHealing(supabase: any): Promise<string> {
+  const since = new Date();
+  since.setDate(since.getDate() - 3);
+  const { data: recentActivity } = await supabase
+    .from('agent_activity')
+    .select('skill_name, status, created_at')
+    .gte('created_at', since.toISOString())
+    .order('created_at', { ascending: false }).limit(200);
+
+  if (!recentActivity?.length) return '';
+
+  const skillStreaks: Record<string, number> = {};
+  const checked = new Set<string>();
+
+  for (const a of recentActivity) {
+    const name = a.skill_name;
+    if (!name || checked.has(name)) continue;
+    if (a.status === 'failed') {
+      skillStreaks[name] = (skillStreaks[name] || 0) + 1;
+    } else {
+      checked.add(name);
+    }
+  }
+
+  const toDisable = Object.entries(skillStreaks)
+    .filter(([, count]) => count >= SELF_HEAL_THRESHOLD)
+    .map(([name]) => name);
+
+  if (!toDisable.length) return '';
+
+  for (const skillName of toDisable) {
+    await supabase.from('agent_skills')
+      .update({ enabled: false })
+      .eq('name', skillName);
+    console.log(`[self-heal] Auto-disabled skill: ${skillName} (${skillStreaks[skillName]} consecutive failures)`);
+  }
+
+  for (const skillName of toDisable) {
+    await supabase.from('agent_automations')
+      .update({ enabled: false, last_error: `Auto-disabled: ${SELF_HEAL_THRESHOLD}+ consecutive failures` })
+      .eq('skill_name', skillName)
+      .eq('enabled', true);
+  }
+
+  return `\n\n⚠️ Self-healing: Auto-disabled ${toDisable.length} skills due to repeated failures: ${toDisable.join(', ')}`;
 }
 
 // ─── Skill CRUD (Self-Modification) ──────────────────────────────────────────
@@ -292,7 +673,7 @@ async function handleAutomationCreate(supabase: any, args: any) {
 }
 
 async function handleAutomationList(supabase: any, args: { enabled_only?: boolean }) {
-  let q = supabase.from('agent_automations').select('id, name, description, trigger_type, trigger_config, skill_name, enabled, run_count, last_triggered_at');
+  let q = supabase.from('agent_automations').select('id, name, description, trigger_type, trigger_config, skill_name, enabled, run_count, last_triggered_at, next_run_at, last_error');
   if (args.enabled_only) q = q.eq('enabled', true);
   const { data } = await q.order('created_at', { ascending: false });
   return { automations: data || [], count: data?.length || 0 };
@@ -332,7 +713,6 @@ async function handleReflect(supabase: any, args: { focus?: string }) {
   const { data: automations } = await supabase.from('agent_automations').select('name, trigger_type, skill_name, enabled, run_count');
   const { data: objectives } = await supabase.from('agent_objectives').select('goal, status, progress');
 
-  // Generate suggestions
   const suggestions: string[] = [];
   for (const [name, s] of Object.entries(skillStats)) {
     if (s.errors > 2) suggestions.push(`Skill "${name}" has ${s.errors} failures — consider debugging.`);
@@ -346,7 +726,6 @@ async function handleReflect(supabase: any, args: { focus?: string }) {
   if (unusedSkills.length > 3) suggestions.push(`${unusedSkills.length} skills never used. Consider disabling or promoting them.`);
   if (suggestions.length === 0) suggestions.push('System running well. No improvements suggested.');
 
-  // Auto-persist learnings
   const learnings: string[] = [];
   for (const [name, s] of Object.entries(skillStats)) {
     if (s.errors > 2 && s.last_error) learnings.push(`Skill "${name}" fails frequently: ${s.last_error}`);
@@ -420,13 +799,25 @@ const SOUL_TOOL = [
   { type: 'function', function: { name: 'soul_update', description: 'Update your personality, values, tone, or philosophy.', parameters: { type: 'object', properties: { field: { type: 'string', enum: ['purpose', 'values', 'tone', 'philosophy'] }, value: { description: 'New value' } }, required: ['field', 'value'] } } },
 ];
 
-export function getBuiltInTools(groups: Array<'memory' | 'objectives' | 'self-mod' | 'reflect' | 'soul'>): any[] {
+const PLANNING_TOOLS = [
+  { type: 'function', function: { name: 'decompose_objective', description: 'Break an objective into 3-7 ordered steps using AI planning. Each step maps to an available skill. Use this when an objective has no plan yet.', parameters: { type: 'object', properties: { objective_id: { type: 'string', description: 'The objective UUID to decompose' } }, required: ['objective_id'] } } },
+  { type: 'function', function: { name: 'advance_plan', description: "Execute the next pending step(s) in an objective's plan with automatic chaining. By default (chain=true), up to 4 consecutive steps are executed in one call. This is the PRIMARY tool for plan execution.", parameters: { type: 'object', properties: { objective_id: { type: 'string', description: 'The objective UUID whose plan to advance' }, chain: { type: 'boolean', description: 'Auto-chain consecutive steps (default: true)' } }, required: ['objective_id'] } } },
+  { type: 'function', function: { name: 'propose_objective', description: 'Proactively create a new objective based on signal patterns, site stats, or strategic gaps. Only propose when there is a clear need not covered by existing objectives.', parameters: { type: 'object', properties: { goal: { type: 'string', description: 'The objective goal' }, reason: { type: 'string', description: 'Why this objective is being proposed' }, constraints: { type: 'object', description: 'Optional constraints (priority, deadline)' }, success_criteria: { type: 'object', description: 'How to measure success' } }, required: ['goal', 'reason'] } } },
+];
+
+const AUTOMATION_EXEC_TOOLS = [
+  { type: 'function', function: { name: 'execute_automation', description: 'Execute an enabled automation by ID. Runs its linked skill with preconfigured arguments and updates run metadata. Prioritize objective-linked and DUE automations.', parameters: { type: 'object', properties: { automation_id: { type: 'string', description: 'The automation UUID to execute' } }, required: ['automation_id'] } } },
+];
+
+export function getBuiltInTools(groups: Array<'memory' | 'objectives' | 'self-mod' | 'reflect' | 'soul' | 'planning' | 'automations-exec'>): any[] {
   const tools: any[] = [];
   if (groups.includes('memory')) tools.push(...MEMORY_TOOLS);
   if (groups.includes('objectives')) tools.push(...OBJECTIVE_TOOLS);
   if (groups.includes('self-mod')) tools.push(...SELF_MOD_TOOLS);
   if (groups.includes('reflect')) tools.push(...REFLECT_TOOL);
   if (groups.includes('soul')) tools.push(...SOUL_TOOL);
+  if (groups.includes('planning')) tools.push(...PLANNING_TOOLS);
+  if (groups.includes('automations-exec')) tools.push(...AUTOMATION_EXEC_TOOLS);
   return tools;
 }
 
@@ -453,6 +844,10 @@ export async function executeBuiltInTool(
     case 'automation_create': return handleAutomationCreate(supabase, fnArgs);
     case 'automation_list': return handleAutomationList(supabase, fnArgs);
     case 'reflect': return handleReflect(supabase, fnArgs);
+    case 'decompose_objective': return handleDecomposeObjective(supabase, fnArgs);
+    case 'advance_plan': return handleAdvancePlan(supabase, supabaseUrl, serviceKey, fnArgs);
+    case 'propose_objective': return handleProposeObjective(supabase, fnArgs);
+    case 'execute_automation': return handleExecuteAutomation(supabase, supabaseUrl, serviceKey, fnArgs);
   }
 
   // Not a built-in → delegate to agent-execute
@@ -495,15 +890,12 @@ export async function reason(
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-  // Resolve AI
   const { apiKey, apiUrl, model } = await resolveAiConfig(supabase);
 
-  // Build tools
   const builtInTools = getBuiltInTools(config.builtInToolGroups || ['memory', 'objectives', 'reflect']);
   const skillTools = await loadSkillTools(supabase, config.scope);
   const allTools = [...builtInTools, ...(config.additionalTools || []), ...skillTools];
 
-  // Run the loop
   let conversationMessages = [...messages];
   const actionsExecuted: string[] = [];
   const skillResults: ReasonResult['skillResults'] = [];
@@ -533,13 +925,11 @@ export async function reason(
 
     const msg = choice.message;
 
-    // No tool calls → done
     if (!msg.tool_calls?.length) {
       finalResponse = msg.content || 'Done.';
       break;
     }
 
-    // Execute tool calls
     conversationMessages.push(msg);
 
     for (const tc of msg.tool_calls) {
