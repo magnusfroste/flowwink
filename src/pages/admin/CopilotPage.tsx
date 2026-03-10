@@ -38,8 +38,8 @@ export default function CopilotPage() {
         </div>
 
         {/* Main content: Chat + Context Panel */}
-        <div className="flex-1 flex overflow-hidden">
-          <div className="flex-1 border-r flex flex-col">
+        <div className="flex-1 flex overflow-hidden relative">
+          <div className="flex-1 min-w-0 border-r flex flex-col">
             <UnifiedChat
               scope="admin"
               messages={operate.messages}
@@ -50,7 +50,7 @@ export default function CopilotPage() {
               onCancel={operate.cancelRequest}
             />
           </div>
-          <div className="w-80 flex flex-col bg-muted/30">
+          <div className="hidden lg:flex w-72 xl:w-80 shrink-0 flex-col bg-muted/30 overflow-hidden">
             <ContextPanel
               activities={operate.activities}
               onApprove={operate.approveAction}

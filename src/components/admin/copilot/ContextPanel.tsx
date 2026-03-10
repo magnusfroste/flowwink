@@ -72,23 +72,20 @@ const STATUS_DOT: Record<string, string> = {
 
 function ActivityItem({ activity }: { activity: AgentActivity }) {
   return (
-    <div className="flex items-start gap-2.5 py-2 px-1 group">
+    <div className="flex items-start gap-2 py-2 px-1 group overflow-hidden">
       <span className={cn(
         'h-2 w-2 rounded-full mt-1.5 shrink-0',
         STATUS_DOT[activity.status] ?? 'bg-muted-foreground'
       )} />
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0 overflow-hidden">
         <p className="text-xs font-medium truncate">
           {(activity.skill_name || 'Unknown').replace(/_/g, ' ')}
         </p>
-        <p className="text-[10px] text-muted-foreground">
+        <p className="text-[10px] text-muted-foreground truncate">
           {formatDistanceToNow(new Date(activity.created_at), { addSuffix: true })}
           {activity.duration_ms ? ` · ${activity.duration_ms}ms` : ''}
         </p>
       </div>
-      <Badge variant="outline" className="text-[9px] shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-        {activity.agent}
-      </Badge>
     </div>
   );
 }
@@ -108,9 +105,9 @@ function PanelSection({
   
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
-      <CollapsibleTrigger className="flex items-center gap-2 w-full px-4 py-2.5 hover:bg-accent/50 transition-colors">
-        <Icon className="h-3.5 w-3.5 text-muted-foreground" />
-        <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground flex-1 text-left">
+      <CollapsibleTrigger className="flex items-center gap-2 w-full px-3 py-2.5 hover:bg-accent/50 transition-colors">
+        <Icon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+        <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground flex-1 text-left truncate">
           {title}
         </span>
         {badge !== undefined && (
@@ -121,7 +118,7 @@ function PanelSection({
         {open ? <ChevronDown className="h-3 w-3 text-muted-foreground" /> : <ChevronRight className="h-3 w-3 text-muted-foreground" />}
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <div className="px-4 pb-3">
+        <div className="px-3 pb-3 overflow-hidden">
           {children}
         </div>
       </CollapsibleContent>
@@ -231,27 +228,27 @@ export function ContextPanel({ activities, onApprove, onRefresh }: ContextPanelP
       </ScrollArea>
 
       {/* Cross-navigation footer */}
-      <div className="border-t p-3 space-y-1">
+      <div className="border-t p-2 space-y-0.5">
         <Button 
-          variant="ghost" size="sm" className="w-full justify-start gap-2 h-8 text-xs"
+          variant="ghost" size="sm" className="w-full justify-start gap-2 h-7 text-xs"
           onClick={() => navigate('/admin/skills')}
         >
-          <Settings2 className="h-3.5 w-3.5" />
-          Manage Skills
+          <Settings2 className="h-3.5 w-3.5 shrink-0" />
+          <span className="truncate">Skills</span>
         </Button>
         <Button 
-          variant="ghost" size="sm" className="w-full justify-start gap-2 h-8 text-xs"
+          variant="ghost" size="sm" className="w-full justify-start gap-2 h-7 text-xs"
           onClick={() => navigate('/admin/skills?tab=automations')}
         >
-          <Workflow className="h-3.5 w-3.5" />
-          Automations
+          <Workflow className="h-3.5 w-3.5 shrink-0" />
+          <span className="truncate">Automations</span>
         </Button>
         <Button 
-          variant="ghost" size="sm" className="w-full justify-start gap-2 h-8 text-xs"
+          variant="ghost" size="sm" className="w-full justify-start gap-2 h-7 text-xs"
           onClick={() => navigate('/admin/skills?tab=evolution')}
         >
-          <TrendingUp className="h-3.5 w-3.5" />
-          Evolution
+          <TrendingUp className="h-3.5 w-3.5 shrink-0" />
+          <span className="truncate">Evolution</span>
         </Button>
       </div>
     </div>
