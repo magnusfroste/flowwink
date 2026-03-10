@@ -262,6 +262,7 @@ export interface ChatSettings {
   
   // FlowPilot integration
   showEscalationsInCopilot: boolean;
+  showPublicChatsInCopilot: boolean;
 }
 
 export const defaultChatSettings: ChatSettings = {
