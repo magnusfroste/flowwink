@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Zap, Plus, Trash2, MessageSquare, PanelLeftClose, PanelLeft, AlertTriangle } from 'lucide-react';
+import { Zap, Plus, Trash2, MessageSquare, PanelLeftClose, PanelLeft, AlertTriangle, Users } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminContentHeader } from '@/components/admin/AdminContentHeader';
 import { AdminSearchCommand, useAdminSearch, SearchButton } from '@/components/admin/AdminSearchCommand';
@@ -22,6 +22,7 @@ export default function CopilotPage() {
   const { searchOpen, setSearchOpen } = useAdminSearch();
   const adminName = branding?.adminName || 'FlowWink';
   const showEscalations = chatSettings?.showEscalationsInCopilot ?? false;
+  const showPublicChats = chatSettings?.showPublicChatsInCopilot ?? false;
 
   // Fetch unresolved escalations
   const { data: escalations = [] } = useQuery({
@@ -38,6 +39,23 @@ export default function CopilotPage() {
     },
     enabled: showEscalations,
     refetchInterval: 30_000,
+  });
+
+  // Fetch active public chat conversations
+  const { data: publicChats = [] } = useQuery({
+    queryKey: ['copilot-public-chats'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('chat_conversations')
+        .select('id, title, customer_name, customer_email, updated_at, conversation_status, session_id')
+        .not('session_id', 'is', null)
+        .order('updated_at', { ascending: false })
+        .limit(30);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: showPublicChats,
+    refetchInterval: 15_000,
   });
 
   useEffect(() => {
@@ -164,7 +182,38 @@ export default function CopilotPage() {
             </div>
           )}
 
-          {/* Footer */}
+          {/* Public chats section */}
+          {showPublicChats && publicChats.length > 0 && (
+            <div className="px-2 pb-2 border-t border-sidebar-border pt-2">
+              <div className="text-[10px] text-sidebar-foreground/40 uppercase tracking-widest font-normal mb-1 px-2 flex items-center gap-1.5">
+                <Users className="h-3 w-3 text-primary" />
+                Public chats ({publicChats.length})
+              </div>
+              {publicChats.map((chat) => (
+                <button
+                  key={chat.id}
+                  onClick={() => handleSwitchConversation(chat.id)}
+                  className={cn(
+                    'w-full flex items-start gap-2 px-2 py-1.5 rounded-md text-left transition-colors',
+                    operate.conversationId === chat.id
+                      ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                      : 'hover:bg-sidebar-accent/50'
+                  )}
+                >
+                  <MessageSquare className="h-3.5 w-3.5 shrink-0 mt-0.5 text-primary/60" />
+                  <div className="flex-1 min-w-0">
+                    <span className="block truncate text-sm">
+                      {chat.customer_name || chat.customer_email || 'Visitor'}
+                    </span>
+                    <span className="block text-[10px] text-sidebar-foreground/50">
+                      {chat.conversation_status || 'active'} · {formatDistanceToNow(new Date(chat.updated_at), { addSuffix: true })}
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+
           <div className="border-t border-sidebar-border p-3">
             <div className="flex items-center gap-2 text-sidebar-foreground/50">
               <Zap className="h-3.5 w-3.5" />

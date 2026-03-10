@@ -262,6 +262,7 @@ export interface ChatSettings {
   
   // FlowPilot integration
   showEscalationsInCopilot: boolean;
+  showPublicChatsInCopilot: boolean;
 }
 
 export const defaultChatSettings: ChatSettings = {
@@ -315,6 +316,7 @@ export const defaultChatSettings: ChatSettings = {
   liveAgentIconStyle: 'avatar',
   showChatIcons: true,
   showEscalationsInCopilot: false,
+  showPublicChatsInCopilot: false,
 };
 
 // Generic hook for fetching settings
