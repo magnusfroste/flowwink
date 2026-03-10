@@ -316,6 +316,7 @@ export const defaultChatSettings: ChatSettings = {
   liveAgentIconStyle: 'avatar',
   showChatIcons: true,
   showEscalationsInCopilot: false,
+  showPublicChatsInCopilot: false,
 };
 
 // Generic hook for fetching settings
