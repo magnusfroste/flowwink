@@ -7,6 +7,7 @@ import {
   Github, ArrowUpCircle,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { AdminThemeToggle } from './AdminThemeToggle';
 import { usePinnedPages } from '@/hooks/usePinnedPages';
 import { useVersionCheck } from '@/hooks/useVersionCheck';
 
@@ -124,6 +125,9 @@ export function AdminContentHeader() {
 
       {/* Spacer in copilot mode */}
       {isCopilotMode && <div className="flex-1" />}
+
+      {/* Theme toggle */}
+      <AdminThemeToggle />
 
       {/* Profile */}
       <DropdownMenu>
