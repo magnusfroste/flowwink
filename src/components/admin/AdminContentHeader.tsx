@@ -126,6 +126,9 @@ export function AdminContentHeader() {
       {/* Spacer in copilot mode */}
       {isCopilotMode && <div className="flex-1" />}
 
+      {/* Theme toggle */}
+      <AdminThemeToggle />
+
       {/* Profile */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
