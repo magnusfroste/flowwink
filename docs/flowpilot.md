@@ -28,6 +28,27 @@ FlowAgent is the **heart and brain** of FlowWink — an autonomous digital opera
 
 Both agents invoke skills through `agent-execute`, share the activity log, and respect the same scope and approval rules.
 
+### Unified Interface with @-Commands
+
+FlowPilot uses a single `UnifiedChat` component for both admin and visitor scopes. The only difference is the `scope` prop (`admin` vs `visitor`), which determines available skills and UI features.
+
+**@-Command System** — Typing `@` in the chat input opens a floating command palette (similar to Claude's `/` commands):
+
+- Commands are **auto-generated from `agent_skills`** in the database
+- Admin scope sees all internal + both-scoped skills
+- Visitor scope sees external + both-scoped skills
+- Built-in commands: `@help`, `@objectives`, `@activity`, `@migrate`
+- Selecting a command prefixes the message: `@blog Write about AI trends`
+
+**Key files:**
+- `src/components/chat/UnifiedChat.tsx` — Single chat component for both scopes
+- `src/components/chat/UnifiedChatInput.tsx` — Input with @-detection
+- `src/components/chat/CommandPalette.tsx` — Floating skill command menu
+- `src/pages/admin/CopilotPage.tsx` — Admin page using `UnifiedChat scope="admin"`
+- `src/components/chat/ChatConversation.tsx` — Thin wrapper using `UnifiedChat scope="visitor"`
+
+**A2A readiness:** Future agent-to-agent communication uses the same pattern — `@a2a:agent-name message`.
+
 ---
 
 ## 2. The Autonomous Loop
