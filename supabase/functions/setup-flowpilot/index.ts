@@ -365,6 +365,245 @@ const DEFAULT_SKILLS = [
       },
     },
   },
+  {
+    name: 'qualify_lead',
+    description: 'AI-powered lead qualification and scoring. Analyzes lead activities, company data, and engagement to produce a score and summary.',
+    handler: 'edge:qualify-lead',
+    category: 'crm',
+    scope: 'internal',
+    requires_approval: false,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'qualify_lead',
+        description: 'Qualify and score a lead using AI analysis.',
+        parameters: {
+          type: 'object',
+          properties: {
+            leadId: { type: 'string', description: 'The lead UUID to qualify' },
+          },
+          required: ['leadId'],
+        },
+      },
+    },
+  },
+  {
+    name: 'enrich_company',
+    description: 'Enrich a company record with industry, size, website info via domain scraping and AI analysis.',
+    handler: 'edge:enrich-company',
+    category: 'crm',
+    scope: 'internal',
+    requires_approval: false,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'enrich_company',
+        description: 'Enrich company data from its domain.',
+        parameters: {
+          type: 'object',
+          properties: {
+            companyId: { type: 'string', description: 'Company UUID' },
+            domain: { type: 'string', description: 'Company domain (e.g. acme.com)' },
+          },
+        },
+      },
+    },
+  },
+  {
+    name: 'research_content',
+    description: 'Deep AI research on a topic — audience insights, content angles, hooks, competitive landscape, and recommended structure.',
+    handler: 'edge:research-content',
+    category: 'content',
+    scope: 'internal',
+    requires_approval: false,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'research_content',
+        description: 'Research a topic for content creation.',
+        parameters: {
+          type: 'object',
+          properties: {
+            topic: { type: 'string', description: 'Topic to research' },
+            target_audience: { type: 'string', description: 'Target audience description' },
+            industry: { type: 'string', description: 'Industry context' },
+            target_channels: { type: 'array', items: { type: 'string' }, description: 'Channels: blog, newsletter, linkedin, x' },
+          },
+          required: ['topic', 'target_channels'],
+        },
+      },
+    },
+  },
+  {
+    name: 'generate_content_proposal',
+    description: 'Generate multi-channel content (blog, newsletter, LinkedIn, X) from a topic with brand voice and tone control.',
+    handler: 'edge:generate-content-proposal',
+    category: 'content',
+    scope: 'internal',
+    requires_approval: true,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'generate_content_proposal',
+        description: 'Generate content across multiple channels.',
+        parameters: {
+          type: 'object',
+          properties: {
+            topic: { type: 'string', description: 'Content topic' },
+            target_channels: { type: 'array', items: { type: 'string' }, description: 'Channels: blog, newsletter, linkedin, x' },
+            brand_voice: { type: 'string', description: 'Brand voice description' },
+            target_audience: { type: 'string', description: 'Target audience' },
+            tone_level: { type: 'number', description: '1-5 (1=formal, 5=casual)' },
+            industry: { type: 'string', description: 'Industry context' },
+          },
+          required: ['topic', 'target_channels'],
+        },
+      },
+    },
+  },
+  {
+    name: 'prospect_research',
+    description: 'Research a company — scrape website, find contacts via Hunter.io, analyze with AI.',
+    handler: 'edge:prospect-research',
+    category: 'crm',
+    scope: 'internal',
+    requires_approval: false,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'prospect_research',
+        description: 'Research a prospect company and find contacts.',
+        parameters: {
+          type: 'object',
+          properties: {
+            company_name: { type: 'string', description: 'Company name' },
+            company_url: { type: 'string', description: 'Company website URL' },
+          },
+          required: ['company_name'],
+        },
+      },
+    },
+  },
+  {
+    name: 'prospect_fit_analysis',
+    description: 'Analyze how well a prospect company fits your ideal customer profile.',
+    handler: 'edge:prospect-fit-analysis',
+    category: 'crm',
+    scope: 'internal',
+    requires_approval: false,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'prospect_fit_analysis',
+        description: 'Analyze prospect-company fit.',
+        parameters: {
+          type: 'object',
+          properties: {
+            company_id: { type: 'string', description: 'Company UUID from database' },
+            company_name: { type: 'string', description: 'Company name (if no ID)' },
+          },
+        },
+      },
+    },
+  },
+  {
+    name: 'weekly_business_digest',
+    description: 'Generate a cross-module business summary covering views, leads, bookings, orders, posts, newsletters.',
+    handler: 'edge:business-digest',
+    category: 'analytics',
+    scope: 'internal',
+    requires_approval: false,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'weekly_business_digest',
+        description: 'Generate a business digest report.',
+        parameters: {
+          type: 'object',
+          properties: {
+            period: { type: 'string', enum: ['day', 'week', 'month'], description: 'Report period' },
+            format: { type: 'string', enum: ['structured', 'markdown'], description: 'Output format' },
+          },
+        },
+      },
+    },
+  },
+  {
+    name: 'publish_scheduled_content',
+    description: 'Check and publish pages and blog posts that are due for scheduled publishing.',
+    handler: 'edge:publish-scheduled-pages',
+    category: 'content',
+    scope: 'internal',
+    requires_approval: false,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'publish_scheduled_content',
+        description: 'Publish pages/posts that have passed their scheduled date.',
+        parameters: { type: 'object', properties: {} },
+      },
+    },
+  },
+  {
+    name: 'scan_gmail_inbox',
+    description: 'Scan connected Gmail inbox for business signals — new leads, partnership inquiries, support requests.',
+    handler: 'edge:gmail-inbox-scan',
+    category: 'communication',
+    scope: 'internal',
+    requires_approval: false,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'scan_gmail_inbox',
+        description: 'Scan Gmail for business-relevant emails and extract signals.',
+        parameters: {
+          type: 'object',
+          properties: {
+            max_messages: { type: 'number', description: 'Max messages to scan (default 20)' },
+            scan_days: { type: 'number', description: 'Days back to scan (default 1)' },
+          },
+        },
+      },
+    },
+  },
+  {
+    name: 'execute_newsletter_send',
+    description: 'Actually send a prepared newsletter to all confirmed subscribers via email.',
+    handler: 'edge:newsletter-send',
+    category: 'communication',
+    scope: 'internal',
+    requires_approval: true,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'execute_newsletter_send',
+        description: 'Send a newsletter to subscribers.',
+        parameters: {
+          type: 'object',
+          properties: {
+            newsletter_id: { type: 'string', description: 'Newsletter UUID to send' },
+          },
+          required: ['newsletter_id'],
+        },
+      },
+    },
+  },
+  {
+    name: 'learn_from_data',
+    description: 'Analyze page views, chat feedback, and lead conversions to distill learnings into persistent memory.',
+    handler: 'edge:flowpilot-learn',
+    category: 'analytics',
+    scope: 'internal',
+    requires_approval: false,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'learn_from_data',
+        description: 'Analyze platform data and save learnings to memory.',
+        parameters: { type: 'object', properties: {} },
+      },
+    },
+  },
 ];
 
 // Default Soul & Identity

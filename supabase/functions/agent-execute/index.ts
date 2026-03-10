@@ -440,7 +440,10 @@ const SKILL_OBJECTIVE_MAP: Record<string, string[]> = {
   write_blog_post: ['blog', 'content', 'publish', 'article'],
   create_page_block: ['page', 'content', 'website'],
   send_newsletter: ['newsletter', 'email', 'subscriber', 'engagement'],
+  execute_newsletter_send: ['newsletter', 'email', 'campaign', 'engagement'],
   add_lead: ['lead', 'crm', 'sales', 'pipeline'],
+  qualify_lead: ['lead', 'qualify', 'score', 'crm', 'sales'],
+  enrich_company: ['company', 'enrich', 'crm', 'data'],
   prospect_research: ['prospect', 'research', 'sales', 'lead'],
   prospect_fit_analysis: ['prospect', 'fit', 'sales', 'pipeline'],
   create_campaign: ['campaign', 'marketing', 'engagement'],
@@ -448,6 +451,11 @@ const SKILL_OBJECTIVE_MAP: Record<string, string[]> = {
   analyze_analytics: ['analytics', 'traffic', 'performance', 'growth'],
   weekly_business_digest: ['digest', 'report', 'overview'],
   search_web: ['research', 'content'],
+  research_content: ['content', 'research', 'blog', 'topic'],
+  generate_content_proposal: ['content', 'proposal', 'blog', 'newsletter', 'social'],
+  publish_scheduled_content: ['publish', 'schedule', 'content', 'page'],
+  scan_gmail_inbox: ['email', 'inbox', 'signal', 'lead'],
+  learn_from_data: ['learn', 'insight', 'analytics', 'performance'],
 };
 
 async function trackObjectiveProgress(
