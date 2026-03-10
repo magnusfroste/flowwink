@@ -153,8 +153,9 @@ const MODULE_HANDLER_TO_SETTING: Record<string, string> = {
   booking: 'bookings',
   newsletter: 'newsletter',
   orders: 'orders',
-  objectives: 'analytics', // objectives relate to analytics/insights
+  objectives: 'analytics',
   products: 'products',
+  media: 'media',
 };
 
 async function autoActivateModule(
@@ -310,6 +311,61 @@ async function executeModuleAction(
       }).select('id, name, trigger_type, enabled').single();
       if (error) throw new Error(`Automation insert failed: ${error.message}`);
       return { automation_id: data.id, name: data.name, trigger_type: data.trigger_type, enabled: data.enabled };
+    }
+
+    case 'media': {
+      const { action = 'list', folder, search, file_path } = args as any;
+
+      if (action === 'list') {
+        const targetFolders = folder ? [folder] : ['pages', 'imports', 'templates', 'uploads'];
+        const allFiles: Array<{ name: string; folder: string; url: string; size?: number; type?: string; created_at?: string }> = [];
+
+        for (const f of targetFolders) {
+          const { data: files } = await supabase.storage
+            .from('cms-images')
+            .list(f, { sortBy: { column: 'created_at', order: 'desc' }, limit: 50 });
+          if (files) {
+            for (const file of files) {
+              if (file.name === '.emptyFolderPlaceholder') continue;
+              const { data: { publicUrl } } = supabase.storage
+                .from('cms-images')
+                .getPublicUrl(`${f}/${file.name}`);
+              allFiles.push({
+                name: file.name,
+                folder: f,
+                url: publicUrl,
+                size: (file.metadata as any)?.size,
+                type: (file.metadata as any)?.mimetype,
+                created_at: file.created_at,
+              });
+            }
+          }
+        }
+
+        // Optional search filter
+        const filtered = search
+          ? allFiles.filter(f => f.name.toLowerCase().includes((search as string).toLowerCase()))
+          : allFiles;
+
+        return { files: filtered.slice(0, 30), total: filtered.length };
+      }
+
+      if (action === 'get_url' && file_path) {
+        const { data: { publicUrl } } = supabase.storage
+          .from('cms-images')
+          .getPublicUrl(file_path);
+        return { url: publicUrl, path: file_path };
+      }
+
+      if (action === 'delete' && file_path) {
+        const { error } = await supabase.storage
+          .from('cms-images')
+          .remove([file_path]);
+        if (error) throw new Error(`Delete failed: ${error.message}`);
+        return { deleted: file_path };
+      }
+
+      return { error: `Unknown media action: ${action}` };
     }
 
     default:
