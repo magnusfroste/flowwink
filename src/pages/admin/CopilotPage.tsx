@@ -59,6 +59,8 @@ export default function CopilotPage() {
 
   return (
     <AdminLayout>
+      <AdminSearchCommand open={searchOpen} onOpenChange={setSearchOpen} />
+
       {/* Chat history sidebar — mirrors AdminSidebar structure */}
       <Sidebar collapsible="none" className="border-r border-sidebar-border">
         {/* Header — matches AdminSidebar header */}
@@ -68,8 +70,11 @@ export default function CopilotPage() {
           </div>
         </SidebarHeader>
 
+        {/* Search Button */}
+        <SearchButton onClick={() => setSearchOpen(true)} />
+
         {/* New chat button */}
-        <div className="px-2 pt-2 pb-1">
+        <div className="px-2 pt-1 pb-1">
           <Button onClick={handleNewChat} variant="outline" className="w-full gap-2 justify-start text-sm h-8" size="sm">
             <Plus className="h-4 w-4" />
             New chat
