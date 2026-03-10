@@ -79,6 +79,11 @@ export default function ChatPage() {
 
   const handleDeleteConversation = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    // Clean up related data before deleting conversation
+    await Promise.all([
+      supabase.from('chat_messages').delete().eq('conversation_id', id),
+      supabase.from('chat_feedback').delete().eq('conversation_id', id),
+    ]);
     await supabase.from('chat_conversations').delete().eq('id', id);
     setConversations(prev => prev.filter(c => c.id !== id));
     if (activeConversationId === id) {
