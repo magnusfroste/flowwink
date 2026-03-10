@@ -9,7 +9,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { usePinnedPages } from '@/hooks/usePinnedPages';
 import { useVersionCheck } from '@/hooks/useVersionCheck';
-import { SidebarTrigger } from '@/components/ui/sidebar';
+
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
