@@ -264,7 +264,7 @@ export interface ChatSettings {
   showEscalationsInCopilot: boolean;
 }
 
-const defaultChatSettings: ChatSettings = {
+export const defaultChatSettings: ChatSettings = {
   enabled: false,
   title: 'AI Assistant',
   placeholder: 'Ask a question...',
