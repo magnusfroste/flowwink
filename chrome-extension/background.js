@@ -1,5 +1,5 @@
 // Background service worker
-// Handles keyboard shortcuts and extension lifecycle
+// Handles keyboard shortcuts, extension lifecycle, and page-settle scraping
 
 chrome.runtime.onInstalled.addListener(() => {
   console.log("Signal Capture extension installed");
@@ -24,6 +24,46 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return true;
 });
 
+// ---- Page Settle Detection ----
+// Instead of a fixed timeout, we watch for network inactivity
+// to know when an SPA has finished loading dynamic content.
+function waitForPageSettle(tabId, timeoutMs = 8000) {
+  return new Promise((resolve) => {
+    let settleTimer = null;
+    let resolved = false;
+    const SETTLE_DELAY = 2000; // 2s of network quiet = settled
+
+    function done() {
+      if (resolved) return;
+      resolved = true;
+      chrome.webNavigation?.onCompleted?.removeListener(navListener);
+      clearTimeout(hardTimeout);
+      resolve();
+    }
+
+    // Reset settle timer on any navigation event in the tab
+    function navListener(details) {
+      if (details.tabId === tabId) {
+        resetSettle();
+      }
+    }
+
+    function resetSettle() {
+      clearTimeout(settleTimer);
+      settleTimer = setTimeout(done, SETTLE_DELAY);
+    }
+
+    // Listen for sub-frame loads (SPA route changes, lazy content)
+    chrome.webNavigation?.onCompleted?.addListener(navListener);
+
+    // Hard timeout fallback
+    const hardTimeout = setTimeout(done, timeoutMs);
+
+    // Start the settle clock
+    resetSettle();
+  });
+}
+
 // Handle external messages (from admin panels via externally_connectable)
 chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => {
   if (message.type === "ping") {
@@ -41,7 +81,7 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
         sendResponse({ success: false, error: "No active tab" });
       }
     });
-    return true; // Keep channel open for async response
+    return true;
   }
 
   if (message.type === "navigate_and_scrape") {
@@ -51,24 +91,25 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
       return true;
     }
 
-    chrome.tabs.create({ url, active: false }, (tab) => {
+    chrome.tabs.create({ url, active: true }, (tab) => {
       const tabId = tab.id;
-      
-      // Wait for page to load
+
+      // Wait for initial page load
       chrome.tabs.onUpdated.addListener(function listener(updatedTabId, info) {
         if (updatedTabId === tabId && info.status === "complete") {
           chrome.tabs.onUpdated.removeListener(listener);
-          
-          // Scrape the page
-          chrome.tabs.sendMessage(tabId, { type: "scrape_page" }, (response) => {
-            // Close the tab
-            chrome.tabs.remove(tabId);
-            sendResponse(response);
+
+          // Wait for SPA content to settle before scraping
+          waitForPageSettle(tabId).then(() => {
+            chrome.tabs.sendMessage(tabId, { type: "scrape_page" }, (response) => {
+              chrome.tabs.remove(tabId);
+              sendResponse(response || { success: false, error: "No response from content script" });
+            });
           });
         }
       });
     });
-    return true; // Keep channel open for async response
+    return true;
   }
 
   return true;

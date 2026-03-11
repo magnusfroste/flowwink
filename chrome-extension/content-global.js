@@ -18,21 +18,26 @@
     return "web";
   }
 
-  // Extract page content (selected text or main content)
+  // Use smart extractors if available, fallback to basic
   function getPageContent() {
+    if (typeof Extractors !== "undefined") {
+      return Extractors.extract();
+    }
     const sel = window.getSelection()?.toString()?.trim();
-    if (sel) return sel;
+    if (sel) return { title: document.title, content: sel, method: "selection" };
     const el = document.querySelector("article") || document.querySelector("main") || document.body;
-    return (el?.innerText || "").substring(0, 8000);
+    return { title: document.title, content: (el?.innerText || "").substring(0, 8000), method: "basic" };
   }
 
   // Extract metadata
   function getPageMeta() {
+    const extracted = getPageContent();
     return {
       url: location.href,
-      title: document.title,
+      title: extracted.title || document.title,
       source_type: detectSource(),
-      content: getPageContent(),
+      content: extracted.content,
+      method: extracted.method,
       has_selection: !!(window.getSelection()?.toString()?.trim()),
     };
   }
@@ -210,7 +215,6 @@
 
   // ---- Build UI ----
   function createUI() {
-    // FAB
     const fab = document.createElement("button");
     fab.id = FAB_ID;
     fab.innerHTML = "⚡";
@@ -218,7 +222,6 @@
     fab.addEventListener("click", togglePalette);
     document.body.appendChild(fab);
 
-    // Palette
     const palette = document.createElement("div");
     palette.id = PALETTE_ID;
     palette.innerHTML = `
@@ -260,20 +263,16 @@
     `;
     document.body.appendChild(palette);
 
-    // Wire action buttons
     palette.querySelectorAll(".action-btn").forEach((btn) => {
       btn.addEventListener("click", () => handleAction(btn.dataset.action));
     });
 
-    // Update meta
     updateMeta();
   }
 
   function updateMeta() {
     const el = document.getElementById("signal-page-meta");
     if (el) el.textContent = document.title || location.hostname;
-
-    // Update FAB highlight when text is selected
     const fab = document.getElementById(FAB_ID);
     if (fab) {
       const hasSel = !!(window.getSelection()?.toString()?.trim());
@@ -307,6 +306,10 @@
     setStatus("Sending…", "");
 
     try {
+      if (!chrome?.storage?.local) {
+        setStatus("Extension context lost — reload the page", "err");
+        return;
+      }
       const stored = await chrome.storage.local.get(["endpoint", "token", "projectName"]);
       const token = stored.token;
       const endpoint = stored.endpoint;
@@ -319,7 +322,6 @@
       const meta = getPageMeta();
       const note = document.getElementById("signal-note")?.value?.trim() || "";
 
-      // Map action to task type / enrichment
       let taskNote = note;
       if (action === "draft") {
         taskNote = `[ACTION:draft] ${note}`.trim();
@@ -331,6 +333,7 @@
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "x-signal-token": token,
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
@@ -370,16 +373,23 @@
     }
   });
 
-  // Update selection highlight periodically
   document.addEventListener("selectionchange", () => {
     updateMeta();
   });
 
-  // ---- Listen for messages from admin panel (externally_connectable) ----
+  // ---- Listen for messages from background / admin panel ----
   chrome.runtime.onMessage?.addListener((msg, sender, sendResponse) => {
     if (msg.type === "scrape_page") {
       const meta = getPageMeta();
-      sendResponse({ success: true, data: meta });
+      sendResponse({
+        success: true,
+        title: meta.title,
+        content: meta.content,
+        url: meta.url,
+        source_type: meta.source_type,
+        method: meta.method,
+        html: document.documentElement.outerHTML.substring(0, 50000),
+      });
     }
   });
 

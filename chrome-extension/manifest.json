@@ -3,7 +3,7 @@
   "name": "FlowWink Signal Capture",
   "version": "1.0.0",
   "description": "Command palette for capturing signals, drafts, and bookmarks to your AI-powered CMS.",
-  "permissions": ["activeTab", "storage", "scripting", "tabs"],
+  "permissions": ["activeTab", "storage", "scripting", "tabs", "webNavigation"],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
@@ -23,13 +23,14 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["content-global.js"],
+      "js": ["extractors.js", "content-global.js"],
       "run_at": "document_idle"
     }
   ],
   "externally_connectable": {
     "matches": [
       "https://*.lovable.app/*",
+      "https://*.lovableproject.com/*",
       "https://*.vercel.app/*",
       "https://*.netlify.app/*",
       "https://*.supabase.co/*",
