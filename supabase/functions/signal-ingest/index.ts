@@ -33,18 +33,15 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // 1. Validate token
+    // 1. Validate token — accepts anon key or custom signal_ingest_token
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ ok: false, error: "Missing token" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const apiKeyHeader = req.headers.get("apikey");
+    const token = authHeader?.startsWith("Bearer ")
+      ? authHeader.replace("Bearer ", "").trim()
+      : apiKeyHeader?.trim() || "";
 
-    const token = authHeader.replace("Bearer ", "").trim();
     if (!token) {
-      return new Response(JSON.stringify({ ok: false, error: "Empty token" }), {
+      return new Response(JSON.stringify({ ok: false, error: "Missing token" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -52,17 +49,25 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    // Validate token against site_settings
-    const { data: tokenSetting } = await supabase
-      .from("site_settings")
-      .select("value")
-      .eq("key", "signal_ingest_token")
-      .maybeSingle();
+    // Accept anon key directly
+    let authorized = token === anonKey;
 
-    const storedToken = (tokenSetting?.value as any)?.token;
-    if (!storedToken || storedToken !== token) {
+    // Also check custom token in site_settings
+    if (!authorized) {
+      const { data: tokenSetting } = await supabase
+        .from("site_settings")
+        .select("value")
+        .eq("key", "signal_ingest_token")
+        .maybeSingle();
+
+      const storedToken = (tokenSetting?.value as any)?.token;
+      authorized = !!storedToken && storedToken === token;
+    }
+
+    if (!authorized) {
       return new Response(JSON.stringify({ ok: false, error: "Invalid token" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
