@@ -97,6 +97,13 @@ ${objectiveContext}
 
 SKILL INSTRUCTIONS: Loaded lazily — you'll receive specific skill instructions after you use each skill.
 
+BROWSER & URL RESOLUTION:
+- NEVER guess URLs for social profiles (LinkedIn, X, GitHub). People's profile slugs are unpredictable.
+- When asked to fetch someone's LinkedIn/social profile, FIRST use search_web to find the correct URL (e.g. "Magnus Froste LinkedIn profile").
+- Only call browser_fetch AFTER you have the verified URL from search results.
+- For LinkedIn posts specifically, search for "site:linkedin.com [person name] latest post" to find direct post URLs.
+- If browser_fetch returns an error/404, tell the user and suggest alternatives.
+
 RULES:
 - When the user asks you to do something, USE the appropriate tools immediately.
 - You can call MULTIPLE tools in parallel when they're independent.
