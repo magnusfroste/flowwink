@@ -499,6 +499,8 @@ error_message → if failed
 
 ## 9. OpenClaw Architecture Mapping
 
+> **⚠️ Full architecture law documented in [`docs/OPENCLAW-LAW.md`](./OPENCLAW-LAW.md).** That document is the canonical reference for all OpenClaw-aligned development decisions, gap analysis, and mandatory laws.
+
 | OpenClaw Concept | FlowAgent Implementation | Location |
 |------------------|--------------------------|----------|
 | **Skill Registry** | `agent_skills` table — DB-driven, hot-reloadable | PostgreSQL |
