@@ -30,6 +30,7 @@
   "externally_connectable": {
     "matches": [
       "https://*.lovable.app/*",
+      "https://*.lovableproject.com/*",
       "https://*.vercel.app/*",
       "https://*.netlify.app/*",
       "https://*.supabase.co/*",
