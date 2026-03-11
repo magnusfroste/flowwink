@@ -297,6 +297,7 @@ const API_EXAMPLES: Record<string, { input: string; output: string }> = {
 const EXTENSION_FILES = [
   'manifest.json',
   'background.js',
+  'extractors.js',
   'content-global.js',
   'popup.html',
   'popup.js',
