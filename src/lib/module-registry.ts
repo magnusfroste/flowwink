@@ -29,6 +29,7 @@ import {
   ordersModule,
   webinarsModule,
   resumeModule,
+  browserControlModule,
 } from '@/lib/modules';
 
 // =============================================================================
@@ -56,6 +57,7 @@ class ModuleRegistry {
       ordersModule,
       webinarsModule,
       resumeModule,
+      browserControlModule,
     ];
 
     for (const mod of builtIn) {
