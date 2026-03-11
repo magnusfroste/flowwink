@@ -44,6 +44,7 @@ export interface ModulesSettings {
   webinars: ModuleConfig;
   salesIntelligence: ModuleConfig;
   resume: ModuleConfig;
+  browserControl: ModuleConfig;
 }
 
 export const defaultModulesSettings: ModulesSettings = {
