@@ -29,6 +29,7 @@ import {
   ordersModule,
   webinarsModule,
   resumeModule,
+  browserControlModule,
 } from '@/lib/modules';
 
 // =============================================================================
