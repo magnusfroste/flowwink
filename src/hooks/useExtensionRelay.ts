@@ -16,7 +16,21 @@
  * 5. Hook calls browser-fetch again with relay_result
  */
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef } from 'react';
+
+// Chrome extension types (only available when running in Chrome with extensions)
+declare global {
+  interface Window {
+    chrome?: {
+      runtime?: {
+        sendMessage: (extensionId: string, message: any, callback: (response: any) => void) => void;
+        lastError?: { message: string };
+      };
+    };
+  }
+}
+
+const getChrome = () => (window as any).chrome;
 
 // The extension ID — users set this in site_settings or we detect via ping
 const EXTENSION_PING_TIMEOUT = 2000;
