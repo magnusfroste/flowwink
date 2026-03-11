@@ -321,6 +321,29 @@ export function ModuleDetailSheet({
               </span>
             </div>
 
+            {/* Autonomy Level */}
+            <div className="rounded-lg border p-3 bg-muted/20">
+              <div className="flex items-center gap-2 mb-2">
+                {autonomy === 'agent-capable' && <Bot className="h-4 w-4 text-primary" />}
+                {autonomy === 'config-required' && <Settings2 className="h-4 w-4 text-muted-foreground" />}
+                {autonomy === 'view-required' && <Eye className="h-4 w-4 text-muted-foreground" />}
+                <span className="text-sm font-medium capitalize">{autonomy.replace('-', ' ')}</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {autonomy === 'agent-capable' && 'This module can be fully managed by FlowPilot without an admin interface. The admin UI is optional.'}
+                {autonomy === 'config-required' && 'This module requires visual configuration. The admin interface is always available when the module is enabled.'}
+                {autonomy === 'view-required' && 'Data flows into this module passively. The admin interface is required to review and manage entries.'}
+              </p>
+              {autonomy === 'agent-capable' && (
+                <div className="flex items-center gap-2 mt-2 pt-2 border-t border-border/50">
+                  <Monitor className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">
+                    Admin UI: <span className="font-medium text-foreground">{adminUI ? 'Enabled' : 'Disabled (agent-only)'}</span>
+                  </span>
+                </div>
+              )}
+            </div>
+
             {/* Statistics */}
             {stats && (
               <>
