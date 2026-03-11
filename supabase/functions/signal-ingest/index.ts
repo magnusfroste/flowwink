@@ -17,7 +17,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+    "authorization, x-client-info, apikey, content-type, x-signal-token, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 Deno.serve(async (req) => {
@@ -33,18 +33,14 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // 1. Validate token
+    // 1. Validate token — check x-signal-token header first, then Authorization Bearer
+    const signalToken = req.headers.get("x-signal-token");
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ ok: false, error: "Missing token" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const token = signalToken?.trim()
+      || (authHeader?.startsWith("Bearer ") ? authHeader.replace("Bearer ", "").trim() : "");
 
-    const token = authHeader.replace("Bearer ", "").trim();
     if (!token) {
-      return new Response(JSON.stringify({ ok: false, error: "Empty token" }), {
+      return new Response(JSON.stringify({ ok: false, error: "Missing token" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -52,17 +48,26 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
+    const publishableKey = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") || "";
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    // Validate token against site_settings
-    const { data: tokenSetting } = await supabase
-      .from("site_settings")
-      .select("value")
-      .eq("key", "signal_ingest_token")
-      .maybeSingle();
+    // Accept anon key, publishable key, or custom token from site_settings
+    let authorized = (anonKey && token === anonKey) || (publishableKey && token === publishableKey);
 
-    const storedToken = (tokenSetting?.value as any)?.token;
-    if (!storedToken || storedToken !== token) {
+    // Also check custom token in site_settings
+    if (!authorized) {
+      const { data: tokenSetting } = await supabase
+        .from("site_settings")
+        .select("value")
+        .eq("key", "signal_ingest_token")
+        .maybeSingle();
+
+      const storedToken = (tokenSetting?.value as any)?.token;
+      authorized = !!storedToken && storedToken === token;
+    }
+
+    if (!authorized) {
       return new Response(JSON.stringify({ ok: false, error: "Invalid token" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

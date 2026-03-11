@@ -331,6 +331,7 @@
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "x-signal-token": token,
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
