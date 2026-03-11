@@ -290,8 +290,8 @@ export default function ConsultantProfilesPage() {
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-green-500/10 flex items-center justify-center">
-                  <FileUser className="h-5 w-5 text-green-600" />
+                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <FileUser className="h-5 w-5 text-primary" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{activeCount}</p>
