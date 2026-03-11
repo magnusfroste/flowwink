@@ -200,7 +200,9 @@ export function AdminSidebar() {
                 if (item.setupOnly && siteSetupComplete) return false;
                 if (!item.moduleId) return true;
                 if (!modules) return true;
-                return modules[item.moduleId]?.enabled ?? true;
+                const mod = modules[item.moduleId];
+                if (!mod?.enabled) return false;
+                return mod.adminUI !== false;
               }),
             }))
             .filter(group => group.items.length > 0)
