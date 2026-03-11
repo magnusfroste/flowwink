@@ -277,12 +277,9 @@ export default function CopilotPage() {
                   ? <span className="text-green-500">v{relay.extensionStatus.version || '?'}</span>
                   : 'not detected'}
               </span>
-              <a
-                href="/admin/browser-control"
-                className="text-[10px] text-primary hover:underline ml-auto"
-              >
-                {relay.extensionStatus.installed ? 'Settings' : 'Setup'}
-              </a>
+              <span className="text-[10px] text-muted-foreground ml-auto">
+                via Modules → Details
+              </span>
             </div>
           </div>
         </div>

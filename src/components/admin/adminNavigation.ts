@@ -74,13 +74,6 @@ export const navigationGroups: NavGroup[] = [
     ],
   },
   {
-    label: "Operator",
-    adminOnly: true,
-    items: [
-      { name: "Browser Control", href: "/admin/browser-control", icon: Globe, moduleId: "browserControl" },
-    ],
-  },
-  {
     label: "Setup",
     adminOnly: true,
     collapsible: true,

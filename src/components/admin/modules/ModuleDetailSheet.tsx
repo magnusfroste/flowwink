@@ -506,7 +506,15 @@ export function ModuleDetailSheet({
               </span>
             </div>
 
-            {/* Autonomy Level */}
+            {/* Browser Control Setup */}
+            {moduleId === 'browserControl' && (
+              <>
+                <Separator />
+                <BrowserControlSetup />
+              </>
+            )}
+
+
             <div className="rounded-lg border p-3 bg-muted/20">
               <div className="flex items-center gap-2 mb-2">
                 {autonomy === 'agent-capable' && <Bot className="h-4 w-4 text-primary" />}
