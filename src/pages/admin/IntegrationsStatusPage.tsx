@@ -493,6 +493,25 @@ function IntegrationConfigPanel({
     );
   }
 
+  if (integrationKey === 'jina') {
+    return (
+      <div className="space-y-3 pt-3 border-t">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium">Prefer free tier</p>
+            <p className="text-xs text-muted-foreground">
+              Use keyless Jina first, fall back to API key on rate limits. Disable to always use your API key.
+            </p>
+          </div>
+          <Switch
+            checked={config?.preferFreeTier ?? true}
+            onCheckedChange={(checked) => handleChange({ preferFreeTier: checked })}
+          />
+        </div>
+      </div>
+    );
+  }
+
   if (integrationKey === 'resend') {
     const emailConfig = config?.emailConfig || { fromEmail: 'onboarding@resend.dev', fromName: 'Newsletter' };
     const newsletterTracking = config?.newsletterTracking || { enableOpenTracking: false, enableClickTracking: false };

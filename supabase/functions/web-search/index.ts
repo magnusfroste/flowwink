@@ -1,10 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 /**
  * Web Search — Modular integration skill
  * 
  * Searches the web for information about a query.
- * Provider priority: Firecrawl (if key available) → Jina Search (keyless fallback)
+ * Provider priority: Firecrawl (if key available) → Jina Search
+ * Jina: free tier first (if preferFreeTier), then API key, then keyless fallback
  * 
  * Used by: prospect-research orchestrator, FlowPilot directly, content research
  */
@@ -28,6 +30,48 @@ interface SearchResult {
   content?: string;
 }
 
+async function getJinaConfig(): Promise<{ preferFreeTier: boolean }> {
+  try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const sb = createClient(supabaseUrl, serviceKey);
+    const { data } = await sb
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'integrations')
+      .maybeSingle();
+    const jina = data?.value?.jina;
+    return { preferFreeTier: jina?.config?.preferFreeTier ?? true };
+  } catch {
+    return { preferFreeTier: true };
+  }
+}
+
+async function jinaSearch(query: string, limit: number, apiKey?: string): Promise<{ results: SearchResult[], ok: boolean }> {
+  const headers: Record<string, string> = { 'Accept': 'application/json' };
+  if (apiKey) {
+    headers['Authorization'] = `Bearer ${apiKey}`;
+  }
+
+  try {
+    const res = await fetch(`https://s.jina.ai/${encodeURIComponent(query)}`, { headers });
+    if (res.ok) {
+      const data = await res.json();
+      const results = (data.data || []).slice(0, limit).map((r: any) => ({
+        title: r.title || '',
+        url: r.url || '',
+        description: r.description || '',
+      }));
+      return { results, ok: true };
+    }
+    console.warn(`[web-search] Jina ${apiKey ? 'authenticated' : 'keyless'} failed:`, res.status);
+    return { results: [], ok: false };
+  } catch (e) {
+    console.warn(`[web-search] Jina ${apiKey ? 'authenticated' : 'keyless'} error:`, e);
+    return { results: [], ok: false };
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -43,6 +87,7 @@ serve(async (req) => {
     }
 
     const firecrawlKey = Deno.env.get('FIRECRAWL_API_KEY');
+    const jinaKey = Deno.env.get('JINA_API_KEY');
     let results: SearchResult[] = [];
     let provider = 'none';
 
@@ -81,25 +126,42 @@ serve(async (req) => {
       }
     }
 
-    // --- Strategy 2: Jina Search (keyless fallback) ---
+    // --- Strategy 2: Jina Search (free first → API key → keyless fallback) ---
     if (results.length === 0) {
-      console.log('[web-search] Using Jina Search for:', query);
-      try {
-        const res = await fetch(`https://s.jina.ai/${encodeURIComponent(query)}`, {
-          headers: { 'Accept': 'application/json' },
-        });
+      const { preferFreeTier } = await getJinaConfig();
 
-        if (res.ok) {
-          const data = await res.json();
-          results = (data.data || []).slice(0, limit).map((r: any) => ({
-            title: r.title || '',
-            url: r.url || '',
-            description: r.description || '',
-          }));
-          provider = 'jina';
+      if (preferFreeTier) {
+        // Try keyless first
+        console.log('[web-search] Trying Jina Search (keyless) for:', query);
+        const keyless = await jinaSearch(query, limit);
+        if (keyless.ok && keyless.results.length > 0) {
+          results = keyless.results;
+          provider = 'jina-free';
+        } else if (jinaKey) {
+          // Keyless failed, fall back to API key
+          console.log('[web-search] Keyless failed, using Jina API key');
+          const authed = await jinaSearch(query, limit, jinaKey);
+          if (authed.ok) {
+            results = authed.results;
+            provider = 'jina-api';
+          }
         }
-      } catch (e) {
-        console.warn('[web-search] Jina Search error:', e);
+      } else if (jinaKey) {
+        // preferFreeTier disabled — go straight to API key
+        console.log('[web-search] Using Jina Search (API key) for:', query);
+        const authed = await jinaSearch(query, limit, jinaKey);
+        if (authed.ok) {
+          results = authed.results;
+          provider = 'jina-api';
+        }
+      } else {
+        // No API key configured, try keyless anyway
+        console.log('[web-search] Using Jina Search (keyless fallback) for:', query);
+        const keyless = await jinaSearch(query, limit);
+        if (keyless.ok) {
+          results = keyless.results;
+          provider = 'jina-free';
+        }
       }
     }
 
