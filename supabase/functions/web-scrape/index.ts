@@ -68,7 +68,7 @@ serve(async (req) => {
   }
 
   try {
-    const { url, max_length = 10000, formats = ['markdown'] } = await req.json() as WebScrapeInput;
+    const { url, max_length = 10000, formats = ['markdown'], preferred_provider = 'auto' } = await req.json() as WebScrapeInput;
 
     if (!url) {
       return new Response(JSON.stringify({ success: false, error: 'url is required' }), {
