@@ -271,7 +271,7 @@ export function AdminSidebar() {
         </div>
 
         {/* Navigation */}
-        <SidebarContent className="px-2 pt-1 pb-2">
+        <SidebarContent ref={sidebarScrollRef} className="px-2 pt-1 pb-2">
           {filteredGroups.map((group, index) => {
             const hasActiveItem = group.items.some(item => isItemActive(item.href));
 
