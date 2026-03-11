@@ -265,10 +265,35 @@ const Extractors = (() => {
     return (clone.innerText || "").substring(0, 8000).trim();
   }
 
+  // Detect error pages (404, login walls, etc.)
+  function detectErrorPage() {
+    const title = (document.title || "").toLowerCase();
+    const bodyText = (document.body?.innerText || "").substring(0, 500).toLowerCase();
+    
+    if (title.includes("page not found") || title.includes("404") ||
+        bodyText.includes("page not found") || bodyText.includes("this page doesn") ||
+        bodyText.includes("page you requested") ||
+        // LinkedIn specific
+        title === "" && bodyText.length < 200) {
+      return true;
+    }
+    return false;
+  }
+
   // ---- Public API ----
 
   function extract() {
     const host = location.hostname;
+
+    // Check for error pages first
+    if (detectErrorPage()) {
+      return {
+        title: document.title || "Error Page",
+        content: `[ERROR] Page returned an error or 404. URL: ${location.href}. The page may not exist or requires different authentication.`,
+        method: "error",
+        is_error: true
+      };
+    }
 
     // Try selected text first
     const sel = window.getSelection()?.toString()?.trim();
