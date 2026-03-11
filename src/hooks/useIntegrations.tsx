@@ -42,6 +42,8 @@ export interface IntegrationProviderConfig {
   notifyOnNewLead?: boolean;
   notifyOnDealWon?: boolean;
   notifyOnFormSubmit?: boolean;
+  // Jina
+  preferFreeTier?: boolean;
 }
 
 // Integration configuration type
