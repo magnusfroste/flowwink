@@ -2,11 +2,11 @@
 const presets = {
   flowwink: {
     name: "FlowWink",
-    endpoint: "https://your-project.supabase.co/functions/v1/signal-ingest",
+    endpoint: "https://rzhjotxffjfsdlhrdkpj.supabase.co/functions/v1/signal-ingest",
   },
   mycms: {
     name: "MyCMS",
-    endpoint: "https://jcsjqnjvnqqghiaawhcl.supabase.co/functions/v1/signal-ingest",
+    endpoint: "",
   },
 };
 
