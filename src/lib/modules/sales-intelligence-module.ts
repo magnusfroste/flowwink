@@ -41,6 +41,9 @@ const ACTION_MAP: Record<string, string> = {
   'research': 'prospect-research',
   'fit-analysis': 'prospect-fit-analysis',
   'profile-setup': 'sales-profile-setup',
+  'web-search': 'web-search',
+  'web-scrape': 'web-scrape',
+  'contact-finder': 'contact-finder',
 };
 
 export const salesIntelligenceModule: ModuleDefinition<SalesIntelligenceInput, SalesIntelligenceOutput> = {
