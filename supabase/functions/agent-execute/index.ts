@@ -143,6 +143,111 @@ serve(async (req) => {
 });
 
 // =============================================================================
+// Markdown → Tiptap JSON converter
+// =============================================================================
+
+function markdownToTiptap(md: string): any {
+  const lines = md.split('\n');
+  const nodes: any[] = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    // Headings
+    const headingMatch = line.match(/^(#{1,6})\s+(.+)/);
+    if (headingMatch) {
+      const level = headingMatch[1].length;
+      nodes.push({
+        type: 'heading',
+        attrs: { level },
+        content: [{ type: 'text', text: inlineClean(headingMatch[2]) }],
+      });
+      i++;
+      continue;
+    }
+
+    // Bullet list items
+    if (/^[-*]\s+/.test(line)) {
+      const items: any[] = [];
+      while (i < lines.length && /^[-*]\s+/.test(lines[i])) {
+        const itemText = lines[i].replace(/^[-*]\s+/, '');
+        items.push({
+          type: 'listItem',
+          content: [{ type: 'paragraph', content: parseInline(itemText) }],
+        });
+        i++;
+      }
+      nodes.push({ type: 'bulletList', content: items });
+      continue;
+    }
+
+    // Numbered list
+    if (/^\d+\.\s+/.test(line)) {
+      const items: any[] = [];
+      while (i < lines.length && /^\d+\.\s+/.test(lines[i])) {
+        const itemText = lines[i].replace(/^\d+\.\s+/, '');
+        items.push({
+          type: 'listItem',
+          content: [{ type: 'paragraph', content: parseInline(itemText) }],
+        });
+        i++;
+      }
+      nodes.push({ type: 'orderedList', content: items });
+      continue;
+    }
+
+    // Empty line
+    if (!line.trim()) {
+      i++;
+      continue;
+    }
+
+    // Regular paragraph
+    nodes.push({
+      type: 'paragraph',
+      content: parseInline(line),
+    });
+    i++;
+  }
+
+  if (nodes.length === 0) {
+    nodes.push({ type: 'paragraph' });
+  }
+
+  return { type: 'doc', content: nodes };
+}
+
+function inlineClean(text: string): string {
+  return text.replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(.+?)\*/g, '$1').replace(/_(.+?)_/g, '$1').trim();
+}
+
+function parseInline(text: string): any[] {
+  const result: any[] = [];
+  // Simple bold/italic parsing
+  const regex = /(\*\*(.+?)\*\*|\*(.+?)\*|_(.+?)_|([^*_]+))/g;
+  let match;
+  while ((match = regex.exec(text)) !== null) {
+    if (match[2]) {
+      // Bold
+      result.push({ type: 'text', marks: [{ type: 'bold' }], text: match[2] });
+    } else if (match[3]) {
+      // Italic
+      result.push({ type: 'text', marks: [{ type: 'italic' }], text: match[3] });
+    } else if (match[4]) {
+      // Italic (underscore)
+      result.push({ type: 'text', marks: [{ type: 'italic' }], text: match[4] });
+    } else if (match[5] && match[5].trim()) {
+      result.push({ type: 'text', text: match[5] });
+    }
+  }
+  if (result.length === 0) {
+    result.push({ type: 'text', text: text.trim() || ' ' });
+  }
+  return result;
+}
+
+// =============================================================================
 // Auto-activate module when FlowPilot uses it
 // =============================================================================
 
