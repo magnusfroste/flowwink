@@ -1,151 +1,105 @@
-# FlowWink Strategic Vision
+# FlowWink Vision
 
-> **Purpose:** Strategic thinking, exploration, and future direction  
-> **Last Updated:** January 2025  
-> **Note:** Ideas here are exploratory. Committed features move to PRD.md Roadmap.
+> **The autonomous agentic web that runs your business.**
 
----
-
-## Core Philosophy
-
-### "Process-First Platform"
-
-The unique position of FlowWink is **reducing complexity from disparate setups and integrations** by focusing on complete processes rather than isolated features.
-
-> **"One platform for the complete customer journey: Discover → Engage → Book → Convert → Retain"**
-
-### The Odoo Parallel
-
-Like Odoo, FlowWink uses a **modular architecture** where:
-- Modules share data (single source of truth)
-- Users enable only what they need
-- Modules are interconnected (not siloed)
+*Updated: March 2026*
 
 ---
 
-## Strategic Principles
+## The Shift We're Building For
 
-### 1. Modules That Share Data Reduce Complexity
+The web has had three eras:
 
-Each new module should leverage existing data:
-- Blog posts → Newsletter content
-- Form submissions → Lead pipeline
-- Bookings → Calendar + reminders
+1. **Static web (1990s–2000s)** — HTML pages. You write it, it sits there.
+2. **Dynamic web (2000s–2020s)** — CMS platforms. You update it, it publishes.
+3. **Agentic web (2025–)** — AI agents. You direct it, it runs.
 
-### 2. Best-of-Breed vs. General Platform
-
-| Approach | Pros | Cons |
-|----------|------|------|
-| **Best-of-Breed** | Deep features, market leader | Integration hell, multiple vendors |
-| **General Platform** | Unified data, simpler ops | Jack of all trades, master of none |
-
-**FlowWink Position:** General platform for the 80% use case, with webhooks for specialized needs.
-
-### 3. The 80/20 Rule
-
-Build modules that solve 80% of needs with 20% of complexity. For the remaining 20%, provide webhook integrations to specialized tools.
+FlowWink is built for era three. Your digital presence is no longer a thing you manage — it's an agent that manages itself. Content gets written. Leads get qualified. Deals get followed up. Campaigns get sent. Gaps get spotted and proposed as objectives. Your website isn't a website. It's a business operating system.
 
 ---
 
-## Module Expansion Analysis
+## The Core Insight
 
-### High Priority (Strong Synergy)
+Every business has two kinds of work:
 
-#### Booking/Scheduling Module
-- **Why:** Many websites need appointments (clinics, consultants, salons)
-- **Synergy:** Newsletter (reminders), Webhooks (calendar sync), Forms (intake)
-- **Complexity Reduction:** Replaces Calendly/Acuity + integration headaches
-- **Recommendation:** ✅ Build this next
+**Directional work** — decisions about what to build, who to serve, what to stand for. This requires human judgment and can never be automated.
 
-#### Lead CRM Module
-- **Why:** Form submissions → leads → follow-up is universal
-- **Synergy:** Forms already exist, Newsletter for nurturing, Webhooks for external CRM
-- **Complexity Reduction:** Replaces basic HubSpot/Pipedrive for small teams
-- **Recommendation:** ✅ Build after Booking
+**Operational work** — executing the plan, maintaining quality, filling gaps, following up, iterating. This is repetitive, time-consuming, and increasingly automatable.
 
-### Medium Priority (Good Synergy)
-
-#### Knowledge Base / Help Center
-- **Why:** Natural extension of Blog + AI Chat
-- **Synergy:** AI already uses content as context, add structured FAQ/docs
-- **Complexity Reduction:** Replaces Zendesk/Intercom for basic support
-- **Recommendation:** ⏳ Consider for Fas 4
-
-#### Memberships / Gated Content
-- **Why:** Monetization for content creators
-- **Synergy:** Newsletter (member communications), Blog (gated posts)
-- **Recommendation:** ⏳ Consider for Fas 4
-
-### Low Priority (Weak Synergy)
-
-#### E-commerce
-- **Why:** Many sites need simple product sales
-- **Risk:** Competes with Shopify, WooCommerce - very crowded
-- **Recommendation:** ❌ Focus on digital products/memberships instead
+FlowWink is designed to take all the operational work off your plate so you can focus entirely on directional work. You set objectives. FlowPilot executes.
 
 ---
 
-## Process-Centric View
+## What This Means in Practice
 
-### Customer Journey Mapping
+**Old model:** You have a website that does what you tell it.
+- You write a blog post → it publishes
+- You upload a product → it shows up
+- A lead comes in → you follow up (eventually)
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    CUSTOMER JOURNEY                              │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  DISCOVER        ENGAGE         BOOK          CONVERT   RETAIN  │
-│     │               │             │              │          │    │
-│     ▼               ▼             ▼              ▼          ▼    │
-│  ┌──────┐      ┌──────────┐  ┌─────────┐   ┌────────┐  ┌──────┐ │
-│  │ Blog │      │Newsletter│  │ Booking │   │  CRM   │  │Repeat│ │
-│  │ SEO  │  →   │  Forms   │→ │Calendar │ → │Pipeline│→ │ Upsell│ │
-│  └──────┘      └──────────┘  └─────────┘   └────────┘  └──────┘ │
-│     ✅             ✅            ✅            ✅          ⏳     │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### Module Interconnections (Odoo-style)
-
-```
-                    ┌─────────────┐
-                    │   CONTENT   │
-                    │   (Pages)   │
-                    └──────┬──────┘
-                           │
-        ┌──────────────────┼──────────────────┐
-        │                  │                  │
-        ▼                  ▼                  ▼
-   ┌─────────┐       ┌──────────┐       ┌─────────┐
-   │  BLOG   │       │   FORMS  │       │   AI    │
-   │         │       │          │       │  CHAT   │
-   └────┬────┘       └────┬─────┘       └────┬────┘
-        │                 │                  │
-        │    ┌────────────┴────────────┐     │
-        │    │                         │     │
-        ▼    ▼                         ▼     ▼
-   ┌──────────────┐              ┌──────────────┐
-   │  NEWSLETTER  │              │   WEBHOOKS   │
-   │              │              │    (N8N)     │
-   └──────┬───────┘              └──────┬───────┘
-          │                             │
-          │         ┌───────────────────┘
-          │         │
-          ▼         ▼
-   ┌──────────────────┐       ┌──────────────────┐
-   │     BOOKING      │       │    LEAD CRM      │
-   │   ✅ Complete    │       │   ✅ Complete    │
-   └──────────────────┘       └──────────────────┘
-```
+**New model:** Your digital presence is an agent that acts on your behalf.
+- You set an objective: "Grow organic traffic from 500 to 5,000 monthly visitors"
+- FlowPilot decomposes it into steps, executes them in sequence, adapts to results
+- You review a summary. The business moves forward.
 
 ---
 
-## Open Questions
+## Design Principles
 
-1. **Multi-tenant vs Single-tenant:** Should modules be tenant-aware for future SaaS offering?
-2. **Module Marketplace:** Should third parties be able to build modules?
-3. **Pricing Model:** Per-module pricing or all-inclusive?
+### 1. Agents, not automation
+Automation executes a fixed sequence. Agents reason about context and adapt. FlowPilot doesn't follow a script — it evaluates the current state of your business, proposes what matters, and executes with judgment.
+
+### 2. Self-evolution over configuration
+Traditional software requires configuration and maintenance. FlowPilot evolves itself — creating new skills when it encounters tasks it can't do, enriching its own knowledge, evolving its personality as your brand grows.
+
+### 3. Privacy by architecture
+Your agent, your data, your AI. FlowWink runs on your infrastructure with your API keys. Sensitive business data never leaves your control. Private LLM support means you can run fully air-gapped.
+
+### 4. OpenClaw compliance
+All agent development follows the [OpenClaw agentic architecture standard](OPENCLAW-LAW.md) — 10 mandatory laws governing how skills, memory, heartbeat, and multi-agent orchestration must work. This prevents architectural drift as the system evolves.
+
+### 5. The 80/20 rule, enforced
+Build the 80% use case deeply. For the remaining 20%, integrate via webhooks and the Workflow DAG engine. Don't compete with Stripe, Shopify, or Salesforce — integrate with them.
+
+---
+
+## The Autonomy Stack (v2.0)
+
+FlowWink 2.0 achieves **10/10 autonomy** across every layer:
+
+| Layer | What it enables |
+|-------|-----------------|
+| **37+ skills** | Complete operations across CMS, CRM, Commerce, Communication |
+| **Workflow DAGs** | Multi-step chains with conditional branching and data passing |
+| **A2A delegation** | Specialist sub-agents for SEO, content, sales, analytics, email |
+| **Skill Packs** | Bundle and distribute capability sets |
+| **pgvector memory** | Semantic search across all learned context |
+| **Self-healing** | Auto-quarantine failing skills before they cause damage |
+| **Plan decomposition** | AI-generated 3–7 step plans from any objective |
+| **Proactive proposals** | FlowPilot surfaces gaps before you notice them |
+| **Soul evolution** | Personality, values, and tone update as your brand evolves |
+| **Approval gating** | Human-in-the-loop for sensitive or costly actions |
+
+---
+
+## Where This Goes
+
+### Near term
+
+- **Hosted Skill Pack Registry** — Community-published skill bundles installable from a URL
+- **Workflow Visualization** — Admin UI to design DAG workflows without code
+- **A2A Message Protocol** — `@a2a:agent-name` inline delegation in the operator chat
+- **Thinking Modes** — Fast vs. deep reasoning budget control per task
+
+### Medium term
+
+- **Multi-tenant Mode** — Run FlowWink as a SaaS with per-tenant agent isolation
+- **Agent Marketplace** — Share and import FlowPilot configurations (soul + skills + workflows)
+- **Cross-site Intelligence** — Agents that learn patterns across an organization's sites
+
+### Long term
+
+The agentic web won't have websites. It will have agents. Every business will have a persistent AI presence that understands its brand, knows its customers, and executes its strategy continuously. FlowWink is the infrastructure for that future — open-source, self-hostable, and built to last.
 
 ---
 
@@ -154,31 +108,14 @@ Build modules that solve 80% of needs with 20% of complexity. For the remaining 
 | Date | Decision | Rationale |
 |------|----------|-----------|
 | Dec 2024 | Blog, Newsletter, Webhooks as core modules | High synergy, low complexity |
-| Dec 2024 | Booking as next priority | Reduces Calendly dependency, high demand |
-| Dec 2024 | Skip e-commerce | Too crowded, low synergy |
-| Jan 2025 | Booking module complete | Smart booking with availability calendar |
-| Jan 2025 | CRM module complete | Leads, deals, companies, activities |
-| Jan 2025 | 11 new interactive blocks | Badge, Social Proof, Tabs, Countdown, etc. |
-| Jan 2025 | 5 AI providers supported | Lovable AI, OpenAI, Gemini, Local LLM, N8N |
+| Dec 2024 | Booking module | Reduces Calendly dependency |
+| Jan 2025 | CRM, E-commerce, Knowledge Base complete | Full business coverage |
+| Jan 2025 | FlowPilot agent (20 skills) | First autonomous loop |
+| Mar 2026 | pgvector + semantic memory | Long-term recall without keyword search |
+| Mar 2026 | Prompt Compiler (OpenClaw Layer 1) | Single system prompt across all surfaces |
+| Mar 2026 | Full CMS autonomy (28+ skills) | Block-level page control, page rollback |
+| Mar 2026 | Workflow DAGs, A2A, Skill Packs | 10/10 autonomy — v2.0 milestone |
 
 ---
 
-## Completed Modules Summary
-
-| Module | Status | Key Features |
-|--------|--------|--------------|
-| Pages | ✅ Complete | 50+ blocks, versioning, workflow |
-| Blog | ✅ Complete | Categories, tags, authors, RSS |
-| Newsletter | ✅ Complete | Subscribers, campaigns, tracking |
-| Knowledge Base | ✅ Complete | Categories, search, AI integration |
-| Forms | ✅ Complete | Custom fields, webhooks, lead capture |
-| CRM | ✅ Complete | Leads, deals, companies, pipeline |
-| Booking | ✅ Complete | Services, availability, calendar |
-| E-commerce | ✅ Complete | Products, cart, Stripe checkout |
-| AI Chat | ✅ Complete | 5 providers, context-aware, widget |
-| Webhooks | ✅ Complete | 14 events, N8N templates |
-| Analytics | ✅ Complete | Page views, country tracking |
-
----
-
-*This document captures strategic thinking. Committed features are tracked in PRD.md Roadmap.*
+*The web that runs your business. That's the vision. We're building it.*

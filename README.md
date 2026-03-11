@@ -1,123 +1,162 @@
 # FlowWink
 
-**Your Website Runs Itself** — The first autonomous agentic CMS powered by FlowPilot.
+> **The autonomous agentic web that runs your business.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Docker Image](https://img.shields.io/badge/Docker-ghcr.io-blue)](https://github.com/magnusfroste/flowwink/pkgs/container/flowwink)
+[![Release](https://img.shields.io/badge/release-v2.0-brightgreen)](https://github.com/magnusfroste/flowwink/releases/tag/v2.0.0)
 
-## What is FlowWink?
+---
 
-FlowWink is the first autonomous agentic CMS — an open-source platform where an AI agent called **FlowPilot** operates your entire online presence. You set objectives. FlowPilot executes.
+## A new era for the web
 
-- ✅ **Autonomous Operations** — FlowPilot writes content, qualifies leads, sends campaigns, and books meetings
-- ✅ **Self-Hosted & Private** — Your agent, your data, your AI — on your infrastructure
-- ✅ **Replaces 4 Products** — CMS + Chatbot + CRM + Marketing Automation in one
-- ✅ **GDPR by Architecture** — Private LLM support, no third-party data transfers
-- ✅ **Self-Evolving** — FlowPilot learns from every interaction and creates new skills
+The web is changing. For 30 years a website has been a passive artifact — something you build, maintain, and operate manually. That era is ending.
 
-### The Autonomous Loop
+**FlowWink is the first platform built for what comes next:** a web where your entire digital presence — content, leads, campaigns, orders, relationships — runs autonomously. Not scheduled. Not templated. **Autonomously.** An AI agent called **FlowPilot** understands your business objectives and executes on them continuously, around the clock, without hand-holding.
 
-FlowPilot operates in a continuous cycle — no manual intervention required:
+You set the direction. FlowPilot runs the business.
 
-```
-┌───────────────────────────────────────────────────────┐
-│                  THE AUTONOMOUS LOOP                   │
-│                                                       │
-│  Heartbeat → Reflect → Plan → Execute → Log → Learn  │
-│       ↑                                        │      │
-│       └────────────────────────────────────────┘      │
-└───────────────────────────────────────────────────────┘
-```
+---
 
-**Every 12 hours**, FlowPilot reviews what happened, evaluates performance against your objectives, plans next actions, and executes — logging everything for your review.
+## What FlowPilot does
 
-### Six Core Capabilities
-
-| Capability | Description |
-|-----------|-------------|
-| **Skill Engine** | 20+ registered tools, self-creating new ones |
-| **Persistent Memory** | Learns preferences, remembers context, stores brand guidelines |
-| **Objectives** | Goal-driven operations with progress tracking |
-| **Autonomous Heartbeat** | 12-hour reflection cycles |
-| **Signal Automations** | Event-driven reactions (form → qualify lead → send email) |
-| **Self-Evolution** | Modifies own instructions, proposes new skills |
-
-### Six Channels, One Agent
+FlowPilot is not a chatbot, a copilot, or a content suggester. It is an **autonomous agent** — a persistent process that wakes up every 12 hours, reads your business situation, and acts.
 
 ```
-FlowPilot operates across all channels natively:
-
-Content & Blog ──── writes, schedules, publishes, optimizes
-Visitor Chat ────── answers questions, qualifies leads, escalates
-CRM ─────────────── captures, scores, enriches, manages leads
-Email ───────────── newsletters, drip sequences, confirmations
-Bookings ────────── schedules, confirms, follows up
-E-Commerce ──────── products, orders, recommendations
+┌─────────────────────────────────────────────────────────────┐
+│                    THE AUTONOMOUS LOOP                       │
+│                                                             │
+│  Self-Heal → Propose → Plan → Execute → Automate → Reflect │
+│      ↑                                               │      │
+│      └───────────────────────────────────────────────┘      │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-## Features
+| What FlowPilot does | How |
+|---------------------|-----|
+| Writes and publishes blog posts | Researches topics, drafts, SEO-optimizes, schedules |
+| Qualifies and enriches leads | Scores, enriches from domain, routes to deals |
+| Sends newsletter campaigns | Segments subscribers, drafts, schedules sends |
+| Manages product promotions | Creates landing pages, promotional posts |
+| Recovers abandoned carts | Detects stale orders, drafts recovery campaigns |
+| Reviews deal pipeline | Surfaces stale deals, drafts re-engagement |
+| Proposes new objectives | Reads site stats, spots gaps, creates its own goals |
+| Evolves its own capabilities | Creates new skills, updates its instructions, reflects |
 
-### Content Management
-- **46+ block types** — Text, images, galleries, accordions, CTAs, booking, and more
-- **Drag & drop** — Reorder blocks visually
-- **Rich text editor** — Powered by Tiptap with AI Text Assistant (Cmd+J)
-- **Media library** — With automatic WebP optimization
+---
 
-### FlowPilot Agent
-- **Skill Engine** — 20+ skills with approval gating and scope control
-- **Persistent Memory** — Brand guidelines, preferences, learned patterns
-- **Objectives** — Goal-driven autonomous operations
-- **Signal Automations** — Event-driven skill execution
-- **Activity Feed** — Complete audit trail of all autonomous actions
+## FlowPilot 2.0 — Full Autonomy
 
-### Blog Module
-- **Full blog engine** — Posts, categories, tags, and author profiles
-- **SEO optimized** — Meta tags, reading time, featured images
-- **Editorial workflow** — Draft → Review → Published with scheduling
-- **RSS feed** — Auto-generated feed for subscribers
+FlowWink 2.0 ships complete **10/10 autonomy** across every layer of your digital business:
 
-### CRM & Lead Management
-- **Lead scoring** — Automatic scoring based on behavior
-- **AI qualification** — FlowPilot qualifies leads 24/7
-- **Deal pipeline** — Kanban board with stage tracking
-- **Company enrichment** — AI-powered data enrichment from domain
+### 37+ Skills across your entire business
 
-### Newsletter
-- **Subscriber management** — Double opt-in, GDPR-compliant
-- **Email campaigns** — Create and send newsletters
-- **Analytics** — Open rates, click tracking, engagement metrics
-- **Signal automations** — Welcome sequences triggered automatically
+| Domain | Skills |
+|--------|--------|
+| **CMS** | Pages (create/publish/rollback), block-level manipulation (add/edit/remove/reorder), Global Elements |
+| **Content** | Blog posts, Knowledge Base, content research, SEO briefs, social media batches |
+| **CRM** | Leads, Companies, Deals, Form submissions, Lead qualification, Company enrichment |
+| **Commerce** | Products, Orders, Bookings |
+| **Communication** | Newsletter campaigns, Webinars, Gmail inbox scanning |
+| **Intelligence** | Analytics, SEO audits, web research, browser automation, prospect research |
+| **Learning** | Memory read/write (vector search), reflection, soul evolution |
 
-### Integration Module
-- **Webhook system** — Trigger on page, blog, form, and newsletter events
-- **N8N templates** — Pre-built workflows for common automations
-- **Content API** — REST and GraphQL for multi-channel delivery
-- **Delivery logs** — Track webhook success/failure with retry support
+### Workflow DAGs — Multi-step automation chains
 
-### Editorial Workflow
-- **Roles** — Writer, Approver, Admin
-- **Approval flow** — Draft → Review → Published (FlowPilot respects this)
-- **Version history** — Track and restore changes (manual and autonomous)
-- **Scheduled publishing** — Set it and forget it
+Define automation chains where each step passes its output to the next:
 
-### AI Features
-- **FlowPilot** — Autonomous agent with skills, memory, and objectives
-- **AI Chat** — Multi-provider support (OpenAI, Gemini, Local LLM, N8N)
-- **AI Text Assistant** — Generate, improve, translate content inline
-- **AI Brand Analysis** — Extract colors and fonts from any URL
-- **Knowledge Base** — Your content becomes AI context
+```
+Research topic → Write blog post → Create social posts → Schedule newsletter
+     s1               s2                  s3                    s4
+                  {{s1.topic}}     {{s2.post_id}}         {{s3.content}}
+```
 
-### Compliance & Security
-- **GDPR** — Audit logging, cookie consent, privacy by design
-- **WCAG 2.1 AA** — Accessibility built into every component
-- **Row Level Security** — Powered by Supabase RLS
-- **Approval Gating** — Human oversight for sensitive autonomous actions
-- **Private AI** — Self-hosted LLM support for complete data sovereignty
+- **Template variables** — `{{stepId.result.field}}` passes data between steps
+- **Conditional branching** — run a step only if a previous result meets a condition
+- **Failure modes** — `on_failure: continue` or `stop` per step
 
-### Content API
-- **REST API** — `/content-api/pages`, `/content-api/page/:slug`
-- **GraphQL** — Full schema for flexible queries
-- **Edge caching** — Fast responses worldwide
+### A2A Delegation — Multi-agent orchestration
+
+FlowPilot delegates subtasks to specialist agents when depth matters:
+
+```
+FlowPilot → delegate_task("seo", "analyze /pricing page")
+         → delegate_task("content", "write a case study about...")
+         → delegate_task("sales", "review stale deals > $10k")
+```
+
+Built-in specialists: **seo**, **content**, **sales**, **analytics**, **email** — each with deep domain focus. Register custom agents with your own system prompts.
+
+### Skill Packs — Install a bundle of capabilities in one command
+
+```
+skill_pack_install("E-Commerce Pack")      → product_promoter, cart_recovery_check, inventory_report
+skill_pack_install("Content Marketing Pack") → content_calendar_view, seo_content_brief, social_post_batch
+skill_pack_install("CRM Nurture Pack")     → lead_pipeline_review, deal_stale_check, customer_health_digest
+```
+
+---
+
+## Architecture
+
+FlowWink follows the **OpenClaw** agentic architecture — 9 composable layers with clear separation of concerns:
+
+```
+┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
+│   Gateway        │     │   Brain           │     │   Memory         │
+│                  │     │                   │     │                  │
+│ • Visitor chat  │────▶│ • agent-reason.ts │────▶│ • pgvector       │
+│ • Admin operate │     │   (ReAct loop)    │     │   semantic search│
+│ • Webhooks      │     │ • resolveAiConfig │     │ • Soul + Identity│
+│ • Heartbeat     │     │ • tool execution  │     │ • Conversation   │
+└─────────────────┘     └──────┬───────────┘     └─────────────────┘
+                               │
+              ┌────────────────┼────────────────────┐
+              │                │                    │
+       ┌──────▼─────┐  ┌───────▼───────┐  ┌────────▼──────┐
+       │   Skills    │  │   Heartbeat   │  │   Workflows   │
+       │             │  │               │  │               │
+       │ 37+ skills  │  │ 8-step loop   │  │ DAG chains    │
+       │ Skill Packs │  │ Self-healing  │  │ Conditions    │
+       │ A2A agents  │  │ Plan decomp   │  │ Template vars │
+       └─────────────┘  └───────────────┘  └───────────────┘
+```
+
+### One reasoning core, all surfaces
+
+`agent-reason.ts` is the single engine shared by every surface:
+- **`agent-operate`** — interactive admin sessions (streaming)
+- **`flowpilot-heartbeat`** — autonomous scheduled loop
+- **`chat-completion`** — visitor-facing AI chat
+
+No logic duplication. All surfaces get every capability automatically.
+
+### Provider-agnostic, free-first
+
+```
+OpenAI GPT-4o → Gemini 2.5 Flash → Lovable AI → Local LLM (Ollama/LM Studio)
+```
+
+FlowPilot routes to whichever provider is configured. Use your own API keys. Run fully offline with a local model.
+
+---
+
+## What FlowWink replaces
+
+| What you used to need | FlowWink replaces it with |
+|-----------------------|--------------------------|
+| WordPress / Webflow | Visual block editor, 50+ block types |
+| HubSpot / Pipedrive | CRM with AI qualification and deal pipeline |
+| Mailchimp / Klaviyo | Newsletter with autonomous campaign creation |
+| Calendly | Booking system with AI follow-up |
+| Jasper / Copy.ai | FlowPilot writing directly into your CMS |
+| Zapier / N8N | Workflow DAGs with conditional branching |
+| Intercom | AI chat with KB integration and lead capture |
+| Shopify (simple) | Products, orders, and Stripe checkout |
+
+One platform. One agent. One subscription (or self-host free).
+
+---
 
 ## Tech Stack
 
@@ -125,140 +164,88 @@ E-Commerce ──────── products, orders, recommendations
 |-------|------------|
 | Frontend | React 18, Vite, TypeScript, Tailwind CSS |
 | UI Components | shadcn/ui, Radix UI |
-| Backend | Supabase (PostgreSQL, Auth, Storage, Edge Functions) |
+| Backend | Supabase (PostgreSQL + pgvector, Auth, Storage, Edge Functions) |
+| Agent Engine | Deno edge functions, OpenAI function-calling format |
 | Editor | Tiptap |
 | State | TanStack Query |
-| AI | OpenAI, Gemini, Local LLM (Ollama/LM Studio/vLLM), N8N |
+| AI Providers | OpenAI, Gemini, Lovable AI, Local LLM (Ollama/LM Studio/vLLM) |
+
+---
 
 ## Self-Hosting
 
-FlowWink is **free to self-host**. Deploy on your own Supabase instance with full control over your data and AI.
+FlowWink is **free to self-host**. Your agent, your data, your infrastructure.
 
 ### Quick Start
 
 ```bash
-# Clone the repository
 git clone https://github.com/magnusfroste/flowwink.git
 cd flowwink
-
-# Install dependencies
 npm install
-
-# Set up environment variables
 cp .env.example .env
 # Edit .env with your Supabase credentials
-
-# Run database migrations (see docs/SETUP.md)
-
-# Start development server (migrations run automatically)
-npm run dev
+npm run dev   # migrations run automatically
 ```
 
-**✨ Auto-Migrations:** Database migrations run automatically when you start the dev server or build for production. No manual migration steps needed!
+### Connect your Supabase instance
 
-### Connecting to Your Own Supabase
+1. Create a project at [supabase.com](https://supabase.com/)
+2. Copy **Project URL**, **Anon key**, and **Project ref** into `.env`
+3. Run `./scripts/setup-supabase.sh` to deploy edge functions
+4. Start the server — migrations apply automatically on `npm run dev`
 
-The entire purpose of this project is to allow you to clone it from GitHub and connect it to **your own Supabase instance**. Here's how:
-
-1. **Create a Supabase Project**
-   - Go to [supabase.com](https://supabase.com/) and create a new project
-   - Note your **project ref** (e.g., `trpejhoieysrwiuhskkm`) from the URL
-
-2. **Get Your Credentials**
-   - Go to Supabase Dashboard → Settings → API
-   - Copy these three values:
-     - **Project URL** → `VITE_SUPABASE_URL`
-     - **Anon/Public key** → `VITE_SUPABASE_PUBLISHABLE_KEY`
-     - **Project ref** → `VITE_SUPABASE_PROJECT_ID`
-
-3. **Set Environment Variables**
-   - For local development: Edit `.env` file
-   - For deployment: Pass as build arguments (see DEPLOYMENT.md)
-
-4. **Run Setup Script** (optional but recommended)
-   ```bash
-   ./scripts/setup-supabase.sh
-   ```
-   This deploys edge functions and runs initial migrations.
-
-**Auto-Migrations:** After initial setup, migrations run automatically when you:
-- Start dev server: `npm run dev`
-- Build for production: `npm run build`
-- Pull latest Docker image: migrations included in build
-
-### Detailed Setup
-
-See **[docs/SETUP.md](docs/SETUP.md)** for complete self-hosting instructions including:
-
-- Supabase project setup
-- Database migrations
-- Edge Functions deployment
-- Production deployment
-
-### Database Schema
-
-A complete SQL schema is available at **[supabase/schema.sql](supabase/schema.sql)** — run it in your Supabase SQL Editor to set up a new instance.
-
-## Deployment Options
-
-### Option 1: Docker (Recommended for Self-Hosting)
-
-Deploy with Docker on any platform for complete control and easy upgrades:
+### Deploy to production
 
 ```bash
-# Pull the latest image
+# Docker (recommended)
 docker pull ghcr.io/magnusfroste/flowwink:latest
 
-# Or use docker-compose (see docs/DEPLOYMENT.md)
-docker-compose up -d
+# Or deploy edge functions manually
+supabase functions deploy agent-execute agent-operate flowpilot-heartbeat
+supabase db push
 ```
 
-**What you get:**
-- ✅ Easy upgrades (`docker pull` for new versions)
-- ✅ Works with Supabase Cloud OR Self-Hosted Supabase
-- ✅ Deploy on Easypanel, Railway, Fly.io, or any VPS
-- ✅ Your data, your AI, your infrastructure
+Supported platforms: **Easypanel**, **Railway**, **Fly.io**, **Hetzner**, **DigitalOcean**, or any VPS with Docker.
 
-**Platforms:**
-- **Easypanel** — One-click Docker deployment with auto-HTTPS ([Guide](docs/DEPLOYMENT.md))
-- **Railway** — Git-based deployment with automatic builds
-- **Fly.io** — Global edge deployment
-- **VPS** — Any server with Docker (Hetzner, DigitalOcean, etc.)
+See **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** for full deployment guides.
 
-### Option 2: Static Hosting (Alternative)
-
-Deploy on static hosting platforms with your own Supabase backend:
-
-| Component | Your Choice |
-|-----------|-------------|
-| **Frontend** | Vercel, Netlify, Cloudflare Pages, or any static host |
-| **Backend** | Your own Supabase project (Cloud or Self-Hosted) |
-| **AI** | Private LLM (OpenAI, Gemini, Ollama, LM Studio, etc.) |
-
-**Note:** When deploying to Vercel/Netlify, run migrations manually before deployment:
-```bash
-npx supabase db push
-```
-
-See **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** for complete deployment guides.
-
-**AI Features:** When self-hosting, configure your AI provider (OpenAI, Gemini, Ollama, LM Studio, or N8N) in the admin panel. FlowPilot operates with the same autonomous capabilities regardless of provider.
+---
 
 ## Documentation
 
-- **[docs/flowpilot.md](docs/flowpilot.md)** — FlowPilot autonomous agent documentation
-- **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** — Docker deployment guide (Easypanel, Railway, Fly.io)
-- **[docs/SETUP.md](docs/SETUP.md)** — Supabase setup guide
-- **[docs/PRD.md](docs/PRD.md)** — Full product documentation
+| Document | What it covers |
+|----------|---------------|
+| **[docs/flowpilot.md](docs/flowpilot.md)** | Complete FlowPilot agent reference — all 37+ skills, heartbeat protocol, tool groups |
+| **[docs/OPENCLAW-LAW.md](docs/OPENCLAW-LAW.md)** | Agentic architecture laws — the principles all future development must follow |
+| **[docs/SETUP.md](docs/SETUP.md)** | Supabase project setup, environment variables, migrations |
+| **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** | Docker, Easypanel, Railway, Fly.io deployment guides |
+| **[docs/MODULES.md](docs/MODULES.md)** | Module documentation — Pages, Blog, CRM, Commerce, etc. |
+| **[docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md)** | Architecture, extending the platform, writing skills |
+
+---
+
+## Roadmap
+
+The agentic web is early. What's coming next:
+
+- **Hosted Skill Pack Registry** — Import community skill packs from a manifest URL
+- **Workflow Visualization** — Admin UI to view and edit DAG steps visually
+- **A2A Message Protocol** — `@a2a:agent-name` inline delegation in the operate chat
+- **Multi-Tenant Mode** — Run FlowWink as a SaaS with per-tenant agent isolation
+- **Agent Marketplace** — Shareable FlowPilot configurations (soul + skills + workflows)
+
+---
 
 ## Contributing
 
-Contributions are welcome! Please open an issue or submit a pull request.
+Contributions are welcome. Open an issue or submit a pull request. See **[docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)**.
 
 ## License
 
-MIT License — see [LICENSE](LICENSE) for details.
+MIT — see [LICENSE](LICENSE) for details.
 
 ---
+
+*Stop managing. Start directing. FlowPilot runs the business so you can build it.*
 
 **Made in Sweden 🇸🇪**
