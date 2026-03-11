@@ -3,10 +3,12 @@ const presets = {
   flowwink: {
     name: "FlowWink",
     endpoint: "https://rzhjotxffjfsdlhrdkpj.supabase.co/functions/v1/signal-ingest",
+    token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ6aGpvdHhmZmpmc2RsaHJka3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU1NTk2MzAsImV4cCI6MjA4MTEzNTYzMH0.h_S8ZHuCWWz97-uzQge0sb3riHmElrKTTfs5jrwE72c",
   },
   mycms: {
     name: "MyCMS",
     endpoint: "",
+    token: "",
   },
 };
 
