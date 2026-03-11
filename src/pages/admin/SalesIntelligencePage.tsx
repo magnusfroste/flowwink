@@ -98,6 +98,7 @@ export default function SalesIntelligencePage() {
           <TabsList>
             <TabsTrigger value="research">Research</TabsTrigger>
             <TabsTrigger value="profiles">Profiles</TabsTrigger>
+            <TabsTrigger value="company">Company Profile</TabsTrigger>
             <TabsTrigger value="history">History</TabsTrigger>
           </TabsList>
 
