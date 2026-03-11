@@ -606,16 +606,27 @@ const DEFAULT_SKILLS = [
   },
   {
     name: 'extract_pdf_text',
-    description: 'Extract text content from a PDF file (resume, document, etc.) stored in the media library or at a URL.',
-    handler: 'module:resume',
+    description: 'Extract text content from any PDF document — resumes, contracts, reports, invoices, etc. Uses AI vision to read the PDF and return structured text.',
+    handler: 'edge:extract-pdf-text',
     category: 'content',
     scope: 'internal',
     requires_approval: false,
+    instructions: `## When to use
+- User attaches a PDF file in chat (you'll see a file URL or storage path)
+- User asks to "read", "parse", or "extract" a PDF
+- Before creating a consultant profile from a resume PDF
+
+## Chaining
+After extracting text from a resume PDF, chain with:
+1. Call parse_resume with the extracted text to get structured data
+2. Call manage_consultant_profile to save the profile
+
+For non-resume PDFs, return the extracted text directly to the user.`,
     tool_definition: {
       type: 'function',
       function: {
         name: 'extract_pdf_text',
-        description: 'Extract text from a PDF file. Use this when a user attaches a PDF or references a PDF URL. Returns the full text content.',
+        description: 'Extract all text from a PDF file. Use when a user attaches a PDF or references a PDF URL. Works for any document type: resumes, contracts, reports, invoices.',
         parameters: {
           type: 'object',
           properties: {
