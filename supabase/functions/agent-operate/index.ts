@@ -62,7 +62,7 @@ serve(async (req) => {
     });
 
     // Build tools
-    const builtInTools = getBuiltInTools(['memory', 'objectives', 'self-mod', 'reflect', 'soul']);
+    const builtInTools = getBuiltInTools(['memory', 'objectives', 'self-mod', 'reflect', 'soul', 'workflows', 'a2a', 'skill-packs']);
     const allTools = [...builtInTools, ...(available_skills || [])];
 
     // Set up SSE stream

@@ -39,7 +39,7 @@ export interface ReasonConfig {
   maxIterations?: number;
   systemPromptOverride?: string;
   extraContext?: string;
-  builtInToolGroups?: Array<'memory' | 'objectives' | 'self-mod' | 'reflect' | 'soul' | 'planning' | 'automations-exec'>;
+  builtInToolGroups?: Array<'memory' | 'objectives' | 'self-mod' | 'reflect' | 'soul' | 'planning' | 'automations-exec' | 'workflows' | 'a2a' | 'skill-packs'>;
   additionalTools?: any[];
 }
 
@@ -66,6 +66,9 @@ const BUILT_IN_TOOL_NAMES = new Set([
   'automation_create', 'automation_list',
   'reflect',
   'decompose_objective', 'advance_plan', 'propose_objective', 'execute_automation',
+  'workflow_create', 'workflow_execute', 'workflow_list',
+  'delegate_task',
+  'skill_pack_list', 'skill_pack_install',
 ]);
 
 // ─── Prompt Compiler (OpenClaw Layer 1 — Centralized) ─────────────────────────
@@ -101,6 +104,23 @@ BROWSER & URL RESOLUTION:
 - When asked to fetch someone's LinkedIn/social profile, FIRST use search_web to find the correct URL.
 - Only call browser_fetch AFTER you have the verified URL from search results.
 
+WORKFLOWS (Multi-step automation chains):
+- Use workflow_create to define sequential steps with conditional branching
+- Steps support template vars {{stepId.result.field}} to pass data between steps
+- Use on_failure:'continue' to keep going despite errors, 'stop' to halt (default)
+- Use workflow_execute to run a workflow with optional input context
+- Use workflow_list to see all registered workflows
+
+A2A DELEGATION (Multi-agent orchestration):
+- Use delegate_task to route subtasks to specialized agents
+- Built-in specialists: 'seo', 'content', 'sales', 'analytics', 'email'
+- Returns the specialist's focused analysis or content — then use it in your next action
+- Register custom agents in memory with key 'agent:name' and value {system_prompt}
+
+SKILL PACKS (Bundled capabilities):
+- Use skill_pack_list to see available packs (E-Commerce, Content Marketing, CRM Nurture)
+- Use skill_pack_install to install an entire pack of related skills in one operation
+
 SKILL INSTRUCTIONS: Loaded lazily — you'll receive specific skill instructions after you use each skill.
 
 RULES:
@@ -116,9 +136,10 @@ const HEARTBEAT_PROTOCOL = `HEARTBEAT PROTOCOL:
 2. PLAN — For each active objective WITHOUT a plan (no progress.plan), call decompose_objective to create a step-by-step plan.
 3. ADVANCE — Objectives are pre-sorted by priority score. Advance them IN ORDER (highest score first). Use advance_plan with chain=true to execute multiple steps per objective.
 4. AUTOMATIONS — Check DUE (⏰) automations. Execute them via execute_automation.
-5. REFLECT — Use 'reflect' to analyze the past 7 days.
-6. REMEMBER — Save learnings to memory.
-7. SUMMARIZE — Brief heartbeat report including plan progress and any new proposals.
+5. WORKFLOWS — If a due automation has a workflow_id in trigger_config, run it via workflow_execute.
+6. REFLECT — Use 'reflect' to analyze the past 7 days.
+7. REMEMBER — Save learnings to memory.
+8. SUMMARIZE — Brief heartbeat report including plan progress and any new proposals.
 
 PRIORITY SCORING (automatic, shown as [score:N]):
 - Deadline proximity: overdue +50, <1 day +40, <3 days +25, <7 days +10
@@ -855,6 +876,248 @@ async function handleExecuteAutomation(supabase: any, supabaseUrl: string, servi
   };
 }
 
+// ─── Workflow DAGs ────────────────────────────────────────────────────────────
+
+function resolveTemplateVars(value: any, context: Record<string, any>): any {
+  if (typeof value === 'string') {
+    return value.replace(/\{\{([\w.]+)\}\}/g, (match, path) => {
+      const parts = path.split('.');
+      let current: any = context;
+      for (const p of parts) {
+        if (current == null) return match;
+        current = current[p];
+      }
+      return current !== undefined ? String(current) : match;
+    });
+  }
+  if (Array.isArray(value)) return value.map((v) => resolveTemplateVars(v, context));
+  if (typeof value === 'object' && value !== null) {
+    const result: Record<string, any> = {};
+    for (const [k, v] of Object.entries(value)) result[k] = resolveTemplateVars(v, context);
+    return result;
+  }
+  return value;
+}
+
+function evaluateCondition(condition: any, context: Record<string, any>): boolean {
+  const { step, field, operator, value } = condition;
+  const stepCtx = context[step];
+  if (!stepCtx) return false;
+  const parts = (field as string).split('.');
+  let actual: any = stepCtx;
+  for (const p of parts) {
+    if (actual == null) return false;
+    actual = actual[p];
+  }
+  switch (operator) {
+    case 'eq': return actual == value;
+    case 'neq': return actual != value;
+    case 'gt': return Number(actual) > Number(value);
+    case 'lt': return Number(actual) < Number(value);
+    case 'contains': return String(actual).includes(String(value));
+    case 'truthy': return Boolean(actual);
+    default: return true;
+  }
+}
+
+async function handleWorkflowCreate(supabase: any, args: any) {
+  const { name, description, steps, trigger_type = 'manual', trigger_config = {} } = args;
+  if (!name || !steps?.length) return { status: 'error', error: 'name and steps are required' };
+  const { data, error } = await supabase.from('agent_workflows')
+    .insert({ name, description, steps, trigger_type, trigger_config })
+    .select('id, name, trigger_type').single();
+  if (error) return { status: 'error', error: error.message };
+  return { status: 'created', workflow: data, step_count: steps.length };
+}
+
+async function handleWorkflowList(supabase: any) {
+  const { data } = await supabase.from('agent_workflows')
+    .select('id, name, description, trigger_type, enabled, run_count, last_run_at, last_error, steps')
+    .order('created_at', { ascending: false });
+  return {
+    workflows: (data || []).map((w: any) => ({
+      ...w, step_count: Array.isArray(w.steps) ? w.steps.length : 0, steps: undefined,
+    })),
+    count: data?.length || 0,
+  };
+}
+
+async function handleWorkflowExecute(
+  supabase: any, supabaseUrl: string, serviceKey: string,
+  args: { workflow_id?: string; workflow_name?: string; input?: Record<string, any> },
+) {
+  let q = supabase.from('agent_workflows').select('*');
+  if (args.workflow_id) q = q.eq('id', args.workflow_id);
+  else if (args.workflow_name) q = q.eq('name', args.workflow_name);
+  else return { status: 'error', error: 'workflow_id or workflow_name required' };
+
+  const { data: wf, error } = await q.maybeSingle();
+  if (error || !wf) return { status: 'error', error: error?.message || 'Workflow not found' };
+
+  const steps: any[] = wf.steps || [];
+  const context: Record<string, any> = { input: args.input || {} };
+  const trace: any[] = [];
+  let overallStatus = 'completed';
+
+  for (const step of steps) {
+    if (step.condition) {
+      const condMet = evaluateCondition(step.condition, context);
+      if (!condMet) {
+        trace.push({ id: step.id, skill: step.skill_name, status: 'skipped', reason: 'condition not met' });
+        context[step.id] = { status: 'skipped' };
+        continue;
+      }
+    }
+
+    const resolvedArgs = resolveTemplateVars(step.skill_args || {}, context);
+    let result: any;
+    try {
+      const resp = await fetch(`${supabaseUrl}/functions/v1/agent-execute`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceKey}` },
+        body: JSON.stringify({ skill_name: step.skill_name, arguments: resolvedArgs, agent_type: 'flowpilot' }),
+      });
+      result = await resp.json();
+    } catch (err: any) {
+      result = { error: err.message };
+    }
+
+    const success = !result.error && result.status !== 'failed';
+    trace.push({ id: step.id, skill: step.skill_name, status: success ? 'done' : 'failed', result });
+    context[step.id] = { status: success ? 'done' : 'failed', result };
+
+    if (!success && (step.on_failure || 'stop') === 'stop') {
+      overallStatus = 'failed';
+      break;
+    }
+  }
+
+  await supabase.from('agent_workflows').update({
+    run_count: (wf.run_count || 0) + 1,
+    last_run_at: new Date().toISOString(),
+    last_error: overallStatus === 'failed' ? (trace.find((s) => s.status === 'failed')?.result?.error || 'step failed') : null,
+  }).eq('id', wf.id);
+
+  return {
+    status: overallStatus,
+    workflow: wf.name,
+    steps_executed: trace.filter((s) => s.status !== 'skipped').length,
+    steps_skipped: trace.filter((s) => s.status === 'skipped').length,
+    trace,
+  };
+}
+
+// ─── A2A Delegation ───────────────────────────────────────────────────────────
+
+const SPECIALIST_PROMPTS: Record<string, string> = {
+  seo: 'You are an SEO specialist. Focus on: keyword analysis, meta optimization, content structure, link building, page speed, Core Web Vitals. Provide specific, actionable recommendations with priority order.',
+  content: 'You are a content strategy specialist. Focus on: audience alignment, content quality, editorial calendar, SEO integration, distribution channels. Write compelling, engaging content that drives results.',
+  sales: 'You are a sales intelligence specialist. Focus on: lead qualification, pipeline analysis, deal strategy, ICP fit, outreach personalization. Prioritize revenue impact and provide concrete next actions.',
+  analytics: 'You are a data analytics specialist. Focus on: trend identification, anomaly detection, conversion funnels, cohort analysis, actionable insights. Back every conclusion with data and suggest experiments.',
+  email: 'You are an email marketing specialist. Focus on: subject lines, personalization, segmentation, deliverability, A/B testing, lifecycle campaigns. Optimize for open rates, click rates, and conversions.',
+};
+
+async function handleDelegateTask(
+  supabase: any, _supabaseUrl: string, _serviceKey: string,
+  args: { agent_name: string; task: string; context?: Record<string, any> },
+) {
+  const { agent_name, task, context = {} } = args;
+
+  const { data: profile } = await supabase.from('agent_memory')
+    .select('value').eq('key', `agent:${agent_name}`).maybeSingle();
+
+  const systemPrompt = profile?.value?.system_prompt
+    || SPECIALIST_PROMPTS[agent_name]
+    || `You are a specialist agent focused on ${agent_name}. Complete the given task thoroughly and concisely.`;
+
+  const { apiKey, apiUrl, model } = await resolveAiConfig(supabase);
+  const contextStr = Object.keys(context).length > 0
+    ? `\n\nContext:\n${JSON.stringify(context, null, 2)}`
+    : '';
+
+  try {
+    const resp = await fetch(apiUrl, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: `${task}${contextStr}` },
+        ],
+        max_tokens: 1500,
+      }),
+    });
+    if (!resp.ok) throw new Error(`AI error: ${resp.status}`);
+    const data = await resp.json();
+    const response = data.choices?.[0]?.message?.content || 'No response generated.';
+    return { status: 'completed', agent: agent_name, task, response };
+  } catch (err: any) {
+    return { status: 'error', agent: agent_name, error: err.message };
+  }
+}
+
+// ─── Skill Packs ──────────────────────────────────────────────────────────────
+
+async function handleSkillPackList(supabase: any) {
+  const { data } = await supabase.from('agent_skill_packs')
+    .select('id, name, description, version, installed, installed_at, skills')
+    .order('name');
+  return {
+    packs: (data || []).map((p: any) => ({
+      id: p.id, name: p.name, description: p.description,
+      version: p.version, installed: p.installed, installed_at: p.installed_at,
+      skill_count: Array.isArray(p.skills) ? p.skills.length : 0,
+    })),
+    count: data?.length || 0,
+  };
+}
+
+async function handleSkillPackInstall(supabase: any, args: { pack_name: string }) {
+  const { data: pack, error } = await supabase.from('agent_skill_packs')
+    .select('*').eq('name', args.pack_name).maybeSingle();
+  if (error || !pack) return { status: 'error', error: error?.message || 'Pack not found. Use skill_pack_list to see available packs.' };
+
+  const skills: any[] = pack.skills || [];
+  const results: any[] = [];
+
+  for (const skill of skills) {
+    const { data: existing } = await supabase.from('agent_skills')
+      .select('id').eq('name', skill.name).maybeSingle();
+
+    if (existing) {
+      await supabase.from('agent_skills')
+        .update({ description: skill.description, updated_at: new Date().toISOString() })
+        .eq('name', skill.name);
+      results.push({ skill: skill.name, action: 'updated' });
+    } else {
+      const { error: insertErr } = await supabase.from('agent_skills').insert({
+        name: skill.name,
+        description: skill.description,
+        handler: skill.handler,
+        category: skill.category || 'automation',
+        scope: skill.scope || 'internal',
+        requires_approval: skill.requires_approval ?? false,
+        enabled: skill.enabled ?? true,
+        instructions: skill.instructions || null,
+        tool_definition: skill.tool_definition || null,
+      });
+      results.push({ skill: skill.name, action: insertErr ? 'failed' : 'created', error: insertErr?.message });
+    }
+  }
+
+  await supabase.from('agent_skill_packs').update({
+    installed: true, installed_at: new Date().toISOString(),
+  }).eq('id', pack.id);
+
+  return {
+    status: 'installed',
+    pack: args.pack_name,
+    skills_processed: results.length,
+    results,
+  };
+}
+
 // ─── Self-Healing (ported from ClawCMS) ───────────────────────────────────────
 
 export async function runSelfHealing(supabase: any): Promise<string> {
@@ -1156,7 +1419,103 @@ const AUTOMATION_EXEC_TOOLS = [
   { type: 'function', function: { name: 'execute_automation', description: 'Execute an enabled automation by ID.', parameters: { type: 'object', properties: { automation_id: { type: 'string' } }, required: ['automation_id'] } } },
 ];
 
-export function getBuiltInTools(groups: Array<'memory' | 'objectives' | 'self-mod' | 'reflect' | 'soul' | 'planning' | 'automations-exec'>): any[] {
+const WORKFLOW_TOOLS = [
+  {
+    type: 'function', function: {
+      name: 'workflow_create',
+      description: 'Create a multi-step workflow with conditional branching. Steps support {{stepId.result.field}} templates to pass data between steps.',
+      parameters: {
+        type: 'object',
+        properties: {
+          name: { type: 'string', description: 'Unique workflow name' },
+          description: { type: 'string' },
+          steps: {
+            type: 'array',
+            description: 'Ordered steps. Each step: {id, skill_name, skill_args, condition?, on_failure?}',
+            items: {
+              type: 'object',
+              properties: {
+                id: { type: 'string', description: 'Step ID e.g. "s1"' },
+                skill_name: { type: 'string' },
+                skill_args: { type: 'object', description: 'Supports {{stepId.result.field}} templates' },
+                condition: { type: 'object', description: 'Optional: {step, field, operator, value}. Operators: eq|neq|gt|lt|contains|truthy' },
+                on_failure: { type: 'string', enum: ['stop', 'continue'], description: 'Default: stop' },
+              },
+              required: ['id', 'skill_name'],
+            },
+          },
+          trigger_type: { type: 'string', enum: ['manual', 'cron', 'event', 'signal'], description: 'Default: manual' },
+          trigger_config: { type: 'object' },
+        },
+        required: ['name', 'steps'],
+      },
+    },
+  },
+  {
+    type: 'function', function: {
+      name: 'workflow_execute',
+      description: 'Execute a workflow by name or ID. Returns step-by-step execution trace with results.',
+      parameters: {
+        type: 'object',
+        properties: {
+          workflow_id: { type: 'string' },
+          workflow_name: { type: 'string' },
+          input: { type: 'object', description: 'Input context accessible as {{input.field}} in steps' },
+        },
+      },
+    },
+  },
+  {
+    type: 'function', function: {
+      name: 'workflow_list',
+      description: 'List all registered workflows with run history and status.',
+      parameters: { type: 'object', properties: {} },
+    },
+  },
+];
+
+const A2A_TOOLS = [
+  {
+    type: 'function', function: {
+      name: 'delegate_task',
+      description: "Delegate a subtask to a specialized agent. Built-in: 'seo', 'content', 'sales', 'analytics', 'email'. Returns specialist's focused analysis.",
+      parameters: {
+        type: 'object',
+        properties: {
+          agent_name: { type: 'string', description: "Specialist: 'seo' | 'content' | 'sales' | 'analytics' | 'email', or any custom name" },
+          task: { type: 'string', description: 'The specific task for the specialist to handle' },
+          context: { type: 'object', description: 'Optional context data to pass to the specialist' },
+        },
+        required: ['agent_name', 'task'],
+      },
+    },
+  },
+];
+
+const SKILL_PACK_TOOLS = [
+  {
+    type: 'function', function: {
+      name: 'skill_pack_list',
+      description: 'List available skill packs and their installation status.',
+      parameters: { type: 'object', properties: {} },
+    },
+  },
+  {
+    type: 'function', function: {
+      name: 'skill_pack_install',
+      description: 'Install a skill pack — adds multiple related skills in one operation.',
+      parameters: {
+        type: 'object',
+        properties: {
+          pack_name: { type: 'string', description: 'Pack name from skill_pack_list' },
+        },
+        required: ['pack_name'],
+      },
+    },
+  },
+];
+
+export function getBuiltInTools(groups: Array<'memory' | 'objectives' | 'self-mod' | 'reflect' | 'soul' | 'planning' | 'automations-exec' | 'workflows' | 'a2a' | 'skill-packs'>): any[] {
   const tools: any[] = [];
   if (groups.includes('memory')) tools.push(...MEMORY_TOOLS);
   if (groups.includes('objectives')) tools.push(...OBJECTIVE_TOOLS);
@@ -1165,6 +1524,9 @@ export function getBuiltInTools(groups: Array<'memory' | 'objectives' | 'self-mo
   if (groups.includes('soul')) tools.push(...SOUL_TOOL);
   if (groups.includes('planning')) tools.push(...PLANNING_TOOLS);
   if (groups.includes('automations-exec')) tools.push(...AUTOMATION_EXEC_TOOLS);
+  if (groups.includes('workflows')) tools.push(...WORKFLOW_TOOLS);
+  if (groups.includes('a2a')) tools.push(...A2A_TOOLS);
+  if (groups.includes('skill-packs')) tools.push(...SKILL_PACK_TOOLS);
   return tools;
 }
 
@@ -1195,6 +1557,12 @@ export async function executeBuiltInTool(
     case 'advance_plan': return handleAdvancePlan(supabase, supabaseUrl, serviceKey, fnArgs);
     case 'propose_objective': return handleProposeObjective(supabase, fnArgs);
     case 'execute_automation': return handleExecuteAutomation(supabase, supabaseUrl, serviceKey, fnArgs);
+    case 'workflow_create': return handleWorkflowCreate(supabase, fnArgs);
+    case 'workflow_execute': return handleWorkflowExecute(supabase, supabaseUrl, serviceKey, fnArgs);
+    case 'workflow_list': return handleWorkflowList(supabase);
+    case 'delegate_task': return handleDelegateTask(supabase, supabaseUrl, serviceKey, fnArgs);
+    case 'skill_pack_list': return handleSkillPackList(supabase);
+    case 'skill_pack_install': return handleSkillPackInstall(supabase, fnArgs);
   }
 
   // Not a built-in → delegate to agent-execute

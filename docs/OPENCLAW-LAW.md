@@ -238,6 +238,9 @@ Skills that use external providers document their provider strategy in `instruct
 - **Full CMS Autonomy** — Block-level manipulation, page lifecycle, KB articles, global elements, deals, products, companies, forms, webinars (28+ registered skills)
 - **Page Rollback** — Version history with rollback capability via `manage_page`
 - **Auto Module Activation** — Modules auto-enable when FlowPilot uses them
+- **Workflow DAGs** — `agent_workflows` table with multi-step chains, template vars, conditional branching
+- **A2A Delegation** — `delegate_task` with built-in specialists (seo/content/sales/analytics/email)
+- **Skill Packs** — `agent_skill_packs` with 3 starter packs (E-Commerce, Content Marketing, CRM Nurture)
 
 ### ⚠️ Partially Implemented
 | Gap | OpenClaw Has | FlowWink Status | Priority |
@@ -248,17 +251,16 @@ Skills that use external providers document their provider strategy in `instruct
 ### ❌ Missing Layers
 | Gap | OpenClaw Has | Impact | Recommendation |
 |-----|-------------|--------|----------------|
-| **Skill Marketplace / Discovery** | Community skills installable via registry | No external skill marketplace | Future: template-based skill packs |
-| **Multi-Agent Routing** | Route messages to specialized agents | Single FlowPilot + single visitor chat | Future: A2A protocol ready (documented) |
+| **Skill Marketplace / Discovery** | Community skills installable via registry | Skill packs installed locally; no external registry | Future: hosted pack registry |
 | **Execution Sandbox** | Safe code execution environment | Skills run in edge functions (isolated) but no sandboxed code gen | Not needed for CMS use case |
 
 ---
 
 ## 6. Recommended Next Steps (Priority Order)
 
-1. **Skill Packs** — Allow templates to include pre-configured skill sets (e.g., "E-commerce Pack" adds order tracking, inventory check, cart recovery skills).
-2. **A2A Protocol** — Implement `@a2a:agent-name` for multi-agent delegation.
-3. **Workflow DAGs** — Multi-step automation chains with conditional branching.
+1. **Hosted Skill Pack Registry** — Allow importing packs from a remote URL (JSON manifest).
+2. **Workflow Visualization** — Admin UI to view and edit workflow DAG steps.
+3. **A2A Message Protocol** — Formal `@a2a:agent-name` parsing in `agent-operate` for inline delegation.
 
 ---
 
@@ -274,18 +276,18 @@ Skills that use external providers document their provider strategy in `instruct
 │ • heartbeat      │     │ • tool execution  │     │ • chat_convos    │
 └─────────────────┘     └──────┬───────────┘     └─────────────────┘
                                │
-                    ┌──────────┴──────────┐
-                    │                     │
-              ┌─────▼──────┐     ┌───────▼────────┐
-              │   Skills    │     │   Heartbeat     │
-              │             │     │                 │
-              │ • agent_    │     │ • self-healing  │
-              │   skills    │     │ • plan decomp   │
-              │ • agent_    │     │ • advance_plan  │
-              │   execute   │     │ • automations   │
-              │ • lazy      │     │ • reflection    │
-              │   instruct  │     │ • proposals     │
-              └─────────────┘     └─────────────────┘
+                    ┌──────────┴──────────────────────┐
+                    │                                  │
+              ┌─────▼──────┐     ┌───────▼────────┐  ┌▼──────────────┐
+              │   Skills    │     │   Heartbeat     │  │  Workflows    │
+              │             │     │                 │  │               │
+              │ • agent_    │     │ • self-healing  │  │ • DAG steps   │
+              │   skills    │     │ • plan decomp   │  │ • conditions  │
+              │ • skill_    │     │ • advance_plan  │  │ • template    │
+              │   packs     │     │ • automations   │  │   vars        │
+              │ • a2a       │     │ • reflection    │  │ • on_failure  │
+              │   delegates │     │ • proposals     │  │   branching   │
+              └─────────────┘     └─────────────────┘  └───────────────┘
 ```
 
 ---

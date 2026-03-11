@@ -352,7 +352,7 @@ FlowAgent can modify its own behavior:
 
 ---
 
-## 5. Complete Skill Inventory (28+ Default Skills)
+## 5. Complete Skill Inventory (37+ Default Skills)
 
 ### CMS & Content (Full Autonomy)
 
@@ -538,7 +538,10 @@ error_message → if failed
 | **Automations** | `agent_automations` — cron/event/signal triggers | PostgreSQL |
 | **Signal Ingest** | `signal-ingest` — external webhook/extension signals | Edge Function |
 | **Self-Modification** | `soul_update`, `skill_instruct`, `skill_create/update/disable`, `reflect` | Built-in tools |
-| **Heartbeat** | `flowpilot-heartbeat` — 7-step autonomous loop | Edge Function |
+| **Workflow DAGs** | `workflow_create`, `workflow_execute`, `workflow_list` — multi-step chains with conditions | Built-in tools |
+| **A2A Delegation** | `delegate_task` — seo/content/sales/analytics/email specialists | Built-in tools |
+| **Skill Packs** | `skill_pack_list`, `skill_pack_install` — bundle install | Built-in tools |
+| **Heartbeat** | `flowpilot-heartbeat` — 8-step autonomous loop | Edge Function |
 | **Learning Loop** | `flowpilot-learn` — daily feedback → memory distillation | Edge Function |
 | **Multi-Tool Loop** | Up to 8 iterations per heartbeat, 6 per interactive session | Runtime |
 
@@ -562,6 +565,8 @@ error_message → if failed
 | E-commerce | ✅ | ❌ | ❌ | ❌ | ✅ |
 | Knowledge Base | ❌ | ✅ | ❌ | ❌ | ✅ |
 | Signal Ingest API | ❌ | ❌ | ❌ | ❌ | ✅ |
+| Workflow DAGs | ❌ | ❌ | ❌ | ❌ | ✅ |
+| Multi-Agent Delegation (A2A) | ❌ | ❌ | ❌ | ❌ | ✅ |
 | Self-Hostable | Some | ❌ | ❌ | ❌ | ✅ |
 | Private LLM | ❌ | ❌ | ❌ | ❌ | ✅ |
 | Open Source | Some | ❌ | ❌ | ❌ | ✅ |
@@ -572,7 +577,7 @@ error_message → if failed
 
 | Capability | Status |
 |-----------|--------|
-| Skill Engine (28+ skills) | ✅ 100% |
+| Skill Engine (37+ skills) | ✅ 100% |
 | Persistent Memory (pgvector) | ✅ 100% |
 | Objectives & Plan Decomposition | ✅ 100% |
 | Priority Scoring | ✅ 100% |
@@ -582,13 +587,15 @@ error_message → if failed
 | CMS Content Autonomy (pages, blocks, KB, global) | ✅ 100% |
 | CRM Autonomy (leads, companies, deals, forms) | ✅ 100% |
 | Commerce Autonomy (products, orders, bookings) | ✅ 100% |
+| Workflow DAGs (multi-step chains, conditions, branching) | ✅ 100% |
+| A2A Delegation (seo/content/sales/analytics/email agents) | ✅ 100% |
+| Skill Packs (E-Commerce, Content Marketing, CRM Nurture) | ✅ 100% |
 | Communication (newsletter, webinars, gmail) | ✅ 95% |
 | Signal Automations | ✅ 95% |
 | Signal Ingest (External) | ✅ 90% |
 | Self-Evolution (soul, skill_instruct, propose_objective) | ✅ 90% |
 | Proactive Goal Setting | ✅ 90% |
 | Provider Routing (free-first) | ✅ 90% |
-| Multi-Agent Orchestration (A2A) | 🔧 40% |
 
 ---
 
