@@ -163,7 +163,7 @@ const router = createBrowserRouter([
   { path: "/admin/webinars", element: <WebinarsPage /> },
   { path: "/admin/sales-intelligence", element: <SalesIntelligencePage /> },
   { path: "/admin/resume", element: <ConsultantProfilesPage /> },
-  { path: "/admin/browser-control", element: <BrowserControlPage /> },
+  
   
   { path: "/preview/:id", element: <PreviewPage /> },
   { path: "/:slug", element: <PublicPage /> },
