@@ -25,3 +25,4 @@ export { ordersModule } from './orders-module';
 export { webinarsModule } from './webinars-module';
 export { salesIntelligenceModule } from './sales-intelligence-module';
 export { resumeModule } from './resume-module';
+export { browserControlModule } from './browser-control-module';
