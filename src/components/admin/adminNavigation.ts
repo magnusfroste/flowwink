@@ -2,7 +2,7 @@ import {
   LayoutDashboard, BarChart3, FileText, Users, Settings, BookOpen, Image, Mail,
   Puzzle, Webhook, UserCheck, Briefcase, Building2, Package, Library, ShoppingCart,
   CalendarDays, Plug, Bot, Zap, MessageSquare, Headphones, Megaphone, Code2,
-  Video, Target, Rocket, LayoutGrid, Inbox, Menu, UserCircle, Palette,
+  Video, Target, Rocket, LayoutGrid, Inbox, Menu, UserCircle, Palette, FileUser,
 } from 'lucide-react';
 
 export type NavItem = {
