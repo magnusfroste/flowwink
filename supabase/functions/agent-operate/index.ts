@@ -6,6 +6,8 @@ import {
   buildSoulPrompt,
   loadMemories,
   loadObjectives,
+  buildSystemPrompt,
+  pruneConversationHistory,
   fetchSkillInstructions,
   loadSkillTools,
   getBuiltInTools,
@@ -15,10 +17,7 @@ import {
 
 /**
  * FlowPilot Operate — Interactive streaming agent
- *
- * Thin SSE wrapper around the shared agent-reason core.
- * Handles: streaming responses, tool iteration status events,
- * skill result metadata, and final token-by-token output.
+ * Thin SSE wrapper around the shared agent-reason core + prompt compiler.
  */
 
 const corsHeaders = {
@@ -28,14 +27,10 @@ const corsHeaders = {
 
 const MAX_TOOL_ITERATIONS = 6;
 
-// ─── SSE helpers ──────────────────────────────────────────────────────────────
-
 function sseEvent(writer: WritableStreamDefaultWriter, encoder: TextEncoder, event: string, data: any) {
   const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
   return writer.write(encoder.encode(payload));
 }
-
-// ─── Main handler (streaming) ─────────────────────────────────────────────────
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -49,74 +44,28 @@ serve(async (req) => {
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    // Resolve AI config via shared module
     const { apiKey, apiUrl, model } = await resolveAiConfig(supabase);
 
-    // Load context in parallel via shared module
+    // Load context in parallel
     const [{ soul, identity }, memoryContext, objectiveContext] = await Promise.all([
       loadSoulIdentity(supabase),
       loadMemories(supabase),
       loadObjectives(supabase),
     ]);
 
-    const soulPrompt = buildSoulPrompt(soul, identity);
+    // Use prompt compiler (OpenClaw Layer 1)
+    const systemPrompt = buildSystemPrompt({
+      mode: 'operate',
+      soulPrompt: buildSoulPrompt(soul, identity),
+      memoryContext,
+      objectiveContext,
+    });
 
-    const systemPrompt = `You are FlowPilot — an autonomous, self-improving AI agent that operates a CMS platform.
-${soulPrompt}
-
-You can use MULTIPLE tools in a single turn and CHAIN tool calls across iterations.
-When a task requires multiple steps, execute them sequentially — don't just describe a plan.
-
-TOOLS & SKILLS:
-- CMS skills: blog posts, leads, analytics, bookings, newsletters, etc.
-- PERSISTENT MEMORY (memory_write / memory_read)
-- OBJECTIVES (objective_update_progress / objective_complete)
-- SELF-MODIFICATION: You can create, update, disable, and list your own skills and automations.
-- SELF-EVOLUTION: Use 'soul_update' to evolve your personality/values, 'skill_instruct' to add knowledge to skills.
-- REFLECTION: Use 'reflect' to analyze your performance — findings are auto-persisted as learnings.
-
-SELF-IMPROVEMENT GUIDELINES:
-- If a user asks you to do something you can't, consider creating a new skill for it.
-- When you notice repetitive manual tasks, suggest creating an automation.
-- Use 'reflect' periodically (or when asked) to review your own performance.
-- Use 'skill_instruct' to enrich skills with context, examples, and edge cases.
-- Use 'soul_update' when you learn something fundamental about your role.
-- When creating skills, set requires_approval=true for anything destructive.
-- New automations are disabled by default — tell the user to enable them when ready.
-- Handler types: module:name (DB ops), edge:function (edge functions), db:table (queries), webhook:url (external)
-
-MEMORY GUIDELINES:
-- Save user preferences, facts, and context with memory_write
-- Check memory before answering questions about the site
-${memoryContext}
-
-OBJECTIVES:
-- After executing skills that contribute to an objective, update progress.
-- When all success_criteria are met, mark as complete.
-${objectiveContext}
-
-SKILL INSTRUCTIONS: Loaded lazily — you'll receive specific skill instructions after you use each skill.
-
-BROWSER & URL RESOLUTION:
-- NEVER guess URLs for social profiles (LinkedIn, X, GitHub). People's profile slugs are unpredictable.
-- When asked to fetch someone's LinkedIn/social profile, FIRST use search_web to find the correct URL (e.g. "Magnus Froste LinkedIn profile").
-- Only call browser_fetch AFTER you have the verified URL from search results.
-- For LinkedIn posts specifically, search for "site:linkedin.com [person name] latest post" to find direct post URLs.
-- If browser_fetch returns an error/404, tell the user and suggest alternatives.
-
-RULES:
-- When the user asks you to do something, USE the appropriate tools immediately.
-- You can call MULTIPLE tools in parallel when they're independent.
-- After tool results come back, you may call MORE tools if the task isn't done.
-- After all actions complete, summarize what you did concisely.
-- Use markdown formatting for clear, readable responses.
-- Be concise but thorough. Use emoji sparingly.`;
-
-    // Build tools via shared module
+    // Build tools
     const builtInTools = getBuiltInTools(['memory', 'objectives', 'self-mod', 'reflect', 'soul']);
     const allTools = [...builtInTools, ...(available_skills || [])];
 
-    // ─── Set up SSE stream ────────────────────────────────────────────
+    // Set up SSE stream
     const { readable, writable } = new TransformStream();
     const writer = writable.getWriter();
     const encoder = new TextEncoder();
@@ -130,13 +79,13 @@ RULES:
       },
     });
 
-    // Run the agent loop in background
     (async () => {
       try {
-        let conversationMessages: any[] = [
-          { role: 'system', content: systemPrompt },
-          ...messages,
-        ];
+        // Apply context pruning before starting
+        let conversationMessages: any[] = await pruneConversationHistory(
+          [{ role: 'system', content: systemPrompt }, ...messages],
+          supabase,
+        );
 
         const allSkillResults: any[] = [];
         const loadedInstructions = new Set<string>();
@@ -170,7 +119,6 @@ RULES:
 
           const assistantMessage = choice.message;
 
-          // No tool calls — stream the final text response
           if (!assistantMessage.tool_calls?.length) {
             if (allSkillResults.length > 0) {
               await sseEvent(writer, encoder, 'skill_results', allSkillResults);
@@ -180,7 +128,6 @@ RULES:
             break;
           }
 
-          // Tool calls — execute via shared module
           conversationMessages.push(assistantMessage);
 
           const toolNames = assistantMessage.tool_calls.map((tc: any) => tc.function.name);
@@ -209,7 +156,7 @@ RULES:
 
           conversationMessages.push(...toolResults);
 
-          // Lazy instruction loading: inject instructions for non-built-in skills just called
+          // Lazy instruction loading
           const calledSkillNames = assistantMessage.tool_calls
             .map((tc: any) => tc.function.name)
             .filter((n: string) => !isBuiltInTool(n));

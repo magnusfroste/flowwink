@@ -201,20 +201,20 @@ Skills that use external providers document their provider strategy in `instruct
 - Self-modification (skill CRUD, soul evolution)
 - Approval gating (human-in-the-loop)
 - Activity audit trail
+- **Prompt Compiler** — `buildSystemPrompt(mode)` shared across heartbeat/operate/chat surfaces
+- **Vector Memory** — `pgvector` with 768-dim embeddings, semantic search via `search_memories_semantic()` RPC
+- **Context Pruning** — `pruneConversationHistory()` with AI-powered summarization of old messages
 
 ### ⚠️ Partially Implemented
 | Gap | OpenClaw Has | FlowWink Status | Priority |
 |-----|-------------|-----------------|----------|
-| **Context Pruning** | Smart context window management (fit infinite conversations in finite windows) | Basic: last 30 memories, 20 recent activities | Medium |
 | **Thinking Modes** | Reasoning budget control (fast vs deep thinking) | Not implemented — always same model | Low |
 | **Session Keys** | Conversation isolation per agent instance | Conversation IDs exist but no isolation guarantees | Low |
 
 ### ❌ Missing Layers
 | Gap | OpenClaw Has | Impact | Recommendation |
 |-----|-------------|--------|----------------|
-| **Workspace Context Compiler** | Assembles system prompt from files, scans workspace | FlowWink loads context in parallel but doesn't "compile" — each function builds its own prompt | Add `buildSystemPrompt()` shared function |
 | **Skill Marketplace / Discovery** | Community skills installable via registry | No external skill marketplace | Future: template-based skill packs |
-| **Vector Memory** | Semantic search via embeddings | Only keyword-based `ilike` search on `agent_memory` | Add pgvector for semantic recall |
 | **Multi-Agent Routing** | Route messages to specialized agents | Single FlowPilot + single visitor chat | Future: A2A protocol ready (documented) |
 | **Execution Sandbox** | Safe code execution environment | Skills run in edge functions (isolated) but no sandboxed code gen | Not needed for CMS use case |
 
@@ -222,11 +222,7 @@ Skills that use external providers document their provider strategy in `instruct
 
 ## 6. Recommended Next Steps (Priority Order)
 
-1. **Prompt Compiler** — Extract system prompt building into a shared `buildSystemPrompt(mode: 'heartbeat' | 'operate' | 'chat')` function in `agent-reason.ts` to eliminate prompt duplication between heartbeat and operate.
-
-2. **Context Pruning** — Implement token-aware context management. Summarize old conversation messages when approaching context limits. OpenClaw uses a pruning strategy that preserves the most relevant context.
-
-3. **Vector Memory** — Add `pgvector` extension and embedding generation to `agent_memory`. This enables semantic search (`memory_read` with vector similarity) instead of just keyword matching. Critical for scaling memory beyond 30 entries.
+1. **Skill Packs** — Allow templates to include pre-configured skill sets (e.g., "E-commerce Pack" adds order tracking, inventory check, cart recovery skills).
 
 4. **Skill Packs** — Allow templates to include pre-configured skill sets (e.g., "E-commerce Pack" adds order tracking, inventory check, cart recovery skills).
 

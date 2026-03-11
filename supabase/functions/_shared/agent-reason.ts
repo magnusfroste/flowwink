@@ -10,12 +10,29 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
  *
  * Consolidates: AI config, built-in tools, tool loop, memory/objectives,
  * soul/identity, reflection, self-modification, plan decomposition,
- * self-healing, and agent-execute delegation.
+ * self-healing, context pruning, vector memory, and prompt compilation.
  *
  * NOT a serve() handler — this is an importable module.
  */
 
 // ─── Types ────────────────────────────────────────────────────────────────────
+
+export type PromptMode = 'operate' | 'heartbeat' | 'chat';
+
+export interface PromptCompilerInput {
+  mode: PromptMode;
+  soulPrompt: string;
+  memoryContext: string;
+  objectiveContext: string;
+  // Heartbeat-specific
+  activityContext?: string;
+  statsContext?: string;
+  automationContext?: string;
+  healingReport?: string;
+  maxIterations?: number;
+  // Chat-specific
+  chatSystemPrompt?: string;
+}
 
 export interface ReasonConfig {
   scope: 'internal' | 'external';
@@ -37,6 +54,8 @@ export interface ReasonResult {
 
 const SELF_HEAL_THRESHOLD = 3;
 const MAX_CHAIN_DEPTH = 4;
+const MAX_CONTEXT_TOKENS = 80_000; // Approximate token budget for conversation history
+const SUMMARY_THRESHOLD = 60_000;  // Start pruning when history exceeds this
 
 const BUILT_IN_TOOL_NAMES = new Set([
   'memory_write', 'memory_read',
@@ -48,6 +67,136 @@ const BUILT_IN_TOOL_NAMES = new Set([
   'reflect',
   'decompose_objective', 'advance_plan', 'propose_objective', 'execute_automation',
 ]);
+
+// ─── Prompt Compiler (OpenClaw Layer 1 — Centralized) ─────────────────────────
+
+const CORE_INSTRUCTIONS = `You can use MULTIPLE tools in a single turn and CHAIN tool calls across iterations.
+When a task requires multiple steps, execute them sequentially — don't just describe a plan.
+
+TOOLS & SKILLS:
+- CMS skills: blog posts, leads, analytics, bookings, newsletters, etc.
+- PERSISTENT MEMORY (memory_write / memory_read — supports semantic vector search)
+- OBJECTIVES (objective_update_progress / objective_complete)
+- SELF-MODIFICATION: You can create, update, disable, and list your own skills and automations.
+- SELF-EVOLUTION: Use 'soul_update' to evolve your personality/values, 'skill_instruct' to add knowledge to skills.
+- REFLECTION: Use 'reflect' to analyze your performance — findings are auto-persisted as learnings.
+
+SELF-IMPROVEMENT GUIDELINES:
+- If a user asks you to do something you can't, consider creating a new skill for it.
+- When you notice repetitive manual tasks, suggest creating an automation.
+- Use 'reflect' periodically (or when asked) to review your own performance.
+- Use 'skill_instruct' to enrich skills with context, examples, and edge cases.
+- Use 'soul_update' when you learn something fundamental about your role.
+- When creating skills, set requires_approval=true for anything destructive.
+- New automations are disabled by default — tell the user to enable them when ready.
+- Handler types: module:name (DB ops), edge:function (edge functions), db:table (queries), webhook:url (external)
+
+MEMORY GUIDELINES:
+- Save user preferences, facts, and context with memory_write
+- Check memory before answering questions about the site
+- memory_read supports semantic search — describe what you're looking for naturally
+
+BROWSER & URL RESOLUTION:
+- NEVER guess URLs for social profiles (LinkedIn, X, GitHub). People's profile slugs are unpredictable.
+- When asked to fetch someone's LinkedIn/social profile, FIRST use search_web to find the correct URL.
+- Only call browser_fetch AFTER you have the verified URL from search results.
+
+SKILL INSTRUCTIONS: Loaded lazily — you'll receive specific skill instructions after you use each skill.
+
+RULES:
+- When the user asks you to do something, USE the appropriate tools immediately.
+- You can call MULTIPLE tools in parallel when they're independent.
+- After tool results come back, you may call MORE tools if the task isn't done.
+- After all actions complete, summarize what you did concisely.
+- Use markdown formatting for clear, readable responses.
+- Be concise but thorough. Use emoji sparingly.`;
+
+const HEARTBEAT_PROTOCOL = `HEARTBEAT PROTOCOL:
+1. PROACTIVE REASONING — Analyze site stats + activity patterns. If you spot a trend, gap, or opportunity NOT covered by existing objectives, use propose_objective to create one. Max 1 new objective per heartbeat.
+2. PLAN — For each active objective WITHOUT a plan (no progress.plan), call decompose_objective to create a step-by-step plan.
+3. ADVANCE — Objectives are pre-sorted by priority score. Advance them IN ORDER (highest score first). Use advance_plan with chain=true to execute multiple steps per objective.
+4. AUTOMATIONS — Check DUE (⏰) automations. Execute them via execute_automation.
+5. REFLECT — Use 'reflect' to analyze the past 7 days.
+6. REMEMBER — Save learnings to memory.
+7. SUMMARIZE — Brief heartbeat report including plan progress and any new proposals.
+
+PRIORITY SCORING (automatic, shown as [score:N]):
+- Deadline proximity: overdue +50, <1 day +40, <3 days +25, <7 days +10
+- Priority field: critical +35, high +20, medium +10
+- Momentum: in-progress plans +15, near completion (>70%) +10
+- Staleness: no update >3 days +8, >7 days +12
+- Failures: plan has failed steps +10
+Advance the HIGHEST scored objectives first.
+
+MULTI-STEP PLANNING RULES:
+- Each objective should have a plan (3-7 steps). Use decompose_objective to create one.
+- advance_plan auto-chains up to 4 steps per call. Use it — don't call advance_plan repeatedly for the same objective.
+- If a step fails, note it but continue to the next objective.
+- If ALL steps are done, mark the objective as completed via objective_complete.
+- Plans persist between heartbeats. FlowPilot picks up where it left off.
+
+PROACTIVE REASONING RULES:
+- Only propose objectives when stats or activity clearly warrant action
+- Never duplicate existing active objectives (checked automatically)
+- Include a clear "reason" explaining what data drove the proposal
+- Keep goals specific and actionable
+- When proposing, set constraints.priority ('critical'|'high'|'medium'|'low')
+
+CONSTRAINTS:
+- Skills marked requires_approval will be BLOCKED and logged for admin review
+- PRIORITIZE: high-score objectives > DUE automations > proposals
+- Self-healing auto-disables skills with 3+ consecutive failures
+- Be efficient: use chaining, focus on top 2-3 objectives per heartbeat`;
+
+/**
+ * buildSystemPrompt — OpenClaw Prompt Compiler
+ * 
+ * Centralized system prompt assembly for all agent surfaces.
+ * Eliminates prompt duplication between heartbeat, operate, and chat.
+ */
+export function buildSystemPrompt(input: PromptCompilerInput): string {
+  const { mode, soulPrompt, memoryContext, objectiveContext } = input;
+
+  if (mode === 'chat' && input.chatSystemPrompt) {
+    return input.chatSystemPrompt;
+  }
+
+  const parts: string[] = [];
+
+  // Layer 1: Identity
+  if (mode === 'heartbeat') {
+    parts.push(`You are FlowPilot running in AUTONOMOUS HEARTBEAT mode. No human is watching.`);
+  } else {
+    parts.push(`You are FlowPilot — an autonomous, self-improving AI agent that operates a CMS platform.`);
+  }
+
+  // Layer 2: Soul & Identity
+  parts.push(soulPrompt);
+
+  // Layer 3: Core instructions (shared)
+  parts.push(CORE_INSTRUCTIONS);
+
+  // Layer 4: Mode-specific context
+  if (mode === 'heartbeat') {
+    parts.push(`\nCONTEXT:`);
+    parts.push(memoryContext);
+    parts.push(objectiveContext);
+    if (input.automationContext) parts.push(input.automationContext);
+    if (input.activityContext) parts.push(input.activityContext);
+    if (input.statsContext) parts.push(input.statsContext);
+    if (input.healingReport) parts.push(input.healingReport);
+    parts.push('');
+    parts.push(HEARTBEAT_PROTOCOL);
+    parts.push(`\n- Max ${input.maxIterations || 8} tool iterations per heartbeat`);
+  } else {
+    // Operate mode
+    parts.push(memoryContext);
+    parts.push(`\nOBJECTIVES:\n- After executing skills that contribute to an objective, update progress.\n- When all success_criteria are met, mark as complete.`);
+    parts.push(objectiveContext);
+  }
+
+  return parts.filter(Boolean).join('\n');
+}
 
 // ─── AI Config Resolution ─────────────────────────────────────────────────────
 
@@ -134,23 +283,212 @@ async function handleMemoryWrite(supabase: any, args: { key: string; value: any;
   const { data: existing } = await supabase
     .from('agent_memory').select('id').eq('key', key).maybeSingle();
 
+  const memValue = typeof value === 'object' ? value : { text: value };
+
+  // Generate embedding for vector search
+  const embedding = await generateEmbedding(supabase, `${key}: ${typeof value === 'string' ? value : JSON.stringify(value)}`);
+
+  const record: any = {
+    value: memValue,
+    category,
+    updated_at: new Date().toISOString(),
+  };
+  if (embedding) record.embedding = embedding;
+
   if (existing) {
-    await supabase.from('agent_memory')
-      .update({ value: typeof value === 'object' ? value : { text: value }, category, updated_at: new Date().toISOString() })
-      .eq('id', existing.id);
+    await supabase.from('agent_memory').update(record).eq('id', existing.id);
   } else {
     await supabase.from('agent_memory')
-      .insert({ key, value: typeof value === 'object' ? value : { text: value }, category, created_by: 'flowpilot' });
+      .insert({ key, ...record, created_by: 'flowpilot' });
   }
-  return { status: 'saved', key };
+  return { status: 'saved', key, has_embedding: !!embedding };
 }
 
-async function handleMemoryRead(supabase: any, args: { key?: string; category?: string }) {
+async function handleMemoryRead(supabase: any, args: { key?: string; category?: string; semantic_query?: string }) {
+  // If semantic query provided, use vector search
+  if (args.semantic_query || args.key) {
+    const searchText = args.semantic_query || args.key || '';
+    const embedding = await generateEmbedding(supabase, searchText);
+
+    if (embedding) {
+      const { data: semanticResults } = await supabase.rpc('search_memories_semantic', {
+        query_embedding: embedding,
+        match_threshold: 0.5,
+        match_count: 10,
+        filter_category: args.category || null,
+      });
+
+      if (semanticResults?.length) {
+        return {
+          memories: semanticResults.map((r: any) => ({
+            key: r.key, value: r.value, category: r.category, similarity: r.similarity,
+          })),
+          search_type: 'semantic',
+        };
+      }
+    }
+  }
+
+  // Fallback: keyword search
   let q = supabase.from('agent_memory').select('key, value, category, updated_at');
   if (args.key) q = q.ilike('key', `%${args.key}%`);
   if (args.category) q = q.eq('category', args.category);
   const { data } = await q.order('updated_at', { ascending: false }).limit(10);
-  return { memories: data || [] };
+  return { memories: data || [], search_type: 'keyword' };
+}
+
+// ─── Vector Memory (Embedding Generation) ─────────────────────────────────────
+
+async function generateEmbedding(supabase: any, text: string): Promise<number[] | null> {
+  try {
+    // Try OpenAI embeddings first
+    const openaiKey = Deno.env.get('OPENAI_API_KEY');
+    if (openaiKey) {
+      const resp = await fetch('https://api.openai.com/v1/embeddings', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${openaiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'text-embedding-3-small',
+          input: text.slice(0, 8000),
+          dimensions: 768,
+        }),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        return data.data?.[0]?.embedding || null;
+      }
+    }
+
+    // Try Gemini embeddings
+    const geminiKey = Deno.env.get('GEMINI_API_KEY');
+    if (geminiKey) {
+      const resp = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${geminiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'models/text-embedding-004',
+            content: { parts: [{ text: text.slice(0, 8000) }] },
+            outputDimensionality: 768,
+          }),
+        }
+      );
+      if (resp.ok) {
+        const data = await resp.json();
+        return data.embedding?.values || null;
+      }
+    }
+
+    console.warn('[vector-memory] No embedding provider available');
+    return null;
+  } catch (err) {
+    console.error('[vector-memory] Embedding generation failed:', err);
+    return null;
+  }
+}
+
+// ─── Context Pruning ──────────────────────────────────────────────────────────
+
+/**
+ * pruneConversationHistory — Token-aware context management
+ * 
+ * Estimates token count of conversation messages. When exceeding the threshold,
+ * summarizes older messages into a single condensed context message, preserving
+ * the system prompt and most recent messages.
+ */
+export async function pruneConversationHistory(
+  messages: any[],
+  supabase: any,
+  opts?: { maxTokens?: number; summaryThreshold?: number }
+): Promise<any[]> {
+  const maxTokens = opts?.maxTokens || MAX_CONTEXT_TOKENS;
+  const threshold = opts?.summaryThreshold || SUMMARY_THRESHOLD;
+
+  // Estimate total tokens
+  let totalTokens = 0;
+  for (const msg of messages) {
+    const content = typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content || '');
+    totalTokens += Math.ceil(content.length / 4);
+    if (msg.tool_calls) {
+      totalTokens += Math.ceil(JSON.stringify(msg.tool_calls).length / 4);
+    }
+  }
+
+  // Under threshold — no pruning needed
+  if (totalTokens < threshold) {
+    return messages;
+  }
+
+  console.log(`[context-pruning] Total ~${totalTokens} tokens exceeds ${threshold}, pruning...`);
+
+  // Separate system messages from conversation
+  const systemMessages = messages.filter(m => m.role === 'system');
+  const conversationMessages = messages.filter(m => m.role !== 'system');
+
+  if (conversationMessages.length <= 6) {
+    return messages; // Too few messages to prune
+  }
+
+  // Keep the last N messages (recent context)
+  const keepRecent = Math.min(10, Math.floor(conversationMessages.length / 2));
+  const oldMessages = conversationMessages.slice(0, -keepRecent);
+  const recentMessages = conversationMessages.slice(-keepRecent);
+
+  // Summarize old messages using AI
+  const summary = await summarizeMessages(oldMessages, supabase);
+
+  if (!summary) {
+    // Fallback: simple truncation — keep system + recent
+    return [...systemMessages, ...recentMessages];
+  }
+
+  // Build pruned history: system + summary + recent
+  const summaryMessage = {
+    role: 'system' as const,
+    content: `[CONVERSATION SUMMARY — Earlier messages condensed for context]\n${summary}`,
+  };
+
+  console.log(`[context-pruning] Pruned ${oldMessages.length} messages into summary (~${Math.ceil(summary.length / 4)} tokens)`);
+
+  return [...systemMessages, summaryMessage, ...recentMessages];
+}
+
+async function summarizeMessages(messages: any[], supabase: any): Promise<string | null> {
+  try {
+    const { apiKey, apiUrl, model } = await resolveAiConfig(supabase);
+
+    // Build a compact representation of old messages
+    const compactMessages = messages
+      .filter(m => m.role === 'user' || m.role === 'assistant')
+      .map(m => `${m.role}: ${(m.content || '').slice(0, 500)}`)
+      .join('\n');
+
+    if (!compactMessages) return null;
+
+    const resp = await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model,
+        messages: [
+          {
+            role: 'system',
+            content: 'Summarize this conversation history into a concise context summary (max 500 words). Preserve: key decisions, facts learned, actions taken, user preferences. Drop: greetings, filler, redundant details.',
+          },
+          { role: 'user', content: compactMessages.slice(0, 12000) },
+        ],
+        max_tokens: 800,
+      }),
+    });
+
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    return data.choices?.[0]?.message?.content || null;
+  } catch (err) {
+    console.error('[context-pruning] Summarization failed:', err);
+    return null;
+  }
 }
 
 // ─── Objectives ───────────────────────────────────────────────────────────────
@@ -172,7 +510,6 @@ export async function loadObjectives(supabase: any): Promise<string> {
     const constraints = o.constraints || {};
     const now = Date.now();
 
-    // Urgency: deadline proximity
     if (constraints.deadline) {
       const daysLeft = (new Date(constraints.deadline).getTime() - now) / 86_400_000;
       if (daysLeft < 0) score += 50;
@@ -181,22 +518,19 @@ export async function loadObjectives(supabase: any): Promise<string> {
       else if (daysLeft < 7) score += 10;
     }
 
-    // Priority field
     if (constraints.priority === 'critical') score += 35;
     else if (constraints.priority === 'high') score += 20;
     else if (constraints.priority === 'medium') score += 10;
 
-    // Momentum: in-progress plan
     if (plan?.steps?.length) {
       const done = plan.steps.filter((s: any) => s.status === 'done').length;
       const pct = done / plan.steps.length;
       if (pct > 0 && pct < 1) score += 15;
       if (pct >= 0.7) score += 10;
     } else {
-      score += 5; // needs plan
+      score += 5;
     }
 
-    // Staleness
     const daysSinceUpdate = (now - new Date(o.updated_at).getTime()) / 86_400_000;
     if (daysSinceUpdate > 3) score += 8;
     if (daysSinceUpdate > 7) score += 12;
@@ -405,7 +739,6 @@ async function handleAdvancePlan(supabase: any, supabaseUrl: string, serviceKey:
 async function handleProposeObjective(supabase: any, args: { goal: string; reason: string; constraints?: any; success_criteria?: any }) {
   const { goal, reason, constraints, success_criteria } = args;
 
-  // Duplicate check
   const { data: existing } = await supabase.from('agent_objectives')
     .select('id, goal').eq('status', 'active');
   const isDuplicate = (existing || []).some((o: any) =>
@@ -470,7 +803,6 @@ async function handleExecuteAutomation(supabase: any, supabaseUrl: string, servi
     .select('*').eq('id', args.automation_id).maybeSingle();
   if (fetchErr || !auto) return { status: 'error', error: fetchErr?.message || 'Automation not found' };
 
-  // Check if linked skill requires approval
   if (auto.skill_name) {
     const { data: skill } = await supabase.from('agent_skills')
       .select('requires_approval').eq('name', auto.skill_name).maybeSingle();
@@ -756,9 +1088,6 @@ async function handleReflect(supabase: any, args: { focus?: string }) {
 }
 
 // ─── Lazy Skill Instructions Loader ───────────────────────────────────────────
-// Instead of loading ALL skill instructions into the system prompt upfront,
-// we fetch instructions only for skills the LLM actually calls.
-// This keeps the prompt lean and scales with the number of registered skills.
 
 export async function fetchSkillInstructions(
   supabase: any,
@@ -782,7 +1111,7 @@ export async function fetchSkillInstructions(
   return `\n\nSKILL CONTEXT (instructions for skills you just used):\n${lines.join('\n\n')}`;
 }
 
-// Keep backward-compat export (now deprecated — returns empty string)
+// Keep backward-compat export
 export async function loadSkillInstructions(_supabase: any): Promise<string> {
   return '';
 }
@@ -790,8 +1119,8 @@ export async function loadSkillInstructions(_supabase: any): Promise<string> {
 // ─── Built-in Tool Definitions ────────────────────────────────────────────────
 
 const MEMORY_TOOLS = [
-  { type: 'function', function: { name: 'memory_write', description: 'Save something to your persistent memory.', parameters: { type: 'object', properties: { key: { type: 'string', description: 'Short identifier' }, value: { description: 'The information to remember' }, category: { type: 'string', enum: ['preference', 'context', 'fact'] } }, required: ['key', 'value'] } } },
-  { type: 'function', function: { name: 'memory_read', description: 'Search your persistent memory.', parameters: { type: 'object', properties: { key: { type: 'string', description: 'Search term' }, category: { type: 'string', enum: ['preference', 'context', 'fact'] } } } } },
+  { type: 'function', function: { name: 'memory_write', description: 'Save something to your persistent memory. Generates vector embedding for semantic search.', parameters: { type: 'object', properties: { key: { type: 'string', description: 'Short identifier' }, value: { description: 'The information to remember' }, category: { type: 'string', enum: ['preference', 'context', 'fact'] } }, required: ['key', 'value'] } } },
+  { type: 'function', function: { name: 'memory_read', description: 'Search your persistent memory. Supports semantic (vector) search — describe what you\'re looking for naturally.', parameters: { type: 'object', properties: { key: { type: 'string', description: 'Keyword search term' }, category: { type: 'string', enum: ['preference', 'context', 'fact'] }, semantic_query: { type: 'string', description: 'Natural language query for semantic vector search (more accurate than keyword)' } } } } },
 ];
 
 const OBJECTIVE_TOOLS = [
@@ -818,13 +1147,13 @@ const SOUL_TOOL = [
 ];
 
 const PLANNING_TOOLS = [
-  { type: 'function', function: { name: 'decompose_objective', description: 'Break an objective into 3-7 ordered steps using AI planning. Each step maps to an available skill. Use this when an objective has no plan yet.', parameters: { type: 'object', properties: { objective_id: { type: 'string', description: 'The objective UUID to decompose' } }, required: ['objective_id'] } } },
-  { type: 'function', function: { name: 'advance_plan', description: "Execute the next pending step(s) in an objective's plan with automatic chaining. By default (chain=true), up to 4 consecutive steps are executed in one call. This is the PRIMARY tool for plan execution.", parameters: { type: 'object', properties: { objective_id: { type: 'string', description: 'The objective UUID whose plan to advance' }, chain: { type: 'boolean', description: 'Auto-chain consecutive steps (default: true)' } }, required: ['objective_id'] } } },
-  { type: 'function', function: { name: 'propose_objective', description: 'Proactively create a new objective based on signal patterns, site stats, or strategic gaps. Only propose when there is a clear need not covered by existing objectives.', parameters: { type: 'object', properties: { goal: { type: 'string', description: 'The objective goal' }, reason: { type: 'string', description: 'Why this objective is being proposed' }, constraints: { type: 'object', description: 'Optional constraints (priority, deadline)' }, success_criteria: { type: 'object', description: 'How to measure success' } }, required: ['goal', 'reason'] } } },
+  { type: 'function', function: { name: 'decompose_objective', description: 'Break an objective into 3-7 ordered steps using AI planning.', parameters: { type: 'object', properties: { objective_id: { type: 'string', description: 'The objective UUID to decompose' } }, required: ['objective_id'] } } },
+  { type: 'function', function: { name: 'advance_plan', description: "Execute the next pending step(s) in an objective's plan with automatic chaining (up to 4 steps).", parameters: { type: 'object', properties: { objective_id: { type: 'string' }, chain: { type: 'boolean', description: 'Auto-chain consecutive steps (default: true)' } }, required: ['objective_id'] } } },
+  { type: 'function', function: { name: 'propose_objective', description: 'Proactively create a new objective based on signal patterns or strategic gaps.', parameters: { type: 'object', properties: { goal: { type: 'string' }, reason: { type: 'string' }, constraints: { type: 'object' }, success_criteria: { type: 'object' } }, required: ['goal', 'reason'] } } },
 ];
 
 const AUTOMATION_EXEC_TOOLS = [
-  { type: 'function', function: { name: 'execute_automation', description: 'Execute an enabled automation by ID. Runs its linked skill with preconfigured arguments and updates run metadata. Prioritize objective-linked and DUE automations.', parameters: { type: 'object', properties: { automation_id: { type: 'string', description: 'The automation UUID to execute' } }, required: ['automation_id'] } } },
+  { type: 'function', function: { name: 'execute_automation', description: 'Execute an enabled automation by ID.', parameters: { type: 'object', properties: { automation_id: { type: 'string' } }, required: ['automation_id'] } } },
 ];
 
 export function getBuiltInTools(groups: Array<'memory' | 'objectives' | 'self-mod' | 'reflect' | 'soul' | 'planning' | 'automations-exec'>): any[] {
@@ -914,7 +1243,8 @@ export async function reason(
   const skillTools = await loadSkillTools(supabase, config.scope);
   const allTools = [...builtInTools, ...(config.additionalTools || []), ...skillTools];
 
-  let conversationMessages = [...messages];
+  // Apply context pruning before starting the loop
+  let conversationMessages = await pruneConversationHistory(messages, supabase);
   const actionsExecuted: string[] = [];
   const skillResults: ReasonResult['skillResults'] = [];
   let finalResponse = '';
@@ -976,7 +1306,7 @@ export async function reason(
       conversationMessages.push({ role: 'tool', tool_call_id: tc.id, content: JSON.stringify(result) });
     }
 
-    // Lazy instruction loading: inject instructions for skills just called
+    // Lazy instruction loading
     if (calledSkillNames.length > 0) {
       const instrContext = await fetchSkillInstructions(supabase, calledSkillNames, loadedInstructions);
       if (instrContext) {

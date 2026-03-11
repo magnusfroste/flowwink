@@ -134,6 +134,7 @@ export type Database = {
           category: Database["public"]["Enums"]["agent_memory_category"]
           created_at: string
           created_by: Database["public"]["Enums"]["agent_type"]
+          embedding: string | null
           expires_at: string | null
           id: string
           key: string
@@ -144,6 +145,7 @@ export type Database = {
           category?: Database["public"]["Enums"]["agent_memory_category"]
           created_at?: string
           created_by?: Database["public"]["Enums"]["agent_type"]
+          embedding?: string | null
           expires_at?: string | null
           id?: string
           key: string
@@ -154,6 +156,7 @@ export type Database = {
           category?: Database["public"]["Enums"]["agent_memory_category"]
           created_at?: string
           created_by?: Database["public"]["Enums"]["agent_type"]
+          embedding?: string | null
           expires_at?: string | null
           id?: string
           key?: string
@@ -2480,6 +2483,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      get_conversation_token_estimate: {
+        Args: { p_conversation_id: string }
+        Returns: number
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -2490,6 +2497,21 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      search_memories_semantic: {
+        Args: {
+          filter_category?: Database["public"]["Enums"]["agent_memory_category"]
+          match_count?: number
+          match_threshold?: number
+          query_embedding: string
+        }
+        Returns: {
+          category: Database["public"]["Enums"]["agent_memory_category"]
+          id: string
+          key: string
+          similarity: number
+          value: Json
+        }[]
       }
     }
     Enums: {
