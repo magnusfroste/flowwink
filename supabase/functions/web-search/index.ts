@@ -79,7 +79,7 @@ serve(async (req) => {
   }
 
   try {
-    const { query, limit = 5, lang, country } = await req.json() as WebSearchInput;
+    const { query, limit = 5, lang, country, preferred_provider = 'auto' } = await req.json() as WebSearchInput;
 
     if (!query) {
       return new Response(JSON.stringify({ success: false, error: 'query is required' }), {
