@@ -143,6 +143,111 @@ serve(async (req) => {
 });
 
 // =============================================================================
+// Markdown → Tiptap JSON converter
+// =============================================================================
+
+function markdownToTiptap(md: string): any {
+  const lines = md.split('\n');
+  const nodes: any[] = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    // Headings
+    const headingMatch = line.match(/^(#{1,6})\s+(.+)/);
+    if (headingMatch) {
+      const level = headingMatch[1].length;
+      nodes.push({
+        type: 'heading',
+        attrs: { level },
+        content: [{ type: 'text', text: inlineClean(headingMatch[2]) }],
+      });
+      i++;
+      continue;
+    }
+
+    // Bullet list items
+    if (/^[-*]\s+/.test(line)) {
+      const items: any[] = [];
+      while (i < lines.length && /^[-*]\s+/.test(lines[i])) {
+        const itemText = lines[i].replace(/^[-*]\s+/, '');
+        items.push({
+          type: 'listItem',
+          content: [{ type: 'paragraph', content: parseInline(itemText) }],
+        });
+        i++;
+      }
+      nodes.push({ type: 'bulletList', content: items });
+      continue;
+    }
+
+    // Numbered list
+    if (/^\d+\.\s+/.test(line)) {
+      const items: any[] = [];
+      while (i < lines.length && /^\d+\.\s+/.test(lines[i])) {
+        const itemText = lines[i].replace(/^\d+\.\s+/, '');
+        items.push({
+          type: 'listItem',
+          content: [{ type: 'paragraph', content: parseInline(itemText) }],
+        });
+        i++;
+      }
+      nodes.push({ type: 'orderedList', content: items });
+      continue;
+    }
+
+    // Empty line
+    if (!line.trim()) {
+      i++;
+      continue;
+    }
+
+    // Regular paragraph
+    nodes.push({
+      type: 'paragraph',
+      content: parseInline(line),
+    });
+    i++;
+  }
+
+  if (nodes.length === 0) {
+    nodes.push({ type: 'paragraph' });
+  }
+
+  return { type: 'doc', content: nodes };
+}
+
+function inlineClean(text: string): string {
+  return text.replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(.+?)\*/g, '$1').replace(/_(.+?)_/g, '$1').trim();
+}
+
+function parseInline(text: string): any[] {
+  const result: any[] = [];
+  // Simple bold/italic parsing
+  const regex = /(\*\*(.+?)\*\*|\*(.+?)\*|_(.+?)_|([^*_]+))/g;
+  let match;
+  while ((match = regex.exec(text)) !== null) {
+    if (match[2]) {
+      // Bold
+      result.push({ type: 'text', marks: [{ type: 'bold' }], text: match[2] });
+    } else if (match[3]) {
+      // Italic
+      result.push({ type: 'text', marks: [{ type: 'italic' }], text: match[3] });
+    } else if (match[4]) {
+      // Italic (underscore)
+      result.push({ type: 'text', marks: [{ type: 'italic' }], text: match[4] });
+    } else if (match[5] && match[5].trim()) {
+      result.push({ type: 'text', text: match[5] });
+    }
+  }
+  if (result.length === 0) {
+    result.push({ type: 'text', text: text.trim() || ' ' });
+  }
+  return result;
+}
+
+// =============================================================================
 // Auto-activate module when FlowPilot uses it
 // =============================================================================
 
@@ -208,16 +313,80 @@ async function executeModuleAction(
 ): Promise<unknown> {
   switch (moduleName) {
     case 'blog': {
-      const { title, topic, tone = 'professional', language = 'en' } = args as any;
-      // Create a draft blog post
+      const { title, topic, tone = 'professional', language = 'en', content } = args as any;
       const slug = (title as string).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+
+      // Build Tiptap content_json from provided content or generate via AI
+      let tiptapDoc: any = { type: 'doc', content: [{ type: 'paragraph' }] };
+      let excerpt = `Blog post about: ${topic}`;
+      let markdownContent = content as string | undefined;
+
+      // If no content provided, generate it with Gemini
+      if (!markdownContent) {
+        const geminiKey = Deno.env.get('GEMINI_API_KEY');
+        const openaiKey = Deno.env.get('OPENAI_API_KEY');
+        if (geminiKey) {
+          try {
+            const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`;
+            const genPrompt = `Write a comprehensive blog post about: "${topic}"\nTitle: "${title}"\nTone: ${tone}\nLanguage: ${language}\n\nWrite 600-1200 words. Use markdown with ## headings, paragraphs, and bullet points where appropriate. Do NOT include the title as an H1 — start with the first section. Output ONLY the markdown content, no preamble.`;
+            const genResp = await fetch(geminiUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contents: [{ parts: [{ text: genPrompt }] }],
+                generationConfig: { maxOutputTokens: 8192, temperature: 0.7 },
+              }),
+            });
+            const genData = await genResp.json();
+            const finishReason = genData.candidates?.[0]?.finishReason;
+            if (finishReason === 'MAX_TOKENS') {
+              console.warn('[write_blog_post] Content truncated by token limit');
+            }
+            markdownContent = genData.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          } catch (e) {
+            console.error('[write_blog_post] Gemini generation failed:', e);
+          }
+        } else if (openaiKey) {
+          try {
+            const genResp = await fetch('https://api.openai.com/v1/chat/completions', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${openaiKey}` },
+              body: JSON.stringify({
+                model: 'gpt-4o-mini',
+                max_tokens: 4096,
+                messages: [
+                  { role: 'system', content: `You are a blog writer. Tone: ${tone}. Language: ${language}.` },
+                  { role: 'user', content: `Write a blog post about "${topic}" titled "${title}". 600-1200 words. Use markdown with ## headings. Do NOT include the title. Output ONLY markdown.` }
+                ],
+              }),
+            });
+            const genData = await genResp.json();
+            if (genData.choices?.[0]?.finish_reason === 'length') {
+              console.warn('[write_blog_post] Content truncated by token limit');
+            }
+            markdownContent = genData.choices?.[0]?.message?.content || '';
+          } catch (e) {
+            console.error('[write_blog_post] OpenAI generation failed:', e);
+          }
+        }
+      }
+
+      // Convert markdown to Tiptap JSON
+      if (markdownContent && markdownContent.trim()) {
+        tiptapDoc = markdownToTiptap(markdownContent);
+        // Generate excerpt from first ~160 chars of plain text
+        const plainText = markdownContent.replace(/[#*_\[\]()>`-]/g, '').replace(/\n+/g, ' ').trim();
+        excerpt = plainText.substring(0, 160) + (plainText.length > 160 ? '...' : '');
+      }
+
       const { data, error } = await supabase.from('blog_posts').insert({
         title, slug, status: 'draft',
-        excerpt: `Blog post about: ${topic}`,
+        excerpt,
+        content_json: tiptapDoc,
         meta_json: { tone, language, generated_by: 'flowpilot', topic },
       }).select().single();
       if (error) throw new Error(`Blog insert failed: ${error.message}`);
-      return { blog_post_id: data.id, slug: data.slug, title: data.title, status: 'draft' };
+      return { blog_post_id: data.id, slug: data.slug, title: data.title, status: 'draft', has_content: !!markdownContent };
     }
 
     case 'crm': {

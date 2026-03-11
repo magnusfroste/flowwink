@@ -177,7 +177,7 @@ CREATE POLICY "System can update automations" ON public.agent_automations FOR UP
 const DEFAULT_SKILLS = [
   {
     name: 'write_blog_post',
-    description: 'Create a draft blog post with title, topic, and tone.',
+    description: 'Create a draft blog post with title, topic, tone, and optional pre-written content. If content is provided it will be used directly; otherwise AI generates it.',
     handler: 'module:blog',
     category: 'content',
     scope: 'internal',
@@ -186,12 +186,13 @@ const DEFAULT_SKILLS = [
       type: 'function',
       function: {
         name: 'write_blog_post',
-        description: 'Create a draft blog post.',
+        description: 'Create a draft blog post. IMPORTANT: Always provide the content parameter with the full blog post text in markdown. If you have source material, write the blog content yourself and pass it in the content field.',
         parameters: {
           type: 'object',
           properties: {
             title: { type: 'string', description: 'Blog post title' },
             topic: { type: 'string', description: 'Topic or brief for the post' },
+            content: { type: 'string', description: 'Full blog post content in markdown format. Use ## for headings, paragraphs, and bullet points. Do NOT include the title as H1.' },
             tone: { type: 'string', enum: ['professional', 'casual', 'technical', 'storytelling'], description: 'Writing tone' },
             language: { type: 'string', description: 'Language code (en, sv, etc.)' },
           },
@@ -661,7 +662,13 @@ For non-resume PDFs, return the extracted text directly to the user.`,
 
 ## Chaining examples
 1. "Read Magnus Froste's latest LinkedIn post and write a blog post" →
-   search_web (find LinkedIn URL) → browser_fetch (read it via relay) → write_blog_post
+   search_web (find LinkedIn URL) → browser_fetch (read it via relay) → write_blog_post (IMPORTANT: pass the full blog content in the 'content' field as markdown)
+   
+## CRITICAL: write_blog_post content
+When calling write_blog_post, ALWAYS provide the 'content' parameter with the full blog post body as markdown.
+- If you have source material (from browser_fetch, search, etc.), write the blog post yourself based on that material and pass it as 'content'.
+- Do NOT call write_blog_post without content — it will create an empty draft.
+- The content should be 600-1200 words of well-structured markdown with ## headings and paragraphs.
 2. "Summarize this article" → browser_fetch → respond with summary
 3. "Research this company" → browser_fetch (their website) → enrich_company
 
