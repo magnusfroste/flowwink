@@ -75,7 +75,7 @@ export const navigationGroups: NavGroup[] = [
   {
     label: "Setup",
     adminOnly: true,
-    collapsible: true,
+    collapsible: false,
     items: [
       { name: "Quick Start", href: "/admin/quick-start", icon: Rocket, setupOnly: true },
       { name: "Templates", href: "/admin/templates", icon: Puzzle, setupOnly: true },
