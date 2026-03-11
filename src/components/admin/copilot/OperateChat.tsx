@@ -1,9 +1,11 @@
 import { useRef, useEffect, useState } from 'react';
-import { ArrowUp, Loader2, Terminal, RotateCcw, Wrench, Sparkles, X } from 'lucide-react';
+import { ArrowUp, Loader2, Terminal, RotateCcw, Wrench, Sparkles, X, Paperclip, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import ReactMarkdown from 'react-markdown';
 import type { OperateMessage } from '@/hooks/useAgentOperate';
 import type { AgentSkill } from '@/types/agent';
@@ -15,6 +17,13 @@ interface OperateChatProps {
   onSendMessage: (message: string) => void;
   onReset: () => void;
   onCancel?: () => void;
+}
+
+interface AttachedFile {
+  name: string;
+  url: string;
+  storagePath: string;
+  size: number;
 }
 
 const QUICK_ACTIONS = [
@@ -55,7 +64,10 @@ function ToolStatusIndicator({ toolStatus }: { toolStatus: OperateMessage['toolS
 
 export function OperateChat({ messages, skills, isLoading, onSendMessage, onReset, onCancel }: OperateChatProps) {
   const [input, setInput] = useState('');
+  const [attachedFile, setAttachedFile] = useState<AttachedFile | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -63,9 +75,73 @@ export function OperateChat({ messages, skills, isLoading, onSendMessage, onRese
     }
   }, [messages, isLoading]);
 
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const maxSize = 20 * 1024 * 1024; // 20MB
+    if (file.size > maxSize) {
+      toast.error('File too large (max 20MB)');
+      return;
+    }
+
+    const allowedTypes = [
+      'application/pdf',
+      'text/plain', 'text/markdown', 'text/csv',
+      'application/json',
+    ];
+    const isAllowed = allowedTypes.includes(file.type) || 
+      file.name.endsWith('.md') || file.name.endsWith('.txt') || file.name.endsWith('.csv');
+
+    if (!isAllowed) {
+      toast.error('Unsupported file type. Use PDF, TXT, MD, CSV, or JSON.');
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const timestamp = Date.now();
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const storagePath = `uploads/flowpilot/${timestamp}_${safeName}`;
+
+      const { error } = await supabase.storage
+        .from('cms-images')
+        .upload(storagePath, file, { contentType: file.type, upsert: true });
+
+      if (error) throw error;
+
+      const { data: urlData } = supabase.storage
+        .from('cms-images')
+        .getPublicUrl(storagePath);
+
+      setAttachedFile({
+        name: file.name,
+        url: urlData.publicUrl,
+        storagePath: `cms-images/${storagePath}`,
+        size: file.size,
+      });
+    } catch (err) {
+      console.error('Upload failed:', err);
+      toast.error('Failed to upload file');
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   const handleSend = () => {
-    if (!input.trim() || isLoading) return;
-    onSendMessage(input.trim());
+    if ((!input.trim() && !attachedFile) || isLoading) return;
+
+    let message = input.trim();
+
+    // Append file context to the message
+    if (attachedFile) {
+      const fileContext = `\n\n[Attached file: ${attachedFile.name}]\nFile URL: ${attachedFile.url}\nStorage path: ${attachedFile.storagePath}`;
+      message = (message || `I've attached a file: ${attachedFile.name}`) + fileContext;
+      setAttachedFile(null);
+    }
+
+    onSendMessage(message);
     setInput('');
   };
 
@@ -91,6 +167,9 @@ export function OperateChat({ messages, skills, isLoading, onSendMessage, onRese
               <p className="text-sm text-muted-foreground">
                 Tell me what you need — I can write blog posts, add leads, analyze traffic, 
                 send newsletters, and more. I have access to <strong>{skills.length}</strong> skills.
+              </p>
+              <p className="text-xs text-muted-foreground">
+                📎 Attach PDF resumes or documents — I'll extract and process the content automatically.
               </p>
             </div>
 
@@ -187,17 +266,52 @@ export function OperateChat({ messages, skills, isLoading, onSendMessage, onRese
         )}
       </div>
 
+      {/* Attached file indicator */}
+      {attachedFile && (
+        <div className="px-4 pb-1">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted text-xs">
+            <FileText className="h-3.5 w-3.5 text-primary" />
+            <span className="truncate max-w-[200px]">{attachedFile.name}</span>
+            <span className="text-muted-foreground">({(attachedFile.size / 1024).toFixed(0)} KB)</span>
+            <button onClick={() => setAttachedFile(null)} className="ml-1 hover:text-destructive">
+              <X className="h-3 w-3" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Input */}
       <div className="border-t p-4">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".pdf,.txt,.md,.csv,.json,application/pdf,text/plain,text/markdown,text/csv,application/json"
+          onChange={handleFileSelect}
+          className="hidden"
+        />
         <div className="flex gap-2">
           <Button variant="ghost" size="icon" onClick={onReset} className="shrink-0" title="Clear conversation">
             <RotateCcw className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isLoading || isUploading}
+            className="shrink-0"
+            title="Attach file (PDF, TXT, MD, CSV, JSON)"
+          >
+            {isUploading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Paperclip className="h-4 w-4" />
+            )}
           </Button>
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
-            placeholder="Tell FlowPilot what to do..."
+            placeholder={attachedFile ? "Add a message about this file..." : "Tell FlowPilot what to do..."}
             disabled={isLoading}
             className="rounded-full"
           />
@@ -215,7 +329,7 @@ export function OperateChat({ messages, skills, isLoading, onSendMessage, onRese
             <Button
               size="icon"
               onClick={handleSend}
-              disabled={!input.trim() || isLoading}
+              disabled={(!input.trim() && !attachedFile) || isLoading}
               className="shrink-0 rounded-full"
             >
               <ArrowUp className="h-4 w-4" />

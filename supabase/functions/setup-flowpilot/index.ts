@@ -604,6 +604,28 @@ const DEFAULT_SKILLS = [
       },
     },
   },
+  {
+    name: 'extract_pdf_text',
+    description: 'Extract text content from a PDF file (resume, document, etc.) stored in the media library or at a URL.',
+    handler: 'module:resume',
+    category: 'content',
+    scope: 'internal',
+    requires_approval: false,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'extract_pdf_text',
+        description: 'Extract text from a PDF file. Use this when a user attaches a PDF or references a PDF URL. Returns the full text content.',
+        parameters: {
+          type: 'object',
+          properties: {
+            file_url: { type: 'string', description: 'Public URL of the PDF file' },
+            storage_path: { type: 'string', description: 'Storage path (bucket/path) of the PDF in media library' },
+          },
+        },
+      },
+    },
+  },
 ];
 
 // Default Soul & Identity
