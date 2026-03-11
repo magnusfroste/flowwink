@@ -52,23 +52,16 @@ Deno.serve(async (req) => {
     const publishableKey = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") || "";
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    // Accept anon key, publishable key, or custom token
+    // Accept anon key, publishable key, or custom token from site_settings
     let authorized = (anonKey && token === anonKey) || (publishableKey && token === publishableKey);
 
     // Also check custom token in site_settings
     if (!authorized) {
-      const { data: tokenSetting, error: settingsErr } = await supabase
+      const { data: tokenSetting } = await supabase
         .from("site_settings")
         .select("value")
         .eq("key", "signal_ingest_token")
         .maybeSingle();
-
-      console.log("[signal-ingest] Token check:", { 
-        tokenReceived: token.slice(0, 15),
-        settingsErr: settingsErr?.message,
-        storedToken: (tokenSetting?.value as any)?.token?.slice(0, 15),
-        match: (tokenSetting?.value as any)?.token === token
-      });
 
       const storedToken = (tokenSetting?.value as any)?.token;
       authorized = !!storedToken && storedToken === token;
