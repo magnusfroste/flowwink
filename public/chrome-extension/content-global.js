@@ -307,6 +307,10 @@
     setStatus("Sending…", "");
 
     try {
+      if (!chrome?.storage?.local) {
+        setStatus("Extension context lost — reload the page", "err");
+        return;
+      }
       const stored = await chrome.storage.local.get(["endpoint", "token", "projectName"]);
       const token = stored.token;
       const endpoint = stored.endpoint;
