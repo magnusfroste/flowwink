@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { 
   Sheet, 
   SheetContent, 
@@ -8,6 +9,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { 
   Code2, 
   ArrowRightLeft, 
@@ -15,18 +18,28 @@ import {
   Database, 
   FileText,
   CheckCircle2,
+  XCircle,
   Clock,
   Hash,
   Bot,
   Settings2,
   Eye,
   Monitor,
+  Download,
+  Chrome,
+  Copy,
+  RefreshCw,
+  Plug,
+  Globe,
 } from "lucide-react";
 import { moduleRegistry } from "@/lib/module-registry";
 import type { ModuleCapability } from "@/types/module-contracts";
 import type { ModuleStats } from "@/hooks/useModuleStats";
 import type { ModuleAutonomy } from "@/hooks/useModules";
 import { formatDistanceToNow } from "date-fns";
+import { useExtensionRelay } from "@/hooks/useExtensionRelay";
+import { toast } from "sonner";
+import JSZip from "jszip";
 
 interface ModuleDetailSheetProps {
   open: boolean;
