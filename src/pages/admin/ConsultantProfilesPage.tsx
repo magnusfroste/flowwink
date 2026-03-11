@@ -62,7 +62,8 @@ import { useToast } from "@/hooks/use-toast";
 async function extractTextFromPdf(arrayBuffer: ArrayBuffer): Promise<string> {
   try {
     // Dynamically load pdf.js from CDN
-    const pdfjsLib = await import(/* @vite-ignore */ "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const pdfjsLib = await (Function('return import("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs")')() as Promise<any>);
     pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.mjs";
     
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
