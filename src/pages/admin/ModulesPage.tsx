@@ -92,7 +92,6 @@ export default function ModulesPage() {
     
     // Handle cascading disables (when parent is disabled, disable dependents)
     if (!enabled) {
-      // Find all modules that depend on this one and disable them
       for (const [depId, parentId] of Object.entries(MODULE_DEPENDENCIES)) {
         if (parentId === moduleId) {
           updated = {
@@ -113,6 +112,18 @@ export default function ModulesPage() {
         };
       }
     }
+    
+    setLocalModules(updated);
+    await updateModules.mutateAsync(updated);
+  };
+
+  const handleAdminUIToggle = async (moduleId: keyof ModulesSettings, adminUI: boolean) => {
+    if (!localModules) return;
+    
+    const updated = {
+      ...localModules,
+      [moduleId]: { ...localModules[moduleId], adminUI },
+    };
     
     setLocalModules(updated);
     await updateModules.mutateAsync(updated);
