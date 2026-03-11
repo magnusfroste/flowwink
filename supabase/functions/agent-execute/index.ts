@@ -788,7 +788,7 @@ async function executeWebhook(
 // =============================================================================
 
 async function logActivity(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   activity: {
     agent: string;
     skill_id: string;
