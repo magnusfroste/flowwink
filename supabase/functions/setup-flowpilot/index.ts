@@ -323,23 +323,99 @@ const DEFAULT_SKILLS = [
   },
   {
     name: 'search_web',
-    description: 'Search the web for research or content ideas.',
-    handler: 'edge:firecrawl-search',
+    description: 'Search the web for information. Supports Firecrawl (paid, high quality) and Jina (free tier available). Agent chooses provider based on need.',
+    handler: 'edge:web-search',
     category: 'search',
     scope: 'internal',
     requires_approval: false,
+    instructions: `# Web Search — Provider Knowledge
+
+## Providers Available
+- **Firecrawl** (paid): Premium search quality, includes scraped content from results, best for deep research where you need full page content alongside results. Costs credits per search.
+- **Jina Search** (free tier available): Fast, lightweight web search. Free tier has rate limits. Good for quick lookups, trend checks, and simple queries.
+
+## When to Use Which
+| Scenario | Provider | Why |
+|----------|----------|-----|
+| Quick fact check | jina | Free, fast, sufficient |
+| Prospect/company research | firecrawl | Richer results with scraped content |
+| Content trend research | jina | Volume of searches, cost-efficient |
+| Deep competitive analysis | firecrawl | Needs full page content |
+| General knowledge lookup | auto | Let the system decide |
+
+## Decision Framework
+1. **Default to auto** — the system tries free providers first, then paid
+2. **Use preferred_provider='jina'** when you want speed and cost savings
+3. **Use preferred_provider='firecrawl'** when result quality and depth matter more than cost
+4. If a free search returns poor/empty results, retry with firecrawl before giving up
+
+## Parameters
+- query: Search query (required)
+- limit: Max results (default 5)
+- preferred_provider: 'auto' | 'firecrawl' | 'jina' (default 'auto')`,
     tool_definition: {
       type: 'function',
       function: {
         name: 'search_web',
-        description: 'Search the web for information.',
+        description: 'Search the web for information. Set preferred_provider based on task needs.',
         parameters: {
           type: 'object',
           properties: {
             query: { type: 'string', description: 'Search query' },
             limit: { type: 'number', description: 'Max results (default 5)' },
+            preferred_provider: { type: 'string', enum: ['auto', 'firecrawl', 'jina'], description: 'Provider selection: auto (free first), firecrawl (paid, deep), jina (fast, free)' },
           },
           required: ['query'],
+        },
+      },
+    },
+  },
+  {
+    name: 'scrape_url',
+    description: 'Scrape a single URL and extract its content as markdown. Supports Firecrawl (JS rendering, paid) and Jina Reader (free tier available).',
+    handler: 'edge:web-scrape',
+    category: 'search',
+    scope: 'internal',
+    requires_approval: false,
+    instructions: `# Web Scrape — Provider Knowledge
+
+## Providers Available
+- **Firecrawl** (paid): Full JS rendering, handles SPAs, dynamic content, anti-bot bypassing. Best for modern web apps, LinkedIn pages, JS-heavy sites. Costs credits per scrape.
+- **Jina Reader** (free tier available): Converts URLs to clean markdown. Works great for static content, blogs, documentation, news articles. Free tier has rate limits.
+
+## When to Use Which
+| Scenario | Provider | Why |
+|----------|----------|-----|
+| Blog post / article | jina | Free, clean markdown output |
+| LinkedIn page | firecrawl | Needs JS rendering + anti-bot |
+| Documentation page | jina | Static content, free is fine |
+| SPA / dynamic web app | firecrawl | JS rendering required |
+| Company about page | auto | Try free first |
+| Landing page analysis | firecrawl | Better at extracting full layout |
+
+## Decision Framework
+1. **Default to auto** — tries free first, falls back to paid
+2. **Use preferred_provider='jina'** for static content (blogs, docs, news)
+3. **Use preferred_provider='firecrawl'** for JS-heavy sites, SPAs, LinkedIn, or when jina returns empty/garbage
+4. If content looks truncated or broken, retry with firecrawl
+
+## Parameters
+- url: URL to scrape (required)
+- max_length: Max content length in chars (default 10000)
+- preferred_provider: 'auto' | 'firecrawl' | 'jina' (default 'auto')`,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'scrape_url',
+        description: 'Scrape a URL and extract content. Set preferred_provider based on site type.',
+        parameters: {
+          type: 'object',
+          properties: {
+            url: { type: 'string', description: 'URL to scrape' },
+            max_length: { type: 'number', description: 'Max content chars (default 10000)' },
+            preferred_provider: { type: 'string', enum: ['auto', 'firecrawl', 'jina'], description: 'Provider: auto (free first), firecrawl (JS rendering, paid), jina (fast, free)' },
+          },
+          required: ['url'],
         },
       },
     },
