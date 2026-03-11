@@ -397,6 +397,17 @@ export function useAgentOperate() {
       }
       await loadActivity();
 
+      // If a relay fetched content, automatically send it as a follow-up
+      // so the agent can use it to continue reasoning
+      if (relayFollowUp) {
+        setIsLoading(false);
+        // Small delay to let UI settle, then send follow-up
+        setTimeout(() => {
+          sendMessage(relayFollowUp!);
+        }, 500);
+        return; // Skip finally's setIsLoading since we'll re-enter sendMessage
+      }
+
     } catch (err: any) {
       if (err.name === 'AbortError') return;
       const errorContent = `Something went wrong: ${err.message}`;
