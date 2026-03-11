@@ -2,6 +2,13 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.87.1";
 import { loadSalesContext } from "../_shared/sales-context.ts";
 
+/**
+ * Prospect Fit Analysis — Orchestrator
+ * 
+ * Uses contact-finder (modular skill) instead of inline Hunter.io.
+ * Chains: load context → load company → contact-finder → AI analysis → persist
+ */
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -12,7 +19,27 @@ interface FitAnalysisInput {
   company_name?: string;
   decision_maker_first_name?: string;
   decision_maker_last_name?: string;
-  user_id?: string; // requesting user for personalized letters
+  user_id?: string;
+}
+
+async function callSkill(functionName: string, body: Record<string, unknown>): Promise<any> {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+  const res = await fetch(`${supabaseUrl}/functions/v1/${functionName}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${serviceKey}`,
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    console.warn(`[prospect-fit] Skill ${functionName} returned ${res.status}`);
+    return { success: false };
+  }
+  return await res.json();
 }
 
 serve(async (req) => {
@@ -34,7 +61,6 @@ serve(async (req) => {
 
     const openaiKey = Deno.env.get('OPENAI_API_KEY');
     const geminiKey = Deno.env.get('GEMINI_API_KEY');
-    const hunterKey = Deno.env.get('HUNTER_API_KEY');
 
     if (!openaiKey && !geminiKey) {
       return new Response(JSON.stringify({ error: 'No AI provider configured.' }), {
@@ -42,7 +68,7 @@ serve(async (req) => {
       });
     }
 
-    // Load rich sales context (with user profile if provided)
+    // Load rich sales context
     const salesContext = await loadSalesContext({
       userId: input.user_id,
       includePages: true,
@@ -50,7 +76,7 @@ serve(async (req) => {
     });
     console.log('[prospect-fit] Sales context loaded:', salesContext.formatted.length, 'chars');
 
-    // Load prospect company data
+    // Load prospect company
     let prospectCompany: any = null;
     let companyId = input.company_id;
 
@@ -70,7 +96,7 @@ serve(async (req) => {
       });
     }
 
-    // Load previous research from agent_memory
+    // Load previous research
     let researchData: any = {};
     if (companyId) {
       const { data: memory } = await supabase.from('agent_memory').select('value')
@@ -78,43 +104,27 @@ serve(async (req) => {
       researchData = memory?.value || {};
     }
 
-    // Load existing leads for this company
+    // Load existing leads
     const { data: leads } = await supabase.from('leads')
       .select('id, name, email, phone, ai_summary, score')
       .eq('company_id', companyId).limit(20);
 
-    // --- Hunter Email Finder for decision-maker ---
+    // --- Contact Finder: decision-maker email ---
     let decisionMakerEmail: any = null;
     const domain = prospectCompany.domain;
 
-    if (hunterKey && domain && input.decision_maker_first_name && input.decision_maker_last_name) {
-      console.log('[prospect-fit] Hunter Email Finder for:', input.decision_maker_first_name, input.decision_maker_last_name);
-      try {
-        const params = new URLSearchParams({
-          domain,
-          first_name: input.decision_maker_first_name,
-          last_name: input.decision_maker_last_name,
-          api_key: hunterKey,
-        });
-        const res = await fetch(`https://api.hunter.io/v2/email-finder?${params}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data.data?.email) {
-            decisionMakerEmail = {
-              email: data.data.email,
-              confidence: data.data.confidence,
-              first_name: data.data.first_name,
-              last_name: data.data.last_name,
-              position: data.data.position,
-            };
-          }
-        }
-      } catch (e) {
-        console.warn('[prospect-fit] Hunter Email Finder failed:', e);
-      }
+    if (domain && input.decision_maker_first_name && input.decision_maker_last_name) {
+      console.log('[prospect-fit] → contact-finder (email_finder)');
+      const contactResult = await callSkill('contact-finder', {
+        action: 'email_finder',
+        domain,
+        first_name: input.decision_maker_first_name,
+        last_name: input.decision_maker_last_name,
+      });
+      decisionMakerEmail = contactResult.contact || null;
     }
 
-    // --- AI Fit Analysis + Introduction Letter ---
+    // --- AI Fit Analysis ---
     const useGemini = !openaiKey && !!geminiKey;
 
     const systemPrompt = `You are a B2B sales strategist. Given your client's full business context and a prospect's research data, perform these tasks:
@@ -193,7 +203,7 @@ ${decisionMakerEmail ? `Decision Maker Found: ${decisionMakerEmail.first_name} $
 
     console.log('[prospect-fit] AI analysis complete, fit_score:', aiResult.fit_score);
 
-    // --- Update lead scores ---
+    // Update lead scores
     const fitScore = aiResult.fit_score || 0;
     if (leads && leads.length > 0) {
       for (const lead of leads) {
@@ -206,34 +216,31 @@ ${decisionMakerEmail ? `Decision Maker Found: ${decisionMakerEmail.first_name} $
       }
     }
 
-    // --- Save introduction letter to agent_memory ---
+    // Save to agent_memory
     if (companyId && aiResult.introduction_letter) {
       const primaryLead = leads?.[0];
       const memoryKey = primaryLead
         ? `intro_letter_${primaryLead.id}`
         : `intro_letter_company_${companyId}`;
 
-      await supabase.from('agent_memory').upsert(
-        {
-          key: memoryKey,
-          value: {
-            company_id: companyId,
-            company_name: prospectCompany.name,
-            fit_score: fitScore,
-            email_subject: aiResult.email_subject,
-            introduction_letter: aiResult.introduction_letter,
-            problem_mapping: aiResult.problem_mapping,
-            decision_maker: decisionMakerEmail,
-            generated_at: new Date().toISOString(),
-          },
-          category: 'context',
-          created_by: 'flowpilot',
+      await supabase.from('agent_memory').upsert({
+        key: memoryKey,
+        value: {
+          company_id: companyId,
+          company_name: prospectCompany.name,
+          fit_score: fitScore,
+          email_subject: aiResult.email_subject,
+          introduction_letter: aiResult.introduction_letter,
+          problem_mapping: aiResult.problem_mapping,
+          decision_maker: decisionMakerEmail,
+          generated_at: new Date().toISOString(),
         },
-        { onConflict: 'key' }
-      );
+        category: 'context',
+        created_by: 'flowpilot',
+      }, { onConflict: 'key' });
     }
 
-    const result = {
+    return new Response(JSON.stringify({
       success: true,
       fit_score: fitScore,
       fit_advice: aiResult.fit_advice || '',
@@ -242,9 +249,7 @@ ${decisionMakerEmail ? `Decision Maker Found: ${decisionMakerEmail.first_name} $
       email_subject: aiResult.email_subject || '',
       decision_maker: decisionMakerEmail,
       leads_updated: leads?.length || 0,
-    };
-
-    return new Response(JSON.stringify(result), {
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
