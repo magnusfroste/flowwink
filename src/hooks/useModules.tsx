@@ -44,6 +44,7 @@ export interface ModulesSettings {
   webinars: ModuleConfig;
   salesIntelligence: ModuleConfig;
   resume: ModuleConfig;
+  browserControl: ModuleConfig;
 }
 
 export const defaultModulesSettings: ModulesSettings = {
@@ -229,6 +230,15 @@ export const defaultModulesSettings: ModulesSettings = {
     autonomy: 'agent-capable',
     adminUI: true,
   },
+  browserControl: {
+    enabled: false,
+    name: 'Browser Control',
+    description: 'Chrome Extension relay for authenticated web browsing — read LinkedIn, X, and login-walled sites via your browser',
+    icon: 'Globe',
+    category: 'system',
+    autonomy: 'config-required',
+    adminUI: true,
+  },
 };
 
 // Map sidebar items to module IDs
@@ -253,6 +263,7 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/webinars': 'webinars',
   '/admin/sales-intelligence': 'salesIntelligence',
   '/admin/resume': 'resume',
+  '/admin/browser-control': 'browserControl',
 };
 
 export function useModules() {

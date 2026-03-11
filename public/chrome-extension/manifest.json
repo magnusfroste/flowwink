@@ -1,0 +1,48 @@
+{
+  "manifest_version": 3,
+  "name": "FlowWink Signal Capture",
+  "version": "1.0.0",
+  "description": "Command palette for capturing signals, drafts, and bookmarks to your AI-powered CMS.",
+  "permissions": ["activeTab", "storage", "scripting", "tabs"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content-global.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "externally_connectable": {
+    "matches": [
+      "https://*.lovable.app/*",
+      "https://*.vercel.app/*",
+      "https://*.netlify.app/*",
+      "https://*.supabase.co/*",
+      "http://localhost:*/*"
+    ]
+  },
+  "commands": {
+    "toggle-palette": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+S",
+        "mac": "Command+Shift+S"
+      },
+      "description": "Toggle signal capture palette"
+    }
+  }
+}

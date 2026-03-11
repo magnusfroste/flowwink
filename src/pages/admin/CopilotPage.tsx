@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Zap, Plus, Trash2, MessageSquare, PanelLeftClose, PanelLeft, AlertTriangle, Users, Globe } from 'lucide-react';
+import { Zap, Plus, Trash2, MessageSquare, PanelLeftClose, PanelLeft, AlertTriangle, Users, Globe, ExternalLink } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminContentHeader } from '@/components/admin/AdminContentHeader';
 import { AdminSearchCommand, useAdminSearch, SearchButton } from '@/components/admin/AdminSearchCommand';
@@ -274,20 +274,15 @@ export default function CopilotPage() {
               <Globe className="h-3.5 w-3.5" />
               <span className="text-xs">
                 Extension: {relay.extensionStatus.installed 
-                  ? `v${relay.extensionStatus.version || '?'}` 
+                  ? <span className="text-green-500">v{relay.extensionStatus.version || '?'}</span>
                   : 'not detected'}
               </span>
-              {!relay.extensionStatus.installed && (
-                <button
-                  onClick={() => {
-                    const id = prompt('Enter Chrome Extension ID:');
-                    if (id) relay.setExtensionId(id.trim());
-                  }}
-                  className="text-[10px] text-primary hover:underline"
-                >
-                  Connect
-                </button>
-              )}
+              <a
+                href="/admin/browser-control"
+                className="text-[10px] text-primary hover:underline ml-auto"
+              >
+                {relay.extensionStatus.installed ? 'Settings' : 'Setup'}
+              </a>
             </div>
           </div>
         </div>
