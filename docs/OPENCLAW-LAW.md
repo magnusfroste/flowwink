@@ -155,23 +155,54 @@ All agent surfaces (interactive, autonomous, visitor chat) MUST share the same r
 
 FlowAgent interacts with platform modules through registered skills:
 
+### CMS & Content (Full Autonomy)
+
 | Module | Skills | Handler | Scope |
 |--------|--------|---------|-------|
+| **Pages** | `manage_page`, `manage_page_blocks` | `module:pages` | internal |
 | **Blog** | `write_blog_post` | `module:blog` | internal |
+| **Knowledge Base** | `manage_kb_article` | `module:kb` | internal |
+| **Global Elements** | `manage_global_blocks` | `module:globalElements` | internal |
+| **Media** | `manage_media` | `module:media` | internal |
+
+### CRM & Sales
+
+| Module | Skills | Handler | Scope |
+|--------|--------|---------|-------|
 | **CRM/Leads** | `add_lead`, `qualify_lead` | `module:crm`, `edge:qualify-lead` | both, internal |
-| **Companies** | `enrich_company` | `edge:enrich-company` | internal |
-| **Booking** | `book_appointment` | `module:booking` | both |
+| **Companies** | `manage_company`, `enrich_company` | `module:companies`, `edge:enrich-company` | internal |
+| **Deals** | `manage_deal` | `module:deals` | internal |
+| **Forms** | `manage_form_submissions` | `module:forms` | internal |
+
+### Communication
+
+| Module | Skills | Handler | Scope |
+|--------|--------|---------|-------|
 | **Newsletter** | `send_newsletter`, `execute_newsletter_send` | `module:newsletter`, `edge:newsletter-send` | internal |
-| **Analytics** | `analyze_analytics`, `weekly_business_digest` | `db:page_views`, `edge:business-digest` | internal |
+| **Webinars** | `manage_webinar` | `module:webinars` | internal |
+| **Email** | `scan_gmail_inbox` | `edge:gmail-inbox-scan` | internal |
+
+### Commerce
+
+| Module | Skills | Handler | Scope |
+|--------|--------|---------|-------|
+| **Products** | `manage_product` | `module:products` | internal |
+| **Orders** | `lookup_order` | `module:orders` | both |
+| **Booking** | `book_appointment` | `module:booking` | both |
+
+### Intelligence & Research
+
+| Module | Skills | Handler | Scope |
+|--------|--------|---------|-------|
+| **Analytics** | `analyze_analytics`, `weekly_business_digest`, `seo_audit_page`, `kb_gap_analysis` | `db:page_views`, `edge:business-digest`, `module:analytics` | internal |
 | **Content Pipeline** | `research_content`, `generate_content_proposal` | `edge:research-content`, `edge:generate-content-proposal` | internal |
 | **Sales Intelligence** | `prospect_research`, `prospect_fit_analysis` | `edge:prospect-research`, `edge:prospect-fit-analysis` | internal |
 | **Web Research** | `search_web`, `scrape_url` | `edge:web-search`, `edge:web-scrape` | internal |
-| **Email** | `scan_gmail_inbox` | `edge:gmail-inbox-scan` | internal |
-| **Scheduling** | `publish_scheduled_content` | `edge:publish-scheduled-pages` | internal |
-| **Orders** | `lookup_order` | `module:orders` | both |
-| **Learning** | `learn_from_data` | `edge:flowpilot-learn` | internal |
 | **Browser** | `browser_fetch` | `edge:browser-fetch` | internal |
+| **Scheduling** | `publish_scheduled_content` | `edge:publish-scheduled-pages` | internal |
+| **Learning** | `learn_from_data` | `edge:flowpilot-learn` | internal |
 | **Objectives** | `create_objective` | `module:objectives` | internal |
+| **Resume** | `manage_consultant_profile`, `match_consultant` | `module:resume` | internal |
 
 ### Integration-Aware Skills
 
@@ -204,6 +235,9 @@ Skills that use external providers document their provider strategy in `instruct
 - **Prompt Compiler** — `buildSystemPrompt(mode)` shared across heartbeat/operate/chat surfaces
 - **Vector Memory** — `pgvector` with 768-dim embeddings, semantic search via `search_memories_semantic()` RPC
 - **Context Pruning** — `pruneConversationHistory()` with AI-powered summarization of old messages
+- **Full CMS Autonomy** — Block-level manipulation, page lifecycle, KB articles, global elements, deals, products, companies, forms, webinars (28+ registered skills)
+- **Page Rollback** — Version history with rollback capability via `manage_page`
+- **Auto Module Activation** — Modules auto-enable when FlowPilot uses them
 
 ### ⚠️ Partially Implemented
 | Gap | OpenClaw Has | FlowWink Status | Priority |
@@ -223,8 +257,8 @@ Skills that use external providers document their provider strategy in `instruct
 ## 6. Recommended Next Steps (Priority Order)
 
 1. **Skill Packs** — Allow templates to include pre-configured skill sets (e.g., "E-commerce Pack" adds order tracking, inventory check, cart recovery skills).
-
-4. **Skill Packs** — Allow templates to include pre-configured skill sets (e.g., "E-commerce Pack" adds order tracking, inventory check, cart recovery skills).
+2. **A2A Protocol** — Implement `@a2a:agent-name` for multi-agent delegation.
+3. **Workflow DAGs** — Multi-step automation chains with conditional branching.
 
 ---
 
@@ -256,4 +290,4 @@ Skills that use external providers document their provider strategy in `instruct
 
 ---
 
-*This document supersedes all previous architectural descriptions. Updated: 2026-03-11.*
+*This document supersedes all previous architectural descriptions. Updated: 2026-03-12.*

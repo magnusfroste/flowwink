@@ -352,51 +352,68 @@ FlowAgent can modify its own behavior:
 
 ---
 
-## 5. Complete Skill Inventory (19 Default Skills)
+## 5. Complete Skill Inventory (28+ Default Skills)
 
-### Content & Research
+### CMS & Content (Full Autonomy)
 
 | Skill | Handler | Scope | Approval | Description |
 |-------|---------|-------|----------|-------------|
-| `write_blog_post` | `module:blog` | internal | ❌ | Create draft blog post with title, topic, tone |
+| `manage_page` | `module:pages` | internal | ❌ | Full page lifecycle: create, update, publish, archive, delete, rollback |
+| `manage_page_blocks` | `module:pages` | internal | ❌ | Block manipulation: add, update, remove, reorder, duplicate, toggle visibility |
+| `manage_global_blocks` | `module:globalElements` | internal | ❌ | Header, footer, sidebar management |
+| `manage_kb_article` | `module:kb` | internal | ❌ | KB article CRUD: create, update, publish, list |
+| `write_blog_post` | `module:blog` | internal | ❌ | Create draft blog post with AI content generation |
+| `publish_scheduled_content` | `edge:publish-scheduled-pages` | internal | ❌ | Auto-publish pages/posts past scheduled date |
+
+### Content Research & Pipeline
+
+| Skill | Handler | Scope | Approval | Description |
+|-------|---------|-------|----------|-------------|
 | `research_content` | `edge:research-content` | internal | ❌ | Deep AI topic research — angles, hooks, competitive landscape |
 | `generate_content_proposal` | `edge:generate-content-proposal` | internal | ✅ | Multi-channel content generation (blog, newsletter, LinkedIn, X) |
-| `publish_scheduled_content` | `edge:publish-scheduled-pages` | internal | ❌ | Auto-publish pages/posts past their scheduled date |
-| `search_web` | `edge:firecrawl-search` | internal | ❌ | Web search for research and content ideas |
+| `search_web` | `edge:web-search` | internal | ❌ | Web search (Jina free / Firecrawl paid) |
+| `scrape_url` | `edge:web-scrape` | internal | ❌ | URL scraping (Jina free / Firecrawl paid) |
 
-### CRM & Sales Intelligence
+### CRM & Sales
 
 | Skill | Handler | Scope | Approval | Description |
 |-------|---------|-------|----------|-------------|
 | `add_lead` | `module:crm` | both | ❌ | Add lead to CRM from any source |
-| `qualify_lead` | `edge:qualify-lead` | internal | ❌ | AI lead scoring — analyzes activities, company data, engagement |
-| `enrich_company` | `edge:enrich-company` | internal | ❌ | Domain-based company enrichment via Firecrawl + AI |
-| `prospect_research` | `edge:prospect-research` | internal | ❌ | Company research + Hunter.io contact discovery |
-| `prospect_fit_analysis` | `edge:prospect-fit-analysis` | internal | ❌ | AI prospect-company fit scoring against ICP |
+| `qualify_lead` | `edge:qualify-lead` | internal | ❌ | AI lead scoring |
+| `manage_company` | `module:companies` | internal | ❌ | Company CRUD |
+| `enrich_company` | `edge:enrich-company` | internal | ❌ | Domain-based company enrichment |
+| `manage_deal` | `module:deals` | internal | ❌ | Sales pipeline: create, update, move stage |
+| `manage_form_submissions` | `module:forms` | internal | ❌ | Form submission access and stats |
+| `prospect_research` | `edge:prospect-research` | internal | ❌ | Company research + contact discovery |
+| `prospect_fit_analysis` | `edge:prospect-fit-analysis` | internal | ❌ | AI prospect-company fit scoring |
 
 ### Communication
 
 | Skill | Handler | Scope | Approval | Description |
 |-------|---------|-------|----------|-------------|
 | `send_newsletter` | `module:newsletter` | internal | ✅ | Create newsletter draft or schedule |
-| `execute_newsletter_send` | `edge:newsletter-send` | internal | ✅ | Actually send newsletter to subscribers via Resend |
-| `scan_gmail_inbox` | `edge:gmail-inbox-scan` | internal | ❌ | Scan Gmail for business signals (leads, inquiries) |
+| `execute_newsletter_send` | `edge:newsletter-send` | internal | ✅ | Send newsletter via Resend |
+| `manage_webinar` | `module:webinars` | internal | ❌ | Webinar CRUD with platform integration |
+| `scan_gmail_inbox` | `edge:gmail-inbox-scan` | internal | ❌ | Scan Gmail for business signals |
 
-### Operations
+### Commerce & Operations
 
 | Skill | Handler | Scope | Approval | Description |
 |-------|---------|-------|----------|-------------|
+| `manage_product` | `module:products` | internal | ❌ | Product catalog CRUD |
+| `lookup_order` | `module:orders` | both | ❌ | Order lookup by ID or email |
 | `book_appointment` | `module:booking` | both | ❌ | Create booking for customer |
-| `lookup_order` | `module:orders` | both | ❌ | Look up order by ID or email |
-| `create_objective` | `module:objectives` | internal | ❌ | Create high-level goal for autonomous operation |
+| `create_objective` | `module:objectives` | internal | ❌ | Create high-level goal |
 
 ### Analytics & Learning
 
 | Skill | Handler | Scope | Approval | Description |
 |-------|---------|-------|----------|-------------|
-| `analyze_analytics` | `db:page_views` | internal | ❌ | Page view analytics by period |
-| `weekly_business_digest` | `edge:business-digest` | internal | ❌ | Cross-module business summary (views, leads, bookings, orders) |
-| `learn_from_data` | `edge:flowpilot-learn` | internal | ❌ | Distill platform data into persistent memory insights |
+| `analyze_analytics` | `db:page_views` | internal | ❌ | Page view analytics |
+| `seo_audit_page` | `module:analytics` | internal | ❌ | SEO audit for any page/post |
+| `kb_gap_analysis` | `module:analytics` | internal | ❌ | KB coverage gap analysis |
+| `weekly_business_digest` | `edge:business-digest` | internal | ❌ | Cross-module business summary |
+| `learn_from_data` | `edge:flowpilot-learn` | internal | ❌ | Distill platform data into memory |
 
 ### Objective Progress Auto-Tracking
 
@@ -555,15 +572,22 @@ error_message → if failed
 
 | Capability | Status |
 |-----------|--------|
-| Skill Engine | ✅ 100% |
-| Persistent Memory | ✅ 100% |
+| Skill Engine (28+ skills) | ✅ 100% |
+| Persistent Memory (pgvector) | ✅ 100% |
 | Objectives & Plan Decomposition | ✅ 100% |
 | Priority Scoring | ✅ 100% |
 | Self-Healing | ✅ 100% |
+| Prompt Compiler | ✅ 100% |
+| Context Pruning | ✅ 100% |
+| CMS Content Autonomy (pages, blocks, KB, global) | ✅ 100% |
+| CRM Autonomy (leads, companies, deals, forms) | ✅ 100% |
+| Commerce Autonomy (products, orders, bookings) | ✅ 100% |
+| Communication (newsletter, webinars, gmail) | ✅ 95% |
 | Signal Automations | ✅ 95% |
 | Signal Ingest (External) | ✅ 90% |
 | Self-Evolution (soul, skill_instruct, propose_objective) | ✅ 90% |
-| Proactive Goal Setting | ✅ 85% |
+| Proactive Goal Setting | ✅ 90% |
+| Provider Routing (free-first) | ✅ 90% |
 | Multi-Agent Orchestration (A2A) | 🔧 40% |
 
 ---

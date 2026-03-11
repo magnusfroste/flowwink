@@ -262,6 +262,13 @@ const MODULE_HANDLER_TO_SETTING: Record<string, string> = {
   products: 'products',
   media: 'media',
   resume: 'resume',
+  pages: 'pages',
+  kb: 'knowledgeBase',
+  globalElements: 'globalElements',
+  deals: 'deals',
+  companies: 'companies',
+  forms: 'forms',
+  webinars: 'webinars',
 };
 
 async function autoActivateModule(
@@ -546,6 +553,38 @@ async function executeModuleAction(
       return await executeResumeAction(supabase, skillName, args);
     }
 
+    case 'pages': {
+      return await executePagesAction(supabase, skillName, args);
+    }
+
+    case 'kb': {
+      return await executeKbAction(supabase, skillName, args);
+    }
+
+    case 'globalElements': {
+      return await executeGlobalBlocksAction(supabase, skillName, args);
+    }
+
+    case 'deals': {
+      return await executeDealsAction(supabase, skillName, args);
+    }
+
+    case 'products': {
+      return await executeProductsAction(supabase, skillName, args);
+    }
+
+    case 'companies': {
+      return await executeCompaniesAction(supabase, skillName, args);
+    }
+
+    case 'forms': {
+      return await executeFormsAction(supabase, skillName, args);
+    }
+
+    case 'webinars': {
+      return await executeWebinarsAction(supabase, skillName, args);
+    }
+
     default:
       return { error: `Unknown module: ${moduleName}` };
   }
@@ -612,6 +651,648 @@ async function executeResumeAction(
     default:
       return { error: `Unknown resume skill: ${skillName}` };
   }
+}
+
+// =============================================================================
+// Pages module — full page lifecycle + block manipulation
+// =============================================================================
+
+async function executePagesAction(
+  supabase: SupabaseClient,
+  skillName: string,
+  args: Record<string, unknown>,
+): Promise<unknown> {
+  switch (skillName) {
+    case 'manage_page': {
+      const { action = 'list', page_id, slug, title, status, meta, blocks } = args as any;
+
+      if (action === 'list') {
+        let query = supabase.from('pages')
+          .select('id, title, slug, status, menu_order, created_at, updated_at')
+          .is('deleted_at', null)
+          .order('updated_at', { ascending: false })
+          .limit(50);
+        if (status) query = query.eq('status', status);
+        const { data, error } = await query;
+        if (error) throw new Error(`List pages failed: ${error.message}`);
+        return { pages: data || [] };
+      }
+
+      if (action === 'get') {
+        let query = supabase.from('pages')
+          .select('id, title, slug, status, content_json, meta_json, menu_order, created_at, updated_at');
+        if (page_id) query = query.eq('id', page_id);
+        else if (slug) query = query.eq('slug', slug);
+        else throw new Error('page_id or slug required');
+        const { data, error } = await query.is('deleted_at', null).single();
+        if (error) throw new Error(`Get page failed: ${error.message}`);
+        const blockSummary = (data.content_json as any[] || []).map((b: any, i: number) => ({
+          index: i, id: b.id, type: b.type, hidden: b.hidden || false,
+        }));
+        return { ...data, block_count: blockSummary.length, block_summary: blockSummary };
+      }
+
+      if (action === 'create') {
+        if (!title) throw new Error('title is required');
+        const pageSlug = slug || title.toLowerCase().replace(/[^a-z0-9åäö]+/g, '-').replace(/(^-|-$)/g, '');
+        const { data, error } = await supabase.from('pages').insert({
+          title,
+          slug: pageSlug,
+          status: 'draft',
+          content_json: blocks || [],
+          meta_json: meta || {},
+        }).select('id, title, slug, status').single();
+        if (error) throw new Error(`Create page failed: ${error.message}`);
+        return { page_id: data.id, slug: data.slug, title: data.title, status: 'draft' };
+      }
+
+      if (action === 'update' && page_id) {
+        const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
+        if (title !== undefined) updates.title = title;
+        if (slug !== undefined) updates.slug = slug;
+        if (meta !== undefined) updates.meta_json = meta;
+        if (blocks !== undefined) updates.content_json = blocks;
+        const { data, error } = await supabase.from('pages')
+          .update(updates).eq('id', page_id).select('id, title, slug, status').single();
+        if (error) throw new Error(`Update page failed: ${error.message}`);
+        return { page_id: data.id, status: 'updated' };
+      }
+
+      if (action === 'publish' && page_id) {
+        // Save version before publishing
+        const { data: current } = await supabase.from('pages')
+          .select('title, content_json, meta_json').eq('id', page_id).single();
+        if (current) {
+          await supabase.from('page_versions').insert({
+            page_id, title: current.title,
+            content_json: current.content_json, meta_json: current.meta_json,
+          });
+        }
+        const { data, error } = await supabase.from('pages')
+          .update({ status: 'published', updated_at: new Date().toISOString() })
+          .eq('id', page_id).select('id, title, slug, status').single();
+        if (error) throw new Error(`Publish failed: ${error.message}`);
+        return { page_id: data.id, slug: data.slug, status: 'published' };
+      }
+
+      if (action === 'archive' && page_id) {
+        const { data, error } = await supabase.from('pages')
+          .update({ status: 'archived', updated_at: new Date().toISOString() })
+          .eq('id', page_id).select('id, title, status').single();
+        if (error) throw new Error(`Archive failed: ${error.message}`);
+        return { page_id: data.id, status: 'archived' };
+      }
+
+      if (action === 'delete' && page_id) {
+        const { error } = await supabase.from('pages')
+          .update({ deleted_at: new Date().toISOString() })
+          .eq('id', page_id);
+        if (error) throw new Error(`Delete failed: ${error.message}`);
+        return { page_id, status: 'deleted' };
+      }
+
+      if (action === 'rollback' && page_id) {
+        const { version_id } = args as any;
+        let query = supabase.from('page_versions')
+          .select('id, title, content_json, meta_json, created_at')
+          .eq('page_id', page_id)
+          .order('created_at', { ascending: false });
+        if (version_id) query = query.eq('id', version_id);
+        const { data: version } = await query.limit(1).single();
+        if (!version) throw new Error('No version found to rollback to');
+        // Save current state as new version before rollback
+        const { data: current } = await supabase.from('pages')
+          .select('title, content_json, meta_json').eq('id', page_id).single();
+        if (current) {
+          await supabase.from('page_versions').insert({
+            page_id, title: current.title,
+            content_json: current.content_json, meta_json: current.meta_json,
+          });
+        }
+        await supabase.from('pages').update({
+          title: version.title, content_json: version.content_json,
+          meta_json: version.meta_json, updated_at: new Date().toISOString(),
+        }).eq('id', page_id);
+        return { page_id, rolled_back_to: version.id, version_date: version.created_at };
+      }
+
+      return { error: `Unknown page action: ${action}` };
+    }
+
+    case 'manage_page_blocks': {
+      const { action = 'list', page_id } = args as any;
+      if (!page_id) throw new Error('page_id is required');
+
+      // Fetch current page blocks
+      const { data: page, error: fetchErr } = await supabase.from('pages')
+        .select('id, content_json').eq('id', page_id).is('deleted_at', null).single();
+      if (fetchErr || !page) throw new Error(`Page not found: ${page_id}`);
+
+      const blocks = (page.content_json as any[]) || [];
+
+      if (action === 'list') {
+        return {
+          page_id,
+          block_count: blocks.length,
+          blocks: blocks.map((b: any, i: number) => ({
+            index: i, id: b.id, type: b.type, hidden: b.hidden || false,
+            has_data: !!b.data && Object.keys(b.data).length > 0,
+          })),
+        };
+      }
+
+      if (action === 'add') {
+        const { block_type, block_data = {}, position } = args as any;
+        if (!block_type) throw new Error('block_type is required');
+        const newBlock = {
+          id: crypto.randomUUID(),
+          type: block_type,
+          data: block_data,
+          spacing: {},
+          animation: { type: 'fade-up' },
+        };
+        const pos = position !== undefined ? Math.min(position, blocks.length) : blocks.length;
+        blocks.splice(pos, 0, newBlock);
+        await supabase.from('pages')
+          .update({ content_json: blocks, updated_at: new Date().toISOString() })
+          .eq('id', page_id);
+        return { page_id, block_id: newBlock.id, type: block_type, position: pos, total_blocks: blocks.length };
+      }
+
+      if (action === 'update') {
+        const { block_id, block_data } = args as any;
+        if (!block_id || !block_data) throw new Error('block_id and block_data required');
+        const idx = blocks.findIndex((b: any) => b.id === block_id);
+        if (idx === -1) throw new Error(`Block not found: ${block_id}`);
+        blocks[idx] = { ...blocks[idx], data: { ...blocks[idx].data, ...block_data } };
+        await supabase.from('pages')
+          .update({ content_json: blocks, updated_at: new Date().toISOString() })
+          .eq('id', page_id);
+        return { page_id, block_id, type: blocks[idx].type, status: 'updated' };
+      }
+
+      if (action === 'remove') {
+        const { block_id } = args as any;
+        if (!block_id) throw new Error('block_id is required');
+        const idx = blocks.findIndex((b: any) => b.id === block_id);
+        if (idx === -1) throw new Error(`Block not found: ${block_id}`);
+        const removed = blocks.splice(idx, 1)[0];
+        await supabase.from('pages')
+          .update({ content_json: blocks, updated_at: new Date().toISOString() })
+          .eq('id', page_id);
+        return { page_id, removed_block_id: removed.id, removed_type: removed.type, remaining_blocks: blocks.length };
+      }
+
+      if (action === 'reorder') {
+        const { block_ids } = args as any;
+        if (!Array.isArray(block_ids)) throw new Error('block_ids array is required');
+        const reordered: any[] = [];
+        for (const bid of block_ids) {
+          const block = blocks.find((b: any) => b.id === bid);
+          if (block) reordered.push(block);
+        }
+        // Append any blocks not in the reorder list at the end
+        for (const b of blocks) {
+          if (!block_ids.includes(b.id)) reordered.push(b);
+        }
+        await supabase.from('pages')
+          .update({ content_json: reordered, updated_at: new Date().toISOString() })
+          .eq('id', page_id);
+        return { page_id, new_order: reordered.map((b: any) => b.id), total_blocks: reordered.length };
+      }
+
+      if (action === 'toggle_visibility') {
+        const { block_id } = args as any;
+        if (!block_id) throw new Error('block_id is required');
+        const idx = blocks.findIndex((b: any) => b.id === block_id);
+        if (idx === -1) throw new Error(`Block not found: ${block_id}`);
+        blocks[idx].hidden = !blocks[idx].hidden;
+        await supabase.from('pages')
+          .update({ content_json: blocks, updated_at: new Date().toISOString() })
+          .eq('id', page_id);
+        return { page_id, block_id, hidden: blocks[idx].hidden };
+      }
+
+      if (action === 'duplicate') {
+        const { block_id } = args as any;
+        if (!block_id) throw new Error('block_id is required');
+        const idx = blocks.findIndex((b: any) => b.id === block_id);
+        if (idx === -1) throw new Error(`Block not found: ${block_id}`);
+        const clone = JSON.parse(JSON.stringify(blocks[idx]));
+        clone.id = crypto.randomUUID();
+        blocks.splice(idx + 1, 0, clone);
+        await supabase.from('pages')
+          .update({ content_json: blocks, updated_at: new Date().toISOString() })
+          .eq('id', page_id);
+        return { page_id, original_block_id: block_id, new_block_id: clone.id, position: idx + 1 };
+      }
+
+      return { error: `Unknown block action: ${action}` };
+    }
+
+    default:
+      return { error: `Unknown pages skill: ${skillName}` };
+  }
+}
+
+// =============================================================================
+// Knowledge Base module handlers
+// =============================================================================
+
+async function executeKbAction(
+  supabase: SupabaseClient,
+  skillName: string,
+  args: Record<string, unknown>,
+): Promise<unknown> {
+  const { action = 'list' } = args as any;
+
+  if (action === 'list') {
+    const { category, is_published } = args as any;
+    let query = supabase.from('kb_articles')
+      .select('id, title, slug, question, category, is_published, is_featured, views_count, helpful_count, not_helpful_count, created_at, updated_at')
+      .order('updated_at', { ascending: false }).limit(50);
+    if (category) query = query.eq('category', category);
+    if (is_published !== undefined) query = query.eq('is_published', is_published);
+    const { data, error } = await query;
+    if (error) throw new Error(`List KB articles failed: ${error.message}`);
+    return { articles: data || [] };
+  }
+
+  if (action === 'get') {
+    const { article_id, slug } = args as any;
+    let query = supabase.from('kb_articles')
+      .select('*');
+    if (article_id) query = query.eq('id', article_id);
+    else if (slug) query = query.eq('slug', slug);
+    else throw new Error('article_id or slug required');
+    const { data, error } = await query.single();
+    if (error) throw new Error(`Get KB article failed: ${error.message}`);
+    return data;
+  }
+
+  if (action === 'create') {
+    const { title, question, answer, category = 'general', include_in_chat = true, is_featured = false, content } = args as any;
+    if (!title || !question) throw new Error('title and question are required');
+    const articleSlug = title.toLowerCase().replace(/[^a-z0-9åäö]+/g, '-').replace(/(^-|-$)/g, '');
+
+    // Convert markdown answer to Tiptap if needed
+    let answerContent = answer;
+    if (typeof answer === 'string' && !content) {
+      answerContent = answer;
+    }
+
+    const { data, error } = await supabase.from('kb_articles').insert({
+      title, question, answer: answerContent || '',
+      slug: articleSlug, category,
+      include_in_chat, is_featured,
+      is_published: false,
+      content_json: content || null,
+    }).select('id, title, slug, category, is_published').single();
+    if (error) throw new Error(`Create KB article failed: ${error.message}`);
+    return { article_id: data.id, slug: data.slug, title: data.title, status: 'draft' };
+  }
+
+  if (action === 'update') {
+    const { article_id, ...updateData } = args as any;
+    if (!article_id) throw new Error('article_id is required');
+    delete updateData.action;
+    const { data, error } = await supabase.from('kb_articles')
+      .update({ ...updateData, updated_at: new Date().toISOString() })
+      .eq('id', article_id).select('id, title, is_published').single();
+    if (error) throw new Error(`Update KB article failed: ${error.message}`);
+    return { article_id: data.id, title: data.title, status: 'updated' };
+  }
+
+  if (action === 'publish') {
+    const { article_id } = args as any;
+    if (!article_id) throw new Error('article_id is required');
+    const { data, error } = await supabase.from('kb_articles')
+      .update({ is_published: true, updated_at: new Date().toISOString() })
+      .eq('id', article_id).select('id, title, slug').single();
+    if (error) throw new Error(`Publish failed: ${error.message}`);
+    return { article_id: data.id, slug: data.slug, status: 'published' };
+  }
+
+  if (action === 'unpublish') {
+    const { article_id } = args as any;
+    if (!article_id) throw new Error('article_id is required');
+    const { data, error } = await supabase.from('kb_articles')
+      .update({ is_published: false, updated_at: new Date().toISOString() })
+      .eq('id', article_id).select('id, title').single();
+    if (error) throw new Error(`Unpublish failed: ${error.message}`);
+    return { article_id: data.id, status: 'unpublished' };
+  }
+
+  return { error: `Unknown KB action: ${action}` };
+}
+
+// =============================================================================
+// Global Blocks module handlers
+// =============================================================================
+
+async function executeGlobalBlocksAction(
+  supabase: SupabaseClient,
+  _skillName: string,
+  args: Record<string, unknown>,
+): Promise<unknown> {
+  const { action = 'list', slot, block_data } = args as any;
+
+  if (action === 'list') {
+    const { data, error } = await supabase.from('global_blocks')
+      .select('id, slot, type, data, is_active, updated_at');
+    if (error) throw new Error(`List global blocks failed: ${error.message}`);
+    return { global_blocks: data || [] };
+  }
+
+  if (action === 'get' && slot) {
+    const { data, error } = await supabase.from('global_blocks')
+      .select('*').eq('slot', slot).maybeSingle();
+    if (error) throw new Error(`Get global block failed: ${error.message}`);
+    return data || { slot, exists: false };
+  }
+
+  if (action === 'update' && slot) {
+    if (!block_data) throw new Error('block_data is required');
+    const { data: existing } = await supabase.from('global_blocks')
+      .select('id, data').eq('slot', slot).maybeSingle();
+
+    if (existing) {
+      const mergedData = { ...existing.data, ...block_data };
+      const { data, error } = await supabase.from('global_blocks')
+        .update({ data: mergedData, updated_at: new Date().toISOString() })
+        .eq('id', existing.id).select('id, slot, type').single();
+      if (error) throw new Error(`Update global block failed: ${error.message}`);
+      return { id: data.id, slot: data.slot, status: 'updated' };
+    } else {
+      const { block_type = slot === 'header' ? 'header' : 'footer' } = args as any;
+      const { data, error } = await supabase.from('global_blocks').insert({
+        slot, type: block_type, data: block_data, is_active: true,
+      }).select('id, slot, type').single();
+      if (error) throw new Error(`Create global block failed: ${error.message}`);
+      return { id: data.id, slot: data.slot, status: 'created' };
+    }
+  }
+
+  if (action === 'toggle' && slot) {
+    const { data: existing } = await supabase.from('global_blocks')
+      .select('id, is_active').eq('slot', slot).single();
+    if (!existing) throw new Error(`No global block in slot: ${slot}`);
+    const { data, error } = await supabase.from('global_blocks')
+      .update({ is_active: !existing.is_active, updated_at: new Date().toISOString() })
+      .eq('id', existing.id).select('id, slot, is_active').single();
+    if (error) throw new Error(`Toggle failed: ${error.message}`);
+    return { id: data.id, slot: data.slot, is_active: data.is_active };
+  }
+
+  return { error: `Unknown global blocks action: ${action}` };
+}
+
+// =============================================================================
+// Deals module handlers
+// =============================================================================
+
+async function executeDealsAction(
+  supabase: SupabaseClient,
+  _skillName: string,
+  args: Record<string, unknown>,
+): Promise<unknown> {
+  const { action = 'list' } = args as any;
+
+  if (action === 'list') {
+    const { stage, lead_id } = args as any;
+    let query = supabase.from('deals')
+      .select('id, title, value_cents, currency, stage, lead_id, company_id, expected_close_date, created_at, updated_at')
+      .order('updated_at', { ascending: false }).limit(50);
+    if (stage) query = query.eq('stage', stage);
+    if (lead_id) query = query.eq('lead_id', lead_id);
+    const { data, error } = await query;
+    if (error) throw new Error(`List deals failed: ${error.message}`);
+    return { deals: data || [] };
+  }
+
+  if (action === 'create') {
+    const { title, value_cents, currency = 'SEK', stage = 'proposal', lead_id, company_id, expected_close_date } = args as any;
+    if (!title) throw new Error('title is required');
+    const { data, error } = await supabase.from('deals').insert({
+      title, value_cents, currency, stage, lead_id, company_id, expected_close_date,
+    }).select('id, title, stage, value_cents').single();
+    if (error) throw new Error(`Create deal failed: ${error.message}`);
+    return { deal_id: data.id, title: data.title, stage: data.stage, value_cents: data.value_cents };
+  }
+
+  if (action === 'update') {
+    const { deal_id, ...updateData } = args as any;
+    if (!deal_id) throw new Error('deal_id is required');
+    delete updateData.action;
+    const { data, error } = await supabase.from('deals')
+      .update({ ...updateData, updated_at: new Date().toISOString() })
+      .eq('id', deal_id).select('id, title, stage').single();
+    if (error) throw new Error(`Update deal failed: ${error.message}`);
+    return { deal_id: data.id, title: data.title, stage: data.stage, status: 'updated' };
+  }
+
+  if (action === 'move_stage') {
+    const { deal_id, stage } = args as any;
+    if (!deal_id || !stage) throw new Error('deal_id and stage required');
+    const completed_at = ['closed_won', 'closed_lost'].includes(stage) ? new Date().toISOString() : null;
+    const { data, error } = await supabase.from('deals')
+      .update({ stage, completed_at, updated_at: new Date().toISOString() })
+      .eq('id', deal_id).select('id, title, stage').single();
+    if (error) throw new Error(`Move stage failed: ${error.message}`);
+    return { deal_id: data.id, title: data.title, new_stage: data.stage };
+  }
+
+  return { error: `Unknown deals action: ${action}` };
+}
+
+// =============================================================================
+// Products module handlers
+// =============================================================================
+
+async function executeProductsAction(
+  supabase: SupabaseClient,
+  _skillName: string,
+  args: Record<string, unknown>,
+): Promise<unknown> {
+  const { action = 'list' } = args as any;
+
+  if (action === 'list') {
+    const { is_active } = args as any;
+    let query = supabase.from('products')
+      .select('id, name, slug, description, price_cents, currency, type, is_active, created_at')
+      .order('created_at', { ascending: false }).limit(50);
+    if (is_active !== undefined) query = query.eq('is_active', is_active);
+    const { data, error } = await query;
+    if (error) throw new Error(`List products failed: ${error.message}`);
+    return { products: data || [] };
+  }
+
+  if (action === 'create') {
+    const { name, description, price_cents, currency = 'SEK', type = 'one_time', slug, image_url, stripe_price_id } = args as any;
+    if (!name || price_cents === undefined) throw new Error('name and price_cents required');
+    const productSlug = slug || name.toLowerCase().replace(/[^a-z0-9åäö]+/g, '-').replace(/(^-|-$)/g, '');
+    const { data, error } = await supabase.from('products').insert({
+      name, slug: productSlug, description, price_cents, currency, type,
+      image_url, stripe_price_id, is_active: true,
+    }).select('id, name, slug, price_cents').single();
+    if (error) throw new Error(`Create product failed: ${error.message}`);
+    return { product_id: data.id, name: data.name, slug: data.slug, price_cents: data.price_cents };
+  }
+
+  if (action === 'update') {
+    const { product_id, ...updateData } = args as any;
+    if (!product_id) throw new Error('product_id is required');
+    delete updateData.action;
+    const { data, error } = await supabase.from('products')
+      .update({ ...updateData, updated_at: new Date().toISOString() })
+      .eq('id', product_id).select('id, name, is_active').single();
+    if (error) throw new Error(`Update product failed: ${error.message}`);
+    return { product_id: data.id, name: data.name, status: 'updated' };
+  }
+
+  return { error: `Unknown products action: ${action}` };
+}
+
+// =============================================================================
+// Companies module handlers
+// =============================================================================
+
+async function executeCompaniesAction(
+  supabase: SupabaseClient,
+  _skillName: string,
+  args: Record<string, unknown>,
+): Promise<unknown> {
+  const { action = 'list' } = args as any;
+
+  if (action === 'list') {
+    const { data, error } = await supabase.from('companies')
+      .select('id, name, domain, industry, size, city, country, created_at')
+      .order('created_at', { ascending: false }).limit(50);
+    if (error) throw new Error(`List companies failed: ${error.message}`);
+    return { companies: data || [] };
+  }
+
+  if (action === 'create') {
+    const { name, domain, industry, size, city, country, website, description } = args as any;
+    if (!name) throw new Error('name is required');
+    const { data, error } = await supabase.from('companies').insert({
+      name, domain, industry, size, city, country, website, description,
+    }).select('id, name, domain').single();
+    if (error) throw new Error(`Create company failed: ${error.message}`);
+    return { company_id: data.id, name: data.name, domain: data.domain };
+  }
+
+  if (action === 'update') {
+    const { company_id, ...updateData } = args as any;
+    if (!company_id) throw new Error('company_id is required');
+    delete updateData.action;
+    const { data, error } = await supabase.from('companies')
+      .update({ ...updateData, updated_at: new Date().toISOString() })
+      .eq('id', company_id).select('id, name').single();
+    if (error) throw new Error(`Update company failed: ${error.message}`);
+    return { company_id: data.id, name: data.name, status: 'updated' };
+  }
+
+  return { error: `Unknown companies action: ${action}` };
+}
+
+// =============================================================================
+// Forms module handlers
+// =============================================================================
+
+async function executeFormsAction(
+  supabase: SupabaseClient,
+  _skillName: string,
+  args: Record<string, unknown>,
+): Promise<unknown> {
+  const { action = 'list' } = args as any;
+
+  if (action === 'list') {
+    const { data, error } = await supabase.from('form_submissions')
+      .select('id, form_name, data, page_slug, status, created_at')
+      .order('created_at', { ascending: false }).limit(50);
+    if (error) throw new Error(`List submissions failed: ${error.message}`);
+    return { submissions: data || [] };
+  }
+
+  if (action === 'get') {
+    const { submission_id } = args as any;
+    if (!submission_id) throw new Error('submission_id is required');
+    const { data, error } = await supabase.from('form_submissions')
+      .select('*').eq('id', submission_id).single();
+    if (error) throw new Error(`Get submission failed: ${error.message}`);
+    return data;
+  }
+
+  if (action === 'update_status') {
+    const { submission_id, status } = args as any;
+    if (!submission_id || !status) throw new Error('submission_id and status required');
+    const { data, error } = await supabase.from('form_submissions')
+      .update({ status }).eq('id', submission_id).select('id, status').single();
+    if (error) throw new Error(`Update status failed: ${error.message}`);
+    return { submission_id: data.id, status: data.status };
+  }
+
+  if (action === 'stats') {
+    const since = new Date();
+    since.setDate(since.getDate() - 30);
+    const { data, error } = await supabase.from('form_submissions')
+      .select('form_name, status, created_at')
+      .gte('created_at', since.toISOString());
+    if (error) throw new Error(`Form stats failed: ${error.message}`);
+    const submissions = data || [];
+    const byForm: Record<string, number> = {};
+    for (const s of submissions) {
+      byForm[s.form_name || 'unknown'] = (byForm[s.form_name || 'unknown'] || 0) + 1;
+    }
+    return { period_days: 30, total: submissions.length, by_form: byForm };
+  }
+
+  return { error: `Unknown forms action: ${action}` };
+}
+
+// =============================================================================
+// Webinars module handlers
+// =============================================================================
+
+async function executeWebinarsAction(
+  supabase: SupabaseClient,
+  _skillName: string,
+  args: Record<string, unknown>,
+): Promise<unknown> {
+  const { action = 'list' } = args as any;
+
+  if (action === 'list') {
+    const { data, error } = await supabase.from('webinars')
+      .select('id, title, description, scheduled_at, platform, meeting_url, status, max_attendees, created_at')
+      .order('scheduled_at', { ascending: false }).limit(50);
+    if (error) throw new Error(`List webinars failed: ${error.message}`);
+    return { webinars: data || [] };
+  }
+
+  if (action === 'create') {
+    const { title, description, scheduled_at, platform = 'google_meet', meeting_url, max_attendees } = args as any;
+    if (!title || !scheduled_at) throw new Error('title and scheduled_at required');
+    const { data, error } = await supabase.from('webinars').insert({
+      title, description, scheduled_at, platform, meeting_url,
+      max_attendees, status: 'upcoming',
+    }).select('id, title, scheduled_at, status').single();
+    if (error) throw new Error(`Create webinar failed: ${error.message}`);
+    return { webinar_id: data.id, title: data.title, scheduled_at: data.scheduled_at };
+  }
+
+  if (action === 'update') {
+    const { webinar_id, ...updateData } = args as any;
+    if (!webinar_id) throw new Error('webinar_id is required');
+    delete updateData.action;
+    const { data, error } = await supabase.from('webinars')
+      .update({ ...updateData, updated_at: new Date().toISOString() })
+      .eq('id', webinar_id).select('id, title, status').single();
+    if (error) throw new Error(`Update webinar failed: ${error.message}`);
+    return { webinar_id: data.id, title: data.title, status: 'updated' };
+  }
+
+  return { error: `Unknown webinars action: ${action}` };
 }
 
 async function executeDbAction(
@@ -991,17 +1672,30 @@ async function logActivity(
 
 // Maps skill names to objective keywords they contribute to
 const SKILL_OBJECTIVE_MAP: Record<string, string[]> = {
+  // Content & Pages
   write_blog_post: ['blog', 'content', 'publish', 'article'],
-  create_page_block: ['page', 'content', 'website'],
+  manage_page: ['page', 'content', 'website', 'publish', 'landing'],
+  manage_page_blocks: ['page', 'block', 'content', 'website', 'design', 'layout'],
+  manage_global_blocks: ['header', 'footer', 'navigation', 'branding', 'global'],
+  manage_kb_article: ['knowledge', 'support', 'faq', 'article', 'kb', 'help'],
+  // Communication
   send_newsletter: ['newsletter', 'email', 'subscriber', 'engagement'],
   execute_newsletter_send: ['newsletter', 'email', 'campaign', 'engagement'],
+  manage_webinar: ['webinar', 'event', 'presentation', 'training'],
+  // CRM & Sales
   add_lead: ['lead', 'crm', 'sales', 'pipeline'],
   qualify_lead: ['lead', 'qualify', 'score', 'crm', 'sales'],
   enrich_company: ['company', 'enrich', 'crm', 'data'],
+  manage_company: ['company', 'crm', 'account', 'client'],
+  manage_deal: ['deal', 'pipeline', 'sales', 'revenue', 'negotiation'],
   prospect_research: ['prospect', 'research', 'sales', 'lead'],
   prospect_fit_analysis: ['prospect', 'fit', 'sales', 'pipeline'],
+  // Commerce
+  manage_product: ['product', 'commerce', 'pricing', 'catalog', 'shop'],
+  manage_form_submissions: ['form', 'submission', 'lead', 'feedback'],
   create_campaign: ['campaign', 'marketing', 'engagement'],
   book_appointment: ['booking', 'appointment', 'calendar'],
+  // Analytics & Research
   analyze_analytics: ['analytics', 'traffic', 'performance', 'growth'],
   weekly_business_digest: ['digest', 'report', 'overview'],
   search_web: ['research', 'content'],
@@ -1012,8 +1706,10 @@ const SKILL_OBJECTIVE_MAP: Record<string, string[]> = {
   learn_from_data: ['learn', 'insight', 'analytics', 'performance'],
   seo_audit_page: ['seo', 'content', 'page', 'traffic', 'search', 'performance'],
   kb_gap_analysis: ['knowledge', 'support', 'chat', 'content', 'article', 'kb'],
+  // Resume & Talent
   manage_consultant_profile: ['resume', 'consultant', 'profile', 'talent'],
   match_consultant: ['resume', 'consultant', 'match', 'talent', 'recruitment'],
+  // Utilities
   extract_pdf_text: ['pdf', 'document', 'extract', 'content', 'resume', 'report', 'contract'],
   competitor_monitor: ['competitor', 'market', 'positioning', 'content', 'intelligence'],
   generate_social_post: ['social', 'linkedin', 'content', 'authority', 'engagement', 'repurpose'],
