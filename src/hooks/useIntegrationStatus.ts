@@ -25,6 +25,7 @@ interface IntegrationStatus {
     meta_pixel: boolean;
     slack: boolean;
     hunter: boolean;
+    jina: boolean;
   };
 }
 

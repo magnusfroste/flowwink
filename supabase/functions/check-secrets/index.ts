@@ -95,6 +95,7 @@ serve(async (req) => {
         google_client_id: !!Deno.env.get('GOOGLE_CLIENT_ID'),
         google_client_secret: !!Deno.env.get('GOOGLE_CLIENT_SECRET'),
         hunter: !!Deno.env.get('HUNTER_API_KEY'),
+        jina: !!Deno.env.get('JINA_API_KEY'),
       }
     };
 
