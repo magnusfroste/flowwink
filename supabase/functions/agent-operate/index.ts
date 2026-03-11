@@ -53,11 +53,10 @@ serve(async (req) => {
     const { apiKey, apiUrl, model } = await resolveAiConfig(supabase);
 
     // Load context in parallel via shared module
-    const [{ soul, identity }, memoryContext, objectiveContext, skillInstructions] = await Promise.all([
+    const [{ soul, identity }, memoryContext, objectiveContext] = await Promise.all([
       loadSoulIdentity(supabase),
       loadMemories(supabase),
       loadObjectives(supabase),
-      loadSkillInstructions(supabase),
     ]);
 
     const soulPrompt = buildSoulPrompt(soul, identity);
