@@ -21,6 +21,7 @@ interface WebSearchInput {
   limit?: number;
   lang?: string;
   country?: string;
+  preferred_provider?: 'firecrawl' | 'jina' | 'auto';
 }
 
 interface SearchResult {
