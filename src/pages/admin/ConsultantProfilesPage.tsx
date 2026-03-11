@@ -374,10 +374,31 @@ export default function ConsultantProfilesPage() {
           title="Consultant Profiles"
           description="Manage consultants for AI-powered resume matching and cover letter generation."
         >
-          <Button onClick={openCreate}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Consultant
-          </Button>
+          <div className="flex items-center gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf"
+              className="hidden"
+              onChange={handlePdfImport}
+            />
+            <Button
+              variant="outline"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isParsing}
+            >
+              {isParsing ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Upload className="h-4 w-4 mr-2" />
+              )}
+              {isParsing ? "Parsing..." : "Import PDF"}
+            </Button>
+            <Button onClick={openCreate}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Consultant
+            </Button>
+          </div>
         </AdminPageHeader>
 
         {/* Summary */}
