@@ -74,6 +74,8 @@ import { SectionDividerBlockEditor } from './SectionDividerBlockEditor';
 import { FeaturedCarouselBlockEditor } from './FeaturedCarouselBlockEditor';
 import { FeaturedProductBlockEditor } from './FeaturedProductBlockEditor';
 import { TrustBarBlockEditor } from './TrustBarBlockEditor';
+import { CategoryNavBlockEditor } from './CategoryNavBlockEditor';
+import { ShippingInfoBlockEditor } from './ShippingInfoBlockEditor';
 import type { ProductsBlockData } from '@/components/public/blocks/ProductsBlock';
 import type { CartBlockData } from '@/components/public/blocks/CartBlock';
 import type { KbFeaturedBlockData } from '@/components/public/blocks/KbFeaturedBlock';
@@ -98,6 +100,8 @@ import type { SectionDividerBlockData } from '@/components/public/blocks/Section
 import type { FeaturedCarouselBlockData } from '@/components/public/blocks/FeaturedCarouselBlock';
 import type { FeaturedProductBlockData } from '@/components/public/blocks/FeaturedProductBlock';
 import type { TrustBarBlockData } from '@/components/public/blocks/TrustBarBlock';
+import type { CategoryNavBlockData } from '@/components/public/blocks/CategoryNavBlock';
+import type { ShippingInfoBlockData } from '@/components/public/blocks/ShippingInfoBlock';
 
 interface NewsletterBlockData {
   title?: string;
