@@ -836,6 +836,7 @@ export const ROLE_LABELS: Record<AppRole, string> = {
   writer: 'Writer',
   approver: 'Approver',
   admin: 'Administrator',
+  customer: 'Customer',
 };
 
 // ==================== BLOG TYPES ====================
