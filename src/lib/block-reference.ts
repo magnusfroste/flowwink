@@ -699,7 +699,7 @@ export function getRequiredFields(type: string): string[] {
  * Excludes blocks that require dynamic data (products, cart, kb-*, etc.)
  */
 export function getImportableBlockTypes(): string[] {
-  const excluded = ['products', 'cart', 'kb-featured', 'kb-hub', 'kb-search', 'kb-accordion', 'smart-booking'];
+  const excluded = ['products', 'cart', 'featured-product', 'kb-featured', 'kb-hub', 'kb-search', 'kb-accordion', 'smart-booking'];
   return BLOCK_REFERENCE
     .filter(b => !excluded.includes(b.type))
     .map(b => b.type);
