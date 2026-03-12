@@ -92,6 +92,18 @@ export default function ProductsPage() {
           <IntegrationWarning integration="stripe" />
         )}
 
+        <Tabs defaultValue="products">
+          <TabsList>
+            <TabsTrigger value="products">Products</TabsTrigger>
+            <TabsTrigger value="categories">Categories</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="categories" className="mt-6">
+            <ProductCategoryManager />
+          </TabsContent>
+
+          <TabsContent value="products" className="mt-6">
+
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
