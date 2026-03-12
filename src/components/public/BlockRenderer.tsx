@@ -276,6 +276,8 @@ export function BlockRenderer({ block, pageId, index = 0 }: BlockRendererProps) 
         return <CategoryNavBlock data={block.data as unknown as CategoryNavBlockData} />;
       case 'shipping-info':
         return <ShippingInfoBlock data={block.data as unknown as ShippingInfoBlockData} />;
+      case 'ai-assistant':
+        return <AiAssistantBlock data={block.data as unknown as AiAssistantBlockData} />;
       default:
         return null;
     }
