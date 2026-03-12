@@ -57,10 +57,10 @@ const digitalShopPages: TemplatePage[] = [
         data: {
           title: '',
           badges: [
-            { id: 'tb1', title: 'Instant Delivery', icon: 'zap' },
+            { id: 'tb1', title: 'Instant Delivery', icon: 'star' },
             { id: 'tb2', title: 'Secure Checkout', icon: 'shield' },
-            { id: 'tb3', title: '30-Day Guarantee', icon: 'refresh-cw' },
-            { id: 'tb4', title: 'Lifetime Updates', icon: 'infinity' },
+            { id: 'tb3', title: '30-Day Guarantee', icon: 'award' },
+            { id: 'tb4', title: 'Lifetime Updates', icon: 'check' },
           ],
           variant: 'minimal',
           columns: 4,
