@@ -1,7 +1,9 @@
-
 -- Register content hub FlowPilot skills
 -- These route content research and proposal generation through FlowPilot
 -- so brand voice, soul, and objectives apply to all AI-generated content.
+
+-- Remove existing skills if present (no unique constraint on name)
+DELETE FROM public.agent_skills WHERE name IN ('research_content', 'generate_content_proposal');
 
 INSERT INTO public.agent_skills (name, description, handler, category, scope, requires_approval, enabled, instructions, tool_definition)
 VALUES
@@ -64,7 +66,7 @@ VALUES
           "target_audience": { "type": "string", "description": "Who the content is for" },
           "tone_level": { "type": "number", "description": "Tone scale 1-5 (1=highly formal, 5=casual/playful)" },
           "industry": { "type": "string", "description": "Industry context" },
-          "content_goals": { "type": "array", "items": { "type": "string" }, "description": "e.g. ['brand awareness', 'lead generation']" },
+          "content_goals": { "type": "array", "items": { "type": "string" }, "description": "e.g. brand awareness, lead generation" },
           "unique_angle": { "type": "string", "description": "Unique positioning or differentiator" },
           "schedule_for": { "type": "string", "description": "ISO date string for scheduling" },
           "user_id": { "type": "string", "description": "Requesting user ID for proposal attribution" }
@@ -74,9 +76,4 @@ VALUES
     }
   }'::jsonb
 )
-ON CONFLICT (name) DO UPDATE SET
-  description = EXCLUDED.description,
-  handler = EXCLUDED.handler,
-  instructions = EXCLUDED.instructions,
-  tool_definition = EXCLUDED.tool_definition,
-  enabled = EXCLUDED.enabled;
+;
