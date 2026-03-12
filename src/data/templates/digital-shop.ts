@@ -1,8 +1,8 @@
 /**
- * Digital Shop Template - E-commerce
+ * Digital Shop Template - Premium E-commerce
  * 
- * E-commerce template for selling digital products.
- * Features product showcase, shopping cart, Stripe checkout, and order management.
+ * Editorial-first e-commerce template inspired by Shopify Impulse theme.
+ * Features story-driven layout, bento grid categories, and premium branding.
  */
 import type { StarterTemplate, TemplatePage, TemplateProduct } from './types';
 import { digitalShopBlogPosts } from '@/data/template-blog-posts';
@@ -15,171 +15,52 @@ const digitalShopPages: TemplatePage[] = [
     menu_order: 1,
     showInMenu: true,
     meta: {
-      description: 'Premium digital products and online courses. Instant delivery, lifetime access.',
+      description: 'Curated digital products for modern creators. Templates, courses, and tools — instant delivery.',
       showTitle: false,
       titleAlignment: 'center',
     },
     blocks: [
+      // ── Marquee: energy + urgency ──
       {
-        id: 'announcement-sale',
-        type: 'announcement-bar',
+        id: 'marquee-promo',
+        type: 'marquee',
         data: {
-          message: '🔥 Summer Sale: 30% off all products — Use code SUMMER30',
-          linkText: 'Shop Now',
-          linkUrl: '#products',
-          variant: 'gradient',
-          dismissable: true,
-          sticky: false,
+          text: 'LIMITED TIME: 20% OFF ALL TEMPLATES  •  FREE INSTANT DELIVERY  •  LIFETIME UPDATES INCLUDED  •  JOIN 10,000+ CREATORS',
+          speed: 'medium',
+          direction: 'left',
+          variant: 'default',
+          pauseOnHover: true,
         },
       },
+
+      // ── Hero: full-bleed, minimal, editorial ──
       {
-        id: 'hero-shop',
+        id: 'hero-editorial',
         type: 'hero',
         data: {
-          title: 'Premium Digital Products',
-          subtitle: 'Courses, templates, and tools to grow your business. Instant delivery, lifetime access.',
+          title: 'Curate Your Digital Workspace',
+          subtitle: 'Premium templates, courses, and tools — crafted for creators who ship.',
           backgroundType: 'image',
-          backgroundImage: 'https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=1920',
-          heightMode: '70vh',
+          backgroundImage: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1920&q=80',
+          heightMode: '80vh',
           contentAlignment: 'center',
-          overlayOpacity: 55,
+          overlayOpacity: 45,
           titleAnimation: 'slide-up',
-          primaryButton: { text: 'Browse Products', url: '#products' },
-          secondaryButton: { text: 'View Cart', url: '/cart' },
+          primaryButton: { text: 'Shop Collection', url: '#products' },
         },
       },
+
+      // ── Trust bar: immediate confidence ──
       {
-        id: 'divider-hero-stats',
-        type: 'section-divider',
-        data: {
-          shape: 'wave',
-          height: 'sm',
-        },
-      },
-      {
-        id: 'stats-proof',
-        type: 'stats',
-        data: {
-          title: '',
-          items: [
-            { id: 'stat-1', value: '10,000+', label: 'Happy Customers' },
-            { id: 'stat-2', value: '50+', label: 'Digital Products' },
-            { id: 'stat-3', value: '4.9/5', label: 'Average Rating' },
-            { id: 'stat-4', value: '24/7', label: 'Instant Delivery' },
-          ],
-          columns: 4,
-          variant: 'minimal',
-        },
-      },
-      {
-        id: 'products-featured',
-        type: 'products',
-        data: {
-          title: 'Featured Products',
-          subtitle: 'Our most popular digital products and courses',
-          productType: 'featured',
-          columns: 3,
-          showFilters: false,
-          showSearch: false,
-          variant: 'cards',
-        },
-      },
-      {
-        id: 'features-benefits',
-        type: 'features',
-        data: {
-          title: 'Why Choose Us',
-          features: [
-            { id: 'benefit-1', icon: 'Zap', title: 'Instant Delivery', description: 'Get access immediately after purchase. No waiting, no shipping.' },
-            { id: 'benefit-2', icon: 'Shield', title: 'Secure Payments', description: 'Powered by Stripe. Your payment information is always safe.' },
-            { id: 'benefit-3', icon: 'RefreshCw', title: 'Lifetime Updates', description: 'Get all future updates and improvements for free.' },
-            { id: 'benefit-4', icon: 'MessageSquare', title: 'Expert Support', description: 'Questions? Our team is here to help via email or chat.' },
-          ],
-          columns: 4,
-          layout: 'grid',
-          variant: 'minimal',
-          iconStyle: 'circle',
-        },
-      },
-      {
-        id: 'carousel-categories',
-        type: 'featured-carousel',
-        data: {
-          slides: [
-            {
-              id: 'slide-templates',
-              title: 'Premium Templates',
-              description: 'Professional designs for presentations, websites, and more.',
-              image: 'https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=1920',
-              ctaText: 'Shop Templates',
-              ctaUrl: '#products',
-              textAlignment: 'left',
-            },
-            {
-              id: 'slide-courses',
-              title: 'Online Courses',
-              description: 'Learn from industry experts with step-by-step video lessons.',
-              image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=1920',
-              ctaText: 'Browse Courses',
-              ctaUrl: '#products',
-              textAlignment: 'left',
-            },
-            {
-              id: 'slide-tools',
-              title: 'Design Tools',
-              description: 'UI kits, icon packs, and design systems for modern teams.',
-              image: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=1920',
-              ctaText: 'View Tools',
-              ctaUrl: '#products',
-              textAlignment: 'left',
-            },
-          ],
-          autoPlay: true,
-          interval: 5000,
-          height: 'md',
-          transition: 'fade',
-        },
-      },
-      {
-        id: 'products-all',
-        type: 'products',
-        data: {
-          title: 'All Products',
-          subtitle: 'Browse our complete collection',
-          productType: 'all',
-          columns: 3,
-          showFilters: true,
-          showSearch: true,
-          variant: 'cards',
-        },
-      },
-      {
-        id: 'testimonials-reviews',
-        type: 'testimonials',
-        data: {
-          title: 'What Our Customers Say',
-          testimonials: [
-            { id: 'test-1', content: 'Best investment I made this year. The quality is outstanding and the support is incredible.', author: 'Sarah Johnson', role: 'Entrepreneur', rating: 5 },
-            { id: 'test-2', content: 'Instant delivery, lifetime access, and regular updates. Exactly what I was looking for.', author: 'Michael Chen', role: 'Designer', rating: 5 },
-            { id: 'test-3', content: 'The templates saved me weeks of work. Worth every penny!', author: 'Emma Davis', role: 'Developer', rating: 5 },
-          ],
-          layout: 'grid',
-          columns: 3,
-          showRating: true,
-          showAvatar: false,
-          variant: 'cards',
-        },
-      },
-      {
-        id: 'badge-payment',
+        id: 'trust-bar',
         type: 'badge',
         data: {
-          title: 'Secure & Trusted',
+          title: '',
           badges: [
-            { id: 'b1', title: 'Stripe Verified', icon: 'shield' },
-            { id: 'b2', title: 'SSL Encrypted', icon: 'check' },
-            { id: 'b3', title: '30-Day Guarantee', icon: 'award' },
-            { id: 'b4', title: 'Instant Delivery', icon: 'check' },
+            { id: 'tb1', title: 'Instant Delivery', icon: 'zap' },
+            { id: 'tb2', title: 'Secure Checkout', icon: 'shield' },
+            { id: 'tb3', title: '30-Day Guarantee', icon: 'refresh-cw' },
+            { id: 'tb4', title: 'Lifetime Updates', icon: 'infinity' },
           ],
           variant: 'minimal',
           columns: 4,
@@ -188,76 +69,225 @@ const digitalShopPages: TemplatePage[] = [
           grayscale: false,
         },
       },
+
+      // ── Two-column: hero product editorial ──
       {
-        id: 'social-proof-shop',
-        type: 'social-proof',
+        id: 'editorial-hero-product',
+        type: 'two-column',
         data: {
-          title: '',
+          eyebrow: 'Featured',
+          title: 'The Creator Toolkit',
+          accentText: 'Everything you need to launch.',
+          content: {
+            type: 'doc',
+            content: [
+              { type: 'paragraph', content: [{ type: 'text', text: '50+ professionally designed templates for presentations, pitch decks, and brand assets. Built with modern design principles — ready to customize and ship.' }] },
+            ],
+          },
+          image: 'https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=800&q=80',
+          imageAlt: 'Creator Toolkit product showcase',
+          imageSide: 'left',
+          imageAspectRatio: '4:5',
+          imageObjectFit: 'cover',
+          imageRounded: 'xl',
+          primaryButton: { text: 'View Product — $49', url: '/products' },
+          verticalAlignment: 'center',
+        },
+      },
+
+      // ── Divider ──
+      {
+        id: 'divider-1',
+        type: 'section-divider',
+        data: {
+          shape: 'wave',
+          height: 'sm',
+        },
+      },
+
+      // ── Products grid: bestsellers ──
+      {
+        id: 'products-bestsellers',
+        type: 'products',
+        data: {
+          title: 'Shop Bestsellers',
+          subtitle: 'Our most popular products, loved by thousands of creators',
+          productType: 'all',
+          columns: 3,
+          showFilters: false,
+          showSearch: false,
+          variant: 'cards',
+        },
+      },
+
+      // ── Parallax: lifestyle break ──
+      {
+        id: 'parallax-lifestyle',
+        type: 'parallax-section',
+        data: {
+          backgroundImage: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=1920&q=80',
+          title: 'Built for Creators Who Ship Fast',
+          subtitle: 'Stop designing from scratch. Start with premium foundations.',
+          height: 'md',
+          overlayOpacity: 50,
+          contentAlignment: 'center',
+          primaryButton: { text: 'Browse All Products', url: '#products' },
+        },
+      },
+
+      // ── Bento grid: category showcase ──
+      {
+        id: 'bento-categories',
+        type: 'bento-grid',
+        data: {
+          title: 'Shop by Category',
+          subtitle: 'Find exactly what you need',
           items: [
-            { id: 'sp1', type: 'counter', icon: 'users', label: 'Happy Customers', value: '10K', suffix: '+' },
-            { id: 'sp2', type: 'rating', icon: 'star', label: 'Average Rating', value: '4.9', maxRating: 5, rating: 4.9 },
-            { id: 'sp3', type: 'activity', icon: 'eye', label: 'Recently Purchased', text: '47 purchases in the last hour' },
+            {
+              id: 'bento-templates',
+              title: 'Templates',
+              description: 'Pitch decks, brand kits, and more',
+              image: 'https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=800&q=80',
+              colSpan: 2,
+              rowSpan: 2,
+              ctaText: 'Browse',
+              ctaUrl: '#products',
+            },
+            {
+              id: 'bento-courses',
+              title: 'Courses',
+              description: '40+ video lessons from experts',
+              image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=600&q=80',
+              colSpan: 1,
+              rowSpan: 1,
+              ctaText: 'Learn',
+              ctaUrl: '#products',
+            },
+            {
+              id: 'bento-tools',
+              title: 'Design Tools',
+              description: 'UI kits, icons, and systems',
+              image: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=600&q=80',
+              colSpan: 1,
+              rowSpan: 1,
+              ctaText: 'Explore',
+              ctaUrl: '#products',
+            },
           ],
-          variant: 'minimal',
-          layout: 'horizontal',
-          size: 'sm',
-          animated: true,
+          columns: 3,
+          gap: 'md',
+          variant: 'glass',
         },
       },
+
+      // ── Testimonials ──
       {
-        id: 'notification-purchases',
-        type: 'notification-toast',
+        id: 'testimonials-social',
+        type: 'testimonials',
         data: {
-          notifications: [
-            { id: 'n1', type: 'purchase', title: 'New Purchase', message: 'Sarah from NYC bought Business Template Pack' },
-            { id: 'n2', type: 'purchase', title: 'New Purchase', message: 'James from London bought UI Design Kit Pro' },
-            { id: 'n3', type: 'purchase', title: 'New Purchase', message: 'Emma from Sydney bought Marketing Mastery Course' },
-            { id: 'n4', type: 'signup', title: 'New Member', message: 'A new Pro Member just joined from Berlin' },
+          title: 'Loved by 10,000+ Creators',
+          testimonials: [
+            { id: 't1', content: 'These templates saved me weeks of work. The quality is on another level — I use them for every client project now.', author: 'Sarah Johnson', role: 'Freelance Designer', rating: 5 },
+            { id: 't2', content: 'Instant delivery and lifetime updates? This is how every digital product should work. Absolutely worth it.', author: 'Michael Chen', role: 'Startup Founder', rating: 5 },
+            { id: 't3', content: 'The Growth Masterclass completely transformed my marketing strategy. Revenue up 3x in two months.', author: 'Emma Davis', role: 'Creator & Coach', rating: 5 },
           ],
-          variant: 'default',
-          position: 'bottom-left',
-          displayDuration: 4000,
-          delayBetween: 10000,
-          initialDelay: 5000,
-          animationType: 'slide',
+          layout: 'grid',
+          columns: 3,
+          showRating: true,
+          showAvatar: false,
+          variant: 'cards',
         },
       },
+
+      // ── Two-column: membership upsell ──
+      {
+        id: 'editorial-membership',
+        type: 'two-column',
+        data: {
+          eyebrow: 'Membership',
+          title: 'Go Pro',
+          accentText: '$29/month — access everything.',
+          content: {
+            type: 'doc',
+            content: [
+              { type: 'paragraph', content: [{ type: 'text', text: 'Unlock our entire catalog with a Pro Membership. New products added weekly, priority support, and exclusive member-only releases. Cancel anytime.' }] },
+            ],
+          },
+          image: 'https://images.unsplash.com/photo-1553729459-efe14ef6055d?w=800&q=80',
+          imageAlt: 'Pro Membership showcase',
+          imageSide: 'right',
+          imageAspectRatio: '4:5',
+          imageObjectFit: 'cover',
+          imageRounded: 'xl',
+          primaryButton: { text: 'Start Pro Membership', url: '/products' },
+          verticalAlignment: 'center',
+        },
+      },
+
+      // ── Newsletter ──
+      {
+        id: 'newsletter-signup',
+        type: 'form',
+        data: {
+          title: 'Join 10,000+ Creators',
+          subtitle: 'Get early access to new products, exclusive discounts, and weekly design inspiration.',
+          fields: [
+            { id: 'email', type: 'email', label: 'Email', placeholder: 'you@example.com', required: true, width: 'full' },
+          ],
+          submitButtonText: 'Subscribe',
+          successMessage: 'Welcome aboard! Check your inbox for a special welcome gift.',
+          variant: 'card',
+        },
+      },
+
+      // ── Blog ──
       {
         id: 'article-grid-blog',
         type: 'article-grid',
         data: {
           title: 'From the Blog',
-          subtitle: 'Tips, strategies, and guides for digital product creators',
+          subtitle: 'Tips and strategies for digital creators',
           columns: 3,
           limit: 3,
           showExcerpt: true,
           showImage: true,
         },
       },
+
+      // ── FAQ ──
       {
         id: 'faq-shop',
         type: 'accordion',
         data: {
-          title: 'Frequently Asked Questions',
+          title: 'Questions & Answers',
           items: [
-            { question: 'How does delivery work?', answer: 'After purchase, you\'ll receive an email with download links and access instructions. Everything is instant - no waiting!' },
-            { question: 'What payment methods do you accept?', answer: 'We accept all major credit cards (Visa, Mastercard, American Express) via Stripe. All payments are secure and encrypted.' },
-            { question: 'Do you offer refunds?', answer: 'Yes! We offer a 30-day money-back guarantee. If you\'re not satisfied, just email us for a full refund.' },
-            { question: 'Can I use these products commercially?', answer: 'Yes! All our products come with a commercial license. Use them in client projects, sell websites built with them, etc.' },
-            { question: 'Do I get updates?', answer: 'Absolutely! All purchases include lifetime updates. When we improve a product, you get the new version for free.' },
+            { question: 'How does instant delivery work?', answer: 'After purchase, you\'ll receive download links and access instructions via email immediately. No waiting required.' },
+            { question: 'What payment methods do you accept?', answer: 'We accept Visa, Mastercard, and American Express via Stripe. All payments are secure and encrypted.' },
+            { question: 'Do you offer refunds?', answer: 'Yes — 30-day money-back guarantee, no questions asked. Just email us.' },
+            { question: 'Can I use products commercially?', answer: 'Absolutely. All products include a commercial license for client work and personal projects.' },
+            { question: 'What\'s included with Pro Membership?', answer: 'Full access to every product in our catalog, new weekly releases, priority support, and member-only exclusives. Cancel anytime.' },
           ],
           variant: 'default',
         },
       },
+
+      // ── Social proof toast ──
       {
-        id: 'cta-shop',
-        type: 'cta',
+        id: 'notification-purchases',
+        type: 'notification-toast',
         data: {
-          title: 'Ready to Get Started?',
-          subtitle: 'Browse our products and find the perfect solution for your needs.',
-          buttonText: 'Browse Products',
-          buttonUrl: '#products',
-          gradient: true,
+          notifications: [
+            { id: 'n1', type: 'purchase', title: 'New Purchase', message: 'Sarah from NYC just bought Creator Toolkit' },
+            { id: 'n2', type: 'purchase', title: 'New Purchase', message: 'James from London bought Design System Pro' },
+            { id: 'n3', type: 'purchase', title: 'New Purchase', message: 'Emma from Sydney joined Pro Membership' },
+            { id: 'n4', type: 'signup', title: 'New Member', message: 'A new Pro Member just joined from Berlin' },
+          ],
+          variant: 'default',
+          position: 'bottom-left',
+          displayDuration: 4000,
+          delayBetween: 12000,
+          initialDelay: 6000,
+          animationType: 'slide',
         },
       },
     ],
@@ -278,7 +308,7 @@ const digitalShopPages: TemplatePage[] = [
         type: 'cart',
         data: {
           title: 'Your Cart',
-          emptyMessage: 'Your cart is empty. Browse our products to get started!',
+          emptyMessage: 'Your cart is empty. Browse our collection to get started!',
           checkoutButtonText: 'Proceed to Checkout',
           continueShoppingText: 'Continue Shopping',
           continueShoppingUrl: '/',
@@ -292,7 +322,7 @@ const digitalShopPages: TemplatePage[] = [
     menu_order: 3,
     showInMenu: true,
     meta: {
-      description: 'Learn about our mission and values',
+      description: 'Our story and mission',
       showTitle: true,
       titleAlignment: 'center',
     },
@@ -305,16 +335,9 @@ const digitalShopPages: TemplatePage[] = [
             type: 'doc',
             content: [
               { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Our Story' }] },
-              { type: 'paragraph', content: [{ type: 'text', text: 'We create premium digital products that help entrepreneurs and creators build better businesses. Every product is crafted with care, tested thoroughly, and supported by our expert team.' }] },
+              { type: 'paragraph', content: [{ type: 'text', text: 'We create premium digital products that help creators and entrepreneurs build better businesses. Every product is crafted with care, tested thoroughly, and supported by our team.' }] },
               { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Our Mission' }] },
               { type: 'paragraph', content: [{ type: 'text', text: 'To provide high-quality digital products that save time, increase productivity, and help our customers succeed.' }] },
-              { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Why Choose Us' }] },
-              { type: 'bulletList', content: [
-                { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Quality First: ' }, { type: 'text', text: 'Every product is meticulously crafted and tested' }] }] },
-                { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Instant Delivery: ' }, { type: 'text', text: 'Get access immediately after purchase' }] }] },
-                { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Lifetime Updates: ' }, { type: 'text', text: 'All future improvements included free' }] }] },
-                { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Expert Support: ' }, { type: 'text', text: 'Our team is here to help you succeed' }] }] },
-              ] },
             ],
           },
         },
@@ -367,8 +390,8 @@ const digitalShopPages: TemplatePage[] = [
 
 const digitalShopProducts: TemplateProduct[] = [
   {
-    name: 'Business Template Pack',
-    description: 'Professional templates for presentations, documents, and reports. Includes 50+ designs.',
+    name: 'Creator Toolkit',
+    description: '50+ professionally designed templates for presentations, pitch decks, and brand assets. Ready to customize and ship.',
     price_cents: 4900,
     currency: 'USD',
     type: 'one_time',
@@ -376,8 +399,8 @@ const digitalShopProducts: TemplateProduct[] = [
     is_active: true,
   },
   {
-    name: 'UI Design Kit Pro',
-    description: 'Complete UI kit with 500+ components for web and mobile. Figma & Sketch included.',
+    name: 'Design System Pro',
+    description: 'Complete UI kit with 500+ components for web and mobile. Figma & Sketch included. Built for modern teams.',
     price_cents: 7900,
     currency: 'USD',
     type: 'one_time',
@@ -385,8 +408,8 @@ const digitalShopProducts: TemplateProduct[] = [
     is_active: true,
   },
   {
-    name: 'Marketing Mastery Course',
-    description: 'Complete marketing course with 40+ video lessons. Learn SEO, ads, and social media.',
+    name: 'Growth Masterclass',
+    description: '40+ video lessons on SEO, paid ads, and social media. Learn the strategies behind 7-figure creator businesses.',
     price_cents: 19900,
     currency: 'USD',
     type: 'one_time',
@@ -394,8 +417,8 @@ const digitalShopProducts: TemplateProduct[] = [
     is_active: true,
   },
   {
-    name: 'Monthly Pro Membership',
-    description: 'Access all products with monthly subscription. New content added weekly.',
+    name: 'Pro Membership',
+    description: 'Access every product in our catalog. New releases weekly, priority support, and member-only exclusives.',
     price_cents: 2900,
     currency: 'USD',
     type: 'recurring',
@@ -407,10 +430,10 @@ const digitalShopProducts: TemplateProduct[] = [
 export const digitalShopTemplate: StarterTemplate = {
   id: 'digital-shop',
   name: 'Digital Shop',
-  description: 'E-commerce template for selling digital products. Features product showcase, shopping cart, Stripe checkout, and order management.',
+  description: 'Premium e-commerce template for digital products. Editorial-first layout with story-driven product showcases, bento grid categories, and Stripe checkout.',
   category: 'platform',
   icon: 'ShoppingBag',
-  tagline: 'Perfect for digital product stores',
+  tagline: 'Premium digital product store',
   aiChatPosition: 'Widget for customer support',
   helpStyle: 'none',
   pages: digitalShopPages,
@@ -419,12 +442,12 @@ export const digitalShopTemplate: StarterTemplate = {
   products: digitalShopProducts,
   branding: {
     organizationName: 'Digital Shop',
-    brandTagline: 'Premium Digital Products',
-    primaryColor: '160 70% 40%',
-    accentColor: '200 80% 50%',
-    headingFont: 'Bricolage Grotesque',
-    bodyFont: 'DM Sans',
-    borderRadius: 'lg',
+    brandTagline: 'Curated Digital Products',
+    primaryColor: '220 50% 20%',
+    accentColor: '40 90% 55%',
+    headingFont: 'Playfair Display',
+    bodyFont: 'Inter',
+    borderRadius: 'xl',
     shadowIntensity: 'medium',
   },
   chatSettings: {
@@ -433,12 +456,12 @@ export const digitalShopTemplate: StarterTemplate = {
     landingPageEnabled: false,
     widgetEnabled: true,
     widgetPosition: 'bottom-right',
-    welcomeMessage: 'Hi! Need help finding the right product? I can help!',
-    systemPrompt: 'You are a helpful sales assistant for a digital product store. Help users find products, answer questions about purchases, and provide support. Be friendly and helpful.',
+    welcomeMessage: 'Hi! Looking for the perfect product? I can help you find it.',
+    systemPrompt: 'You are a helpful sales assistant for a premium digital product store. Help users find products, answer questions about purchases, and provide support. Be friendly, concise, and helpful.',
     suggestedPrompts: [
-      'What products do you recommend?',
+      'What do you recommend for beginners?',
+      'Tell me about Pro Membership',
       'How does delivery work?',
-      'Do you offer refunds?',
     ],
     includeContentAsContext: true,
     includedPageSlugs: ['*'],
@@ -471,14 +494,14 @@ export const digitalShopTemplate: StarterTemplate = {
   seoSettings: {
     siteTitle: 'Digital Shop',
     titleTemplate: '%s | Digital Shop',
-    defaultDescription: 'Premium digital products and online courses. Instant delivery, lifetime access.',
+    defaultDescription: 'Curated digital products for modern creators. Templates, courses, and tools — instant delivery, lifetime access.',
     robotsIndex: true,
     robotsFollow: true,
   },
   aeoSettings: {
     enabled: true,
     organizationName: 'Digital Shop',
-    shortDescription: 'Premium digital products and online courses. Instant delivery, lifetime access.',
+    shortDescription: 'Curated digital products for modern creators. Instant delivery, lifetime access.',
     schemaOrgEnabled: true,
     schemaOrgType: 'Organization',
     faqSchemaEnabled: true,
