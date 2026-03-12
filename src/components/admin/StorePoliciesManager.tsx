@@ -114,19 +114,21 @@ export function StorePoliciesManager() {
   const createPolicyPage = async (template: PolicyTemplate) => {
     setCreating(template.slug);
     try {
-      const { error } = await supabase.from('pages').insert({
+      const payload = {
         title: template.title,
         slug: template.slug,
-        status: 'draft',
-        content_json: template.blocks,
+        status: 'draft' as const,
+        content_json: template.blocks as unknown as import('@/integrations/supabase/types').Json,
         meta_json: {
           description: template.description,
           showTitle: false,
           titleAlignment: 'center',
-        },
+        } as unknown as import('@/integrations/supabase/types').Json,
         show_in_menu: false,
         menu_order: 99,
-      });
+      };
+
+      const { error } = await supabase.from('pages').insert(payload);
 
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ['policy-pages'] });
