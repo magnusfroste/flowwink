@@ -4,7 +4,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, FileUser, Star, ArrowRight, CheckCircle2, XCircle } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 interface ConsultantMatch {
@@ -53,11 +52,22 @@ export function ResumeMatcherBlock({ data }: ResumeMatcherBlockProps) {
     setSelectedMatch(null);
 
     try {
-      const { data: result, error } = await supabase.functions.invoke('resume-match', {
-        body: { job_description: jobDescription.trim(), max_results: 3 },
-      });
+      // Use publishable key directly — same pattern as chat-completion.
+      // supabase.functions.invoke() sends the user JWT which fails for anonymous visitors.
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/resume-match`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ job_description: jobDescription.trim(), max_results: 3 }),
+        }
+      );
 
-      if (error) throw error;
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const result = await response.json();
 
       if (result?.success && result.matches?.length > 0) {
         setMatches(result.matches);
