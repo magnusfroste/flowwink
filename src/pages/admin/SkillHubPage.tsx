@@ -19,6 +19,7 @@ import { ObjectivesPanel } from '@/components/admin/skills/ObjectivesPanel';
 import { AutomationsPanel } from '@/components/admin/skills/AutomationsPanel';
 import { AutomationHealthPanel } from '@/components/admin/skills/AutomationHealthPanel';
 import { EvolutionPanel } from '@/components/admin/skills/EvolutionPanel';
+import { WorkflowsPanel } from '@/components/admin/skills/WorkflowsPanel';
 import { SelfHealingAlert } from '@/components/admin/skills/SelfHealingAlert';
 import { useSkills, useToggleSkill, useUpsertSkill, useDeleteSkill } from '@/hooks/useSkillHub';
 import type { AgentSkill } from '@/types/agent';
@@ -92,6 +93,7 @@ export default function SkillHubPage() {
           <TabsTrigger value="health">Health</TabsTrigger>
           <TabsTrigger value="objectives">Objectives</TabsTrigger>
           <TabsTrigger value="automations">Automations</TabsTrigger>
+          <TabsTrigger value="workflows">Workflows</TabsTrigger>
           <TabsTrigger value="evolution">Evolution</TabsTrigger>
         </TabsList>
 
@@ -171,6 +173,11 @@ export default function SkillHubPage() {
         {/* Automations Tab */}
         <TabsContent value="automations">
           <AutomationsPanel />
+        </TabsContent>
+
+        {/* Workflows Tab */}
+        <TabsContent value="workflows">
+          <WorkflowsPanel />
         </TabsContent>
 
         {/* Evolution Tab */}

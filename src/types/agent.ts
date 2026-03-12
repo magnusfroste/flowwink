@@ -144,3 +144,33 @@ export interface AgentExecuteResponse {
   message?: string;
   error?: string;
 }
+
+// =============================================================================
+// Workflow
+// =============================================================================
+
+export interface WorkflowStep {
+  id: string;
+  name: string;
+  skill_name: string;
+  arguments: Record<string, unknown>;
+  on_success?: string; // next step id
+  on_failure?: string; // fallback step id
+  condition?: string;  // expression to evaluate
+  template_vars?: Record<string, string>;
+}
+
+export interface AgentWorkflow {
+  id: string;
+  name: string;
+  description: string | null;
+  steps: WorkflowStep[];
+  trigger_type: string;
+  trigger_config: Record<string, unknown> | null;
+  enabled: boolean;
+  run_count: number;
+  last_run_at: string | null;
+  last_error: string | null;
+  created_at: string;
+  updated_at: string;
+}
