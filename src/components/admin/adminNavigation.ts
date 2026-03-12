@@ -10,8 +10,6 @@ export type NavItem = {
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   moduleId?: string;
-  setupOnly?: boolean;
-  searchOnly?: boolean;
 };
 
 export type NavGroup = {
@@ -35,7 +33,11 @@ export const navigationGroups: NavGroup[] = [
     label: "Content",
     items: [
       { name: "Pages", href: "/admin/pages", icon: FileText, moduleId: "pages" },
+      { name: "Trash", href: "/admin/pages/trash", icon: FileText, moduleId: "pages" },
       { name: "Blog", href: "/admin/blog", icon: BookOpen, moduleId: "blog" },
+      { name: "Blog Categories", href: "/admin/blog/categories", icon: BookOpen, moduleId: "blog" },
+      { name: "Blog Tags", href: "/admin/blog/tags", icon: BookOpen, moduleId: "blog" },
+      { name: "Blog Settings", href: "/admin/blog/settings", icon: BookOpen, moduleId: "blog" },
       { name: "Campaigns", href: "/admin/campaigns", icon: Megaphone, moduleId: "contentApi" },
       { name: "Knowledge Base", href: "/admin/knowledge-base", icon: Library, moduleId: "knowledgeBase" },
       { name: "Media Library", href: "/admin/media", icon: Image, moduleId: "mediaLibrary" },
@@ -68,6 +70,8 @@ export const navigationGroups: NavGroup[] = [
       { name: "Resume", href: "/admin/resume", icon: FileUser, moduleId: "resume" },
       { name: "Deals", href: "/admin/deals", icon: Briefcase, moduleId: "deals" },
       { name: "Bookings", href: "/admin/bookings", icon: CalendarDays, moduleId: "bookings" },
+      { name: "Booking Services", href: "/admin/bookings/services", icon: CalendarDays, moduleId: "bookings" },
+      { name: "Booking Availability", href: "/admin/bookings/availability", icon: CalendarDays, moduleId: "bookings" },
       { name: "Products", href: "/admin/products", icon: Package, moduleId: "products" },
       { name: "Orders", href: "/admin/orders", icon: ShoppingCart, moduleId: "orders" },
     ],
@@ -77,8 +81,10 @@ export const navigationGroups: NavGroup[] = [
     adminOnly: true,
     collapsible: false,
     items: [
-      { name: "Quick Start", href: "/admin/quick-start", icon: Rocket, setupOnly: true },
-      { name: "Templates", href: "/admin/templates", icon: Puzzle, setupOnly: true },
+      { name: "Quick Start", href: "/admin/quick-start", icon: Rocket },
+      { name: "Templates", href: "/admin/templates", icon: Puzzle },
+      { name: "New Site", href: "/admin/new-site", icon: Rocket },
+      { name: "Template Export", href: "/admin/template-export", icon: Puzzle },
       { name: "Branding", href: "/admin/branding", icon: Palette },
       { name: "Global Elements", href: "/admin/global-blocks", icon: LayoutGrid, moduleId: "globalElements" },
       { name: "Modules", href: "/admin/modules", icon: Puzzle },
@@ -87,17 +93,9 @@ export const navigationGroups: NavGroup[] = [
       { name: "Webhooks", href: "/admin/webhooks", icon: Webhook },
       { name: "Menu Order", href: "/admin/menu-order", icon: Menu },
       { name: "Users", href: "/admin/users", icon: Users },
+      { name: "Profile", href: "/admin/profile", icon: UserCircle },
       { name: "Settings", href: "/admin/settings", icon: Settings },
-      { name: "Developer Tools", href: "/admin/developer-tools", icon: Code2, searchOnly: true },
-      { name: "New Site", href: "/admin/new-site", icon: Rocket, searchOnly: true },
-      { name: "Trash", href: "/admin/pages/trash", icon: FileText, searchOnly: true },
-      { name: "Blog Categories", href: "/admin/blog/categories", icon: BookOpen, searchOnly: true },
-      { name: "Blog Tags", href: "/admin/blog/tags", icon: BookOpen, searchOnly: true },
-      { name: "Blog Settings", href: "/admin/blog/settings", icon: BookOpen, searchOnly: true },
-      { name: "Profile", href: "/admin/profile", icon: UserCircle, searchOnly: true },
-      { name: "Booking Services", href: "/admin/bookings/services", icon: CalendarDays, searchOnly: true },
-      { name: "Booking Availability", href: "/admin/bookings/availability", icon: CalendarDays, searchOnly: true },
-      { name: "Template Export", href: "/admin/template-export", icon: Puzzle, searchOnly: true },
+      { name: "Developer Tools", href: "/admin/developer-tools", icon: Code2 },
     ],
   },
 ];

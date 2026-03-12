@@ -69,7 +69,6 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
@@ -91,18 +90,6 @@ import {
 
 import { navigationGroups, type NavItem, type NavGroup } from './adminNavigation';
 
-function useSiteSetupComplete() {
-  return useQuery({
-    queryKey: ['site-setup-complete'],
-    queryFn: async () => {
-      const { count } = await supabase
-        .from('pages')
-        .select('id', { count: 'exact', head: true });
-      return (count ?? 0) > 0;
-    },
-    staleTime: 5 * 60 * 1000,
-  });
-}
 
 export function AdminSidebar() {
   const location = useLocation();
@@ -112,7 +99,6 @@ export function AdminSidebar() {
   const { data: modules } = useModules();
   const { addPin, removePin, isPinned } = usePinnedPages(user?.id);
   const { data: branding } = useBrandingSettings();
-  const { data: siteSetupComplete } = useSiteSetupComplete();
   const { currentVersion, latestVersion, latestReleaseUrl, hasUpdate } = useVersionCheck();
   const isCollapsed = state === "collapsed";
   const [searchOpen, setSearchOpen] = useState(false);
@@ -145,48 +131,25 @@ export function AdminSidebar() {
   // Filter by admin role
   const roleFilteredGroups = navigationGroups.filter((group) => !group.adminOnly || isAdmin);
   
-  // Filter by enabled modules and setup status
+  // Filter by enabled modules
   const filteredGroups = useMemo(() => roleFilteredGroups
     .map(group => ({
       ...group,
       items: group.items.filter(item => {
-        // Hide search-only items from sidebar (but keep for search)
-        if (item.searchOnly) return false;
-        // Hide setup-only items after site is set up
-        if (item.setupOnly && siteSetupComplete) return false;
-        // If no moduleId, always show
         if (!item.moduleId) return true;
-        // If modules not loaded yet, show all
         if (!modules) return true;
-        // Check if module is enabled and has admin UI active
         const mod = modules[item.moduleId];
         if (!mod?.enabled) return false;
         return mod.adminUI !== false;
       }),
     }))
-    .filter(group => group.items.length > 0), [roleFilteredGroups, modules, siteSetupComplete]);
+    .filter(group => group.items.length > 0), [roleFilteredGroups, modules]);
 
-  // Flatten all items for search (includes searchOnly items)
-  const allSearchItems = useMemo(() => 
-    roleFilteredGroups
-      .map(group => ({
-        ...group,
-        items: group.items.filter(item => {
-          // Hide setup-only items after site is set up
-          if (item.setupOnly && siteSetupComplete) return false;
-          // If no moduleId, always show
-          if (!item.moduleId) return true;
-          // If modules not loaded yet, show all
-          if (!modules) return true;
-          const mod = modules[item.moduleId];
-          if (!mod?.enabled) return false;
-          return mod.adminUI !== false;
-        }),
-      }))
-      .filter(group => group.items.length > 0)
-      .flatMap(group => 
-        group.items.map(item => ({ ...item, group: group.label }))
-      ), [roleFilteredGroups, modules, siteSetupComplete]);
+  // All items for search
+  const allSearchItems = useMemo(() =>
+    filteredGroups.flatMap(group =>
+      group.items.map(item => ({ ...item, group: group.label }))
+    ), [filteredGroups]);
 
   const handleSearchSelect = (href: string) => {
     setSearchOpen(false);
@@ -212,22 +175,14 @@ export function AdminSidebar() {
         <CommandInput placeholder="Search pages..." />
         <CommandList>
           <CommandEmpty>No results found.</CommandEmpty>
-          {roleFilteredGroups
-            .map(group => ({
-              ...group,
-              items: group.items.filter(item => {
-                if (item.setupOnly && siteSetupComplete) return false;
-                if (!item.moduleId) return true;
-                if (!modules) return true;
-                const mod = modules[item.moduleId];
-                if (!mod?.enabled) return false;
-                return mod.adminUI !== false;
-              }),
-            }))
-            .filter(group => group.items.length > 0)
-            .map((group) => (
-            <CommandGroup key={group.label} heading={group.label}>
-              {group.items.map((item) => (
+          {Object.entries(
+            allSearchItems.reduce<Record<string, typeof allSearchItems>>((acc, item) => {
+              (acc[item.group] ??= []).push(item);
+              return acc;
+            }, {})
+          ).map(([groupLabel, items]) => (
+            <CommandGroup key={groupLabel} heading={groupLabel}>
+              {items.map((item) => (
                 <CommandItem
                   key={item.href}
                   onSelect={() => handleSearchSelect(item.href)}

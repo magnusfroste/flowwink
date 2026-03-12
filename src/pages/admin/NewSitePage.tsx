@@ -290,6 +290,7 @@ export default function NewSitePage() {
       kbContent: !!selectedTemplate.kbCategories?.length,
       products: !!selectedTemplate.products?.length,
       modules: !!selectedTemplate.requiredModules?.length,
+      resetObjectives: !!selectedTemplate.flowpilot?.objectives?.length,
       clearMedia: false,
       downloadImages: !!(templateImageInfo && templateImageInfo.uniqueUrls.length > 0),
       publishPages: true,
@@ -615,9 +616,15 @@ export default function NewSitePage() {
       // Step 12: Bootstrap FlowPilot agentic layer with template context
       try {
         setProgress({ currentPage: 1, totalPages: 1, currentStep: 'Bootstrapping FlowPilot...' });
+
+        // Clear existing objectives if requested (avoids duplicates on reinstall)
+        if (opts.resetObjectives) {
+          await supabase.from('agent_objectives').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        }
+
         await supabase.functions.invoke('setup-flowpilot', {
           body: {
-            template_flowpilot: selectedTemplate.flowpilot || {},
+            template_flowpilot: opts.resetObjectives ? (selectedTemplate.flowpilot || {}) : { ...selectedTemplate.flowpilot, objectives: [] },
             template_id: selectedTemplate.id,
             template_name: selectedTemplate.name,
           },

@@ -11,22 +11,7 @@ import {
 } from '@/components/ui/command';
 import { useAuth } from '@/hooks/useAuth';
 import { useModules } from '@/hooks/useModules';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { navigationGroups } from './adminNavigation';
-
-function useSiteSetupComplete() {
-  return useQuery({
-    queryKey: ['site-setup-complete'],
-    queryFn: async () => {
-      const { count } = await supabase
-        .from('pages')
-        .select('id', { count: 'exact', head: true });
-      return (count ?? 0) > 0;
-    },
-    staleTime: 5 * 60 * 1000,
-  });
-}
 
 export function useAdminSearch() {
   const [searchOpen, setSearchOpen] = useState(false);
@@ -54,7 +39,6 @@ export function AdminSearchCommand({ open, onOpenChange }: AdminSearchCommandPro
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
   const { data: modules } = useModules();
-  const { data: siteSetupComplete } = useSiteSetupComplete();
 
   const roleFilteredGroups = navigationGroups.filter(
     (group) => !group.adminOnly || isAdmin
@@ -66,14 +50,13 @@ export function AdminSearchCommand({ open, onOpenChange }: AdminSearchCommandPro
         .map((group) => ({
           ...group,
           items: group.items.filter((item) => {
-            if (item.setupOnly && siteSetupComplete) return false;
             if (!item.moduleId) return true;
             if (!modules) return true;
             return modules[item.moduleId]?.enabled ?? true;
           }),
         }))
         .filter((group) => group.items.length > 0),
-    [roleFilteredGroups, modules, siteSetupComplete]
+    [roleFilteredGroups, modules]
   );
 
   const handleSelect = (href: string) => {

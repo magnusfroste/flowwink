@@ -1,13 +1,13 @@
 import { useState, useMemo } from 'react';
 import { 
-  FileText, 
-  Palette, 
-  MessageSquare, 
-  Settings, 
-  Cookie, 
-  Search, 
-  Newspaper, 
-  BookOpen, 
+  FileText,
+  Palette,
+  MessageSquare,
+  Settings,
+  Cookie,
+  Search,
+  Newspaper,
+  BookOpen,
   Package,
   ArrowRight,
   Check,
@@ -17,7 +17,8 @@ import {
   Download,
   Send,
   ImageIcon,
-  Trash2
+  Trash2,
+  Target,
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -43,6 +44,7 @@ export interface TemplateOverwriteOptions {
   products: boolean;
   modules: boolean;
   // Additional options
+  resetObjectives: boolean;
   clearMedia: boolean;
   downloadImages: boolean;
   publishPages: boolean;
@@ -191,6 +193,7 @@ export function TemplatePreviewDialog({
     products: !!template.products?.length,
     modules: !!template.requiredModules?.length,
     // Additional options
+    resetObjectives: !!template.flowpilot?.objectives?.length,
     clearMedia: false,
     downloadImages: templateImageCount > 0,
     publishPages: true,
@@ -276,6 +279,7 @@ export function TemplatePreviewDialog({
       kbContent: !!template.kbCategories?.length,
       products: !!template.products?.length,
       modules: !!template.requiredModules?.length,
+      resetObjectives: !!template.flowpilot?.objectives?.length,
       clearMedia: false,
       downloadImages: templateImageCount > 0,
       publishPages: true,
@@ -297,6 +301,7 @@ export function TemplatePreviewDialog({
       kbContent: false,
       products: false,
       modules: false,
+      resetObjectives: false,
       clearMedia: false,
       downloadImages: false,
       publishPages: false,
@@ -389,6 +394,19 @@ export function TemplatePreviewDialog({
               onToggle={(v) => updateOption('chatSettings', v)}
               hasExisting={existingContent.hasChatSettings}
             />
+
+            {/* FlowPilot Objectives - only show if template has them */}
+            {template.flowpilot?.objectives?.length ? (
+              <SettingRow
+                icon={<Target className="h-4 w-4" />}
+                label="FlowPilot Objectives"
+                templateValue={`${template.flowpilot.objectives.length} objective${template.flowpilot.objectives.length > 1 ? 's' : ''}`}
+                existingValue="Existing objectives"
+                enabled={options.resetObjectives}
+                onToggle={(v) => updateOption('resetObjectives', v)}
+                hasExisting={true}
+              />
+            ) : null}
 
             {/* Header */}
             <SettingRow
