@@ -28,16 +28,30 @@ function LogoImage({
   size: string;
   variant: string;
 }) {
+  const [failed, setFailed] = useState(false);
+
   const sizeClasses = {
     sm: 'h-8 max-w-[100px]',
     md: 'h-12 max-w-[140px]',
     lg: 'h-16 max-w-[180px]',
   };
 
-  const content = (
+  const content = failed ? (
+    <span
+      className={cn(
+        'font-semibold tracking-tight text-foreground/60 transition-all duration-300',
+        size === 'sm' ? 'text-sm' : size === 'lg' ? 'text-lg' : 'text-base',
+        variant === 'grayscale' && 'opacity-50 hover:opacity-100',
+        url && 'hover:scale-105 inline-block'
+      )}
+    >
+      {name}
+    </span>
+  ) : (
     <img
       src={logo}
       alt={name}
+      onError={() => setFailed(true)}
       className={cn(
         'object-contain transition-all duration-300',
         sizeClasses[size as keyof typeof sizeClasses] || sizeClasses.md,

@@ -81,12 +81,12 @@ const launchpadPages: StarterTemplate['pages'] = [
         data: {
           title: 'Trusted by Industry Leaders',
           logos: [
-            { id: 'l1', name: 'Spotify', logo: 'https://logo.clearbit.com/spotify.com' },
-            { id: 'l2', name: 'Klarna', logo: 'https://logo.clearbit.com/klarna.com' },
-            { id: 'l3', name: 'King', logo: 'https://logo.clearbit.com/king.com' },
-            { id: 'l4', name: 'Truecaller', logo: 'https://logo.clearbit.com/truecaller.com' },
-            { id: 'l5', name: 'iZettle', logo: 'https://logo.clearbit.com/izettle.com' },
-            { id: 'l6', name: 'Mojang', logo: 'https://logo.clearbit.com/mojang.com' },
+            { id: 'l1', name: 'Spotify', logo: 'https://img.logo.dev/spotify.com?token=pk_test' },
+            { id: 'l2', name: 'Klarna', logo: 'https://img.logo.dev/klarna.com?token=pk_test' },
+            { id: 'l3', name: 'King', logo: 'https://img.logo.dev/king.com?token=pk_test' },
+            { id: 'l4', name: 'Truecaller', logo: 'https://img.logo.dev/truecaller.com?token=pk_test' },
+            { id: 'l5', name: 'iZettle', logo: 'https://img.logo.dev/izettle.com?token=pk_test' },
+            { id: 'l6', name: 'Mojang', logo: 'https://img.logo.dev/mojang.com?token=pk_test' },
           ],
           layout: 'scroll',
           variant: 'grayscale',
