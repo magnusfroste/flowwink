@@ -70,6 +70,27 @@ const digitalShopPages: TemplatePage[] = [
         },
       },
 
+      // ── AI Shopping Assistant: hero-integrated ──
+      {
+        id: 'ai-assistant-hero',
+        type: 'ai-assistant',
+        data: {
+          title: 'What are you looking for?',
+          subtitle: 'Ask our AI assistant — it knows every product in our catalog.',
+          placeholder: 'Find templates for my startup pitch deck...',
+          variant: 'minimal',
+          iconStyle: 'search',
+          showBadge: true,
+          badgeText: 'AI-Powered Shopping',
+          suggestedPrompts: [
+            'Best template for a startup?',
+            'Compare your design kits',
+            'What\'s included in Pro?',
+            'Recommend something for beginners',
+          ],
+        },
+      },
+
       // ── Two-column: hero product editorial ──
       {
         id: 'editorial-hero-product',
