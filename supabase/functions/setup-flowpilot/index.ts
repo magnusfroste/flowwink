@@ -859,7 +859,7 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json();
     const { 
-      service_role_key, 
+      service_role_key: body_service_role_key, 
       supabase_url, 
       seed_skills = true, 
       seed_soul = true,
@@ -867,9 +867,12 @@ Deno.serve(async (req) => {
       template_flowpilot,
     } = body;
 
+    // Prefer env var over body param (never require client to send service_role_key)
+    const service_role_key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || body_service_role_key;
+
     if (!service_role_key) {
       return new Response(
-        JSON.stringify({ error: 'service_role_key is required' }),
+        JSON.stringify({ error: 'service_role_key is required — set SUPABASE_SERVICE_ROLE_KEY as an edge function secret' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
