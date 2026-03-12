@@ -201,6 +201,25 @@ const digitalShopPages: TemplatePage[] = [
         },
       },
 
+      // ── AI Assistant: mid-page card ──
+      {
+        id: 'ai-assistant-midpage',
+        type: 'ai-assistant',
+        data: {
+          title: 'Need Help Choosing?',
+          subtitle: 'Our AI shopping expert can recommend the perfect product for your needs.',
+          placeholder: 'Describe what you\'re working on...',
+          variant: 'card',
+          iconStyle: 'shopping',
+          showBadge: false,
+          suggestedPrompts: [
+            'I need a UI kit for a SaaS app',
+            'What course is best for marketing?',
+            'Tell me about the Pro Membership',
+          ],
+        },
+      },
+
       // ── Testimonials ──
       {
         id: 'testimonials-social',
