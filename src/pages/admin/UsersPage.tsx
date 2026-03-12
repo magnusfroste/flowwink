@@ -110,6 +110,7 @@ export default function UsersPage() {
     writer: 'bg-muted text-muted-foreground',
     approver: 'bg-warning/20 text-warning-foreground',
     admin: 'bg-primary/20 text-primary',
+    customer: 'bg-accent text-accent-foreground',
   };
 
   return (

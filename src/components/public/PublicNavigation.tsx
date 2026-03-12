@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { useBranding } from '@/providers/BrandingProvider';
 import { ThemeToggle } from './ThemeToggle';
 import { CartIndicator } from './CartIndicator';
+import { AccountIndicator } from './AccountIndicator';
 import { useHeaderBlock, defaultHeaderData } from '@/hooks/useGlobalBlocks';
 import { useBlogSettings } from '@/hooks/useSiteSettings';
 import type { HeaderNavItem } from '@/types/cms';
@@ -409,12 +410,14 @@ export function PublicNavigation() {
             {/* Custom nav items - with mega menu support */}
             {customNavItems.map((item) => renderNavItem(item))}
             {headerSettings.showThemeToggle !== false && <ThemeToggle />}
+            <AccountIndicator />
             <CartIndicator />
           </nav>
 
           {/* Mobile Menu Button */}
           <div className="flex items-center gap-2 md:hidden">
             {headerSettings.showThemeToggle !== false && <ThemeToggle />}
+            <AccountIndicator />
             <CartIndicator />
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}

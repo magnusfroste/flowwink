@@ -72,6 +72,12 @@ import PricingPage from "./pages/PricingPage";
 import ShopPage from "./pages/ShopPage";
 import ProductDetailPage from "./pages/ProductDetailPage";
 import CartPage from "./pages/CartPage";
+import CustomerAuthPage from "./pages/account/CustomerAuthPage";
+import AccountLayout from "./pages/account/AccountLayout";
+import CustomerOrdersPage from "./pages/account/OrdersPage";
+import AddressesPage from "./pages/account/AddressesPage";
+import WishlistPage from "./pages/account/WishlistPage";
+import CustomerProfilePage from "./pages/account/ProfilePage";
 import DeveloperToolsPage from "./pages/admin/DeveloperToolsPage";
 import WebinarsPage from "./pages/admin/WebinarsPage";
 import SalesIntelligencePage from "./pages/admin/SalesIntelligencePage";
@@ -109,6 +115,17 @@ const router = createBrowserRouter([
   { path: "/shop", element: <ShopPage /> },
   { path: "/shop/:id", element: <ProductDetailPage /> },
   { path: "/cart", element: <CartPage /> },
+  { path: "/account/login", element: <CustomerAuthPage /> },
+  {
+    path: "/account",
+    element: <AccountLayout />,
+    children: [
+      { index: true, element: <CustomerOrdersPage /> },
+      { path: "addresses", element: <AddressesPage /> },
+      { path: "wishlist", element: <WishlistPage /> },
+      { path: "profile", element: <CustomerProfilePage /> },
+    ],
+  },
   { path: "/checkout", element: <CheckoutPage /> },
   { path: "/checkout/success", element: <CheckoutSuccessPage /> },
   // Blog routes

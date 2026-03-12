@@ -18,6 +18,7 @@ interface CheckoutRequest {
   items: CartItem[];
   customerName: string;
   customerEmail: string;
+  userId?: string | null;
   currency: string;
   successUrl: string;
   cancelUrl: string;
@@ -74,6 +75,7 @@ serve(async (req: Request) => {
       items,
       customerName,
       customerEmail,
+      userId,
       currency,
       successUrl,
       cancelUrl,
@@ -213,6 +215,7 @@ serve(async (req: Request) => {
         total_cents: totalCents,
         currency: currency.toUpperCase(),
         status: "pending",
+        user_id: userId || null,
         metadata: { mode, hasRecurring, hasOneTime },
       })
       .select()

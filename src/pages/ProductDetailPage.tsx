@@ -1,6 +1,6 @@
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { ShoppingCart, ArrowLeft, Check } from 'lucide-react';
+import { ShoppingCart, ArrowLeft, Check, Heart } from 'lucide-react';
 import { PublicNavigation } from '@/components/public/PublicNavigation';
 import { PublicFooter } from '@/components/public/PublicFooter';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useProduct, formatPrice } from '@/hooks/useProducts';
 import { useCart } from '@/contexts/CartContext';
+import { useWishlist, useToggleWishlist } from '@/hooks/useCustomerData';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 
@@ -16,8 +18,12 @@ export default function ProductDetailPage() {
   const navigate = useNavigate();
   const { data: product, isLoading } = useProduct(id);
   const { addItem, items } = useCart();
+  const { user } = useAuth();
+  const { data: wishlistItems = [] } = useWishlist();
+  const toggleWishlist = useToggleWishlist();
 
   const isInCart = product ? items.some((i) => i.productId === product.id) : false;
+  const isInWishlist = product ? wishlistItems.some((w) => w.product_id === product.id) : false;
 
   const handleAdd = () => {
     if (!product || isInCart) return;
@@ -143,6 +149,16 @@ export default function ProductDetailPage() {
                 {isInCart && (
                   <Button size="lg" variant="outline" asChild>
                     <Link to="/cart">View cart</Link>
+                  </Button>
+                )}
+                {user && (
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    onClick={() => toggleWishlist.mutate(product.id)}
+                    className={isInWishlist ? 'text-destructive border-destructive/30' : ''}
+                  >
+                    <Heart className={`h-5 w-5 ${isInWishlist ? 'fill-current' : ''}`} />
                   </Button>
                 )}
               </div>

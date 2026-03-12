@@ -1189,6 +1189,57 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_addresses: {
+        Row: {
+          address_line1: string
+          address_line2: string | null
+          city: string
+          country: string
+          created_at: string
+          full_name: string
+          id: string
+          is_default: boolean
+          label: string
+          phone: string | null
+          postal_code: string
+          state: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address_line1: string
+          address_line2?: string | null
+          city: string
+          country?: string
+          created_at?: string
+          full_name: string
+          id?: string
+          is_default?: boolean
+          label?: string
+          phone?: string | null
+          postal_code: string
+          state?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address_line1?: string
+          address_line2?: string | null
+          city?: string
+          country?: string
+          created_at?: string
+          full_name?: string
+          id?: string
+          is_default?: boolean
+          label?: string
+          phone?: string | null
+          postal_code?: string
+          state?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       deal_activities: {
         Row: {
           completed_at: string | null
@@ -1869,6 +1920,7 @@ export type Database = {
           stripe_payment_intent: string | null
           total_cents: number
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           confirmation_sent_at?: string | null
@@ -1883,6 +1935,7 @@ export type Database = {
           stripe_payment_intent?: string | null
           total_cents: number
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           confirmation_sent_at?: string | null
@@ -1897,6 +1950,7 @@ export type Database = {
           stripe_payment_intent?: string | null
           total_cents?: number
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -2517,6 +2571,35 @@ export type Database = {
         }
         Relationships: []
       }
+      wishlist_items: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wishlist_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       profiles_public: {
@@ -2610,7 +2693,7 @@ export type Database = {
         | "search"
         | "analytics"
       agent_type: "flowpilot" | "chat"
-      app_role: "writer" | "approver" | "admin"
+      app_role: "writer" | "approver" | "admin" | "customer"
       automation_trigger_type: "cron" | "event" | "signal"
       deal_stage: "proposal" | "negotiation" | "closed_won" | "closed_lost"
       lead_status: "lead" | "opportunity" | "customer" | "lost"
@@ -2794,7 +2877,7 @@ export const Constants = {
         "analytics",
       ],
       agent_type: ["flowpilot", "chat"],
-      app_role: ["writer", "approver", "admin"],
+      app_role: ["writer", "approver", "admin", "customer"],
       automation_trigger_type: ["cron", "event", "signal"],
       deal_stage: ["proposal", "negotiation", "closed_won", "closed_lost"],
       lead_status: ["lead", "opportunity", "customer", "lost"],
