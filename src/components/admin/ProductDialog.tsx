@@ -45,6 +45,7 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
       type: 'one_time',
       price: '',
       currency: 'SEK',
+      image_url: '',
     },
   });
 
@@ -58,6 +59,7 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
         type: product.type,
         price: (product.price_cents / 100).toString(),
         currency: product.currency,
+        image_url: product.image_url || '',
       });
     } else {
       reset({
@@ -66,6 +68,7 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
         type: 'one_time',
         price: '',
         currency: 'SEK',
+        image_url: '',
       });
     }
   }, [product, reset]);
