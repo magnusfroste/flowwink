@@ -1572,7 +1572,7 @@ async function executeAnalyticsAction(
         }));
 
       // 7. Negative feedback themes
-      const negativeThemes = (negativeFeedback || []).map(f => ({
+      const negativeThemes = (negativeFeedback || []).map((f: any) => ({
         question: f.user_question,
         had_kb_context: (f.context_kb_articles || []).length > 0,
       }));
