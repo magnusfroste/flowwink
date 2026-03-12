@@ -417,6 +417,7 @@ export function PublicNavigation() {
           {/* Mobile Menu Button */}
           <div className="flex items-center gap-2 md:hidden">
             {headerSettings.showThemeToggle !== false && <ThemeToggle />}
+            <AccountIndicator />
             <CartIndicator />
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
