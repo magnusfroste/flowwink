@@ -86,6 +86,7 @@ import type { BentoGridBlockData } from '@/components/public/blocks/BentoGridBlo
 import type { SectionDividerBlockData } from '@/components/public/blocks/SectionDividerBlock';
 import type { FeaturedCarouselBlockData } from '@/components/public/blocks/FeaturedCarouselBlock';
 import type { ChatLauncherBlockData } from '@/components/public/blocks/ChatLauncherBlock';
+import type { AiAssistantBlockData } from '@/components/public/blocks/AiAssistantBlock';
 
 import {
   LayoutGrid,
