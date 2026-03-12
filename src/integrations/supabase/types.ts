@@ -237,6 +237,39 @@ export type Database = {
         }
         Relationships: []
       }
+      agent_skill_packs: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          installed: boolean
+          installed_at: string | null
+          name: string
+          skills: Json
+          version: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          installed?: boolean
+          installed_at?: string | null
+          name: string
+          skills?: Json
+          version?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          installed?: boolean
+          installed_at?: string | null
+          name?: string
+          skills?: Json
+          version?: string
+        }
+        Relationships: []
+      }
       agent_skills: {
         Row: {
           category: Database["public"]["Enums"]["agent_skill_category"]
@@ -278,6 +311,51 @@ export type Database = {
           requires_approval?: boolean
           scope?: Database["public"]["Enums"]["agent_scope"]
           tool_definition?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      agent_workflows: {
+        Row: {
+          created_at: string
+          description: string | null
+          enabled: boolean
+          id: string
+          last_error: string | null
+          last_run_at: string | null
+          name: string
+          run_count: number
+          steps: Json
+          trigger_config: Json | null
+          trigger_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          last_error?: string | null
+          last_run_at?: string | null
+          name: string
+          run_count?: number
+          steps?: Json
+          trigger_config?: Json | null
+          trigger_type?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          last_error?: string | null
+          last_run_at?: string | null
+          name?: string
+          run_count?: number
+          steps?: Json
+          trigger_config?: Json | null
+          trigger_type?: string
           updated_at?: string
         }
         Relationships: []
