@@ -1,7 +1,8 @@
 import { logger } from '@/lib/logger';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '@/contexts/CartContext';
+import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,12 +14,23 @@ import { Loader2, ShoppingBag, ArrowLeft } from 'lucide-react';
 
 export default function CheckoutPage() {
   const { items, totalPriceCents, currency, clearCart } = useCart();
+  const { user, profile } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
   });
+
+  // Auto-fill for logged-in users
+  useEffect(() => {
+    if (user && profile) {
+      setFormData({
+        name: profile.full_name || '',
+        email: user.email || '',
+      });
+    }
+  }, [user, profile]);
 
   const formatPrice = (cents: number) => {
     return new Intl.NumberFormat('en-US', {
