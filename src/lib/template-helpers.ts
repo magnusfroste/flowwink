@@ -465,14 +465,17 @@ export function getTemplateThumbnail(template: StarterTemplate): { type: 'image'
           return { type: 'image', value: data.imageSrc };
         }
         
-        // Check for video (use poster or first frame)
+        // Check for video — prefer poster image, fallback to gradient
         if (data.backgroundType === 'video' && data.videoUrl) {
-          // For videos, we'll use a gradient based on primary color
+          if (data.videoPosterUrl) {
+            return { type: 'image', value: data.videoPosterUrl };
+          }
           const primary = template.branding?.primaryColor || '#6366f1';
           const accent = template.branding?.accentColor || '#8b5cf6';
-          return { 
-            type: 'gradient', 
-            value: `linear-gradient(135deg, ${primary} 0%, ${accent} 100%)` 
+          const toColor = (c: string) => c.startsWith('#') ? c : `hsl(${c})`;
+          return {
+            type: 'gradient',
+            value: `linear-gradient(135deg, ${toColor(primary)} 0%, ${toColor(accent)} 100%)`
           };
         }
       }
@@ -490,9 +493,10 @@ export function getTemplateThumbnail(template: StarterTemplate): { type: 'image'
   // Fallback to gradient based on branding colors
   const primary = template.branding?.primaryColor || '#6366f1';
   const accent = template.branding?.accentColor || '#8b5cf6';
-  return { 
-    type: 'gradient', 
-    value: `linear-gradient(135deg, ${primary} 0%, ${accent} 100%)` 
+  const toColor = (c: string) => c.startsWith('#') ? c : `hsl(${c})`;
+  return {
+    type: 'gradient',
+    value: `linear-gradient(135deg, ${toColor(primary)} 0%, ${toColor(accent)} 100%)`
   };
 }
 

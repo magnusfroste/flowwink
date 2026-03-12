@@ -58,6 +58,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             subtitle: 'FlowPilot is an autonomous AI agent that writes your content, qualifies your leads, runs your campaigns, and learns from every interaction. You set the objectives. It does the rest.',
             backgroundType: 'video',
             videoUrl: 'https://cdn.prod.website-files.com/673761996d53e695f4ec8cb6%2F67b84e27497ac9c515a29519_wassching%20opening-transcode.mp4',
+            videoPosterUrl: 'https://images.pexels.com/photos/3861969/pexels-photo-3861969.jpeg?auto=compress&w=1920',
             heightMode: 'viewport',
             contentAlignment: 'center',
             overlayOpacity: 55,

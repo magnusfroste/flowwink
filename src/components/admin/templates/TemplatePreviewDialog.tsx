@@ -281,6 +281,7 @@ export function TemplatePreviewDialog({
       blogPosts: !!template.blogPosts?.length,
       kbContent: !!template.kbCategories?.length,
       products: !!template.products?.length,
+      consultants: !!template.consultants?.length,
       modules: !!template.requiredModules?.length,
       resetObjectives: !!template.flowpilot?.objectives?.length,
       clearMedia: false,
