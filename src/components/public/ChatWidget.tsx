@@ -30,6 +30,22 @@ const sizeMap = {
 export function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [initialMessage, setInitialMessage] = useState<string | undefined>();
+  const { data: settings, isLoading } = useChatSettings();
+  const { branding } = useBranding();
+
+  // Listen for external open-chat-widget events (from AiAssistantBlock, etc.)
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.message) {
+        setInitialMessage(detail.message);
+      }
+      setIsOpen(true);
+    };
+    window.addEventListener('open-chat-widget', handler);
+    return () => window.removeEventListener('open-chat-widget', handler);
+  }, []);
   const { data: settings, isLoading } = useChatSettings();
   const { branding } = useBranding();
 
