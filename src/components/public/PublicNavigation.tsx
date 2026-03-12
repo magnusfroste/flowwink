@@ -7,6 +7,7 @@ import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 import { useBranding } from '@/providers/BrandingProvider';
 import { ThemeToggle } from './ThemeToggle';
+import { CartIndicator } from './CartIndicator';
 import { useHeaderBlock, defaultHeaderData } from '@/hooks/useGlobalBlocks';
 import { useBlogSettings } from '@/hooks/useSiteSettings';
 import type { HeaderNavItem } from '@/types/cms';
@@ -408,11 +409,13 @@ export function PublicNavigation() {
             {/* Custom nav items - with mega menu support */}
             {customNavItems.map((item) => renderNavItem(item))}
             {headerSettings.showThemeToggle !== false && <ThemeToggle />}
+            <CartIndicator />
           </nav>
 
           {/* Mobile Menu Button */}
           <div className="flex items-center gap-2 md:hidden">
             {headerSettings.showThemeToggle !== false && <ThemeToggle />}
+            <CartIndicator />
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-2 rounded-md hover:bg-muted transition-colors"

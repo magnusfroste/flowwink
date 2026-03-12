@@ -69,6 +69,9 @@ import NotFound from "./pages/NotFound";
 import CheckoutPage from "./pages/CheckoutPage";
 import CheckoutSuccessPage from "./pages/CheckoutSuccessPage";
 import PricingPage from "./pages/PricingPage";
+import ShopPage from "./pages/ShopPage";
+import ProductDetailPage from "./pages/ProductDetailPage";
+import CartPage from "./pages/CartPage";
 import DeveloperToolsPage from "./pages/admin/DeveloperToolsPage";
 import WebinarsPage from "./pages/admin/WebinarsPage";
 import SalesIntelligencePage from "./pages/admin/SalesIntelligencePage";
@@ -103,6 +106,9 @@ const router = createBrowserRouter([
   { path: "/newsletter/confirmed", element: <NewsletterConfirmedPage /> },
   // Checkout and pricing routes
   { path: "/priser", element: <PricingPage /> },
+  { path: "/shop", element: <ShopPage /> },
+  { path: "/shop/:id", element: <ProductDetailPage /> },
+  { path: "/cart", element: <CartPage /> },
   { path: "/checkout", element: <CheckoutPage /> },
   { path: "/checkout/success", element: <CheckoutSuccessPage /> },
   // Blog routes
