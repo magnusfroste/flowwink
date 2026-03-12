@@ -48,7 +48,9 @@ const VALID_BLOCK_TYPES: ContentBlockType[] = [
   // E-commerce blocks
   'featured-product', 'trust-bar', 'category-nav', 'shipping-info',
   // Module-specific
-  'resume-matcher'
+  'resume-matcher',
+  // AI / Conversational commerce
+  'ai-assistant'
 ];
 
 // Required fields per block type
