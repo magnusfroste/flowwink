@@ -104,6 +104,10 @@ export default function ProductsPage() {
             <ProductCategoryManager />
           </TabsContent>
 
+          <TabsContent value="settings" className="mt-6">
+            <StoreSettingsPanel />
+          </TabsContent>
+
           <TabsContent value="products" className="mt-6">
 
       {isLoading ? (
