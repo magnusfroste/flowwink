@@ -1544,13 +1544,13 @@ async function executeAnalyticsAction(
       const uncoveredQuestions: string[] = [];
       for (const q of userQuestions) {
         const qLower = q.toLowerCase();
-        const covered = articleTitles.some(t => {
-          const words = t.split(/\s+/).filter(w => w.length > 3);
-          const matching = words.filter(w => qLower.includes(w));
+        const covered = articleTitles.some((t: string) => {
+          const words = t.split(/\s+/).filter((w: string) => w.length > 3);
+          const matching = words.filter((w: string) => qLower.includes(w));
           return matching.length >= Math.ceil(words.length * 0.5);
-        }) || articleQuestions.some(aq => {
-          const words = aq.split(/\s+/).filter(w => w.length > 3);
-          const matching = words.filter(w => qLower.includes(w));
+        }) || articleQuestions.some((aq: string) => {
+          const words = aq.split(/\s+/).filter((w: string) => w.length > 3);
+          const matching = words.filter((w: string) => qLower.includes(w));
           return matching.length >= Math.ceil(words.length * 0.5);
         });
 
