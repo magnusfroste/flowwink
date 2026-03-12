@@ -447,7 +447,7 @@ export const digitalShopTemplate: StarterTemplate = {
     accentColor: '40 90% 55%',
     headingFont: 'Playfair Display',
     bodyFont: 'Inter',
-    borderRadius: 'xl',
+    borderRadius: 'lg',
     shadowIntensity: 'medium',
   },
   chatSettings: {
