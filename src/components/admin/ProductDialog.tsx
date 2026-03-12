@@ -126,7 +126,22 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
           </div>
 
           <div className="space-y-2">
-            <Label>Type</Label>
+            <Label htmlFor="image_url">Image URL</Label>
+            <Input
+              id="image_url"
+              {...register('image_url')}
+              placeholder="https://example.com/image.jpg"
+              type="url"
+            />
+            {watch('image_url') && (
+              <img
+                src={watch('image_url')}
+                alt="Preview"
+                className="h-16 w-16 rounded-lg object-cover border border-border"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+              />
+            )}
+          </div>
             <Select
               value={productType}
               onValueChange={(value: ProductType) => setValue('type', value)}
