@@ -70,7 +70,7 @@ export function BadgeBlock({ data }: BadgeBlockProps) {
   }
 
   const renderBadge = (badge: BadgeItem) => {
-    const IconComponent = badge.icon ? iconComponents[badge.icon] : Award;
+    const IconComponent = badge.icon && iconComponents[badge.icon as keyof typeof iconComponents] ? iconComponents[badge.icon as keyof typeof iconComponents] : Award;
     
     const content = (
       <>
