@@ -57,6 +57,8 @@ import {
   ResumeMatcherBlock,
   FeaturedProductBlock,
   TrustBarBlock,
+  CategoryNavBlock,
+  ShippingInfoBlock,
 } from './blocks';
 import type { ChatLauncherBlockData } from './blocks/ChatLauncherBlock';
 import type { KbHubBlockData } from './blocks/KbHubBlock';
