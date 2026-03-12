@@ -190,3 +190,42 @@ export const companyCsvColumns: { key: keyof CompanyCsvRow; header: string }[] =
   { key: 'phone', header: 'Phone' },
   { key: 'address', header: 'Address' },
 ];
+
+// Product CSV config
+export interface ProductCsvRow {
+  name: string;
+  description: string | null;
+  price: string | null;
+  currency: string | null;
+  type: string | null;
+  image_url: string | null;
+}
+
+export const productCsvHeaderMap: Record<string, keyof ProductCsvRow> = {
+  'name': 'name',
+  'namn': 'name',
+  'product': 'name',
+  'produkt': 'name',
+  'description': 'description',
+  'beskrivning': 'description',
+  'price': 'price',
+  'pris': 'price',
+  'price_cents': 'price',
+  'currency': 'currency',
+  'valuta': 'currency',
+  'type': 'type',
+  'typ': 'type',
+  'image': 'image_url',
+  'image_url': 'image_url',
+  'bild': 'image_url',
+  'bildlänk': 'image_url',
+};
+
+export const productCsvColumns: { key: keyof ProductCsvRow; header: string }[] = [
+  { key: 'name', header: 'Name' },
+  { key: 'description', header: 'Description' },
+  { key: 'price', header: 'Price' },
+  { key: 'currency', header: 'Currency' },
+  { key: 'type', header: 'Type' },
+  { key: 'image_url', header: 'Image URL' },
+];

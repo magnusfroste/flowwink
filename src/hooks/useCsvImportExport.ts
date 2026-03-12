@@ -9,11 +9,15 @@ import {
   leadCsvColumns,
   companyCsvHeaderMap,
   companyCsvColumns,
+  productCsvHeaderMap,
+  productCsvColumns,
   type LeadCsvRow,
   type CompanyCsvRow,
+  type ProductCsvRow,
 } from '@/lib/csv-utils';
 import type { LeadWithCompany } from '@/hooks/useLeads';
 import type { Company } from '@/hooks/useCompanies';
+import type { Product } from '@/hooks/useProducts';
 
 export function useExportLeads() {
   return async (leads: LeadWithCompany[]) => {
