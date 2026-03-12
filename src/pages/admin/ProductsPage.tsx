@@ -187,6 +187,9 @@ export default function ProductsPage() {
         </div>
       )}
 
+          </TabsContent>
+        </Tabs>
+
       <ProductDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
