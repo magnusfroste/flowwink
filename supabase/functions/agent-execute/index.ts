@@ -1561,8 +1561,8 @@ async function executeAnalyticsAction(
 
       // 6. Identify underperforming articles
       const underperforming = (articles || [])
-        .filter(a => (a.not_helpful_count || 0) > (a.helpful_count || 0) || a.needs_improvement)
-        .map(a => ({
+        .filter((a: any) => (a.not_helpful_count || 0) > (a.helpful_count || 0) || a.needs_improvement)
+        .map((a: any) => ({
           id: a.id,
           title: a.title,
           slug: a.slug,
