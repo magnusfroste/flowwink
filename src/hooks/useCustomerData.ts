@@ -47,16 +47,17 @@ export function useUpsertAddress() {
     mutationFn: async (address: Partial<CustomerAddress> & { id?: string }) => {
       if (!user) throw new Error('Not authenticated');
 
+      const { id, created_at, updated_at, ...fields } = address;
       const payload = {
-        ...address,
+        ...fields,
         user_id: user.id,
       };
 
-      if (address.id) {
+      if (id) {
         const { data, error } = await supabase
           .from('customer_addresses')
           .update(payload)
-          .eq('id', address.id)
+          .eq('id', id)
           .select()
           .single();
         if (error) throw error;
@@ -64,7 +65,7 @@ export function useUpsertAddress() {
       } else {
         const { data, error } = await supabase
           .from('customer_addresses')
-          .insert(payload)
+          .insert([payload as any])
           .select()
           .single();
         if (error) throw error;

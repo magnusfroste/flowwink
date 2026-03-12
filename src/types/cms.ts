@@ -1,4 +1,4 @@
-export type AppRole = 'writer' | 'approver' | 'admin';
+export type AppRole = 'writer' | 'approver' | 'admin' | 'customer';
 
 export type PageStatus = 'draft' | 'reviewing' | 'published' | 'archived';
 
