@@ -1532,13 +1532,13 @@ async function executeAnalyticsAction(
         .gte('created_at', since.toISOString())
         .limit(100);
 
-      const articleTitles = (articles || []).map(a => a.title.toLowerCase());
-      const articleQuestions = (articles || []).map(a => a.question.toLowerCase());
+      const articleTitles = (articles || []).map((a: any) => a.title.toLowerCase());
+      const articleQuestions = (articles || []).map((a: any) => a.question.toLowerCase());
 
       // 4. Extract unique user questions / topics
       const userQuestions = (messages || [])
-        .map(m => m.content.trim())
-        .filter(q => q.length > 10 && q.length < 500 && q.endsWith('?'));
+        .map((m: any) => m.content.trim())
+        .filter((q: any) => q.length > 10 && q.length < 500 && q.endsWith('?'));
 
       // 5. Find questions NOT covered by existing KB
       const uncoveredQuestions: string[] = [];
