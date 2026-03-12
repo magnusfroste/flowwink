@@ -50,13 +50,14 @@ const digitalShopPages: TemplatePage[] = [
           subtitle: 'Premium templates, courses, and tools — crafted for creators who ship fast and look great doing it.',
           backgroundType: 'image',
           backgroundImage: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1920&q=80',
-          heightMode: '85vh',
+          heightMode: '70vh',
           contentAlignment: 'center',
           overlayOpacity: 50,
           titleAnimation: 'slide-up',
           primaryButton: { text: 'Shop Collection', url: '#products-bestsellers' },
           secondaryButton: { text: 'Ask AI Assistant', url: '#ai-assistant-hero' },
         },
+        spacing: { marginBottom: 'lg' },
       },
 
       // 3 ── Stats: instant social proof ──
