@@ -18,8 +18,12 @@ export default function ProductDetailPage() {
   const navigate = useNavigate();
   const { data: product, isLoading } = useProduct(id);
   const { addItem, items } = useCart();
+  const { user } = useAuth();
+  const { data: wishlistItems = [] } = useWishlist();
+  const toggleWishlist = useToggleWishlist();
 
   const isInCart = product ? items.some((i) => i.productId === product.id) : false;
+  const isInWishlist = product ? wishlistItems.some((w) => w.product_id === product.id) : false;
 
   const handleAdd = () => {
     if (!product || isInCart) return;
