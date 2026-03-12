@@ -70,7 +70,6 @@ import {
   AlertTriangle,
   FileUser,
   ShieldCheck,
-  LayoutGrid,
   Truck,
 } from 'lucide-react';
 import { ContentBlockType } from '@/types/cms';
