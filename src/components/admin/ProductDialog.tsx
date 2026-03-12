@@ -31,6 +31,7 @@ interface FormData {
   type: ProductType;
   price: string;
   currency: string;
+  image_url: string;
 }
 
 export function ProductDialog({ open, onOpenChange, product }: ProductDialogProps) {
