@@ -111,7 +111,7 @@ serve(async (req) => {
     const { apiKey, apiUrl, model } = await resolveAiConfig(supabase);
 
     // 3. Load tools — include planning + automation execution
-    const builtInTools = getBuiltInTools(['memory', 'objectives', 'reflect', 'planning', 'automations-exec', 'workflows', 'a2a']);
+    const builtInTools = getBuiltInTools(['memory', 'objectives', 'self-mod', 'reflect', 'soul', 'planning', 'automations-exec', 'workflows', 'a2a', 'skill-packs']);
     const skillTools = await loadSkillTools(supabase, 'internal');
     const allTools = [...builtInTools, ...skillTools];
 
