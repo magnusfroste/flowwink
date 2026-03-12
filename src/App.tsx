@@ -106,6 +106,9 @@ const router = createBrowserRouter([
   { path: "/newsletter/confirmed", element: <NewsletterConfirmedPage /> },
   // Checkout and pricing routes
   { path: "/priser", element: <PricingPage /> },
+  { path: "/shop", element: <ShopPage /> },
+  { path: "/shop/:id", element: <ProductDetailPage /> },
+  { path: "/cart", element: <CartPage /> },
   { path: "/checkout", element: <CheckoutPage /> },
   { path: "/checkout/success", element: <CheckoutSuccessPage /> },
   // Blog routes
