@@ -115,6 +115,17 @@ const router = createBrowserRouter([
   { path: "/shop", element: <ShopPage /> },
   { path: "/shop/:id", element: <ProductDetailPage /> },
   { path: "/cart", element: <CartPage /> },
+  { path: "/account/login", element: <CustomerAuthPage /> },
+  {
+    path: "/account",
+    element: <AccountLayout />,
+    children: [
+      { index: true, element: <CustomerOrdersPage /> },
+      { path: "addresses", element: <AddressesPage /> },
+      { path: "wishlist", element: <WishlistPage /> },
+      { path: "profile", element: <CustomerProfilePage /> },
+    ],
+  },
   { path: "/checkout", element: <CheckoutPage /> },
   { path: "/checkout/success", element: <CheckoutSuccessPage /> },
   // Blog routes
