@@ -12,6 +12,7 @@ import { Bold, Italic, List, ListOrdered, ArrowLeftRight, Pin, Heading1, Heading
 import { ImageUploader } from '../ImageUploader';
 import { AITiptapToolbar } from '../AITiptapToolbar';
 import { renderToHtml, getEditorContent as getEditorContentFromUtils } from '@/lib/tiptap-utils';
+import { TwoColumnBlock } from '@/components/public/blocks/TwoColumnBlock';
 
 interface TwoColumnBlockEditorProps {
   data: TwoColumnBlockData;
@@ -420,7 +421,12 @@ export function TwoColumnBlockEditor({ data, isEditing, onChange }: TwoColumnBlo
     );
   }
 
-  // Preview mode - match public TwoColumnBlock layout
+  // Preview mode — use the public block for text-text layouts, custom preview for image+text
+  const isTextTextLayout = !!(data.leftColumn || data.rightColumn);
+  if (isTextTextLayout) {
+    return <TwoColumnBlock data={data} />;
+  }
+
   const imageFirst = data.imagePosition === 'left';
   const htmlContent = renderToHtml(data.content);
   const hasHeader = data.eyebrow || data.title;

@@ -517,6 +517,12 @@ export interface TwoColumnBlockData {
   secondImageAlt?: string;
   // Background
   backgroundColor?: string;
+  // Text-Text layout (alternative to image+text)
+  leftColumn?: RichTextContent;
+  rightColumn?: RichTextContent;
+  layout?: '50-50' | '60-40' | '40-60';
+  // Note/caption below image
+  note?: string;
 }
 
 export interface InfoBoxBlockData {
