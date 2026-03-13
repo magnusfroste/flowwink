@@ -919,10 +919,10 @@ export const consultAgencyTemplate: StarterTemplate = {
   headerSettings: {
     variant: 'clean',
     stickyHeader: true,
-    backgroundStyle: 'solid',
+    backgroundStyle: 'blur',
     headerShadow: 'sm',
     showBorder: false,
-    headerHeight: 'default',
+    headerHeight: 'tall',
     linkColorScheme: 'default',
   },
 
