@@ -17,7 +17,7 @@ import { cn } from '@/lib/utils';
 import { useSeoSettings, useMaintenanceSettings, useGeneralSettings } from '@/hooks/useSiteSettings';
 import { Button } from '@/components/ui/button';
 import { useEffect, useState } from 'react';
-import type { Page, ContentBlock } from '@/types/cms';
+import type { Page, ContentBlock, SectionBackground } from '@/types/cms';
 import { usePageViewTracker } from '@/hooks/usePageViewTracker';
 import { useAnchorScroll } from '@/hooks/useAnchorScroll';
 
