@@ -49,17 +49,15 @@ export function useMediaLibraryCount() {
   const { data: count, isLoading } = useQuery({
     queryKey: ['media-library-count'],
     queryFn: async () => {
-      const [pagesResult, importsResult, templatesResult] = await Promise.all([
-        supabase.storage.from('cms-images').list('pages'),
-        supabase.storage.from('cms-images').list('imports'),
-        supabase.storage.from('cms-images').list('templates'),
-      ]);
+      const folders = ['pages', 'imports', 'templates', 'uploads'];
+      const results = await Promise.all(
+        folders.map(folder => supabase.storage.from('cms-images').list(folder))
+      );
 
-      const pagesCount = pagesResult.data?.length || 0;
-      const importsCount = importsResult.data?.length || 0;
-      const templatesCount = templatesResult.data?.length || 0;
-      
-      return pagesCount + importsCount + templatesCount;
+      return results.reduce((total, result) => {
+        const files = (result.data || []).filter(f => f.name !== '.emptyFolderPlaceholder');
+        return total + files.length;
+      }, 0);
     },
   });
 
