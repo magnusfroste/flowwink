@@ -1340,6 +1340,11 @@ async function executeDbAction(
       })).sort((a, b) => b.views - a.views).slice(0, 10);
 
       return { period, total_views: totalViews, unique_pages: uniqueSlugs.length, top_pages: topPages };
+    }
+
+    default:
+      return { error: `Unknown db table: ${table}` };
+  }
 }
 
 // =============================================================================
