@@ -118,7 +118,7 @@ const securehealthPages: StarterTemplate['pages'] = [
     slug: 'resources',
     menu_order: 4,
     showInMenu: true,
-    meta: { description: 'Helpful resources and frequently asked questions', showTitle: true, titleAlignment: 'center' },
+    meta: { description: 'Helpful resources and frequently asked questions', showTitle: false, titleAlignment: 'center' },
     blocks: [
       { id: 'hero-1', type: 'hero', data: { title: 'Patient Resources', subtitle: 'Everything you need to know about your care', backgroundType: 'color', heightMode: 'auto', contentAlignment: 'center', overlayOpacity: 0 } },
       { id: 'chat-1', type: 'chat-launcher', data: { title: 'Private AI Health Assistant', subtitle: 'HIPAA-compliant — all conversations stay private', placeholder: 'Ask about appointments, services, or health information...', showQuickActions: true, quickActionCount: 4, variant: 'card' } },
