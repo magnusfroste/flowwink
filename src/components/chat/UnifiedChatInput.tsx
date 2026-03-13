@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback, KeyboardEvent } from 'react';
-import { ArrowUp, X, Paperclip, FileText, Loader2 } from 'lucide-react';
+import { ArrowUp, X, Paperclip, FileText, Loader2, Mic, MicOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { CommandPalette } from './CommandPalette';
@@ -64,6 +64,7 @@ interface UnifiedChatInputProps {
   disabled?: boolean;
   skills: AgentSkill[];
   scope: 'admin' | 'visitor';
+  allowVoice?: boolean;
 }
 
 export function UnifiedChatInput({
@@ -75,14 +76,17 @@ export function UnifiedChatInput({
   disabled,
   skills,
   scope,
+  allowVoice = true,
 }: UnifiedChatInputProps) {
   const [value, setValue] = useState('');
   const [showPalette, setShowPalette] = useState(false);
   const [commandFilter, setCommandFilter] = useState('');
   const [attachedFile, setAttachedFile] = useState<AttachedFile | null>(null);
   const [isReadingFile, setIsReadingFile] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const recognitionRef = useRef<any>(null);
   const { toast } = useToast();
 
   // Auto-resize textarea
@@ -177,6 +181,36 @@ export function UnifiedChatInput({
     }
   };
 
+  const startVoice = useCallback(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = navigator.language || 'sv-SE';
+    recognitionRef.current = recognition;
+
+    recognition.onresult = (event: any) => {
+      const transcript = Array.from(event.results)
+        .map((r: any) => r[0].transcript)
+        .join('');
+      setValue(transcript);
+    };
+
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = () => setIsListening(false);
+
+    recognition.start();
+    setIsListening(true);
+  }, [isListening]);
+
   return (
     <div className="relative border-t bg-background">
       {/* Command palette */}
@@ -236,6 +270,19 @@ export function UnifiedChatInput({
                 />
               </>
             )}
+            {allowVoice && ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition) ? (
+              <Button
+                variant="ghost"
+                size="icon"
+                type="button"
+                onClick={startVoice}
+                disabled={isLoading || disabled}
+                className={cn('h-9 w-9 rounded-full', isListening && 'text-red-500 bg-red-50 dark:bg-red-950')}
+                title={isListening ? 'Stop recording' : 'Voice input'}
+              >
+                {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+              </Button>
+            ) : null}
           </div>
 
           {/* Textarea */}

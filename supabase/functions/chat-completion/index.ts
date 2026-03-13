@@ -57,6 +57,8 @@ interface ChatRequest {
   settings?: ChatSettings;
   customerEmail?: string;
   customerName?: string;
+  mode?: string;
+  checkinId?: string;
 }
 
 // Tool definitions for function calling
@@ -119,6 +121,23 @@ const AVAILABLE_TOOLS = {
           }
         },
         required: ["summary", "priority"]
+      }
+    }
+  },
+  save_kb_article: {
+    type: "function",
+    function: {
+      name: "save_kb_article",
+      description: "Save the updated consultant profile to the knowledge base. Call this when you have gathered enough information (at least 3 exchanges) about the consultant's latest project, skills, and availability.",
+      parameters: {
+        type: "object",
+        properties: {
+          summary: {
+            type: "string",
+            description: "A comprehensive plain-text summary of the consultant's profile including: name, role/title, skills and tech stack, latest project description, what went well, challenges, and current availability."
+          }
+        },
+        required: ["summary"]
       }
     }
   }
@@ -364,12 +383,13 @@ async function loadAgentSkillTools(supabase: any): Promise<{tools: any[], skillM
 
 // Execute tool calls — handles built-in tools + agent skills via agent-execute
 async function executeToolCall(
-  toolName: string, 
+  toolName: string,
   args: Record<string, any>,
   conversationId: string | undefined,
   customerEmail: string | undefined,
   customerName: string | undefined,
   agentSkillNames?: Map<string, string>,
+  checkinId?: string,
 ): Promise<string> {
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -479,6 +499,25 @@ async function executeToolCall(
       }
     }
 
+    case 'save_kb_article': {
+      if (!checkinId || !args.summary) return 'Missing checkin context or summary.';
+      try {
+        const supabaseClient = createClient(supabaseUrl, supabaseKey);
+        const { error } = await supabaseClient
+          .from('kb_articles')
+          .update({
+            answer_text: args.summary,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', checkinId);
+        if (error) throw error;
+        return 'Profile updated successfully in the knowledge base.';
+      } catch (err) {
+        console.error('save_kb_article error:', err);
+        return `Failed to save profile: ${err instanceof Error ? err.message : 'Unknown error'}`;
+      }
+    }
+
     default:
       return `Unknown tool: ${toolName}`;
   }
@@ -506,7 +545,7 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, conversationId, sessionId, settings, customerEmail, customerName } = await req.json() as ChatRequest;
+    const { messages, conversationId, sessionId, settings, customerEmail, customerName, mode, checkinId } = await req.json() as ChatRequest;
     
     console.log('Chat request received:', { 
       messageCount: messages.length, 
@@ -606,11 +645,41 @@ serve(async (req) => {
       systemPrompt += buildSentimentPrompt(settings?.sentimentThreshold || 7);
     }
 
+    // Check-in mode: fetch consultant profile and build interview system prompt
+    const isCheckinMode = mode === 'checkin' && !!checkinId;
+    if (isCheckinMode) {
+      const { data: kbArticle } = await supabase
+        .from('kb_articles')
+        .select('title, question, answer_text')
+        .eq('id', checkinId)
+        .maybeSingle();
+
+      const consultantName = kbArticle?.title || 'consultant';
+      const existingProfile = kbArticle?.answer_text || 'No existing profile information.';
+
+      systemPrompt = `You are FlowPilot, conducting a friendly professional check-in interview with ${consultantName}.
+
+Your goal is to update their knowledge base profile by asking conversational questions. Keep it natural and brief — this is a quick check-in, not a formal interview.
+
+Current profile:
+${existingProfile}
+
+Ask about (one at a time, conversationally):
+1. Their most recent project or assignment (what, where, duration, tech stack)
+2. What went particularly well
+3. Any interesting challenges
+4. Current availability
+
+After 3–5 exchanges when you have enough information, call the save_kb_article tool with a comprehensive updated profile summary. Then confirm to the consultant that their profile has been updated.
+
+IMPORTANT: Always respond in the same language the consultant writes in.`;
+    }
+
     // Build tools array based on settings
     const tools: any[] = [];
     let agentSkillNames = new Map<string, string>(); // tool function name -> skill name
     // OpenAI always supports tool calling; local providers support it if explicitly enabled (e.g., vLLM/Qwen3)
-    const toolCallingSupported = aiProvider === 'openai' || 
+    const toolCallingSupported = aiProvider === 'openai' ||
       (aiProvider === 'local' && settings?.localSupportsToolCalling);
     
     console.log('Tool calling check:', {
@@ -622,6 +691,11 @@ serve(async (req) => {
       firecrawlIntegrationEnabled: aiIntegrations?.firecrawl?.enabled,
     });
     
+    // Always add save_kb_article in check-in mode (requires tool calling support)
+    if (isCheckinMode && toolCallingSupported) {
+      tools.push(AVAILABLE_TOOLS.save_kb_article);
+    }
+
     if (settings?.toolCallingEnabled && toolCallingSupported) {
       if (settings?.firecrawlSearchEnabled && aiIntegrations?.firecrawl?.enabled) {
         console.log('Adding firecrawl_search tool');
@@ -822,12 +896,13 @@ When the user asks about a specific website, use firecrawl_search with the websi
             try {
               const args = JSON.parse(tc.function.arguments);
               const result = await executeToolCall(
-                tc.function.name, 
-                args, 
+                tc.function.name,
+                args,
                 conversationId,
                 customerEmail,
                 customerName,
                 agentSkillNames,
+                checkinId,
               );
               
               toolResults.push({
@@ -1114,12 +1189,13 @@ When the user asks about a specific website, use firecrawl_search with the websi
             try {
               const args = JSON.parse(tc.function.arguments);
               const result = await executeToolCall(
-                tc.function.name, 
-                args, 
+                tc.function.name,
+                args,
                 conversationId,
                 customerEmail,
                 customerName,
                 agentSkillNames,
+                checkinId,
               );
               
               localToolResults.push({

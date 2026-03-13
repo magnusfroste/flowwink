@@ -17,10 +17,11 @@ interface ChatConversationProps {
   skipRestore?: boolean;
   initialMessage?: string;
   onInitialMessageSent?: () => void;
+  checkinId?: string;
 }
 
-export function ChatConversation({ 
-  mode = 'block', 
+export function ChatConversation({
+  mode = 'block',
   className,
   conversationId,
   onNewConversation,
@@ -29,6 +30,7 @@ export function ChatConversation({
   skipRestore = false,
   initialMessage,
   onInitialMessageSent,
+  checkinId,
 }: ChatConversationProps) {
   const initialMessageSentRef = useRef(false);
   const { data: settings } = useChatSettings();
@@ -42,7 +44,7 @@ export function ChatConversation({
     agentInfo,
     sendMessage,
     cancelRequest,
-  } = useChat({ conversationId, onNewConversation, skipRestore });
+  } = useChat({ conversationId, onNewConversation, skipRestore, checkinId });
 
   // Load visitor-scoped skills for @-commands
   useEffect(() => {
@@ -98,12 +100,16 @@ export function ChatConversation({
           cancelRequest,
         }}
         visitorSettings={{
-          title: settings?.title,
-          welcomeMessage: settings?.welcomeMessage,
-          suggestedPrompts,
-          placeholder: settings?.placeholder,
+          title: checkinId ? 'Profile Check-in' : settings?.title,
+          welcomeMessage: checkinId
+            ? 'Hi! I\'m FlowPilot. Tell me about your latest project and I\'ll update your profile. You can also use voice input 🎙️'
+            : settings?.welcomeMessage,
+          suggestedPrompts: checkinId
+            ? ['Tell me about my latest project', 'I want to update my availability', 'What information do you need?']
+            : suggestedPrompts,
+          placeholder: checkinId ? 'Tell me about your latest project...' : settings?.placeholder,
           enabled: settings?.enabled,
-          feedbackEnabled: settings?.feedbackEnabled ?? true,
+          feedbackEnabled: checkinId ? false : (settings?.feedbackEnabled ?? true),
         }}
         conversationId={conversationId}
         compact={compact}

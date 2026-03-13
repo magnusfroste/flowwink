@@ -20,6 +20,8 @@ interface Conversation {
 export default function ChatPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const checkinId = searchParams.get('mode') === 'checkin' ? (searchParams.get('id') ?? undefined) : undefined;
   const { data: settings, isLoading: settingsLoading } = useChatSettings();
   const { user } = useAuth();
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -33,10 +35,10 @@ export default function ChatPage() {
 
   // Check if landing page is enabled
   useEffect(() => {
-    if (!settingsLoading && !settings?.landingPageEnabled) {
+    if (!checkinId && !settingsLoading && !settings?.landingPageEnabled) {
       navigate('/');
     }
-  }, [settings, settingsLoading, navigate]);
+  }, [settings, settingsLoading, navigate, checkinId]);
 
   const loadConversations = useCallback(async () => {
     const sessionId = localStorage.getItem('chat-session-id');
@@ -91,14 +93,18 @@ export default function ChatPage() {
     }
   };
 
-  if (settingsLoading || !settings?.enabled || !settings?.landingPageEnabled) {
-    return null;
-  }
+  if (!checkinId && (settingsLoading || !settings?.enabled || !settings?.landingPageEnabled)) return null;
+  if (settingsLoading) return null;
 
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden">
       <PublicNavigation />
-      
+      {checkinId && (
+        <div className="bg-primary/5 border-b px-4 py-2 text-sm text-center text-muted-foreground">
+          ✦ Check-in mode — FlowPilot will update your profile
+        </div>
+      )}
+
       <main className="flex-1 flex min-h-0">
         {/* Sidebar */}
         <aside className={cn(
@@ -161,9 +167,9 @@ export default function ChatPage() {
             initialMessage={!initialMessageProcessed.current ? initialMessage : undefined}
             onInitialMessageSent={() => {
               initialMessageProcessed.current = true;
-              // Clear the location state so refreshing doesn't resend
               navigate(location.pathname, { replace: true, state: {} });
             }}
+            checkinId={checkinId}
           />
         </div>
       </main>

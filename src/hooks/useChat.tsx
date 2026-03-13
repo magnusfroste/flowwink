@@ -22,6 +22,7 @@ interface UseChatOptions {
   conversationId?: string;
   onNewConversation?: (id: string) => void;
   skipRestore?: boolean;
+  checkinId?: string;
 }
 
 const CONVERSATION_STORAGE_KEY = 'chat-conversation-id';
@@ -411,6 +412,7 @@ export function useChat(options?: UseChatOptions) {
             })),
             conversationId: convId,
             sessionId: getSessionId(),
+            ...(options?.checkinId && { mode: 'checkin', checkinId: options.checkinId }),
           settings: {
               aiProvider: settings?.aiProvider || 'openai',
               // Only send if actually configured (not empty string) - let edge function use Integration config
