@@ -41,49 +41,9 @@ export function BookingBlockEditor({ data, onChange, isEditing }: BookingBlockEd
     updateData({ services: (data.services || []).filter((s) => s.id !== id) });
   };
 
-  // Preview for non-editing mode
+  // Preview for non-editing mode — render the actual public block
   if (!isEditing) {
-    return (
-      <div className="flex flex-col items-center justify-center p-6 bg-muted/30 rounded-lg border-2 border-dashed border-muted-foreground/30">
-        <Calendar className="h-10 w-10 text-muted-foreground/50 mb-3" />
-        <h3 className="font-medium text-lg">{data.title || 'Booking Widget'}</h3>
-        <p className="text-sm text-muted-foreground mt-1 text-center">
-          {data.mode === 'embed' ? (
-            <>
-              {data.provider === 'calendly' && 'Calendly embed'}
-              {data.provider === 'cal' && 'Cal.com embed'}
-              {data.provider === 'hubspot' && 'HubSpot embed'}
-              {data.provider === 'custom' && 'Custom iframe embed'}
-            </>
-          ) : data.mode === 'smart' ? (
-            <>
-              <span className="flex items-center justify-center gap-1">
-                <Sparkles className="h-3 w-3" /> Smart booking with real availability
-              </span>
-              {data.triggerWebhook && (
-                <span className="flex items-center justify-center gap-1 text-xs text-primary mt-1">
-                  <Webhook className="h-3 w-3" /> Webhook enabled
-                </span>
-              )}
-            </>
-          ) : (
-            <>
-              Booking form
-              {data.services && data.services.length > 0 && (
-                <span className="block text-xs mt-1">
-                  {data.services.length} service{data.services.length > 1 ? 's' : ''} configured
-                </span>
-              )}
-              {data.triggerWebhook && (
-                <span className="flex items-center justify-center gap-1 text-xs text-primary mt-1">
-                  <Webhook className="h-3 w-3" /> Webhook enabled
-                </span>
-              )}
-            </>
-          )}
-        </p>
-      </div>
-    );
+    return <BookingBlock data={data} blockId="preview" pageId="" />;
   }
 
   return (
