@@ -14,6 +14,98 @@ export type Database = {
   }
   public: {
     Tables: {
+      a2a_activity: {
+        Row: {
+          created_at: string
+          direction: Database["public"]["Enums"]["a2a_direction"]
+          duration_ms: number | null
+          error_message: string | null
+          id: string
+          input: Json | null
+          output: Json | null
+          peer_id: string
+          skill_name: string | null
+          status: Database["public"]["Enums"]["a2a_activity_status"]
+        }
+        Insert: {
+          created_at?: string
+          direction: Database["public"]["Enums"]["a2a_direction"]
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          input?: Json | null
+          output?: Json | null
+          peer_id: string
+          skill_name?: string | null
+          status?: Database["public"]["Enums"]["a2a_activity_status"]
+        }
+        Update: {
+          created_at?: string
+          direction?: Database["public"]["Enums"]["a2a_direction"]
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          input?: Json | null
+          output?: Json | null
+          peer_id?: string
+          skill_name?: string | null
+          status?: Database["public"]["Enums"]["a2a_activity_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "a2a_activity_peer_id_fkey"
+            columns: ["peer_id"]
+            isOneToOne: false
+            referencedRelation: "a2a_peers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      a2a_peers: {
+        Row: {
+          capabilities: Json
+          created_at: string
+          created_by: string | null
+          id: string
+          inbound_token_hash: string | null
+          last_seen_at: string | null
+          name: string
+          outbound_token: string
+          request_count: number
+          status: Database["public"]["Enums"]["a2a_peer_status"]
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          capabilities?: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          inbound_token_hash?: string | null
+          last_seen_at?: string | null
+          name: string
+          outbound_token?: string
+          request_count?: number
+          status?: Database["public"]["Enums"]["a2a_peer_status"]
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          capabilities?: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          inbound_token_hash?: string | null
+          last_seen_at?: string | null
+          name?: string
+          outbound_token?: string
+          request_count?: number
+          status?: Database["public"]["Enums"]["a2a_peer_status"]
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
       agent_activity: {
         Row: {
           agent: Database["public"]["Enums"]["agent_type"]
@@ -2723,6 +2815,9 @@ export type Database = {
       }
     }
     Enums: {
+      a2a_activity_status: "success" | "error" | "pending"
+      a2a_direction: "inbound" | "outbound"
+      a2a_peer_status: "active" | "paused" | "revoked"
       agent_activity_status:
         | "success"
         | "failed"
@@ -2905,6 +3000,9 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      a2a_activity_status: ["success", "error", "pending"],
+      a2a_direction: ["inbound", "outbound"],
+      a2a_peer_status: ["active", "paused", "revoked"],
       agent_activity_status: [
         "success",
         "failed",
