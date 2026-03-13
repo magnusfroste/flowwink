@@ -132,9 +132,21 @@ export default function PreviewPage() {
           </div>
         )}
         
-        {(previewData.content_json || []).map((block, index) => (
-          <BlockRenderer key={block.id} block={block} pageId={previewData.id} index={index} />
-        ))}
+        {(() => {
+          const FULL_BLEED = new Set(['hero', 'parallax-section', 'announcement-bar', 'map', 'marquee', 'header', 'footer', 'popup', 'notification-toast', 'floating-cta', 'chat-launcher', 'section-divider', 'featured-carousel']);
+          let contentIndex = 0;
+          return (previewData.content_json || []).map((block, index) => {
+            const isFullBleed = FULL_BLEED.has(block.type);
+            let resolvedBg: import('@/types/cms').SectionBackground | undefined;
+            if (!isFullBleed && !block.sectionBackground) {
+              resolvedBg = contentIndex % 2 === 1 ? 'muted' : 'none';
+              contentIndex++;
+            } else if (!isFullBleed) {
+              contentIndex++;
+            }
+            return <BlockRenderer key={block.id} block={block} pageId={previewData.id} index={index} resolvedBackground={resolvedBg} />;
+          });
+        })()}
       </main>
 
       <PublicFooter />
