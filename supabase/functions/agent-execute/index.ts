@@ -1651,7 +1651,7 @@ async function executeA2ARequest(
   const { data: peer, error: peerError } = await supabase
     .from('a2a_peers')
     .select('*')
-    .eq('name', peerName)
+    .ilike('name', peerName)
     .eq('status', 'active')
     .single();
 
