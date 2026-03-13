@@ -357,15 +357,28 @@ export default function PublicPage() {
               </div>
             </div>
           ) : pageData.content_json?.length > 0 ? (
-            pageData.content_json.map((block, index) => {
-              try {
-                return <BlockRenderer key={block.id} block={block} pageId={pageData.id} index={index} />;
-              } catch (err) {
-                logger.error('[PublicPage] Error rendering block:', block.type, err);
-                setRenderError(err as Error);
-                return null;
-              }
-            })
+            (() => {
+              // Auto-alternate backgrounds for non-full-bleed blocks
+              const FULL_BLEED = new Set(['hero', 'parallax-section', 'announcement-bar', 'map', 'marquee', 'header', 'footer', 'popup', 'notification-toast', 'floating-cta', 'chat-launcher', 'section-divider', 'featured-carousel']);
+              let contentIndex = 0;
+              return pageData.content_json.map((block, index) => {
+                try {
+                  const isFullBleed = FULL_BLEED.has(block.type);
+                  let resolvedBg: SectionBackground | undefined;
+                  if (!isFullBleed && !block.sectionBackground) {
+                    resolvedBg = contentIndex % 2 === 1 ? 'muted' : 'none';
+                    contentIndex++;
+                  } else if (!isFullBleed) {
+                    contentIndex++;
+                  }
+                  return <BlockRenderer key={block.id} block={block} pageId={pageData.id} index={index} resolvedBackground={resolvedBg} />;
+                } catch (err) {
+                  logger.error('[PublicPage] Error rendering block:', block.type, err);
+                  setRenderError(err as Error);
+                  return null;
+                }
+              });
+            })()
           ) : (
             <div className="py-16 px-6">
               <div className="container mx-auto max-w-3xl text-center text-muted-foreground">
