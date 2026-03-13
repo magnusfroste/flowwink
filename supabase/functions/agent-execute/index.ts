@@ -1680,18 +1680,33 @@ async function executeA2ARequest(
   const startTime = Date.now();
 
   try {
-    // Send request to peer's a2a-ingest endpoint
+    // Determine peer endpoint and body format from capabilities
     const peerUrl = peer.url.replace(/\/$/, '');
-    const response = await fetch(`${peerUrl}/functions/v1/a2a-ingest`, {
+    const caps = peer.capabilities as Record<string, unknown> || {};
+    const endpoint = (caps.endpoint as string) || '/functions/v1/a2a-negotiate';
+    const protocol = (caps.protocol as string) || 'a2a-negotiate';
+
+    // Build request body based on peer's protocol
+    let requestBody: Record<string, unknown>;
+    if (protocol === 'a2a-negotiate') {
+      // Standard A2A negotiate protocol: { type: "task", skill_id, input }
+      requestBody = {
+        type: 'task',
+        skill_id: skill,
+        input: skillArgs,
+      };
+    } else {
+      // Legacy/FlowWink protocol
+      requestBody = { skill, arguments: skillArgs };
+    }
+
+    const response = await fetch(`${peerUrl}${endpoint}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${peer.outbound_token}`,
       },
-      body: JSON.stringify({
-        skill,
-        arguments: skillArgs,
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     const result = await response.json();
