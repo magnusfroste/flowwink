@@ -955,7 +955,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             title: 'Resources',
             links: [
               { id: 'link-docs', icon: 'BookOpen', title: 'Documentation', description: 'Architecture & API reference', url: '/docs' },
-              { id: 'link-github', icon: 'Github', title: 'GitHub', description: 'Source code & issues', url: 'https://github.com/flowwink/flowwink' },
+              { id: 'link-github', icon: 'Github', title: 'GitHub', description: 'Source code & issues', url: 'https://github.com/magnusfroste/flowwink' },
               { id: 'link-discord', icon: 'MessageCircle', title: 'Community', description: 'Discord support', url: 'https://discord.gg/flowwink' },
               { id: 'link-selfhost', icon: 'Server', title: 'Self-Hosting', description: 'Docker deployment guide', url: '/docs/self-hosting' },
             ],
