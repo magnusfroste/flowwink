@@ -1266,7 +1266,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
     },
   ],
   branding: {
-    logo: 'https://rzhjotxffjfsdlhrdkpj.supabase.co/storage/v1/object/public/cms-images/template-logos/flowwink.png',
+    logo: '',
     organizationName: 'FlowWink',
     brandTagline: 'The Autonomous Agentic CMS',
     primaryColor: '162 63% 41%',
