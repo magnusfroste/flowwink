@@ -693,6 +693,7 @@ export const serviceProTemplate: StarterTemplate = {
   blogPosts: serviceProBlogPosts,
   products: serviceProProducts,
   branding: {
+    logo: 'https://rzhjotxffjfsdlhrdkpj.supabase.co/storage/v1/object/public/cms-images/template-logos/servicepro.png',
     organizationName: 'ServicePro',
     brandTagline: 'Professional Services You Can Trust',
     primaryColor: '220 70% 50%',
