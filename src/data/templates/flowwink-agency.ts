@@ -391,7 +391,7 @@ const flowwinkAgencyPages: TemplatePage[] = [
     showInMenu: true,
     meta: {
       description: 'Learn how FlowWink works for agencies. From deployment to client handoff in 5 minutes.',
-      showTitle: true,
+      showTitle: false,
       titleAlignment: 'center',
     },
     blocks: [
