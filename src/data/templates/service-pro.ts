@@ -497,7 +497,7 @@ const serviceProPages: TemplatePage[] = [
     showInMenu: true,
     meta: {
       description: 'Learn about our team and mission',
-      showTitle: true,
+      showTitle: false,
       titleAlignment: 'center',
     },
     blocks: [
