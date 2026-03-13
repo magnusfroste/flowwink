@@ -104,19 +104,125 @@ const withPageFallback = (element: JSX.Element) => (
 );
 
 
-// Layout wrapper that provides router context to CartSidebar
-function RootLayout({ children }: { children: React.ReactNode }) {
+// Layout that renders CartSidebar inside router context
+function AppLayout() {
   return (
     <>
       <CartSidebar />
-      {children}
+      <Outlet />
     </>
   );
 }
 
 const router = createBrowserRouter([
-  { path: "/", element: <RootLayout><PublicPage /></RootLayout> },
-  { path: "/auth", element: <AuthPage /> },
+  {
+    element: <AppLayout />,
+    children: [
+      { path: "/", element: <PublicPage /> },
+      { path: "/auth", element: <AuthPage /> },
+      { path: "/chat", element: <ChatPage /> },
+      { path: "/newsletter/manage", element: <NewsletterManagePage /> },
+      { path: "/newsletter/confirmed", element: <NewsletterConfirmedPage /> },
+      { path: "/priser", element: <PricingPage /> },
+      { path: "/shop", element: <ShopPage /> },
+      { path: "/shop/:id", element: <ProductDetailPage /> },
+      { path: "/cart", element: <CartPage /> },
+      { path: "/account/login", element: <CustomerAuthPage /> },
+      {
+        path: "/account",
+        element: <AccountLayout />,
+        children: [
+          { index: true, element: <CustomerOrdersPage /> },
+          { path: "addresses", element: <AddressesPage /> },
+          { path: "wishlist", element: <WishlistPage /> },
+          { path: "profile", element: <CustomerProfilePage /> },
+        ],
+      },
+      { path: "/checkout", element: <CheckoutPage /> },
+      { path: "/checkout/success", element: <CheckoutSuccessPage /> },
+      { path: "/blogg", element: <BlogArchivePage /> },
+      { path: "/blogg/kategori/:slug", element: <BlogCategoryPage /> },
+      { path: "/blogg/tagg/:slug", element: <BlogTagPage /> },
+      { path: "/blogg/:slug", element: <BlogPostPage /> },
+      { path: "/admin", element: <AdminDashboard /> },
+      { path: "/admin/analytics", element: <AnalyticsDashboardPage /> },
+      { path: "/admin/pages", element: <PagesListPage /> },
+      { path: "/admin/pages/new", element: <NewPagePage /> },
+      { path: "/admin/pages/trash", element: <TrashPage /> },
+      { path: "/admin/pages/:id", element: <PageEditorPage /> },
+      { path: "/admin/blog", element: <BlogPostsPage /> },
+      { path: "/admin/blog/new", element: <BlogPostEditorPage /> },
+      { path: "/admin/blog/categories", element: <BlogCategoriesPage /> },
+      { path: "/admin/blog/tags", element: <BlogTagsPage /> },
+      { path: "/admin/blog/settings", element: <BlogSettingsPage /> },
+      { path: "/admin/blog/:id", element: <BlogPostEditorPage /> },
+      { path: "/admin/media", element: <MediaLibraryPage /> },
+      { path: "/admin/users", element: <UsersPage /> },
+      { path: "/admin/settings", element: <SiteSettingsPage /> },
+      { path: "/admin/profile", element: <ProfilePage /> },
+      { path: "/admin/branding", element: <BrandingSettingsPage /> },
+      { path: "/admin/menu-order", element: <MenuOrderPage /> },
+      { path: "/admin/chat", element: <ChatSettingsPage /> },
+      { path: "/admin/content-api", element: <ContentApiPage /> },
+      { path: "/admin/campaigns", element: <ContentCampaignsPage /> },
+      { path: "/admin/quick-start", element: <QuickStartPage /> },
+      { path: "/admin/new-site", element: <NewSitePage /> },
+      { path: "/admin/templates", element: withPageFallback(<TemplateGalleryPage />) },
+      { path: "/admin/global-blocks", element: <GlobalBlocksPage /> },
+      { path: "/admin/forms", element: <FormSubmissionsPage /> },
+      { path: "/admin/newsletter", element: <NewsletterPage /> },
+      { path: "/admin/contacts", element: <LeadsPage /> },
+      { path: "/admin/contacts/:id", element: <LeadDetailPage /> },
+      { path: "/admin/deals", element: <DealsPage /> },
+      { path: "/admin/deals/:id", element: <DealDetailPage /> },
+      { path: "/admin/companies", element: <CompaniesPage /> },
+      { path: "/admin/companies/:id", element: <CompanyDetailPage /> },
+      { path: "/admin/products", element: <ProductsPage /> },
+      { path: "/admin/orders", element: <OrdersPage /> },
+      { path: "/admin/bookings", element: <BookingsPage /> },
+      { path: "/admin/bookings/services", element: <BookingServicesPage /> },
+      { path: "/admin/bookings/availability", element: <BookingAvailabilityPage /> },
+      { path: "/admin/modules", element: <ModulesPage /> },
+      { path: "/admin/integrations", element: <IntegrationsStatusPage /> },
+      { path: "/admin/webhooks", element: <WebhooksPage /> },
+      { path: "/admin/knowledge-base", element: <KnowledgeBaseAdminPage /> },
+      { path: "/admin/knowledge-base/new", element: <KbArticleEditorPage /> },
+      { path: "/admin/knowledge-base/:id", element: <KbArticleEditorPage /> },
+      { path: "/admin/copilot", element: <CopilotPage /> },
+      { path: "/admin/skills", element: withPageFallback(<SkillHubPage />) },
+      { path: "/admin/live-support", element: <LiveSupportPage /> },
+      { path: "/admin/template-export", element: <TemplateExportPage /> },
+      { path: "/admin/developer-tools", element: <DeveloperToolsPage /> },
+      { path: "/admin/webinars", element: <WebinarsPage /> },
+      { path: "/admin/sales-intelligence", element: <SalesIntelligencePage /> },
+      { path: "/admin/resume", element: <ConsultantProfilesPage /> },
+      { path: "/preview/:id", element: <PreviewPage /> },
+      { path: "/:slug", element: <PublicPage /> },
+    ],
+  },
+]);
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <HelmetProvider>
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+        <AuthProvider>
+          <BrandingProvider>
+            <CartProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <RouterProvider router={router} />
+              </TooltipProvider>
+            </CartProvider>
+          </BrandingProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </HelmetProvider>
+  </QueryClientProvider>
+);
+
+export default App;
   { path: "/chat", element: <ChatPage /> },
   // KB routes are now handled dynamically in PublicPage based on kbSettings.menuSlug
   { path: "/newsletter/manage", element: <NewsletterManagePage /> },
