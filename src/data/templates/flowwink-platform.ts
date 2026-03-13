@@ -1001,7 +1001,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             contentAlignment: 'center',
             overlayOpacity: 0,
             primaryButton: { text: 'See It Operate', url: '/demo' },
-            secondaryButton: { text: 'Self-Host Free', url: 'https://github.com/flowwink/flowwink' },
+            secondaryButton: { text: 'Self-Host Free', url: 'https://github.com/magnusfroste/flowwink' },
           },
         },
         {
