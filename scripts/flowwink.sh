@@ -236,7 +236,9 @@ cmd_update_funcs() {
     fi
 
     local functions total
-    functions=$(find "$functions_dir" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | grep -v "^_" | sort)
+    functions=$(find "$functions_dir" -mindepth 1 -maxdepth 1 -type d | while read -r dir; do
+        [ -f "$dir/index.ts" ] && basename "$dir"
+    done | sort)
     total=$(echo "$functions" | wc -l | tr -d ' ')
 
     echo -e "  ${DIM}Project: ${PROJECT_NAME}${NC}"
