@@ -361,7 +361,15 @@ export default function PublicPage() {
               // Auto-alternate backgrounds for non-full-bleed blocks
               const FULL_BLEED = new Set(['hero', 'parallax-section', 'announcement-bar', 'map', 'marquee', 'header', 'footer', 'popup', 'notification-toast', 'floating-cta', 'chat-launcher', 'section-divider', 'featured-carousel']);
               // Blocks that have their own visual background/styling — skip auto-bg to avoid "box on box"
-              const SELF_STYLED = new Set(['cta', 'newsletter', 'pricing', 'form', 'booking', 'smart-booking', 'comparison', 'bento-grid', 'social-proof', 'badge', 'kb-search', 'kb-hub', 'kb-featured', 'kb-accordion', 'separator']);
+              const SELF_STYLED = new Set([
+                'cta', 'newsletter', 'pricing', 'form', 'booking', 'smart-booking',
+                'comparison', 'bento-grid', 'social-proof', 'badge', 'separator',
+                'kb-search', 'kb-hub', 'kb-featured', 'kb-accordion',
+                // Card/container blocks that render their own framing
+                'features', 'stats', 'testimonials', 'team', 'tabs', 'accordion',
+                'timeline', 'resume-matcher', 'quick-links', 'two-column', 'logos',
+                'table', 'countdown', 'products', 'cart', 'webinar', 'article-grid',
+              ]);
               let contentIndex = 0;
               return pageData.content_json.map((block, index) => {
                 try {
