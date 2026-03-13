@@ -1,7 +1,4 @@
 
--- Enable pgcrypto for gen_random_bytes
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
-
 -- A2A Federation enums
 DO $$ BEGIN
   CREATE TYPE public.a2a_peer_status AS ENUM ('active', 'paused', 'revoked');
@@ -18,7 +15,7 @@ CREATE TABLE IF NOT EXISTS public.a2a_peers (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   name text NOT NULL,
   url text NOT NULL,
-  outbound_token text NOT NULL DEFAULT encode(gen_random_bytes(32), 'hex'),
+  outbound_token text NOT NULL DEFAULT encode(extensions.gen_random_bytes(32), 'hex'),
   inbound_token_hash text,
   status a2a_peer_status NOT NULL DEFAULT 'active',
   capabilities jsonb NOT NULL DEFAULT '[]'::jsonb,
