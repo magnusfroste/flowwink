@@ -224,6 +224,7 @@ export const helpCenterTemplate: StarterTemplate = {
   kbCategories: hybridHelpCategories,
   requiredModules: ['knowledgeBase', 'chat', 'forms', 'bookings'],
   branding: {
+    logo: 'https://rzhjotxffjfsdlhrdkpj.supabase.co/storage/v1/object/public/cms-images/template-logos/helpcenter.png',
     organizationName: 'Help Center',
     brandTagline: 'Answers made easy',
     primaryColor: '220 70% 50%',

@@ -662,6 +662,7 @@ export const digitalShopTemplate: StarterTemplate = {
   blogPosts: digitalShopBlogPosts,
   products: digitalShopProducts,
   branding: {
+    logo: 'https://rzhjotxffjfsdlhrdkpj.supabase.co/storage/v1/object/public/cms-images/template-logos/digitalshop.png',
     organizationName: 'Digital Shop',
     brandTagline: 'Curated Digital Products',
     primaryColor: '220 50% 20%',

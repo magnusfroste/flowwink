@@ -583,6 +583,7 @@ export const trustcorpTemplate: StarterTemplate = {
   kbCategories: trustcorpKbCategories,
   requiredModules: ['knowledgeBase', 'chat', 'forms', 'leads'],
   branding: {
+    logo: 'https://rzhjotxffjfsdlhrdkpj.supabase.co/storage/v1/object/public/cms-images/template-logos/trustcorp.png',
     organizationName: 'TrustCorp',
     brandTagline: 'Enterprise Excellence',
     primaryColor: '220 70% 35%',

@@ -256,6 +256,7 @@ export const momentumTemplate: StarterTemplate = {
   pages: momentumPages,
   requiredModules: ['forms', 'leads'],
   branding: {
+    logo: 'https://rzhjotxffjfsdlhrdkpj.supabase.co/storage/v1/object/public/cms-images/template-logos/momentum.png',
     organizationName: 'Momentum',
     brandTagline: 'Build the Future',
     primaryColor: '250 91% 64%',

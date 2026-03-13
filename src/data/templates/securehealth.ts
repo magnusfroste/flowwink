@@ -353,6 +353,7 @@ export const securehealthTemplate: StarterTemplate = {
   kbCategories: securehealthKbCategories,
   requiredModules: ['blog', 'knowledgeBase', 'chat', 'forms', 'bookings'],
   branding: {
+    logo: 'https://rzhjotxffjfsdlhrdkpj.supabase.co/storage/v1/object/public/cms-images/template-logos/securehealth.png',
     organizationName: 'SecureHealth',
     brandTagline: 'Your Health, Your Privacy',
     primaryColor: '199 89% 35%',

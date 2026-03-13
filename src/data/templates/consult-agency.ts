@@ -890,6 +890,7 @@ export const consultAgencyTemplate: StarterTemplate = {
   ],
 
   branding: {
+    logo: 'https://rzhjotxffjfsdlhrdkpj.supabase.co/storage/v1/object/public/cms-images/template-logos/consultagency.png',
     organizationName: 'ConsultAgency',
     brandTagline: 'The right consultant. Every time.',
     primaryColor: '238 84% 67%',       // Indigo — professional, modern

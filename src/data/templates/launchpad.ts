@@ -791,6 +791,7 @@ export const launchpadTemplate: StarterTemplate = {
   kbCategories: launchpadKbCategories,
   requiredModules: ['blog', 'knowledgeBase', 'chat', 'newsletter', 'leads', 'forms'],
   branding: {
+    logo: 'https://rzhjotxffjfsdlhrdkpj.supabase.co/storage/v1/object/public/cms-images/template-logos/launchpad.png',
     organizationName: 'LaunchPad',
     brandTagline: 'Launch Your Vision',
     primaryColor: '250 84% 54%',

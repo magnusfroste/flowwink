@@ -770,6 +770,7 @@ export const flowwinkAgencyTemplate: StarterTemplate = {
   kbCategories: agencyKbCategories,
   requiredModules: ['chat', 'blog', 'newsletter', 'forms', 'knowledgeBase'],
   branding: {
+    logo: 'https://rzhjotxffjfsdlhrdkpj.supabase.co/storage/v1/object/public/cms-images/template-logos/flowwink.png',
     organizationName: 'FlowWink Agency',
     brandTagline: 'One Platform. Unlimited Clients.',
     primaryColor: '262 80% 50%',
