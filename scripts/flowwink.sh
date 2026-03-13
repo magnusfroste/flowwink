@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # FlowWink CLI
 # Interactive command-line interface for FlowWink setup and management
@@ -550,6 +550,73 @@ cmd_install() {
     [[ "$keys" =~ ^[Yy]$ ]] && cmd_set_keys
 }
 
+# ─── Tab completion (requires bash 4+) ───
+
+FW_COMMANDS=(
+    "/login" "/link" "/install"
+    "/update-db" "/update-funcs" "/set-keys" "/create-admin"
+    "/env" "/status" "/about" "/help" "/quit"
+)
+
+_fw_complete() {
+    local cur="$READLINE_LINE"
+    local matches=()
+
+    for cmd in "${FW_COMMANDS[@]}"; do
+        [[ "$cmd" == "$cur"* ]] && matches+=("$cmd")
+    done
+
+    local count=${#matches[@]}
+
+    if [ "$count" -eq 0 ]; then
+        return
+    elif [ "$count" -eq 1 ]; then
+        # Complete the single match
+        READLINE_LINE="${matches[0]}"
+        READLINE_POINT=${#READLINE_LINE}
+    else
+        # Advance to the longest common prefix first
+        local prefix="${matches[0]}"
+        for m in "${matches[@]:1}"; do
+            while [[ "$m" != "$prefix"* ]]; do
+                prefix="${prefix%?}"
+            done
+        done
+        if [ "${#prefix}" -gt "${#cur}" ]; then
+            READLINE_LINE="$prefix"
+            READLINE_POINT=${#prefix}
+        fi
+        # Print matches below the current line
+        echo
+        for cmd in "${matches[@]}"; do
+            printf "  \033[0;36m%-20s\033[0m" "$cmd"
+        done
+        echo; echo
+    fi
+}
+
+_fw_slash_hint() {
+    # Insert the / character at cursor position
+    READLINE_LINE="${READLINE_LINE:0:$READLINE_POINT}/${READLINE_LINE:$READLINE_POINT}"
+    READLINE_POINT=$((READLINE_POINT + 1))
+    # If / is the first character typed, show the full command list as a hint
+    if [ "$READLINE_POINT" -eq 1 ]; then
+        echo
+        printf "  \033[2m"
+        for cmd in "${FW_COMMANDS[@]}"; do
+            printf "%-20s" "$cmd"
+        done
+        printf "\033[0m"
+        echo; echo
+    fi
+}
+
+# Only bind if bash 4+ (bind -x not supported on macOS default bash 3.2)
+if [ "${BASH_VERSINFO[0]}" -ge 4 ]; then
+    bind -x '"\t":_fw_complete'   2>/dev/null
+    bind -x '"/":_fw_slash_hint'  2>/dev/null
+fi
+
 # ─── Prerequisites ───
 
 if ! command -v supabase &>/dev/null; then
@@ -582,7 +649,12 @@ else
 fi
 
 echo ""
-echo -e "  Type ${CYAN}/help${NC} for commands  ·  ${CYAN}/quit${NC} to exit"
+if [ "${BASH_VERSINFO[0]}" -ge 4 ]; then
+    echo -e "  Type ${CYAN}/${NC} or press ${CYAN}Tab${NC} for suggestions  ·  ${CYAN}/quit${NC} to exit"
+else
+    echo -e "  Type ${CYAN}/help${NC} for commands  ·  ${CYAN}/quit${NC} to exit"
+    echo -e "  ${DIM}(Tab completion requires bash 4+: brew install bash)${NC}"
+fi
 echo ""
 
 # ─── REPL ───
