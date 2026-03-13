@@ -104,8 +104,18 @@ const withPageFallback = (element: JSX.Element) => (
 );
 
 
+// Layout wrapper that provides router context to CartSidebar
+function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <>
+      <CartSidebar />
+      {children}
+    </>
+  );
+}
+
 const router = createBrowserRouter([
-  { path: "/", element: <PublicPage /> },
+  { path: "/", element: <RootLayout><PublicPage /></RootLayout> },
   { path: "/auth", element: <AuthPage /> },
   { path: "/chat", element: <ChatPage /> },
   // KB routes are now handled dynamically in PublicPage based on kbSettings.menuSlug
