@@ -66,6 +66,14 @@ function applyBrandingToDocument(branding: BrandingSettings) {
   }
   if (branding.secondaryColor) {
     root.style.setProperty('--secondary', branding.secondaryColor);
+    // Auto-derive contrasting foreground for secondary
+    const parts = branding.secondaryColor.split(/\s+/);
+    const lightness = parseFloat(parts[2] || '50');
+    if (lightness < 40) {
+      root.style.setProperty('--secondary-foreground', '0 0% 98%');
+    } else {
+      root.style.setProperty('--secondary-foreground', '0 0% 9%');
+    }
   }
   if (branding.accentColor) {
     root.style.setProperty('--accent', branding.accentColor);
