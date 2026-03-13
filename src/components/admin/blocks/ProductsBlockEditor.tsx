@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { ShoppingBag } from 'lucide-react';
 import { useProducts } from '@/hooks/useProducts';
+import { ProductsBlock } from '@/components/public/blocks/ProductsBlock';
 import type { ProductsBlockData } from '@/components/public/blocks/ProductsBlock';
 
 interface ProductsBlockEditorProps {
@@ -24,15 +25,7 @@ export function ProductsBlockEditor({ data, onChange, isEditing }: ProductsBlock
 
   // Preview for non-editing mode
   if (!isEditing) {
-    return (
-      <div className="p-6 text-center border-2 border-dashed rounded-lg bg-muted/30">
-        <ShoppingBag className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-        <h3 className="font-medium text-lg">{data.title || 'Products'}</h3>
-        <p className="text-sm text-muted-foreground mt-1">
-          {activeProductsCount} active product{activeProductsCount !== 1 ? 's' : ''}
-        </p>
-      </div>
-    );
+    return <ProductsBlock data={data} />;
   }
 
   return (

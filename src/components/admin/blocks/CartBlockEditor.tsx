@@ -3,6 +3,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { ShoppingCart } from 'lucide-react';
+import { CartBlock } from '@/components/public/blocks/CartBlock';
 import type { CartBlockData } from '@/components/public/blocks/CartBlock';
 
 interface CartBlockEditorProps {
@@ -18,15 +19,7 @@ export function CartBlockEditor({ data, onChange, isEditing }: CartBlockEditorPr
 
   // Preview for non-editing mode
   if (!isEditing) {
-    return (
-      <div className="p-6 text-center border-2 border-dashed rounded-lg bg-muted/30">
-        <ShoppingCart className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-        <h3 className="font-medium text-lg">{data.title || 'Shopping Cart'}</h3>
-        <p className="text-sm text-muted-foreground mt-1">
-          Displays the visitor's shopping cart
-        </p>
-      </div>
-    );
+    return <CartBlock data={data} />;
   }
 
   return (
