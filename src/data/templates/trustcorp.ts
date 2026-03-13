@@ -391,7 +391,7 @@ const trustcorpPages: StarterTemplate['pages'] = [
     slug: 'contact',
     menu_order: 5,
     showInMenu: true,
-    meta: { description: 'Connect with our enterprise team', showTitle: true, titleAlignment: 'center' },
+    meta: { description: 'Connect with our enterprise team', showTitle: false, titleAlignment: 'center' },
     blocks: [
       { id: 'hero-1', type: 'hero', data: { title: 'Contact Our Team', subtitle: 'Let\'s discuss how we can help your organization', backgroundType: 'color', heightMode: 'auto', contentAlignment: 'center', overlayOpacity: 0 } },
       { id: 'chat-1', type: 'chat-launcher', data: { title: 'Private Enterprise Assistant', subtitle: 'All conversations are processed on your infrastructure', placeholder: 'Ask about our enterprise solutions...', showQuickActions: true, quickActionCount: 4, variant: 'card' } },
