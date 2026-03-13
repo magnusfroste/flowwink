@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminPageContainer } from "@/components/admin/AdminPageContainer";
 import { Input } from "@/components/ui/input";
@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { STARTER_TEMPLATES, StarterTemplate } from "@/data/templates";
 import { TemplatePreview } from "@/components/admin/templates/TemplatePreview";
 import { TemplateVisualCard } from "@/components/admin/templates/TemplateVisualCard";
+import { InstallTemplateDialog } from "@/components/admin/templates/InstallTemplateDialog";
 import { 
   Search, 
   ArrowLeft,
@@ -15,15 +16,14 @@ import {
 } from "lucide-react";
 
 export default function TemplateGalleryPage() {
-  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [previewTemplate, setPreviewTemplate] = useState<StarterTemplate | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [installTemplate, setInstallTemplate] = useState<StarterTemplate | null>(null);
+  const [installOpen, setInstallOpen] = useState(false);
 
-  // Simple search filter only
   const filteredTemplates = useMemo(() => {
     if (!searchQuery) return STARTER_TEMPLATES;
-    
     const search = searchQuery.toLowerCase();
     return STARTER_TEMPLATES.filter((template) => 
       template.name.toLowerCase().includes(search) ||
@@ -38,7 +38,8 @@ export default function TemplateGalleryPage() {
   };
 
   const handleSelect = (template: StarterTemplate) => {
-    navigate('/admin/new-site', { state: { selectedTemplate: template } });
+    setInstallTemplate(template);
+    setInstallOpen(true);
   };
 
   return (
@@ -68,7 +69,7 @@ export default function TemplateGalleryPage() {
           </div>
         </div>
 
-        {/* Template grid - 2 columns, large visual cards */}
+        {/* Template grid */}
         {filteredTemplates.length === 0 ? (
           <div className="text-center py-16">
             <p className="text-muted-foreground mb-4">No templates match your search</p>
@@ -110,6 +111,13 @@ export default function TemplateGalleryPage() {
         open={previewOpen}
         onOpenChange={setPreviewOpen}
         onSelect={handleSelect}
+      />
+
+      {/* Install dialog */}
+      <InstallTemplateDialog
+        template={installTemplate}
+        open={installOpen}
+        onOpenChange={setInstallOpen}
       />
     </AdminLayout>
   );
