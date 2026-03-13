@@ -65,23 +65,30 @@ export function useCreateA2APeer() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (input: { name: string; url: string; inbound_token_hash?: string }) => {
-      // Hash the inbound token if provided (simple approach - in production use crypto.subtle)
+    mutationFn: async (input: { name: string; url: string; outbound_token?: string; inbound_token?: string }) => {
+      // Hash the inbound token if provided (token peer sends TO us)
       let hashedToken: string | null = null;
-      if (input.inbound_token_hash) {
+      if (input.inbound_token) {
         const encoder = new TextEncoder();
-        const data = encoder.encode(input.inbound_token_hash);
+        const data = encoder.encode(input.inbound_token);
         const hashBuffer = await crypto.subtle.digest('SHA-256', data);
         hashedToken = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
       }
 
+      const insertData: Record<string, unknown> = {
+        name: input.name,
+        url: input.url.replace(/\/$/, ''),
+        inbound_token_hash: hashedToken,
+      };
+
+      // If user provides the peer's API key, use it as outbound token
+      if (input.outbound_token) {
+        insertData.outbound_token = input.outbound_token;
+      }
+
       const { data, error } = await supabase
         .from('a2a_peers' as any)
-        .insert({
-          name: input.name,
-          url: input.url.replace(/\/$/, ''),
-          inbound_token_hash: hashedToken,
-        })
+        .insert(insertData)
         .select()
         .single();
 

@@ -44,7 +44,8 @@ export default function FederationPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [newPeerName, setNewPeerName] = useState('');
   const [newPeerUrl, setNewPeerUrl] = useState('');
-  const [newPeerToken, setNewPeerToken] = useState('');
+  const [newPeerOutboundToken, setNewPeerOutboundToken] = useState('');
+  const [newPeerInboundToken, setNewPeerInboundToken] = useState('');
   const [showToken, setShowToken] = useState<string | null>(null);
   const [copiedToken, setCopiedToken] = useState(false);
 
@@ -54,15 +55,19 @@ export default function FederationPage() {
     const result = await createPeer.mutateAsync({
       name: newPeerName,
       url: newPeerUrl,
-      inbound_token_hash: newPeerToken || undefined,
+      outbound_token: newPeerOutboundToken || undefined,
+      inbound_token: newPeerInboundToken || undefined,
     });
 
     if (result) {
-      setShowToken(result.outbound_token);
+      if (!newPeerOutboundToken) {
+        setShowToken(result.outbound_token);
+      }
       setDialogOpen(false);
       setNewPeerName('');
       setNewPeerUrl('');
-      setNewPeerToken('');
+      setNewPeerOutboundToken('');
+      setNewPeerInboundToken('');
     }
   };
 
@@ -216,14 +221,25 @@ export default function FederationPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Their Token (optional)</Label>
+                  <Label>Their API Key (optional)</Label>
                   <Input
-                    placeholder="Paste the token they gave you"
-                    value={newPeerToken}
-                    onChange={e => setNewPeerToken(e.target.value)}
+                    placeholder="Paste the peer's API key / token"
+                    value={newPeerOutboundToken}
+                    onChange={e => setNewPeerOutboundToken(e.target.value)}
                   />
                   <p className="text-xs text-muted-foreground">
-                    If the peer has already generated a token for you, paste it here.
+                    The token we send to authenticate with them. If left empty, one is auto-generated.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Our Token for Them (optional)</Label>
+                  <Input
+                    placeholder="Token they'll use to call us"
+                    value={newPeerInboundToken}
+                    onChange={e => setNewPeerInboundToken(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    If the peer needs to send requests to us, paste their inbound token here.
                   </p>
                 </div>
               </div>
