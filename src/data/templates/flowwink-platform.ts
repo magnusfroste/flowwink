@@ -65,7 +65,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             titleAnimation: 'slide-up',
             showScrollIndicator: true,
             primaryButton: { text: 'Watch It Work', url: '/demo' },
-            secondaryButton: { text: 'Self-Host Free', url: 'https://github.com/flowwink/flowwink' },
+            secondaryButton: { text: 'Self-Host Free', url: 'https://github.com/magnusfroste/flowwink' },
           },
         },
         // CHAT LAUNCHER — Talk to FlowPilot
