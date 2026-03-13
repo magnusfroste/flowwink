@@ -553,7 +553,7 @@ export const orderModuleInputSchema = z.object({
     quantity: z.number().min(1).default(1),
     price_cents: z.number().min(0),
   })).min(1),
-  currency: z.string().length(3).default('SEK'),
+  currency: z.string().length(3).default('USD'),
   stripe_checkout_id: z.string().optional(),
   stripe_payment_intent: z.string().optional(),
   meta: moduleMetaSchema.optional(),

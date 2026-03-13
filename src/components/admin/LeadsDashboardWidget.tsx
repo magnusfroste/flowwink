@@ -52,7 +52,7 @@ export function LeadsDashboardWidget() {
             <p className="text-lg font-bold text-green-500">
               {isLoading ? '-' : stats?.customers || 0}
             </p>
-            <p className="text-xs text-muted-foreground">Kunder</p>
+            <p className="text-xs text-muted-foreground">Customers</p>
           </div>
         </div>
 

@@ -50,8 +50,8 @@ function getRandomTimestamp(): string {
 
 function getRandomLocation(): string {
   const locations = [
-    'Stockholm', 'Göteborg', 'Malmö', 'Uppsala', 'Linköping',
     'New York', 'London', 'Paris', 'Berlin', 'Tokyo',
+    'Sydney', 'Toronto', 'Amsterdam', 'Singapore', 'Barcelona',
   ];
   return locations[Math.floor(Math.random() * locations.length)];
 }

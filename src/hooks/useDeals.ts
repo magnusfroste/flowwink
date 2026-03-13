@@ -82,7 +82,7 @@ export function useCreateDeal() {
         .insert({
           ...deal,
           stage: deal.stage || 'proposal',
-          currency: deal.currency || 'SEK',
+          currency: deal.currency || 'USD',
         })
         .select('*, product:products(*)')
         .single();

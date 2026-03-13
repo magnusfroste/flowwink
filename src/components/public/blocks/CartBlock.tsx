@@ -153,7 +153,7 @@ export function CartBlock({ data }: CartBlockProps) {
               {data.showContinueShopping !== false && (
                 <Link to={data.continueShoppingUrl || '/'} className="flex-1">
                   <Button variant="outline" className="w-full">
-                    Fortsätt handla
+                    Continue shopping
                   </Button>
                 </Link>
               )}

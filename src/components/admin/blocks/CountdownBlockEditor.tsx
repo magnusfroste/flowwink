@@ -74,7 +74,7 @@ export function CountdownBlockEditor({ data, onChange, isEditing }: CountdownBlo
       {/* Basic Settings */}
       <div className="grid gap-4">
         <div className="grid gap-2">
-          <Label htmlFor="title">Rubrik (valfri)</Label>
+          <Label htmlFor="title">Title (optional)</Label>
           <Input
             id="title"
             value={data.title || ''}
@@ -84,7 +84,7 @@ export function CountdownBlockEditor({ data, onChange, isEditing }: CountdownBlo
         </div>
 
         <div className="grid gap-2">
-          <Label htmlFor="subtitle">Underrubrik (valfri)</Label>
+          <Label htmlFor="subtitle">Subtitle (optional)</Label>
           <Input
             id="subtitle"
             value={data.subtitle || ''}
@@ -94,7 +94,7 @@ export function CountdownBlockEditor({ data, onChange, isEditing }: CountdownBlo
         </div>
 
         <div className="grid gap-2">
-          <Label htmlFor="targetDate">Måldatum och tid *</Label>
+          <Label htmlFor="targetDate">Target date and time *</Label>
           <Input
             id="targetDate"
             type="datetime-local"
@@ -106,7 +106,7 @@ export function CountdownBlockEditor({ data, onChange, isEditing }: CountdownBlo
         </div>
 
         <div className="grid gap-2">
-          <Label htmlFor="expiredMessage">Meddelande när tiden gått ut</Label>
+          <Label htmlFor="expiredMessage">Message when countdown ends</Label>
           <Input
             id="expiredMessage"
             value={data.expiredMessage || ''}
@@ -150,9 +150,9 @@ export function CountdownBlockEditor({ data, onChange, isEditing }: CountdownBlo
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="sm">Liten</SelectItem>
+              <SelectItem value="sm">Small</SelectItem>
               <SelectItem value="md">Medium</SelectItem>
-              <SelectItem value="lg">Stor</SelectItem>
+              <SelectItem value="lg">Large</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -160,45 +160,45 @@ export function CountdownBlockEditor({ data, onChange, isEditing }: CountdownBlo
 
       {/* Unit Toggles */}
       <div className="space-y-3">
-        <Label className="text-base font-medium">Visa enheter</Label>
+        <Label className="text-base font-medium">Show units</Label>
         <div className="grid grid-cols-2 gap-4">
           <div className="flex items-center gap-2">
             <Switch
               checked={data.showDays !== false}
               onCheckedChange={(checked) => onChange({ ...data, showDays: checked })}
             />
-            <Label>Dagar</Label>
+            <Label>Days</Label>
           </div>
           <div className="flex items-center gap-2">
             <Switch
               checked={data.showHours !== false}
               onCheckedChange={(checked) => onChange({ ...data, showHours: checked })}
             />
-            <Label>Timmar</Label>
+            <Label>Hours</Label>
           </div>
           <div className="flex items-center gap-2">
             <Switch
               checked={data.showMinutes !== false}
               onCheckedChange={(checked) => onChange({ ...data, showMinutes: checked })}
             />
-            <Label>Minuter</Label>
+            <Label>Minutes</Label>
           </div>
           <div className="flex items-center gap-2">
             <Switch
               checked={data.showSeconds !== false}
               onCheckedChange={(checked) => onChange({ ...data, showSeconds: checked })}
             />
-            <Label>Sekunder</Label>
+            <Label>Seconds</Label>
           </div>
         </div>
       </div>
 
       {/* Custom Labels */}
       <div className="space-y-3">
-        <Label className="text-base font-medium">Anpassa etiketter (valfritt)</Label>
+        <Label className="text-base font-medium">Customize labels (optional)</Label>
         <div className="grid grid-cols-2 gap-3">
           <div className="grid gap-1">
-            <Label className="text-xs text-muted-foreground">Dagar</Label>
+            <Label className="text-xs text-muted-foreground">Days</Label>
             <Input
               value={data.labels?.days || ''}
               onChange={(e) =>
@@ -207,11 +207,11 @@ export function CountdownBlockEditor({ data, onChange, isEditing }: CountdownBlo
                   labels: { ...data.labels, days: e.target.value },
                 })
               }
-              placeholder="Dagar"
+              placeholder="Days"
             />
           </div>
           <div className="grid gap-1">
-            <Label className="text-xs text-muted-foreground">Timmar</Label>
+            <Label className="text-xs text-muted-foreground">Hours</Label>
             <Input
               value={data.labels?.hours || ''}
               onChange={(e) =>
@@ -220,11 +220,11 @@ export function CountdownBlockEditor({ data, onChange, isEditing }: CountdownBlo
                   labels: { ...data.labels, hours: e.target.value },
                 })
               }
-              placeholder="Timmar"
+              placeholder="Hours"
             />
           </div>
           <div className="grid gap-1">
-            <Label className="text-xs text-muted-foreground">Minuter</Label>
+            <Label className="text-xs text-muted-foreground">Minutes</Label>
             <Input
               value={data.labels?.minutes || ''}
               onChange={(e) =>
@@ -233,11 +233,11 @@ export function CountdownBlockEditor({ data, onChange, isEditing }: CountdownBlo
                   labels: { ...data.labels, minutes: e.target.value },
                 })
               }
-              placeholder="Minuter"
+              placeholder="Minutes"
             />
           </div>
           <div className="grid gap-1">
-            <Label className="text-xs text-muted-foreground">Sekunder</Label>
+            <Label className="text-xs text-muted-foreground">Seconds</Label>
             <Input
               value={data.labels?.seconds || ''}
               onChange={(e) =>
@@ -246,7 +246,7 @@ export function CountdownBlockEditor({ data, onChange, isEditing }: CountdownBlo
                   labels: { ...data.labels, seconds: e.target.value },
                 })
               }
-              placeholder="Sekunder"
+              placeholder="Seconds"
             />
           </div>
         </div>

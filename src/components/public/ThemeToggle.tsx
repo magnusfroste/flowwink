@@ -34,7 +34,7 @@ export function ThemeToggle() {
           variant="ghost" 
           size="icon" 
           className="h-9 w-9 rounded-full hover:bg-muted"
-          aria-label="Växla tema"
+          aria-label="Toggle theme"
         >
           {resolvedTheme === 'dark' ? (
             <Moon className="h-4 w-4 transition-transform" />
@@ -52,7 +52,7 @@ export function ThemeToggle() {
           )}
         >
           <Sun className="h-4 w-4" />
-          <span>Ljust</span>
+          <span>Light</span>
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => setTheme('dark')}
@@ -62,7 +62,7 @@ export function ThemeToggle() {
           )}
         >
           <Moon className="h-4 w-4" />
-          <span>Mörkt</span>
+          <span>Dark</span>
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => setTheme('system')}

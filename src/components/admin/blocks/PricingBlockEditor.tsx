@@ -219,7 +219,7 @@ export function PricingBlockEditor({ data, onChange, isEditing }: PricingBlockEd
                         <span>{p.name}</span>
                         <span className="text-muted-foreground">
                           {formatPrice(p.price_cents, p.currency)}
-                          {p.type === 'recurring' ? '/mån' : ''}
+                          {p.type === 'recurring' ? '/mo' : ''}
                         </span>
                       </div>
                     ))
@@ -411,7 +411,7 @@ export function PricingBlockEditor({ data, onChange, isEditing }: PricingBlockEd
                         <SelectItem value="none">No connection (use URL)</SelectItem>
                         {products?.map(p => (
                           <SelectItem key={p.id} value={p.id}>
-                            {p.name} - {formatPrice(p.price_cents, p.currency)}{p.type === 'recurring' ? '/mån' : ''}
+                            {p.name} - {formatPrice(p.price_cents, p.currency)}{p.type === 'recurring' ? '/mo' : ''}
                           </SelectItem>
                         ))}
                       </SelectContent>

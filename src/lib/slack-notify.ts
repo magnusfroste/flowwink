@@ -111,9 +111,9 @@ export function notifyDealWon(options: {
   leadId: string;
 }): void {
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-  const valueFormatted = new Intl.NumberFormat('sv-SE', {
+  const valueFormatted = new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: 'SEK',
+    currency: 'USD',
     minimumFractionDigits: 0,
   }).format(options.valueCents / 100);
 

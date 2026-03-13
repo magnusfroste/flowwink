@@ -178,7 +178,7 @@ export function TemplateCard({ template, onPreview, onSelect }: TemplateCardProp
             onClick={() => onSelect(template)}
           >
             <Sparkles className="h-3.5 w-3.5 mr-1" />
-            Använd
+            Use
           </Button>
         </div>
       </CardContent>

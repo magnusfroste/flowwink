@@ -69,7 +69,7 @@ function SimpleNavItem({
       </div>
 
       {/* Open in new tab toggle */}
-      <div className="flex items-center gap-1" title="Öppna i ny flik">
+      <div className="flex items-center gap-1" title="Open in new tab">
         <Switch
           checked={item.openInNewTab}
           onCheckedChange={(checked) => onUpdate({ ...item, openInNewTab: checked })}
@@ -461,8 +461,8 @@ export function HeaderBlockEditor({ data, onChange }: HeaderBlockEditorProps) {
           <CardContent className="pt-6 space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <Label>Visa logotyp</Label>
-                <p className="text-sm text-muted-foreground">Visa logotyp i header</p>
+                <Label>Show logo</Label>
+                <p className="text-sm text-muted-foreground">Show logo in header</p>
               </div>
               <Switch
                 checked={data.showLogo !== false}
@@ -482,7 +482,7 @@ export function HeaderBlockEditor({ data, onChange }: HeaderBlockEditorProps) {
             </div>
 
             <div className="space-y-2">
-              <Label>Logotypstorlek</Label>
+              <Label>Logo size</Label>
               <Select
                 value={data.logoSize || 'md'}
                 onValueChange={(value: 'sm' | 'md' | 'lg') => onChange({ ...data, logoSize: value })}
@@ -491,15 +491,15 @@ export function HeaderBlockEditor({ data, onChange }: HeaderBlockEditorProps) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="sm">Liten</SelectItem>
+                  <SelectItem value="sm">Small</SelectItem>
                   <SelectItem value="md">Medium</SelectItem>
-                  <SelectItem value="lg">Stor</SelectItem>
+                  <SelectItem value="lg">Large</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <Label>Header-höjd</Label>
+              <Label>Header height</Label>
               <Select
                 value={data.headerHeight || 'default'}
                 onValueChange={(value: 'compact' | 'default' | 'tall') => onChange({ ...data, headerHeight: value })}
@@ -523,7 +523,7 @@ export function HeaderBlockEditor({ data, onChange }: HeaderBlockEditorProps) {
         <Card>
           <CardContent className="pt-6 space-y-4">
             <div className="space-y-2">
-              <Label>Bakgrundsstil</Label>
+              <Label>Background style</Label>
               <Select
                 value={data.backgroundStyle || 'solid'}
                 onValueChange={(value: 'solid' | 'transparent' | 'blur') => onChange({ ...data, backgroundStyle: value })}
@@ -532,15 +532,15 @@ export function HeaderBlockEditor({ data, onChange }: HeaderBlockEditorProps) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="solid">Solid bakgrund</SelectItem>
+                  <SelectItem value="solid">Solid background</SelectItem>
                   <SelectItem value="transparent">Transparent</SelectItem>
-                  <SelectItem value="blur">Blur (glaseffekt)</SelectItem>
+                  <SelectItem value="blur">Blur (glass effect)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <Label>Skugga</Label>
+              <Label>Shadow</Label>
               <Select
                 value={data.headerShadow || 'none'}
                 onValueChange={(value: 'none' | 'sm' | 'md' | 'lg') => onChange({ ...data, headerShadow: value })}
@@ -549,16 +549,16 @@ export function HeaderBlockEditor({ data, onChange }: HeaderBlockEditorProps) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">Ingen</SelectItem>
-                  <SelectItem value="sm">Liten</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
+                  <SelectItem value="sm">Small</SelectItem>
                   <SelectItem value="md">Medium</SelectItem>
-                  <SelectItem value="lg">Stor</SelectItem>
+                  <SelectItem value="lg">Large</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <Label>Länkfärg</Label>
+              <Label>Link color</Label>
               <Select
                 value={data.linkColorScheme || 'default'}
                 onValueChange={(value: 'default' | 'primary' | 'muted' | 'contrast') => onChange({ ...data, linkColorScheme: value })}
@@ -567,7 +567,7 @@ export function HeaderBlockEditor({ data, onChange }: HeaderBlockEditorProps) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="default">Standard</SelectItem>
+                  <SelectItem value="default">Default</SelectItem>
                   <SelectItem value="primary">Primary</SelectItem>
                   <SelectItem value="muted">Muted</SelectItem>
                   <SelectItem value="contrast">High Contrast</SelectItem>

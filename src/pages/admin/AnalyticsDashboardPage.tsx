@@ -52,34 +52,34 @@ import {
 } from 'recharts';
 
 const SOURCE_LABELS: Record<string, string> = {
-  form: 'Formulär',
+  form: 'Form',
   newsletter: 'Newsletter',
   chat: 'Chat',
-  manual: 'Manuell',
+  manual: 'Manual',
   import: 'Import',
-  unknown: 'Okänd',
+  unknown: 'Unknown',
 };
 
 const STATUS_LABELS: Record<string, string> = {
   lead: 'Lead',
-  opportunity: 'Möjlighet',
-  customer: 'Kund',
-  lost: 'Förlorad',
+  opportunity: 'Opportunity',
+  customer: 'Customer',
+  lost: 'Lost',
 };
 
 const STAGE_LABELS: Record<string, string> = {
-  proposal: 'Offert',
-  negotiation: 'Förhandling',
-  closed_won: 'Vunnen',
-  closed_lost: 'Förlorad',
+  proposal: 'Proposal',
+  negotiation: 'Negotiation',
+  closed_won: 'Closed Won',
+  closed_lost: 'Closed Lost',
 };
 
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
 
 function formatCurrency(cents: number): string {
-  return new Intl.NumberFormat('sv-SE', {
+  return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: 'SEK',
+    currency: 'USD',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(cents / 100);
@@ -116,7 +116,7 @@ function SummaryCard({
             {change !== undefined && (
               <div className={`flex items-center gap-1 text-xs mt-1 ${change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {change >= 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
-                <span>{Math.abs(change)}% från förra månaden</span>
+                <span>{Math.abs(change)}% from last month</span>
               </div>
             )}
           </>
@@ -219,10 +219,10 @@ export default function AnalyticsDashboardPage() {
       icon: Inbox,
     },
     bookingsEnabled && {
-      title: 'Bokningar denna månad',
+      title: 'Bookings this month',
       value: bookingStats?.total || 0,
       icon: CalendarDays,
-      description: `${bookingStats?.upcoming || 0} kommande`,
+      description: `${bookingStats?.upcoming || 0} upcoming`,
     },
   ].filter(Boolean) as Array<{
     title: string;
@@ -437,13 +437,13 @@ export default function AnalyticsDashboardPage() {
             <Card className="lg:col-span-2">
               <CardHeader>
                 <CardTitle>
-                  {leadsEnabled && formsEnabled 
-                    ? 'Leads & Formulär (30 dagar)' 
-                    : leadsEnabled 
-                      ? 'Leads (30 dagar)' 
-                      : 'Formulär (30 dagar)'}
+                  {leadsEnabled && formsEnabled
+                    ? 'Leads & Forms (30 days)'
+                    : leadsEnabled
+                      ? 'Leads (30 days)'
+                      : 'Forms (30 days)'}
                 </CardTitle>
-                <CardDescription>Daglig utveckling</CardDescription>
+                <CardDescription>Daily trend</CardDescription>
               </CardHeader>
               <CardContent>
                 {timeSeriesLoading ? (
@@ -486,7 +486,7 @@ export default function AnalyticsDashboardPage() {
                         <Area
                           type="monotone"
                           dataKey="formSubmissions"
-                          name="Formulär"
+                          name="Forms"
                           stroke="hsl(var(--chart-2))"
                           fillOpacity={1}
                           fill="url(#colorForms)"
@@ -502,8 +502,8 @@ export default function AnalyticsDashboardPage() {
             {leadsEnabled ? (
               <Card>
                 <CardHeader>
-                  <CardTitle>Leads per källa</CardTitle>
-                  <CardDescription>Fördelning av leads efter ursprung</CardDescription>
+                  <CardTitle>Leads by source</CardTitle>
+                  <CardDescription>Distribution of leads by origin</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {sourceLoading ? (
@@ -534,7 +534,7 @@ export default function AnalyticsDashboardPage() {
                     </ResponsiveContainer>
                   ) : (
                     <div className="h-[250px] flex items-center justify-center text-muted-foreground">
-                      Ingen data tillgänglig
+                      No data available
                     </div>
                   )}
                 </CardContent>
@@ -605,8 +605,8 @@ export default function AnalyticsDashboardPage() {
         {bookingsEnabled && (
           <Card>
             <CardHeader>
-              <CardTitle>Bokningar</CardTitle>
-              <CardDescription>Översikt för denna månad</CardDescription>
+              <CardTitle>Bookings</CardTitle>
+              <CardDescription>Overview for this month</CardDescription>
             </CardHeader>
             <CardContent>
               {bookingsLoading ? (
@@ -615,7 +615,7 @@ export default function AnalyticsDashboardPage() {
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                   <div className="text-center p-4 rounded-lg bg-muted/50">
                     <p className="text-2xl font-bold">{bookingStats?.total || 0}</p>
-                    <p className="text-xs text-muted-foreground">Totalt</p>
+                    <p className="text-xs text-muted-foreground">Total</p>
                   </div>
                   <div className="text-center p-4 rounded-lg bg-yellow-500/10">
                     <p className="text-2xl font-bold text-yellow-600">{bookingStats?.pending || 0}</p>
@@ -704,8 +704,8 @@ export default function AnalyticsDashboardPage() {
         {leadsEnabled && leadsByStatus && leadsByStatus.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle>Lead-status</CardTitle>
-              <CardDescription>Fördelning av leads i pipeline</CardDescription>
+              <CardTitle>Lead status</CardTitle>
+              <CardDescription>Distribution of leads in pipeline</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-4">

@@ -45,7 +45,7 @@ export default function BookingServicesPage() {
       description: '',
       duration_minutes: 60,
       price_cents: 0,
-      currency: 'SEK',
+      currency: 'USD',
       color: '#3b82f6',
       is_active: true,
     });

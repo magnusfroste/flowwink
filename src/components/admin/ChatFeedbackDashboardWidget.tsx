@@ -28,11 +28,11 @@ export function ChatFeedbackDashboardWidget() {
             <MessageSquare className="h-5 w-5" />
             AI Chat Feedback
           </CardTitle>
-          <CardDescription>Användarfeedback och innehåll som behöver förbättras</CardDescription>
+          <CardDescription>User feedback and content that needs improvement</CardDescription>
         </div>
         <Button asChild size="sm" variant="outline">
           <Link to="/admin/chat?tab=feedback">
-            Visa allt
+            View all
             <ExternalLink className="h-3 w-3 ml-1" />
           </Link>
         </Button>
@@ -63,7 +63,7 @@ export function ChatFeedbackDashboardWidget() {
                   <ThumbsUp className="h-4 w-4 text-success" />
                   <span className="text-lg font-bold">{stats.positive}</span>
                 </div>
-                <p className="text-xs text-muted-foreground">Positiv</p>
+                <p className="text-xs text-muted-foreground">Positive</p>
               </div>
               
               <div className="p-3 rounded-lg bg-muted/50 text-center">
@@ -71,7 +71,7 @@ export function ChatFeedbackDashboardWidget() {
                   <ThumbsDown className="h-4 w-4 text-destructive" />
                   <span className="text-lg font-bold">{stats.negative}</span>
                 </div>
-                <p className="text-xs text-muted-foreground">Negativ</p>
+                <p className="text-xs text-muted-foreground">Negative</p>
               </div>
               
               <div className="p-3 rounded-lg bg-muted/50 text-center">
@@ -79,14 +79,14 @@ export function ChatFeedbackDashboardWidget() {
                   <TrendingUp className="h-4 w-4 text-primary" />
                   <span className="text-lg font-bold">{stats.positiveRate}%</span>
                 </div>
-                <p className="text-xs text-muted-foreground">Nöjdhet</p>
+                <p className="text-xs text-muted-foreground">Satisfaction</p>
               </div>
             </div>
 
             {/* Satisfaction Progress Bar */}
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Nöjdhetsgrad</span>
+                <span className="text-muted-foreground">Satisfaction rate</span>
                 <span className="font-medium">{stats.positiveRate}%</span>
               </div>
               <Progress 
@@ -100,7 +100,7 @@ export function ChatFeedbackDashboardWidget() {
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm font-medium text-warning">
                   <AlertTriangle className="h-4 w-4" />
-                  Artiklar som behöver förbättras ({articlesNeedingImprovement.length})
+                  Articles needing improvement ({articlesNeedingImprovement.length})
                 </div>
                 <div className="space-y-1.5">
                   {articlesNeedingImprovement.slice(0, 3).map((article) => (
@@ -127,7 +127,7 @@ export function ChatFeedbackDashboardWidget() {
                       to="/admin/chat?tab=feedback"
                       className="text-xs text-muted-foreground hover:text-primary transition-colors block text-center pt-1"
                     >
-                      +{articlesNeedingImprovement.length - 3} fler artiklar →
+                      +{articlesNeedingImprovement.length - 3} more articles →
                     </Link>
                   )}
                 </div>

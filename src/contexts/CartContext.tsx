@@ -91,7 +91,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
   const totalPriceCents = items.reduce((sum, item) => sum + item.priceCents * item.quantity, 0);
-  const currency = items[0]?.currency || 'SEK';
+  const currency = items[0]?.currency || 'USD';
 
   return (
     <CartContext.Provider

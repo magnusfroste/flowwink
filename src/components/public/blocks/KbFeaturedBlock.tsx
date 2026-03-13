@@ -23,7 +23,7 @@ interface KbFeaturedBlockProps {
 
 export function KbFeaturedBlock({ data }: KbFeaturedBlockProps) {
   const {
-    title = 'Vanliga frågor',
+    title = 'Frequently Asked Questions',
     subtitle,
     maxItems = 6,
     showCategory = true,

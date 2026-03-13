@@ -101,8 +101,8 @@ export function FormBlock({ data, blockId, pageId }: FormBlockProps) {
 
       // Create/update lead automatically
       const emailField = data.fields.find(f => f.type === 'email');
-      const nameField = data.fields.find(f => f.label.toLowerCase().includes('namn') || f.label.toLowerCase().includes('name'));
-      const companyField = data.fields.find(f => f.label.toLowerCase().includes('företag') || f.label.toLowerCase().includes('company'));
+      const nameField = data.fields.find(f => f.label.toLowerCase().includes('name'));
+      const companyField = data.fields.find(f => f.label.toLowerCase().includes('company'));
       const phoneField = data.fields.find(f => f.type === 'phone');
 
       if (emailField && formData[emailField.id]) {

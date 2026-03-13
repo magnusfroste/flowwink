@@ -74,16 +74,16 @@ export function KbAccordionBlockEditor({ data, onChange, isEditing }: KbAccordio
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="categorySlug">Filtrera efter kategori</Label>
+        <Label htmlFor="categorySlug">Filter by category</Label>
         <Select
           value={data.categorySlug || 'all'}
           onValueChange={(value) => handleChange('categorySlug', value === 'all' ? undefined : value)}
         >
           <SelectTrigger id="categorySlug">
-            <SelectValue placeholder="Alla kategorier" />
+            <SelectValue placeholder="All categories" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Alla kategorier</SelectItem>
+            <SelectItem value="all">All categories</SelectItem>
             {categories?.map((cat) => (
               <SelectItem key={cat.id} value={cat.slug}>
                 {cat.name}
@@ -142,7 +142,7 @@ export function KbAccordionBlockEditor({ data, onChange, isEditing }: KbAccordio
       </div>
 
       <div className="flex items-center justify-between">
-        <Label htmlFor="showCategory">Visa kategori</Label>
+        <Label htmlFor="showCategory">Show category</Label>
         <Switch
           id="showCategory"
           checked={data.showCategory === true}
@@ -151,7 +151,7 @@ export function KbAccordionBlockEditor({ data, onChange, isEditing }: KbAccordio
       </div>
 
       <div className="flex items-center justify-between">
-        <Label htmlFor="allowMultiple">Tillåt flera öppna samtidigt</Label>
+        <Label htmlFor="allowMultiple">Allow multiple open at once</Label>
         <Switch
           id="allowMultiple"
           checked={data.allowMultiple === true}

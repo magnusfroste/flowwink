@@ -204,7 +204,7 @@ export function useExportProducts() {
       name: p.name,
       description: p.description || '',
       price: (p.price_cents / 100).toString(),
-      currency: p.currency || 'SEK',
+      currency: p.currency || 'USD',
       type: p.type || 'one_time',
       image_url: p.image_url || '',
     }));
@@ -242,7 +242,7 @@ export function useImportProducts() {
           name: row.name.trim(),
           description: row.description || null,
           price_cents: parsePriceToCents(row.price),
-          currency: row.currency?.toUpperCase()?.trim() || 'SEK',
+          currency: row.currency?.toUpperCase()?.trim() || 'USD',
           type: (validateProductType(row.type?.toLowerCase()?.replace('-', '_')?.trim() ?? null)
             ? row.type!.toLowerCase().replace('-', '_').trim()
             : 'one_time') as 'one_time' | 'recurring',

@@ -164,8 +164,8 @@ export interface MaintenanceSettings {
 
 const defaultMaintenanceSettings: MaintenanceSettings = {
   enabled: false,
-  title: 'Webbplatsen är under underhåll',
-  message: 'Vi genomför planerat underhåll just nu. Webbplatsen kommer att vara tillgänglig igen inom kort.',
+  title: 'Site under maintenance',
+  message: 'We are currently performing scheduled maintenance. The site will be back online shortly.',
   expectedEndTime: '',
 };
 

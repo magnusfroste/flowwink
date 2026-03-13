@@ -85,11 +85,11 @@ export default function CheckoutPage() {
         // Redirect to Stripe Checkout
         window.location.href = data.url;
       } else {
-        throw new Error('Ingen checkout-URL mottagen');
+        throw new Error('No checkout URL received');
       }
     } catch (error: any) {
       logger.error('Checkout error:', error);
-      toast.error(error.message || 'Kunde inte starta betalning');
+      toast.error(error.message || 'Could not initiate payment');
     } finally {
       setIsLoading(false);
     }
@@ -109,7 +109,7 @@ export default function CheckoutPage() {
           <CardFooter>
             <Button onClick={() => navigate('/')} className="w-full">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Fortsätt handla
+              Continue shopping
             </Button>
           </CardFooter>
         </Card>
@@ -171,10 +171,10 @@ export default function CheckoutPage() {
                   {isLoading ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Förbereder betalning...
+                      Preparing payment...
                     </>
                   ) : (
-                    <>Betala {formatPrice(totalPriceCents)}</>
+                    <>Pay {formatPrice(totalPriceCents)}</>
                   )}
                 </Button>
               </form>
@@ -184,7 +184,7 @@ export default function CheckoutPage() {
           {/* Order Summary */}
           <Card>
             <CardHeader>
-              <CardTitle>Din beställning</CardTitle>
+              <CardTitle>Your order</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {items.map((item) => (
@@ -192,7 +192,7 @@ export default function CheckoutPage() {
                   <div>
                     <p className="font-medium">{item.productName}</p>
                     <p className="text-sm text-muted-foreground">
-                      {item.quantity} st × {formatPrice(item.priceCents)}
+                      {item.quantity} × {formatPrice(item.priceCents)}
                     </p>
                   </div>
                   <p className="font-medium">
@@ -202,7 +202,7 @@ export default function CheckoutPage() {
               ))}
               <Separator />
               <div className="flex justify-between items-center text-lg font-bold">
-                <span>Totalt</span>
+                <span>Total</span>
                 <span>{formatPrice(totalPriceCents)}</span>
               </div>
             </CardContent>

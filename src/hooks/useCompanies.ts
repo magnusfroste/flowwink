@@ -85,10 +85,10 @@ export function useCreateCompany() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['companies'] });
-      toast.success('Företag skapat');
+      toast.success('Company created');
     },
     onError: (error) => {
-      toast.error('Kunde inte skapa företag: ' + error.message);
+      toast.error('Could not create company: ' + error.message);
     },
   });
 }
@@ -111,10 +111,10 @@ export function useUpdateCompany() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['companies'] });
       queryClient.invalidateQueries({ queryKey: ['companies', data.id] });
-      toast.success('Företag uppdaterat');
+      toast.success('Company updated');
     },
     onError: (error) => {
-      toast.error('Kunde inte uppdatera företag: ' + error.message);
+      toast.error('Could not update company: ' + error.message);
     },
   });
 }
@@ -133,10 +133,10 @@ export function useDeleteCompany() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['companies'] });
-      toast.success('Företag borttaget');
+      toast.success('Company deleted');
     },
     onError: (error) => {
-      toast.error('Kunde inte ta bort företag: ' + error.message);
+      toast.error('Could not delete company: ' + error.message);
     },
   });
 }

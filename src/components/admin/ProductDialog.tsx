@@ -44,7 +44,7 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
       description: '',
       type: 'one_time',
       price: '',
-      currency: 'SEK',
+      currency: 'USD',
       image_url: '',
     },
   });
@@ -67,7 +67,7 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
         description: '',
         type: 'one_time',
         price: '',
-        currency: 'SEK',
+        currency: 'USD',
         image_url: '',
       });
     }

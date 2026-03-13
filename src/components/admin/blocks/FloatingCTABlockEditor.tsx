@@ -66,7 +66,7 @@ export function FloatingCTABlockEditor({ data, onChange, isEditing }: FloatingCT
       {/* Content Section */}
       <div className="space-y-4">
         <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wider">
-          Innehåll
+          Content
         </h4>
         
         <div className="space-y-2">
@@ -74,7 +74,7 @@ export function FloatingCTABlockEditor({ data, onChange, isEditing }: FloatingCT
           <Input
             value={data.title || ''}
             onChange={(e) => onChange({ ...data, title: e.target.value })}
-            placeholder="Ex: Boka din tid idag!"
+            placeholder="Ex: Book your slot today!"
           />
         </div>
 
@@ -133,7 +133,7 @@ export function FloatingCTABlockEditor({ data, onChange, isEditing }: FloatingCT
         </h4>
 
         <div className="space-y-2">
-          <Label>Visa efter scroll: {data.showAfterScroll || 25}%</Label>
+          <Label>Show after scroll: {data.showAfterScroll || 25}%</Label>
           <Slider
             value={[data.showAfterScroll || 25]}
             onValueChange={([value]) => onChange({ ...data, showAfterScroll: value })}

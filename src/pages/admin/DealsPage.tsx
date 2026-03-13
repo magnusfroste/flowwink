@@ -397,7 +397,7 @@ function CreateDealDialogWithLeadPicker({ open, onOpenChange }: CreateDealDialog
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="value">Value (SEK)</Label>
+              <Label htmlFor="value">Value</Label>
               <Input
                 id="value"
                 type="number"

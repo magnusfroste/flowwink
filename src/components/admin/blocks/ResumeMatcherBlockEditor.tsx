@@ -18,9 +18,9 @@ interface ResumeMatcherBlockEditorProps {
 }
 
 const MOCK_MATCHES = [
-  { name: 'Marcus Lindström', title: 'Cloud Architect', score: 97, skills: ['AWS', 'Terraform', 'Kubernetes'] },
-  { name: 'Sofia Bergqvist', title: 'Senior React Developer', score: 84, skills: ['React', 'TypeScript', 'Next.js'] },
-  { name: 'Anna Kjelberg', title: 'Data Engineer', score: 71, skills: ['Databricks', 'Spark', 'Python'] },
+  { name: 'Marcus Anderson', title: 'Cloud Architect', score: 97, skills: ['AWS', 'Terraform', 'Kubernetes'] },
+  { name: 'Sofia Davis', title: 'Senior React Developer', score: 84, skills: ['React', 'TypeScript', 'Next.js'] },
+  { name: 'Anna Chen', title: 'Data Engineer', score: 71, skills: ['Databricks', 'Spark', 'Python'] },
 ];
 
 function ScoreBadge({ score }: { score: number }) {
