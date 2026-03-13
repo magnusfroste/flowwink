@@ -360,7 +360,7 @@ export function TemplatePreviewDialog({
           )}
         </div>
 
-        <ScrollArea className="max-h-[50vh] -mx-6 px-6">
+        <ScrollArea className="flex-1 min-h-0 -mx-6 px-6">
           <div className="space-y-2">
             {/* Content Settings Section */}
             <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide pb-1">
