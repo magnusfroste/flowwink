@@ -114,6 +114,78 @@ export function TwoColumnBlock({ data }: TwoColumnBlockProps) {
   // Check if CTA is internal or external link
   const isInternalLink = data.ctaUrl?.startsWith('/');
 
+  // Layout grid class for text-text mode
+  const layoutGridClass = (() => {
+    if (!isTextTextLayout) return 'md:grid-cols-2';
+    switch (data.layout) {
+      case '60-40': return 'md:grid-cols-[3fr_2fr]';
+      case '40-60': return 'md:grid-cols-[2fr_3fr]';
+      default: return 'md:grid-cols-2';
+    }
+  })();
+
+  // Text-Text layout mode
+  if (isTextTextLayout) {
+    return (
+      <section className="py-16 px-6" style={{ backgroundColor: data.backgroundColor }}>
+        <div className="container mx-auto max-w-6xl">
+          {/* Header */}
+          {hasHeader && (
+            <div className="mb-10">
+              {data.eyebrow && (
+                <p className="text-sm font-semibold uppercase tracking-widest mb-4" style={{ color: eyebrowColor }}>
+                  {data.eyebrow}
+                </p>
+              )}
+              {data.title && (
+                <h2 className={`font-bold tracking-tight leading-tight ${getTitleSize()}`}>
+                  {renderTitle()}
+                </h2>
+              )}
+            </div>
+          )}
+          <div className={cn('grid gap-12', layoutGridClass)}>
+            {/* Left column */}
+            {leftHtml && (
+              <div className="prose prose-lg dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: leftHtml }} />
+            )}
+            {/* Right column */}
+            {rightHtml && (
+              <div className="prose prose-lg dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: rightHtml }} />
+            )}
+          </div>
+          {/* Note */}
+          {data.note && (
+            <p className="mt-6 text-sm text-muted-foreground italic">{data.note}</p>
+          )}
+          {/* CTA */}
+          {data.ctaText && data.ctaUrl && (
+            <div className="mt-8">
+              {isInternalLink ? (
+                <Link to={data.ctaUrl} className="inline-flex items-center gap-3 text-sm font-semibold uppercase tracking-widest group hover:opacity-80 transition-opacity">
+                  <span>{data.ctaText}</span>
+                  <span className="flex items-center gap-2">
+                    <span className="w-8 h-px bg-current" />
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </span>
+                </Link>
+              ) : (
+                <a href={data.ctaUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-3 text-sm font-semibold uppercase tracking-widest group hover:opacity-80 transition-opacity">
+                  <span>{data.ctaText}</span>
+                  <span className="flex items-center gap-2">
+                    <span className="w-8 h-px bg-current" />
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </span>
+                </a>
+              )}
+            </div>
+          )}
+        </div>
+      </section>
+    );
+  }
+
+  // Image+Text layout (original)
   return (
     <section 
       className="py-16 px-6"
