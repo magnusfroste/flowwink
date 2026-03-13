@@ -171,7 +171,7 @@ const securehealthPages: StarterTemplate['pages'] = [
     slug: 'contact',
     menu_order: 6,
     showInMenu: true,
-    meta: { description: 'Book an appointment or reach our care team', showTitle: true, titleAlignment: 'center' },
+    meta: { description: 'Book an appointment or reach our care team', showTitle: false, titleAlignment: 'center' },
     blocks: [
       { id: 'hero-1', type: 'hero', data: { title: 'Contact Us', subtitle: 'We\'re here to help with your healthcare needs', backgroundType: 'color', heightMode: 'auto', contentAlignment: 'center', overlayOpacity: 0 } },
       { id: 'chat-1', type: 'chat-launcher', data: { title: 'Book with AI Assistant', subtitle: 'Private and HIPAA-compliant', placeholder: 'Ask about booking, services, or availability...', showQuickActions: true, quickActionCount: 4, variant: 'card' } },
