@@ -44,7 +44,8 @@ export default function FederationPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [newPeerName, setNewPeerName] = useState('');
   const [newPeerUrl, setNewPeerUrl] = useState('');
-  const [newPeerToken, setNewPeerToken] = useState('');
+  const [newPeerOutboundToken, setNewPeerOutboundToken] = useState('');
+  const [newPeerInboundToken, setNewPeerInboundToken] = useState('');
   const [showToken, setShowToken] = useState<string | null>(null);
   const [copiedToken, setCopiedToken] = useState(false);
 
