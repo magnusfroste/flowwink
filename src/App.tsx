@@ -223,7 +223,6 @@ const App = () => (
 );
 
 export default App;
-  { path: "/chat", element: <ChatPage /> },
   // KB routes are now handled dynamically in PublicPage based on kbSettings.menuSlug
   { path: "/newsletter/manage", element: <NewsletterManagePage /> },
   { path: "/newsletter/confirmed", element: <NewsletterConfirmedPage /> },
