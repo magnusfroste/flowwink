@@ -335,8 +335,8 @@ export default function PublicPage() {
       <div className="min-h-screen bg-background">
         <PublicNavigation />
 
-        {/* Page Title - only show if showTitle !== false */}
-        {pageData.meta_json?.showTitle !== false && (
+        {/* Page Title - hide if showTitle is false OR first block is a hero */}
+        {pageData.meta_json?.showTitle !== false && pageData.content_json?.[0]?.type !== 'hero' && (
           <div className="bg-muted/30 py-12 px-6">
             <div className={cn(
               "container mx-auto",
