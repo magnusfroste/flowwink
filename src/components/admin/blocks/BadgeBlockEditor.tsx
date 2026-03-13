@@ -46,12 +46,7 @@ export function BadgeBlockEditor({ data, onChange, isEditing }: BadgeBlockEditor
   };
 
   if (!isEditing) {
-    return (
-      <div className="py-8 text-center text-muted-foreground">
-        <div className="text-lg font-medium mb-2">{title || 'Badge Block'}</div>
-        <div className="text-sm">{badges.length} badges • {variant} variant</div>
-      </div>
-    );
+    return <BadgeBlock data={data} />;
   }
 
   return (
