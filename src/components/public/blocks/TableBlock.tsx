@@ -18,7 +18,7 @@ export interface TableBlockData {
   title?: string;
   caption?: string;
   columns: TableColumn[];
-  rows: Record<string, string>[];
+  rows: (Record<string, string> | string[])[];
   variant: 'default' | 'striped' | 'bordered' | 'minimal';
   size: 'sm' | 'md' | 'lg';
   stickyHeader?: boolean;
