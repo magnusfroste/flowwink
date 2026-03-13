@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { StarterTemplateSelector } from '@/components/admin/StarterTemplateSelector';
+// StarterTemplateSelector removed — template selection now happens on /admin/templates
 import { TemplatePreviewDialog, TemplateOverwriteOptions } from '@/components/admin/templates/TemplatePreviewDialog';
 import { StarterTemplate } from '@/data/templates';
 import { validateTemplate, ValidationResult } from '@/lib/template-validator';
