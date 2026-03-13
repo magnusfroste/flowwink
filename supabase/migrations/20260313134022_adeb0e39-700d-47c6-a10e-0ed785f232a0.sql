@@ -1,0 +1,1 @@
+UPDATE public.a2a_peers SET outbound_token = 'a2a_7b2b1884a8ac4dcfaf3c7f85b99f6ff9' WHERE name ilike 'soundspace';
