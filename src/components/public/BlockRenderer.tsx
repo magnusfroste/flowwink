@@ -1,4 +1,4 @@
-import { ContentBlock, BlockSpacing, SpacingSize, AnimationType, PopupBlockData, BookingBlockData, PricingBlockData, TestimonialsBlockData, TeamBlockData, LogosBlockData, ComparisonBlockData, FeaturesBlockData } from '@/types/cms';
+import { ContentBlock, BlockSpacing, SpacingSize, AnimationType, SectionBackground, PopupBlockData, BookingBlockData, PricingBlockData, TestimonialsBlockData, TeamBlockData, LogosBlockData, ComparisonBlockData, FeaturesBlockData } from '@/types/cms';
 import { AnimatedBlock } from './AnimatedBlock';
 import { cn } from '@/lib/utils';
 import {
