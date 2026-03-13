@@ -757,7 +757,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             title: 'Ready to Let FlowPilot Operate?',
             subtitle: 'Self-host for free or start a managed trial. Autonomous operations included.',
             buttonText: 'Self-Host Free',
-            buttonUrl: 'https://github.com/flowwink/flowwink',
+            buttonUrl: 'https://github.com/magnusfroste/flowwink',
             secondaryButtonText: 'Start Trial',
             secondaryButtonUrl: '/contact',
             gradient: true,
