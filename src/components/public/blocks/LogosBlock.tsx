@@ -240,7 +240,6 @@ export function LogosBlock({ data }: LogosBlockProps) {
             ))}
           </div>
         )}
-      </div>
-    </section>
+    </div>
   );
 }
