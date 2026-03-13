@@ -775,10 +775,9 @@ export default function NewSitePage() {
                       </CardTitle>
                       <CardDescription>{selectedTemplate.tagline}</CardDescription>
                     </div>
-                    <StarterTemplateSelector 
-                      onSelectTemplate={handleTemplateSelect}
-                      trigger={<Button variant="outline" size="sm">Change</Button>}
-                    />
+                    <Button variant="outline" size="sm" onClick={() => navigate('/admin/templates')}>
+                      Change
+                    </Button>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
