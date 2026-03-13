@@ -275,7 +275,7 @@ const flowwinkAgencyPages: TemplatePage[] = [
     showInMenu: true,
     meta: {
       description: 'Calculate how much your agency can save by switching to FlowWink. Compare costs vs Webflow, Squarespace, and other platforms.',
-      showTitle: true,
+      showTitle: false,
       titleAlignment: 'center',
     },
     blocks: [
