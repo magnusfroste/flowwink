@@ -597,7 +597,7 @@ const flowwinkAgencyPages: TemplatePage[] = [
     showInMenu: true,
     meta: {
       description: 'FlowWink pricing for agencies - Self-host free forever, or choose managed hosting with priority support.',
-      showTitle: true,
+      showTitle: false,
       titleAlignment: 'center',
     },
     blocks: [
