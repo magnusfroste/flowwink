@@ -203,7 +203,7 @@ function AnimatedStatWrapper({
 }
 
 export function StatsBlock({ data }: StatsBlockProps) {
-  const stats = data.stats || [];
+  const stats = data.stats || (data as any).items || [];
   const [isVisible, setIsVisible] = useState(false);
   const containerRef = useRef<HTMLElement>(null);
   const animated = data.animated !== false; // Default to true

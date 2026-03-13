@@ -146,8 +146,8 @@ function AlternatingTimeline({ steps, showDates, staggered }: { steps: TimelineS
 }
 
 export function TimelineBlock({ data }: TimelineBlockProps) {
-  const steps = data.steps || [];
-  const variant = data.variant || 'vertical';
+  const steps = data.steps || (data as any).items || [];
+  const variant = data.variant || (data as any).layout || 'vertical';
   const showDates = data.showDates ?? false;
   const staggered = data.staggeredReveal ?? false;
 

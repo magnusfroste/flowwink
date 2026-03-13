@@ -100,7 +100,7 @@ function SortableStat({ stat, index, onUpdate, onDelete }: SortableStatProps) {
 }
 
 export function StatsBlockEditor({ data, onChange, canEdit }: StatsBlockEditorProps) {
-  const stats = data.stats || [];
+  const stats = data.stats || (data as any).items || [];
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),

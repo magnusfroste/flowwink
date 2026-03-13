@@ -7,6 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Plus, Trash2, GripVertical } from 'lucide-react';
 import type { BentoGridBlockData, BentoGridItem } from '@/components/public/blocks/BentoGridBlock';
+import { BentoGridBlock } from '@/components/public/blocks/BentoGridBlock';
 
 interface BentoGridBlockEditorProps {
   data: BentoGridBlockData;
@@ -16,12 +17,7 @@ interface BentoGridBlockEditorProps {
 
 export function BentoGridBlockEditor({ data, onChange, isEditing }: BentoGridBlockEditorProps) {
   if (!isEditing) {
-    return (
-      <div className="p-4 text-center text-muted-foreground">
-        <p className="font-medium">Bento Grid</p>
-        <p className="text-sm">{data.items?.length || 0} items · {data.columns || 3} columns</p>
-      </div>
-    );
+    return <BentoGridBlock data={data} />;
   }
 
   const updateItem = (index: number, updates: Partial<BentoGridItem>) => {
