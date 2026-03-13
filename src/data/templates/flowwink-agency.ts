@@ -626,7 +626,7 @@ const flowwinkAgencyPages: TemplatePage[] = [
               description: 'Full platform, your infrastructure.',
               features: ['Unlimited client sites', 'All 47+ block types', 'Blog, newsletter, forms, CRM', 'AI chat widget', 'Headless API access', 'Community support', 'MIT licensed, modify freely'],
               buttonText: 'Get Started',
-              buttonUrl: 'https://github.com/flowwink/flowwink',
+              buttonUrl: 'https://github.com/magnusfroste/flowwink',
             },
             {
               id: 'tier-managed',
