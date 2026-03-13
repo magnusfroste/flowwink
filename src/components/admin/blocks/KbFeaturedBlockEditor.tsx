@@ -2,8 +2,8 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Star } from 'lucide-react';
 import { KbPageSlugField } from './KbPageSlugField';
+import { KbFeaturedBlock } from '@/components/public/blocks/KbFeaturedBlock';
 import type { KbFeaturedBlockData } from '@/components/public/blocks/KbFeaturedBlock';
 
 interface KbFeaturedBlockEditorProps {
