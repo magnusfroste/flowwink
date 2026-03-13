@@ -1,0 +1,146 @@
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  const startTime = Date.now();
+
+  try {
+    // Extract bearer token
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Missing or invalid authorization header' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const token = authHeader.replace('Bearer ', '');
+
+    // Create admin client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, serviceKey);
+
+    // Hash the token and look up peer
+    const encoder = new TextEncoder();
+    const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(token));
+    const tokenHash = Array.from(new Uint8Array(hashBuffer))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+
+    const { data: peer, error: peerError } = await supabase
+      .from('a2a_peers')
+      .select('*')
+      .eq('inbound_token_hash', tokenHash)
+      .eq('status', 'active')
+      .single();
+
+    if (peerError || !peer) {
+      return new Response(JSON.stringify({ error: 'Invalid or inactive peer token' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Parse request body
+    const body = await req.json();
+    const { skill, arguments: args } = body;
+
+    if (!skill) {
+      return new Response(JSON.stringify({ error: 'Missing "skill" field' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Log activity as pending
+    const { data: activityRow } = await supabase
+      .from('a2a_activity')
+      .insert({
+        peer_id: peer.id,
+        direction: 'inbound',
+        skill_name: skill,
+        input: args || {},
+        status: 'pending',
+      })
+      .select('id')
+      .single();
+
+    // Execute skill via agent-execute
+    let result: any;
+    let status: 'success' | 'error' = 'success';
+    let errorMessage: string | null = null;
+
+    try {
+      const execResponse = await fetch(`${supabaseUrl}/functions/v1/agent-execute`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${serviceKey}`,
+        },
+        body: JSON.stringify({
+          skill_name: skill,
+          arguments: args || {},
+          context: {
+            source: 'a2a',
+            peer_id: peer.id,
+            peer_name: peer.name,
+          },
+        }),
+      });
+
+      result = await execResponse.json();
+
+      if (!execResponse.ok) {
+        status = 'error';
+        errorMessage = result?.error || `Skill execution failed with status ${execResponse.status}`;
+      }
+    } catch (err: any) {
+      status = 'error';
+      errorMessage = err.message || 'Skill execution failed';
+      result = { error: errorMessage };
+    }
+
+    const durationMs = Date.now() - startTime;
+
+    // Update activity log
+    if (activityRow?.id) {
+      await supabase
+        .from('a2a_activity')
+        .update({
+          output: result,
+          status,
+          duration_ms: durationMs,
+          error_message: errorMessage,
+        })
+        .eq('id', activityRow.id);
+    }
+
+    // Update peer stats
+    await supabase
+      .from('a2a_peers')
+      .update({
+        last_seen_at: new Date().toISOString(),
+        request_count: (peer.request_count || 0) + 1,
+      })
+      .eq('id', peer.id);
+
+    return new Response(JSON.stringify(result), {
+      status: status === 'success' ? 200 : 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  } catch (err: any) {
+    console.error('A2A ingest error:', err);
+    return new Response(JSON.stringify({ error: err.message || 'Internal error' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+});
