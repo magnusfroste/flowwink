@@ -1194,7 +1194,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
       showInMenu: true,
       meta: {
         description: 'Explore all 47+ block types available in FlowWink - from content blocks to interactive elements and AI-powered features.',
-        showTitle: true,
+        showTitle: false,
         titleAlignment: 'center',
       },
       blocks: [
