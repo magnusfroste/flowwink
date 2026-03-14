@@ -81,12 +81,12 @@ const launchpadPages: StarterTemplate['pages'] = [
         data: {
           title: 'Trusted by Industry Leaders',
           logos: [
-            { id: 'l1', name: 'Spotify', logo: 'https://img.logo.dev/spotify.com?token=pk_test' },
-            { id: 'l2', name: 'Klarna', logo: 'https://img.logo.dev/klarna.com?token=pk_test' },
-            { id: 'l3', name: 'King', logo: 'https://img.logo.dev/king.com?token=pk_test' },
-            { id: 'l4', name: 'Truecaller', logo: 'https://img.logo.dev/truecaller.com?token=pk_test' },
-            { id: 'l5', name: 'iZettle', logo: 'https://img.logo.dev/izettle.com?token=pk_test' },
-            { id: 'l6', name: 'Mojang', logo: 'https://img.logo.dev/mojang.com?token=pk_test' },
+            { id: 'l1', name: 'Spotify', logo: '' },
+            { id: 'l2', name: 'Klarna', logo: '' },
+            { id: 'l3', name: 'King', logo: '' },
+            { id: 'l4', name: 'Truecaller', logo: '' },
+            { id: 'l5', name: 'iZettle', logo: '' },
+            { id: 'l6', name: 'Mojang', logo: '' },
           ],
           layout: 'scroll',
           variant: 'grayscale',
