@@ -2850,6 +2850,10 @@ export type Database = {
       }
     }
     Functions: {
+      checkout_objective: {
+        Args: { p_locked_by?: string; p_objective_id: string }
+        Returns: boolean
+      }
       dispatch_automation_event: {
         Args: {
           entity_id?: string
