@@ -52,6 +52,22 @@ export interface ReasonResult {
   actionsExecuted: string[];
   skillResults: Array<{ skill: string; status: string; result: any }>;
   durationMs: number;
+  tokenUsage?: TokenUsage;
+}
+
+export interface TokenUsage {
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+}
+
+export interface HeartbeatState {
+  last_run: string;
+  objectives_advanced: string[];
+  next_priorities: string[];
+  pending_actions: string[];
+  token_usage: TokenUsage;
+  iteration_count: number;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
