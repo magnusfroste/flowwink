@@ -1,6 +1,8 @@
 import { useParams, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { ShoppingCart, ArrowLeft, Check, Heart, ChevronRight } from 'lucide-react';
+import { StockStatusBadge, BackInStockForm } from '@/components/public/StockStatus';
+import { getStockStatus, isProductPurchasable } from '@/hooks/useProducts';
 import { PublicNavigation } from '@/components/public/PublicNavigation';
 import { PublicFooter } from '@/components/public/PublicFooter';
 import { Button } from '@/components/ui/button';
