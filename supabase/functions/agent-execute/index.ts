@@ -329,6 +329,10 @@ async function executeModuleAction(
     }
 
     case 'crm': {
+      if (skillName === 'manage_leads') {
+        return await executeLeadsAction(supabase, args);
+      }
+      // add_lead — original handler
       const { email, name, source = 'chat', phone } = args as any;
       const { data, error } = await supabase.from('leads').insert({
         email, name, source, phone,
