@@ -156,6 +156,11 @@ const FULL_BLEED_TYPES = new Set([
   'chat-launcher', 'section-divider', 'featured-carousel',
 ]);
 
+// Overlay block types that use position:fixed and should not occupy any document flow
+const OVERLAY_TYPES = new Set([
+  'floating-cta', 'notification-toast', 'popup', 'chat-launcher',
+]);
+
 function getSectionBackgroundClasses(bg?: SectionBackground): { section: string; text: string } {
   switch (bg) {
     case 'muted':
@@ -310,6 +315,11 @@ export function BlockRenderer({ block, pageId, index = 0, resolvedBackground }: 
 
   const content = renderBlock();
   const anchorId = block.anchorId || block.id;
+  // Overlay blocks (fixed position) render without any wrapper to avoid taking up document flow
+  if (OVERLAY_TYPES.has(block.type)) {
+    return <>{content}</>;
+  }
+
   const isFullBleed = FULL_BLEED_TYPES.has(block.type);
   
   // Determine background: explicit on block, or resolved from parent (auto-alternate)
