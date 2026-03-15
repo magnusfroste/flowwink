@@ -70,7 +70,6 @@ const CATEGORY_ORDER = ["content", "communication", "data", "insights", "system"
 
 // Module dependencies - key depends on value
 const MODULE_DEPENDENCIES: Partial<Record<keyof ModulesSettings, keyof ModulesSettings>> = {
-  orders: 'products',
   deals: 'leads',
   liveSupport: 'chat',
 };

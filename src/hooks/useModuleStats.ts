@@ -62,10 +62,7 @@ export function useModuleStats() {
         stats.companies = { count: companiesResult.count, lastUsed: companiesResult.data?.[0]?.updated_at };
       }
       if (productsResult.count !== null) {
-        stats.products = { count: productsResult.count, lastUsed: productsResult.data?.[0]?.updated_at };
-      }
-      if (ordersResult.count !== null) {
-        stats.orders = { count: ordersResult.count, lastUsed: ordersResult.data?.[0]?.updated_at };
+        stats.ecommerce = { count: (productsResult.count || 0) + (ordersResult.count || 0), lastUsed: productsResult.data?.[0]?.updated_at || ordersResult.data?.[0]?.updated_at };
       }
       if (kbResult.count !== null) {
         stats.knowledgeBase = { count: kbResult.count, lastUsed: kbResult.data?.[0]?.updated_at };
