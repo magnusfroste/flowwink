@@ -419,13 +419,7 @@ async function executeModuleAction(
     }
 
     case 'orders': {
-      const { order_id, email } = args as any;
-      let query = supabase.from('orders').select('id, status, total_cents, currency, created_at, customer_email');
-      if (order_id) query = query.eq('id', order_id);
-      else if (email) query = query.eq('customer_email', email);
-      const { data, error } = await query.order('created_at', { ascending: false }).limit(5);
-      if (error) throw new Error(`Order lookup failed: ${error.message}`);
-      return { orders: data || [] };
+      return await executeOrdersAction(supabase, skillName, args);
     }
 
     case 'objectives': {
