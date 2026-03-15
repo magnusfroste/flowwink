@@ -412,8 +412,8 @@ export function PublicNavigation() {
             {/* Custom nav items - with mega menu support */}
             {customNavItems.map((item) => renderNavItem(item))}
             {headerSettings.showThemeToggle !== false && <ThemeToggle />}
-            {productsEnabled && <AccountIndicator />}
-            {productsEnabled && <CartIndicator />}
+            {ecommerceEnabled && <AccountIndicator />}
+            {ecommerceEnabled && <CartIndicator />}
           </nav>
 
           {/* Mobile Menu Button */}
