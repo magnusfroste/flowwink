@@ -315,6 +315,11 @@ export function BlockRenderer({ block, pageId, index = 0, resolvedBackground }: 
 
   const content = renderBlock();
   const anchorId = block.anchorId || block.id;
+  // Overlay blocks (fixed position) render without any wrapper to avoid taking up document flow
+  if (OVERLAY_TYPES.has(block.type)) {
+    return <>{content}</>;
+  }
+
   const isFullBleed = FULL_BLEED_TYPES.has(block.type);
   
   // Determine background: explicit on block, or resolved from parent (auto-alternate)
