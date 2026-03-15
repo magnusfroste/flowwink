@@ -51,6 +51,10 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
       price: '',
       currency: 'USD',
       image_url: '',
+      track_inventory: false,
+      stock_quantity: '',
+      low_stock_threshold: '5',
+      allow_backorder: false,
     },
   });
 
