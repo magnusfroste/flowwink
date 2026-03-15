@@ -228,10 +228,11 @@ export default function ChatSettingsPage() {
 
         {formData.enabled && (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid grid-cols-8 w-full">
+            <TabsList className="grid grid-cols-9 w-full">
               <TabsTrigger value="general">General</TabsTrigger>
               <TabsTrigger value="provider">Provider</TabsTrigger>
               <TabsTrigger value="knowledge">Knowledge</TabsTrigger>
+              <TabsTrigger value="speech">Speech</TabsTrigger>
               <TabsTrigger value="advanced">Advanced</TabsTrigger>
               <TabsTrigger value="display">Display</TabsTrigger>
               <TabsTrigger value="analytics">Analytics</TabsTrigger>
