@@ -1060,10 +1060,12 @@ This skill is primarily triggered by automations, not directly by users.
           properties: {
             action: { type: 'string', enum: ['list', 'create', 'update', 'move_stage'] },
             deal_id: { type: 'string' },
-            title: { type: 'string' },
             value_cents: { type: 'number' },
             stage: { type: 'string' },
             lead_id: { type: 'string' },
+            product_id: { type: 'string' },
+            expected_close: { type: 'string', description: 'Date YYYY-MM-DD' },
+            notes: { type: 'string' },
           },
           required: ['action'],
         },
