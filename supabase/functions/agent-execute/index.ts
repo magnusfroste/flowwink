@@ -325,6 +325,9 @@ async function executeModuleAction(
 ): Promise<unknown> {
   switch (moduleName) {
     case 'blog': {
+      if (skillName === 'manage_blog_posts') {
+        return await executeBlogPostsManagement(supabase, args);
+      }
       return await executeBlogAction(supabase, skillName, args);
     }
 
