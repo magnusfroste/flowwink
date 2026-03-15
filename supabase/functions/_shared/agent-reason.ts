@@ -938,6 +938,9 @@ async function handleAdvancePlan(supabase: any, supabaseUrl: string, serviceKey:
     if (!success || !nextStep.skill_name || allDone) break;
   }
 
+  // Release the lock
+  await releaseObjective(supabase, objective_id);
+
   const lastResult = chainResults[chainResults.length - 1];
   return {
     status: chainResults.some(r => r.status === 'failed') ? 'chain_partial' : 'chain_completed',
