@@ -59,6 +59,7 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
   });
 
   const productType = watch('type');
+  const trackInventory = watch('track_inventory');
 
   useEffect(() => {
     if (product) {
