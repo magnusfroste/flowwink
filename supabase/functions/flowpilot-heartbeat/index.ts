@@ -12,7 +12,14 @@ import {
   getBuiltInTools,
   executeBuiltInTool,
   runSelfHealing,
+  loadCMSSchema,
+  loadHeartbeatState,
+  saveHeartbeatState,
+  extractTokenUsage,
+  accumulateTokens,
+  isOverBudget,
 } from "../_shared/agent-reason.ts";
+import type { TokenUsage, HeartbeatState } from "../_shared/agent-reason.ts";
 
 /**
  * FlowPilot Heartbeat — Enhanced Autonomous Loop
