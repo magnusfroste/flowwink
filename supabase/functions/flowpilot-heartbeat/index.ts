@@ -219,7 +219,17 @@ serve(async (req) => {
 
     const duration = Date.now() - startTime;
 
-    // 6. Log heartbeat
+    // 7. Save heartbeat state for next run
+    await saveHeartbeatState(supabase, {
+      last_run: new Date().toISOString(),
+      objectives_advanced: actionsExecuted.filter(a => a === 'advance_plan' || a === 'objective_complete'),
+      next_priorities: [],
+      pending_actions: [],
+      token_usage: totalTokenUsage,
+      iteration_count: actionsExecuted.length,
+    });
+
+    // 8. Log heartbeat with token usage
     await supabase.from("agent_activity").insert({
       agent: "flowpilot",
       skill_name: "heartbeat",
@@ -227,12 +237,13 @@ serve(async (req) => {
       output: { summary: finalResponse.slice(0, 2000) },
       status: "success",
       duration_ms: duration,
+      token_usage: totalTokenUsage,
     });
 
-    console.log(`[heartbeat] Complete in ${duration}ms, ${actionsExecuted.length} actions: ${actionsExecuted.join(", ")}`);
+    console.log(`[heartbeat] Complete in ${duration}ms, ${actionsExecuted.length} actions, ${totalTokenUsage.total_tokens} tokens: ${actionsExecuted.join(", ")}`);
 
     return new Response(
-      JSON.stringify({ status: "ok", duration_ms: duration, actions: actionsExecuted, summary: finalResponse.slice(0, 500) }),
+      JSON.stringify({ status: "ok", duration_ms: duration, actions: actionsExecuted, token_usage: totalTokenUsage, summary: finalResponse.slice(0, 500) }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err: any) {

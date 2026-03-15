@@ -101,7 +101,23 @@ export interface AgentActivity {
   conversation_id: string | null;
   error_message: string | null;
   duration_ms: number | null;
+  token_usage: TokenUsage | null;
   created_at: string;
+}
+
+export interface TokenUsage {
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+}
+
+export interface HeartbeatState {
+  last_run: string;
+  objectives_advanced: string[];
+  next_priorities: string[];
+  pending_actions: string[];
+  token_usage: TokenUsage;
+  iteration_count: number;
 }
 
 // =============================================================================
