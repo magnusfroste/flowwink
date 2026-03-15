@@ -17,11 +17,13 @@ import { useCompanies, useCreateCompany } from '@/hooks/useCompanies';
 import { useAddLeadActivity, type ActivityType } from '@/hooks/useActivities';
 import { getLeadStatusInfo, type LeadStatus } from '@/lib/lead-utils';
 import { DealSection } from '@/components/admin/DealSection';
-import { ActivityTimeline } from '@/components/admin/ActivityTimeline';
+import { UnifiedTimeline } from '@/components/admin/crm/UnifiedTimeline';
+import { CrmTasksCard } from '@/components/admin/crm/CrmTasksCard';
+import { SendEmailDialog } from '@/components/admin/crm/SendEmailDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { 
-  ArrowLeft, Mail, Phone, Building, Calendar, Sparkles, AlertCircle, Check, ChevronsUpDown, X, Plus, Loader2
+  ArrowLeft, Mail, Phone, Building, Calendar, Sparkles, AlertCircle, Check, ChevronsUpDown, X, Plus, Loader2, Send
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -30,7 +32,6 @@ export default function LeadDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: lead, isLoading } = useLead(id);
-  const { data: activities, isLoading: activitiesLoading } = useLeadActivities(id);
   const { data: companies } = useCompanies();
   const createCompany = useCreateCompany();
   const updateLead = useUpdateLead();
@@ -50,6 +51,7 @@ export default function LeadDetailPage() {
   const [newCompanyNotes, setNewCompanyNotes] = useState('');
   const [isEnrichingInline, setIsEnrichingInline] = useState(false);
   const [showEnrichedFields, setShowEnrichedFields] = useState(false);
+  const [showEmailDialog, setShowEmailDialog] = useState(false);
 
   if (isLoading) {
     return (
@@ -78,10 +80,7 @@ export default function LeadDetailPage() {
   const companyName = lead.companies?.name;
 
   const handleCompanyChange = (companyId: string | null) => {
-    updateLead.mutate({ 
-      id: lead.id, 
-      company_id: companyId,
-    });
+    updateLead.mutate({ id: lead.id, company_id: companyId });
     setCompanyOpen(false);
     setShowNewCompanyForm(false);
   };
@@ -91,15 +90,12 @@ export default function LeadDetailPage() {
       toast.error('Enter a domain to enrich');
       return;
     }
-    
     setIsEnrichingInline(true);
     try {
       const { data, error } = await supabase.functions.invoke('enrich-company', {
         body: { domain: newCompanyDomain.trim() }
       });
-      
       if (error) throw error;
-      
       if (data?.success && data?.data) {
         const enrichedData = data.data;
         if (enrichedData.industry) setNewCompanyIndustry(enrichedData.industry);
@@ -136,10 +132,7 @@ export default function LeadDetailPage() {
 
   const handleCreateCompany = async () => {
     if (!newCompanyName.trim()) return;
-    
-    // Check if we have enriched data
     const hasEnrichedData = newCompanyIndustry || newCompanySize || newCompanyPhone || newCompanyAddress || newCompanyWebsite;
-    
     createCompany.mutate(
       {
         name: newCompanyName.trim(),
@@ -163,11 +156,7 @@ export default function LeadDetailPage() {
   };
 
   const handleStatusChange = (newStatus: LeadStatus) => {
-    updateLead.mutate({ 
-      id: lead.id, 
-      status: newStatus,
-      needs_review: false,
-    });
+    updateLead.mutate({ id: lead.id, status: newStatus, needs_review: false });
   };
 
   const handleAddNote = () => {
@@ -178,18 +167,6 @@ export default function LeadDetailPage() {
 
   const handleQualify = () => {
     qualifyLead.mutate(lead.id);
-  };
-
-  const handleAddActivity = (activity: { type: ActivityType; title?: string; description?: string }) => {
-    addActivity.mutate({
-      leadId: lead.id,
-      type: activity.type,
-      metadata: {
-        title: activity.title,
-        description: activity.description,
-      },
-      points: activity.type === 'call' ? 10 : activity.type === 'meeting' ? 15 : activity.type === 'email' ? 5 : 0,
-    });
   };
 
   return (
@@ -207,7 +184,7 @@ export default function LeadDetailPage() {
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Info */}
+        {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
           {/* Status & Actions */}
           <Card>
@@ -239,16 +216,25 @@ export default function LeadDetailPage() {
                   </Badge>
                 )}
 
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={handleQualify}
-                  disabled={qualifyLead.isPending}
-                  className="ml-auto"
-                >
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  {qualifyLead.isPending ? 'Qualifying...' : 'AI Qualify'}
-                </Button>
+                <div className="flex items-center gap-2 ml-auto">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowEmailDialog(true)}
+                  >
+                    <Send className="h-4 w-4 mr-2" />
+                    Email
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={handleQualify}
+                    disabled={qualifyLead.isPending}
+                  >
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    {qualifyLead.isPending ? 'Qualifying...' : 'AI Qualify'}
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -276,6 +262,9 @@ export default function LeadDetailPage() {
           {/* Deals Section */}
           <DealSection leadId={lead.id} />
 
+          {/* Tasks */}
+          <CrmTasksCard leadId={lead.id} />
+
           {/* Add Note */}
           <Card>
             <CardHeader>
@@ -300,14 +289,8 @@ export default function LeadDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Activity Timeline */}
-          <ActivityTimeline
-            activities={activities || []}
-            onAddActivity={handleAddActivity}
-            isLoading={activitiesLoading}
-            title="Activity History"
-            description="All interactions with this contact"
-          />
+          {/* Unified Cross-Module Timeline */}
+          <UnifiedTimeline leadId={lead.id} email={lead.email} />
         </div>
 
         {/* Sidebar */}
@@ -358,40 +341,15 @@ export default function LeadDetailPage() {
                         <div className="p-3 space-y-3 max-h-96 overflow-y-auto">
                           <div className="flex items-center justify-between">
                             <span className="text-sm font-medium">New company</span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 p-0"
-                              onClick={resetNewCompanyForm}
-                            >
+                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={resetNewCompanyForm}>
                               <X className="h-4 w-4" />
                             </Button>
                           </div>
-                          <Input
-                            placeholder="Company name *"
-                            value={newCompanyName}
-                            onChange={(e) => setNewCompanyName(e.target.value)}
-                            autoFocus
-                          />
+                          <Input placeholder="Company name *" value={newCompanyName} onChange={(e) => setNewCompanyName(e.target.value)} autoFocus />
                           <div className="flex gap-2">
-                            <Input
-                              placeholder="Domain (e.g. acme.com)"
-                              value={newCompanyDomain}
-                              onChange={(e) => setNewCompanyDomain(e.target.value)}
-                              className="flex-1"
-                            />
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              onClick={handleEnrichInline}
-                              disabled={!newCompanyDomain.trim() || isEnrichingInline}
-                              title="Enrich with AI"
-                            >
-                              {isEnrichingInline ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <Sparkles className="h-4 w-4" />
-                              )}
+                            <Input placeholder="Domain (e.g. acme.com)" value={newCompanyDomain} onChange={(e) => setNewCompanyDomain(e.target.value)} className="flex-1" />
+                            <Button variant="outline" size="icon" onClick={handleEnrichInline} disabled={!newCompanyDomain.trim() || isEnrichingInline} title="Enrich with AI">
+                              {isEnrichingInline ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                             </Button>
                           </div>
                           
@@ -401,9 +359,7 @@ export default function LeadDetailPage() {
                                 <div className="space-y-1">
                                   <Label className="text-xs">Industry</Label>
                                   <Select value={newCompanyIndustry} onValueChange={setNewCompanyIndustry}>
-                                    <SelectTrigger className="h-8 text-xs">
-                                      <SelectValue placeholder="Select..." />
-                                    </SelectTrigger>
+                                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select..." /></SelectTrigger>
                                     <SelectContent>
                                       <SelectItem value="IT & Technology">IT & Technology</SelectItem>
                                       <SelectItem value="Finance & Insurance">Finance & Insurance</SelectItem>
@@ -421,9 +377,7 @@ export default function LeadDetailPage() {
                                 <div className="space-y-1">
                                   <Label className="text-xs">Size</Label>
                                   <Select value={newCompanySize} onValueChange={setNewCompanySize}>
-                                    <SelectTrigger className="h-8 text-xs">
-                                      <SelectValue placeholder="Select..." />
-                                    </SelectTrigger>
+                                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select..." /></SelectTrigger>
                                     <SelectContent>
                                       <SelectItem value="1-10">1-10 employees</SelectItem>
                                       <SelectItem value="11-50">11-50 employees</SelectItem>
@@ -436,50 +390,24 @@ export default function LeadDetailPage() {
                               </div>
                               <div className="space-y-1">
                                 <Label className="text-xs">Phone</Label>
-                                <Input
-                                  placeholder="Phone number"
-                                  value={newCompanyPhone}
-                                  onChange={(e) => setNewCompanyPhone(e.target.value)}
-                                  className="h-8 text-xs"
-                                />
+                                <Input placeholder="Phone number" value={newCompanyPhone} onChange={(e) => setNewCompanyPhone(e.target.value)} className="h-8 text-xs" />
                               </div>
                               <div className="space-y-1">
                                 <Label className="text-xs">Website</Label>
-                                <Input
-                                  placeholder="https://..."
-                                  value={newCompanyWebsite}
-                                  onChange={(e) => setNewCompanyWebsite(e.target.value)}
-                                  className="h-8 text-xs"
-                                />
+                                <Input placeholder="https://..." value={newCompanyWebsite} onChange={(e) => setNewCompanyWebsite(e.target.value)} className="h-8 text-xs" />
                               </div>
                               <div className="space-y-1">
                                 <Label className="text-xs">Address</Label>
-                                <Input
-                                  placeholder="Address"
-                                  value={newCompanyAddress}
-                                  onChange={(e) => setNewCompanyAddress(e.target.value)}
-                                  className="h-8 text-xs"
-                                />
+                                <Input placeholder="Address" value={newCompanyAddress} onChange={(e) => setNewCompanyAddress(e.target.value)} className="h-8 text-xs" />
                               </div>
                               <div className="space-y-1">
                                 <Label className="text-xs">Description</Label>
-                                <Textarea
-                                  placeholder="Company description..."
-                                  value={newCompanyNotes}
-                                  onChange={(e) => setNewCompanyNotes(e.target.value)}
-                                  rows={2}
-                                  className="text-xs"
-                                />
+                                <Textarea placeholder="Company description..." value={newCompanyNotes} onChange={(e) => setNewCompanyNotes(e.target.value)} rows={2} className="text-xs" />
                               </div>
                             </div>
                           )}
                           
-                          <Button
-                            className="w-full"
-                            size="sm"
-                            onClick={handleCreateCompany}
-                            disabled={!newCompanyName.trim() || createCompany.isPending}
-                          >
+                          <Button className="w-full" size="sm" onClick={handleCreateCompany} disabled={!newCompanyName.trim() || createCompany.isPending}>
                             {createCompany.isPending ? 'Creating...' : 'Create & link'}
                           </Button>
                         </div>
@@ -490,22 +418,11 @@ export default function LeadDetailPage() {
                             <CommandEmpty>No company found.</CommandEmpty>
                             <CommandGroup>
                               {companies?.map((company) => (
-                                <CommandItem
-                                  key={company.id}
-                                  value={company.name}
-                                  onSelect={() => handleCompanyChange(company.id)}
-                                >
-                                  <Check
-                                    className={cn(
-                                      "mr-2 h-4 w-4",
-                                      lead.company_id === company.id ? "opacity-100" : "opacity-0"
-                                    )}
-                                  />
+                                <CommandItem key={company.id} value={company.name} onSelect={() => handleCompanyChange(company.id)}>
+                                  <Check className={cn("mr-2 h-4 w-4", lead.company_id === company.id ? "opacity-100" : "opacity-0")} />
                                   <div className="flex flex-col">
                                     <span>{company.name}</span>
-                                    {company.domain && (
-                                      <span className="text-xs text-muted-foreground">{company.domain}</span>
-                                    )}
+                                    {company.domain && <span className="text-xs text-muted-foreground">{company.domain}</span>}
                                   </div>
                                 </CommandItem>
                               ))}
@@ -515,7 +432,6 @@ export default function LeadDetailPage() {
                               <CommandItem
                                 onSelect={() => {
                                   setShowNewCompanyForm(true);
-                                  // Auto-fill domain from contact email
                                   const emailDomain = lead.email.split('@')[1];
                                   const personalDomains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com', 'live.com', 'msn.com', 'aol.com'];
                                   if (emailDomain && !personalDomains.includes(emailDomain)) {
@@ -536,18 +452,10 @@ export default function LeadDetailPage() {
                   </Popover>
                   {lead.companies && (
                     <div className="flex items-center gap-2 mt-2">
-                      <Link 
-                        to={`/admin/companies/${lead.companies.id}`}
-                        className="text-xs hover:underline text-primary"
-                      >
+                      <Link to={`/admin/companies/${lead.companies.id}`} className="text-xs hover:underline text-primary">
                         View company
                       </Link>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 px-2 text-xs text-muted-foreground hover:text-destructive"
-                        onClick={() => handleCompanyChange(null)}
-                      >
+                      <Button variant="ghost" size="sm" className="h-6 px-2 text-xs text-muted-foreground hover:text-destructive" onClick={() => handleCompanyChange(null)}>
                         <X className="h-3 w-3 mr-1" />
                         Unlink
                       </Button>
@@ -581,6 +489,14 @@ export default function LeadDetailPage() {
           </Card>
         </div>
       </div>
+
+      {/* Email Dialog */}
+      <SendEmailDialog
+        open={showEmailDialog}
+        onOpenChange={setShowEmailDialog}
+        recipientEmail={lead.email}
+        recipientName={lead.name || undefined}
+      />
     </AdminLayout>
   );
 }
