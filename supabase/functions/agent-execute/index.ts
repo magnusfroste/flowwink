@@ -541,10 +541,45 @@ async function executeResumeAction(
       }
 
       if (action === 'update' && profile_id) {
+        delete profileData.action;
         const { data, error } = await supabase.from('consultant_profiles')
           .update(profileData).eq('id', profile_id).select('id, name').single();
         if (error) throw new Error(`Update failed: ${error.message}`);
         return { profile_id: data.id, status: 'updated' };
+      }
+
+      if (action === 'delete' && profile_id) {
+        const { error } = await supabase.from('consultant_profiles')
+          .delete().eq('id', profile_id);
+        if (error) throw new Error(`Delete failed: ${error.message}`);
+        return { profile_id, status: 'deleted' };
+      }
+
+      if (action === 'find_duplicates') {
+        const { data: all, error } = await supabase.from('consultant_profiles')
+          .select('id, name, email, title, skills')
+          .order('created_at', { ascending: true });
+        if (error) throw new Error(`List failed: ${error.message}`);
+        const profiles = all || [];
+        const duplicates: Array<{ ids: string[]; name: string; reason: string }> = [];
+        const seen = new Map<string, any>();
+        for (const p of profiles) {
+          const key = p.name?.toLowerCase().trim();
+          if (key && seen.has(key)) {
+            duplicates.push({ ids: [seen.get(key).id, p.id], name: p.name, reason: 'Same name' });
+          } else if (key) {
+            seen.set(key, p);
+          }
+          if (p.email) {
+            const emailKey = p.email.toLowerCase();
+            if (seen.has(`email:${emailKey}`)) {
+              duplicates.push({ ids: [seen.get(`email:${emailKey}`).id, p.id], name: p.name, reason: 'Same email' });
+            } else {
+              seen.set(`email:${emailKey}`, p);
+            }
+          }
+        }
+        return { total_profiles: profiles.length, duplicates, duplicate_count: duplicates.length };
       }
 
       return { error: `Unknown resume action: ${action}` };
