@@ -30,6 +30,10 @@ export interface PromptCompilerInput {
   automationContext?: string;
   healingReport?: string;
   maxIterations?: number;
+  // Autonomy features
+  cmsSchemaContext?: string;
+  heartbeatState?: string;
+  tokenBudget?: number;
   // Chat-specific
   chatSystemPrompt?: string;
 }
