@@ -12,6 +12,11 @@ interface ExecuteRequest {
   arguments: Record<string, unknown>;
   agent_type: 'flowpilot' | 'chat';
   conversation_id?: string;
+  objective_context?: {
+    goal: string;
+    step: string;
+    why: string;
+  };
 }
 
 serve(async (req) => {
@@ -26,7 +31,7 @@ serve(async (req) => {
 
   try {
     const body: ExecuteRequest = await req.json();
-    const { skill_id, skill_name, arguments: args, agent_type, conversation_id } = body;
+    const { skill_id, skill_name, arguments: args, agent_type, conversation_id, objective_context } = body;
 
     if (!skill_id && !skill_name) {
       return new Response(JSON.stringify({ error: 'skill_id or skill_name required' }), {
@@ -122,10 +127,13 @@ serve(async (req) => {
       result = { error: `Unknown handler type: ${handler}` };
     }
 
-    // 5. Log activity
+    // 5. Log activity (with objective context if provided)
+    const activityInput = objective_context
+      ? { ...args, _objective_context: objective_context }
+      : args;
     const activityId = await logActivity(supabase, {
       agent: agent_type, skill_id: skill.id, skill_name: skill.name,
-      input: args, output: result as Record<string, unknown>,
+      input: activityInput, output: result as Record<string, unknown>,
       status: 'success', conversation_id,
       duration_ms: Date.now() - startTime,
     });

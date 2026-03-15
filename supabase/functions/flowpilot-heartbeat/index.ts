@@ -12,7 +12,14 @@ import {
   getBuiltInTools,
   executeBuiltInTool,
   runSelfHealing,
+  loadCMSSchema,
+  loadHeartbeatState,
+  saveHeartbeatState,
+  extractTokenUsage,
+  accumulateTokens,
+  isOverBudget,
 } from "../_shared/agent-reason.ts";
+import type { TokenUsage, HeartbeatState } from "../_shared/agent-reason.ts";
 
 /**
  * FlowPilot Heartbeat — Enhanced Autonomous Loop
@@ -97,7 +104,7 @@ serve(async (req) => {
 
   try {
     // 1. Gather context + run self-healing in parallel
-    const [{ soul, identity }, memoryCtx, objectiveCtx, activityCtx, statsCtx, automationCtx, healingReport] = await Promise.all([
+    const [{ soul, identity }, memoryCtx, objectiveCtx, activityCtx, statsCtx, automationCtx, healingReport, cmsSchemaCtx, heartbeatStateCtx] = await Promise.all([
       loadSoulIdentity(supabase),
       loadMemories(supabase),
       loadObjectives(supabase),
@@ -105,6 +112,8 @@ serve(async (req) => {
       loadSiteStats(supabase),
       loadLinkedAutomations(supabase),
       runSelfHealing(supabase),
+      loadCMSSchema(supabase),
+      loadHeartbeatState(supabase),
     ]);
 
     // 2. Resolve AI config
@@ -115,7 +124,10 @@ serve(async (req) => {
     const skillTools = await loadSkillTools(supabase, 'internal');
     const allTools = [...builtInTools, ...skillTools];
 
-    // 4. Build system prompt via prompt compiler (OpenClaw Layer 1)
+    // 4. Token budget
+    const TOKEN_BUDGET = 50_000;
+
+    // 5. Build system prompt via prompt compiler (OpenClaw Layer 1)
     const systemPrompt = buildSystemPrompt({
       mode: 'heartbeat',
       soulPrompt: buildSoulPrompt(soul, identity),
@@ -125,10 +137,13 @@ serve(async (req) => {
       statsContext: statsCtx,
       automationContext: automationCtx,
       healingReport: healingReport,
+      cmsSchemaContext: cmsSchemaCtx,
+      heartbeatState: heartbeatStateCtx,
+      tokenBudget: TOKEN_BUDGET,
       maxIterations: MAX_ITERATIONS,
     });
 
-    // 5. Run the reasoning loop with context pruning
+    // 6. Run the reasoning loop with context pruning + token tracking
     const rawMessages: any[] = [
       { role: "system", content: systemPrompt },
       { role: "user", content: `Heartbeat triggered at ${new Date().toISOString()}. Review objectives, advance plans, execute due automations, and report system health.` },
@@ -138,8 +153,16 @@ serve(async (req) => {
 
     let finalResponse = "";
     const actionsExecuted: string[] = [];
+    let totalTokenUsage: TokenUsage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
 
     for (let i = 0; i < MAX_ITERATIONS; i++) {
+      // Token budget check
+      if (isOverBudget(totalTokenUsage, TOKEN_BUDGET)) {
+        console.log(`[heartbeat] Token budget exceeded (${totalTokenUsage.total_tokens}/${TOKEN_BUDGET}), stopping.`);
+        finalResponse = finalResponse || `Heartbeat stopped: token budget reached (${totalTokenUsage.total_tokens} tokens used).`;
+        break;
+      }
+
       const aiResponse = await fetch(apiUrl, {
         method: "POST",
         headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
@@ -158,6 +181,11 @@ serve(async (req) => {
       }
 
       const aiData = await aiResponse.json();
+      
+      // Track tokens
+      const iterationTokens = extractTokenUsage(aiData);
+      totalTokenUsage = accumulateTokens(totalTokenUsage, iterationTokens);
+
       const choice = aiData.choices?.[0];
       if (!choice) throw new Error("No AI response");
 
@@ -191,7 +219,17 @@ serve(async (req) => {
 
     const duration = Date.now() - startTime;
 
-    // 6. Log heartbeat
+    // 7. Save heartbeat state for next run
+    await saveHeartbeatState(supabase, {
+      last_run: new Date().toISOString(),
+      objectives_advanced: actionsExecuted.filter(a => a === 'advance_plan' || a === 'objective_complete'),
+      next_priorities: [],
+      pending_actions: [],
+      token_usage: totalTokenUsage,
+      iteration_count: actionsExecuted.length,
+    });
+
+    // 8. Log heartbeat with token usage
     await supabase.from("agent_activity").insert({
       agent: "flowpilot",
       skill_name: "heartbeat",
@@ -199,12 +237,13 @@ serve(async (req) => {
       output: { summary: finalResponse.slice(0, 2000) },
       status: "success",
       duration_ms: duration,
+      token_usage: totalTokenUsage,
     });
 
-    console.log(`[heartbeat] Complete in ${duration}ms, ${actionsExecuted.length} actions: ${actionsExecuted.join(", ")}`);
+    console.log(`[heartbeat] Complete in ${duration}ms, ${actionsExecuted.length} actions, ${totalTokenUsage.total_tokens} tokens: ${actionsExecuted.join(", ")}`);
 
     return new Response(
-      JSON.stringify({ status: "ok", duration_ms: duration, actions: actionsExecuted, summary: finalResponse.slice(0, 500) }),
+      JSON.stringify({ status: "ok", duration_ms: duration, actions: actionsExecuted, token_usage: totalTokenUsage, summary: finalResponse.slice(0, 500) }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err: any) {

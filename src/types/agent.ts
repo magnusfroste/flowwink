@@ -74,6 +74,8 @@ export interface AgentObjective {
   progress: Record<string, unknown>;
   created_by: string | null;
   completed_at: string | null;
+  locked_by: string | null;
+  locked_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -99,7 +101,23 @@ export interface AgentActivity {
   conversation_id: string | null;
   error_message: string | null;
   duration_ms: number | null;
+  token_usage: TokenUsage | null;
   created_at: string;
+}
+
+export interface TokenUsage {
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+}
+
+export interface HeartbeatState {
+  last_run: string;
+  objectives_advanced: string[];
+  next_priorities: string[];
+  pending_actions: string[];
+  token_usage: TokenUsage;
+  iteration_count: number;
 }
 
 // =============================================================================
@@ -135,6 +153,11 @@ export interface AgentExecuteRequest {
   arguments: Record<string, unknown>;
   agent_type: AgentType;
   conversation_id?: string;
+  objective_context?: {
+    goal: string;
+    step: string;
+    why: string;
+  };
 }
 
 export interface AgentExecuteResponse {

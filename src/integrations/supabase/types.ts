@@ -119,6 +119,7 @@ export type Database = {
           skill_id: string | null
           skill_name: string | null
           status: Database["public"]["Enums"]["agent_activity_status"]
+          token_usage: Json | null
         }
         Insert: {
           agent?: Database["public"]["Enums"]["agent_type"]
@@ -132,6 +133,7 @@ export type Database = {
           skill_id?: string | null
           skill_name?: string | null
           status?: Database["public"]["Enums"]["agent_activity_status"]
+          token_usage?: Json | null
         }
         Update: {
           agent?: Database["public"]["Enums"]["agent_type"]
@@ -145,6 +147,7 @@ export type Database = {
           skill_id?: string | null
           skill_name?: string | null
           status?: Database["public"]["Enums"]["agent_activity_status"]
+          token_usage?: Json | null
         }
         Relationships: [
           {
@@ -298,6 +301,8 @@ export type Database = {
           created_by: string | null
           goal: string
           id: string
+          locked_at: string | null
+          locked_by: string | null
           progress: Json
           status: Database["public"]["Enums"]["agent_objective_status"]
           success_criteria: Json
@@ -310,6 +315,8 @@ export type Database = {
           created_by?: string | null
           goal: string
           id?: string
+          locked_at?: string | null
+          locked_by?: string | null
           progress?: Json
           status?: Database["public"]["Enums"]["agent_objective_status"]
           success_criteria?: Json
@@ -322,6 +329,8 @@ export type Database = {
           created_by?: string | null
           goal?: string
           id?: string
+          locked_at?: string | null
+          locked_by?: string | null
           progress?: Json
           status?: Database["public"]["Enums"]["agent_objective_status"]
           success_criteria?: Json

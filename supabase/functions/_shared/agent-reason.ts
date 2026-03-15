@@ -30,6 +30,10 @@ export interface PromptCompilerInput {
   automationContext?: string;
   healingReport?: string;
   maxIterations?: number;
+  // Autonomy features
+  cmsSchemaContext?: string;
+  heartbeatState?: string;
+  tokenBudget?: number;
   // Chat-specific
   chatSystemPrompt?: string;
 }
@@ -48,14 +52,31 @@ export interface ReasonResult {
   actionsExecuted: string[];
   skillResults: Array<{ skill: string; status: string; result: any }>;
   durationMs: number;
+  tokenUsage?: TokenUsage;
+}
+
+export interface TokenUsage {
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+}
+
+export interface HeartbeatState {
+  last_run: string;
+  objectives_advanced: string[];
+  next_priorities: string[];
+  pending_actions: string[];
+  token_usage: TokenUsage;
+  iteration_count: number;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const SELF_HEAL_THRESHOLD = 3;
 const MAX_CHAIN_DEPTH = 4;
-const MAX_CONTEXT_TOKENS = 80_000; // Approximate token budget for conversation history
-const SUMMARY_THRESHOLD = 60_000;  // Start pruning when history exceeds this
+const MAX_CONTEXT_TOKENS = 80_000;
+const SUMMARY_THRESHOLD = 60_000;
+const DEFAULT_TOKEN_BUDGET = 50_000; // Max tokens per heartbeat session
 
 const BUILT_IN_TOOL_NAMES = new Set([
   'memory_write', 'memory_read',
@@ -200,6 +221,11 @@ export function buildSystemPrompt(input: PromptCompilerInput): string {
   // Layer 2: Soul & Identity
   parts.push(soulPrompt);
 
+  // Layer 2.5: CMS Schema Awareness
+  if (input.cmsSchemaContext) {
+    parts.push(input.cmsSchemaContext);
+  }
+
   // Layer 3: Core instructions (shared)
   parts.push(CORE_INSTRUCTIONS);
 
@@ -212,6 +238,10 @@ export function buildSystemPrompt(input: PromptCompilerInput): string {
     if (input.activityContext) parts.push(input.activityContext);
     if (input.statsContext) parts.push(input.statsContext);
     if (input.healingReport) parts.push(input.healingReport);
+    if (input.heartbeatState) parts.push(input.heartbeatState);
+    if (input.tokenBudget) {
+      parts.push(`\nTOKEN BUDGET: ${input.tokenBudget} tokens max. Be efficient — stop early if approaching the limit.`);
+    }
     parts.push('');
     parts.push(HEARTBEAT_PROTOCOL);
     parts.push(`\n- Max ${input.maxIterations || 8} tool iterations per heartbeat`);
@@ -288,6 +318,147 @@ export function buildSoulPrompt(soul: any, identity: any): string {
   if (soul.tone) prompt += `\nTone: ${soul.tone}`;
   if (soul.philosophy) prompt += `\nPhilosophy: ${soul.philosophy}`;
   return prompt;
+}
+
+// ─── CMS Schema Awareness ─────────────────────────────────────────────────────
+
+export async function loadCMSSchema(supabase: any): Promise<string> {
+  try {
+    const [modulesRes, countsRes] = await Promise.all([
+      supabase.from('site_settings').select('key, value').in('key', ['modules', 'integrations', 'system_ai']),
+      Promise.all([
+        supabase.from('pages').select('id', { count: 'exact', head: true }),
+        supabase.from('blog_posts').select('id', { count: 'exact', head: true }),
+        supabase.from('leads').select('id', { count: 'exact', head: true }),
+        supabase.from('products').select('id', { count: 'exact', head: true }),
+        supabase.from('bookings').select('id', { count: 'exact', head: true }),
+        supabase.from('newsletter_subscribers').select('id', { count: 'exact', head: true }).eq('status', 'confirmed'),
+        supabase.from('kb_articles').select('id', { count: 'exact', head: true }),
+        supabase.from('agent_skills').select('id', { count: 'exact', head: true }).eq('enabled', true),
+      ]),
+    ]);
+
+    const settings = modulesRes.data || [];
+    const modules = settings.find((s: any) => s.key === 'modules')?.value || {};
+    const integrations = settings.find((s: any) => s.key === 'integrations')?.value || {};
+
+    const [pages, posts, leads, products, bookings, subscribers, kbArticles, skills] = countsRes;
+
+    const enabledModules = Object.entries(modules)
+      .filter(([, v]: [string, any]) => v?.enabled)
+      .map(([k]) => k);
+
+    const activeIntegrations: string[] = [];
+    if (Deno.env.get('STRIPE_SECRET_KEY')) activeIntegrations.push('Stripe');
+    if (Deno.env.get('RESEND_API_KEY')) activeIntegrations.push('Resend');
+    if (Deno.env.get('FIRECRAWL_API_KEY')) activeIntegrations.push('Firecrawl');
+    if (Deno.env.get('UNSPLASH_ACCESS_KEY')) activeIntegrations.push('Unsplash');
+    if (Deno.env.get('OPENAI_API_KEY')) activeIntegrations.push('OpenAI');
+    if (Deno.env.get('GEMINI_API_KEY')) activeIntegrations.push('Gemini');
+
+    const blockTypes = [
+      'hero', 'text', 'image', 'gallery', 'cta', 'contact', 'faq', 'pricing',
+      'testimonials', 'features', 'stats', 'team', 'video', 'map', 'newsletter',
+      'blog-list', 'product-list', 'booking', 'chat', 'parallax-section', 'marquee',
+      'consultant-profile', 'webinar', 'knowledge-base',
+    ];
+
+    return `\n\nCMS SCHEMA AWARENESS:
+Enabled modules: ${enabledModules.length > 0 ? enabledModules.join(', ') : 'none configured'}
+Active integrations: ${activeIntegrations.length > 0 ? activeIntegrations.join(', ') : 'none'}
+Available block types: ${blockTypes.join(', ')}
+Data counts: ${pages.count ?? 0} pages, ${posts.count ?? 0} blog posts, ${leads.count ?? 0} leads, ${products.count ?? 0} products, ${bookings.count ?? 0} bookings, ${subscribers.count ?? 0} subscribers, ${kbArticles.count ?? 0} KB articles, ${skills.count ?? 0} active skills`;
+  } catch (err) {
+    console.error('[cms-schema] Failed to load:', err);
+    return '';
+  }
+}
+
+// ─── Persistent Heartbeat State ───────────────────────────────────────────────
+
+export async function loadHeartbeatState(supabase: any): Promise<string> {
+  const { data } = await supabase
+    .from('agent_memory')
+    .select('value')
+    .eq('key', 'heartbeat_state')
+    .maybeSingle();
+
+  if (!data?.value) return '';
+
+  const state = data.value as HeartbeatState;
+  const parts: string[] = ['\n\nHEARTBEAT STATE (from previous run):'];
+  if (state.last_run) parts.push(`Last run: ${state.last_run}`);
+  if (state.objectives_advanced?.length) parts.push(`Objectives advanced last time: ${state.objectives_advanced.join(', ')}`);
+  if (state.next_priorities?.length) parts.push(`Priorities flagged: ${state.next_priorities.join(', ')}`);
+  if (state.pending_actions?.length) parts.push(`Pending actions: ${state.pending_actions.join(', ')}`);
+  if (state.token_usage) parts.push(`Previous token usage: ${state.token_usage.total_tokens} tokens`);
+  if (state.iteration_count) parts.push(`Previous iterations: ${state.iteration_count}`);
+  return parts.join('\n');
+}
+
+export async function saveHeartbeatState(supabase: any, state: HeartbeatState): Promise<void> {
+  const { data: existing } = await supabase
+    .from('agent_memory').select('id').eq('key', 'heartbeat_state').maybeSingle();
+
+  const record = {
+    value: state,
+    category: 'context',
+    updated_at: new Date().toISOString(),
+  };
+
+  if (existing) {
+    await supabase.from('agent_memory').update(record).eq('id', existing.id);
+  } else {
+    await supabase.from('agent_memory')
+      .insert({ key: 'heartbeat_state', ...record, created_by: 'flowpilot' });
+  }
+}
+
+// ─── Atomic Task Checkout ─────────────────────────────────────────────────────
+
+export async function checkoutObjective(supabase: any, objectiveId: string): Promise<boolean> {
+  // Atomic: only succeeds if not locked or lock is stale (>30 min)
+  const staleThreshold = new Date(Date.now() - 30 * 60_000).toISOString();
+  const { data, error } = await supabase
+    .from('agent_objectives')
+    .update({ locked_by: 'heartbeat', locked_at: new Date().toISOString() })
+    .eq('id', objectiveId)
+    .or(`locked_by.is.null,locked_at.lt.${staleThreshold}`)
+    .select('id')
+    .maybeSingle();
+
+  return !error && !!data;
+}
+
+export async function releaseObjective(supabase: any, objectiveId: string): Promise<void> {
+  await supabase
+    .from('agent_objectives')
+    .update({ locked_by: null, locked_at: null })
+    .eq('id', objectiveId)
+    .eq('locked_by', 'heartbeat');
+}
+
+// ─── Token Tracking ───────────────────────────────────────────────────────────
+
+export function extractTokenUsage(aiData: any): TokenUsage {
+  const usage = aiData.usage || {};
+  return {
+    prompt_tokens: usage.prompt_tokens || 0,
+    completion_tokens: usage.completion_tokens || 0,
+    total_tokens: (usage.prompt_tokens || 0) + (usage.completion_tokens || 0),
+  };
+}
+
+export function accumulateTokens(current: TokenUsage, incoming: TokenUsage): TokenUsage {
+  return {
+    prompt_tokens: current.prompt_tokens + incoming.prompt_tokens,
+    completion_tokens: current.completion_tokens + incoming.completion_tokens,
+    total_tokens: current.total_tokens + incoming.total_tokens,
+  };
+}
+
+export function isOverBudget(usage: TokenUsage, budget: number): boolean {
+  return usage.total_tokens >= budget;
 }
 
 // ─── Memory ───────────────────────────────────────────────────────────────────
@@ -712,6 +883,12 @@ async function handleAdvancePlan(supabase: any, supabaseUrl: string, serviceKey:
     let result: any = { status: 'manual', message: 'No skill mapped — requires manual action.' };
     if (nextStep.skill_name) {
       try {
+        // Goal-Aware Execution: pass objective context to agent-execute
+        const objectiveContext = {
+          goal: obj.goal,
+          step: nextStep.description,
+          why: `Step ${nextStep.order} of plan for objective: ${obj.goal}`,
+        };
         const resp = await fetch(`${supabaseUrl}/functions/v1/agent-execute`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceKey}` },
@@ -719,6 +896,7 @@ async function handleAdvancePlan(supabase: any, supabaseUrl: string, serviceKey:
             skill_name: nextStep.skill_name,
             arguments: nextStep.skill_args || {},
             agent_type: 'flowpilot',
+            objective_context: objectiveContext,
           }),
         });
         result = await resp.json();
