@@ -217,7 +217,55 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-4">
+          {/* Inventory */}
+          <div className="space-y-3 rounded-lg border p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-sm font-medium">Track inventory</Label>
+                <p className="text-xs text-muted-foreground">Enable stock management for this product</p>
+              </div>
+              <Switch
+                checked={trackInventory}
+                onCheckedChange={(v) => setValue('track_inventory', v)}
+              />
+            </div>
+
+            {trackInventory && (
+              <div className="grid grid-cols-2 gap-4 pt-2">
+                <div className="space-y-2">
+                  <Label htmlFor="stock_quantity">Stock quantity</Label>
+                  <Input
+                    id="stock_quantity"
+                    type="number"
+                    min="0"
+                    {...register('stock_quantity')}
+                    placeholder="0"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="low_stock_threshold">Low stock threshold</Label>
+                  <Input
+                    id="low_stock_threshold"
+                    type="number"
+                    min="0"
+                    {...register('low_stock_threshold')}
+                    placeholder="5"
+                  />
+                </div>
+                <div className="col-span-2 flex items-center justify-between">
+                  <div>
+                    <Label className="text-sm">Allow backorders</Label>
+                    <p className="text-xs text-muted-foreground">Continue selling when out of stock</p>
+                  </div>
+                  <Switch
+                    checked={watch('allow_backorder')}
+                    onCheckedChange={(v) => setValue('allow_backorder', v)}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
