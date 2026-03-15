@@ -1545,6 +1545,30 @@ export type Database = {
         }
         Relationships: []
       }
+      installed_template: {
+        Row: {
+          id: string
+          installed_at: string
+          manifest: Json
+          template_id: string
+          template_name: string
+        }
+        Insert: {
+          id?: string
+          installed_at?: string
+          manifest?: Json
+          template_id: string
+          template_name: string
+        }
+        Update: {
+          id?: string
+          installed_at?: string
+          manifest?: Json
+          template_id?: string
+          template_name?: string
+        }
+        Relationships: []
+      }
       kb_articles: {
         Row: {
           answer_json: Json | null
