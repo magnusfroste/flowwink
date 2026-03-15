@@ -69,6 +69,10 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
         price: (product.price_cents / 100).toString(),
         currency: product.currency,
         image_url: product.image_url || '',
+        track_inventory: product.track_inventory,
+        stock_quantity: product.stock_quantity?.toString() ?? '',
+        low_stock_threshold: product.low_stock_threshold.toString(),
+        allow_backorder: product.allow_backorder,
       });
     } else {
       reset({
@@ -78,6 +82,10 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
         price: '',
         currency: 'USD',
         image_url: '',
+        track_inventory: false,
+        stock_quantity: '',
+        low_stock_threshold: '5',
+        allow_backorder: false,
       });
     }
   }, [product, reset]);
