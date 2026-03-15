@@ -1780,7 +1780,12 @@ export async function loadSkillTools(supabase: any, scope: 'internal' | 'externa
 
   return (skills || [])
     .filter((s: any) => s.tool_definition?.function)
-    .map((s: any) => s.tool_definition);
+    .map((s: any) => {
+      const td = s.tool_definition;
+      // Ensure every tool has the required 'type' field
+      if (!td.type) td.type = 'function';
+      return td;
+    });
 }
 
 // ─── Non-Streaming Reason Loop ────────────────────────────────────────────────
