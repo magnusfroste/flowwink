@@ -101,6 +101,10 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
       sort_order: 0,
       image_url: data.image_url?.trim() || null,
       stripe_price_id: product?.stripe_price_id ?? null,
+      track_inventory: data.track_inventory,
+      stock_quantity: data.track_inventory ? (data.stock_quantity ? parseInt(data.stock_quantity) : 0) : null,
+      low_stock_threshold: parseInt(data.low_stock_threshold) || 5,
+      allow_backorder: data.allow_backorder,
     };
 
     if (product) {
