@@ -156,6 +156,13 @@ serve(async (req) => {
     let totalTokenUsage: TokenUsage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
 
     for (let i = 0; i < MAX_ITERATIONS; i++) {
+      // Token budget check
+      if (isOverBudget(totalTokenUsage, TOKEN_BUDGET)) {
+        console.log(`[heartbeat] Token budget exceeded (${totalTokenUsage.total_tokens}/${TOKEN_BUDGET}), stopping.`);
+        finalResponse = finalResponse || `Heartbeat stopped: token budget reached (${totalTokenUsage.total_tokens} tokens used).`;
+        break;
+      }
+
       const aiResponse = await fetch(apiUrl, {
         method: "POST",
         headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
@@ -174,6 +181,11 @@ serve(async (req) => {
       }
 
       const aiData = await aiResponse.json();
+      
+      // Track tokens
+      const iterationTokens = extractTokenUsage(aiData);
+      totalTokenUsage = accumulateTokens(totalTokenUsage, iterationTokens);
+
       const choice = aiData.choices?.[0];
       if (!choice) throw new Error("No AI response");
 
