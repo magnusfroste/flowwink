@@ -335,7 +335,15 @@ export function useTemplateInstaller() {
         }
       }
 
-      // Apply branding
+      // Clean up trashed pages with conflicting slugs
+      if (opts.pages && deletedPages && deletedPages.length > 0) {
+        const templateSlugs = new Set(template.pages.map(p => p.slug));
+        const conflicting = deletedPages.filter(p => templateSlugs.has(p.slug));
+        for (const page of conflicting) {
+          try { await permanentDeletePage.mutateAsync(page.id); } catch { /* already deleted */ }
+        }
+      }
+
       if (opts.branding) {
         setProgress({ currentPage: 0, totalPages: 1, currentStep: 'Applying branding...' });
         await updateBranding.mutateAsync(template.branding);
