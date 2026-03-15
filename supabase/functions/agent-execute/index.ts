@@ -1234,9 +1234,12 @@ async function executeFormsAction(
   const { action = 'list' } = args as any;
 
   if (action === 'list') {
-    const { data, error } = await supabase.from('form_submissions')
-      .select('id, form_name, data, page_slug, status, created_at')
-      .order('created_at', { ascending: false }).limit(50);
+    const { form_name, limit = 50 } = args as any;
+    let query = supabase.from('form_submissions')
+      .select('id, form_name, block_id, data, metadata, page_id, created_at')
+      .order('created_at', { ascending: false }).limit(limit);
+    if (form_name) query = query.eq('form_name', form_name);
+    const { data, error } = await query;
     if (error) throw new Error(`List submissions failed: ${error.message}`);
     return { submissions: data || [] };
   }
@@ -1250,20 +1253,19 @@ async function executeFormsAction(
     return data;
   }
 
-  if (action === 'update_status') {
-    const { submission_id, status } = args as any;
-    if (!submission_id || !status) throw new Error('submission_id and status required');
-    const { data, error } = await supabase.from('form_submissions')
-      .update({ status }).eq('id', submission_id).select('id, status').single();
-    if (error) throw new Error(`Update status failed: ${error.message}`);
-    return { submission_id: data.id, status: data.status };
+  if (action === 'delete') {
+    const { submission_id } = args as any;
+    if (!submission_id) throw new Error('submission_id is required');
+    const { error } = await supabase.from('form_submissions').delete().eq('id', submission_id);
+    if (error) throw new Error(`Delete failed: ${error.message}`);
+    return { submission_id, status: 'deleted' };
   }
 
   if (action === 'stats') {
     const since = new Date();
     since.setDate(since.getDate() - 30);
     const { data, error } = await supabase.from('form_submissions')
-      .select('form_name, status, created_at')
+      .select('form_name, created_at')
       .gte('created_at', since.toISOString());
     if (error) throw new Error(`Form stats failed: ${error.message}`);
     const submissions = data || [];
