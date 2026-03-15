@@ -228,10 +228,11 @@ export default function ChatSettingsPage() {
 
         {formData.enabled && (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid grid-cols-8 w-full">
+            <TabsList className="grid grid-cols-9 w-full">
               <TabsTrigger value="general">General</TabsTrigger>
               <TabsTrigger value="provider">Provider</TabsTrigger>
               <TabsTrigger value="knowledge">Knowledge</TabsTrigger>
+              <TabsTrigger value="speech">Speech</TabsTrigger>
               <TabsTrigger value="advanced">Advanced</TabsTrigger>
               <TabsTrigger value="display">Display</TabsTrigger>
               <TabsTrigger value="analytics">Analytics</TabsTrigger>
@@ -875,6 +876,158 @@ export default function ChatSettingsPage() {
                   </div>
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            {/* Speech — STT & TTS */}
+            <TabsContent value="speech">
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Headphones className="h-5 w-5" />
+                      Speech-to-Text (STT)
+                    </CardTitle>
+                    <CardDescription>
+                      Configure voice input for the chat interface. Used in check-in mode and regular chat.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>STT Provider</Label>
+                      <Select
+                        value={formData.sttProvider}
+                        onValueChange={(v) => setFormData({ ...formData, sttProvider: v as any })}
+                      >
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="browser">Browser (Web Speech API)</SelectItem>
+                          <SelectItem value="openai">OpenAI Whisper</SelectItem>
+                          <SelectItem value="gemini">Google Gemini</SelectItem>
+                          <SelectItem value="local">Private / Local Whisper</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        {formData.sttProvider === 'browser' && 'Uses the browser\'s built-in speech recognition. Free, but quality varies by browser.'}
+                        {formData.sttProvider === 'openai' && 'Uses OpenAI Whisper API. High quality, 50+ languages. Requires OPENAI_API_KEY.'}
+                        {formData.sttProvider === 'gemini' && 'Uses Google Gemini for transcription. Requires GEMINI_API_KEY.'}
+                        {formData.sttProvider === 'local' && 'Point to your own OpenAI-compatible Whisper endpoint for full data sovereignty.'}
+                      </p>
+                    </div>
+                    {formData.sttProvider === 'local' && (
+                      <>
+                        <div className="space-y-2">
+                          <Label>Endpoint URL</Label>
+                          <Input
+                            value={formData.sttLocalEndpoint}
+                            onChange={(e) => setFormData({ ...formData, sttLocalEndpoint: e.target.value })}
+                            placeholder="https://your-whisper.local/v1"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Model</Label>
+                          <Input
+                            value={formData.sttLocalModel}
+                            onChange={(e) => setFormData({ ...formData, sttLocalModel: e.target.value })}
+                            placeholder="whisper-1"
+                          />
+                        </div>
+                      </>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Headphones className="h-5 w-5" />
+                      Text-to-Speech (TTS)
+                    </CardTitle>
+                    <CardDescription>
+                      Enable voice output so FlowPilot reads responses aloud. Useful in consultant check-in mode.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>TTS Provider</Label>
+                      <Select
+                        value={formData.ttsProvider}
+                        onValueChange={(v) => setFormData({ ...formData, ttsProvider: v as any })}
+                      >
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Disabled</SelectItem>
+                          <SelectItem value="openai">OpenAI TTS</SelectItem>
+                          <SelectItem value="gemini">Google Gemini</SelectItem>
+                          <SelectItem value="local">Private / Local TTS</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {formData.ttsProvider !== 'none' && (
+                      <>
+                        {formData.ttsProvider === 'openai' && (
+                          <div className="space-y-2">
+                            <Label>Voice</Label>
+                            <Select
+                              value={formData.ttsVoice}
+                              onValueChange={(v) => setFormData({ ...formData, ttsVoice: v })}
+                            >
+                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="alloy">Alloy (neutral)</SelectItem>
+                                <SelectItem value="echo">Echo (male)</SelectItem>
+                                <SelectItem value="fable">Fable (storytelling)</SelectItem>
+                                <SelectItem value="onyx">Onyx (deep)</SelectItem>
+                                <SelectItem value="nova">Nova (female)</SelectItem>
+                                <SelectItem value="shimmer">Shimmer (warm)</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+                        {formData.ttsProvider === 'local' && (
+                          <>
+                            <div className="space-y-2">
+                              <Label>Endpoint URL</Label>
+                              <Input
+                                value={formData.ttsLocalEndpoint}
+                                onChange={(e) => setFormData({ ...formData, ttsLocalEndpoint: e.target.value })}
+                                placeholder="https://your-tts.local/v1"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Model</Label>
+                              <Input
+                                value={formData.ttsLocalModel}
+                                onChange={(e) => setFormData({ ...formData, ttsLocalModel: e.target.value })}
+                                placeholder="tts-1"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Voice ID</Label>
+                              <Input
+                                value={formData.ttsVoice}
+                                onChange={(e) => setFormData({ ...formData, ttsVoice: e.target.value })}
+                                placeholder="alloy"
+                              />
+                            </div>
+                          </>
+                        )}
+                        <div className="flex items-center justify-between pt-2">
+                          <div>
+                            <Label>Auto-play in check-in mode</Label>
+                            <p className="text-xs text-muted-foreground">
+                              Automatically read responses aloud during consultant check-in
+                            </p>
+                          </div>
+                          <Switch
+                            checked={formData.ttsAutoPlay}
+                            onCheckedChange={(v) => setFormData({ ...formData, ttsAutoPlay: v })}
+                          />
+                        </div>
+                      </>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
 
             {/* Advanced / Tool Calling settings */}

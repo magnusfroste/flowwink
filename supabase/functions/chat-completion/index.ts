@@ -124,17 +124,31 @@ const AVAILABLE_TOOLS = {
       }
     }
   },
-  save_kb_article: {
+  save_consultant_profile: {
     type: "function",
     function: {
-      name: "save_kb_article",
-      description: "Save the updated consultant profile to the knowledge base. Call this when you have gathered enough information (at least 3 exchanges) about the consultant's latest project, skills, and availability.",
+      name: "save_consultant_profile",
+      description: "Save the updated consultant profile after gathering information about their latest project, skills, and availability. Call this when you have enough information (at least 3 exchanges).",
       parameters: {
         type: "object",
         properties: {
           summary: {
             type: "string",
-            description: "A comprehensive plain-text summary of the consultant's profile including: name, role/title, skills and tech stack, latest project description, what went well, challenges, and current availability."
+            description: "A comprehensive updated bio/summary of the consultant including: latest project, skills, what went well, challenges, and current availability."
+          },
+          skills: {
+            type: "array",
+            items: { type: "string" },
+            description: "Updated list of all skills and technologies the consultant mentioned."
+          },
+          availability: {
+            type: "string",
+            enum: ["available", "busy", "on_leave"],
+            description: "Current availability status."
+          },
+          title: {
+            type: "string",
+            description: "Updated professional title if mentioned."
           }
         },
         required: ["summary"]
@@ -499,21 +513,31 @@ async function executeToolCall(
       }
     }
 
-    case 'save_kb_article': {
+    case 'save_consultant_profile': {
       if (!checkinId || !args.summary) return 'Missing checkin context or summary.';
       try {
         const supabaseClient = createClient(supabaseUrl, supabaseKey);
+        const updateData: Record<string, unknown> = {
+          summary: args.summary,
+          updated_at: new Date().toISOString(),
+        };
+        if (args.skills && Array.isArray(args.skills) && args.skills.length > 0) {
+          updateData.skills = args.skills;
+        }
+        if (args.availability) {
+          updateData.availability = args.availability;
+        }
+        if (args.title) {
+          updateData.title = args.title;
+        }
         const { error } = await supabaseClient
-          .from('kb_articles')
-          .update({
-            answer_text: args.summary,
-            updated_at: new Date().toISOString(),
-          })
+          .from('consultant_profiles')
+          .update(updateData)
           .eq('id', checkinId);
         if (error) throw error;
-        return 'Profile updated successfully in the knowledge base.';
+        return 'Consultant profile updated successfully.';
       } catch (err) {
-        console.error('save_kb_article error:', err);
+        console.error('save_consultant_profile error:', err);
         return `Failed to save profile: ${err instanceof Error ? err.message : 'Unknown error'}`;
       }
     }
@@ -648,18 +672,20 @@ serve(async (req) => {
     // Check-in mode: fetch consultant profile and build interview system prompt
     const isCheckinMode = mode === 'checkin' && !!checkinId;
     if (isCheckinMode) {
-      const { data: kbArticle } = await supabase
-        .from('kb_articles')
-        .select('title, question, answer_text')
+      const { data: consultant } = await supabase
+        .from('consultant_profiles')
+        .select('name, title, skills, summary, availability, experience_years, bio')
         .eq('id', checkinId)
         .maybeSingle();
 
-      const consultantName = kbArticle?.title || 'consultant';
-      const existingProfile = kbArticle?.answer_text || 'No existing profile information.';
+      const consultantName = consultant?.name || 'consultant';
+      const existingProfile = consultant
+        ? `Name: ${consultant.name}\nTitle: ${consultant.title || 'N/A'}\nSkills: ${(consultant.skills || []).join(', ')}\nExperience: ${consultant.experience_years || 0} years\nAvailability: ${consultant.availability || 'unknown'}\nSummary: ${consultant.summary || 'No summary yet.'}\nBio: ${consultant.bio || 'N/A'}`
+        : 'No existing profile found.';
 
       systemPrompt = `You are FlowPilot, conducting a friendly professional check-in interview with ${consultantName}.
 
-Your goal is to update their knowledge base profile by asking conversational questions. Keep it natural and brief — this is a quick check-in, not a formal interview.
+Your goal is to update their consultant profile by asking conversational questions. Keep it natural and brief — this is a quick check-in, not a formal interview.
 
 Current profile:
 ${existingProfile}
@@ -668,9 +694,9 @@ Ask about (one at a time, conversationally):
 1. Their most recent project or assignment (what, where, duration, tech stack)
 2. What went particularly well
 3. Any interesting challenges
-4. Current availability
+4. Current availability and preferred next role
 
-After 3–5 exchanges when you have enough information, call the save_kb_article tool with a comprehensive updated profile summary. Then confirm to the consultant that their profile has been updated.
+After 3–5 exchanges when you have enough information, call the save_consultant_profile tool with the updated summary, skills array, availability, and title. Then confirm to the consultant that their profile has been updated.
 
 IMPORTANT: Always respond in the same language the consultant writes in.`;
     }
@@ -691,9 +717,9 @@ IMPORTANT: Always respond in the same language the consultant writes in.`;
       firecrawlIntegrationEnabled: aiIntegrations?.firecrawl?.enabled,
     });
     
-    // Always add save_kb_article in check-in mode (requires tool calling support)
+    // Always add save_consultant_profile in check-in mode (requires tool calling support)
     if (isCheckinMode && toolCallingSupported) {
-      tools.push(AVAILABLE_TOOLS.save_kb_article);
+      tools.push(AVAILABLE_TOOLS.save_consultant_profile);
     }
 
     if (settings?.toolCallingEnabled && toolCallingSupported) {
