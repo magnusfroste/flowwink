@@ -1,5 +1,5 @@
 import { logger } from '@/lib/logger';
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { StarterTemplate } from '@/data/templates';
 import { TemplateOverwriteOptions } from '@/components/admin/templates/TemplatePreviewDialog';
