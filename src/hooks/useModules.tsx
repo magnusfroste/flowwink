@@ -280,13 +280,29 @@ export function useModules() {
       
       // Merge stored settings with defaults to ensure all modules exist
       const stored = (data?.value as unknown as Partial<ModulesSettings>) || {};
+      
+      // Backward compatibility: migrate old products/orders keys to ecommerce
+      const storedAny = stored as Record<string, unknown>;
+      if (('products' in storedAny || 'orders' in storedAny) && !('ecommerce' in storedAny)) {
+        const oldProducts = storedAny.products as ModuleConfig | undefined;
+        const oldOrders = storedAny.orders as ModuleConfig | undefined;
+        storedAny.ecommerce = {
+          ...defaultModulesSettings.ecommerce,
+          enabled: oldProducts?.enabled || oldOrders?.enabled || false,
+        };
+        delete storedAny.products;
+        delete storedAny.orders;
+      }
+      
       return {
         ...defaultModulesSettings,
         ...Object.fromEntries(
-          Object.entries(stored).map(([key, value]) => [
-            key,
-            { ...defaultModulesSettings[key as keyof ModulesSettings], ...value }
-          ])
+          Object.entries(stored)
+            .filter(([key]) => key in defaultModulesSettings)
+            .map(([key, value]) => [
+              key,
+              { ...defaultModulesSettings[key as keyof ModulesSettings], ...value }
+            ])
         ),
       } as ModulesSettings;
     },
