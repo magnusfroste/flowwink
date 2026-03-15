@@ -117,9 +117,9 @@ export function UnifiedChatInput({
   }, [value, attachedFile, isLoading, disabled, onSend]);
 
   const handleCommandSelect = useCallback((command: string) => {
-    const atIndex = value.lastIndexOf('@');
-    const before = atIndex >= 0 ? value.slice(0, atIndex) : value;
-    const newValue = `${before}@${command} `;
+    const slashIndex = value.lastIndexOf('/');
+    const before = slashIndex >= 0 ? value.slice(0, slashIndex) : value;
+    const newValue = `${before}/${command} `;
     setValue(newValue);
     setShowPalette(false);
     setCommandFilter('');
@@ -132,11 +132,11 @@ export function UnifiedChatInput({
 
     const cursorPos = e.target.selectionStart;
     const textBeforeCursor = newValue.slice(0, cursorPos);
-    const atMatch = textBeforeCursor.match(/@(\w*)$/);
+    const slashMatch = textBeforeCursor.match(/\/(\w*)$/);
 
-    if (atMatch) {
+    if (slashMatch) {
       setShowPalette(true);
-      setCommandFilter(atMatch[1]);
+      setCommandFilter(slashMatch[1]);
     } else {
       setShowPalette(false);
       setCommandFilter('');
