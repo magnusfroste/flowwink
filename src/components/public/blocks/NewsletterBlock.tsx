@@ -66,7 +66,7 @@ export function NewsletterBlock({ data }: NewsletterBlockProps) {
 
   if (isSuccess) {
     return (
-      <div className={`py-8 ${variant === "minimal" ? "" : "bg-muted/30 rounded-xl px-6"}`}>
+      <div className={`py-10 ${variant === "minimal" ? "" : "bg-muted/30 rounded-xl px-6"}`}>
         <div className="flex flex-col items-center text-center gap-3">
           <CheckCircle className="h-12 w-12 text-success" />
           <p className="text-lg font-medium">{successMessage}</p>
@@ -142,7 +142,7 @@ export function NewsletterBlock({ data }: NewsletterBlockProps) {
 
   // Default variant
   return (
-    <div className="px-6 bg-gradient-to-br from-primary/5 to-primary/10 rounded-2xl">
+    <div className="px-6 py-10 md:py-14 bg-gradient-to-br from-primary/5 to-primary/10 rounded-2xl">
       <div className="max-w-xl mx-auto text-center">
         <div className="mx-auto mb-4 h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
           <Mail className="h-7 w-7 text-accent-foreground" />
