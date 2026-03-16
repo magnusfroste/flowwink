@@ -34,6 +34,7 @@ export interface PromptCompilerInput {
   cmsSchemaContext?: string;
   heartbeatState?: string;
   tokenBudget?: number;
+  siteMaturity?: SiteMaturity;
   // Chat-specific
   chatSystemPrompt?: string;
 }
@@ -68,6 +69,16 @@ export interface HeartbeatState {
   pending_actions: string[];
   token_usage: TokenUsage;
   iteration_count: number;
+}
+
+export interface SiteMaturity {
+  isFresh: boolean;
+  blogPosts: number;
+  leads: number;
+  subscribers: number;
+  pageViews: number;
+  contentResearch: number;
+  contentProposals: number;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -196,6 +207,44 @@ CONSTRAINTS:
 - Self-healing auto-disables skills with 3+ consecutive failures
 - Be efficient: use chaining, focus on top 2-3 objectives per heartbeat`;
 
+const DAY_1_PLAYBOOK = `
+🚀 FRESH SITE DETECTED — DAY 1 PLAYBOOK ACTIVE
+This site was just installed. There is almost no content, no leads, no research. Your job is to PRODUCE TANGIBLE OUTPUT that demonstrates value immediately. Do NOT just plan — EXECUTE.
+
+PRIORITY ORDER (complete each before moving to next):
+
+1. RESEARCH & INTELLIGENCE (use available web search/scrape skills)
+   - Read and understand ALL published pages to learn what this company does
+   - Use search_web to research the company's industry, competitors, and market trends
+   - Use memory_write to save key findings: ICP definition, competitor list, industry trends
+   - Store a structured company profile in memory with key 'company_research'
+
+2. SEO AUDIT (use seo_audit_page skill if available)
+   - Audit every published page for SEO issues
+   - Fix meta titles and descriptions where possible
+   - Save findings to memory with key 'seo_audit_results'
+
+3. CONTENT CAMPAIGN (use blog_write, content proposal skills)
+   - Based on research, identify 3-5 blog topics that would attract the company's ICP
+   - Write at least 1 full blog post draft (status: draft, ready for human review)
+   - Create content proposals for remaining topics
+   - Save content strategy to memory with key 'content_strategy'
+
+4. SALES PROSPECTING (use search_web + memory_write)
+   - Based on ICP, research 5-10 companies that match the ideal customer profile
+   - For each: company name, website, industry, why they're a good fit
+   - Save prospect list to memory with key 'prospect_pipeline'
+   - Create leads for the most promising prospects if add_lead skill is available
+
+EXECUTION RULES:
+- Spend 60% of token budget on research + content, 20% on SEO, 20% on prospecting
+- ALWAYS save results to memory — this persists between heartbeats
+- If a step fails, log it and move on. Don't get stuck in loops.
+- Write REAL content, not placeholders. Quality matters for the showcase.
+- After completing tasks, update objective progress with specific deliverables
+- Flag the heartbeat state with day1_completed: true when done
+`;
+
 /**
  * buildSystemPrompt — OpenClaw Prompt Compiler
  * 
@@ -245,6 +294,11 @@ export function buildSystemPrompt(input: PromptCompilerInput): string {
     parts.push('');
     parts.push(HEARTBEAT_PROTOCOL);
     parts.push(`\n- Max ${input.maxIterations || 8} tool iterations per heartbeat`);
+
+    // Layer 5: Day 1 Playbook (fresh sites only)
+    if (input.siteMaturity?.isFresh) {
+      parts.push(DAY_1_PLAYBOOK);
+    }
   } else {
     // Operate mode
     parts.push(memoryContext);
@@ -372,6 +426,42 @@ Data counts: ${pages.count ?? 0} pages, ${posts.count ?? 0} blog posts, ${leads.
     console.error('[cms-schema] Failed to load:', err);
     return '';
   }
+}
+
+// ─── Site Maturity Detection ──────────────────────────────────────────────────
+
+export async function detectSiteMaturity(supabase: any): Promise<SiteMaturity> {
+  const weekAgo = new Date();
+  weekAgo.setDate(weekAgo.getDate() - 7);
+
+  const [posts, leads, subscribers, views, research, proposals] = await Promise.all([
+    supabase.from('blog_posts').select('id', { count: 'exact', head: true }).eq('status', 'published'),
+    supabase.from('leads').select('id', { count: 'exact', head: true }),
+    supabase.from('newsletter_subscribers').select('id', { count: 'exact', head: true }).eq('status', 'confirmed'),
+    supabase.from('page_views').select('id', { count: 'exact', head: true }).gte('created_at', weekAgo.toISOString()),
+    supabase.from('content_research').select('id', { count: 'exact', head: true }),
+    supabase.from('content_proposals').select('id', { count: 'exact', head: true }),
+  ]);
+
+  const blogPosts = posts.count ?? 0;
+  const leadsCount = leads.count ?? 0;
+  const subscribersCount = subscribers.count ?? 0;
+  const pageViews = views.count ?? 0;
+  const contentResearch = research.count ?? 0;
+  const contentProposals = proposals.count ?? 0;
+
+  // Fresh site: minimal content, no organic traction yet
+  const isFresh = blogPosts <= 2 && leadsCount === 0 && contentResearch === 0 && contentProposals === 0;
+
+  return {
+    isFresh,
+    blogPosts,
+    leads: leadsCount,
+    subscribers: subscribersCount,
+    pageViews,
+    contentResearch,
+    contentProposals,
+  };
 }
 
 // ─── Persistent Heartbeat State ───────────────────────────────────────────────

@@ -975,10 +975,31 @@ export const consultAgencyTemplate: StarterTemplate = {
 
   flowpilot: {
     objectives: [
-      { goal: 'Qualify all inbound client briefs and present matched consultant profiles within 2 hours', success_criteria: { daily_briefs_processed: 5 } },
-      { goal: 'Qualify inbound consultant applications and route to the talent team', success_criteria: { weekly_applications: 10 } },
-      { goal: 'Answer all availability and competency queries from visitors autonomously', success_criteria: { chat_resolution_rate: 0.85 } },
-      { goal: 'Grow newsletter list with content about technology trends and consultant insights', success_criteria: { monthly_subscribers: 50 } },
+      {
+        goal: 'Day 1: Research the IT consulting market — identify top 5 competitors, define our ICP, and document industry trends',
+        success_criteria: { memory_keys: ['company_research', 'competitor_analysis'] },
+        constraints: { priority: 'critical', deadline_days: 1 },
+      },
+      {
+        goal: 'Write and publish 2 blog posts targeting our ICP: one about technology trends, one consultant hiring guide',
+        success_criteria: { published_posts: 2 },
+        constraints: { priority: 'high', deadline_days: 3 },
+      },
+      {
+        goal: 'SEO audit all published pages — fix meta titles, descriptions, and heading structure',
+        success_criteria: { pages_audited: 'all', seo_score_avg: 80 },
+        constraints: { priority: 'high', deadline_days: 2 },
+      },
+      {
+        goal: 'Research and build a prospect pipeline of 10 companies that need IT consulting services in the Nordics',
+        success_criteria: { prospects_found: 10, leads_created: 5 },
+        constraints: { priority: 'medium', deadline_days: 5 },
+      },
+      {
+        goal: 'Create a 4-week content calendar with blog topics, newsletter themes, and social post ideas',
+        success_criteria: { content_proposals: 8 },
+        constraints: { priority: 'medium', deadline_days: 7 },
+      },
     ],
     prioritySkills: ['add_lead', 'qualify_lead', 'lead_qualify', 'newsletter_create', 'blog_write', 'analyze_analytics'],
     soul: {

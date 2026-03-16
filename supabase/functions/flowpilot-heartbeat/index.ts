@@ -18,6 +18,7 @@ import {
   extractTokenUsage,
   accumulateTokens,
   isOverBudget,
+  detectSiteMaturity,
 } from "../_shared/agent-reason.ts";
 import type { TokenUsage, HeartbeatState } from "../_shared/agent-reason.ts";
 
@@ -104,7 +105,7 @@ serve(async (req) => {
 
   try {
     // 1. Gather context + run self-healing in parallel
-    const [{ soul, identity }, memoryCtx, objectiveCtx, activityCtx, statsCtx, automationCtx, healingReport, cmsSchemaCtx, heartbeatStateCtx] = await Promise.all([
+    const [{ soul, identity }, memoryCtx, objectiveCtx, activityCtx, statsCtx, automationCtx, healingReport, cmsSchemaCtx, heartbeatStateCtx, siteMaturity] = await Promise.all([
       loadSoulIdentity(supabase),
       loadMemories(supabase),
       loadObjectives(supabase),
@@ -114,6 +115,7 @@ serve(async (req) => {
       runSelfHealing(supabase),
       loadCMSSchema(supabase),
       loadHeartbeatState(supabase),
+      detectSiteMaturity(supabase),
     ]);
 
     // 2. Resolve AI config
@@ -124,8 +126,10 @@ serve(async (req) => {
     const skillTools = await loadSkillTools(supabase, 'internal');
     const allTools = [...builtInTools, ...skillTools];
 
-    // 4. Token budget
-    const TOKEN_BUDGET = 50_000;
+    // 4. Token budget — give fresh sites more room to work
+    const TOKEN_BUDGET = siteMaturity.isFresh ? 80_000 : 50_000;
+
+    console.log(`[heartbeat] Site maturity: ${siteMaturity.isFresh ? 'FRESH (Day 1 playbook active)' : 'mature'}, budget: ${TOKEN_BUDGET}`);
 
     // 5. Build system prompt via prompt compiler (OpenClaw Layer 1)
     const systemPrompt = buildSystemPrompt({
@@ -140,7 +144,8 @@ serve(async (req) => {
       cmsSchemaContext: cmsSchemaCtx,
       heartbeatState: heartbeatStateCtx,
       tokenBudget: TOKEN_BUDGET,
-      maxIterations: MAX_ITERATIONS,
+      maxIterations: siteMaturity.isFresh ? 12 : MAX_ITERATIONS,
+      siteMaturity,
     });
 
     // 6. Run the reasoning loop with context pruning + token tracking
@@ -155,7 +160,8 @@ serve(async (req) => {
     const actionsExecuted: string[] = [];
     let totalTokenUsage: TokenUsage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
 
-    for (let i = 0; i < MAX_ITERATIONS; i++) {
+    const maxIter = siteMaturity.isFresh ? 12 : MAX_ITERATIONS;
+    for (let i = 0; i < maxIter; i++) {
       // Token budget check
       if (isOverBudget(totalTokenUsage, TOKEN_BUDGET)) {
         console.log(`[heartbeat] Token budget exceeded (${totalTokenUsage.total_tokens}/${TOKEN_BUDGET}), stopping.`);
