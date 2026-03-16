@@ -26,13 +26,31 @@ export default function TemplateLivePreviewPage() {
           color: isDark ? 'hsl(0 0% 100%)' : 'hsl(222 47% 11%)',
         }}
       >
-        {page?.blocks?.map((block, index) => (
-          <BlockRenderer
-            key={block.id || index}
-            block={block as ContentBlock}
-            index={index}
-          />
-        ))}
+        {(() => {
+          const FULL_BLEED = new Set(['hero', 'parallax-section', 'announcement-bar', 'map', 'marquee', 'header', 'footer', 'popup', 'notification-toast', 'floating-cta', 'chat-launcher', 'section-divider', 'featured-carousel']);
+          const SELF_STYLED = new Set([
+            'cta', 'newsletter', 'pricing', 'form', 'booking', 'smart-booking',
+            'comparison', 'bento-grid', 'social-proof', 'badge', 'separator',
+            'kb-search', 'kb-hub', 'kb-featured', 'kb-accordion',
+            'features', 'stats', 'testimonials', 'team', 'tabs', 'accordion',
+            'timeline', 'resume-matcher', 'quick-links', 'two-column', 'logos',
+            'table', 'countdown', 'products', 'cart', 'webinar', 'article-grid',
+          ]);
+          let contentIndex = 0;
+          return page?.blocks?.map((block, index) => {
+            const b = block as ContentBlock;
+            const isFullBleed = FULL_BLEED.has(b.type);
+            const isSelfStyled = SELF_STYLED.has(b.type);
+            let resolvedBg: import('@/types/cms').SectionBackground | undefined;
+            if (!isFullBleed && !b.sectionBackground) {
+              resolvedBg = isSelfStyled ? undefined : (contentIndex % 2 === 1 ? 'muted' : 'none');
+              contentIndex++;
+            } else if (!isFullBleed) {
+              contentIndex++;
+            }
+            return <BlockRenderer key={b.id || index} block={b} index={index} resolvedBackground={resolvedBg} />;
+          });
+        })()}
         {(!page?.blocks || page.blocks.length === 0) && (
           <div className="flex items-center justify-center h-screen text-muted-foreground">
             No blocks on this page

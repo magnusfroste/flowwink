@@ -38,7 +38,7 @@ export function InfoBoxBlock({ data }: InfoBoxBlockProps) {
   const Icon = style.IconComponent;
 
   return (
-    <section className="py-16 px-6">
+    <section className="px-6">
       <div className="container mx-auto max-w-6xl">
         <div className={`p-6 rounded-lg border ${style.bg} ${style.border}`}>
           <div className="flex items-start gap-4">

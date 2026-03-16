@@ -94,7 +94,7 @@ export function PricingBlock({ data }: PricingBlockProps) {
   };
 
   return (
-    <section className="py-12 md:py-16">
+    <section>
       <div className="max-w-6xl mx-auto px-4">
         {/* Header */}
         {(data.title || data.subtitle) && (

@@ -154,7 +154,7 @@ export function TimelineBlock({ data }: TimelineBlockProps) {
   if (steps.length === 0) return null;
 
   return (
-    <section className="py-16 md:py-24">
+    <section>
       <div className="container mx-auto px-4">
         {(data.title || data.subtitle) && (
           <div className="text-center mb-12">

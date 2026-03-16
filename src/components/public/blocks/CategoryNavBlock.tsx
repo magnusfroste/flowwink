@@ -52,7 +52,7 @@ export function CategoryNavBlock({ data }: CategoryNavBlockProps) {
   }
 
   return (
-    <section className="py-12 md:py-16">
+    <section>
       <div className="max-w-6xl mx-auto px-4">
         {data.title && (
           <h2 className="font-serif text-2xl md:text-3xl font-semibold mb-8 text-center">

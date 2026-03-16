@@ -32,7 +32,7 @@ export function QuickLinksBlock({ data }: { data: QuickLinksBlockData }) {
   };
 
   return (
-    <section className={cn('py-6 md:py-8', bgClasses[variant])}>
+    <section className={cn(bgClasses[variant])}>
       <div className={cn(
         'container mx-auto max-w-6xl px-6',
         layout === 'split' ? 'flex flex-col md:flex-row md:items-center md:gap-10' : 'text-center'

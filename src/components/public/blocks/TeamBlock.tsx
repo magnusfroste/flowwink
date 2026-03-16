@@ -151,7 +151,7 @@ export function TeamBlock({ data }: TeamBlockProps) {
     : { className: cn('grid gap-6 md:gap-8', gridCols[columns]) };
 
   return (
-    <section className="py-12 md:py-16">
+    <section>
       <div className="container max-w-6xl mx-auto px-4">
         {(title || subtitle) && (
           <div className="text-center mb-10 md:mb-12">

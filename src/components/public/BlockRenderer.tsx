@@ -344,7 +344,7 @@ export function BlockRenderer({ block, pageId, index = 0, resolvedBackground }: 
         'w-full',
         bgClass,
         textClass,
-        !isFullBleed && 'py-12 md:py-16 lg:py-20',
+        !isFullBleed && 'py-8 md:py-12 lg:py-16',
       )}
     >
       {innerContent}

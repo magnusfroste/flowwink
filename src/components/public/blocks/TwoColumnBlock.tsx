@@ -188,7 +188,7 @@ export function TwoColumnBlock({ data }: TwoColumnBlockProps) {
   // Image+Text layout (original)
   return (
     <section 
-      className="py-16 px-6"
+      className="px-6"
       style={{ backgroundColor: data.backgroundColor }}
     >
       <div className="container mx-auto max-w-6xl">

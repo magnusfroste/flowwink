@@ -73,7 +73,7 @@ export function FeaturedProductBlock({ data }: FeaturedProductBlockProps) {
   };
 
   return (
-    <section className={cn('py-16 md:py-24', bgClasses[data.backgroundStyle || 'default'])}>
+    <section className={cn(bgClasses[data.backgroundStyle || 'default'])}>
       <div className="max-w-6xl mx-auto px-4">
         <div className={cn(
           'grid md:grid-cols-2 gap-8 md:gap-12 items-center',

@@ -57,7 +57,7 @@ export function ImageBlock({ data }: ImageBlockProps) {
 
   return (
     <section className={cn(
-      fullBleed ? 'w-full' : 'py-16 px-6'
+      fullBleed ? 'w-full' : 'px-6'
     )}>
       <figure 
         className={cn(

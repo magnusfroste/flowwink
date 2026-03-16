@@ -170,7 +170,7 @@ export function KbHubBlock({ data }: KbHubBlockProps) {
   const isLoading = categoriesLoading || articlesLoading;
 
   return (
-    <section className="py-16 px-4">
+    <section className="px-4">
       <div className="container mx-auto max-w-6xl">
         {/* Header */}
         {(title || subtitle) && (

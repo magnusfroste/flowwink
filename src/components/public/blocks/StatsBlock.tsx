@@ -287,7 +287,7 @@ export function StatsBlock({ data }: StatsBlockProps) {
   };
 
   return (
-    <section ref={containerRef} className="py-12 md:py-20 bg-primary/5">
+    <section ref={containerRef}>
       <div className="container mx-auto px-4">
         {data.title && (
           <h2 className="text-2xl md:text-3xl font-serif font-bold text-center mb-12">

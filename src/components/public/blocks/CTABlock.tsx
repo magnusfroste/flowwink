@@ -155,7 +155,7 @@ export function CTABlock({ data }: CTABlockProps) {
   return (
     <section
       className={cn(
-        'py-16 px-6',
+        'px-6',
         useGradient
           ? 'bg-gradient-to-r from-primary to-primary/80 text-primary-foreground'
           : 'bg-primary text-primary-foreground'
