@@ -102,7 +102,7 @@ export function CTABlock({ data }: CTABlockProps) {
   // With-image variant - full background image with overlay
   if (variant === 'with-image' && data.backgroundImage) {
     return (
-      <section className="relative py-16 px-6">
+      <section className="relative px-6">
         {/* Background image */}
         <div className="absolute inset-0">
           <img
