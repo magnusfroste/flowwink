@@ -744,7 +744,7 @@ export async function loadObjectives(supabase: any): Promise<string> {
       : ' | NO PLAN (needs decompose_objective)';
     const deadline = o.constraints?.deadline ? ` | ⏰ deadline: ${o.constraints.deadline}` : '';
     const priority = o.constraints?.priority ? ` | priority: ${o.constraints.priority}` : '';
-    return `- #${i + 1} [score:${o._priority_score}] [${o.id.slice(0, 8)}] "${o.goal}"${planInfo}${deadline}${priority} | progress: ${JSON.stringify(o.progress)} | criteria: ${JSON.stringify(o.success_criteria)}`;
+    return `- #${i + 1} [score:${o._priority_score}] [${o.id}] "${o.goal}"${planInfo}${deadline}${priority} | progress: ${JSON.stringify(o.progress)} | criteria: ${JSON.stringify(o.success_criteria)}`;
   }).join('\n');
 }
 
@@ -834,6 +834,10 @@ Success criteria: ${JSON.stringify(objective.success_criteria || {})}`,
 }
 
 async function handleDecomposeObjective(supabase: any, args: { objective_id: string }) {
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!args.objective_id || !UUID_RE.test(args.objective_id)) {
+    return { status: 'error', error: `Invalid objective_id UUID: "${args.objective_id}". Use the full UUID from the objectives list.` };
+  }
   const { data: obj, error } = await supabase.from('agent_objectives')
     .select('id, goal, constraints, success_criteria, progress')
     .eq('id', args.objective_id).single();
@@ -848,6 +852,10 @@ async function handleDecomposeObjective(supabase: any, args: { objective_id: str
 }
 
 async function handleAdvancePlan(supabase: any, supabaseUrl: string, serviceKey: string, args: { objective_id: string; chain?: boolean }) {
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!args.objective_id || !UUID_RE.test(args.objective_id)) {
+    return { status: 'error', error: `Invalid objective_id UUID: "${args.objective_id}". Use the full UUID from the objectives list.` };
+  }
   const { objective_id, chain = true } = args;
   const maxSteps = chain ? MAX_CHAIN_DEPTH : 1;
   const chainResults: any[] = [];
