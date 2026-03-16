@@ -171,6 +171,9 @@ export default function AdminDashboard() {
     if (!moduleAvailable[widgetId]) return null;
 
     switch (widgetId) {
+      case 'business-pulse':
+        return <BusinessPulseWidget key={widgetId} />;
+
       case 'needs-attention':
         return totalActionItems > 0 ? (
           <Card key={widgetId}>
