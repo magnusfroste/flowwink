@@ -15,7 +15,7 @@ export function CTABlock({ data }: CTABlockProps) {
   // Split variant - image on one side, content on the other
   if (variant === 'split') {
     return (
-      <section className="py-0">
+      <section>
         <div className="grid md:grid-cols-2 min-h-[400px]">
           {/* Image side */}
           <div className="relative bg-muted">
