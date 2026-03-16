@@ -66,7 +66,7 @@ export function CTABlock({ data }: CTABlockProps) {
   // Minimal variant - clean, understated design
   if (variant === 'minimal') {
     return (
-      <section className="py-16 px-6">
+      <section className="px-6">
         <div className="container mx-auto text-center max-w-3xl">
           <h2 className="font-serif text-2xl md:text-3xl font-bold mb-4 text-foreground">
             {data.title}
