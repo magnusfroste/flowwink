@@ -160,7 +160,8 @@ serve(async (req) => {
     const actionsExecuted: string[] = [];
     let totalTokenUsage: TokenUsage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
 
-    for (let i = 0; i < MAX_ITERATIONS; i++) {
+    const maxIter = siteMaturity.isFresh ? 12 : MAX_ITERATIONS;
+    for (let i = 0; i < maxIter; i++) {
       // Token budget check
       if (isOverBudget(totalTokenUsage, TOKEN_BUDGET)) {
         console.log(`[heartbeat] Token budget exceeded (${totalTokenUsage.total_tokens}/${TOKEN_BUDGET}), stopping.`);
