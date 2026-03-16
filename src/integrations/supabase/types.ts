@@ -1540,6 +1540,45 @@ export type Database = {
           },
         ]
       }
+      flowpilot_briefings: {
+        Row: {
+          action_items: Json
+          created_at: string
+          emailed_at: string | null
+          id: string
+          metrics: Json
+          read_at: string | null
+          sections: Json
+          summary: string
+          title: string
+          type: string
+        }
+        Insert: {
+          action_items?: Json
+          created_at?: string
+          emailed_at?: string | null
+          id?: string
+          metrics?: Json
+          read_at?: string | null
+          sections?: Json
+          summary: string
+          title: string
+          type?: string
+        }
+        Update: {
+          action_items?: Json
+          created_at?: string
+          emailed_at?: string | null
+          id?: string
+          metrics?: Json
+          read_at?: string | null
+          sections?: Json
+          summary?: string
+          title?: string
+          type?: string
+        }
+        Relationships: []
+      }
       form_submissions: {
         Row: {
           block_id: string
