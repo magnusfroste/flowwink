@@ -66,7 +66,7 @@ export function NewsletterBlock({ data }: NewsletterBlockProps) {
 
   if (isSuccess) {
     return (
-      <div className={`py-8 ${variant === "minimal" ? "" : "bg-muted/30 rounded-xl px-6"}`}>
+      <div className={`py-10 ${variant === "minimal" ? "" : "bg-muted/30 rounded-xl px-6"}`}>
         <div className="flex flex-col items-center text-center gap-3">
           <CheckCircle className="h-12 w-12 text-success" />
           <p className="text-lg font-medium">{successMessage}</p>
