@@ -18,6 +18,7 @@ import {
   extractTokenUsage,
   accumulateTokens,
   isOverBudget,
+  detectSiteMaturity,
 } from "../_shared/agent-reason.ts";
 import type { TokenUsage, HeartbeatState } from "../_shared/agent-reason.ts";
 
