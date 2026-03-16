@@ -21,6 +21,7 @@ import { ChatFeedbackDashboardWidget } from '@/components/admin/ChatFeedbackDash
 import { ChatAnalyticsDashboardWidget } from '@/components/admin/ChatAnalyticsDashboardWidget';
 import { AutomationHealthDashboardWidget } from '@/components/admin/AutomationHealthDashboardWidget';
 import { FlowPilotDashboardWidget } from '@/components/admin/FlowPilotDashboardWidget';
+import { BusinessPulseWidget } from '@/components/admin/BusinessPulseWidget';
 import { LiveSupportDashboardWidget } from '@/components/admin/LiveSupportDashboardWidget';
 import { usePages } from '@/hooks/usePages';
 import { useAuth } from '@/hooks/useAuth';
