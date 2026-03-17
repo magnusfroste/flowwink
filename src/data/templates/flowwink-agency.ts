@@ -214,7 +214,7 @@ const flowwinkAgencyPages: TemplatePage[] = [
           title: 'Complete Suite Included',
           subtitle: 'Everything your clients need, nothing they do not.',
           features: [
-            { id: 'f1', icon: 'Layout', title: 'Visual Page Builder', description: '47+ blocks for any layout. Clients can edit, you control what they can touch.' },
+            { id: 'f1', icon: 'Layout', title: 'Visual Page Builder', description: '58+ blocks for any layout. Clients can edit, you control what they can touch.' },
             { id: 'f2', icon: 'PenTool', title: 'Blog & Newsletter', description: 'Built-in blog with categories, tags, and email newsletter. No plugins needed.' },
             { id: 'f3', icon: 'MessageCircle', title: 'AI Chat Widget', description: 'Train on client content. Answers visitor questions 24/7.' },
             { id: 'f4', icon: 'ClipboardList', title: 'Forms & CRM', description: 'Contact forms, lead capture, and basic CRM. All data stays in your control.' },
