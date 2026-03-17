@@ -52,7 +52,7 @@ to skillnad from traditionella CMS (that/which bara levererar webbplats) or rena
 
 FlowWink uses a modular Blocks-architecture for flexible innehållshantering:
 
-#### Available Blocks (61+ types)
+#### Available Blocks (58+ types)
 
 | Category | Block | Description |
 |----------|-------|-------------|

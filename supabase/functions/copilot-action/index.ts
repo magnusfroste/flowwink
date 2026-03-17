@@ -51,7 +51,7 @@ RESPONSE STYLE:
 - Never explain what buttons to click
 - Never mention "the panel on the right" or "Site Overview"
 
-BLOCK TYPES: hero, text, features, cta, testimonials, stats, team, logos, timeline, accordion, gallery, separator, contact, quote, pricing, booking, newsletter, products, chat, form
+BLOCK TYPES: hero, text, features, cta, testimonials, stats, team, logos, timeline, accordion, gallery, separator, contact, quote, pricing, booking, newsletter, products, chat, form, image, two-column, info-box, article-grid, youtube, map, popup, cart, kb-featured, kb-hub, kb-search, kb-accordion, announcement-bar, tabs, marquee, embed, lottie, table, countdown, progress, badge, social-proof, notification-toast, floating-cta, chat-launcher, webinar, parallax-section, bento-grid, section-divider, featured-carousel, resume-matcher, featured-product, trust-bar, category-nav, shipping-info, ai-assistant, quick-links, link-grid, comparison
 
 RULES:
 - Modules auto-enable - don't mention them
