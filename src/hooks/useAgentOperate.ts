@@ -629,6 +629,7 @@ export function useAgentOperate() {
     sendMessage,
     executeSkill,
     approveAction,
+    rejectAction,
     cancelRequest,
     loadSkills,
     loadActivity,
