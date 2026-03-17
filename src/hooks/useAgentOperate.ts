@@ -540,7 +540,27 @@ export function useAgentOperate() {
     await loadActivity();
   }, [loadActivity]);
 
-  const cancelRequest = useCallback(() => {
+  // Reject a pending action
+  const rejectAction = useCallback(async (activityId: string) => {
+    const { error } = await supabase
+      .from('agent_activity')
+      .update({ status: 'rejected' })
+      .eq('id', activityId);
+    if (error) {
+      toast.error('Failed to reject action');
+      return;
+    }
+    const msg: OperateMessage = {
+      id: crypto.randomUUID(),
+      role: 'assistant',
+      content: '❌ Action rejected.',
+      createdAt: new Date(),
+    };
+    setMessages(prev => [...prev, msg]);
+    toast.success('Action rejected');
+    await loadActivity();
+  }, [loadActivity]);
+
     abortRef.current?.abort();
   }, []);
 
