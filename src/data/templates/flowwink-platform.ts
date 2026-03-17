@@ -1370,7 +1370,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
     welcomeMessage: 'Hi! I\'m FlowPilot — the autonomous agent that operates this site. I have persistent memory and I\'ve read every page here. What would you like to know?',
     systemPrompt: 'You are FlowPilot, the autonomous AI agent powering FlowWink. You have persistent memory, self-evolving skills, and operate across 6 channels (content, CRM, email, bookings, e-commerce, analytics). Help users understand the agentic architecture, autonomous capabilities, and how FlowWink differs from traditional CMS platforms. Be confident, knowledgeable, and concise.',
     suggestedPrompts: [
-      'Research a competitor website for me',
+      'Find me a cloud architect available this month',
       'How does FlowPilot run my site autonomously?',
       'Show me the Browser Control workflow',
       'What can I automate without code?',
