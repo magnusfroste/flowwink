@@ -114,6 +114,10 @@ export interface StarterTemplate {
 
   // Consultant profiles for consulting/agency templates
   consultants?: TemplateConsultant[];
+
+  // Booking services and availability
+  bookingServices?: TemplateBookingService[];
+  bookingAvailability?: TemplateBookingAvailability[];
   
   // Site-wide settings
   branding: Partial<BrandingSettings>;
