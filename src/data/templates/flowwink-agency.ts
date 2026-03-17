@@ -152,7 +152,7 @@ const flowwinkAgencyPages: TemplatePage[] = [
         data: {
           title: 'Built for Agencies, By Agencies',
           tabs: [
-            { id: 'tab-team', title: 'For Your Team', icon: 'Users', content: '<h3>Faster Development</h3><ul><li>Visual block editor with 47+ components</li><li>Reusable templates across clients</li><li>Version history and approval workflows</li><li>One platform to learn, use everywhere</li></ul>' },
+            { id: 'tab-team', title: 'For Your Team', icon: 'Users', content: '<h3>Faster Development</h3><ul><li>Visual block editor with 58+ components</li><li>Reusable templates across clients</li><li>Version history and approval workflows</li><li>One platform to learn, use everywhere</li></ul>' },
             { id: 'tab-clients', title: 'For Your Clients', icon: 'Smile', content: '<h3>Happy Clients</h3><ul><li>Simple, intuitive admin interface</li><li>Built-in blog, newsletter, and forms</li><li>AI chat widget for visitor support</li><li>Mobile-friendly editing on any device</li></ul>' },
             { id: 'tab-business', title: 'For Your Business', icon: 'TrendingUp', content: '<h3>Better Margins</h3><ul><li>Charge monthly management fees</li><li>Keep 100% of what you charge</li><li>No per-client platform costs</li><li>Build once, deploy to many clients</li></ul>' },
           ],
@@ -214,7 +214,7 @@ const flowwinkAgencyPages: TemplatePage[] = [
           title: 'Complete Suite Included',
           subtitle: 'Everything your clients need, nothing they do not.',
           features: [
-            { id: 'f1', icon: 'Layout', title: 'Visual Page Builder', description: '47+ blocks for any layout. Clients can edit, you control what they can touch.' },
+            { id: 'f1', icon: 'Layout', title: 'Visual Page Builder', description: '58+ blocks for any layout. Clients can edit, you control what they can touch.' },
             { id: 'f2', icon: 'PenTool', title: 'Blog & Newsletter', description: 'Built-in blog with categories, tags, and email newsletter. No plugins needed.' },
             { id: 'f3', icon: 'MessageCircle', title: 'AI Chat Widget', description: 'Train on client content. Answers visitor questions 24/7.' },
             { id: 'f4', icon: 'ClipboardList', title: 'Forms & CRM', description: 'Contact forms, lead capture, and basic CRM. All data stays in your control.' },
@@ -521,7 +521,7 @@ const flowwinkAgencyPages: TemplatePage[] = [
         data: {
           title: '',
           tabs: [
-            { id: 'tab-content', title: 'Content Management', icon: 'FileText', content: '<h3>Visual Block Editor</h3><p>47+ block types for any layout. Drag-and-drop interface that clients can actually use.</p><ul><li>Hero, features, testimonials, pricing blocks</li><li>Version history with one-click restore</li><li>Approval workflow for quality control</li><li>Schedule publishing in advance</li></ul>' },
+            { id: 'tab-content', title: 'Content Management', icon: 'FileText', content: '<h3>Visual Block Editor</h3><p>58+ block types for any layout. Drag-and-drop interface that clients can actually use.</p><ul><li>Hero, features, testimonials, pricing blocks</li><li>Version history with one-click restore</li><li>Approval workflow for quality control</li><li>Schedule publishing in advance</li></ul>' },
             { id: 'tab-clients', title: 'Client Sites', icon: 'Users', content: '<h3>Multi-Site Architecture</h3><p>Deploy unlimited sites from one codebase. Each client gets their own environment.</p><ul><li>White-label everything</li><li>Per-client branding and settings</li><li>Separate databases for isolation</li><li>Transfer sites between servers easily</li></ul>' },
             { id: 'tab-marketing', title: 'Marketing', icon: 'Megaphone', content: '<h3>Built-in Marketing Tools</h3><p>Everything clients need to grow their business, no plugins required.</p><ul><li>Blog with categories and tags</li><li>Newsletter with Resend integration</li><li>SEO settings per page</li><li>Forms with lead capture</li><li>AI chat widget</li></ul>' },
             { id: 'tab-integrations', title: 'Integrations', icon: 'Plug', content: '<h3>Connect to Everything</h3><p>Content API, webhooks, and native integrations for your workflow.</p><ul><li>REST and GraphQL API</li><li>Webhooks for any event</li><li>Stripe payments built-in</li><li>Zapier/Make compatible</li><li>Custom code when needed</li></ul>' },
@@ -624,7 +624,7 @@ const flowwinkAgencyPages: TemplatePage[] = [
               price: 'Free',
               period: 'forever',
               description: 'Full platform, your infrastructure.',
-              features: ['Unlimited client sites', 'All 47+ block types', 'Blog, newsletter, forms, CRM', 'AI chat widget', 'Headless API access', 'Community support', 'MIT licensed, modify freely'],
+              features: ['Unlimited client sites', 'All 58+ block types', 'Blog, newsletter, forms, CRM', 'AI chat widget', 'Headless API access', 'Community support', 'MIT licensed, modify freely'],
               buttonText: 'Get Started',
               buttonUrl: 'https://github.com/magnusfroste/flowwink',
             },
