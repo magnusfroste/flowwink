@@ -322,6 +322,82 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             secondaryButton: { text: 'Start Trial', url: '/contact' },
           },
         },
+        // — WALKTHROUGH VIDEO —
+        {
+          id: 'demo-video',
+          type: 'youtube',
+          data: {
+            url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            title: 'See FlowPilot Operate in 3 Minutes',
+            autoplay: false,
+            loop: false,
+            mute: false,
+            controls: true,
+          },
+        },
+        // — ADMIN SCREENSHOT GALLERY —
+        {
+          id: 'demo-gallery',
+          type: 'gallery',
+          data: {
+            layout: 'grid',
+            columns: 3,
+            images: [
+              {
+                src: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&q=80',
+                alt: 'FlowPilot Copilot — AI chat operating autonomously',
+                caption: 'FlowPilot Copilot — real-time autonomous chat',
+              },
+              {
+                src: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&q=80',
+                alt: 'Lead Pipeline with AI enrichment and scoring',
+                caption: 'Lead Pipeline — AI enrichment & scoring',
+              },
+              {
+                src: 'https://images.unsplash.com/photo-1518186285589-2f7649de83e0?w=800&q=80',
+                alt: 'Skill Hub with 15+ autonomous skills',
+                caption: 'Skill Hub — 15+ autonomous skills',
+              },
+              {
+                src: 'https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=800&q=80',
+                alt: 'Objectives decomposition and progress tracking',
+                caption: 'Objectives — goal decomposition & tracking',
+              },
+              {
+                src: 'https://images.unsplash.com/photo-1551434678-e076c223a692?w=800&q=80',
+                alt: 'Activity feed showing autonomous agent actions',
+                caption: 'Activity Feed — full audit trail',
+              },
+              {
+                src: 'https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=800&q=80',
+                alt: 'Content Authority with competitor monitoring',
+                caption: 'Content Authority — AI-driven publishing',
+              },
+            ],
+          },
+        },
+        // — PLATFORM STATS —
+        {
+          id: 'demo-stats',
+          type: 'stats',
+          data: {
+            title: 'The Platform at a Glance',
+            subtitle: 'Everything FlowPilot manages autonomously — zero manual steps.',
+            columns: 4,
+            stats: [
+              { value: '22', label: 'Modules', description: 'Versioned & Zod-validated' },
+              { value: '15+', label: 'Skills', description: 'Autonomous agent capabilities' },
+              { value: '7-Step', label: 'Reasoning Loop', description: 'Self-Heal → Remember' },
+              { value: '61+', label: 'Block Types', description: 'Visual content building' },
+            ],
+          },
+        },
+        // — TRY IT YOURSELF —
+        {
+          id: 'sep-try-it',
+          type: 'separator',
+          data: { variant: 'text', text: 'Try It Yourself', icon: 'Sparkles' },
+        },
         // — SMART BOOKING —
         {
           id: 'sep-booking-demo',
