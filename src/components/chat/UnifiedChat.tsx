@@ -244,8 +244,8 @@ export function UnifiedChat({
                 ...messages.map(m => ({ type: 'msg' as const, data: m })),
                 ...proactiveMessages.map(m => ({ type: 'proactive' as const, data: m })),
               ].sort((a, b) => {
-                const timeA = a.type === 'msg' ? new Date(a.data.timestamp || 0).getTime() : new Date(a.data.created_at).getTime();
-                const timeB = b.type === 'msg' ? new Date(b.data.timestamp || 0).getTime() : new Date(b.data.created_at).getTime();
+                const timeA = a.type === 'msg' ? (a.data.createdAt?.getTime() || 0) : new Date(a.data.created_at).getTime();
+                const timeB = b.type === 'msg' ? (b.data.createdAt?.getTime() || 0) : new Date(b.data.created_at).getTime();
                 return timeA - timeB;
               });
 
