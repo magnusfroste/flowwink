@@ -366,7 +366,7 @@ export const flowwinkKbCategories: TemplateKbCategory[] = [
         title: 'Skills Overview',
         slug: 'skills-overview',
         question: 'What are FlowPilot skills?',
-        answer_text: 'Skills are FlowPilot\'s registered capabilities — modular tools defined in OpenAI function-calling format. Each skill has a name, description, input parameters, execution handler, scope (internal/external), and an approval requirement flag. FlowPilot ships with 20+ skills and can create new ones autonomously.',
+        answer_text: 'Skills are FlowPilot\'s registered capabilities — modular tools defined in OpenAI function-calling format. Each skill has a name, description, input parameters, execution handler, scope (internal/external), and an approval requirement flag. FlowPilot ships with 30+ skills and can create new ones autonomously.',
         is_featured: true,
         include_in_chat: true,
       },

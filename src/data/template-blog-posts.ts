@@ -537,7 +537,7 @@ export const flowwinkBlogPosts: TemplateBlogPost[] = [
   {
     title: 'Skill Engine Deep Dive: How FlowPilot Learns New Capabilities',
     slug: 'skill-engine-deep-dive-flowpilot-capabilities',
-    excerpt: 'FlowPilot ships with 20+ skills and can create new ones autonomously. Here is how the skill engine works — registration, routing, approval, and self-evolution.',
+    excerpt: 'FlowPilot ships with 30+ skills and can create new ones autonomously. Here is how the skill engine works — registration, routing, approval, and self-evolution.',
     featured_image: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200',
     featured_image_alt: 'Connected network representing skill engine',
     content: [
