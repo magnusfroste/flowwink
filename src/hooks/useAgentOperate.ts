@@ -209,43 +209,92 @@ export function useAgentOperate() {
     });
   }, []);
 
-  // Load existing conversation on mount
+  // Load existing conversation on mount — auto-select today's session
   useEffect(() => {
     const loadExistingConversation = async () => {
       const existingId = localStorage.getItem(FLOWPILOT_CONVERSATION_KEY);
-      if (!existingId) return;
+      
+      if (existingId) {
+        const { data: conv } = await supabase
+          .from('chat_conversations')
+          .select('id, created_at')
+          .eq('id', existingId)
+          .maybeSingle();
 
-      const { data: conv } = await supabase
-        .from('chat_conversations')
-        .select('id')
-        .eq('id', existingId)
-        .maybeSingle();
+        if (conv) {
+          // Check if stored conversation is from today — if so, use it
+          const convDate = new Date(conv.created_at);
+          const today = new Date();
+          const isFromToday = convDate.toDateString() === today.toDateString();
+          
+          if (isFromToday) {
+            setConversationId(existingId);
+            const { data: msgs } = await supabase
+              .from('chat_messages')
+              .select('*')
+              .eq('conversation_id', existingId)
+              .order('created_at', { ascending: true });
 
-      if (!conv) {
-        localStorage.removeItem(FLOWPILOT_CONVERSATION_KEY);
-        return;
+            if (msgs && msgs.length > 0) {
+              const loaded: OperateMessage[] = msgs
+                .filter((m: any) => m.role === 'user' || m.role === 'assistant')
+                .map((m: any) => ({
+                  id: m.id,
+                  role: m.role as 'user' | 'assistant',
+                  content: m.content,
+                  createdAt: new Date(m.created_at),
+                  skillResults: m.metadata?.skill_results || undefined,
+                  skillResult: m.metadata?.skill_results?.[0] || undefined,
+                }));
+              setMessages(loaded);
+            }
+            return;
+          }
+        }
       }
 
-      setConversationId(existingId);
+      // No valid today-session in localStorage — find or defer to getOrCreateConversation
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      const { data: { user } } = await supabase.auth.getUser();
 
-      const { data: msgs } = await supabase
-        .from('chat_messages')
-        .select('*')
-        .eq('conversation_id', existingId)
-        .order('created_at', { ascending: true });
+      const { data: todaySession } = await supabase
+        .from('chat_conversations')
+        .select('id')
+        .eq('conversation_status', 'active')
+        .is('session_id', null)
+        .eq('user_id', user?.id ?? '')
+        .gte('created_at', todayStart.toISOString())
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-      if (msgs && msgs.length > 0) {
-        const loaded: OperateMessage[] = msgs
-          .filter((m: any) => m.role === 'user' || m.role === 'assistant')
-          .map((m: any) => ({
-            id: m.id,
-            role: m.role as 'user' | 'assistant',
-            content: m.content,
-            createdAt: new Date(m.created_at),
-            skillResults: m.metadata?.skill_results || undefined,
-            skillResult: m.metadata?.skill_results?.[0] || undefined,
-          }));
-        setMessages(loaded);
+      if (todaySession) {
+        localStorage.setItem(FLOWPILOT_CONVERSATION_KEY, todaySession.id);
+        setConversationId(todaySession.id);
+
+        const { data: msgs } = await supabase
+          .from('chat_messages')
+          .select('*')
+          .eq('conversation_id', todaySession.id)
+          .order('created_at', { ascending: true });
+
+        if (msgs && msgs.length > 0) {
+          const loaded: OperateMessage[] = msgs
+            .filter((m: any) => m.role === 'user' || m.role === 'assistant')
+            .map((m: any) => ({
+              id: m.id,
+              role: m.role as 'user' | 'assistant',
+              content: m.content,
+              createdAt: new Date(m.created_at),
+              skillResults: m.metadata?.skill_results || undefined,
+              skillResult: m.metadata?.skill_results?.[0] || undefined,
+            }));
+          setMessages(loaded);
+        }
+      } else {
+        // Clear stale reference — new session will be created on first message
+        localStorage.removeItem(FLOWPILOT_CONVERSATION_KEY);
       }
     };
 
