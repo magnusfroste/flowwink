@@ -263,6 +263,8 @@ export function UnifiedChat({
                       payload={pm.action_payload || { type: 'update' }}
                       createdAt={pm.created_at}
                       onAction={onProactiveAction}
+                      onApprove={onApproveAction}
+                      onReject={onRejectAction}
                     />
                   );
                 }
