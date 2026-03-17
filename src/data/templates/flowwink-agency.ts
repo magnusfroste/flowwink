@@ -624,7 +624,7 @@ const flowwinkAgencyPages: TemplatePage[] = [
               price: 'Free',
               period: 'forever',
               description: 'Full platform, your infrastructure.',
-              features: ['Unlimited client sites', 'All 47+ block types', 'Blog, newsletter, forms, CRM', 'AI chat widget', 'Headless API access', 'Community support', 'MIT licensed, modify freely'],
+              features: ['Unlimited client sites', 'All 58+ block types', 'Blog, newsletter, forms, CRM', 'AI chat widget', 'Headless API access', 'Community support', 'MIT licensed, modify freely'],
               buttonText: 'Get Started',
               buttonUrl: 'https://github.com/magnusfroste/flowwink',
             },

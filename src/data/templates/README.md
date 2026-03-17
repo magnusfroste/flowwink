@@ -117,7 +117,7 @@ Fork the repo, commit your template, and open a Pull Request. Include:
 
 ## Block Reference
 
-See [docs/TEMPLATE-AUTHORING.md](../../docs/TEMPLATE-AUTHORING.md) for the complete block reference with all 47+ block types.
+See [docs/TEMPLATE-AUTHORING.md](../../docs/TEMPLATE-AUTHORING.md) for the complete block reference with all 58+ block types.
 
 ## Alternative: JSON Import
 
