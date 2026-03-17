@@ -263,26 +263,39 @@ FlowWink uses två olikaeditor-types beroende on innehållstyp:
 
 ### 3.1 Templates (Complete Packages)
 
-Templates is kompletta paket that/which contains:
+Templates are complete packages that include:
 - **Pre-configured pages** (homepage, about us, services, contact, etc.)
-- **Blocks-content** (already ifyllda with relevanttext and bilder)
+- **Block content** (pre-filled with relevant text and images)
 - **Branding settings** (colors, typography, logo, etc.)
+- **Blog posts** (pre-written content for SEO and marketing)
+- **KB articles** (knowledge base content for support)
+- **FlowPilot configuration** (soul, objectives, priority skills)
+- **Consultant profiles** (for agency/consulting templates)
+- **Products** (for e-commerce templates)
 
-| Template | category | Sidor | Target audience |
-|----------|----------|-------|----------|
+| Template | Category | Pages | Target |
+|----------|----------|-------|--------|
 | **Launchpad** | Startup | 5 | SaaS/Tech startups |
+| **Momentum** | Startup | 4 | Single-page dark design |
 | **TrustCorp** | Enterprise | 5 | B2B companies |
 | **SecureHealth** | Compliance | 7 | Healthcare providers |
-| **FlowWink Platform** | Platform | 5 | CMS showcase |
+| **FlowWink Platform** | Platform | 5 | CMS showcase (dogfooding) |
+| **Help Center** | Help Center | 4 | Help center with KB + AI |
+| **Service Pro** | Startup | 5 | Service business + booking |
+| **Digital Shop** | Platform | 5 | E-commerce / digital products |
+| **FlowWink Agency** | Platform | 5 | Agency white-label |
+| **Consult Agency** | Platform | 5 | Consulting agency with AI matching |
 
 #### Template Selection
-Varje template has sina egna Branding settings. När du väljer a template:
-- All pages are created automatically with förkonfigurerat content
+Each template has its own branding settings. When you choose a template:
+- All pages are created automatically with pre-configured content
+- Blog posts, KB articles, products, and consultant profiles are seeded
+- FlowPilot soul and objectives are configured via `setup-flowpilot`
 - Branding settings applied (colors, typography, logo)
-- Du can anpassa allt efter behov (ändra Blocks, Colors, content)
+- Everything can be customized after installation
 
 #### Reset to Template Defaults
-BrandingSettingsPage shows vilken template that/which is aktiv and offers "Reset to Template Defaults"-knapp for att återställa branding to template-standarden.
+BrandingSettingsPage shows which template is active and offers a "Reset to Template Defaults" button.
 
 ### 3.2 Custom Themes (Brand Guide Assistant)
 
