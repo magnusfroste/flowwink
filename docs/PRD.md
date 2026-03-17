@@ -1170,7 +1170,7 @@ for vårdorganisationer that/which Requires HIPAA:
 | **Webinars** — plan, promote, and follow up online events | ✅ Complete |
 | **Content API v2** — REST + GraphQL + Markdown export for LLM consumption | ✅ Complete |
 | **10 starter templates** with blog posts, KB, FlowPilot config | ✅ Complete |
-| **61+ block types** | ✅ Complete |
+| **58+ block types** | ✅ Complete |
 
 #### Booking Module Features
 
