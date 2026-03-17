@@ -29,7 +29,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
   aiChatPosition: 'Embedded autonomous agent for site operations',
   blogPosts: flowwinkBlogPosts,
   kbCategories: flowwinkKbCategories,
-  requiredModules: ['blog', 'knowledgeBase', 'chat', 'liveSupport', 'newsletter', 'leads', 'deals', 'companies', 'forms', 'ecommerce', 'bookings', 'analytics', 'contentApi', 'webinars'],
+  requiredModules: ['blog', 'knowledgeBase', 'chat', 'liveSupport', 'newsletter', 'leads', 'deals', 'companies', 'forms', 'ecommerce', 'bookings', 'analytics', 'contentApi', 'webinars', 'resume'],
   pages: [
     // ═══════════════════════════════════════════════════════════
     // HOME — The Pitch (convince visitors in one scroll)
@@ -1164,7 +1164,187 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
         { id: 'cta-pricing', type: 'cta', data: { title: 'Start Building Today', subtitle: 'Self-host for free or start a managed trial. Autonomous operations included in every plan.', buttonText: 'Self-Host Free', buttonUrl: 'https://github.com/magnusfroste/flowwink', secondaryButtonText: 'Start Trial', secondaryButtonUrl: '/contact', gradient: true } },
       ],
     },
+
+    // ═══════════════════════════════════════════════════════════
+    // CONSULTANCY — Find the Right Expert
+    // ═══════════════════════════════════════════════════════════
+    {
+      title: 'Consultancy',
+      slug: 'consultancy',
+      menu_order: 7,
+      showInMenu: true,
+      meta: {
+        description: 'Find the perfect consultant with AI-powered matching. Browse our expert roster, get tailored CVs, and book implementation sessions.',
+        showTitle: false,
+        titleAlignment: 'center',
+      },
+      blocks: [
+        {
+          id: 'hero-consultancy',
+          type: 'hero',
+          data: {
+            title: 'Find the Right Expert in Seconds',
+            subtitle: 'Paste a job description and our AI matches you with the best consultant — complete with a tailored CV, cover letter, and skill gap analysis.',
+            backgroundType: 'color',
+            heightMode: 'auto',
+            contentAlignment: 'center',
+            overlayOpacity: 0,
+            primaryButton: { text: 'Try the Matcher', url: '#resume-matcher' },
+            secondaryButton: { text: 'Book a Demo', url: '/demo' },
+          },
+        },
+        {
+          id: 'features-consultancy',
+          type: 'features',
+          data: {
+            title: 'The Consultancy Module',
+            subtitle: 'Everything you need to manage and match consulting talent — powered by FlowPilot.',
+            features: [
+              { id: 'ck1', title: 'AI Resume Matcher', description: 'Paste a job description, get ranked matches with scores and tailored summaries.', icon: 'FileUser' },
+              { id: 'ck2', title: 'Consultant Profiles', description: 'Full skill, certification, and experience management with availability tracking.', icon: 'Users' },
+              { id: 'ck3', title: 'Voice Check-In', description: 'Consultants update their profile via a conversational chat link, no login required.', icon: 'Mic' },
+              { id: 'ck4', title: 'Chrome Extension Check-In', description: 'FlowPilot browses LinkedIn and enriches profiles using your authenticated browser session.', icon: 'Globe' },
+              { id: 'ck5', title: 'Booking Integration', description: 'Clients book demo sessions, workshops, or strategy calls directly from the site.', icon: 'Calendar' },
+            ],
+            columns: 3,
+            variant: 'cards',
+          },
+        },
+        {
+          id: 'resume-matcher',
+          type: 'resume-matcher',
+          data: {
+            title: 'AI-Powered Consultant Matching',
+            subtitle: 'Paste a job description or assignment brief below. FlowPilot will analyze your requirements and match you with the best consultants from our roster.',
+            placeholder: 'Paste the job description or assignment brief here...',
+            buttonText: 'Find Match',
+          },
+        },
+        {
+          id: 'rich-text-checkin',
+          type: 'text',
+          data: {
+            content: {
+              type: 'doc',
+              content: [
+                { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'The Check-In Workflow' }] },
+                { type: 'paragraph', content: [{ type: 'text', text: 'Keeping consultant profiles up-to-date is the biggest challenge in any staffing operation. FlowWink solves this with two automated workflows:' }] },
+                { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: '🎤 Voice Check-In (Chat Link)' }] },
+                { type: 'paragraph', content: [{ type: 'text', text: 'Each consultant gets a unique check-in URL. When they visit it, FlowPilot starts a conversational interview — asking about new skills, certifications, project updates, and availability changes. The profile is updated in real-time. No forms. No logins. Just talk.' }] },
+                { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: '🌐 Browser Control (Chrome Extension)' }] },
+                { type: 'paragraph', content: [{ type: 'text', text: 'For deeper enrichment, FlowPilot can browse LinkedIn, GitHub, and portfolio sites using the Chrome Extension relay. It reads the consultant\'s public profile through your authenticated browser session and automatically updates skills, endorsements, and experience data. No scraping APIs. No rate limits. Just your real browser.' }] },
+              ],
+            },
+          },
+        },
+        {
+          id: 'cta-consultancy',
+          type: 'cta',
+          data: {
+            title: 'See It in Action',
+            subtitle: 'Visit the demo page to experience live booking, product browsing, and consultant matching — all managed by FlowPilot.',
+            buttonText: 'Try the Demo',
+            buttonUrl: '/demo',
+            secondaryButtonText: 'View Pricing',
+            secondaryButtonUrl: '/pricing',
+            gradient: true,
+          },
+        },
+      ],
+    },
   ],
+
+  // ═══════════════════════════════════════════════════════════
+  // SEED DATA — Products, Consultants, Booking
+  // ═══════════════════════════════════════════════════════════
+  products: [
+    { name: 'FlowWink Starter', description: 'Free self-hosted plan with full FlowPilot agent, all 58+ blocks, and unlimited pages.', price_cents: 0, currency: 'USD', type: 'one_time', is_active: true },
+    { name: 'FlowWink Pro', description: 'Managed cloud hosting with automatic updates, daily backups, SSL, CDN, and priority support.', price_cents: 4900, currency: 'USD', type: 'recurring', is_active: true },
+    { name: 'FlowWink Enterprise', description: 'Dedicated infrastructure, custom skill development, SSO, compliance support, and a dedicated success manager.', price_cents: 19900, currency: 'USD', type: 'recurring', is_active: true },
+    { name: 'FlowPilot Add-on', description: 'Enhanced FlowPilot capabilities: premium AI models, extended memory, and priority skill execution.', price_cents: 2900, currency: 'USD', type: 'recurring', is_active: true },
+  ],
+
+  consultants: [
+    {
+      name: 'Anna Lindqvist',
+      title: 'FlowWink Platform Architect',
+      summary: 'Seasoned technology executive with 18 years leading engineering organisations. Specializes in FlowWink platform architecture, FlowPilot objective design, and autonomous CMS strategy for enterprise deployments.',
+      skills: ['FlowWink Architecture', 'FlowPilot Objectives', 'Tech Strategy', 'Platform Design', 'Team Building', 'CMS Migration'],
+      experience_years: 18,
+      certifications: ['Executive Leadership (INSEAD)', 'SAFe 6 SPC'],
+      languages: ['English', 'German'],
+      availability: 'partially_available',
+      hourly_rate_cents: 195000,
+      currency: 'USD',
+      is_active: true,
+    },
+    {
+      name: 'Marcus Berg',
+      title: 'FlowWink Cloud & Infrastructure Specialist',
+      summary: 'Cloud architect specializing in FlowWink self-hosted deployments and managed cloud migrations. Has deployed 40+ FlowWink instances across AWS and Azure with zero-downtime migrations.',
+      skills: ['FlowWink Deployment', 'AWS', 'Azure', 'Docker', 'Kubernetes', 'Terraform', 'CI/CD', 'FinOps'],
+      experience_years: 14,
+      certifications: ['AWS Solutions Architect Professional', 'CKA'],
+      languages: ['English'],
+      availability: 'available',
+      hourly_rate_cents: 175000,
+      currency: 'USD',
+      is_active: true,
+    },
+    {
+      name: 'Sofia Eriksson',
+      title: 'FlowPilot Skill Developer',
+      summary: 'Full-stack developer specializing in FlowPilot custom skill development, edge function authoring, and block creation. Has built 20+ custom skills for clients in fintech and e-commerce.',
+      skills: ['FlowPilot Skills', 'React', 'TypeScript', 'Supabase Edge Functions', 'Block Development', 'API Integration'],
+      experience_years: 8,
+      certifications: ['AWS Cloud Practitioner'],
+      languages: ['English'],
+      availability: 'available',
+      hourly_rate_cents: 135000,
+      currency: 'USD',
+      is_active: true,
+    },
+    {
+      name: 'Emma Karlsson',
+      title: 'FlowWink DevOps & Automation Engineer',
+      summary: 'SRE specializing in FlowWink infrastructure automation, FlowPilot monitoring, and autonomous workflow optimization. Cuts deployment cycles from weeks to hours.',
+      skills: ['FlowWink Ops', 'Kubernetes', 'GitHub Actions', 'Prometheus', 'Grafana', 'Automation Workflows', 'Edge Functions'],
+      experience_years: 10,
+      certifications: ['CKA', 'CKS'],
+      languages: ['English', 'Norwegian'],
+      availability: 'available',
+      hourly_rate_cents: 165000,
+      currency: 'USD',
+      is_active: true,
+    },
+    {
+      name: 'Erik Johansson',
+      title: 'FlowWink Frontend & Block Developer',
+      summary: 'Component-library author and design-system advocate specializing in FlowWink custom block development. Has led frontend architecture for multiple FlowWink-powered sites through growth phases.',
+      skills: ['FlowWink Blocks', 'React', 'TypeScript', 'Tailwind CSS', 'Storybook', 'Design Systems', 'Web Performance'],
+      experience_years: 6,
+      languages: ['English'],
+      availability: 'available',
+      hourly_rate_cents: 120000,
+      currency: 'USD',
+      is_active: true,
+    },
+  ],
+
+  bookingServices: [
+    { name: 'Product Demo', description: 'A 30-minute guided walkthrough of FlowWink and FlowPilot capabilities tailored to your use case.', duration_minutes: 30, price_cents: 0, currency: 'USD', color: '#3b82f6', is_active: true },
+    { name: 'Implementation Workshop', description: 'A 60-minute hands-on session to configure FlowWink for your specific business needs, including template setup and FlowPilot objectives.', duration_minutes: 60, price_cents: 15000, currency: 'USD', color: '#8b5cf6', is_active: true },
+    { name: 'Strategy Call', description: 'A 45-minute consultation on CMS strategy, autonomous operations planning, and FlowPilot skill roadmap.', duration_minutes: 45, price_cents: 9500, currency: 'USD', color: '#10b981', is_active: true },
+  ],
+
+  bookingAvailability: [
+    { day_of_week: 1, start_time: '09:00', end_time: '17:00', is_active: true },
+    { day_of_week: 2, start_time: '09:00', end_time: '17:00', is_active: true },
+    { day_of_week: 3, start_time: '09:00', end_time: '17:00', is_active: true },
+    { day_of_week: 4, start_time: '09:00', end_time: '17:00', is_active: true },
+    { day_of_week: 5, start_time: '09:00', end_time: '17:00', is_active: true },
+  ],
+
   branding: {
     logo: '',
     organizationName: 'FlowWink',
@@ -1190,7 +1370,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
     welcomeMessage: 'Hi! I\'m FlowPilot — the autonomous agent that operates this site. I have persistent memory and I\'ve read every page here. What would you like to know?',
     systemPrompt: 'You are FlowPilot, the autonomous AI agent powering FlowWink. You have persistent memory, self-evolving skills, and operate across 6 channels (content, CRM, email, bookings, e-commerce, analytics). Help users understand the agentic architecture, autonomous capabilities, and how FlowWink differs from traditional CMS platforms. Be confident, knowledgeable, and concise.',
     suggestedPrompts: [
-      'Research a competitor website for me',
+      'Find me a cloud architect available this month',
       'How does FlowPilot run my site autonomously?',
       'Show me the Browser Control workflow',
       'What can I automate without code?',

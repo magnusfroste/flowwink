@@ -31,6 +31,8 @@ export interface TemplateManifest {
   kbCategoryIds: string[];
   productIds: string[];
   consultantIds: string[];
+  bookingServiceIds: string[];
+  bookingAvailabilityIds: string[];
 }
 
 export function useTemplateInstaller() {
@@ -270,7 +272,7 @@ export function useTemplateInstaller() {
       // Auto-cleanup previous template using manifest
       if (installedTemplate?.manifest) {
         const m = installedTemplate.manifest;
-        const totalCleanup = (m.pageIds?.length || 0) + (m.blogPostIds?.length || 0) + (m.kbCategoryIds?.length || 0) + (m.productIds?.length || 0) + (m.consultantIds?.length || 0);
+        const totalCleanup = (m.pageIds?.length || 0) + (m.blogPostIds?.length || 0) + (m.kbCategoryIds?.length || 0) + (m.productIds?.length || 0) + (m.consultantIds?.length || 0) + (m.bookingServiceIds?.length || 0) + (m.bookingAvailabilityIds?.length || 0);
         if (totalCleanup > 0) {
           setProgress({ currentPage: 0, totalPages: totalCleanup, currentStep: `Uninstalling "${installedTemplate.template_name}"...` });
           let cleaned = 0;
@@ -303,6 +305,18 @@ export function useTemplateInstaller() {
           for (const conId of (m.consultantIds || [])) {
             setProgress({ currentPage: ++cleaned, totalPages: totalCleanup, currentStep: 'Removing previous template consultants...' });
             try { await supabase.from('consultant_profiles').delete().eq('id', conId); } catch { /* already deleted */ }
+          }
+
+          // Remove booking availability (before services due to FK)
+          for (const availId of (m.bookingAvailabilityIds || [])) {
+            setProgress({ currentPage: ++cleaned, totalPages: totalCleanup, currentStep: 'Removing previous template booking availability...' });
+            try { await supabase.from('booking_availability').delete().eq('id', availId); } catch { /* already deleted */ }
+          }
+
+          // Remove booking services
+          for (const svcId of (m.bookingServiceIds || [])) {
+            setProgress({ currentPage: ++cleaned, totalPages: totalCleanup, currentStep: 'Removing previous template booking services...' });
+            try { await supabase.from('booking_services').delete().eq('id', svcId); } catch { /* already deleted */ }
           }
 
           // Remove old manifest record
@@ -456,7 +470,39 @@ export function useTemplateInstaller() {
         }
       }
 
-      // Create blog posts
+      // Seed booking services and availability
+      const createdBookingServiceIds: string[] = [];
+      const createdBookingAvailabilityIds: string[] = [];
+      if (template.bookingServices?.length) {
+        const services = template.bookingServices;
+        setProgress({ currentPage: 0, totalPages: services.length, currentStep: 'Seeding booking services...' });
+        for (let i = 0; i < services.length; i++) {
+          const s = services[i];
+          setProgress({ currentPage: i + 1, totalPages: services.length, currentStep: `Adding booking service "${s.name}"...` });
+          const { data } = await supabase.from('booking_services').insert({
+            name: s.name, description: s.description || null,
+            duration_minutes: s.duration_minutes, price_cents: s.price_cents,
+            currency: s.currency, color: s.color || '#3b82f6',
+            is_active: s.is_active ?? true, sort_order: i,
+          }).select('id').single();
+          if (data?.id) createdBookingServiceIds.push(data.id);
+        }
+      }
+      if (template.bookingAvailability?.length) {
+        const slots = template.bookingAvailability;
+        setProgress({ currentPage: 0, totalPages: slots.length, currentStep: 'Seeding booking availability...' });
+        for (let i = 0; i < slots.length; i++) {
+          const slot = slots[i];
+          setProgress({ currentPage: i + 1, totalPages: slots.length, currentStep: `Adding availability slot ${i + 1}...` });
+          const { data } = await supabase.from('booking_availability').insert({
+            day_of_week: slot.day_of_week,
+            start_time: slot.start_time,
+            end_time: slot.end_time,
+            is_active: slot.is_active ?? true,
+          }).select('id').single();
+          if (data?.id) createdBookingAvailabilityIds.push(data.id);
+        }
+      }
       const createdBlogPostIds: string[] = [];
       if (opts.blogPosts) {
         const postsToCreate = templateBlogPosts || [];
@@ -523,6 +569,8 @@ export function useTemplateInstaller() {
         kbCategoryIds: createdKbCategoryIds,
         productIds: createdProductIds,
         consultantIds: createdConsultantIds,
+        bookingServiceIds: createdBookingServiceIds,
+        bookingAvailabilityIds: createdBookingAvailabilityIds,
       };
       await supabase.from('installed_template').delete().neq('id', '00000000-0000-0000-0000-000000000000');
       await supabase.from('installed_template').insert({

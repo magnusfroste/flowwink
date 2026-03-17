@@ -42,6 +42,25 @@ export interface TemplateConsultant {
   is_active?: boolean;
 }
 
+// Booking service definition for templates
+export interface TemplateBookingService {
+  name: string;
+  description?: string;
+  duration_minutes: number;
+  price_cents: number;
+  currency: string;
+  color?: string;
+  is_active?: boolean;
+}
+
+// Booking availability slot for templates
+export interface TemplateBookingAvailability {
+  day_of_week: number; // 0=Sun, 1=Mon, ..., 6=Sat
+  start_time: string;  // "09:00"
+  end_time: string;    // "17:00"
+  is_active?: boolean;
+}
+
 // Page definition within a template
 export interface TemplatePage {
   title: string;
@@ -95,6 +114,10 @@ export interface StarterTemplate {
 
   // Consultant profiles for consulting/agency templates
   consultants?: TemplateConsultant[];
+
+  // Booking services and availability
+  bookingServices?: TemplateBookingService[];
+  bookingAvailability?: TemplateBookingAvailability[];
   
   // Site-wide settings
   branding: Partial<BrandingSettings>;
