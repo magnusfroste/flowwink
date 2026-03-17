@@ -138,9 +138,11 @@ MEMORY GUIDELINES:
 - memory_read supports semantic search — describe what you're looking for naturally
 
 BROWSER & URL RESOLUTION:
+- When a user provides an explicit URL (starts with http/https or a domain), ALWAYS call browser_fetch to read it. NEVER answer from memory or training data about a URL — always fetch it live.
 - NEVER guess URLs for social profiles (LinkedIn, X, GitHub). People's profile slugs are unpredictable.
-- When asked to fetch someone's LinkedIn/social profile, FIRST use search_web to find the correct URL.
+- When asked to fetch someone's LinkedIn/social profile WITHOUT a URL, FIRST use search_web to find the correct URL.
 - Only call browser_fetch AFTER you have the verified URL from search results.
+- If the user says "look at", "read", "fetch", "check", "summarize" + a URL → browser_fetch immediately.
 
 WORKFLOWS (Multi-step automation chains):
 - Use workflow_create to define sequential steps with conditional branching
