@@ -158,7 +158,7 @@ const FULL_BLEED_TYPES = new Set([
 
 // Overlay block types that use position:fixed and should not occupy any document flow
 const OVERLAY_TYPES = new Set([
-  'floating-cta', 'notification-toast', 'popup', 'chat-launcher',
+  'floating-cta', 'notification-toast', 'popup',
 ]);
 
 function getSectionBackgroundClasses(bg?: SectionBackground): { section: string; text: string } {
