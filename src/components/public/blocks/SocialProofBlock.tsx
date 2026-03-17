@@ -63,6 +63,7 @@ function AnimatedCounter({
   const [displayValue, setDisplayValue] = useState('0');
   const ref = useRef<HTMLSpanElement>(null);
   const hasAnimated = useRef(false);
+  const observerActive = useRef(false);
 
   useEffect(() => {
     const valueStr = String(value ?? '');
