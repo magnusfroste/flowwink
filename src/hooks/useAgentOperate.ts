@@ -444,7 +444,7 @@ export function useAgentOperate() {
       if (data.status === 'pending_approval') {
         // Inject a proactive HIL card into the chat as a chat_message
         const activityId = data.activity_id;
-        const conversationId = conversationIdRef.current;
+        const currentConvId = conversationId;
         if (conversationId) {
           const actionPayload = {
             type: 'approval',
