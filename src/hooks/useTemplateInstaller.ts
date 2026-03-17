@@ -470,7 +470,39 @@ export function useTemplateInstaller() {
         }
       }
 
-      // Create blog posts
+      // Seed booking services and availability
+      const createdBookingServiceIds: string[] = [];
+      const createdBookingAvailabilityIds: string[] = [];
+      if (template.bookingServices?.length) {
+        const services = template.bookingServices;
+        setProgress({ currentPage: 0, totalPages: services.length, currentStep: 'Seeding booking services...' });
+        for (let i = 0; i < services.length; i++) {
+          const s = services[i];
+          setProgress({ currentPage: i + 1, totalPages: services.length, currentStep: `Adding booking service "${s.name}"...` });
+          const { data } = await supabase.from('booking_services').insert({
+            name: s.name, description: s.description || null,
+            duration_minutes: s.duration_minutes, price_cents: s.price_cents,
+            currency: s.currency, color: s.color || '#3b82f6',
+            is_active: s.is_active ?? true, sort_order: i,
+          }).select('id').single();
+          if (data?.id) createdBookingServiceIds.push(data.id);
+        }
+      }
+      if (template.bookingAvailability?.length) {
+        const slots = template.bookingAvailability;
+        setProgress({ currentPage: 0, totalPages: slots.length, currentStep: 'Seeding booking availability...' });
+        for (let i = 0; i < slots.length; i++) {
+          const slot = slots[i];
+          setProgress({ currentPage: i + 1, totalPages: slots.length, currentStep: `Adding availability slot ${i + 1}...` });
+          const { data } = await supabase.from('booking_availability').insert({
+            day_of_week: slot.day_of_week,
+            start_time: slot.start_time,
+            end_time: slot.end_time,
+            is_active: slot.is_active ?? true,
+          }).select('id').single();
+          if (data?.id) createdBookingAvailabilityIds.push(data.id);
+        }
+      }
       const createdBlogPostIds: string[] = [];
       if (opts.blogPosts) {
         const postsToCreate = templateBlogPosts || [];
