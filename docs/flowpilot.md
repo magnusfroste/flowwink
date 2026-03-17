@@ -1,12 +1,14 @@
 # FlowAgent — Autonomous Agentic Intelligence Engine
 
-> **Your website runs itself.** FlowAgent is not a chatbot. It is an autonomous AI operator that writes your content, qualifies your leads, runs your campaigns, and learns from every interaction. You set the objectives. It does the rest.
+> **Your website runs itself.** FlowAgent is not a chatbot. It is an autonomous AI operator that writes your content, qualifies your leads, runs your campaigns, orchestrates multi-agent workflows, and learns from every interaction. You set the objectives. It does the rest.
+
+> **Version:** 2.0 | **Updated:** March 2026 | **Skills:** 37+ | **Autonomy:** 10/10
 
 ---
 
 ## 1. What FlowAgent Is
 
-FlowAgent is the **heart and brain** of FlowWink — an autonomous digital operator inspired by the OpenClaw agentic framework. It features persistent memory, self-evolving skills, goal-driven objectives with plan decomposition, self-healing, and a reactive automation layer. It sits above the entire platform — content, CRM, bookings, newsletters, analytics, knowledge base, e-commerce — and orchestrates them continuously, with or without a human present.
+FlowAgent is the **heart and brain** of FlowWink — an autonomous digital operator inspired by the OpenClaw agentic framework. It features persistent pgvector memory, self-evolving skills, goal-driven objectives with AI plan decomposition, self-healing, Workflow DAGs, Agent-to-Agent (A2A) delegation, Skill Packs, and a reactive automation layer. It sits above the entire platform — content, CRM, bookings, newsletters, analytics, knowledge base, e-commerce, consultant profiles — and orchestrates them continuously, with or without a human present.
 
 ### The Paradigm Shift
 
