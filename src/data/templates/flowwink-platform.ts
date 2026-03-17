@@ -1196,7 +1196,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
       description: 'Fully managed FlowWink instance with FlowPilot agent, automatic updates, daily backups, SSL, CDN, and priority support.',
       price_cents: 4900,
       currency: 'EUR',
-      type: 'subscription',
+      type: 'recurring',
       is_active: true,
     },
     {
