@@ -1197,6 +1197,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
       price_cents: 4900,
       currency: 'EUR',
       type: 'recurring',
+      image_url: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=400&h=300&fit=crop',
       is_active: true,
     },
     {
@@ -1205,6 +1206,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
       price_cents: 99000,
       currency: 'EUR',
       type: 'recurring',
+      image_url: 'https://images.unsplash.com/photo-1553729459-efe14ef6055d?w=400&h=300&fit=crop',
       is_active: true,
     },
     {
@@ -1213,6 +1215,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
       price_cents: 149900,
       currency: 'EUR',
       type: 'one_time',
+      image_url: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=400&h=300&fit=crop',
       is_active: true,
     },
     {
@@ -1221,6 +1224,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
       price_cents: 49900,
       currency: 'EUR',
       type: 'one_time',
+      image_url: 'https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=400&h=300&fit=crop',
       is_active: true,
     },
   ],
