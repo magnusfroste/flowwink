@@ -137,7 +137,7 @@ const momentumPages: StarterTemplate['pages'] = [
           imageAlt: 'Code on screen',
           imagePosition: 'right',
           ctaText: 'Explore AI Features →',
-          ctaUrl: '/features',
+          ctaUrl: '/home',
         },
       },
       {
