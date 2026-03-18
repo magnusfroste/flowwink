@@ -1157,6 +1157,24 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             subtitle: 'Choose a service and time that works for you. Instant confirmation.',
           },
         },
+        // PROGRESS — service quality KPIs
+        {
+          id: 'services-progress',
+          type: 'progress',
+          data: {
+            title: 'Our Track Record',
+            subtitle: 'Numbers that speak for themselves.',
+            items: [
+              { id: 'sp1', label: 'Client Satisfaction', value: 98, color: 'hsl(142 71% 45%)' },
+              { id: 'sp2', label: 'On-Time Delivery', value: 96, color: 'hsl(217 91% 60%)' },
+              { id: 'sp3', label: 'Repeat Clients', value: 89, color: 'hsl(280 65% 60%)' },
+              { id: 'sp4', label: 'Same-Day Availability', value: 75, color: 'hsl(35 92% 55%)' },
+            ],
+            showPercentage: true,
+            animated: true,
+            variant: 'default',
+          },
+        },
         // CTA
         {
           id: 'cta-services',
