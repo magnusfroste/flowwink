@@ -25,9 +25,14 @@ const Toaster = ({ ...props }: ToasterProps) => {
   );
 };
 
-const toast: typeof originalSonnerToast = (...args: Parameters<typeof originalSonnerToast>) => {
-  if (toastSilencer.silent) return;
-  return originalSonnerToast(...args);
-};
+const silencedToast = Object.assign(
+  (...args: Parameters<typeof originalSonnerToast>) => {
+    if (toastSilencer.silent) return '' as string | number;
+    return originalSonnerToast(...args);
+  },
+  originalSonnerToast,
+);
+
+const toast = silencedToast as typeof originalSonnerToast;
 
 export { Toaster, toast };
