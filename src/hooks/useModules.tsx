@@ -274,6 +274,7 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/sales-intelligence': 'salesIntelligence',
   '/admin/resume': 'resume',
   '/admin/federation': 'federation',
+  '/admin/growth': 'paidGrowth',
 };
 
 export function useModules() {

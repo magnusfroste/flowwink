@@ -305,6 +305,7 @@ export const INTEGRATION_CATEGORIES = {
   media: { label: 'Media & Tools', order: 6 },
   analytics: { label: 'Analytics & Attribution', order: 7 },
   notifications: { label: 'Notifications', order: 8 },
+  advertising: { label: 'Advertising', order: 9 },
 } as const;
 
 // Fetch integrations settings
