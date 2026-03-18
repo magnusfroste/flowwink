@@ -605,8 +605,10 @@ export function useTemplateInstaller() {
       await queryClient.invalidateQueries({ queryKey: ['products'] });
       await queryClient.invalidateQueries({ queryKey: ['site-settings'] });
 
+      toastSilencer.silent = false;
       toast({ title: 'Template applied!', description });
     } catch (error) {
+      toastSilencer.silent = false;
       toast({ title: 'Error', description: 'Failed to apply template. Some changes may have been applied.', variant: 'destructive' });
       setStep('idle');
     }
