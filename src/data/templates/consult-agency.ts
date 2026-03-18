@@ -919,6 +919,12 @@ export const consultAgencyTemplate: StarterTemplate = {
       'How does the matching process work?',
       'What are your typical rates?',
     ],
+    includeContentAsContext: true,
+    includedPageSlugs: ['*'],
+    includeKbArticles: true,
+    contentContextMaxTokens: 50000,
+    showContextIndicator: true,
+    toolCallingEnabled: true,
   },
 
   headerSettings: {

@@ -387,6 +387,7 @@ export const securehealthTemplate: StarterTemplate = {
     includeKbArticles: true,
     contentContextMaxTokens: 50000,
     showContextIndicator: true,
+    toolCallingEnabled: true,
   },
   headerSettings: {
     variant: 'mega-menu',

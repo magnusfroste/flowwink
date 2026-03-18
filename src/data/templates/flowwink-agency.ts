@@ -810,6 +810,7 @@ Direct technical questions to demo.flowwink.com for hands-on exploration.`,
     includeKbArticles: true,
     contentContextMaxTokens: 50000,
     showContextIndicator: true,
+    toolCallingEnabled: true,
   },
   headerSettings: {
     variant: 'sticky',

@@ -691,6 +691,7 @@ export const digitalShopTemplate: StarterTemplate = {
     includeKbArticles: false,
     contentContextMaxTokens: 30000,
     showContextIndicator: false,
+    toolCallingEnabled: true,
   },
   headerSettings: {
     variant: 'sticky',

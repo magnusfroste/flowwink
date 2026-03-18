@@ -824,6 +824,7 @@ export const launchpadTemplate: StarterTemplate = {
     includedPageSlugs: ['*'],
     includeKbArticles: true,
     showContextIndicator: true,
+    toolCallingEnabled: true,
   },
   headerSettings: {
     variant: 'sticky',

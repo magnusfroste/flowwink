@@ -720,6 +720,7 @@ export const serviceProTemplate: StarterTemplate = {
     includeKbArticles: true,
     contentContextMaxTokens: 50000,
     showContextIndicator: true,
+    toolCallingEnabled: true,
   },
   headerSettings: {
     variant: 'sticky',

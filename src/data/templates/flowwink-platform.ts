@@ -1367,6 +1367,12 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
       'Can I self-host for free?',
       'What AI models are supported?',
     ],
+    includeContentAsContext: true,
+    includedPageSlugs: ['*'],
+    includeKbArticles: true,
+    contentContextMaxTokens: 50000,
+    showContextIndicator: true,
+    toolCallingEnabled: true,
   },
 
   headerSettings: {
