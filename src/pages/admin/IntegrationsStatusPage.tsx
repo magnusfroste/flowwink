@@ -886,6 +886,25 @@ export default function IntegrationsStatusPage() {
                           </div>
                         </CardHeader>
                         <CardContent className="space-y-4">
+                          {/* Module usage */}
+                          {integrationModuleMap[key] && (
+                            <div>
+                              <p className="text-xs text-muted-foreground mb-1.5">Used by</p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {integrationModuleMap[key].required.map((name) => (
+                                  <Badge key={name} variant="default" className="text-xs font-normal">
+                                    {name}
+                                  </Badge>
+                                ))}
+                                {integrationModuleMap[key].optional.map((name) => (
+                                  <Badge key={name} variant="secondary" className="text-xs font-normal">
+                                    {name}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
                           {/* Features */}
                           <div>
                             <p className="text-xs text-muted-foreground mb-1.5">Enables</p>
