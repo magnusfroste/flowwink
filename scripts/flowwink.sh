@@ -113,7 +113,9 @@ cmd_login() {
     echo ""
     print_section "Log in to Supabase"
 
-    if supabase projects list &>/dev/null; then
+    local list_out
+    list_out=$(supabase projects list 2>&1)
+    if [ $? -eq 0 ] && ! echo "$list_out" | grep -qi "error\|not logged\|unauthorized\|login required"; then
         echo -e "  ${GREEN}✓ Already logged in${NC}"
         echo ""
         return 0
@@ -136,7 +138,9 @@ cmd_link() {
     echo ""
     print_section "Link Supabase Project"
 
-    if ! supabase projects list &>/dev/null; then
+    local _list_check
+    _list_check=$(supabase projects list 2>&1)
+    if [ $? -ne 0 ] || echo "$_list_check" | grep -qi "error\|not logged\|unauthorized\|login required"; then
         echo -e "  ${RED}✗ Not logged in.${NC} Run ${CYAN}/login${NC} first."
         echo ""
         return 1
