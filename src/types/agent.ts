@@ -6,7 +6,7 @@
  */
 
 export type AgentScope = 'internal' | 'external' | 'both';
-export type AgentSkillCategory = 'content' | 'crm' | 'communication' | 'automation' | 'search' | 'analytics';
+export type AgentSkillCategory = 'content' | 'crm' | 'communication' | 'automation' | 'search' | 'analytics' | 'growth';
 export type AgentActivityStatus = 'success' | 'failed' | 'pending_approval' | 'approved' | 'rejected';
 export type AgentType = 'flowpilot' | 'chat';
 export type AgentMemoryCategory = 'preference' | 'context' | 'fact';

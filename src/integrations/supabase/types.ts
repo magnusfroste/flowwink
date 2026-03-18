@@ -106,6 +106,113 @@ export type Database = {
         }
         Relationships: []
       }
+      ad_campaigns: {
+        Row: {
+          budget_cents: number
+          created_at: string
+          created_by: string | null
+          currency: string
+          end_date: string | null
+          external_id: string | null
+          id: string
+          metrics: Json
+          name: string
+          objective: string | null
+          platform: string
+          spent_cents: number
+          start_date: string | null
+          status: string
+          target_audience: Json
+          updated_at: string
+        }
+        Insert: {
+          budget_cents?: number
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          end_date?: string | null
+          external_id?: string | null
+          id?: string
+          metrics?: Json
+          name: string
+          objective?: string | null
+          platform?: string
+          spent_cents?: number
+          start_date?: string | null
+          status?: string
+          target_audience?: Json
+          updated_at?: string
+        }
+        Update: {
+          budget_cents?: number
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          end_date?: string | null
+          external_id?: string | null
+          id?: string
+          metrics?: Json
+          name?: string
+          objective?: string | null
+          platform?: string
+          spent_cents?: number
+          start_date?: string | null
+          status?: string
+          target_audience?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ad_creatives: {
+        Row: {
+          body: string | null
+          campaign_id: string
+          created_at: string
+          cta_text: string | null
+          headline: string | null
+          id: string
+          image_url: string | null
+          performance: Json
+          status: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          body?: string | null
+          campaign_id: string
+          created_at?: string
+          cta_text?: string | null
+          headline?: string | null
+          id?: string
+          image_url?: string | null
+          performance?: Json
+          status?: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string | null
+          campaign_id?: string
+          created_at?: string
+          cta_text?: string | null
+          headline?: string | null
+          id?: string
+          image_url?: string | null
+          performance?: Json
+          status?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ad_creatives_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "ad_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agent_activity: {
         Row: {
           agent: Database["public"]["Enums"]["agent_type"]
@@ -3022,6 +3129,7 @@ export type Database = {
         | "analytics"
         | "system"
         | "commerce"
+        | "growth"
       agent_type: "flowpilot" | "chat"
       app_role: "writer" | "approver" | "admin" | "customer"
       automation_trigger_type: "cron" | "event" | "signal"
@@ -3210,6 +3318,7 @@ export const Constants = {
         "analytics",
         "system",
         "commerce",
+        "growth",
       ],
       agent_type: ["flowpilot", "chat"],
       app_role: ["writer", "approver", "admin", "customer"],

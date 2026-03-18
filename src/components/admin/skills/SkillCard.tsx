@@ -16,6 +16,7 @@ const CATEGORY_LABELS: Record<AgentSkillCategory, string> = {
   automation: 'Automation',
   search: 'Search',
   analytics: 'Analytics',
+  growth: 'Growth',
 };
 
 function handlerLabel(handler: string) {
