@@ -404,12 +404,12 @@ export const securehealthTemplate: StarterTemplate = {
         id: 'services', label: 'Services', url: '#', enabled: true,
         description: 'Comprehensive healthcare services',
         children: [
-          { id: 'primary-care', label: 'Primary Care', url: '/services/primary-care', description: 'General health checkups and preventive care', icon: '🩺' },
-          { id: 'mental-health', label: 'Mental Health', url: '/services/mental-health', description: 'Counseling and therapy services', icon: '🧠' },
-          { id: 'telehealth', label: 'Telehealth', url: '/services/telehealth', description: 'Virtual consultations from home', icon: '💻' },
-          { id: 'lab-services', label: 'Lab Services', url: '/services/lab', description: 'Diagnostic testing and results', icon: '🧪' },
-          { id: 'pharmacy', label: 'Pharmacy', url: '/services/pharmacy', description: 'Prescription management', icon: '💊' },
-          { id: 'specialists', label: 'Specialists', url: '/services/specialists', description: 'Access to medical specialists', icon: '👨‍⚕️' },
+          { id: 'primary-care', label: 'Primary Care', url: '/services', description: 'General health checkups and preventive care', icon: '🩺' },
+          { id: 'mental-health', label: 'Mental Health', url: '/services', description: 'Counseling and therapy services', icon: '🧠' },
+          { id: 'telehealth', label: 'Telehealth', url: '/services', description: 'Virtual consultations from home', icon: '💻' },
+          { id: 'lab-services', label: 'Lab Services', url: '/services', description: 'Diagnostic testing and results', icon: '🧪' },
+          { id: 'pharmacy', label: 'Pharmacy', url: '/services', description: 'Prescription management', icon: '💊' },
+          { id: 'specialists', label: 'Specialists', url: '/services', description: 'Access to medical specialists', icon: '👨‍⚕️' },
         ],
       },
       {
