@@ -109,16 +109,59 @@ class ModuleRegistry {
   }
 
   /**
+   * Pre-flight check: verify that a module's required integrations are active.
+   * Returns { ok: true } or { ok: false, missing: string[] }.
+   * 
+   * @param moduleId - The module to check
+   * @param readiness - Integration readiness data (from useModuleReadiness)
+   */
+  preflight(
+    moduleId: string,
+    readiness: { ready: boolean; missingRequired: string[] }
+  ): { ok: true } | { ok: false; missing: string[]; error: string } {
+    const module = this.modules.get(moduleId);
+    if (!module) {
+      return { ok: false, missing: [], error: `Module '${moduleId}' not found` };
+    }
+    if (!readiness.ready) {
+      const missing = readiness.missingRequired;
+      return {
+        ok: false,
+        missing,
+        error: `Module '${module.name}' requires integrations that are not configured: ${missing.join(', ')}`,
+      };
+    }
+    return { ok: true };
+  }
+
+  /**
    * Publish content through a module
+   * 
+   * @param readiness - Optional integration readiness. When provided, publish
+   *   will fail fast if required integrations are missing.
    */
   async publish<TInput, TOutput>(
     moduleId: string,
-    input: TInput
+    input: TInput,
+    readiness?: { ready: boolean; missingRequired: string[] }
   ): Promise<TOutput> {
     const module = this.modules.get(moduleId);
     
     if (!module) {
       throw new Error(`Module '${moduleId}' not found`);
+    }
+
+    // Pre-flight integration check (when readiness data is provided)
+    if (readiness) {
+      const check = this.preflight(moduleId, readiness);
+      if (check.ok === false) {
+        logger.error(`[ModuleRegistry] Pre-flight failed for ${moduleId}: ${check.error}`);
+        return {
+          success: false,
+          error: check.error,
+          missing_integrations: check.missing,
+        } as TOutput;
+      }
     }
 
     // Validate input against schema
