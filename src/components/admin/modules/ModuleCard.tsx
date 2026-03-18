@@ -15,10 +15,13 @@ import {
   Bot,
   Settings2,
   Eye,
+  AlertTriangle,
+  Plug,
 } from "lucide-react";
 import { moduleRegistry } from "@/lib/module-registry";
 import type { ModuleStats } from "@/hooks/useModuleStats";
 import type { ModulesSettings, ModuleConfig, ModuleAutonomy } from "@/hooks/useModules";
+import { useModuleReadiness } from "@/hooks/useModuleReadiness";
 import { ModuleDetailSheet } from "./ModuleDetailSheet";
 import {
   Tooltip,
