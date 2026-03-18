@@ -219,6 +219,7 @@ export const defaultModulesSettings: ModulesSettings = {
     category: 'data',
     autonomy: 'agent-capable',
     adminUI: true,
+    optionalIntegrations: ['hunter', 'jina', 'firecrawl', 'openai', 'gemini'],
   },
   resume: {
     enabled: false,
