@@ -33,7 +33,7 @@ export const growthModule: ModuleDefinition<GrowthCampaignInput, GrowthCampaignO
 
       const { data, error } = await supabase
         .from('ad_campaigns')
-        .insert(insertData)
+        .insert([insertData])
         .select('id, name, status')
         .single();
 
