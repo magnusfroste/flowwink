@@ -580,8 +580,9 @@ export const trustcorpTemplate: StarterTemplate = {
   tagline: 'For enterprises that demand excellence',
   aiChatPosition: 'Large embedded assistant with data sovereignty messaging',
   pages: trustcorpPages,
+  blogPosts: trustcorpBlogPosts,
   kbCategories: trustcorpKbCategories,
-  requiredModules: ['knowledgeBase', 'chat', 'forms', 'leads'],
+  requiredModules: ['blog', 'knowledgeBase', 'chat', 'forms', 'leads'],
   branding: {
     logo: '',
     organizationName: 'TrustCorp',

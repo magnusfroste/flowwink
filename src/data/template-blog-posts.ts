@@ -1218,3 +1218,97 @@ export const digitalShopBlogPosts: TemplateBlogPost[] = [
     meta: { description: 'Avoid these 7 common mistakes when launching your online store. From product strategy to SEO and checkout optimization.' },
   },
 ];
+
+// =====================================================
+// CONSULT AGENCY - IT Consulting Blog Posts
+// =====================================================
+export const consultAgencyBlogPosts: TemplateBlogPost[] = [
+  {
+    title: 'The Consultant Shortage Is a Myth — Your Pipeline Is the Problem',
+    slug: 'consultant-shortage-myth-pipeline-problem',
+    excerpt: 'Companies claim they cannot find talent. The truth? Most consulting firms have deep benches but broken matching. Here is how agentic technology is closing the gap.',
+    featured_image: '/templates/blog/team-brainstorming.jpg',
+    featured_image_alt: 'Team of consultants collaborating in a modern office',
+    is_featured: true,
+    content: [
+      createTextBlock({
+        type: 'doc',
+        content: [
+          p('Every quarter, hiring managers tell us they cannot find senior developers, architects, or project managers. Meanwhile, consulting firms sit on hundreds of available specialists whose profiles never surface at the right time.'),
+          h2('The Matching Problem'),
+          p('Traditional consulting relies on account managers who remember who is available. When a brief arrives at 4 PM on Friday, no one is checking the bench. By Monday, the client has moved on.'),
+          h2('Always-On Availability'),
+          p('An agentic platform changes the equation. When a client asks "Do you have a senior Java architect available in Stockholm next month?", the system can answer instantly — with real data, not guesswork.'),
+          h2('From Weeks to Minutes'),
+          ul(
+            'Automated skill matching against live consultant profiles',
+            'Real-time availability checks without waiting for account managers',
+            'Instant shortlists based on actual competencies and certifications',
+            'Qualification of inbound briefs 24/7 — even outside business hours'
+          ),
+          h2('The Bottom Line'),
+          p('Firms that surface the right consultant within hours — not days — win more assignments. It is not about having more consultants. It is about knowing exactly what you have.'),
+        ],
+      }),
+    ],
+    meta: { description: 'How agentic technology solves the consultant matching problem. Move from manual bench management to instant, data-driven talent matching.' },
+  },
+  {
+    title: 'Why Your Consulting Website Should Answer Client Briefs at 2 AM',
+    slug: 'consulting-website-answer-briefs-24-7',
+    excerpt: 'Enterprise clients do not work on your schedule. An agentic web presence qualifies leads and matches consultants around the clock.',
+    featured_image: '/templates/blog/developer-workspace.jpg',
+    featured_image_alt: 'Modern workspace with laptop showing consultant profiles',
+    content: [
+      createTextBlock({
+        type: 'doc',
+        content: [
+          p('Your best prospect just landed on your website at 11 PM. They have a tight deadline, a specific tech stack, and budget approval. What happens next?'),
+          h2('The Old Way'),
+          p('They fill out a generic contact form. Maybe they get a reply by Wednesday. By then, they have already signed with the firm that responded in 20 minutes.'),
+          h2('The Agentic Way'),
+          p('An AI consultant on your website can ask the right questions, match against your actual roster, and present relevant profiles — all before the visitor finishes their coffee.'),
+          h3('What Clients Actually Want'),
+          ul(
+            'Immediate confirmation that you have relevant expertise',
+            'Specific consultant profiles, not generic capability decks',
+            'Clear availability and engagement timelines',
+            'A fast path to a real conversation when they are ready'
+          ),
+          h2('Measuring Impact'),
+          p('Our data shows that firms with agentic websites see 3x higher brief-to-meeting conversion rates. Speed and specificity beat brochure websites every time.'),
+        ],
+      }),
+    ],
+    meta: { description: 'Enterprise clients expect instant responses. Learn how agentic consulting websites qualify briefs and match consultants 24/7.' },
+  },
+  {
+    title: 'Building a Consultant Brand: From Bench Resource to Trusted Advisor',
+    slug: 'building-consultant-brand-trusted-advisor',
+    excerpt: 'The best consulting firms do not sell hours — they sell expertise. Here is how to position your consultants as thought leaders.',
+    featured_image: '/templates/blog/server-infrastructure.jpg',
+    featured_image_alt: 'Professional consultant giving a presentation',
+    content: [
+      createTextBlock({
+        type: 'doc',
+        content: [
+          p('In a commoditized market, the difference between a $900/day consultant and a $1,500/day advisor is not skill — it is positioning. Clients pay more for recognized expertise.'),
+          h2('Content as Proof of Expertise'),
+          p('When your consultants publish insights about their domain — architecture decisions, migration strategies, security patterns — clients see advisors, not resources.'),
+          h2('The Flywheel Effect'),
+          ul(
+            'Consultants write about real project learnings',
+            'Content attracts inbound leads in their specialty',
+            'Leads convert because they already trust the expertise',
+            'Higher rates because value is demonstrated, not claimed'
+          ),
+          h2('Making It Sustainable'),
+          p('The key is automation. AI-assisted content creation turns a 30-minute consultant debrief into a polished article. The consultant provides the insight; the platform handles the production.'),
+          h2('Start Small'),
+          p('One article per consultant per quarter. That is all it takes to start. Within a year, you have a library of expertise that no competitor can replicate — because it is based on real experience.'),
+        ],
+      }),
+    ],
+    meta: { description: 'Position your consulting firm as thought leaders. Learn how content marketing and AI-assisted publishing build consultant brands.' },
+  },
+];

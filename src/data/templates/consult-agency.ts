@@ -16,6 +16,7 @@
  * client logos, testimonials, agentic chat launcher, A2A integration CTA.
  */
 import type { StarterTemplate } from './types';
+import { consultAgencyBlogPosts } from '../template-blog-posts';
 
 export const consultAgencyTemplate: StarterTemplate = {
   id: 'consult-agency',
@@ -26,6 +27,7 @@ export const consultAgencyTemplate: StarterTemplate = {
   tagline: 'Your website is a consultant. Always on. Always current.',
   aiChatPosition: 'Agentic consultant — live roster data, answers any brief, qualifies leads, A2A-ready for enterprise integrations',
   requiredModules: ['blog', 'chat', 'leads', 'deals', 'companies', 'forms', 'bookings', 'newsletter', 'resume'],
+  blogPosts: consultAgencyBlogPosts,
 
   pages: [
 
