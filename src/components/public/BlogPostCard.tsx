@@ -70,7 +70,7 @@ export function BlogPostCard({
               </div>
             )}
             
-            <h2 className="text-2xl font-serif font-bold group-hover:text-primary transition-colors mb-3">
+            <h2 className="text-xl sm:text-2xl font-serif font-bold group-hover:text-primary transition-colors mb-3">
               {post.title}
             </h2>
             
