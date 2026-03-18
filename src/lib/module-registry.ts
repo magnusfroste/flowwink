@@ -32,6 +32,7 @@ import {
   resumeModule,
   browserControlModule,
   growthModule,
+  federationModule,
 } from '@/lib/modules';
 
 // =============================================================================
