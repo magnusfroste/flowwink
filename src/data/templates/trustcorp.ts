@@ -641,12 +641,12 @@ export const trustcorpTemplate: StarterTemplate = {
         id: 'resources', label: 'Resources', url: '#', enabled: true,
         description: 'Learn and grow with TrustCorp',
         children: [
-          { id: 'docs', label: 'Documentation', url: '/docs', description: 'Technical guides and API reference', icon: '📚' },
-          { id: 'academy', label: 'TrustCorp Academy', url: '/academy', description: 'Free courses and certifications', icon: '🎓' },
-          { id: 'blog', label: 'Blog', url: '/blog', description: 'Industry insights and updates', icon: '✍️' },
+          { id: 'docs', label: 'Documentation', url: '/home', description: 'Technical guides and API reference', icon: '📚' },
+          { id: 'academy', label: 'TrustCorp Academy', url: '/home', description: 'Free courses and certifications', icon: '🎓' },
+          { id: 'blog', label: 'Blog', url: '/home', description: 'Industry insights and updates', icon: '✍️' },
           { id: 'case-studies', label: 'Case Studies', url: '/case-studies', description: 'Success stories from our clients', icon: '📈' },
-          { id: 'webinars', label: 'Webinars', url: '/webinars', description: 'Live and on-demand sessions', icon: '🎥' },
-          { id: 'community', label: 'Community', url: '/community', description: 'Connect with other users', icon: '💬' },
+          { id: 'webinars', label: 'Webinars', url: '/home', description: 'Live and on-demand sessions', icon: '🎥' },
+          { id: 'community', label: 'Community', url: '/home', description: 'Connect with other users', icon: '💬' },
         ],
       },
       {
