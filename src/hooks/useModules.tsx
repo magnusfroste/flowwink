@@ -45,6 +45,7 @@ export interface ModulesSettings {
   resume: ModuleConfig;
   browserControl: ModuleConfig;
   federation: ModuleConfig;
+  paidGrowth: ModuleConfig;
 }
 
 export const defaultModulesSettings: ModulesSettings = {
@@ -239,6 +240,15 @@ export const defaultModulesSettings: ModulesSettings = {
     autonomy: 'agent-capable',
     adminUI: true,
   },
+  paidGrowth: {
+    enabled: false,
+    name: 'Paid Growth',
+    description: 'Autonomous ad campaigns — create, optimize and monitor paid advertising across platforms',
+    icon: 'Megaphone',
+    category: 'insights',
+    autonomy: 'agent-capable',
+    adminUI: true,
+  },
 };
 
 // Map sidebar items to module IDs
@@ -264,6 +274,7 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/sales-intelligence': 'salesIntelligence',
   '/admin/resume': 'resume',
   '/admin/federation': 'federation',
+  '/admin/growth': 'paidGrowth',
 };
 
 export function useModules() {

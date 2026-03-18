@@ -23,6 +23,7 @@ import {
   Target,
   FileUser,
   Network,
+  Megaphone,
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
@@ -56,6 +57,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   Target,
   FileUser,
   Network,
+  Megaphone,
 };
 
 const CATEGORY_LABELS: Record<string, string> = {

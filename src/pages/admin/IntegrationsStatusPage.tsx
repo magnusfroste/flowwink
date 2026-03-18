@@ -38,6 +38,7 @@ import {
   Target,
   MessageSquare,
   Search,
+  Megaphone,
 } from "lucide-react";
 import { useUnsavedChanges, UnsavedChangesDialog } from "@/hooks/useUnsavedChanges";
 import {
@@ -65,6 +66,7 @@ const iconMap = {
   Target,
   MessageSquare,
   Search,
+  Megaphone,
 };
 
 type IntegrationStatus = 'active' | 'disabled' | 'not_configured';

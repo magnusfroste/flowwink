@@ -29,7 +29,7 @@ export const navigationGroups: NavGroup[] = [
       { name: "Skill Hub", href: "/admin/skills", icon: Bot },
       { name: "Federation", href: "/admin/federation", icon: Network, moduleId: "federation" },
       { name: "Analytics", href: "/admin/analytics", icon: BarChart3, moduleId: "analytics" },
-      { name: "Growth", href: "/admin/growth", icon: Megaphone },
+      { name: "Growth", href: "/admin/growth", icon: Megaphone, moduleId: "paidGrowth" },
     ],
   },
   {
