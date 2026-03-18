@@ -131,12 +131,21 @@ export function useTemplateInstaller() {
         const globalIndex = i + batchIndex;
         onProgress(globalIndex, uniqueUrls.length, url);
         try {
-          const { data, error } = await supabase.functions.invoke('process-image', {
-            body: { imageUrl: url, folder: 'templates' }
-          });
-          if (error) { logger.warn(`Failed to process image ${url}:`, error); return; }
-          if (data.success && data.url) {
-            urlMap.set(url, data.url);
+          if (isLocalTemplateImage(url)) {
+            // Local template image: fetch from own origin and upload directly to storage
+            const storageUrl = await uploadLocalTemplateImage(url);
+            if (storageUrl) {
+              urlMap.set(url, storageUrl);
+            }
+          } else {
+            // External URL: use the process-image edge function
+            const { data, error } = await supabase.functions.invoke('process-image', {
+              body: { imageUrl: url, folder: 'templates' }
+            });
+            if (error) { logger.warn(`Failed to process image ${url}:`, error); return; }
+            if (data.success && data.url) {
+              urlMap.set(url, data.url);
+            }
           }
         } catch (err) {
           logger.warn(`Error processing image ${url}:`, err);
@@ -144,6 +153,40 @@ export function useTemplateInstaller() {
       }));
     }
     return urlMap;
+  };
+
+  const uploadLocalTemplateImage = async (localPath: string): Promise<string | null> => {
+    try {
+      // Fetch the image from our own origin (public/ folder)
+      const response = await fetch(localPath);
+      if (!response.ok) {
+        logger.warn(`Failed to fetch local image ${localPath}: ${response.status}`);
+        return null;
+      }
+      const blob = await response.blob();
+      
+      // Generate a storage path
+      const fileName = localPath.split('/').pop() || 'image.jpg';
+      const storagePath = `templates/${Date.now()}-${fileName}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('cms-images')
+        .upload(storagePath, blob, { contentType: blob.type || 'image/jpeg', upsert: true });
+      
+      if (uploadError) {
+        logger.warn(`Failed to upload ${localPath} to storage:`, uploadError);
+        return null;
+      }
+      
+      const { data: publicUrlData } = supabase.storage
+        .from('cms-images')
+        .getPublicUrl(storagePath);
+      
+      return publicUrlData.publicUrl;
+    } catch (err) {
+      logger.warn(`Error uploading local image ${localPath}:`, err);
+      return null;
+    }
   };
 
   const applyImageMappingToPages = (
