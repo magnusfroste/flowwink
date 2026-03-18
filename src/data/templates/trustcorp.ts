@@ -612,6 +612,7 @@ export const trustcorpTemplate: StarterTemplate = {
     contentContextMaxTokens: 50000,
     showContextIndicator: true,
     toolCallingEnabled: true,
+    allowGeneralKnowledge: true,
   },
   headerSettings: {
     variant: 'mega-menu',

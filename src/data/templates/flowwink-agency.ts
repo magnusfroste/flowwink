@@ -811,6 +811,7 @@ Direct technical questions to demo.flowwink.com for hands-on exploration.`,
     contentContextMaxTokens: 50000,
     showContextIndicator: true,
     toolCallingEnabled: true,
+    allowGeneralKnowledge: true,
   },
   headerSettings: {
     variant: 'sticky',

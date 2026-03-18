@@ -692,6 +692,7 @@ export const digitalShopTemplate: StarterTemplate = {
     contentContextMaxTokens: 30000,
     showContextIndicator: false,
     toolCallingEnabled: true,
+    allowGeneralKnowledge: true,
   },
   headerSettings: {
     variant: 'sticky',

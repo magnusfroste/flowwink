@@ -252,6 +252,7 @@ export const helpCenterTemplate: StarterTemplate = {
     contentContextMaxTokens: 50000,
     showContextIndicator: true,
     toolCallingEnabled: true,
+    allowGeneralKnowledge: true,
   },
   headerSettings: {
     variant: 'sticky',
