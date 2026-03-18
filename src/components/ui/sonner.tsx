@@ -1,5 +1,6 @@
 import { useTheme } from "next-themes";
-import { Toaster as Sonner, toast } from "sonner";
+import { Toaster as Sonner, toast as originalSonnerToast } from "sonner";
+import { toastSilencer } from "@/lib/toast-silencer";
 
 type ToasterProps = React.ComponentProps<typeof Sonner>;
 
@@ -23,5 +24,15 @@ const Toaster = ({ ...props }: ToasterProps) => {
     />
   );
 };
+
+const silencedToast = Object.assign(
+  (...args: Parameters<typeof originalSonnerToast>) => {
+    if (toastSilencer.silent) return '' as string | number;
+    return originalSonnerToast(...args);
+  },
+  originalSonnerToast,
+);
+
+const toast = silencedToast as typeof originalSonnerToast;
 
 export { Toaster, toast };

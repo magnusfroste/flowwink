@@ -310,24 +310,54 @@ serve(async (req) => {
 
     console.log(`[briefing] Created: ${title} | Health: ${healthScore} | Actions: ${actionItems.length}`);
 
-    // ─── Inject proactive chat message ──────────────────────────────
+    // ─── Inject proactive chat message into today's FlowPilot session ──
     try {
-      // Find or create a FlowPilot conversation for the admin
-      let conversationId: string | null = null;
-      const { data: existing } = await supabase
-        .from("chat_conversations")
-        .select("id")
-        .eq("title", "FlowPilot Daily")
-        .order("created_at", { ascending: false })
+      // Find the first admin user to associate the conversation with
+      const { data: adminRoleRow } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "admin")
         .limit(1)
         .maybeSingle();
 
-      if (existing) {
-        conversationId = existing.id;
-      } else {
+      const adminUserId = adminRoleRow?.user_id ?? null;
+
+      // Find or create today's FlowPilot session — matching the same pattern
+      // used by useAgentOperate.getOrCreateConversation() on the frontend
+      const todayStart = new Date(now);
+      todayStart.setHours(0, 0, 0, 0);
+      const todayLabel = todayStart.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+
+      let conversationId: string | null = null;
+
+      // Look for existing today session (same query shape as the frontend hook)
+      if (adminUserId) {
+        const { data: todaySession } = await supabase
+          .from("chat_conversations")
+          .select("id")
+          .eq("conversation_status", "active")
+          .is("session_id", null)
+          .eq("user_id", adminUserId)
+          .gte("created_at", todayStart.toISOString())
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (todaySession) {
+          conversationId = todaySession.id;
+        }
+      }
+
+      // If no today-session exists, create one with the correct format
+      if (!conversationId) {
         const { data: newConv } = await supabase
           .from("chat_conversations")
-          .insert({ title: "FlowPilot Daily" })
+          .insert({
+            title: `Session — ${todayLabel}`,
+            conversation_status: "active",
+            priority: "normal",
+            user_id: adminUserId,
+          })
           .select("id")
           .single();
         conversationId = newConv?.id ?? null;
@@ -374,7 +404,7 @@ serve(async (req) => {
           action_payload: actionPayload,
         });
 
-        console.log(`[briefing] Proactive chat message injected into conversation ${conversationId}`);
+        console.log(`[briefing] Proactive message injected into "Session — ${todayLabel}" (${conversationId})`);
       }
     } catch (chatErr: any) {
       console.error("[briefing] Failed to inject chat message:", chatErr.message);

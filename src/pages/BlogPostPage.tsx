@@ -118,7 +118,7 @@ export default function BlogPostPage() {
           )}
           
           {/* Title */}
-          <h1 className="text-4xl md:text-5xl font-serif font-bold mb-6 leading-tight">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif font-bold mb-6 leading-tight">
             {post.title}
           </h1>
           
@@ -175,7 +175,7 @@ export default function BlogPostPage() {
           
           {/* Content */}
           <div
-            className="prose prose-lg dark:prose-invert max-w-none mb-12"
+            className="prose prose-base md:prose-lg dark:prose-invert max-w-none mb-12 prose-img:rounded-lg prose-img:max-w-full"
             dangerouslySetInnerHTML={{ __html: renderToHtml(post.content_json) }}
           />
           

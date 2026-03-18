@@ -21,7 +21,7 @@ export const launchpadBlogPosts: TemplateBlogPost[] = [
     title: 'From Zero to MVP: A Step-by-Step Guide for First-Time Founders',
     slug: 'zero-to-mvp-guide-first-time-founders',
     excerpt: 'Building your first product can feel overwhelming. Here is a practical roadmap that takes you from idea to launch without the usual pitfalls.',
-    featured_image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=1200',
+    featured_image: '/templates/blog/team-brainstorming.jpg',
     featured_image_alt: 'Team brainstorming around a whiteboard',
     is_featured: true,
     content: [
@@ -53,7 +53,7 @@ export const launchpadBlogPosts: TemplateBlogPost[] = [
     title: 'Why Developer Experience Is the New Competitive Advantage',
     slug: 'developer-experience-competitive-advantage',
     excerpt: 'In the age of SaaS, the companies that win are the ones developers love to use. Here is why DX matters more than ever.',
-    featured_image: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=1200',
+    featured_image: '/templates/blog/developer-coding.jpg',
     featured_image_alt: 'Developer coding on laptop',
     content: [
       createTextBlock({
@@ -79,7 +79,7 @@ export const launchpadBlogPosts: TemplateBlogPost[] = [
     title: 'The Art of Pricing: Lessons from Scaling to 10K Customers',
     slug: 'art-of-pricing-scaling-lessons',
     excerpt: 'Pricing is the most powerful lever you have. Here is what we learned about pricing strategy while growing from zero to ten thousand paying customers.',
-    featured_image: 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=1200',
+    featured_image: '/templates/blog/financial-charts.jpg',
     featured_image_alt: 'Calculator and financial charts',
     content: [
       createTextBlock({
@@ -111,7 +111,7 @@ export const trustcorpBlogPosts: TemplateBlogPost[] = [
     title: 'Digital Transformation in 2024: Beyond the Buzzwords',
     slug: 'digital-transformation-2024-beyond-buzzwords',
     excerpt: 'Every organization talks about digital transformation, but few execute it successfully. Here is what separates the leaders from the laggards.',
-    featured_image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1200',
+    featured_image: '/templates/blog/office-building.jpg',
     featured_image_alt: 'Modern office building facade',
     is_featured: true,
     content: [
@@ -143,7 +143,7 @@ export const trustcorpBlogPosts: TemplateBlogPost[] = [
     title: 'Private AI: Why Data Sovereignty Is the New Boardroom Priority',
     slug: 'private-ai-data-sovereignty-boardroom-priority',
     excerpt: 'As AI becomes essential infrastructure, the question of where that AI runs—and who controls your data—has become a strategic imperative.',
-    featured_image: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1200',
+    featured_image: '/templates/blog/tech-network.jpg',
     featured_image_alt: 'Abstract technology network visualization',
     content: [
       createTextBlock({
@@ -169,7 +169,7 @@ export const trustcorpBlogPosts: TemplateBlogPost[] = [
     title: 'Building Resilient Organizations: Lessons from the Front Lines',
     slug: 'building-resilient-organizations-lessons',
     excerpt: 'The past few years have stress-tested every organization. Here are the patterns that separated those who thrived from those who merely survived.',
-    featured_image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=1200',
+    featured_image: '/templates/blog/team-brainstorming.jpg',
     featured_image_alt: 'Team meeting in modern office',
     content: [
       createTextBlock({
@@ -202,7 +202,7 @@ export const securehealthBlogPosts: TemplateBlogPost[] = [
     title: 'Understanding Preventive Care: Your Guide to Staying Healthy',
     slug: 'understanding-preventive-care-guide',
     excerpt: 'Prevention is always better than cure. Learn which screenings and checkups you need at every stage of life.',
-    featured_image: 'https://images.unsplash.com/photo-1505751172876-fa1923c5c528?w=1200',
+    featured_image: '/templates/blog/doctor-stethoscope.jpg',
     featured_image_alt: 'Doctor with stethoscope',
     is_featured: true,
     content: [
@@ -240,7 +240,7 @@ export const securehealthBlogPosts: TemplateBlogPost[] = [
     title: 'Your Health Data, Your Privacy: How We Protect Your Information',
     slug: 'health-data-privacy-protection',
     excerpt: 'In an age of data breaches, understanding how your health information is protected has never been more important.',
-    featured_image: 'https://images.unsplash.com/photo-1563986768494-4dee2763ff3f?w=1200',
+    featured_image: '/templates/blog/digital-security.jpg',
     featured_image_alt: 'Digital security lock concept',
     content: [
       createTextBlock({
@@ -271,7 +271,7 @@ export const securehealthBlogPosts: TemplateBlogPost[] = [
     title: 'Mental Health Matters: Breaking the Stigma, Finding Support',
     slug: 'mental-health-matters-breaking-stigma',
     excerpt: 'Mental health is health. Learn about our approach to mental wellness and the support services available to you.',
-    featured_image: 'https://images.unsplash.com/photo-1544027993-37dbfe43562a?w=1200',
+    featured_image: '/templates/blog/nature-wellness.jpg',
     featured_image_alt: 'Peaceful nature scene for mental wellness',
     content: [
       createTextBlock({
@@ -308,7 +308,7 @@ export const momentumBlogPosts: TemplateBlogPost[] = [
     title: 'Ship in Days, Not Months: The New Development Paradigm',
     slug: 'ship-days-not-months-development-paradigm',
     excerpt: 'The best teams are shipping faster than ever. Here is how modern tooling is compressing development timelines from months to days.',
-    featured_image: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200',
+    featured_image: '/templates/blog/server-infrastructure.jpg',
     featured_image_alt: 'Fast moving technology abstract',
     is_featured: true,
     content: [
@@ -338,7 +338,7 @@ export const momentumBlogPosts: TemplateBlogPost[] = [
     title: 'Why We Bet Everything on Developer Experience',
     slug: 'bet-everything-developer-experience',
     excerpt: 'Great developer experience is not a feature—it is the product. Here is why we obsess over every interaction.',
-    featured_image: 'https://images.unsplash.com/photo-1484417894907-623942c8ee29?w=1200',
+    featured_image: '/templates/blog/developer-workspace.jpg',
     featured_image_alt: 'Developer workspace setup',
     content: [
       createTextBlock({
@@ -368,7 +368,7 @@ export const flowwinkBlogPosts: TemplateBlogPost[] = [
     title: 'Your Website Should Run Itself: The Case for Autonomous CMS',
     slug: 'your-website-should-run-itself',
     excerpt: 'Content management has not evolved in 20 years. It is time for a system that operates autonomously — writing, publishing, qualifying leads, and learning from every interaction.',
-    featured_image: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200',
+    featured_image: '/templates/blog/code-editor.jpg',
     featured_image_alt: 'AI-powered autonomous system visualization',
     is_featured: true,
     content: [
@@ -402,7 +402,7 @@ export const flowwinkBlogPosts: TemplateBlogPost[] = [
     title: 'FlowPilot: How an Autonomous Agent Manages Your Entire Online Presence',
     slug: 'flowpilot-autonomous-agent-manages-online-presence',
     excerpt: 'Meet FlowPilot — an OpenClaw-inspired autonomous agent with persistent memory, self-evolving skills, and goal-driven objectives that manages content, CRM, email, and e-commerce.',
-    featured_image: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=1200',
+    featured_image: '/templates/blog/ai-concept.jpg',
     featured_image_alt: 'Autonomous AI agent concept',
     content: [
       createTextBlock({
@@ -433,7 +433,7 @@ export const flowwinkBlogPosts: TemplateBlogPost[] = [
     title: 'Self-Hosted AI: Why Privacy Is the Ultimate Competitive Advantage',
     slug: 'self-hosted-ai-privacy-competitive-advantage',
     excerpt: 'When your AI agent manages content, leads, and customer data, where it runs matters. Self-hosted AI is not just safer — it is strategically superior.',
-    featured_image: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200',
+    featured_image: '/templates/blog/server-infrastructure.jpg',
     featured_image_alt: 'Secure server infrastructure',
     content: [
       createTextBlock({
@@ -464,7 +464,7 @@ export const flowwinkBlogPosts: TemplateBlogPost[] = [
     title: 'The Autonomous Loop: How FlowPilot Reflects, Plans, and Self-Improves',
     slug: 'autonomous-loop-flowpilot-reflects-plans-improves',
     excerpt: 'Every 12 hours, FlowPilot runs a heartbeat cycle — reflecting on performance, planning next actions, and evolving its own capabilities. Here is how it works.',
-    featured_image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=1200',
+    featured_image: '/templates/blog/team-brainstorming.jpg',
     featured_image_alt: 'Continuous improvement cycle visualization',
     content: [
       createTextBlock({
@@ -497,7 +497,7 @@ export const flowwinkBlogPosts: TemplateBlogPost[] = [
     title: 'From 4 Products to 1 Agent: Replacing Your CMS, Chatbot, CRM, and Marketing Stack',
     slug: 'replacing-cms-chatbot-crm-marketing-stack',
     excerpt: 'Most businesses run a CMS, a chatbot, a CRM, and marketing automation as separate products. FlowPilot replaces all four with a single autonomous agent.',
-    featured_image: 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=1200',
+    featured_image: '/templates/blog/unified-platform.jpg',
     featured_image_alt: 'Unified platform replacing multiple tools',
     content: [
       createTextBlock({
@@ -538,7 +538,7 @@ export const flowwinkBlogPosts: TemplateBlogPost[] = [
     title: 'Skill Engine Deep Dive: How FlowPilot Learns New Capabilities',
     slug: 'skill-engine-deep-dive-flowpilot-capabilities',
     excerpt: 'FlowPilot ships with 30+ skills and can create new ones autonomously. Here is how the skill engine works — registration, routing, approval, and self-evolution.',
-    featured_image: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200',
+    featured_image: '/templates/blog/server-infrastructure.jpg',
     featured_image_alt: 'Connected network representing skill engine',
     content: [
       createTextBlock({
@@ -582,7 +582,7 @@ export const flowwinkBlogPosts: TemplateBlogPost[] = [
     title: 'Objectives vs Automations: Two Modes of Autonomous Operation',
     slug: 'objectives-vs-automations-two-modes',
     excerpt: 'FlowPilot operates in two cadences: one-time objectives with tracked progress, and recurring automations on cron schedules. Understanding when to use each is key to effective autonomous operations.',
-    featured_image: 'https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=1200',
+    featured_image: '/templates/blog/planning-board.jpg',
     featured_image_alt: 'Strategic planning board with goals and recurring tasks',
     content: [
       createTextBlock({
@@ -623,7 +623,7 @@ export const flowwinkBlogPosts: TemplateBlogPost[] = [
     title: 'Agent-to-Agent: How FlowPilot Talks to Other AI Agents',
     slug: 'agent-to-agent-flowpilot-a2a-protocol',
     excerpt: 'The agentic web is not one agent per company — it is agents collaborating across boundaries. FlowPilot supports A2A peer connections with token-authenticated communication.',
-    featured_image: 'https://images.unsplash.com/photo-1639322537228-f710d846310a?w=1200',
+    featured_image: '/templates/blog/connected-nodes.jpg',
     featured_image_alt: 'Network of connected nodes representing agent-to-agent communication',
     content: [
       createTextBlock({
@@ -659,7 +659,7 @@ export const flowwinkBlogPosts: TemplateBlogPost[] = [
     title: 'Content Authority: How FlowPilot Builds Your Thought Leadership Automatically',
     slug: 'content-authority-flowpilot-thought-leadership',
     excerpt: 'FlowPilot now monitors competitors, identifies content gaps, researches trending topics, and drafts thought leadership pieces — all autonomously through its Content Authority skills.',
-    featured_image: 'https://images.unsplash.com/photo-1432888498266-38ffec3eaf0a?w=1200',
+    featured_image: '/templates/blog/content-strategy.jpg',
     featured_image_alt: 'Person analyzing content strategy on multiple screens',
     content: [
       createTextBlock({
@@ -693,7 +693,7 @@ export const flowwinkBlogPosts: TemplateBlogPost[] = [
     title: 'The 7-Step FlowAgent Loop: Self-Heal, Propose, Plan, Advance, Automate, Reflect, Remember',
     slug: 'flowagent-7-step-autonomous-loop',
     excerpt: 'FlowPilot\'s reasoning engine has evolved into a 7-step autonomous loop. Understanding each phase reveals how an AI agent maintains, improves, and operates your entire digital presence.',
-    featured_image: 'https://images.unsplash.com/photo-1509228627152-72ae9ae6848d?w=1200',
+    featured_image: '/templates/blog/process-diagram.jpg',
     featured_image_alt: 'Circular process diagram representing autonomous loop',
     content: [
       createTextBlock({
@@ -725,7 +725,7 @@ export const flowwinkBlogPosts: TemplateBlogPost[] = [
     title: 'Module Registry: The Data Orchestration Layer Behind FlowWink',
     slug: 'module-registry-data-orchestration-layer',
     excerpt: 'FlowWink\'s Module Registry API organizes 15+ platform features into versioned, Zod-validated modules that FlowPilot can orchestrate. Here is how data flows between modules.',
-    featured_image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200',
+    featured_image: '/templates/misc/analytics-dashboard.jpg',
     featured_image_alt: 'Data flow architecture diagram',
     content: [
       createTextBlock({
@@ -765,7 +765,7 @@ export const flowwinkBlogPosts: TemplateBlogPost[] = [
     title: 'Google A2A Protocol and the Rise of the Agentic Web',
     slug: 'google-a2a-protocol-agentic-web',
     excerpt: 'Google\'s Agent-to-Agent protocol is setting the standard for how autonomous agents discover, authenticate, and collaborate. Here is what it means for FlowPilot and the future of the web.',
-    featured_image: 'https://images.unsplash.com/photo-1573164713988-8665fc963095?w=1200',
+    featured_image: '/templates/team/tech-woman.jpg',
     featured_image_alt: 'Interconnected digital network representing agent collaboration',
     is_featured: false,
     content: [
@@ -798,7 +798,7 @@ export const flowwinkBlogPosts: TemplateBlogPost[] = [
     title: 'Running AI Models Locally: Privacy, Performance, and Practical Guidance',
     slug: 'running-ai-models-locally-privacy-performance',
     excerpt: 'Open-source LLMs have reached a tipping point. Models like Llama, Mistral, and Gemma can run on modest hardware with quality that rivals cloud APIs. Here is how to set it up with FlowWink.',
-    featured_image: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200',
+    featured_image: '/templates/blog/server-infrastructure.jpg',
     featured_image_alt: 'Server hardware running local AI models',
     is_featured: false,
     content: [
@@ -842,7 +842,7 @@ export const flowwinkBlogPosts: TemplateBlogPost[] = [
     title: 'The Agentic Web Is Here: What It Means for Your Business',
     slug: 'agentic-web-what-it-means-for-business',
     excerpt: 'We are entering the age of autonomous agents. Websites that operate themselves, agents that collaborate, and AI that acts — not just answers. Here is what forward-thinking businesses need to know.',
-    featured_image: 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=1200',
+    featured_image: '/templates/blog/autonomous-agents.jpg',
     featured_image_alt: 'Abstract visualization of connected autonomous agents',
     is_featured: false,
     content: [
@@ -879,7 +879,7 @@ export const flowwinkBlogPosts: TemplateBlogPost[] = [
     title: 'MCP, Function Calling, and Tool Use: How FlowPilot Stays Framework-Agnostic',
     slug: 'mcp-function-calling-tool-use-framework-agnostic',
     excerpt: 'OpenAI function calling, Anthropic MCP, Google A2A — the AI ecosystem is fragmenting into competing standards. FlowPilot\'s skill engine is designed to work with all of them.',
-    featured_image: 'https://images.unsplash.com/photo-1504639725590-34d0984388bd?w=1200',
+    featured_image: '/templates/blog/code-frameworks.jpg',
     featured_image_alt: 'Code on screen representing multiple AI frameworks',
     is_featured: false,
     content: [
@@ -921,7 +921,7 @@ export const agencyBlogPosts: TemplateBlogPost[] = [
     title: 'The Hidden Cost of Webflow: Why Agencies Are Switching to Self-Hosted',
     slug: 'hidden-cost-webflow-agencies-switching-self-hosted',
     excerpt: 'Webflow charges €20-200 per client site. For agencies managing 20+ sites, that adds up fast. Here is a better way.',
-    featured_image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1200',
+    featured_image: '/templates/blog/dashboard-costs.jpg',
     featured_image_alt: 'Dashboard showing cost savings',
     is_featured: true,
     content: [
@@ -958,7 +958,7 @@ export const agencyBlogPosts: TemplateBlogPost[] = [
     title: 'How to Price Client Websites for Recurring Revenue',
     slug: 'how-price-client-websites-recurring-revenue',
     excerpt: 'Project-based pricing is a trap. Here is how to structure website pricing that builds predictable monthly revenue.',
-    featured_image: 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=1200',
+    featured_image: '/templates/blog/financial-charts.jpg',
     featured_image_alt: 'Financial charts showing recurring revenue growth',
     content: [
       createTextBlock({
@@ -1002,7 +1002,7 @@ export const agencyBlogPosts: TemplateBlogPost[] = [
     title: 'White-Label Best Practices: Delivering Client Sites That Look Like Yours',
     slug: 'white-label-best-practices-client-sites',
     excerpt: 'White-labeling is not just about removing logos. It is about creating a seamless experience that builds your agency brand.',
-    featured_image: 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?w=1200',
+    featured_image: '/templates/blog/designer-branding.jpg',
     featured_image_alt: 'Designer working on branded interface',
     content: [
       createTextBlock({
@@ -1057,7 +1057,7 @@ export const serviceProBlogPosts: TemplateBlogPost[] = [
     title: '5 Ways to Reduce No-Shows and Fill Your Calendar',
     slug: '5-ways-reduce-no-shows-fill-calendar',
     excerpt: 'No-shows cost service businesses thousands every year. Here are proven strategies to keep your schedule full and your clients committed.',
-    featured_image: 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=1200',
+    featured_image: '/templates/blog/calendar-appointments.jpg',
     featured_image_alt: 'Calendar with appointments marked',
     is_featured: true,
     content: [
@@ -1086,7 +1086,7 @@ export const serviceProBlogPosts: TemplateBlogPost[] = [
     title: 'How to Price Your Services for Profitability',
     slug: 'how-to-price-services-profitability',
     excerpt: 'Pricing is the hardest decision for service businesses. Learn value-based pricing strategies that attract clients and grow your bottom line.',
-    featured_image: 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=1200',
+    featured_image: '/templates/blog/financial-charts.jpg',
     featured_image_alt: 'Business charts and financial planning',
     content: [
       createTextBlock({
@@ -1110,7 +1110,7 @@ export const serviceProBlogPosts: TemplateBlogPost[] = [
     title: 'Building Client Trust Before the First Appointment',
     slug: 'building-client-trust-before-first-appointment',
     excerpt: 'Trust starts long before a client walks through your door. Here is how your online presence can build confidence and convert browsers into bookings.',
-    featured_image: 'https://images.unsplash.com/photo-1556745757-8d76bdb6984b?w=1200',
+    featured_image: '/templates/blog/professional-handshake.jpg',
     featured_image_alt: 'Professional handshake between client and service provider',
     content: [
       createTextBlock({
@@ -1140,7 +1140,7 @@ export const digitalShopBlogPosts: TemplateBlogPost[] = [
     title: 'The Complete Guide to Selling Digital Products Online',
     slug: 'complete-guide-selling-digital-products-online',
     excerpt: 'Digital products offer unlimited scalability with near-zero marginal cost. Here is everything you need to know to start selling successfully.',
-    featured_image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1200',
+    featured_image: '/templates/blog/dashboard-costs.jpg',
     featured_image_alt: 'Digital workspace with laptop showing online store',
     is_featured: true,
     content: [
@@ -1167,7 +1167,7 @@ export const digitalShopBlogPosts: TemplateBlogPost[] = [
     title: 'How to Create Product Bundles That Sell',
     slug: 'how-to-create-product-bundles-that-sell',
     excerpt: 'Product bundles increase average order value and give customers more perceived value. Learn the psychology and strategy behind effective bundling.',
-    featured_image: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1200',
+    featured_image: '/templates/blog/product-collection.jpg',
     featured_image_alt: 'Curated product collection on display',
     content: [
       createTextBlock({
@@ -1191,7 +1191,7 @@ export const digitalShopBlogPosts: TemplateBlogPost[] = [
     title: '7 Mistakes to Avoid When Launching Your Online Store',
     slug: '7-mistakes-avoid-launching-online-store',
     excerpt: 'Most online stores fail in the first year. Avoid these common mistakes to give your digital shop the best chance of success.',
-    featured_image: 'https://images.unsplash.com/photo-1556742031-c6961e8560b0?w=1200',
+    featured_image: '/templates/blog/entrepreneur-laptop.jpg',
     featured_image_alt: 'Entrepreneur working on laptop in creative workspace',
     content: [
       createTextBlock({
@@ -1216,5 +1216,99 @@ export const digitalShopBlogPosts: TemplateBlogPost[] = [
       }),
     ],
     meta: { description: 'Avoid these 7 common mistakes when launching your online store. From product strategy to SEO and checkout optimization.' },
+  },
+];
+
+// =====================================================
+// CONSULT AGENCY - IT Consulting Blog Posts
+// =====================================================
+export const consultAgencyBlogPosts: TemplateBlogPost[] = [
+  {
+    title: 'The Consultant Shortage Is a Myth — Your Pipeline Is the Problem',
+    slug: 'consultant-shortage-myth-pipeline-problem',
+    excerpt: 'Companies claim they cannot find talent. The truth? Most consulting firms have deep benches but broken matching. Here is how agentic technology is closing the gap.',
+    featured_image: '/templates/blog/team-brainstorming.jpg',
+    featured_image_alt: 'Team of consultants collaborating in a modern office',
+    is_featured: true,
+    content: [
+      createTextBlock({
+        type: 'doc',
+        content: [
+          p('Every quarter, hiring managers tell us they cannot find senior developers, architects, or project managers. Meanwhile, consulting firms sit on hundreds of available specialists whose profiles never surface at the right time.'),
+          h2('The Matching Problem'),
+          p('Traditional consulting relies on account managers who remember who is available. When a brief arrives at 4 PM on Friday, no one is checking the bench. By Monday, the client has moved on.'),
+          h2('Always-On Availability'),
+          p('An agentic platform changes the equation. When a client asks "Do you have a senior Java architect available in Stockholm next month?", the system can answer instantly — with real data, not guesswork.'),
+          h2('From Weeks to Minutes'),
+          ul(
+            'Automated skill matching against live consultant profiles',
+            'Real-time availability checks without waiting for account managers',
+            'Instant shortlists based on actual competencies and certifications',
+            'Qualification of inbound briefs 24/7 — even outside business hours'
+          ),
+          h2('The Bottom Line'),
+          p('Firms that surface the right consultant within hours — not days — win more assignments. It is not about having more consultants. It is about knowing exactly what you have.'),
+        ],
+      }),
+    ],
+    meta: { description: 'How agentic technology solves the consultant matching problem. Move from manual bench management to instant, data-driven talent matching.' },
+  },
+  {
+    title: 'Why Your Consulting Website Should Answer Client Briefs at 2 AM',
+    slug: 'consulting-website-answer-briefs-24-7',
+    excerpt: 'Enterprise clients do not work on your schedule. An agentic web presence qualifies leads and matches consultants around the clock.',
+    featured_image: '/templates/blog/developer-workspace.jpg',
+    featured_image_alt: 'Modern workspace with laptop showing consultant profiles',
+    content: [
+      createTextBlock({
+        type: 'doc',
+        content: [
+          p('Your best prospect just landed on your website at 11 PM. They have a tight deadline, a specific tech stack, and budget approval. What happens next?'),
+          h2('The Old Way'),
+          p('They fill out a generic contact form. Maybe they get a reply by Wednesday. By then, they have already signed with the firm that responded in 20 minutes.'),
+          h2('The Agentic Way'),
+          p('An AI consultant on your website can ask the right questions, match against your actual roster, and present relevant profiles — all before the visitor finishes their coffee.'),
+          h3('What Clients Actually Want'),
+          ul(
+            'Immediate confirmation that you have relevant expertise',
+            'Specific consultant profiles, not generic capability decks',
+            'Clear availability and engagement timelines',
+            'A fast path to a real conversation when they are ready'
+          ),
+          h2('Measuring Impact'),
+          p('Our data shows that firms with agentic websites see 3x higher brief-to-meeting conversion rates. Speed and specificity beat brochure websites every time.'),
+        ],
+      }),
+    ],
+    meta: { description: 'Enterprise clients expect instant responses. Learn how agentic consulting websites qualify briefs and match consultants 24/7.' },
+  },
+  {
+    title: 'Building a Consultant Brand: From Bench Resource to Trusted Advisor',
+    slug: 'building-consultant-brand-trusted-advisor',
+    excerpt: 'The best consulting firms do not sell hours — they sell expertise. Here is how to position your consultants as thought leaders.',
+    featured_image: '/templates/blog/server-infrastructure.jpg',
+    featured_image_alt: 'Professional consultant giving a presentation',
+    content: [
+      createTextBlock({
+        type: 'doc',
+        content: [
+          p('In a commoditized market, the difference between a $900/day consultant and a $1,500/day advisor is not skill — it is positioning. Clients pay more for recognized expertise.'),
+          h2('Content as Proof of Expertise'),
+          p('When your consultants publish insights about their domain — architecture decisions, migration strategies, security patterns — clients see advisors, not resources.'),
+          h2('The Flywheel Effect'),
+          ul(
+            'Consultants write about real project learnings',
+            'Content attracts inbound leads in their specialty',
+            'Leads convert because they already trust the expertise',
+            'Higher rates because value is demonstrated, not claimed'
+          ),
+          h2('Making It Sustainable'),
+          p('The key is automation. AI-assisted content creation turns a 30-minute consultant debrief into a polished article. The consultant provides the insight; the platform handles the production.'),
+          h2('Start Small'),
+          p('One article per consultant per quarter. That is all it takes to start. Within a year, you have a library of expertise that no competitor can replicate — because it is based on real experience.'),
+        ],
+      }),
+    ],
+    meta: { description: 'Position your consulting firm as thought leaders. Learn how content marketing and AI-assisted publishing build consultant brands.' },
   },
 ];

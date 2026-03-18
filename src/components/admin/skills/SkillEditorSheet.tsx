@@ -30,7 +30,7 @@ const schema = z.object({
   name: z.string().min(1, 'Required'),
   description: z.string().optional(),
   instructions: z.string().optional(),
-  category: z.enum(['content', 'crm', 'communication', 'automation', 'search', 'analytics']),
+  category: z.enum(['content', 'crm', 'communication', 'automation', 'search', 'analytics', 'growth']),
   scope: z.enum(['internal', 'external', 'both']),
   handler: z.string().min(1, 'Required'),
   requires_approval: z.boolean(),
@@ -180,6 +180,7 @@ export function SkillEditorSheet({ skill, open, onClose, onSave, onDelete }: Ski
                   <SelectItem value="automation">Automation</SelectItem>
                   <SelectItem value="search">Search</SelectItem>
                   <SelectItem value="analytics">Analytics</SelectItem>
+                  <SelectItem value="growth">Growth</SelectItem>
                 </SelectContent>
               </Select>
             </div>

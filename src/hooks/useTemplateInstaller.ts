@@ -1,4 +1,5 @@
 import { logger } from '@/lib/logger';
+import { toastSilencer } from '@/lib/toast-silencer';
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { StarterTemplate } from '@/data/templates';
@@ -12,7 +13,7 @@ import { useModules, useUpdateModules, ModulesSettings, defaultModulesSettings }
 import { useProducts, useCreateProduct, useDeleteProduct } from '@/hooks/useProducts';
 import { useMediaLibraryCount, useClearMediaLibrary } from '@/hooks/useMediaLibrary';
 import { useToast } from '@/hooks/use-toast';
-import { extractImagesFromTemplate, updateBlockAtPath } from '@/lib/image-extraction';
+import { extractImagesFromTemplate, updateBlockAtPath, isLocalTemplateImage } from '@/lib/image-extraction';
 import { supabase } from '@/integrations/supabase/client';
 import { createDocumentFromText } from '@/lib/tiptap-utils';
 import type { ContentBlock } from '@/types/cms';
@@ -130,12 +131,21 @@ export function useTemplateInstaller() {
         const globalIndex = i + batchIndex;
         onProgress(globalIndex, uniqueUrls.length, url);
         try {
-          const { data, error } = await supabase.functions.invoke('process-image', {
-            body: { imageUrl: url, folder: 'templates' }
-          });
-          if (error) { logger.warn(`Failed to process image ${url}:`, error); return; }
-          if (data.success && data.url) {
-            urlMap.set(url, data.url);
+          if (isLocalTemplateImage(url)) {
+            // Local template image: fetch from own origin and upload directly to storage
+            const storageUrl = await uploadLocalTemplateImage(url);
+            if (storageUrl) {
+              urlMap.set(url, storageUrl);
+            }
+          } else {
+            // External URL: use the process-image edge function
+            const { data, error } = await supabase.functions.invoke('process-image', {
+              body: { imageUrl: url, folder: 'templates' }
+            });
+            if (error) { logger.warn(`Failed to process image ${url}:`, error); return; }
+            if (data.success && data.url) {
+              urlMap.set(url, data.url);
+            }
           }
         } catch (err) {
           logger.warn(`Error processing image ${url}:`, err);
@@ -143,6 +153,40 @@ export function useTemplateInstaller() {
       }));
     }
     return urlMap;
+  };
+
+  const uploadLocalTemplateImage = async (localPath: string): Promise<string | null> => {
+    try {
+      // Fetch the image from our own origin (public/ folder)
+      const response = await fetch(localPath);
+      if (!response.ok) {
+        logger.warn(`Failed to fetch local image ${localPath}: ${response.status}`);
+        return null;
+      }
+      const blob = await response.blob();
+      
+      // Generate a storage path
+      const fileName = localPath.split('/').pop() || 'image.jpg';
+      const storagePath = `templates/${Date.now()}-${fileName}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('cms-images')
+        .upload(storagePath, blob, { contentType: blob.type || 'image/jpeg', upsert: true });
+      
+      if (uploadError) {
+        logger.warn(`Failed to upload ${localPath} to storage:`, uploadError);
+        return null;
+      }
+      
+      const { data: publicUrlData } = supabase.storage
+        .from('cms-images')
+        .getPublicUrl(storagePath);
+      
+      return publicUrlData.publicUrl;
+    } catch (err) {
+      logger.warn(`Error uploading local image ${localPath}:`, err);
+      return null;
+    }
   };
 
   const applyImageMappingToPages = (
@@ -225,6 +269,7 @@ export function useTemplateInstaller() {
     setStep('creating');
     const pageIds: string[] = [];
 
+    toastSilencer.silent = true;
     try {
       // Clear media
       if (opts.clearMedia && mediaCount && mediaCount > 0) {
@@ -364,9 +409,10 @@ export function useTemplateInstaller() {
       }
 
       // Apply chat settings
-      if (opts.chatSettings) {
+      if (opts.chatSettings && template.chatSettings) {
         setProgress({ currentPage: 0, totalPages: 1, currentStep: 'Configuring AI chat...' });
-        await updateChat.mutateAsync(template.chatSettings as any);
+        const { defaultChatSettings } = await import('@/hooks/useSiteSettings');
+        await updateChat.mutateAsync({ ...defaultChatSettings, ...template.chatSettings } as any);
       }
 
       // Apply header settings
@@ -393,10 +439,19 @@ export function useTemplateInstaller() {
         await updateAeo.mutateAsync(template.aeoSettings as any);
       }
 
-      // Apply cookie banner
-      if (opts.cookieBannerSettings) {
+      // Apply cookie banner (merge with defaults so partial template settings don't erase text)
+      if (opts.cookieBannerSettings && template.cookieBannerSettings) {
         setProgress({ currentPage: 0, totalPages: 1, currentStep: 'Configuring cookies...' });
-        await updateCookieBanner.mutateAsync(template.cookieBannerSettings as any);
+        const cookieDefaults = {
+          enabled: true,
+          title: 'We use cookies',
+          description: 'We use cookies to improve your experience on our website, analyze traffic, and personalize content. By clicking "Accept all", you consent to our use of cookies.',
+          policyLinkText: 'Read our Privacy Policy',
+          policyLinkUrl: '/privacy-policy',
+          acceptButtonText: 'Accept all',
+          rejectButtonText: 'Essential only',
+        };
+        await updateCookieBanner.mutateAsync({ ...cookieDefaults, ...template.cookieBannerSettings } as any);
       }
 
       // Create pages
@@ -603,8 +658,10 @@ export function useTemplateInstaller() {
       await queryClient.invalidateQueries({ queryKey: ['products'] });
       await queryClient.invalidateQueries({ queryKey: ['site-settings'] });
 
+      toastSilencer.silent = false;
       toast({ title: 'Template applied!', description });
     } catch (error) {
+      toastSilencer.silent = false;
       toast({ title: 'Error', description: 'Failed to apply template. Some changes may have been applied.', variant: 'destructive' });
       setStep('idle');
     }

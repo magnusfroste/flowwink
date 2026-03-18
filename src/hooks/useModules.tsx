@@ -21,6 +21,8 @@ export interface ModuleConfig {
   core?: boolean; // Core modules cannot be disabled
   autonomy: ModuleAutonomy;
   adminUI: boolean; // Whether admin interface is shown (default: true for view/config-required)
+  requiredIntegrations?: string[]; // Module won't function without these
+  optionalIntegrations?: string[]; // Enhanced functionality with these
 }
 
 export interface ModulesSettings {
@@ -45,6 +47,7 @@ export interface ModulesSettings {
   resume: ModuleConfig;
   browserControl: ModuleConfig;
   federation: ModuleConfig;
+  paidGrowth: ModuleConfig;
 }
 
 export const defaultModulesSettings: ModulesSettings = {
@@ -56,6 +59,7 @@ export const defaultModulesSettings: ModulesSettings = {
     category: 'insights',
     autonomy: 'view-required',
     adminUI: true,
+    optionalIntegrations: ['google_analytics', 'meta_pixel'],
   },
   bookings: {
     enabled: true,
@@ -65,6 +69,7 @@ export const defaultModulesSettings: ModulesSettings = {
     category: 'data',
     autonomy: 'config-required',
     adminUI: true,
+    optionalIntegrations: ['resend', 'stripe'],
   },
   pages: {
     enabled: true,
@@ -84,6 +89,7 @@ export const defaultModulesSettings: ModulesSettings = {
     category: 'content',
     autonomy: 'config-required',
     adminUI: true,
+    optionalIntegrations: ['openai', 'gemini', 'unsplash'],
   },
   knowledgeBase: {
     enabled: false,
@@ -102,6 +108,7 @@ export const defaultModulesSettings: ModulesSettings = {
     category: 'communication',
     autonomy: 'view-required',
     adminUI: true,
+    optionalIntegrations: ['openai', 'gemini', 'local_llm', 'n8n'],
   },
   liveSupport: {
     enabled: false,
@@ -120,6 +127,7 @@ export const defaultModulesSettings: ModulesSettings = {
     category: 'communication',
     autonomy: 'config-required',
     adminUI: true,
+    requiredIntegrations: ['resend'],
   },
   forms: {
     enabled: true,
@@ -165,6 +173,8 @@ export const defaultModulesSettings: ModulesSettings = {
     category: 'data',
     autonomy: 'config-required',
     adminUI: true,
+    requiredIntegrations: ['stripe'],
+    optionalIntegrations: ['resend', 'stripe_webhook'],
   },
   contentApi: {
     enabled: false,
@@ -202,6 +212,7 @@ export const defaultModulesSettings: ModulesSettings = {
     category: 'communication',
     autonomy: 'config-required',
     adminUI: true,
+    optionalIntegrations: ['resend'],
   },
   salesIntelligence: {
     enabled: false,
@@ -211,6 +222,7 @@ export const defaultModulesSettings: ModulesSettings = {
     category: 'data',
     autonomy: 'agent-capable',
     adminUI: true,
+    optionalIntegrations: ['hunter', 'jina', 'firecrawl', 'openai', 'gemini'],
   },
   resume: {
     enabled: false,
@@ -220,6 +232,7 @@ export const defaultModulesSettings: ModulesSettings = {
     category: 'data',
     autonomy: 'agent-capable',
     adminUI: true,
+    optionalIntegrations: ['openai', 'gemini'],
   },
   browserControl: {
     enabled: false,
@@ -238,6 +251,17 @@ export const defaultModulesSettings: ModulesSettings = {
     category: 'system',
     autonomy: 'agent-capable',
     adminUI: true,
+  },
+  paidGrowth: {
+    enabled: false,
+    name: 'Paid Growth',
+    description: 'Autonomous ad campaigns — create, optimize and monitor paid advertising across platforms',
+    icon: 'Megaphone',
+    category: 'insights',
+    autonomy: 'agent-capable',
+    adminUI: true,
+    requiredIntegrations: ['meta_ads'],
+    optionalIntegrations: ['openai', 'gemini'],
   },
 };
 
@@ -264,6 +288,7 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/sales-intelligence': 'salesIntelligence',
   '/admin/resume': 'resume',
   '/admin/federation': 'federation',
+  '/admin/growth': 'paidGrowth',
 };
 
 export function useModules() {

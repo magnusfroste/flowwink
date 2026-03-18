@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
@@ -9,16 +10,20 @@ import {
   Link2, 
   Info, 
   Hash,
+  ArrowRight,
   ArrowRightLeft,
   Webhook,
   Monitor,
   Bot,
   Settings2,
   Eye,
+  AlertTriangle,
+  Plug,
 } from "lucide-react";
 import { moduleRegistry } from "@/lib/module-registry";
 import type { ModuleStats } from "@/hooks/useModuleStats";
 import type { ModulesSettings, ModuleConfig, ModuleAutonomy } from "@/hooks/useModules";
+import { useModuleReadiness } from "@/hooks/useModuleReadiness";
 import { ModuleDetailSheet } from "./ModuleDetailSheet";
 import {
   Tooltip,
@@ -80,11 +85,16 @@ export function ModuleCard({
   IconComponent,
 }: ModuleCardProps) {
   const [detailOpen, setDetailOpen] = useState(false);
+  const navigate = useNavigate();
   
   // Check if this module has a registry entry (has API)
   const registryModule = moduleRegistry.list().find(m => m.id === moduleId);
   const hasApi = !!registryModule;
   const capabilities = registryModule?.capabilities || [];
+  
+  // Integration readiness
+  const readiness = useModuleReadiness(moduleId);
+  const hasIntegrationDeps = readiness.totalRequired > 0 || readiness.totalOptional > 0;
   
   // Simplified capability indicators
   const canReceiveContent = capabilities.includes('content:receive');
@@ -233,7 +243,31 @@ export function ModuleCard({
             </div>
           )}
           
-          {isEnabled && !hasApi && !stats && !canToggleUI && (
+          {/* Integration readiness indicator */}
+          {isEnabled && hasIntegrationDeps && (
+            <div className="flex items-center gap-1.5 pt-1 border-t border-border/50">
+              {!readiness.ready ? (
+                <button
+                  onClick={() => navigate('/admin/integrations')}
+                  className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 hover:opacity-70 transition-opacity cursor-pointer"
+                >
+                  <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                  <span>Missing: {readiness.missingRequired.join(', ')}</span>
+                  <ArrowRight className="h-3 w-3 shrink-0" />
+                </button>
+              ) : (
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Plug className="h-3.5 w-3.5" />
+                  <span>
+                    {readiness.activeRequired.length + readiness.activeOptional.length}/
+                    {readiness.totalRequired + readiness.totalOptional} integrations
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {isEnabled && !hasApi && !stats && !canToggleUI && !hasIntegrationDeps && (
             <div className="flex items-center gap-1.5 text-xs text-primary">
               <Check className="h-3.5 w-3.5" />
               <span>Active</span>

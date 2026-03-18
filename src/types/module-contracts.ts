@@ -624,6 +624,54 @@ export const moduleErrorSchema = z.object({
 export type ModuleError = z.infer<typeof moduleErrorSchema>;
 
 // =============================================================================
+// Growth Module
+// =============================================================================
+
+export const growthCampaignInputSchema = z.object({
+  name: z.string().min(1).max(200),
+  platform: z.enum(['meta', 'google', 'linkedin']).default('meta'),
+  objective: z.string().optional(),
+  budget_cents: z.number().int().min(0),
+  currency: z.string().default('SEK'),
+  target_audience: z.record(z.unknown()).optional(),
+});
+
+export type GrowthCampaignInput = z.infer<typeof growthCampaignInputSchema>;
+
+export const growthCampaignOutputSchema = z.object({
+  success: z.boolean(),
+  campaign_id: z.string(),
+  name: z.string(),
+  status: z.string(),
+  error: z.string().optional(),
+});
+
+export type GrowthCampaignOutput = z.infer<typeof growthCampaignOutputSchema>;
+
+// =============================================================================
+// Federation Module
+// =============================================================================
+
+export const federationPeerInputSchema = z.object({
+  name: z.string().min(1).max(200),
+  url: z.string().url(),
+  outbound_token: z.string().optional(),
+  capabilities: z.record(z.unknown()).optional(),
+});
+
+export type FederationPeerInput = z.infer<typeof federationPeerInputSchema>;
+
+export const federationPeerOutputSchema = z.object({
+  success: z.boolean(),
+  peer_id: z.string(),
+  name: z.string(),
+  status: z.string(),
+  error: z.string().optional(),
+});
+
+export type FederationPeerOutput = z.infer<typeof federationPeerOutputSchema>;
+
+// =============================================================================
 // Module Definition Interface
 // =============================================================================
 

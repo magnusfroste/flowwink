@@ -5,6 +5,7 @@
  * Bold typography, smooth animations, and maximum impact.
  */
 import type { StarterTemplate } from './types';
+import { momentumBlogPosts } from '../template-blog-posts';
 
 const momentumPages: StarterTemplate['pages'] = [
   {
@@ -49,8 +50,8 @@ const momentumPages: StarterTemplate['pages'] = [
           overlayOpacity: 85,
           titleAnimation: 'slide-up',
           showScrollIndicator: true,
-          primaryButton: { text: 'Start Building Free', url: '#pricing' },
-          secondaryButton: { text: 'Watch Demo', url: '#features' },
+          primaryButton: { text: 'Talk to AI', url: '#chat-launcher-home' },
+          secondaryButton: { text: 'See Pricing', url: '#pricing' },
         },
       },
       {
@@ -133,11 +134,11 @@ const momentumPages: StarterTemplate['pages'] = [
               ]},
             ],
           },
-          imageSrc: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800',
+          imageSrc: '/templates/blog/code-editor.jpg',
           imageAlt: 'Code on screen',
           imagePosition: 'right',
           ctaText: 'Explore AI Features →',
-          ctaUrl: '/features',
+          ctaUrl: '/home',
         },
       },
       {
@@ -160,18 +161,18 @@ const momentumPages: StarterTemplate['pages'] = [
               ]},
             ],
           },
-          imageSrc: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=800',
+          imageSrc: '/templates/blog/server-infrastructure.jpg',
           imageAlt: 'Server infrastructure',
           imagePosition: 'left',
           ctaText: 'View Architecture →',
-          ctaUrl: '/features',
+          ctaUrl: '/home',
         },
       },
       {
         id: 'parallax-tech',
         type: 'parallax-section',
         data: {
-          backgroundImage: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=1920',
+          backgroundImage: '/templates/hero/tech-future.jpg',
           title: 'Built for the Future',
           subtitle: 'Infrastructure that scales from your first user to your first million.',
           height: 'sm',
@@ -254,7 +255,8 @@ export const momentumTemplate: StarterTemplate = {
   tagline: 'One page. Maximum impact.',
   aiChatPosition: 'Disabled for clean single-page experience',
   pages: momentumPages,
-  requiredModules: ['forms', 'leads'],
+  blogPosts: momentumBlogPosts,
+  requiredModules: ['blog', 'chat', 'forms', 'leads'],
   branding: {
     logo: '',
     organizationName: 'Momentum',
@@ -270,8 +272,24 @@ export const momentumTemplate: StarterTemplate = {
     defaultTheme: 'dark',
   },
   chatSettings: {
-    enabled: false,
-    widgetEnabled: false,
+    enabled: true,
+    landingPageEnabled: true,
+    widgetEnabled: true,
+    widgetPosition: 'bottom-right',
+    welcomeMessage: 'Hey! I\'m Momentum\'s AI — ask me about features, pricing, or how to get started.',
+    systemPrompt: 'You are a sharp, concise AI assistant for Momentum — a developer platform. Match the brand tone: confident, technical, no fluff. Answer in the same language the user writes in.',
+    suggestedPrompts: [
+      'How fast can I deploy my first app?',
+      'What stack does Momentum run on?',
+      'Show me pricing for a startup team',
+    ],
+    includeContentAsContext: true,
+    includedPageSlugs: ['*'],
+    includeKbArticles: true,
+    contentContextMaxTokens: 50000,
+    showContextIndicator: true,
+    toolCallingEnabled: true,
+    allowGeneralKnowledge: true,
   },
   headerSettings: {
     variant: 'clean',

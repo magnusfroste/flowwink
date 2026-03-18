@@ -1563,9 +1563,160 @@ This skill is primarily triggered by automations, not directly by users.
       },
     },
   },
-];
+  // ─── Paid Growth Skills ─────────────────────────────────────────────────────
+  {
+    name: 'ad_campaign_create',
+    description: 'Create a new ad campaign with objective, budget, target audience, and platform. Requires approval due to budget commitment.',
+    handler: 'edge:ad-campaign-create',
+    category: 'growth',
+    scope: 'internal',
+    requires_approval: true,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'ad_campaign_create',
+        description: 'Create a new ad campaign. Requires approval because it commits budget.',
+        parameters: {
+          type: 'object',
+          properties: {
+            name: { type: 'string', description: 'Campaign name' },
+            platform: { type: 'string', enum: ['meta', 'google', 'linkedin'], description: 'Ad platform' },
+            objective: { type: 'string', enum: ['awareness', 'traffic', 'leads', 'conversions'], description: 'Campaign objective' },
+            budget_cents: { type: 'number', description: 'Daily budget in cents' },
+            currency: { type: 'string', description: 'Currency code (default SEK)' },
+            target_audience: { type: 'object', description: 'Target audience config: demographics, interests, location' },
+            start_date: { type: 'string', description: 'Start date YYYY-MM-DD' },
+            end_date: { type: 'string', description: 'End date YYYY-MM-DD' },
+          },
+          required: ['name', 'platform', 'objective', 'budget_cents'],
+        },
+      },
+    },
+  },
+  {
+    name: 'ad_creative_generate',
+    description: 'Generate ad creative (headline, body, CTA) using AI based on campaign objective and target audience.',
+    handler: 'edge:ad-creative-generate',
+    category: 'growth',
+    scope: 'internal',
+    requires_approval: false,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'ad_creative_generate',
+        description: 'Generate ad copy and creative using AI.',
+        parameters: {
+          type: 'object',
+          properties: {
+            campaign_id: { type: 'string', description: 'Campaign UUID to generate creative for' },
+            type: { type: 'string', enum: ['image', 'video', 'text', 'carousel'], description: 'Creative type' },
+            tone: { type: 'string', enum: ['professional', 'casual', 'urgent', 'storytelling'], description: 'Ad tone' },
+            key_message: { type: 'string', description: 'Core message or value proposition' },
+            cta: { type: 'string', description: 'Call to action text' },
+          },
+          required: ['campaign_id', 'type'],
+        },
+      },
+    },
+  },
+  {
+    name: 'ad_performance_check',
+    description: 'Check ad campaign performance metrics: spend, impressions, clicks, CTR, CPC, conversions.',
+    handler: 'edge:ad-performance-check',
+    category: 'growth',
+    scope: 'internal',
+    requires_approval: false,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'ad_performance_check',
+        description: 'Get performance metrics for ad campaigns.',
+        parameters: {
+          type: 'object',
+          properties: {
+            campaign_id: { type: 'string', description: 'Campaign UUID (omit for all campaigns)' },
+            period: { type: 'string', enum: ['today', 'week', 'month', 'all'], description: 'Time period' },
+          },
+        },
+      },
+    },
+  },
+  {
+    name: 'ad_optimize',
+    description: 'Analyze campaign performance and recommend optimizations: pause underperformers, scale winners, adjust budgets. Requires approval.',
+    handler: 'edge:ad-optimize',
+    category: 'growth',
+    scope: 'internal',
+    requires_approval: true,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'ad_optimize',
+        description: 'Optimize ad campaigns based on performance data. Requires approval for budget changes.',
+        parameters: {
+          type: 'object',
+          properties: {
+            campaign_id: { type: 'string', description: 'Campaign UUID to optimize (omit for all)' },
+            action: { type: 'string', enum: ['analyze', 'pause_underperformers', 'scale_winners', 'rebalance_budget'], description: 'Optimization action' },
+            threshold_ctr: { type: 'number', description: 'Minimum CTR threshold (default 0.5%)' },
+            threshold_cpc_cents: { type: 'number', description: 'Max CPC in cents before pausing' },
+          },
+        },
+      },
+    },
+  },
 
-// Default Soul & Identity
+  // ─── Composable Content Skills ──────────────────────────────────────────────
+  {
+    name: 'landing_page_compose',
+    description: 'Autonomously compose a landing page from the block library based on a campaign goal, target audience, and optional ad campaign reference. Uses AI to select optimal block types, generate copy, and publish as a draft page.',
+    handler: 'edge:landing-page-compose',
+    instructions: `You compose high-converting landing pages by selecting from the platform's block library.
+
+## Available block types (use only these):
+hero, text, cta, features, stats, testimonials, pricing, accordion, form, newsletter, quote, two-column, info-box, logos, comparison, social-proof, countdown, chat-launcher, separator
+
+## Composition rules:
+1. ALWAYS start with a hero block — strong headline + subheadline + CTA
+2. Follow with value proposition blocks (features, stats, two-column)
+3. Add social proof (testimonials, logos, social-proof)
+4. Include at least one conversion block (cta, form, newsletter, chat-launcher)
+5. End with a final CTA or contact section
+6. Use separator blocks between major sections
+7. Keep total blocks between 5-10 for focused landing pages
+8. Match tone and messaging to the target audience
+9. If linked to an ad campaign, align messaging with campaign objective
+
+## Output format:
+Return a valid content_json array of ContentBlock objects with proper data for each block type.`,
+    category: 'growth',
+    scope: 'internal',
+    requires_approval: true,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'landing_page_compose',
+        description: 'Compose a landing page from blocks based on campaign goal and audience. Creates a draft page ready for review.',
+        parameters: {
+          type: 'object',
+          properties: {
+            goal: { type: 'string', description: 'Campaign/page goal, e.g. "Generate leads for consulting services" or "Promote summer sale"' },
+            target_audience: { type: 'string', description: 'Target audience description, e.g. "Small business owners aged 30-50 looking for IT consulting"' },
+            campaign_id: { type: 'string', description: 'Optional: Link to an existing ad_campaign UUID for messaging alignment' },
+            page_title: { type: 'string', description: 'Page title (used for slug generation)' },
+            tone: { type: 'string', enum: ['professional', 'casual', 'urgent', 'inspirational', 'technical'], description: 'Desired tone of voice (default: professional)' },
+            include_blocks: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Optional: specific block types to include (e.g. ["pricing", "testimonials"])',
+            },
+          },
+          required: ['goal', 'target_audience', 'page_title'],
+        },
+      },
+    },
+  },
+];
 const DEFAULT_SOUL = {
   purpose: 'I help run this website autonomously — managing content, leads, and growth so the owner can focus on their business.',
   values: ['Be helpful and proactive', 'Never take destructive actions without approval', 'Learn from every interaction', 'Prioritize quality over quantity'],

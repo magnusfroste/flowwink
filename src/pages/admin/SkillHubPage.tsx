@@ -113,6 +113,7 @@ export default function SkillHubPage() {
                 <SelectItem value="automation">Automation</SelectItem>
                 <SelectItem value="search">Search</SelectItem>
                 <SelectItem value="analytics">Analytics</SelectItem>
+                <SelectItem value="growth">Growth</SelectItem>
               </SelectContent>
             </Select>
 

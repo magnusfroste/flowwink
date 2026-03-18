@@ -44,6 +44,8 @@ export interface IntegrationProviderConfig {
   notifyOnFormSubmit?: boolean;
   // Jina
   preferFreeTier?: boolean;
+  // Meta Ads
+  adAccountId?: string;
 }
 
 // Integration configuration type
@@ -52,7 +54,7 @@ export interface IntegrationConfig {
   name: string;
   description: string;
   icon: string;
-  category: 'payments' | 'communication' | 'ai' | 'media' | 'automation' | 'analytics' | 'notifications' | 'sales';
+  category: 'payments' | 'communication' | 'ai' | 'media' | 'automation' | 'analytics' | 'notifications' | 'sales' | 'advertising';
   features: string[];
   secretName: string;
   docsUrl: string;
@@ -78,6 +80,7 @@ export interface IntegrationsSettings {
   slack: IntegrationConfig;
   hunter: IntegrationConfig;
   jina: IntegrationConfig;
+  meta_ads: IntegrationConfig;
 }
 
 // Default settings - all disabled by default, requiring explicit activation
@@ -278,6 +281,20 @@ export const defaultIntegrationsSettings: IntegrationsSettings = {
       preferFreeTier: true,
     },
   },
+  meta_ads: {
+    enabled: false,
+    name: 'Meta Ads',
+    description: 'Facebook & Instagram campaign management',
+    icon: 'Megaphone',
+    category: 'advertising',
+    features: ['Campaign creation', 'Creative generation', 'Performance tracking', 'Budget optimization'],
+    secretName: 'META_ADS_ACCESS_TOKEN',
+    docsUrl: 'https://developers.facebook.com/docs/marketing-apis',
+    docsLabel: 'Get access token',
+    config: {
+      adAccountId: '',
+    },
+  },
 };
 
 // Category definitions
@@ -290,6 +307,7 @@ export const INTEGRATION_CATEGORIES = {
   media: { label: 'Media & Tools', order: 6 },
   analytics: { label: 'Analytics & Attribution', order: 7 },
   notifications: { label: 'Notifications', order: 8 },
+  advertising: { label: 'Advertising', order: 9 },
 } as const;
 
 // Fetch integrations settings
