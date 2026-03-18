@@ -995,6 +995,29 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             variant: 'hero-integrated',
           },
         },
+        // TWO-COLUMN — conversational service narrative
+        {
+          id: 'services-two-col',
+          type: 'two-column',
+          data: {
+            title: 'The Future of Service Business Is Conversational',
+            content: {
+              type: 'doc',
+              content: [
+                { type: 'paragraph', content: [{ type: 'text', text: 'Your clients don\'t want to navigate menus or fill out forms. They want to say what they need and get it done — instantly.' }] },
+                { type: 'paragraph', content: [{ type: 'text', text: 'FlowPilot turns your website into a conversational operator. It knows your services, real-time availability, pricing, and policies. It books appointments, answers questions, and follows up — autonomously, 24/7.' }] },
+                { type: 'paragraph', content: [{ type: 'text', text: 'No chatbot scripts. No decision trees. Just an AI that understands your business as well as your best receptionist — and never takes a day off.' }] },
+              ],
+            },
+            imageUrl: 'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=800&q=80',
+            imageAlt: 'Professional service team collaborating',
+            imagePosition: 'right',
+            imageObjectFit: 'cover',
+            imageRounded: 'xl',
+            primaryButton: { text: 'Try It Now', url: '#services-chat' },
+            verticalAlignment: 'center',
+          },
+        },
         // FEATURED CAROUSEL — from service-pro
         {
           id: 'services-carousel',
