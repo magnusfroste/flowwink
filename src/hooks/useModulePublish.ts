@@ -31,7 +31,7 @@ export function useModulePublish<TInput = unknown, TOutput = unknown>(
   const publish = useCallback(
     async (input: TInput): Promise<TOutput | null> => {
       const check = moduleRegistry.preflight(moduleId, readiness);
-      if (!check.ok) {
+      if (check.ok === false) {
         toast({
           title: 'Missing integrations',
           description: check.error,

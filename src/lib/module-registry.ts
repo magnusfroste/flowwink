@@ -154,7 +154,7 @@ class ModuleRegistry {
     // Pre-flight integration check (when readiness data is provided)
     if (readiness) {
       const check = this.preflight(moduleId, readiness);
-      if (!check.ok) {
+      if (check.ok === false) {
         logger.error(`[ModuleRegistry] Pre-flight failed for ${moduleId}: ${check.error}`);
         return {
           success: false,
