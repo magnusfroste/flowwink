@@ -85,6 +85,7 @@ export function ModuleCard({
   IconComponent,
 }: ModuleCardProps) {
   const [detailOpen, setDetailOpen] = useState(false);
+  const navigate = useNavigate();
   
   // Check if this module has a registry entry (has API)
   const registryModule = moduleRegistry.list().find(m => m.id === moduleId);
