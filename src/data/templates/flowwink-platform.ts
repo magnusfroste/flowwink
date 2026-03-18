@@ -411,6 +411,24 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             layout: 'split',
           },
         },
+        // CONTACT FORM
+        {
+          id: 'contact-form',
+          type: 'form',
+          data: {
+            title: 'Get in Touch',
+            subtitle: 'Start your free trial or ask us anything — we typically respond within a few hours.',
+            formName: 'contact',
+            fields: [
+              { id: 'name', label: 'Name', type: 'text', required: true, placeholder: 'Your name' },
+              { id: 'email', label: 'Email', type: 'email', required: true, placeholder: 'you@company.com' },
+              { id: 'company', label: 'Company', type: 'text', required: false, placeholder: 'Company name (optional)' },
+              { id: 'message', label: 'Message', type: 'textarea', required: true, placeholder: 'Tell us what you need...' },
+            ],
+            submitText: 'Send Message',
+            successMessage: 'Thanks! We\'ll be in touch shortly.',
+          },
+        },
         // CTA — Final
         {
           id: 'cta-final',
