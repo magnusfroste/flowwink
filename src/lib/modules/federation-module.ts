@@ -29,7 +29,7 @@ export const federationModule: ModuleDefinition<FederationPeerInput, FederationP
           url: validated.url,
           outbound_token: validated.outbound_token || '',
           capabilities: (validated.capabilities || {}) as Json,
-          status: 'pending' as const,
+          status: 'paused' as const,
         }])
         .select('id, name, status')
         .single();
