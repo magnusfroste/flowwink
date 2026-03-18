@@ -100,11 +100,11 @@ export function BentoGridBlock({ data }: BentoGridBlockProps) {
   );
 
   return (
-    <section className="py-16 md:py-24">
+    <section className="py-12 md:py-20">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         {(eyebrow || title || subtitle) && (
-          <div className="text-center mb-12 md:mb-16 max-w-3xl mx-auto">
+          <div className="text-center mb-8 md:mb-12 max-w-3xl mx-auto">
             {eyebrow && (
               <span
                 className="inline-block text-xs font-semibold uppercase tracking-[0.2em] mb-3"
@@ -130,7 +130,7 @@ export function BentoGridBlock({ data }: BentoGridBlockProps) {
         <div
           ref={containerRef}
           className={cn(
-            'grid grid-cols-1 md:grid-cols-3 auto-rows-[minmax(180px,auto)]',
+            'grid grid-cols-1 md:grid-cols-3 auto-rows-[minmax(160px,auto)]',
             columns === 4 && 'lg:grid-cols-4',
             getGapClass(gap),
           )}
@@ -193,12 +193,12 @@ export function BentoGridBlock({ data }: BentoGridBlockProps) {
                   </h3>
 
                   {item.description && (
-                    <p className={cn(
-                      'text-sm leading-relaxed',
+                    <div className={cn(
+                      'text-sm leading-relaxed whitespace-pre-line',
                       item.image ? 'text-white/80' : 'text-muted-foreground',
                     )}>
                       {item.description}
-                    </p>
+                    </div>
                   )}
 
                   {item.linkLabel && (
