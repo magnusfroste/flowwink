@@ -346,7 +346,7 @@ const launchpadPages: StarterTemplate['pages'] = [
           imageAlt: 'Dashboard analytics',
           imagePosition: 'left',
           ctaText: 'Explore Docs →',
-          ctaUrl: '/docs',
+          ctaUrl: '/home',
         },
       },
       {

@@ -27,8 +27,8 @@ const hybridHelpPages: TemplatePage[] = [
         type: 'announcement-bar',
         data: {
           message: '✅ All systems operational — Check our new AI-powered search',
-          linkText: 'Status Page',
-          linkUrl: '/status',
+          linkText: 'View Status',
+          linkUrl: '/home',
           variant: 'default',
           dismissable: true,
           sticky: false,

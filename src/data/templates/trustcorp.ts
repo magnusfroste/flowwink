@@ -678,8 +678,8 @@ export const trustcorpTemplate: StarterTemplate = {
       { id: 'support', label: 'Support Center', url: '/support', enabled: true },
       { id: 'privacy', label: 'Privacy Policy', url: '/privacy-policy', enabled: true },
       { id: 'terms', label: 'Terms of Service', url: '/terms-of-service', enabled: true },
-      { id: 'security', label: 'Security', url: '/security', enabled: true },
-      { id: 'sla', label: 'SLA', url: '/sla', enabled: true },
+      { id: 'security', label: 'Security', url: '/home', enabled: true },
+      { id: 'sla', label: 'SLA', url: '/home', enabled: true },
     ],
   },
   seoSettings: {

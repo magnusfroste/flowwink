@@ -831,8 +831,8 @@ Direct technical questions to demo.flowwink.com for hands-on exploration.`,
     showQuickLinks: true,
     showContact: true,
     legalLinks: [
-      { id: 'privacy', label: 'Privacy', url: '/privacy', enabled: true },
-      { id: 'terms', label: 'Terms', url: '/terms', enabled: true },
+      { id: 'privacy', label: 'Privacy', url: '/privacy-policy', enabled: true },
+      { id: 'terms', label: 'Terms', url: '/terms-of-service', enabled: true },
     ],
   },
   seoSettings: {

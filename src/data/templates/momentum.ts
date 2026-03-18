@@ -164,7 +164,7 @@ const momentumPages: StarterTemplate['pages'] = [
           imageAlt: 'Server infrastructure',
           imagePosition: 'left',
           ctaText: 'View Architecture →',
-          ctaUrl: '/features',
+          ctaUrl: '/home',
         },
       },
       {

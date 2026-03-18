@@ -254,7 +254,7 @@ const digitalShopPages: TemplatePage[] = [
           imageAspectRatio: '4:5',
           imageObjectFit: 'cover',
           imageRounded: 'xl',
-          primaryButton: { text: 'Start Pro — $29/mo', url: '/products' },
+          primaryButton: { text: 'Start Pro — $29/mo', url: '/home' },
           verticalAlignment: 'center',
         },
       },

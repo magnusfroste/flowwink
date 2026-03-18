@@ -49,7 +49,7 @@ const serviceProPages: TemplatePage[] = [
           overlayOpacity: 60,
           titleAnimation: 'fade-in',
           primaryButton: { text: 'Book Your Appointment', url: '/book' },
-          secondaryButton: { text: 'Ask Our AI', url: '/chat' },
+          secondaryButton: { text: 'Ask Our AI', url: '#chat-launcher' },
         },
       },
       {
