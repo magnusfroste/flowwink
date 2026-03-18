@@ -139,7 +139,7 @@ const launchpadPages: StarterTemplate['pages'] = [
           imageAlt: 'Team collaborating on laptop',
           imagePosition: 'right',
           ctaText: 'See How It Works →',
-          ctaUrl: '/features',
+          ctaUrl: '/product',
         },
       },
       {
