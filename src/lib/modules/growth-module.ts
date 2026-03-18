@@ -28,7 +28,7 @@ export const growthModule: ModuleDefinition<GrowthCampaignInput, GrowthCampaignO
         objective: validated.objective || null,
         budget_cents: validated.budget_cents,
         currency: validated.currency || 'SEK',
-        target_audience: validated.target_audience || {} as Record<string, unknown>,
+        target_audience: (validated.target_audience || {}) as Json,
         status: 'draft' as const,
       };
 
