@@ -619,6 +619,7 @@ export default function IntegrationsStatusPage() {
   const { data: secretsStatus, isLoading: secretsLoading, refetch: refetchSecrets } = useIntegrationStatus();
   const { data: integrationSettings, isLoading: settingsLoading } = useIntegrations();
   const updateIntegrations = useUpdateIntegrations();
+  const integrationModuleMap = useIntegrationModuleMap();
 
   const isLoading = secretsLoading || settingsLoading;
   const hasUnsavedChanges = pendingSettings !== null;
