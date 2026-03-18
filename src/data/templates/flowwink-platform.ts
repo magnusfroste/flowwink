@@ -112,6 +112,20 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             variant: 'minimal',
           },
         },
+        // PARADIGM SHIFT — The investor/vision argument
+        {
+          id: 'two-col-paradigm',
+          type: 'two-column',
+          data: {
+            eyebrow: 'THE AGENTIC WEB',
+            title: 'SaaS Solved Distribution. It Never Solved the Work.',
+            content: 'Every tool you pay for hands the work back to you. HubSpot, Webflow, Mailchimp — you still have to pick them up. That\'s not software that scales. That\'s software that delegates the burden.\n\nThe next generation of business software doesn\'t wait to be used. It acts.\n\nFlowWink is built native agentic from day one. Not a chatbot bolted onto a CMS. Not an AI button added to an existing product. An autonomous operator that runs your business while you sleep.',
+            secondaryContent: '**Traditional SaaS**\nHuman → Tool → Result\n\n**FlowWink**\nHuman sets direction → Agent executes → Result',
+            layout: 'text-text',
+            contentFormat: 'markdown',
+            primaryButton: { text: 'Meet FlowPilot', url: '/flowpilot' },
+          },
+        },
         // TIMELINE — How FlowPilot Works (3 steps — simple)
         {
           id: 'timeline-how',
