@@ -124,7 +124,7 @@ export function CompanyProfileCard() {
         setProfile(prev => {
           const merged = { ...prev };
           for (const [key, val] of Object.entries(extracted)) {
-            const currentVal = (prev as Record<string, unknown>)[key];
+            const currentVal = (prev as unknown as Record<string, unknown>)[key];
             if (val && String(val).trim() && (!currentVal || !String(currentVal).trim())) {
               (merged as Record<string, unknown>)[key] = val;
             }
