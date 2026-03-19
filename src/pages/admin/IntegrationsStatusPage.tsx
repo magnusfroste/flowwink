@@ -258,16 +258,16 @@ function IntegrationConfigPanel({
         <div className="space-y-2">
           <Label htmlFor="openai-model" className="text-xs">Default Model</Label>
           <Select
-            value={config?.model || 'gpt-4o-mini'}
+            value={config?.model || 'gpt-4.1-mini'}
             onValueChange={(value) => handleChange({ model: value })}
           >
             <SelectTrigger id="openai-model" className="h-8 text-sm">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="gpt-4o-mini">GPT-4o Mini (Recommended)</SelectItem>
-              <SelectItem value="gpt-4o">GPT-4o (Powerful)</SelectItem>
-              <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo (Legacy)</SelectItem>
+              <SelectItem value="gpt-4.1">GPT-4.1 (Best quality)</SelectItem>
+              <SelectItem value="gpt-4.1-mini">GPT-4.1 Mini (Recommended)</SelectItem>
+              <SelectItem value="gpt-4.1-nano">GPT-4.1 Nano (Fast & cheap)</SelectItem>
             </SelectContent>
           </Select>
         </div>

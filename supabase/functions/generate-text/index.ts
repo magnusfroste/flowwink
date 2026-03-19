@@ -169,7 +169,7 @@ serve(async (req) => {
     
     // Get model from settings
     const geminiModel = systemAiSettings.geminiModel || 'gemini-2.0-flash-exp';
-    const openaiModel = systemAiSettings.openaiModel || 'gpt-4o-mini';
+    const openaiModel = systemAiSettings.openaiModel || 'gpt-4.1-mini';
     
     console.log(`Generating text with action: ${action}, provider: ${useGemini ? 'gemini' : 'openai'}, model: ${useGemini ? geminiModel : openaiModel}, input length: ${text.length}`);
 

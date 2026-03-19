@@ -131,7 +131,7 @@ Return ONLY valid JSON.`;
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${openaiKey}` },
             body: JSON.stringify({
-              model: 'gpt-4o-mini',
+              model: 'gpt-4.1-mini',
               max_tokens: 1024,
               messages: [
                 { role: 'system', content: 'You generate social media posts. Return only valid JSON.' },

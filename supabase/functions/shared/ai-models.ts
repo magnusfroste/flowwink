@@ -8,8 +8,8 @@ export const AI_MODELS = {
   openai: {
     default: 'gpt-4.1-mini',
     chat: 'gpt-4.1-mini',
-    fast: 'gpt-4.1-mini',
-    pro: 'gpt-4o',
+    fast: 'gpt-4.1-nano',
+    pro: 'gpt-4.1',
   },
 
   // Google Gemini

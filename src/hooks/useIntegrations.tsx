@@ -131,7 +131,7 @@ export const defaultIntegrationsSettings: IntegrationsSettings = {
   openai: {
     enabled: false,
     name: 'OpenAI',
-    description: 'GPT-4o, GPT-4o-mini',
+    description: 'GPT-4.1, GPT-4.1 Mini, GPT-4.1 Nano',
     icon: 'Bot',
     category: 'ai',
     features: ['AI Chat', 'Text generation', 'Content migration'],
@@ -140,7 +140,7 @@ export const defaultIntegrationsSettings: IntegrationsSettings = {
     docsLabel: 'Get API key',
     config: {
       baseUrl: 'https://api.openai.com/v1',
-      model: 'gpt-4o-mini',
+      model: 'gpt-4.1-mini',
     },
   },
   gemini: {

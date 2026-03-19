@@ -1278,8 +1278,8 @@ Respond only with JSON.`;
         }),
       });
     } else {
-      // Use OpenAI API - upgraded to gpt-4o for better analysis
-      const model = 'gpt-4o';
+      // Use OpenAI API
+      const model = 'gpt-4.1';
       aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {

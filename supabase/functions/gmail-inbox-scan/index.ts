@@ -188,7 +188,7 @@ Be concise and actionable. Focus on professional signals, ignore promotional/mar
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4.1-mini',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userContent },
@@ -230,7 +230,7 @@ Be concise and actionable. Focus on professional signals, ignore promotional/mar
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            model: 'gpt-4o-mini',
+            model: 'gpt-4.1-mini',
             messages: [
               { role: 'system', content: topicPrompt },
               { role: 'user', content: analysis },
