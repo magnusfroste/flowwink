@@ -14,6 +14,7 @@ import { SchedulePublishDialog } from '@/components/admin/SchedulePublishDialog'
 import { AeoAnalyzer } from '@/components/admin/AeoAnalyzer';
 import { usePage, useUpdatePage, useUpdatePageStatus } from '@/hooks/usePages';
 import { useAuth } from '@/hooks/useAuth';
+import { useGeneralSettings } from '@/hooks/useSiteSettings';
 import { useToast } from '@/hooks/use-toast';
 import { useUnsavedChanges, UnsavedChangesDialog } from '@/hooks/useUnsavedChanges';
 import { useUndoRedo } from '@/hooks/useUndoRedo';
@@ -30,6 +31,8 @@ export default function PageEditorPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isApprover } = useAuth();
+  const { data: generalSettings } = useGeneralSettings();
+  const reviewEnabled = generalSettings?.contentReviewEnabled !== false;
   
   const { data: page, isLoading, refetch } = usePage(id);
   const updatePage = useUpdatePage();
@@ -98,6 +101,13 @@ export default function PageEditorPage() {
     await handleSave();
     if (id) {
       await updateStatus.mutateAsync({ id, status: 'reviewing', scheduledAt });
+    }
+  };
+
+  const handlePublishDirectly = async () => {
+    await handleSave();
+    if (id) {
+      await updateStatus.mutateAsync({ id, status: 'published' });
     }
   };
 
@@ -181,8 +191,9 @@ export default function PageEditorPage() {
     );
   }
 
-  const canEdit = page.status === 'draft' || isApprover;
-  const canSendForReview = page.status === 'draft';
+  const canEdit = page.status === 'draft' || isApprover || !reviewEnabled;
+  const canSendForReview = page.status === 'draft' && reviewEnabled;
+  const canPublishDirectly = page.status === 'draft' && !reviewEnabled;
   const canApprove = page.status === 'reviewing' && isApprover;
 
   return (
@@ -337,6 +348,12 @@ export default function PageEditorPage() {
                 <Button variant="outline" onClick={handleSave} disabled={isSaving || !hasChanges}>
                   {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
                   SAVE DRAFT
+                </Button>
+              )}
+              {canPublishDirectly && (
+                <Button onClick={handlePublishDirectly} disabled={updateStatus.isPending} className="bg-success hover:bg-success/90">
+                  <Check className="h-4 w-4 mr-2" />
+                  PUBLISH
                 </Button>
               )}
               {canSendForReview && (

@@ -434,6 +434,30 @@ export default function SiteSettingsPage() {
               </CardContent>
             </Card>
 
+            {/* Content Workflow */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="font-serif">Content Workflow</CardTitle>
+                <CardDescription>Control how content gets published on your site</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Review workflow</Label>
+                    <p className="text-sm text-muted-foreground">
+                      {generalData.contentReviewEnabled !== false
+                        ? 'Content goes through a review step before publishing (draft → review → published)'
+                        : 'All users can publish content directly without review (draft → published)'}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={generalData.contentReviewEnabled !== false}
+                    onCheckedChange={(checked) => setGeneralData(prev => ({ ...prev, contentReviewEnabled: checked }))}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Environment Info */}
             <EnvironmentInfoCard />
 

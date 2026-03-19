@@ -40,7 +40,7 @@ import {
 } from "@/hooks/useBlogPosts";
 import { useBlogCategories } from "@/hooks/useBlogCategories";
 import { useBlogTags, useGetOrCreateBlogTag } from "@/hooks/useBlogTags";
-import { useBlogSettings } from "@/hooks/useSiteSettings";
+import { useBlogSettings, useGeneralSettings } from "@/hooks/useSiteSettings";
 import type { PageStatus, BlogPostMeta, TiptapDocument } from "@/types/cms";
 
 function generateSlug(title: string): string {
@@ -61,6 +61,8 @@ export default function BlogPostEditorPage() {
   
   const { data: post, isLoading } = useBlogPost(isNew ? undefined : id);
   const { data: blogSettings } = useBlogSettings();
+  const { data: generalSettings } = useGeneralSettings();
+  const reviewEnabled = generalSettings?.contentReviewEnabled !== false;
   const { data: authors } = useAuthors();
   const { data: categories } = useBlogCategories();
   const { data: tags } = useBlogTags();
@@ -234,8 +236,8 @@ export default function BlogPostEditorPage() {
     }
   };
   
-  const canEdit = isNew || post?.status === "draft" || isAdmin || isApprover;
-  const canPublish = isAdmin || isApprover;
+  const canEdit = isNew || post?.status === "draft" || isAdmin || isApprover || !reviewEnabled;
+  const canPublish = isAdmin || isApprover || !reviewEnabled;
   
   if (!isNew && isLoading) {
     return (
@@ -485,7 +487,7 @@ export default function BlogPostEditorPage() {
               
               {!isNew && post && (
                 <>
-                  {post.status === "draft" && (
+                  {post.status === "draft" && reviewEnabled && (
                     <Button
                       variant="secondary"
                       onClick={() => handleStatusChange("reviewing")}
@@ -493,6 +495,16 @@ export default function BlogPostEditorPage() {
                     >
                       <Send className="mr-2 h-4 w-4" />
                       Submit for Review
+                    </Button>
+                  )}
+                  
+                  {post.status === "draft" && !reviewEnabled && (
+                    <Button
+                      onClick={() => handleStatusChange("published")}
+                      disabled={statusMutation.isPending}
+                    >
+                      <Check className="mr-2 h-4 w-4" />
+                      Publish
                     </Button>
                   )}
                   

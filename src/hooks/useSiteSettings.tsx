@@ -8,10 +8,12 @@ import type { Json } from '@/integrations/supabase/types';
 export interface GeneralSettings {
   homepageSlug: string;
   selectedTemplate?: string;
+  contentReviewEnabled?: boolean;
 }
 
 const defaultGeneralSettings: GeneralSettings = {
   homepageSlug: 'home',
+  contentReviewEnabled: true,
 };
 
 export interface SeoSettings {
