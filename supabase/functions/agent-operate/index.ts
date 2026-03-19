@@ -64,9 +64,30 @@ serve(async (req) => {
       cmsSchemaContext: cmsSchemaCtx,
     });
 
-    // Build tools
+    // Build tools — normalize to ensure OpenAI compatibility
     const builtInTools = getBuiltInTools(['memory', 'objectives', 'self-mod', 'reflect', 'soul', 'planning', 'automations-exec', 'workflows', 'a2a', 'skill-packs']);
-    const allTools = [...builtInTools, ...(available_skills || [])];
+    const rawTools = [...builtInTools, ...(available_skills || [])];
+    
+    // OpenAI requires every property to have a 'type' field — fix any that don't
+    const allTools = rawTools.map((tool: any) => {
+      try {
+        const props = tool?.function?.parameters?.properties;
+        if (props && typeof props === 'object') {
+          for (const [, val] of Object.entries(props)) {
+            const p = val as any;
+            if (!p.type && !p.enum && !p.items && !p.oneOf && !p.anyOf) {
+              p.type = 'string';
+            }
+          }
+        }
+        // Remove empty required arrays (OpenAI doesn't like required: [])
+        const params = tool?.function?.parameters;
+        if (params?.required && Array.isArray(params.required) && params.required.length === 0) {
+          delete params.required;
+        }
+      } catch { /* safety net */ }
+      return tool;
+    });
 
     // Set up SSE stream
     const { readable, writable } = new TransformStream();
