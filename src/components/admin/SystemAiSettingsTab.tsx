@@ -50,7 +50,7 @@ export function SystemAiSettingsTab({ data, onChange }: SystemAiSettingsTabProps
               <Sparkles className="h-5 w-5" />
               AI Provider
             </CardTitle>
-            <CardDescription>Choose which AI model powers internal tools</CardDescription>
+            <CardDescription>Choose which AI provider powers internal tools</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -86,50 +86,6 @@ export function SystemAiSettingsTab({ data, onChange }: SystemAiSettingsTabProps
                 </SelectContent>
               </Select>
             </div>
-
-            {data.provider === 'openai' && (
-              <div className="space-y-2">
-                <Label>OpenAI Model</Label>
-                <Select
-                  value={data.openaiModel}
-                  onValueChange={(value: SystemAiSettings['openaiModel']) => updateField('openaiModel', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="gpt-4.1">GPT-4.1 (Best quality)</SelectItem>
-                    <SelectItem value="gpt-4.1-mini">GPT-4.1 Mini (Recommended)</SelectItem>
-                    <SelectItem value="gpt-4.1-nano">GPT-4.1 Nano (Fast & cheap)</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  GPT-4o Mini is recommended for most use cases
-                </p>
-              </div>
-            )}
-
-            {data.provider === 'gemini' && (
-              <div className="space-y-2">
-                <Label>Gemini Model</Label>
-                <Select
-                  value={data.geminiModel}
-                  onValueChange={(value: SystemAiSettings['geminiModel']) => updateField('geminiModel', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="gemini-2.0-flash-exp">Gemini 2.0 Flash (Recommended)</SelectItem>
-                    <SelectItem value="gemini-1.5-pro">Gemini 1.5 Pro (Best quality)</SelectItem>
-                    <SelectItem value="gemini-1.5-flash">Gemini 1.5 Flash (Fast)</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  Gemini 2.0 Flash offers the best balance of speed and quality
-                </p>
-              </div>
-            )}
           </CardContent>
         </Card>
 
@@ -184,6 +140,104 @@ export function SystemAiSettingsTab({ data, onChange }: SystemAiSettingsTabProps
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="font-serif flex items-center gap-2">
+            <Sparkles className="h-5 w-5" />
+            Model Configuration
+          </CardTitle>
+          <CardDescription>
+            FlowPilot uses two models: a fast model for real-time chat and tool execution, 
+            and a reasoning model for deep analysis, research, and planning.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {data.provider === 'openai' && (
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Chat & Interaction Model</Label>
+                <Select
+                  value={data.openaiModel}
+                  onValueChange={(value: SystemAiSettings['openaiModel']) => updateField('openaiModel', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="gpt-4.1">GPT-4.1</SelectItem>
+                    <SelectItem value="gpt-4.1-mini">GPT-4.1 Mini</SelectItem>
+                    <SelectItem value="gpt-4.1-nano">GPT-4.1 Nano</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Used for real-time chat, tool calls, and quick tasks
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label>Research & Reasoning Model</Label>
+                <Select
+                  value={data.openaiReasoningModel}
+                  onValueChange={(value: SystemAiSettings['openaiReasoningModel']) => updateField('openaiReasoningModel', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="gpt-4.1">GPT-4.1</SelectItem>
+                    <SelectItem value="gpt-4.1-mini">GPT-4.1 Mini</SelectItem>
+                    <SelectItem value="gpt-4.1-nano">GPT-4.1 Nano</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Used for objectives, planning, content research, and deep analysis
+                </p>
+              </div>
+            </div>
+          )}
+
+          {data.provider === 'gemini' && (
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Chat & Interaction Model</Label>
+                <Select
+                  value={data.geminiModel}
+                  onValueChange={(value: SystemAiSettings['geminiModel']) => updateField('geminiModel', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="gemini-2.5-flash">Gemini 2.5 Flash</SelectItem>
+                    <SelectItem value="gemini-2.0-flash-exp">Gemini 2.0 Flash</SelectItem>
+                    <SelectItem value="gemini-1.5-flash">Gemini 1.5 Flash</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Used for real-time chat, tool calls, and quick tasks
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label>Research & Reasoning Model</Label>
+                <Select
+                  value={data.geminiReasoningModel}
+                  onValueChange={(value: SystemAiSettings['geminiReasoningModel']) => updateField('geminiReasoningModel', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="gemini-2.5-pro">Gemini 2.5 Pro</SelectItem>
+                    <SelectItem value="gemini-2.5-flash">Gemini 2.5 Flash</SelectItem>
+                    <SelectItem value="gemini-1.5-pro">Gemini 1.5 Pro</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Used for objectives, planning, content research, and deep analysis
+                </p>
+              </div>
+            </div>
+          )}
 
       <Card>
         <CardHeader>
