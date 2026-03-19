@@ -318,8 +318,12 @@ export default function SiteSettingsPage() {
     }
   }, [systemAiSettings]);
 
-  const isLoading = seoLoading || performanceLoading || scriptsLoading || cookieLoading || maintenanceLoading || generalLoading || aeoLoading || systemAiLoading;
-  const isSaving = updateSeo.isPending || updatePerformance.isPending || updateScripts.isPending || updateCookieBanner.isPending || updateMaintenance.isPending || updateGeneral.isPending || updateAeo.isPending || updateSystemAi.isPending;
+  useEffect(() => {
+    if (autonomySettings) setAutonomyData(autonomySettings);
+  }, [autonomySettings]);
+
+  const isLoading = seoLoading || performanceLoading || scriptsLoading || cookieLoading || maintenanceLoading || generalLoading || aeoLoading || systemAiLoading || autonomyLoading;
+  const isSaving = updateSeo.isPending || updatePerformance.isPending || updateScripts.isPending || updateCookieBanner.isPending || updateMaintenance.isPending || updateGeneral.isPending || updateAeo.isPending || updateSystemAi.isPending || updateAutonomy.isPending;
 
   // Track unsaved changes
   const hasChanges = useMemo(() => {
