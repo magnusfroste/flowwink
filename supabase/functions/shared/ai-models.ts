@@ -6,9 +6,9 @@
 export const AI_MODELS = {
   // OpenAI
   openai: {
-    default: 'gpt-4o-mini',
-    chat: 'gpt-4o-mini',
-    fast: 'gpt-4o-mini',
+    default: 'gpt-4.1-mini',
+    chat: 'gpt-4.1-mini',
+    fast: 'gpt-4.1-mini',
     pro: 'gpt-4o',
   },
 

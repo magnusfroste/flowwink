@@ -99,6 +99,7 @@ export function SystemAiSettingsTab({ data, onChange }: SystemAiSettingsTabProps
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="gpt-4o">GPT-4o (Best quality)</SelectItem>
+                    <SelectItem value="gpt-4.1-mini">GPT-4.1 Mini (Fast & smart)</SelectItem>
                     <SelectItem value="gpt-4o-mini">GPT-4o Mini (Fast & affordable)</SelectItem>
                     <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo (Legacy)</SelectItem>
                   </SelectContent>
