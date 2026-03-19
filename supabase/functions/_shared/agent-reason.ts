@@ -46,6 +46,7 @@ export interface ReasonConfig {
   extraContext?: string;
   builtInToolGroups?: Array<'memory' | 'objectives' | 'self-mod' | 'reflect' | 'soul' | 'planning' | 'automations-exec' | 'workflows' | 'a2a' | 'skill-packs'>;
   additionalTools?: any[];
+  tier?: AiTier;
 }
 
 export interface ReasonResult {
@@ -313,10 +314,12 @@ export function buildSystemPrompt(input: PromptCompilerInput): string {
 
 // ─── AI Config Resolution ─────────────────────────────────────────────────────
 
-export async function resolveAiConfig(supabase: any): Promise<{ apiKey: string; apiUrl: string; model: string }> {
+export type AiTier = 'fast' | 'reasoning';
+
+export async function resolveAiConfig(supabase: any, tier: AiTier = 'fast'): Promise<{ apiKey: string; apiUrl: string; model: string }> {
   let apiKey = '';
   let apiUrl = 'https://api.openai.com/v1/chat/completions';
-  let model = 'gpt-4.1';
+  let model = tier === 'reasoning' ? 'gpt-4.1' : 'gpt-4.1-mini';
 
   const { data: settings } = await supabase
     .from('site_settings').select('value').eq('key', 'system_ai').maybeSingle();
@@ -326,10 +329,14 @@ export async function resolveAiConfig(supabase: any): Promise<{ apiKey: string; 
     if (cfg.provider === 'gemini' && Deno.env.get('GEMINI_API_KEY')) {
       apiKey = Deno.env.get('GEMINI_API_KEY')!;
       apiUrl = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
-      model = cfg.model || 'gemini-2.5-flash';
+      model = tier === 'reasoning'
+        ? (cfg.geminiReasoningModel || 'gemini-2.5-pro')
+        : (cfg.geminiModel || cfg.model || 'gemini-2.5-flash');
     } else if (cfg.provider === 'openai' && Deno.env.get('OPENAI_API_KEY')) {
       apiKey = Deno.env.get('OPENAI_API_KEY')!;
-      model = cfg.model || 'gpt-4.1';
+      model = tier === 'reasoning'
+        ? (cfg.openaiReasoningModel || 'gpt-4.1')
+        : (cfg.openaiModel || cfg.model || 'gpt-4.1-mini');
     }
   }
 
@@ -338,7 +345,7 @@ export async function resolveAiConfig(supabase: any): Promise<{ apiKey: string; 
     if (lovableKey) {
       apiKey = lovableKey;
       apiUrl = 'https://ai.gateway.lovable.dev/v1/chat/completions';
-      model = 'google/gemini-2.5-flash';
+      model = tier === 'reasoning' ? 'google/gemini-2.5-pro' : 'google/gemini-2.5-flash';
     }
   }
 
@@ -742,7 +749,7 @@ export async function pruneConversationHistory(
 
 async function summarizeMessages(messages: any[], supabase: any): Promise<string | null> {
   try {
-    const { apiKey, apiUrl, model } = await resolveAiConfig(supabase);
+    const { apiKey, apiUrl, model } = await resolveAiConfig(supabase, 'fast');
 
     // Build a compact representation of old messages
     const compactMessages = messages
@@ -868,7 +875,7 @@ async function decomposeObjectiveIntoPlan(
 
   const skillList = (skills || []).map((s: any) => `- ${s.name}: ${s.description} (${s.handler})`).join('\n');
 
-  const { apiKey, apiUrl, model } = await resolveAiConfig(supabase);
+  const { apiKey, apiUrl, model } = await resolveAiConfig(supabase, 'reasoning');
   const aiResp = await fetch(apiUrl, {
     method: 'POST',
     headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
@@ -1320,7 +1327,7 @@ async function handleDelegateTask(
     || SPECIALIST_PROMPTS[agent_name]
     || `You are a specialist agent focused on ${agent_name}. Complete the given task thoroughly and concisely.`;
 
-  const { apiKey, apiUrl, model } = await resolveAiConfig(supabase);
+  const { apiKey, apiUrl, model } = await resolveAiConfig(supabase, 'fast');
   const contextStr = Object.keys(context).length > 0
     ? `\n\nContext:\n${JSON.stringify(context, null, 2)}`
     : '';
@@ -1900,7 +1907,7 @@ export async function reason(
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-  const { apiKey, apiUrl, model } = await resolveAiConfig(supabase);
+  const { apiKey, apiUrl, model } = await resolveAiConfig(supabase, config.tier || 'fast');
 
   const builtInTools = getBuiltInTools(config.builtInToolGroups || ['memory', 'objectives', 'reflect']);
   const skillTools = await loadSkillTools(supabase, config.scope);

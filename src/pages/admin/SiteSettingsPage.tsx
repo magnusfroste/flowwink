@@ -252,7 +252,9 @@ export default function SiteSettingsPage() {
   const [systemAiData, setSystemAiData] = useState<SystemAiSettings>({
     provider: 'openai',
     openaiModel: 'gpt-4.1-mini',
-    geminiModel: 'gemini-2.0-flash-exp',
+    openaiReasoningModel: 'gpt-4.1',
+    geminiModel: 'gemini-2.5-flash',
+    geminiReasoningModel: 'gemini-2.5-pro',
     defaultTone: 'professional',
     defaultLanguage: 'en',
   });

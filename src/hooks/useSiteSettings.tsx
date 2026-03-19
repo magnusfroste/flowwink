@@ -610,10 +610,15 @@ export function useUpdateAeoSettings() {
 // System AI settings (internal AI tools: text generation, company enrichment, lead qualification, etc.)
 export type SystemAiProvider = 'openai' | 'gemini';
 
+export type OpenAiModel = 'gpt-4.1' | 'gpt-4.1-mini' | 'gpt-4.1-nano';
+export type GeminiModel = 'gemini-2.5-pro' | 'gemini-2.5-flash' | 'gemini-2.0-flash-exp' | 'gemini-1.5-pro' | 'gemini-1.5-flash';
+
 export interface SystemAiSettings {
   provider: SystemAiProvider;
-  openaiModel: 'gpt-4.1' | 'gpt-4.1-mini' | 'gpt-4.1-nano';
-  geminiModel: 'gemini-2.0-flash-exp' | 'gemini-1.5-pro' | 'gemini-1.5-flash';
+  openaiModel: OpenAiModel;
+  openaiReasoningModel: OpenAiModel;
+  geminiModel: GeminiModel;
+  geminiReasoningModel: GeminiModel;
   // Content generation preferences
   defaultTone: 'professional' | 'friendly' | 'formal';
   defaultLanguage: string;
@@ -622,7 +627,9 @@ export interface SystemAiSettings {
 const defaultSystemAiSettings: SystemAiSettings = {
   provider: 'openai',
   openaiModel: 'gpt-4.1-mini',
-  geminiModel: 'gemini-2.0-flash-exp',
+  openaiReasoningModel: 'gpt-4.1',
+  geminiModel: 'gemini-2.5-flash',
+  geminiReasoningModel: 'gemini-2.5-pro',
   defaultTone: 'professional',
   defaultLanguage: 'en',
 };

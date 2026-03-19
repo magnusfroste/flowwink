@@ -119,7 +119,7 @@ serve(async (req) => {
     ]);
 
     // 2. Resolve AI config
-    const { apiKey, apiUrl, model } = await resolveAiConfig(supabase);
+    const { apiKey, apiUrl, model } = await resolveAiConfig(supabase, 'reasoning');
 
     // 3. Load tools — include planning + automation execution
     const builtInTools = getBuiltInTools(['memory', 'objectives', 'self-mod', 'reflect', 'soul', 'planning', 'automations-exec', 'workflows', 'a2a', 'skill-packs']);

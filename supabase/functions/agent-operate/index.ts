@@ -45,7 +45,7 @@ serve(async (req) => {
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    const { apiKey, apiUrl, model } = await resolveAiConfig(supabase);
+    const { apiKey, apiUrl, model } = await resolveAiConfig(supabase, 'fast');
 
     // Load context in parallel
     const [{ soul, identity }, memoryContext, objectiveContext, cmsSchemaCtx] = await Promise.all([
