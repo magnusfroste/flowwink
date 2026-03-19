@@ -3091,6 +3091,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      register_flowpilot_cron: {
+        Args: { p_anon_key: string; p_supabase_url: string }
+        Returns: Json
+      }
       search_memories_semantic: {
         Args: {
           filter_category?: Database["public"]["Enums"]["agent_memory_category"]

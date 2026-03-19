@@ -1942,6 +1942,26 @@ Deno.serve(async (req) => {
       console.log(`[setup-flowpilot] Seeded ${objectivesSeeded} objectives`);
     }
 
+    // 6. Auto-register heartbeat cron job via DB function (idempotent)
+    let cronRegistered = false;
+    try {
+      const anonKey = Deno.env.get('SUPABASE_ANON_KEY') || Deno.env.get('SUPABASE_PUBLISHABLE_KEY') || '';
+      
+      const { data: cronResult, error: cronError } = await supabase.rpc('register_flowpilot_cron', {
+        p_supabase_url: supabaseUrl,
+        p_anon_key: anonKey,
+      });
+
+      if (cronError) {
+        console.warn('[setup-flowpilot] Cron registration failed (manual setup may be needed):', cronError.message);
+      } else {
+        cronRegistered = true;
+        console.log('[setup-flowpilot] Cron registration result:', cronResult);
+      }
+    } catch (cronErr) {
+      console.warn('[setup-flowpilot] Cron registration failed (non-fatal):', cronErr);
+    }
+
     console.log('[setup-flowpilot] Bootstrap complete!');
 
     return new Response(
@@ -1952,14 +1972,13 @@ Deno.serve(async (req) => {
           skills_seeded: skillsSeeded,
           soul_seeded: soulSeeded,
           objectives_seeded: objectivesSeeded,
+          cron_registered: cronRegistered,
           total_default_skills: DEFAULT_SKILLS.length,
           template_configured: !!template_flowpilot,
         },
         next_steps: [
           'Configure AI provider in Site Settings → System AI',
           'Set OPENAI_API_KEY or GEMINI_API_KEY as secrets',
-          'Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in vault for heartbeat self-invocation',
-          'Deploy edge functions: agent-execute, agent-operate, flowpilot-heartbeat',
           'Open /admin/copilot to start using FlowPilot',
         ],
       }),
