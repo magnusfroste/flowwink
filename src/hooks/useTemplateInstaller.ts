@@ -613,6 +613,19 @@ export function useTemplateInstaller() {
           },
         });
         logger.log('[TemplateInstaller] FlowPilot bootstrapped for template:', template.id);
+
+        // Fire immediate heartbeat to decompose freshly seeded objectives
+        if (opts.resetObjectives && template.flowpilot?.objectives?.length) {
+          setProgress({ currentPage: 1, totalPages: 1, currentStep: 'Starting FlowPilot autonomy...' });
+          try {
+            await supabase.functions.invoke('flowpilot-heartbeat', {
+              body: { time: new Date().toISOString(), trigger: 'post-install' },
+            });
+            logger.log('[TemplateInstaller] Initial heartbeat fired — objectives will be decomposed');
+          } catch (hbError) {
+            logger.warn('[TemplateInstaller] Initial heartbeat failed (non-fatal):', hbError);
+          }
+        }
       } catch (fpError) {
         logger.warn('[TemplateInstaller] FlowPilot bootstrap failed (non-fatal):', fpError);
       }
