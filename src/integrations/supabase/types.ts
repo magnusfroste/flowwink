@@ -3095,6 +3095,16 @@ export type Database = {
         Args: { p_anon_key: string; p_supabase_url: string }
         Returns: Json
       }
+      schedule_cron_job: {
+        Args: {
+          p_body: string
+          p_headers: string
+          p_jobname: string
+          p_schedule: string
+          p_url: string
+        }
+        Returns: boolean
+      }
       search_memories_semantic: {
         Args: {
           filter_category?: Database["public"]["Enums"]["agent_memory_category"]
@@ -3110,6 +3120,7 @@ export type Database = {
           value: Json
         }[]
       }
+      unschedule_cron_job: { Args: { p_jobname: string }; Returns: boolean }
     }
     Enums: {
       a2a_activity_status: "success" | "error" | "pending"
