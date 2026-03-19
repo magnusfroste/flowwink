@@ -110,7 +110,7 @@ export function CommandPalette({ open, onSelect, onClose, skills, scope, filter 
                     )}
                   >
                     <span className="text-muted-foreground">{cmd.icon}</span>
-                    <span className="font-medium">@{cmd.name.replace(/_/g, ' ')}</span>
+                    <span className="font-medium">/{cmd.name.replace(/_/g, ' ')}</span>
                     <span className="text-xs text-muted-foreground truncate flex-1 text-left">{cmd.description}</span>
                     {cmd.isBuiltin && (
                       <Badge variant="outline" className="text-[9px] h-4 px-1.5 shrink-0">built-in</Badge>

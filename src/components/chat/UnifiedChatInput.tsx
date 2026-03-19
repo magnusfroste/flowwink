@@ -328,11 +328,11 @@ export function UnifiedChatInput({
           </div>
         </div>
 
-        {/* @ hint */}
+        {/* / hint */}
         {scope === 'admin' && !showPalette && !value && (
           <div className="px-1 pt-1">
             <span className="text-[11px] text-muted-foreground/50">
-              Type <kbd className="px-1 py-0.5 rounded bg-muted text-muted-foreground text-[10px] font-mono">@</kbd> for commands
+              Type <kbd className="px-1 py-0.5 rounded bg-muted text-muted-foreground text-[10px] font-mono">/</kbd> for commands
             </span>
           </div>
         )}

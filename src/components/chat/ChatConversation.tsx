@@ -46,7 +46,7 @@ export function ChatConversation({
     cancelRequest,
   } = useChat({ conversationId, onNewConversation, skipRestore, checkinId });
 
-  // Load visitor-scoped skills for @-commands
+  // Load visitor-scoped skills for /commands
   useEffect(() => {
     const loadSkills = async () => {
       const { data } = await supabase
