@@ -67,6 +67,7 @@ export const navigationGroups: NavGroup[] = [
     label: "CRM",
     adminOnly: true,
     items: [
+      { name: "Company Insights", href: "/admin/company-insights", icon: Building2, moduleId: "companyInsights" },
       { name: "Contacts", href: "/admin/contacts", icon: UserCheck, moduleId: "leads" },
       { name: "Companies", href: "/admin/companies", icon: Building2, moduleId: "companies" },
       { name: "Sales Intelligence", href: "/admin/sales-intelligence", icon: Target, moduleId: "salesIntelligence" },
