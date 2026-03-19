@@ -1758,14 +1758,47 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { 
-      service_role_key: body_service_role_key, 
-      supabase_url, 
-      seed_skills = true, 
+    const {
+      service_role_key: body_service_role_key,
+      supabase_url,
+      seed_skills = true,
       seed_soul = true,
       // Template-aware configuration
-      template_flowpilot,
+      template_id,
+      template_flowpilot: template_flowpilot_body,
     } = body;
+
+    // If caller passes template_id but no inline template_flowpilot,
+    // fall back to the built-in starter automations/workflows (same for all templates).
+    const STARTER_FLOWPILOT = {
+      automations: [
+        {
+          name: 'Weekly Business Digest',
+          description: 'Every Friday afternoon, summarise traffic, leads, and top content, then log to activity.',
+          trigger_type: 'cron' as const,
+          trigger_config: { cron: '0 16 * * 5', timezone: 'UTC' },
+          skill_name: 'weekly_business_digest',
+          skill_arguments: {},
+          enabled: true,
+        },
+      ],
+      workflows: [
+        {
+          name: 'Content Pipeline',
+          description: 'Research a topic, generate a blog post proposal, write and publish.',
+          steps: [
+            { id: 'step-1', skill_name: 'research_content', skill_args: { query: '{{topic}}' } },
+            { id: 'step-2', skill_name: 'generate_content_proposal', skill_args: { research_context: '{{step-1.output}}' } },
+            { id: 'step-3', skill_name: 'write_blog_post', skill_args: { proposal: '{{step-2.output}}' }, on_failure: 'stop' },
+          ],
+          trigger_type: 'manual' as const,
+          trigger_config: {},
+          enabled: true,
+        },
+      ],
+    };
+
+    const template_flowpilot = template_flowpilot_body ?? (template_id ? STARTER_FLOWPILOT : undefined);
 
     // Prefer env var over body param (never require client to send service_role_key)
     const service_role_key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || body_service_role_key;
@@ -1804,8 +1837,11 @@ Deno.serve(async (req) => {
         .select('id')
         .limit(1);
 
-      if (existingSkills && existingSkills.length > 0 && !seed_skills) {
-        console.log('[setup-flowpilot] Already set up with skills, skipping (pass seed_skills=true to upsert)');
+      // Only bail out early if skills exist, skill re-seeding is not requested,
+      // soul re-seeding is not requested, AND no template data is provided.
+      // If a template is being applied (objectives/automations/cron), always continue.
+      if (existingSkills && existingSkills.length > 0 && !seed_skills && !seed_soul && !template_flowpilot) {
+        console.log('[setup-flowpilot] Already set up, no template provided and seed flags are false — skipping.');
         return new Response(
           JSON.stringify({
             success: true,

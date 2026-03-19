@@ -88,6 +88,8 @@ cmd_help() {
     echo -e "  ${CYAN}/set-keys${NC}        Configure API keys & secrets"
     echo -e "  ${CYAN}/create-admin${NC}    Create an admin user"
     echo ""
+    echo -e "  ${CYAN}/setup-flowpilot${NC} Seed FlowPilot objectives, automations & cron"
+    echo ""
     echo -e "  ${CYAN}/env${NC}             Show environment variables for hosting"
     echo -e "  ${CYAN}/status${NC}          Check deployment status"
     echo -e "  ${CYAN}/about${NC}           About FlowWink"
@@ -550,6 +552,91 @@ cmd_status() {
     echo ""
 }
 
+cmd_setup_flowpilot() {
+    echo ""
+    print_section "Setup FlowPilot"
+    require_link || return 1
+
+    if [ -z "$SERVICE_ROLE_KEY" ] || [ "$SERVICE_ROLE_KEY" = "null" ]; then
+        echo -e "  ${RED}✗ Service role key not available.${NC}"
+        echo -e "  ${DIM}Run /link to reload project keys.${NC}"
+        echo ""
+        return 1
+    fi
+
+    echo -e "  ${DIM}Project: ${PROJECT_NAME}${NC}"
+    echo ""
+    echo -e "  ${DIM}↑↓ navigate  Enter select${NC}"
+    echo ""
+
+    local -a OPTIONS=(
+        "Seed objectives & automations from template"
+        "Register / renew heartbeat cron only"
+        "Cancel"
+    )
+
+    _fw_select "${OPTIONS[@]}"
+    local idx=$_FW_IDX
+    [ "$idx" -eq -1 ] || [ "$idx" -eq 2 ] && echo "" && return 0
+
+    echo ""
+
+    local payload
+    if [ "$idx" -eq 0 ]; then
+        local -a TEMPLATES=(
+            "blank"
+            "consult-agency"
+            "digital-shop"
+            "flowwink-agency"
+            "flowwink-platform"
+            "helpcenter"
+            "launchpad"
+            "momentum"
+            "securehealth"
+            "service-pro"
+            "trustcorp"
+        )
+        echo "  Select template:"
+        echo ""
+        _fw_select "${TEMPLATES[@]}"
+        local tidx=$_FW_IDX
+        [ "$tidx" -eq -1 ] && echo "" && return 0
+        local template_id="${TEMPLATES[$tidx]}"
+        echo ""
+        echo -e "  Seeding FlowPilot from template ${BOLD}${template_id}${NC}..."
+        payload="{\"template_id\":\"${template_id}\",\"seed_skills\":false,\"seed_soul\":false}"
+    else
+        echo -e "  Registering heartbeat cron..."
+        payload="{\"seed_skills\":false,\"seed_soul\":false,\"seed_objectives\":false}"
+    fi
+
+    local response
+    response=$(curl -s -X POST "${SUPABASE_URL}/functions/v1/setup-flowpilot" \
+        -H "Authorization: Bearer ${SERVICE_ROLE_KEY}" \
+        -H "apikey: ${SERVICE_ROLE_KEY}" \
+        -H "Content-Type: application/json" \
+        -d "$payload" 2>&1)
+
+    if echo "$response" | grep -qE '"success"\s*:\s*true|"objectives_seeded"|"cron_registered"'; then
+        echo -e "  ${GREEN}✓ FlowPilot setup complete${NC}"
+        local obj_count
+        obj_count=$(echo "$response" | jq -r '.objectives_seeded // empty' 2>/dev/null || echo "")
+        [ -n "$obj_count" ] && echo -e "  ${DIM}Objectives seeded: ${obj_count}${NC}"
+        local auto_count
+        auto_count=$(echo "$response" | jq -r '.automations_seeded // empty' 2>/dev/null || echo "")
+        [ -n "$auto_count" ] && echo -e "  ${DIM}Automations seeded: ${auto_count}${NC}"
+        local cron_ok
+        cron_ok=$(echo "$response" | jq -r '.cron_registered // empty' 2>/dev/null || echo "")
+        [ "$cron_ok" = "true" ] && echo -e "  ${DIM}Cron registered ✓${NC}"
+    else
+        echo -e "  ${RED}✗ Setup failed${NC}"
+        local err
+        err=$(echo "$response" | jq -r '.error // .message // .' 2>/dev/null || echo "$response")
+        echo "$err" | head -3 | sed 's/^/  /'
+    fi
+    echo ""
+}
+
 cmd_install() {
     echo ""
     print_section "Full Installation"
@@ -623,6 +710,7 @@ _fw_select() {
 FW_COMMANDS=(
     "/login" "/link" "/install"
     "/update-db" "/update-funcs" "/set-keys" "/create-admin"
+    "/setup-flowpilot"
     "/env" "/status" "/about" "/help" "/quit"
 )
 
@@ -788,6 +876,7 @@ while true; do
         /update-funcs|/update-functions) cmd_update_funcs ;;
         /set-keys|/set-secrets)      cmd_set_keys ;;
         /create-admin)               cmd_create_admin ;;
+        /setup-flowpilot)            cmd_setup_flowpilot ;;
         /env)                        cmd_env ;;
         /status)                     cmd_status ;;
         /about)                      cmd_about ;;
