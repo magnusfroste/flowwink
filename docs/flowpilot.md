@@ -2,7 +2,7 @@
 
 > **Your website runs itself.** FlowAgent is not a chatbot. It is an autonomous AI operator that writes your content, qualifies your leads, runs your campaigns, orchestrates multi-agent workflows, and learns from every interaction. You set the objectives. It does the rest.
 
-> **Version:** 2.0 | **Updated:** March 2026 | **Skills:** 37+ | **Autonomy:** 10/10
+> **Version:** 3.0 | **Updated:** March 2026 | **Skills:** 73 registered + 32 built-in tools | **Autonomy:** 10/10
 
 ---
 
@@ -59,7 +59,7 @@ FlowAgent operates on a continuous cycle. This is the core value proposition —
 
 ```
 ┌─────────────┐
-│  HEARTBEAT  │ ← Triggers every 12 hours (configurable)
+│  HEARTBEAT  │ ← Triggers every 12 hours (configurable via admin)
 └──────┬──────┘
        ▼
 ┌─────────────┐
@@ -117,7 +117,7 @@ The central innovation is `agent-reason` — a **shared importable module** (not
 │  └──────────────┘  └──────────────┘  └──────────────────────┘  │
 │                                                                  │
 │  ┌──────────────────────────────────────────────────────────┐   │
-│  │              26 Built-in Tools (7 groups)                 │   │
+│  │              32 Built-in Tools (9 groups)                 │   │
 │  │                                                          │   │
 │  │  memory: memory_write, memory_read                       │   │
 │  │  objectives: objective_update_progress, objective_complete│   │
@@ -126,7 +126,11 @@ The central innovation is `agent-reason` — a **shared importable module** (not
 │  │  soul: soul_update (purpose/values/tone/philosophy)      │   │
 │  │  planning: decompose_objective, advance_plan,            │   │
 │  │            propose_objective                              │   │
-│  │  automations-exec: execute_automation                    │   │
+│  │  workflows: workflow_create, workflow_execute,            │   │
+│  │             workflow_list                                 │   │
+│  │  delegation: delegate_task                                │   │
+│  │  skill-packs: skill_pack_list, skill_pack_install         │   │
+│  │  automations: execute_automation                          │   │
 │  └──────────────────────────────────────────────────────────┘   │
 │                                                                  │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐  │
@@ -144,8 +148,8 @@ The central innovation is `agent-reason` — a **shared importable module** (not
           ▼                    ▼                     ▼
 ┌──────────────────┐ ┌──────────────────┐ ┌─────────────────────┐
 │  agent-operate   │ │ flowpilot-       │ │  flowpilot-learn    │
-│  (SSE streaming) │ │ heartbeat        │ │  (daily 03:00 UTC)  │
-│  Interactive     │ │ (12h autonomous) │ │  Feedback analysis  │
+│  (SSE streaming) │ │ heartbeat        │ │  (daily, configurable)│
+│  Interactive     │ │ (12h, config.)   │ │  Feedback analysis  │
 └──────────────────┘ └──────────────────┘ └─────────────────────┘
                                │
 ┌──────────────────────────────┼──────────────────────────────────┐
@@ -153,7 +157,7 @@ The central innovation is `agent-reason` — a **shared importable module** (not
 │                                                                  │
 │  ┌──────────────┐    ┌──────────────────┐    ┌───────────────┐  │
 │  │ agent_skills  │───▸│  agent-execute   │───▸│ agent_activity│  │
-│  │  (registry)   │    │  (router)        │    │ (audit log)   │  │
+│  │  (73 skills)  │    │  (router)        │    │ (audit log)   │  │
 │  └──────────────┘    └────────┬─────────┘    └───────────────┘  │
 │                               │                                  │
 │            ┌──────────┬───────┼────────┬──────────┐             │
@@ -177,15 +181,15 @@ The central innovation is `agent-reason` — a **shared importable module** (not
 
 | Consumer | Mode | Tool Groups | Purpose |
 |----------|------|-------------|---------|
-| `agent-operate` | SSE streaming | memory, objectives, self-mod, reflect, soul | Interactive admin assistant |
-| `flowpilot-heartbeat` | Non-streaming | memory, objectives, reflect, planning, automations-exec | Autonomous 12h loop |
+| `agent-operate` | SSE streaming | memory, objectives, self-mod, reflect, soul, workflows, delegation, skill-packs | Interactive admin assistant |
+| `flowpilot-heartbeat` | Non-streaming | memory, objectives, reflect, planning, automations-exec, workflows | Autonomous 12h loop |
 | `flowpilot-learn` | Non-streaming | memory, reflect | Daily feedback distillation |
 
 ---
 
 ## 4. The Seven Core Capabilities
 
-### 4.1 Skill Engine (19 Default Skills + Runtime Creation)
+### 4.1 Skill Engine (73 Registered Skills + 32 Built-in Tools)
 
 Every capability is a **skill** — a database-driven, hot-reloadable tool definition in OpenAI function-calling format. FlowAgent can create new skills at runtime.
 
@@ -210,6 +214,7 @@ Every capability is a **skill** — a database-driven, hot-reloadable tool defin
 | `module:` | Module handler in `agent-execute` | `module:blog` |
 | `db:` | Direct DB query | `db:page_views` |
 | `webhook:` | External | `webhook:n8n` |
+| `a2a:` | Agent-to-Agent peer | `a2a:SoundSpace` |
 
 **Scope model** — controls access:
 
@@ -291,7 +296,7 @@ Automatic fault detection and skill quarantine (ported from ClawCMS):
 
 ### 4.5 Autonomous Heartbeat
 
-The `flowpilot-heartbeat` Edge Function drives autonomous operation. Every 12 hours:
+The `flowpilot-heartbeat` Edge Function drives autonomous operation. Frequency configurable via admin (default: every 12 hours):
 
 ```
 HEARTBEAT PROTOCOL (7 steps):
@@ -354,125 +359,219 @@ FlowAgent can modify its own behavior:
 
 ---
 
-## 5. Complete Skill Inventory (37+ Default Skills)
+## 5. Complete Skill Inventory — VERIFIED FROM DATABASE
 
-### CMS & Content (Full Autonomy)
+> **Source of truth**: `SELECT name, handler, scope, category FROM agent_skills ORDER BY category, name;`
+> **Last verified**: 2026-03-19 | **Total**: 73 registered skills
 
-| Skill | Handler | Scope | Approval | Description |
-|-------|---------|-------|----------|-------------|
-| `manage_page` | `module:pages` | internal | ❌ | Full page lifecycle: create, update, publish, archive, delete, rollback |
-| `manage_page_blocks` | `module:pages` | internal | ❌ | Block manipulation: add, update, remove, reorder, duplicate, toggle visibility |
-| `manage_global_blocks` | `module:globalElements` | internal | ❌ | Header, footer, sidebar management |
-| `manage_kb_article` | `module:kb` | internal | ❌ | KB article CRUD: create, update, publish, list |
-| `write_blog_post` | `module:blog` | internal | ❌ | Create draft blog post with AI content generation |
-| `publish_scheduled_content` | `edge:publish-scheduled-pages` | internal | ❌ | Auto-publish pages/posts past scheduled date |
+### Content Skills (21 skills)
 
-### Content Research & Pipeline
+| # | Skill | Handler | Scope | Approval | Status |
+|---|-------|---------|-------|----------|--------|
+| 1 | `browse_blog` | `module:blog` | external | ❌ | ✅ Verified |
+| 2 | `create_campaign` | `edge:generate-content-proposal` | internal | ❌ | ✅ Verified |
+| 3 | `create_page_block` | `edge:copilot-action` | internal | ❌ | ✅ Verified |
+| 4 | `extract_pdf_text` | `edge:extract-pdf-text` | internal | ❌ | ✅ Verified |
+| 5 | `generate_content_proposal` | `edge:generate-content-proposal` | internal | ✅ | ✅ Verified |
+| 6 | `generate_site_from_identity` | `edge:generate-site-from-identity` | both | ✅ | ✅ Verified |
+| 7 | `generate_social_post` | `edge:generate-social-post` | internal | ❌ | ✅ Verified |
+| 8 | `manage_blog_categories` | `module:blog` | internal | ❌ | ✅ Verified |
+| 9 | `manage_blog_posts` | `module:blog` | internal | ❌ | ✅ Verified |
+| 10 | `manage_consultant_profile` | `module:resume` | internal | ❌ | ✅ Verified |
+| 11 | `manage_global_blocks` | `module:globalElements` | internal | ❌ | ✅ Verified |
+| 12 | `manage_kb_article` | `module:kb` | internal | ❌ | ✅ Verified |
+| 13 | `manage_page` | `module:pages` | internal | ❌ | ✅ Verified |
+| 14 | `manage_page_blocks` | `module:pages` | internal | ❌ | ✅ Verified |
+| 15 | `manage_product` | `module:products` | internal | ❌ | ✅ Verified |
+| 16 | `match_consultant` | `module:resume` | both | ❌ | ✅ Verified |
+| 17 | `media_browse` | `module:media` | internal | ❌ | ✅ Verified |
+| 18 | `migrate_url` | `edge:copilot-action` | internal | ❌ | ✅ Verified |
+| 19 | `publish_scheduled_content` | `edge:publish-scheduled-pages` | internal | ❌ | ✅ Verified |
+| 20 | `research_content` | `edge:research-content` | internal | ❌ | ✅ Verified |
+| 21 | `write_blog_post` | `module:blog` | internal | ❌ | ✅ Verified |
 
-| Skill | Handler | Scope | Approval | Description |
-|-------|---------|-------|----------|-------------|
-| `research_content` | `edge:research-content` | internal | ❌ | Deep AI topic research — angles, hooks, competitive landscape |
-| `generate_content_proposal` | `edge:generate-content-proposal` | internal | ✅ | Multi-channel content generation (blog, newsletter, LinkedIn, X) |
-| `search_web` | `edge:web-search` | internal | ❌ | Web search (Jina free / Firecrawl paid) |
-| `scrape_url` | `edge:web-scrape` | internal | ❌ | URL scraping (Jina free / Firecrawl paid) |
+### CRM Skills (23 skills)
 
-### CRM & Sales
+| # | Skill | Handler | Scope | Approval | Status |
+|---|-------|---------|-------|----------|--------|
+| 1 | `add_lead` | `module:crm` | both | ❌ | ✅ Verified |
+| 2 | `book_appointment` | `module:booking` | both | ❌ | ✅ Verified |
+| 3 | `browse_products` | `module:products` | external | ❌ | ✅ Verified |
+| 4 | `browse_services` | `module:booking` | external | ❌ | ✅ Verified |
+| 5 | `check_availability` | `module:booking` | external | ❌ | ✅ Verified |
+| 6 | `check_order` | `module:orders` | external | ❌ | ✅ Verified |
+| 7 | `contact_finder` | `edge:contact-finder` | internal | ❌ | ✅ Verified |
+| 8 | `enrich_company` | `edge:enrich-company` | internal | ❌ | ✅ Verified |
+| 9 | `lead_nurture_sequence` | `module:newsletter` | internal | ❌ | ✅ Verified |
+| 10 | `lookup_order` | `module:orders` | both | ❌ | ✅ Verified |
+| 11 | `manage_booking_availability` | `module:booking` | internal | ❌ | ✅ Verified |
+| 12 | `manage_bookings` | `module:booking` | internal | ❌ | ✅ Verified |
+| 13 | `manage_company` | `module:companies` | internal | ❌ | ✅ Verified |
+| 14 | `manage_deal` | `module:deals` | internal | ❌ | ✅ Verified |
+| 15 | `manage_form_submissions` | `module:forms` | internal | ❌ | ✅ Verified |
+| 16 | `manage_inventory` | `module:products` | internal | ❌ | ✅ Verified |
+| 17 | `manage_leads` | `module:crm` | internal | ❌ | ✅ Verified |
+| 18 | `manage_orders` | `module:orders` | internal | ❌ | ✅ Verified |
+| 19 | `prospect_fit_analysis` | `edge:prospect-fit-analysis` | internal | ❌ | ✅ Verified |
+| 20 | `prospect_research` | `edge:prospect-research` | internal | ❌ | ✅ Verified |
+| 21 | `qualify_lead` | `edge:qualify-lead` | internal | ❌ | ✅ Verified |
+| 22 | `sales_profile_setup` | `edge:sales-profile-setup` | internal | ❌ | ✅ Verified |
+| 23 | `manage_site_settings` | `db:site_settings` | internal | ❌ | ✅ Verified |
 
-| Skill | Handler | Scope | Approval | Description |
-|-------|---------|-------|----------|-------------|
-| `add_lead` | `module:crm` | both | ❌ | Add lead to CRM from any source |
-| `qualify_lead` | `edge:qualify-lead` | internal | ❌ | AI lead scoring |
-| `manage_company` | `module:companies` | internal | ❌ | Company CRUD |
-| `enrich_company` | `edge:enrich-company` | internal | ❌ | Domain-based company enrichment |
-| `manage_deal` | `module:deals` | internal | ❌ | Sales pipeline: create, update, move stage |
-| `manage_form_submissions` | `module:forms` | internal | ❌ | Form submission access and stats |
-| `prospect_research` | `edge:prospect-research` | internal | ❌ | Company research + contact discovery |
-| `prospect_fit_analysis` | `edge:prospect-fit-analysis` | internal | ❌ | AI prospect-company fit scoring |
+### Communication Skills (8 skills)
 
-### Communication
+| # | Skill | Handler | Scope | Approval | Status |
+|---|-------|---------|-------|----------|--------|
+| 1 | `execute_newsletter_send` | `edge:newsletter-send` | internal | ✅ | ✅ Verified |
+| 2 | `manage_newsletter_subscribers` | `module:newsletter` | internal | ❌ | ✅ Verified |
+| 3 | `manage_webinar` | `module:webinars` | internal | ❌ | ✅ Verified |
+| 4 | `newsletter_subscribe` | `edge:newsletter-subscribe` | external | ❌ | ✅ Verified |
+| 5 | `register_webinar` | `module:webinars` | external | ❌ | ✅ Verified |
+| 6 | `scan_gmail_inbox` | `edge:gmail-inbox-scan` | internal | ❌ | ✅ Verified |
+| 7 | `send_newsletter` | `module:newsletter` | internal | ✅ | ✅ Verified |
+| 8 | `generate_social_post` | `edge:generate-social-post` | internal | ❌ | ✅ Verified |
 
-| Skill | Handler | Scope | Approval | Description |
-|-------|---------|-------|----------|-------------|
-| `send_newsletter` | `module:newsletter` | internal | ✅ | Create newsletter draft or schedule |
-| `execute_newsletter_send` | `edge:newsletter-send` | internal | ✅ | Send newsletter via Resend |
-| `manage_webinar` | `module:webinars` | internal | ❌ | Webinar CRUD with platform integration |
-| `scan_gmail_inbox` | `edge:gmail-inbox-scan` | internal | ❌ | Scan Gmail for business signals |
+### Automation Skills (9 skills)
 
-### Commerce & Operations
+| # | Skill | Handler | Scope | Approval | Status |
+|---|-------|---------|-------|----------|--------|
+| 1 | `a2a_request` | `a2a:SoundSpace` | internal | ❌ | ✅ Verified |
+| 2 | `create_automation` | `module:automations` | internal | ❌ | ✅ Verified |
+| 3 | `create_objective` | `module:objectives` | internal | ❌ | ✅ Verified |
+| 4 | `manage_automations` | `module:automations` | internal | ❌ | ✅ Verified |
+| 5 | `memory_read` | `builtin:memory_read` | internal | ❌ | ✅ Verified |
+| 6 | `memory_write` | `builtin:memory_write` | internal | ❌ | ✅ Verified |
+| 7 | `process_signal` | `edge:signal-ingest` | internal | ❌ | ✅ Verified |
+| 8 | `remove_duplicate_resumes` | `module:cleanup_duplicates` | internal | ✅ | ⚠️ Disabled |
+| 9 | `update_settings` | `db:site_settings` | internal | ✅ | ✅ Verified |
 
-| Skill | Handler | Scope | Approval | Description |
-|-------|---------|-------|----------|-------------|
-| `manage_product` | `module:products` | internal | ❌ | Product catalog CRUD |
-| `lookup_order` | `module:orders` | both | ❌ | Order lookup by ID or email |
-| `book_appointment` | `module:booking` | both | ❌ | Create booking for customer |
-| `create_objective` | `module:objectives` | internal | ❌ | Create high-level goal |
+### Search & Browser Skills (5 skills)
 
-### Analytics & Learning
+| # | Skill | Handler | Scope | Approval | Status |
+|---|-------|---------|-------|----------|--------|
+| 1 | `browser_fetch` | `edge:browser-fetch` | internal | ❌ | ✅ Verified |
+| 2 | `scrape_url` | `edge:web-scrape` | internal | ❌ | ✅ Verified |
+| 3 | `search_web` | `edge:web-search` | both | ❌ | ✅ Verified |
+| 4 | `web_scrape` | `edge:web-scrape` | both | ❌ | ✅ Verified |
+| 5 | `web_search` | `edge:web-search` | both | ❌ | ✅ Verified |
 
-| Skill | Handler | Scope | Approval | Description |
-|-------|---------|-------|----------|-------------|
-| `analyze_analytics` | `db:page_views` | internal | ❌ | Page view analytics |
-| `seo_audit_page` | `module:analytics` | internal | ❌ | SEO audit for any page/post |
-| `kb_gap_analysis` | `module:analytics` | internal | ❌ | KB coverage gap analysis |
-| `weekly_business_digest` | `edge:business-digest` | internal | ❌ | Cross-module business summary |
-| `learn_from_data` | `edge:flowpilot-learn` | internal | ❌ | Distill platform data into memory |
+### Analytics Skills (8 skills)
 
-### Objective Progress Auto-Tracking
+| # | Skill | Handler | Scope | Approval | Status |
+|---|-------|---------|-------|----------|--------|
+| 1 | `analyze_analytics` | `db:page_views` | internal | ❌ | ✅ Verified |
+| 2 | `analyze_chat_feedback` | `module:analytics` | internal | ❌ | ✅ Verified |
+| 3 | `competitor_monitor` | `edge:competitor-monitor` | internal | ❌ | ✅ Verified |
+| 4 | `competitor_watch` | `edge:firecrawl-scrape` | internal | ❌ | ✅ Verified |
+| 5 | `kb_gap_analysis` | `module:analytics` | internal | ❌ | ✅ Verified |
+| 6 | `learn_from_data` | `edge:flowpilot-learn` | internal | ❌ | ✅ Verified |
+| 7 | `seo_audit_page` | `module:analytics` | internal | ❌ | ✅ Verified |
+| 8 | `weekly_business_digest` | `edge:business-digest` | internal | ❌ | ✅ Verified |
 
-Every skill execution is automatically matched against active objectives via `SKILL_OBJECTIVE_MAP`. When a skill like `write_blog_post` succeeds, objectives containing keywords like "blog" or "content" automatically get their progress incremented — creating a closed-loop system where actions visibly advance business goals.
+### Built-in Tools (32 tools in agent-reason — NOT in agent_skills table)
 
-### 5.6 Workflow DAGs
+These are hardcoded in `agent-reason.ts` and not stored in the database:
 
-Multi-step workflow chains with conditional branching and data passing between steps:
-
-```json
-{
-  "name": "Content Pipeline",
-  "trigger_type": "manual",
-  "steps": [
-    { "id": "s1", "skill_name": "research_content", "args": { "topic": "{{input.topic}}" } },
-    { "id": "s2", "skill_name": "write_blog_post", "depends_on": ["s1"], "args": { "research": "{{s1.output}}" } },
-    { "id": "s3", "skill_name": "send_newsletter", "depends_on": ["s2"], "condition": "s2.output.status === 'published'" }
-  ]
-}
-```
-
-**Built-in tools**: `workflow_create`, `workflow_execute`, `workflow_list`
-**Trigger types**: manual, cron, event, signal
-**Features**: Step dependencies, conditional execution, data passing between steps, error handling per step
-
-### 5.7 Agent-to-Agent (A2A) Delegation
-
-Specialist sub-agents that FlowAgent can delegate tasks to:
-
-| Agent | Specialization |
-|-------|---------------|
-| `seo` | Technical SEO, keyword analysis, meta optimization |
-| `content` | Writing, editing, tone consistency |
-| `sales` | Lead qualification, deal analysis, follow-up |
-| `analytics` | Data analysis, trend identification, reporting |
-| `email` | Newsletter strategy, subject lines, segmentation |
-
-**Built-in tool**: `delegate_task` — routes to specialist with context
-**A2A Peers**: External agents registered in `a2a_peers` table with token-authenticated communication
-**Activity tracking**: All delegations logged in `a2a_activity`
-
-### 5.8 Skill Packs
-
-Bundled capability sets that can be installed as a group:
-
-| Pack | Skills Included |
-|------|----------------|
-| **E-Commerce** | manage_product, lookup_order, inventory alerts |
-| **Content Marketing** | research_content, write_blog_post, generate_content_proposal, send_newsletter |
-| **CRM Nurture** | add_lead, qualify_lead, manage_deal, enrich_company |
-
-**Built-in tools**: `skill_pack_list`, `skill_pack_install`
-**Storage**: `agent_skill_packs` table with version tracking
+| Group | Tool | Purpose |
+|-------|------|---------|
+| **Memory** | `memory_write` | Save key-value to persistent memory |
+| **Memory** | `memory_read` | Search memory by key/category |
+| **Objectives** | `objective_update_progress` | Update objective progress JSON |
+| **Objectives** | `objective_complete` | Mark objective as completed |
+| **Self-Mod** | `skill_create` | Register new skill at runtime |
+| **Self-Mod** | `skill_update` | Modify existing skill definition |
+| **Self-Mod** | `skill_list` | List all registered skills |
+| **Self-Mod** | `skill_disable` | Disable a skill |
+| **Self-Mod** | `skill_instruct` | Write instructions to a skill |
+| **Reflect** | `reflect` | 7-day performance analysis |
+| **Soul** | `soul_update` | Evolve personality/values/tone |
+| **Planning** | `decompose_objective` | AI plan decomposition (3-7 steps) |
+| **Planning** | `advance_plan` | Execute next plan steps |
+| **Planning** | `propose_objective` | Proactively create objectives |
+| **Workflows** | `workflow_create` | Define multi-step DAG workflow |
+| **Workflows** | `workflow_execute` | Run a workflow with input |
+| **Workflows** | `workflow_list` | List all workflows |
+| **Delegation** | `delegate_task` | Route to specialist sub-agent |
+| **Skill Packs** | `skill_pack_list` | List available skill packs |
+| **Skill Packs** | `skill_pack_install` | Install a pack of skills |
+| **Automations** | `execute_automation` | Trigger an automation manually |
 
 ---
 
-## 6. Approval Gating & Human-in-the-Loop
+## 6. Autonomy Schedule (Admin-Configurable)
+
+Five autonomous cron jobs are registered during bootstrap via `register_flowpilot_cron`:
+
+| Job | Default Schedule | Configurable | Purpose |
+|-----|-----------------|--------------|---------|
+| `flowpilot-heartbeat` | Every 12h | ✅ Frequency (6h/12h/24h) | Objective management, self-healing, reflection |
+| `flowpilot-daily-briefing` | 07:00 local | ✅ Hour + timezone | Morning business summary |
+| `flowpilot-learn` | 03:00 local | ✅ Hour + timezone | Nightly feedback distillation |
+| `automation-dispatcher` | Every minute | ❌ Fixed | Execute due cron automations |
+| `publish-scheduled-pages` | Every minute | ❌ Fixed | Publish scheduled content |
+
+**Admin UI**: Site Settings → Autonomy tab. Local timezone selection with automatic UTC conversion.
+
+---
+
+## 7. Database Triggers (Event-Driven)
+
+Active Postgres triggers that fire events + signals via `pg_net`:
+
+| Trigger | Table | Events Emitted |
+|---------|-------|---------------|
+| `on_lead_created` | `leads` | `lead_created` |
+| `on_lead_score_changed` | `leads` | `lead_score_changed` |
+| `on_blog_published` | `blog_posts` | `blog_published` |
+| `on_booking_created` | `bookings` | `booking_created` |
+| `on_form_submitted` | `form_submissions` | `form_submitted` |
+| `on_order_created` | `orders` | `order_created` |
+
+These triggers enable the signal automation layer — e.g., "when a lead is created, auto-qualify."
+
+---
+
+## 8. Workflow DAGs
+
+Multi-step workflow chains stored in `agent_workflows` table (3 seed workflows):
+
+| Workflow | Trigger | Steps |
+|----------|---------|-------|
+| Content Publishing Pipeline | manual | research → write → publish |
+| Lead Nurture Flow | signal | qualify → enrich → create deal |
+| Weekly Business Digest | cron | analyze → digest → brief |
+
+**Built-in tools**: `workflow_create`, `workflow_execute`, `workflow_list`
+**Features**: Step dependencies (`depends_on`), conditional execution, data passing between steps (`{{s1.output}}`), error handling per step
+
+---
+
+## 9. Agent-to-Agent (A2A) Delegation
+
+| Mechanism | Description |
+|-----------|-------------|
+| **Built-in sub-agents** | `delegate_task` routes to seo/content/sales/analytics/email specialists |
+| **External peers** | `a2a_peers` table with token-authenticated communication |
+| **A2A skill** | `a2a_request` handler (`a2a:SoundSpace`) for external agent calls |
+| **Activity tracking** | All delegations logged in `a2a_activity` |
+
+---
+
+## 10. Skill Packs
+
+Bundled capability sets in `agent_skill_packs` table (3 seed packs, not yet installed):
+
+| Pack | Status | Skills Included |
+|------|--------|----------------|
+| **E-Commerce Pack** | ⬜ Not installed | manage_product, lookup_order, inventory alerts |
+| **Content Marketing Pack** | ⬜ Not installed | research_content, write_blog_post, generate_content_proposal, send_newsletter |
+| **CRM Nurture Pack** | ⬜ Not installed | add_lead, qualify_lead, manage_deal, enrich_company |
+
+**Tools**: `skill_pack_list`, `skill_pack_install`
+
+---
+
+## 11. Approval Gating & Human-in-the-Loop
 
 1. Agent calls skill → `agent-execute` intercepts
 2. If `requires_approval`: activity logged with status `pending_approval`, `202` returned
@@ -480,23 +579,17 @@ Bundled capability sets that can be installed as a group:
 4. Admin approves → original args re-executed automatically
 5. Result returned to conversation (if still active)
 
-**Activity logging** — every execution produces an `agent_activity` row:
-
-```
-agent         → 'flowpilot' | 'chat'
-skill_id      → FK to agent_skills
-skill_name    → denormalized for fast display
-input         → JSONB (arguments passed)
-output        → JSONB (result returned)
-status        → success | failed | pending_approval | approved | rejected
-duration_ms   → execution time
-conversation_id → links to chat session
-error_message → if failed
-```
+**Skills requiring approval** (verified from DB):
+- `generate_content_proposal` — Multi-channel content generation
+- `generate_site_from_identity` — Generate entire site from business identity
+- `execute_newsletter_send` — Send newsletter to subscribers
+- `send_newsletter` — Draft/schedule newsletter
+- `remove_duplicate_resumes` — Destructive cleanup
+- `update_settings` — Site settings modification
 
 ---
 
-## 7. Content as Knowledge — The Public Chat
+## 12. Content as Knowledge — The Public Chat
 
 ### Knowledge Base Construction
 
@@ -518,138 +611,257 @@ error_message → if failed
 
 ---
 
-## 8. Key Files Reference
+## 13. Edge Functions Reference (76 total)
 
-### Edge Functions (Backend)
+### Agent Core
+| Function | Purpose |
+|----------|---------|
+| `agent-reason` | **Shared module** — NOT a serve() handler. AI config, soul, memory, 32 built-in tools, reasoning loop. |
+| `agent-execute` | Unified skill executor — handler routing, scope validation, approval gating, activity logging |
+| `agent-operate` | Interactive SSE streaming wrapper around agent-reason |
 
-| File | Purpose |
-|------|---------|
-| `agent-reason/index.ts` | **Core module** — AI config, soul/identity, memory, objectives, 26 built-in tools, self-healing, plan decomposition, priority scoring, reasoning loop. NOT a serve() handler. |
-| `agent-execute/index.ts` | Unified skill executor — handler routing (`edge:`, `module:`, `db:`, `webhook:`), scope validation, approval gating, activity logging, auto-module activation, objective progress tracking |
-| `agent-operate/index.ts` | Interactive SSE streaming wrapper around agent-reason. Token-by-token output with tool iteration status events. |
-| `flowpilot-heartbeat/index.ts` | 7-step autonomous loop — self-heal → propose → plan → advance → automate → reflect → remember |
-| `flowpilot-learn/index.ts` | Daily feedback distillation (03:00 UTC) — page views, chat feedback, lead conversion → memory |
-| `chat-completion/index.ts` | Public chat — knowledge base construction, skill loading, AI provider routing |
-| `signal-ingest/index.ts` | Token-authenticated external signal endpoint for webhooks/extensions |
-| `automation-dispatcher/index.ts` | Cron automation executor (pg_cron → agent-execute) |
-| `signal-dispatcher/index.ts` | Signal condition evaluator (dynamic conditions → agent-execute) |
-| `setup-flowpilot/index.ts` | Bootstrap — seeds skills, soul, identity for new instances |
+### Autonomous Loop
+| Function | Purpose |
+|----------|---------|
+| `flowpilot-heartbeat` | 7-step autonomous loop (12h configurable) |
+| `flowpilot-learn` | Daily feedback distillation |
+| `flowpilot-briefing` | Morning business briefing |
+| `automation-dispatcher` | Cron automation executor |
+| `signal-dispatcher` | Signal condition evaluator |
+| `signal-ingest` | Token-authenticated external signal endpoint |
+| `update-autonomy-cron` | Admin schedule configuration |
+| `setup-flowpilot` | Bootstrap — seeds skills, soul, identity |
 
-### Frontend
+### Content & CMS
+| Function | Purpose |
+|----------|---------|
+| `chat-completion` | Public chat with knowledge base + skills |
+| `copilot-action` | Page migration, block creation |
+| `get-page` | Page serving with caching |
+| `render-page` | Server-side page rendering |
+| `publish-scheduled-pages` | Scheduled content publisher |
+| `generate-text` | AI text generation |
+| `research-content` | Deep topic research |
+| `generate-content-proposal` | Multi-channel content pipeline |
+| `generate-social-post` | Social media post generation |
+| `generate-site-from-identity` | Full site generation from business identity |
+| `landing-page-compose` | AI landing page composition |
+| `blog-rss` | RSS feed generator |
+| `sitemap-xml` | Sitemap generator |
+| `llms-txt` | LLM-optimized text export |
+| `content-api` | REST/GraphQL/Markdown Content API |
 
-| File | Purpose |
-|------|---------|
-| `src/pages/CopilotPage.tsx` | FlowAgent UI — Operate/Migrate mode switcher |
-| `src/components/copilot/OperateChat.tsx` | Chat interface with quick actions and skill badges |
-| `src/components/copilot/ActivityFeed.tsx` | Real-time activity sidebar with approve/reject |
-| `src/components/admin/skills/SelfHealingAlert.tsx` | Auto-disabled skill notifications with re-enable |
-| `src/pages/admin/SkillHubPage.tsx` | Skill registry admin — CRUD, activity log, objectives |
-| `src/hooks/useAgentOperate.ts` | React hook — messages, skills, activity, approval flow |
+### CRM & Sales
+| Function | Purpose |
+|----------|---------|
+| `qualify-lead` | AI lead scoring + summary |
+| `enrich-company` | Domain-based company enrichment |
+| `contact-finder` | Contact discovery (Hunter.io) |
+| `prospect-research` | Full company research pipeline |
+| `prospect-fit-analysis` | Fit scoring + intro letter |
+| `sales-profile-setup` | Sales profile configuration |
+| `enrich-company-profile` | Business identity enrichment |
+| `competitor-monitor` | Competitor tracking |
 
-### Database Tables
+### Communication
+| Function | Purpose |
+|----------|---------|
+| `newsletter-send` | Send newsletter via Resend |
+| `newsletter-subscribe` | Public subscription endpoint |
+| `newsletter-track` | Open/click tracking |
+| `newsletter-link` | Link tracking redirects |
+| `newsletter-export` | GDPR data export |
+| `newsletter-gdpr` | GDPR compliance tools |
+| `send-contact-email` | Contact form emails |
+| `send-booking-confirmation` | Booking confirmation emails |
+| `send-order-confirmation` | Order confirmation emails |
+| `gmail-inbox-scan` | Gmail business signal scan |
+| `gmail-oauth-callback` | Gmail OAuth handler |
+| `support-router` | Live support routing |
+
+### Commerce
+| Function | Purpose |
+|----------|---------|
+| `create-checkout` | Stripe checkout session |
+| `stripe-webhook` | Stripe event handler |
+
+### Search & Browser
+| Function | Purpose |
+|----------|---------|
+| `web-search` | Web search (Jina free / Firecrawl paid) |
+| `web-scrape` | URL scraping |
+| `browser-fetch` | Chrome Extension relay for walled gardens |
+| `scrape-url` | URL content extraction |
+| `unsplash-search` | Stock photo search |
+| `firecrawl-map` | Site mapping |
+| `firecrawl-search` | Full-text search |
+
+### Analytics & Intelligence
+| Function | Purpose |
+|----------|---------|
+| `business-digest` | Weekly cross-module business summary |
+| `track-page-view` | Page view tracking |
+| `analyze-brand` | Brand analysis |
+
+### System
+| Function | Purpose |
+|----------|---------|
+| `setup-database` | Database bootstrap |
+| `check-secrets` | Integration status checker |
+| `send-webhook` | Outbound webhooks + event dispatch |
+| `invalidate-cache` | Page cache invalidation |
+| `process-image` | Image optimization (WebP) |
+| `fetch-image` | Remote image fetching |
+| `test-ai-connection` | AI provider connectivity test |
+| `create-user` | User creation |
+| `parse-resume` | Resume PDF parsing |
+| `resume-match` | AI consultant matching |
+| `extract-pdf-text` | PDF text extraction |
+| `update-kb-feedback` | KB article feedback tracking |
+| `run-autonomy-tests` | Autonomy conformance suite |
+| `a2a-ingest` | A2A peer communication handler |
+
+### Growth
+| Function | Purpose |
+|----------|---------|
+| `ad-campaign-create` | Ad campaign creation |
+| `ad-creative-generate` | AI ad creative generation |
+| `ad-optimize` | Campaign optimization |
+| `ad-performance-check` | Performance monitoring |
+| `migrate-page` | Page migration from URL |
+
+---
+
+## 14. Frontend Admin Pages (53 pages)
+
+| Page | Route | Module |
+|------|-------|--------|
+| AdminDashboard | `/admin` | Core |
+| PagesListPage | `/admin/pages` | Pages |
+| PageEditorPage | `/admin/pages/:id` | Pages |
+| NewPagePage | `/admin/pages/new` | Pages |
+| BlogPostsPage | `/admin/blog` | Blog |
+| BlogPostEditorPage | `/admin/blog/:id` | Blog |
+| BlogCategoriesPage | `/admin/blog/categories` | Blog |
+| BlogTagsPage | `/admin/blog/tags` | Blog |
+| BlogSettingsPage | `/admin/blog/settings` | Blog |
+| KnowledgeBasePage | `/admin/knowledge-base` | KB |
+| KbArticleEditorPage | `/admin/knowledge-base/:id` | KB |
+| NewsletterPage | `/admin/newsletter` | Newsletter |
+| LeadsPage | `/admin/contacts` | CRM |
+| LeadDetailPage | `/admin/contacts/:id` | CRM |
+| CompaniesPage | `/admin/companies` | Companies |
+| CompanyDetailPage | `/admin/companies/:id` | Companies |
+| DealsPage | `/admin/deals` | Deals |
+| DealDetailPage | `/admin/deals/:id` | Deals |
+| ProductsPage | `/admin/products` | Products |
+| OrdersPage | `/admin/orders` | Orders |
+| BookingsPage | `/admin/bookings` | Bookings |
+| BookingServicesPage | `/admin/bookings/services` | Bookings |
+| BookingAvailabilityPage | `/admin/bookings/availability` | Bookings |
+| FormSubmissionsPage | `/admin/forms` | Forms |
+| MediaLibraryPage | `/admin/media` | Media |
+| GlobalBlocksPage | `/admin/global-blocks` | Global Elements |
+| ConsultantProfilesPage | `/admin/resume` | Resume |
+| WebinarsPage | `/admin/webinars` | Webinars |
+| ContentApiPage | `/admin/content-api` | Content Hub |
+| SalesIntelligencePage | `/admin/sales-intelligence` | Sales Intel |
+| CompanyInsightsPage | `/admin/company-insights` | Business Identity |
+| AnalyticsDashboardPage | `/admin/analytics` | Analytics |
+| GrowthDashboardPage | `/admin/growth` | Growth |
+| ContentCampaignsPage | `/admin/content-campaigns` | Growth |
+| CopilotPage | `/admin/copilot` | FlowAgent |
+| SkillHubPage | `/admin/skills` | FlowAgent |
+| FederationPage | `/admin/federation` | A2A |
+| LiveSupportPage | `/admin/live-support` | Support |
+| ChatSettingsPage | `/admin/chat-settings` | Chat |
+| SiteSettingsPage | `/admin/settings` | System |
+| IntegrationsStatusPage | `/admin/integrations` | System |
+| ModulesPage | `/admin/modules` | System |
+| UsersPage | `/admin/users` | System |
+| WebhooksPage | `/admin/webhooks` | System |
+| ProfilePage | `/admin/profile` | System |
+| BrandingSettingsPage | `/admin/branding` | System |
+| DeveloperToolsPage | `/admin/developer-tools` | System |
+| TemplateGalleryPage | `/admin/templates` | System |
+| TemplateExportPage | `/admin/template-export` | System |
+| TemplateLivePreviewPage | `/admin/template-preview` | System |
+| QuickStartPage | `/admin/quick-start` | Onboarding |
+| TrashPage | `/admin/trash` | System |
+| AutonomyTestSuitePage | `/admin/autonomy-tests` | Testing |
+
+---
+
+## 15. Database Tables (Agent Layer)
 
 | Table | Purpose |
 |-------|---------|
-| `agent_skills` | Skill registry (name, handler, scope, instructions, tool_definition) |
-| `agent_memory` | Persistent K-V memory (incl. soul & identity) |
-| `agent_objectives` | Goal tracking with plan decomposition, priority scoring, progress |
-| `agent_activity` | Full execution audit trail |
+| `agent_skills` | Skill registry — 73 skills (name, handler, scope, instructions, tool_definition) |
+| `agent_memory` | Persistent K-V memory incl. soul & identity (pgvector-ready) |
+| `agent_objectives` | Goal tracking with plan decomposition, priority scoring, locking |
+| `agent_activity` | Full execution audit trail with I/O, timing, status |
 | `agent_automations` | Cron/event/signal trigger definitions with run tracking |
 | `agent_objective_activities` | Join table linking objectives to activities |
-
-### Types
-
-| File | Purpose |
-|------|---------|
-| `src/types/agent.ts` | TypeScript types for skills, memory, objectives, activity, automations |
-
----
-
-## 9. OpenClaw Architecture Mapping
-
-> **⚠️ Full architecture law documented in [`docs/OPENCLAW-LAW.md`](./OPENCLAW-LAW.md).** That document is the canonical reference for all OpenClaw-aligned development decisions, gap analysis, and mandatory laws.
-
-| OpenClaw Concept | FlowAgent Implementation | Location |
-|------------------|--------------------------|----------|
-| **Skill Registry** | `agent_skills` table — DB-driven, hot-reloadable | PostgreSQL |
-| **Tool Definition** | OpenAI function-calling JSON format | JSONB |
-| **Tool Router** | `agent-execute` — unified dispatcher | Edge Function |
-| **Handler Routing** | `edge:`, `module:`, `db:`, `webhook:` prefixes | String convention |
-| **Scope Model** | `internal`, `external`, `both` enum | DB enum |
-| **Approval Gate** | `requires_approval` boolean → pending_approval status | DB flag |
-| **Memory** | `agent_memory` — persistent K-V with categories | PostgreSQL |
-| **Soul / Identity** | `agent_memory` entries (keys: `soul`, `identity`) | JSONB |
-| **Skill Knowledge** | `instructions` column on `agent_skills` | Text |
-| **Objectives** | `agent_objectives` with plan decomposition & priority scoring | PostgreSQL |
-| **Plan Decomposition** | `decompose_objective` → AI-generated 3-7 step plans | agent-reason |
-| **Plan Execution** | `advance_plan` → chain up to 4 steps per call | agent-reason |
-| **Proactive Goals** | `propose_objective` → agent creates its own objectives | agent-reason |
-| **Self-Healing** | `runSelfHealing` → auto-disable after 3+ failures | agent-reason |
-| **Activity Log** | `agent_activity` — full I/O audit trail | PostgreSQL |
-| **Automations** | `agent_automations` — cron/event/signal triggers | PostgreSQL |
-| **Signal Ingest** | `signal-ingest` — external webhook/extension signals | Edge Function |
-| **Self-Modification** | `soul_update`, `skill_instruct`, `skill_create/update/disable`, `reflect` | Built-in tools |
-| **Workflow DAGs** | `workflow_create`, `workflow_execute`, `workflow_list` — multi-step chains with conditions | Built-in tools |
-| **A2A Delegation** | `delegate_task` — seo/content/sales/analytics/email specialists | Built-in tools |
-| **Skill Packs** | `skill_pack_list`, `skill_pack_install` — bundle install | Built-in tools |
-| **Heartbeat** | `flowpilot-heartbeat` — 8-step autonomous loop | Edge Function |
-| **Learning Loop** | `flowpilot-learn` — daily feedback → memory distillation | Edge Function |
-| **Multi-Tool Loop** | Up to 8 iterations per heartbeat, 6 per interactive session | Runtime |
+| `agent_workflows` | Workflow DAG definitions (3 seed workflows) |
+| `agent_skill_packs` | Skill bundle definitions (3 seed packs) |
+| `a2a_peers` | External agent peer registry |
+| `a2a_activity` | A2A communication audit trail |
+| `flowpilot_briefings` | Morning briefing archive |
+| `audit_logs` | General system audit trail |
 
 ---
 
-## 10. FlowWink Replaces Four Products
+## 16. OpenClaw Architecture Compliance
 
-| Capability | CMS | Chatbot | Marketing | CRM | **FlowWink** |
-|-----------|-----|---------|-----------|-----|-------------|
-| Visual Page Builder | ✅ | ❌ | ❌ | ❌ | ✅ |
-| Autonomous AI Agent | ❌ | ❌ | ❌ | ❌ | ✅ |
-| Self-Healing Skills | ❌ | ❌ | ❌ | ❌ | ✅ |
-| Plan Decomposition | ❌ | ❌ | ❌ | ❌ | ✅ |
-| Proactive Goal Setting | ❌ | ❌ | ❌ | ❌ | ✅ |
-| Persistent Memory | ❌ | ❌ | ❌ | ❌ | ✅ |
-| Self-Evolving Skills | ❌ | ❌ | ❌ | ❌ | ✅ |
-| Lead CRM & Scoring | ❌ | ❌ | ✅ | ✅ | ✅ |
-| AI Content Generation | ❌ | ✅ | ❌ | ❌ | ✅ |
-| Email Campaigns | ❌ | ❌ | ✅ | ❌ | ✅ |
-| Booking System | ❌ | ❌ | ❌ | ❌ | ✅ |
-| E-commerce | ✅ | ❌ | ❌ | ❌ | ✅ |
-| Knowledge Base | ❌ | ✅ | ❌ | ❌ | ✅ |
-| Signal Ingest API | ❌ | ❌ | ❌ | ❌ | ✅ |
-| Workflow DAGs | ❌ | ❌ | ❌ | ❌ | ✅ |
-| Multi-Agent Delegation (A2A) | ❌ | ❌ | ❌ | ❌ | ✅ |
-| Self-Hostable | Some | ❌ | ❌ | ❌ | ✅ |
-| Private LLM | ❌ | ❌ | ❌ | ❌ | ✅ |
-| Open Source | Some | ❌ | ❌ | ❌ | ✅ |
+> **⚠️ Full architecture law documented in [`docs/OPENCLAW-LAW.md`](./OPENCLAW-LAW.md).**
+
+| OpenClaw Concept | FlowAgent Implementation | Status |
+|------------------|--------------------------|--------|
+| Skill Registry | `agent_skills` table — 73 DB-driven, hot-reloadable | ✅ |
+| Tool Definition | OpenAI function-calling JSON format | ✅ |
+| Tool Router | `agent-execute` — unified dispatcher | ✅ |
+| Handler Routing | `edge:`, `module:`, `db:`, `webhook:`, `a2a:` | ✅ |
+| Scope Model | `internal`, `external`, `both` enum | ✅ |
+| Approval Gate | `requires_approval` → pending_approval | ✅ |
+| Memory | `agent_memory` — persistent K-V with categories | ✅ |
+| Soul / Identity | `agent_memory` entries (soul + identity keys) | ✅ |
+| Skill Knowledge | `instructions` column on `agent_skills` | ✅ |
+| Objectives | `agent_objectives` with plan decomposition | ✅ |
+| Plan Decomposition | `decompose_objective` → 3-7 step plans | ✅ |
+| Plan Execution | `advance_plan` → chain up to 4 steps | ✅ |
+| Proactive Goals | `propose_objective` → self-created objectives | ✅ |
+| Self-Healing | `runSelfHealing` → auto-disable after 3+ failures | ✅ |
+| Activity Log | `agent_activity` — full I/O audit trail | ✅ |
+| Automations | `agent_automations` — cron/event/signal | ✅ |
+| Signal Ingest | `signal-ingest` — external triggers | ✅ |
+| Self-Modification | soul_update, skill_instruct, skill_create/update/disable | ✅ |
+| Workflow DAGs | `workflow_create/execute/list` — multi-step chains | ✅ |
+| A2A Delegation | `delegate_task` + `a2a_peers` table | ✅ |
+| Skill Packs | `skill_pack_list/install` — bundle install | ✅ |
+| Heartbeat | `flowpilot-heartbeat` — 7-step loop | ✅ |
+| Learning Loop | `flowpilot-learn` — daily distillation | ✅ |
+| Multi-Tool Loop | Up to 8 iterations (heartbeat), 6 (interactive) | ✅ |
+| Autonomy Schedule | Admin-configurable timezone + frequency | ✅ |
+| DB Triggers | 6 event triggers for reactive automations | ✅ |
+| Auto-Module Activation | Skills auto-enable modules they need | ✅ |
 
 ---
 
-## 11. Maturity Roadmap
+## 17. Known Gaps & Future Work
 
-| Capability | Status |
-|-----------|--------|
-| Skill Engine (37+ skills) | ✅ 100% |
-| Persistent Memory (pgvector) | ✅ 100% |
-| Objectives & Plan Decomposition | ✅ 100% |
-| Priority Scoring | ✅ 100% |
-| Self-Healing | ✅ 100% |
-| Prompt Compiler | ✅ 100% |
-| Context Pruning | ✅ 100% |
-| CMS Content Autonomy (pages, blocks, KB, global) | ✅ 100% |
-| CRM Autonomy (leads, companies, deals, forms) | ✅ 100% |
-| Commerce Autonomy (products, orders, bookings) | ✅ 100% |
-| Workflow DAGs (multi-step chains, conditions, branching) | ✅ 100% |
-| A2A Delegation (seo/content/sales/analytics/email agents) | ✅ 100% |
-| Skill Packs (E-Commerce, Content Marketing, CRM Nurture) | ✅ 100% |
-| Communication (newsletter, webinars, gmail) | ✅ 95% |
-| Signal Automations | ✅ 95% |
-| Signal Ingest (External) | ✅ 90% |
-| Self-Evolution (soul, skill_instruct, propose_objective) | ✅ 90% |
-| Proactive Goal Setting | ✅ 90% |
-| Provider Routing (free-first) | ✅ 90% |
+| Area | Gap | Priority |
+|------|-----|----------|
+| **Duplicate search skills** | `search_web` + `web_search` and `scrape_url` + `web_scrape` are duplicates | 🟡 Low |
+| **Skill Packs** | 3 packs seeded but none installed — no auto-install on template setup | 🟡 Medium |
+| **Workflow execution** | DAG workflows exist in DB but no cron/event trigger wiring yet | 🟡 Medium |
+| **A2A communication** | Single peer (SoundSpace) registered; no real external agents connected | 🟡 Low |
+| **Briefing delivery** | Briefings stored in DB but no email delivery to admin | 🟡 Medium |
+| **pgvector embeddings** | `embedding` column exists on `agent_memory` but not populated | 🟡 Medium |
+| **Token budget enforcement** | Token tracking exists but no hard budget limits per day/month | 🟢 Low |
+| **Growth module** | Ad campaign edge functions exist but no full end-to-end flow | 🟡 Medium |
 
 ---
 
 *Stop managing. Start directing. — FlowAgent operates your entire digital presence so you can focus on what matters.*
 
-*This document is the definitive reference for the FlowAgent agentic framework. Update it when new skills, handlers, or architectural changes are introduced.*
+*This document is the definitive, DB-verified reference for the FlowAgent agentic framework. Update it when new skills, handlers, or architectural changes are introduced.*
