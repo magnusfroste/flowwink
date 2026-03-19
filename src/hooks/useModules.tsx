@@ -264,6 +264,16 @@ export const defaultModulesSettings: ModulesSettings = {
     requiredIntegrations: ['meta_ads'],
     optionalIntegrations: ['openai', 'gemini'],
   },
+  companyInsights: {
+    enabled: true,
+    name: 'Company Insights',
+    description: 'Unified business identity, financials, and market positioning — feeds Sales Intelligence, Chat, and SEO',
+    icon: 'Building2',
+    category: 'insights',
+    autonomy: 'agent-capable',
+    adminUI: true,
+    optionalIntegrations: ['firecrawl'],
+  },
 };
 
 // Map sidebar items to module IDs
