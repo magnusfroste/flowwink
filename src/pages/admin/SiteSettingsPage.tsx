@@ -288,7 +288,25 @@ export default function SiteSettingsPage() {
   }, [aeoSettings]);
 
   useEffect(() => {
-    if (systemAiSettings) setSystemAiData(systemAiSettings);
+    if (systemAiSettings) {
+      // Migrate legacy model values to 4.1 family
+      const OPENAI_MIGRATION: Record<string, string> = {
+        'gpt-4o': 'gpt-4.1', 'gpt-4o-mini': 'gpt-4.1-mini', 'gpt-3.5-turbo': 'gpt-4.1-nano',
+      };
+      const GEMINI_MIGRATION: Record<string, string> = {
+        'gemini-1.5-pro': 'gemini-2.5-pro', 'gemini-1.5-flash': 'gemini-2.5-flash',
+      };
+      const migrateOpenai = (v?: string) => (v && OPENAI_MIGRATION[v]) || v || 'gpt-4.1-mini';
+      const migrateGemini = (v?: string) => (v && GEMINI_MIGRATION[v]) || v || 'gemini-2.5-flash';
+
+      setSystemAiData({
+        ...systemAiSettings,
+        openaiModel: migrateOpenai(systemAiSettings.openaiModel) as any,
+        openaiReasoningModel: migrateOpenai(systemAiSettings.openaiReasoningModel) || 'gpt-4.1' as any,
+        geminiModel: migrateGemini(systemAiSettings.geminiModel) as any,
+        geminiReasoningModel: migrateGemini(systemAiSettings.geminiReasoningModel) || 'gemini-2.5-pro' as any,
+      });
+    }
   }, [systemAiSettings]);
 
   const isLoading = seoLoading || performanceLoading || scriptsLoading || cookieLoading || maintenanceLoading || generalLoading || aeoLoading || systemAiLoading;
