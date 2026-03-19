@@ -1948,7 +1948,7 @@ Deno.serve(async (req) => {
       const anonKey = Deno.env.get('SUPABASE_ANON_KEY') || Deno.env.get('SUPABASE_PUBLISHABLE_KEY') || '';
       
       const { data: cronResult, error: cronError } = await supabase.rpc('register_flowpilot_cron', {
-        p_supabase_url: supabaseUrl,
+        p_supabase_url: url,
         p_anon_key: anonKey,
       });
 
