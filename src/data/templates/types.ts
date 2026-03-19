@@ -144,6 +144,31 @@ export interface StarterTemplate {
       tone?: string;
       values?: string[];
     };
+    /** Starter automations seeded on install */
+    automations?: Array<{
+      name: string;
+      description?: string;
+      trigger_type: 'cron' | 'event' | 'signal' | 'manual';
+      trigger_config?: Record<string, unknown>;
+      skill_name: string;
+      skill_arguments?: Record<string, unknown>;
+      enabled?: boolean;
+    }>;
+    /** Starter workflows seeded on install */
+    workflows?: Array<{
+      name: string;
+      description?: string;
+      steps: Array<{
+        id: string;
+        skill_name: string;
+        skill_args?: Record<string, unknown>;
+        condition?: string;
+        on_failure?: string;
+      }>;
+      trigger_type?: 'manual' | 'cron' | 'event' | 'signal';
+      trigger_config?: Record<string, unknown>;
+      enabled?: boolean;
+    }>;
   };
   
   // General settings

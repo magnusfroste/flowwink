@@ -1962,6 +1962,41 @@ Deno.serve(async (req) => {
       console.warn('[setup-flowpilot] Cron registration failed (non-fatal):', cronErr);
     }
 
+    // 7. Seed starter automations from template
+    let automationsSeeded = 0;
+    if (template_flowpilot?.automations?.length) {
+      for (const auto of template_flowpilot.automations) {
+        await supabase.from('agent_automations').delete().eq('name', auto.name);
+        const { error } = await supabase.from('agent_automations').insert({
+          name: auto.name,
+          description: auto.description || null,
+          trigger_type: auto.trigger_type,
+          trigger_config: auto.trigger_config || {},
+          skill_name: auto.skill_name,
+          skill_arguments: auto.skill_arguments || {},
+          enabled: auto.enabled !== false,
+        });
+        if (!error) automationsSeeded++;
+      }
+    }
+
+    // 8. Seed starter workflows from template
+    let workflowsSeeded = 0;
+    if (template_flowpilot?.workflows?.length) {
+      for (const wf of template_flowpilot.workflows) {
+        await supabase.from('agent_workflows').upsert({
+          name: wf.name,
+          description: wf.description || null,
+          steps: wf.steps,
+          trigger_type: wf.trigger_type || 'manual',
+          trigger_config: wf.trigger_config || {},
+          enabled: wf.enabled !== false,
+        }, { onConflict: 'name' });
+        workflowsSeeded++;
+      }
+    }
+
+    console.log(`[setup-flowpilot] Seeded ${automationsSeeded} automations, ${workflowsSeeded} workflows`);
     console.log('[setup-flowpilot] Bootstrap complete!');
 
     return new Response(
