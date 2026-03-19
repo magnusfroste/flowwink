@@ -149,3 +149,75 @@ verify_jwt = false
 
 [functions.flowpilot-learn]
 verify_jwt = false
+
+[functions.a2a-ingest]
+verify_jwt = false
+
+[functions.ad-campaign-create]
+verify_jwt = false
+
+[functions.ad-creative-generate]
+verify_jwt = false
+
+[functions.ad-optimize]
+verify_jwt = false
+
+[functions.ad-performance-check]
+verify_jwt = false
+
+[functions.automation-dispatcher]
+verify_jwt = false
+
+[functions.browser-fetch]
+verify_jwt = false
+
+[functions.business-digest]
+verify_jwt = false
+
+[functions.competitor-monitor]
+verify_jwt = false
+
+[functions.contact-finder]
+verify_jwt = false
+
+[functions.extract-pdf-text]
+verify_jwt = false
+
+[functions.flowpilot-briefing]
+verify_jwt = false
+
+[functions.generate-social-post]
+verify_jwt = false
+
+[functions.landing-page-compose]
+verify_jwt = false
+
+[functions.parse-resume]
+verify_jwt = false
+
+[functions.resume-match]
+verify_jwt = false
+
+[functions.run-autonomy-tests]
+verify_jwt = false
+
+[functions.sales-profile-setup]
+verify_jwt = false
+
+[functions.scrape-url]
+verify_jwt = false
+
+[functions.send-contact-email]
+verify_jwt = false
+
+[functions.signal-dispatcher]
+verify_jwt = false
+
+[functions.signal-ingest]
+verify_jwt = false
+
+[functions.web-scrape]
+verify_jwt = false
+
+[functions.web-search]
+verify_jwt = false
