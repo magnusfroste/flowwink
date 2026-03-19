@@ -238,6 +238,8 @@ export function SystemAiSettingsTab({ data, onChange }: SystemAiSettingsTabProps
               </div>
             </div>
           )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
