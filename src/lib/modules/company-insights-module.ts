@@ -1,6 +1,6 @@
 export const companyInsightsModule = {
   id: "companyInsights",
-  name: "Company Insights",
+  name: "Business Identity",
   description: "Unified business identity, financials, and market positioning. Feeds Sales Intelligence, Chat AI, SEO, and FlowAgent with company context.",
   category: "crm" as const,
   icon: "Building2",

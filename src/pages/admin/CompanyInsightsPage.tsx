@@ -70,7 +70,7 @@ export default function CompanyInsightsPage() {
               <Building2 className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-2xl font-semibold tracking-tight">Company Insights</h1>
+              <h1 className="text-2xl font-semibold tracking-tight">Business Identity</h1>
               <p className="text-sm text-muted-foreground">
                 Business identity used across Sales, Chat, SEO, and FlowAgent
               </p>

@@ -266,7 +266,7 @@ export const defaultModulesSettings: ModulesSettings = {
   },
   companyInsights: {
     enabled: true,
-    name: 'Company Insights',
+    name: 'Business Identity',
     description: 'Unified business identity, financials, and market positioning — feeds Sales Intelligence, Chat, and SEO',
     icon: 'Building2',
     category: 'insights',
