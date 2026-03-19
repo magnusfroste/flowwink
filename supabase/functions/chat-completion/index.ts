@@ -1007,7 +1007,9 @@ When the user asks about a specific website, use firecrawl_search with the websi
         throw new Error('Gemini API key is not configured');
       }
 
-      const model = settings?.geminiModel || 'gemini-2.0-flash-exp';
+      const GEMINI_MIGRATE: Record<string, string> = { 'gemini-1.5-pro': 'gemini-2.5-pro', 'gemini-1.5-flash': 'gemini-2.5-flash', 'gemini-2.0-flash-exp': 'gemini-2.5-flash', 'gemini-pro': 'gemini-2.5-pro' };
+      const rawGeminiModel = settings?.geminiModel || 'gemini-2.5-flash';
+      const model = GEMINI_MIGRATE[rawGeminiModel] || rawGeminiModel;
 
       const geminiMessages = fullMessages
         .filter(m => m.role !== 'system')
