@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Save, Loader2, Plus, X } from "lucide-react";
+import { Building2, Save, Loader2, Plus, X, Globe, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import type { Json } from "@/integrations/supabase/types";
 
@@ -20,6 +20,16 @@ interface CompanyProfile {
   client_testimonials: string;
   target_industries: string[];
   differentiators: string[];
+  // Sales-specific fields
+  value_proposition: string;
+  icp: string;
+  competitors: string;
+  pricing_notes: string;
+  industry: string;
+  // Contact info (may be auto-extracted)
+  contact_email: string;
+  contact_phone: string;
+  address: string;
 }
 
 const defaultProfile: CompanyProfile = {
@@ -31,6 +41,14 @@ const defaultProfile: CompanyProfile = {
   client_testimonials: "",
   target_industries: [],
   differentiators: [],
+  value_proposition: "",
+  icp: "",
+  competitors: "",
+  pricing_notes: "",
+  industry: "",
+  contact_email: "",
+  contact_phone: "",
+  address: "",
 };
 
 export function CompanyProfileCard() {
@@ -40,6 +58,8 @@ export function CompanyProfileCard() {
   const [newServiceDesc, setNewServiceDesc] = useState("");
   const [newIndustry, setNewIndustry] = useState("");
   const [newDifferentiator, setNewDifferentiator] = useState("");
+  const [enrichUrl, setEnrichUrl] = useState("");
+  const [isEnriching, setIsEnriching] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["site-settings", "company_profile"],
@@ -56,7 +76,7 @@ export function CompanyProfileCard() {
   });
 
   useEffect(() => {
-    if (data) setProfile(data);
+    if (data) setProfile({ ...defaultProfile, ...data });
   }, [data]);
 
   const saveMutation = useMutation({
@@ -91,6 +111,37 @@ export function CompanyProfileCard() {
     },
   });
 
+  const handleEnrich = async () => {
+    if (!enrichUrl.trim()) return;
+    setIsEnriching(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("migrate-page", {
+        body: { url: enrichUrl.trim() },
+      });
+      if (error) throw error;
+      if (data?.companyProfile) {
+        const extracted = data.companyProfile as Record<string, unknown>;
+        setProfile(prev => {
+          const merged = { ...prev };
+          for (const [key, val] of Object.entries(extracted)) {
+            const currentVal = (prev as unknown as Record<string, unknown>)[key];
+            if (val && String(val).trim() && (!currentVal || !String(currentVal).trim())) {
+              (merged as unknown as Record<string, unknown>)[key] = val;
+            }
+          }
+          return merged;
+        });
+        toast.success("Company data extracted — review and save");
+      } else {
+        toast.info("No company data could be extracted from this page");
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Enrichment failed");
+    } finally {
+      setIsEnriching(false);
+    }
+  };
+
   const update = (field: keyof CompanyProfile, value: any) => {
     setProfile((prev) => ({ ...prev, [field]: value }));
   };
@@ -124,6 +175,8 @@ export function CompanyProfileCard() {
     Object.keys(profile.services).length > 0,
     profile.delivered_value,
     profile.target_industries.length > 0,
+    profile.value_proposition,
+    profile.icp,
   ].filter(Boolean).length;
 
   if (isLoading) {
@@ -153,12 +206,12 @@ export function CompanyProfileCard() {
             <div>
               <CardTitle className="text-base flex items-center gap-2">
                 Company Profile
-                <Badge variant={filledFields >= 4 ? "default" : "outline"} className="text-xs">
-                  {filledFields}/5 sections
+                <Badge variant={filledFields >= 5 ? "default" : "outline"} className="text-xs">
+                  {filledFields}/7 sections
                 </Badge>
               </CardTitle>
               <CardDescription>
-                Your business context used by Sales Intelligence for qualifying questions & fit analysis
+                Unified business context used by Sales Intelligence, Chat AI, and FlowAgent
               </CardDescription>
             </div>
           </div>
@@ -174,6 +227,36 @@ export function CompanyProfileCard() {
         </div>
       </CardHeader>
       <CardContent className="space-y-5">
+        {/* Enrich from Website */}
+        <div className="p-3 rounded-lg border border-dashed bg-muted/30 space-y-2">
+          <Label className="text-xs font-medium flex items-center gap-1.5">
+            <Globe className="h-3.5 w-3.5" />
+            Enrich from Website
+          </Label>
+          <div className="flex gap-2">
+            <Input
+              value={enrichUrl}
+              onChange={(e) => setEnrichUrl(e.target.value)}
+              placeholder="https://yourcompany.com"
+              className="h-8 text-sm"
+              onKeyDown={(e) => e.key === "Enter" && handleEnrich()}
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 gap-1.5 shrink-0"
+              onClick={handleEnrich}
+              disabled={isEnriching || !enrichUrl.trim()}
+            >
+              {isEnriching ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+              Enrich
+            </Button>
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            AI will extract company data from your website. Existing fields won't be overwritten.
+          </p>
+        </div>
+
         {/* Company Name */}
         <div className="space-y-1.5">
           <Label htmlFor="cp-name" className="text-xs font-medium">Company Name</Label>
@@ -182,6 +265,18 @@ export function CompanyProfileCard() {
             value={profile.company_name}
             onChange={(e) => update("company_name", e.target.value)}
             placeholder="Acme Consulting AB"
+            className="h-9"
+          />
+        </div>
+
+        {/* Industry */}
+        <div className="space-y-1.5">
+          <Label htmlFor="cp-industry" className="text-xs font-medium">Industry</Label>
+          <Input
+            id="cp-industry"
+            value={profile.industry}
+            onChange={(e) => update("industry", e.target.value)}
+            placeholder="Digital Agency, SaaS, Consulting..."
             className="h-9"
           />
         </div>
@@ -195,6 +290,30 @@ export function CompanyProfileCard() {
             onChange={(e) => update("about_us", e.target.value)}
             placeholder="Brief description of your company, mission, and what you do..."
             rows={3}
+          />
+        </div>
+
+        {/* Value Proposition */}
+        <div className="space-y-1.5">
+          <Label htmlFor="cp-vp" className="text-xs font-medium">Value Proposition</Label>
+          <Textarea
+            id="cp-vp"
+            value={profile.value_proposition}
+            onChange={(e) => update("value_proposition", e.target.value)}
+            placeholder="What unique value do you deliver to clients?"
+            rows={2}
+          />
+        </div>
+
+        {/* ICP */}
+        <div className="space-y-1.5">
+          <Label htmlFor="cp-icp" className="text-xs font-medium">Ideal Customer Profile</Label>
+          <Textarea
+            id="cp-icp"
+            value={profile.icp}
+            onChange={(e) => update("icp", e.target.value)}
+            placeholder="Describe your ideal customer: size, industry, challenges..."
+            rows={2}
           />
         </div>
 
@@ -249,6 +368,30 @@ export function CompanyProfileCard() {
           />
         </div>
 
+        {/* Competitors */}
+        <div className="space-y-1.5">
+          <Label htmlFor="cp-competitors" className="text-xs font-medium">Competitors</Label>
+          <Input
+            id="cp-competitors"
+            value={profile.competitors}
+            onChange={(e) => update("competitors", e.target.value)}
+            placeholder="Competitor A, Competitor B..."
+            className="h-9"
+          />
+        </div>
+
+        {/* Pricing Notes */}
+        <div className="space-y-1.5">
+          <Label htmlFor="cp-pricing" className="text-xs font-medium">Pricing Strategy</Label>
+          <Textarea
+            id="cp-pricing"
+            value={profile.pricing_notes}
+            onChange={(e) => update("pricing_notes", e.target.value)}
+            placeholder="Pricing model, ranges, or strategy notes..."
+            rows={2}
+          />
+        </div>
+
         {/* Clients */}
         <div className="space-y-1.5">
           <Label htmlFor="cp-clients" className="text-xs font-medium">Notable Clients</Label>
@@ -271,6 +414,40 @@ export function CompanyProfileCard() {
             placeholder="Short quotes from happy clients..."
             rows={2}
           />
+        </div>
+
+        {/* Contact Info */}
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="cp-email" className="text-xs font-medium">Contact Email</Label>
+            <Input
+              id="cp-email"
+              value={profile.contact_email}
+              onChange={(e) => update("contact_email", e.target.value)}
+              placeholder="info@company.com"
+              className="h-9"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="cp-phone" className="text-xs font-medium">Contact Phone</Label>
+            <Input
+              id="cp-phone"
+              value={profile.contact_phone}
+              onChange={(e) => update("contact_phone", e.target.value)}
+              placeholder="+46 8 123 45 67"
+              className="h-9"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="cp-address" className="text-xs font-medium">Address</Label>
+            <Input
+              id="cp-address"
+              value={profile.address}
+              onChange={(e) => update("address", e.target.value)}
+              placeholder="Street, City"
+              className="h-9"
+            />
+          </div>
         </div>
 
         {/* Target Industries */}

@@ -13,7 +13,6 @@ import { ResearchResultCards } from "@/components/admin/sales-intelligence/Resea
 import { FitAnalysisCard } from "@/components/admin/sales-intelligence/FitAnalysisCard";
 import { SalesProfileSetup } from "@/components/admin/sales-intelligence/SalesProfileSetup";
 import { ResearchHistory } from "@/components/admin/sales-intelligence/ResearchHistory";
-import { CompanyProfileCard } from "@/components/admin/integrations/CompanyProfileCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { ResearchResult, FitAnalysisResult } from "@/components/admin/sales-intelligence/types";
 
@@ -97,8 +96,7 @@ export default function SalesIntelligencePage() {
         <Tabs defaultValue="research" className="space-y-4">
           <TabsList>
             <TabsTrigger value="research">Research</TabsTrigger>
-            <TabsTrigger value="profiles">Profiles</TabsTrigger>
-            <TabsTrigger value="company">Company Profile</TabsTrigger>
+            <TabsTrigger value="profiles">Sales Profile</TabsTrigger>
             <TabsTrigger value="history">History</TabsTrigger>
           </TabsList>
 
@@ -193,10 +191,6 @@ export default function SalesIntelligencePage() {
 
           <TabsContent value="profiles" className="space-y-4">
             <SalesProfileSetup />
-          </TabsContent>
-
-          <TabsContent value="company" className="space-y-4">
-            <CompanyProfileCard />
           </TabsContent>
 
           <TabsContent value="history" className="space-y-4">

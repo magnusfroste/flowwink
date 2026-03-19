@@ -1195,8 +1195,24 @@ Respond ONLY with valid JSON, no other text:
     },
     { "id": "block-2", "type": "text", "data": { "content": "<p>...</p>" } },
     { "id": "block-3", "type": "lottie", "data": { "src": "https://lottie.host/...", "autoplay": true, "loop": true, "alt": "Animation description" } }
-  ]
-}`;
+  ],
+  "companyProfile": {
+    "company_name": "Company name from the page",
+    "about_us": "Brief company description extracted from about/intro sections",
+    "services": { "Service Name": "Brief description" },
+    "value_proposition": "Main value proposition or tagline",
+    "industry": "Detected industry",
+    "differentiators": ["Key differentiator 1", "Key differentiator 2"],
+    "target_industries": ["Target industry 1"],
+    "contact_email": "info@example.com",
+    "contact_phone": "+46 8 123 45 67",
+    "address": "Street, City, Country",
+    "clients": "Notable clients if mentioned",
+    "client_testimonials": "Short testimonial quotes if found"
+  }
+}
+
+IMPORTANT: The "companyProfile" field is OPTIONAL. Only include it if you can extract meaningful company data from the page (typically homepage or about pages). Include only fields you can confidently extract — omit fields where data is not available.`;
 
     // Identify hero video candidates
     const heroVideos = extractedVideos.filter(v => v.isHeroCandidate);
@@ -1457,12 +1473,65 @@ Respond only with JSON.`;
     console.log('Step 5: Successfully mapped', blocks.length, 'blocks');
     console.log('Block types:', blocks.map((b: Record<string, unknown>) => b.type).join(', '));
 
+    // Step 6: Save company profile to site_settings if extracted
+    const companyProfile = parsedBlocks.companyProfile;
+    if (companyProfile && typeof companyProfile === 'object' && Object.keys(companyProfile).length > 0) {
+      try {
+        const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+        const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+        const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.87.1");
+        const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+        // Check for existing profile and merge
+        const { data: existing } = await supabase
+          .from('site_settings')
+          .select('value')
+          .eq('key', 'company_profile')
+          .maybeSingle();
+
+        const existingProfile = (existing?.value as Record<string, unknown>) || {};
+        // Merge: existing manual entries take priority over AI-extracted
+        const mergedProfile: Record<string, unknown> = { ...companyProfile };
+        for (const [key, val] of Object.entries(existingProfile)) {
+          if (val && String(val).trim().length > 0) {
+            mergedProfile[key] = val; // Keep existing non-empty values
+          }
+        }
+
+        const { error: upsertError } = await supabase
+          .from('site_settings')
+          .upsert(
+            { key: 'company_profile', value: mergedProfile, updated_at: new Date().toISOString() },
+            { onConflict: 'key' }
+          );
+
+        if (upsertError) {
+          console.error('Failed to save company profile:', upsertError);
+        } else {
+          console.log('Company profile saved to site_settings:', Object.keys(mergedProfile).join(', '));
+        }
+
+        // Also update company_name setting for backward compatibility
+        if (mergedProfile.company_name) {
+          await supabase
+            .from('site_settings')
+            .upsert(
+              { key: 'company_name', value: mergedProfile.company_name, updated_at: new Date().toISOString() },
+              { onConflict: 'key' }
+            );
+        }
+      } catch (profileError) {
+        console.error('Error saving company profile:', profileError);
+      }
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
         sourceUrl: formattedUrl,
         title: parsedBlocks.title || metadata.title || 'Imported page',
         blocks,
+        companyProfile: companyProfile || null,
         metadata: {
           originalTitle: metadata.title,
           originalDescription: metadata.description,

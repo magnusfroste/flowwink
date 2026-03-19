@@ -431,11 +431,19 @@ export function useCopilot(): UseCopilotReturn {
         currentPageUrl: url,
       }));
 
+      // Notify about company profile extraction
+      if (data.companyProfile) {
+        toast.success('Company profile extracted and saved', {
+          description: 'Your company data has been auto-filled from the website',
+          duration: 5000,
+        });
+      }
+
       // Add success message with first block preview
       const successMessage: CopilotMessage = {
         id: generateId(),
         role: 'assistant',
-        content: `✨ Found ${migratedBlocks.length} sections on "${data.title || 'the page'}"${data.metadata?.platform ? ` (${data.metadata.platform})` : ''}!\n\nLet me show you each section one at a time. You can approve, edit, or skip each one.`,
+        content: `✨ Found ${migratedBlocks.length} sections on "${data.title || 'the page'}"${data.metadata?.platform ? ` (${data.metadata.platform})` : ''}!${data.companyProfile ? '\n\n📋 Company profile auto-extracted and saved to Settings.' : ''}\n\nLet me show you each section one at a time. You can approve, edit, or skip each one.`,
         createdAt: new Date(),
       };
       setMessages(prev => [...prev, successMessage]);

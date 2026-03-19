@@ -3,11 +3,10 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.87.1";
 /**
  * Sales Intelligence Context Loader
  * 
- * Assembles a unified context string from 4 layers:
+ * Assembles a unified context string from:
  * 1. CMS Pages (CAG) — published products/services
- * 2. Sales Intelligence Profiles — company ICP + user pitch
- * 3. Site Settings — company name, brand tone
- * 4. Agent Memory — previous research (optional)
+ * 2. Site Settings — company_profile (unified source), company_name, brand_tone
+ * 3. Sales Intelligence Profiles — user pitch (sender context)
  * 
  * Used by prospect-research, prospect-fit-analysis, and sales-profile-setup.
  */
@@ -38,20 +37,24 @@ export async function loadSalesContext(options?: {
   const maxPageTokens = options?.maxPageTokens ?? 8000;
 
   // Parallel loads
-  const [profilesRes, settingsRes, pagesRes] = await Promise.all([
-    // Layer 2: Sales Intelligence Profiles
-    supabase
-      .from('sales_intelligence_profiles')
-      .select('type, user_id, data')
-      .in('type', ['company', 'user']),
-
-    // Layer 3: Site Settings
+  const [settingsRes, userProfileRes, pagesRes] = await Promise.all([
+    // Layer 1: Site Settings (unified company profile source)
     supabase
       .from('site_settings')
       .select('key, value')
       .in('key', ['company_name', 'company_profile', 'brand_tone', 'industry']),
 
-    // Layer 1: CMS Pages (published only)
+    // Layer 2: User profile from sales_intelligence_profiles (sender context only)
+    options?.userId
+      ? supabase
+          .from('sales_intelligence_profiles')
+          .select('data')
+          .eq('type', 'user')
+          .eq('user_id', options.userId)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+
+    // Layer 3: CMS Pages (published only)
     includePages
       ? supabase
           .from('pages')
@@ -62,21 +65,17 @@ export async function loadSalesContext(options?: {
       : Promise.resolve({ data: [] }),
   ]);
 
-  // --- Process profiles ---
-  const profiles = profilesRes.data || [];
-  const companyProfileRow = profiles.find(p => p.type === 'company');
-  const userProfileRow = options?.userId
-    ? profiles.find(p => p.type === 'user' && p.user_id === options.userId)
-    : null;
-
-  const companyProfile = (companyProfileRow?.data as Record<string, unknown>) || {};
-  const userProfile = (userProfileRow?.data as Record<string, unknown>) || null;
-
   // --- Process site settings ---
   const settingsMap: Record<string, unknown> = {};
   for (const s of (settingsRes.data || [])) {
     settingsMap[s.key] = s.value;
   }
+
+  // --- Company profile from unified site_settings source ---
+  const companyProfile = (settingsMap.company_profile as Record<string, unknown>) || {};
+
+  // --- User profile (sender context) ---
+  const userProfile = (userProfileRes.data?.data as Record<string, unknown>) || null;
 
   // --- Process CMS pages into text summaries ---
   let pagesSummary = '';
@@ -91,7 +90,6 @@ export async function loadSalesContext(options?: {
       const textParts: string[] = [];
       for (const block of blocks) {
         if (block.type === 'text' && block.data?.content) {
-          // Strip HTML tags for plain text
           const plain = (block.data.content as string).replace(/<[^>]*>/g, '').trim();
           if (plain) textParts.push(plain);
         } else if (block.type === 'hero' && block.data?.title) {
@@ -108,7 +106,7 @@ export async function loadSalesContext(options?: {
 
       const pageText = `### ${page.title}\n${textParts.join('\n')}`;
       totalChars += pageText.length;
-      if (totalChars > maxPageTokens * 4) break; // rough char-to-token ratio
+      if (totalChars > maxPageTokens * 4) break;
       pageTexts.push(pageText);
     }
 
@@ -119,30 +117,43 @@ export async function loadSalesContext(options?: {
   const sections: string[] = [];
 
   // Company identity
-  const companyName = (settingsMap.company_name as string) || (companyProfile.company_name as string) || '';
+  const companyName = (companyProfile.company_name as string) || (settingsMap.company_name as string) || '';
   if (companyName) {
     sections.push(`## Our Company: ${companyName}`);
   }
 
-  // Company profile (ICP, value prop, etc.)
+  // Company profile (from unified site_settings.company_profile)
   if (Object.keys(companyProfile).length > 0) {
     const cp = companyProfile;
     const profileParts: string[] = [];
+    if (cp.about_us) profileParts.push(`About: ${cp.about_us}`);
     if (cp.value_proposition) profileParts.push(`Value Proposition: ${cp.value_proposition}`);
     if (cp.icp) profileParts.push(`Ideal Customer Profile: ${cp.icp}`);
-    if (cp.differentiators) profileParts.push(`Key Differentiators: ${cp.differentiators}`);
+    if (cp.differentiators) {
+      const diffs = Array.isArray(cp.differentiators) ? cp.differentiators.join(', ') : cp.differentiators;
+      profileParts.push(`Key Differentiators: ${diffs}`);
+    }
     if (cp.competitors) profileParts.push(`Competitors: ${cp.competitors}`);
     if (cp.pricing_notes) profileParts.push(`Pricing: ${cp.pricing_notes}`);
     if (cp.industry) profileParts.push(`Industry: ${cp.industry}`);
+    if (cp.services) {
+      const svc = cp.services;
+      if (typeof svc === 'object' && !Array.isArray(svc)) {
+        const svcParts = Object.entries(svc as Record<string, string>).map(([k, v]) => v ? `${k}: ${v}` : k);
+        profileParts.push(`Services: ${svcParts.join('; ')}`);
+      }
+    }
+    if (cp.clients) profileParts.push(`Notable Clients: ${cp.clients}`);
+    if (cp.client_testimonials) profileParts.push(`Testimonials: ${cp.client_testimonials}`);
+    if (cp.target_industries) {
+      const inds = Array.isArray(cp.target_industries) ? cp.target_industries.join(', ') : cp.target_industries;
+      profileParts.push(`Target Industries: ${inds}`);
+    }
+    if (cp.delivered_value) profileParts.push(`Delivered Value: ${cp.delivered_value}`);
 
     if (profileParts.length > 0) {
       sections.push(`## Company Profile\n${profileParts.join('\n')}`);
     }
-  }
-
-  // Fallback to old site_settings company_profile
-  if (Object.keys(companyProfile).length === 0 && settingsMap.company_profile) {
-    sections.push(`## Company Profile (Legacy)\n${JSON.stringify(settingsMap.company_profile, null, 2)}`);
   }
 
   // User profile (sender context)
