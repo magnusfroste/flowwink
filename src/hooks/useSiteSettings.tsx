@@ -621,7 +621,7 @@ export interface SystemAiSettings {
 
 const defaultSystemAiSettings: SystemAiSettings = {
   provider: 'openai',
-  openaiModel: 'gpt-4o-mini',
+  openaiModel: 'gpt-4.1-mini',
   geminiModel: 'gemini-2.0-flash-exp',
   defaultTone: 'professional',
   defaultLanguage: 'en',
