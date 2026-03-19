@@ -329,7 +329,7 @@ export async function resolveAiConfig(supabase: any): Promise<{ apiKey: string; 
       model = cfg.model || 'gemini-2.5-flash';
     } else if (cfg.provider === 'openai' && Deno.env.get('OPENAI_API_KEY')) {
       apiKey = Deno.env.get('OPENAI_API_KEY')!;
-      model = cfg.model || 'gpt-4o';
+      model = cfg.model || 'gpt-4.1';
     }
   }
 

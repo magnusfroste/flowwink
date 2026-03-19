@@ -64,7 +64,7 @@ Return JSON with: headline (max 40 chars), body (max 125 chars), cta_text (max 2
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${openaiKey}` },
           body: JSON.stringify({
-            model: 'gpt-4o-mini',
+            model: 'gpt-4.1-mini',
             messages: [
               { role: 'system', content: 'You generate ad copy. Return valid JSON only.' },
               { role: 'user', content: aiPrompt },

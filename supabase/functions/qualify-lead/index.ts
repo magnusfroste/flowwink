@@ -143,7 +143,7 @@ Svara ENDAST med JSON i detta format:
           });
         } else {
           // Use OpenAI API
-          const model = 'gpt-4o-mini';
+          const model = 'gpt-4.1-mini';
           response = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
             headers: {

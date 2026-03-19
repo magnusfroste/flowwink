@@ -66,7 +66,7 @@ serve(async (req) => {
       useGemini = !OPENAI_API_KEY && !!GEMINI_API_KEY;
     }
 
-    const openaiModel = systemAi.openaiModel || 'gpt-4o-mini';
+    const openaiModel = systemAi.openaiModel || 'gpt-4.1-mini';
     const geminiModel = systemAi.geminiModel || 'gemini-2.0-flash-exp';
 
     if (!OPENAI_API_KEY && !GEMINI_API_KEY) {
