@@ -196,7 +196,7 @@ serve(async (req) => {
 // Cron expression → next run time (simple parser for common patterns)
 // =============================================================================
 
-function calculateNextRun(cronExpr?: string): string {
+function calculateNextRun(cronExpr?: string, from?: Date): string {
   if (!cronExpr) {
     // Default: 1 hour from now
     return new Date(Date.now() + 60 * 60 * 1000).toISOString();
