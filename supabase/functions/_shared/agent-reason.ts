@@ -1696,7 +1696,7 @@ const REFLECT_TOOL = [
 ];
 
 const SOUL_TOOL = [
-  { type: 'function', function: { name: 'soul_update', description: 'Update your personality, values, tone, or philosophy.', parameters: { type: 'object', properties: { field: { type: 'string', enum: ['purpose', 'values', 'tone', 'philosophy'] }, value: { description: 'New value' } }, required: ['field', 'value'] } } },
+  { type: 'function', function: { name: 'soul_update', description: 'Update your personality, values, tone, or philosophy.', parameters: { type: 'object', properties: { field: { type: 'string', enum: ['purpose', 'values', 'tone', 'philosophy'] }, value: { type: 'string', description: 'New value' } }, required: ['field', 'value'] } } },
 ];
 
 const PLANNING_TOOLS = [
