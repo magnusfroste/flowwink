@@ -137,10 +137,16 @@
 ## Phase 9.5: Autonomy Cold Start Fix ✅ DONE
 
 ### Completed
-- **Auto-register heartbeat cron** — `setup-flowpilot` now calls `register_flowpilot_cron` DB function to schedule the heartbeat (every 12h) automatically during template install
-- **`register_flowpilot_cron` DB function** — SECURITY DEFINER function that idempotently creates `pg_cron` job for `flowpilot-heartbeat` via `pg_net`
+- **Auto-register ALL autonomy cron jobs** — `setup-flowpilot` calls `register_flowpilot_cron` DB function which registers all 5 jobs:
+  - `flowpilot-heartbeat` (every 12h) — objective decomposition + advancement
+  - `automation-dispatcher-every-minute` — executes due cron automations
+  - `publish-scheduled-pages` (every minute) — publishes scheduled pages
+  - `flowpilot-learn` (daily 03:00) — nightly learning loop
+  - `flowpilot-daily-briefing` (daily 07:00) — morning briefing
+- **`register_flowpilot_cron` DB function** — SECURITY DEFINER function that idempotently creates all `pg_cron` jobs via `pg_net`, removes duplicate `heartbeat-12h` if present
 - **Immediate first heartbeat** — `useTemplateInstaller` fires `flowpilot-heartbeat` right after bootstrap when objectives were seeded, so decomposition starts within seconds
 - **`pg_cron` + `pg_net` extensions** — enabled via migration to support autonomous scheduling
+- **DB triggers verified** — all event triggers (lead_created, blog_published, booking_created, form_submitted, order_created, lead_score_changed) confirmed active
 
 ## Phase 10: Agent Self-Evolution ✅ DONE
 
