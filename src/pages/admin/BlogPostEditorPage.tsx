@@ -487,7 +487,7 @@ export default function BlogPostEditorPage() {
               
               {!isNew && post && (
                 <>
-                  {post.status === "draft" && (
+                  {post.status === "draft" && reviewEnabled && (
                     <Button
                       variant="secondary"
                       onClick={() => handleStatusChange("reviewing")}
@@ -495,6 +495,16 @@ export default function BlogPostEditorPage() {
                     >
                       <Send className="mr-2 h-4 w-4" />
                       Submit for Review
+                    </Button>
+                  )}
+                  
+                  {post.status === "draft" && !reviewEnabled && (
+                    <Button
+                      onClick={() => handleStatusChange("published")}
+                      disabled={statusMutation.isPending}
+                    >
+                      <Check className="mr-2 h-4 w-4" />
+                      Publish
                     </Button>
                   )}
                   
