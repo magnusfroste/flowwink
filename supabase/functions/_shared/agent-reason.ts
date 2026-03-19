@@ -1903,6 +1903,29 @@ export async function loadSkillTools(supabase: any, scope: 'internal' | 'externa
       const td = s.tool_definition;
       // Ensure every tool has the required 'type' field
       if (!td.type) td.type = 'function';
+      // Normalize properties for OpenAI compatibility
+      try {
+        const fixProps = (props: any) => {
+          if (!props || typeof props !== 'object') return;
+          for (const [, val] of Object.entries(props)) {
+            const p = val as any;
+            if (!p.type && !p.enum && !p.items && !p.oneOf && !p.anyOf) {
+              p.type = 'string';
+            }
+            if (p.type === 'array' && !p.items) {
+              p.items = { type: 'string' };
+            }
+            if (p.type === 'object' && p.properties) {
+              fixProps(p.properties);
+            }
+          }
+        };
+        fixProps(td?.function?.parameters?.properties);
+        const params = td?.function?.parameters;
+        if (params?.required && Array.isArray(params.required) && params.required.length === 0) {
+          delete params.required;
+        }
+      } catch { /* safety net */ }
       return td;
     });
 }

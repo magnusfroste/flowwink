@@ -71,15 +71,24 @@ serve(async (req) => {
     // OpenAI requires every property to have a 'type' field — fix any that don't
     const allTools = rawTools.map((tool: any) => {
       try {
-        const props = tool?.function?.parameters?.properties;
-        if (props && typeof props === 'object') {
+        const fixProps = (props: any) => {
+          if (!props || typeof props !== 'object') return;
           for (const [, val] of Object.entries(props)) {
             const p = val as any;
             if (!p.type && !p.enum && !p.items && !p.oneOf && !p.anyOf) {
               p.type = 'string';
             }
+            // OpenAI requires array types to have an 'items' definition
+            if (p.type === 'array' && !p.items) {
+              p.items = { type: 'string' };
+            }
+            // Recurse into nested object properties
+            if (p.type === 'object' && p.properties) {
+              fixProps(p.properties);
+            }
           }
-        }
+        };
+        fixProps(tool?.function?.parameters?.properties);
         // Remove empty required arrays (OpenAI doesn't like required: [])
         const params = tool?.function?.parameters;
         if (params?.required && Array.isArray(params.required) && params.required.length === 0) {
