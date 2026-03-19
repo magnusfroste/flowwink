@@ -14,6 +14,7 @@ import { SchedulePublishDialog } from '@/components/admin/SchedulePublishDialog'
 import { AeoAnalyzer } from '@/components/admin/AeoAnalyzer';
 import { usePage, useUpdatePage, useUpdatePageStatus } from '@/hooks/usePages';
 import { useAuth } from '@/hooks/useAuth';
+import { useGeneralSettings } from '@/hooks/useSiteSettings';
 import { useToast } from '@/hooks/use-toast';
 import { useUnsavedChanges, UnsavedChangesDialog } from '@/hooks/useUnsavedChanges';
 import { useUndoRedo } from '@/hooks/useUndoRedo';
