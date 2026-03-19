@@ -316,7 +316,7 @@ export function buildSystemPrompt(input: PromptCompilerInput): string {
 export async function resolveAiConfig(supabase: any): Promise<{ apiKey: string; apiUrl: string; model: string }> {
   let apiKey = '';
   let apiUrl = 'https://api.openai.com/v1/chat/completions';
-  let model = 'gpt-4o';
+  let model = 'gpt-4.1';
 
   const { data: settings } = await supabase
     .from('site_settings').select('value').eq('key', 'system_ai').maybeSingle();
