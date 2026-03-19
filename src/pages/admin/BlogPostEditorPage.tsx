@@ -236,8 +236,8 @@ export default function BlogPostEditorPage() {
     }
   };
   
-  const canEdit = isNew || post?.status === "draft" || isAdmin || isApprover;
-  const canPublish = isAdmin || isApprover;
+  const canEdit = isNew || post?.status === "draft" || isAdmin || isApprover || !reviewEnabled;
+  const canPublish = isAdmin || isApprover || !reviewEnabled;
   
   if (!isNew && isLoading) {
     return (
