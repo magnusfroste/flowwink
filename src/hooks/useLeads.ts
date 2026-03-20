@@ -191,3 +191,23 @@ export function useLeadStats() {
     },
   });
 }
+
+export function useDeleteLead() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      // Delete related activities first
+      await supabase.from('lead_activities').delete().eq('lead_id', id);
+      const { error } = await supabase.from('leads').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      queryClient.invalidateQueries({ queryKey: ['lead-stats'] });
+      toast.success('Contact deleted');
+    },
+    onError: () => {
+      toast.error('Failed to delete contact');
+    },
+  });
+}
