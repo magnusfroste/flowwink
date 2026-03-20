@@ -300,10 +300,7 @@ export default function CopilotPage() {
           )}
 
           <div className="border-t border-sidebar-border p-3 space-y-1.5">
-            <div className="flex items-center gap-2 text-sidebar-foreground/50">
-              <Zap className="h-3.5 w-3.5" />
-              <span className="text-xs">{operate.skills.length} skills available</span>
-            </div>
+
             <div className="flex items-center gap-2 text-sidebar-foreground/50">
               <Globe className="h-3.5 w-3.5" />
               <span className="text-xs">
