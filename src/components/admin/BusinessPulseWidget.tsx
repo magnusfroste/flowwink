@@ -128,7 +128,7 @@ export function BusinessPulseWidget() {
               {briefing.action_items.length} action item{briefing.action_items.length > 1 ? 's' : ''} need attention
             </p>
             <Button asChild variant="outline" size="sm" className="w-full">
-              <Link to="/admin/copilot">Open FlowPilot →</Link>
+              <Link to="/admin/flowpilot">Open FlowPilot →</Link>
             </Button>
           </div>
         )}

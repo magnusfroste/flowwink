@@ -96,9 +96,9 @@ export default function TemplateGalleryPage() {
             Can't find what you're looking for?
           </p>
           <Button variant="outline" asChild>
-            <Link to="/admin/copilot">
+            <Link to="/admin/flowpilot">
               <Bot className="h-4 w-4 mr-2" />
-              Let Copilot build it for you
+              Let FlowPilot build it for you
               <ArrowRight className="h-4 w-4 ml-2" />
             </Link>
           </Button>

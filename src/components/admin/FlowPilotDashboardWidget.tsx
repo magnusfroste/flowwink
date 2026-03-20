@@ -86,7 +86,7 @@ export function FlowPilotDashboardWidget() {
             <Bot className="h-4 w-4 text-primary" />
             FlowPilot
           </CardTitle>
-          <Link to="/admin/copilot" className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1">
+          <Link to="/admin/flowpilot" className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1">
             Open <ArrowRight className="h-3 w-3" />
           </Link>
         </div>
