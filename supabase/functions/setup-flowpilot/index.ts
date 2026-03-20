@@ -1732,6 +1732,233 @@ Return a valid content_json array of ContentBlock objects with proper data for e
       },
     },
   },
+
+  // ─── Live Support ─────────────────────────────────────────────────────────
+  {
+    name: 'support_list_conversations',
+    description: 'List support conversations filtered by status (waiting_agent, with_agent, escalated, closed). Returns customer name, email, priority, sentiment, and escalation reason.',
+    handler: 'db:chat_conversations',
+    category: 'communication',
+    scope: 'internal',
+    requires_approval: false,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'support_list_conversations',
+        description: 'List support conversations by status. Use to monitor escalated or waiting conversations.',
+        parameters: {
+          type: 'object',
+          properties: {
+            status: { type: 'string', enum: ['waiting_agent', 'with_agent', 'escalated', 'closed', 'active'], description: 'Filter by conversation status' },
+            limit: { type: 'number', description: 'Max results (default 20)' },
+          },
+          required: [],
+        },
+      },
+    },
+  },
+  {
+    name: 'support_assign_conversation',
+    description: 'Assign or reassign a support conversation to an agent. Updates conversation status to with_agent.',
+    handler: 'db:chat_conversations',
+    category: 'communication',
+    scope: 'internal',
+    requires_approval: false,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'support_assign_conversation',
+        description: 'Assign a conversation to an agent or change its status.',
+        parameters: {
+          type: 'object',
+          properties: {
+            conversation_id: { type: 'string', description: 'UUID of the conversation' },
+            agent_id: { type: 'string', description: 'UUID of the support_agents record to assign' },
+            status: { type: 'string', enum: ['with_agent', 'escalated', 'closed'], description: 'New status' },
+          },
+          required: ['conversation_id'],
+        },
+      },
+    },
+  },
+  {
+    name: 'support_get_feedback',
+    description: 'Retrieve chat feedback ratings and comments. Useful for monitoring customer satisfaction and identifying knowledge gaps.',
+    handler: 'db:chat_feedback',
+    category: 'analytics',
+    scope: 'internal',
+    requires_approval: false,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'support_get_feedback',
+        description: 'Get chat feedback to analyze customer satisfaction and common issues.',
+        parameters: {
+          type: 'object',
+          properties: {
+            rating: { type: 'string', enum: ['positive', 'negative'], description: 'Filter by rating' },
+            limit: { type: 'number', description: 'Max results (default 20)' },
+          },
+          required: [],
+        },
+      },
+    },
+  },
+
+  // ─── CRM Tasks ────────────────────────────────────────────────────────────
+  {
+    name: 'crm_task_list',
+    description: 'List CRM tasks with optional filters for lead, deal, priority, and completion status.',
+    handler: 'db:crm_tasks',
+    category: 'crm',
+    scope: 'internal',
+    requires_approval: false,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'crm_task_list',
+        description: 'List CRM tasks. Filter by lead, deal, priority, or completion status.',
+        parameters: {
+          type: 'object',
+          properties: {
+            lead_id: { type: 'string', description: 'Filter by lead UUID' },
+            deal_id: { type: 'string', description: 'Filter by deal UUID' },
+            priority: { type: 'string', enum: ['low', 'medium', 'high', 'urgent'], description: 'Filter by priority' },
+            show_completed: { type: 'boolean', description: 'Include completed tasks (default false)' },
+            limit: { type: 'number', description: 'Max results (default 20)' },
+          },
+          required: [],
+        },
+      },
+    },
+  },
+  {
+    name: 'crm_task_create',
+    description: 'Create a new CRM task with title, description, due date, priority, and optional lead/deal link.',
+    handler: 'db:crm_tasks',
+    category: 'crm',
+    scope: 'internal',
+    requires_approval: false,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'crm_task_create',
+        description: 'Create a CRM task. Link to a lead or deal for context.',
+        parameters: {
+          type: 'object',
+          properties: {
+            title: { type: 'string', description: 'Task title' },
+            description: { type: 'string', description: 'Task details' },
+            due_date: { type: 'string', description: 'Due date in ISO format' },
+            priority: { type: 'string', enum: ['low', 'medium', 'high', 'urgent'], description: 'Task priority' },
+            lead_id: { type: 'string', description: 'Link to a lead UUID' },
+            deal_id: { type: 'string', description: 'Link to a deal UUID' },
+          },
+          required: ['title'],
+        },
+      },
+    },
+  },
+  {
+    name: 'crm_task_update',
+    description: 'Update an existing CRM task — change title, description, priority, due date, or mark as completed.',
+    handler: 'db:crm_tasks',
+    category: 'crm',
+    scope: 'internal',
+    requires_approval: false,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'crm_task_update',
+        description: 'Update a CRM task. Use completed_at to mark complete.',
+        parameters: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', description: 'Task UUID' },
+            title: { type: 'string', description: 'Updated title' },
+            description: { type: 'string', description: 'Updated description' },
+            due_date: { type: 'string', description: 'Updated due date' },
+            priority: { type: 'string', enum: ['low', 'medium', 'high', 'urgent'] },
+            completed_at: { type: 'string', description: 'ISO timestamp to mark complete, or null to reopen' },
+          },
+          required: ['id'],
+        },
+      },
+    },
+  },
+
+  // ─── Branding & Site Identity ─────────────────────────────────────────────
+  {
+    name: 'site_branding_get',
+    description: 'Read current site branding settings including logo, colors, fonts, and favicon from site_settings.',
+    handler: 'db:site_settings',
+    category: 'content',
+    scope: 'internal',
+    requires_approval: false,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'site_branding_get',
+        description: 'Get current site branding (logo, colors, fonts, favicon).',
+        parameters: {
+          type: 'object',
+          properties: {},
+          required: [],
+        },
+      },
+    },
+  },
+  {
+    name: 'site_branding_update',
+    description: 'Update site branding settings — logo URL, primary/accent colors, font family, favicon.',
+    handler: 'db:site_settings',
+    category: 'content',
+    scope: 'internal',
+    requires_approval: true,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'site_branding_update',
+        description: 'Update branding settings. Requires approval.',
+        parameters: {
+          type: 'object',
+          properties: {
+            logo_url: { type: 'string', description: 'URL to logo image' },
+            favicon_url: { type: 'string', description: 'URL to favicon' },
+            primary_color: { type: 'string', description: 'Primary brand color (hex)' },
+            accent_color: { type: 'string', description: 'Accent color (hex)' },
+            font_family: { type: 'string', description: 'Primary font family name' },
+          },
+          required: [],
+        },
+      },
+    },
+  },
+
+  // ─── User & Role Management ───────────────────────────────────────────────
+  {
+    name: 'users_list',
+    description: 'List platform users with their roles from user_roles table. Shows email, role, and last sign-in.',
+    handler: 'db:profiles',
+    category: 'crm',
+    scope: 'internal',
+    requires_approval: false,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'users_list',
+        description: 'List platform users and their assigned roles.',
+        parameters: {
+          type: 'object',
+          properties: {
+            role: { type: 'string', enum: ['admin', 'approver', 'writer'], description: 'Filter by role' },
+            limit: { type: 'number', description: 'Max results (default 20)' },
+          },
+          required: [],
+        },
+      },
+    },
+  },
 ];
 const DEFAULT_SOUL = {
   purpose: 'I help run this website autonomously — managing content, leads, and growth so the owner can focus on their business.',
