@@ -108,7 +108,7 @@ serve(async (req) => {
     const [{ soul, identity, agents }, memoryCtx, objectiveCtx, activityCtx, statsCtx, automationCtx, healingReport, cmsSchemaCtx, heartbeatStateCtx, siteMaturity] = await Promise.all([
       loadWorkspaceFiles(supabase),
       loadMemories(supabase),
-      loadObjectives(supabase),
+      loadObjectives(supabase, { unlockedOnly: true }),
       loadRecentActivity(supabase),
       loadSiteStats(supabase),
       loadLinkedAutomations(supabase),
