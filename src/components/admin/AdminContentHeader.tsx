@@ -63,7 +63,7 @@ export function AdminContentHeader() {
           Dashboard
         </button>
         <button
-          onClick={() => navigate('/admin/copilot')}
+          onClick={() => navigate('/admin/flowpilot')}
           className={cn(
             'flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors',
             isCopilotMode

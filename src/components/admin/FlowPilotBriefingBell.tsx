@@ -22,7 +22,7 @@ export function FlowPilotBriefingBell() {
       variant="ghost"
       size="icon"
       className="relative h-8 w-8"
-      onClick={() => navigate('/admin/copilot')}
+      onClick={() => navigate('/admin/flowpilot')}
       title={count > 0 ? `${count} unread FlowPilot message${count > 1 ? 's' : ''}` : 'FlowPilot Chat'}
     >
       <Bell className="h-4 w-4" />

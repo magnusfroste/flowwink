@@ -2050,7 +2050,7 @@ Deno.serve(async (req) => {
         next_steps: [
           'Configure AI provider in Site Settings → System AI',
           'Set OPENAI_API_KEY or GEMINI_API_KEY as secrets',
-          'Open /admin/copilot to start using FlowPilot',
+          'Open /admin/flowpilot to start using FlowPilot',
         ],
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

@@ -78,7 +78,7 @@ export function WelcomeModal() {
           {isAIConfigured ? (
             <>
               <Link
-                to="/admin/copilot"
+                to="/admin/flowpilot"
                 onClick={handleClose}
                 className="flex items-start gap-3 p-3 rounded-lg bg-primary/5 border border-primary/20 hover:bg-primary/10 transition-colors"
               >

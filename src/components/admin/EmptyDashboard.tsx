@@ -40,8 +40,8 @@ export function EmptyDashboard() {
               The fastest way to create a complete website. Just describe your vision.
             </p>
             <Button asChild className="w-full gap-2">
-              <Link to="/admin/copilot">
-                Start with Copilot
+              <Link to="/admin/flowpilot">
+                Start with FlowPilot
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>

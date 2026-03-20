@@ -51,7 +51,7 @@ export default function QuickStartPage() {
 }
 
 function CopilotCard({ isPrimary, isAIConfigured }: { isPrimary: boolean; isAIConfigured: boolean }) {
-  const linkTo = isAIConfigured ? '/admin/copilot' : '/admin/integrations#ai';
+  const linkTo = isAIConfigured ? '/admin/flowpilot' : '/admin/integrations#ai';
   
   return (
     <Link to={linkTo} className="block group">
