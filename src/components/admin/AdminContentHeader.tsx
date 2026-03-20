@@ -38,7 +38,7 @@ export function AdminContentHeader() {
   const { currentVersion, latestVersion, latestReleaseUrl, hasUpdate } = useVersionCheck();
   const GITHUB_RELEASES_URL = 'https://github.com/magnusfroste/flowwink/releases';
 
-  const isCopilotMode = location.pathname === '/admin/copilot';
+  const isCopilotMode = location.pathname === '/admin/flowpilot';
 
   const initials =
     profile?.full_name?.charAt(0)?.toUpperCase() ||
