@@ -768,42 +768,6 @@ export const serviceProTemplate: StarterTemplate = {
   cookieBannerSettings: {
     enabled: true,
   },
-  flowpilot: {
-    objectives: [
-      { goal: 'Fill booking calendar to 80% capacity weekly', success_criteria: { weekly_bookings: 15 } },
-      { goal: 'Collect and showcase customer testimonials', success_criteria: { testimonials: 10 } },
-    ],
-    prioritySkills: ['book_appointment', 'add_lead', 'write_blog_post', 'analyze_analytics'],
-    soul: {
-      purpose: 'I help this service business fill its calendar, showcase expertise, and convert inquiries into bookings.',
-      tone: 'Warm, service-oriented. Professional but personal.',
-    },
-
-    automations: [
-      {
-        name: 'Weekly Business Digest',
-        description: 'Every Friday afternoon, analyze performance and generate a business digest with key metrics, wins, and next week priorities.',
-        trigger_type: 'cron',
-        trigger_config: { cron: '0 16 * * 5', timezone: 'UTC' },
-        skill_name: 'weekly_business_digest',
-        skill_arguments: {},
-        enabled: true,
-      },
-    ],
-    workflows: [
-      {
-        name: 'Content Pipeline',
-        description: 'Research a topic, generate a blog post proposal, write and publish. Run manually or trigger from objectives.',
-        steps: [
-          { id: 'step-1', skill_name: 'research_content', skill_args: { query: '{{topic}}' } },
-          { id: 'step-2', skill_name: 'generate_content_proposal', skill_args: { research_context: '{{step-1.output}}' } },
-          { id: 'step-3', skill_name: 'write_blog_post', skill_args: { proposal: '{{step-2.output}}' }, on_failure: 'stop' },
-        ],
-        trigger_type: 'manual',
-        enabled: true,
-      },
-    ],
-  },
   siteSettings: {
     homepageSlug: 'home',
   },

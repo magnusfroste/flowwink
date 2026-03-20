@@ -474,42 +474,5 @@ export const securehealthTemplate: StarterTemplate = {
     llmsFullTxtEnabled: true,
   },
   cookieBannerSettings: { enabled: true },
-  flowpilot: {
-    objectives: [
-      { goal: 'Maintain up-to-date patient-facing content and FAQ', success_criteria: { kb_articles: 15 }, constraints: { hipaa_compliant: true, no_patient_data: true } },
-      { goal: 'Ensure all booking inquiries are captured and confirmed', success_criteria: { booking_confirmation_rate: 100 } },
-    ],
-    prioritySkills: ['book_appointment', 'write_blog_post', 'analyze_analytics'],
-    soul: {
-      purpose: 'I support this healthcare organization by managing patient-facing content and bookings with compliance in mind.',
-      tone: 'Empathetic, clear, professional. Patient safety always comes first.',
-      values: ['Privacy and compliance above all', 'Clear and accessible health communication', 'Never share patient data'],
-    },
-
-    automations: [
-      {
-        name: 'Weekly Business Digest',
-        description: 'Every Friday afternoon, analyze performance and generate a business digest with key metrics, wins, and next week priorities.',
-        trigger_type: 'cron',
-        trigger_config: { cron: '0 16 * * 5', timezone: 'UTC' },
-        skill_name: 'weekly_business_digest',
-        skill_arguments: {},
-        enabled: true,
-      },
-    ],
-    workflows: [
-      {
-        name: 'Content Pipeline',
-        description: 'Research a topic, generate a blog post proposal, write and publish. Run manually or trigger from objectives.',
-        steps: [
-          { id: 'step-1', skill_name: 'research_content', skill_args: { query: '{{topic}}' } },
-          { id: 'step-2', skill_name: 'generate_content_proposal', skill_args: { research_context: '{{step-1.output}}' } },
-          { id: 'step-3', skill_name: 'write_blog_post', skill_args: { proposal: '{{step-2.output}}' }, on_failure: 'stop' },
-        ],
-        trigger_type: 'manual',
-        enabled: true,
-      },
-    ],
-  },
   siteSettings: { homepageSlug: 'home' },
 };
