@@ -23,8 +23,19 @@ import { SendEmailDialog } from '@/components/admin/crm/SendEmailDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { 
-  ArrowLeft, Mail, Phone, Building, Calendar, Sparkles, AlertCircle, Check, ChevronsUpDown, X, Plus, Loader2, Send
+  ArrowLeft, Mail, Phone, Building, Calendar, Sparkles, AlertCircle, Check, ChevronsUpDown, X, Plus, Loader2, Send, Trash2
 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
