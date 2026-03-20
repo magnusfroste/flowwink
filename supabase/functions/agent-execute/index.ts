@@ -877,9 +877,13 @@ async function executeKbAction(
   if (action === 'list') {
     const { category, is_published } = args as any;
     let query = supabase.from('kb_articles')
-      .select('id, title, slug, question, category, is_published, is_featured, views_count, helpful_count, not_helpful_count, created_at, updated_at')
+      .select('id, title, slug, question, category_id, is_published, is_featured, views_count, helpful_count, not_helpful_count, created_at, updated_at')
       .order('updated_at', { ascending: false }).limit(50);
-    if (category) query = query.eq('category', category);
+    if (category) {
+      // Resolve category name → id
+      const { data: cat } = await supabase.from('kb_categories').select('id').ilike('name', category).maybeSingle();
+      if (cat) query = query.eq('category_id', cat.id);
+    }
     if (is_published !== undefined) query = query.eq('is_published', is_published);
     const { data, error } = await query;
     if (error) throw new Error(`List KB articles failed: ${error.message}`);
@@ -899,23 +903,30 @@ async function executeKbAction(
   }
 
   if (action === 'create') {
-    const { title, question, answer, category = 'general', include_in_chat = true, is_featured = false, content } = args as any;
+    const { title, question, answer, category = 'general', include_in_chat = true, is_featured = false } = args as any;
     if (!title || !question) throw new Error('title and question are required');
     const articleSlug = title.toLowerCase().replace(/[^a-z0-9åäö]+/g, '-').replace(/(^-|-$)/g, '');
 
-    // Convert markdown answer to Tiptap if needed
-    let answerContent = answer;
-    if (typeof answer === 'string' && !content) {
-      answerContent = answer;
+    // Resolve category string → category_id UUID
+    const { data: cats } = await supabase.from('kb_categories').select('id, slug, name').eq('is_active', true).limit(20);
+    let categoryId: string | null = null;
+    if (cats && cats.length > 0) {
+      const match = cats.find(c =>
+        c.slug === category.toLowerCase().replace(/\s+/g, '-') ||
+        c.name?.toLowerCase() === category.toLowerCase()
+      );
+      categoryId = match?.id ?? cats[0].id;
     }
+    if (!categoryId) throw new Error('No KB categories found — create a KB category first');
 
     const { data, error } = await supabase.from('kb_articles').insert({
-      title, question, answer: answerContent || '',
-      slug: articleSlug, category,
+      title, question,
+      answer_text: answer || '',
+      slug: articleSlug,
+      category_id: categoryId,
       include_in_chat, is_featured,
       is_published: false,
-      content_json: content || null,
-    }).select('id, title, slug, category, is_published').single();
+    }).select('id, title, slug, is_published').single();
     if (error) throw new Error(`Create KB article failed: ${error.message}`);
     return { article_id: data.id, slug: data.slug, title: data.title, status: 'draft' };
   }
