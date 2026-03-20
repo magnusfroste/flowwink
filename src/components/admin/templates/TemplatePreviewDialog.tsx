@@ -196,7 +196,7 @@ export function TemplatePreviewDialog({
     consultants: !!template.consultants?.length,
     modules: !!template.requiredModules?.length,
     // Additional options
-    resetObjectives: !!template.flowpilot?.objectives?.length,
+    resetObjectives: false,
     clearMedia: false,
     downloadImages: templateImageCount > 0,
     publishPages: true,
