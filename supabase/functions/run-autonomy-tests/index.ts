@@ -115,7 +115,7 @@ async function layer1Tests(): Promise<TestResult[]> {
   results.push(await runTest("buildSystemPrompt: operate mode", 1, async () => {
     const p = buildSystemPrompt(baseInput);
     assertContains(p, "autonomous, self-improving AI agent");
-    assertContains(p, "OBJECTIVES:");
+    assertContains(p, "GROUNDING & DATA INTEGRITY");
   }));
 
   results.push(await runTest("buildSystemPrompt: heartbeat mode includes protocol", 1, async () => {
