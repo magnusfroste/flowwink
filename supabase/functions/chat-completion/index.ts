@@ -1,10 +1,31 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  loadWorkspaceFiles,
+  buildWorkspacePrompt,
+  buildSystemPrompt,
+  loadSkillTools,
+} from "../_shared/agent-reason.ts";
+
+/**
+ * Chat Completion — Visitor-facing AI chat
+ *
+ * Now unified with agent-reason core:
+ * - Soul/Identity personality injected via buildSystemPrompt(mode='chat')
+ * - External skills loaded from DB registry via loadSkillTools
+ * - Multi-iteration tool loop (up to 4 rounds)
+ * - All OpenAI-compatible providers (OpenAI, Gemini compat, Local) use same code path
+ * - N8N remains a special webhook passthrough
+ */
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
+
+const MAX_TOOL_ITERATIONS = 4;
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface ChatMessage {
   role: 'user' | 'assistant' | 'system' | 'tool';
@@ -16,10 +37,7 @@ interface ChatMessage {
 interface ToolCall {
   id: string;
   type: 'function';
-  function: {
-    name: string;
-    arguments: string;
-  };
+  function: { name: string; arguments: string };
 }
 
 interface ChatSettings {
@@ -32,6 +50,7 @@ interface ChatSettings {
   localEndpoint?: string;
   localModel?: string;
   localApiKey?: string;
+  localSupportsToolCalling?: boolean;
   n8nWebhookUrl?: string;
   n8nWebhookType?: 'chat' | 'generic';
   systemPrompt?: string;
@@ -39,15 +58,12 @@ interface ChatSettings {
   contentContextMaxTokens?: number;
   includedPageSlugs?: string[];
   includeKbArticles?: boolean;
-  // Tool calling settings
   toolCallingEnabled?: boolean;
   firecrawlSearchEnabled?: boolean;
   humanHandoffEnabled?: boolean;
   sentimentDetectionEnabled?: boolean;
   sentimentThreshold?: number;
-  localSupportsToolCalling?: boolean; // Whether local AI supports OpenAI-compatible tool calling (e.g., vLLM/Qwen3)
-  // General knowledge
-  allowGeneralKnowledge?: boolean; // Allow AI to use its own knowledge beyond page content
+  allowGeneralKnowledge?: boolean;
 }
 
 interface ChatRequest {
@@ -61,153 +77,87 @@ interface ChatRequest {
   checkinId?: string;
 }
 
-// Tool definitions for function calling
-const AVAILABLE_TOOLS = {
+// ─── Chat-specific tool definitions ───────────────────────────────────────────
+
+const CHAT_TOOLS: Record<string, any> = {
   firecrawl_search: {
     type: "function",
     function: {
       name: "firecrawl_search",
-      description: "Search the web for current information when the user asks about topics not in your knowledge base, or when they need up-to-date information.",
+      description: "Search the web for current information when the user asks about topics not in your knowledge base.",
       parameters: {
         type: "object",
-        properties: {
-          query: {
-            type: "string",
-            description: "The search query to find information about"
-          }
-        },
-        required: ["query"]
-      }
-    }
+        properties: { query: { type: "string", description: "The search query" } },
+        required: ["query"],
+      },
+    },
   },
   handoff_to_human: {
     type: "function",
     function: {
       name: "handoff_to_human",
-      description: "Transfer the conversation to a human support agent. Use this when: 1) The user explicitly asks to speak to a human, 2) The user is very frustrated or upset, 3) You cannot help with their specific request, 4) The issue is complex and requires human judgment.",
+      description: "Transfer the conversation to a human support agent when the user is frustrated, explicitly requests a human, or when you cannot help.",
       parameters: {
         type: "object",
         properties: {
-          reason: {
-            type: "string",
-            description: "Brief description of why handoff is needed"
-          },
-          urgency: {
-            type: "string",
-            enum: ["low", "normal", "high", "urgent"],
-            description: "How urgent is this handoff"
-          }
+          reason: { type: "string", description: "Why handoff is needed" },
+          urgency: { type: "string", enum: ["low", "normal", "high", "urgent"] },
         },
-        required: ["reason", "urgency"]
-      }
-    }
+        required: ["reason", "urgency"],
+      },
+    },
   },
   create_escalation: {
     type: "function",
     function: {
       name: "create_escalation",
-      description: "Create a support ticket when no human agents are available. This saves the conversation for follow-up.",
+      description: "Create a support ticket when no human agents are available.",
       parameters: {
         type: "object",
         properties: {
-          summary: {
-            type: "string",
-            description: "Brief summary of the issue"
-          },
-          priority: {
-            type: "string",
-            enum: ["low", "normal", "high", "urgent"],
-            description: "Priority level for the ticket"
-          }
+          summary: { type: "string", description: "Brief summary of the issue" },
+          priority: { type: "string", enum: ["low", "normal", "high", "urgent"] },
         },
-        required: ["summary", "priority"]
-      }
-    }
+        required: ["summary", "priority"],
+      },
+    },
   },
-  save_consultant_profile: {
-    type: "function",
-    function: {
-      name: "save_consultant_profile",
-      description: "Save the updated consultant profile after gathering information about their latest project, skills, and availability. Call this when you have enough information (at least 3 exchanges).",
-      parameters: {
-        type: "object",
-        properties: {
-          summary: {
-            type: "string",
-            description: "A comprehensive updated bio/summary of the consultant including: latest project, skills, what went well, challenges, and current availability."
-          },
-          skills: {
-            type: "array",
-            items: { type: "string" },
-            description: "Updated list of all skills and technologies the consultant mentioned."
-          },
-          availability: {
-            type: "string",
-            enum: ["available", "busy", "on_leave"],
-            description: "Current availability status."
-          },
-          title: {
-            type: "string",
-            description: "Updated professional title if mentioned."
-          }
-        },
-        required: ["summary"]
-      }
-    }
-  }
 };
 
-// Extract text from Tiptap JSON content
+// ─── Content extraction helpers ───────────────────────────────────────────────
+
 function extractTextFromTiptap(content: any): string {
   if (!content) return '';
-  
-  if (typeof content === 'string') {
-    return content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-  }
-  
+  if (typeof content === 'string') return content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
   if (typeof content === 'object') {
     const texts: string[] = [];
-    
-    if (content.text) {
-      texts.push(content.text);
-    }
-    
+    if (content.text) texts.push(content.text);
     if (content.content && Array.isArray(content.content)) {
       for (const node of content.content) {
-        const nodeText = extractTextFromTiptap(node);
-        if (nodeText) texts.push(nodeText);
+        const t = extractTextFromTiptap(node);
+        if (t) texts.push(t);
       }
     }
-    
     return texts.join(' ').replace(/\s+/g, ' ').trim();
   }
-  
   return '';
 }
 
-// Extract text from block content
 function extractTextFromBlock(block: any): string {
   if (!block) return '';
-  
   const texts: string[] = [];
   const type = block.type;
   const data = block.data || block;
 
   switch (type) {
-    case 'text':
-      if (data.content) {
-        texts.push(extractTextFromTiptap(data.content));
-      }
-      break;
+    case 'text': if (data.content) texts.push(extractTextFromTiptap(data.content)); break;
     case 'hero':
       if (data.title) texts.push(data.title);
       if (data.subtitle) texts.push(data.subtitle);
-      if (data.ctaText) texts.push(data.ctaText);
       break;
     case 'cta':
       if (data.title) texts.push(data.title);
       if (data.subtitle) texts.push(data.subtitle);
-      if (data.buttonText) texts.push(data.buttonText);
       break;
     case 'accordion':
       if (data.items && Array.isArray(data.items)) {
@@ -226,265 +176,125 @@ function extractTextFromBlock(block: any): string {
       if (data.quote) texts.push(data.quote);
       if (data.author) texts.push(`- ${data.author}`);
       break;
-    case 'info-box':
-    case 'infoBox':
+    case 'info-box': case 'infoBox':
       if (data.title) texts.push(data.title);
       if (data.content) texts.push(extractTextFromTiptap(data.content));
       break;
-    case 'two-column':
-    case 'twoColumn':
+    case 'two-column': case 'twoColumn':
       if (data.leftContent) texts.push(extractTextFromTiptap(data.leftContent));
       if (data.rightContent) texts.push(extractTextFromTiptap(data.rightContent));
       break;
     case 'stats':
       if (data.items && Array.isArray(data.items)) {
-        data.items.forEach((item: any) => {
-          if (item.value && item.label) texts.push(`${item.value} ${item.label}`);
-        });
+        data.items.forEach((item: any) => { if (item.value && item.label) texts.push(`${item.value} ${item.label}`); });
       }
       break;
-    case 'article-grid':
-    case 'articleGrid':
+    case 'article-grid': case 'articleGrid':
       if (data.items && Array.isArray(data.items)) {
-        data.items.forEach((item: any) => {
-          if (item.title) texts.push(item.title);
-          if (item.excerpt) texts.push(item.excerpt);
-        });
+        data.items.forEach((item: any) => { if (item.title) texts.push(item.title); if (item.excerpt) texts.push(item.excerpt); });
       }
       break;
-    case 'link-grid':
-    case 'linkGrid':
+    case 'link-grid': case 'linkGrid':
       if (data.items && Array.isArray(data.items)) {
-        data.items.forEach((item: any) => {
-          if (item.title) texts.push(item.title);
-          if (item.description) texts.push(item.description);
-        });
+        data.items.forEach((item: any) => { if (item.title) texts.push(item.title); if (item.description) texts.push(item.description); });
       }
       break;
   }
-
   return texts.join(' ');
 }
 
-// Build knowledge base from pages
-async function buildKnowledgeBase(
-  maxTokens: number, 
-  includedSlugs: string[] = [],
-  includeKbArticles: boolean = false
-): Promise<string> {
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-  const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-  const supabase = createClient(supabaseUrl, supabaseKey);
+// ─── Knowledge base builder ──────────────────────────────────────────────────
 
+async function buildKnowledgeBase(
+  supabase: any, maxTokens: number, includedSlugs: string[], includeKbArticles: boolean,
+): Promise<string> {
   const sections: string[] = [];
   let estimatedTokens = 0;
 
-  let query = supabase
-    .from('pages')
-    .select('title, slug, content_json')
-    .eq('status', 'published');
-
-  if (includedSlugs.length > 0) {
-    query = query.in('slug', includedSlugs);
-  }
-
-  const { data: pages, error: pagesError } = await query;
-
-  if (pagesError) {
-    console.error('Failed to fetch pages for knowledge base:', pagesError);
-  }
+  // Pages
+  let query = supabase.from('pages').select('title, slug, content_json').eq('status', 'published');
+  if (includedSlugs.length > 0) query = query.in('slug', includedSlugs);
+  const { data: pages } = await query;
 
   if (pages) {
     for (const page of pages) {
       const pageTexts: string[] = [];
-      
       if (page.content_json && Array.isArray(page.content_json)) {
         for (const block of page.content_json) {
           const text = extractTextFromBlock(block);
           if (text) pageTexts.push(text);
         }
       }
-
       if (pageTexts.length > 0) {
         const pageContent = `### ${page.title} (/${page.slug})\n${pageTexts.join('\n')}`;
         const contentTokens = Math.ceil(pageContent.length / 4);
-        
-        if (estimatedTokens + contentTokens > maxTokens) {
-          console.log(`Knowledge base truncated at ${estimatedTokens} tokens (max: ${maxTokens})`);
-          break;
-        }
-        
+        if (estimatedTokens + contentTokens > maxTokens) break;
         sections.push(pageContent);
         estimatedTokens += contentTokens;
       }
     }
   }
 
+  // KB Articles
   if (includeKbArticles) {
-    const { data: kbArticles, error: kbError } = await supabase
+    const { data: kbArticles } = await supabase
       .from('kb_articles')
       .select('title, question, answer_json, answer_text')
-      .eq('include_in_chat', true)
-      .eq('is_published', true);
+      .eq('include_in_chat', true).eq('is_published', true);
 
-    if (kbError) {
-      console.error('Failed to fetch KB articles:', kbError);
-    }
-
-    if (kbArticles && kbArticles.length > 0) {
+    if (kbArticles?.length) {
       const faqSection: string[] = [];
-      
       for (const article of kbArticles) {
         let answerText = article.answer_text || '';
-        if (!answerText && article.answer_json) {
-          answerText = extractTextFromTiptap(article.answer_json);
-        }
-        
+        if (!answerText && article.answer_json) answerText = extractTextFromTiptap(article.answer_json);
         if (answerText) {
-          const faqEntry = `Q: ${article.question}\nA: ${answerText}`;
-          const entryTokens = Math.ceil(faqEntry.length / 4);
-          
-          if (estimatedTokens + entryTokens > maxTokens) {
-            console.log(`KB articles truncated at ${estimatedTokens} tokens`);
-            break;
-          }
-          
-          faqSection.push(faqEntry);
+          const entry = `Q: ${article.question}\nA: ${answerText}`;
+          const entryTokens = Math.ceil(entry.length / 4);
+          if (estimatedTokens + entryTokens > maxTokens) break;
+          faqSection.push(entry);
           estimatedTokens += entryTokens;
         }
       }
-
-      if (faqSection.length > 0) {
-        sections.push(`\n## FAQ\n${faqSection.join('\n\n')}`);
-        console.log(`Added ${faqSection.length} KB articles to knowledge base`);
-      }
+      if (faqSection.length > 0) sections.push(`\n## FAQ\n${faqSection.join('\n\n')}`);
     }
   }
 
   if (sections.length === 0) return '';
-
-  console.log(`Built knowledge base: ~${estimatedTokens} tokens`);
-  
   return `\n\n## Website Content (Knowledge Base)\n${sections.join('\n\n')}`;
 }
 
-// Load external/both agent skills as tools
-async function loadAgentSkillTools(supabase: any): Promise<{tools: any[], skillMap: Map<string, string>}> {
-  const { data: skills, error } = await supabase
-    .from('agent_skills')
-    .select('id, name, scope, tool_definition, handler')
-    .eq('enabled', true)
-    .in('scope', ['external', 'both']);
+// ─── Chat tool execution ─────────────────────────────────────────────────────
 
-  if (error || !skills?.length) {
-    return { tools: [], skillMap: new Map() };
-  }
-
-  const tools: any[] = [];
-  const skillMap = new Map<string, string>(); // tool function name -> skill name
-
-  for (const skill of skills) {
-    const toolDef = skill.tool_definition as any;
-    if (toolDef?.type === 'function' && toolDef.function) {
-      tools.push(toolDef);
-      skillMap.set(toolDef.function.name, skill.name);
-    }
-  }
-
-  console.log(`Loaded ${tools.length} agent skills for public chat:`, [...skillMap.keys()]);
-  return { tools, skillMap };
-}
-
-// Execute tool calls — handles built-in tools + agent skills via agent-execute
-async function executeToolCall(
-  toolName: string,
-  args: Record<string, any>,
-  conversationId: string | undefined,
-  customerEmail: string | undefined,
-  customerName: string | undefined,
-  agentSkillNames?: Map<string, string>,
-  checkinId?: string,
+async function executeChatTool(
+  supabase: any, supabaseUrl: string, serviceKey: string,
+  toolName: string, args: any,
+  conversationId?: string, customerEmail?: string, customerName?: string,
 ): Promise<string> {
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-  const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-
-  console.log(`Executing tool: ${toolName}`, args);
-
-  // Check if this is an agent skill
-  if (agentSkillNames?.has(toolName)) {
-    const skillName = agentSkillNames.get(toolName)!;
-    try {
-      const response = await fetch(`${supabaseUrl}/functions/v1/agent-execute`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${supabaseKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          skill_name: skillName,
-          arguments: args,
-          agent_type: 'chat',
-          conversation_id: conversationId,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.status === 'pending_approval') {
-        return `This action requires admin approval. Your request has been submitted and will be processed shortly.`;
-      }
-      if (data.error) {
-        return `Could not complete this action: ${data.error}`;
-      }
-      return JSON.stringify(data.result || data, null, 2);
-    } catch (error) {
-      console.error('Agent skill execution error:', error);
-      return `Action failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
-    }
-  }
-
   switch (toolName) {
     case 'firecrawl_search': {
       try {
-        const response = await fetch(`${supabaseUrl}/functions/v1/firecrawl-search`, {
+        const resp = await fetch(`${supabaseUrl}/functions/v1/firecrawl-search`, {
           method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${supabaseKey}`,
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Authorization': `Bearer ${serviceKey}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({ query: args.query, limit: 3 }),
         });
-
-        const data = await response.json();
-        
-        if (!data.success) {
-          return `Search failed: ${data.error}`;
-        }
-
-        const results = (data.results || []).map((r: any) => 
+        const data = await resp.json();
+        if (!data.success) return `Search failed: ${data.error}`;
+        return (data.results || []).map((r: any) =>
           `**${r.title}** (${r.url})\n${r.description || r.content?.substring(0, 300) || ''}`
-        ).join('\n\n');
-
-        return results || 'No results found.';
-      } catch (error) {
-        console.error('Firecrawl search error:', error);
-        return `Search error: ${error instanceof Error ? error.message : 'Unknown error'}`;
+        ).join('\n\n') || 'No results found.';
+      } catch (err: any) {
+        return `Search error: ${err.message}`;
       }
     }
 
     case 'handoff_to_human':
     case 'create_escalation': {
-      if (!conversationId) {
-        return 'Cannot create handoff without a conversation ID.';
-      }
-
+      if (!conversationId) return 'Cannot create handoff without a conversation ID.';
       try {
-        const response = await fetch(`${supabaseUrl}/functions/v1/support-router`, {
+        const resp = await fetch(`${supabaseUrl}/functions/v1/support-router`, {
           method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${supabaseKey}`,
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Authorization': `Bearer ${serviceKey}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({
             conversationId,
             sentiment: {
@@ -493,75 +303,179 @@ async function executeToolCall(
               humanNeeded: true,
               trigger: args.reason || args.summary || 'User requested',
             },
-            customerEmail,
-            customerName,
+            customerEmail, customerName,
           }),
         });
-
-        const data = await response.json();
-        
-        if (data.action === 'handoff_to_agent') {
-          return `HANDOFF_SUCCESS: ${data.message}`;
-        } else if (data.action === 'create_escalation') {
-          return `ESCALATION_CREATED: ${data.message}`;
-        }
-        
+        const data = await resp.json();
+        if (data.action === 'handoff_to_agent') return `HANDOFF_SUCCESS: ${data.message}`;
+        if (data.action === 'create_escalation') return `ESCALATION_CREATED: ${data.message}`;
         return data.message || 'Handoff processed.';
-      } catch (error) {
-        console.error('Support router error:', error);
-        return `Handoff error: ${error instanceof Error ? error.message : 'Unknown error'}`;
+      } catch (err: any) {
+        return `Handoff error: ${err.message}`;
       }
     }
 
-    case 'save_consultant_profile': {
-      if (!checkinId || !args.summary) return 'Missing checkin context or summary.';
+    default: {
+      // Agent skill — delegate to agent-execute
       try {
-        const supabaseClient = createClient(supabaseUrl, supabaseKey);
-        const updateData: Record<string, unknown> = {
-          summary: args.summary,
-          updated_at: new Date().toISOString(),
-        };
-        if (args.skills && Array.isArray(args.skills) && args.skills.length > 0) {
-          updateData.skills = args.skills;
-        }
-        if (args.availability) {
-          updateData.availability = args.availability;
-        }
-        if (args.title) {
-          updateData.title = args.title;
-        }
-        const { error } = await supabaseClient
-          .from('consultant_profiles')
-          .update(updateData)
-          .eq('id', checkinId);
-        if (error) throw error;
-        return 'Consultant profile updated successfully.';
-      } catch (err) {
-        console.error('save_consultant_profile error:', err);
-        return `Failed to save profile: ${err instanceof Error ? err.message : 'Unknown error'}`;
+        const resp = await fetch(`${supabaseUrl}/functions/v1/agent-execute`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${serviceKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            skill_name: toolName,
+            arguments: args,
+            agent_type: 'chat',
+            conversation_id: conversationId,
+          }),
+        });
+        const data = await resp.json();
+        if (data.status === 'pending_approval') return 'This action requires admin approval. Your request has been submitted.';
+        if (data.error) return `Could not complete: ${data.error}`;
+        return JSON.stringify(data.result || data, null, 2);
+      } catch (err: any) {
+        return `Action failed: ${err.message}`;
       }
     }
-
-    default:
-      return `Unknown tool: ${toolName}`;
   }
 }
 
-// Build sentiment detection prompt
+// ─── Provider resolution ─────────────────────────────────────────────────────
+
+const OPENAI_MIGRATE: Record<string, string> = {
+  'gpt-4o': 'gpt-4.1', 'gpt-4o-mini': 'gpt-4.1-mini', 'gpt-3.5-turbo': 'gpt-4.1-nano',
+  'gpt-4-turbo': 'gpt-4.1', 'gpt-4': 'gpt-4.1',
+};
+const GEMINI_MIGRATE: Record<string, string> = {
+  'gemini-1.5-pro': 'gemini-2.5-pro', 'gemini-1.5-flash': 'gemini-2.5-flash',
+  'gemini-2.0-flash-exp': 'gemini-2.5-flash', 'gemini-pro': 'gemini-2.5-pro',
+};
+
+interface ProviderConfig {
+  apiKey: string;
+  apiUrl: string;
+  model: string;
+  supportsToolCalling: boolean;
+  isN8n: boolean;
+  n8nConfig?: { webhookUrl: string; webhookType: string; apiKey?: string };
+}
+
+function resolveProvider(settings: ChatSettings | undefined, integrations: any): ProviderConfig {
+  const provider = settings?.aiProvider || 'openai';
+
+  if (provider === 'n8n') {
+    const n8nConfig = integrations?.n8n?.config || {};
+    const webhookUrl = settings?.n8nWebhookUrl || n8nConfig?.webhookUrl;
+    if (!webhookUrl) throw new Error('N8N webhook URL is not configured.');
+    const n8nApiKey = Deno.env.get('N8N_API_KEY') || n8nConfig?.apiKey;
+    return {
+      apiKey: '', apiUrl: '', model: '',
+      supportsToolCalling: false, isN8n: true,
+      n8nConfig: { webhookUrl, webhookType: settings?.n8nWebhookType || n8nConfig?.webhookType || 'chat', apiKey: n8nApiKey },
+    };
+  }
+
+  if (provider === 'gemini') {
+    const apiKey = settings?.geminiApiKey || Deno.env.get('GEMINI_API_KEY');
+    if (!apiKey) throw new Error('Gemini API key is not configured');
+    const rawModel = settings?.geminiModel || 'gemini-2.5-flash';
+    return {
+      apiKey,
+      apiUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+      model: GEMINI_MIGRATE[rawModel] || rawModel,
+      supportsToolCalling: true, isN8n: false,
+    };
+  }
+
+  if (provider === 'local') {
+    const localConfig = integrations?.local_llm?.config || {};
+    const chatEndpoint = settings?.localEndpoint;
+    const isPlaceholder = !chatEndpoint || chatEndpoint.includes('your-local-llm') || chatEndpoint.includes('placeholder');
+    const endpoint = isPlaceholder ? localConfig?.endpoint : chatEndpoint;
+    if (!endpoint) throw new Error('Local endpoint is not configured.');
+
+    const localApiKey = Deno.env.get('LOCAL_LLM_API_KEY') || localConfig?.apiKey || settings?.localApiKey;
+    const baseEndpoint = endpoint.replace(/\/+$/, '');
+    const apiPath = baseEndpoint.endsWith('/v1') ? '/chat/completions' : '/v1/chat/completions';
+    const model = settings?.localModel || localConfig?.model || 'llama3';
+
+    return {
+      apiKey: localApiKey || '',
+      apiUrl: `${baseEndpoint}${apiPath}`,
+      model,
+      supportsToolCalling: settings?.localSupportsToolCalling || false,
+      isN8n: false,
+    };
+  }
+
+  // OpenAI (default)
+  const apiKey = settings?.openaiApiKey || Deno.env.get('OPENAI_API_KEY');
+  if (!apiKey) throw new Error('OpenAI API key is not configured');
+  const baseUrl = settings?.openaiBaseUrl || 'https://api.openai.com/v1';
+  const rawModel = settings?.openaiModel || 'gpt-4.1-mini';
+  return {
+    apiKey,
+    apiUrl: `${baseUrl}/chat/completions`,
+    model: OPENAI_MIGRATE[rawModel] || rawModel,
+    supportsToolCalling: true, isN8n: false,
+  };
+}
+
+// ─── N8N webhook handler ─────────────────────────────────────────────────────
+
+async function handleN8nWebhook(
+  settings: ChatSettings | undefined, n8nConfig: NonNullable<ProviderConfig['n8nConfig']>,
+  fullMessages: ChatMessage[], conversationId?: string, sessionId?: string, systemPrompt?: string,
+): Promise<Response> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (n8nConfig.apiKey) {
+    headers['Authorization'] = n8nConfig.apiKey.startsWith('Bearer ') ? n8nConfig.apiKey : `Bearer ${n8nConfig.apiKey}`;
+  }
+
+  const lastUserMessage = fullMessages.filter(m => m.role === 'user').pop();
+  const payload = n8nConfig.webhookType === 'chat'
+    ? { chatInput: lastUserMessage?.content || '', sessionId: sessionId || conversationId, systemPrompt }
+    : { messages: fullMessages, model: 'gpt-4', conversationId, sessionId };
+
+  const resp = await fetch(n8nConfig.webhookUrl, {
+    method: 'POST', headers, body: JSON.stringify(payload),
+  });
+
+  if (!resp.ok) {
+    const errorText = await resp.text();
+    console.error('N8N webhook error:', resp.status, errorText);
+    throw new Error('N8N webhook failed');
+  }
+
+  const data = await resp.json();
+  let responseContent = 'I could not process your request.';
+  if (Array.isArray(data) && data.length > 0) {
+    responseContent = data[0].output || data[0].message || data[0].response || responseContent;
+  } else if (typeof data === 'object' && data !== null) {
+    responseContent = data.output || data.message || data.response || responseContent;
+  }
+
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream({
+    start(controller) {
+      const sseData = JSON.stringify({ choices: [{ delta: { content: responseContent }, finish_reason: 'stop' }] });
+      controller.enqueue(encoder.encode(`data: ${sseData}\n\n`));
+      controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+      controller.close();
+    },
+  });
+
+  return new Response(stream, { headers: { ...corsHeaders, 'Content-Type': 'text/event-stream' } });
+}
+
+// ─── Sentiment prompt builder ────────────────────────────────────────────────
+
 function buildSentimentPrompt(threshold: number): string {
-  return `
-
-## Sentiment Analysis
-Analyze each user message for emotional state. Look for:
-- Frustration indicators: repeated questions, caps, exclamation marks, negative words
-- Urgency: time-sensitive language, deadlines, emergency words
-- Explicit requests: "speak to human", "talk to person", "real person"
-
-If frustration level exceeds ${threshold}/10 OR user explicitly requests human help:
-- Call the handoff_to_human tool with appropriate reason and urgency
-
+  return `\n\n## Sentiment Analysis
+Analyze each user message for emotional state. If frustration level exceeds ${threshold}/10 OR user explicitly requests human help, call the handoff_to_human tool with appropriate reason and urgency.
 Be empathetic and acknowledge frustration before attempting handoff.`;
 }
+
+// ─── Main handler ─────────────────────────────────────────────────────────────
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -570,842 +484,309 @@ serve(async (req) => {
 
   try {
     const { messages, conversationId, sessionId, settings, customerEmail, customerName, mode, checkinId } = await req.json() as ChatRequest;
-    
-    console.log('Chat request received:', { 
-      messageCount: messages.length, 
-      provider: settings?.aiProvider,
-      toolCallingEnabled: settings?.toolCallingEnabled,
-      allowGeneralKnowledge: settings?.allowGeneralKnowledge,
-      includeContentAsContext: settings?.includeContentAsContext,
-      conversationId,
-    });
 
-    const aiProvider = settings?.aiProvider || 'openai';
+    // Redirect check-in mode to dedicated function
+    if (mode === 'checkin' && checkinId) {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      const resp = await fetch(`${supabaseUrl}/functions/v1/consultant-checkin`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${serviceKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages, checkinId }),
+      });
+      return new Response(resp.body, {
+        status: resp.status,
+        headers: { ...corsHeaders, 'Content-Type': resp.headers.get('Content-Type') || 'text/event-stream' },
+      });
+    }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, serviceKey);
 
-    // Check if conversation is handled by a live agent - AI should not respond
+    // Check if conversation is handled by a live agent
     if (conversationId) {
       const { data: conversation } = await supabase
         .from('chat_conversations')
         .select('conversation_status, assigned_agent_id')
-        .eq('id', conversationId)
-        .single();
-      
-      if (conversation?.assigned_agent_id && 
-          (conversation.conversation_status === 'with_agent' || conversation.conversation_status === 'waiting_agent')) {
-        console.log('Conversation is handled by live agent, AI will not respond:', conversationId);
+        .eq('id', conversationId).single();
+
+      if (conversation?.assigned_agent_id &&
+        (conversation.conversation_status === 'with_agent' || conversation.conversation_status === 'waiting_agent')) {
         return new Response(
-          JSON.stringify({ 
-            skipped: true, 
-            reason: 'Conversation is being handled by a live support agent.' 
-          }),
-          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          JSON.stringify({ skipped: true, reason: 'Conversation is being handled by a live support agent.' }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
         );
       }
     }
 
+    // Load integrations config
     const { data: integrationSettings } = await supabase
-      .from('site_settings')
-      .select('value')
-      .eq('key', 'integrations')
-      .maybeSingle();
+      .from('site_settings').select('value').eq('key', 'integrations').maybeSingle();
+    const integrations = integrationSettings?.value as any;
 
-    const aiIntegrations = integrationSettings?.value as any;
-    
-    // Check if provider is enabled
-    if (aiProvider === 'openai') {
-      const openaiEnabled = aiIntegrations?.openai?.enabled ?? false;
-      if (!openaiEnabled) {
-        return new Response(
-          JSON.stringify({ error: 'OpenAI integration is disabled.' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-    } else if (aiProvider === 'gemini') {
-      const geminiEnabled = aiIntegrations?.gemini?.enabled ?? false;
-      if (!geminiEnabled) {
-        return new Response(
-          JSON.stringify({ error: 'Gemini integration is disabled.' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
+    // Check provider enabled
+    const aiProvider = settings?.aiProvider || 'openai';
+    if (aiProvider === 'openai' && !(integrations?.openai?.enabled ?? false)) {
+      return new Response(JSON.stringify({ error: 'OpenAI integration is disabled.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+    if (aiProvider === 'gemini' && !(integrations?.gemini?.enabled ?? false)) {
+      return new Response(JSON.stringify({ error: 'Gemini integration is disabled.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    let systemPrompt = settings?.systemPrompt || 'You are a helpful AI assistant.';
+    // Resolve provider
+    const provider = resolveProvider(settings, integrations);
 
-    // Always respond in the user's language
-    systemPrompt += '\n\nIMPORTANT: Always respond in the same language as the user writes in. If the user writes in Swedish, respond in Swedish. If in English, respond in English. Match the user\'s language automatically.';
+    // Load context in parallel: workspace files (soul/identity) + knowledge base + skills
+    const shouldLoadKB = settings?.includeContentAsContext || settings?.includeKbArticles;
+    const shouldLoadSkills = settings?.toolCallingEnabled && provider.supportsToolCalling;
 
-    // Add knowledge base restriction or allowance
-    // IMPORTANT: allowGeneralKnowledge takes precedence - if true, AI can use its own knowledge
+    const [{ soul, identity, agents }, knowledgeBase, skillTools] = await Promise.all([
+      loadWorkspaceFiles(supabase),
+      shouldLoadKB
+        ? buildKnowledgeBase(
+            supabase,
+            settings?.contentContextMaxTokens || 50000,
+            settings?.includeContentAsContext ? (settings?.includedPageSlugs || []) : [],
+            settings?.includeKbArticles || false,
+          )
+        : Promise.resolve(''),
+      shouldLoadSkills ? loadSkillTools(supabase, 'external') : Promise.resolve([]),
+    ]);
+
+    // Build system prompt with knowledge base context
+    let chatPrompt = settings?.systemPrompt || 'You are a helpful AI assistant.';
+
+    // Knowledge base restrictions
     if (settings?.allowGeneralKnowledge) {
-      console.log('General knowledge ENABLED - AI may use its own knowledge');
-      systemPrompt += '\n\nYou have access to general knowledge and can answer questions on any topic. When the user asks about the website or its services, prioritize the website content provided below. For other topics (like math, science, history, etc.), feel free to use your general knowledge.';
-    } else if (settings?.includeContentAsContext || settings?.includeKbArticles) {
-      console.log('General knowledge DISABLED - AI restricted to website content only');
-      systemPrompt += '\n\nIMPORTANT: Only answer questions based on the website content provided below. If the answer is not in the content, politely say you can only help with questions about this website.';
+      chatPrompt += '\n\nYou have access to general knowledge and can answer questions on any topic. When the user asks about the website or its services, prioritize the website content provided below.';
+    } else if (shouldLoadKB) {
+      chatPrompt += '\n\nIMPORTANT: Only answer questions based on the website content provided below. If the answer is not in the content, politely say you can only help with questions about this website.';
     }
 
-    // Add knowledge base if enabled
-    if (settings?.includeContentAsContext || settings?.includeKbArticles) {
-      const maxTokens = settings?.contentContextMaxTokens || 50000;
-      const includedSlugs = settings?.includedPageSlugs || [];
-      const includeKb = settings?.includeKbArticles || false;
-      const knowledgeBase = await buildKnowledgeBase(
-        maxTokens, 
-        settings?.includeContentAsContext ? includedSlugs : [],
-        includeKb
-      );
-      if (knowledgeBase) {
-        systemPrompt += knowledgeBase;
-      }
-    }
+    if (knowledgeBase) chatPrompt += knowledgeBase;
 
-    // Add sentiment detection if enabled
+    // Sentiment detection
     if (settings?.sentimentDetectionEnabled && settings?.humanHandoffEnabled) {
-      systemPrompt += buildSentimentPrompt(settings?.sentimentThreshold || 7);
+      chatPrompt += buildSentimentPrompt(settings?.sentimentThreshold || 7);
     }
 
-    // Check-in mode: fetch consultant profile and build interview system prompt
-    const isCheckinMode = mode === 'checkin' && !!checkinId;
-    if (isCheckinMode) {
-      const { data: consultant } = await supabase
-        .from('consultant_profiles')
-        .select('name, title, skills, summary, availability, experience_years, bio')
-        .eq('id', checkinId)
-        .maybeSingle();
-
-      const consultantName = consultant?.name || 'consultant';
-      const existingProfile = consultant
-        ? `Name: ${consultant.name}\nTitle: ${consultant.title || 'N/A'}\nSkills: ${(consultant.skills || []).join(', ')}\nExperience: ${consultant.experience_years || 0} years\nAvailability: ${consultant.availability || 'unknown'}\nSummary: ${consultant.summary || 'No summary yet.'}\nBio: ${consultant.bio || 'N/A'}`
-        : 'No existing profile found.';
-
-      systemPrompt = `You are FlowPilot, conducting a friendly professional check-in interview with ${consultantName}.
-
-Your goal is to update their consultant profile by asking conversational questions. Keep it natural and brief — this is a quick check-in, not a formal interview.
-
-Current profile:
-${existingProfile}
-
-Ask about (one at a time, conversationally):
-1. Their most recent project or assignment (what, where, duration, tech stack)
-2. What went particularly well
-3. Any interesting challenges
-4. Current availability and preferred next role
-
-After 3–5 exchanges when you have enough information, call the save_consultant_profile tool with the updated summary, skills array, availability, and title. Then confirm to the consultant that their profile has been updated.
-
-IMPORTANT: Always respond in the same language the consultant writes in.`;
-    }
-
-    // Build tools array based on settings
-    const tools: any[] = [];
-    let agentSkillNames = new Map<string, string>(); // tool function name -> skill name
-    // OpenAI always supports tool calling; local providers support it if explicitly enabled (e.g., vLLM/Qwen3)
-    const toolCallingSupported = aiProvider === 'openai' ||
-      (aiProvider === 'local' && settings?.localSupportsToolCalling);
-    
-    console.log('Tool calling check:', {
-      toolCallingEnabled: settings?.toolCallingEnabled,
-      toolCallingSupported,
-      aiProvider,
-      localSupportsToolCalling: settings?.localSupportsToolCalling,
-      firecrawlSearchEnabled: settings?.firecrawlSearchEnabled,
-      firecrawlIntegrationEnabled: aiIntegrations?.firecrawl?.enabled,
+    // Use prompt compiler — injects soul/identity personality + grounding
+    const systemPrompt = buildSystemPrompt({
+      mode: 'chat',
+      soulPrompt: buildWorkspacePrompt(soul, identity, agents),
+      agents,
+      memoryContext: '',
+      objectiveContext: '',
+      chatSystemPrompt: chatPrompt,
     });
-    
-    // Always add save_consultant_profile in check-in mode (requires tool calling support)
-    if (isCheckinMode && toolCallingSupported) {
-      tools.push(AVAILABLE_TOOLS.save_consultant_profile);
-    }
 
-    if (settings?.toolCallingEnabled && toolCallingSupported) {
-      if (settings?.firecrawlSearchEnabled && aiIntegrations?.firecrawl?.enabled) {
-        console.log('Adding firecrawl_search tool');
-        tools.push(AVAILABLE_TOOLS.firecrawl_search);
+    // Build tools array
+    const tools: any[] = [];
+    const chatToolNames = new Set<string>();
+
+    if (shouldLoadSkills) {
+      if (settings?.firecrawlSearchEnabled && integrations?.firecrawl?.enabled) {
+        tools.push(CHAT_TOOLS.firecrawl_search);
+        chatToolNames.add('firecrawl_search');
       }
       if (settings?.humanHandoffEnabled) {
-        tools.push(AVAILABLE_TOOLS.handoff_to_human);
-        tools.push(AVAILABLE_TOOLS.create_escalation);
+        tools.push(CHAT_TOOLS.handoff_to_human);
+        tools.push(CHAT_TOOLS.create_escalation);
+        chatToolNames.add('handoff_to_human');
+        chatToolNames.add('create_escalation');
       }
-
-      // Load agent skills (external/both scope) as additional tools
-      const { tools: skillTools, skillMap } = await loadAgentSkillTools(supabase);
-      if (skillTools.length > 0) {
-        tools.push(...skillTools);
-        agentSkillNames = skillMap;
-      }
+      // External skills from DB registry
+      tools.push(...skillTools);
     }
-    
-    // Add tool usage instructions to system prompt if tools are enabled
+
+    // Add tool instructions to system prompt
+    let finalSystemPrompt = systemPrompt;
     if (tools.length > 0) {
       const toolNames = tools.map((t: any) => t.function?.name).filter(Boolean);
       let toolInstructions = `\n\nYou have access to the following tools: ${toolNames.join(', ')}.`;
-      
       if (settings?.firecrawlSearchEnabled) {
-        toolInstructions += `\nWhen the user asks for current/live information (news, weather, prices, recent events, etc.), you MUST use the firecrawl_search tool to search the web.
-When the user asks about a specific website, use firecrawl_search with the website URL or domain in the query.`;
+        toolInstructions += `\nWhen the user asks for current/live information, you MUST use the firecrawl_search tool.`;
       }
-      
-      if (agentSkillNames.size > 0) {
-        toolInstructions += `\nYou can also perform actions like booking appointments, checking orders, and adding contact information. Use the appropriate tool when the user requests these actions. Always confirm the action result with the user.`;
+      if (skillTools.length > 0) {
+        toolInstructions += `\nYou can also perform actions like booking appointments, checking orders, and adding contact information. Use the appropriate tool when requested.`;
       }
-      
-      toolInstructions += `\nAlways use tools when they can help answer the user's question - do not say you cannot access the internet or current information.`;
-      systemPrompt += toolInstructions;
+      toolInstructions += `\nAlways use tools when they can help answer the user's question.`;
+      finalSystemPrompt += toolInstructions;
     }
 
-    // Fallback: Keyword-based handoff detection for non-OpenAI providers
-    if (settings?.humanHandoffEnabled && !toolCallingSupported) {
+    // Keyword-based handoff fallback for non-tool-calling providers
+    if (settings?.humanHandoffEnabled && !provider.supportsToolCalling) {
       const lastUserMessage = messages.filter(m => m.role === 'user').pop()?.content?.toLowerCase() || '';
       const handoffKeywords = [
         'talk to a person', 'speak to a human', 'real person', 'human agent',
-        'talk to human', 'speak to person', 'want a person', 'need a human',
-        'customer service', 'support agent', 'live agent', 'not helpful',
-        'prata med människa', 'riktig person', 'mänsklig support'
+        'talk to human', 'speak to person', 'customer service', 'support agent',
+        'prata med människa', 'riktig person', 'mänsklig support',
       ];
-      
-      const shouldHandoff = handoffKeywords.some(kw => lastUserMessage.includes(kw));
-      
-      if (shouldHandoff && conversationId) {
-        console.log('Keyword-based handoff triggered for conversation:', conversationId);
-        
-        // Call support router
-        try {
-          const routerResponse = await fetch(`${supabaseUrl}/functions/v1/support-router`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${supabaseKey}`,
-            },
-            body: JSON.stringify({
-              conversationId,
-              sentiment: {
-                frustrationLevel: 8,
-                urgency: 'high',
-                humanNeeded: true,
-                trigger: 'User explicitly requested human support',
-              },
-              customerEmail,
-              customerName,
-            }),
-          });
-
-          const routerResult = await routerResponse.json();
-          console.log('Support router result:', routerResult);
-          
-          // Return handoff message to user
-          const handoffMessage = routerResult.message || 'Connecting you to a support agent...';
-          const encoder = new TextEncoder();
-          const stream = new ReadableStream({
-            start(controller) {
-              const data = JSON.stringify({
-                choices: [{
-                  delta: { content: handoffMessage },
-                  finish_reason: 'stop'
-                }]
-              });
-              controller.enqueue(encoder.encode(`data: ${data}\n\n`));
-              controller.enqueue(encoder.encode('data: [DONE]\n\n'));
-              controller.close();
-            }
-          });
-
-          return new Response(stream, {
-            headers: { ...corsHeaders, 'Content-Type': 'text/event-stream' },
-          });
-        } catch (error) {
-          console.error('Fallback handoff error:', error);
-        }
+      if (handoffKeywords.some(kw => lastUserMessage.includes(kw)) && conversationId) {
+        const result = await executeChatTool(
+          supabase, supabaseUrl, serviceKey,
+          'handoff_to_human', { reason: 'User explicitly requested human support', urgency: 'high' },
+          conversationId, customerEmail, customerName,
+        );
+        const encoder = new TextEncoder();
+        const stream = new ReadableStream({
+          start(controller) {
+            const data = JSON.stringify({ choices: [{ delta: { content: result }, finish_reason: 'stop' }] });
+            controller.enqueue(encoder.encode(`data: ${data}\n\n`));
+            controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+            controller.close();
+          },
+        });
+        return new Response(stream, { headers: { ...corsHeaders, 'Content-Type': 'text/event-stream' } });
       }
     }
 
-    // Prepare messages with system prompt
-    const fullMessages: ChatMessage[] = [
-      { role: 'system', content: systemPrompt },
+    // N8N: webhook passthrough (no tool loop)
+    if (provider.isN8n) {
+      const fullMsgs: ChatMessage[] = [{ role: 'system', content: finalSystemPrompt }, ...messages];
+      return handleN8nWebhook(settings, provider.n8nConfig!, fullMsgs, conversationId, sessionId, finalSystemPrompt);
+    }
+
+    // ─── Unified OpenAI-compatible tool loop ─────────────────────────────────
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (provider.apiKey) headers['Authorization'] = `Bearer ${provider.apiKey}`;
+
+    let conversationMessages: any[] = [
+      { role: 'system', content: finalSystemPrompt },
       ...messages,
     ];
 
-    let response: Response;
-
-    if (aiProvider === 'openai') {
-      const apiKey = settings?.openaiApiKey || Deno.env.get('OPENAI_API_KEY');
-      if (!apiKey) {
-        throw new Error('OpenAI API key is not configured');
-      }
-
-      const baseUrl = settings?.openaiBaseUrl || 'https://api.openai.com/v1';
-      // Migrate legacy model names server-side
-      const OPENAI_MIGRATE: Record<string, string> = { 'gpt-4o': 'gpt-4.1', 'gpt-4o-mini': 'gpt-4.1-mini', 'gpt-3.5-turbo': 'gpt-4.1-nano', 'gpt-4-turbo': 'gpt-4.1', 'gpt-4': 'gpt-4.1' };
-      const rawModel = settings?.openaiModel || 'gpt-4.1-mini';
-      const model = OPENAI_MIGRATE[rawModel] || rawModel;
-
+    // Multi-iteration tool loop (non-streaming until final response)
+    for (let iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration++) {
       const requestBody: any = {
-        model,
-        messages: fullMessages,
-        stream: true,
+        model: provider.model,
+        messages: conversationMessages,
       };
 
-      // Add tools if any are enabled
+      // Only include tools on first iteration or when we have tools
       if (tools.length > 0) {
         requestBody.tools = tools;
         requestBody.tool_choice = 'auto';
       }
 
-      response = await fetch(`${baseUrl}/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
-      });
+      // Last chance: if no tools or last iteration, stream directly
+      if (tools.length === 0 || iteration === MAX_TOOL_ITERATIONS - 1) {
+        requestBody.stream = true;
+        const streamResp = await fetch(provider.apiUrl, {
+          method: 'POST', headers, body: JSON.stringify(requestBody),
+        });
 
-      // Handle tool calls (non-streaming for tool execution)
-      if (tools.length > 0) {
-        const clonedResponse = response.clone();
-        const reader = clonedResponse.body?.getReader();
-        const decoder = new TextDecoder();
-        let fullContent = '';
-        let toolCalls: ToolCall[] = [];
-
-        if (reader) {
-          let buffer = '';
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            
-            buffer += decoder.decode(value, { stream: true });
-            const lines = buffer.split('\n');
-            buffer = lines.pop() || '';
-
-            for (const line of lines) {
-              if (!line.startsWith('data: ') || line === 'data: [DONE]') continue;
-              try {
-                const parsed = JSON.parse(line.slice(6));
-                const delta = parsed.choices?.[0]?.delta;
-                
-                if (delta?.content) {
-                  fullContent += delta.content;
-                }
-                
-                if (delta?.tool_calls) {
-                  for (const tc of delta.tool_calls) {
-                    if (tc.index !== undefined) {
-                      if (!toolCalls[tc.index]) {
-                        toolCalls[tc.index] = {
-                          id: tc.id || '',
-                          type: 'function',
-                          function: { name: '', arguments: '' }
-                        };
-                      }
-                      if (tc.id) toolCalls[tc.index].id = tc.id;
-                      if (tc.function?.name) toolCalls[tc.index].function.name = tc.function.name;
-                      if (tc.function?.arguments) toolCalls[tc.index].function.arguments += tc.function.arguments;
-                    }
-                  }
-                }
-              } catch (e) {
-                // Ignore parse errors
-              }
-            }
-          }
+        if (!streamResp.ok) {
+          return handleAiError(streamResp);
         }
 
-        // If there are tool calls, execute them and make another request
-        if (toolCalls.length > 0 && toolCalls[0]?.function?.name) {
-          console.log('Tool calls detected:', toolCalls);
-          
-          // Execute each tool call
-          const toolResults: ChatMessage[] = [];
-          for (const tc of toolCalls) {
-            try {
-              const args = JSON.parse(tc.function.arguments);
-              const result = await executeToolCall(
-                tc.function.name,
-                args,
-                conversationId,
-                customerEmail,
-                customerName,
-                agentSkillNames,
-                checkinId,
-              );
-              
-              toolResults.push({
-                role: 'tool',
-                tool_call_id: tc.id,
-                content: result,
-              });
-            } catch (error) {
-              console.error('Tool execution error:', error);
-              toolResults.push({
-                role: 'tool',
-                tool_call_id: tc.id,
-                content: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-              });
-            }
-          }
+        return new Response(streamResp.body, {
+          headers: { ...corsHeaders, 'Content-Type': 'text/event-stream' },
+        });
+      }
 
-          // Add assistant message with tool calls and tool results
-          const assistantMessage: ChatMessage = {
-            role: 'assistant',
-            content: fullContent || '',
-            tool_calls: toolCalls,
-          };
+      // Non-streaming call to detect tool calls
+      const aiResp = await fetch(provider.apiUrl, {
+        method: 'POST', headers, body: JSON.stringify(requestBody),
+      });
 
-          const followUpMessages = [
-            ...fullMessages,
-            assistantMessage,
-            ...toolResults,
-          ];
+      if (!aiResp.ok) {
+        return handleAiError(aiResp);
+      }
 
-          // Make follow-up request
-          const followUpResponse = await fetch(`${baseUrl}/chat/completions`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${apiKey}`,
-              'Content-Type': 'application/json',
+      const aiData = await aiResp.json();
+      const choice = aiData.choices?.[0];
+      if (!choice) throw new Error('No response from AI');
+
+      const msg = choice.message;
+
+      // No tool calls → stream the final response
+      if (!msg.tool_calls?.length) {
+        // Re-do the call with streaming for smooth output
+        requestBody.stream = true;
+        delete requestBody.tools;
+        delete requestBody.tool_choice;
+        const streamResp = await fetch(provider.apiUrl, {
+          method: 'POST', headers, body: JSON.stringify(requestBody),
+        });
+
+        if (!streamResp.ok) {
+          // Fallback: return the non-streamed content
+          const encoder = new TextEncoder();
+          const fallbackStream = new ReadableStream({
+            start(controller) {
+              const data = JSON.stringify({ choices: [{ delta: { content: msg.content || 'Done.' }, finish_reason: 'stop' }] });
+              controller.enqueue(encoder.encode(`data: ${data}\n\n`));
+              controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+              controller.close();
             },
-            body: JSON.stringify({
-              model,
-              messages: followUpMessages,
-              stream: true,
-            }),
           });
-
-          return new Response(followUpResponse.body, {
+          return new Response(fallbackStream, {
             headers: { ...corsHeaders, 'Content-Type': 'text/event-stream' },
           });
         }
 
-        // No tool calls — re-stream the already-collected content
-        // (original response body may be consumed by clone, so reconstruct SSE from fullContent)
-        if (fullContent) {
-          const enc = new TextEncoder();
-          const reStream = new ReadableStream({
-            start(controller) {
-              const data = JSON.stringify({
-                choices: [{ delta: { content: fullContent }, finish_reason: 'stop' }]
-              });
-              controller.enqueue(enc.encode(`data: ${data}\n\n`));
-              controller.enqueue(enc.encode('data: [DONE]\n\n'));
-              controller.close();
-            }
-          });
-          return new Response(reStream, {
-            headers: { ...corsHeaders, 'Content-Type': 'text/event-stream' },
-          });
-        }
-      }
-
-    } else if (aiProvider === 'gemini') {
-      const apiKey = settings?.geminiApiKey || Deno.env.get('GEMINI_API_KEY');
-      if (!apiKey) {
-        throw new Error('Gemini API key is not configured');
-      }
-
-      const GEMINI_MIGRATE: Record<string, string> = { 'gemini-1.5-pro': 'gemini-2.5-pro', 'gemini-1.5-flash': 'gemini-2.5-flash', 'gemini-2.0-flash-exp': 'gemini-2.5-flash', 'gemini-pro': 'gemini-2.5-pro' };
-      const rawGeminiModel = settings?.geminiModel || 'gemini-2.5-flash';
-      const model = GEMINI_MIGRATE[rawGeminiModel] || rawGeminiModel;
-
-      const geminiMessages = fullMessages
-        .filter(m => m.role !== 'system')
-        .map(m => ({
-          role: m.role === 'assistant' ? 'model' : 'user',
-          parts: [{ text: m.content }]
-        }));
-
-      const systemMsg = fullMessages.find(m => m.role === 'system');
-      if (systemMsg) {
-        geminiMessages.unshift({
-          role: 'user',
-          parts: [{ text: `System instructions: ${systemMsg.content}` }]
+        return new Response(streamResp.body, {
+          headers: { ...corsHeaders, 'Content-Type': 'text/event-stream' },
         });
       }
 
-      const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${apiKey}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: geminiMessages,
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 2048,
-          }
-        }),
-      });
+      // Tool calls detected — execute them
+      console.log(`[chat] Tool iteration ${iteration + 1}:`, msg.tool_calls.map((tc: any) => tc.function.name));
 
-      if (!geminiResponse.ok) {
-        const errorText = await geminiResponse.text();
-        console.error('Gemini error:', geminiResponse.status, errorText);
-        return new Response(JSON.stringify({ error: 'Gemini AI service error.' }), {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      conversationMessages.push(msg);
+
+      for (const tc of msg.tool_calls) {
+        let fnArgs: any;
+        try { fnArgs = JSON.parse(tc.function.arguments || '{}'); } catch { fnArgs = {}; }
+
+        const result = await executeChatTool(
+          supabase, supabaseUrl, serviceKey,
+          tc.function.name, fnArgs,
+          conversationId, customerEmail, customerName,
+        );
+
+        conversationMessages.push({
+          role: 'tool', tool_call_id: tc.id, content: result,
         });
       }
 
-      // Convert Gemini SSE to OpenAI-compatible SSE format
-      const geminiReader = geminiResponse.body?.getReader();
-      if (!geminiReader) {
-        throw new Error('No response body from Gemini');
-      }
-
-      const encoder = new TextEncoder();
-      const geminiDecoder = new TextDecoder();
-      const geminiStream = new ReadableStream({
-        async start(controller) {
-          let buffer = '';
-          try {
-            while (true) {
-              const { done, value } = await geminiReader.read();
-              if (done) break;
-
-              buffer += geminiDecoder.decode(value, { stream: true });
-              let newlineIndex: number;
-              while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
-                let line = buffer.slice(0, newlineIndex);
-                buffer = buffer.slice(newlineIndex + 1);
-                if (line.endsWith('\r')) line = line.slice(0, -1);
-                if (!line.startsWith('data: ') || line.trim() === '') continue;
-
-                const jsonStr = line.slice(6).trim();
-                if (!jsonStr) continue;
-
-                try {
-                  const parsed = JSON.parse(jsonStr);
-                  const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
-                  if (text) {
-                    const sseData = JSON.stringify({
-                      choices: [{ delta: { content: text }, finish_reason: null }]
-                    });
-                    controller.enqueue(encoder.encode(`data: ${sseData}\n\n`));
-                  }
-                } catch {
-                  // skip malformed chunks
-                }
-              }
-            }
-            controller.enqueue(encoder.encode('data: [DONE]\n\n'));
-            controller.close();
-          } catch (err) {
-            console.error('Gemini stream error:', err);
-            controller.close();
-          }
-        }
-      });
-
-      return new Response(geminiStream, {
-        headers: { ...corsHeaders, 'Content-Type': 'text/event-stream' },
-      });
-    } else if (aiProvider === 'local') {
-      const localConfig = aiIntegrations?.local_llm?.config || {};
-      const chatEndpoint = settings?.localEndpoint;
-      const isPlaceholder = !chatEndpoint || chatEndpoint.includes('your-local-llm') || chatEndpoint.includes('placeholder');
-      const endpoint = isPlaceholder ? localConfig?.endpoint : chatEndpoint;
-      
-      if (!endpoint) {
-        throw new Error('Local endpoint is not configured.');
-      }
-
-      const supabaseLocalKey = Deno.env.get('LOCAL_LLM_API_KEY');
-      const configLocalKey = localConfig?.apiKey;
-      const localApiKey = supabaseLocalKey || configLocalKey || settings?.localApiKey;
-
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-      
-      if (localApiKey) {
-        headers['Authorization'] = `Bearer ${localApiKey}`;
-      }
-
-      const baseEndpoint = endpoint.replace(/\/+$/, '');
-      const apiPath = baseEndpoint.endsWith('/v1') ? '/chat/completions' : '/v1/chat/completions';
-      const fullUrl = `${baseEndpoint}${apiPath}`;
-      
-      const chatModel = settings?.localModel;
-      const model = localConfig?.model || (chatModel && chatModel !== 'llama3' ? chatModel : null) || 'llama3';
-
-      const localRequestBody: any = {
-        model,
-        messages: fullMessages,
-        stream: true,
-      };
-
-      // Add tools if any are enabled (requires OpenAI-compatible local LLM)
-      if (tools.length > 0) {
-        localRequestBody.tools = tools;
-        localRequestBody.tool_choice = 'auto';
-        console.log('Local AI request with tools:', JSON.stringify({ url: fullUrl, tools: tools.map((t: any) => t.function?.name) }));
-      }
-
-      console.log('Sending request to local AI:', fullUrl);
-      response = await fetch(fullUrl, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(localRequestBody),
-      });
-      
-      console.log('Local AI response status:', response.status, response.statusText);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Local AI error response:', errorText);
-        throw new Error(`Local AI request failed: ${response.status} - ${errorText}`);
-      }
-
-      // Handle tool calls for local AI (same as OpenAI)
-      if (tools.length > 0) {
-        const clonedResponse = response.clone();
-        const localReader = clonedResponse.body?.getReader();
-        const localDecoder = new TextDecoder();
-        let localFullContent = '';
-        let localToolCalls: ToolCall[] = [];
-
-        if (localReader) {
-          let localBuffer = '';
-          while (true) {
-            const { done, value } = await localReader.read();
-            if (done) break;
-            
-            localBuffer += localDecoder.decode(value, { stream: true });
-            const localLines = localBuffer.split('\n');
-            localBuffer = localLines.pop() || '';
-
-            for (const line of localLines) {
-              if (!line.startsWith('data: ') || line === 'data: [DONE]') continue;
-              try {
-                const parsed = JSON.parse(line.slice(6));
-                const delta = parsed.choices?.[0]?.delta;
-                
-                if (delta?.content) {
-                  localFullContent += delta.content;
-                }
-                
-                if (delta?.tool_calls) {
-                  for (const tc of delta.tool_calls) {
-                    if (tc.index !== undefined) {
-                      if (!localToolCalls[tc.index]) {
-                        localToolCalls[tc.index] = {
-                          id: tc.id || '',
-                          type: 'function',
-                          function: { name: '', arguments: '' }
-                        };
-                      }
-                      if (tc.id) localToolCalls[tc.index].id = tc.id;
-                      if (tc.function?.name) localToolCalls[tc.index].function.name = tc.function.name;
-                      if (tc.function?.arguments) localToolCalls[tc.index].function.arguments += tc.function.arguments;
-                    }
-                  }
-                }
-              } catch (e) {
-                // Ignore parse errors
-              }
-            }
-          }
-        }
-
-        // If there are tool calls, execute them and make another request
-        if (localToolCalls.length > 0 && localToolCalls[0]?.function?.name) {
-          console.log('Local AI tool calls detected:', localToolCalls);
-          
-          // Execute each tool call
-          const localToolResults: ChatMessage[] = [];
-          for (const tc of localToolCalls) {
-            try {
-              const args = JSON.parse(tc.function.arguments);
-              const result = await executeToolCall(
-                tc.function.name,
-                args,
-                conversationId,
-                customerEmail,
-                customerName,
-                agentSkillNames,
-                checkinId,
-              );
-              
-              localToolResults.push({
-                role: 'tool',
-                tool_call_id: tc.id,
-                content: result,
-              });
-            } catch (error) {
-              console.error('Local AI tool execution error:', error);
-              localToolResults.push({
-                role: 'tool',
-                tool_call_id: tc.id,
-                content: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-              });
-            }
-          }
-
-          // Add assistant message with tool calls and tool results
-          const localAssistantMessage: ChatMessage = {
-            role: 'assistant',
-            content: localFullContent || '',
-            tool_calls: localToolCalls,
-          };
-
-          const localFollowUpMessages = [
-            ...fullMessages,
-            localAssistantMessage,
-            ...localToolResults,
-          ];
-
-          // Make follow-up request to local AI
-          const localFollowUpResponse = await fetch(fullUrl, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({
-              model,
-              messages: localFollowUpMessages,
-              stream: true,
-            }),
-          });
-
-          return new Response(localFollowUpResponse.body, {
-            headers: { ...corsHeaders, 'Content-Type': 'text/event-stream' },
-          });
-        }
-
-        // No tool calls — re-stream collected content (clone may have consumed original body)
-        if (localFullContent) {
-          const enc = new TextEncoder();
-          const reStream = new ReadableStream({
-            start(controller) {
-              const data = JSON.stringify({
-                choices: [{ delta: { content: localFullContent }, finish_reason: 'stop' }]
-              });
-              controller.enqueue(enc.encode(`data: ${data}\n\n`));
-              controller.enqueue(enc.encode('data: [DONE]\n\n'));
-              controller.close();
-            }
-          });
-          return new Response(reStream, {
-            headers: { ...corsHeaders, 'Content-Type': 'text/event-stream' },
-          });
-        }
-      }
-    } else if (aiProvider === 'n8n') {
-      const n8nConfig = aiIntegrations?.n8n?.config || {};
-      const webhookUrl = settings?.n8nWebhookUrl || n8nConfig?.webhookUrl;
-      if (!webhookUrl) {
-        throw new Error('N8N webhook URL is not configured.');
-      }
-
-      const supabaseN8nKey = Deno.env.get('N8N_API_KEY');
-      const configN8nKey = n8nConfig?.apiKey;
-      const n8nApiKey = supabaseN8nKey || configN8nKey;
-
-      const n8nWebhookType = settings?.n8nWebhookType || n8nConfig?.webhookType || 'chat';
-      const lastUserMessage = messages.filter(m => m.role === 'user').pop();
-      
-      let n8nPayload: Record<string, unknown>;
-      
-      if (n8nWebhookType === 'chat') {
-        n8nPayload = {
-          chatInput: lastUserMessage?.content || '',
-          sessionId: sessionId || conversationId,
-          systemPrompt,
-        };
-      } else {
-        n8nPayload = {
-          messages: fullMessages,
-          model: 'gpt-4',
-          conversationId,
-          sessionId,
-        };
-      }
-
-      const n8nHeaders: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-      
-      if (n8nApiKey) {
-        n8nHeaders['Authorization'] = n8nApiKey.startsWith('Bearer ') ? n8nApiKey : `Bearer ${n8nApiKey}`;
-      }
-
-      const n8nResponse = await fetch(webhookUrl, {
-        method: 'POST',
-        headers: n8nHeaders,
-        body: JSON.stringify(n8nPayload),
-      });
-
-      if (!n8nResponse.ok) {
-        const errorText = await n8nResponse.text();
-        console.error('N8N webhook error:', n8nResponse.status, errorText);
-        throw new Error('N8N webhook failed');
-      }
-
-      const n8nData = await n8nResponse.json();
-      
-      let responseContent = 'I could not process your request.';
-      
-      if (Array.isArray(n8nData) && n8nData.length > 0) {
-        responseContent = n8nData[0].output || n8nData[0].message || n8nData[0].response || responseContent;
-      } else if (typeof n8nData === 'object' && n8nData !== null) {
-        responseContent = n8nData.output || n8nData.message || n8nData.response || responseContent;
-      }
-      
-      const encoder = new TextEncoder();
-      const stream = new ReadableStream({
-        start(controller) {
-          const data = JSON.stringify({
-            choices: [{
-              delta: { content: responseContent },
-              finish_reason: 'stop'
-            }]
-          });
-          controller.enqueue(encoder.encode(`data: ${data}\n\n`));
-          controller.enqueue(encoder.encode('data: [DONE]\n\n'));
-          controller.close();
-        }
-      });
-
-      return new Response(stream, {
-        headers: { ...corsHeaders, 'Content-Type': 'text/event-stream' },
-      });
-    } else {
-      throw new Error(`Unknown AI provider: ${aiProvider}`);
+      // Continue loop for next iteration...
     }
 
-    if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: 'Too many requests. Please wait and try again.' }), {
-          status: 429,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: 'Credits exhausted. Contact administrator.' }), {
-          status: 402,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      const errorText = await response.text();
-      console.error('AI provider error:', response.status, errorText);
-      return new Response(JSON.stringify({ error: 'AI service error.' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    // Should not reach here, but safety fallback
+    throw new Error('Tool loop exhausted');
 
-    return new Response(response.body, {
-      headers: { ...corsHeaders, 'Content-Type': 'text/event-stream' },
-    });
-
-  } catch (error) {
-    console.error('Chat completion error:', error);
-    return new Response(JSON.stringify({ 
-      error: error instanceof Error ? error.message : 'An unexpected error occurred.' 
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  } catch (err: any) {
+    console.error('Chat completion error:', err);
+    return new Response(JSON.stringify({ error: err.message || 'An unexpected error occurred.' }), {
+      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
 });
+
+// ─── Error handling ──────────────────────────────────────────────────────────
+
+async function handleAiError(response: Response): Promise<Response> {
+  if (response.status === 429) {
+    return new Response(JSON.stringify({ error: 'Too many requests. Please wait and try again.' }), {
+      status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+  if (response.status === 402) {
+    return new Response(JSON.stringify({ error: 'Credits exhausted. Contact administrator.' }), {
+      status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+  const errorText = await response.text();
+  console.error('AI provider error:', response.status, errorText);
+  return new Response(JSON.stringify({ error: 'AI service error.' }), {
+    status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
