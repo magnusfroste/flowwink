@@ -91,8 +91,8 @@ const SUMMARY_THRESHOLD = 60_000;
 const DEFAULT_TOKEN_BUDGET = 50_000; // Max tokens per heartbeat session
 
 const BUILT_IN_TOOL_NAMES = new Set([
-  'memory_write', 'memory_read',
-  'objective_update_progress', 'objective_complete',
+  'memory_write', 'memory_read', 'memory_delete',
+  'objective_update_progress', 'objective_complete', 'objective_delete',
   'skill_create', 'skill_update', 'skill_list', 'skill_disable', 'skill_enable', 'skill_delete',
   'skill_instruct',
   'soul_update',
