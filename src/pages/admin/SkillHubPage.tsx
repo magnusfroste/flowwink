@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { Plus, Zap } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
+import { Plus, Zap, Timer, Save, Loader2 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -21,7 +21,16 @@ import { AutomationHealthPanel } from '@/components/admin/skills/AutomationHealt
 import { EvolutionPanel } from '@/components/admin/skills/EvolutionPanel';
 import { WorkflowsPanel } from '@/components/admin/skills/WorkflowsPanel';
 import { SelfHealingAlert } from '@/components/admin/skills/SelfHealingAlert';
+import { AutonomyScheduleTab } from '@/components/admin/AutonomyScheduleTab';
 import { useSkills, useToggleSkill, useUpsertSkill, useDeleteSkill } from '@/hooks/useSkillHub';
+import {
+  useAutonomyScheduleSettings,
+  useUpdateAutonomyScheduleSettings,
+  AutonomyScheduleSettings,
+  defaultAutonomyScheduleSettings,
+} from '@/hooks/useSiteSettings';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import type { AgentSkill } from '@/types/agent';
 
 export default function SkillHubPage() {
@@ -38,6 +47,29 @@ export default function SkillHubPage() {
   const [editingSkill, setEditingSkill] = useState<AgentSkill | null>(null);
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [scopeFilter, setScopeFilter] = useState('all');
+
+  // Autonomy schedule
+  const { data: autonomySettings } = useAutonomyScheduleSettings();
+  const updateAutonomy = useUpdateAutonomyScheduleSettings();
+  const [autonomyData, setAutonomyData] = useState<AutonomyScheduleSettings>(defaultAutonomyScheduleSettings);
+  const [autonomySaving, setAutonomySaving] = useState(false);
+
+  useEffect(() => {
+    if (autonomySettings) setAutonomyData(autonomySettings);
+  }, [autonomySettings]);
+
+  const handleSaveAutonomy = async () => {
+    setAutonomySaving(true);
+    try {
+      await updateAutonomy.mutateAsync(autonomyData);
+      await supabase.functions.invoke('update-autonomy-cron');
+      toast.success('Autonomy schedule saved');
+    } catch {
+      toast.error('Failed to save autonomy schedule');
+    } finally {
+      setAutonomySaving(false);
+    }
+  };
 
   const filtered = useMemo(() => {
     return skills.filter((s) => {
@@ -95,6 +127,10 @@ export default function SkillHubPage() {
           <TabsTrigger value="automations">Automations</TabsTrigger>
           <TabsTrigger value="workflows">Workflows</TabsTrigger>
           <TabsTrigger value="evolution">Evolution</TabsTrigger>
+          <TabsTrigger value="autonomy" className="flex items-center gap-1.5">
+            <Timer className="h-3.5 w-3.5" />
+            Autonomy
+          </TabsTrigger>
         </TabsList>
 
         {/* Skills Tab */}
@@ -184,6 +220,21 @@ export default function SkillHubPage() {
         {/* Evolution Tab */}
         <TabsContent value="evolution">
           <EvolutionPanel />
+        </TabsContent>
+
+        {/* Autonomy Tab */}
+        <TabsContent value="autonomy" className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold">Autonomy Schedule</h2>
+              <p className="text-sm text-muted-foreground">Configure when FlowPilot runs its autonomous loops.</p>
+            </div>
+            <Button onClick={handleSaveAutonomy} disabled={autonomySaving} size="sm">
+              {autonomySaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+              Save schedule
+            </Button>
+          </div>
+          <AutonomyScheduleTab data={autonomyData} onChange={setAutonomyData} />
         </TabsContent>
       </Tabs>
 
