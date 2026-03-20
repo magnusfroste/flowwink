@@ -312,6 +312,8 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/federation': 'federation',
   '/admin/growth': 'paidGrowth',
   '/admin/company-insights': 'companyInsights',
+  '/admin/copilot': 'flowpilot',
+  '/admin/skills': 'flowpilot',
 };
 
 export function useModules() {
