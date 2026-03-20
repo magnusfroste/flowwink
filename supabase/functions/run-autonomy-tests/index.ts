@@ -351,6 +351,85 @@ async function layer3Tests(supabase: any): Promise<TestResult[]> {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// LAYER 4: End-to-End Autonomy Health (Live system state)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+async function layer4Tests(supabase: any, supabaseUrl: string, serviceKey: string): Promise<TestResult[]> {
+  const results: TestResult[] = [];
+  const headers = {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${serviceKey}`,
+  };
+
+  // 1. Skills seeded
+  results.push(await runTest("L4: ≥10 enabled skills in agent_skills", 4 as any, async () => {
+    const { count, error } = await supabase
+      .from('agent_skills')
+      .select('id', { count: 'exact', head: true })
+      .eq('enabled', true);
+    if (error) throw new Error(error.message);
+    if ((count ?? 0) < 10) throw new Error(`Got ${count} — run Re-run Bootstrap`);
+  }));
+
+  // 2. Soul configured
+  results.push(await runTest("L4: FlowPilot soul exists in agent_memory", 4 as any, async () => {
+    const { data, error } = await supabase
+      .from('agent_memory').select('value').eq('key', 'soul').maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!data) throw new Error("Soul missing — run Re-run Bootstrap");
+    if (!data.value?.purpose) throw new Error("Soul has no purpose field");
+  }));
+
+  // 3. Active objectives
+  results.push(await runTest("L4: ≥1 active objective in agent_objectives", 4 as any, async () => {
+    const { count, error } = await supabase
+      .from('agent_objectives').select('id', { count: 'exact', head: true }).eq('status', 'active');
+    if (error) throw new Error(error.message);
+    if ((count ?? 0) < 1) throw new Error("No active objectives — run Re-run Bootstrap");
+  }));
+
+  // 4. Automations configured
+  results.push(await runTest("L4: ≥1 enabled automation in agent_automations", 4 as any, async () => {
+    const { count, error } = await supabase
+      .from('agent_automations').select('id', { count: 'exact', head: true }).eq('enabled', true);
+    if (error) throw new Error(error.message);
+    if ((count ?? 0) < 1) throw new Error("No automations — run /setup-flowpilot from CLI");
+  }));
+
+  // 5. Skill execution (read-only DB skill)
+  results.push(await runTest("L4: analyze_analytics skill executes end-to-end", 4 as any, async () => {
+    const resp = await fetch(`${supabaseUrl}/functions/v1/agent-execute`, {
+      method: "POST", headers,
+      body: JSON.stringify({ skill_name: "analyze_analytics", arguments: { period: "7d" }, agent_type: "flowpilot" }),
+    });
+    if (resp.status === 404) throw new Error("analyze_analytics not found — skills not seeded");
+    const data = await resp.json();
+    if (data.status === 'error') throw new Error(data.error || "Skill returned error");
+  }));
+
+  // 6. Heartbeat has run (check heartbeat_state in memory)
+  results.push(await runTest("L4: heartbeat_state exists (heartbeat has run)", 4 as any, async () => {
+    const { data, error } = await supabase
+      .from('agent_memory').select('value, updated_at').eq('key', 'heartbeat_state').maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!data) throw new Error("heartbeat_state missing — heartbeat has never run");
+    const hoursSince = (Date.now() - new Date(data.updated_at).getTime()) / 3_600_000;
+    if (hoursSince > 48) throw new Error(`Last ran ${Math.round(hoursSince)}h ago — cron may be broken`);
+  }));
+
+  // 7. Activity log has entries in last 7 days
+  results.push(await runTest("L4: agent_activity has entries in last 7 days", 4 as any, async () => {
+    const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
+    const { count, error } = await supabase
+      .from('agent_activity').select('id', { count: 'exact', head: true }).gte('created_at', since);
+    if (error) throw new Error(error.message);
+    if ((count ?? 0) === 0) throw new Error("No activity in 7 days — FlowPilot is not running");
+  }));
+
+  return results;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // MAIN
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -378,6 +457,7 @@ serve(async (req) => {
     if (layerFilter.includes(1)) tasks.push(layer1Tests());
     if (layerFilter.includes(2)) tasks.push(layer2Tests(supabaseUrl, serviceKey));
     if (layerFilter.includes(3)) tasks.push(layer3Tests(supabase));
+    if (layerFilter.includes(4)) tasks.push(layer4Tests(supabase, supabaseUrl, serviceKey));
 
     const layerResults = await Promise.all(tasks);
     for (const lr of layerResults) allResults.push(...lr);
