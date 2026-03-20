@@ -407,7 +407,7 @@ export function AdminSidebar() {
                   {hasUpdate ? (
                     <>
                       <ArrowUpCircle className="mr-2 h-4 w-4 text-warning" />
-                      <span className="flex-1">v{currentVersion} → v{latestVersion}</span>
+                      <span className="flex-1">Update: v{latestVersion}</span>
                     </>
                   ) : (
                     <>
