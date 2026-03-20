@@ -204,15 +204,14 @@ export function UnifiedChat({
       <div className="space-y-2 max-w-md">
         <h2 className="text-lg font-semibold">FlowPilot</h2>
         <p className="text-sm text-muted-foreground">
-          Your autonomous CMS operator. Use <kbd className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground text-xs font-mono">@</kbd> commands
-          to access {skills.length} skills, or just tell me what you need.
+          Your autonomous CMS operator. Use <kbd className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground text-xs font-mono">/</kbd> to invoke skills, or just tell me what you need.
         </p>
       </div>
       <div className="flex flex-wrap gap-2 justify-center">
         {[
           { label: 'Analyze this week', action: 'Analyze my site traffic for this week' },
-          { label: 'Write a blog post', action: '@write_blog_post Write about our latest update' },
-          { label: 'Check leads', action: '@check_leads Show recent lead activity' },
+          { label: 'Write a blog post', action: '/write_blog_post Write about our latest update' },
+          { label: 'Check leads', action: '/manage_leads Show recent lead activity' },
         ].map(qa => (
           <Button key={qa.label} variant="outline" size="sm" className="rounded-full" onClick={() => handleSend(qa.action)}>
             {qa.label}
