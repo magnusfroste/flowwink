@@ -258,7 +258,7 @@ export function useTemplateInstaller() {
       products: !!template.products?.length,
       consultants: !!template.consultants?.length,
       modules: !!template.requiredModules?.length,
-      resetObjectives: !!template.flowpilot?.objectives?.length,
+      resetObjectives: false,
       clearMedia: false,
       downloadImages: !!(templateImageInfo && templateImageInfo.uniqueUrls.length > 0),
       publishPages: true,
@@ -599,36 +599,8 @@ export function useTemplateInstaller() {
         }
       }
 
-      // Bootstrap FlowPilot
-      try {
-        setProgress({ currentPage: 1, totalPages: 1, currentStep: 'Bootstrapping FlowPilot...' });
-        if (opts.resetObjectives) {
-          await supabase.from('agent_objectives').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-        }
-        await supabase.functions.invoke('setup-flowpilot', {
-          body: {
-            template_flowpilot: opts.resetObjectives ? (template.flowpilot || {}) : { ...template.flowpilot, objectives: [] },
-            template_id: template.id,
-            template_name: template.name,
-          },
-        });
-        logger.log('[TemplateInstaller] FlowPilot bootstrapped for template:', template.id);
-
-        // Fire immediate heartbeat to decompose freshly seeded objectives
-        if (opts.resetObjectives && template.flowpilot?.objectives?.length) {
-          setProgress({ currentPage: 1, totalPages: 1, currentStep: 'Starting FlowPilot autonomy...' });
-          try {
-            await supabase.functions.invoke('flowpilot-heartbeat', {
-              body: { time: new Date().toISOString(), trigger: 'post-install' },
-            });
-            logger.log('[TemplateInstaller] Initial heartbeat fired — objectives will be decomposed');
-          } catch (hbError) {
-            logger.warn('[TemplateInstaller] Initial heartbeat failed (non-fatal):', hbError);
-          }
-        }
-      } catch (fpError) {
-        logger.warn('[TemplateInstaller] FlowPilot bootstrap failed (non-fatal):', fpError);
-      }
+      // FlowPilot is now a core module — bootstrapped automatically via useFlowPilotBootstrap.
+      // Templates no longer seed FlowPilot objectives, automations, or workflows.
 
       // Save installation manifest for future cleanup
       const manifest: TemplateManifest = {

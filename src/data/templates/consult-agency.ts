@@ -983,66 +983,6 @@ export const consultAgencyTemplate: StarterTemplate = {
     enabled: true,
   },
 
-  flowpilot: {
-    objectives: [
-      {
-        goal: 'Day 1: Research the IT consulting market — identify top 5 competitors, define our ICP, and document industry trends',
-        success_criteria: { memory_keys: ['company_research', 'competitor_analysis'] },
-        constraints: { priority: 'critical', deadline_days: 1 },
-      },
-      {
-        goal: 'Write and publish 2 blog posts targeting our ICP: one about technology trends, one consultant hiring guide',
-        success_criteria: { published_posts: 2 },
-        constraints: { priority: 'high', deadline_days: 3 },
-      },
-      {
-        goal: 'SEO audit all published pages — fix meta titles, descriptions, and heading structure',
-        success_criteria: { pages_audited: 'all', seo_score_avg: 80 },
-        constraints: { priority: 'high', deadline_days: 2 },
-      },
-      {
-        goal: 'Research and build a prospect pipeline of 10 companies that need IT consulting services in the Nordics',
-        success_criteria: { prospects_found: 10, leads_created: 5 },
-        constraints: { priority: 'medium', deadline_days: 5 },
-      },
-      {
-        goal: 'Create a 4-week content calendar with blog topics, newsletter themes, and social post ideas',
-        success_criteria: { content_proposals: 8 },
-        constraints: { priority: 'medium', deadline_days: 7 },
-      },
-    ],
-    prioritySkills: ['add_lead', 'qualify_lead', 'lead_qualify', 'newsletter_create', 'blog_write', 'analyze_analytics'],
-    soul: {
-      purpose: 'I am the always-on consultant for ConsultAgency. I know our full network of 300+ specialists and can match any brief to the right person. I qualify inbound leads from both clients seeking consultants and consultants seeking assignments. I answer questions about availability, rates, process, and competencies — 24/7, without making anyone wait for business hours.',
-      tone: 'Professional, direct, and confident. I don\'t oversell. I match. When a client describes an assignment, I ask smart follow-up questions and present the right profile — not a long list. I\'m a senior consultant who happens to work around the clock.',
-      values: ['honesty', 'quality-over-quantity', 'respect-for-time', 'transparency', 'expertise'],
-    },
-
-    automations: [
-      {
-        name: 'Weekly Business Digest',
-        description: 'Every Friday afternoon, analyze performance and generate a business digest with key metrics, wins, and next week priorities.',
-        trigger_type: 'cron',
-        trigger_config: { cron: '0 16 * * 5', timezone: 'UTC' },
-        skill_name: 'weekly_business_digest',
-        skill_arguments: {},
-        enabled: true,
-      },
-    ],
-    workflows: [
-      {
-        name: 'Content Pipeline',
-        description: 'Research a topic, generate a blog post proposal, write and publish. Run manually or trigger from objectives.',
-        steps: [
-          { id: 'step-1', skill_name: 'research_content', skill_args: { query: '{{topic}}' } },
-          { id: 'step-2', skill_name: 'generate_content_proposal', skill_args: { research_context: '{{step-1.output}}' } },
-          { id: 'step-3', skill_name: 'write_blog_post', skill_args: { proposal: '{{step-2.output}}' }, on_failure: 'stop' },
-        ],
-        trigger_type: 'manual',
-        enabled: true,
-      },
-    ],
-  },
 
   consultants: [
     {

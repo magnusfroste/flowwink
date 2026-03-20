@@ -18,7 +18,6 @@ import {
   Send,
   ImageIcon,
   Trash2,
-  Target,
   UserCheck,
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -196,7 +195,7 @@ export function TemplatePreviewDialog({
     consultants: !!template.consultants?.length,
     modules: !!template.requiredModules?.length,
     // Additional options
-    resetObjectives: !!template.flowpilot?.objectives?.length,
+    resetObjectives: false,
     clearMedia: false,
     downloadImages: templateImageCount > 0,
     publishPages: true,
@@ -283,7 +282,7 @@ export function TemplatePreviewDialog({
       products: !!template.products?.length,
       consultants: !!template.consultants?.length,
       modules: !!template.requiredModules?.length,
-      resetObjectives: !!template.flowpilot?.objectives?.length,
+      resetObjectives: false,
       clearMedia: false,
       downloadImages: templateImageCount > 0,
       publishPages: true,
@@ -400,18 +399,6 @@ export function TemplatePreviewDialog({
               hasExisting={existingContent.hasChatSettings}
             />
 
-            {/* FlowPilot Objectives - only show if template has them */}
-            {template.flowpilot?.objectives?.length ? (
-              <SettingRow
-                icon={<Target className="h-4 w-4" />}
-                label="FlowPilot Objectives"
-                templateValue={`${template.flowpilot.objectives.length} objective${template.flowpilot.objectives.length > 1 ? 's' : ''}`}
-                existingValue="Existing objectives"
-                enabled={options.resetObjectives}
-                onToggle={(v) => updateOption('resetObjectives', v)}
-                hasExisting={true}
-              />
-            ) : null}
 
             {/* Header */}
             <SettingRow

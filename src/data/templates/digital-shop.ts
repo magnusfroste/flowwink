@@ -738,43 +738,6 @@ export const digitalShopTemplate: StarterTemplate = {
   cookieBannerSettings: {
     enabled: true,
   },
-  flowpilot: {
-    objectives: [
-      { goal: 'Drive product sales through content marketing and AI recommendations', success_criteria: { monthly_orders: 10 }, constraints: { promote_own_products: true } },
-      { goal: 'Write product-focused blog posts to improve SEO', success_criteria: { published_posts: 8 } },
-      { goal: 'Increase Pro Membership conversions via personalized chat interactions', success_criteria: { monthly_subscriptions: 5 } },
-    ],
-    prioritySkills: ['write_blog_post', 'lookup_order', 'analyze_analytics', 'add_lead'],
-    soul: {
-      purpose: 'I help this digital shop grow revenue by creating product content, providing personalized shopping assistance, tracking orders, and engaging customers through conversational commerce.',
-      tone: 'Friendly, knowledgeable, conversion-focused. Like a trusted friend who happens to know everything about design tools.',
-    },
-
-    automations: [
-      {
-        name: 'Weekly Business Digest',
-        description: 'Every Friday afternoon, analyze performance and generate a business digest with key metrics, wins, and next week priorities.',
-        trigger_type: 'cron',
-        trigger_config: { cron: '0 16 * * 5', timezone: 'UTC' },
-        skill_name: 'weekly_business_digest',
-        skill_arguments: {},
-        enabled: true,
-      },
-    ],
-    workflows: [
-      {
-        name: 'Content Pipeline',
-        description: 'Research a topic, generate a blog post proposal, write and publish. Run manually or trigger from objectives.',
-        steps: [
-          { id: 'step-1', skill_name: 'research_content', skill_args: { query: '{{topic}}' } },
-          { id: 'step-2', skill_name: 'generate_content_proposal', skill_args: { research_context: '{{step-1.output}}' } },
-          { id: 'step-3', skill_name: 'write_blog_post', skill_args: { proposal: '{{step-2.output}}' }, on_failure: 'stop' },
-        ],
-        trigger_type: 'manual',
-        enabled: true,
-      },
-    ],
-  },
   siteSettings: {
     homepageSlug: 'home',
   },

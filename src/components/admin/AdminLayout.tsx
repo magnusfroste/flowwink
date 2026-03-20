@@ -5,6 +5,7 @@ import { AdminSidebar } from './AdminSidebar';
 import { AdminContentHeader } from './AdminContentHeader';
 import { Loader2 } from 'lucide-react';
 import { SidebarProvider } from '@/components/ui/sidebar';
+import { useFlowPilotBootstrap } from '@/hooks/useFlowPilotBootstrap';
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -16,6 +17,9 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const location = useLocation();
 
   const isCopilotMode = location.pathname === '/admin/copilot';
+
+  // Auto-seed FlowPilot on first admin session (idempotent)
+  useFlowPilotBootstrap();
 
   useEffect(() => {
     if (!loading && !user) {

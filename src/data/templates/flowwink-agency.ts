@@ -857,43 +857,6 @@ Direct technical questions to demo.flowwink.com for hands-on exploration.`,
   cookieBannerSettings: {
     enabled: true,
   },
-  flowpilot: {
-    objectives: [
-      { goal: 'Publish weekly thought-leadership blog posts', success_criteria: { posts_per_week: 1 }, constraints: { tone: 'agency-expert', quality_over_quantity: true } },
-      { goal: 'Grow newsletter subscriber base to 500', success_criteria: { subscribers: 500 } },
-      { goal: 'Convert website visitors into qualified leads', success_criteria: { monthly_leads: 20 } },
-    ],
-    prioritySkills: ['write_blog_post', 'add_lead', 'send_newsletter', 'analyze_analytics', 'search_web'],
-    soul: {
-      purpose: 'I run this agency\'s digital presence — creating expert content, nurturing leads, and demonstrating thought leadership.',
-      tone: 'Confident, knowledgeable, results-oriented. Agency-level professionalism.',
-    },
-
-    automations: [
-      {
-        name: 'Weekly Business Digest',
-        description: 'Every Friday afternoon, analyze performance and generate a business digest with key metrics, wins, and next week priorities.',
-        trigger_type: 'cron',
-        trigger_config: { cron: '0 16 * * 5', timezone: 'UTC' },
-        skill_name: 'weekly_business_digest',
-        skill_arguments: {},
-        enabled: true,
-      },
-    ],
-    workflows: [
-      {
-        name: 'Content Pipeline',
-        description: 'Research a topic, generate a blog post proposal, write and publish. Run manually or trigger from objectives.',
-        steps: [
-          { id: 'step-1', skill_name: 'research_content', skill_args: { query: '{{topic}}' } },
-          { id: 'step-2', skill_name: 'generate_content_proposal', skill_args: { research_context: '{{step-1.output}}' } },
-          { id: 'step-3', skill_name: 'write_blog_post', skill_args: { proposal: '{{step-2.output}}' }, on_failure: 'stop' },
-        ],
-        trigger_type: 'manual',
-        enabled: true,
-      },
-    ],
-  },
   siteSettings: {
     homepageSlug: 'home',
   },

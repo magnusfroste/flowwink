@@ -49,6 +49,7 @@ export interface ModulesSettings {
   federation: ModuleConfig;
   paidGrowth: ModuleConfig;
   companyInsights: ModuleConfig;
+  flowpilot: ModuleConfig;
 }
 
 export const defaultModulesSettings: ModulesSettings = {
@@ -274,6 +275,16 @@ export const defaultModulesSettings: ModulesSettings = {
     adminUI: true,
     optionalIntegrations: ['firecrawl'],
   },
+  flowpilot: {
+    enabled: true,
+    name: 'FlowPilot',
+    description: 'Autonomous AI operator — skills, objectives, automations and workflows',
+    icon: 'Sparkles',
+    category: 'system',
+    core: true,
+    autonomy: 'agent-capable',
+    adminUI: true,
+  },
 };
 
 // Map sidebar items to module IDs
@@ -301,6 +312,8 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/federation': 'federation',
   '/admin/growth': 'paidGrowth',
   '/admin/company-insights': 'companyInsights',
+  '/admin/copilot': 'flowpilot',
+  '/admin/skills': 'flowpilot',
 };
 
 export function useModules() {

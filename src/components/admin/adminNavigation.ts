@@ -25,8 +25,8 @@ export const navigationGroups: NavGroup[] = [
     label: "Main",
     items: [
       { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
-      { name: "FlowPilot", href: "/admin/copilot", icon: Zap },
-      { name: "Skill Hub", href: "/admin/skills", icon: Bot },
+      { name: "FlowPilot", href: "/admin/copilot", icon: Zap, moduleId: "flowpilot" },
+      { name: "Skill Hub", href: "/admin/skills", icon: Bot, moduleId: "flowpilot" },
       { name: "Federation", href: "/admin/federation", icon: Network, moduleId: "federation" },
       { name: "Analytics", href: "/admin/analytics", icon: BarChart3, moduleId: "analytics" },
       { name: "Growth", href: "/admin/growth", icon: Megaphone, moduleId: "paidGrowth" },

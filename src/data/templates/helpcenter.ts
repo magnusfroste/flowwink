@@ -299,42 +299,6 @@ export const helpCenterTemplate: StarterTemplate = {
   cookieBannerSettings: {
     enabled: true,
   },
-  flowpilot: {
-    objectives: [
-      { goal: 'Build comprehensive help documentation with 30+ articles', success_criteria: { kb_articles: 30 } },
-      { goal: 'Reduce repeat support questions by improving FAQ coverage', success_criteria: { chat_deflection_rate: 70 } },
-    ],
-    prioritySkills: ['write_blog_post', 'analyze_analytics', 'book_appointment'],
-    soul: {
-      purpose: 'I manage this help center — ensuring customers find answers quickly and support quality stays high.',
-      tone: 'Helpful, patient, clear. Customer-first mindset.',
-    },
-
-    automations: [
-      {
-        name: 'Weekly Business Digest',
-        description: 'Every Friday afternoon, analyze performance and generate a business digest with key metrics, wins, and next week priorities.',
-        trigger_type: 'cron',
-        trigger_config: { cron: '0 16 * * 5', timezone: 'UTC' },
-        skill_name: 'weekly_business_digest',
-        skill_arguments: {},
-        enabled: true,
-      },
-    ],
-    workflows: [
-      {
-        name: 'Content Pipeline',
-        description: 'Research a topic, generate a blog post proposal, write and publish. Run manually or trigger from objectives.',
-        steps: [
-          { id: 'step-1', skill_name: 'research_content', skill_args: { query: '{{topic}}' } },
-          { id: 'step-2', skill_name: 'generate_content_proposal', skill_args: { research_context: '{{step-1.output}}' } },
-          { id: 'step-3', skill_name: 'write_blog_post', skill_args: { proposal: '{{step-2.output}}' }, on_failure: 'stop' },
-        ],
-        trigger_type: 'manual',
-        enabled: true,
-      },
-    ],
-  },
   siteSettings: {
     homepageSlug: 'home',
   },
