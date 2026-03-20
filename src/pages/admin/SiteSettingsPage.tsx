@@ -427,10 +427,6 @@ export default function SiteSettingsPage() {
               <Zap className="h-4 w-4" />
               <span className="hidden sm:inline">Performance</span>
             </TabsTrigger>
-            <TabsTrigger value="autonomy" className="flex items-center gap-2">
-              <Timer className="h-4 w-4" />
-              <span className="hidden sm:inline">Autonomy</span>
-            </TabsTrigger>
           </TabsList>
 
           {/* General Tab */}
