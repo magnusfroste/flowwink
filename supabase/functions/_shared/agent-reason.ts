@@ -1786,6 +1786,7 @@ const MEMORY_TOOLS = [
 const OBJECTIVE_TOOLS = [
   { type: 'function', function: { name: 'objective_update_progress', description: 'Update progress on an active objective.', parameters: { type: 'object', properties: { objective_id: { type: 'string' }, progress: { type: 'object', description: 'Updated progress object' } }, required: ['objective_id', 'progress'] } } },
   { type: 'function', function: { name: 'objective_complete', description: 'Mark an objective as completed.', parameters: { type: 'object', properties: { objective_id: { type: 'string' } }, required: ['objective_id'] } } },
+  { type: 'function', function: { name: 'objective_delete', description: 'Permanently delete an objective and its linked activities.', parameters: { type: 'object', properties: { objective_id: { type: 'string' } }, required: ['objective_id'] } } },
 ];
 
 const SELF_MOD_TOOLS = [
