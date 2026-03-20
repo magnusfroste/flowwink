@@ -706,33 +706,31 @@ serve(async (req) => {
 
       const msg = choice.message;
 
-      // No tool calls → stream the final response
+      // No tool calls → we already have the response, stream it as SSE
       if (!msg.tool_calls?.length) {
-        // Re-do the call with streaming for smooth output
-        requestBody.stream = true;
-        delete requestBody.tools;
-        delete requestBody.tool_choice;
-        const streamResp = await fetch(provider.apiUrl, {
-          method: 'POST', headers, body: JSON.stringify(requestBody),
+        const content = msg.content || 'Done.';
+        const encoder = new TextEncoder();
+        
+        // Simulate token-by-token SSE from the already-received content
+        // Split into word-level chunks for smooth streaming feel
+        const words = content.split(/(\s+)/);
+        const stream = new ReadableStream({
+          async start(controller) {
+            for (let i = 0; i < words.length; i++) {
+              const chunk = words[i];
+              if (!chunk) continue;
+              const data = JSON.stringify({ choices: [{ delta: { content: chunk }, finish_reason: null }] });
+              controller.enqueue(encoder.encode(`data: ${data}\n\n`));
+            }
+            // Send finish
+            const doneData = JSON.stringify({ choices: [{ delta: {}, finish_reason: 'stop' }] });
+            controller.enqueue(encoder.encode(`data: ${doneData}\n\n`));
+            controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+            controller.close();
+          },
         });
 
-        if (!streamResp.ok) {
-          // Fallback: return the non-streamed content
-          const encoder = new TextEncoder();
-          const fallbackStream = new ReadableStream({
-            start(controller) {
-              const data = JSON.stringify({ choices: [{ delta: { content: msg.content || 'Done.' }, finish_reason: 'stop' }] });
-              controller.enqueue(encoder.encode(`data: ${data}\n\n`));
-              controller.enqueue(encoder.encode('data: [DONE]\n\n'));
-              controller.close();
-            },
-          });
-          return new Response(fallbackStream, {
-            headers: { ...corsHeaders, 'Content-Type': 'text/event-stream' },
-          });
-        }
-
-        return new Response(streamResp.body, {
+        return new Response(stream, {
           headers: { ...corsHeaders, 'Content-Type': 'text/event-stream' },
         });
       }
