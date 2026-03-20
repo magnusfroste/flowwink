@@ -1,33 +1,36 @@
 
+# OpenClaw-Aligned Prompt Architecture for FlowPilot
 
-# Dubbelkoll efter FlowPilot Core Module-refaktorn
+## Status: ✅ Implementerad
 
-## Status: Nästan rent — 2 småsaker att fixa
+### Vad som gjordes
 
-### ✅ Redan korrekt
-- **`useModules.tsx`**: `flowpilot` registrerad med `core: true`, `SIDEBAR_TO_MODULE` inkluderar `/admin/copilot` och `/admin/skills`
-- **`adminNavigation.ts`**: Båda nav-items har `moduleId: "flowpilot"`
-- **`useFlowPilotBootstrap.ts`**: Idempotent hook, kontrollerar skill count, seedar generiskt, fires heartbeat
-- **`AdminLayout.tsx`**: Hook anropas globalt
-- **Template types**: `flowpilot`-property borttagen från `StarterTemplate`
-- **Template-filer**: Alla 11 mallar saknar `soul`, `objectives`, `automations`, `workflows` — rent
-- **`useTemplateInstaller.ts`**: `setup-flowpilot`-anrop borttaget, kommentar på plats (rad 602-603)
-- **Edge function**: Fortfarande accepterar `template_flowpilot` från bootstrap-hooken — fungerar
+**Layered Prompt Architecture** — systemprompt-kompilatorn (`buildSystemPrompt`) följer nu OpenClaw-principen med 6 explicita lager:
 
-### ⚠️ Sak att fixa
+1. **Layer 1: Mode Identity** — heartbeat/operate (hårdkodat, kort)
+2. **Layer 2: SOUL + IDENTITY** — från DB, evolverbar via `soul_update`
+3. **Layer 3: AGENTS** — från DB, evolverbar via `agents_update` (fallback: `CORE_INSTRUCTIONS`)
+4. **Layer 4: CMS Schema Awareness** — moduler, integrationer, block types
+5. **Layer 5: GROUNDING RULES** — ALLTID hårdkodat säkerhetslager (kan ej skrivas över)
+6. **Layer 6: Mode-specifik kontext** — objectives, memory, heartbeat protocol
 
-**1. Missvisande toast i template installer (rad 637)**
-```
-description += '. FlowPilot initialized.';
-```
-Templates seedar inte längre FlowPilot — denna text är felaktig. Bör tas bort eller ändras till något som reflekterar att FlowPilot bootstrappas separat.
+### Nya funktioner
 
-### 📋 Icke-blockerande observationer
+- **`loadWorkspaceFiles()`** — hämtar soul, identity OCH agents i ett DB-anrop
+- **`buildWorkspacePrompt()`** — bygger SOUL + IDENTITY + AGENTS prompt
+- **`agents_update` tool** — FlowPilot kan uppdatera sina egna operativa regler
+- **`handleAgentsUpdate()`** — upsert mot `agent_memory(key='agents')`
+- **Bootstrap seeding** — initialt AGENTS-dokument skapas vid första admin-session
 
-**2. Edge function har kvar `STARTER_FLOWPILOT` (rad 1773-1801)**
-`setup-flowpilot` har fortfarande en inbäddad `STARTER_FLOWPILOT`-konfiguration och `template_id`-parameter. Dessa kodvägar anropas aldrig längre (bootstrap-hooken skickar `template_flowpilot` direkt, templates anropar inte edge function). Inte trasigt, men dead code — kan städas vid tillfälle.
+### Backward-kompatibilitet
 
-## Åtgärd
+- `loadSoulIdentity()` och `buildSoulPrompt()` finns kvar som deprecated wrappers
+- `agent-reason/index.ts` (re-export) opåverkat
+- Test-filen (`run-autonomy-tests`) fungerar via deprecated API
 
-Enda nödvändiga fix: ta bort `'. FlowPilot initialized.'` från toast-meddelandet i `useTemplateInstaller.ts` rad 637.
+### Filer ändrade
 
+- `supabase/functions/_shared/agent-reason.ts` — prompt compiler, workspace loader, agents tool
+- `supabase/functions/agent-operate/index.ts` — uppdaterade imports/destructuring
+- `supabase/functions/flowpilot-heartbeat/index.ts` — uppdaterade imports/destructuring
+- `src/hooks/useFlowPilotBootstrap.ts` — seedar AGENTS-dokument
