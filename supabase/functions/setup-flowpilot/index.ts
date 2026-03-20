@@ -2119,27 +2119,40 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 3. Seed skills
+    // 3. Seed skills (batch: one read, one bulk insert)
     let skillsSeeded = 0;
     if (seed_skills) {
       console.log('[setup-flowpilot] Seeding default skills...');
-      for (const skill of DEFAULT_SKILLS) {
-        const { data: existing } = await supabase
-          .from('agent_skills')
-          .select('id')
-          .eq('name', skill.name)
-          .maybeSingle();
-
-        if (!existing) {
-          const { error } = await supabase.from('agent_skills').insert(skill);
-          if (error) {
-            console.error(`[setup-flowpilot] Failed to seed skill ${skill.name}:`, error);
-          } else {
-            skillsSeeded++;
+      
+      // Fetch all existing skill names in a single query
+      const { data: existingSkillRows } = await supabase
+        .from('agent_skills')
+        .select('name');
+      const existingNames = new Set((existingSkillRows || []).map((r: { name: string }) => r.name));
+      
+      // Filter to only new skills
+      const newSkills = DEFAULT_SKILLS.filter(s => !existingNames.has(s.name));
+      
+      if (newSkills.length > 0) {
+        // Batch insert all new skills at once
+        const { error } = await supabase.from('agent_skills').insert(newSkills);
+        if (error) {
+          console.error('[setup-flowpilot] Batch skill insert failed, falling back to individual:', error.message);
+          // Fallback: insert one by one to identify problematic skills
+          for (const skill of newSkills) {
+            const { error: singleErr } = await supabase.from('agent_skills').insert(skill);
+            if (singleErr) {
+              console.error(`[setup-flowpilot] Failed to seed skill ${skill.name}:`, singleErr.message);
+            } else {
+              skillsSeeded++;
+            }
           }
+        } else {
+          skillsSeeded = newSkills.length;
         }
       }
-      console.log(`[setup-flowpilot] Seeded ${skillsSeeded} skills`);
+      
+      console.log(`[setup-flowpilot] Seeded ${skillsSeeded} new skills (${existingNames.size} already existed)`);
     }
 
     // 4. Seed soul & identity (with template overrides)
