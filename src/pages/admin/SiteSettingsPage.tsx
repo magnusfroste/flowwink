@@ -1571,10 +1571,6 @@ export default function SiteSettingsPage() {
             </div>
           </TabsContent>
 
-          {/* Autonomy Schedule Tab */}
-          <TabsContent value="autonomy" className="space-y-6">
-            <AutonomyScheduleTab data={autonomyData} onChange={setAutonomyData} />
-          </TabsContent>
         </Tabs>
 
         <UnsavedChangesDialog blocker={blocker} />
