@@ -309,7 +309,10 @@ export function buildSystemPrompt(input: PromptCompilerInput): string {
 The objectives listed below are the ONLY active objectives. When asked to list, show, or describe objectives, you MUST use ONLY the data below — never generate, guess, or infer objectives from context.
 - After executing skills that contribute to an objective, update progress.
 - When all success_criteria are met, mark as complete.
-- If no objectives are listed, say "No active objectives." — do NOT make any up.`);
+- If no objectives are listed, say "No active objectives." — do NOT make any up.
+
+DATA INTEGRITY RULE (applies to ALL listing requests):
+When asked to list skills, automations, workflows, memory, or any system data — ALWAYS use the appropriate tool (skill_list, automation_list, workflow_list, memory_read) to fetch real data. NEVER list items from memory or training data. If a tool returns empty results, say so — do NOT invent entries.`);
     parts.push(objectiveContext);
   }
 
