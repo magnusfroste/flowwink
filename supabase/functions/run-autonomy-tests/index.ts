@@ -139,9 +139,50 @@ async function layer1Tests(): Promise<TestResult[]> {
     if (p.includes('LEAK')) throw new Error("Heartbeat state leaked into operate mode");
   }));
 
-  results.push(await runTest("buildSystemPrompt: chat uses override", 1, async () => {
-    const p = buildSystemPrompt({ ...baseInput, mode: 'chat', chatSystemPrompt: 'Custom.' });
-    assertEqual(p, 'Custom.');
+  results.push(await runTest("buildSystemPrompt: chat includes soul + grounding", 1, async () => {
+    const soulP = buildWorkspacePrompt({ purpose: "Help" }, { name: "Bot" }, null);
+    const p = buildSystemPrompt({ ...baseInput, mode: 'chat', soulPrompt: soulP, chatSystemPrompt: 'Welcome.' });
+    assertContains(p, 'Welcome.');
+    assertContains(p, 'Name: Bot');
+    assertContains(p, 'DATA INTEGRITY');
+    assertContains(p, 'same language');
+  }));
+
+  // OpenClaw LAW 4: buildWorkspacePrompt with agents
+  results.push(await runTest("LAW4: buildWorkspacePrompt includes agents rules", 1, async () => {
+    const agents = { direct_action_rules: "Act boldly.", self_improvement: "Learn always." };
+    const p = buildWorkspacePrompt({ purpose: "Grow" }, { name: "Aria" }, agents);
+    assertContains(p, "OPERATIONAL RULES (AGENTS):");
+    assertContains(p, "Act boldly.");
+    assertContains(p, "Learn always.");
+  }));
+
+  results.push(await runTest("LAW4: agents null omits AGENTS section", 1, async () => {
+    const p = buildWorkspacePrompt({ purpose: "Help" }, { name: "Bot" }, null);
+    if (p.includes("OPERATIONAL RULES")) throw new Error("AGENTS section should not appear");
+  }));
+
+  // Grounding rules always present
+  results.push(await runTest("Grounding: present in operate with agents override", 1, async () => {
+    const agents = { direct_action_rules: "Custom." };
+    const p = buildSystemPrompt({ ...baseInput, agents, soulPrompt: buildWorkspacePrompt({}, {}, agents) });
+    assertContains(p, "GROUNDING & DATA INTEGRITY");
+    assertContains(p, "NEVER fabricate");
+  }));
+
+  // 6-layer ordering
+  results.push(await runTest("6-Layer: correct order in operate", 1, async () => {
+    const agents = { direct_action_rules: "R1" };
+    const sp = buildWorkspacePrompt({ purpose: "G" }, { name: "A" }, agents);
+    const p = buildSystemPrompt({ ...baseInput, agents, soulPrompt: sp, cmsSchemaContext: 'CMS_S' });
+    const modeIdx = p.indexOf("autonomous");
+    const soulIdx = p.indexOf("Name: A");
+    const agentsIdx = p.indexOf("OPERATIONAL RULES");
+    const cmsIdx = p.indexOf("CMS_S");
+    const groundIdx = p.indexOf("GROUNDING & DATA INTEGRITY");
+    if (!(modeIdx < soulIdx && soulIdx < agentsIdx && agentsIdx < cmsIdx && cmsIdx < groundIdx)) {
+      throw new Error(`Layer order violated: mode=${modeIdx} soul=${soulIdx} agents=${agentsIdx} cms=${cmsIdx} grounding=${groundIdx}`);
+    }
   }));
 
   return results;
