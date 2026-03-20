@@ -105,8 +105,8 @@ serve(async (req) => {
 
   try {
     // 1. Gather context + run self-healing in parallel
-    const [{ soul, identity }, memoryCtx, objectiveCtx, activityCtx, statsCtx, automationCtx, healingReport, cmsSchemaCtx, heartbeatStateCtx, siteMaturity] = await Promise.all([
-      loadSoulIdentity(supabase),
+    const [{ soul, identity, agents }, memoryCtx, objectiveCtx, activityCtx, statsCtx, automationCtx, healingReport, cmsSchemaCtx, heartbeatStateCtx, siteMaturity] = await Promise.all([
+      loadWorkspaceFiles(supabase),
       loadMemories(supabase),
       loadObjectives(supabase),
       loadRecentActivity(supabase),
