@@ -283,7 +283,7 @@ export function TemplatePreviewDialog({
       products: !!template.products?.length,
       consultants: !!template.consultants?.length,
       modules: !!template.requiredModules?.length,
-      resetObjectives: !!template.flowpilot?.objectives?.length,
+      resetObjectives: false,
       clearMedia: false,
       downloadImages: templateImageCount > 0,
       publishPages: true,
