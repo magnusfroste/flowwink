@@ -892,12 +892,19 @@ async function summarizeMessages(messages: any[], supabase: any): Promise<string
 
 // ─── Objectives ───────────────────────────────────────────────────────────────
 
-export async function loadObjectives(supabase: any): Promise<string> {
-  const { data } = await supabase
+export async function loadObjectives(supabase: any, opts?: { unlockedOnly?: boolean }): Promise<string> {
+  let query = supabase
     .from('agent_objectives')
     .select('id, goal, status, constraints, success_criteria, progress, created_at, updated_at, locked_by, locked_at')
-    .eq('status', 'active')
-    .is('locked_by', null)
+    .eq('status', 'active');
+
+  // Heartbeat needs only unlocked objectives to avoid race conditions.
+  // Chat/admin context should see ALL active objectives regardless of lock state.
+  if (opts?.unlockedOnly) {
+    query = query.is('locked_by', null);
+  }
+
+  const { data } = await query
     .order('created_at', { ascending: false })
     .limit(10);
 
