@@ -5,6 +5,7 @@ import { AdminSidebar } from './AdminSidebar';
 import { AdminContentHeader } from './AdminContentHeader';
 import { Loader2 } from 'lucide-react';
 import { SidebarProvider } from '@/components/ui/sidebar';
+import { useFlowPilotBootstrap } from '@/hooks/useFlowPilotBootstrap';
 
 interface AdminLayoutProps {
   children: ReactNode;
