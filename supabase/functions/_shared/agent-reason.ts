@@ -22,6 +22,8 @@ export type PromptMode = 'operate' | 'heartbeat' | 'chat';
 export interface PromptCompilerInput {
   mode: PromptMode;
   soulPrompt: string;
+  /** @deprecated — use agentsDoc instead for layered prompt */
+  agents?: any;
   memoryContext: string;
   objectiveContext: string;
   // Heartbeat-specific
