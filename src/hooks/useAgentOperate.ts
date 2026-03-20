@@ -322,9 +322,90 @@ export function useAgentOperate() {
     if (data) setActivities(data as unknown as AgentActivity[]);
   }, []);
 
+  // ─── Builtin slash command handler (bypasses AI) ─────────────────────
+
+  const handleBuiltinCommand = useCallback(async (command: string): Promise<string | null> => {
+    const cmd = command.toLowerCase().trim();
+
+    if (cmd === 'objectives') {
+      const { data, error } = await supabase
+        .from('agent_objectives')
+        .select('id, goal, status, progress, constraints, success_criteria, created_at')
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (error) return `⚠️ Failed to load objectives: ${error.message}`;
+      if (!data?.length) return '📋 No active objectives.';
+
+      const lines = data.map((o: any, i: number) => {
+        const plan = o.progress?.plan;
+        const planStr = plan?.steps
+          ? `${plan.steps.filter((s: any) => s.status === 'done').length}/${plan.steps.length} steps`
+          : 'no plan';
+        const priority = o.constraints?.priority ? ` • ${o.constraints.priority}` : '';
+        return `${i + 1}. **${o.goal}**\n   ${planStr}${priority} • \`${o.id.slice(0, 8)}\``;
+      });
+
+      return `📋 **Active Objectives** (${data.length})\n\n${lines.join('\n\n')}`;
+    }
+
+    if (cmd === 'activity') {
+      const { data, error } = await supabase
+        .from('agent_activity')
+        .select('skill_name, status, created_at, error_message')
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (error) return `⚠️ Failed to load activity: ${error.message}`;
+      if (!data?.length) return '📊 No recent activity.';
+
+      const lines = data.map((a: any) => {
+        const time = new Date(a.created_at).toLocaleString('sv-SE', { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' });
+        const icon = a.status === 'success' ? '✅' : a.status === 'failed' ? '❌' : '⏳';
+        return `${icon} **${(a.skill_name || 'unknown').replace(/_/g, ' ')}** — ${time}${a.error_message ? ` ⚠️ ${a.error_message.slice(0, 60)}` : ''}`;
+      });
+
+      return `📊 **Recent Activity** (last ${data.length})\n\n${lines.join('\n')}`;
+    }
+
+    if (cmd === 'help') {
+      const skillCount = skills.length;
+      return `🤖 **FlowPilot Commands**\n\n` +
+        `• \`/objectives\` — View active goals (from database)\n` +
+        `• \`/activity\` — Recent agent activity\n` +
+        `• \`/help\` — This help\n` +
+        `• \`/migrate\` — Migrate a website\n\n` +
+        `Plus **${skillCount} skills** available — type \`/\` to browse.`;
+    }
+
+    return null; // Not a builtin — pass to AI
+  }, [skills]);
+
   // ─── Send message with SSE streaming ────────────────────────────────
 
   const sendMessage = useCallback(async (content: string) => {
+    // ─── Intercept builtin slash commands — render real data, skip AI ──
+    const trimmed = content.trim().replace(/^\//, '');
+    const builtinResult = await handleBuiltinCommand(trimmed);
+    if (builtinResult) {
+      const userMsg: OperateMessage = {
+        id: crypto.randomUUID(),
+        role: 'user',
+        content,
+        createdAt: new Date(),
+      };
+      const assistantMsg: OperateMessage = {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        content: builtinResult,
+        createdAt: new Date(),
+        toolStatus: { phase: 'done' },
+      };
+      setMessages(prev => [...prev, userMsg, assistantMsg]);
+      return;
+    }
+
     const userMsg: OperateMessage = {
       id: crypto.randomUUID(),
       role: 'user',
