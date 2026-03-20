@@ -136,27 +136,40 @@ serve(async (req) => {
       let lastError: string | null = null;
 
       try {
-        const wfResponse = await fetch(
-          `${supabaseUrl}/functions/v1/agent-execute`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${serviceKey}`,
-            },
-            body: JSON.stringify({
-              skill_name: "workflow_execute",
-              arguments: { workflow_id: wf.id },
-              agent_type: "flowpilot",
-            }),
-          }
-        );
+        // Execute each workflow step sequentially via agent-execute
+        const steps = (wf.steps as any[]) || [];
+        let stepContext: Record<string, unknown> = {};
 
-        const wfResult = await wfResponse.json();
-        if (!wfResponse.ok || wfResult.error) {
-          status = "failed";
-          lastError = wfResult.error || `HTTP ${wfResponse.status}`;
+        for (const step of steps) {
+          const stepResponse = await fetch(
+            `${supabaseUrl}/functions/v1/agent-execute`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${serviceKey}`,
+              },
+              body: JSON.stringify({
+                skill_name: step.skill_name,
+                arguments: { ...step.arguments, ...stepContext },
+                agent_type: "flowpilot",
+              }),
+            }
+          );
+
+          const stepResult = await stepResponse.json();
+          if (!stepResponse.ok || stepResult.error) {
+            if (step.on_failure === "stop") {
+              throw new Error(`Step '${step.name}' failed: ${stepResult.error || `HTTP ${stepResponse.status}`}`);
+            }
+            // on_failure: continue — log and keep going
+            console.warn(`Workflow step '${step.name}' failed, continuing:`, stepResult.error);
+          } else {
+            // Pass step output as context for subsequent steps
+            stepContext[step.id] = stepResult;
+          }
         }
+
       } catch (err) {
         status = "failed";
         lastError = (err as Error).message || "Workflow execution error";

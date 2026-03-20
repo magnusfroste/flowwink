@@ -1,0 +1,1 @@
+UPDATE agent_workflows SET last_error = NULL WHERE name = 'Weekly Business Digest';
