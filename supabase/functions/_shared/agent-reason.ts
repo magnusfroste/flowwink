@@ -1597,6 +1597,36 @@ async function handleAutomationList(supabase: any, args: { enabled_only?: boolea
   return { automations: data || [], count: data?.length || 0 };
 }
 
+async function handleAutomationUpdate(supabase: any, args: { automation_id?: string; automation_name?: string; updates: Record<string, any> }) {
+  const safeFields = ['name', 'description', 'trigger_type', 'trigger_config', 'skill_name', 'skill_arguments', 'enabled'];
+  const filtered: Record<string, any> = {};
+  for (const [k, v] of Object.entries(args.updates)) {
+    if (safeFields.includes(k)) filtered[k] = v;
+  }
+  if (Object.keys(filtered).length === 0) return { status: 'error', error: 'No valid fields to update' };
+  filtered.updated_at = new Date().toISOString();
+
+  let q = supabase.from('agent_automations').update(filtered);
+  if (args.automation_id) q = q.eq('id', args.automation_id);
+  else if (args.automation_name) q = q.eq('name', args.automation_name);
+  else return { status: 'error', error: 'Provide automation_id or automation_name' };
+
+  const { data, error } = await q.select('id, name, enabled').single();
+  if (error) return { status: 'error', error: error.message };
+  return { status: 'updated', automation: data };
+}
+
+async function handleAutomationDelete(supabase: any, args: { automation_id?: string; automation_name?: string }) {
+  let q = supabase.from('agent_automations').delete();
+  if (args.automation_id) q = q.eq('id', args.automation_id);
+  else if (args.automation_name) q = q.eq('name', args.automation_name);
+  else return { status: 'error', error: 'Provide automation_id or automation_name' };
+
+  const { data, error } = await q.select('id, name').single();
+  if (error) return { status: 'error', error: error.message };
+  return { status: 'deleted', automation: data };
+}
+
 // ─── Reflection ───────────────────────────────────────────────────────────────
 
 async function handleReflect(supabase: any, args: { focus?: string }) {
