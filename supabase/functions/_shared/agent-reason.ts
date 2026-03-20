@@ -1529,6 +1529,20 @@ async function handleSkillDisable(supabase: any, args: { skill_name: string }) {
   return { status: 'disabled', skill: data };
 }
 
+async function handleSkillEnable(supabase: any, args: { skill_name: string }) {
+  const { data, error } = await supabase
+    .from('agent_skills').update({ enabled: true, updated_at: new Date().toISOString() }).eq('name', args.skill_name).select('id, name').single();
+  if (error) return { status: 'error', error: error.message };
+  return { status: 'enabled', skill: data };
+}
+
+async function handleSkillDelete(supabase: any, args: { skill_name: string }) {
+  const { data, error } = await supabase
+    .from('agent_skills').delete().eq('name', args.skill_name).select('id, name').single();
+  if (error) return { status: 'error', error: error.message };
+  return { status: 'deleted', skill: data };
+}
+
 async function handleSkillInstruct(supabase: any, args: { skill_name: string; instructions: string }) {
   const { data, error } = await supabase
     .from('agent_skills').update({ instructions: args.instructions, updated_at: new Date().toISOString() }).eq('name', args.skill_name).select('id, name, instructions').single();
