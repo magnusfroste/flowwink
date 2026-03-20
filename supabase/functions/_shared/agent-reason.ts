@@ -1693,6 +1693,25 @@ async function handleSoulUpdate(supabase: any, args: { field: string; value: any
   return { status: 'updated', field: args.field, soul: updatedSoul };
 }
 
+// ─── Agents Update (operational rules) ────────────────────────────────────────
+
+async function handleAgentsUpdate(supabase: any, args: { field: string; value: any }) {
+  const { data: existing } = await supabase
+    .from('agent_memory').select('id, value').eq('key', 'agents').maybeSingle();
+
+  const currentAgents = existing?.value || {};
+  const updatedAgents = { ...currentAgents, [args.field]: args.value, version: currentAgents.version || '1.0' };
+
+  if (existing) {
+    await supabase.from('agent_memory')
+      .update({ value: updatedAgents, updated_at: new Date().toISOString() }).eq('id', existing.id);
+  } else {
+    await supabase.from('agent_memory')
+      .insert({ key: 'agents', value: updatedAgents, category: 'preference', created_by: 'flowpilot' });
+  }
+  return { status: 'updated', field: args.field, agents: updatedAgents };
+}
+
 // ─── Automation CRUD ──────────────────────────────────────────────────────────
 
 async function handleAutomationCreate(supabase: any, args: any) {
