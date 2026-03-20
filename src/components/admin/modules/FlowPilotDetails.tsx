@@ -29,6 +29,7 @@ interface BootstrapStats {
 }
 
 export function FlowPilotDetails() {
+  const queryClient = useQueryClient();
   const [isBootstrapping, setIsBootstrapping] = useState(false);
   const navigate = useNavigate();
 
