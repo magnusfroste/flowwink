@@ -53,7 +53,7 @@ export function FlowPilotDetails() {
         },
         objectives: {
           total: objectives.data?.length ?? 0,
-          active: objectives.data?.filter(o => o.status === 'active' || o.status === 'in_progress').length ?? 0,
+          active: objectives.data?.filter(o => o.status === 'active').length ?? 0,
         },
         cronJobs: [], // We can't query pg_cron from client
       };
