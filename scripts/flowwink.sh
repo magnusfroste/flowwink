@@ -570,6 +570,7 @@ cmd_setup_flowpilot() {
     echo ""
 
     local -a OPTIONS=(
+        "Sync missing skills (safe re-seed)"
         "Seed objectives & automations from template"
         "Register / renew heartbeat cron only"
         "Cancel"
@@ -577,12 +578,16 @@ cmd_setup_flowpilot() {
 
     _fw_select "${OPTIONS[@]}"
     local idx=$_FW_IDX
-    [ "$idx" -eq -1 ] || [ "$idx" -eq 2 ] && echo "" && return 0
+    [ "$idx" -eq -1 ] || [ "$idx" -eq 3 ] && echo "" && return 0
 
     echo ""
 
     local payload
     if [ "$idx" -eq 0 ]; then
+        # Sync missing skills
+        echo -e "  Syncing missing skills..."
+        payload="{\"seed_skills\":true,\"seed_soul\":false}"
+    elif [ "$idx" -eq 2 ]; then
         local -a TEMPLATES=(
             "blank"
             "consult-agency"
