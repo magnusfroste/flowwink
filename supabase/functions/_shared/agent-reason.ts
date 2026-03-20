@@ -2085,6 +2085,7 @@ export async function executeBuiltInTool(
     case 'skill_delete': return handleSkillDelete(supabase, fnArgs);
     case 'skill_instruct': return handleSkillInstruct(supabase, fnArgs);
     case 'soul_update': return handleSoulUpdate(supabase, fnArgs);
+    case 'agents_update': return handleAgentsUpdate(supabase, fnArgs);
     case 'automation_create': return handleAutomationCreate(supabase, fnArgs);
     case 'automation_list': return handleAutomationList(supabase, fnArgs);
     case 'automation_update': return handleAutomationUpdate(supabase, fnArgs);
