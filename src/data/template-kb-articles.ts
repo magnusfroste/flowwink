@@ -867,7 +867,7 @@ export const flowwinkKbCategories: TemplateKbCategory[] = [
         title: 'Automations Overview',
         slug: 'automations-overview',
         question: 'What are automations and how do I set one up?',
-        answer_text: 'Automations are recurring skill executions on a cron schedule. Go to Admin → Skill Hub → Automations → New Automation. Select a trigger type (Cron Schedule), set the schedule (e.g., "0 9 * * 1" for every Monday at 9 AM), choose the skill to execute, and configure arguments. Automations run indefinitely until disabled.',
+        answer_text: 'Automations are recurring skill executions on a cron schedule. Go to Admin → Engine Room → Automations → New Automation. Select a trigger type (Cron Schedule), set the schedule (e.g., "0 9 * * 1" for every Monday at 9 AM), choose the skill to execute, and configure arguments. Automations run indefinitely until disabled.',
         is_featured: true,
         include_in_chat: true,
       },

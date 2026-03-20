@@ -129,7 +129,7 @@ export function useFlowPilotBootstrap() {
       return data;
     },
     onSuccess: () => {
-      // Invalidate relevant queries so Skill Hub reflects the new skills
+      // Invalidate relevant queries so Engine Room reflects the new skills
       queryClient.invalidateQueries({ queryKey: ['agent-skills'] });
       queryClient.invalidateQueries({ queryKey: ['agent-objectives'] });
       queryClient.invalidateQueries({ queryKey: ['agent-automations'] });

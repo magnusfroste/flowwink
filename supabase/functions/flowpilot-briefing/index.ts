@@ -228,7 +228,7 @@ serve(async (req) => {
     if (failedActions > 0) {
       actionItems.push({
         priority: "high",
-        text: `${failedActions} FlowPilot action${failedActions > 1 ? "s" : ""} failed — check Skill Hub`,
+        text: `${failedActions} FlowPilot action${failedActions > 1 ? "s" : ""} failed — check Engine Room`,
         link: "/admin/skills",
       });
     }

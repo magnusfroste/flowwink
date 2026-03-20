@@ -609,7 +609,7 @@ export const flowwinkBlogPosts: TemplateBlogPost[] = [
             'Configure skill arguments',
             'FlowPilot executes on schedule, logs results'
           ),
-          p('Automations are configured in Admin → Skill Hub → Automations. Each automation has a trigger type, skill reference, and execution history.'),
+          p('Automations are configured in Admin → Engine Room → Automations. Each automation has a trigger type, skill reference, and execution history.'),
           h2('When to Use Which'),
           p('Use objectives for finite, strategic work — projects with a clear end state. Use automations for ongoing operational routines that should happen regardless of objectives. The combination gives FlowPilot both strategic direction and operational rhythm.'),
           h2('They Work Together'),

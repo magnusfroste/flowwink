@@ -3,7 +3,7 @@
  * 
  * Right-side panel for the FlowPilot cockpit.
  * Aggregates: Agent Status, Active Objectives, Live Activity Feed.
- * Provides cross-navigation links to Skill Hub.
+ * Provides cross-navigation links to Engine Room.
  */
 
 import { useState, useEffect } from 'react';
