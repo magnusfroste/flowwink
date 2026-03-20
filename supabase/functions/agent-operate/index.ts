@@ -2,8 +2,8 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import {
   resolveAiConfig,
-  loadSoulIdentity,
-  buildSoulPrompt,
+  loadWorkspaceFiles,
+  buildWorkspacePrompt,
   loadMemories,
   loadObjectives,
   buildSystemPrompt,
@@ -48,8 +48,8 @@ serve(async (req) => {
     const { apiKey, apiUrl, model } = await resolveAiConfig(supabase, 'fast');
 
     // Load context in parallel
-    const [{ soul, identity }, memoryContext, objectiveContext, cmsSchemaCtx] = await Promise.all([
-      loadSoulIdentity(supabase),
+    const [{ soul, identity, agents }, memoryContext, objectiveContext, cmsSchemaCtx] = await Promise.all([
+      loadWorkspaceFiles(supabase),
       loadMemories(supabase),
       loadObjectives(supabase),
       loadCMSSchema(supabase),
@@ -58,7 +58,8 @@ serve(async (req) => {
     // Use prompt compiler (OpenClaw Layer 1)
     const systemPrompt = buildSystemPrompt({
       mode: 'operate',
-      soulPrompt: buildSoulPrompt(soul, identity),
+      soulPrompt: buildWorkspacePrompt(soul, identity, agents),
+      agents,
       memoryContext,
       objectiveContext,
       cmsSchemaContext: cmsSchemaCtx,

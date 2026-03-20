@@ -2,8 +2,8 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
   resolveAiConfig,
-  loadSoulIdentity,
-  buildSoulPrompt,
+  loadWorkspaceFiles,
+  buildWorkspacePrompt,
   loadMemories,
   loadObjectives,
   buildSystemPrompt,
@@ -105,8 +105,8 @@ serve(async (req) => {
 
   try {
     // 1. Gather context + run self-healing in parallel
-    const [{ soul, identity }, memoryCtx, objectiveCtx, activityCtx, statsCtx, automationCtx, healingReport, cmsSchemaCtx, heartbeatStateCtx, siteMaturity] = await Promise.all([
-      loadSoulIdentity(supabase),
+    const [{ soul, identity, agents }, memoryCtx, objectiveCtx, activityCtx, statsCtx, automationCtx, healingReport, cmsSchemaCtx, heartbeatStateCtx, siteMaturity] = await Promise.all([
+      loadWorkspaceFiles(supabase),
       loadMemories(supabase),
       loadObjectives(supabase),
       loadRecentActivity(supabase),
@@ -134,7 +134,8 @@ serve(async (req) => {
     // 5. Build system prompt via prompt compiler (OpenClaw Layer 1)
     const systemPrompt = buildSystemPrompt({
       mode: 'heartbeat',
-      soulPrompt: buildSoulPrompt(soul, identity),
+      soulPrompt: buildWorkspacePrompt(soul, identity, agents),
+      agents,
       memoryContext: memoryCtx,
       objectiveContext: objectiveCtx,
       activityContext: activityCtx,

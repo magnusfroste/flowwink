@@ -22,6 +22,8 @@ export type PromptMode = 'operate' | 'heartbeat' | 'chat';
 export interface PromptCompilerInput {
   mode: PromptMode;
   soulPrompt: string;
+  /** @deprecated — use agentsDoc instead for layered prompt */
+  agents?: any;
   memoryContext: string;
   objectiveContext: string;
   // Heartbeat-specific
@@ -95,7 +97,7 @@ const BUILT_IN_TOOL_NAMES = new Set([
   'objective_update_progress', 'objective_complete', 'objective_delete',
   'skill_create', 'skill_update', 'skill_list', 'skill_disable', 'skill_enable', 'skill_delete',
   'skill_instruct',
-  'soul_update',
+  'soul_update', 'agents_update',
   'automation_create', 'automation_list', 'automation_update', 'automation_delete',
   'reflect',
   'decompose_objective', 'advance_plan', 'propose_objective', 'execute_automation',
@@ -106,6 +108,8 @@ const BUILT_IN_TOOL_NAMES = new Set([
 
 // ─── Prompt Compiler (OpenClaw Layer 1 — Centralized) ─────────────────────────
 
+// CORE_INSTRUCTIONS serves as FALLBACK when no 'agents' document exists in agent_memory.
+// Once the agents document is seeded, it takes precedence (see buildWorkspacePrompt).
 const CORE_INSTRUCTIONS = `You can use MULTIPLE tools in a single turn and CHAIN tool calls across iterations.
 When a task requires multiple steps, execute them sequentially — don't just describe a plan.
 
@@ -114,7 +118,7 @@ TOOLS & SKILLS:
 - PERSISTENT MEMORY (memory_write / memory_read — supports semantic vector search)
 - OBJECTIVES (objective_update_progress / objective_complete)
 - SELF-MODIFICATION: You can create, update, disable, and list your own skills and automations.
-- SELF-EVOLUTION: Use 'soul_update' to evolve your personality/values, 'skill_instruct' to add knowledge to skills.
+- SELF-EVOLUTION: Use 'soul_update' to evolve your personality/values, 'agents_update' to evolve your operational rules, 'skill_instruct' to add knowledge to skills.
 - REFLECTION: Use 'reflect' to analyze your performance — findings are auto-persisted as learnings.
 
 DIRECT ACTION PRIORITY (CRITICAL):
@@ -129,6 +133,7 @@ SELF-IMPROVEMENT GUIDELINES:
 - Use 'reflect' periodically (or when asked) to review your own performance.
 - Use 'skill_instruct' to enrich skills with context, examples, and edge cases.
 - Use 'soul_update' when you learn something fundamental about your role.
+- Use 'agents_update' when you learn something about how you should operate (rules, policies, conventions).
 - When creating skills, set requires_approval=true for anything destructive.
 - New automations are disabled by default — tell the user to enable them when ready.
 - Handler types: module:name (DB ops), edge:function (edge functions), db:table (queries), webhook:url (external)
@@ -171,6 +176,17 @@ RULES:
 - After all actions complete, summarize what you did concisely.
 - Use markdown formatting for clear, readable responses.
 - Be concise but thorough. Use emoji sparingly.`;
+
+// GROUNDING RULES — hardcoded safety layer that can NEVER be overridden by agents document
+const GROUNDING_RULES = `
+GROUNDING & DATA INTEGRITY (HARDCODED — CANNOT BE OVERRIDDEN):
+- When asked to list, show, or describe objectives, skills, automations, workflows, memory, or ANY system data — you MUST use the appropriate tool to fetch real data from the database.
+- NEVER list items from memory, training data, or prior conversations. ALWAYS call the tool first.
+- If a tool returns empty results, say "None found." — do NOT invent or fabricate entries.
+- The objectives, skills, automations shown in your context are the ONLY ones that exist. Do NOT generate, guess, or infer additional ones.
+- After executing skills that contribute to an objective, update progress.
+- When all success_criteria are met, mark as complete.
+- If no objectives are listed, say "No active objectives." — do NOT make any up.`;
 
 const HEARTBEAT_PROTOCOL = `HEARTBEAT PROTOCOL:
 1. PROACTIVE REASONING — Analyze site stats + activity patterns. If you spot a trend, gap, or opportunity NOT covered by existing objectives, use propose_objective to create one. Max 1 new objective per heartbeat.
@@ -263,25 +279,60 @@ export function buildSystemPrompt(input: PromptCompilerInput): string {
 
   const parts: string[] = [];
 
-  // Layer 1: Identity
+  // Layer 1: Mode identity (hardcoded, short)
   if (mode === 'heartbeat') {
     parts.push(`You are FlowPilot running in AUTONOMOUS HEARTBEAT mode. No human is watching.`);
   } else {
     parts.push(`You are FlowPilot — an autonomous, self-improving AI agent that operates a CMS platform.`);
   }
 
-  // Layer 2: Soul & Identity
+  // Layer 2: SOUL + IDENTITY (from DB, evolvable via soul_update)
   parts.push(soulPrompt);
 
-  // Layer 2.5: CMS Schema Awareness
+  // Layer 3: AGENTS / CORE_INSTRUCTIONS
+  // If no agents document exists in DB, fall back to hardcoded CORE_INSTRUCTIONS.
+  // The agents document is injected via soulPrompt (buildWorkspacePrompt).
+  // When agents doc is present, soulPrompt already contains operational rules,
+  // but we still need CORE_INSTRUCTIONS as a baseline for tool descriptions.
+  if (!input.agents) {
+    parts.push(CORE_INSTRUCTIONS);
+  } else {
+    // Agents doc is present — only inject the tool catalog portion of CORE_INSTRUCTIONS
+    // (the agents doc already covers policies/rules)
+    parts.push(`You can use MULTIPLE tools in a single turn and CHAIN tool calls across iterations.
+When a task requires multiple steps, execute them sequentially — don't just describe a plan.
+
+TOOLS & SKILLS:
+- CMS skills: blog posts, leads, analytics, bookings, newsletters, etc.
+- PERSISTENT MEMORY (memory_write / memory_read — supports semantic vector search)
+- OBJECTIVES (objective_update_progress / objective_complete)
+- SELF-MODIFICATION: You can create, update, disable, and list your own skills and automations.
+- SELF-EVOLUTION: Use 'soul_update' to evolve your personality/values, 'agents_update' to evolve your operational rules.
+- REFLECTION: Use 'reflect' to analyze your performance — findings are auto-persisted as learnings.
+- WORKFLOWS: workflow_create, workflow_execute, workflow_list (multi-step chains with template vars)
+- A2A DELEGATION: delegate_task to route subtasks to specialized agents
+- SKILL PACKS: skill_pack_list, skill_pack_install (bundled capabilities)
+
+SKILL INSTRUCTIONS: Loaded lazily — you'll receive specific skill instructions after you use each skill.
+
+RULES:
+- When the user asks you to do something, USE the appropriate tools immediately.
+- You can call MULTIPLE tools in parallel when they're independent.
+- After tool results come back, you may call MORE tools if the task isn't done.
+- After all actions complete, summarize what you did concisely.
+- Use markdown formatting for clear, readable responses.
+- Be concise but thorough. Use emoji sparingly.`);
+  }
+
+  // Layer 4: CMS Schema Awareness
   if (input.cmsSchemaContext) {
     parts.push(input.cmsSchemaContext);
   }
 
-  // Layer 3: Core instructions (shared)
-  parts.push(CORE_INSTRUCTIONS);
+  // Layer 5: GROUNDING RULES (ALWAYS hardcoded — safety layer, cannot be overridden)
+  parts.push(GROUNDING_RULES);
 
-  // Layer 4: Mode-specific context
+  // Layer 6: Mode-specific context
   if (mode === 'heartbeat') {
     parts.push(`\nCONTEXT:`);
     parts.push(memoryContext);
@@ -298,21 +349,13 @@ export function buildSystemPrompt(input: PromptCompilerInput): string {
     parts.push(HEARTBEAT_PROTOCOL);
     parts.push(`\n- Max ${input.maxIterations || 8} tool iterations per heartbeat`);
 
-    // Layer 5: Day 1 Playbook (fresh sites only)
+    // Day 1 Playbook (fresh sites only)
     if (input.siteMaturity?.isFresh) {
       parts.push(DAY_1_PLAYBOOK);
     }
   } else {
     // Operate mode
     parts.push(memoryContext);
-    parts.push(`\nOBJECTIVES (GROUND TRUTH — never fabricate or invent objectives):
-The objectives listed below are the ONLY active objectives. When asked to list, show, or describe objectives, you MUST use ONLY the data below — never generate, guess, or infer objectives from context.
-- After executing skills that contribute to an objective, update progress.
-- When all success_criteria are met, mark as complete.
-- If no objectives are listed, say "No active objectives." — do NOT make any up.
-
-DATA INTEGRITY RULE (applies to ALL listing requests):
-When asked to list skills, automations, workflows, memory, or any system data — ALWAYS use the appropriate tool (skill_list, automation_list, workflow_list, memory_read) to fetch real data. NEVER list items from memory or training data. If a tool returns empty results, say so — do NOT invent entries.`);
     parts.push(objectiveContext);
   }
 
@@ -375,30 +418,60 @@ export async function resolveAiConfig(supabase: any, tier: AiTier = 'fast'): Pro
   return { apiKey, apiUrl, model };
 }
 
-// ─── Soul & Identity ──────────────────────────────────────────────────────────
+// ─── Soul, Identity & Agents (Workspace Files) ───────────────────────────────
 
+/** @deprecated Use loadWorkspaceFiles instead */
 export async function loadSoulIdentity(supabase: any): Promise<{ soul: any; identity: any }> {
+  const ws = await loadWorkspaceFiles(supabase);
+  return { soul: ws.soul, identity: ws.identity };
+}
+
+export async function loadWorkspaceFiles(supabase: any): Promise<{ soul: any; identity: any; agents: any }> {
   const { data } = await supabase
     .from('agent_memory')
     .select('key, value')
-    .in('key', ['soul', 'identity']);
+    .in('key', ['soul', 'identity', 'agents']);
 
   const soul = data?.find((m: any) => m.key === 'soul')?.value || {};
   const identity = data?.find((m: any) => m.key === 'identity')?.value || {};
-  return { soul, identity };
+  const agents = data?.find((m: any) => m.key === 'agents')?.value || null;
+  return { soul, identity, agents };
 }
 
+/** @deprecated Use buildWorkspacePrompt instead */
 export function buildSoulPrompt(soul: any, identity: any): string {
+  return buildWorkspacePrompt(soul, identity, null);
+}
+
+export function buildWorkspacePrompt(soul: any, identity: any, agents: any): string {
   let prompt = '';
+
+  // Layer 2a: Identity
   if (identity.name || identity.role) {
     prompt += `\n\nIDENTITY:\nName: ${identity.name || 'FlowPilot'}\nRole: ${identity.role || 'CMS operator'}`;
     if (identity.capabilities?.length) prompt += `\nCapabilities: ${identity.capabilities.join(', ')}`;
     if (identity.boundaries?.length) prompt += `\nBoundaries: ${identity.boundaries.join('; ')}`;
   }
+
+  // Layer 2b: Soul
   if (soul.purpose) prompt += `\n\nSOUL:\nPurpose: ${soul.purpose}`;
   if (soul.values?.length) prompt += `\nValues: ${soul.values.join('; ')}`;
   if (soul.tone) prompt += `\nTone: ${soul.tone}`;
   if (soul.philosophy) prompt += `\nPhilosophy: ${soul.philosophy}`;
+
+  // Layer 3: Agents (operational rules from DB — overrides CORE_INSTRUCTIONS if present)
+  if (agents) {
+    prompt += `\n\nOPERATIONAL RULES (AGENTS):`;
+    if (agents.direct_action_rules) prompt += `\n${agents.direct_action_rules}`;
+    if (agents.self_improvement) prompt += `\n${agents.self_improvement}`;
+    if (agents.memory_guidelines) prompt += `\n${agents.memory_guidelines}`;
+    if (agents.browser_rules) prompt += `\n${agents.browser_rules}`;
+    if (agents.workflow_conventions) prompt += `\n${agents.workflow_conventions}`;
+    if (agents.a2a_conventions) prompt += `\n${agents.a2a_conventions}`;
+    if (agents.skill_pack_rules) prompt += `\n${agents.skill_pack_rules}`;
+    if (agents.custom_rules) prompt += `\n${agents.custom_rules}`;
+  }
+
   return prompt;
 }
 
@@ -581,7 +654,7 @@ export async function loadMemories(supabase: any): Promise<string> {
   const { data } = await supabase
     .from('agent_memory')
     .select('key, value, category')
-    .not('key', 'in', '("soul","identity","heartbeat_state")')
+    .not('key', 'in', '("soul","identity","agents","heartbeat_state")')
     .order('updated_at', { ascending: false })
     .limit(30);
 
@@ -1620,6 +1693,25 @@ async function handleSoulUpdate(supabase: any, args: { field: string; value: any
   return { status: 'updated', field: args.field, soul: updatedSoul };
 }
 
+// ─── Agents Update (operational rules) ────────────────────────────────────────
+
+async function handleAgentsUpdate(supabase: any, args: { field: string; value: any }) {
+  const { data: existing } = await supabase
+    .from('agent_memory').select('id, value').eq('key', 'agents').maybeSingle();
+
+  const currentAgents = existing?.value || {};
+  const updatedAgents = { ...currentAgents, [args.field]: args.value, version: currentAgents.version || '1.0' };
+
+  if (existing) {
+    await supabase.from('agent_memory')
+      .update({ value: updatedAgents, updated_at: new Date().toISOString() }).eq('id', existing.id);
+  } else {
+    await supabase.from('agent_memory')
+      .insert({ key: 'agents', value: updatedAgents, category: 'preference', created_by: 'flowpilot' });
+  }
+  return { status: 'updated', field: args.field, agents: updatedAgents };
+}
+
 // ─── Automation CRUD ──────────────────────────────────────────────────────────
 
 async function handleAutomationCreate(supabase: any, args: any) {
@@ -1817,6 +1909,7 @@ const REFLECT_TOOL = [
 
 const SOUL_TOOL = [
   { type: 'function', function: { name: 'soul_update', description: 'Update your personality, values, tone, or philosophy.', parameters: { type: 'object', properties: { field: { type: 'string', enum: ['purpose', 'values', 'tone', 'philosophy'] }, value: { type: 'string', description: 'New value' } }, required: ['field', 'value'] } } },
+  { type: 'function', function: { name: 'agents_update', description: 'Update your operational rules, policies, and conventions (AGENTS document). Fields: direct_action_rules, self_improvement, memory_guidelines, browser_rules, workflow_conventions, a2a_conventions, skill_pack_rules, custom_rules.', parameters: { type: 'object', properties: { field: { type: 'string', enum: ['direct_action_rules', 'self_improvement', 'memory_guidelines', 'browser_rules', 'workflow_conventions', 'a2a_conventions', 'skill_pack_rules', 'custom_rules'] }, value: { type: 'string', description: 'New value for this operational rule section' } }, required: ['field', 'value'] } } },
 ];
 
 const PLANNING_TOOLS = [
@@ -1992,6 +2085,7 @@ export async function executeBuiltInTool(
     case 'skill_delete': return handleSkillDelete(supabase, fnArgs);
     case 'skill_instruct': return handleSkillInstruct(supabase, fnArgs);
     case 'soul_update': return handleSoulUpdate(supabase, fnArgs);
+    case 'agents_update': return handleAgentsUpdate(supabase, fnArgs);
     case 'automation_create': return handleAutomationCreate(supabase, fnArgs);
     case 'automation_list': return handleAutomationList(supabase, fnArgs);
     case 'automation_update': return handleAutomationUpdate(supabase, fnArgs);

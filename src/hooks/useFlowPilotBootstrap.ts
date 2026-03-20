@@ -86,6 +86,36 @@ export function useFlowPilotBootstrap() {
       
       logger.log('[FlowPilotBootstrap] Bootstrap complete:', data);
 
+      // Seed AGENTS document (operational rules) if not present
+      try {
+        const { data: existingAgents } = await supabase
+          .from('agent_memory')
+          .select('id')
+          .eq('key', 'agents')
+          .maybeSingle();
+
+        if (!existingAgents) {
+          await supabase.from('agent_memory').insert({
+            key: 'agents',
+            value: {
+              version: '1.0',
+              direct_action_rules: 'When a user asks you to DO something (delete, update, create, fix, clean up), ALWAYS execute it directly using the appropriate skill — NEVER create an automation instead. Only create automations when the user explicitly asks for scheduled/recurring tasks.',
+              self_improvement: 'If a user asks you to do something you can\'t, consider creating a new skill. When you notice repetitive tasks, SUGGEST (don\'t auto-create) an automation. Use reflect periodically. Use skill_instruct to enrich skills. Use soul_update for fundamental role insights. Use agents_update for operational rule refinements. Set requires_approval=true for destructive skills. New automations are disabled by default.',
+              memory_guidelines: 'Save user preferences, facts, and context with memory_write. Check memory before answering questions about the site. memory_read supports semantic search.',
+              browser_rules: 'When a user provides a URL, ALWAYS call browser_fetch. NEVER guess URLs for social profiles. Use search_web first to find correct URLs.',
+              workflow_conventions: 'Use workflow_create for sequential steps with conditional branching. Steps support {{stepId.result.field}} templates. Use on_failure:continue or stop.',
+              a2a_conventions: 'Use delegate_task for subtasks to specialized agents. Built-in specialists: seo, content, sales, analytics, email.',
+              skill_pack_rules: 'Use skill_pack_list to see available packs. Use skill_pack_install for batch installation.',
+            },
+            category: 'preference',
+            created_by: 'flowpilot',
+          });
+          logger.log('[FlowPilotBootstrap] AGENTS document seeded');
+        }
+      } catch (agentsError) {
+        logger.warn('[FlowPilotBootstrap] AGENTS seed failed (non-fatal):', agentsError);
+      }
+
       // Fire initial heartbeat to decompose objectives
       try {
         await supabase.functions.invoke('flowpilot-heartbeat', {
