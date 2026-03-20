@@ -1963,10 +1963,14 @@ export async function executeBuiltInTool(
     case 'skill_update': return handleSkillUpdate(supabase, fnArgs);
     case 'skill_list': return handleSkillList(supabase, fnArgs);
     case 'skill_disable': return handleSkillDisable(supabase, fnArgs);
+    case 'skill_enable': return handleSkillEnable(supabase, fnArgs);
+    case 'skill_delete': return handleSkillDelete(supabase, fnArgs);
     case 'skill_instruct': return handleSkillInstruct(supabase, fnArgs);
     case 'soul_update': return handleSoulUpdate(supabase, fnArgs);
     case 'automation_create': return handleAutomationCreate(supabase, fnArgs);
     case 'automation_list': return handleAutomationList(supabase, fnArgs);
+    case 'automation_update': return handleAutomationUpdate(supabase, fnArgs);
+    case 'automation_delete': return handleAutomationDelete(supabase, fnArgs);
     case 'reflect': return handleReflect(supabase, fnArgs);
     case 'decompose_objective': return handleDecomposeObjective(supabase, fnArgs);
     case 'advance_plan': return handleAdvancePlan(supabase, supabaseUrl, serviceKey, fnArgs);
@@ -1975,6 +1979,8 @@ export async function executeBuiltInTool(
     case 'workflow_create': return handleWorkflowCreate(supabase, fnArgs);
     case 'workflow_execute': return handleWorkflowExecute(supabase, supabaseUrl, serviceKey, fnArgs);
     case 'workflow_list': return handleWorkflowList(supabase);
+    case 'workflow_update': return handleWorkflowUpdate(supabase, fnArgs);
+    case 'workflow_delete': return handleWorkflowDelete(supabase, fnArgs);
     case 'delegate_task': return handleDelegateTask(supabase, supabaseUrl, serviceKey, fnArgs);
     case 'skill_pack_list': return handleSkillPackList(supabase);
     case 'skill_pack_install': return handleSkillPackInstall(supabase, fnArgs);
