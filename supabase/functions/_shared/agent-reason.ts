@@ -1859,6 +1859,34 @@ const WORKFLOW_TOOLS = [
       parameters: { type: 'object', properties: {} },
     },
   },
+  {
+    type: 'function', function: {
+      name: 'workflow_update',
+      description: 'Update an existing workflow by ID or name.',
+      parameters: {
+        type: 'object',
+        properties: {
+          workflow_id: { type: 'string' },
+          workflow_name: { type: 'string' },
+          updates: { type: 'object', description: 'Fields to update: name, description, steps, trigger_type, trigger_config, enabled' },
+        },
+        required: ['updates'],
+      },
+    },
+  },
+  {
+    type: 'function', function: {
+      name: 'workflow_delete',
+      description: 'Permanently delete a workflow by ID or name.',
+      parameters: {
+        type: 'object',
+        properties: {
+          workflow_id: { type: 'string' },
+          workflow_name: { type: 'string' },
+        },
+      },
+    },
+  },
 ];
 
 const A2A_TOOLS = [
