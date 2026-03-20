@@ -1377,6 +1377,7 @@ async function handleWorkflowDelete(supabase: any, args: { workflow_id?: string;
 
 
 async function handleWorkflowExecute(
+  supabase: any, supabaseUrl: string, serviceKey: string,
   args: { workflow_id?: string; workflow_name?: string; input?: Record<string, any> },
 ) {
   let q = supabase.from('agent_workflows').select('*');
