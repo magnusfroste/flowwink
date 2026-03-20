@@ -28,6 +28,7 @@ interface BootstrapStats {
 
 export function FlowPilotDetails() {
   const [isBootstrapping, setIsBootstrapping] = useState(false);
+  const navigate = useNavigate();
 
   const { data: stats, isLoading, refetch } = useQuery({
     queryKey: ['flowpilot-bootstrap-stats'],
