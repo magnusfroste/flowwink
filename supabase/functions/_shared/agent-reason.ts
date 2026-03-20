@@ -1251,7 +1251,37 @@ async function handleWorkflowList(supabase: any) {
   };
 }
 
-async function handleWorkflowExecute(
+async function handleWorkflowUpdate(supabase: any, args: { workflow_id?: string; workflow_name?: string; updates: Record<string, any> }) {
+  const safeFields = ['name', 'description', 'steps', 'trigger_type', 'trigger_config', 'enabled'];
+  const filtered: Record<string, any> = {};
+  for (const [k, v] of Object.entries(args.updates)) {
+    if (safeFields.includes(k)) filtered[k] = v;
+  }
+  if (Object.keys(filtered).length === 0) return { status: 'error', error: 'No valid fields to update' };
+  filtered.updated_at = new Date().toISOString();
+
+  let q = supabase.from('agent_workflows').update(filtered);
+  if (args.workflow_id) q = q.eq('id', args.workflow_id);
+  else if (args.workflow_name) q = q.eq('name', args.workflow_name);
+  else return { status: 'error', error: 'Provide workflow_id or workflow_name' };
+
+  const { data, error } = await q.select('id, name, enabled').single();
+  if (error) return { status: 'error', error: error.message };
+  return { status: 'updated', workflow: data };
+}
+
+async function handleWorkflowDelete(supabase: any, args: { workflow_id?: string; workflow_name?: string }) {
+  let q = supabase.from('agent_workflows').delete();
+  if (args.workflow_id) q = q.eq('id', args.workflow_id);
+  else if (args.workflow_name) q = q.eq('name', args.workflow_name);
+  else return { status: 'error', error: 'Provide workflow_id or workflow_name' };
+
+  const { data, error } = await q.select('id, name').single();
+  if (error) return { status: 'error', error: error.message };
+  return { status: 'deleted', workflow: data };
+}
+
+
   supabase: any, supabaseUrl: string, serviceKey: string,
   args: { workflow_id?: string; workflow_name?: string; input?: Record<string, any> },
 ) {
