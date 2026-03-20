@@ -257,13 +257,15 @@ describe("Prompt Compiler (buildSystemPrompt)", () => {
     expect(prompt).toContain("TOKEN BUDGET: 50000 tokens max");
   });
 
-  it("chat mode uses chatSystemPrompt override", () => {
+  it("chat mode uses chatSystemPrompt as base layer", () => {
     const prompt = buildSystemPrompt({
       ...baseInput,
       mode: 'chat',
       chatSystemPrompt: 'You are a helpful assistant.',
     });
-    expect(prompt).toBe('You are a helpful assistant.');
+    expect(prompt).toContain('You are a helpful assistant.');
+    // Chat mode now adds soul + grounding layers on top
+    expect(prompt).toContain('SOUL: Test');
   });
 
   it("does not leak heartbeat state into operate mode", () => {
