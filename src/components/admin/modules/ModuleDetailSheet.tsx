@@ -40,6 +40,7 @@ import { formatDistanceToNow } from "date-fns";
 import { useExtensionRelay } from "@/hooks/useExtensionRelay";
 import { toast } from "sonner";
 import JSZip from "jszip";
+import { FlowPilotDetails } from "./FlowPilotDetails";
 
 interface ModuleDetailSheetProps {
   open: boolean;
