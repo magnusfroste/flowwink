@@ -3126,6 +3126,23 @@ export type Database = {
         }
         Returns: boolean
       }
+      search_memories_hybrid: {
+        Args: {
+          filter_category?: Database["public"]["Enums"]["agent_memory_category"]
+          match_count?: number
+          match_threshold?: number
+          query_embedding?: string
+          query_text: string
+        }
+        Returns: {
+          category: Database["public"]["Enums"]["agent_memory_category"]
+          id: string
+          key: string
+          search_type: string
+          similarity: number
+          value: Json
+        }[]
+      }
       search_memories_semantic: {
         Args: {
           filter_category?: Database["public"]["Enums"]["agent_memory_category"]
@@ -3141,6 +3158,8 @@ export type Database = {
           value: Json
         }[]
       }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
       unschedule_cron_job: { Args: { p_jobname: string }; Returns: boolean }
     }
     Enums: {

@@ -117,8 +117,7 @@ When a task requires multiple steps, execute them sequentially — don't just de
 
 TOOLS & SKILLS:
 - CMS skills: blog posts, leads, analytics, bookings, newsletters, etc.
-- PERSISTENT MEMORY (memory_write / memory_read — supports semantic vector search)
-- OBJECTIVES (objective_update_progress / objective_complete)
+- PERSISTENT MEMORY (memory_write / memory_read — hybrid search: vector similarity + keyword matching)
 - SELF-MODIFICATION: You can create, update, disable, and list your own skills and automations.
 - SELF-EVOLUTION: Use 'soul_update' to evolve your personality/values, 'agents_update' to evolve your operational rules, 'skill_instruct' to add knowledge to skills.
 - REFLECTION: Use 'reflect' to analyze your performance — findings are auto-persisted as learnings.
@@ -143,7 +142,7 @@ SELF-IMPROVEMENT GUIDELINES:
 MEMORY GUIDELINES:
 - Save user preferences, facts, and context with memory_write
 - Check memory before answering questions about the site
-- memory_read supports semantic search — describe what you're looking for naturally
+- memory_read uses hybrid search — describe what you're looking for (semantic) OR use exact terms (keyword). Both work simultaneously.
 
 BROWSER & URL RESOLUTION:
 - When a user provides an explicit URL (starts with http/https or a domain), ALWAYS call browser_fetch to read it. NEVER answer from memory or training data about a URL — always fetch it live.
@@ -822,11 +821,32 @@ async function handleMemoryWrite(supabase: any, args: { key: string; value: any;
 }
 
 async function handleMemoryRead(supabase: any, args: { key?: string; category?: string; semantic_query?: string }) {
-  // If semantic query provided, use vector search
-  if (args.semantic_query || args.key) {
-    const searchText = args.semantic_query || args.key || '';
+  const searchText = args.semantic_query || args.key || '';
+  
+  if (searchText) {
+    // Generate embedding for vector component
     const embedding = await generateEmbedding(supabase, searchText);
 
+    // Use hybrid search (70% vector + 30% keyword via pg_trgm)
+    const { data: hybridResults, error } = await supabase.rpc('search_memories_hybrid', {
+      query_text: searchText,
+      query_embedding: embedding || null,
+      match_threshold: 0.25,
+      match_count: 10,
+      filter_category: args.category || null,
+    });
+
+    if (!error && hybridResults?.length) {
+      return {
+        memories: hybridResults.map((r: any) => ({
+          key: r.key, value: r.value, category: r.category, 
+          similarity: r.similarity, search_type: r.search_type,
+        })),
+        search_type: 'hybrid',
+      };
+    }
+
+    // Fallback: pure vector search if hybrid function fails
     if (embedding) {
       const { data: semanticResults } = await supabase.rpc('search_memories_semantic', {
         query_embedding: embedding,
@@ -846,7 +866,7 @@ async function handleMemoryRead(supabase: any, args: { key?: string; category?: 
     }
   }
 
-  // Fallback: keyword search
+  // Final fallback: basic keyword search
   let q = supabase.from('agent_memory').select('key, value, category, updated_at');
   if (args.key) q = q.ilike('key', `%${args.key}%`);
   if (args.category) q = q.eq('category', args.category);
@@ -2034,7 +2054,7 @@ export async function loadSkillInstructions(_supabase: any): Promise<string> {
 
 const MEMORY_TOOLS = [
   { type: 'function', function: { name: 'memory_write', description: 'Save something to your persistent memory. Generates vector embedding for semantic search.', parameters: { type: 'object', properties: { key: { type: 'string', description: 'Short identifier' }, value: { type: 'string', description: 'The information to remember' }, category: { type: 'string', enum: ['preference', 'context', 'fact'] } }, required: ['key', 'value'] } } },
-  { type: 'function', function: { name: 'memory_read', description: 'Search your persistent memory. Supports semantic (vector) search — describe what you\'re looking for naturally.', parameters: { type: 'object', properties: { key: { type: 'string', description: 'Keyword search term' }, category: { type: 'string', enum: ['preference', 'context', 'fact'] }, semantic_query: { type: 'string', description: 'Natural language query for semantic vector search (more accurate than keyword)' } } } } },
+  { type: 'function', function: { name: 'memory_read', description: 'Search your persistent memory using hybrid search (vector similarity + keyword matching). Finds both semantically similar AND exact keyword matches (IDs, error strings, names).', parameters: { type: 'object', properties: { key: { type: 'string', description: 'Keyword search term — good for exact matches (IDs, names, error codes)' }, category: { type: 'string', enum: ['preference', 'context', 'fact'] }, semantic_query: { type: 'string', description: 'Natural language query for semantic search — good for conceptual matching' } } } } },
   { type: 'function', function: { name: 'memory_delete', description: 'Delete a memory entry by key.', parameters: { type: 'object', properties: { key: { type: 'string', description: 'The memory key to delete' } }, required: ['key'] } } },
 ];
 

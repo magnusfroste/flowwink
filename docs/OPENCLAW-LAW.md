@@ -219,7 +219,7 @@ All agent surfaces (interactive, autonomous, visitor chat) MUST share `agent-rea
 
 | Gap | OpenClaw Has | FlowWink Status | Impact |
 |-----|-------------|-----------------|--------|
-| **Hybrid memory search** | BM25 + vector (70/30 weighted) | Vector-only via pgvector | Exact keyword matches (IDs, errors) may be missed |
+| ~~**Hybrid memory search**~~ | ~~BM25 + vector (70/30 weighted)~~ | ✅ `search_memories_hybrid()` — pg_trgm + pgvector (70/30) | ~~Exact keyword matches (IDs, errors) may be missed~~ **RESOLVED** |
 | **Pre-compaction memory flush** | Silent agentic turn saves context before summarization | No pre-flush — just summarize and truncate | Risk of losing important context during pruning |
 | **Protocol specs (L5)** | Structured reply tags, `NO_REPLY` sentinel, heartbeat signals | Basic SSE streaming, no reply tags | Less structured agent output parsing |
 | **Workspace: HEARTBEAT.md** | Editable checklist file the agent reads each heartbeat | Hardcoded 7-step protocol in edge function | Admin can't customize heartbeat behavior without code deploy |
@@ -244,7 +244,7 @@ All agent surfaces (interactive, autonomous, visitor chat) MUST share `agent-rea
 
 ## 6. Recommended Next Steps (Priority Order)
 
-1. **Hybrid memory search** — Add BM25 keyword scoring alongside pgvector. Critical for finding exact IDs, error messages, and code references in memory.
+1. ~~**Hybrid memory search**~~ ✅ Implemented — `search_memories_hybrid()` with pg_trgm + pgvector (70% vector, 30% keyword).
 2. **Pre-compaction memory flush** — Before `pruneConversationHistory()` summarizes, trigger a silent step that extracts and persists key facts to `agent_memory`.
 3. **Editable HEARTBEAT config** — Move the 7-step protocol to `agent_memory(key='heartbeat')` so admin can customize via Skill Hub.
 4. **USER.md equivalent** — Store per-visitor context in `agent_memory` or `chat_conversations.metadata` so the agent remembers returning users.
