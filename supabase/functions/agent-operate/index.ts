@@ -41,11 +41,23 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, available_skills } = await req.json();
+    const { messages, available_skills, conversation_id } = await req.json();
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, serviceKey);
+
+    // Concurrency guard — one agent run per conversation
+    const lane = conversation_id ? `operate:${conversation_id}` : null;
+    if (lane) {
+      const acquired = await tryAcquireLock(supabase, lane, 'operate', 300);
+      if (!acquired) {
+        return new Response(
+          JSON.stringify({ error: 'Another agent process is running on this conversation' }),
+          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
 
     const { apiKey, apiUrl, model } = await resolveAiConfig(supabase, 'fast');
 
