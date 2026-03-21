@@ -2201,6 +2201,64 @@ export function getBuiltInTools(groups: Array<'memory' | 'objectives' | 'self-mo
   return tools;
 }
 
+// ─── Skill Chaining ───────────────────────────────────────────────────────────
+
+async function handleChainSkills(
+  supabase: any, supabaseUrl: string, serviceKey: string,
+  args: { steps: Array<{ skill_name: string; args?: Record<string, any> }>; stop_on_error?: boolean },
+) {
+  const { steps = [], stop_on_error = true } = args;
+  if (!steps.length) return { status: 'error', error: 'No steps provided' };
+  if (steps.length > 6) return { status: 'error', error: 'Max 6 steps per chain' };
+
+  const trace: any[] = [];
+  let previousResult: any = null;
+
+  for (const step of steps) {
+    // Inject previous result into args
+    const resolvedArgs: Record<string, any> = { ...(step.args || {}) };
+    if (previousResult) {
+      resolvedArgs._previous_result = previousResult;
+      // Resolve {{prev.field}} template vars
+      for (const [k, v] of Object.entries(resolvedArgs)) {
+        if (typeof v === 'string' && v.includes('{{prev.')) {
+          resolvedArgs[k] = v.replace(/\{\{prev\.(\w+)\}\}/g, (_m, field) => {
+            const val = previousResult?.[field] ?? previousResult?.result?.[field];
+            return val !== undefined ? String(val) : '';
+          });
+        }
+      }
+    }
+
+    let result: any;
+    try {
+      const resp = await fetch(`${supabaseUrl}/functions/v1/agent-execute`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceKey}` },
+        body: JSON.stringify({ skill_name: step.skill_name, arguments: resolvedArgs, agent_type: 'flowpilot' }),
+      });
+      result = await resp.json();
+    } catch (err: any) {
+      result = { error: err.message };
+    }
+
+    const success = !result.error && result.status !== 'failed';
+    trace.push({ skill: step.skill_name, status: success ? 'done' : 'failed', result });
+    previousResult = result?.result || result;
+
+    if (!success && stop_on_error) break;
+  }
+
+  const allSuccess = trace.every(t => t.status === 'done');
+  return {
+    status: allSuccess ? 'chain_completed' : 'chain_partial',
+    steps_executed: trace.length,
+    steps_total: steps.length,
+    trace,
+    final_result: previousResult,
+  };
+}
+
 // ─── Tool Execution Router ───────────────────────────────────────────────────
 
 export async function executeBuiltInTool(
