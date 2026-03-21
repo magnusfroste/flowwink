@@ -1814,6 +1814,16 @@ async function handleSkillInstruct(supabase: any, args: { skill_name: string; in
   const { data, error } = await supabase
     .from('agent_skills').update({ instructions: args.instructions, updated_at: new Date().toISOString() }).eq('name', args.skill_name).select('id, name, instructions').single();
   if (error) return { status: 'error', error: error.message };
+
+  // Log activity so Evolution panel can track instruction rewrites
+  await supabase.from('agent_activity').insert({
+    agent: 'flowpilot',
+    skill_name: 'skill_instruct',
+    input: { skill_name: args.skill_name, instructions_length: args.instructions.length },
+    output: { skill_id: data.id, skill_name: data.name, preview: args.instructions.slice(0, 200) },
+    status: 'success',
+  });
+
   return { status: 'updated', skill: data };
 }
 
