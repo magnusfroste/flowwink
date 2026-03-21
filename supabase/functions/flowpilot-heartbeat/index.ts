@@ -285,5 +285,8 @@ serve(async (req) => {
       JSON.stringify({ error: err.message || "Internal error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
+  } finally {
+    // Always release heartbeat lock
+    await releaseLock(supabase, 'heartbeat');
   }
 });
