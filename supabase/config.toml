@@ -221,3 +221,18 @@ verify_jwt = false
 
 [functions.web-search]
 verify_jwt = false
+
+[functions.backfill-embeddings]
+verify_jwt = false
+
+[functions.consultant-checkin]
+verify_jwt = false
+
+[functions.enrich-company-profile]
+verify_jwt = false
+
+[functions.generate-site-from-identity]
+verify_jwt = false
+
+[functions.update-autonomy-cron]
+verify_jwt = false
