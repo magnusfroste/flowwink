@@ -266,14 +266,14 @@ export default function CompanyInsightsPage() {
                   <CardTitle className="text-base flex items-center gap-2">
                     <TrendingUp className="h-4 w-4" /> Public Records
                   </CardTitle>
-                  <CardDescription>Enrich from Allabolag and similar sources</CardDescription>
+                  <CardDescription>Search public records for financial data</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="flex gap-2">
                     <Input
                       value={enrichId}
                       onChange={e => setEnrichId(e.target.value)}
-                      placeholder="Org number or company name"
+                      placeholder="Company name, registration number, or domain"
                       className="h-9"
                       onKeyDown={e => e.key === "Enter" && handleEnrichPublic()}
                     />
@@ -282,7 +282,7 @@ export default function CompanyInsightsPage() {
                       Lookup
                     </Button>
                   </div>
-                  <p className="text-xs text-muted-foreground">Search Swedish public company records for financial data.</p>
+                  <p className="text-xs text-muted-foreground">Searches the web for revenue, employees, registration data and more.</p>
                 </CardContent>
               </Card>
 

@@ -16,7 +16,7 @@ serve(async (req) => {
 
     if (!identifier) {
       return new Response(
-        JSON.stringify({ success: false, error: "identifier is required (org number or company name)" }),
+        JSON.stringify({ success: false, error: "identifier is required (company name, registration number, or domain)" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -24,57 +24,72 @@ serve(async (req) => {
     const firecrawlKey = Deno.env.get("FIRECRAWL_API_KEY");
     if (!firecrawlKey) {
       return new Response(
-        JSON.stringify({ success: false, error: "Web scraping not configured. Add Firecrawl integration to enable public record enrichment." }),
+        JSON.stringify({ success: false, error: "Web search not configured. Add Firecrawl integration to enable public record enrichment." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    let profile: Record<string, unknown> = {};
-    const source = "allabolag.se";
+    // Use Firecrawl search to find financial/company data from any public source
+    const searchQuery = `"${identifier}" company revenue employees founded`;
+    console.log("Searching public records for:", searchQuery);
 
-    // Scrape Allabolag via Firecrawl
-    const searchUrl = `https://www.allabolag.se/what/${encodeURIComponent(identifier)}`;
-    console.log("Scraping Allabolag:", searchUrl);
-
-    const scrapeResp = await fetch("https://api.firecrawl.dev/v1/scrape", {
+    const searchResp = await fetch("https://api.firecrawl.dev/v1/search", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${firecrawlKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        url: searchUrl,
-        formats: ["markdown"],
-        onlyMainContent: true,
-        waitFor: 2000,
+        query: searchQuery,
+        limit: 3,
+        scrapeOptions: { formats: ["markdown"] },
       }),
     });
 
-    if (!scrapeResp.ok) {
-      console.error("Firecrawl scrape failed:", scrapeResp.status);
+    if (!searchResp.ok) {
+      console.error("Firecrawl search failed:", searchResp.status);
       return new Response(
-        JSON.stringify({ success: true, profile: null, source }),
+        JSON.stringify({ success: true, profile: null, source: "web_search" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const scrapeData = await scrapeResp.json();
-    const markdown = scrapeData?.data?.markdown || scrapeData?.markdown || "";
+    const searchData = await searchResp.json();
+    const results = searchData?.data || searchData?.results || [];
 
-    if (!markdown) {
+    // Combine content from top results
+    const combinedContent = results
+      .map((r: any) => `## ${r.title || r.url}\n${r.markdown || r.description || ""}`)
+      .join("\n\n---\n\n")
+      .slice(0, 12000);
+
+    if (!combinedContent.trim()) {
       return new Response(
-        JSON.stringify({ success: true, profile: null, source }),
+        JSON.stringify({ success: true, profile: null, source: "web_search" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Use AI to extract structured data
+    // Use AI to extract structured financial/company data
     const aiKey = Deno.env.get("OPENAI_API_KEY");
     const geminiKey = Deno.env.get("GEMINI_API_KEY");
 
-    const extractionPrompt = `Extract structured company data from this Swedish business registry page. Return JSON with these fields (leave empty string if not found):
-legal_name, org_number, founded_year, revenue (in SEK, e.g. "12.5 MSEK"), employees (number as string), 
-industry, address, financial_health (brief assessment), board_members (array of names).`;
+    const extractionPrompt = `Extract structured company data from these search results. Return JSON with these fields (use empty string if not found):
+- legal_name: Official registered company name
+- org_number: Company registration/organization number (any country format)
+- founded_year: Year the company was founded
+- revenue: Annual revenue with currency (e.g. "€2.5M", "$12M", "45 MSEK")
+- employees: Number of employees as string
+- industry: Primary industry/sector
+- address: Registered or main office address
+- financial_health: Brief assessment based on available data
+- board_members: Array of key people/board member names (empty array if not found)
+
+Be market-agnostic — extract data regardless of country or currency format.
+Only return the JSON object, no other text.`;
+
+    let profile: Record<string, unknown> = {};
+    const sources = results.map((r: any) => r.url).filter(Boolean);
 
     if (aiKey) {
       const aiResp = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -85,7 +100,7 @@ industry, address, financial_health (brief assessment), board_members (array of 
           response_format: { type: "json_object" },
           messages: [
             { role: "system", content: extractionPrompt },
-            { role: "user", content: markdown.slice(0, 8000) },
+            { role: "user", content: `Company identifier: "${identifier}"\n\nSearch results:\n${combinedContent}` },
           ],
         }),
       });
@@ -104,7 +119,7 @@ industry, address, financial_health (brief assessment), board_members (array of 
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            contents: [{ parts: [{ text: `${extractionPrompt}\n\nPage content:\n${markdown.slice(0, 8000)}` }] }],
+            contents: [{ parts: [{ text: `${extractionPrompt}\n\nCompany identifier: "${identifier}"\n\nSearch results:\n${combinedContent}` }] }],
             generationConfig: { responseMimeType: "application/json" },
           }),
         }
@@ -121,7 +136,7 @@ industry, address, financial_health (brief assessment), board_members (array of 
 
     if (Object.keys(profile).length === 0) {
       return new Response(
-        JSON.stringify({ success: true, profile: null, source }),
+        JSON.stringify({ success: true, profile: null, source: "web_search" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -129,7 +144,7 @@ industry, address, financial_health (brief assessment), board_members (array of 
     console.log("Enrichment successful:", Object.keys(profile));
 
     return new Response(
-      JSON.stringify({ success: true, profile, source }),
+      JSON.stringify({ success: true, profile, source: "Public web search", sources }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {

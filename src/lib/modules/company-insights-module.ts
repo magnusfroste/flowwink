@@ -11,7 +11,7 @@ export const companyInsightsModule = {
   features: [
     "Company identity management",
     "Website-based enrichment",
-    "Public records enrichment (Allabolag, etc.)",
+    "Public records enrichment (web search)",
     "Financial insights",
     "Market positioning & ICP",
     "Enrichment history & source tracking",
