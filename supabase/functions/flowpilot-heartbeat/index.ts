@@ -19,6 +19,7 @@ import {
   accumulateTokens,
   isOverBudget,
   detectSiteMaturity,
+  loadCrossModuleInsights,
 } from "../_shared/agent-reason.ts";
 import type { TokenUsage, HeartbeatState } from "../_shared/agent-reason.ts";
 
