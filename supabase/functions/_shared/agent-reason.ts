@@ -1662,7 +1662,7 @@ async function handleSkillUpdate(supabase: any, args: { skill_name: string; upda
 }
 
 async function handleSkillList(supabase: any, args: { category?: string; scope?: string; include_disabled?: boolean }) {
-  let q = supabase.from('agent_skills').select('id, name, description, category, scope, handler, enabled, requires_approval');
+  let q = supabase.from('agent_skills').select('id, name, description, category, scope, handler, enabled, trust_level, requires_approval');
   if (!args.include_disabled) q = q.eq('enabled', true);
   if (args.category) q = q.eq('category', args.category);
   if (args.scope) q = q.eq('scope', args.scope);
