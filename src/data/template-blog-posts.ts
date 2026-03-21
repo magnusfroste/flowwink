@@ -417,7 +417,7 @@ export const flowwinkBlogPosts: TemplateBlogPost[] = [
           h3('3. Objectives & Goals'),
           p('You define objectives like "Generate 10 qualified leads per week." FlowPilot tracks progress, adjusts strategies, and reports on results. Goals drive behavior, not manual task lists.'),
           h3('4. Autonomous Heartbeat'),
-          p('Every 12 hours, FlowPilot runs a reflection cycle. It reviews recent activity, evaluates performance against objectives, identifies opportunities, and plans its next actions. This happens without human input.'),
+          p('On a configurable schedule, FlowPilot runs a reflection cycle. It reviews recent activity, evaluates performance against objectives, identifies opportunities, and plans its next actions. This happens without human input.'),
           h3('5. Signal Automations'),
           p('When events occur — a form submission, a chat conversation, a new subscriber — FlowPilot reacts instantly. Signals trigger skills: qualify the lead, send a welcome email, enrich the company data.'),
           h3('6. Self-Evolution'),
