@@ -20,6 +20,8 @@ import {
   isOverBudget,
   detectSiteMaturity,
   loadCrossModuleInsights,
+  tryAcquireLock,
+  releaseLock,
 } from "../_shared/agent-reason.ts";
 import type { TokenUsage, HeartbeatState } from "../_shared/agent-reason.ts";
 
@@ -105,6 +107,16 @@ serve(async (req) => {
   const startTime = Date.now();
 
   try {
+    // Concurrency guard — only one heartbeat at a time (TTL: 10 minutes)
+    const lockAcquired = await tryAcquireLock(supabase, 'heartbeat', 'heartbeat', 600);
+    if (!lockAcquired) {
+      console.log('[heartbeat] Another heartbeat is already running — skipping');
+      return new Response(
+        JSON.stringify({ skipped: true, reason: 'concurrent_heartbeat' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // 1. Gather context + run self-healing in parallel
     const [{ soul, identity, agents }, memoryCtx, objectiveCtx, activityCtx, statsCtx, automationCtx, healingReport, cmsSchemaCtx, heartbeatStateCtx, siteMaturity, crossModuleCtx] = await Promise.all([
       loadWorkspaceFiles(supabase),
@@ -273,5 +285,8 @@ serve(async (req) => {
       JSON.stringify({ error: err.message || "Internal error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
+  } finally {
+    // Always release heartbeat lock
+    await releaseLock(supabase, 'heartbeat');
   }
 });

@@ -233,7 +233,7 @@ All agent surfaces (interactive, autonomous, visitor chat) MUST share `agent-rea
 |-----|-------------|--------|----------|
 | **USER.md** | Per-user context, preferences, personalization layer | Agent doesn't know user-specific preferences in visitor chat | Medium |
 | **TOOLS.md** | Local tool documentation, custom notes | Skill instructions partially cover this | Low |
-| **Command queue** | Lane-based FIFO (main/sub-agent/cron, concurrency limits) | No protection against concurrent agent runs on same context | Medium |
+| ~~**Command queue**~~ | ~~Lane-based FIFO (main/sub-agent/cron, concurrency limits)~~ | ✅ `agent_locks` table + `try_acquire_agent_lock()` / `release_agent_lock()` with TTL | ~~No protection against concurrent agent runs~~ **RESOLVED** |
 | **Session isolation** | `dmScope` modes, per-session sandboxing, MEMORY.md security boundary | All conversations share same memory pool | Low |
 | **Thinking modes** | Reasoning budget control (fast vs deep) | Always same model depth | Low |
 | **Multi-channel gateway** | WhatsApp, Telegram, Discord, Slack, Signal bridges | Web-only (visitor chat + admin) | Low (CMS scope) |
@@ -248,7 +248,7 @@ All agent surfaces (interactive, autonomous, visitor chat) MUST share `agent-rea
 2. ~~**Pre-compaction memory flush**~~ ✅ Implemented — `preCompactionFlush()` extracts up to 5 discrete facts via AI before `pruneConversationHistory()` summarizes.
 3. **Editable HEARTBEAT config** — Move the 7-step protocol to `agent_memory(key='heartbeat')` so admin can customize via Skill Hub.
 4. **USER.md equivalent** — Store per-visitor context in `agent_memory` or `chat_conversations.metadata` so the agent remembers returning users.
-5. **Command queue / concurrency guard** — Prevent overlapping agent runs on the same conversation.
+5. ~~**Command queue / concurrency guard**~~ ✅ Implemented — `agent_locks` table with lane-based TTL locking. Heartbeat uses `heartbeat` lane, operate uses `operate:{conversationId}`.
 6. **Skill gating** — Add `requires` field to `agent_skills` for prerequisite checks.
 
 ---

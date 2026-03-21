@@ -49,6 +49,10 @@ export interface ReasonConfig {
   builtInToolGroups?: Array<'memory' | 'objectives' | 'self-mod' | 'reflect' | 'soul' | 'planning' | 'automations-exec' | 'workflows' | 'a2a' | 'skill-packs'>;
   additionalTools?: any[];
   tier?: AiTier;
+  /** Lane name for concurrency guard. If set, only one agent can run on this lane at a time. */
+  lockLane?: string;
+  /** Identifier for who holds the lock (e.g. 'heartbeat', 'chat', 'operate') */
+  lockOwner?: string;
 }
 
 export interface ReasonResult {
@@ -57,6 +61,8 @@ export interface ReasonResult {
   skillResults: Array<{ skill: string; status: string; result: any }>;
   durationMs: number;
   tokenUsage?: TokenUsage;
+  /** True if the run was skipped because another agent process holds the lock */
+  skippedDueToLock?: boolean;
 }
 
 export interface TokenUsage {
@@ -2811,6 +2817,32 @@ export async function loadSkillTools(supabase: any, scope: 'internal' | 'externa
     });
 }
 
+// ─── Concurrency Guard (OpenClaw Command Queue) ──────────────────────────────
+
+/**
+ * Try to acquire a lane-based lock. Returns true if acquired.
+ * Lanes: 'heartbeat', 'chat:{conversationId}', 'operate:{conversationId}'
+ */
+export async function tryAcquireLock(supabase: any, lane: string, lockedBy = 'agent', ttlSeconds = 300): Promise<boolean> {
+  const { data, error } = await supabase.rpc('try_acquire_agent_lock', {
+    p_lane: lane,
+    p_locked_by: lockedBy,
+    p_ttl_seconds: ttlSeconds,
+  });
+  if (error) {
+    console.warn(`[lock] Failed to acquire '${lane}':`, error.message);
+    return false;
+  }
+  return data === true;
+}
+
+/**
+ * Release a lane lock.
+ */
+export async function releaseLock(supabase: any, lane: string): Promise<void> {
+  await supabase.rpc('release_agent_lock', { p_lane: lane });
+}
+
 // ─── Non-Streaming Reason Loop ────────────────────────────────────────────────
 
 export async function reason(
@@ -2823,14 +2855,31 @@ export async function reason(
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-  const { apiKey, apiUrl, model } = await resolveAiConfig(supabase, config.tier || 'fast');
+  // ─── Concurrency guard ───
+  const lane = config.lockLane;
+  if (lane) {
+    const acquired = await tryAcquireLock(supabase, lane, config.lockOwner || 'reason', 300);
+    if (!acquired) {
+      console.warn(`[agent-reason] Lane '${lane}' is locked — skipping to prevent race condition`);
+      return {
+        response: 'Another agent process is currently running on this context. Please try again in a moment.',
+        actionsExecuted: [],
+        skillResults: [],
+        durationMs: Date.now() - startTime,
+        skippedDueToLock: true,
+      };
+    }
+  }
 
-  const builtInTools = getBuiltInTools(config.builtInToolGroups || ['memory', 'objectives', 'reflect']);
-  const skillTools = await loadSkillTools(supabase, config.scope);
-  const allTools = [...builtInTools, ...(config.additionalTools || []), ...skillTools];
+  try {
+    const { apiKey, apiUrl, model } = await resolveAiConfig(supabase, config.tier || 'fast');
 
-  // Apply context pruning before starting the loop
-  let conversationMessages = await pruneConversationHistory(messages, supabase);
+    const builtInTools = getBuiltInTools(config.builtInToolGroups || ['memory', 'objectives', 'reflect']);
+    const skillTools = await loadSkillTools(supabase, config.scope);
+    const allTools = [...builtInTools, ...(config.additionalTools || []), ...skillTools];
+
+    // Apply context pruning before starting the loop
+    let conversationMessages = await pruneConversationHistory(messages, supabase);
   const actionsExecuted: string[] = [];
   const skillResults: ReasonResult['skillResults'] = [];
   let finalResponse = '';
@@ -2901,10 +2950,16 @@ export async function reason(
     }
   }
 
-  return {
-    response: finalResponse,
-    actionsExecuted,
-    skillResults,
-    durationMs: Date.now() - startTime,
-  };
+    return {
+      response: finalResponse,
+      actionsExecuted,
+      skillResults,
+      durationMs: Date.now() - startTime,
+    };
+  } finally {
+    // Always release the lock
+    if (lane) {
+      await releaseLock(supabase, lane);
+    }
+  }
 }
