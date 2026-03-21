@@ -631,10 +631,24 @@ export async function loadCrossModuleInsights(supabase: any): Promise<string> {
 
     if (recentOutcomes.data?.length) {
       const outcomes: Record<string, number> = {};
+      const skillPerf: Record<string, { total: number; good: number }> = {};
       for (const o of recentOutcomes.data) {
         outcomes[o.outcome_status] = (outcomes[o.outcome_status] || 0) + 1;
+        const sk = o.skill_name || 'unknown';
+        if (!skillPerf[sk]) skillPerf[sk] = { total: 0, good: 0 };
+        skillPerf[sk].total++;
+        if (o.outcome_status === 'success' || o.outcome_status === 'partial') skillPerf[sk].good++;
       }
       parts.push(`🎯 Action outcomes: ${Object.entries(outcomes).map(([s, c]) => `${s}:${c}`).join(', ')}`);
+      // Top/bottom performing skills
+      const perfEntries = Object.entries(skillPerf).filter(([, v]) => v.total >= 2);
+      if (perfEntries.length) {
+        const sorted = perfEntries.sort((a, b) => (b[1].good / b[1].total) - (a[1].good / a[1].total));
+        const best = sorted.slice(0, 3).map(([name, v]) => `${name}(${Math.round(v.good / v.total * 100)}%)`);
+        parts.push(`📊 Skill performance (7d): ${best.join(', ')}`);
+        const worst = sorted.filter(([, v]) => v.good / v.total < 0.5);
+        if (worst.length) parts.push(`⚠️ Underperforming: ${worst.map(([n]) => n).join(', ')} — check learnings`);
+      }
     }
 
     return parts.join('\n');
