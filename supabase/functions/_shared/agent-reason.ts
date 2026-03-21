@@ -930,9 +930,9 @@ async function generateEmbedding(supabase: any, text: string): Promise<number[] 
 /**
  * pruneConversationHistory — Token-aware context management
  * 
- * Estimates token count of conversation messages. When exceeding the threshold,
- * summarizes older messages into a single condensed context message, preserving
- * the system prompt and most recent messages.
+ * OpenClaw-aligned: Before summarizing, a silent "pre-compaction flush" extracts
+ * key facts from the messages about to be pruned and persists them to agent_memory.
+ * This prevents context loss during summarization.
  */
 export async function pruneConversationHistory(
   messages: any[],
@@ -972,6 +972,10 @@ export async function pruneConversationHistory(
   const oldMessages = conversationMessages.slice(0, -keepRecent);
   const recentMessages = conversationMessages.slice(-keepRecent);
 
+  // ─── PRE-COMPACTION MEMORY FLUSH (OpenClaw pattern) ───
+  // Extract and persist key facts BEFORE summarization to prevent context loss
+  await preCompactionFlush(oldMessages, supabase);
+
   // Summarize old messages using AI
   const summary = await summarizeMessages(oldMessages, supabase);
 
@@ -989,6 +993,101 @@ export async function pruneConversationHistory(
   console.log(`[context-pruning] Pruned ${oldMessages.length} messages into summary (~${Math.ceil(summary.length / 4)} tokens)`);
 
   return [...systemMessages, summaryMessage, ...recentMessages];
+}
+
+/**
+ * preCompactionFlush — Silent extraction of key facts before context summarization.
+ * 
+ * Uses a fast AI call to identify discrete facts (user preferences, decisions, 
+ * configurations, names, IDs) from the messages about to be pruned, then
+ * persists each as a separate agent_memory entry with embeddings.
+ */
+async function preCompactionFlush(messages: any[], supabase: any): Promise<void> {
+  try {
+    const { apiKey, apiUrl, model } = await resolveAiConfig(supabase, 'fast');
+
+    // Build compact transcript of messages being pruned
+    const transcript = messages
+      .filter(m => m.role === 'user' || m.role === 'assistant')
+      .map(m => `${m.role}: ${(m.content || '').slice(0, 400)}`)
+      .join('\n')
+      .slice(0, 8000);
+
+    if (!transcript || transcript.length < 50) return;
+
+    const resp = await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model,
+        messages: [
+          {
+            role: 'system',
+            content: `You are a memory extraction agent. Extract discrete facts from this conversation that should be remembered long-term.
+
+Output a JSON array of objects, each with:
+- "key": short identifier (snake_case, max 40 chars) 
+- "value": the fact/preference/decision (1-2 sentences max)
+- "category": one of "preference", "context", "fact"
+
+Focus on:
+- User preferences and decisions (e.g. "user prefers dark mode", "company name is Acme")
+- Configuration choices made
+- Business facts mentioned (names, IDs, URLs, numbers)
+- Explicit corrections or clarifications
+- Important outcomes or results
+
+Skip:
+- Greetings, small talk, acknowledgments
+- Things already obvious from the system prompt
+- Temporary/session-specific details
+
+Return ONLY the JSON array. If nothing worth remembering, return [].`,
+          },
+          { role: 'user', content: transcript },
+        ],
+        max_tokens: 600,
+        temperature: 0.1,
+      }),
+    });
+
+    if (!resp.ok) {
+      console.warn('[pre-compaction] AI extraction failed:', resp.status);
+      return;
+    }
+
+    const data = await resp.json();
+    const content = data.choices?.[0]?.message?.content || '[]';
+    
+    // Parse the JSON array (handle markdown code fences)
+    const cleaned = content.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
+    let facts: Array<{ key: string; value: string; category?: string }>;
+    try {
+      facts = JSON.parse(cleaned);
+    } catch {
+      console.warn('[pre-compaction] Failed to parse extraction result');
+      return;
+    }
+
+    if (!Array.isArray(facts) || facts.length === 0) return;
+
+    // Persist each fact (max 5 to avoid noise)
+    const toSave = facts.slice(0, 5);
+    console.log(`[pre-compaction] Flushing ${toSave.length} facts to memory before pruning`);
+
+    for (const fact of toSave) {
+      if (!fact.key || !fact.value) continue;
+      const prefixedKey = `conv_${fact.key}`;
+      await handleMemoryWrite(supabase, {
+        key: prefixedKey,
+        value: fact.value,
+        category: fact.category || 'context',
+      });
+    }
+  } catch (err) {
+    // Non-fatal: pruning continues even if flush fails
+    console.error('[pre-compaction] Flush failed (non-fatal):', err);
+  }
 }
 
 async function summarizeMessages(messages: any[], supabase: any): Promise<string | null> {
