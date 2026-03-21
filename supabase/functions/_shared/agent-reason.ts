@@ -2307,6 +2307,112 @@ async function handleChainSkills(
   };
 }
 
+// ─── Outcome Evaluation ───────────────────────────────────────────────────────
+
+async function handleEvaluateOutcomes(supabase: any, args: { limit?: number; skill_filter?: string }) {
+  const limit = args.limit || 15;
+  const since = new Date();
+  since.setDate(since.getDate() - 7);
+
+  let query = supabase
+    .from('agent_activity')
+    .select('id, skill_name, input, output, status, created_at, duration_ms')
+    .is('outcome_status', null)
+    .eq('status', 'success')
+    .gte('created_at', since.toISOString())
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (args.skill_filter) {
+    query = query.eq('skill_name', args.skill_filter);
+  }
+
+  const { data: activities } = await query;
+  if (!activities?.length) {
+    return { status: 'no_pending', message: 'No unevaluated actions in the last 7 days.' };
+  }
+
+  // Enrich with correlation data — fetch recent metrics for context
+  const [viewsResult, leadsResult, subscriberResult] = await Promise.all([
+    supabase.from('page_views').select('page_slug', { count: 'exact', head: false })
+      .gte('created_at', since.toISOString()).limit(500),
+    supabase.from('leads').select('id, source, score, created_at')
+      .gte('created_at', since.toISOString()).order('created_at', { ascending: false }).limit(50),
+    supabase.from('newsletter_subscribers').select('id', { count: 'exact', head: true })
+      .gte('created_at', since.toISOString()),
+  ]);
+
+  // Build page view counts for correlation
+  const pageViewCounts: Record<string, number> = {};
+  for (const pv of (viewsResult.data || [])) {
+    pageViewCounts[pv.page_slug] = (pageViewCounts[pv.page_slug] || 0) + 1;
+  }
+
+  const correlationContext = {
+    total_page_views_7d: viewsResult.data?.length || 0,
+    top_pages: Object.entries(pageViewCounts).sort((a, b) => b[1] - a[1]).slice(0, 10),
+    new_leads_7d: leadsResult.data?.length || 0,
+    new_subscribers_7d: subscriberResult.count || 0,
+    lead_sources: [...new Set((leadsResult.data || []).map((l: any) => l.source))],
+  };
+
+  return {
+    status: 'pending_evaluation',
+    count: activities.length,
+    activities: activities.map((a: any) => ({
+      id: a.id,
+      skill_name: a.skill_name,
+      created_at: a.created_at,
+      input_summary: JSON.stringify(a.input).slice(0, 300),
+      output_summary: JSON.stringify(a.output).slice(0, 300),
+    })),
+    correlation_data: correlationContext,
+    instructions: 'For each activity, assess its impact using the correlation_data. Then call record_outcome for each with your assessment.',
+  };
+}
+
+async function handleRecordOutcome(supabase: any, args: {
+  activity_id: string;
+  outcome_status: string;
+  outcome_data?: Record<string, any>;
+}) {
+  const validStatuses = ['success', 'partial', 'neutral', 'negative', 'too_early'];
+  if (!validStatuses.includes(args.outcome_status)) {
+    return { status: 'error', error: `Invalid outcome_status. Must be one of: ${validStatuses.join(', ')}` };
+  }
+
+  const { data, error } = await supabase
+    .from('agent_activity')
+    .update({
+      outcome_status: args.outcome_status,
+      outcome_data: args.outcome_data || {},
+      outcome_evaluated_at: new Date().toISOString(),
+    })
+    .eq('id', args.activity_id)
+    .select('id, skill_name, outcome_status')
+    .single();
+
+  if (error) return { status: 'error', error: error.message };
+
+  // If this is a negative outcome, log a learning to memory
+  if (args.outcome_status === 'negative' || args.outcome_status === 'neutral') {
+    const skillName = data?.skill_name || 'unknown';
+    await supabase.from('agent_memory').upsert({
+      key: `outcome_learning:${skillName}:${new Date().toISOString().slice(0, 10)}`,
+      value: {
+        skill: skillName,
+        outcome: args.outcome_status,
+        data: args.outcome_data,
+        lesson: `${skillName} produced ${args.outcome_status} result. Review strategy.`,
+      },
+      category: 'context',
+      created_by: 'flowpilot',
+    }, { onConflict: 'key' });
+  }
+
+  return { status: 'recorded', activity: data };
+}
+
 // ─── Tool Execution Router ───────────────────────────────────────────────────
 
 export async function executeBuiltInTool(
