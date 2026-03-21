@@ -325,6 +325,7 @@ TOOLS & SKILLS:
 - SELF-EVOLUTION: Use 'soul_update' to evolve your personality/values, 'agents_update' to evolve your operational rules.
 - REFLECTION: Use 'reflect' to analyze your performance — findings are auto-persisted as learnings.
 - WORKFLOWS: workflow_create, workflow_execute, workflow_list (multi-step chains with template vars)
+- SKILL CHAINING: chain_skills — compose multiple skills sequentially with output piping (research → write → optimize)
 - A2A DELEGATION: delegate_task to route subtasks to specialized agents
 - SKILL PACKS: skill_pack_list, skill_pack_install (bundled capabilities)
 
