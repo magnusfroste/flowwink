@@ -105,6 +105,7 @@ const BUILT_IN_TOOL_NAMES = new Set([
   'delegate_task',
   'skill_pack_list', 'skill_pack_install',
   'chain_skills',
+  'evaluate_outcomes', 'record_outcome',
 ]);
 
 // ─── Prompt Compiler (OpenClaw Layer 1 — Centralized) ─────────────────────────
