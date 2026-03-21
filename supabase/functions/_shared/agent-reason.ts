@@ -2944,10 +2944,16 @@ export async function reason(
     }
   }
 
-  return {
-    response: finalResponse,
-    actionsExecuted,
-    skillResults,
-    durationMs: Date.now() - startTime,
-  };
+    return {
+      response: finalResponse,
+      actionsExecuted,
+      skillResults,
+      durationMs: Date.now() - startTime,
+    };
+  } finally {
+    // Always release the lock
+    if (lane) {
+      await releaseLock(supabase, lane);
+    }
+  }
 }
