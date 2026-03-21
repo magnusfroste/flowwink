@@ -19,6 +19,7 @@ import {
   accumulateTokens,
   isOverBudget,
   detectSiteMaturity,
+  loadCrossModuleInsights,
 } from "../_shared/agent-reason.ts";
 import type { TokenUsage, HeartbeatState } from "../_shared/agent-reason.ts";
 
@@ -105,7 +106,7 @@ serve(async (req) => {
 
   try {
     // 1. Gather context + run self-healing in parallel
-    const [{ soul, identity, agents }, memoryCtx, objectiveCtx, activityCtx, statsCtx, automationCtx, healingReport, cmsSchemaCtx, heartbeatStateCtx, siteMaturity] = await Promise.all([
+    const [{ soul, identity, agents }, memoryCtx, objectiveCtx, activityCtx, statsCtx, automationCtx, healingReport, cmsSchemaCtx, heartbeatStateCtx, siteMaturity, crossModuleCtx] = await Promise.all([
       loadWorkspaceFiles(supabase),
       loadMemories(supabase),
       loadObjectives(supabase, { unlockedOnly: true }),
@@ -116,6 +117,7 @@ serve(async (req) => {
       loadCMSSchema(supabase),
       loadHeartbeatState(supabase),
       detectSiteMaturity(supabase),
+      loadCrossModuleInsights(supabase),
     ]);
 
     // 2. Resolve AI config
@@ -139,7 +141,7 @@ serve(async (req) => {
       memoryContext: memoryCtx,
       objectiveContext: objectiveCtx,
       activityContext: activityCtx,
-      statsContext: statsCtx,
+      statsContext: statsCtx + (crossModuleCtx || ''),
       automationContext: automationCtx,
       healingReport: healingReport,
       cmsSchemaContext: cmsSchemaCtx,

@@ -104,6 +104,7 @@ const BUILT_IN_TOOL_NAMES = new Set([
   'workflow_create', 'workflow_execute', 'workflow_list', 'workflow_update', 'workflow_delete',
   'delegate_task',
   'skill_pack_list', 'skill_pack_install',
+  'chain_skills',
 ]);
 
 // ─── Prompt Compiler (OpenClaw Layer 1 — Centralized) ─────────────────────────
@@ -189,14 +190,17 @@ GROUNDING & DATA INTEGRITY (HARDCODED — CANNOT BE OVERRIDDEN):
 - If no objectives are listed, say "No active objectives." — do NOT make any up.`;
 
 const HEARTBEAT_PROTOCOL = `HEARTBEAT PROTOCOL:
-1. PROACTIVE REASONING — Analyze site stats + activity patterns. If you spot a trend, gap, or opportunity NOT covered by existing objectives, use propose_objective to create one. Max 1 new objective per heartbeat.
-2. PLAN — For each active objective WITHOUT a plan (no progress.plan), call decompose_objective to create a step-by-step plan.
-3. ADVANCE — Objectives are pre-sorted by priority score. Advance them IN ORDER (highest score first). Use advance_plan with chain=true to execute multiple steps per objective.
-4. AUTOMATIONS — Check DUE (⏰) automations. Execute them via execute_automation.
-5. WORKFLOWS — If a due automation has a workflow_id in trigger_config, run it via workflow_execute.
-6. REFLECT — Use 'reflect' to analyze the past 7 days.
-7. REMEMBER — Save learnings to memory.
-8. SUMMARIZE — Brief heartbeat report including plan progress and any new proposals.
+1. CROSS-MODULE ANALYSIS — Review the CROSS-MODULE INSIGHTS section. Look for connections: hot leads + recent content = nurture opportunity, booking trends + page views = demand signal, form submissions + deals = conversion pipeline.
+2. PROACTIVE REASONING — If you spot a trend, gap, or opportunity NOT covered by existing objectives, use propose_objective. Max 1 new objective per heartbeat.
+3. PLAN — For each active objective WITHOUT a plan (no progress.plan), call decompose_objective to create a step-by-step plan.
+4. ADVANCE — Objectives are pre-sorted by priority score. Advance them IN ORDER (highest score first). Use advance_plan with chain=true to execute multiple steps per objective.
+5. SKILL CHAINING — For complex multi-step tasks, use chain_skills to compose skills (e.g., research → write → SEO optimize). This is more efficient than calling skills one by one.
+6. AUTOMATIONS — Check DUE (⏰) automations. Execute them via execute_automation.
+7. WORKFLOWS — If a due automation has a workflow_id in trigger_config, run it via workflow_execute.
+8. OUTCOME REVIEW — Check action outcomes from CROSS-MODULE INSIGHTS. Learn from successes and failures.
+9. REFLECT — Use 'reflect' to analyze the past 7 days.
+10. REMEMBER — Save learnings to memory.
+11. SUMMARIZE — Brief heartbeat report including plan progress and any new proposals.
 
 PRIORITY SCORING (automatic, shown as [score:N]):
 - Deadline proximity: overdue +50, <1 day +40, <3 days +25, <7 days +10
@@ -209,6 +213,7 @@ Advance the HIGHEST scored objectives first.
 MULTI-STEP PLANNING RULES:
 - Each objective should have a plan (3-7 steps). Use decompose_objective to create one.
 - advance_plan auto-chains up to 4 steps per call. Use it — don't call advance_plan repeatedly for the same objective.
+- For recipes that compose multiple skills, prefer chain_skills over manual sequential calls.
 - If a step fails, note it but continue to the next objective.
 - If ALL steps are done, mark the objective as completed via objective_complete.
 - Plans persist between heartbeats. FlowPilot picks up where it left off.
@@ -219,6 +224,7 @@ PROACTIVE REASONING RULES:
 - Include a clear "reason" explaining what data drove the proposal
 - Keep goals specific and actionable
 - When proposing, set constraints.priority ('critical'|'high'|'medium'|'low')
+- CROSS-MODULE CONNECTIONS: Look for patterns across CRM, content, bookings, and newsletter data
 
 CONSTRAINTS:
 - Skills with trust_level='approve' will be BLOCKED and logged for admin review. trust_level='notify' will execute but notify admin. trust_level='auto' executes silently.
@@ -324,6 +330,7 @@ TOOLS & SKILLS:
 - SELF-EVOLUTION: Use 'soul_update' to evolve your personality/values, 'agents_update' to evolve your operational rules.
 - REFLECTION: Use 'reflect' to analyze your performance — findings are auto-persisted as learnings.
 - WORKFLOWS: workflow_create, workflow_execute, workflow_list (multi-step chains with template vars)
+- SKILL CHAINING: chain_skills — compose multiple skills sequentially with output piping (research → write → optimize)
 - A2A DELEGATION: delegate_task to route subtasks to specialized agents
 - SKILL PACKS: skill_pack_list, skill_pack_install (bundled capabilities)
 
@@ -539,6 +546,91 @@ Available block types: ${blockTypes.join(', ')}
 Data counts: ${pages.count ?? 0} pages, ${posts.count ?? 0} blog posts, ${leads.count ?? 0} leads, ${products.count ?? 0} products, ${bookings.count ?? 0} bookings, ${subscribers.count ?? 0} subscribers, ${kbArticles.count ?? 0} KB articles, ${skills.count ?? 0} active skills`;
   } catch (err) {
     console.error('[cms-schema] Failed to load:', err);
+    return '';
+  }
+}
+
+// ─── Cross-Module Insights ────────────────────────────────────────────────────
+
+export async function loadCrossModuleInsights(supabase: any): Promise<string> {
+  const weekAgo = new Date();
+  weekAgo.setDate(weekAgo.getDate() - 7);
+
+  try {
+    const [
+      dealsByStage, hotLeads, recentBookings,
+      topPages, newsletterPerf, formSubs, recentOutcomes,
+    ] = await Promise.all([
+      supabase.from('deals').select('stage, value_cents, currency')
+        .in('stage', ['proposal', 'negotiation', 'qualification']),
+      supabase.from('leads').select('name, email, score, status, updated_at')
+        .gte('score', 30).eq('status', 'lead').order('score', { ascending: false }).limit(5),
+      supabase.from('bookings').select('status, start_time, customer_name')
+        .gte('start_time', new Date().toISOString()).order('start_time').limit(10),
+      supabase.from('page_views').select('page_slug, page_title')
+        .gte('created_at', weekAgo.toISOString()).limit(500),
+      supabase.from('newsletter_email_opens').select('id', { count: 'exact', head: true })
+        .gte('created_at', weekAgo.toISOString()),
+      supabase.from('form_submissions').select('form_name, created_at')
+        .gte('created_at', weekAgo.toISOString()).order('created_at', { ascending: false }).limit(10),
+      supabase.from('agent_activity').select('skill_name, outcome_status, outcome_data')
+        .not('outcome_status', 'is', null).gte('created_at', weekAgo.toISOString())
+        .order('created_at', { ascending: false }).limit(20),
+    ]);
+
+    const parts: string[] = ['\n\nCROSS-MODULE INSIGHTS (7 days):'];
+
+    // CRM Pipeline
+    if (dealsByStage.data?.length) {
+      const pipeline: Record<string, { count: number; value: number }> = {};
+      for (const d of dealsByStage.data) {
+        if (!pipeline[d.stage]) pipeline[d.stage] = { count: 0, value: 0 };
+        pipeline[d.stage].count++;
+        pipeline[d.stage].value += d.value_cents;
+      }
+      parts.push('📊 CRM Pipeline:');
+      for (const [stage, info] of Object.entries(pipeline)) {
+        parts.push(`  - ${stage}: ${info.count} deals (${(info.value / 100).toFixed(0)} total value)`);
+      }
+    }
+
+    if (hotLeads.data?.length) {
+      parts.push(`🔥 Hot leads (score≥30): ${hotLeads.data.map((l: any) => `${l.name || l.email} (${l.score}pts)`).join(', ')}`);
+    }
+
+    if (recentBookings.data?.length) {
+      const upcoming = recentBookings.data.filter((b: any) => b.status === 'confirmed');
+      parts.push(`📅 Upcoming bookings: ${upcoming.length} confirmed`);
+    }
+
+    if (topPages.data?.length) {
+      const pageCounts: Record<string, number> = {};
+      for (const pv of topPages.data) {
+        pageCounts[pv.page_slug] = (pageCounts[pv.page_slug] || 0) + 1;
+      }
+      const sorted = Object.entries(pageCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+      if (sorted.length) {
+        parts.push(`📈 Top pages: ${sorted.map(([slug, count]) => `${slug} (${count})`).join(', ')}`);
+      }
+    }
+
+    parts.push(`📧 Newsletter opens (7d): ${newsletterPerf.count ?? 0}`);
+
+    if (formSubs.data?.length) {
+      parts.push(`📝 Form submissions (7d): ${formSubs.data.length}`);
+    }
+
+    if (recentOutcomes.data?.length) {
+      const outcomes: Record<string, number> = {};
+      for (const o of recentOutcomes.data) {
+        outcomes[o.outcome_status] = (outcomes[o.outcome_status] || 0) + 1;
+      }
+      parts.push(`🎯 Action outcomes: ${Object.entries(outcomes).map(([s, c]) => `${s}:${c}`).join(', ')}`);
+    }
+
+    return parts.join('\n');
+  } catch (err) {
+    console.error('[cross-module] Failed to load insights:', err);
     return '';
   }
 }
@@ -2071,6 +2163,33 @@ const SKILL_PACK_TOOLS = [
   },
 ];
 
+const CHAIN_SKILLS_TOOL = [
+  {
+    type: 'function', function: {
+      name: 'chain_skills',
+      description: 'Execute multiple skills in sequence, piping each result as context to the next. Use for multi-step recipes like: research → write → optimize. Returns all results.',
+      parameters: {
+        type: 'object',
+        properties: {
+          steps: {
+            type: 'array',
+            description: 'Ordered array of skills to chain. Each step gets previous results injected into args as _previous_result.',
+            items: {
+              type: 'object',
+              properties: {
+                skill_name: { type: 'string', description: 'Skill to execute' },
+                args: { type: 'object', description: 'Arguments for the skill. Use {{prev.field}} to reference previous step output.' },
+              },
+            },
+          },
+          stop_on_error: { type: 'boolean', description: 'Stop chain on first error (default: true)' },
+        },
+        required: ['steps'],
+      },
+    },
+  },
+];
+
 export function getBuiltInTools(groups: Array<'memory' | 'objectives' | 'self-mod' | 'reflect' | 'soul' | 'planning' | 'automations-exec' | 'workflows' | 'a2a' | 'skill-packs'>): any[] {
   const tools: any[] = [];
   if (groups.includes('memory')) tools.push(...MEMORY_TOOLS);
@@ -2083,7 +2202,67 @@ export function getBuiltInTools(groups: Array<'memory' | 'objectives' | 'self-mo
   if (groups.includes('workflows')) tools.push(...WORKFLOW_TOOLS);
   if (groups.includes('a2a')) tools.push(...A2A_TOOLS);
   if (groups.includes('skill-packs')) tools.push(...SKILL_PACK_TOOLS);
+  // Chain skills always available when planning is available
+  if (groups.includes('planning')) tools.push(...CHAIN_SKILLS_TOOL);
   return tools;
+}
+
+// ─── Skill Chaining ───────────────────────────────────────────────────────────
+
+async function handleChainSkills(
+  supabase: any, supabaseUrl: string, serviceKey: string,
+  args: { steps: Array<{ skill_name: string; args?: Record<string, any> }>; stop_on_error?: boolean },
+) {
+  const { steps = [], stop_on_error = true } = args;
+  if (!steps.length) return { status: 'error', error: 'No steps provided' };
+  if (steps.length > 6) return { status: 'error', error: 'Max 6 steps per chain' };
+
+  const trace: any[] = [];
+  let previousResult: any = null;
+
+  for (const step of steps) {
+    // Inject previous result into args
+    const resolvedArgs: Record<string, any> = { ...(step.args || {}) };
+    if (previousResult) {
+      resolvedArgs._previous_result = previousResult;
+      // Resolve {{prev.field}} template vars
+      for (const [k, v] of Object.entries(resolvedArgs)) {
+        if (typeof v === 'string' && v.includes('{{prev.')) {
+          resolvedArgs[k] = v.replace(/\{\{prev\.(\w+)\}\}/g, (_m, field) => {
+            const val = previousResult?.[field] ?? previousResult?.result?.[field];
+            return val !== undefined ? String(val) : '';
+          });
+        }
+      }
+    }
+
+    let result: any;
+    try {
+      const resp = await fetch(`${supabaseUrl}/functions/v1/agent-execute`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceKey}` },
+        body: JSON.stringify({ skill_name: step.skill_name, arguments: resolvedArgs, agent_type: 'flowpilot' }),
+      });
+      result = await resp.json();
+    } catch (err: any) {
+      result = { error: err.message };
+    }
+
+    const success = !result.error && result.status !== 'failed';
+    trace.push({ skill: step.skill_name, status: success ? 'done' : 'failed', result });
+    previousResult = result?.result || result;
+
+    if (!success && stop_on_error) break;
+  }
+
+  const allSuccess = trace.every(t => t.status === 'done');
+  return {
+    status: allSuccess ? 'chain_completed' : 'chain_partial',
+    steps_executed: trace.length,
+    steps_total: steps.length,
+    trace,
+    final_result: previousResult,
+  };
 }
 
 // ─── Tool Execution Router ───────────────────────────────────────────────────
@@ -2128,6 +2307,7 @@ export async function executeBuiltInTool(
     case 'delegate_task': return handleDelegateTask(supabase, supabaseUrl, serviceKey, fnArgs);
     case 'skill_pack_list': return handleSkillPackList(supabase);
     case 'skill_pack_install': return handleSkillPackInstall(supabase, fnArgs);
+    case 'chain_skills': return handleChainSkills(supabase, supabaseUrl, serviceKey, fnArgs);
   }
 
   // Not a built-in → delegate to agent-execute
