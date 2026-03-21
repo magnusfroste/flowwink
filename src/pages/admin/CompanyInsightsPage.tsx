@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,8 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Save, Loader2, Plus, X, Globe, Sparkles, TrendingUp, Users, History } from "lucide-react";
-import { useCompanyInsights, type CompanyProfile } from "@/hooks/useCompanyInsights";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Building2, Save, Loader2, Plus, X, Globe, Sparkles, TrendingUp, Users, History, ShieldCheck, Info } from "lucide-react";
+import { useCompanyInsights, type CompanyProfile, type ServiceItem } from "@/hooks/useCompanyInsights";
 
 export default function CompanyInsightsPage() {
   const { profile, isLoading, save, isSaving, enrichFromWebsite, enrichFromPublicSources } = useCompanyInsights();
@@ -20,11 +21,17 @@ export default function CompanyInsightsPage() {
   // Use local state once user starts editing, otherwise use fetched profile
   const p = local || profile;
 
-  const update = (field: keyof CompanyProfile, value: any) => {
-    setLocal(prev => ({ ...(prev || profile), [field]: value }));
+  const isDirty = local !== null;
+
+  const update = (field: keyof CompanyProfile, value: unknown) => {
+    setLocal(prev => ({ ...(prev || profile), [field]: value } as CompanyProfile));
   };
 
   const handleSave = () => {
+    if (!p.company_name?.trim()) {
+      // Allow save but warn
+      // toast.warning("Consider adding a company name");
+    }
     save(p);
     setLocal(null);
   };
@@ -45,6 +52,18 @@ export default function CompanyInsightsPage() {
     setIsEnriching(false);
   };
 
+  const filledCount = useMemo(() => {
+    return [
+      p?.company_name,
+      p?.about_us,
+      (p?.services || []).length > 0,
+      p?.value_proposition,
+      p?.icp,
+      p?.industry,
+      p?.org_number,
+    ].filter(Boolean).length;
+  }, [p]);
+
   if (isLoading) {
     return (
       <AdminLayout>
@@ -54,11 +73,6 @@ export default function CompanyInsightsPage() {
       </AdminLayout>
     );
   }
-
-  const filledCount = [
-    p.company_name, p.about_us, Object.keys(p.services).length > 0,
-    p.value_proposition, p.icp, p.industry, p.org_number,
-  ].filter(Boolean).length;
 
   return (
     <AdminLayout>
@@ -72,7 +86,7 @@ export default function CompanyInsightsPage() {
             <div>
               <h1 className="text-2xl font-semibold tracking-tight">Business Identity</h1>
               <p className="text-sm text-muted-foreground">
-                Business identity used across Sales, Chat, SEO, and FlowAgent
+                Central identity used across Sales, Chat, SEO, and FlowAgent
               </p>
             </div>
           </div>
@@ -80,7 +94,7 @@ export default function CompanyInsightsPage() {
             <Badge variant={filledCount >= 5 ? "default" : "outline"}>
               {filledCount}/7 sections
             </Badge>
-            <Button onClick={handleSave} disabled={isSaving} className="gap-1.5">
+            <Button onClick={handleSave} disabled={isSaving || !isDirty} className="gap-1.5">
               {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               Save
             </Button>
@@ -114,6 +128,7 @@ export default function CompanyInsightsPage() {
                 <CardContent className="space-y-4">
                   <Field label="Company Name" value={p.company_name} onChange={v => update("company_name", v)} placeholder="Acme AB" />
                   <Field label="Industry" value={p.industry} onChange={v => update("industry", v)} placeholder="Digital Agency, SaaS..." />
+                  <Field label="Domain" value={p.domain} onChange={v => update("domain", v)} placeholder="yourcompany.com" />
                   <FieldArea label="About Us" value={p.about_us} onChange={v => update("about_us", v)} placeholder="Brief company description..." rows={3} />
                   <FieldArea label="Value Proposition" value={p.value_proposition} onChange={v => update("value_proposition", v)} placeholder="What unique value do you deliver?" rows={2} />
                 </CardContent>
@@ -125,9 +140,9 @@ export default function CompanyInsightsPage() {
                   <CardDescription>What you provide to clients</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <ServiceEditor services={p.services} onChange={v => update("services", v)} />
+                  <ServiceEditor services={p.services || []} onChange={v => update("services", v)} />
                   <FieldArea label="Delivered Value" value={p.delivered_value} onChange={v => update("delivered_value", v)} placeholder="Measurable outcomes you deliver..." rows={2} />
-                  <TagEditor label="Key Differentiators" tags={p.differentiators} onChange={v => update("differentiators", v)} placeholder="Add differentiator..." />
+                  <TagEditor label="Key Differentiators" tags={p.differentiators || []} onChange={v => update("differentiators", v)} placeholder="Add differentiator..." />
                 </CardContent>
               </Card>
 
@@ -158,7 +173,7 @@ export default function CompanyInsightsPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <FieldArea label="Ideal Customer Profile" value={p.icp} onChange={v => update("icp", v)} placeholder="Describe your ideal customer..." rows={3} />
-                  <TagEditor label="Target Industries" tags={p.target_industries} onChange={v => update("target_industries", v)} placeholder="Add industry..." />
+                  <TagEditor label="Target Industries" tags={p.target_industries || []} onChange={v => update("target_industries", v)} placeholder="Add industry..." />
                 </CardContent>
               </Card>
 
@@ -199,7 +214,7 @@ export default function CompanyInsightsPage() {
                   <Field label="Revenue" value={p.revenue} onChange={v => update("revenue", v)} placeholder="10 MSEK" />
                   <Field label="Employees" value={p.employees} onChange={v => update("employees", v)} placeholder="25" />
                   <FieldArea label="Financial Health" value={p.financial_health} onChange={v => update("financial_health", v)} placeholder="Summary of financial standing..." rows={2} />
-                  <TagEditor label="Board Members" tags={p.board_members} onChange={v => update("board_members", v)} placeholder="Add board member..." />
+                  <TagEditor label="Board Members" tags={p.board_members || []} onChange={v => update("board_members", v)} placeholder="Add board member..." />
                 </CardContent>
               </Card>
             </div>
@@ -208,6 +223,20 @@ export default function CompanyInsightsPage() {
           {/* Enrichment Tab */}
           <TabsContent value="enrichment">
             <div className="grid gap-4 md:grid-cols-2">
+              {/* Defensive enrichment notice */}
+              <div className="md:col-span-2">
+                <div className="flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4">
+                  <ShieldCheck className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">Safe enrichment — existing data is never overwritten</p>
+                    <p className="text-xs text-muted-foreground">
+                      Enrichment only fills empty fields. If a field already has data, it stays unchanged.
+                      You can always review the changes before saving.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base flex items-center gap-2">
@@ -216,7 +245,6 @@ export default function CompanyInsightsPage() {
                   <CardDescription>AI extracts company data from your website</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <Field label="Domain" value={p.domain} onChange={v => update("domain", v)} placeholder="yourcompany.com" />
                   <div className="flex gap-2">
                     <Input
                       value={enrichUrl}
@@ -230,7 +258,6 @@ export default function CompanyInsightsPage() {
                       Enrich
                     </Button>
                   </div>
-                  <p className="text-xs text-muted-foreground">Existing fields won't be overwritten.</p>
                 </CardContent>
               </Card>
 
@@ -275,7 +302,10 @@ export default function CompanyInsightsPage() {
                           <div>
                             <p className="font-medium">{entry.source}</p>
                             <p className="text-xs text-muted-foreground">
-                              {entry.fields_updated.length} fields updated: {entry.fields_updated.join(", ")}
+                              {entry.fields_updated.length === 0
+                                ? "No new fields — all data already present"
+                                : `${entry.fields_updated.length} fields updated: ${entry.fields_updated.join(", ")}`
+                              }
                             </p>
                           </div>
                           <Badge variant="outline" className="text-xs shrink-0">
@@ -338,7 +368,7 @@ function TagEditor({ label, tags, onChange, placeholder }: { label: string; tags
         </div>
       )}
       <div className="flex gap-2">
-        <Input value={input} onChange={e => setInput(e.target.value)} placeholder={placeholder} className="h-8 text-sm" onKeyDown={e => e.key === "Enter" && (e.preventDefault(), add())} />
+        <Input value={input} onChange={e => setInput(e.target.value)} placeholder={placeholder} className="h-8 text-sm" onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); add(); } }} />
         <Button variant="outline" size="sm" className="h-8 px-2" onClick={add}>
           <Plus className="h-3.5 w-3.5" />
         </Button>
@@ -347,27 +377,30 @@ function TagEditor({ label, tags, onChange, placeholder }: { label: string; tags
   );
 }
 
-function ServiceEditor({ services, onChange }: { services: Record<string, string>; onChange: (v: Record<string, string>) => void }) {
+function ServiceEditor({ services, onChange }: { services: ServiceItem[]; onChange: (v: ServiceItem[]) => void }) {
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
   const add = () => {
     if (!name.trim()) return;
-    onChange({ ...services, [name.trim()]: desc.trim() });
+    onChange([...services, { id: crypto.randomUUID(), name: name.trim(), description: desc.trim() }]);
     setName("");
     setDesc("");
+  };
+  const remove = (id: string) => {
+    onChange(services.filter(s => s.id !== id));
   };
   return (
     <div className="space-y-2">
       <Label className="text-xs font-medium">Services</Label>
-      {Object.entries(services || {}).length > 0 && (
+      {services.length > 0 && (
         <div className="space-y-1.5">
-          {Object.entries(services).map(([n, d]) => (
-            <div key={n} className="flex items-start gap-2 p-2 rounded-md bg-muted/50">
+          {services.map((s) => (
+            <div key={s.id} className="flex items-start gap-2 p-2 rounded-md bg-muted/50">
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium">{n}</p>
-                {d && <p className="text-xs text-muted-foreground">{d}</p>}
+                <p className="text-sm font-medium">{s.name}</p>
+                {s.description && <p className="text-xs text-muted-foreground">{s.description}</p>}
               </div>
-              <Button variant="ghost" size="sm" className="h-6 w-6 p-0 shrink-0" onClick={() => { const next = { ...services }; delete next[n]; onChange(next); }}>
+              <Button variant="ghost" size="sm" className="h-6 w-6 p-0 shrink-0" onClick={() => remove(s.id)}>
                 <X className="h-3 w-3" />
               </Button>
             </div>
@@ -375,8 +408,8 @@ function ServiceEditor({ services, onChange }: { services: Record<string, string
         </div>
       )}
       <div className="flex gap-2">
-        <Input value={name} onChange={e => setName(e.target.value)} placeholder="Service name" className="h-8 text-sm flex-1" onKeyDown={e => e.key === "Enter" && add()} />
-        <Input value={desc} onChange={e => setDesc(e.target.value)} placeholder="Description" className="h-8 text-sm flex-1" onKeyDown={e => e.key === "Enter" && add()} />
+        <Input value={name} onChange={e => setName(e.target.value)} placeholder="Service name" className="h-8 text-sm flex-1" onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); add(); } }} />
+        <Input value={desc} onChange={e => setDesc(e.target.value)} placeholder="Description" className="h-8 text-sm flex-1" onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); add(); } }} />
         <Button variant="outline" size="sm" className="h-8 px-2 shrink-0" onClick={add}>
           <Plus className="h-3.5 w-3.5" />
         </Button>

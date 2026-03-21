@@ -3,10 +3,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Json } from "@/integrations/supabase/types";
 
+export interface ServiceItem {
+  id: string;
+  name: string;
+  description: string;
+}
+
 export interface CompanyProfile {
   company_name: string;
   about_us: string;
-  services: Record<string, string>;
+  services: ServiceItem[];
   delivered_value: string;
   clients: string;
   client_testimonials: string;
@@ -20,6 +26,7 @@ export interface CompanyProfile {
   contact_email: string;
   contact_phone: string;
   address: string;
+  domain: string;
   // Financial fields (enriched from public sources)
   org_number: string;
   revenue: string;
@@ -30,7 +37,6 @@ export interface CompanyProfile {
   legal_name: string;
   // Enrichment metadata
   enrichment_log: EnrichmentEntry[];
-  domain: string;
 }
 
 export interface EnrichmentEntry {
@@ -42,7 +48,7 @@ export interface EnrichmentEntry {
 export const defaultProfile: CompanyProfile = {
   company_name: "",
   about_us: "",
-  services: {},
+  services: [],
   delivered_value: "",
   clients: "",
   client_testimonials: "",
@@ -56,6 +62,7 @@ export const defaultProfile: CompanyProfile = {
   contact_email: "",
   contact_phone: "",
   address: "",
+  domain: "",
   org_number: "",
   revenue: "",
   employees: "",
@@ -64,10 +71,54 @@ export const defaultProfile: CompanyProfile = {
   founded_year: "",
   legal_name: "",
   enrichment_log: [],
-  domain: "",
 };
 
 const QUERY_KEY = ["site-settings", "company_profile"];
+
+/**
+ * Normalize legacy services format.
+ * Old format: Record<string, string> → New format: ServiceItem[]
+ */
+function normalizeServices(raw: unknown): ServiceItem[] {
+  if (Array.isArray(raw)) return raw as ServiceItem[];
+  if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+    return Object.entries(raw as Record<string, string>).map(([name, description]) => ({
+      id: crypto.randomUUID(),
+      name,
+      description: description || "",
+    }));
+  }
+  return [];
+}
+
+/**
+ * Merge enrichment data into current profile.
+ * DEFENSIVE: Only fills EMPTY fields — never overwrites existing data.
+ * Returns the merged profile and list of fields that were updated.
+ */
+function mergeEnrichment(
+  current: CompanyProfile,
+  extracted: Record<string, unknown>,
+): { merged: CompanyProfile; fieldsUpdated: string[] } {
+  const merged = { ...current };
+  const fieldsUpdated: string[] = [];
+
+  for (const [key, val] of Object.entries(extracted)) {
+    if (key === "enrichment_log" || key === "services") continue;
+    const currentVal = (current as unknown as Record<string, unknown>)[key];
+
+    // Skip if the extracted value is empty
+    if (!val || !String(val).trim()) continue;
+
+    // Skip if current field already has data (DEFENSIVE — never overwrite)
+    if (currentVal && String(currentVal).trim()) continue;
+
+    (merged as unknown as Record<string, unknown>)[key] = val;
+    fieldsUpdated.push(key);
+  }
+
+  return { merged, fieldsUpdated };
+}
 
 export function useCompanyInsights() {
   const queryClient = useQueryClient();
@@ -81,7 +132,10 @@ export function useCompanyInsights() {
         .eq("key", "company_profile")
         .maybeSingle();
       if (error) throw error;
-      return { ...defaultProfile, ...(data?.value as unknown as Partial<CompanyProfile>) } as CompanyProfile;
+      const raw = { ...defaultProfile, ...(data?.value as unknown as Partial<CompanyProfile>) };
+      // Normalize legacy services format
+      raw.services = normalizeServices(raw.services);
+      return raw as CompanyProfile;
     },
     staleTime: 1000 * 60 * 5,
   });
@@ -130,23 +184,18 @@ export function useCompanyInsights() {
       }
 
       const extracted = data.companyProfile as Record<string, unknown>;
-      const merged = { ...currentProfile };
-      const fieldsUpdated: string[] = [];
-
-      for (const [key, val] of Object.entries(extracted)) {
-        const currentVal = (currentProfile as unknown as Record<string, unknown>)[key];
-        if (val && String(val).trim() && (!currentVal || !String(currentVal).trim())) {
-          (merged as unknown as Record<string, unknown>)[key] = val;
-          fieldsUpdated.push(key);
-        }
-      }
+      const { merged, fieldsUpdated } = mergeEnrichment(currentProfile, extracted);
 
       merged.enrichment_log = [
         ...(merged.enrichment_log || []),
         { source: `Website: ${url}`, timestamp: new Date().toISOString(), fields_updated: fieldsUpdated },
       ];
 
-      toast.success(`Extracted ${fieldsUpdated.length} fields — review and save`);
+      if (fieldsUpdated.length === 0) {
+        toast.info("All fields already populated — nothing new to add");
+      } else {
+        toast.success(`Extracted ${fieldsUpdated.length} new fields — review and save`);
+      }
       return merged;
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Enrichment failed");
@@ -166,23 +215,18 @@ export function useCompanyInsights() {
       }
 
       const extracted = data.profile as Record<string, unknown>;
-      const merged = { ...currentProfile };
-      const fieldsUpdated: string[] = [];
-
-      for (const [key, val] of Object.entries(extracted)) {
-        const currentVal = (currentProfile as unknown as Record<string, unknown>)[key];
-        if (val && String(val).trim() && (!currentVal || !String(currentVal).trim())) {
-          (merged as unknown as Record<string, unknown>)[key] = val;
-          fieldsUpdated.push(key);
-        }
-      }
+      const { merged, fieldsUpdated } = mergeEnrichment(currentProfile, extracted);
 
       merged.enrichment_log = [
         ...(merged.enrichment_log || []),
         { source: data.source || "Public records", timestamp: new Date().toISOString(), fields_updated: fieldsUpdated },
       ];
 
-      toast.success(`Enriched ${fieldsUpdated.length} fields from public sources`);
+      if (fieldsUpdated.length === 0) {
+        toast.info("All fields already populated — nothing new to add");
+      } else {
+        toast.success(`Enriched ${fieldsUpdated.length} new fields from public sources`);
+      }
       return merged;
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Enrichment failed");
