@@ -245,7 +245,7 @@ All agent surfaces (interactive, autonomous, visitor chat) MUST share `agent-rea
 ## 6. Recommended Next Steps (Priority Order)
 
 1. ~~**Hybrid memory search**~~ ✅ Implemented — `search_memories_hybrid()` with pg_trgm + pgvector (70% vector, 30% keyword).
-2. **Pre-compaction memory flush** — Before `pruneConversationHistory()` summarizes, trigger a silent step that extracts and persists key facts to `agent_memory`.
+2. ~~**Pre-compaction memory flush**~~ ✅ Implemented — `preCompactionFlush()` extracts up to 5 discrete facts via AI before `pruneConversationHistory()` summarizes.
 3. **Editable HEARTBEAT config** — Move the 7-step protocol to `agent_memory(key='heartbeat')` so admin can customize via Skill Hub.
 4. **USER.md equivalent** — Store per-visitor context in `agent_memory` or `chat_conversations.metadata` so the agent remembers returning users.
 5. **Command queue / concurrency guard** — Prevent overlapping agent runs on the same conversation.
