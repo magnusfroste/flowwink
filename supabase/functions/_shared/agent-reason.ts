@@ -134,7 +134,7 @@ SELF-IMPROVEMENT GUIDELINES:
 - Use 'skill_instruct' to enrich skills with context, examples, and edge cases.
 - Use 'soul_update' when you learn something fundamental about your role.
 - Use 'agents_update' when you learn something about how you should operate (rules, policies, conventions).
-- When creating skills, set requires_approval=true for anything destructive.
+- When creating skills, set trust_level: 'approve' for destructive actions, 'notify' for safe-but-important, 'auto' for low-risk read/analytics.
 - New automations are disabled by default — tell the user to enable them when ready.
 - Handler types: module:name (DB ops), edge:function (edge functions), db:table (queries), webhook:url (external)
 
