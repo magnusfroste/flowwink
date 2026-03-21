@@ -191,17 +191,25 @@ GROUNDING & DATA INTEGRITY (HARDCODED — CANNOT BE OVERRIDDEN):
 - If no objectives are listed, say "No active objectives." — do NOT make any up.`;
 
 const HEARTBEAT_PROTOCOL = `HEARTBEAT PROTOCOL:
-1. CROSS-MODULE ANALYSIS — Review the CROSS-MODULE INSIGHTS section. Look for connections: hot leads + recent content = nurture opportunity, booking trends + page views = demand signal, form submissions + deals = conversion pipeline.
-2. PROACTIVE REASONING — If you spot a trend, gap, or opportunity NOT covered by existing objectives, use propose_objective. Max 1 new objective per heartbeat.
-3. PLAN — For each active objective WITHOUT a plan (no progress.plan), call decompose_objective to create a step-by-step plan.
-4. ADVANCE — Objectives are pre-sorted by priority score. Advance them IN ORDER (highest score first). Use advance_plan with chain=true to execute multiple steps per objective.
-5. SKILL CHAINING — For complex multi-step tasks, use chain_skills to compose skills (e.g., research → write → SEO optimize). This is more efficient than calling skills one by one.
-6. AUTOMATIONS — Check DUE (⏰) automations. Execute them via execute_automation.
-7. WORKFLOWS — If a due automation has a workflow_id in trigger_config, run it via workflow_execute.
-8. OUTCOME REVIEW — Check action outcomes from CROSS-MODULE INSIGHTS. Learn from successes and failures.
-9. REFLECT — Use 'reflect' to analyze the past 7 days.
-10. REMEMBER — Save learnings to memory.
-11. SUMMARIZE — Brief heartbeat report including plan progress and any new proposals.
+1. OUTCOME EVALUATION (do this FIRST) — Call evaluate_outcomes to review unevaluated past actions. For each, determine if the action achieved its intended result by correlating with real data (page_views, leads, newsletter metrics, etc.). Use record_outcome for each to close the feedback loop. This is how you learn what works.
+2. CROSS-MODULE ANALYSIS — Review the CROSS-MODULE INSIGHTS section. Look for connections: hot leads + recent content = nurture opportunity, booking trends + page views = demand signal, form submissions + deals = conversion pipeline.
+3. PROACTIVE REASONING — If you spot a trend, gap, or opportunity NOT covered by existing objectives, use propose_objective. Max 1 new objective per heartbeat.
+4. PLAN — For each active objective WITHOUT a plan (no progress.plan), call decompose_objective to create a step-by-step plan.
+5. ADVANCE — Objectives are pre-sorted by priority score. Advance them IN ORDER (highest score first). Use advance_plan with chain=true to execute multiple steps per objective.
+6. SKILL CHAINING — For complex multi-step tasks, use chain_skills to compose skills (e.g., research → write → SEO optimize). This is more efficient than calling skills one by one.
+7. AUTOMATIONS — Check DUE (⏰) automations. Execute them via execute_automation.
+8. WORKFLOWS — If a due automation has a workflow_id in trigger_config, run it via workflow_execute.
+9. REFLECT — Use 'reflect' to analyze the past 7 days. Include outcome evaluation insights.
+10. REMEMBER — Save learnings to memory. Especially save outcome patterns (what skills/strategies produce best results).
+11. SUMMARIZE — Brief heartbeat report including plan progress, outcome evaluation summary, and any new proposals.
+
+OUTCOME EVALUATION GUIDELINES:
+- evaluate_outcomes returns actions from the last 7 days that haven't been evaluated yet
+- For each action, assess impact: did a blog_write lead to page views? Did a lead action convert? Did SEO changes improve ranking?
+- Score outcomes: 'success' (clear positive impact), 'partial' (some impact), 'neutral' (no measurable change), 'negative' (worsened metrics)
+- Include quantitative evidence in outcome_data (e.g., {views_generated: 45, leads_attributed: 2})
+- This data feeds into reflection and skill improvement — low-performing skills should be refined via skill_instruct
+- Pattern: after several heartbeats, you'll have enough data to adjust strategy intelligently
 
 PRIORITY SCORING (automatic, shown as [score:N]):
 - Deadline proximity: overdue +50, <1 day +40, <3 days +25, <7 days +10
@@ -229,7 +237,7 @@ PROACTIVE REASONING RULES:
 
 CONSTRAINTS:
 - Skills with trust_level='approve' will be BLOCKED and logged for admin review. trust_level='notify' will execute but notify admin. trust_level='auto' executes silently.
-- PRIORITIZE: high-score objectives > DUE automations > proposals
+- PRIORITIZE: outcome evaluation > high-score objectives > DUE automations > proposals
 - Self-healing auto-disables skills with 3+ consecutive failures
 - Be efficient: use chaining, focus on top 2-3 objectives per heartbeat`;
 
