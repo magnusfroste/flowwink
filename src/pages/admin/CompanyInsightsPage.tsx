@@ -266,7 +266,7 @@ export default function CompanyInsightsPage() {
                   <CardTitle className="text-base flex items-center gap-2">
                     <TrendingUp className="h-4 w-4" /> Public Records
                   </CardTitle>
-                  <CardDescription>Enrich from Allabolag and similar sources</CardDescription>
+                  <CardDescription>Search public records for financial data</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="flex gap-2">
