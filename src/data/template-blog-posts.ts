@@ -388,7 +388,7 @@ export const flowwinkBlogPosts: TemplateBlogPost[] = [
             'Reflects on its own performance on a regular schedule and improves'
           ),
           h2('The Autonomous Loop'),
-          p('FlowPilot operates in a continuous cycle: Heartbeat → Reflect → Plan → Execute → Log → Learn. Every 12 hours, it reviews what happened, what worked, what failed, and adjusts its approach. No human intervention required.'),
+          p('FlowPilot operates in a continuous cycle: Heartbeat → Reflect → Plan → Execute → Log → Learn. On a configurable schedule, it reviews what happened, what worked, what failed, and adjusts its approach. No human intervention required.'),
           h2('You Set Objectives. FlowPilot Executes.'),
           p('Instead of managing tasks, you set goals: "Publish 4 blog posts per month." "Qualify all inbound leads within 5 minutes." "Send a weekly newsletter." FlowPilot breaks these into actions and executes them autonomously.'),
           h2('Human-in-the-Loop, Not Human-in-the-Way'),
