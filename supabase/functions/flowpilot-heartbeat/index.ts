@@ -20,6 +20,8 @@ import {
   isOverBudget,
   detectSiteMaturity,
   loadCrossModuleInsights,
+  tryAcquireLock,
+  releaseLock,
 } from "../_shared/agent-reason.ts";
 import type { TokenUsage, HeartbeatState } from "../_shared/agent-reason.ts";
 
