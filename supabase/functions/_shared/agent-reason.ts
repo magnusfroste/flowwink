@@ -1250,8 +1250,9 @@ async function handleExecuteAutomation(supabase: any, supabaseUrl: string, servi
 
   if (auto.skill_name) {
     const { data: skill } = await supabase.from('agent_skills')
-      .select('requires_approval').eq('name', auto.skill_name).maybeSingle();
-    if (skill?.requires_approval) {
+      .select('trust_level, requires_approval').eq('name', auto.skill_name).maybeSingle();
+    const trustLevel = skill?.trust_level || (skill?.requires_approval ? 'approve' : 'auto');
+    if (trustLevel === 'approve') {
       await supabase.from('agent_activity').insert({
         agent: 'flowpilot', skill_name: auto.skill_name,
         input: { automation_id: args.automation_id, arguments: auto.skill_arguments },
