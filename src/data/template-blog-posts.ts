@@ -473,7 +473,7 @@ export const flowwinkBlogPosts: TemplateBlogPost[] = [
           p('Most AI tools are reactive — you prompt, they respond. FlowPilot is proactive. It operates in a continuous autonomous loop that drives self-improvement without human intervention.'),
           h2('The Six Phases'),
           h3('Phase 1: Heartbeat'),
-          p('Every 12 hours, FlowPilot\'s heartbeat triggers. It wakes up, gathers context, and begins its reflection cycle.'),
+          p('On schedule, FlowPilot\'s heartbeat triggers. It wakes up, gathers context, and begins its reflection cycle.'),
           h3('Phase 2: Reflect'),
           p('FlowPilot reviews everything that happened since the last heartbeat: content published, leads qualified, emails sent, conversations held, bookings made. It evaluates what worked and what did not.'),
           h3('Phase 3: Plan'),

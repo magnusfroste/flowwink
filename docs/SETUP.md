@@ -354,7 +354,7 @@ SELECT cron.schedule(
 ### FlowPilot Autonomous Loop
 
 ```sql
--- Heartbeat every 12 hours (00:00, 12:00 UTC)
+-- Heartbeat (default: twice daily — schedule managed via admin Autonomy Settings)
 SELECT cron.schedule(
   'flowpilot-heartbeat',
   '0 0,12 * * *',

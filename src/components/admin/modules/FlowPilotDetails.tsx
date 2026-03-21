@@ -265,7 +265,7 @@ export function FlowPilotDetails() {
         </div>
         <div className="space-y-1">
           {[
-            { name: 'flowpilot-heartbeat', schedule: 'Every 12 hours', desc: 'Objective management & site health' },
+            { name: 'flowpilot-heartbeat', schedule: 'Configurable (default: twice daily)', desc: 'Objective management & site health' },
             { name: 'automation-dispatcher', schedule: 'Every minute', desc: 'Cron-triggered automations' },
             { name: 'publish-scheduled-pages', schedule: 'Every minute', desc: 'Scheduled content publishing' },
             { name: 'flowpilot-learn', schedule: 'Daily 03:00', desc: 'Nightly learning & memory consolidation' },
