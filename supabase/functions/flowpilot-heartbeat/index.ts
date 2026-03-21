@@ -22,6 +22,7 @@ import {
   loadCrossModuleInsights,
   tryAcquireLock,
   releaseLock,
+  loadHeartbeatProtocol,
 } from "../_shared/agent-reason.ts";
 import type { TokenUsage, HeartbeatState } from "../_shared/agent-reason.ts";
 
