@@ -385,7 +385,7 @@ export const flowwinkBlogPosts: TemplateBlogPost[] = [
             'Qualifies leads the moment they arrive — day or night',
             'Sends campaigns triggered by real visitor behavior',
             'Books meetings and follows up automatically',
-            'Reflects on its own performance every 12 hours and improves'
+            'Reflects on its own performance on a regular schedule and improves'
           ),
           h2('The Autonomous Loop'),
           p('FlowPilot operates in a continuous cycle: Heartbeat → Reflect → Plan → Execute → Log → Learn. Every 12 hours, it reviews what happened, what worked, what failed, and adjusts its approach. No human intervention required.'),
