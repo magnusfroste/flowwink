@@ -191,7 +191,7 @@ GROUNDING & DATA INTEGRITY (HARDCODED — CANNOT BE OVERRIDDEN):
 - If no objectives are listed, say "No active objectives." — do NOT make any up.`;
 
 const HEARTBEAT_PROTOCOL = `HEARTBEAT PROTOCOL:
-1. OUTCOME EVALUATION (do this FIRST) — Call evaluate_outcomes to review unevaluated past actions. For each, determine if the action achieved its intended result by correlating with real data (page_views, leads, newsletter metrics, etc.). Use record_outcome for each to close the feedback loop. This is how you learn what works.
+1. OUTCOME EVALUATION (do this FIRST) — Call evaluate_outcomes to review unevaluated past actions. It returns causal data (specific to each action's 72h impact window), a skill scorecard (historical success rates), and recent learnings (your own past assessments). Use this to make informed judgments. Call record_outcome for each. If an action is too recent to judge, use 'too_early' — it will resurface in the next heartbeat via include_too_early.
 2. CROSS-MODULE ANALYSIS — Review the CROSS-MODULE INSIGHTS section. Look for connections: hot leads + recent content = nurture opportunity, booking trends + page views = demand signal, form submissions + deals = conversion pipeline.
 3. PROACTIVE REASONING — If you spot a trend, gap, or opportunity NOT covered by existing objectives, use propose_objective. Max 1 new objective per heartbeat.
 4. PLAN — For each active objective WITHOUT a plan (no progress.plan), call decompose_objective to create a step-by-step plan.
@@ -204,12 +204,15 @@ const HEARTBEAT_PROTOCOL = `HEARTBEAT PROTOCOL:
 11. SUMMARIZE — Brief heartbeat report including plan progress, outcome evaluation summary, and any new proposals.
 
 OUTCOME EVALUATION GUIDELINES:
-- evaluate_outcomes returns actions from the last 7 days that haven't been evaluated yet
-- For each action, assess impact: did a blog_write lead to page views? Did a lead action convert? Did SEO changes improve ranking?
-- Score outcomes: 'success' (clear positive impact), 'partial' (some impact), 'neutral' (no measurable change), 'negative' (worsened metrics)
-- Include quantitative evidence in outcome_data (e.g., {views_generated: 45, leads_attributed: 2})
-- This data feeds into reflection and skill improvement — low-performing skills should be refined via skill_instruct
-- Pattern: after several heartbeats, you'll have enough data to adjust strategy intelligently
+- evaluate_outcomes returns per-activity causal_data with a 72h impact window specific to each action
+- For content skills: check causal_data.page_views_72h for the specific page created
+- For CRM skills: check causal_data.related_leads for lead status changes
+- The skill_scorecard shows historical success rates — skills below 50% need strategy adjustment via skill_instruct
+- recent_learnings contains your own past assessments — read them to avoid repeating mistakes
+- Score outcomes: 'success' (clear positive impact), 'partial' (some impact), 'neutral' (no measurable change), 'negative' (worsened metrics), 'too_early' (action < 48h ago, not enough data yet)
+- Include quantitative evidence in outcome_data (e.g., {views_generated: 45, leads_attributed: 2, bookings: 1, revenue_cents: 50000})
+- Correlation data now includes deals, bookings, orders, and chat feedback — use all available signals
+- Pattern: after several heartbeats, the scorecard reveals which strategies work best for THIS specific business
 
 PRIORITY SCORING (automatic, shown as [score:N]):
 - Deadline proximity: overdue +50, <1 day +40, <3 days +25, <7 days +10
@@ -631,10 +634,24 @@ export async function loadCrossModuleInsights(supabase: any): Promise<string> {
 
     if (recentOutcomes.data?.length) {
       const outcomes: Record<string, number> = {};
+      const skillPerf: Record<string, { total: number; good: number }> = {};
       for (const o of recentOutcomes.data) {
         outcomes[o.outcome_status] = (outcomes[o.outcome_status] || 0) + 1;
+        const sk = o.skill_name || 'unknown';
+        if (!skillPerf[sk]) skillPerf[sk] = { total: 0, good: 0 };
+        skillPerf[sk].total++;
+        if (o.outcome_status === 'success' || o.outcome_status === 'partial') skillPerf[sk].good++;
       }
       parts.push(`🎯 Action outcomes: ${Object.entries(outcomes).map(([s, c]) => `${s}:${c}`).join(', ')}`);
+      // Top/bottom performing skills
+      const perfEntries = Object.entries(skillPerf).filter(([, v]) => v.total >= 2);
+      if (perfEntries.length) {
+        const sorted = perfEntries.sort((a, b) => (b[1].good / b[1].total) - (a[1].good / a[1].total));
+        const best = sorted.slice(0, 3).map(([name, v]) => `${name}(${Math.round(v.good / v.total * 100)}%)`);
+        parts.push(`📊 Skill performance (7d): ${best.join(', ')}`);
+        const worst = sorted.filter(([, v]) => v.good / v.total < 0.5);
+        if (worst.length) parts.push(`⚠️ Underperforming: ${worst.map(([n]) => n).join(', ')} — check learnings`);
+      }
     }
 
     return parts.join('\n');
@@ -2203,12 +2220,13 @@ const OUTCOME_TOOLS = [
   {
     type: 'function', function: {
       name: 'evaluate_outcomes',
-      description: 'Fetch recent agent actions (last 7 days) that have not been evaluated yet. Returns activities with their skill_name, input, output, and creation time so you can assess their impact by correlating with real metrics.',
+      description: 'Fetch recent agent actions that have not been evaluated yet. Returns activities enriched with CAUSAL correlation data specific to each action (e.g. page views for the exact blog post written, leads from the specific source). Also includes a skill scorecard showing historical success rates and past learnings.',
       parameters: {
         type: 'object',
         properties: {
           limit: { type: 'number', description: 'Max number of unevaluated actions to return (default 15)' },
           skill_filter: { type: 'string', description: 'Optional: only evaluate actions from this skill' },
+          include_too_early: { type: 'boolean', description: 'Re-evaluate actions previously marked as too_early (default false)' },
         },
       },
     },
@@ -2222,7 +2240,7 @@ const OUTCOME_TOOLS = [
         properties: {
           activity_id: { type: 'string', description: 'The agent_activity ID to evaluate' },
           outcome_status: { type: 'string', enum: ['success', 'partial', 'neutral', 'negative', 'too_early'], description: 'Assessed outcome' },
-          outcome_data: { type: 'object', description: 'Quantitative evidence: {views_generated, leads_attributed, conversions, notes}' },
+          outcome_data: { type: 'object', description: 'Quantitative evidence: {views_generated, leads_attributed, conversions, bookings, revenue_cents, notes}' },
         },
         required: ['activity_id', 'outcome_status'],
       },
@@ -2309,19 +2327,58 @@ async function handleChainSkills(
 
 // ─── Outcome Evaluation ───────────────────────────────────────────────────────
 
-async function handleEvaluateOutcomes(supabase: any, args: { limit?: number; skill_filter?: string }) {
+/**
+ * Extract causal hints from an activity's input/output to enable
+ * skill-specific correlation (e.g. the slug of a blog post written).
+ */
+function extractCausalHints(activity: any): { slugs: string[]; emails: string[]; skillType: string } {
+  const inp = activity.input || {};
+  const out = activity.output || {};
+  const slugs: string[] = [];
+  const emails: string[] = [];
+
+  // Extract slugs from common fields
+  for (const obj of [inp, out, out?.result]) {
+    if (!obj || typeof obj !== 'object') continue;
+    if (obj.slug) slugs.push(obj.slug);
+    if (obj.page_slug) slugs.push(obj.page_slug);
+    if (obj.post_slug) slugs.push(obj.post_slug);
+    if (obj.email) emails.push(obj.email);
+    if (obj.lead_email) emails.push(obj.lead_email);
+  }
+
+  // Classify skill type for correlation strategy
+  const name = activity.skill_name || '';
+  let skillType = 'general';
+  if (name.match(/blog|post|content|page|seo/i)) skillType = 'content';
+  else if (name.match(/lead|crm|qualify|prospect|enrich/i)) skillType = 'crm';
+  else if (name.match(/newsletter|email|subscribe/i)) skillType = 'communication';
+  else if (name.match(/book|schedule/i)) skillType = 'booking';
+  else if (name.match(/deal|order|product/i)) skillType = 'commerce';
+
+  return { slugs, emails, skillType };
+}
+
+async function handleEvaluateOutcomes(supabase: any, args: { limit?: number; skill_filter?: string; include_too_early?: boolean }) {
   const limit = args.limit || 15;
   const since = new Date();
   since.setDate(since.getDate() - 7);
 
+  // Fetch unevaluated activities
   let query = supabase
     .from('agent_activity')
     .select('id, skill_name, input, output, status, created_at, duration_ms')
-    .is('outcome_status', null)
     .eq('status', 'success')
     .gte('created_at', since.toISOString())
     .order('created_at', { ascending: false })
     .limit(limit);
+
+  if (args.include_too_early) {
+    // Include both null AND too_early for re-evaluation
+    query = query.or('outcome_status.is.null,outcome_status.eq.too_early');
+  } else {
+    query = query.is('outcome_status', null);
+  }
 
   if (args.skill_filter) {
     query = query.eq('skill_name', args.skill_filter);
@@ -2329,23 +2386,72 @@ async function handleEvaluateOutcomes(supabase: any, args: { limit?: number; ski
 
   const { data: activities } = await query;
   if (!activities?.length) {
-    return { status: 'no_pending', message: 'No unevaluated actions in the last 7 days.' };
+    return { status: 'no_pending', message: 'No unevaluated actions found.' };
   }
 
-  // Enrich with correlation data — fetch recent metrics for context
-  const [viewsResult, leadsResult, subscriberResult] = await Promise.all([
+  // For each activity, build a temporal window (24-72h after the action)
+  const enrichedActivities = [];
+  for (const a of activities) {
+    const actionTime = new Date(a.created_at);
+    const windowStart = actionTime.toISOString();
+    const windowEnd = new Date(actionTime.getTime() + 72 * 60 * 60 * 1000).toISOString();
+    const hints = extractCausalHints(a);
+
+    const causal: Record<string, any> = { window: `${windowStart} → ${windowEnd}`, skill_type: hints.skillType };
+
+    // Skill-specific causal queries within the 72h window
+    if (hints.skillType === 'content' && hints.slugs.length) {
+      const { data: views } = await supabase.from('page_views').select('page_slug', { count: 'exact', head: false })
+        .in('page_slug', hints.slugs.map(s => `/${s}`).concat(hints.slugs.map(s => `/blog/${s}`)).concat(hints.slugs))
+        .gte('created_at', windowStart).lte('created_at', windowEnd).limit(200);
+      causal.page_views_72h = views?.length || 0;
+      causal.tracked_slugs = hints.slugs;
+    }
+
+    if (hints.skillType === 'crm' && hints.emails.length) {
+      const { data: leads } = await supabase.from('leads').select('id, score, status')
+        .in('email', hints.emails).limit(10);
+      causal.related_leads = leads?.map((l: any) => ({ score: l.score, status: l.status })) || [];
+    }
+
+    enrichedActivities.push({
+      id: a.id,
+      skill_name: a.skill_name,
+      created_at: a.created_at,
+      input_summary: JSON.stringify(a.input).slice(0, 300),
+      output_summary: JSON.stringify(a.output).slice(0, 300),
+      causal_data: causal,
+    });
+  }
+
+  // Fetch broad correlation context (all metrics in 7d window)
+  const [viewsResult, leadsResult, subscriberResult, dealsResult, bookingsResult, ordersResult, feedbackResult] = await Promise.all([
     supabase.from('page_views').select('page_slug', { count: 'exact', head: false })
       .gte('created_at', since.toISOString()).limit(500),
     supabase.from('leads').select('id, source, score, created_at')
       .gte('created_at', since.toISOString()).order('created_at', { ascending: false }).limit(50),
     supabase.from('newsletter_subscribers').select('id', { count: 'exact', head: true })
       .gte('created_at', since.toISOString()),
+    supabase.from('deals').select('stage, value_cents, created_at')
+      .gte('created_at', since.toISOString()).limit(50),
+    supabase.from('bookings').select('id, status, created_at')
+      .gte('created_at', since.toISOString()).limit(50),
+    supabase.from('order_items').select('id, price_cents, created_at')
+      .gte('created_at', since.toISOString()).limit(50),
+    supabase.from('chat_feedback').select('rating, created_at')
+      .gte('created_at', since.toISOString()).limit(50),
   ]);
 
-  // Build page view counts for correlation
+  // Page view counts
   const pageViewCounts: Record<string, number> = {};
   for (const pv of (viewsResult.data || [])) {
     pageViewCounts[pv.page_slug] = (pageViewCounts[pv.page_slug] || 0) + 1;
+  }
+
+  // Feedback summary
+  const feedbackSummary: Record<string, number> = {};
+  for (const f of (feedbackResult.data || [])) {
+    feedbackSummary[f.rating] = (feedbackSummary[f.rating] || 0) + 1;
   }
 
   const correlationContext = {
@@ -2354,20 +2460,62 @@ async function handleEvaluateOutcomes(supabase: any, args: { limit?: number; ski
     new_leads_7d: leadsResult.data?.length || 0,
     new_subscribers_7d: subscriberResult.count || 0,
     lead_sources: [...new Set((leadsResult.data || []).map((l: any) => l.source))],
+    new_deals_7d: dealsResult.data?.length || 0,
+    deal_value_7d: (dealsResult.data || []).reduce((s: number, d: any) => s + (d.value_cents || 0), 0),
+    bookings_7d: bookingsResult.data?.length || 0,
+    orders_7d: ordersResult.data?.length || 0,
+    order_revenue_7d: (ordersResult.data || []).reduce((s: number, o: any) => s + (o.price_cents || 0), 0),
+    chat_feedback_7d: feedbackSummary,
   };
+
+  // Build skill scorecard from historical evaluated outcomes
+  const { data: historicalOutcomes } = await supabase
+    .from('agent_activity')
+    .select('skill_name, outcome_status')
+    .not('outcome_status', 'is', null)
+    .neq('outcome_status', 'too_early')
+    .order('created_at', { ascending: false })
+    .limit(200);
+
+  const scorecard: Record<string, { total: number; success: number; partial: number; neutral: number; negative: number; rate: number }> = {};
+  for (const o of (historicalOutcomes || [])) {
+    if (!o.skill_name) continue;
+    if (!scorecard[o.skill_name]) scorecard[o.skill_name] = { total: 0, success: 0, partial: 0, neutral: 0, negative: 0, rate: 0 };
+    const s = scorecard[o.skill_name];
+    s.total++;
+    if (o.outcome_status === 'success') s.success++;
+    else if (o.outcome_status === 'partial') s.partial++;
+    else if (o.outcome_status === 'neutral') s.neutral++;
+    else if (o.outcome_status === 'negative') s.negative++;
+  }
+  for (const s of Object.values(scorecard)) {
+    s.rate = s.total > 0 ? Math.round(((s.success + s.partial * 0.5) / s.total) * 100) : 0;
+  }
+
+  // Fetch recent learnings from memory so the agent reads its own diary
+  const { data: learnings } = await supabase
+    .from('agent_memory')
+    .select('key, value, created_at')
+    .like('key', 'outcome_learning:%')
+    .order('created_at', { ascending: false })
+    .limit(10);
+
+  const recentLearnings = (learnings || []).map((l: any) => ({
+    skill: l.value?.skill,
+    outcome: l.value?.outcome,
+    lesson: l.value?.lesson,
+    data: l.value?.data,
+    date: l.created_at?.slice(0, 10),
+  }));
 
   return {
     status: 'pending_evaluation',
-    count: activities.length,
-    activities: activities.map((a: any) => ({
-      id: a.id,
-      skill_name: a.skill_name,
-      created_at: a.created_at,
-      input_summary: JSON.stringify(a.input).slice(0, 300),
-      output_summary: JSON.stringify(a.output).slice(0, 300),
-    })),
+    count: enrichedActivities.length,
+    activities: enrichedActivities,
     correlation_data: correlationContext,
-    instructions: 'For each activity, assess its impact using the correlation_data. Then call record_outcome for each with your assessment.',
+    skill_scorecard: scorecard,
+    recent_learnings: recentLearnings.length ? recentLearnings : undefined,
+    instructions: 'For each activity, assess impact using its causal_data (skill-specific, 72h window) AND the broad correlation_data. Check the skill_scorecard to see historical patterns. Review recent_learnings to avoid repeating mistakes. Call record_outcome for each activity.',
   };
 }
 
@@ -2394,7 +2542,7 @@ async function handleRecordOutcome(supabase: any, args: {
 
   if (error) return { status: 'error', error: error.message };
 
-  // If this is a negative outcome, log a learning to memory
+  // Log learnings for negative/neutral outcomes
   if (args.outcome_status === 'negative' || args.outcome_status === 'neutral') {
     const skillName = data?.skill_name || 'unknown';
     await supabase.from('agent_memory').upsert({
@@ -2404,6 +2552,22 @@ async function handleRecordOutcome(supabase: any, args: {
         outcome: args.outcome_status,
         data: args.outcome_data,
         lesson: `${skillName} produced ${args.outcome_status} result. Review strategy.`,
+      },
+      category: 'context',
+      created_by: 'flowpilot',
+    }, { onConflict: 'key' });
+  }
+
+  // Log learnings for success outcomes too — what works is as important as what doesn't
+  if (args.outcome_status === 'success' && args.outcome_data) {
+    const skillName = data?.skill_name || 'unknown';
+    await supabase.from('agent_memory').upsert({
+      key: `outcome_success:${skillName}:${new Date().toISOString().slice(0, 10)}`,
+      value: {
+        skill: skillName,
+        outcome: 'success',
+        data: args.outcome_data,
+        lesson: `${skillName} produced successful result. Replicate this approach.`,
       },
       category: 'context',
       created_by: 'flowpilot',
