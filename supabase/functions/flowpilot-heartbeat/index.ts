@@ -119,7 +119,7 @@ serve(async (req) => {
     }
 
     // 1. Gather context + run self-healing in parallel
-    const [{ soul, identity, agents }, memoryCtx, objectiveCtx, activityCtx, statsCtx, automationCtx, healingReport, cmsSchemaCtx, heartbeatStateCtx, siteMaturity, crossModuleCtx] = await Promise.all([
+    const [{ soul, identity, agents }, memoryCtx, objectiveCtx, activityCtx, statsCtx, automationCtx, healingReport, cmsSchemaCtx, heartbeatStateCtx, siteMaturity, crossModuleCtx, customProtocol] = await Promise.all([
       loadWorkspaceFiles(supabase),
       loadMemories(supabase),
       loadObjectives(supabase, { unlockedOnly: true }),
@@ -131,6 +131,7 @@ serve(async (req) => {
       loadHeartbeatState(supabase),
       detectSiteMaturity(supabase),
       loadCrossModuleInsights(supabase),
+      loadHeartbeatProtocol(supabase),
     ]);
 
     // 2. Resolve AI config
@@ -144,7 +145,7 @@ serve(async (req) => {
     // 4. Token budget — give fresh sites more room to work
     const TOKEN_BUDGET = siteMaturity.isFresh ? 80_000 : 50_000;
 
-    console.log(`[heartbeat] Site maturity: ${siteMaturity.isFresh ? 'FRESH (Day 1 playbook active)' : 'mature'}, budget: ${TOKEN_BUDGET}`);
+    console.log(`[heartbeat] Site maturity: ${siteMaturity.isFresh ? 'FRESH (Day 1 playbook active)' : 'mature'}, budget: ${TOKEN_BUDGET}${customProtocol ? ', using CUSTOM protocol' : ''}`);
 
     // 5. Build system prompt via prompt compiler (OpenClaw Layer 1)
     const systemPrompt = buildSystemPrompt({
@@ -162,6 +163,7 @@ serve(async (req) => {
       tokenBudget: TOKEN_BUDGET,
       maxIterations: siteMaturity.isFresh ? 12 : MAX_ITERATIONS,
       siteMaturity,
+      customHeartbeatProtocol: customProtocol ?? undefined,
     });
 
     // 6. Run the reasoning loop with context pruning + token tracking
