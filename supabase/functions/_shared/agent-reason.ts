@@ -2244,6 +2244,8 @@ export function getBuiltInTools(groups: Array<'memory' | 'objectives' | 'self-mo
   if (groups.includes('skill-packs')) tools.push(...SKILL_PACK_TOOLS);
   // Chain skills always available when planning is available
   if (groups.includes('planning')) tools.push(...CHAIN_SKILLS_TOOL);
+  // Outcome evaluation always available with planning
+  if (groups.includes('planning')) tools.push(...OUTCOME_TOOLS);
   return tools;
 }
 
