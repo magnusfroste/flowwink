@@ -59,7 +59,7 @@ FlowAgent operates on a continuous cycle. This is the core value proposition —
 
 ```
 ┌─────────────┐
-│  HEARTBEAT  │ ← Triggers every 12 hours (configurable via admin)
+│  HEARTBEAT  │ ← Triggers on admin-configured schedule (default: twice daily)
 └──────┬──────┘
        ▼
 ┌─────────────┐
