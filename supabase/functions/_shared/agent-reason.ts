@@ -2045,6 +2045,25 @@ async function handleAgentsUpdate(supabase: any, args: { field: string; value: a
   return { status: 'updated', field: args.field, agents: updatedAgents };
 }
 
+// ─── Heartbeat Protocol Update ────────────────────────────────────────────────
+
+async function handleHeartbeatProtocolUpdate(supabase: any, args: { action: string; protocol?: string }) {
+  if (args.action === 'get') {
+    const custom = await loadHeartbeatProtocol(supabase);
+    return { status: 'ok', protocol: custom || getDefaultHeartbeatProtocol(), is_custom: !!custom };
+  }
+  if (args.action === 'reset') {
+    await supabase.from('agent_memory').delete().eq('key', 'heartbeat_protocol');
+    return { status: 'reset', message: 'Heartbeat protocol restored to default' };
+  }
+  if (args.action === 'set') {
+    if (!args.protocol) return { status: 'error', error: 'protocol text is required for action=set' };
+    await saveHeartbeatProtocol(supabase, args.protocol);
+    return { status: 'updated', message: 'Custom heartbeat protocol saved. Will be used on next heartbeat.' };
+  }
+  return { status: 'error', error: `Unknown action: ${args.action}` };
+}
+
 // ─── Automation CRUD ──────────────────────────────────────────────────────────
 
 async function handleAutomationCreate(supabase: any, args: any) {
