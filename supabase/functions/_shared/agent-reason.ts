@@ -49,6 +49,10 @@ export interface ReasonConfig {
   builtInToolGroups?: Array<'memory' | 'objectives' | 'self-mod' | 'reflect' | 'soul' | 'planning' | 'automations-exec' | 'workflows' | 'a2a' | 'skill-packs'>;
   additionalTools?: any[];
   tier?: AiTier;
+  /** Lane name for concurrency guard. If set, only one agent can run on this lane at a time. */
+  lockLane?: string;
+  /** Identifier for who holds the lock (e.g. 'heartbeat', 'chat', 'operate') */
+  lockOwner?: string;
 }
 
 export interface ReasonResult {
@@ -57,6 +61,8 @@ export interface ReasonResult {
   skillResults: Array<{ skill: string; status: string; result: any }>;
   durationMs: number;
   tokenUsage?: TokenUsage;
+  /** True if the run was skipped because another agent process holds the lock */
+  skippedDueToLock?: boolean;
 }
 
 export interface TokenUsage {
