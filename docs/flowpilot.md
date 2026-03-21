@@ -296,7 +296,7 @@ Automatic fault detection and skill quarantine (ported from ClawCMS):
 
 ### 4.5 Autonomous Heartbeat
 
-The `flowpilot-heartbeat` Edge Function drives autonomous operation. Frequency configurable via admin (default: every 12 hours):
+The `flowpilot-heartbeat` Edge Function drives autonomous operation. Frequency is fully configurable via the Autonomy Schedule in Engine Room (default: twice daily at 00:00 and 12:00 local time):
 
 ```
 HEARTBEAT PROTOCOL (7 steps):
