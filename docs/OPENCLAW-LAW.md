@@ -220,7 +220,7 @@ All agent surfaces (interactive, autonomous, visitor chat) MUST share `agent-rea
 | Gap | OpenClaw Has | FlowWink Status | Impact |
 |-----|-------------|-----------------|--------|
 | ~~**Hybrid memory search**~~ | ~~BM25 + vector (70/30 weighted)~~ | ✅ `search_memories_hybrid()` — pg_trgm + pgvector (70/30) | ~~Exact keyword matches (IDs, errors) may be missed~~ **RESOLVED** |
-| **Pre-compaction memory flush** | Silent agentic turn saves context before summarization | No pre-flush — just summarize and truncate | Risk of losing important context during pruning |
+| ~~**Pre-compaction memory flush**~~ | ~~Silent agentic turn saves context before summarization~~ | ✅ `preCompactionFlush()` extracts facts via AI before pruning | ~~Risk of losing important context during pruning~~ **RESOLVED** |
 | **Protocol specs (L5)** | Structured reply tags, `NO_REPLY` sentinel, heartbeat signals | Basic SSE streaming, no reply tags | Less structured agent output parsing |
 | **Workspace: HEARTBEAT.md** | Editable checklist file the agent reads each heartbeat | Hardcoded 7-step protocol in edge function | Admin can't customize heartbeat behavior without code deploy |
 | **Workspace: BOOT.md** | Startup hook script | Code-level bootstrap in `useFlowPilotBootstrap.ts` | Same limitation — not admin-editable |
