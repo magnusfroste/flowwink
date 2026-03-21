@@ -20,7 +20,7 @@ You set the direction. FlowPilot runs the business.
 
 ## What FlowPilot does
 
-FlowPilot is not a chatbot, a copilot, or a content suggester. It is an **autonomous agent** — a persistent process that wakes up every 12 hours, reads your business situation, and acts.
+FlowPilot is not a chatbot, a copilot, or a content suggester. It is an **autonomous agent** — a persistent process that wakes up on a configurable schedule (default: twice daily), reads your business situation, and acts.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐

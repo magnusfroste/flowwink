@@ -59,7 +59,7 @@ FlowAgent operates on a continuous cycle. This is the core value proposition —
 
 ```
 ┌─────────────┐
-│  HEARTBEAT  │ ← Triggers every 12 hours (configurable via admin)
+│  HEARTBEAT  │ ← Triggers on admin-configured schedule (default: twice daily)
 └──────┬──────┘
        ▼
 ┌─────────────┐
@@ -296,7 +296,7 @@ Automatic fault detection and skill quarantine (ported from ClawCMS):
 
 ### 4.5 Autonomous Heartbeat
 
-The `flowpilot-heartbeat` Edge Function drives autonomous operation. Frequency configurable via admin (default: every 12 hours):
+The `flowpilot-heartbeat` Edge Function drives autonomous operation. Frequency is fully configurable via the Autonomy Schedule in Engine Room (default: twice daily at 00:00 and 12:00 local time):
 
 ```
 HEARTBEAT PROTOCOL (7 steps):
@@ -504,7 +504,7 @@ Five autonomous cron jobs are registered during bootstrap via `register_flowpilo
 
 | Job | Default Schedule | Configurable | Purpose |
 |-----|-----------------|--------------|---------|
-| `flowpilot-heartbeat` | Every 12h | ✅ Frequency (6h/12h/24h) | Objective management, self-healing, reflection |
+| `flowpilot-heartbeat` | Twice daily (00:00, 12:00) | ✅ Frequency + hours + timezone | Objective management, self-healing, reflection |
 | `flowpilot-daily-briefing` | 07:00 local | ✅ Hour + timezone | Morning business summary |
 | `flowpilot-learn` | 03:00 local | ✅ Hour + timezone | Nightly feedback distillation |
 | `automation-dispatcher` | Every minute | ❌ Fixed | Execute due cron automations |

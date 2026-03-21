@@ -319,7 +319,7 @@ See **[DEPLOYMENT.md](./DEPLOYMENT.md)** for deploying to Easypanel, Railway, or
 | `send-webhook` | Trigger webhooks for events | Yes | - |
 | `setup-database` | Database setup/initialization | Yes (Admin) | - |
 | `setup-flowpilot` | Bootstrap agentic layer (skills, soul, identity) | Yes (Admin) | - |
-| `flowpilot-heartbeat` | Autonomous heartbeat loop (runs every 12h) | No | AI API keys |
+| `flowpilot-heartbeat` | Autonomous heartbeat loop (admin-configurable schedule) | No | AI API keys |
 | `flowpilot-learn` | Analyze usage data → agent memory | No | - |
 | `sitemap-xml` | Generate sitemap | No | - |
 | `stripe-webhook` | Handle Stripe webhooks | No | `STRIPE_WEBHOOK_SECRET` |
@@ -354,7 +354,7 @@ SELECT cron.schedule(
 ### FlowPilot Autonomous Loop
 
 ```sql
--- Heartbeat every 12 hours (00:00, 12:00 UTC)
+-- Heartbeat (default: twice daily — schedule managed via admin Autonomy Settings)
 SELECT cron.schedule(
   'flowpilot-heartbeat',
   '0 0,12 * * *',

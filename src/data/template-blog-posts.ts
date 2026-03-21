@@ -385,10 +385,10 @@ export const flowwinkBlogPosts: TemplateBlogPost[] = [
             'Qualifies leads the moment they arrive — day or night',
             'Sends campaigns triggered by real visitor behavior',
             'Books meetings and follows up automatically',
-            'Reflects on its own performance every 12 hours and improves'
+            'Reflects on its own performance on a regular schedule and improves'
           ),
           h2('The Autonomous Loop'),
-          p('FlowPilot operates in a continuous cycle: Heartbeat → Reflect → Plan → Execute → Log → Learn. Every 12 hours, it reviews what happened, what worked, what failed, and adjusts its approach. No human intervention required.'),
+          p('FlowPilot operates in a continuous cycle: Heartbeat → Reflect → Plan → Execute → Log → Learn. On a configurable schedule, it reviews what happened, what worked, what failed, and adjusts its approach. No human intervention required.'),
           h2('You Set Objectives. FlowPilot Executes.'),
           p('Instead of managing tasks, you set goals: "Publish 4 blog posts per month." "Qualify all inbound leads within 5 minutes." "Send a weekly newsletter." FlowPilot breaks these into actions and executes them autonomously.'),
           h2('Human-in-the-Loop, Not Human-in-the-Way'),
@@ -417,7 +417,7 @@ export const flowwinkBlogPosts: TemplateBlogPost[] = [
           h3('3. Objectives & Goals'),
           p('You define objectives like "Generate 10 qualified leads per week." FlowPilot tracks progress, adjusts strategies, and reports on results. Goals drive behavior, not manual task lists.'),
           h3('4. Autonomous Heartbeat'),
-          p('Every 12 hours, FlowPilot runs a reflection cycle. It reviews recent activity, evaluates performance against objectives, identifies opportunities, and plans its next actions. This happens without human input.'),
+          p('On a configurable schedule, FlowPilot runs a reflection cycle. It reviews recent activity, evaluates performance against objectives, identifies opportunities, and plans its next actions. This happens without human input.'),
           h3('5. Signal Automations'),
           p('When events occur — a form submission, a chat conversation, a new subscriber — FlowPilot reacts instantly. Signals trigger skills: qualify the lead, send a welcome email, enrich the company data.'),
           h3('6. Self-Evolution'),
@@ -463,7 +463,7 @@ export const flowwinkBlogPosts: TemplateBlogPost[] = [
   {
     title: 'The Autonomous Loop: How FlowPilot Reflects, Plans, and Self-Improves',
     slug: 'autonomous-loop-flowpilot-reflects-plans-improves',
-    excerpt: 'Every 12 hours, FlowPilot runs a heartbeat cycle — reflecting on performance, planning next actions, and evolving its own capabilities. Here is how it works.',
+    excerpt: 'On a configurable schedule, FlowPilot runs a heartbeat cycle — reflecting on performance, planning next actions, and evolving its own capabilities. Here is how it works.',
     featured_image: '/templates/blog/team-brainstorming.jpg',
     featured_image_alt: 'Continuous improvement cycle visualization',
     content: [
@@ -473,7 +473,7 @@ export const flowwinkBlogPosts: TemplateBlogPost[] = [
           p('Most AI tools are reactive — you prompt, they respond. FlowPilot is proactive. It operates in a continuous autonomous loop that drives self-improvement without human intervention.'),
           h2('The Six Phases'),
           h3('Phase 1: Heartbeat'),
-          p('Every 12 hours, FlowPilot\'s heartbeat triggers. It wakes up, gathers context, and begins its reflection cycle.'),
+          p('On schedule, FlowPilot\'s heartbeat triggers. It wakes up, gathers context, and begins its reflection cycle.'),
           h3('Phase 2: Reflect'),
           p('FlowPilot reviews everything that happened since the last heartbeat: content published, leads qualified, emails sent, conversations held, bookings made. It evaluates what worked and what did not.'),
           h3('Phase 3: Plan'),
