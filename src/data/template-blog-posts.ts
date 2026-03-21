@@ -463,7 +463,7 @@ export const flowwinkBlogPosts: TemplateBlogPost[] = [
   {
     title: 'The Autonomous Loop: How FlowPilot Reflects, Plans, and Self-Improves',
     slug: 'autonomous-loop-flowpilot-reflects-plans-improves',
-    excerpt: 'Every 12 hours, FlowPilot runs a heartbeat cycle — reflecting on performance, planning next actions, and evolving its own capabilities. Here is how it works.',
+    excerpt: 'On a configurable schedule, FlowPilot runs a heartbeat cycle — reflecting on performance, planning next actions, and evolving its own capabilities. Here is how it works.',
     featured_image: '/templates/blog/team-brainstorming.jpg',
     featured_image_alt: 'Continuous improvement cycle visualization',
     content: [
