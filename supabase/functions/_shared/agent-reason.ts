@@ -1647,7 +1647,7 @@ async function handleSkillCreate(supabase: any, args: any) {
 }
 
 async function handleSkillUpdate(supabase: any, args: { skill_name: string; updates: Record<string, any> }) {
-  const safeFields = ['description', 'handler', 'category', 'scope', 'requires_approval', 'enabled', 'tool_definition', 'instructions'];
+  const safeFields = ['description', 'handler', 'category', 'scope', 'trust_level', 'requires_approval', 'enabled', 'tool_definition', 'instructions'];
   const filtered: Record<string, any> = {};
   for (const [k, v] of Object.entries(args.updates)) {
     if (safeFields.includes(k)) filtered[k] = v;
