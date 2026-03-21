@@ -346,6 +346,27 @@ export type Database = {
           },
         ]
       }
+      agent_locks: {
+        Row: {
+          expires_at: string
+          lane: string
+          locked_at: string
+          locked_by: string
+        }
+        Insert: {
+          expires_at?: string
+          lane: string
+          locked_at?: string
+          locked_by: string
+        }
+        Update: {
+          expires_at?: string
+          lane?: string
+          locked_at?: string
+          locked_by?: string
+        }
+        Relationships: []
+      }
       agent_memory: {
         Row: {
           category: Database["public"]["Enums"]["agent_memory_category"]
@@ -3116,6 +3137,7 @@ export type Database = {
         Args: { p_anon_key: string; p_supabase_url: string }
         Returns: Json
       }
+      release_agent_lock: { Args: { p_lane: string }; Returns: undefined }
       schedule_cron_job: {
         Args: {
           p_body: string
@@ -3160,6 +3182,10 @@ export type Database = {
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      try_acquire_agent_lock: {
+        Args: { p_lane: string; p_locked_by?: string; p_ttl_seconds?: number }
+        Returns: boolean
+      }
       unschedule_cron_job: { Args: { p_jobname: string }; Returns: boolean }
     }
     Enums: {
