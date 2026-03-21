@@ -59,7 +59,7 @@ export function useUpsertSkill() {
       } else {
         const { error } = await supabase
           .from('agent_skills')
-          .insert(payload);
+          .insert({ ...payload, origin: 'user' });
         if (error) throw error;
       }
     },
