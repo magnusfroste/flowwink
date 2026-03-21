@@ -1676,6 +1676,7 @@ async function handleSkillPackInstall(supabase: any, args: { pack_name: string }
         enabled: skill.enabled ?? true,
         instructions: skill.instructions || null,
         tool_definition: skill.tool_definition || null,
+        origin: 'managed',
       });
       results.push({ skill: skill.name, action: insertErr ? 'failed' : 'created', error: insertErr?.message });
     }
