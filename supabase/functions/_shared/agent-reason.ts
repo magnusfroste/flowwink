@@ -705,6 +705,56 @@ export async function detectSiteMaturity(supabase: any): Promise<SiteMaturity> {
   };
 }
 
+// ─── Editable Heartbeat Protocol (OpenClaw Layer) ─────────────────────────────
+
+/**
+ * Load custom heartbeat protocol from agent_memory.
+ * Key: 'heartbeat_protocol' — if present, replaces the hardcoded HEARTBEAT_PROTOCOL.
+ * This allows admins to customize the agent's autonomous behavior via Skill Hub.
+ */
+export async function loadHeartbeatProtocol(supabase: any): Promise<string | null> {
+  const { data } = await supabase
+    .from('agent_memory')
+    .select('value')
+    .eq('key', 'heartbeat_protocol')
+    .maybeSingle();
+
+  if (!data?.value) return null;
+
+  // Value can be a string or { protocol: string }
+  const val = data.value;
+  if (typeof val === 'string') return val;
+  if (typeof val === 'object' && val.protocol) return val.protocol;
+  return null;
+}
+
+/**
+ * Save a custom heartbeat protocol to agent_memory.
+ */
+export async function saveHeartbeatProtocol(supabase: any, protocol: string): Promise<void> {
+  const { data: existing } = await supabase
+    .from('agent_memory').select('id').eq('key', 'heartbeat_protocol').maybeSingle();
+
+  const record = {
+    value: { protocol, updated_at: new Date().toISOString() },
+    category: 'context' as const,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (existing) {
+    await supabase.from('agent_memory').update(record).eq('id', existing.id);
+  } else {
+    await supabase.from('agent_memory').insert({ key: 'heartbeat_protocol', created_by: 'flowpilot', ...record });
+  }
+}
+
+/**
+ * Get the default (hardcoded) heartbeat protocol. Useful for reset.
+ */
+export function getDefaultHeartbeatProtocol(): string {
+  return HEARTBEAT_PROTOCOL;
+}
+
 // ─── Persistent Heartbeat State ───────────────────────────────────────────────
 
 export async function loadHeartbeatState(supabase: any): Promise<string> {
