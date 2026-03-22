@@ -1669,7 +1669,7 @@ Deno.serve(async (req) => {
         const { error: updateError } = await supabase
           .from('newsletter_subscribers')
           .update({ 
-            status: 'active', 
+            status: 'confirmed', 
             name: name || null,
             preferences: preferences || null,
             unsubscribed_at: null,
