@@ -2197,9 +2197,12 @@ Deno.serve(async (req) => {
       supabase.from('agent_activity').select('id').limit(0),
       supabase.from('agent_objectives').select('id').limit(0),
       supabase.from('agent_automations').select('id').limit(0),
+      supabase.from('agent_locks').select('lane').limit(0),
+      supabase.from('agent_workflows').select('id').limit(0),
+      supabase.from('agent_skill_packs').select('id').limit(0),
     ]);
 
-    const missingTables = ['agent_skills', 'agent_memory', 'agent_activity', 'agent_objectives', 'agent_automations']
+    const missingTables = ['agent_skills', 'agent_memory', 'agent_activity', 'agent_objectives', 'agent_automations', 'agent_locks', 'agent_workflows', 'agent_skill_packs']
       .filter((_, i) => tableChecks[i].error);
 
     if (missingTables.length > 0) {
