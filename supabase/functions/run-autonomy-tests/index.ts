@@ -922,7 +922,7 @@ serve(async (req) => {
   try {
     let body: any = {};
     try { body = await req.json(); } catch { /* empty body OK */ }
-    const layerFilter: number[] = body.layers || [1, 2, 3];
+    const layerFilter: number[] = body.layers || [1, 2, 3, 4, 5, 6];
 
     const allResults: TestResult[] = [];
 
