@@ -118,6 +118,61 @@ serve(async (req) => {
       );
     }
 
+    // 0. INTEGRITY GATE — quick pre-flight validation before reasoning
+    let integrityContext = '';
+    try {
+      const { data: enabledSkills } = await supabase
+        .from('agent_skills')
+        .select('name, instructions, tool_definition, description')
+        .eq('enabled', true);
+
+      const skills = enabledSkills || [];
+      const integrityIssues: string[] = [];
+
+      const noInstr = skills.filter((s: any) => !s.instructions || s.instructions.trim() === '');
+      if (noInstr.length > 0) integrityIssues.push(`${noInstr.length} skills missing instructions`);
+
+      const badTd = skills.filter((s: any) => {
+        const td = typeof s.tool_definition === 'string' ? JSON.parse(s.tool_definition) : s.tool_definition;
+        return !td?.function?.name;
+      });
+      if (badTd.length > 0) integrityIssues.push(`${badTd.length} skills with invalid tool definitions`);
+
+      const { data: memKeys } = await supabase
+        .from('agent_memory')
+        .select('key')
+        .in('key', ['soul', 'identity', 'agents']);
+      const missing = ['soul', 'identity', 'agents'].filter(k => !(memKeys || []).some((m: any) => m.key === k));
+      if (missing.length > 0) integrityIssues.push(`Missing memory keys: ${missing.join(', ')}`);
+
+      const { data: autos } = await supabase
+        .from('agent_automations')
+        .select('name, skill_name')
+        .eq('enabled', true);
+      const skillNames = new Set(skills.map((s: any) => s.name));
+      const broken = (autos || []).filter((a: any) => a.skill_name && !skillNames.has(a.skill_name));
+      if (broken.length > 0) integrityIssues.push(`${broken.length} automations reference missing skills`);
+
+      if (integrityIssues.length > 0) {
+        integrityContext = `\n\n⚠️ SYSTEM INTEGRITY ISSUES DETECTED:\n${integrityIssues.map(i => `- ${i}`).join('\n')}\nConsider creating an objective to fix these if none exists.`;
+
+        // Log integrity issues as activity
+        await supabase.from('agent_activity').insert({
+          agent: 'flowpilot',
+          skill_name: 'system_integrity_check',
+          input: { source: 'heartbeat_gate' },
+          output: { issues: integrityIssues, issue_count: integrityIssues.length },
+          status: integrityIssues.length > 2 ? 'failed' : 'success',
+        });
+
+        console.log(`[heartbeat] Integrity gate: ${integrityIssues.length} issues found`);
+      } else {
+        console.log('[heartbeat] Integrity gate: all checks passed ✓');
+      }
+    } catch (intErr) {
+      console.warn('[heartbeat] Integrity gate failed (non-fatal):', intErr);
+    }
+
     // 1. Gather context + run self-healing in parallel
     const [{ soul, identity, agents }, memoryCtx, objectiveCtx, activityCtx, statsCtx, automationCtx, healingReport, cmsSchemaCtx, heartbeatStateCtx, siteMaturity, crossModuleCtx, customProtocol] = await Promise.all([
       loadWorkspaceFiles(supabase),
@@ -155,7 +210,7 @@ serve(async (req) => {
       memoryContext: memoryCtx,
       objectiveContext: objectiveCtx,
       activityContext: activityCtx,
-      statsContext: statsCtx + (crossModuleCtx || ''),
+      statsContext: statsCtx + (crossModuleCtx || '') + integrityContext,
       automationContext: automationCtx,
       healingReport: healingReport,
       cmsSchemaContext: cmsSchemaCtx,
