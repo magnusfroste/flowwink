@@ -539,11 +539,12 @@ serve(async (req) => {
     // Resolve provider
     const provider = resolveProvider(settings, integrations);
 
-    // Load context in parallel: workspace files (soul/identity) + knowledge base + skills
+    // Load context in parallel: workspace files, knowledge base, skills, visitor history
     const shouldLoadKB = settings?.includeContentAsContext || settings?.includeKbArticles;
     const shouldLoadSkills = settings?.toolCallingEnabled && provider.supportsToolCalling;
+    const visitorIdentifier = customerEmail || sessionId;
 
-    const [{ soul, identity, agents }, knowledgeBase, skillTools] = await Promise.all([
+    const [{ soul, identity, agents }, knowledgeBase, skillTools, visitorContext] = await Promise.all([
       loadWorkspaceFiles(supabase),
       shouldLoadKB
         ? buildKnowledgeBase(
@@ -554,6 +555,7 @@ serve(async (req) => {
           )
         : Promise.resolve(''),
       shouldLoadSkills ? loadSkillTools(supabase, 'external') : Promise.resolve([]),
+      visitorIdentifier ? loadVisitorContext(supabase, visitorIdentifier, conversationId) : Promise.resolve(''),
     ]);
 
     // Build system prompt with knowledge base context
