@@ -141,6 +141,8 @@ Deno.serve(async (req) => {
           ? `All ${enabledSkills.length} enabled skills have instructions`
           : `${noInstructions.length} skills missing instructions (agent can't use them effectively)`,
       details: noInstructions.map((s: any) => s.name),
+      fixable: noInstructions.length > 0,
+      fixAction: "fix-disable-broken-skills",
     });
 
     // 1b. Skills without description
