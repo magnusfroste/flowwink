@@ -32,7 +32,7 @@ const corsHeaders = {
 
 interface TestResult {
   name: string;
-  layer: 1 | 2 | 3;
+  layer: 1 | 2 | 3 | 4 | 5;
   status: 'pass' | 'fail' | 'skip';
   duration_ms: number;
   error?: string;
