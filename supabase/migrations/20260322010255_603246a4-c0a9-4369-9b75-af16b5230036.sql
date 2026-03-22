@@ -1,0 +1,1 @@
+ALTER TABLE public.agent_memory ADD CONSTRAINT agent_memory_key_unique UNIQUE (key);
