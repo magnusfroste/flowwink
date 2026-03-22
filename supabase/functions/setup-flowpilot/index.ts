@@ -2119,10 +2119,29 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 3. Seed skills (batch: one read, one bulk insert)
+    // 3. Seed skills (with pre-seed validation + batch insert)
     let skillsSeeded = 0;
+    const seedWarnings: string[] = [];
     if (seed_skills) {
       console.log('[setup-flowpilot] Seeding default skills...');
+
+      // Pre-seed validation: warn about incomplete skills in DEFAULT_SKILLS
+      for (const s of DEFAULT_SKILLS) {
+        if (!s.instructions || s.instructions.trim() === '') {
+          seedWarnings.push(`Skill "${s.name}" has no instructions — agent won't know when/how to use it`);
+        }
+        const td = s.tool_definition as any;
+        if (!td?.function?.name || !td?.function?.parameters) {
+          seedWarnings.push(`Skill "${s.name}" has invalid tool_definition`);
+        }
+        if (!s.description || s.description.trim() === '') {
+          seedWarnings.push(`Skill "${s.name}" has no description`);
+        }
+      }
+      if (seedWarnings.length > 0) {
+        console.warn(`[setup-flowpilot] Pre-seed validation: ${seedWarnings.length} warnings`);
+        seedWarnings.forEach(w => console.warn(`  ⚠️ ${w}`));
+      }
       
       // Fetch all existing skill names in a single query
       const { data: existingSkillRows } = await supabase
