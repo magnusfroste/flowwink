@@ -27,6 +27,95 @@ Deno.serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const sb = createClient(supabaseUrl, serviceKey);
 
+    // ═══════════════════════════════════════════
+    // HANDLE FIX ACTIONS (POST with action)
+    // ═══════════════════════════════════════════
+    if (req.method === "POST") {
+      const body = await req.json();
+      const { action, targets } = body;
+      const fixResults: { action: string; success: boolean; message: string }[] = [];
+
+      if (action === "fix-missing-memory-keys") {
+        const defaults: Record<string, any> = {
+          soul: { persona: "Helpful AI consultant", tone: "professional", values: ["helpfulness", "accuracy", "empathy"] },
+          identity: { name: "FlowPilot", role: "AI Consultant", version: "1.0" },
+          agents: { operatives: ["flowpilot"], coordination: "sequential", version: "1.0" },
+        };
+        for (const key of (targets || Object.keys(defaults))) {
+          if (!defaults[key]) continue;
+          const { error } = await sb.from("agent_memory").upsert(
+            { key, value: defaults[key], category: "core", created_by: "system" },
+            { onConflict: "key" }
+          );
+          fixResults.push({
+            action: `Insert memory key "${key}"`,
+            success: !error,
+            message: error ? error.message : `Key "${key}" created with defaults`,
+          });
+        }
+      }
+
+      if (action === "fix-broken-automations") {
+        // Disable automations referencing non-existent skills
+        const { data: skills } = await sb.from("agent_skills").select("name").eq("enabled", true);
+        const skillNames = new Set((skills || []).map((s: any) => s.name));
+        const { data: autos } = await sb.from("agent_automations").select("id, name, skill_name").eq("enabled", true);
+        for (const a of (autos || [])) {
+          if (a.skill_name && !skillNames.has(a.skill_name)) {
+            const { error } = await sb.from("agent_automations").update({ enabled: false }).eq("id", a.id);
+            fixResults.push({
+              action: `Disable automation "${a.name}"`,
+              success: !error,
+              message: error ? error.message : `Disabled (skill "${a.skill_name}" not found)`,
+            });
+          }
+        }
+      }
+
+      if (action === "fix-disable-broken-skills") {
+        // Disable skills without instructions
+        const { data: skills } = await sb
+          .from("agent_skills")
+          .select("id, name, instructions")
+          .eq("enabled", true);
+        for (const s of (skills || [])) {
+          if (!s.instructions || s.instructions.trim() === "") {
+            const { error } = await sb.from("agent_skills").update({ enabled: false }).eq("id", s.id);
+            fixResults.push({
+              action: `Disable skill "${s.name}"`,
+              success: !error,
+              message: error ? error.message : "Disabled (missing instructions)",
+            });
+          }
+        }
+      }
+
+      if (action === "fix-zombie-locks") {
+        const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+        const { data: zombies } = await sb
+          .from("agent_objectives")
+          .select("id, goal")
+          .not("locked_at", "is", null)
+          .lt("locked_at", oneHourAgo);
+        for (const o of (zombies || [])) {
+          const { error } = await sb
+            .from("agent_objectives")
+            .update({ locked_at: null, locked_by: null })
+            .eq("id", o.id);
+          fixResults.push({
+            action: `Unlock objective "${o.goal.substring(0, 40)}"`,
+            success: !error,
+            message: error ? error.message : "Lock released",
+          });
+        }
+      }
+
+      return new Response(
+        JSON.stringify({ fixes: fixResults, fixedCount: fixResults.filter(f => f.success).length }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const results: CheckResult[] = [];
 
     // ═══════════════════════════════════════════
