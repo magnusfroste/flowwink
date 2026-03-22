@@ -15,6 +15,7 @@ All autonomy tests run **server-side** via the `run-autonomy-tests` edge functio
 | **L3 — Scenario** | Database state, persistence, atomicity | Edge function → database | `SUPABASE_SERVICE_ROLE_KEY` |
 | **L4 — Autonomy Health** | Live system: skills, soul, objectives seeded | Edge function → database | `SUPABASE_SERVICE_ROLE_KEY` |
 | **L5 — Wiring** | End-to-end data flow: soul→prompt, memory→context, skill→tools, lock→skip | Edge function → all components | `SUPABASE_SERVICE_ROLE_KEY` |
+| **L6 — Behavior** | OMATS Stage 3: personality consistency, idle discipline, task completion, grounding | Edge function → AI provider | AI API key + `SUPABASE_SERVICE_ROLE_KEY` |
 
 ---
 
