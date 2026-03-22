@@ -2273,6 +2273,100 @@ Deno.serve(async (req) => {
     }
 
     console.log(`[setup-flowpilot] Seeded ${automationsSeeded} automations, ${workflowsSeeded} workflows`);
+
+    // ═══════════════════════════════════════════
+    // 9. POST-BOOTSTRAP INTEGRITY GATE
+    // Validates the system after seeding and auto-creates
+    // an objective if integrity score is below threshold.
+    // ═══════════════════════════════════════════
+    let integrityResult: any = null;
+    try {
+      console.log('[setup-flowpilot] Running post-bootstrap integrity check...');
+
+      // --- Inline integrity checks (subset of system-integrity-check) ---
+      const { data: allSkills } = await supabase
+        .from('agent_skills')
+        .select('name, enabled, instructions, tool_definition, handler, description')
+        .eq('enabled', true);
+
+      const enabledSkills = allSkills || [];
+      let issues: string[] = [];
+
+      // Check: skills without instructions
+      const noInstr = enabledSkills.filter((s: any) => !s.instructions || s.instructions.trim() === '');
+      if (noInstr.length > 0) {
+        issues.push(`${noInstr.length} skills missing instructions: ${noInstr.slice(0, 5).map((s: any) => s.name).join(', ')}${noInstr.length > 5 ? '...' : ''}`);
+      }
+
+      // Check: skills without description
+      const noDesc = enabledSkills.filter((s: any) => !s.description || s.description.trim() === '');
+      if (noDesc.length > 0) {
+        issues.push(`${noDesc.length} skills missing descriptions`);
+      }
+
+      // Check: invalid tool definitions
+      const badTd = enabledSkills.filter((s: any) => {
+        if (!s.tool_definition) return true;
+        const td = typeof s.tool_definition === 'string' ? JSON.parse(s.tool_definition) : s.tool_definition;
+        return !td?.function?.name || !td?.function?.parameters;
+      });
+      if (badTd.length > 0) {
+        issues.push(`${badTd.length} skills with invalid tool definitions: ${badTd.map((s: any) => s.name).join(', ')}`);
+      }
+
+      // Check: critical memory keys
+      const { data: memKeys } = await supabase
+        .from('agent_memory')
+        .select('key')
+        .in('key', ['soul', 'identity', 'agents']);
+      const foundKeys = new Set((memKeys || []).map((m: any) => m.key));
+      const missingKeys = ['soul', 'identity', 'agents'].filter(k => !foundKeys.has(k));
+      if (missingKeys.length > 0) {
+        issues.push(`Missing critical memory keys: ${missingKeys.join(', ')}`);
+      }
+
+      // Check: automations referencing missing skills
+      const { data: autos } = await supabase
+        .from('agent_automations')
+        .select('name, skill_name')
+        .eq('enabled', true);
+      const skillNames = new Set(enabledSkills.map((s: any) => s.name));
+      const brokenAutos = (autos || []).filter((a: any) => a.skill_name && !skillNames.has(a.skill_name));
+      if (brokenAutos.length > 0) {
+        issues.push(`${brokenAutos.length} automations reference missing skills: ${brokenAutos.map((a: any) => `${a.name}→${a.skill_name}`).join(', ')}`);
+      }
+
+      const totalChecks = 5;
+      const passedChecks = totalChecks - [noInstr, noDesc, badTd, missingKeys, brokenAutos].filter(arr => arr.length > 0).length;
+      const score = Math.round((passedChecks / totalChecks) * 100);
+
+      integrityResult = { score, issues, totalChecks, passedChecks };
+      console.log(`[setup-flowpilot] Integrity score: ${score}% (${passedChecks}/${totalChecks} checks passed)`);
+
+      // Auto-create objective if score is below 80%
+      if (score < 80 && issues.length > 0) {
+        const goalText = `Fix system integrity issues (score: ${score}%). Problems: ${issues.join('; ')}`;
+        const { data: existingObj } = await supabase
+          .from('agent_objectives')
+          .select('id')
+          .ilike('goal', '%system integrity%')
+          .in('status', ['active', 'in_progress'])
+          .maybeSingle();
+
+        if (!existingObj) {
+          await supabase.from('agent_objectives').insert({
+            goal: goalText,
+            status: 'active',
+            constraints: { auto_created: true, source: 'integrity_gate' },
+            success_criteria: { integrity_score_above: 90 },
+          });
+          console.log('[setup-flowpilot] Auto-created integrity fix objective');
+        }
+      }
+    } catch (intErr) {
+      console.warn('[setup-flowpilot] Integrity check failed (non-fatal):', intErr);
+    }
+
     console.log('[setup-flowpilot] Bootstrap complete!');
 
     return new Response(
@@ -2286,6 +2380,7 @@ Deno.serve(async (req) => {
           cron_registered: cronRegistered,
           total_default_skills: DEFAULT_SKILLS.length,
           template_configured: !!template_flowpilot,
+          integrity: integrityResult,
         },
         next_steps: [
           'Configure AI provider in Site Settings → System AI',
