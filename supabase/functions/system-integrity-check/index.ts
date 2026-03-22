@@ -13,6 +13,8 @@ interface CheckResult {
   status: "pass" | "warn" | "fail";
   message: string;
   details?: string[];
+  fixable?: boolean;
+  fixAction?: string;
 }
 
 Deno.serve(async (req) => {
