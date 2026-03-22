@@ -114,7 +114,7 @@ export function useApproveActivity() {
     mutationFn: async ({ id, approved }: { id: string; approved: boolean }) => {
       const { error } = await supabase
         .from('agent_activity')
-        .update({ status: approved ? 'approved' : 'rejected' } as any)
+        .update({ status: approved ? 'success' : 'failed' } as any)
         .eq('id', id);
       if (error) throw error;
     },
