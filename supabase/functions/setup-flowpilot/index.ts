@@ -11,7 +11,7 @@ const corsHeaders = {
 
 const AGENTIC_SCHEMA = `
 -- ═══════════════════════════════════════════════════════════════════════════════
--- FLOWPILOT AGENTIC LAYER — Self-hosted bootstrap
+-- FLOWPILOT AGENTIC LAYER — Self-hosted bootstrap (v2 — complete)
 -- ═══════════════════════════════════════════════════════════════════════════════
 
 -- Enums
@@ -22,6 +22,9 @@ DO $$ BEGIN CREATE TYPE public.agent_memory_category AS ENUM ('preference', 'con
 DO $$ BEGIN CREATE TYPE public.agent_objective_status AS ENUM ('active', 'completed', 'paused', 'failed'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE TYPE public.agent_activity_status AS ENUM ('success', 'failed', 'pending_approval'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE TYPE public.automation_trigger_type AS ENUM ('cron', 'event', 'signal'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN CREATE TYPE public.skill_origin AS ENUM ('bundled', 'managed', 'agent', 'user'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN CREATE TYPE public.skill_trust_level AS ENUM ('auto', 'notify', 'approve'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN CREATE TYPE public.activity_outcome_status AS ENUM ('success', 'partial', 'neutral', 'negative', 'too_early'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 -- Agent Skills
 CREATE TABLE IF NOT EXISTS public.agent_skills (
@@ -35,6 +38,9 @@ CREATE TABLE IF NOT EXISTS public.agent_skills (
   tool_definition JSONB NOT NULL DEFAULT '{}'::jsonb,
   requires_approval BOOLEAN NOT NULL DEFAULT false,
   enabled BOOLEAN NOT NULL DEFAULT true,
+  trust_level skill_trust_level NOT NULL DEFAULT 'auto',
+  origin skill_origin NOT NULL DEFAULT 'bundled',
+  requires JSONB,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -46,6 +52,7 @@ CREATE TABLE IF NOT EXISTS public.agent_memory (
   value JSONB NOT NULL DEFAULT '{}'::jsonb,
   category agent_memory_category NOT NULL DEFAULT 'context',
   created_by agent_type NOT NULL DEFAULT 'flowpilot',
+  embedding vector(768),
   expires_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -63,6 +70,10 @@ CREATE TABLE IF NOT EXISTS public.agent_activity (
   error_message TEXT,
   conversation_id UUID,
   duration_ms INTEGER,
+  token_usage JSONB,
+  outcome_status activity_outcome_status,
+  outcome_data JSONB,
+  outcome_evaluated_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -76,6 +87,8 @@ CREATE TABLE IF NOT EXISTS public.agent_objectives (
   progress JSONB NOT NULL DEFAULT '{}'::jsonb,
   created_by UUID,
   completed_at TIMESTAMPTZ,
+  locked_at TIMESTAMPTZ,
+  locked_by TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -108,6 +121,42 @@ CREATE TABLE IF NOT EXISTS public.agent_automations (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Agent Locks (concurrency guard)
+CREATE TABLE IF NOT EXISTS public.agent_locks (
+  lane TEXT PRIMARY KEY,
+  locked_by TEXT NOT NULL,
+  locked_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  expires_at TIMESTAMPTZ NOT NULL DEFAULT now() + interval '5 minutes'
+);
+
+-- Agent Workflows (multi-step chains)
+CREATE TABLE IF NOT EXISTS public.agent_workflows (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  description TEXT,
+  steps JSONB NOT NULL DEFAULT '[]'::jsonb,
+  trigger_type TEXT NOT NULL DEFAULT 'manual',
+  trigger_config JSONB,
+  enabled BOOLEAN NOT NULL DEFAULT true,
+  run_count INTEGER NOT NULL DEFAULT 0,
+  last_run_at TIMESTAMPTZ,
+  last_error TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Agent Skill Packs (bundled capabilities)
+CREATE TABLE IF NOT EXISTS public.agent_skill_packs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  description TEXT,
+  version TEXT NOT NULL DEFAULT '1.0.0',
+  skills JSONB NOT NULL DEFAULT '[]'::jsonb,
+  installed BOOLEAN NOT NULL DEFAULT false,
+  installed_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- RLS
 -- ═══════════════════════════════════════════════════════════════════════════════
@@ -118,6 +167,9 @@ ALTER TABLE public.agent_activity ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.agent_objectives ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.agent_objective_activities ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.agent_automations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.agent_locks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.agent_workflows ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.agent_skill_packs ENABLE ROW LEVEL SECURITY;
 
 -- agent_skills
 DROP POLICY IF EXISTS "Admins can manage skills" ON public.agent_skills;
@@ -168,6 +220,56 @@ DROP POLICY IF EXISTS "Authenticated can view automations" ON public.agent_autom
 CREATE POLICY "Authenticated can view automations" ON public.agent_automations FOR SELECT TO authenticated USING (true);
 DROP POLICY IF EXISTS "System can update automations" ON public.agent_automations;
 CREATE POLICY "System can update automations" ON public.agent_automations FOR UPDATE USING (true);
+
+-- agent_locks
+DROP POLICY IF EXISTS "System can manage locks" ON public.agent_locks;
+CREATE POLICY "System can manage locks" ON public.agent_locks FOR ALL USING (true);
+
+-- agent_workflows
+DROP POLICY IF EXISTS "Admins can manage workflows" ON public.agent_workflows;
+CREATE POLICY "Admins can manage workflows" ON public.agent_workflows FOR ALL TO authenticated USING (has_role(auth.uid(), 'admin'::app_role));
+DROP POLICY IF EXISTS "System can manage workflows" ON public.agent_workflows;
+CREATE POLICY "System can manage workflows" ON public.agent_workflows FOR ALL USING (true);
+
+-- agent_skill_packs
+DROP POLICY IF EXISTS "Admins can manage skill packs" ON public.agent_skill_packs;
+CREATE POLICY "Admins can manage skill packs" ON public.agent_skill_packs FOR ALL TO authenticated USING (has_role(auth.uid(), 'admin'::app_role));
+DROP POLICY IF EXISTS "System can manage skill packs" ON public.agent_skill_packs;
+CREATE POLICY "System can manage skill packs" ON public.agent_skill_packs FOR ALL USING (true);
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- Database Functions (required for agent operation)
+-- ═══════════════════════════════════════════════════════════════════════════════
+
+-- Atomic objective checkout (prevents race conditions)
+CREATE OR REPLACE FUNCTION public.checkout_objective(p_objective_id uuid, p_locked_by text DEFAULT 'heartbeat')
+RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE rows_affected integer;
+BEGIN
+  UPDATE agent_objectives SET locked_by = p_locked_by, locked_at = now()
+  WHERE id = p_objective_id AND (locked_by IS NULL OR locked_at < now() - interval '30 minutes');
+  GET DIAGNOSTICS rows_affected = ROW_COUNT;
+  RETURN rows_affected > 0;
+END; $$;
+
+-- Concurrency lock (prevents parallel heartbeat runs)
+CREATE OR REPLACE FUNCTION public.try_acquire_agent_lock(p_lane text, p_locked_by text DEFAULT 'agent', p_ttl_seconds integer DEFAULT 300)
+RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE rows_affected integer;
+BEGIN
+  DELETE FROM agent_locks WHERE expires_at < now();
+  INSERT INTO agent_locks (lane, locked_by, locked_at, expires_at)
+  VALUES (p_lane, p_locked_by, now(), now() + (p_ttl_seconds || ' seconds')::interval)
+  ON CONFLICT (lane) DO UPDATE SET locked_by = p_locked_by, locked_at = now(),
+    expires_at = now() + (p_ttl_seconds || ' seconds')::interval
+  WHERE agent_locks.expires_at < now();
+  GET DIAGNOSTICS rows_affected = ROW_COUNT;
+  RETURN rows_affected > 0;
+END; $$;
+
+CREATE OR REPLACE FUNCTION public.release_agent_lock(p_lane text)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN DELETE FROM agent_locks WHERE lane = p_lane; END; $$;
 `;
 
 // =============================================================================

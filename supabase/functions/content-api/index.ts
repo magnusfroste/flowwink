@@ -1696,7 +1696,7 @@ Deno.serve(async (req) => {
           name: name || null,
           preferences: preferences || null,
           metadata: metadata || null,
-          status: 'active',
+          status: 'confirmed',
         })
         .select()
         .single();
