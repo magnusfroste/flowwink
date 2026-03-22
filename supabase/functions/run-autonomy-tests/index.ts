@@ -38,10 +38,6 @@ interface TestResult {
   duration_ms: number;
   error?: string;
 }
-  status: 'pass' | 'fail' | 'skip';
-  duration_ms: number;
-  error?: string;
-}
 
 function assertEqual(actual: any, expected: any, msg?: string) {
   const a = JSON.stringify(actual);
