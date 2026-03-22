@@ -1655,7 +1655,7 @@ Deno.serve(async (req) => {
         .maybeSingle();
 
       if (existing) {
-        if (existing.status === 'active') {
+        if (existing.status === 'confirmed') {
           return new Response(JSON.stringify({
             success: true,
             message: 'Already subscribed',
