@@ -13,6 +13,8 @@ All autonomy tests run **server-side** via the `run-autonomy-tests` edge functio
 | **L1 — Unit** | Pure functions from `agent-reason.ts` | Edge function (in-memory) | None |
 | **L2 — Integration** | Edge function HTTP endpoints | Edge function → edge functions | `SUPABASE_SERVICE_ROLE_KEY` |
 | **L3 — Scenario** | Database state, persistence, atomicity | Edge function → database | `SUPABASE_SERVICE_ROLE_KEY` |
+| **L4 — Autonomy Health** | Live system: skills, soul, objectives seeded | Edge function → database | `SUPABASE_SERVICE_ROLE_KEY` |
+| **L5 — Wiring** | End-to-end data flow: soul→prompt, memory→context, skill→tools, lock→skip | Edge function → all components | `SUPABASE_SERVICE_ROLE_KEY` |
 
 ---
 
