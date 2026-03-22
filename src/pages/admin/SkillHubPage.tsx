@@ -199,7 +199,8 @@ export default function SkillHubPage() {
         </TabsContent>
 
         {/* Health Tab */}
-        <TabsContent value="health">
+        <TabsContent value="health" className="space-y-6">
+          <SystemIntegrityPanel />
           <AutomationHealthPanel />
         </TabsContent>
 
