@@ -213,7 +213,7 @@ export default function AutonomyTestSuitePage() {
             <CardContent>
               <ScrollArea className="h-[400px]">
                 <div className="space-y-1">
-                  {[1, 2, 3, 4, 5].map((layer) => {
+                  {[1, 2, 3, 4, 5, 6].map((layer) => {
                     const layerResults = lastRun.results.filter(r => r.layer === layer);
                     if (layerResults.length === 0) return null;
                     return (
