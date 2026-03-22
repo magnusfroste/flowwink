@@ -122,6 +122,22 @@ const CHAT_TOOLS: Record<string, any> = {
       },
     },
   },
+  save_visitor_profile: {
+    type: "function",
+    function: {
+      name: "save_visitor_profile",
+      description: "Save visitor preferences, interests, or other context to remember them in future conversations. Call when you learn something useful about the visitor.",
+      parameters: {
+        type: "object",
+        properties: {
+          name: { type: "string", description: "Visitor's name if provided" },
+          preferences: { type: "string", description: "Preferences learned during conversation" },
+          interests: { type: "string", description: "Topics or products the visitor is interested in" },
+          notes: { type: "string", description: "Any other useful context to remember" },
+        },
+      },
+    },
+  },
 };
 
 // ─── Content extraction helpers ───────────────────────────────────────────────
