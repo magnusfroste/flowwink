@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { RefreshCw, CheckCircle, AlertTriangle, XCircle, ShieldCheck } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { RefreshCw, CheckCircle, AlertTriangle, XCircle, ShieldCheck, Wrench } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface CheckResult {
   id: string;
@@ -17,6 +18,8 @@ interface CheckResult {
   status: 'pass' | 'warn' | 'fail';
   message: string;
   details?: string[];
+  fixable?: boolean;
+  fixAction?: string;
 }
 
 interface IntegrityResponse {
@@ -29,6 +32,13 @@ const STATUS_CONFIG = {
   pass: { icon: CheckCircle, color: 'text-emerald-500', bg: 'bg-emerald-500/10', label: 'Pass' },
   warn: { icon: AlertTriangle, color: 'text-amber-500', bg: 'bg-amber-500/10', label: 'Warning' },
   fail: { icon: XCircle, color: 'text-destructive', bg: 'bg-destructive/10', label: 'Fail' },
+};
+
+const FIX_LABELS: Record<string, { label: string; description: string }> = {
+  'fix-missing-memory-keys': { label: 'Create defaults', description: 'Insert default soul, identity, and agents memory keys' },
+  'fix-broken-automations': { label: 'Disable broken', description: 'Disable automations that reference non-existent skills' },
+  'fix-disable-broken-skills': { label: 'Disable incomplete', description: 'Disable skills that have no instructions' },
+  'fix-zombie-locks': { label: 'Release locks', description: 'Release objective locks older than 1 hour' },
 };
 
 function ScoreRing({ score }: { score: number }) {
@@ -54,10 +64,11 @@ function ScoreRing({ score }: { score: number }) {
   );
 }
 
-function CheckRow({ check }: { check: CheckResult }) {
+function CheckRow({ check, onFix, isFixing }: { check: CheckResult; onFix: (action: string) => void; isFixing: boolean }) {
   const cfg = STATUS_CONFIG[check.status];
   const Icon = cfg.icon;
   const hasDetails = check.details && check.details.length > 0;
+  const fixInfo = check.fixAction ? FIX_LABELS[check.fixAction] : null;
 
   const content = (
     <div className={cn(
@@ -74,6 +85,22 @@ function CheckRow({ check }: { check: CheckResult }) {
         </div>
         <p className="text-xs text-muted-foreground mt-0.5">{check.message}</p>
       </div>
+      {check.fixable && check.fixAction && check.status !== 'pass' && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5 shrink-0 text-xs h-7"
+          disabled={isFixing}
+          onClick={(e) => {
+            e.stopPropagation();
+            onFix(check.fixAction!);
+          }}
+          title={fixInfo?.description}
+        >
+          <Wrench className={cn('h-3 w-3', isFixing && 'animate-spin')} />
+          {fixInfo?.label || 'Fix'}
+        </Button>
+      )}
     </div>
   );
 
@@ -98,6 +125,7 @@ function CheckRow({ check }: { check: CheckResult }) {
 
 export function SystemIntegrityPanel() {
   const [runKey, setRunKey] = useState(0);
+  const queryClient = useQueryClient();
 
   const { data, isLoading, isFetching } = useQuery<IntegrityResponse>({
     queryKey: ['system-integrity', runKey],
@@ -107,6 +135,28 @@ export function SystemIntegrityPanel() {
       return data;
     },
     staleTime: 5 * 60 * 1000,
+  });
+
+  const fixMutation = useMutation({
+    mutationFn: async (action: string) => {
+      const { data, error } = await supabase.functions.invoke('system-integrity-check', {
+        method: 'POST',
+        body: { action },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (result, action) => {
+      const fixInfo = FIX_LABELS[action];
+      toast.success(`Fixed: ${fixInfo?.label || action}`, {
+        description: `${result.fixedCount} item(s) remediated`,
+      });
+      // Re-scan after fix
+      setRunKey(k => k + 1);
+    },
+    onError: (err: any) => {
+      toast.error('Fix failed', { description: err.message });
+    },
   });
 
   if (isLoading) {
@@ -131,13 +181,14 @@ export function SystemIntegrityPanel() {
     return acc;
   }, {});
 
-  // Sort: fails first, then warns, then passes
   const sortedCategories = Object.entries(grouped).sort(([, a], [, b]) => {
     const score = (checks: CheckResult[]) =>
       checks.filter(c => c.status === 'fail').length * 100 +
       checks.filter(c => c.status === 'warn').length * 10;
     return score(b) - score(a);
   });
+
+  const fixableCount = results.filter(r => r.fixable && r.status !== 'pass').length;
 
   return (
     <Card>
@@ -167,7 +218,7 @@ export function SystemIntegrityPanel() {
         </div>
 
         {/* Summary badges */}
-        <div className="flex gap-2 mt-3">
+        <div className="flex items-center gap-2 mt-3 flex-wrap">
           <Badge variant="outline" className="gap-1 bg-emerald-500/10 text-emerald-600 border-emerald-200">
             <CheckCircle className="h-3 w-3" /> {summary.pass} pass
           </Badge>
@@ -181,6 +232,11 @@ export function SystemIntegrityPanel() {
               <XCircle className="h-3 w-3" /> {summary.fail} failures
             </Badge>
           )}
+          {fixableCount > 0 && (
+            <Badge variant="outline" className="gap-1 bg-primary/10 text-primary border-primary/20 ml-auto">
+              <Wrench className="h-3 w-3" /> {fixableCount} auto-fixable
+            </Badge>
+          )}
         </div>
       </CardHeader>
 
@@ -191,7 +247,14 @@ export function SystemIntegrityPanel() {
               {category}
             </h3>
             <div className="space-y-1">
-              {checks.map(check => <CheckRow key={check.id} check={check} />)}
+              {checks.map(check => (
+                <CheckRow
+                  key={check.id}
+                  check={check}
+                  onFix={(action) => fixMutation.mutate(action)}
+                  isFixing={fixMutation.isPending}
+                />
+              ))}
             </div>
             <Separator className="mt-3" />
           </div>
