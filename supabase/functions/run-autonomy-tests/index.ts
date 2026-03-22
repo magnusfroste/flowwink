@@ -13,6 +13,13 @@ import {
   loadHeartbeatState,
   saveHeartbeatState,
   loadMemories,
+  loadObjectives,
+  loadWorkspaceFiles,
+  loadSkillTools,
+  getBuiltInTools,
+  tryAcquireLock,
+  releaseLock,
+  loadHeartbeatProtocol,
 } from "../_shared/agent-reason.ts";
 import type { PromptCompilerInput, TokenUsage, HeartbeatState } from "../_shared/agent-reason.ts";
 
@@ -25,7 +32,7 @@ const corsHeaders = {
 
 interface TestResult {
   name: string;
-  layer: 1 | 2 | 3;
+  layer: 1 | 2 | 3 | 4 | 5;
   status: 'pass' | 'fail' | 'skip';
   duration_ms: number;
   error?: string;
@@ -45,7 +52,7 @@ function assertContains(str: string, substr: string, msg?: string) {
   if (!str.includes(substr)) throw new Error(msg || `"${str.slice(0, 100)}..." does not contain "${substr}"`);
 }
 
-async function runTest(name: string, layer: 1 | 2 | 3, fn: () => Promise<void>): Promise<TestResult> {
+async function runTest(name: string, layer: 1 | 2 | 3 | 4 | 5, fn: () => Promise<void>): Promise<TestResult> {
   const start = Date.now();
   try {
     await fn();
@@ -430,6 +437,215 @@ async function layer4Tests(supabase: any, supabaseUrl: string, serviceKey: strin
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// LAYER 5: Wiring Tests (End-to-End Pipeline Verification)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+async function layer5Tests(supabase: any, supabaseUrl: string, serviceKey: string): Promise<TestResult[]> {
+  const results: TestResult[] = [];
+
+  // 1. Soul → Prompt Pipeline: Soul saved in DB actually appears in compiled prompt
+  results.push(await runTest("WIRE: Soul → Prompt pipeline", 5 as any, async () => {
+    const { soul, identity, agents } = await loadWorkspaceFiles(supabase);
+    const soulPrompt = buildWorkspacePrompt(soul, identity, agents);
+    const systemPrompt = buildSystemPrompt({
+      mode: 'operate',
+      soulPrompt,
+      agents,
+      memoryContext: '',
+      objectiveContext: '',
+    });
+    if (soul.purpose) {
+      assertContains(systemPrompt, soul.purpose, `Soul purpose "${soul.purpose}" not found in system prompt`);
+    }
+    if (identity.name) {
+      assertContains(systemPrompt, identity.name, `Identity name "${identity.name}" not found in system prompt`);
+    }
+    assertContains(systemPrompt, "GROUNDING & DATA INTEGRITY");
+  }));
+
+  // 2. Memory → Context Pipeline: Saved memory appears in loadMemories output
+  results.push(await runTest("WIRE: Memory → Context pipeline", 5 as any, async () => {
+    const testKey = `TEST_WIRE_${Date.now()}`;
+    await supabase.from('agent_memory').upsert({
+      key: testKey,
+      value: { data: 'wiring_test_value_42' },
+      category: 'preference',
+      created_by: 'flowpilot',
+    }, { onConflict: 'key' });
+
+    try {
+      const memoryCtx = await loadMemories(supabase);
+      assertContains(memoryCtx, testKey, `Memory key "${testKey}" not found in loadMemories output`);
+    } finally {
+      await supabase.from('agent_memory').delete().eq('key', testKey);
+    }
+  }));
+
+  // 3. Objective → Prompt Pipeline: Active objective appears in compiled prompt
+  results.push(await runTest("WIRE: Objective → Prompt pipeline", 5 as any, async () => {
+    const testGoal = `TEST_WIRE_OBJ_${Date.now()}`;
+    const { data: obj } = await supabase.from('agent_objectives').insert({
+      goal: testGoal,
+      status: 'active',
+      constraints: { priority: 'medium' },
+      success_criteria: { test: true },
+      progress: {},
+    }).select('id').single();
+    assertExists(obj);
+
+    try {
+      const objCtx = await loadObjectives(supabase);
+      assertContains(objCtx, testGoal, `Objective "${testGoal}" not found in loadObjectives output`);
+
+      const systemPrompt = buildSystemPrompt({
+        mode: 'heartbeat',
+        soulPrompt: '',
+        memoryContext: '',
+        objectiveContext: objCtx,
+        maxIterations: 5,
+      });
+      assertContains(systemPrompt, testGoal, `Objective not in compiled heartbeat prompt`);
+    } finally {
+      await supabase.from('agent_objectives').delete().eq('id', obj.id);
+    }
+  }));
+
+  // 4. Skill → Tool Schema Pipeline: DB skills become valid OpenAI tool definitions
+  results.push(await runTest("WIRE: Skill → Tool schema pipeline", 5 as any, async () => {
+    const tools = await loadSkillTools(supabase, 'internal');
+    if (tools.length === 0) throw new Error("No skill tools loaded — skills may not be seeded");
+    
+    for (const tool of tools.slice(0, 5)) {
+      assertExists(tool.type, `Tool missing 'type' field`);
+      assertEqual(tool.type, 'function', `Tool type should be 'function', got '${tool.type}'`);
+      assertExists(tool.function, `Tool missing 'function' field`);
+      assertExists(tool.function.name, `Tool missing 'function.name'`);
+      assertExists(tool.function.parameters, `Tool ${tool.function.name} missing 'function.parameters'`);
+    }
+  }));
+
+  // 5. Built-in Tools registered and complete
+  results.push(await runTest("WIRE: Built-in tools loadable", 5 as any, async () => {
+    const tools = getBuiltInTools(['memory', 'objectives', 'self-mod', 'reflect', 'soul', 'planning']);
+    if (tools.length < 5) throw new Error(`Expected ≥5 built-in tools, got ${tools.length}`);
+    
+    const toolNames = tools.map((t: any) => t.function.name);
+    const requiredTools = ['memory_write', 'memory_read', 'objective_update_progress', 'reflect', 'soul_update'];
+    for (const req of requiredTools) {
+      if (!toolNames.includes(req)) throw new Error(`Required built-in tool '${req}' missing`);
+    }
+  }));
+
+  // 6. Heartbeat State → Prompt Context
+  results.push(await runTest("WIRE: Heartbeat state → prompt context", 5 as any, async () => {
+    const testState: HeartbeatState = {
+      last_run: new Date().toISOString(),
+      objectives_advanced: ['test-obj-1'],
+      next_priorities: ['p1'],
+      pending_actions: [],
+      token_usage: { prompt_tokens: 7777, completion_tokens: 3333, total_tokens: 11110 },
+      iteration_count: 3,
+    };
+    await saveHeartbeatState(supabase, testState);
+    const stateCtx = await loadHeartbeatState(supabase);
+    assertContains(stateCtx, '11110', `Token usage 11110 not found in heartbeat state context`);
+
+    const prompt = buildSystemPrompt({
+      mode: 'heartbeat',
+      soulPrompt: '',
+      memoryContext: '',
+      objectiveContext: '',
+      heartbeatState: stateCtx,
+      maxIterations: 5,
+    });
+    assertContains(prompt, '11110', `Heartbeat state not in compiled prompt`);
+  }));
+
+  // 7. Lock → Heartbeat Skip Pipeline
+  results.push(await runTest("WIRE: Lock → Heartbeat skip", 5 as any, async () => {
+    const hdrs = {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${serviceKey}`,
+    };
+    const acquired = await tryAcquireLock(supabase, 'heartbeat', 'test_wiring', 60);
+
+    try {
+      if (acquired) {
+        const resp = await fetch(`${supabaseUrl}/functions/v1/flowpilot-heartbeat`, {
+          method: 'POST', headers: hdrs,
+          body: JSON.stringify({ time: new Date().toISOString() }),
+        });
+        const data = await resp.json();
+        assertEqual(data.skipped, true, `Expected heartbeat to skip when lock held, got: ${JSON.stringify(data)}`);
+      }
+    } finally {
+      if (acquired) {
+        await releaseLock(supabase, 'heartbeat');
+      }
+    }
+  }));
+
+  // 8. CMS Schema → Prompt Pipeline
+  results.push(await runTest("WIRE: CMS schema → prompt injection", 5 as any, async () => {
+    const schema = await loadCMSSchema(supabase);
+    if (!schema) return;
+
+    const prompt = buildSystemPrompt({
+      mode: 'operate',
+      soulPrompt: '',
+      memoryContext: '',
+      objectiveContext: '',
+      cmsSchemaContext: schema,
+    });
+    assertContains(prompt, 'CMS SCHEMA AWARENESS', `CMS schema header not in prompt`);
+  }));
+
+  // 9. Custom Heartbeat Protocol → Prompt
+  results.push(await runTest("WIRE: Heartbeat protocol → prompt", 5 as any, async () => {
+    const customProtocol = await loadHeartbeatProtocol(supabase);
+    const prompt = buildSystemPrompt({
+      mode: 'heartbeat',
+      soulPrompt: '',
+      memoryContext: '',
+      objectiveContext: '',
+      maxIterations: 5,
+      customHeartbeatProtocol: customProtocol ?? undefined,
+    });
+    assertContains(prompt, 'OUTCOME EVALUATION', `No outcome evaluation in heartbeat prompt`);
+  }));
+
+  // 10. Full 6-Layer Prompt Assembly (heartbeat)
+  results.push(await runTest("WIRE: Full 6-layer prompt assembly", 5 as any, async () => {
+    const { soul, identity, agents } = await loadWorkspaceFiles(supabase);
+    const soulPrompt = buildWorkspacePrompt(soul, identity, agents);
+    const memoryCtx = await loadMemories(supabase);
+    const objCtx = await loadObjectives(supabase);
+    const cmsSchema = await loadCMSSchema(supabase);
+    const hbState = await loadHeartbeatState(supabase);
+
+    const prompt = buildSystemPrompt({
+      mode: 'heartbeat',
+      soulPrompt,
+      agents,
+      memoryContext: memoryCtx,
+      objectiveContext: objCtx,
+      cmsSchemaContext: cmsSchema,
+      heartbeatState: hbState,
+      tokenBudget: 50000,
+      maxIterations: 8,
+    });
+
+    assertContains(prompt, 'HEARTBEAT mode', 'Missing Layer 1: Mode');
+    assertContains(prompt, 'GROUNDING & DATA INTEGRITY', 'Missing Layer 5: Grounding');
+    assertContains(prompt, 'TOKEN BUDGET', 'Missing token budget');
+
+    if (soul.purpose) assertContains(prompt, soul.purpose, 'Soul purpose lost in assembly');
+  }));
+
+  return results;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // MAIN
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -445,19 +661,18 @@ serve(async (req) => {
   const startTime = Date.now();
 
   try {
-    // Parse optional layer filter
     let body: any = {};
     try { body = await req.json(); } catch { /* empty body OK */ }
     const layerFilter: number[] = body.layers || [1, 2, 3];
 
     const allResults: TestResult[] = [];
 
-    // Run selected layers in parallel where possible
     const tasks: Promise<TestResult[]>[] = [];
     if (layerFilter.includes(1)) tasks.push(layer1Tests());
     if (layerFilter.includes(2)) tasks.push(layer2Tests(supabaseUrl, serviceKey));
     if (layerFilter.includes(3)) tasks.push(layer3Tests(supabase));
     if (layerFilter.includes(4)) tasks.push(layer4Tests(supabase, supabaseUrl, serviceKey));
+    if (layerFilter.includes(5)) tasks.push(layer5Tests(supabase, supabaseUrl, serviceKey));
 
     const layerResults = await Promise.all(tasks);
     for (const lr of layerResults) allResults.push(...lr);
