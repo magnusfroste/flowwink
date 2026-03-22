@@ -386,6 +386,34 @@ async function executeChatTool(
     }
 
     default: {
+      // Check for visitor profile save
+      if (toolName === 'save_visitor_profile') {
+        if (!conversationId) return 'Cannot save profile without a conversation.';
+        try {
+          // Merge with existing profile
+          const { data: conv } = await supabase
+            .from('chat_conversations')
+            .select('visitor_profile')
+            .eq('id', conversationId).single();
+
+          const existing = conv?.visitor_profile || {};
+          const merged = { ...existing };
+          if (args.name) merged.name = args.name;
+          if (args.preferences) merged.preferences = args.preferences;
+          if (args.interests) merged.interests = args.interests;
+          if (args.notes) merged.notes = [existing.notes, args.notes].filter(Boolean).join('; ');
+
+          await supabase
+            .from('chat_conversations')
+            .update({ visitor_profile: merged })
+            .eq('id', conversationId);
+
+          return 'Visitor profile saved. I\'ll remember this for future conversations.';
+        } catch (err: any) {
+          return `Could not save profile: ${err.message}`;
+        }
+      }
+
       // Agent skill — delegate to agent-execute
       try {
         const resp = await fetch(`${supabaseUrl}/functions/v1/agent-execute`, {
