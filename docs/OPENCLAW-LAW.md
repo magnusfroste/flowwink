@@ -247,9 +247,9 @@ All agent surfaces (interactive, autonomous, visitor chat) MUST share `agent-rea
 1. ~~**Hybrid memory search**~~ ✅ Implemented — `search_memories_hybrid()` with pg_trgm + pgvector (70% vector, 30% keyword).
 2. ~~**Pre-compaction memory flush**~~ ✅ Implemented — `preCompactionFlush()` extracts up to 5 discrete facts via AI before `pruneConversationHistory()` summarizes.
 3. ~~**Editable HEARTBEAT config**~~ ✅ Implemented — Protocol stored in `agent_memory(key='heartbeat_protocol')`. Loaded by heartbeat, customizable via `heartbeat_protocol_update` tool (get/set/reset). Default hardcoded protocol used as fallback.
-4. **USER.md equivalent** — Store per-visitor context in `agent_memory` or `chat_conversations.metadata` so the agent remembers returning users.
+4. ~~**USER.md equivalent**~~ ✅ Implemented — `chat_conversations.visitor_profile` JSONB stores accumulated visitor context. `loadVisitorContext()` loads past conversations by email/session. `save_visitor_profile` chat tool lets AI persist learned preferences. Returning visitors get personalized context injected into the system prompt.
 5. ~~**Command queue / concurrency guard**~~ ✅ Implemented — `agent_locks` table with lane-based TTL locking. Heartbeat uses `heartbeat` lane, operate uses `operate:{conversationId}`.
-6. **Skill gating** — Add `requires` field to `agent_skills` for prerequisite checks.
+6. ~~**Skill gating**~~ ✅ Implemented — `agent_skills.requires` JSONB column with `filterGatedSkills()` in `loadSkillTools()`. Supports prerequisites: `{"type":"skill","name":"..."}`, `{"type":"integration","key":"..."}`, `{"type":"module","id":"..."}`.
 
 ---
 
