@@ -2854,11 +2854,16 @@ export async function loadSkillTools(supabase: any, scope: 'internal' | 'externa
   const scopes = scope === 'internal' ? ['internal', 'both'] : ['external', 'both'];
   const { data: skills } = await supabase
     .from('agent_skills')
-    .select('name, tool_definition, scope')
+    .select('name, tool_definition, scope, requires')
     .eq('enabled', true)
     .in('scope', scopes);
 
-  return (skills || [])
+  if (!skills?.length) return [];
+
+  // Skill gating: check prerequisites
+  const gatedSkills = await filterGatedSkills(supabase, skills);
+
+  return gatedSkills
     .filter((s: any) => s.tool_definition?.function)
     .map((s: any) => {
       const td = s.tool_definition;
@@ -2889,6 +2894,48 @@ export async function loadSkillTools(supabase: any, scope: 'internal' | 'externa
       } catch { /* safety net */ }
       return td;
     });
+}
+
+/**
+ * Skill Gating — filter out skills whose prerequisites are not met.
+ * 
+ * Supports:
+ *   { "type": "skill", "name": "skill_name" }       — another skill must be enabled
+ *   { "type": "integration", "key": "openai" }       — an integration must be enabled
+ *   { "type": "module", "id": "blog" }                — a module must be enabled
+ */
+async function filterGatedSkills(supabase: any, skills: any[]): Promise<any[]> {
+  // Build lookup sets lazily (only if any skill has requires)
+  const skillsWithGates = skills.filter((s: any) => s.requires && Array.isArray(s.requires) && s.requires.length > 0);
+  if (skillsWithGates.length === 0) return skills;
+
+  // Fetch context for gating checks
+  const enabledSkillNames = new Set(skills.map((s: any) => s.name));
+
+  const [{ data: moduleSettings }, { data: integrationSettings }] = await Promise.all([
+    supabase.from('site_settings').select('value').eq('key', 'modules').maybeSingle(),
+    supabase.from('site_settings').select('value').eq('key', 'integrations').maybeSingle(),
+  ]);
+
+  const modules = moduleSettings?.value || {};
+  const integrations = integrationSettings?.value || {};
+
+  return skills.filter((s: any) => {
+    if (!s.requires || !Array.isArray(s.requires) || s.requires.length === 0) return true;
+
+    return s.requires.every((req: any) => {
+      switch (req.type) {
+        case 'skill':
+          return enabledSkillNames.has(req.name);
+        case 'integration':
+          return integrations[req.key]?.enabled === true;
+        case 'module':
+          return modules[req.id]?.enabled === true;
+        default:
+          return true; // Unknown gate type — allow
+      }
+    });
+  });
 }
 
 // ─── Concurrency Guard (OpenClaw Command Queue) ──────────────────────────────
