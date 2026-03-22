@@ -376,6 +376,8 @@ Deno.serve(async (req) => {
       details: zombieLocks.map(
         (o: any) => `"${o.goal.substring(0, 50)}" locked by ${o.locked_by} since ${o.locked_at}`
       ),
+      fixable: zombieLocks.length > 0,
+      fixAction: "fix-zombie-locks",
     });
 
     // Objectives without success criteria
