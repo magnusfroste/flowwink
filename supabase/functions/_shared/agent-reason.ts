@@ -40,7 +40,7 @@ const SELF_HEAL_THRESHOLD = 3;
 const MAX_CHAIN_DEPTH = 4;
 const MAX_CONTEXT_TOKENS = 80_000;
 const SUMMARY_THRESHOLD = 60_000;
-const DEFAULT_TOKEN_BUDGET = 50_000; // Max tokens per heartbeat session
+const DEFAULT_TOKEN_BUDGET = 80_000; // Max tokens per heartbeat session (aligned with heartbeat)
 
 const BUILT_IN_TOOL_NAMES = new Set([
   'memory_write', 'memory_read', 'memory_delete',
