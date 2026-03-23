@@ -141,12 +141,9 @@ serve(async (req) => {
       duration_ms: Date.now() - startTime,
     });
 
-    // 5b. Initialize outcome tracking (pending evaluation)
-    if (activityId) {
-      await supabase.from('agent_activity').update({
-        outcome_status: 'pending',
-      }).eq('id', activityId);
-    }
+    // 5b. Outcome tracking: leave outcome_status as NULL
+    // The heartbeat's evaluate_outcomes tool picks up activities with NULL outcome_status.
+    // Note: 'pending' is NOT in the activity_outcome_status enum — do not set it.
 
     // 6. Auto-track objective progress
     if (activityId) {

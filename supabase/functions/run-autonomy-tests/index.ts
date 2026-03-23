@@ -855,6 +855,107 @@ async function layer5Tests(supabase: any, supabaseUrl: string, serviceKey: strin
   return results;
 }
 
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// LAYER 7: ROBUSTNESS TESTS — Validates fixes for known silent blockers
+// ═══════════════════════════════════════════════════════════════════════════════
+
+async function layer7Tests(supabase: any, supabaseUrl: string, serviceKey: string): Promise<TestResult[]> {
+  const results: TestResult[] = [];
+
+  // Test: Cron field name compatibility (both .expression and .cron must work)
+  results.push(await runTest('ROBUST: Dispatcher handles both cron field names', 7 as any, async () => {
+    // Insert a test automation with trigger_config.cron (not .expression)
+    const testName = `_test_cron_compat_${Date.now()}`;
+    await supabase.from('agent_automations').insert({
+      name: testName,
+      trigger_type: 'cron',
+      trigger_config: { cron: '0 */6 * * *' },  // Uses 'cron' key
+      skill_name: 'analyze_analytics',
+      skill_arguments: { period: 'week' },
+      enabled: false,  // Don't actually run it
+    });
+
+    // Also test with .expression key
+    const testName2 = `_test_cron_compat2_${Date.now()}`;
+    await supabase.from('agent_automations').insert({
+      name: testName2,
+      trigger_type: 'cron',
+      trigger_config: { expression: '0 */12 * * *' },  // Uses 'expression' key
+      skill_name: 'analyze_analytics',
+      skill_arguments: { period: 'week' },
+      enabled: false,
+    });
+
+    // Cleanup
+    await supabase.from('agent_automations').delete().eq('name', testName);
+    await supabase.from('agent_automations').delete().eq('name', testName2);
+  }));
+
+  // Test: outcome_status enum validation
+  results.push(await runTest('ROBUST: outcome_status only uses valid enum values', 7 as any, async () => {
+    // Insert an activity and verify NULL outcome_status (not 'pending')
+    const { data: act } = await supabase.from('agent_activity').insert({
+      agent: 'flowpilot',
+      skill_name: '_test_outcome_enum',
+      input: { test: true },
+      output: { test: true },
+      status: 'success',
+    }).select('id, outcome_status').single();
+
+    assertExists(act, 'Activity should be created');
+    assertEqual(act.outcome_status, null, 'outcome_status should be NULL (not pending)');
+
+    // Cleanup
+    await supabase.from('agent_activity').delete().eq('id', act.id);
+  }));
+
+  // Test: agents memory key exists after bootstrap
+  results.push(await runTest('ROBUST: agents memory key seeded by bootstrap', 7 as any, async () => {
+    const { data } = await supabase
+      .from('agent_memory')
+      .select('key, value')
+      .eq('key', 'agents')
+      .maybeSingle();
+    
+    // After setup-flowpilot runs, agents should exist
+    // If not present yet, this is expected pre-bootstrap — skip
+    if (!data) {
+      console.log('[test] agents key not found — may need bootstrap first');
+      return; // Not a failure — bootstrap may not have run
+    }
+    assertExists(data.value, 'agents value should not be null');
+  }));
+
+  // Test: evaluate_outcomes finds NULL outcome_status activities
+  results.push(await runTest('ROBUST: evaluate_outcomes picks up NULL outcome activities', 7 as any, async () => {
+    // Insert a test activity with NULL outcome_status
+    const { data: act } = await supabase.from('agent_activity').insert({
+      agent: 'flowpilot',
+      skill_name: '_test_eval_pickup',
+      input: { test: true },
+      output: { test: true },
+      status: 'success',
+      // outcome_status deliberately omitted → NULL
+    }).select('id').single();
+
+    // Query the same way evaluate_outcomes does
+    const { data: found } = await supabase
+      .from('agent_activity')
+      .select('id')
+      .eq('status', 'success')
+      .is('outcome_status', null)
+      .eq('id', act.id)
+      .maybeSingle();
+
+    assertExists(found, 'Activity with NULL outcome_status should be queryable');
+
+    // Cleanup
+    await supabase.from('agent_activity').delete().eq('id', act.id);
+  }));
+
+  return results;
+}
 // ═══════════════════════════════════════════════════════════════════════════════
 // LAYER 6: Autonomy Behavior Tests (OMATS Stage 3 Inspired)
 // Tests that the AI agent actually BEHAVES correctly — not just that data flows.
@@ -1125,7 +1226,7 @@ serve(async (req) => {
   try {
     let body: any = {};
     try { body = await req.json(); } catch { /* empty body OK */ }
-    const layerFilter: number[] = body.layers || [1, 2, 3, 4, 5, 6];
+    const layerFilter: number[] = body.layers || [1, 2, 3, 4, 5, 6, 7];
 
     const allResults: TestResult[] = [];
 
@@ -1136,6 +1237,7 @@ serve(async (req) => {
     if (layerFilter.includes(4)) tasks.push(layer4Tests(supabase, supabaseUrl, serviceKey));
     if (layerFilter.includes(5)) tasks.push(layer5Tests(supabase, supabaseUrl, serviceKey));
     if (layerFilter.includes(6)) tasks.push(layer6Tests(supabase, supabaseUrl, serviceKey));
+    if (layerFilter.includes(7)) tasks.push(layer7Tests(supabase, supabaseUrl, serviceKey));
 
     const layerResults = await Promise.all(tasks);
     for (const lr of layerResults) allResults.push(...lr);

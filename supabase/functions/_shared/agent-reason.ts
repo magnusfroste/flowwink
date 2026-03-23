@@ -1579,8 +1579,9 @@ async function handleExecuteAutomation(supabase: any, supabaseUrl: string, servi
   }
 
   let nextRun: string | null = null;
-  if (auto.trigger_type === 'cron' && auto.trigger_config?.cron) {
-    nextRun = calculateNextRun(auto.trigger_config.cron);
+  if (auto.trigger_type === 'cron') {
+    const cronExpr = auto.trigger_config?.cron || auto.trigger_config?.expression;
+    if (cronExpr) nextRun = calculateNextRun(cronExpr);
   }
 
   const updatePayload: Record<string, any> = {

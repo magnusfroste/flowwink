@@ -52,7 +52,8 @@ serve(async (req) => {
     for (const auto of (dueAutomations || [])) {
       // If next_run_at was NULL, just initialize it and skip execution
       if (!auto.next_run_at) {
-        const nextRun = calculateNextRun((auto.trigger_config as any)?.expression);
+        const cronExpr = (auto.trigger_config as any)?.expression || (auto.trigger_config as any)?.cron;
+        const nextRun = calculateNextRun(cronExpr);
         await supabase
           .from("agent_automations")
           .update({ next_run_at: nextRun })
@@ -95,10 +96,9 @@ serve(async (req) => {
         lastError = (err as Error).message || "Execution error";
       }
 
-      // 3. Calculate next_run_at from cron expression
-      const nextRun = calculateNextRun(
-        (auto.trigger_config as any)?.expression
-      );
+      // 3. Calculate next_run_at from cron expression (support both field names)
+      const cronExpr = (auto.trigger_config as any)?.expression || (auto.trigger_config as any)?.cron;
+      const nextRun = calculateNextRun(cronExpr);
 
       // 4. Update automation metadata
       await supabase
@@ -122,7 +122,7 @@ serve(async (req) => {
       .eq("trigger_type", "cron");
 
     for (const wf of (dueWorkflows || [])) {
-      const cronExpr = (wf.trigger_config as any)?.expression;
+      const cronExpr = (wf.trigger_config as any)?.expression || (wf.trigger_config as any)?.cron;
       if (!cronExpr) continue;
 
       // Check if workflow is due based on last_run_at + cron interval

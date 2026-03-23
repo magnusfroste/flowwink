@@ -2319,6 +2319,28 @@ Deno.serve(async (req) => {
           created_by: 'flowpilot',
         });
       }
+
+      // Seed agents (operational rules) if missing
+      const { data: existingAgents } = await supabase
+        .from('agent_memory')
+        .select('id')
+        .eq('key', 'agents')
+        .maybeSingle();
+
+      if (!existingAgents) {
+        await supabase.from('agent_memory').insert({
+          key: 'agents',
+          value: {
+            version: '1.0',
+            direct_action_rules: 'When asked to DO something, execute immediately using the appropriate skill. Only create automations when explicitly asked for scheduled/recurring tasks.',
+            self_improvement: 'Create new skills for missing capabilities. Use reflect periodically. Use skill_instruct to enrich skills with context.',
+            memory_guidelines: 'Save user preferences and important facts. Check memory before answering questions about the site.',
+          },
+          category: 'preference',
+          created_by: 'flowpilot',
+        });
+        console.log('[setup-flowpilot] Seeded agents memory key');
+      }
     }
 
     // 5. Seed initial objectives from template
