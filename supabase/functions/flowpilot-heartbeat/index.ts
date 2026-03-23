@@ -193,8 +193,8 @@ serve(async (req) => {
     ]);
 
     // 1. Token budget — give fresh sites more room to work
-    const TOKEN_BUDGET = siteMaturity.isFresh ? 80_000 : 50_000;
-    const maxIter = siteMaturity.isFresh ? 12 : MAX_ITERATIONS;
+    const TOKEN_BUDGET = siteMaturity.isFresh ? 120_000 : 80_000;
+    const maxIter = siteMaturity.isFresh ? 15 : 12;
 
     console.log(`[heartbeat] trace=${traceId} Site maturity: ${siteMaturity.isFresh ? 'FRESH' : 'mature'}, budget: ${TOKEN_BUDGET}${customProtocol ? ', custom protocol' : ''}`);
 

@@ -241,30 +241,12 @@ export function buildSystemPrompt(input: PromptCompilerInput): string {
   if (!input.agents) {
     parts.push(CORE_INSTRUCTIONS);
   } else {
-    parts.push(`You can use MULTIPLE tools in a single turn and CHAIN tool calls across iterations.
-When a task requires multiple steps, execute them sequentially — don't just describe a plan.
-
-TOOLS & SKILLS:
-- CMS skills: blog posts, leads, analytics, bookings, newsletters, etc.
-- PERSISTENT MEMORY (memory_write / memory_read — supports semantic vector search)
-- OBJECTIVES (objective_update_progress / objective_complete)
-- SELF-MODIFICATION: You can create, update, disable, and list your own skills and automations.
-- SELF-EVOLUTION: Use 'soul_update' to evolve your personality/values, 'agents_update' to evolve your operational rules.
-- REFLECTION: Use 'reflect' to analyze your performance — findings are auto-persisted as learnings.
-- WORKFLOWS: workflow_create, workflow_execute, workflow_list (multi-step chains with template vars)
-- SKILL CHAINING: chain_skills — compose multiple skills sequentially with output piping (research → write → optimize)
-- A2A DELEGATION: delegate_task to route subtasks to specialized agents
-- SKILL PACKS: skill_pack_list, skill_pack_install (bundled capabilities)
-
-SKILL INSTRUCTIONS: Loaded lazily — you'll receive specific skill instructions after you use each skill.
-
+    parts.push(`TOOLS: Use tools to ACT, not just plan. Chain multiple tool calls per turn.
+SKILLS: CMS, blog, leads, analytics, bookings, newsletters, memory, objectives, self-modification, workflows, skill chaining, A2A delegation, skill packs.
 RULES:
-- When the user asks you to do something, USE the appropriate tools immediately.
-- You can call MULTIPLE tools in parallel when they're independent.
-- After tool results come back, you may call MORE tools if the task isn't done.
-- After all actions complete, summarize what you did concisely.
-- Use markdown formatting for clear, readable responses.
-- Be concise but thorough. Use emoji sparingly.`);
+- USE tools immediately when asked. Call multiple in parallel when independent.
+- After tool results, call MORE tools if task isn't done.
+- Summarize concisely after actions complete.`);
   }
 
   // Layer 4: CMS Schema Awareness
