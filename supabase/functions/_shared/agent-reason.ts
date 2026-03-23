@@ -40,7 +40,7 @@ const SELF_HEAL_THRESHOLD = 3;
 const MAX_CHAIN_DEPTH = 4;
 const MAX_CONTEXT_TOKENS = 80_000;
 const SUMMARY_THRESHOLD = 60_000;
-const DEFAULT_TOKEN_BUDGET = 50_000; // Max tokens per heartbeat session
+const DEFAULT_TOKEN_BUDGET = 80_000; // Max tokens per heartbeat session (aligned with heartbeat)
 
 const BUILT_IN_TOOL_NAMES = new Set([
   'memory_write', 'memory_read', 'memory_delete',
@@ -2664,12 +2664,22 @@ export async function executeBuiltInTool(
   // Not a built-in → delegate to agent-execute with trace ID
   const body: Record<string, any> = { skill_name: fnName, arguments: fnArgs, agent_type: 'flowpilot' };
   if (traceId) body.trace_id = traceId;
-  const response = await fetch(`${supabaseUrl}/functions/v1/agent-execute`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceKey}` },
-    body: JSON.stringify(body),
-  });
-  return response.json();
+  try {
+    const response = await fetch(`${supabaseUrl}/functions/v1/agent-execute`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceKey}` },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error(`[reason] trace=${traceId} agent-execute ${fnName} HTTP ${response.status}: ${errText.slice(0, 200)}`);
+      return { error: `Skill ${fnName} failed: HTTP ${response.status}`, status: 'failed' };
+    }
+    return response.json();
+  } catch (err: any) {
+    console.error(`[reason] trace=${traceId} agent-execute ${fnName} fetch error:`, err.message);
+    return { error: `Skill ${fnName} unreachable: ${err.message}`, status: 'failed' };
+  }
 }
 
 export function isBuiltInTool(name: string): boolean {
@@ -2815,13 +2825,22 @@ export async function reason(
     let finalResponse = '';
     let totalTokenUsage: TokenUsage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
     const loadedInstructions = new Set<string>();
+    const tokenBudget = (config as any).tokenBudget || DEFAULT_TOKEN_BUDGET;
+    let consecutiveEmptyTurns = 0;
 
     for (let i = 0; i < maxIterations; i++) {
-      // Token budget check (if provided via config)
-      const tokenBudget = (config as any).tokenBudget;
-      if (tokenBudget && totalTokenUsage.total_tokens >= tokenBudget) {
-        console.log(`[reason] trace=${traceId} Token budget exceeded (${totalTokenUsage.total_tokens}/${tokenBudget})`);
-        finalResponse = finalResponse || `Stopped: token budget reached (${totalTokenUsage.total_tokens} tokens).`;
+      // Token budget check
+      if (totalTokenUsage.total_tokens >= tokenBudget) {
+        console.log(`[reason] trace=${traceId} Token budget reached (${totalTokenUsage.total_tokens}/${tokenBudget})`);
+        finalResponse = finalResponse || `Heartbeat complete. Used ${totalTokenUsage.total_tokens} tokens in ${i} iterations.`;
+        break;
+      }
+
+      // Remaining budget guard — skip expensive AI call if <5% budget left
+      const remainingBudget = tokenBudget - totalTokenUsage.total_tokens;
+      if (remainingBudget < tokenBudget * 0.05 && i > 0) {
+        console.log(`[reason] trace=${traceId} Budget nearly exhausted (${remainingBudget} remaining), stopping early`);
+        finalResponse = finalResponse || `Heartbeat complete. ${actionsExecuted.length} actions in ${i} iterations.`;
         break;
       }
 
@@ -2867,16 +2886,20 @@ export async function reason(
         break;
       }
 
+      // Anti-runaway: detect if agent keeps calling same tools without progress
+      consecutiveEmptyTurns = 0; // Reset on tool calls
+      
       conversationMessages.push(msg);
 
       const calledSkillNames: string[] = [];
+      let turnErrors = 0;
 
       for (const tc of msg.tool_calls) {
         const fnName = tc.function.name;
         let fnArgs: any;
         try { fnArgs = JSON.parse(tc.function.arguments || '{}'); } catch { fnArgs = {}; }
 
-        console.log(`[reason] trace=${traceId} Executing: ${fnName}`, JSON.stringify(fnArgs).slice(0, 200));
+        console.log(`[reason] trace=${traceId} iter=${i} Executing: ${fnName}`, JSON.stringify(fnArgs).slice(0, 200));
         actionsExecuted.push(fnName);
 
         let result: any;
@@ -2884,14 +2907,30 @@ export async function reason(
           result = await executeBuiltInTool(supabase, supabaseUrl, serviceKey, fnName, fnArgs, traceId);
         } catch (err: any) {
           result = { error: err.message };
+          turnErrors++;
+        }
+
+        // Detect silent errors in results
+        if (result?.error || result?.status === 'failed') {
+          turnErrors++;
         }
 
         if (!isBuiltInTool(fnName)) {
-          skillResults.push({ skill: fnName, status: result?.status || 'success', result: result?.result || result });
+          const skillFailed = !!(result?.error || result?.status === 'failed');
+          skillResults.push({ skill: fnName, status: skillFailed ? 'failed' : 'success', result: result?.result || result });
           calledSkillNames.push(fnName);
         }
 
         conversationMessages.push({ role: 'tool', tool_call_id: tc.id, content: JSON.stringify(result) });
+      }
+
+      // Anti-runaway: if ALL tool calls in a turn errored, inject a stop hint
+      if (turnErrors === msg.tool_calls.length && msg.tool_calls.length > 0) {
+        consecutiveEmptyTurns++;
+        if (consecutiveEmptyTurns >= 2) {
+          console.warn(`[reason] trace=${traceId} ${consecutiveEmptyTurns} consecutive error turns — breaking loop`);
+          conversationMessages.push({ role: 'system', content: 'Multiple consecutive tool errors detected. Stop calling failing tools and summarize what you accomplished.' });
+        }
       }
 
       // Lazy instruction loading
