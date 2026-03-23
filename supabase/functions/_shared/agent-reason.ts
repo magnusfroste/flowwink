@@ -1194,10 +1194,12 @@ export async function loadObjectives(supabase: any, opts?: { unlockedOnly?: bool
     .select('id, goal, status, constraints, success_criteria, progress, created_at, updated_at, locked_by, locked_at')
     .eq('status', 'active');
 
-  // Heartbeat needs only unlocked objectives to avoid race conditions.
+  // Heartbeat should skip actively locked objectives, but MUST still see stale locks
+  // so they can be recovered by checkoutObjective() during advance_plan.
   // Chat/admin context should see ALL active objectives regardless of lock state.
   if (opts?.unlockedOnly) {
-    query = query.is('locked_by', null);
+    const staleThreshold = new Date(Date.now() - 30 * 60_000).toISOString();
+    query = query.or(`locked_by.is.null,locked_at.lt.${staleThreshold}`);
   }
 
   const { data } = await query
