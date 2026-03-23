@@ -12,6 +12,8 @@ interface ExecuteRequest {
   arguments: Record<string, unknown>;
   agent_type: 'flowpilot' | 'chat';
   conversation_id?: string;
+  /** Trace ID from the parent reason() loop for end-to-end observability */
+  trace_id?: string;
   objective_context?: {
     goal: string;
     step: string;
