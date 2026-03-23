@@ -65,7 +65,7 @@ const BUILT_IN_TOOL_NAMES = new Set([
   'memory_write', 'memory_read', 'memory_delete',
   'objective_update_progress', 'objective_complete', 'objective_delete',
   'skill_create', 'skill_update', 'skill_list', 'skill_disable', 'skill_enable', 'skill_delete',
-  'skill_instruct',
+  'skill_instruct', 'skill_read',
   'soul_update', 'agents_update', 'heartbeat_protocol_update',
   'automation_create', 'automation_list', 'automation_update', 'automation_delete',
   'reflect',
