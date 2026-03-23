@@ -783,7 +783,7 @@ async function layer5Tests(supabase: any, supabaseUrl: string, serviceKey: strin
       maxIterations: 5,
       customHeartbeatProtocol: customProtocol ?? undefined,
     });
-    assertContains(prompt, 'OUTCOME EVALUATION', `No outcome evaluation in heartbeat prompt`);
+    assertContains(prompt, 'EVALUATE', `No outcome evaluation step in heartbeat prompt`);
   }));
 
   // 10. Full 6-Layer Prompt Assembly (heartbeat)
