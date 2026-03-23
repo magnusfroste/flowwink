@@ -787,7 +787,11 @@ async function executePagesAction(
         return { page_id, rolled_back_to: version.id, version_date: version.created_at };
       }
 
-      return { error: `Unknown page action: ${action}` };
+      // Better error messages for missing arguments
+      if (['update', 'publish', 'archive', 'delete', 'rollback'].includes(action) && !page_id) {
+        return { error: `page_id is required for action: ${action}` };
+      }
+      return { error: `Unknown page action: ${action}. Valid actions: list, get, create, update, publish, archive, delete, rollback` };
     }
 
     case 'manage_page_blocks': {

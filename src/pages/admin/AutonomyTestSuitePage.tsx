@@ -38,12 +38,14 @@ const LAYER_LABELS: Record<number, { label: string; description: string }> = {
   4: { label: 'Autonomy Health', description: 'Live system: skills seeded, soul, objectives, skill execution, heartbeat ran' },
   5: { label: 'Wiring', description: 'End-to-end: soul→prompt, memory→context, skill→tools, lock→skip' },
   6: { label: 'Behavior', description: 'OMATS Stage 3: personality, idle discipline, task completion, grounding' },
+  7: { label: 'Robustness', description: 'Error propagation, trace forwarding, database consistency' },
+  8: { label: 'Diagnostics', description: 'Live health: heartbeat frequency, token efficiency, action output, silent failures' },
 };
 
 export default function AutonomyTestSuitePage() {
   const [isRunning, setIsRunning] = useState(false);
   const [lastRun, setLastRun] = useState<TestRun | null>(null);
-  const [selectedLayers, setSelectedLayers] = useState<string[]>(['1', '2', '3', '4', '5', '6']);
+  const [selectedLayers, setSelectedLayers] = useState<string[]>(['1', '2', '3', '4', '5', '6', '7', '8']);
 
   const runTests = useCallback(async () => {
     setIsRunning(true);
@@ -143,15 +145,15 @@ export default function AutonomyTestSuitePage() {
                 onValueChange={(val) => val.length > 0 && setSelectedLayers(val)}
                 className="justify-start"
               >
-                {[1, 2, 3, 4, 5, 6].map((layer) => (
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((layer) => (
                   <ToggleGroupItem key={layer} value={String(layer)} className="gap-2 px-4">
                     {getLayerBadge(layer)}
                     <span className="text-sm">{LAYER_LABELS[layer].label}</span>
                   </ToggleGroupItem>
                 ))}
               </ToggleGroup>
-              <div className="grid grid-cols-1 md:grid-cols-6 gap-2 mt-2">
-                {[1, 2, 3, 4, 5, 6].map((layer) => (
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mt-2">
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((layer) => (
                   <p key={layer} className="text-xs text-muted-foreground">
                     <span className="font-medium">L{layer}:</span> {LAYER_LABELS[layer].description}
                   </p>
@@ -213,7 +215,7 @@ export default function AutonomyTestSuitePage() {
             <CardContent>
               <ScrollArea className="h-[400px]">
                 <div className="space-y-1">
-                  {[1, 2, 3, 4, 5, 6].map((layer) => {
+                  {[1, 2, 3, 4, 5, 6, 7, 8].map((layer) => {
                     const layerResults = lastRun.results.filter(r => r.layer === layer);
                     if (layerResults.length === 0) return null;
                     return (
