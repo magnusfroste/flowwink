@@ -95,10 +95,9 @@ serve(async (req) => {
         lastError = (err as Error).message || "Execution error";
       }
 
-      // 3. Calculate next_run_at from cron expression
-      const nextRun = calculateNextRun(
-        (auto.trigger_config as any)?.expression
-      );
+      // 3. Calculate next_run_at from cron expression (support both field names)
+      const cronExpr = (auto.trigger_config as any)?.expression || (auto.trigger_config as any)?.cron;
+      const nextRun = calculateNextRun(cronExpr);
 
       // 4. Update automation metadata
       await supabase
