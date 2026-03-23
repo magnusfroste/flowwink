@@ -1037,7 +1037,9 @@ async function layer7Tests(supabase: any, supabaseUrl: string, serviceKey: strin
   }));
 
   return results;
-}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// LAYER 6: Autonomy Behavior Tests (OMATS Stage 3 Inspired)
 // Tests that the AI agent actually BEHAVES correctly — not just that data flows.
 // ═══════════════════════════════════════════════════════════════════════════════
 
