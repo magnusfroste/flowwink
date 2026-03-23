@@ -3069,6 +3069,7 @@ export async function reason(
         console.log(`[reason] trace=${traceId} Reloaded ${skillTools.length} skill tools at ${currentSkillTier} tier`);
       }
 
+      const aiResponse = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
