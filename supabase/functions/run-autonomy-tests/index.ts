@@ -755,6 +755,44 @@ async function layer5Tests(supabase: any, supabaseUrl: string, serviceKey: strin
     if (soul.purpose) assertContains(prompt, soul.purpose, 'Soul purpose lost in assembly');
   }));
 
+  // 11. Site Maturity → Prompt Wiring (documented: fresh vs mature changes prompt)
+  results.push(await runTest("WIRE: Site maturity → heartbeat prompt", 5 as any, async () => {
+    const maturity = await detectSiteMaturity(supabase);
+    const prompt = buildSystemPrompt({
+      mode: 'heartbeat',
+      soulPrompt: '',
+      memoryContext: '',
+      objectiveContext: '',
+      siteMaturity: maturity,
+      tokenBudget: maturity.isFresh ? 80000 : 50000,
+      maxIterations: maturity.isFresh ? 12 : 8,
+    });
+    
+    if (maturity.isFresh) {
+      assertContains(prompt, 'DAY 1 PLAYBOOK', 'Fresh site should include Day 1 Playbook');
+      assertContains(prompt, 'TOKEN BUDGET: 80000', 'Fresh site should have 80K budget');
+    } else {
+      if (prompt.includes('DAY 1 PLAYBOOK')) throw new Error('Mature site should NOT have Day 1 Playbook');
+      assertContains(prompt, 'TOKEN BUDGET: 50000', 'Mature site should have 50K budget');
+    }
+  }));
+
+  // 12. Signal dispatcher endpoint responds
+  results.push(await runTest("WIRE: signal-dispatcher endpoint responds", 5 as any, async () => {
+    const hdrs = {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${serviceKey}`,
+    };
+    const resp = await fetch(`${supabaseUrl}/functions/v1/signal-dispatcher`, {
+      method: 'POST', headers: hdrs,
+      body: JSON.stringify({ signal: 'test_nonexistent_signal', data: {}, context: {} }),
+    });
+    const data = await resp.json();
+    // Should respond with matched=0, not crash
+    if (resp.status >= 500) throw new Error(`signal-dispatcher crashed: ${JSON.stringify(data)}`);
+    assertExists(data.signal || data.matched !== undefined || data.error, 'signal-dispatcher returned empty response');
+  }));
+
   return results;
 }
 
