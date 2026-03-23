@@ -1226,7 +1226,7 @@ serve(async (req) => {
   try {
     let body: any = {};
     try { body = await req.json(); } catch { /* empty body OK */ }
-    const layerFilter: number[] = body.layers || [1, 2, 3, 4, 5, 6];
+    const layerFilter: number[] = body.layers || [1, 2, 3, 4, 5, 6, 7];
 
     const allResults: TestResult[] = [];
 
@@ -1237,6 +1237,7 @@ serve(async (req) => {
     if (layerFilter.includes(4)) tasks.push(layer4Tests(supabase, supabaseUrl, serviceKey));
     if (layerFilter.includes(5)) tasks.push(layer5Tests(supabase, supabaseUrl, serviceKey));
     if (layerFilter.includes(6)) tasks.push(layer6Tests(supabase, supabaseUrl, serviceKey));
+    if (layerFilter.includes(7)) tasks.push(layer7Tests(supabase, supabaseUrl, serviceKey));
 
     const layerResults = await Promise.all(tasks);
     for (const lr of layerResults) allResults.push(...lr);
