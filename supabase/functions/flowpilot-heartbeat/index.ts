@@ -219,18 +219,24 @@ serve(async (req) => {
     });
 
     // 3. Delegate to the shared reason() loop — NO duplicated tool loop
-    const result = await reason(supabase, [
+    //    Wall-clock guard: wrap in a timeout to prevent runaway (OpenClaw #3181)
+    const reasonPromise = reason(supabase, [
       { role: "system", content: systemPrompt },
-      { role: "user", content: `Heartbeat triggered at ${new Date().toISOString()}. Review objectives, advance plans, execute due automations, and report system health.` },
+      { role: "user", content: `Heartbeat triggered at ${new Date().toISOString()}. Evaluate outcomes, advance objectives, execute due automations.` },
     ], {
       scope: 'internal',
       maxIterations: maxIter,
       tier: 'reasoning',
       traceId,
       builtInToolGroups: ['memory', 'objectives', 'self-mod', 'reflect', 'soul', 'planning', 'automations-exec', 'workflows', 'a2a', 'skill-packs'],
-      // Pass token budget via config extension
       tokenBudget: TOKEN_BUDGET,
     } as any);
+
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error(`Heartbeat wall-clock timeout (${MAX_WALL_CLOCK_MS}ms)`)), MAX_WALL_CLOCK_MS)
+    );
+
+    const result = await Promise.race([reasonPromise, timeoutPromise]);
 
     const duration = Date.now() - startTime;
 
