@@ -1126,7 +1126,10 @@ export async function loadObjectives(supabase: any, opts?: { unlockedOnly?: bool
       : ' | NO PLAN (needs decompose_objective)';
     const deadline = o.constraints?.deadline ? ` | ⏰ deadline: ${o.constraints.deadline}` : '';
     const priority = o.constraints?.priority ? ` | priority: ${o.constraints.priority}` : '';
-    return `- #${i + 1} [score:${o._priority_score}] [${o.id}] "${o.goal}"${planInfo}${deadline}${priority} | progress: ${JSON.stringify(o.progress)} | criteria: ${JSON.stringify(o.success_criteria)}`;
+    // Show next pending step instead of full progress dump
+    const nextStep = plan?.steps?.find((s: any) => s.status !== 'done');
+    const nextInfo = nextStep ? ` | next: "${nextStep.description || nextStep.action}"` : '';
+    return `- #${i + 1} [score:${o._priority_score}] [${o.id}] "${o.goal}"${planInfo}${nextInfo}${deadline}${priority}`;
   }).join('\n');
 }
 
