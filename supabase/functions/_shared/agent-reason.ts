@@ -3058,7 +3058,16 @@ export async function reason(
         }
       }
 
-      const aiResponse = await fetch(apiUrl, {
+      // ─── Dynamic skill tier degradation ───
+      const newTier = resolveSkillBudgetTier(tokenBudget, totalTokenUsage.total_tokens);
+      if (newTier !== currentSkillTier) {
+        console.log(`[reason] trace=${traceId} Skill budget tier changed: ${currentSkillTier} → ${newTier} at ${Math.round(totalTokenUsage.total_tokens / tokenBudget * 100)}%`);
+        currentSkillTier = newTier;
+        skillTools = await loadSkillTools(supabase, config.scope, config.skillCategories, currentSkillTier);
+        allTools = [...builtInTools, ...(config.additionalTools || []), ...skillTools];
+        console.log(`[reason] trace=${traceId} Reloaded ${skillTools.length} skill tools at ${currentSkillTier} tier`);
+      }
+
         method: 'POST',
         headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
