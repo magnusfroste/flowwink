@@ -2446,13 +2446,13 @@ async function handleEvaluateOutcomes(supabase: any, args: { limit?: number; ski
   since.setDate(since.getDate() - 7);
 
   // Fetch unevaluated activities
+  // IMPORTANT: .or() and .is() filters must be applied BEFORE .order()/.limit()
+  // to avoid PostgREST query plan issues where filters are applied after limiting.
   let query = supabase
     .from('agent_activity')
     .select('id, skill_name, input, output, status, created_at, duration_ms')
     .eq('status', 'success')
-    .gte('created_at', since.toISOString())
-    .order('created_at', { ascending: false })
-    .limit(limit);
+    .gte('created_at', since.toISOString());
 
   if (args.include_too_early) {
     // Include both null AND too_early for re-evaluation
@@ -2460,6 +2460,9 @@ async function handleEvaluateOutcomes(supabase: any, args: { limit?: number; ski
   } else {
     query = query.is('outcome_status', null);
   }
+
+  // Apply ordering and limit AFTER all filters
+  query = query.order('created_at', { ascending: false }).limit(limit);
 
   if (args.skill_filter) {
     query = query.eq('skill_name', args.skill_filter);

@@ -132,10 +132,10 @@ serve(async (req) => {
       result = { error: `Unknown handler type: ${handler}` };
     }
 
-    // 5. Log activity (with objective context if provided)
-    const activityInput = objective_context
-      ? { ...args, _objective_context: objective_context }
-      : args;
+    // 5. Log activity (with objective context and trace_id if provided)
+    const activityInput: Record<string, unknown> = { ...args };
+    if (objective_context) activityInput._objective_context = objective_context;
+    if (trace_id) activityInput.trace_id = trace_id;
     const activityId = await logActivity(supabase, {
       agent: agent_type, skill_id: skill.id, skill_name: skill.name,
       input: activityInput, output: result as Record<string, unknown>,
