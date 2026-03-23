@@ -141,11 +141,14 @@ serve(async (req) => {
     const activityInput: Record<string, unknown> = { ...args };
     if (objective_context) activityInput._objective_context = objective_context;
     if (trace_id) activityInput.trace_id = trace_id;
+    // Determine if the handler actually succeeded
+    const handlerFailed = !!(result as any)?.error;
     const activityId = await logActivity(supabase, {
       agent: agent_type, skill_id: skill.id, skill_name: skill.name,
       input: activityInput, output: result as Record<string, unknown>,
-      status: 'success', conversation_id,
+      status: handlerFailed ? 'failed' : 'success', conversation_id,
       duration_ms: Date.now() - startTime,
+      error_message: handlerFailed ? String((result as any).error).slice(0, 500) : undefined,
     });
 
     // 5b. Outcome tracking: leave outcome_status as NULL
