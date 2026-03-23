@@ -2666,6 +2666,7 @@ export async function executeBuiltInTool(
   serviceKey: string,
   fnName: string,
   fnArgs: any,
+  traceId?: string,
 ): Promise<any> {
   switch (fnName) {
     case 'memory_write': return handleMemoryWrite(supabase, fnArgs);
@@ -2706,11 +2707,13 @@ export async function executeBuiltInTool(
     case 'record_outcome': return handleRecordOutcome(supabase, fnArgs);
   }
 
-  // Not a built-in → delegate to agent-execute
+  // Not a built-in → delegate to agent-execute with trace ID
+  const body: Record<string, any> = { skill_name: fnName, arguments: fnArgs, agent_type: 'flowpilot' };
+  if (traceId) body.trace_id = traceId;
   const response = await fetch(`${supabaseUrl}/functions/v1/agent-execute`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceKey}` },
-    body: JSON.stringify({ skill_name: fnName, arguments: fnArgs, agent_type: 'flowpilot' }),
+    body: JSON.stringify(body),
   });
   return response.json();
 }
