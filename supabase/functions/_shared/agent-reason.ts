@@ -2713,13 +2713,20 @@ export function isBuiltInTool(name: string): boolean {
 
 // ─── Load Skills from Registry ────────────────────────────────────────────────
 
-export async function loadSkillTools(supabase: any, scope: 'internal' | 'external'): Promise<any[]> {
+export async function loadSkillTools(supabase: any, scope: 'internal' | 'external', categories?: string[]): Promise<any[]> {
   const scopes = scope === 'internal' ? ['internal', 'both'] : ['external', 'both'];
-  const { data: skills } = await supabase
+  let query = supabase
     .from('agent_skills')
-    .select('name, tool_definition, scope, requires')
+    .select('name, tool_definition, scope, requires, category')
     .eq('enabled', true)
     .in('scope', scopes);
+  
+  // Category filter — drastically reduces token overhead for heartbeat
+  if (categories && categories.length > 0) {
+    query = query.in('category', categories);
+  }
+
+  const { data: skills } = await query;
 
   if (!skills?.length) return [];
 
