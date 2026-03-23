@@ -1,36 +1,82 @@
 
-# OpenClaw-Aligned Prompt Architecture for FlowPilot
+# FlowPilot Autonomy Architecture
 
-## Status: ✅ Implementerad
+## Status: ✅ Refactored (March 2026)
 
-### Vad som gjordes
+### Modular Architecture
 
-**Layered Prompt Architecture** — systemprompt-kompilatorn (`buildSystemPrompt`) följer nu OpenClaw-principen med 6 explicita lager:
+The monolithic `agent-reason.ts` (3000+ lines) has been decomposed into focused submodules while maintaining backward compatibility through re-exports:
 
-1. **Layer 1: Mode Identity** — heartbeat/operate (hårdkodat, kort)
-2. **Layer 2: SOUL + IDENTITY** — från DB, evolverbar via `soul_update`
-3. **Layer 3: AGENTS** — från DB, evolverbar via `agents_update` (fallback: `CORE_INSTRUCTIONS`)
-4. **Layer 4: CMS Schema Awareness** — moduler, integrationer, block types
-5. **Layer 5: GROUNDING RULES** — ALLTID hårdkodat säkerhetslager (kan ej skrivas över)
-6. **Layer 6: Mode-specifik kontext** — objectives, memory, heartbeat protocol
+```
+supabase/functions/_shared/
+├── agent-reason.ts      ← Façade: re-exports + core logic (prompt compiler, tools, handlers)
+├── types.ts             ← Shared type definitions (PromptMode, ReasonConfig, TokenUsage, etc.)
+├── ai-config.ts         ← AI provider resolution (OpenAI, Gemini, Lovable, Local)
+├── concurrency.ts       ← Lane-based locking via agent_locks table
+├── token-tracking.ts    ← Budget enforcement for autonomous runs
+└── trace.ts             ← Correlation IDs (trace_id) for full run observability
+```
 
-### Nya funktioner
+### Key Architectural Decisions
 
-- **`loadWorkspaceFiles()`** — hämtar soul, identity OCH agents i ett DB-anrop
-- **`buildWorkspacePrompt()`** — bygger SOUL + IDENTITY + AGENTS prompt
-- **`agents_update` tool** — FlowPilot kan uppdatera sina egna operativa regler
-- **`handleAgentsUpdate()`** — upsert mot `agent_memory(key='agents')`
-- **Bootstrap seeding** — initialt AGENTS-dokument skapas vid första admin-session
+#### 1. Single Reasoning Loop (DRY)
+The heartbeat previously duplicated the entire tool loop from `reason()`. Now:
+- `flowpilot-heartbeat` → gathers context → calls `reason()` → logs results
+- `agent-operate` → gathers context → runs its own SSE streaming loop (streaming requires different architecture)
+- Both share: tool definitions, tool router, skill loading, context pruning
 
-### Backward-kompatibilitet
+#### 2. Trace IDs (Observability)
+Every autonomy run gets a unique `trace_id` (format: `fp_{timestamp}_{random}`):
+- Generated at heartbeat start → flows into `reason()` → passed to `executeBuiltInTool()` → forwarded to `agent-execute` calls
+- Logged in `agent_activity.input.trace_id` for each heartbeat
+- Query: "show me everything that happened in heartbeat run X" → `WHERE input->>'trace_id' = 'fp_xxx'`
 
-- `loadSoulIdentity()` och `buildSoulPrompt()` finns kvar som deprecated wrappers
-- `agent-reason/index.ts` (re-export) opåverkat
-- Test-filen (`run-autonomy-tests`) fungerar via deprecated API
+#### 3. Backward Compatibility
+All existing imports continue to work:
+```typescript
+// This still works — agent-reason.ts re-exports everything
+import { resolveAiConfig, tryAcquireLock, extractTokenUsage } from "../_shared/agent-reason.ts";
 
-### Filer ändrade
+// But you can also import directly for clarity
+import { tryAcquireLock } from "../_shared/concurrency.ts";
+import { generateTraceId } from "../_shared/trace.ts";
+```
 
-- `supabase/functions/_shared/agent-reason.ts` — prompt compiler, workspace loader, agents tool
-- `supabase/functions/agent-operate/index.ts` — uppdaterade imports/destructuring
-- `supabase/functions/flowpilot-heartbeat/index.ts` — uppdaterade imports/destructuring
-- `src/hooks/useFlowPilotBootstrap.ts` — seedar AGENTS-dokument
+### Data Flow: Heartbeat Run
+
+```
+pg_cron (every 12h)
+  → flowpilot-heartbeat (edge function)
+    → generateTraceId('hb') → trace_id: hb_xxx
+    → tryAcquireLock('heartbeat')
+    → [parallel] loadWorkspaceFiles, loadMemories, loadObjectives, loadSiteStats, ...
+    → buildSystemPrompt (OpenClaw 6-layer compiler)
+    → reason(messages, config) ← SHARED LOOP
+      → AI provider (OpenAI/Gemini)
+      → tool_calls → executeBuiltInTool(trace_id)
+        → built-in? → handle directly
+        → skill? → agent-execute(trace_id) → handler
+      → loop until no more tool_calls or budget exceeded
+    → saveHeartbeatState
+    → agent_activity.insert(trace_id)
+    → releaseLock('heartbeat')
+```
+
+### OpenClaw Prompt Layers
+
+1. **Mode Identity** — heartbeat/operate (hardcoded)
+2. **SOUL + IDENTITY** — from DB, evolvable via `soul_update`
+3. **AGENTS** — from DB, evolvable via `agents_update` (fallback: `CORE_INSTRUCTIONS`)
+4. **CMS Schema** — modules, integrations, block types
+5. **GROUNDING RULES** — hardcoded safety layer (cannot be overridden)
+6. **Context** — objectives, memory, heartbeat protocol, site maturity
+
+### Files Changed
+
+- `supabase/functions/_shared/agent-reason.ts` — refactored to re-export from submodules
+- `supabase/functions/_shared/types.ts` — NEW: shared type definitions
+- `supabase/functions/_shared/ai-config.ts` — NEW: AI provider resolution
+- `supabase/functions/_shared/concurrency.ts` — NEW: lane-based locking
+- `supabase/functions/_shared/token-tracking.ts` — NEW: budget enforcement
+- `supabase/functions/_shared/trace.ts` — NEW: correlation IDs
+- `supabase/functions/flowpilot-heartbeat/index.ts` — refactored to use `reason()`

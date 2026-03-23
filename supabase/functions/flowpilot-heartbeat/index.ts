@@ -7,28 +7,29 @@ import {
   loadMemories,
   loadObjectives,
   buildSystemPrompt,
-  pruneConversationHistory,
   loadSkillTools,
   getBuiltInTools,
-  executeBuiltInTool,
   runSelfHealing,
   loadCMSSchema,
   loadHeartbeatState,
   saveHeartbeatState,
-  extractTokenUsage,
-  accumulateTokens,
-  isOverBudget,
   detectSiteMaturity,
   loadCrossModuleInsights,
-  tryAcquireLock,
-  releaseLock,
   loadHeartbeatProtocol,
+  reason,
 } from "../_shared/agent-reason.ts";
-import type { TokenUsage, HeartbeatState } from "../_shared/agent-reason.ts";
+import { tryAcquireLock, releaseLock } from "../_shared/concurrency.ts";
+import { generateTraceId } from "../_shared/trace.ts";
+import type { TokenUsage } from "../_shared/types.ts";
 
 /**
- * FlowPilot Heartbeat — Enhanced Autonomous Loop
- * Uses the shared prompt compiler + context pruning from agent-reason.
+ * FlowPilot Heartbeat — Autonomous Loop
+ * 
+ * Thin orchestration wrapper that:
+ *   1. Gathers heartbeat-specific context (activity, stats, automations)
+ *   2. Builds the system prompt via the prompt compiler
+ *   3. Delegates to the shared reason() loop (no duplicated tool loop)
+ *   4. Logs results and saves heartbeat state
  */
 
 const corsHeaders = {
@@ -94,6 +95,61 @@ async function loadLinkedAutomations(supabase: any): Promise<string> {
   return out;
 }
 
+// ─── Integrity gate ───────────────────────────────────────────────────────────
+
+async function runIntegrityGate(supabase: any): Promise<string> {
+  try {
+    const { data: enabledSkills } = await supabase
+      .from('agent_skills')
+      .select('name, instructions, tool_definition, description')
+      .eq('enabled', true);
+
+    const skills = enabledSkills || [];
+    const integrityIssues: string[] = [];
+
+    const noInstr = skills.filter((s: any) => !s.instructions || s.instructions.trim() === '');
+    if (noInstr.length > 0) integrityIssues.push(`${noInstr.length} skills missing instructions`);
+
+    const badTd = skills.filter((s: any) => {
+      const td = typeof s.tool_definition === 'string' ? JSON.parse(s.tool_definition) : s.tool_definition;
+      return !td?.function?.name;
+    });
+    if (badTd.length > 0) integrityIssues.push(`${badTd.length} skills with invalid tool definitions`);
+
+    const { data: memKeys } = await supabase
+      .from('agent_memory')
+      .select('key')
+      .in('key', ['soul', 'identity', 'agents']);
+    const missing = ['soul', 'identity', 'agents'].filter(k => !(memKeys || []).some((m: any) => m.key === k));
+    if (missing.length > 0) integrityIssues.push(`Missing memory keys: ${missing.join(', ')}`);
+
+    const { data: autos } = await supabase
+      .from('agent_automations')
+      .select('name, skill_name')
+      .eq('enabled', true);
+    const skillNames = new Set(skills.map((s: any) => s.name));
+    const broken = (autos || []).filter((a: any) => a.skill_name && !skillNames.has(a.skill_name));
+    if (broken.length > 0) integrityIssues.push(`${broken.length} automations reference missing skills`);
+
+    if (integrityIssues.length > 0) {
+      await supabase.from('agent_activity').insert({
+        agent: 'flowpilot',
+        skill_name: 'system_integrity_check',
+        input: { source: 'heartbeat_gate' },
+        output: { issues: integrityIssues, issue_count: integrityIssues.length },
+        status: integrityIssues.length > 2 ? 'failed' : 'success',
+      });
+      console.log(`[heartbeat] Integrity gate: ${integrityIssues.length} issues found`);
+      return `\n\n⚠️ SYSTEM INTEGRITY ISSUES DETECTED:\n${integrityIssues.map(i => `- ${i}`).join('\n')}\nConsider creating an objective to fix these if none exists.`;
+    }
+    console.log('[heartbeat] Integrity gate: all checks passed ✓');
+    return '';
+  } catch (intErr) {
+    console.warn('[heartbeat] Integrity gate failed (non-fatal):', intErr);
+    return '';
+  }
+}
+
 // ─── Main handler ─────────────────────────────────────────────────────────────
 
 serve(async (req) => {
@@ -106,75 +162,22 @@ serve(async (req) => {
   const supabase = createClient(supabaseUrl, serviceKey);
 
   const startTime = Date.now();
+  const traceId = generateTraceId('hb');
 
   try {
     // Concurrency guard — only one heartbeat at a time (TTL: 10 minutes)
     const lockAcquired = await tryAcquireLock(supabase, 'heartbeat', 'heartbeat', 600);
     if (!lockAcquired) {
-      console.log('[heartbeat] Another heartbeat is already running — skipping');
+      console.log(`[heartbeat] trace=${traceId} Another heartbeat is already running — skipping`);
       return new Response(
-        JSON.stringify({ skipped: true, reason: 'concurrent_heartbeat' }),
+        JSON.stringify({ skipped: true, reason: 'concurrent_heartbeat', trace_id: traceId }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // 0. INTEGRITY GATE — quick pre-flight validation before reasoning
-    let integrityContext = '';
-    try {
-      const { data: enabledSkills } = await supabase
-        .from('agent_skills')
-        .select('name, instructions, tool_definition, description')
-        .eq('enabled', true);
-
-      const skills = enabledSkills || [];
-      const integrityIssues: string[] = [];
-
-      const noInstr = skills.filter((s: any) => !s.instructions || s.instructions.trim() === '');
-      if (noInstr.length > 0) integrityIssues.push(`${noInstr.length} skills missing instructions`);
-
-      const badTd = skills.filter((s: any) => {
-        const td = typeof s.tool_definition === 'string' ? JSON.parse(s.tool_definition) : s.tool_definition;
-        return !td?.function?.name;
-      });
-      if (badTd.length > 0) integrityIssues.push(`${badTd.length} skills with invalid tool definitions`);
-
-      const { data: memKeys } = await supabase
-        .from('agent_memory')
-        .select('key')
-        .in('key', ['soul', 'identity', 'agents']);
-      const missing = ['soul', 'identity', 'agents'].filter(k => !(memKeys || []).some((m: any) => m.key === k));
-      if (missing.length > 0) integrityIssues.push(`Missing memory keys: ${missing.join(', ')}`);
-
-      const { data: autos } = await supabase
-        .from('agent_automations')
-        .select('name, skill_name')
-        .eq('enabled', true);
-      const skillNames = new Set(skills.map((s: any) => s.name));
-      const broken = (autos || []).filter((a: any) => a.skill_name && !skillNames.has(a.skill_name));
-      if (broken.length > 0) integrityIssues.push(`${broken.length} automations reference missing skills`);
-
-      if (integrityIssues.length > 0) {
-        integrityContext = `\n\n⚠️ SYSTEM INTEGRITY ISSUES DETECTED:\n${integrityIssues.map(i => `- ${i}`).join('\n')}\nConsider creating an objective to fix these if none exists.`;
-
-        // Log integrity issues as activity
-        await supabase.from('agent_activity').insert({
-          agent: 'flowpilot',
-          skill_name: 'system_integrity_check',
-          input: { source: 'heartbeat_gate' },
-          output: { issues: integrityIssues, issue_count: integrityIssues.length },
-          status: integrityIssues.length > 2 ? 'failed' : 'success',
-        });
-
-        console.log(`[heartbeat] Integrity gate: ${integrityIssues.length} issues found`);
-      } else {
-        console.log('[heartbeat] Integrity gate: all checks passed ✓');
-      }
-    } catch (intErr) {
-      console.warn('[heartbeat] Integrity gate failed (non-fatal):', intErr);
-    }
-
-    // 1. Gather context + run self-healing in parallel
-    const [{ soul, identity, agents }, memoryCtx, objectiveCtx, activityCtx, statsCtx, automationCtx, healingReport, cmsSchemaCtx, heartbeatStateCtx, siteMaturity, crossModuleCtx, customProtocol] = await Promise.all([
+    // 0. Integrity gate + context gathering in parallel
+    const [integrityContext, { soul, identity, agents }, memoryCtx, objectiveCtx, activityCtx, statsCtx, automationCtx, healingReport, cmsSchemaCtx, heartbeatStateCtx, siteMaturity, crossModuleCtx, customProtocol] = await Promise.all([
+      runIntegrityGate(supabase),
       loadWorkspaceFiles(supabase),
       loadMemories(supabase),
       loadObjectives(supabase, { unlockedOnly: true }),
@@ -189,20 +192,13 @@ serve(async (req) => {
       loadHeartbeatProtocol(supabase),
     ]);
 
-    // 2. Resolve AI config
-    const { apiKey, apiUrl, model } = await resolveAiConfig(supabase, 'reasoning');
-
-    // 3. Load tools — include planning + automation execution
-    const builtInTools = getBuiltInTools(['memory', 'objectives', 'self-mod', 'reflect', 'soul', 'planning', 'automations-exec', 'workflows', 'a2a', 'skill-packs']);
-    const skillTools = await loadSkillTools(supabase, 'internal');
-    const allTools = [...builtInTools, ...skillTools];
-
-    // 4. Token budget — give fresh sites more room to work
+    // 1. Token budget — give fresh sites more room to work
     const TOKEN_BUDGET = siteMaturity.isFresh ? 80_000 : 50_000;
+    const maxIter = siteMaturity.isFresh ? 12 : MAX_ITERATIONS;
 
-    console.log(`[heartbeat] Site maturity: ${siteMaturity.isFresh ? 'FRESH (Day 1 playbook active)' : 'mature'}, budget: ${TOKEN_BUDGET}${customProtocol ? ', using CUSTOM protocol' : ''}`);
+    console.log(`[heartbeat] trace=${traceId} Site maturity: ${siteMaturity.isFresh ? 'FRESH' : 'mature'}, budget: ${TOKEN_BUDGET}${customProtocol ? ', custom protocol' : ''}`);
 
-    // 5. Build system prompt via prompt compiler (OpenClaw Layer 1)
+    // 2. Build system prompt via prompt compiler
     const systemPrompt = buildSystemPrompt({
       mode: 'heartbeat',
       soulPrompt: buildWorkspacePrompt(soul, identity, agents),
@@ -216,123 +212,69 @@ serve(async (req) => {
       cmsSchemaContext: cmsSchemaCtx,
       heartbeatState: heartbeatStateCtx,
       tokenBudget: TOKEN_BUDGET,
-      maxIterations: siteMaturity.isFresh ? 12 : MAX_ITERATIONS,
+      maxIterations: maxIter,
       siteMaturity,
       customHeartbeatProtocol: customProtocol ?? undefined,
     });
 
-    // 6. Run the reasoning loop with context pruning + token tracking
-    const rawMessages: any[] = [
+    // 3. Delegate to the shared reason() loop — NO duplicated tool loop
+    const result = await reason(supabase, [
       { role: "system", content: systemPrompt },
       { role: "user", content: `Heartbeat triggered at ${new Date().toISOString()}. Review objectives, advance plans, execute due automations, and report system health.` },
-    ];
-
-    const messages = await pruneConversationHistory(rawMessages, supabase);
-
-    let finalResponse = "";
-    const actionsExecuted: string[] = [];
-    let totalTokenUsage: TokenUsage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
-
-    const maxIter = siteMaturity.isFresh ? 12 : MAX_ITERATIONS;
-    for (let i = 0; i < maxIter; i++) {
-      // Token budget check
-      if (isOverBudget(totalTokenUsage, TOKEN_BUDGET)) {
-        console.log(`[heartbeat] Token budget exceeded (${totalTokenUsage.total_tokens}/${TOKEN_BUDGET}), stopping.`);
-        finalResponse = finalResponse || `Heartbeat stopped: token budget reached (${totalTokenUsage.total_tokens} tokens used).`;
-        break;
-      }
-
-      const aiResponse = await fetch(apiUrl, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model,
-          messages,
-          tools: allTools.length > 0 ? allTools : undefined,
-          tool_choice: allTools.length > 0 ? "auto" : undefined,
-        }),
-      });
-
-      if (!aiResponse.ok) {
-        const err = await aiResponse.text();
-        console.error("[heartbeat] AI error:", aiResponse.status, err);
-        throw new Error(`AI provider error: ${aiResponse.status}`);
-      }
-
-      const aiData = await aiResponse.json();
-      
-      // Track tokens
-      const iterationTokens = extractTokenUsage(aiData);
-      totalTokenUsage = accumulateTokens(totalTokenUsage, iterationTokens);
-
-      const choice = aiData.choices?.[0];
-      if (!choice) throw new Error("No AI response");
-
-      const msg = choice.message;
-
-      if (!msg.tool_calls?.length) {
-        finalResponse = msg.content || "Heartbeat complete.";
-        break;
-      }
-
-      messages.push(msg);
-
-      for (const tc of msg.tool_calls) {
-        const fnName = tc.function.name;
-        let fnArgs: any;
-        try { fnArgs = JSON.parse(tc.function.arguments || "{}"); } catch { fnArgs = {}; }
-
-        console.log(`[heartbeat] Executing: ${fnName}`, JSON.stringify(fnArgs).slice(0, 200));
-        actionsExecuted.push(fnName);
-
-        let result: any;
-        try {
-          result = await executeBuiltInTool(supabase, supabaseUrl, serviceKey, fnName, fnArgs);
-        } catch (err: any) {
-          result = { error: err.message };
-        }
-
-        messages.push({ role: "tool", tool_call_id: tc.id, content: JSON.stringify(result) });
-      }
-    }
+    ], {
+      scope: 'internal',
+      maxIterations: maxIter,
+      tier: 'reasoning',
+      traceId,
+      builtInToolGroups: ['memory', 'objectives', 'self-mod', 'reflect', 'soul', 'planning', 'automations-exec', 'workflows', 'a2a', 'skill-packs'],
+      // Pass token budget via config extension
+      tokenBudget: TOKEN_BUDGET,
+    } as any);
 
     const duration = Date.now() - startTime;
 
-    // 7. Save heartbeat state for next run
+    // 4. Save heartbeat state for next run
     await saveHeartbeatState(supabase, {
       last_run: new Date().toISOString(),
-      objectives_advanced: actionsExecuted.filter(a => a === 'advance_plan' || a === 'objective_complete'),
+      objectives_advanced: result.actionsExecuted.filter(a => a === 'advance_plan' || a === 'objective_complete'),
       next_priorities: [],
       pending_actions: [],
-      token_usage: totalTokenUsage,
-      iteration_count: actionsExecuted.length,
+      token_usage: result.tokenUsage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+      iteration_count: result.actionsExecuted.length,
     });
 
-    // 8. Log heartbeat with token usage
+    // 5. Log heartbeat with trace ID
     await supabase.from("agent_activity").insert({
       agent: "flowpilot",
       skill_name: "heartbeat",
-      input: { trigger: "scheduled", actions: actionsExecuted },
-      output: { summary: finalResponse.slice(0, 2000) },
+      input: { trigger: "scheduled", actions: result.actionsExecuted, trace_id: traceId },
+      output: { summary: result.response.slice(0, 2000) },
       status: "success",
       duration_ms: duration,
-      token_usage: totalTokenUsage,
+      token_usage: result.tokenUsage,
     });
 
-    console.log(`[heartbeat] Complete in ${duration}ms, ${actionsExecuted.length} actions, ${totalTokenUsage.total_tokens} tokens: ${actionsExecuted.join(", ")}`);
+    console.log(`[heartbeat] trace=${traceId} Complete in ${duration}ms, ${result.actionsExecuted.length} actions, ${result.tokenUsage?.total_tokens || 0} tokens`);
 
     return new Response(
-      JSON.stringify({ status: "ok", duration_ms: duration, actions: actionsExecuted, token_usage: totalTokenUsage, summary: finalResponse.slice(0, 500) }),
+      JSON.stringify({
+        status: "ok",
+        trace_id: traceId,
+        duration_ms: duration,
+        actions: result.actionsExecuted,
+        token_usage: result.tokenUsage,
+        summary: result.response.slice(0, 500),
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err: any) {
     const duration = Date.now() - startTime;
-    console.error("[heartbeat] Error:", err);
+    console.error(`[heartbeat] trace=${traceId} Error:`, err);
 
     await supabase.from("agent_activity").insert({
       agent: "flowpilot",
       skill_name: "heartbeat",
-      input: { trigger: "scheduled" },
+      input: { trigger: "scheduled", trace_id: traceId },
       output: {},
       status: "failed",
       error_message: err.message || "Unknown error",
@@ -340,11 +282,10 @@ serve(async (req) => {
     });
 
     return new Response(
-      JSON.stringify({ error: err.message || "Internal error" }),
+      JSON.stringify({ error: err.message || "Internal error", trace_id: traceId }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } finally {
-    // Always release heartbeat lock
     await releaseLock(supabase, 'heartbeat');
   }
 });
