@@ -38,6 +38,8 @@ const LAYER_LABELS: Record<number, { label: string; description: string }> = {
   4: { label: 'Autonomy Health', description: 'Live system: skills seeded, soul, objectives, skill execution, heartbeat ran' },
   5: { label: 'Wiring', description: 'End-to-end: soul→prompt, memory→context, skill→tools, lock→skip' },
   6: { label: 'Behavior', description: 'OMATS Stage 3: personality, idle discipline, task completion, grounding' },
+  7: { label: 'Robustness', description: 'Error propagation, trace forwarding, database consistency' },
+  8: { label: 'Diagnostics', description: 'Live health: heartbeat frequency, token efficiency, action output, silent failures' },
 };
 
 export default function AutonomyTestSuitePage() {
