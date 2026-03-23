@@ -8,89 +8,31 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
  *   - flowpilot-heartbeat (autonomous, non-streaming)
  *   - chat-completion delegates skill execution here too
  *
- * Consolidates: AI config, built-in tools, tool loop, memory/objectives,
- * soul/identity, reflection, self-modification, plan decomposition,
- * self-healing, context pruning, vector memory, and prompt compilation.
+ * Architecture: This file re-exports from focused submodules and contains
+ * the core logic that hasn't been extracted yet. Submodules:
+ *   - types.ts          — shared type definitions
+ *   - ai-config.ts      — AI provider resolution
+ *   - concurrency.ts    — lane-based locking
+ *   - token-tracking.ts — budget enforcement
+ *   - trace.ts          — correlation IDs
  *
  * NOT a serve() handler — this is an importable module.
  */
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Re-exports from submodules ───────────────────────────────────────────────
+export type { PromptMode, PromptCompilerInput, ReasonConfig, ReasonResult, TokenUsage, HeartbeatState, SiteMaturity, BuiltInToolGroup } from './types.ts';
+export type { AiTier } from './ai-config.ts';
+export { resolveAiConfig } from './ai-config.ts';
+export { tryAcquireLock, releaseLock } from './concurrency.ts';
+export { extractTokenUsage, accumulateTokens, isOverBudget } from './token-tracking.ts';
+export { generateTraceId } from './trace.ts';
 
-export type PromptMode = 'operate' | 'heartbeat' | 'chat';
-
-export interface PromptCompilerInput {
-  mode: PromptMode;
-  soulPrompt: string;
-  /** @deprecated — use agentsDoc instead for layered prompt */
-  agents?: any;
-  memoryContext: string;
-  objectiveContext: string;
-  // Heartbeat-specific
-  activityContext?: string;
-  statsContext?: string;
-  automationContext?: string;
-  healingReport?: string;
-  maxIterations?: number;
-  // Autonomy features
-  cmsSchemaContext?: string;
-  heartbeatState?: string;
-  tokenBudget?: number;
-  siteMaturity?: SiteMaturity;
-  /** Custom heartbeat protocol loaded from agent_memory. Falls back to HEARTBEAT_PROTOCOL constant. */
-  customHeartbeatProtocol?: string;
-  // Chat-specific
-  chatSystemPrompt?: string;
-}
-
-export interface ReasonConfig {
-  scope: 'internal' | 'external';
-  maxIterations?: number;
-  systemPromptOverride?: string;
-  extraContext?: string;
-  builtInToolGroups?: Array<'memory' | 'objectives' | 'self-mod' | 'reflect' | 'soul' | 'planning' | 'automations-exec' | 'workflows' | 'a2a' | 'skill-packs'>;
-  additionalTools?: any[];
-  tier?: AiTier;
-  /** Lane name for concurrency guard. If set, only one agent can run on this lane at a time. */
-  lockLane?: string;
-  /** Identifier for who holds the lock (e.g. 'heartbeat', 'chat', 'operate') */
-  lockOwner?: string;
-}
-
-export interface ReasonResult {
-  response: string;
-  actionsExecuted: string[];
-  skillResults: Array<{ skill: string; status: string; result: any }>;
-  durationMs: number;
-  tokenUsage?: TokenUsage;
-  /** True if the run was skipped because another agent process holds the lock */
-  skippedDueToLock?: boolean;
-}
-
-export interface TokenUsage {
-  prompt_tokens: number;
-  completion_tokens: number;
-  total_tokens: number;
-}
-
-export interface HeartbeatState {
-  last_run: string;
-  objectives_advanced: string[];
-  next_priorities: string[];
-  pending_actions: string[];
-  token_usage: TokenUsage;
-  iteration_count: number;
-}
-
-export interface SiteMaturity {
-  isFresh: boolean;
-  blogPosts: number;
-  leads: number;
-  subscribers: number;
-  pageViews: number;
-  contentResearch: number;
-  contentProposals: number;
-}
+// ─── Local imports for internal use ───────────────────────────────────────────
+import type { PromptCompilerInput, ReasonConfig, ReasonResult, TokenUsage, SiteMaturity, BuiltInToolGroup } from './types.ts';
+import { resolveAiConfig } from './ai-config.ts';
+import type { AiTier } from './ai-config.ts';
+import { tryAcquireLock, releaseLock } from './concurrency.ts';
+import { generateTraceId } from './trace.ts';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
