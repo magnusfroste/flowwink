@@ -40,7 +40,26 @@ const SELF_HEAL_THRESHOLD = 3;
 const MAX_CHAIN_DEPTH = 4;
 const MAX_CONTEXT_TOKENS = 80_000;
 const SUMMARY_THRESHOLD = 60_000;
-const DEFAULT_TOKEN_BUDGET = 80_000; // Max tokens per heartbeat session (aligned with heartbeat)
+const DEFAULT_TOKEN_BUDGET = 80_000;
+
+// OpenClaw §4.3 — Hard caps for prompt sections to prevent token bloat
+const MAX_SOUL_CHARS = 3_000;
+const MAX_AGENTS_CHARS = 4_000;
+const MAX_MEMORY_CHARS = 4_000;
+const MAX_OBJECTIVES_CHARS = 4_000;
+const MAX_CMS_SCHEMA_CHARS = 2_000;
+const MAX_CROSS_MODULE_CHARS = 3_000;
+const MAX_ACTIVITY_CHARS = 2_000;
+const MAX_BOOTSTRAP_TOTAL_CHARS = 20_000; // OpenClaw default
+
+// OpenClaw §5.4 — Pre-budget memory flush threshold (fraction of budget)
+const MEMORY_FLUSH_THRESHOLD = 0.80;
+
+/** Truncate a string to maxChars, appending "…[truncated]" if cut */
+function truncateSection(text: string, maxChars: number): string {
+  if (!text || text.length <= maxChars) return text;
+  return text.slice(0, maxChars) + '\n…[truncated — use tools to read full data]';
+}
 
 const BUILT_IN_TOOL_NAMES = new Set([
   'memory_write', 'memory_read', 'memory_delete',
@@ -249,24 +268,24 @@ RULES:
 - Summarize concisely after actions complete.`);
   }
 
-  // Layer 4: CMS Schema Awareness
+  // Layer 4: CMS Schema Awareness (truncated — OpenClaw §4.3)
   if (input.cmsSchemaContext) {
-    parts.push(input.cmsSchemaContext);
+    parts.push(truncateSection(input.cmsSchemaContext, MAX_CMS_SCHEMA_CHARS));
   }
 
   // Layer 5: GROUNDING RULES (ALWAYS hardcoded — safety layer, cannot be overridden)
   parts.push(GROUNDING_RULES);
 
-  // Layer 6: Mode-specific context
+  // Layer 6: Mode-specific context (all sections truncated — OpenClaw §4.3)
   if (mode === 'heartbeat') {
     parts.push(`\nCONTEXT:`);
-    parts.push(memoryContext);
-    parts.push(objectiveContext);
-    if (input.automationContext) parts.push(input.automationContext);
-    if (input.activityContext) parts.push(input.activityContext);
-    if (input.statsContext) parts.push(input.statsContext);
-    if (input.healingReport) parts.push(input.healingReport);
-    if (input.heartbeatState) parts.push(input.heartbeatState);
+    parts.push(truncateSection(memoryContext, MAX_MEMORY_CHARS));
+    parts.push(truncateSection(objectiveContext, MAX_OBJECTIVES_CHARS));
+    if (input.automationContext) parts.push(truncateSection(input.automationContext, MAX_ACTIVITY_CHARS));
+    if (input.activityContext) parts.push(truncateSection(input.activityContext, MAX_ACTIVITY_CHARS));
+    if (input.statsContext) parts.push(truncateSection(input.statsContext, MAX_CROSS_MODULE_CHARS));
+    if (input.healingReport) parts.push(truncateSection(input.healingReport, 1_000));
+    if (input.heartbeatState) parts.push(truncateSection(input.heartbeatState, 1_000));
     if (input.tokenBudget) {
       parts.push(`\nTOKEN BUDGET: ${input.tokenBudget} tokens max. Be efficient — stop early if approaching the limit.`);
     }
@@ -285,7 +304,9 @@ RULES:
     parts.push(objectiveContext);
   }
 
-  return parts.filter(Boolean).join('\n');
+  const assembled = parts.filter(Boolean).join('\n');
+  console.log(`[prompt-compiler] mode=${mode} prompt_chars=${assembled.length} (~${Math.ceil(assembled.length / 4)} tokens)`);
+  return assembled;
 }
 
 // AI Config — now in ai-config.ts (re-exported above)
@@ -325,26 +346,30 @@ export function buildWorkspacePrompt(soul: any, identity: any, agents: any): str
     if (identity.boundaries?.length) prompt += `\nBoundaries: ${identity.boundaries.join('; ')}`;
   }
 
-  // Layer 2b: Soul
-  if (soul.purpose) prompt += `\n\nSOUL:\nPurpose: ${soul.purpose}`;
-  if (soul.values?.length) prompt += `\nValues: ${soul.values.join('; ')}`;
-  if (soul.tone) prompt += `\nTone: ${soul.tone}`;
-  if (soul.philosophy) prompt += `\nPhilosophy: ${soul.philosophy}`;
+  // Layer 2b: Soul (truncated — OpenClaw §4.3)
+  let soulSection = '';
+  if (soul.purpose) soulSection += `\n\nSOUL:\nPurpose: ${soul.purpose}`;
+  if (soul.values?.length) soulSection += `\nValues: ${soul.values.join('; ')}`;
+  if (soul.tone) soulSection += `\nTone: ${soul.tone}`;
+  if (soul.philosophy) soulSection += `\nPhilosophy: ${soul.philosophy}`;
+  prompt += truncateSection(soulSection, MAX_SOUL_CHARS);
 
-  // Layer 3: Agents (operational rules from DB — overrides CORE_INSTRUCTIONS if present)
+  // Layer 3: Agents (truncated — OpenClaw §4.3)
   if (agents) {
-    prompt += `\n\nOPERATIONAL RULES (AGENTS):`;
-    if (agents.direct_action_rules) prompt += `\n${agents.direct_action_rules}`;
-    if (agents.self_improvement) prompt += `\n${agents.self_improvement}`;
-    if (agents.memory_guidelines) prompt += `\n${agents.memory_guidelines}`;
-    if (agents.browser_rules) prompt += `\n${agents.browser_rules}`;
-    if (agents.workflow_conventions) prompt += `\n${agents.workflow_conventions}`;
-    if (agents.a2a_conventions) prompt += `\n${agents.a2a_conventions}`;
-    if (agents.skill_pack_rules) prompt += `\n${agents.skill_pack_rules}`;
-    if (agents.custom_rules) prompt += `\n${agents.custom_rules}`;
+    let agentsSection = `\n\nOPERATIONAL RULES (AGENTS):`;
+    if (agents.direct_action_rules) agentsSection += `\n${agents.direct_action_rules}`;
+    if (agents.self_improvement) agentsSection += `\n${agents.self_improvement}`;
+    if (agents.memory_guidelines) agentsSection += `\n${agents.memory_guidelines}`;
+    if (agents.browser_rules) agentsSection += `\n${agents.browser_rules}`;
+    if (agents.workflow_conventions) agentsSection += `\n${agents.workflow_conventions}`;
+    if (agents.a2a_conventions) agentsSection += `\n${agents.a2a_conventions}`;
+    if (agents.skill_pack_rules) agentsSection += `\n${agents.skill_pack_rules}`;
+    if (agents.custom_rules) agentsSection += `\n${agents.custom_rules}`;
+    prompt += truncateSection(agentsSection, MAX_AGENTS_CHARS);
   }
 
-  return prompt;
+  // OpenClaw §4.3 — Global bootstrap cap
+  return truncateSection(prompt, MAX_BOOTSTRAP_TOTAL_CHARS);
 }
 
 // ─── CMS Schema Awareness ─────────────────────────────────────────────────────
@@ -2827,6 +2852,7 @@ export async function reason(
     const loadedInstructions = new Set<string>();
     const tokenBudget = (config as any).tokenBudget || DEFAULT_TOKEN_BUDGET;
     let consecutiveEmptyTurns = 0;
+    let memoryFlushed = false; // OpenClaw §5.4 — track if we've already flushed
 
     for (let i = 0; i < maxIterations; i++) {
       // Token budget check
@@ -2842,6 +2868,31 @@ export async function reason(
         console.log(`[reason] trace=${traceId} Budget nearly exhausted (${remainingBudget} remaining), stopping early`);
         finalResponse = finalResponse || `Heartbeat complete. ${actionsExecuted.length} actions in ${i} iterations.`;
         break;
+      }
+
+      // ─── OpenClaw §5.4 — Pre-Budget Memory Flush ───
+      // When budget crosses 80%, trigger a silent memory write to preserve context
+      if (!memoryFlushed && totalTokenUsage.total_tokens > tokenBudget * MEMORY_FLUSH_THRESHOLD && i > 1) {
+        memoryFlushed = true;
+        console.log(`[reason] trace=${traceId} Budget at ${Math.round(totalTokenUsage.total_tokens / tokenBudget * 100)}% — flushing context to memory`);
+        try {
+          // Extract what we've accomplished so far and save it
+          const accomplishments = actionsExecuted.length > 0
+            ? `Actions: ${actionsExecuted.join(', ')}. Skills: ${skillResults.map(r => `${r.skill}(${r.status})`).join(', ')}`
+            : 'No actions yet';
+          await handleMemoryWrite(supabase, {
+            key: `heartbeat_flush_${new Date().toISOString().slice(0, 10)}`,
+            value: `Pre-budget flush at ${totalTokenUsage.total_tokens}/${tokenBudget} tokens. ${accomplishments}. Partial response: ${(finalResponse || '').slice(0, 300)}`,
+            category: 'context',
+          });
+          // Inject a hint to the model
+          conversationMessages.push({
+            role: 'system',
+            content: `⚠️ Token budget at ${Math.round(totalTokenUsage.total_tokens / tokenBudget * 100)}%. Context has been saved to memory. Focus on completing the most important remaining action, then summarize.`,
+          });
+        } catch (flushErr) {
+          console.warn(`[reason] trace=${traceId} Memory flush failed (non-fatal):`, flushErr);
+        }
       }
 
       const aiResponse = await fetch(apiUrl, {
