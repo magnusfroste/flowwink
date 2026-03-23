@@ -2690,6 +2690,7 @@ export async function executeBuiltInTool(
     case 'skill_enable': return handleSkillEnable(supabase, fnArgs);
     case 'skill_delete': return handleSkillDelete(supabase, fnArgs);
     case 'skill_instruct': return handleSkillInstruct(supabase, fnArgs);
+    case 'skill_read': return handleSkillRead(supabase, fnArgs);
     case 'soul_update': return handleSoulUpdate(supabase, fnArgs);
     case 'agents_update': return handleAgentsUpdate(supabase, fnArgs);
     case 'heartbeat_protocol_update': return handleHeartbeatProtocolUpdate(supabase, fnArgs);
