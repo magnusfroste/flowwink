@@ -2876,16 +2876,20 @@ export async function reason(
         break;
       }
 
+      // Anti-runaway: detect if agent keeps calling same tools without progress
+      consecutiveEmptyTurns = 0; // Reset on tool calls
+      
       conversationMessages.push(msg);
 
       const calledSkillNames: string[] = [];
+      let turnErrors = 0;
 
       for (const tc of msg.tool_calls) {
         const fnName = tc.function.name;
         let fnArgs: any;
         try { fnArgs = JSON.parse(tc.function.arguments || '{}'); } catch { fnArgs = {}; }
 
-        console.log(`[reason] trace=${traceId} Executing: ${fnName}`, JSON.stringify(fnArgs).slice(0, 200));
+        console.log(`[reason] trace=${traceId} iter=${i} Executing: ${fnName}`, JSON.stringify(fnArgs).slice(0, 200));
         actionsExecuted.push(fnName);
 
         let result: any;
@@ -2893,14 +2897,30 @@ export async function reason(
           result = await executeBuiltInTool(supabase, supabaseUrl, serviceKey, fnName, fnArgs, traceId);
         } catch (err: any) {
           result = { error: err.message };
+          turnErrors++;
+        }
+
+        // Detect silent errors in results
+        if (result?.error || result?.status === 'failed') {
+          turnErrors++;
         }
 
         if (!isBuiltInTool(fnName)) {
-          skillResults.push({ skill: fnName, status: result?.status || 'success', result: result?.result || result });
+          const skillFailed = !!(result?.error || result?.status === 'failed');
+          skillResults.push({ skill: fnName, status: skillFailed ? 'failed' : 'success', result: result?.result || result });
           calledSkillNames.push(fnName);
         }
 
         conversationMessages.push({ role: 'tool', tool_call_id: tc.id, content: JSON.stringify(result) });
+      }
+
+      // Anti-runaway: if ALL tool calls in a turn errored, inject a stop hint
+      if (turnErrors === msg.tool_calls.length && msg.tool_calls.length > 0) {
+        consecutiveEmptyTurns++;
+        if (consecutiveEmptyTurns >= 2) {
+          console.warn(`[reason] trace=${traceId} ${consecutiveEmptyTurns} consecutive error turns — breaking loop`);
+          conversationMessages.push({ role: 'system', content: 'Multiple consecutive tool errors detected. Stop calling failing tools and summarize what you accomplished.' });
+        }
       }
 
       // Lazy instruction loading
