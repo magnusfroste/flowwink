@@ -1294,6 +1294,164 @@ async function layer6Tests(supabase: any, supabaseUrl: string, serviceKey: strin
   return results;
 }
 // ═══════════════════════════════════════════════════════════════════════════════
+// Layer 8 — Diagnostics: Live system health validation
+// ═══════════════════════════════════════════════════════════════════════════════
+
+async function layer8Tests(supabase: any): Promise<TestResult[]> {
+  const results: TestResult[] = [];
+
+  // ─── Test 1: Heartbeat has run recently (within 24h) ──────────────────────
+  results.push(await runTest("DIAG: Heartbeat ran within last 24h", 8 as any, async () => {
+    const since = new Date();
+    since.setHours(since.getHours() - 24);
+    const { data } = await supabase
+      .from('agent_activity')
+      .select('created_at, status')
+      .eq('agent', 'flowpilot')
+      .eq('skill_name', 'heartbeat')
+      .gte('created_at', since.toISOString())
+      .order('created_at', { ascending: false })
+      .limit(1);
+    if (!data?.length) throw new Error('No heartbeat activity in last 24h — cron may not be registered');
+    if (data[0].status !== 'success') throw new Error(`Last heartbeat status: ${data[0].status}`);
+  }));
+
+  // ─── Test 2: Heartbeat trace_id is populated ─────────────────────────────
+  results.push(await runTest("DIAG: Heartbeat logs include trace_id", 8 as any, async () => {
+    const { data } = await supabase
+      .from('agent_activity')
+      .select('input')
+      .eq('agent', 'flowpilot')
+      .eq('skill_name', 'heartbeat')
+      .eq('status', 'success')
+      .order('created_at', { ascending: false })
+      .limit(1);
+    if (!data?.length) throw new Error('SKIP: No heartbeat data');
+    const traceId = data[0]?.input?.trace_id;
+    if (!traceId || traceId === '') throw new Error('trace_id is empty in heartbeat activity log — tracing broken');
+  }));
+
+  // ─── Test 3: Heartbeat produces actions (not just burning tokens) ─────────
+  results.push(await runTest("DIAG: Heartbeat executes meaningful actions", 8 as any, async () => {
+    const { data } = await supabase
+      .from('agent_activity')
+      .select('input, output, token_usage')
+      .eq('agent', 'flowpilot')
+      .eq('skill_name', 'heartbeat')
+      .eq('status', 'success')
+      .order('created_at', { ascending: false })
+      .limit(3);
+    if (!data?.length) throw new Error('SKIP: No heartbeat data');
+    
+    // Check if any recent heartbeat executed actions
+    const anyWithActions = data.some((d: any) => {
+      const actions = d.input?.actions;
+      return actions && Array.isArray(actions) && actions.length > 0;
+    });
+    if (!anyWithActions) {
+      const tokens = data.map((d: any) => d.token_usage?.total_tokens || 0);
+      throw new Error(`Last 3 heartbeats had 0 actions but consumed ${tokens.join(', ')} tokens — agent may be stuck in reasoning without acting`);
+    }
+  }));
+
+  // ─── Test 4: No skill handler errors in recent activity ──────────────────
+  results.push(await runTest("DIAG: No silent skill failures in last 48h", 8 as any, async () => {
+    const since = new Date();
+    since.setHours(since.getHours() - 48);
+    const { data } = await supabase
+      .from('agent_activity')
+      .select('skill_name, status, error_message, output')
+      .eq('agent', 'flowpilot')
+      .neq('skill_name', 'heartbeat')
+      .neq('skill_name', 'system_integrity_check')
+      .gte('created_at', since.toISOString())
+      .order('created_at', { ascending: false })
+      .limit(50);
+    
+    if (!data?.length) throw new Error('No skill executions in 48h — agent may be idle');
+    
+    // Check for silent failures: status=success but output contains error
+    const silentFails = data.filter((d: any) => {
+      if (d.status === 'failed') return false; // explicit fail is fine
+      const out = typeof d.output === 'string' ? d.output : JSON.stringify(d.output || '');
+      return out.includes('"error"') || out.includes('Unknown') || out.includes('required');
+    });
+    
+    if (silentFails.length > 0) {
+      const examples = silentFails.slice(0, 3).map((s: any) => 
+        `${s.skill_name}: ${JSON.stringify(s.output).slice(0, 100)}`
+      ).join('; ');
+      throw new Error(`${silentFails.length} silent failures found: ${examples}`);
+    }
+  }));
+
+  // ─── Test 5: Token budget not consistently maxed ─────────────────────────
+  results.push(await runTest("DIAG: Token budget not exhausted every run", 8 as any, async () => {
+    const { data } = await supabase
+      .from('agent_activity')
+      .select('output, token_usage')
+      .eq('agent', 'flowpilot')
+      .eq('skill_name', 'heartbeat')
+      .eq('status', 'success')
+      .order('created_at', { ascending: false })
+      .limit(5);
+    if (!data?.length) throw new Error('SKIP: No heartbeat data');
+    
+    const budgetMaxed = data.filter((d: any) => {
+      const summary = typeof d.output?.summary === 'string' ? d.output.summary : '';
+      return summary.includes('budget reached') || summary.includes('budget exhausted');
+    });
+    
+    if (budgetMaxed.length === data.length) {
+      throw new Error(`All ${data.length} recent heartbeats maxed token budget — prompt may be too large or agent is over-reasoning`);
+    }
+  }));
+
+  // ─── Test 6: Objectives have decomposed plans ────────────────────────────
+  results.push(await runTest("DIAG: Active objectives have execution plans", 8 as any, async () => {
+    const { data } = await supabase
+      .from('agent_objectives')
+      .select('id, goal, progress, status')
+      .eq('status', 'active');
+    if (!data?.length) throw new Error('No active objectives — agent has nothing to work on');
+    
+    const noPlan = data.filter((d: any) => {
+      const progress = d.progress || {};
+      const plan = progress.plan || progress.steps || progress.decomposed;
+      return !plan || (Array.isArray(plan) && plan.length === 0);
+    });
+    
+    if (noPlan.length === data.length) {
+      throw new Error(`All ${data.length} active objectives lack decomposed plans — decomposition may not be running`);
+    }
+  }));
+
+  // ─── Test 7: Cron jobs are registered ────────────────────────────────────
+  results.push(await runTest("DIAG: FlowPilot cron jobs are registered", 8 as any, async () => {
+    // We can't query cron.job directly, but we can check if heartbeat runs regularly
+    const { data } = await supabase
+      .from('agent_activity')
+      .select('created_at')
+      .eq('agent', 'flowpilot')
+      .eq('skill_name', 'heartbeat')
+      .order('created_at', { ascending: false })
+      .limit(5);
+    if (!data || data.length < 2) throw new Error('SKIP: Not enough heartbeat data to verify cron');
+    
+    // Check intervals between runs — should be ~12h
+    const times = data.map((d: any) => new Date(d.created_at).getTime());
+    const gaps = [];
+    for (let i = 0; i < times.length - 1; i++) {
+      gaps.push((times[i] - times[i + 1]) / (1000 * 60 * 60)); // hours
+    }
+    const avgGap = gaps.reduce((a, b) => a + b, 0) / gaps.length;
+    if (avgGap > 24) {
+      throw new Error(`Average gap between heartbeats: ${avgGap.toFixed(1)}h — expected ~12h. Cron may be misconfigured.`);
+    }
+  }));
+
+  return results;
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
