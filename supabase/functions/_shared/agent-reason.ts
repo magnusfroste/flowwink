@@ -2823,18 +2823,23 @@ export async function reason(
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
+  // ─── Trace ID ───
+  const traceId = config.traceId || generateTraceId(config.lockOwner || 'reason');
+  console.log(`[reason] Starting run trace=${traceId} lane=${config.lockLane || 'none'} tier=${config.tier || 'fast'}`);
+
   // ─── Concurrency guard ───
   const lane = config.lockLane;
   if (lane) {
     const acquired = await tryAcquireLock(supabase, lane, config.lockOwner || 'reason', 300);
     if (!acquired) {
-      console.warn(`[agent-reason] Lane '${lane}' is locked — skipping to prevent race condition`);
+      console.warn(`[reason] trace=${traceId} Lane '${lane}' is locked — skipping`);
       return {
         response: 'Another agent process is currently running on this context. Please try again in a moment.',
         actionsExecuted: [],
         skillResults: [],
         durationMs: Date.now() - startTime,
         skippedDueToLock: true,
+        traceId,
       };
     }
   }
@@ -2848,84 +2853,110 @@ export async function reason(
 
     // Apply context pruning before starting the loop
     let conversationMessages = await pruneConversationHistory(messages, supabase);
-  const actionsExecuted: string[] = [];
-  const skillResults: ReasonResult['skillResults'] = [];
-  let finalResponse = '';
-  const loadedInstructions = new Set<string>();
+    const actionsExecuted: string[] = [];
+    const skillResults: ReasonResult['skillResults'] = [];
+    let finalResponse = '';
+    let totalTokenUsage: TokenUsage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
+    const loadedInstructions = new Set<string>();
 
-  for (let i = 0; i < maxIterations; i++) {
-    const aiResponse = await fetch(apiUrl, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model,
-        messages: conversationMessages,
-        tools: allTools.length > 0 ? allTools : undefined,
-        tool_choice: allTools.length > 0 ? 'auto' : undefined,
-      }),
-    });
-
-    if (!aiResponse.ok) {
-      const errText = await aiResponse.text();
-      console.error('[agent-reason] AI error:', aiResponse.status, errText);
-      throw new Error(`AI provider error: ${aiResponse.status}`);
-    }
-
-    const aiData = await aiResponse.json();
-    const choice = aiData.choices?.[0];
-    if (!choice) throw new Error('No AI response');
-
-    const msg = choice.message;
-
-    if (!msg.tool_calls?.length) {
-      finalResponse = msg.content || 'Done.';
-      break;
-    }
-
-    conversationMessages.push(msg);
-
-    const calledSkillNames: string[] = [];
-
-    for (const tc of msg.tool_calls) {
-      const fnName = tc.function.name;
-      let fnArgs: any;
-      try { fnArgs = JSON.parse(tc.function.arguments || '{}'); } catch { fnArgs = {}; }
-
-      console.log(`[agent-reason] Executing: ${fnName}`, JSON.stringify(fnArgs).slice(0, 200));
-      actionsExecuted.push(fnName);
-
-      let result: any;
-      try {
-        result = await executeBuiltInTool(supabase, supabaseUrl, serviceKey, fnName, fnArgs);
-      } catch (err: any) {
-        result = { error: err.message };
+    for (let i = 0; i < maxIterations; i++) {
+      // Token budget check (if provided via config)
+      const tokenBudget = (config as any).tokenBudget;
+      if (tokenBudget && totalTokenUsage.total_tokens >= tokenBudget) {
+        console.log(`[reason] trace=${traceId} Token budget exceeded (${totalTokenUsage.total_tokens}/${tokenBudget})`);
+        finalResponse = finalResponse || `Stopped: token budget reached (${totalTokenUsage.total_tokens} tokens).`;
+        break;
       }
 
-      if (!isBuiltInTool(fnName)) {
-        skillResults.push({ skill: fnName, status: result?.status || 'success', result: result?.result || result });
-        calledSkillNames.push(fnName);
+      const aiResponse = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model,
+          messages: conversationMessages,
+          tools: allTools.length > 0 ? allTools : undefined,
+          tool_choice: allTools.length > 0 ? 'auto' : undefined,
+        }),
+      });
+
+      if (!aiResponse.ok) {
+        const errText = await aiResponse.text();
+        console.error(`[reason] trace=${traceId} AI error:`, aiResponse.status, errText);
+        throw new Error(`AI provider error: ${aiResponse.status}`);
       }
 
-      conversationMessages.push({ role: 'tool', tool_call_id: tc.id, content: JSON.stringify(result) });
-    }
+      const aiData = await aiResponse.json();
 
-    // Lazy instruction loading
-    if (calledSkillNames.length > 0) {
-      const instrContext = await fetchSkillInstructions(supabase, calledSkillNames, loadedInstructions);
-      if (instrContext) {
-        conversationMessages.push({ role: 'system', content: instrContext });
+      // Track tokens
+      const usage = aiData.usage || {};
+      const iterTokens: TokenUsage = {
+        prompt_tokens: usage.prompt_tokens || 0,
+        completion_tokens: usage.completion_tokens || 0,
+        total_tokens: (usage.prompt_tokens || 0) + (usage.completion_tokens || 0),
+      };
+      totalTokenUsage = {
+        prompt_tokens: totalTokenUsage.prompt_tokens + iterTokens.prompt_tokens,
+        completion_tokens: totalTokenUsage.completion_tokens + iterTokens.completion_tokens,
+        total_tokens: totalTokenUsage.total_tokens + iterTokens.total_tokens,
+      };
+
+      const choice = aiData.choices?.[0];
+      if (!choice) throw new Error('No AI response');
+
+      const msg = choice.message;
+
+      if (!msg.tool_calls?.length) {
+        finalResponse = msg.content || 'Done.';
+        break;
+      }
+
+      conversationMessages.push(msg);
+
+      const calledSkillNames: string[] = [];
+
+      for (const tc of msg.tool_calls) {
+        const fnName = tc.function.name;
+        let fnArgs: any;
+        try { fnArgs = JSON.parse(tc.function.arguments || '{}'); } catch { fnArgs = {}; }
+
+        console.log(`[reason] trace=${traceId} Executing: ${fnName}`, JSON.stringify(fnArgs).slice(0, 200));
+        actionsExecuted.push(fnName);
+
+        let result: any;
+        try {
+          result = await executeBuiltInTool(supabase, supabaseUrl, serviceKey, fnName, fnArgs, traceId);
+        } catch (err: any) {
+          result = { error: err.message };
+        }
+
+        if (!isBuiltInTool(fnName)) {
+          skillResults.push({ skill: fnName, status: result?.status || 'success', result: result?.result || result });
+          calledSkillNames.push(fnName);
+        }
+
+        conversationMessages.push({ role: 'tool', tool_call_id: tc.id, content: JSON.stringify(result) });
+      }
+
+      // Lazy instruction loading
+      if (calledSkillNames.length > 0) {
+        const instrContext = await fetchSkillInstructions(supabase, calledSkillNames, loadedInstructions);
+        if (instrContext) {
+          conversationMessages.push({ role: 'system', content: instrContext });
+        }
       }
     }
-  }
+
+    console.log(`[reason] trace=${traceId} Complete: ${actionsExecuted.length} actions, ${totalTokenUsage.total_tokens} tokens, ${Date.now() - startTime}ms`);
 
     return {
       response: finalResponse,
       actionsExecuted,
       skillResults,
       durationMs: Date.now() - startTime,
+      tokenUsage: totalTokenUsage,
+      traceId,
     };
   } finally {
-    // Always release the lock
     if (lane) {
       await releaseLock(supabase, lane);
     }
