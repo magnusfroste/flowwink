@@ -2850,6 +2850,7 @@ export async function reason(
     const loadedInstructions = new Set<string>();
     const tokenBudget = (config as any).tokenBudget || DEFAULT_TOKEN_BUDGET;
     let consecutiveEmptyTurns = 0;
+    let memoryFlushed = false; // OpenClaw §5.4 — track if we've already flushed
 
     for (let i = 0; i < maxIterations; i++) {
       // Token budget check
@@ -2865,6 +2866,31 @@ export async function reason(
         console.log(`[reason] trace=${traceId} Budget nearly exhausted (${remainingBudget} remaining), stopping early`);
         finalResponse = finalResponse || `Heartbeat complete. ${actionsExecuted.length} actions in ${i} iterations.`;
         break;
+      }
+
+      // ─── OpenClaw §5.4 — Pre-Budget Memory Flush ───
+      // When budget crosses 80%, trigger a silent memory write to preserve context
+      if (!memoryFlushed && totalTokenUsage.total_tokens > tokenBudget * MEMORY_FLUSH_THRESHOLD && i > 1) {
+        memoryFlushed = true;
+        console.log(`[reason] trace=${traceId} Budget at ${Math.round(totalTokenUsage.total_tokens / tokenBudget * 100)}% — flushing context to memory`);
+        try {
+          // Extract what we've accomplished so far and save it
+          const accomplishments = actionsExecuted.length > 0
+            ? `Actions: ${actionsExecuted.join(', ')}. Skills: ${skillResults.map(r => `${r.skill}(${r.status})`).join(', ')}`
+            : 'No actions yet';
+          await handleMemoryWrite(supabase, {
+            key: `heartbeat_flush_${new Date().toISOString().slice(0, 10)}`,
+            value: `Pre-budget flush at ${totalTokenUsage.total_tokens}/${tokenBudget} tokens. ${accomplishments}. Partial response: ${(finalResponse || '').slice(0, 300)}`,
+            category: 'context',
+          });
+          // Inject a hint to the model
+          conversationMessages.push({
+            role: 'system',
+            content: `⚠️ Token budget at ${Math.round(totalTokenUsage.total_tokens / tokenBudget * 100)}%. Context has been saved to memory. Focus on completing the most important remaining action, then summarize.`,
+          });
+        } catch (flushErr) {
+          console.warn(`[reason] trace=${traceId} Memory flush failed (non-fatal):`, flushErr);
+        }
       }
 
       const aiResponse = await fetch(apiUrl, {
