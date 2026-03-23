@@ -130,8 +130,9 @@ WORKFLOWS (Multi-step automation chains):
 A2A DELEGATION (Multi-agent orchestration):
 - Use delegate_task to route subtasks to specialized agents
 - Built-in specialists: 'seo', 'content', 'sales', 'analytics', 'email'
+- Sessions are PERSISTENT — each specialist remembers prior conversations automatically
+- Use session_id to create isolated threads (e.g., 'project-x-seo')
 - Returns the specialist's focused analysis or content — then use it in your next action
-- Register custom agents in memory with key 'agent:name' and value {system_prompt}
 
 SKILL PACKS (Bundled capabilities):
 - Use skill_pack_list to see available packs (E-Commerce, Content Marketing, CRM Nurture)
