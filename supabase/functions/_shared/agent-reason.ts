@@ -40,7 +40,20 @@ const SELF_HEAL_THRESHOLD = 3;
 const MAX_CHAIN_DEPTH = 4;
 const MAX_CONTEXT_TOKENS = 80_000;
 const SUMMARY_THRESHOLD = 60_000;
-const DEFAULT_TOKEN_BUDGET = 80_000; // Max tokens per heartbeat session (aligned with heartbeat)
+const DEFAULT_TOKEN_BUDGET = 80_000;
+
+// OpenClaw §4.3 — Hard caps for prompt sections to prevent token bloat
+const MAX_SOUL_CHARS = 3_000;
+const MAX_AGENTS_CHARS = 4_000;
+const MAX_MEMORY_CHARS = 4_000;
+const MAX_OBJECTIVES_CHARS = 4_000;
+const MAX_CMS_SCHEMA_CHARS = 2_000;
+const MAX_CROSS_MODULE_CHARS = 3_000;
+const MAX_ACTIVITY_CHARS = 2_000;
+const MAX_BOOTSTRAP_TOTAL_CHARS = 20_000; // OpenClaw default
+
+// OpenClaw §5.4 — Pre-budget memory flush threshold (fraction of budget)
+const MEMORY_FLUSH_THRESHOLD = 0.80;
 
 const BUILT_IN_TOOL_NAMES = new Set([
   'memory_write', 'memory_read', 'memory_delete',
