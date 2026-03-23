@@ -55,6 +55,12 @@ const MAX_BOOTSTRAP_TOTAL_CHARS = 20_000; // OpenClaw default
 // OpenClaw §5.4 — Pre-budget memory flush threshold (fraction of budget)
 const MEMORY_FLUSH_THRESHOLD = 0.80;
 
+/** Truncate a string to maxChars, appending "…[truncated]" if cut */
+function truncateSection(text: string, maxChars: number): string {
+  if (!text || text.length <= maxChars) return text;
+  return text.slice(0, maxChars) + '\n…[truncated — use tools to read full data]';
+}
+
 const BUILT_IN_TOOL_NAMES = new Set([
   'memory_write', 'memory_read', 'memory_delete',
   'objective_update_progress', 'objective_complete', 'objective_delete',
