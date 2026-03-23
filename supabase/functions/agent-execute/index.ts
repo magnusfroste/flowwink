@@ -33,7 +33,7 @@ serve(async (req) => {
 
   try {
     const body: ExecuteRequest = await req.json();
-    const { skill_id, skill_name, arguments: args, agent_type, conversation_id, objective_context } = body;
+    const { skill_id, skill_name, arguments: args, agent_type, conversation_id, objective_context, trace_id } = body;
 
     if (!skill_id && !skill_name) {
       return new Response(JSON.stringify({ error: 'skill_id or skill_name required' }), {
