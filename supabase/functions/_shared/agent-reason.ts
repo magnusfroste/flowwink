@@ -130,8 +130,9 @@ WORKFLOWS (Multi-step automation chains):
 A2A DELEGATION (Multi-agent orchestration):
 - Use delegate_task to route subtasks to specialized agents
 - Built-in specialists: 'seo', 'content', 'sales', 'analytics', 'email'
+- Sessions are PERSISTENT — each specialist remembers prior conversations automatically
+- Use session_id to create isolated threads (e.g., 'project-x-seo')
 - Returns the specialist's focused analysis or content — then use it in your next action
-- Register custom agents in memory with key 'agent:name' and value {system_prompt}
 
 SKILL PACKS (Bundled capabilities):
 - Use skill_pack_list to see available packs (E-Commerce, Content Marketing, CRM Nurture)
@@ -1617,9 +1618,12 @@ const SPECIALIST_PROMPTS: Record<string, string> = {
   email: 'You are an email marketing specialist. Focus on: subject lines, personalization, segmentation, deliverability, A/B testing, lifecycle campaigns. Optimize for open rates, click rates, and conversions.',
 };
 
+// Max messages to keep in a sub-agent session
+const MAX_SESSION_MESSAGES = 10;
+
 async function handleDelegateTask(
   supabase: any, _supabaseUrl: string, _serviceKey: string,
-  args: { agent_name: string; task: string; context?: Record<string, any> },
+  args: { agent_name: string; task: string; context?: Record<string, any>; session_id?: string },
 ) {
   const { agent_name, task, context = {} } = args;
 
@@ -1635,23 +1639,68 @@ async function handleDelegateTask(
     ? `\n\nContext:\n${JSON.stringify(context, null, 2)}`
     : '';
 
+  // ─── Persistent Sub-Agent Sessions ───
+  // Load previous conversation for this specialist (if any)
+  const sessionKey = args.session_id || `a2a_session:${agent_name}`;
+  const { data: sessionData } = await supabase.from('agent_memory')
+    .select('value').eq('key', sessionKey).maybeSingle();
+
+  const previousMessages: Array<{ role: string; content: string }> = sessionData?.value?.messages || [];
+
+  // Build conversation: system + previous history + new task
+  const messages: Array<{ role: string; content: string }> = [
+    { role: 'system', content: systemPrompt },
+    ...previousMessages.slice(-MAX_SESSION_MESSAGES),
+    { role: 'user', content: `${task}${contextStr}` },
+  ];
+
   try {
     const resp = await fetch(apiUrl, {
       method: 'POST',
       headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: `${task}${contextStr}` },
-        ],
+        messages,
         max_tokens: 1500,
       }),
     });
     if (!resp.ok) throw new Error(`AI error: ${resp.status}`);
     const data = await resp.json();
     const response = data.choices?.[0]?.message?.content || 'No response generated.';
-    return { status: 'completed', agent: agent_name, task, response };
+
+    // ─── Persist session for continuity ───
+    const updatedMessages = [
+      ...previousMessages.slice(-(MAX_SESSION_MESSAGES - 2)),
+      { role: 'user', content: task },
+      { role: 'assistant', content: response },
+    ];
+
+    const sessionRecord = {
+      value: {
+        messages: updatedMessages,
+        agent: agent_name,
+        last_task: task,
+        updated_at: new Date().toISOString(),
+        turn_count: (sessionData?.value?.turn_count || 0) + 1,
+      },
+      category: 'context',
+      updated_at: new Date().toISOString(),
+    };
+
+    if (sessionData) {
+      await supabase.from('agent_memory').update(sessionRecord).eq('key', sessionKey);
+    } else {
+      await supabase.from('agent_memory').insert({ key: sessionKey, ...sessionRecord, created_by: 'flowpilot' });
+    }
+
+    return {
+      status: 'completed',
+      agent: agent_name,
+      task,
+      response,
+      session_id: sessionKey,
+      turn_count: (sessionData?.value?.turn_count || 0) + 1,
+    };
   } catch (err: any) {
     return { status: 'error', agent: agent_name, error: err.message };
   }
@@ -2238,13 +2287,14 @@ const A2A_TOOLS = [
   {
     type: 'function', function: {
       name: 'delegate_task',
-      description: "Delegate a subtask to a specialized agent. Built-in: 'seo', 'content', 'sales', 'analytics', 'email'. Returns specialist's focused analysis.",
+      description: "Delegate a subtask to a specialized agent with persistent session memory. Built-in: 'seo', 'content', 'sales', 'analytics', 'email'. The specialist remembers previous interactions within the same session.",
       parameters: {
         type: 'object',
         properties: {
           agent_name: { type: 'string', description: "Specialist: 'seo' | 'content' | 'sales' | 'analytics' | 'email', or any custom name" },
           task: { type: 'string', description: 'The specific task for the specialist to handle' },
           context: { type: 'object', description: 'Optional context data to pass to the specialist' },
+          session_id: { type: 'string', description: 'Optional custom session key. Default: a2a_session:{agent_name}. Use a unique ID for isolated conversation threads.' },
         },
         required: ['agent_name', 'task'],
       },
@@ -2743,7 +2793,45 @@ export function isBuiltInTool(name: string): boolean {
 
 // ─── Load Skills from Registry ────────────────────────────────────────────────
 
-export async function loadSkillTools(supabase: any, scope: 'internal' | 'external', categories?: string[]): Promise<any[]> {
+/** Three-tier skill budget degradation (OpenClaw §4.4)
+ * 
+ * Tier 1 — FULL (budget < 50%):   All tools with full descriptions + parameters
+ * Tier 2 — COMPACT (50–75%):      All tools but descriptions truncated to 80 chars, no parameter descriptions
+ * Tier 3 — DROP (> 75%):          Only top-used + recently-used skills (max 20), compact format
+ */
+export type SkillBudgetTier = 'full' | 'compact' | 'drop';
+
+export function resolveSkillBudgetTier(tokenBudget: number, tokensUsed: number): SkillBudgetTier {
+  const pct = tokensUsed / tokenBudget;
+  if (pct < 0.50) return 'full';
+  if (pct < 0.75) return 'compact';
+  return 'drop';
+}
+
+function compactToolDefinition(td: any): any {
+  const clone = JSON.parse(JSON.stringify(td));
+  const fn = clone.function;
+  if (!fn) return clone;
+  // Truncate description
+  if (fn.description && fn.description.length > 80) {
+    fn.description = fn.description.slice(0, 77) + '...';
+  }
+  // Strip parameter descriptions to save tokens
+  const props = fn.parameters?.properties;
+  if (props) {
+    for (const val of Object.values(props) as any[]) {
+      delete val.description;
+    }
+  }
+  return clone;
+}
+
+export async function loadSkillTools(
+  supabase: any,
+  scope: 'internal' | 'external',
+  categories?: string[],
+  budgetTier?: SkillBudgetTier,
+): Promise<any[]> {
   const scopes = scope === 'internal' ? ['internal', 'both'] : ['external', 'both'];
   let query = supabase
     .from('agent_skills')
@@ -2761,7 +2849,37 @@ export async function loadSkillTools(supabase: any, scope: 'internal' | 'externa
   if (!skills?.length) return [];
 
   // Skill gating: check prerequisites
-  const gatedSkills = await filterGatedSkills(supabase, skills);
+  let gatedSkills = await filterGatedSkills(supabase, skills);
+
+  // ─── Tier 3: DROP — only keep top-used skills ───
+  if (budgetTier === 'drop') {
+    // Fetch recent usage to determine which skills to keep
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 14);
+    const { data: recentUsage } = await supabase
+      .from('agent_activity')
+      .select('skill_name')
+      .gte('created_at', weekAgo.toISOString())
+      .eq('status', 'success')
+      .order('created_at', { ascending: false })
+      .limit(200);
+
+    const usageCounts: Record<string, number> = {};
+    for (const a of (recentUsage || [])) {
+      if (a.skill_name) usageCounts[a.skill_name] = (usageCounts[a.skill_name] || 0) + 1;
+    }
+
+    // Score each skill: usage count + category bonus for content/analytics
+    const scored = gatedSkills.map((s: any) => ({
+      ...s,
+      _score: (usageCounts[s.name] || 0) + (s.category === 'content' || s.category === 'analytics' ? 2 : 0),
+    }));
+    scored.sort((a: any, b: any) => b._score - a._score);
+    gatedSkills = scored.slice(0, 20);
+    console.log(`[skill-budget] DROP tier: reduced to ${gatedSkills.length} skills from ${skills.length}`);
+  }
+
+  const tier = budgetTier || 'full';
 
   return gatedSkills
     .filter((s: any) => s.tool_definition?.function)
@@ -2792,6 +2910,11 @@ export async function loadSkillTools(supabase: any, scope: 'internal' | 'externa
           delete params.required;
         }
       } catch { /* safety net */ }
+
+      // Apply compaction for compact/drop tiers
+      if (tier === 'compact' || tier === 'drop') {
+        return compactToolDefinition(td);
+      }
       return td;
     });
 }
@@ -2875,11 +2998,15 @@ export async function reason(
 
   try {
     const { apiKey, apiUrl, model } = await resolveAiConfig(supabase, config.tier || 'fast');
+    const tokenBudget = config.tokenBudget || DEFAULT_TOKEN_BUDGET;
 
+    // ─── Three-tier skill budget degradation (OpenClaw §4.4) ───
+    const initialTier = resolveSkillBudgetTier(tokenBudget, 0);
     const builtInTools = getBuiltInTools(config.builtInToolGroups || ['memory', 'objectives', 'reflect']);
-    const skillTools = await loadSkillTools(supabase, config.scope, config.skillCategories);
-    console.log(`[reason] trace=${traceId} Loaded ${builtInTools.length} built-in + ${skillTools.length} skill tools${config.skillCategories ? ` (categories: ${config.skillCategories.join(',')})` : ' (ALL categories)'}`);
-    const allTools = [...builtInTools, ...(config.additionalTools || []), ...skillTools];
+    let currentSkillTier: SkillBudgetTier = initialTier;
+    let skillTools = await loadSkillTools(supabase, config.scope, config.skillCategories, currentSkillTier);
+    console.log(`[reason] trace=${traceId} Loaded ${builtInTools.length} built-in + ${skillTools.length} skill tools (tier: ${currentSkillTier})${config.skillCategories ? ` (categories: ${config.skillCategories.join(',')})` : ' (ALL categories)'}`);
+    let allTools = [...builtInTools, ...(config.additionalTools || []), ...skillTools];
 
     // Apply context pruning before starting the loop
     let conversationMessages = await pruneConversationHistory(messages, supabase);
@@ -2888,7 +3015,6 @@ export async function reason(
     let finalResponse = '';
     let totalTokenUsage: TokenUsage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
     const loadedInstructions = new Set<string>();
-    const tokenBudget = config.tokenBudget || DEFAULT_TOKEN_BUDGET;
     let consecutiveEmptyTurns = 0;
     let memoryFlushed = false; // OpenClaw §5.4 — track if we've already flushed
 
@@ -2931,6 +3057,16 @@ export async function reason(
         } catch (flushErr) {
           console.warn(`[reason] trace=${traceId} Memory flush failed (non-fatal):`, flushErr);
         }
+      }
+
+      // ─── Dynamic skill tier degradation ───
+      const newTier = resolveSkillBudgetTier(tokenBudget, totalTokenUsage.total_tokens);
+      if (newTier !== currentSkillTier) {
+        console.log(`[reason] trace=${traceId} Skill budget tier changed: ${currentSkillTier} → ${newTier} at ${Math.round(totalTokenUsage.total_tokens / tokenBudget * 100)}%`);
+        currentSkillTier = newTier;
+        skillTools = await loadSkillTools(supabase, config.scope, config.skillCategories, currentSkillTier);
+        allTools = [...builtInTools, ...(config.additionalTools || []), ...skillTools];
+        console.log(`[reason] trace=${traceId} Reloaded ${skillTools.length} skill tools at ${currentSkillTier} tier`);
       }
 
       const aiResponse = await fetch(apiUrl, {
