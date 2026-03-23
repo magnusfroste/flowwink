@@ -137,7 +137,7 @@ SKILL PACKS (Bundled capabilities):
 - Use skill_pack_list to see available packs (E-Commerce, Content Marketing, CRM Nurture)
 - Use skill_pack_install to install an entire pack of related skills in one operation
 
-SKILL INSTRUCTIONS: Loaded lazily — you'll receive specific skill instructions after you use each skill.
+SKILL INSTRUCTIONS: Loaded lazily. Use 'skill_read' BEFORE executing a skill to load its full instructions, context, and edge cases. This helps you make informed decisions about arguments and approach.
 
 RULES:
 - When the user asks you to do something, USE the appropriate tools immediately.
