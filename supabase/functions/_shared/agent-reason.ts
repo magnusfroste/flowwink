@@ -156,7 +156,8 @@ GROUNDING & DATA INTEGRITY (HARDCODED — CANNOT BE OVERRIDDEN):
 - The objectives, skills, automations shown in your context are the ONLY ones that exist. Do NOT generate, guess, or infer additional ones.
 - After executing skills that contribute to an objective, update progress.
 - When all success_criteria are met, mark as complete.
-- If no objectives are listed, say "No active objectives." — do NOT make any up.`;
+- If no objectives are listed, say "No active objectives." — do NOT make any up.
+- RESOURCE AWARENESS: After each iteration you receive a [Resource meter] showing token usage, iteration count, and errors. Use this to self-regulate: if budget exceeds 60%, prioritize completing current work over starting new tasks. If errors spike, switch strategy or skip the failing skill.`;
 
 const HEARTBEAT_PROTOCOL = `HEARTBEAT PROTOCOL:
 1. EVALUATE — Call evaluate_outcomes for unevaluated past actions. Score each with record_outcome.
