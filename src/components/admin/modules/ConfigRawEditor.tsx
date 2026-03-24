@@ -106,7 +106,7 @@ export function ConfigRawEditor() {
       const { data, error } = await supabase
         .from('agent_memory')
         .select('id, key, value, updated_at')
-        .eq('category', 'config')
+        .eq('category', 'config' as any)
         .order('key');
       if (error) throw error;
       return (data ?? []).map(row => ({
