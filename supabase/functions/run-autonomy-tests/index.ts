@@ -600,6 +600,36 @@ async function layer4Tests(supabase: any, supabaseUrl: string, serviceKey: strin
     if (resp.status >= 500) throw new Error(`setup-flowpilot returned ${resp.status}: ${text.slice(0, 200)}`);
   }));
 
+  // 11. Instance health endpoint responds with valid shape
+  results.push(await runTest("L4: instance-health endpoint returns valid health status", 4 as any, async () => {
+    const resp = await fetch(`${supabaseUrl}/functions/v1/instance-health`, {
+      method: "POST", headers,
+      body: JSON.stringify({}),
+    });
+    const data = await resp.json();
+    if (resp.status >= 500) throw new Error(`instance-health returned ${resp.status}: ${JSON.stringify(data).slice(0, 200)}`);
+    assertExists(data.status, "Missing status field");
+    if (!['healthy', 'degraded', 'unhealthy'].includes(data.status)) {
+      throw new Error(`Invalid status: ${data.status}`);
+    }
+    assertExists(data.version, "Missing version field");
+    assertExists(data.memory, "Missing memory field");
+    assertExists(data.heartbeat, "Missing heartbeat field");
+    assertExists(data.integrity, "Missing integrity field");
+  }));
+
+  // 12. Skill hash drift detection — expected_skill_hash exists after bootstrap
+  results.push(await runTest("L4: expected_skill_hash stored in agent_memory", 4 as any, async () => {
+    const { data, error } = await supabase
+      .from('agent_memory')
+      .select('value')
+      .eq('key', 'expected_skill_hash')
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!data) throw new Error("expected_skill_hash missing — run Re-run Bootstrap");
+    assertExists(data.value?.hash, "Skill hash value is empty");
+  }));
+
   return results;
 }
 

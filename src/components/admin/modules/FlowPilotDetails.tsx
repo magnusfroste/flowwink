@@ -15,10 +15,17 @@ import {
   Clock,
   Hash,
   FlaskConical,
+  HeartPulse,
+  AlertTriangle,
+  ShieldCheck,
+  ShieldAlert,
+  Activity,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 import { formatDistanceToNow } from 'date-fns';
+
+// ── Types ────────────────────────────────────────────────────────────────────
 
 interface BootstrapStats {
   skills: { total: number; enabled: number; lastCreated: string | null };
@@ -27,6 +34,177 @@ interface BootstrapStats {
   objectives: { total: number; active: number };
   cronJobs: string[];
 }
+
+interface HealthCheckResult {
+  status: 'healthy' | 'degraded' | 'unhealthy';
+  checked_at: string;
+  version: {
+    skill_count: number;
+    enabled_count: number;
+    skill_hash: string;
+    expected_hash: string | null;
+    hash_match: boolean | null;
+  };
+  memory: { soul: boolean; identity: boolean; agents: boolean };
+  heartbeat: { last_run: string | null; age_hours: number | null; stale: boolean };
+  integrity: { score: number; issues: string[] };
+  checks_passed: number;
+  checks_total: number;
+}
+
+// ── Sub-components ───────────────────────────────────────────────────────────
+
+function HealthStatusCard() {
+  const [isChecking, setIsChecking] = useState(false);
+  const [result, setResult] = useState<HealthCheckResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const runHealthCheck = async () => {
+    setIsChecking(true);
+    setError(null);
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke('instance-health', {
+        body: {},
+      });
+      if (fnError) throw fnError;
+      setResult(data as HealthCheckResult);
+    } catch (err: any) {
+      setError(err.message || 'Health check failed');
+      toast.error('Health check failed');
+    } finally {
+      setIsChecking(false);
+    }
+  };
+
+  const statusConfig = {
+    healthy: { icon: ShieldCheck, color: 'text-success', bg: 'bg-success/10', label: 'Healthy' },
+    degraded: { icon: AlertTriangle, color: 'text-warning', bg: 'bg-warning/10', label: 'Degraded' },
+    unhealthy: { icon: ShieldAlert, color: 'text-destructive', bg: 'bg-destructive/10', label: 'Unhealthy' },
+  };
+
+  return (
+    <div className="rounded-lg border p-3 bg-muted/20">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2 text-sm font-medium">
+          <HeartPulse className="h-4 w-4 text-primary" />
+          Instance Health
+        </div>
+        {result && (() => {
+          const cfg = statusConfig[result.status];
+          const Icon = cfg.icon;
+          return (
+            <Badge variant={result.status === 'healthy' ? 'default' : result.status === 'degraded' ? 'secondary' : 'destructive'} className="text-[10px]">
+              <Icon className="h-3 w-3 mr-1" />
+              {cfg.label}
+            </Badge>
+          );
+        })()}
+      </div>
+
+      {!result && !error && (
+        <p className="text-[11px] text-muted-foreground mb-2">
+          Run a health check to detect drift, stale heartbeats, and configuration issues.
+        </p>
+      )}
+
+      {error && (
+        <div className="rounded-md bg-destructive/10 p-2 mb-2">
+          <p className="text-[11px] text-destructive">{error}</p>
+        </div>
+      )}
+
+      {result && (
+        <div className="space-y-2">
+          {/* Score overview */}
+          <div className="flex items-center gap-3 text-[11px]">
+            <span className="text-muted-foreground">Checks:</span>
+            <span className="font-medium">{result.checks_passed}/{result.checks_total} passed</span>
+            <span className="text-muted-foreground">Integrity:</span>
+            <span className="font-medium">{result.integrity.score}%</span>
+          </div>
+
+          {/* Drift warning */}
+          {result.version.hash_match === false && (
+            <div className="rounded-md bg-warning/10 border border-warning/20 p-2 flex items-start gap-2">
+              <AlertTriangle className="h-3.5 w-3.5 text-warning shrink-0 mt-0.5" />
+              <div>
+                <p className="text-[11px] font-medium text-warning">Skill Hash Drift Detected</p>
+                <p className="text-[10px] text-muted-foreground">
+                  Instance skills differ from bootstrap baseline. Re-run Bootstrap to sync.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Stale heartbeat warning */}
+          {result.heartbeat.stale && (
+            <div className="rounded-md bg-warning/10 border border-warning/20 p-2 flex items-start gap-2">
+              <Clock className="h-3.5 w-3.5 text-warning shrink-0 mt-0.5" />
+              <div>
+                <p className="text-[11px] font-medium text-warning">Heartbeat Stale</p>
+                <p className="text-[10px] text-muted-foreground">
+                  {result.heartbeat.age_hours
+                    ? `Last heartbeat ${Math.round(result.heartbeat.age_hours)}h ago`
+                    : 'No heartbeat recorded'}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Missing memory keys */}
+          {(!result.memory.soul || !result.memory.identity || !result.memory.agents) && (
+            <div className="rounded-md bg-destructive/10 border border-destructive/20 p-2 flex items-start gap-2">
+              <ShieldAlert className="h-3.5 w-3.5 text-destructive shrink-0 mt-0.5" />
+              <div>
+                <p className="text-[11px] font-medium text-destructive">Missing Memory Keys</p>
+                <p className="text-[10px] text-muted-foreground">
+                  {[
+                    !result.memory.soul && 'soul',
+                    !result.memory.identity && 'identity',
+                    !result.memory.agents && 'agents',
+                  ].filter(Boolean).join(', ')}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Integrity issues */}
+          {result.integrity.issues.length > 0 && (
+            <div className="space-y-1">
+              {result.integrity.issues.slice(0, 3).map((issue, i) => (
+                <p key={i} className="text-[10px] text-muted-foreground flex items-start gap-1.5">
+                  <Activity className="h-3 w-3 shrink-0 mt-0.5 text-muted-foreground" />
+                  {issue}
+                </p>
+              ))}
+            </div>
+          )}
+
+          {/* Timestamp */}
+          <p className="text-[10px] text-muted-foreground text-right">
+            Checked {formatDistanceToNow(new Date(result.checked_at), { addSuffix: true })}
+          </p>
+        </div>
+      )}
+
+      <Button
+        onClick={runHealthCheck}
+        disabled={isChecking}
+        variant="outline"
+        size="sm"
+        className="w-full h-7 text-xs mt-2"
+      >
+        {isChecking ? (
+          <><RefreshCw className="h-3 w-3 mr-1.5 animate-spin" /> Running check…</>
+        ) : (
+          <><HeartPulse className="h-3 w-3 mr-1.5" /> Run Health Check</>
+        )}
+      </Button>
+    </div>
+  );
+}
+
+// ── Main Component ───────────────────────────────────────────────────────────
 
 export function FlowPilotDetails() {
   const queryClient = useQueryClient();
@@ -61,7 +239,7 @@ export function FlowPilotDetails() {
           total: objectives.data?.length ?? 0,
           active: objectives.data?.filter(o => o.status === 'active').length ?? 0,
         },
-        cronJobs: [], // We can't query pg_cron from client
+        cronJobs: [],
       };
     },
   });
@@ -69,7 +247,6 @@ export function FlowPilotDetails() {
   const handleRebootstrap = async () => {
     setIsBootstrapping(true);
     try {
-      // Full bootstrap: skills, soul, objectives, automations, workflows, cron
       const { error } = await supabase.functions.invoke('setup-flowpilot', {
         body: {
           seed_skills: true,
@@ -155,7 +332,6 @@ export function FlowPilotDetails() {
         logger.warn('[ReBootstrap] Heartbeat failed (non-fatal):', hbErr);
       }
 
-      // Invalidate all relevant caches
       queryClient.invalidateQueries({ queryKey: ['agent-skills'] });
       queryClient.invalidateQueries({ queryKey: ['agent-objectives'] });
       queryClient.invalidateQueries({ queryKey: ['agent-automations'] });
@@ -257,6 +433,9 @@ export function FlowPilotDetails() {
         </div>
       </div>
 
+      {/* Instance Health */}
+      <HealthStatusCard />
+
       {/* Cron Jobs Info */}
       <div className="rounded-lg border p-3 bg-muted/20">
         <div className="flex items-center gap-2 mb-2 text-xs font-medium">
@@ -270,6 +449,7 @@ export function FlowPilotDetails() {
             { name: 'publish-scheduled-pages', schedule: 'Every minute', desc: 'Scheduled content publishing' },
             { name: 'flowpilot-learn', schedule: 'Daily 03:00', desc: 'Nightly learning & memory consolidation' },
             { name: 'flowpilot-daily-briefing', schedule: 'Daily 07:00', desc: 'Morning summary & action items' },
+            { name: 'instance-health-check', schedule: 'Every 6 hours', desc: 'Drift detection & system health' },
           ].map(job => (
             <div key={job.name} className="flex items-start gap-2 py-1">
               <Hash className="h-3 w-3 text-muted-foreground shrink-0 mt-0.5" />
