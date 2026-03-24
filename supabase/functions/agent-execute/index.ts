@@ -2556,13 +2556,8 @@ async function logActivity(
     conversation_id?: string;
     duration_ms: number;
     error_message?: string;
-    log_type?: string;
-    log_message?: string;
   },
 ): Promise<string | null> {
-  const logType = activity.log_type ?? deriveLogType(activity.status);
-  const logMessage = activity.log_message ?? deriveLogMessage(activity.skill_name, activity.output, activity.error_message);
-
   const { data, error } = await supabase.from('agent_activity').insert({
     agent: activity.agent,
     skill_id: activity.skill_id,
@@ -2573,34 +2568,10 @@ async function logActivity(
     conversation_id: activity.conversation_id || null,
     duration_ms: activity.duration_ms,
     error_message: activity.error_message || null,
-    log_type: logType,
-    log_message: logMessage,
   }).select('id').single();
 
   if (error) console.error('Failed to log activity:', error);
   return data?.id || null;
-}
-
-function deriveLogType(status: string): string {
-  if (status === 'failed') return 'error';
-  if (status === 'pending_approval') return 'tool_call';
-  return 'tool_result';
-}
-
-function deriveLogMessage(
-  skillName: string,
-  output: Record<string, unknown>,
-  errorMessage?: string,
-): string {
-  // Prefer explicit message fields from the skill output
-  const msg = output?.message ?? output?.summary ?? output?.description ?? output?.result;
-  if (typeof msg === 'string' && msg.length > 0) return msg;
-
-  // For errors, use the error message
-  if (errorMessage) return errorMessage;
-
-  // Fallback: readable skill name
-  return skillName.replace(/_/g, ' ');
 }
 
 // =============================================================================
