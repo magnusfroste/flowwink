@@ -21,6 +21,8 @@ export interface PromptCompilerInput {
   siteMaturity?: SiteMaturity;
   customHeartbeatProtocol?: string;
   chatSystemPrompt?: string;
+  /** Domain-specific playbook for fresh/new sites (injected by domain pack) */
+  freshSitePlaybook?: string;
 }
 
 export interface ReasonConfig {
