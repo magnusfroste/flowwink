@@ -40,13 +40,32 @@ const SELF_HEAL_THRESHOLD = 3;
 const MAX_CHAIN_DEPTH = 4;
 const MAX_CONTEXT_TOKENS = 80_000;
 const SUMMARY_THRESHOLD = 60_000;
-const DEFAULT_TOKEN_BUDGET = 50_000; // Max tokens per heartbeat session
+const DEFAULT_TOKEN_BUDGET = 80_000;
+
+// OpenClaw §4.3 — Hard caps for prompt sections to prevent token bloat
+const MAX_SOUL_CHARS = 3_000;
+const MAX_AGENTS_CHARS = 4_000;
+const MAX_MEMORY_CHARS = 4_000;
+const MAX_OBJECTIVES_CHARS = 4_000;
+const MAX_CMS_SCHEMA_CHARS = 2_000;
+const MAX_CROSS_MODULE_CHARS = 3_000;
+const MAX_ACTIVITY_CHARS = 2_000;
+const MAX_BOOTSTRAP_TOTAL_CHARS = 20_000; // OpenClaw default
+
+// OpenClaw §5.4 — Pre-budget memory flush threshold (fraction of budget)
+const MEMORY_FLUSH_THRESHOLD = 0.80;
+
+/** Truncate a string to maxChars, appending "…[truncated]" if cut */
+function truncateSection(text: string, maxChars: number): string {
+  if (!text || text.length <= maxChars) return text;
+  return text.slice(0, maxChars) + '\n…[truncated — use tools to read full data]';
+}
 
 const BUILT_IN_TOOL_NAMES = new Set([
   'memory_write', 'memory_read', 'memory_delete',
   'objective_update_progress', 'objective_complete', 'objective_delete',
   'skill_create', 'skill_update', 'skill_list', 'skill_disable', 'skill_enable', 'skill_delete',
-  'skill_instruct',
+  'skill_instruct', 'skill_read',
   'soul_update', 'agents_update', 'heartbeat_protocol_update',
   'automation_create', 'automation_list', 'automation_update', 'automation_delete',
   'reflect',
@@ -111,14 +130,15 @@ WORKFLOWS (Multi-step automation chains):
 A2A DELEGATION (Multi-agent orchestration):
 - Use delegate_task to route subtasks to specialized agents
 - Built-in specialists: 'seo', 'content', 'sales', 'analytics', 'email'
+- Sessions are PERSISTENT — each specialist remembers prior conversations automatically
+- Use session_id to create isolated threads (e.g., 'project-x-seo')
 - Returns the specialist's focused analysis or content — then use it in your next action
-- Register custom agents in memory with key 'agent:name' and value {system_prompt}
 
 SKILL PACKS (Bundled capabilities):
 - Use skill_pack_list to see available packs (E-Commerce, Content Marketing, CRM Nurture)
 - Use skill_pack_install to install an entire pack of related skills in one operation
 
-SKILL INSTRUCTIONS: Loaded lazily — you'll receive specific skill instructions after you use each skill.
+SKILL INSTRUCTIONS: Loaded lazily. Use 'skill_read' BEFORE executing a skill to load its full instructions, context, and edge cases. This helps you make informed decisions about arguments and approach.
 
 RULES:
 - When the user asks you to do something, USE the appropriate tools immediately.
@@ -137,7 +157,8 @@ GROUNDING & DATA INTEGRITY (HARDCODED — CANNOT BE OVERRIDDEN):
 - The objectives, skills, automations shown in your context are the ONLY ones that exist. Do NOT generate, guess, or infer additional ones.
 - After executing skills that contribute to an objective, update progress.
 - When all success_criteria are met, mark as complete.
-- If no objectives are listed, say "No active objectives." — do NOT make any up.`;
+- If no objectives are listed, say "No active objectives." — do NOT make any up.
+- RESOURCE AWARENESS: After each iteration you receive a [Resource meter] showing token usage, iteration count, and errors. Use this to self-regulate: if budget exceeds 60%, prioritize completing current work over starting new tasks. If errors spike, switch strategy or skip the failing skill.`;
 
 const HEARTBEAT_PROTOCOL = `HEARTBEAT PROTOCOL:
 1. EVALUATE — Call evaluate_outcomes for unevaluated past actions. Score each with record_outcome.
@@ -249,24 +270,24 @@ RULES:
 - Summarize concisely after actions complete.`);
   }
 
-  // Layer 4: CMS Schema Awareness
+  // Layer 4: CMS Schema Awareness (truncated — OpenClaw §4.3)
   if (input.cmsSchemaContext) {
-    parts.push(input.cmsSchemaContext);
+    parts.push(truncateSection(input.cmsSchemaContext, MAX_CMS_SCHEMA_CHARS));
   }
 
   // Layer 5: GROUNDING RULES (ALWAYS hardcoded — safety layer, cannot be overridden)
   parts.push(GROUNDING_RULES);
 
-  // Layer 6: Mode-specific context
+  // Layer 6: Mode-specific context (all sections truncated — OpenClaw §4.3)
   if (mode === 'heartbeat') {
     parts.push(`\nCONTEXT:`);
-    parts.push(memoryContext);
-    parts.push(objectiveContext);
-    if (input.automationContext) parts.push(input.automationContext);
-    if (input.activityContext) parts.push(input.activityContext);
-    if (input.statsContext) parts.push(input.statsContext);
-    if (input.healingReport) parts.push(input.healingReport);
-    if (input.heartbeatState) parts.push(input.heartbeatState);
+    parts.push(truncateSection(memoryContext, MAX_MEMORY_CHARS));
+    parts.push(truncateSection(objectiveContext, MAX_OBJECTIVES_CHARS));
+    if (input.automationContext) parts.push(truncateSection(input.automationContext, MAX_ACTIVITY_CHARS));
+    if (input.activityContext) parts.push(truncateSection(input.activityContext, MAX_ACTIVITY_CHARS));
+    if (input.statsContext) parts.push(truncateSection(input.statsContext, MAX_CROSS_MODULE_CHARS));
+    if (input.healingReport) parts.push(truncateSection(input.healingReport, 1_000));
+    if (input.heartbeatState) parts.push(truncateSection(input.heartbeatState, 1_000));
     if (input.tokenBudget) {
       parts.push(`\nTOKEN BUDGET: ${input.tokenBudget} tokens max. Be efficient — stop early if approaching the limit.`);
     }
@@ -285,7 +306,9 @@ RULES:
     parts.push(objectiveContext);
   }
 
-  return parts.filter(Boolean).join('\n');
+  const assembled = parts.filter(Boolean).join('\n');
+  console.log(`[prompt-compiler] mode=${mode} prompt_chars=${assembled.length} (~${Math.ceil(assembled.length / 4)} tokens)`);
+  return assembled;
 }
 
 // AI Config — now in ai-config.ts (re-exported above)
@@ -325,26 +348,30 @@ export function buildWorkspacePrompt(soul: any, identity: any, agents: any): str
     if (identity.boundaries?.length) prompt += `\nBoundaries: ${identity.boundaries.join('; ')}`;
   }
 
-  // Layer 2b: Soul
-  if (soul.purpose) prompt += `\n\nSOUL:\nPurpose: ${soul.purpose}`;
-  if (soul.values?.length) prompt += `\nValues: ${soul.values.join('; ')}`;
-  if (soul.tone) prompt += `\nTone: ${soul.tone}`;
-  if (soul.philosophy) prompt += `\nPhilosophy: ${soul.philosophy}`;
+  // Layer 2b: Soul (truncated — OpenClaw §4.3)
+  let soulSection = '';
+  if (soul.purpose) soulSection += `\n\nSOUL:\nPurpose: ${soul.purpose}`;
+  if (soul.values?.length) soulSection += `\nValues: ${soul.values.join('; ')}`;
+  if (soul.tone) soulSection += `\nTone: ${soul.tone}`;
+  if (soul.philosophy) soulSection += `\nPhilosophy: ${soul.philosophy}`;
+  prompt += truncateSection(soulSection, MAX_SOUL_CHARS);
 
-  // Layer 3: Agents (operational rules from DB — overrides CORE_INSTRUCTIONS if present)
+  // Layer 3: Agents (truncated — OpenClaw §4.3)
   if (agents) {
-    prompt += `\n\nOPERATIONAL RULES (AGENTS):`;
-    if (agents.direct_action_rules) prompt += `\n${agents.direct_action_rules}`;
-    if (agents.self_improvement) prompt += `\n${agents.self_improvement}`;
-    if (agents.memory_guidelines) prompt += `\n${agents.memory_guidelines}`;
-    if (agents.browser_rules) prompt += `\n${agents.browser_rules}`;
-    if (agents.workflow_conventions) prompt += `\n${agents.workflow_conventions}`;
-    if (agents.a2a_conventions) prompt += `\n${agents.a2a_conventions}`;
-    if (agents.skill_pack_rules) prompt += `\n${agents.skill_pack_rules}`;
-    if (agents.custom_rules) prompt += `\n${agents.custom_rules}`;
+    let agentsSection = `\n\nOPERATIONAL RULES (AGENTS):`;
+    if (agents.direct_action_rules) agentsSection += `\n${agents.direct_action_rules}`;
+    if (agents.self_improvement) agentsSection += `\n${agents.self_improvement}`;
+    if (agents.memory_guidelines) agentsSection += `\n${agents.memory_guidelines}`;
+    if (agents.browser_rules) agentsSection += `\n${agents.browser_rules}`;
+    if (agents.workflow_conventions) agentsSection += `\n${agents.workflow_conventions}`;
+    if (agents.a2a_conventions) agentsSection += `\n${agents.a2a_conventions}`;
+    if (agents.skill_pack_rules) agentsSection += `\n${agents.skill_pack_rules}`;
+    if (agents.custom_rules) agentsSection += `\n${agents.custom_rules}`;
+    prompt += truncateSection(agentsSection, MAX_AGENTS_CHARS);
   }
 
-  return prompt;
+  // OpenClaw §4.3 — Global bootstrap cap
+  return truncateSection(prompt, MAX_BOOTSTRAP_TOTAL_CHARS);
 }
 
 // ─── CMS Schema Awareness ─────────────────────────────────────────────────────
@@ -1591,9 +1618,12 @@ const SPECIALIST_PROMPTS: Record<string, string> = {
   email: 'You are an email marketing specialist. Focus on: subject lines, personalization, segmentation, deliverability, A/B testing, lifecycle campaigns. Optimize for open rates, click rates, and conversions.',
 };
 
+// Max messages to keep in a sub-agent session
+const MAX_SESSION_MESSAGES = 10;
+
 async function handleDelegateTask(
   supabase: any, _supabaseUrl: string, _serviceKey: string,
-  args: { agent_name: string; task: string; context?: Record<string, any> },
+  args: { agent_name: string; task: string; context?: Record<string, any>; session_id?: string },
 ) {
   const { agent_name, task, context = {} } = args;
 
@@ -1609,23 +1639,68 @@ async function handleDelegateTask(
     ? `\n\nContext:\n${JSON.stringify(context, null, 2)}`
     : '';
 
+  // ─── Persistent Sub-Agent Sessions ───
+  // Load previous conversation for this specialist (if any)
+  const sessionKey = args.session_id || `a2a_session:${agent_name}`;
+  const { data: sessionData } = await supabase.from('agent_memory')
+    .select('value').eq('key', sessionKey).maybeSingle();
+
+  const previousMessages: Array<{ role: string; content: string }> = sessionData?.value?.messages || [];
+
+  // Build conversation: system + previous history + new task
+  const messages: Array<{ role: string; content: string }> = [
+    { role: 'system', content: systemPrompt },
+    ...previousMessages.slice(-MAX_SESSION_MESSAGES),
+    { role: 'user', content: `${task}${contextStr}` },
+  ];
+
   try {
     const resp = await fetch(apiUrl, {
       method: 'POST',
       headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: `${task}${contextStr}` },
-        ],
+        messages,
         max_tokens: 1500,
       }),
     });
     if (!resp.ok) throw new Error(`AI error: ${resp.status}`);
     const data = await resp.json();
     const response = data.choices?.[0]?.message?.content || 'No response generated.';
-    return { status: 'completed', agent: agent_name, task, response };
+
+    // ─── Persist session for continuity ───
+    const updatedMessages = [
+      ...previousMessages.slice(-(MAX_SESSION_MESSAGES - 2)),
+      { role: 'user', content: task },
+      { role: 'assistant', content: response },
+    ];
+
+    const sessionRecord = {
+      value: {
+        messages: updatedMessages,
+        agent: agent_name,
+        last_task: task,
+        updated_at: new Date().toISOString(),
+        turn_count: (sessionData?.value?.turn_count || 0) + 1,
+      },
+      category: 'context',
+      updated_at: new Date().toISOString(),
+    };
+
+    if (sessionData) {
+      await supabase.from('agent_memory').update(sessionRecord).eq('key', sessionKey);
+    } else {
+      await supabase.from('agent_memory').insert({ key: sessionKey, ...sessionRecord, created_by: 'flowpilot' });
+    }
+
+    return {
+      status: 'completed',
+      agent: agent_name,
+      task,
+      response,
+      session_id: sessionKey,
+      turn_count: (sessionData?.value?.turn_count || 0) + 1,
+    };
   } catch (err: any) {
     return { status: 'error', agent: agent_name, error: err.message };
   }
@@ -1827,6 +1902,33 @@ async function handleSkillInstruct(supabase: any, args: { skill_name: string; in
   });
 
   return { status: 'updated', skill: data };
+}
+
+async function handleSkillRead(supabase: any, args: { skill_name: string }) {
+  const { data, error } = await supabase
+    .from('agent_skills')
+    .select('id, name, description, handler, category, scope, trust_level, instructions, tool_definition, requires, requires_approval')
+    .eq('name', args.skill_name)
+    .maybeSingle();
+
+  if (error) return { status: 'error', error: error.message };
+  if (!data) return { status: 'not_found', error: `Skill "${args.skill_name}" not found` };
+
+  return {
+    status: 'loaded',
+    skill: {
+      name: data.name,
+      description: data.description,
+      handler: data.handler,
+      category: data.category,
+      scope: data.scope,
+      trust_level: data.trust_level,
+      requires_approval: data.requires_approval,
+      instructions: data.instructions || '(no instructions — consider adding with skill_instruct)',
+      parameters: data.tool_definition?.function?.parameters || null,
+      prerequisites: data.requires || [],
+    },
+  };
 }
 
 // ─── Soul Update ──────────────────────────────────────────────────────────────
@@ -2070,7 +2172,8 @@ const SELF_MOD_TOOLS = [
   { type: 'function', function: { name: 'skill_disable', description: 'Disable a skill.', parameters: { type: 'object', properties: { skill_name: { type: 'string' } }, required: ['skill_name'] } } },
   { type: 'function', function: { name: 'skill_enable', description: 'Re-enable a disabled skill.', parameters: { type: 'object', properties: { skill_name: { type: 'string' } }, required: ['skill_name'] } } },
   { type: 'function', function: { name: 'skill_delete', description: 'Permanently delete a skill from the registry.', parameters: { type: 'object', properties: { skill_name: { type: 'string' } }, required: ['skill_name'] } } },
-  { type: 'function', function: { name: 'skill_instruct', description: 'Add rich instructions/knowledge to a skill.', parameters: { type: 'object', properties: { skill_name: { type: 'string' }, instructions: { type: 'string' } }, required: ['skill_name', 'instructions'] } } },
+  { type: 'function', function: { name: 'skill_instruct', description: 'Add rich instructions/knowledge to a skill (WRITE operation).', parameters: { type: 'object', properties: { skill_name: { type: 'string' }, instructions: { type: 'string' } }, required: ['skill_name', 'instructions'] } } },
+  { type: 'function', function: { name: 'skill_read', description: 'Load full instructions, handler, and metadata for a skill BEFORE executing it. Use this to understand how a skill works, what arguments it expects, and edge cases — especially for complex or unfamiliar skills.', parameters: { type: 'object', properties: { skill_name: { type: 'string', description: 'Exact skill name to load instructions for' } }, required: ['skill_name'] } } },
   { type: 'function', function: { name: 'automation_create', description: 'Create a new automation. Disabled by default for safety.', parameters: { type: 'object', properties: { name: { type: 'string' }, description: { type: 'string' }, trigger_type: { type: 'string', enum: ['cron', 'event', 'signal'] }, trigger_config: { type: 'object' }, skill_name: { type: 'string' }, skill_arguments: { type: 'object' }, enabled: { type: 'boolean' } }, required: ['name', 'trigger_type', 'trigger_config', 'skill_name'] } } },
   { type: 'function', function: { name: 'automation_list', description: 'List all automations.', parameters: { type: 'object', properties: { enabled_only: { type: 'boolean' } } } } },
   { type: 'function', function: { name: 'automation_update', description: 'Update an existing automation by ID or name.', parameters: { type: 'object', properties: { automation_id: { type: 'string' }, automation_name: { type: 'string' }, updates: { type: 'object', description: 'Fields to update: name, description, trigger_type, trigger_config, skill_name, skill_arguments, enabled' } }, required: ['updates'] } } },
@@ -2184,13 +2287,14 @@ const A2A_TOOLS = [
   {
     type: 'function', function: {
       name: 'delegate_task',
-      description: "Delegate a subtask to a specialized agent. Built-in: 'seo', 'content', 'sales', 'analytics', 'email'. Returns specialist's focused analysis.",
+      description: "Delegate a subtask to a specialized agent with persistent session memory. Built-in: 'seo', 'content', 'sales', 'analytics', 'email'. The specialist remembers previous interactions within the same session.",
       parameters: {
         type: 'object',
         properties: {
           agent_name: { type: 'string', description: "Specialist: 'seo' | 'content' | 'sales' | 'analytics' | 'email', or any custom name" },
           task: { type: 'string', description: 'The specific task for the specialist to handle' },
           context: { type: 'object', description: 'Optional context data to pass to the specialist' },
+          session_id: { type: 'string', description: 'Optional custom session key. Default: a2a_session:{agent_name}. Use a unique ID for isolated conversation threads.' },
         },
         required: ['agent_name', 'task'],
       },
@@ -2636,6 +2740,7 @@ export async function executeBuiltInTool(
     case 'skill_enable': return handleSkillEnable(supabase, fnArgs);
     case 'skill_delete': return handleSkillDelete(supabase, fnArgs);
     case 'skill_instruct': return handleSkillInstruct(supabase, fnArgs);
+    case 'skill_read': return handleSkillRead(supabase, fnArgs);
     case 'soul_update': return handleSoulUpdate(supabase, fnArgs);
     case 'agents_update': return handleAgentsUpdate(supabase, fnArgs);
     case 'heartbeat_protocol_update': return handleHeartbeatProtocolUpdate(supabase, fnArgs);
@@ -2664,12 +2769,22 @@ export async function executeBuiltInTool(
   // Not a built-in → delegate to agent-execute with trace ID
   const body: Record<string, any> = { skill_name: fnName, arguments: fnArgs, agent_type: 'flowpilot' };
   if (traceId) body.trace_id = traceId;
-  const response = await fetch(`${supabaseUrl}/functions/v1/agent-execute`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceKey}` },
-    body: JSON.stringify(body),
-  });
-  return response.json();
+  try {
+    const response = await fetch(`${supabaseUrl}/functions/v1/agent-execute`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceKey}` },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error(`[reason] trace=${traceId} agent-execute ${fnName} HTTP ${response.status}: ${errText.slice(0, 200)}`);
+      return { error: `Skill ${fnName} failed: HTTP ${response.status}`, status: 'failed' };
+    }
+    return response.json();
+  } catch (err: any) {
+    console.error(`[reason] trace=${traceId} agent-execute ${fnName} fetch error:`, err.message);
+    return { error: `Skill ${fnName} unreachable: ${err.message}`, status: 'failed' };
+  }
 }
 
 export function isBuiltInTool(name: string): boolean {
@@ -2678,18 +2793,93 @@ export function isBuiltInTool(name: string): boolean {
 
 // ─── Load Skills from Registry ────────────────────────────────────────────────
 
-export async function loadSkillTools(supabase: any, scope: 'internal' | 'external'): Promise<any[]> {
+/** Three-tier skill budget degradation (OpenClaw §4.4)
+ * 
+ * Tier 1 — FULL (budget < 50%):   All tools with full descriptions + parameters
+ * Tier 2 — COMPACT (50–75%):      All tools but descriptions truncated to 80 chars, no parameter descriptions
+ * Tier 3 — DROP (> 75%):          Only top-used + recently-used skills (max 20), compact format
+ */
+export type SkillBudgetTier = 'full' | 'compact' | 'drop';
+
+export function resolveSkillBudgetTier(tokenBudget: number, tokensUsed: number): SkillBudgetTier {
+  const pct = tokensUsed / tokenBudget;
+  if (pct < 0.50) return 'full';
+  if (pct < 0.75) return 'compact';
+  return 'drop';
+}
+
+function compactToolDefinition(td: any): any {
+  const clone = JSON.parse(JSON.stringify(td));
+  const fn = clone.function;
+  if (!fn) return clone;
+  // Truncate description
+  if (fn.description && fn.description.length > 80) {
+    fn.description = fn.description.slice(0, 77) + '...';
+  }
+  // Strip parameter descriptions to save tokens
+  const props = fn.parameters?.properties;
+  if (props) {
+    for (const val of Object.values(props) as any[]) {
+      delete val.description;
+    }
+  }
+  return clone;
+}
+
+export async function loadSkillTools(
+  supabase: any,
+  scope: 'internal' | 'external',
+  categories?: string[],
+  budgetTier?: SkillBudgetTier,
+): Promise<any[]> {
   const scopes = scope === 'internal' ? ['internal', 'both'] : ['external', 'both'];
-  const { data: skills } = await supabase
+  let query = supabase
     .from('agent_skills')
-    .select('name, tool_definition, scope, requires')
+    .select('name, tool_definition, scope, requires, category')
     .eq('enabled', true)
     .in('scope', scopes);
+  
+  // Category filter — drastically reduces token overhead for heartbeat
+  if (categories && categories.length > 0) {
+    query = query.in('category', categories);
+  }
+
+  const { data: skills } = await query;
 
   if (!skills?.length) return [];
 
   // Skill gating: check prerequisites
-  const gatedSkills = await filterGatedSkills(supabase, skills);
+  let gatedSkills = await filterGatedSkills(supabase, skills);
+
+  // ─── Tier 3: DROP — only keep top-used skills ───
+  if (budgetTier === 'drop') {
+    // Fetch recent usage to determine which skills to keep
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 14);
+    const { data: recentUsage } = await supabase
+      .from('agent_activity')
+      .select('skill_name')
+      .gte('created_at', weekAgo.toISOString())
+      .eq('status', 'success')
+      .order('created_at', { ascending: false })
+      .limit(200);
+
+    const usageCounts: Record<string, number> = {};
+    for (const a of (recentUsage || [])) {
+      if (a.skill_name) usageCounts[a.skill_name] = (usageCounts[a.skill_name] || 0) + 1;
+    }
+
+    // Score each skill: usage count + category bonus for content/analytics
+    const scored = gatedSkills.map((s: any) => ({
+      ...s,
+      _score: (usageCounts[s.name] || 0) + (s.category === 'content' || s.category === 'analytics' ? 2 : 0),
+    }));
+    scored.sort((a: any, b: any) => b._score - a._score);
+    gatedSkills = scored.slice(0, 20);
+    console.log(`[skill-budget] DROP tier: reduced to ${gatedSkills.length} skills from ${skills.length}`);
+  }
+
+  const tier = budgetTier || 'full';
 
   return gatedSkills
     .filter((s: any) => s.tool_definition?.function)
@@ -2720,6 +2910,11 @@ export async function loadSkillTools(supabase: any, scope: 'internal' | 'externa
           delete params.required;
         }
       } catch { /* safety net */ }
+
+      // Apply compaction for compact/drop tiers
+      if (tier === 'compact' || tier === 'drop') {
+        return compactToolDefinition(td);
+      }
       return td;
     });
 }
@@ -2803,10 +2998,15 @@ export async function reason(
 
   try {
     const { apiKey, apiUrl, model } = await resolveAiConfig(supabase, config.tier || 'fast');
+    const tokenBudget = config.tokenBudget || DEFAULT_TOKEN_BUDGET;
 
+    // ─── Three-tier skill budget degradation (OpenClaw §4.4) ───
+    const initialTier = resolveSkillBudgetTier(tokenBudget, 0);
     const builtInTools = getBuiltInTools(config.builtInToolGroups || ['memory', 'objectives', 'reflect']);
-    const skillTools = await loadSkillTools(supabase, config.scope);
-    const allTools = [...builtInTools, ...(config.additionalTools || []), ...skillTools];
+    let currentSkillTier: SkillBudgetTier = initialTier;
+    let skillTools = await loadSkillTools(supabase, config.scope, config.skillCategories, currentSkillTier);
+    console.log(`[reason] trace=${traceId} Loaded ${builtInTools.length} built-in + ${skillTools.length} skill tools (tier: ${currentSkillTier})${config.skillCategories ? ` (categories: ${config.skillCategories.join(',')})` : ' (ALL categories)'}`);
+    let allTools = [...builtInTools, ...(config.additionalTools || []), ...skillTools];
 
     // Apply context pruning before starting the loop
     let conversationMessages = await pruneConversationHistory(messages, supabase);
@@ -2815,14 +3015,58 @@ export async function reason(
     let finalResponse = '';
     let totalTokenUsage: TokenUsage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
     const loadedInstructions = new Set<string>();
+    let consecutiveEmptyTurns = 0;
+    let memoryFlushed = false; // OpenClaw §5.4 — track if we've already flushed
 
     for (let i = 0; i < maxIterations; i++) {
-      // Token budget check (if provided via config)
-      const tokenBudget = (config as any).tokenBudget;
-      if (tokenBudget && totalTokenUsage.total_tokens >= tokenBudget) {
-        console.log(`[reason] trace=${traceId} Token budget exceeded (${totalTokenUsage.total_tokens}/${tokenBudget})`);
-        finalResponse = finalResponse || `Stopped: token budget reached (${totalTokenUsage.total_tokens} tokens).`;
+      // Token budget check
+      if (totalTokenUsage.total_tokens >= tokenBudget) {
+        console.log(`[reason] trace=${traceId} Token budget reached (${totalTokenUsage.total_tokens}/${tokenBudget})`);
+        finalResponse = finalResponse || `Heartbeat complete. Used ${totalTokenUsage.total_tokens} tokens in ${i} iterations.`;
         break;
+      }
+
+      // Remaining budget guard — skip expensive AI call if <5% budget left
+      const remainingBudget = tokenBudget - totalTokenUsage.total_tokens;
+      if (remainingBudget < tokenBudget * 0.05 && i > 0) {
+        console.log(`[reason] trace=${traceId} Budget nearly exhausted (${remainingBudget} remaining), stopping early`);
+        finalResponse = finalResponse || `Heartbeat complete. ${actionsExecuted.length} actions in ${i} iterations.`;
+        break;
+      }
+
+      // ─── OpenClaw §5.4 — Pre-Budget Memory Flush ───
+      // When budget crosses 80%, trigger a silent memory write to preserve context
+      if (!memoryFlushed && totalTokenUsage.total_tokens > tokenBudget * MEMORY_FLUSH_THRESHOLD && i > 1) {
+        memoryFlushed = true;
+        console.log(`[reason] trace=${traceId} Budget at ${Math.round(totalTokenUsage.total_tokens / tokenBudget * 100)}% — flushing context to memory`);
+        try {
+          // Extract what we've accomplished so far and save it
+          const accomplishments = actionsExecuted.length > 0
+            ? `Actions: ${actionsExecuted.join(', ')}. Skills: ${skillResults.map(r => `${r.skill}(${r.status})`).join(', ')}`
+            : 'No actions yet';
+          await handleMemoryWrite(supabase, {
+            key: `heartbeat_flush_${new Date().toISOString().slice(0, 10)}`,
+            value: `Pre-budget flush at ${totalTokenUsage.total_tokens}/${tokenBudget} tokens. ${accomplishments}. Partial response: ${(finalResponse || '').slice(0, 300)}`,
+            category: 'context',
+          });
+          // Inject a hint to the model
+          conversationMessages.push({
+            role: 'system',
+            content: `⚠️ Token budget at ${Math.round(totalTokenUsage.total_tokens / tokenBudget * 100)}%. Context has been saved to memory. Focus on completing the most important remaining action, then summarize.`,
+          });
+        } catch (flushErr) {
+          console.warn(`[reason] trace=${traceId} Memory flush failed (non-fatal):`, flushErr);
+        }
+      }
+
+      // ─── Dynamic skill tier degradation ───
+      const newTier = resolveSkillBudgetTier(tokenBudget, totalTokenUsage.total_tokens);
+      if (newTier !== currentSkillTier) {
+        console.log(`[reason] trace=${traceId} Skill budget tier changed: ${currentSkillTier} → ${newTier} at ${Math.round(totalTokenUsage.total_tokens / tokenBudget * 100)}%`);
+        currentSkillTier = newTier;
+        skillTools = await loadSkillTools(supabase, config.scope, config.skillCategories, currentSkillTier);
+        allTools = [...builtInTools, ...(config.additionalTools || []), ...skillTools];
+        console.log(`[reason] trace=${traceId} Reloaded ${skillTools.length} skill tools at ${currentSkillTier} tier`);
       }
 
       const aiResponse = await fetch(apiUrl, {
@@ -2867,16 +3111,20 @@ export async function reason(
         break;
       }
 
+      // Anti-runaway: detect if agent keeps calling same tools without progress
+      consecutiveEmptyTurns = 0; // Reset on tool calls
+      
       conversationMessages.push(msg);
 
       const calledSkillNames: string[] = [];
+      let turnErrors = 0;
 
       for (const tc of msg.tool_calls) {
         const fnName = tc.function.name;
         let fnArgs: any;
         try { fnArgs = JSON.parse(tc.function.arguments || '{}'); } catch { fnArgs = {}; }
 
-        console.log(`[reason] trace=${traceId} Executing: ${fnName}`, JSON.stringify(fnArgs).slice(0, 200));
+        console.log(`[reason] trace=${traceId} iter=${i} Executing: ${fnName}`, JSON.stringify(fnArgs).slice(0, 200));
         actionsExecuted.push(fnName);
 
         let result: any;
@@ -2884,14 +3132,40 @@ export async function reason(
           result = await executeBuiltInTool(supabase, supabaseUrl, serviceKey, fnName, fnArgs, traceId);
         } catch (err: any) {
           result = { error: err.message };
+          turnErrors++;
+        }
+
+        // Detect silent errors in results
+        if (result?.error || result?.status === 'failed') {
+          turnErrors++;
         }
 
         if (!isBuiltInTool(fnName)) {
-          skillResults.push({ skill: fnName, status: result?.status || 'success', result: result?.result || result });
+          const skillFailed = !!(result?.error || result?.status === 'failed');
+          skillResults.push({ skill: fnName, status: skillFailed ? 'failed' : 'success', result: result?.result || result });
           calledSkillNames.push(fnName);
         }
 
         conversationMessages.push({ role: 'tool', tool_call_id: tc.id, content: JSON.stringify(result) });
+      }
+
+      // Anti-runaway: if ALL tool calls in a turn errored, inject a stop hint
+      if (turnErrors === msg.tool_calls.length && msg.tool_calls.length > 0) {
+        consecutiveEmptyTurns++;
+        if (consecutiveEmptyTurns >= 2) {
+          console.warn(`[reason] trace=${traceId} ${consecutiveEmptyTurns} consecutive error turns — breaking loop`);
+          conversationMessages.push({ role: 'system', content: 'Multiple consecutive tool errors detected. Stop calling failing tools and summarize what you accomplished.' });
+        }
+      }
+
+      // ─── Resource Awareness — let the agent see its own consumption ───
+      const budgetPct = Math.round((totalTokenUsage.total_tokens / tokenBudget) * 100);
+      const iterationsLeft = maxIterations - i - 1;
+      if (i > 0) {
+        conversationMessages.push({
+          role: 'system',
+          content: `[Resource meter] Iteration ${i + 1}/${maxIterations} | Tokens: ${totalTokenUsage.total_tokens.toLocaleString()}/${tokenBudget.toLocaleString()} (${budgetPct}%) | Errors this turn: ${turnErrors}/${msg.tool_calls.length} | Remaining iterations: ${iterationsLeft}`,
+        });
       }
 
       // Lazy instruction loading

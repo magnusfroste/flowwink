@@ -227,6 +227,10 @@ serve(async (req) => {
         console.error('agent-operate stream error:', err);
         try { await sseEvent(writer, encoder, 'error', { message: err.message || 'Internal error' }); } catch { /* writer closed */ }
       } finally {
+        // Release concurrency lock from the correct scope
+        if (lane) {
+          try { await releaseLock(supabase, lane); } catch { /* best effort */ }
+        }
         try { await writer.close(); } catch { /* already closed */ }
       }
     })();
@@ -322,10 +326,5 @@ async function streamFinalResponse(
     console.error('Stream error, falling back:', err);
     await sseEvent(writer, encoder, 'delta', { content: fallbackContent });
     await sseEvent(writer, encoder, 'done', {});
-  } finally {
-    // Release concurrency lock
-    if (lane) {
-      await releaseLock(supabase, lane);
-    }
   }
 }

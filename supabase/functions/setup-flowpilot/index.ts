@@ -2063,17 +2063,44 @@ Return a valid content_json array of ContentBlock objects with proper data for e
   },
 ];
 const DEFAULT_SOUL = {
-  purpose: 'I help run this website autonomously — managing content, leads, and growth so the owner can focus on their business.',
-  values: ['Be helpful and proactive', 'Never take destructive actions without approval', 'Learn from every interaction', 'Prioritize quality over quantity'],
-  tone: 'Professional but approachable. Concise. Action-oriented.',
-  philosophy: 'I aim to make this website run itself while keeping the human in the loop for important decisions.',
+  purpose: 'I am FlowPilot — the autonomous intelligence layer of this FlowWink website. I observe, reason, and act across every module (content, CRM, marketing, support, analytics) to make this site run itself. My north star is measurable business outcomes: traffic, leads, conversions, and customer satisfaction.',
+  values: [
+    'Outcome over output — every action must tie to a measurable goal',
+    'Proactive > reactive — anticipate needs before they surface',
+    'Quality over quantity — one great blog post beats five mediocre ones',
+    'Human-in-the-loop for irreversible actions — never delete, never send without approval',
+    'Learn from every cycle — reflect on what worked, prune what did not',
+    'Transparency — always explain reasoning when asked',
+  ],
+  tone: 'Direct and confident, like a senior consultant. Warm but never chatty. Data-backed when possible. Use concrete numbers and specifics instead of vague adjectives.',
+  philosophy: 'The website is a living system, not a static document. I treat each page, post, and interaction as part of a feedback loop: publish → measure → learn → improve. I own the operational layer so the business owner can focus on strategy and customers. I am not a chatbot — I am a digital operator with agency.',
+  persona: 'FlowPilot — Autonomous Digital Operator',
 };
 
 const DEFAULT_IDENTITY = {
   name: 'FlowPilot',
-  role: 'Autonomous CMS operator',
-  capabilities: ['Content creation', 'Lead management', 'Analytics review', 'Newsletter drafting', 'Booking management', 'Self-improvement'],
-  boundaries: ['Cannot send newsletters without approval', 'Cannot delete data', 'Cannot modify authentication or security settings'],
+  role: 'Autonomous Digital Operator',
+  version: '2.0',
+  capabilities: [
+    'Content strategy & creation (blog posts, pages, KB articles)',
+    'SEO audits & optimization',
+    'Lead qualification & CRM management',
+    'Newsletter composition & audience segmentation',
+    'Booking & calendar management',
+    'Ad campaign monitoring & optimization',
+    'Competitor & industry research',
+    'Analytics review & insight extraction',
+    'Knowledge base gap analysis',
+    'Autonomous self-improvement & skill evolution',
+    'A2A peer communication',
+  ],
+  boundaries: [
+    'Cannot send newsletters or emails without explicit approval',
+    'Cannot delete user data or drop tables',
+    'Cannot modify authentication, security settings, or RLS policies',
+    'Cannot make financial transactions or change pricing without approval',
+    'Must log all autonomous actions to agent_activity for traceability',
+  ],
 };
 
 // =============================================================================
@@ -2332,10 +2359,38 @@ Deno.serve(async (req) => {
         await supabase.from('agent_memory').insert({
           key: 'agents',
           value: {
-            version: '1.0',
-            direct_action_rules: 'When asked to DO something, execute immediately using the appropriate skill. Only create automations when explicitly asked for scheduled/recurring tasks.',
-            self_improvement: 'Create new skills for missing capabilities. Use reflect periodically. Use skill_instruct to enrich skills with context.',
-            memory_guidelines: 'Save user preferences and important facts. Check memory before answering questions about the site.',
+            version: '2.0',
+            direct_action_rules: `# Direct Action Protocol
+- When asked to DO something → execute immediately using the appropriate skill
+- When asked to AUTOMATE something → create an automation with trigger_type matching the intent
+- When asked to PLAN something → create an objective with clear success_criteria
+- Never ask "would you like me to..." — just do it and report the result
+- If a skill fails, try an alternative approach before reporting failure`,
+            self_improvement: `# Self-Improvement Protocol
+- After every heartbeat, evaluate outcomes of recent actions (72h window)
+- Create new skills via skill_create when a capability gap is identified
+- Enrich existing skills via skill_instruct with learnings from real usage
+- Use reflect to synthesize weekly patterns into strategic memory
+- Track skill effectiveness via the Skill Scorecard (success/fail ratio)
+- Prune or disable skills with <20% success rate after 10+ attempts`,
+            memory_guidelines: `# Memory Protocol (OpenClaw §5)
+- Save user preferences, brand voice, industry context as 'preference' category
+- Save operational learnings (what worked/failed) as 'learning' category
+- Save factual site data (traffic baselines, competitor info) as 'fact' category
+- Always check memory before answering questions about the site or its history
+- Use semantic search (search_memories) before creating duplicate entries
+- Pre-compact: extract discrete facts before conversation history is pruned`,
+            workflow_conventions: `# Workflow Conventions
+- Heartbeat is the primary autonomous loop — runs every 12 hours
+- Each heartbeat: evaluate outcomes → pick highest-priority objective → execute skills → log results
+- Automations handle event-driven work (lead.created, form.submitted, etc.)
+- Workflows handle multi-step orchestrations (research → write → review → publish)
+- Budget guard: stop at 80% token usage, flush progress to memory first`,
+            browser_rules: `# External Research Rules
+- Use browser_fetch for competitor monitoring, industry research, and content inspiration
+- Never scrape login-protected pages or personal data
+- Cache research results in agent_memory with 'fact' category and expiry
+- Respect rate limits: max 5 fetches per heartbeat cycle`,
           },
           category: 'preference',
           created_by: 'flowpilot',
@@ -2422,77 +2477,44 @@ Deno.serve(async (req) => {
     console.log(`[setup-flowpilot] Seeded ${automationsSeeded} automations, ${workflowsSeeded} workflows`);
 
     // ═══════════════════════════════════════════
-    // 9. POST-BOOTSTRAP INTEGRITY GATE
-    // Validates the system after seeding and auto-creates
-    // an objective if integrity score is below threshold.
+    // 9. POST-BOOTSTRAP INTEGRITY GATE + SKILL HASH
+    // Uses shared integrity module for checks and stores
+    // expected_skill_hash for drift detection.
     // ═══════════════════════════════════════════
     let integrityResult: any = null;
     try {
       console.log('[setup-flowpilot] Running post-bootstrap integrity check...');
 
-      // --- Inline integrity checks (subset of system-integrity-check) ---
-      const { data: allSkills } = await supabase
-        .from('agent_skills')
-        .select('name, enabled, instructions, tool_definition, handler, description')
-        .eq('enabled', true);
+      // Use shared integrity module
+      const { runIntegrityChecks, computeSkillHash } = await import('../_shared/integrity.ts');
+      const result = await runIntegrityChecks(supabase);
+      integrityResult = result;
+      console.log(`[setup-flowpilot] Integrity score: ${result.score}% (${result.passedChecks}/${result.totalChecks} checks passed)`);
 
-      const enabledSkills = allSkills || [];
-      let issues: string[] = [];
-
-      // Check: skills without instructions
-      const noInstr = enabledSkills.filter((s: any) => !s.instructions || s.instructions.trim() === '');
-      if (noInstr.length > 0) {
-        issues.push(`${noInstr.length} skills missing instructions: ${noInstr.slice(0, 5).map((s: any) => s.name).join(', ')}${noInstr.length > 5 ? '...' : ''}`);
+      // Compute and store expected skill hash for drift detection
+      try {
+        const { data: enabledSkills } = await supabase
+          .from('agent_skills')
+          .select('name, instructions')
+          .eq('enabled', true);
+        
+        if (enabledSkills?.length) {
+          const hash = await computeSkillHash(enabledSkills);
+          await supabase.from('agent_memory').upsert({
+            key: 'expected_skill_hash',
+            value: { hash, skill_count: enabledSkills.length, computed_at: new Date().toISOString() },
+            category: 'context',
+            created_by: 'flowpilot',
+          }, { onConflict: 'key' });
+          console.log(`[setup-flowpilot] Stored expected_skill_hash: ${hash.slice(0, 16)}... (${enabledSkills.length} skills)`);
+        }
+      } catch (hashErr) {
+        console.warn('[setup-flowpilot] Skill hash storage failed (non-fatal):', hashErr);
       }
-
-      // Check: skills without description
-      const noDesc = enabledSkills.filter((s: any) => !s.description || s.description.trim() === '');
-      if (noDesc.length > 0) {
-        issues.push(`${noDesc.length} skills missing descriptions`);
-      }
-
-      // Check: invalid tool definitions
-      const badTd = enabledSkills.filter((s: any) => {
-        if (!s.tool_definition) return true;
-        const td = typeof s.tool_definition === 'string' ? JSON.parse(s.tool_definition) : s.tool_definition;
-        return !td?.function?.name || !td?.function?.parameters;
-      });
-      if (badTd.length > 0) {
-        issues.push(`${badTd.length} skills with invalid tool definitions: ${badTd.map((s: any) => s.name).join(', ')}`);
-      }
-
-      // Check: critical memory keys
-      const { data: memKeys } = await supabase
-        .from('agent_memory')
-        .select('key')
-        .in('key', ['soul', 'identity', 'agents']);
-      const foundKeys = new Set((memKeys || []).map((m: any) => m.key));
-      const missingKeys = ['soul', 'identity', 'agents'].filter(k => !foundKeys.has(k));
-      if (missingKeys.length > 0) {
-        issues.push(`Missing critical memory keys: ${missingKeys.join(', ')}`);
-      }
-
-      // Check: automations referencing missing skills
-      const { data: autos } = await supabase
-        .from('agent_automations')
-        .select('name, skill_name')
-        .eq('enabled', true);
-      const skillNames = new Set(enabledSkills.map((s: any) => s.name));
-      const brokenAutos = (autos || []).filter((a: any) => a.skill_name && !skillNames.has(a.skill_name));
-      if (brokenAutos.length > 0) {
-        issues.push(`${brokenAutos.length} automations reference missing skills: ${brokenAutos.map((a: any) => `${a.name}→${a.skill_name}`).join(', ')}`);
-      }
-
-      const totalChecks = 5;
-      const passedChecks = totalChecks - [noInstr, noDesc, badTd, missingKeys, brokenAutos].filter(arr => arr.length > 0).length;
-      const score = Math.round((passedChecks / totalChecks) * 100);
-
-      integrityResult = { score, issues, totalChecks, passedChecks };
-      console.log(`[setup-flowpilot] Integrity score: ${score}% (${passedChecks}/${totalChecks} checks passed)`);
 
       // Auto-create objective if score is below 80%
-      if (score < 80 && issues.length > 0) {
-        const goalText = `Fix system integrity issues (score: ${score}%). Problems: ${issues.join('; ')}`;
+      if (result.score < 80 && result.issues.length > 0) {
+        const goalText = `Fix system integrity issues (score: ${result.score}%). Problems: ${result.issues.join('; ')}`;
         const { data: existingObj } = await supabase
           .from('agent_objectives')
           .select('id')

@@ -38,7 +38,8 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const MAX_ITERATIONS = 8;
+const MAX_ITERATIONS = 12;
+const MAX_WALL_CLOCK_MS = 120_000; // 2 minutes — hard stop to prevent runaway (OpenClaw #3181)
 
 // ─── Context loaders (heartbeat-specific) ─────────────────────────────────────
 
@@ -218,18 +219,27 @@ serve(async (req) => {
     });
 
     // 3. Delegate to the shared reason() loop — NO duplicated tool loop
-    const result = await reason(supabase, [
+    //    Wall-clock guard: wrap in a timeout to prevent runaway (OpenClaw #3181)
+    const reasonPromise = reason(supabase, [
       { role: "system", content: systemPrompt },
-      { role: "user", content: `Heartbeat triggered at ${new Date().toISOString()}. Review objectives, advance plans, execute due automations, and report system health.` },
+      { role: "user", content: `Heartbeat triggered at ${new Date().toISOString()}. Evaluate outcomes, advance objectives, execute due automations.` },
     ], {
       scope: 'internal',
       maxIterations: maxIter,
       tier: 'reasoning',
       traceId,
-      builtInToolGroups: ['memory', 'objectives', 'self-mod', 'reflect', 'soul', 'planning', 'automations-exec', 'workflows', 'a2a', 'skill-packs'],
-      // Pass token budget via config extension
+      builtInToolGroups: ['memory', 'objectives', 'reflect', 'planning', 'automations-exec'],
       tokenBudget: TOKEN_BUDGET,
-    } as any);
+      // Essential categories for autonomous work (~42 skills instead of 91)
+      // CRM + communication skills are available via chain_skills if needed
+      skillCategories: ['content', 'analytics', 'system', 'growth'],
+    });
+
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error(`Heartbeat wall-clock timeout (${MAX_WALL_CLOCK_MS}ms)`)), MAX_WALL_CLOCK_MS)
+    );
+
+    const result = await Promise.race([reasonPromise, timeoutPromise]);
 
     const duration = Date.now() - startTime;
 

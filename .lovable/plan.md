@@ -1,82 +1,67 @@
 
-# FlowPilot Autonomy Architecture
 
-## Status: ✅ Refactored (March 2026)
+# Plan: Close Remaining OpenClaw Gaps
 
-### Modular Architecture
+## Current State
+Two gaps remain at ⚠️ in `docs/OPENCLAW-LAW.md`:
 
-The monolithic `agent-reason.ts` (3000+ lines) has been decomposed into focused submodules while maintaining backward compatibility through re-exports:
+1. **Protocol Specs (L5)** — OpenClaw uses structured reply tags (`NO_REPLY`, `HEARTBEAT_OK`, action tags) to allow programmatic parsing of agent output. FlowPilot currently uses free-form text + SSE events.
 
-```
-supabase/functions/_shared/
-├── agent-reason.ts      ← Façade: re-exports + core logic (prompt compiler, tools, handlers)
-├── types.ts             ← Shared type definitions (PromptMode, ReasonConfig, TokenUsage, etc.)
-├── ai-config.ts         ← AI provider resolution (OpenAI, Gemini, Lovable, Local)
-├── concurrency.ts       ← Lane-based locking via agent_locks table
-├── token-tracking.ts    ← Budget enforcement for autonomous runs
-└── trace.ts             ← Correlation IDs (trace_id) for full run observability
-```
+2. **Tool Policy** — OpenClaw has layered allow/deny per tool. FlowPilot has `scope` (internal/public) + `trust_level` (auto/notify/approve) which is functionally sufficient but not formally documented as equivalent.
 
-### Key Architectural Decisions
+## What to Build
 
-#### 1. Single Reasoning Loop (DRY)
-The heartbeat previously duplicated the entire tool loop from `reason()`. Now:
-- `flowpilot-heartbeat` → gathers context → calls `reason()` → logs results
-- `agent-operate` → gathers context → runs its own SSE streaming loop (streaming requires different architecture)
-- Both share: tool definitions, tool router, skill loading, context pruning
+### 1. Protocol Specs — Reply Directives
+Add structured reply directives to the agent prompt and SSE handling:
 
-#### 2. Trace IDs (Observability)
-Every autonomy run gets a unique `trace_id` (format: `fp_{timestamp}_{random}`):
-- Generated at heartbeat start → flows into `reason()` → passed to `executeBuiltInTool()` → forwarded to `agent-execute` calls
-- Logged in `agent_activity.input.trace_id` for each heartbeat
-- Query: "show me everything that happened in heartbeat run X" → `WHERE input->>'trace_id' = 'fp_xxx'`
+- **`NO_REPLY` sentinel**: When the heartbeat determines no action is needed, it outputs `NO_REPLY` instead of generating filler text. The heartbeat handler detects this and logs a clean "idle" activity entry.
+- **`HEARTBEAT_OK` sentinel**: After successful heartbeat execution, signals clean completion.
+- **Action tags**: Structured output markers like `[ACTION:skill_name]` and `[RESULT:status]` that get parsed from agent output and stored in `agent_activity` for better traceability.
 
-#### 3. Backward Compatibility
-All existing imports continue to work:
+**Files changed:**
+- `supabase/functions/_shared/agent-reason.ts` — Add protocol directives to `GROUNDING_RULES` and `HEARTBEAT_PROTOCOL` constants. Add a `parseReplyDirectives()` utility function.
+- `supabase/functions/flowpilot-heartbeat/index.ts` — Detect `NO_REPLY` / `HEARTBEAT_OK` in agent response, log appropriate activity status.
+- `supabase/functions/agent-operate/index.ts` — Strip directive tags before streaming to client.
+
+### 2. Tool Policy — Formalize Existing Model
+Document and lightly enhance the existing scope + trust_level system to match OpenClaw's intent:
+
+- Add a `tool_policy` key to `agent_memory` that stores global allow/deny overrides (e.g., temporarily block a skill globally).
+- `loadSkillTools()` checks this policy before including tools.
+- This completes the gap without over-engineering — the existing `scope` + `trust_level` + `requires` already covers 95% of OpenClaw's tool policy.
+
+**Files changed:**
+- `supabase/functions/_shared/agent-reason.ts` — In `loadSkillTools()`, check `agent_memory(key='tool_policy')` for blocked skill names.
+- `supabase/functions/setup-flowpilot/index.ts` — Seed default `tool_policy` key (empty allow/deny lists).
+
+### 3. Update Gap Analysis Doc
+- `docs/OPENCLAW-LAW.md` — Move both gaps from ⚠️ to ✅ with resolution notes.
+
+## Technical Details
+
+### Reply Directive Constants
 ```typescript
-// This still works — agent-reason.ts re-exports everything
-import { resolveAiConfig, tryAcquireLock, extractTokenUsage } from "../_shared/agent-reason.ts";
-
-// But you can also import directly for clarity
-import { tryAcquireLock } from "../_shared/concurrency.ts";
-import { generateTraceId } from "../_shared/trace.ts";
+const REPLY_DIRECTIVES = `
+REPLY DIRECTIVES (use these exact strings when applicable):
+- Output "NO_REPLY" (alone, no other text) when the heartbeat finds nothing to do.
+- Output "HEARTBEAT_OK" as the final line after a successful heartbeat with actions taken.
+- Prefix action descriptions with [ACTION:skill_name] for traceability.
+`;
 ```
 
-### Data Flow: Heartbeat Run
-
-```
-pg_cron (every 12h)
-  → flowpilot-heartbeat (edge function)
-    → generateTraceId('hb') → trace_id: hb_xxx
-    → tryAcquireLock('heartbeat')
-    → [parallel] loadWorkspaceFiles, loadMemories, loadObjectives, loadSiteStats, ...
-    → buildSystemPrompt (OpenClaw 6-layer compiler)
-    → reason(messages, config) ← SHARED LOOP
-      → AI provider (OpenAI/Gemini)
-      → tool_calls → executeBuiltInTool(trace_id)
-        → built-in? → handle directly
-        → skill? → agent-execute(trace_id) → handler
-      → loop until no more tool_calls or budget exceeded
-    → saveHeartbeatState
-    → agent_activity.insert(trace_id)
-    → releaseLock('heartbeat')
+### Tool Policy Schema
+```json
+{
+  "blocked": ["skill_name_1"],
+  "notes": "Blocked due to repeated failures"
+}
 ```
 
-### OpenClaw Prompt Layers
+### parseReplyDirectives(content: string)
+Returns `{ directive: 'NO_REPLY' | 'HEARTBEAT_OK' | null, cleanContent: string }`.
 
-1. **Mode Identity** — heartbeat/operate (hardcoded)
-2. **SOUL + IDENTITY** — from DB, evolvable via `soul_update`
-3. **AGENTS** — from DB, evolvable via `agents_update` (fallback: `CORE_INSTRUCTIONS`)
-4. **CMS Schema** — modules, integrations, block types
-5. **GROUNDING RULES** — hardcoded safety layer (cannot be overridden)
-6. **Context** — objectives, memory, heartbeat protocol, site maturity
+## Estimated Scope
+- 3 edge function files modified
+- 1 doc file updated
+- ~80 lines of new code
 
-### Files Changed
-
-- `supabase/functions/_shared/agent-reason.ts` — refactored to re-export from submodules
-- `supabase/functions/_shared/types.ts` — NEW: shared type definitions
-- `supabase/functions/_shared/ai-config.ts` — NEW: AI provider resolution
-- `supabase/functions/_shared/concurrency.ts` — NEW: lane-based locking
-- `supabase/functions/_shared/token-tracking.ts` — NEW: budget enforcement
-- `supabase/functions/_shared/trace.ts` — NEW: correlation IDs
-- `supabase/functions/flowpilot-heartbeat/index.ts` — refactored to use `reason()`

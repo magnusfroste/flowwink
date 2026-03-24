@@ -35,6 +35,10 @@ export interface ReasonConfig {
   lockOwner?: string;
   /** Trace ID for correlating all activity within a single run */
   traceId?: string;
+  /** Token budget for the entire run */
+  tokenBudget?: number;
+  /** Filter skills by category — if set, only skills in these categories are loaded */
+  skillCategories?: string[];
 }
 
 export interface ReasonResult {
