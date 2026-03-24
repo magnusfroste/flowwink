@@ -24,7 +24,7 @@ OpenClaw is brilliant but tightly coupled to a long-lived Node.js process with f
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│  SURFACES (thin wrappers)                           │
+│  SURFACES (thin wrappers — edge functions)           │
 │  ┌──────────────┐ ┌──────────────┐ ┌─────────────┐ │
 │  │ chat-        │ │ agent-       │ │ flowpilot-  │ │
 │  │ completion   │ │ operate      │ │ heartbeat   │ │
@@ -51,7 +51,8 @@ OpenClaw is brilliant but tightly coupled to a long-lived Node.js process with f
 │  ┌──────────────────────────────────────────────┐   │
 │  │  SHARED INFRA                                │   │
 │  │  types.ts · ai-config.ts · concurrency.ts    │   │
-│  │  token-tracking.ts · trace.ts                │   │
+│  │  token-tracking.ts · trace.ts · integrity.ts │   │
+│  │  sales-context.ts                            │   │
 │  └──────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────┘
 ```
@@ -64,20 +65,22 @@ OpenClaw is brilliant but tightly coupled to a long-lived Node.js process with f
 supabase/functions/_shared/
 ├── pilot/                          ← GENERIC CORE (domain-agnostic)
 │   ├── index.ts                    Barrel re-exports
-│   ├── reason.ts            (871L) ReAct loop, skill loading, context pruning
-│   ├── prompt-compiler.ts   (298L) 6-layer system prompt assembly
-│   ├── handlers.ts         (1401L) 40+ built-in tool handlers
-│   └── built-in-tools.ts   (241L)  Tool JSON schemas
+│   ├── reason.ts                   ReAct loop, skill loading, context pruning
+│   ├── prompt-compiler.ts          6-layer system prompt assembly
+│   ├── handlers.ts                 40+ built-in tool handlers
+│   └── built-in-tools.ts           Tool JSON schemas
 │
 ├── domains/                        ← DOMAIN PACKS (vertical-specific)
-│   └── cms-context.ts       (246L) CMS schema, insights, maturity detection
+│   └── cms-context.ts              CMS schema, insights, maturity detection
 │
-├── agent-reason.ts          (107L) Backward-compat facade (re-exports pilot/)
+├── agent-reason.ts                 Backward-compat facade (re-exports pilot/)
 ├── types.ts                        Shared TypeScript interfaces
 ├── ai-config.ts                    Model routing (OpenAI, Gemini, local, n8n)
 ├── concurrency.ts                  Lane-based lock manager
 ├── token-tracking.ts               Token extraction & budget tracking
-└── trace.ts                        Correlation IDs for observability
+├── trace.ts                        Correlation IDs for observability
+├── integrity.ts                    Drift detection & health scoring
+└── sales-context.ts                Sales intelligence context loader
 ```
 
 ---
@@ -150,6 +153,35 @@ Grouped by capability:
 | **Packs** | `skill_pack_list`, `skill_pack_install` | Bundle installation |
 | **Chaining** | `chain_skills` | Execute multiple skills sequentially |
 
+Tool groups are selectable per surface via `BuiltInToolGroup`:
+`'memory' | 'objectives' | 'self-mod' | 'reflect' | 'soul' | 'planning' | 'automations-exec' | 'workflows' | 'a2a' | 'skill-packs'`
+
+---
+
+## Surfaces (Edge Functions)
+
+Three primary surfaces call into the Pilot core:
+
+| Surface | Edge Function | Mode | Streaming | Lock Lane |
+|---------|--------------|------|-----------|-----------|
+| **Visitor Chat** | `chat-completion` | `chat` | SSE | None |
+| **Admin Operate** | `agent-operate` | `operate` | SSE | `operate:{convId}` |
+| **Heartbeat** | `flowpilot-heartbeat` | `heartbeat` | No | `heartbeat` |
+
+Supporting edge functions:
+
+| Function | Purpose |
+|----------|---------|
+| `setup-flowpilot` | Idempotent bootstrap: seeds soul, skills, objectives, cron |
+| `agent-execute` | Direct skill execution (no reasoning loop) |
+| `signal-ingest` | Receives external signals → triggers matching automations |
+| `signal-dispatcher` | Routes signals to `automation-dispatcher` |
+| `automation-dispatcher` | Executes due automations on schedule |
+| `instance-health` | Drift detection + integrity scoring |
+| `a2a-ingest` | Receives inbound A2A delegation requests |
+| `flowpilot-briefing` | Generates daily/weekly AI briefings |
+| `system-integrity-check` | Full system health check |
+
 ---
 
 ## Domain Packs
@@ -181,6 +213,8 @@ export const helpdeskDomainPack = {
 
 Then wire it into your surface's `reason()` call.
 
+> **Note:** `sales-context.ts` is NOT a domain pack — it's a standalone context loader used by sales-specific edge functions (`prospect-research`, `prospect-fit-analysis`, `sales-profile-setup`). It loads company profile, user pitch, and CMS page summaries for sales AI prompts.
+
 ---
 
 ## Memory Architecture
@@ -200,7 +234,21 @@ Then wire it into your surface's `reason()` call.
 
 ---
 
-## Concurrency
+## Shared Infrastructure
+
+### AI Config (`ai-config.ts`)
+
+Resolves which AI provider to use based on `site_settings.system_ai` + available env vars.
+
+**Priority:** OpenAI → Gemini → Local → n8n
+
+**Model migration:** Legacy model names are auto-mapped to current versions:
+- `gpt-4o` → `gpt-4.1`, `gpt-4o-mini` → `gpt-4.1-mini`
+- `gemini-1.5-pro` → `gemini-2.5-pro`, `gemini-1.5-flash` → `gemini-2.5-flash`
+
+**Tiers:** `fast` (default: gpt-4.1-mini) and `reasoning` (gpt-4.1 / gemini-2.5-pro).
+
+### Concurrency (`concurrency.ts`)
 
 Lane-based locking via `agent_locks` table:
 
@@ -209,9 +257,34 @@ heartbeat    → lane: "heartbeat"           (TTL: 15 min)
 operate      → lane: "operate:{convId}"    (TTL: 5 min)
 ```
 
-Functions: `tryAcquireLock(lane, owner, ttl)` / `releaseLock(lane, owner)`
+Functions: `tryAcquireLock(supabase, lane, owner, ttl)` / `releaseLock(supabase, lane)`
 
 Auto-expires via TTL — no zombie locks.
+
+### Integrity (`integrity.ts`)
+
+Drift detection and health scoring, used by `setup-flowpilot` and `instance-health`:
+
+- `computeSkillHash(skills)` — deterministic SHA-256 of skill names + instruction snippets
+- `runIntegrityChecks(supabase)` — validates: skills have instructions, descriptions, valid tool_definitions, critical memory keys exist, automations reference valid skills
+- Returns `{ score, issues, totalChecks, passedChecks }`
+
+### Token Tracking (`token-tracking.ts`)
+
+- `extractTokenUsage(aiResponse)` → `{ prompt_tokens, completion_tokens, total_tokens }`
+- `accumulateTokens(running, delta)` → merged totals
+- `isOverBudget(usage, budget)` → boolean
+
+### Trace (`trace.ts`)
+
+- `generateTraceId(prefix)` → `fp_m2x7k9_abc123`
+- Format: `{prefix}_{timestamp_base36}_{random}` — human-readable, sortable, unique
+
+---
+
+## Concurrency
+
+Lane-based locking via `agent_locks` table. See [Shared Infrastructure](#concurrency-concurrencyts) above.
 
 ---
 
@@ -234,6 +307,46 @@ The 7-step autonomous loop (customizable via `heartbeat_protocol_update`):
 5. **Automate** — run due automations
 6. **Propose** — suggest new objectives based on data patterns
 7. **Reflect** — self-assessment, persist learnings
+
+---
+
+## Key TypeScript Interfaces
+
+From `types.ts`:
+
+```typescript
+type PromptMode = 'operate' | 'heartbeat' | 'chat';
+
+interface ReasonConfig {
+  scope: 'internal' | 'external';     // Skill filtering
+  maxIterations?: number;              // Default: 6 (operate) / 8 (heartbeat)
+  systemPromptOverride?: string;       // Bypass prompt compiler
+  extraContext?: string;               // Additional context injection
+  builtInToolGroups?: BuiltInToolGroup[]; // Which tool groups to include
+  additionalTools?: any[];             // Extra tool definitions
+  tier?: AiTier;                       // 'fast' | 'reasoning'
+  lockLane?: string;                   // Concurrency lock lane
+  lockOwner?: string;                  // Lock owner identifier
+  traceId?: string;                    // Correlation ID
+  tokenBudget?: number;               // Token limit for run
+  skillCategories?: string[];          // Filter skills by category
+}
+
+interface ReasonResult {
+  response: string;
+  actionsExecuted: string[];
+  skillResults: Array<{ skill: string; status: string; result: any }>;
+  durationMs: number;
+  tokenUsage?: TokenUsage;
+  skippedDueToLock?: boolean;
+  traceId?: string;
+}
+
+type BuiltInToolGroup =
+  | 'memory' | 'objectives' | 'self-mod' | 'reflect'
+  | 'soul' | 'planning' | 'automations-exec'
+  | 'workflows' | 'a2a' | 'skill-packs';
+```
 
 ---
 
@@ -262,6 +375,7 @@ The only CMS-specific code is in `domains/` and `agent-reason.ts` (the facade). 
 | `agent_workflows` | Multi-step DAGs with conditional branching |
 | `agent_activity` | Audit trail of all agent actions |
 | `agent_locks` | Lane-based concurrency guards |
+| `agent_skill_packs` | Installable skill bundles |
 | `a2a_peers` / `a2a_activity` | Agent-to-agent delegation registry |
 | `chat_messages` / `chat_conversations` | Conversation history |
 

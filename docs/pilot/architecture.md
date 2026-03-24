@@ -30,28 +30,31 @@ Surface (edge function)
          │  │ Budget check (tokens/iters) │               │
          │  └─────────────────────────────┘               │
          │                                                │
-         └── Return: { content, tokensUsed, iterations }──┘
+         └── Return: ReasonResult ────────────────────────┘
 ```
 
 ---
 
-## ReasonConfig Interface
+## ReasonConfig Interface (Actual)
 
 ```typescript
 interface ReasonConfig {
-  supabase: SupabaseClient;
-  systemPrompt: string;
-  messages: Message[];
-  tools: ToolDefinition[];
-  mode: 'operate' | 'heartbeat' | 'chat';
-  conversationId?: string;
-  tokenBudget?: number;       // default: 80,000
-  maxIterations?: number;     // default: 6 (operate) / 8 (heartbeat)
-  onStream?: (delta: string) => void;  // SSE streaming callback
-  traceId?: string;           // Correlation ID for observability
-  heartbeatState?: HeartbeatState;     // Cross-run persistence
+  scope: 'internal' | 'external';       // Skill filtering by scope
+  maxIterations?: number;                // Default: 6 (operate) / 8 (heartbeat)
+  systemPromptOverride?: string;         // Bypass 6-layer prompt compiler
+  extraContext?: string;                 // Appended to system prompt
+  builtInToolGroups?: BuiltInToolGroup[];// Which tool groups to include
+  additionalTools?: any[];              // Extra tool definitions
+  tier?: AiTier;                        // 'fast' | 'reasoning'
+  lockLane?: string;                    // Concurrency guard lane
+  lockOwner?: string;                   // Lock owner identifier
+  traceId?: string;                     // Correlation ID for observability
+  tokenBudget?: number;                 // Token limit for entire run
+  skillCategories?: string[];           // Filter DB skills by category
 }
 ```
+
+**Note:** `reason()` receives a `supabase` client, `conversationId`, and `messages` array as separate parameters alongside this config. The config controls behavior, not data.
 
 ---
 
@@ -114,6 +117,13 @@ Stored in `agent_memory` with reserved keys:
 | `tool_policy` | `TOOLS.md` | `{ blocked: string[] }` |
 | `heartbeat_state` | — | `{ lastHeartbeat, completedCycles, ... }` |
 
+### Prompt Context Isolation
+
+Internal system keys are **excluded** from LLM context in `loadMemories()`:
+- `tool_policy`, `expected_skill_hash`, `heartbeat_state`, `heartbeat_protocol`
+
+This prevents infrastructure metadata from polluting the agent's reasoning.
+
 ---
 
 ## Skill Budget Tiers
@@ -126,6 +136,8 @@ As token usage grows, skill definitions are progressively compressed:
 | 50–75% | `compact` | Descriptions truncated to 80 chars, parameter descriptions removed |
 | > 75% | `drop` | Only built-in tools remain, DB skills dropped |
 
+`resolveSkillBudgetTier(tokenUsage, budget)` → `'full' | 'compact' | 'drop'`
+
 ---
 
 ## Context Pruning Pipeline
@@ -133,15 +145,17 @@ As token usage grows, skill definitions are progressively compressed:
 When conversation history approaches `SUMMARY_THRESHOLD` (60k tokens):
 
 ```
-1. preCompactionFlush()
+1. preCompactionFlush(oldMessages, supabase)
    └── AI extracts up to 5 discrete facts from old messages
    └── Persists each as agent_memory entry with vector embedding
 
-2. pruneConversationHistory()
+2. pruneConversationHistory(messages, supabase)
    └── AI generates a summary of old messages
    └── Replaces old messages with [SUMMARY] message
    └── Keeps recent N messages intact
 ```
+
+Both functions live in `reason.ts` (lines ~458–530).
 
 ---
 
@@ -173,6 +187,8 @@ handleDelegateTask({ peer_type, task, context })
   ├── Log to a2a_activity table
   └── Return specialist response
 ```
+
+Built-in specialist types: `seo`, `content`, `sales`, `analytics`, `email`.
 
 Sessions are **persistent** — each specialist remembers prior delegations via the activity log.
 
@@ -213,15 +229,38 @@ handleWorkflowExecute(supabase, { workflow_id })
 
 ## AI Provider Routing
 
-`resolveAiConfig()` returns model + endpoint + API key based on:
+`resolveAiConfig(supabase, tier)` returns `{ apiKey, apiUrl, model }` based on:
 
-1. Explicit model parameter
-2. `site_settings.system_ai` preferences
-3. Available API keys (auto-detect)
+1. `site_settings.system_ai` preferences (provider, model overrides)
+2. Available API keys (auto-detect from env)
+3. Tier: `fast` or `reasoning`
 
-Priority: OpenAI → Gemini → Local → n8n
+**Priority:** OpenAI → Gemini → Local → n8n
 
-Each provider uses a unified request/response adapter so the reasoning loop is model-agnostic.
+**Model migration maps** (transparent to callers):
+- OpenAI: `gpt-4o` → `gpt-4.1`, `gpt-4o-mini` → `gpt-4.1-mini`, `gpt-3.5-turbo` → `gpt-4.1-nano`
+- Gemini: `gemini-1.5-pro` → `gemini-2.5-pro`, `gemini-1.5-flash` → `gemini-2.5-flash`
+
+Each provider uses the OpenAI-compatible API format so the reasoning loop is model-agnostic.
+
+---
+
+## Integrity & Drift Detection
+
+`integrity.ts` provides two functions used by `setup-flowpilot` and `instance-health`:
+
+### `computeSkillHash(skills)`
+Deterministic SHA-256 hash of all skill names + first 200 chars of instructions. Stored in `agent_memory(key='expected_skill_hash')` after bootstrap. Compared at runtime to detect drift.
+
+### `runIntegrityChecks(supabase)`
+Runs 5 validation checks:
+1. Skills have instructions
+2. Skills have descriptions
+3. Tool definitions are valid JSON with `function.name` and `function.parameters`
+4. Critical memory keys exist (`soul`, `identity`, `agents`)
+5. Enabled automations reference existing skills
+
+Returns `{ score: 0-100, issues: string[], totalChecks, passedChecks }`.
 
 ---
 
@@ -246,6 +285,18 @@ Every tool execution is logged to `agent_activity`:
 ```
 { skill_name, status, input, output, duration_ms, token_usage, conversation_id }
 ```
+
+---
+
+## Safety Guards
+
+| Guard | Threshold | Behavior |
+|-------|-----------|----------|
+| **Wall-clock timeout** | 120s (heartbeat) | Hard abort |
+| **Anti-runaway** | 2+ consecutive tool errors | Session abort |
+| **Token budget** | Configurable (default 80k) | Stop reasoning |
+| **Pre-budget flush** | 80% budget used | Extract + save facts, then focus on completion |
+| **Iteration cap** | 6 (operate) / 8 (heartbeat) | Stop after N tool rounds |
 
 ---
 
