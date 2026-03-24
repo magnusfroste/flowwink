@@ -55,8 +55,8 @@ export function useBetaTestFindings(sessionId?: string) {
   return useQuery({
     queryKey: ['beta-test-findings', sessionId],
     queryFn: async () => {
-      let query = supabase
-        .from('beta_test_findings')
+      let query = (supabase
+        .from('beta_test_findings') as any)
         .select('*')
         .order('created_at', { ascending: false })
         .limit(100);
