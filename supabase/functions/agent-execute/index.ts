@@ -1772,7 +1772,65 @@ async function executeNewsletterAction(
     return { error: `Unknown subscriber action: ${action}` };
   }
 
-  // send_newsletter — create draft
+  // manage_newsletters — full CRUD on newsletters table
+  if (skillName === 'manage_newsletters') {
+    const { action = 'list', newsletter_id, subject, content_html, status, schedule_at, limit = 20 } = args as any;
+
+    if (action === 'list') {
+      let query = supabase.from('newsletters')
+        .select('id, subject, status, sent_count, open_count, click_count, scheduled_at, sent_at, created_at')
+        .order('created_at', { ascending: false }).limit(limit);
+      if (status) query = query.eq('status', status);
+      const { data, error } = await query;
+      if (error) throw new Error(`List newsletters failed: ${error.message}`);
+      return { newsletters: data || [] };
+    }
+
+    if (action === 'get') {
+      const id = newsletter_id;
+      if (!id) throw new Error('newsletter_id required for get');
+      const { data, error } = await supabase.from('newsletters')
+        .select('*').eq('id', id).single();
+      if (error) throw new Error(`Get newsletter failed: ${error.message}`);
+      return data;
+    }
+
+    if (action === 'create') {
+      if (!subject) throw new Error('subject required for create');
+      const { data, error } = await supabase.from('newsletters').insert({
+        subject,
+        content_html: content_html || '',
+        status: schedule_at ? 'scheduled' : 'draft',
+        scheduled_at: schedule_at || null,
+      }).select().single();
+      if (error) throw new Error(`Create newsletter failed: ${error.message}`);
+      return { newsletter_id: data.id, subject: data.subject, status: data.status };
+    }
+
+    if (action === 'update') {
+      if (!newsletter_id) throw new Error('newsletter_id required for update');
+      const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
+      if (subject !== undefined) updates.subject = subject;
+      if (content_html !== undefined) updates.content_html = content_html;
+      if (status !== undefined) updates.status = status;
+      if (schedule_at !== undefined) updates.scheduled_at = schedule_at;
+      const { data, error } = await supabase.from('newsletters')
+        .update(updates).eq('id', newsletter_id).select('id, subject, status').single();
+      if (error) throw new Error(`Update newsletter failed: ${error.message}`);
+      return { newsletter_id: data.id, subject: data.subject, status: data.status };
+    }
+
+    if (action === 'delete') {
+      if (!newsletter_id) throw new Error('newsletter_id required for delete');
+      const { error } = await supabase.from('newsletters').delete().eq('id', newsletter_id);
+      if (error) throw new Error(`Delete newsletter failed: ${error.message}`);
+      return { newsletter_id, status: 'deleted' };
+    }
+
+    return { error: `Unknown newsletters action: ${action}` };
+  }
+
+  // send_newsletter — legacy handler (create draft)
   const { subject, content, schedule_at } = args as any;
   const { data, error } = await supabase.from('newsletters').insert({
     subject, content_html: content,
