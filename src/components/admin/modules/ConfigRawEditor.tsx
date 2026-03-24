@@ -201,7 +201,7 @@ export function ConfigRawEditor() {
             .from('agent_memory')
             .update({ value: value as any, updated_at: new Date().toISOString() })
             .eq('key', key)
-            .eq('category', 'config');
+            .eq('category', 'config' as any);
         } else {
           await supabase.from('agent_memory').insert({
             key,
