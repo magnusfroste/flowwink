@@ -326,10 +326,5 @@ async function streamFinalResponse(
     console.error('Stream error, falling back:', err);
     await sseEvent(writer, encoder, 'delta', { content: fallbackContent });
     await sseEvent(writer, encoder, 'done', {});
-  } finally {
-    // Release concurrency lock
-    if (lane) {
-      await releaseLock(supabase, lane);
-    }
   }
 }
