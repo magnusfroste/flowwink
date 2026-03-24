@@ -3204,6 +3204,7 @@ export type Database = {
         | "partial"
         | "no_effect"
         | "negative"
+        | "neutral"
       agent_activity_status:
         | "success"
         | "failed"
@@ -3400,6 +3401,7 @@ export const Constants = {
         "partial",
         "no_effect",
         "negative",
+        "neutral",
       ],
       agent_activity_status: [
         "success",

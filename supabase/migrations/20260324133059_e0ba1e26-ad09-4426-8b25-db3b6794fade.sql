@@ -1,0 +1,1 @@
+ALTER TYPE public.activity_outcome_status ADD VALUE IF NOT EXISTS 'neutral';
