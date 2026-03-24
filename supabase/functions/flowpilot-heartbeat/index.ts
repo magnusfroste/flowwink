@@ -244,6 +244,10 @@ serve(async (req) => {
 
     const duration = Date.now() - startTime;
 
+    // Parse reply directives (OpenClaw Protocol Specs L5)
+    const { directive, cleanContent } = parseReplyDirectives(result.response);
+    const isIdle = directive === 'NO_REPLY';
+
     // 4. Save heartbeat state for next run
     await saveHeartbeatState(supabase, {
       last_run: new Date().toISOString(),
@@ -254,12 +258,12 @@ serve(async (req) => {
       iteration_count: result.actionsExecuted.length,
     });
 
-    // 5. Log heartbeat with trace ID
+    // 5. Log heartbeat with trace ID — use 'idle' distinction for NO_REPLY
     await supabase.from("agent_activity").insert({
       agent: "flowpilot",
       skill_name: "heartbeat",
-      input: { trigger: "scheduled", actions: result.actionsExecuted, trace_id: traceId },
-      output: { summary: result.response.slice(0, 2000) },
+      input: { trigger: "scheduled", actions: result.actionsExecuted, trace_id: traceId, directive },
+      output: { summary: (isIdle ? 'Idle — no actions needed' : cleanContent).slice(0, 2000) },
       status: "success",
       duration_ms: duration,
       token_usage: result.tokenUsage,
