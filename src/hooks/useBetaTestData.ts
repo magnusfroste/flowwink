@@ -40,8 +40,8 @@ export function useBetaTestSessions() {
   return useQuery({
     queryKey: ['beta-test-sessions'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('beta_test_sessions')
+      const { data, error } = await (supabase
+        .from('beta_test_sessions') as any)
         .select('*')
         .order('created_at', { ascending: false })
         .limit(50);
