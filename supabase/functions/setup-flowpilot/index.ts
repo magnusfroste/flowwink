@@ -1439,6 +1439,58 @@ This skill is primarily triggered by automations, not directly by users.
     },
   },
   {
+    name: 'manage_newsletters',
+    description: 'Manage newsletters: list, get, create, update, delete. Full CRUD on newsletter drafts and scheduled sends.',
+    handler: 'module:newsletter',
+    category: 'content',
+    scope: 'internal',
+    requires_approval: false,
+    trust_level: 'notify',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_newsletters',
+        description: 'Manage newsletters. Actions: list, get, create, update, delete.',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: { type: 'string', enum: ['list', 'get', 'create', 'update', 'delete'] },
+            newsletter_id: { type: 'string', description: 'Newsletter UUID (for get/update/delete)' },
+            subject: { type: 'string', description: 'Newsletter subject line' },
+            content_html: { type: 'string', description: 'HTML content of the newsletter' },
+            status: { type: 'string', description: 'Filter by status (for list) or set status (for update)' },
+            schedule_at: { type: 'string', description: 'ISO date to schedule send' },
+            limit: { type: 'number', description: 'Max results (default 20)' },
+          },
+          required: ['action'],
+        },
+      },
+    },
+    instructions: `# manage_newsletters
+
+## What
+Full CRUD management of newsletters in the newsletters table.
+
+## When
+- User asks to create, edit, list, or delete newsletters
+- As part of a content campaign chain (research → blog → newsletter → social)
+- When FlowPilot autonomously creates newsletter drafts from content
+
+## Actions
+| Action | Required fields | Result |
+|--------|----------------|--------|
+| list   | (optional: status, limit) | Array of newsletters with metrics |
+| get    | newsletter_id  | Full newsletter with content |
+| create | subject, content_html | New draft newsletter |
+| update | newsletter_id + fields | Updated newsletter |
+| delete | newsletter_id  | Deleted newsletter |
+
+## Edge Cases
+- Always create as 'draft' unless schedule_at is provided
+- Use execute_newsletter_send to actually send (separate skill with approval gate)
+- content_html should be well-formed HTML for email rendering`,
+  },
+  {
     name: 'manage_consultant_profile',
     description: 'Manage consultant/resume profiles: list, create, update, delete, deduplicate.',
     handler: 'module:resume',
