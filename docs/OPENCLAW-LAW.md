@@ -305,5 +305,5 @@ These are **intentional adaptations**, not gaps. FlowWink trades OpenClaw's file
 
 ---
 
-*This document supersedes all previous architectural descriptions. Revised: 2026-03-20.*
-*Source: [github.com/openclaw/openclaw](https://github.com/openclaw/openclaw) (main branch, March 2026)*
+*This document supersedes all previous architectural descriptions. Revised: 2026-03-24.*
+*Founded on: [github.com/openclaw/openclaw](https://github.com/openclaw/openclaw) (main branch, March 2026, 332k+ ★)*
