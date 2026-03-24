@@ -1941,40 +1941,50 @@ async function executeBlogPostsManagement(
     return data;
   }
 
-  if (action === 'update' && post_id) {
+  // Resolve post_id from slug if needed
+  const resolvedPostId = post_id || (slug ? await (async () => {
+    const { data } = await supabase.from('blog_posts').select('id').eq('slug', slug).maybeSingle();
+    return data?.id;
+  })() : null);
+
+  if (action === 'update') {
+    if (!resolvedPostId) throw new Error('post_id or slug required for update');
     const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
     if (title !== undefined) updates.title = title;
     if (excerpt !== undefined) updates.excerpt = excerpt;
     if (featured_image !== undefined) updates.featured_image = featured_image;
     const { data, error } = await supabase.from('blog_posts')
-      .update(updates).eq('id', post_id).select('id, title, status').single();
+      .update(updates).eq('id', resolvedPostId).select('id, title, status').single();
     if (error) throw new Error(`Update post failed: ${error.message}`);
     return { post_id: data.id, status: 'updated' };
   }
 
-  if (action === 'publish' && post_id) {
+  if (action === 'publish') {
+    if (!resolvedPostId) throw new Error('post_id or slug required for publish');
     const { data, error } = await supabase.from('blog_posts')
       .update({ status: 'published', published_at: new Date().toISOString(), updated_at: new Date().toISOString() })
-      .eq('id', post_id).select('id, title, slug, status').single();
+      .eq('id', resolvedPostId).select('id, title, slug, status').single();
     if (error) throw new Error(`Publish failed: ${error.message}`);
     return { post_id: data.id, slug: data.slug, status: 'published' };
   }
 
-  if (action === 'unpublish' && post_id) {
+  if (action === 'unpublish') {
+    if (!resolvedPostId) throw new Error('post_id or slug required for unpublish');
     const { data, error } = await supabase.from('blog_posts')
       .update({ status: 'draft', updated_at: new Date().toISOString() })
-      .eq('id', post_id).select('id, title, status').single();
+      .eq('id', resolvedPostId).select('id, title, status').single();
     if (error) throw new Error(`Unpublish failed: ${error.message}`);
     return { post_id: data.id, status: 'draft' };
   }
 
-  if (action === 'delete' && post_id) {
-    const { error } = await supabase.from('blog_posts').delete().eq('id', post_id);
+  if (action === 'delete') {
+    if (!resolvedPostId) throw new Error('post_id or slug required for delete');
+    const { error } = await supabase.from('blog_posts').delete().eq('id', resolvedPostId);
     if (error) throw new Error(`Delete post failed: ${error.message}`);
-    return { post_id, status: 'deleted' };
+    return { post_id: resolvedPostId, status: 'deleted' };
   }
 
-  return { error: `Unknown blog posts action: ${action}` };
+  throw new Error(`Unknown blog posts action: ${action}. Supported: list, get, update, publish, unpublish, delete`);
 }
 
 // =============================================================================
