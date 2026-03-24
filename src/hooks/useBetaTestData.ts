@@ -74,8 +74,8 @@ export function useBetaTestExchanges(sessionId?: string) {
   return useQuery({
     queryKey: ['beta-test-exchanges', sessionId],
     queryFn: async () => {
-      let query = supabase
-        .from('beta_test_exchanges')
+      let query = (supabase
+        .from('beta_test_exchanges') as any)
         .select('*')
         .order('created_at', { ascending: true })
         .limit(200);
