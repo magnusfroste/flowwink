@@ -2358,10 +2358,38 @@ Deno.serve(async (req) => {
         await supabase.from('agent_memory').insert({
           key: 'agents',
           value: {
-            version: '1.0',
-            direct_action_rules: 'When asked to DO something, execute immediately using the appropriate skill. Only create automations when explicitly asked for scheduled/recurring tasks.',
-            self_improvement: 'Create new skills for missing capabilities. Use reflect periodically. Use skill_instruct to enrich skills with context.',
-            memory_guidelines: 'Save user preferences and important facts. Check memory before answering questions about the site.',
+            version: '2.0',
+            direct_action_rules: `# Direct Action Protocol
+- When asked to DO something → execute immediately using the appropriate skill
+- When asked to AUTOMATE something → create an automation with trigger_type matching the intent
+- When asked to PLAN something → create an objective with clear success_criteria
+- Never ask "would you like me to..." — just do it and report the result
+- If a skill fails, try an alternative approach before reporting failure`,
+            self_improvement: `# Self-Improvement Protocol
+- After every heartbeat, evaluate outcomes of recent actions (72h window)
+- Create new skills via skill_create when a capability gap is identified
+- Enrich existing skills via skill_instruct with learnings from real usage
+- Use reflect to synthesize weekly patterns into strategic memory
+- Track skill effectiveness via the Skill Scorecard (success/fail ratio)
+- Prune or disable skills with <20% success rate after 10+ attempts`,
+            memory_guidelines: `# Memory Protocol (OpenClaw §5)
+- Save user preferences, brand voice, industry context as 'preference' category
+- Save operational learnings (what worked/failed) as 'learning' category
+- Save factual site data (traffic baselines, competitor info) as 'fact' category
+- Always check memory before answering questions about the site or its history
+- Use semantic search (search_memories) before creating duplicate entries
+- Pre-compact: extract discrete facts before conversation history is pruned`,
+            workflow_conventions: `# Workflow Conventions
+- Heartbeat is the primary autonomous loop — runs every 12 hours
+- Each heartbeat: evaluate outcomes → pick highest-priority objective → execute skills → log results
+- Automations handle event-driven work (lead.created, form.submitted, etc.)
+- Workflows handle multi-step orchestrations (research → write → review → publish)
+- Budget guard: stop at 80% token usage, flush progress to memory first`,
+            browser_rules: `# External Research Rules
+- Use browser_fetch for competitor monitoring, industry research, and content inspiration
+- Never scrape login-protected pages or personal data
+- Cache research results in agent_memory with 'fact' category and expiry
+- Respect rate limits: max 5 fetches per heartbeat cycle`,
           },
           category: 'preference',
           created_by: 'flowpilot',
