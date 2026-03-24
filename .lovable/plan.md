@@ -1,50 +1,56 @@
 
 
-# Plan: OpenClaw Core Refaktor — `_shared/pilot/`
+# Plan: OpenClaw Core Refactor — `_shared/pilot/`
 
-## Status: Phase 1 Complete ✅
+## Status: Phase 3 Complete ✅ + Documentation Complete ✅
 
-### Completed
-1. **Created `_shared/pilot/prompt-compiler.ts`** — Generalized prompt compiler with no CMS references. Identity defaults changed from 'FlowPilot'/'CMS operator' to 'Agent'/'autonomous operator'. Added `freshSitePlaybook` parameter for domain-injected playbooks.
+### Completed Phases
 
-2. **Created `_shared/pilot/built-in-tools.ts`** — All 30+ built-in tool definitions extracted. Clean separation with `getBuiltInTools()` and `BUILT_IN_TOOL_NAMES` exports.
+#### Phase 1 — Extract Generic Core
+1. Created `_shared/pilot/prompt-compiler.ts` — 6-layer prompt compiler (298L)
+2. Created `_shared/pilot/built-in-tools.ts` — 40+ tool definitions (241L)
+3. Created `_shared/domains/cms-context.ts` — CMS domain pack (246L)
+4. Created `_shared/pilot/index.ts` — barrel re-exports
+5. Updated `_shared/types.ts` — added `freshSitePlaybook` to `PromptCompilerInput`
 
-3. **Created `_shared/domains/cms-context.ts`** — All CMS-specific logic extracted:
-   - `loadCMSSchema()` — data counts, modules, integrations
-   - `loadCrossModuleInsights()` — deals, leads, bookings, page views
-   - `detectSiteMaturity()` — fresh site detection
-   - `CMS_DAY_1_PLAYBOOK` — fresh site playbook
-   - `cmsDomainPack` aggregate export
+#### Phase 2 — Extract Handlers
+6. Created `_shared/pilot/handlers.ts` — 40+ built-in tool handlers (1401L)
 
-4. **Created `_shared/pilot/index.ts`** — Barrel file re-exporting all pilot modules.
+#### Phase 3 — Extract Reasoning Loop
+7. Created `_shared/pilot/reason.ts` — ReAct loop, skill loading, context pruning (871L)
+8. Converted `_shared/agent-reason.ts` to backward-compatible re-export facade (107L)
 
-5. **Updated `_shared/types.ts`** — Added `freshSitePlaybook` field to `PromptCompilerInput`.
+#### Phase 4 — Documentation
+9. Created `docs/pilot/README.md` — Overview, architecture diagram, file map, domain pack guide
+10. Created `docs/pilot/architecture.md` — Deep technical reference (data flow, configs, internals)
+11. Created `docs/pilot/handlers-reference.md` — All 40+ handlers with what/when/behavior
 
-### Phase 2 (Next)
-- **Move handler functions into `pilot/reason.ts`** — The 2500+ lines of handler logic (memory, objectives, workflows, A2A, skill CRUD, reflection, outcome evaluation, reason loop) still live in `agent-reason.ts`. Extract into `pilot/reason.ts`.
-- **Update `agent-reason.ts`** to be a slim re-export facade.
-- **Update imports** in heartbeat, operate, chat-completion, setup-flowpilot.
-- **Seed `domain_pack` and `reasoning_config`** in setup-flowpilot bootstrap.
-- **Update `docs/OPENCLAW-LAW.md`** with new architecture.
-
-## Architecture (Current)
+## Architecture (Final)
 
 ```text
 supabase/functions/
 ├── _shared/
-│   ├── pilot/                          ← GENERIC CORE
-│   │   ├── index.ts                    (barrel re-exports)
-│   │   ├── prompt-compiler.ts          (6-layer prompt, workspace files) ✅
-│   │   └── built-in-tools.ts           (tool definitions) ✅
+│   ├── pilot/                          ← GENERIC CORE (domain-agnostic)
+│   │   ├── index.ts                    Barrel re-exports
+│   │   ├── reason.ts            (871L) ReAct loop, skill loading, context pruning
+│   │   ├── prompt-compiler.ts   (298L) 6-layer system prompt assembly
+│   │   ├── handlers.ts         (1401L) 40+ built-in tool handlers
+│   │   └── built-in-tools.ts   (241L)  Tool JSON schemas
 │   │
-│   ├── domains/                         ← DOMAIN PACKS
-│   │   └── cms-context.ts              (CMS schema, insights, maturity) ✅
+│   ├── domains/                        ← DOMAIN PACKS (vertical-specific)
+│   │   └── cms-context.ts       (246L) CMS schema, insights, maturity detection
 │   │
-│   ├── agent-reason.ts                 ← MONOLITH (to be split in Phase 2)
-│   ├── types.ts                        ✅ updated
-│   ├── ai-config.ts                    (already modular)
-│   ├── concurrency.ts                  (already modular)
-│   ├── token-tracking.ts              (already modular)
-│   ├── trace.ts                        (already modular)
-│   └── integrity.ts                    (already modular)
+│   ├── agent-reason.ts          (107L) Backward-compat facade (re-exports pilot/)
+│   ├── types.ts                        Shared TypeScript interfaces
+│   ├── ai-config.ts                    Model routing (OpenAI, Gemini, local, n8n)
+│   ├── concurrency.ts                  Lane-based lock manager
+│   ├── token-tracking.ts               Token extraction & budget tracking
+│   └── trace.ts                        Correlation IDs
+
+docs/
+├── pilot/
+│   ├── README.md                       Overview + getting started for contributors
+│   ├── architecture.md                 Deep technical reference
+│   └── handlers-reference.md           All handler docs
+└── OPENCLAW-LAW.md                     Architectural law (unchanged)
 ```
