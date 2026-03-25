@@ -49,6 +49,11 @@ export default function FederationPage() {
   const [showToken, setShowToken] = useState<string | null>(null);
   const [copiedToken, setCopiedToken] = useState(false);
 
+  const [editingPeer, setEditingPeer] = useState<typeof peers extends (infer T)[] | undefined ? T | null : null>(null);
+  const [editName, setEditName] = useState('');
+  const [editUrl, setEditUrl] = useState('');
+  const [editOutboundToken, setEditOutboundToken] = useState('');
+
   const [generatedInboundToken, setGeneratedInboundToken] = useState<string | null>(null);
 
   const handleCreatePeer = async () => {
