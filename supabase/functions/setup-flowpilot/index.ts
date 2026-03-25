@@ -284,6 +284,23 @@ const DEFAULT_SKILLS = [
     category: 'content',
     scope: 'internal',
     requires_approval: false,
+    instructions: `## write_blog_post
+### What
+Creates a draft blog post in the CMS with title, topic, tone, and content.
+### When to use
+- User asks to write/create/draft a blog post
+- Content pipeline workflow step (after research_content + generate_content_proposal)
+- NOT for updating existing posts (use manage_blog_posts with action='update')
+### Parameters
+- **title**: Required. The blog post title.
+- **topic**: Required. Brief or topic description used for AI generation if no content provided.
+- **content**: Always provide full markdown. Do NOT leave empty expecting AI generation — quality is much lower. Use ## for headings, paragraphs, bullets. Do NOT include the title as H1.
+- **tone**: Defaults to 'professional'. Options: professional, casual, technical, storytelling.
+- **language**: ISO code (en, sv). Defaults to site language.
+### Edge cases
+- If no content provided, handler generates via AI — but quality is lower than agent-written content.
+- Title must be unique; duplicates get a numeric suffix.
+- Always creates as 'draft' status — use manage_blog_posts to publish.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -310,6 +327,22 @@ const DEFAULT_SKILLS = [
     category: 'crm',
     scope: 'both',
     requires_approval: false,
+    instructions: `## add_lead
+### What
+Adds a new lead to the CRM system.
+### When to use
+- Visitor provides contact info in chat
+- Form submission contains a new email
+- Manual lead entry requested by admin
+- NOT for updating existing leads (use manage_leads)
+### Parameters
+- **email**: Required. Must be a valid email address.
+- **name**: Optional but recommended for personalization.
+- **phone**: Optional.
+- **source**: Where the lead came from: 'chat', 'form', 'manual', 'import'.
+### Edge cases
+- Duplicate emails: handler may reject or merge — check response.
+- Always set source accurately for attribution tracking.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -335,6 +368,23 @@ const DEFAULT_SKILLS = [
     category: 'crm',
     scope: 'both',
     requires_approval: false,
+    instructions: `## book_appointment
+### What
+Creates a booking for a customer at a specific date and time.
+### When to use
+- Visitor asks to book/schedule an appointment in chat
+- Admin creates a booking manually
+- Automated booking from a workflow
+### Parameters
+- **customer_name**: Required.
+- **customer_email**: Required for confirmation email.
+- **date**: Required, YYYY-MM-DD format.
+- **time**: Required, HH:MM format (24h).
+- **service_id**: Optional. If omitted, uses default service.
+### Edge cases
+- Always call check_availability first to verify the slot is open.
+- Booking confirmation email is sent automatically.
+- Double bookings are rejected by the handler.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -361,6 +411,18 @@ const DEFAULT_SKILLS = [
     category: 'analytics',
     scope: 'internal',
     requires_approval: false,
+    instructions: `## analyze_analytics
+### What
+Retrieves page view analytics for a given time period.
+### When to use
+- User asks about traffic, views, or site performance
+- Part of weekly_business_digest or reporting workflows
+- When evaluating content performance
+### Parameters
+- **period**: 'today', 'week', 'month', 'quarter'. Defaults to 'week'.
+### Edge cases
+- Returns aggregated data — for per-page breakdown, check the response structure.
+- New sites may have no data — handle gracefully.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -382,6 +444,21 @@ const DEFAULT_SKILLS = [
     category: 'communication',
     scope: 'internal',
     requires_approval: true,
+    instructions: `## send_newsletter
+### What
+Creates a newsletter draft (does NOT send immediately). Requires approval.
+### When to use
+- User asks to create/draft a newsletter
+- Part of content pipeline: research → write → newsletter
+- NOT for sending — use execute_newsletter_send after approval
+### Parameters
+- **subject**: Required. Newsletter subject line.
+- **content**: Required. HTML content for the newsletter body.
+- **schedule_at**: Optional ISO datetime. If set, newsletter is scheduled for future send.
+### Edge cases
+- Always creates as draft. Sending requires execute_newsletter_send (separate approval gate).
+- HTML must be well-formed for email rendering.
+- Check subscriber count with manage_newsletter_subscribers before drafting.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -406,6 +483,21 @@ const DEFAULT_SKILLS = [
     category: 'automation',
     scope: 'internal',
     requires_approval: false,
+    instructions: `## create_objective
+### What
+Creates a new high-level objective for FlowPilot's autonomous operation.
+### When to use
+- Admin defines a new business goal
+- Heartbeat identifies a gap that needs a structured plan
+- System integrity issues require a tracked fix
+### Parameters
+- **goal**: Required. Clear, measurable goal text.
+- **constraints**: Optional guardrails (e.g., no_destructive_actions, deadline, max budget).
+- **success_criteria**: Optional measurable criteria for completion.
+### Edge cases
+- Check existing objectives first to avoid duplicates (use manage_leads... no, query agent_objectives).
+- Objectives drive heartbeat behavior — be specific in goal text.
+- Keep active objectives to <5 to maintain focus.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -529,6 +621,20 @@ const DEFAULT_SKILLS = [
     category: 'crm',
     scope: 'both',
     requires_approval: false,
+    instructions: `## lookup_order
+### What
+Looks up order status by order ID or customer email.
+### When to use
+- Visitor asks about their order status in chat
+- Admin needs to check a specific order
+- CRM workflow needs order context
+### Parameters
+- **order_id**: Direct lookup by UUID.
+- **email**: Lookup all orders for a customer email.
+- At least one parameter should be provided.
+### Edge cases
+- Returns multiple orders when searching by email — present the most recent first.
+- Sensitive data: only share order details with the order owner in visitor chat.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -551,6 +657,19 @@ const DEFAULT_SKILLS = [
     category: 'crm',
     scope: 'internal',
     requires_approval: false,
+    instructions: `## qualify_lead
+### What
+AI-powered lead qualification that analyzes activities, company data, and engagement to produce a score and summary.
+### When to use
+- New lead enters the CRM (can be triggered by automation on lead.created signal)
+- Admin asks to evaluate/score a lead
+- Before creating a deal from a lead
+### Parameters
+- **leadId**: Required. The lead UUID to qualify.
+### Edge cases
+- Requires AI provider to be configured. Falls back gracefully if unavailable.
+- Score is 0-100. Save the result for future reference.
+- Chain with enrich_company if the lead has a company domain.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -573,6 +692,20 @@ const DEFAULT_SKILLS = [
     category: 'crm',
     scope: 'internal',
     requires_approval: false,
+    instructions: `## enrich_company
+### What
+Enriches a company record with industry, size, website info via domain scraping and AI analysis.
+### When to use
+- New company created in CRM with only a name/domain
+- Admin asks to research a company
+- Part of prospect_research pipeline
+### Parameters
+- **companyId**: Company UUID from the database.
+- **domain**: Company domain (e.g., acme.com). Used for scraping.
+### Edge cases
+- Requires either companyId or domain. Both is ideal.
+- Domain scraping may fail for very small companies or blocked sites.
+- Results are saved directly to the company record.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -595,6 +728,21 @@ const DEFAULT_SKILLS = [
     category: 'content',
     scope: 'internal',
     requires_approval: false,
+    instructions: `## research_content
+### What
+Deep AI research on a topic — audience insights, content angles, hooks, competitive landscape, and recommended structure.
+### When to use
+- First step in content pipeline before writing
+- Admin asks for topic research or content ideas
+- Autonomous content planning during heartbeat
+### Parameters
+- **topic**: Required. The subject to research.
+- **target_audience**: Optional but improves relevance significantly.
+- **industry**: Optional context for industry-specific insights.
+- **target_channels**: Required. Array of channels: 'blog', 'newsletter', 'linkedin', 'x'.
+### Edge cases
+- AI-intensive operation — costs tokens. Use judiciously in autonomous mode.
+- Chain: research_content → generate_content_proposal → write_blog_post.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -620,6 +768,22 @@ const DEFAULT_SKILLS = [
     category: 'content',
     scope: 'internal',
     requires_approval: true,
+    instructions: `## generate_content_proposal
+### What
+Generates multi-channel content (blog, newsletter, LinkedIn, X) from a topic with brand voice control. Requires approval.
+### When to use
+- After research_content, to create actual content drafts
+- Admin requests content for multiple channels
+- Content pipeline workflow step
+### Parameters
+- **topic**: Required. Content topic or brief.
+- **target_channels**: Required. Array: 'blog', 'newsletter', 'linkedin', 'x'.
+- **brand_voice**: Optional. Description of brand voice.
+- **tone_level**: 1-5 (1=formal, 5=casual). Default 3.
+### Edge cases
+- Requires approval before content is published.
+- Output includes variants for each channel — review before publishing.
+- If brand voice is not set, reads from soul document.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -647,6 +811,19 @@ const DEFAULT_SKILLS = [
     category: 'crm',
     scope: 'internal',
     requires_approval: false,
+    instructions: `## prospect_research
+### What
+Researches a company — scrapes website, finds contacts via Hunter.io, analyzes with AI.
+### When to use
+- Admin asks to research a prospect or potential client
+- Sales pipeline: identify decision makers at a company
+- Before creating a deal or outreach campaign
+### Parameters
+- **company_name**: Required. The company to research.
+- **company_url**: Optional but strongly recommended for better results.
+### Edge cases
+- Hunter.io API key required for contact discovery. Without it, only website analysis is returned.
+- Chain: prospect_research → qualify_lead → manage_deal (create).`,
     tool_definition: {
       type: 'function',
       function: {
@@ -670,6 +847,19 @@ const DEFAULT_SKILLS = [
     category: 'crm',
     scope: 'internal',
     requires_approval: false,
+    instructions: `## prospect_fit_analysis
+### What
+Analyzes how well a prospect company fits your ideal customer profile using AI.
+### When to use
+- After prospect_research, to score the fit
+- Admin asks "is this a good prospect?"
+- Lead prioritization workflows
+### Parameters
+- **company_id**: UUID from companies table. Preferred.
+- **company_name**: Fallback if no UUID.
+### Edge cases
+- Works best when the company has been enriched first (enrich_company).
+- Returns a fit score and reasoning — use for deal prioritization.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -692,6 +882,19 @@ const DEFAULT_SKILLS = [
     category: 'analytics',
     scope: 'internal',
     requires_approval: false,
+    instructions: `## weekly_business_digest
+### What
+Generates a cross-module business summary covering views, leads, bookings, orders, posts, and newsletters.
+### When to use
+- Automated: runs via cron every Friday at 16:00 UTC
+- Admin asks for a business summary or report
+- Heartbeat needs performance context
+### Parameters
+- **period**: 'day', 'week', 'month'. Default 'week'.
+- **format**: 'structured' (JSON) or 'markdown'. Default 'structured'.
+### Edge cases
+- Returns zeros for modules that have no data — this is normal for new sites.
+- Can be heavy on DB queries — avoid running more than once per hour.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -714,6 +917,17 @@ const DEFAULT_SKILLS = [
     category: 'content',
     scope: 'internal',
     requires_approval: false,
+    instructions: `## publish_scheduled_content
+### What
+Checks and publishes pages and blog posts that have passed their scheduled publish date.
+### When to use
+- Runs automatically via cron (every minute)
+- Rarely called manually — the automation handles it
+### Parameters
+- None required.
+### Edge cases
+- Idempotent — safe to call multiple times.
+- Only publishes content with status='scheduled' and scheduled_at <= now().`,
     tool_definition: {
       type: 'function',
       function: {
@@ -730,6 +944,20 @@ const DEFAULT_SKILLS = [
     category: 'communication',
     scope: 'internal',
     requires_approval: false,
+    instructions: `## scan_gmail_inbox
+### What
+Scans connected Gmail inbox for business signals — new leads, partnership inquiries, support requests.
+### When to use
+- Part of inbox monitoring automation
+- Admin asks to check recent emails
+- Lead discovery from inbound emails
+### Parameters
+- **max_messages**: Max messages to scan (default 20).
+- **scan_days**: Days back to scan (default 1).
+### Edge cases
+- Requires Google OAuth connection. Returns error if not connected.
+- Only reads — does not send or modify emails.
+- Extracts signals: lead info, meeting requests, support needs.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -752,6 +980,19 @@ const DEFAULT_SKILLS = [
     category: 'communication',
     scope: 'internal',
     requires_approval: true,
+    instructions: `## execute_newsletter_send
+### What
+Actually sends a prepared newsletter to all confirmed subscribers via email. Requires approval.
+### When to use
+- After a newsletter has been created and reviewed via manage_newsletters
+- NEVER call without explicit admin approval
+- Final step in newsletter workflow
+### Parameters
+- **newsletter_id**: Required. UUID of the newsletter to send.
+### Edge cases
+- DESTRUCTIVE: Cannot unsend once sent. Always confirm with admin.
+- Only sends to confirmed subscribers.
+- Check subscriber count before sending to set expectations.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -774,6 +1015,19 @@ const DEFAULT_SKILLS = [
     category: 'analytics',
     scope: 'internal',
     requires_approval: false,
+    instructions: `## learn_from_data
+### What
+Analyzes page views, chat feedback, and lead conversions to distill learnings into persistent memory.
+### When to use
+- Runs daily via cron (flowpilot-learn at 03:00)
+- Heartbeat reflection phase
+- Admin asks "what have you learned?"
+### Parameters
+- None required.
+### Edge cases
+- Saves insights to agent_memory with category='context'.
+- Idempotent — repeated calls refine rather than duplicate learnings.
+- Requires sufficient data to produce meaningful insights.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -940,6 +1194,21 @@ This skill is primarily triggered by automations, not directly by users.
     category: 'content',
     scope: 'internal',
     requires_approval: false,
+    instructions: `## manage_page
+### What
+Full page lifecycle management: list, get, create, update, publish, archive, delete, rollback.
+### When to use
+- Admin asks to create, edit, or manage pages
+- Content pipeline: create landing pages, update existing content
+- Page status changes (publish, archive, schedule)
+### Parameters
+- **action**: Required. One of: list, get, create, update, publish, unpublish, archive, delete, rollback.
+- **page_id** or **slug**: Required for most actions except list/create.
+- **title**, **content_json**, **meta_json**: For create/update.
+### Edge cases
+- Delete is soft-delete (archive). Hard delete requires explicit confirmation.
+- Rollback restores previous version from page_versions table.
+- content_json must be a valid ContentBlock[] array.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -980,6 +1249,23 @@ This skill is primarily triggered by automations, not directly by users.
     category: 'content',
     scope: 'internal',
     requires_approval: false,
+    instructions: `## manage_page_blocks
+### What
+Granular block-level operations on pages: add, update, remove, reorder blocks.
+### When to use
+- Admin wants to modify specific blocks on a page without replacing the entire content
+- Adding a new section to an existing page
+- Reordering page layout
+### Parameters
+- **action**: Required. One of: add, update, remove, reorder.
+- **page_id**: Required. The page to modify.
+- **block_id**: Required for update/remove.
+- **block_data**: Block object for add/update.
+- **position**: Insert position for add.
+- **block_ids**: Ordered array for reorder.
+### Edge cases
+- block_data must match the ContentBlock schema for the block type.
+- Reorder requires ALL block_ids in the desired order.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -1012,6 +1298,20 @@ This skill is primarily triggered by automations, not directly by users.
     category: 'content',
     scope: 'internal',
     requires_approval: false,
+    instructions: `## manage_blog_posts
+### What
+Manages existing blog posts: list, get, update, publish, unpublish, delete.
+### When to use
+- Admin asks to list, edit, or manage blog posts
+- Publishing workflow: review → publish
+- Content audits: find drafts, outdated posts
+### Parameters
+- **action**: Required. list, get, update, publish, unpublish, delete.
+- **post_id** or **slug**: For get/update/publish/unpublish/delete.
+- **status**: Filter (list) or set (update).
+### Edge cases
+- Publish sets published_at to now(). Unpublish reverts to draft.
+- Use write_blog_post to CREATE new posts, this skill is for MANAGING existing ones.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -1041,6 +1341,19 @@ This skill is primarily triggered by automations, not directly by users.
     category: 'content',
     scope: 'internal',
     requires_approval: false,
+    instructions: `## manage_blog_categories
+### What
+Manages blog categories and tags: list, create, delete.
+### When to use
+- Admin asks to organize blog content with categories/tags
+- Before writing posts that need categorization
+- Content taxonomy management
+### Parameters
+- **action**: Required. list_categories, create_category, list_tags, create_tag.
+- **name**, **slug**: For creation.
+### Edge cases
+- Slug must be URL-safe. Auto-generated from name if not provided.
+- Deleting a category does not delete associated posts.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -1066,6 +1379,19 @@ This skill is primarily triggered by automations, not directly by users.
     category: 'content',
     scope: 'both',
     requires_approval: false,
+    instructions: `## browse_blog
+### What
+Browse published blog posts (visitor-facing, read-only).
+### When to use
+- Visitor asks about blog content in chat
+- Need to find published posts for reference
+- NOT for admin management (use manage_blog_posts)
+### Parameters
+- **search**: Optional text search.
+- **limit**: Max results, default 5.
+### Edge cases
+- Only returns published posts. Drafts and scheduled posts are excluded.
+- Visitor-safe: no sensitive data exposed.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -1088,6 +1414,20 @@ This skill is primarily triggered by automations, not directly by users.
     category: 'content',
     scope: 'internal',
     requires_approval: false,
+    instructions: `## manage_kb_article
+### What
+Manages knowledge base articles: list, get, create, update, publish, unpublish.
+### When to use
+- Admin asks to create or edit FAQ/KB content
+- kb_gap_analysis identifies missing topics
+- Chat finds questions it can't answer → create KB article
+### Parameters
+- **action**: Required. list, get, create, update, publish, unpublish.
+- **title**, **question**, **answer**: For create/update.
+- **include_in_chat**: Boolean — whether the article is used by chat AI.
+### Edge cases
+- Articles with include_in_chat=true are embedded into chat context.
+- Always set a clear question field for chat matching.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -1117,6 +1457,19 @@ This skill is primarily triggered by automations, not directly by users.
     category: 'content',
     scope: 'internal',
     requires_approval: false,
+    instructions: `## manage_global_blocks
+### What
+Manages global blocks (header, footer, announcement bar, etc.): list, get, update, toggle.
+### When to use
+- Admin asks to change header, footer, or site-wide elements
+- Branding updates that affect global layout
+### Parameters
+- **action**: Required. list, get, update, toggle.
+- **slot**: Slot name: header, footer, announcement, etc.
+- **block_data**: Block configuration object for update.
+### Edge cases
+- Toggle enables/disables a global block without deleting it.
+- Changes affect ALL pages immediately.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -1141,6 +1494,22 @@ This skill is primarily triggered by automations, not directly by users.
     category: 'crm',
     scope: 'internal',
     requires_approval: false,
+    instructions: `## manage_leads
+### What
+Full lead management: list, get, update status/score, delete.
+### When to use
+- Admin asks to view or manage CRM leads
+- Updating lead status in a sales pipeline
+- Bulk operations on leads
+### Parameters
+- **action**: Required. list, get, update, delete.
+- **lead_id**: For get/update/delete.
+- **status**: Filter (list) or set (update).
+- **score**: Set lead score (update).
+- **search**: Text search across name/email.
+### Edge cases
+- Use add_lead to CREATE new leads. This skill manages EXISTING leads.
+- Delete is permanent. Consider archiving instead.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -1168,6 +1537,21 @@ This skill is primarily triggered by automations, not directly by users.
     category: 'crm',
     scope: 'internal',
     requires_approval: false,
+    instructions: `## manage_deal
+### What
+Manages sales deals: list, create, update, move between stages.
+### When to use
+- Admin asks to create or manage deals
+- Moving deals through the pipeline (lead → proposal → negotiation → won/lost)
+- After lead qualification suggests a deal
+### Parameters
+- **action**: Required. list, create, update, move_stage.
+- **lead_id**: Required for create.
+- **stage**: Deal stage (for create/update/move_stage).
+- **value_cents**: Deal value in cents.
+### Edge cases
+- Moving to 'won' or 'lost' sets closed_at automatically.
+- Deals link to leads and optionally to products.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -1197,6 +1581,20 @@ This skill is primarily triggered by automations, not directly by users.
     category: 'crm',
     scope: 'internal',
     requires_approval: false,
+    instructions: `## manage_company
+### What
+Manages CRM companies: list, get, create, update, delete.
+### When to use
+- Admin asks to manage company records
+- Part of prospect research workflow
+- Organizing leads by company
+### Parameters
+- **action**: Required. list, get, create, update, delete.
+- **name**: For create. Company name.
+- **domain**: Company domain for enrichment.
+### Edge cases
+- Use enrich_company after creating to auto-fill industry, size, etc.
+- Domain should not include http/https prefix.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -1228,6 +1626,19 @@ This skill is primarily triggered by automations, not directly by users.
     category: 'commerce',
     scope: 'both',
     requires_approval: false,
+    instructions: `## browse_products
+### What
+Browse products in the catalog (visitor-facing, read-only).
+### When to use
+- Visitor asks about products or pricing in chat
+- Need product info for recommendations
+- NOT for admin management (use manage_product)
+### Parameters
+- **search**: Optional text search.
+- **type**: Filter by type: physical, digital, service.
+### Edge cases
+- Only returns active products. Archived products excluded.
+- Visitor-safe: shows public pricing and descriptions.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -1250,6 +1661,20 @@ This skill is primarily triggered by automations, not directly by users.
     category: 'commerce',
     scope: 'internal',
     requires_approval: false,
+    instructions: `## manage_product
+### What
+Manages products in the catalog: create, update, delete, manage variants.
+### When to use
+- Admin asks to add or edit products
+- E-commerce setup workflows
+### Parameters
+- **action**: Required. list, get, create, update, delete.
+- **name**: Product name (create/update).
+- **price_cents**: Price in cents (create/update).
+- **description**: Product description.
+### Edge cases
+- Price is in cents (e.g., 9900 = $99.00 or 99 SEK).
+- Use manage_inventory for stock levels.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -1276,6 +1701,21 @@ This skill is primarily triggered by automations, not directly by users.
     category: 'commerce',
     scope: 'internal',
     requires_approval: false,
+    instructions: `## manage_inventory
+### What
+Manages product inventory: list stock levels, update quantities, check low-stock alerts.
+### When to use
+- Admin asks about stock levels
+- Automated low-stock alerts
+- After order fulfillment
+### Parameters
+- **action**: Required. list_stock, update_stock, low_stock.
+- **product_id**: For update_stock.
+- **quantity**: New stock quantity.
+- **threshold**: Low stock threshold (default 5).
+### Edge cases
+- low_stock action returns all products below threshold.
+- Stock can go negative if not checked before order.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -1301,6 +1741,21 @@ This skill is primarily triggered by automations, not directly by users.
     category: 'commerce',
     scope: 'internal',
     requires_approval: false,
+    instructions: `## manage_orders
+### What
+Manages e-commerce orders: list, get details, update status, view stats.
+### When to use
+- Admin asks about orders or order status
+- Order fulfillment workflow
+- Business reporting (order stats)
+### Parameters
+- **action**: Required. list, get, update_status, stats.
+- **order_id**: For get/update_status.
+- **status**: New status for update_status.
+- **period**: For stats: today, week, month, quarter.
+### Edge cases
+- Status transitions: pending → processing → shipped → delivered.
+- Stats action returns aggregated revenue and order counts.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -1327,6 +1782,19 @@ This skill is primarily triggered by automations, not directly by users.
     category: 'crm',
     scope: 'both',
     requires_approval: false,
+    instructions: `## check_availability
+### What
+Checks booking availability for a specific date.
+### When to use
+- Visitor asks about available times in chat
+- Before calling book_appointment
+- Calendar management
+### Parameters
+- **date**: Required. Date in YYYY-MM-DD format.
+- **service_id**: Optional. Filter by specific service.
+### Edge cases
+- Returns available time slots based on booking_availability hours minus existing bookings.
+- Respects blocked dates from booking_blocked_dates.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -1350,6 +1818,17 @@ This skill is primarily triggered by automations, not directly by users.
     category: 'crm',
     scope: 'both',
     requires_approval: false,
+    instructions: `## browse_services
+### What
+Lists available booking services (visitor-facing).
+### When to use
+- Visitor asks what services are available
+- Before booking to let visitor choose a service
+### Parameters
+- None required.
+### Edge cases
+- Only returns active services (is_active=true).
+- Includes price and duration information.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -1366,6 +1845,21 @@ This skill is primarily triggered by automations, not directly by users.
     category: 'crm',
     scope: 'internal',
     requires_approval: false,
+    instructions: `## manage_booking_availability
+### What
+Manages booking hours and blocked dates for the scheduling system.
+### When to use
+- Admin sets business hours
+- Admin blocks dates for holidays/vacations
+- Schedule configuration changes
+### Parameters
+- **action**: Required. list_hours, set_hours, block_date, unblock_date, list_blocked.
+- **day_of_week**: 0-6 (0=Sunday) for set_hours.
+- **start_time**, **end_time**: HH:MM format.
+- **date**: YYYY-MM-DD for block/unblock.
+### Edge cases
+- Setting hours replaces existing hours for that day.
+- Blocked dates override availability hours.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -1393,6 +1887,20 @@ This skill is primarily triggered by automations, not directly by users.
     category: 'crm',
     scope: 'internal',
     requires_approval: false,
+    instructions: `## manage_bookings
+### What
+Lists, views, updates, or cancels bookings.
+### When to use
+- Admin manages appointments
+- Booking status updates (confirm, cancel)
+- Calendar overview
+### Parameters
+- **action**: Required. list, get, update_status, cancel.
+- **booking_id**: For get/update_status/cancel.
+- **period**: Filter: today, week, month.
+### Edge cases
+- Cancel sends a cancellation email to the customer.
+- Cancelled bookings free up the time slot.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -1419,6 +1927,20 @@ This skill is primarily triggered by automations, not directly by users.
     category: 'communication',
     scope: 'internal',
     requires_approval: false,
+    instructions: `## manage_newsletter_subscribers
+### What
+Manages newsletter subscribers: list, search, count, remove.
+### When to use
+- Admin asks about subscriber count or list
+- Before sending newsletters (verify audience)
+- Unsubscribe requests
+### Parameters
+- **action**: Required. list, search, count, remove.
+- **search**: Text search across email/name.
+- **email**: Specific email for remove.
+### Edge cases
+- Remove is permanent. No undo.
+- Count is useful before newsletter sends to set expectations.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -1497,6 +2019,19 @@ Full CRUD management of newsletters in the newsletters table.
     category: 'content',
     scope: 'internal',
     requires_approval: false,
+    instructions: `## manage_consultant_profile
+### What
+Manages consultant/resume profiles: list, create, update, delete, find duplicates.
+### When to use
+- Admin uploads a resume → extract_pdf_text → parse_resume → manage_consultant_profile(create)
+- Editing consultant information
+- Finding duplicate profiles
+### Parameters
+- **action**: Required. list, create, update, delete, find_duplicates.
+- **name**, **title**, **skills**, **bio**: For create/update.
+### Edge cases
+- find_duplicates uses name similarity to detect potential duplicates.
+- Chain: extract_pdf_text → parse structured data → create profile.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -1525,6 +2060,19 @@ Full CRUD management of newsletters in the newsletters table.
     category: 'content',
     scope: 'internal',
     requires_approval: false,
+    instructions: `## match_consultant
+### What
+AI-powered matching of consultants to a job description.
+### When to use
+- Client has a job opening and needs consultant recommendations
+- Admin asks "who is best for this project?"
+- Automated matching in recruitment workflows
+### Parameters
+- **job_description**: Required. Full job requirements text.
+- **max_results**: Max matches to return (default 3).
+### Edge cases
+- Works best with enriched profiles (skills, experience, bio).
+- Returns ranked matches with match reasoning.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -1548,6 +2096,21 @@ Full CRUD management of newsletters in the newsletters table.
     category: 'content',
     scope: 'internal',
     requires_approval: false,
+    instructions: `## media_browse
+### What
+Browse, search, and manage files in the media library.
+### When to use
+- Admin asks about uploaded images or files
+- Need to find a specific media file URL
+- Cleanup: delete unused media
+### Parameters
+- **action**: Required. list, get_url, delete, clear_all.
+- **folder**: Folder filter: pages, imports, templates, uploads, blog.
+- **search**: Search by filename.
+- **file_path**: For delete/get_url.
+### Edge cases
+- clear_all is DESTRUCTIVE. Requires confirmation.
+- get_url returns a signed URL for temporary access.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -1573,6 +2136,19 @@ Full CRUD management of newsletters in the newsletters table.
     category: 'crm',
     scope: 'internal',
     requires_approval: false,
+    instructions: `## manage_form_submissions
+### What
+Views and manages form submissions from website forms.
+### When to use
+- Admin asks about form responses
+- Lead generation: review contact form submissions
+- Analytics: form submission statistics
+### Parameters
+- **action**: Required. list, get, delete, stats.
+- **form_name**: Filter by form name.
+### Edge cases
+- Form submissions may contain PII — handle with care.
+- Stats action returns submission counts by form.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -1598,6 +2174,17 @@ Full CRUD management of newsletters in the newsletters table.
     category: 'communication',
     scope: 'internal',
     requires_approval: false,
+    instructions: `## manage_webinar
+### What
+Manages webinars and registrations.
+### When to use
+- Admin creates or manages webinar events
+- Viewing webinar registrations
+### Parameters
+- **action**: Required. list, create, update, registrations.
+- **title**: Webinar title for create.
+### Edge cases
+- Registrations are linked to leads when email matches.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -1622,6 +2209,21 @@ Full CRUD management of newsletters in the newsletters table.
     category: 'system',
     scope: 'internal',
     requires_approval: false,
+    instructions: `## manage_site_settings
+### What
+Reads and updates site settings including module configuration, site name, theme, AI config, chat config.
+### When to use
+- Admin asks to change site settings
+- System configuration queries
+- Module enable/disable
+### Parameters
+- **action**: Required. get, get_all, update.
+- **key**: Settings key (modules, site_name, theme, ai_config, chat_config, etc.).
+- **value**: New value for update.
+### Edge cases
+- Some settings changes require page reload to take effect.
+- ai_config controls which AI provider FlowPilot uses.
+- Be careful with module toggles — disabling a module hides its UI.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -1646,6 +2248,18 @@ Full CRUD management of newsletters in the newsletters table.
     category: 'analytics',
     scope: 'internal',
     requires_approval: false,
+    instructions: `## seo_audit_page
+### What
+Runs an SEO audit on a page or blog post, checking title, meta, content depth, images, and links.
+### When to use
+- Admin asks for SEO analysis
+- Before publishing important pages
+- Content quality check during heartbeat
+### Parameters
+- **slug**: Required. Page or blog post slug to audit.
+### Edge cases
+- Works on both pages and blog posts.
+- Returns actionable recommendations with severity levels.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -1668,6 +2282,18 @@ Full CRUD management of newsletters in the newsletters table.
     category: 'analytics',
     scope: 'internal',
     requires_approval: false,
+    instructions: `## kb_gap_analysis
+### What
+Analyzes chat data to find questions not covered by KB articles, underperforming articles, and content gaps.
+### When to use
+- Admin asks "what questions can't the chat answer?"
+- Knowledge base improvement cycles
+- Content strategy: identify missing topics
+### Parameters
+- **limit**: Max uncovered questions to return (default 20).
+### Edge cases
+- Requires chat history data to produce meaningful results.
+- Chain: kb_gap_analysis → manage_kb_article(create) for each gap.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -1689,6 +2315,19 @@ Full CRUD management of newsletters in the newsletters table.
     category: 'analytics',
     scope: 'internal',
     requires_approval: false,
+    instructions: `## analyze_chat_feedback
+### What
+Analyzes chat feedback: summary statistics, negative feedback drill-down.
+### When to use
+- Admin asks about chat satisfaction or quality
+- Part of weekly digest or performance review
+- Identifying problematic chat responses
+### Parameters
+- **action**: summary (overall stats) or negative_only (drill into bad feedback).
+- **period**: week, month, quarter.
+### Edge cases
+- Negative feedback includes the original question and AI response for context.
+- Use insights to improve KB articles and chat configuration.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -1712,6 +2351,23 @@ Full CRUD management of newsletters in the newsletters table.
     category: 'automation',
     scope: 'internal',
     requires_approval: false,
+    instructions: `## manage_automations
+### What
+Creates and manages agent automations (cron jobs, event triggers, signal handlers).
+### When to use
+- Admin asks to automate a recurring task
+- Setting up event-driven workflows (e.g., "when a lead is created, qualify it")
+- Managing existing automation schedules
+### Parameters
+- **name**: Required. Automation name.
+- **skill_name**: Required. The database skill to execute.
+- **trigger_type**: cron, event, signal, manual.
+- **trigger_config**: Trigger-specific config (cron expression, event name, etc.).
+- **enabled**: Boolean. New automations default to disabled per LAW 7.
+### Edge cases
+- skill_name must reference a DATABASE skill, not a built-in tool.
+- Cron expressions use standard format: minute hour day month weekday.
+- New automations are disabled by default — admin must explicitly enable.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -1741,6 +2397,21 @@ Full CRUD management of newsletters in the newsletters table.
     category: 'growth',
     scope: 'internal',
     requires_approval: true,
+    instructions: `## ad_campaign_create
+### What
+Creates a new ad campaign with objective, budget, target audience, and platform. Requires approval due to budget commitment.
+### When to use
+- Admin asks to create an advertising campaign
+- Part of paid growth workflow
+### Parameters
+- **name**: Required. Campaign name.
+- **platform**: Required. meta, google, or linkedin.
+- **objective**: Required. awareness, traffic, leads, conversions.
+- **budget_cents**: Required. Daily budget in cents.
+### Edge cases
+- Requires approval because it commits real budget.
+- Creates in 'draft' status until approved and activated.
+- Chain: ad_campaign_create → ad_creative_generate → activate.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -1770,6 +2441,20 @@ Full CRUD management of newsletters in the newsletters table.
     category: 'growth',
     scope: 'internal',
     requires_approval: false,
+    instructions: `## ad_creative_generate
+### What
+Generates ad creative (headline, body, CTA) using AI based on campaign objective and target audience.
+### When to use
+- After creating an ad campaign, generate creative assets
+- A/B testing: generate multiple creative variants
+### Parameters
+- **campaign_id**: Required. Campaign UUID.
+- **type**: Required. image, video, text, or carousel.
+- **tone**: Ad tone: professional, casual, urgent, storytelling.
+- **key_message**: Core value proposition.
+### Edge cases
+- AI-generated — review before activating.
+- Multiple creatives per campaign enable A/B testing.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -1796,6 +2481,19 @@ Full CRUD management of newsletters in the newsletters table.
     category: 'growth',
     scope: 'internal',
     requires_approval: false,
+    instructions: `## ad_performance_check
+### What
+Checks ad campaign performance metrics: spend, impressions, clicks, CTR, CPC, conversions.
+### When to use
+- Admin asks about ad performance
+- Part of weekly digest
+- Before ad_optimize to gather data
+### Parameters
+- **campaign_id**: Optional. Omit for all campaigns.
+- **period**: today, week, month, all.
+### Edge cases
+- New campaigns may show zeros — wait at least 24h for meaningful data.
+- Metrics are from the internal tracking system, not the ad platform API.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -1818,6 +2516,20 @@ Full CRUD management of newsletters in the newsletters table.
     category: 'growth',
     scope: 'internal',
     requires_approval: true,
+    instructions: `## ad_optimize
+### What
+Analyzes campaign performance and recommends optimizations. Requires approval for budget changes.
+### When to use
+- Campaigns have been running for 3+ days
+- Admin asks to optimize ad spend
+- Automated optimization in growth workflows
+### Parameters
+- **campaign_id**: Optional. Omit for all campaigns.
+- **action**: analyze, pause_underperformers, scale_winners, rebalance_budget.
+- **threshold_ctr**: Min CTR before pausing (default 0.5%).
+### Edge cases
+- Requires approval for budget-affecting actions.
+- Always analyze first, then act on recommendations.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -1895,6 +2607,19 @@ Return a valid content_json array of ContentBlock objects with proper data for e
     category: 'communication',
     scope: 'internal',
     requires_approval: false,
+    instructions: `## support_list_conversations
+### What
+Lists support conversations filtered by status.
+### When to use
+- Admin asks about support queue
+- Monitoring escalated or waiting conversations
+- Support dashboard data
+### Parameters
+- **status**: Filter: waiting_agent, with_agent, escalated, closed, active.
+- **limit**: Max results (default 20).
+### Edge cases
+- Escalated conversations should be prioritized.
+- Returns customer name, email, priority, and sentiment score.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -1918,6 +2643,19 @@ Return a valid content_json array of ContentBlock objects with proper data for e
     category: 'communication',
     scope: 'internal',
     requires_approval: false,
+    instructions: `## support_assign_conversation
+### What
+Assigns or reassigns a support conversation to an agent.
+### When to use
+- Admin assigns a conversation to a team member
+- Routing escalated conversations
+### Parameters
+- **conversation_id**: Required. UUID of the conversation.
+- **agent_id**: UUID of the support agent to assign.
+- **status**: New status: with_agent, escalated, closed.
+### Edge cases
+- Assigning sets status to 'with_agent' automatically.
+- Closing a conversation removes it from active queue.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -1942,6 +2680,19 @@ Return a valid content_json array of ContentBlock objects with proper data for e
     category: 'analytics',
     scope: 'internal',
     requires_approval: false,
+    instructions: `## support_get_feedback
+### What
+Retrieves chat feedback ratings and comments for quality monitoring.
+### When to use
+- Admin asks about customer satisfaction
+- Quality assurance reviews
+- Identifying knowledge gaps from negative feedback
+### Parameters
+- **rating**: Filter by 'positive' or 'negative'.
+- **limit**: Max results (default 20).
+### Edge cases
+- Use negative feedback to identify KB gaps and improve responses.
+- Chain: support_get_feedback(negative) → kb_gap_analysis.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -1967,6 +2718,21 @@ Return a valid content_json array of ContentBlock objects with proper data for e
     category: 'crm',
     scope: 'internal',
     requires_approval: false,
+    instructions: `## crm_task_list
+### What
+Lists CRM tasks with optional filters.
+### When to use
+- Admin asks about pending tasks
+- Pipeline management: what needs attention
+- Filtering tasks by lead, deal, or priority
+### Parameters
+- **lead_id**: Filter by lead UUID.
+- **deal_id**: Filter by deal UUID.
+- **priority**: Filter: low, medium, high, urgent.
+- **show_completed**: Include completed tasks (default false).
+### Edge cases
+- Defaults to showing only incomplete tasks.
+- Tasks link to leads and/or deals for context.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -1993,6 +2759,21 @@ Return a valid content_json array of ContentBlock objects with proper data for e
     category: 'crm',
     scope: 'internal',
     requires_approval: false,
+    instructions: `## crm_task_create
+### What
+Creates a new CRM task with title, description, due date, and priority.
+### When to use
+- Admin asks to create a follow-up task
+- Automated task creation from workflows
+- After lead qualification suggests next steps
+### Parameters
+- **title**: Required. Task title.
+- **due_date**: ISO date for the deadline.
+- **priority**: low, medium, high, urgent. Default medium.
+- **lead_id** or **deal_id**: Link to CRM entity.
+### Edge cases
+- Tasks without due_date show as undated.
+- Link to a lead or deal for context in CRM views.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -2020,6 +2801,20 @@ Return a valid content_json array of ContentBlock objects with proper data for e
     category: 'crm',
     scope: 'internal',
     requires_approval: false,
+    instructions: `## crm_task_update
+### What
+Updates an existing CRM task — change title, priority, due date, or mark as completed.
+### When to use
+- Admin updates task details
+- Marking tasks as complete
+- Changing task priority
+### Parameters
+- **id**: Required. Task UUID.
+- **completed_at**: ISO timestamp to mark complete. Set to null to reopen.
+- **priority**, **title**, **description**, **due_date**: Fields to update.
+### Edge cases
+- Setting completed_at marks the task as done.
+- Setting completed_at to null reopens the task.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -2049,6 +2844,18 @@ Return a valid content_json array of ContentBlock objects with proper data for e
     category: 'content',
     scope: 'internal',
     requires_approval: false,
+    instructions: `## site_branding_get
+### What
+Reads current site branding settings: logo, colors, fonts, favicon.
+### When to use
+- Admin asks about current branding
+- Before making branding changes (get current state)
+- Content creation that needs brand context
+### Parameters
+- None required.
+### Edge cases
+- Returns null for unset values.
+- Use site_branding_update to make changes.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -2069,6 +2876,21 @@ Return a valid content_json array of ContentBlock objects with proper data for e
     category: 'content',
     scope: 'internal',
     requires_approval: true,
+    instructions: `## site_branding_update
+### What
+Updates site branding settings — logo, colors, fonts, favicon. Requires approval.
+### When to use
+- Admin asks to change logo, colors, or fonts
+- Rebranding workflow
+### Parameters
+- **logo_url**: URL to logo image.
+- **favicon_url**: URL to favicon.
+- **primary_color**: Hex color code.
+- **accent_color**: Hex color code.
+- **font_family**: Font family name.
+### Edge cases
+- Requires approval — branding changes are visible to all visitors immediately.
+- Logo and favicon should be hosted in the media library or a CDN.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -2097,6 +2919,19 @@ Return a valid content_json array of ContentBlock objects with proper data for e
     category: 'crm',
     scope: 'internal',
     requires_approval: false,
+    instructions: `## users_list
+### What
+Lists platform users with their roles.
+### When to use
+- Admin asks about team members or users
+- Role management queries
+- Audit: who has admin access
+### Parameters
+- **role**: Filter by role: admin, approver, writer.
+- **limit**: Max results (default 20).
+### Edge cases
+- Shows email, role, and last sign-in.
+- Does not include customers — only platform users.`,
     tool_definition: {
       type: 'function',
       function: {
@@ -2357,6 +3192,26 @@ Deno.serve(async (req) => {
       }
       
       console.log(`[setup-flowpilot] Seeded ${skillsSeeded} new skills (${existingNames.size} already existed)`);
+
+      // Backfill instructions on existing skills that lack them
+      const skillsToBackfill = DEFAULT_SKILLS.filter(
+        s => existingNames.has(s.name) && s.instructions && s.instructions.trim() !== ''
+      );
+      if (skillsToBackfill.length > 0) {
+        let backfilled = 0;
+        for (const skill of skillsToBackfill) {
+          const { data: updated } = await supabase
+            .from('agent_skills')
+            .update({ instructions: skill.instructions })
+            .eq('name', skill.name)
+            .is('instructions', null)
+            .select('id');
+          if (updated && updated.length > 0) backfilled++;
+        }
+        if (backfilled > 0) {
+          console.log(`[setup-flowpilot] Backfilled instructions on ${backfilled} existing skills`);
+        }
+      }
     }
 
     // 4. Seed soul & identity (with template overrides)
