@@ -22,6 +22,7 @@ interface OutboundRequest {
   peer_id?: string;
   skill: string;
   arguments?: Record<string, unknown>;
+  message?: string; // Raw text message (bypasses skill: prefix)
 }
 
 Deno.serve(async (req) => {
@@ -66,7 +67,7 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, serviceKey);
     const body: OutboundRequest = await req.json();
-    const { peer_name, peer_id, skill, arguments: args = {} } = body;
+    const { peer_name, peer_id, skill, arguments: args = {}, message: rawMessage } = body;
 
     if (!skill) {
       return new Response(JSON.stringify({ error: 'Missing "skill" field' }), {
@@ -137,7 +138,7 @@ Deno.serve(async (req) => {
             messageId,
             role: 'user',
             parts: [
-              { type: 'text', text: `skill:${skill} ${JSON.stringify(args)}` },
+              { type: 'text', text: rawMessage || `skill:${skill} ${JSON.stringify(args)}` },
             ],
           },
         },
