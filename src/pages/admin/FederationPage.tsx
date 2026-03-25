@@ -28,9 +28,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Globe, Plus, RefreshCw, Copy, Check, ArrowDownLeft, ArrowUpRight, AlertCircle, Pencil, Zap, Loader2 } from 'lucide-react';
+import { Globe, Plus, RefreshCw, Copy, Check, ArrowDownLeft, ArrowUpRight, AlertCircle, Pencil, Zap, Loader2, Search, Shield, Cpu } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useA2APeers, useCreateA2APeer, useUpdateA2APeer, useRegenerateToken, useA2AActivity } from '@/hooks/useA2A';
+import { useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
 
 export default function FederationPage() {
@@ -40,6 +41,7 @@ export default function FederationPage() {
   const createPeer = useCreateA2APeer();
   const updatePeer = useUpdateA2APeer();
   const regenerateToken = useRegenerateToken();
+  const queryClient = useQueryClient();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [newPeerName, setNewPeerName] = useState('');
@@ -55,8 +57,12 @@ export default function FederationPage() {
   const [editOutboundToken, setEditOutboundToken] = useState('');
 
   const [generatedInboundToken, setGeneratedInboundToken] = useState<string | null>(null);
-  const [testingPeerId, setTestingPeerId] = useState<string | null>(null);
+   const [testingPeerId, setTestingPeerId] = useState<string | null>(null);
   const [testResult, setTestResult] = useState<{ peerId: string; success: boolean; message: string } | null>(null);
+
+  const [discoveringPeerId, setDiscoveringPeerId] = useState<string | null>(null);
+  const [auditingPeerId, setAuditingPeerId] = useState<string | null>(null);
+  const [auditResult, setAuditResult] = useState<{ peerId: string; success: boolean; text: string } | null>(null);
 
   const handleTestConnection = async (peer: { id: string; name: string; url: string }) => {
     if (!peer.url) {
@@ -104,6 +110,113 @@ export default function FederationPage() {
       toast({ title: 'Connection error', description: msg, variant: 'destructive' });
     } finally {
       setTestingPeerId(null);
+    }
+  };
+
+  const handleDiscover = async (peer: { id: string; name: string; url: string }) => {
+    if (!peer.url) return;
+    setDiscoveringPeerId(peer.id);
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/a2a-discover`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({ peer_id: peer.id, action: 'discover' }),
+        }
+      );
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast({
+          title: 'Skills discovered',
+          description: `Found ${data.agent_card?.skills?.length || 0} skills from ${data.agent_card?.name || peer.name}`,
+        });
+        queryClient.invalidateQueries({ queryKey: ['a2a-peers'] });
+      } else {
+        const errMsg = typeof data.error === 'object' ? data.error.message || JSON.stringify(data.error) : String(data.error || 'Unknown error');
+        toast({ title: 'Discovery failed', description: errMsg, variant: 'destructive' });
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      toast({ title: 'Discovery error', description: msg, variant: 'destructive' });
+    } finally {
+      setDiscoveringPeerId(null);
+    }
+  };
+
+  const handleRunAudit = async (peer: { id: string; name: string; url: string }) => {
+    if (!peer.url) return;
+    setAuditingPeerId(peer.id);
+    setAuditResult(null);
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      toast({ title: 'Audit started', description: `Asking ${peer.name} to audit your site...` });
+
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/a2a-discover`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({
+            peer_id: peer.id,
+            action: 'audit',
+            site_url: window.location.origin,
+          }),
+        }
+      );
+      const data = await res.json();
+      
+      // Extract readable text from the result
+      let auditText = '';
+      const taskResult = data.result?.result;
+      if (taskResult?.artifacts?.length) {
+        for (const artifact of taskResult.artifacts) {
+          for (const part of artifact.parts || []) {
+            if (part.kind === 'text' || part.type === 'text') {
+              auditText += (part.text || '') + '\n';
+            }
+          }
+        }
+      }
+      if (!auditText && taskResult?.status?.message?.parts) {
+        for (const part of taskResult.status.message.parts) {
+          if (part.kind === 'text' || part.type === 'text') {
+            auditText += (part.text || '') + '\n';
+          }
+        }
+      }
+
+      if (data.success) {
+        setAuditResult({ peerId: peer.id, success: true, text: auditText || 'Audit completed — check objectives for findings.' });
+        toast({ title: 'Audit complete', description: 'Findings have been saved as objectives.' });
+      } else {
+        const errMsg = data.error
+          ? (typeof data.error === 'object' ? data.error.message || JSON.stringify(data.error) : String(data.error))
+          : 'Audit failed';
+        setAuditResult({ peerId: peer.id, success: false, text: errMsg });
+        toast({ title: 'Audit failed', description: errMsg, variant: 'destructive' });
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      setAuditResult({ peerId: peer.id, success: false, text: msg });
+      toast({ title: 'Audit error', description: msg, variant: 'destructive' });
+    } finally {
+      setAuditingPeerId(null);
     }
   };
 
@@ -463,39 +576,102 @@ export default function FederationPage() {
                         <Globe className="h-5 w-5 text-primary" />
                       </div>
                       <div>
-                        <CardTitle className="text-base">{peer.name}</CardTitle>
+                        <CardTitle className="text-base">
+                          {((peer.capabilities as any)?.agent_name) || peer.name}
+                        </CardTitle>
                         <CardDescription className="font-mono text-xs">{peer.url}</CardDescription>
+                        {(peer.capabilities as any)?.agent_description && (
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {(peer.capabilities as any).agent_description}
+                          </p>
+                        )}
                       </div>
                     </div>
-                    <Badge variant={statusColor(peer.status)}>{peer.status}</Badge>
+                    <div className="flex items-center gap-2">
+                      {(peer.capabilities as any)?.protocol_version && (
+                        <Badge variant="outline" className="text-[10px]">
+                          A2A v{(peer.capabilities as any).protocol_version}
+                        </Badge>
+                      )}
+                      <Badge variant={statusColor(peer.status)}>{peer.status}</Badge>
+                    </div>
                   </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-3">
+                  {/* Discovered Skills */}
+                  {(() => {
+                    const skills = (peer.capabilities as any)?.skills;
+                    if (!skills?.length) return null;
+                    return (
+                      <div className="flex flex-wrap gap-1.5">
+                        {skills.map((skill: any) => (
+                          <Badge key={skill.id} variant="secondary" className="text-[11px] font-normal gap-1">
+                            <Cpu className="h-3 w-3" />
+                            {skill.name || skill.id}
+                          </Badge>
+                        ))}
+                      </div>
+                    );
+                  })()}
+
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-6 text-sm text-muted-foreground">
                       <span>{peer.request_count} requests</span>
                       {peer.last_seen_at && (
                         <span>Last seen {formatDistanceToNow(new Date(peer.last_seen_at), { addSuffix: true })}</span>
                       )}
-                      <span>Created {formatDistanceToNow(new Date(peer.created_at), { addSuffix: true })}</span>
+                      {(peer.capabilities as any)?.discovered_at && (
+                        <span className="text-xs">Skills discovered {formatDistanceToNow(new Date((peer.capabilities as any).discovered_at), { addSuffix: true })}</span>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       {peer.status !== 'revoked' && (
                          <>
                           {peer.url && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleTestConnection(peer)}
-                              disabled={testingPeerId === peer.id}
-                            >
-                              {testingPeerId === peer.id ? (
-                                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                              ) : (
-                                <Zap className="h-3 w-3 mr-1" />
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDiscover(peer)}
+                                disabled={discoveringPeerId === peer.id}
+                              >
+                                {discoveringPeerId === peer.id ? (
+                                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                ) : (
+                                  <Search className="h-3 w-3 mr-1" />
+                                )}
+                                Discover
+                              </Button>
+                              {(peer.capabilities as any)?.skills?.some((s: any) => s.id === 'openclaw_audit') && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleRunAudit(peer)}
+                                  disabled={auditingPeerId === peer.id}
+                                  className="border-primary/30 text-primary hover:bg-primary/5"
+                                >
+                                  {auditingPeerId === peer.id ? (
+                                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                  ) : (
+                                    <Shield className="h-3 w-3 mr-1" />
+                                  )}
+                                  Audit
+                                </Button>
                               )}
-                              Test
-                            </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleTestConnection(peer)}
+                                disabled={testingPeerId === peer.id}
+                              >
+                                {testingPeerId === peer.id ? (
+                                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                ) : (
+                                  <Zap className="h-3 w-3 mr-1" />
+                                )}
+                                Test
+                              </Button>
+                            </>
                           )}
                           <Button
                             variant="outline"
@@ -544,12 +720,24 @@ export default function FederationPage() {
                     </div>
                   </div>
                   {testResult && testResult.peerId === peer.id && (
-                    <div className={`mt-3 p-2 rounded text-xs font-mono ${
+                    <div className={`p-2 rounded text-xs font-mono ${
                       testResult.success 
                         ? 'bg-green-500/10 text-green-600 border border-green-500/20' 
                         : 'bg-destructive/10 text-destructive border border-destructive/20'
                     }`}>
                       {testResult.message}
+                    </div>
+                  )}
+                  {auditResult && auditResult.peerId === peer.id && (
+                    <div className={`p-3 rounded text-xs ${
+                      auditResult.success 
+                        ? 'bg-green-500/10 text-foreground border border-green-500/20' 
+                        : 'bg-destructive/10 text-destructive border border-destructive/20'
+                    }`}>
+                      <p className="font-medium mb-1">{auditResult.success ? '✓ Audit Complete' : '✗ Audit Failed'}</p>
+                      <pre className="whitespace-pre-wrap text-[11px] text-muted-foreground max-h-60 overflow-auto">
+                        {auditResult.text}
+                      </pre>
                     </div>
                   )}
                 </CardContent>
