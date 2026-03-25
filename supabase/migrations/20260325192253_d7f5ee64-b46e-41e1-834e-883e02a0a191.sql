@@ -1,0 +1,1 @@
+UPDATE a2a_peers SET capabilities = '{"protocol": "jsonrpc", "endpoint": "/a2a/jsonrpc"}'::jsonb WHERE id = '6d79178d-ab9b-49e9-a941-4d4e8a5202c0';
