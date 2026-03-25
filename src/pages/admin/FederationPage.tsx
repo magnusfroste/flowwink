@@ -269,6 +269,51 @@ export default function FederationPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        {/* Edit Peer Dialog */}
+        <Dialog open={!!editingPeer} onOpenChange={(open) => !open && setEditingPeer(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Peer</DialogTitle>
+              <DialogDescription>
+                Update the connection details for {editName}.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Name</Label>
+                <Input value={editName} onChange={e => setEditName(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>URL</Label>
+                <Input
+                  placeholder="https://peer.example.com"
+                  value={editUrl}
+                  onChange={e => setEditUrl(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  The peer's A2A endpoint or Agent Card URL.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label>Outbound Token (leave empty to keep current)</Label>
+                <Input
+                  placeholder="Paste new token to update"
+                  value={editOutboundToken}
+                  onChange={e => setEditOutboundToken(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Token FlowPilot sends when calling this peer. Only updates if you enter a new value.
+                </p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditingPeer(null)}>Cancel</Button>
+              <Button onClick={handleSaveEdit} disabled={!editName || updatePeer.isPending}>
+                {updatePeer.isPending ? 'Saving...' : 'Save'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Add Peer */}
         <div className="flex justify-end">
