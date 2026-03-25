@@ -2948,6 +2948,179 @@ Lists platform users with their roles.
       },
     },
   },
+  // ── manage_* CRUD skills (OpenClaw feedback: highest-impact gap) ──────────
+  {
+    name: 'manage_blog_posts',
+    description: 'Update, publish, unpublish, or delete existing blog posts.',
+    handler: 'module:blog',
+    category: 'content',
+    scope: 'internal',
+    requires_approval: false,
+    instructions: `## manage_blog_posts
+### What
+Full CRUD management of existing blog posts — update content, change status, publish, unpublish, or delete.
+### When to use
+- Publish a draft blog post (action='publish')
+- Update title, content, excerpt, or featured image on an existing post
+- Unpublish or revert a post to draft (action='unpublish')
+- Delete a post (action='delete')
+- NOT for creating new posts — use write_blog_post for that
+### Parameters
+- **action**: Required. One of: 'update', 'publish', 'unpublish', 'delete'.
+- **post_id**: Required. UUID of the blog post. Find via search or listing.
+- **updates**: Object with fields to update. Only used with action='update'.
+  - title, content (markdown), excerpt, featured_image, featured_image_alt, slug, is_featured
+### Edge cases
+- 'publish' sets status='published' and published_at=now() if not already set.
+- 'unpublish' reverts to 'draft' — published_at is preserved for reference.
+- 'delete' is permanent — consider unpublishing first.
+- Always confirm post_id exists before calling — use a listing query if unsure.
+### Chaining
+After publishing: consider calling search_web to share on social, or check analytics after 48h.`,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_blog_posts',
+        description: 'Update, publish, unpublish, or delete an existing blog post.',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: { type: 'string', enum: ['update', 'publish', 'unpublish', 'delete'], description: 'Operation to perform' },
+            post_id: { type: 'string', description: 'UUID of the blog post' },
+            updates: {
+              type: 'object',
+              description: 'Fields to update (only for action=update)',
+              properties: {
+                title: { type: 'string' },
+                content: { type: 'string', description: 'Full markdown content' },
+                excerpt: { type: 'string' },
+                featured_image: { type: 'string' },
+                featured_image_alt: { type: 'string' },
+                slug: { type: 'string' },
+                is_featured: { type: 'boolean' },
+              },
+            },
+          },
+          required: ['action', 'post_id'],
+        },
+      },
+    },
+  },
+  {
+    name: 'manage_leads',
+    description: 'Update lead status, score, notes, or delete a lead from the CRM.',
+    handler: 'module:crm',
+    category: 'crm',
+    scope: 'both',
+    requires_approval: false,
+    instructions: `## manage_leads
+### What
+Update, score, qualify, or delete existing leads in the CRM.
+### When to use
+- Change lead status (new → contacted → qualified → converted → lost)
+- Update lead score based on engagement signals
+- Add or update notes on a lead
+- Delete spam or duplicate leads (action='delete')
+- NOT for adding new leads — use add_lead for that
+### Parameters
+- **action**: Required. One of: 'update', 'delete'.
+- **lead_id**: Required. UUID of the lead.
+- **updates**: Object with fields to update (only for action='update').
+  - status, score, name, phone, notes, company_id, tags
+### Edge cases
+- Status changes trigger automations (lead.status_changed signal) — update status intentionally.
+- Score changes also trigger automations (lead.score_updated signal).
+- Deleting a lead with active deals will orphan those deals — check deals first.
+### Chaining
+After qualifying a lead (status='qualified'): consider creating a deal via manage_deals.`,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_leads',
+        description: 'Update or delete an existing CRM lead.',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: { type: 'string', enum: ['update', 'delete'], description: 'Operation to perform' },
+            lead_id: { type: 'string', description: 'UUID of the lead' },
+            updates: {
+              type: 'object',
+              description: 'Fields to update (only for action=update)',
+              properties: {
+                status: { type: 'string', enum: ['new', 'contacted', 'qualified', 'converted', 'lost'] },
+                score: { type: 'number', description: 'Lead score (0-100)' },
+                name: { type: 'string' },
+                phone: { type: 'string' },
+                notes: { type: 'string' },
+                company_id: { type: 'string' },
+                tags: { type: 'array', items: { type: 'string' } },
+              },
+            },
+          },
+          required: ['action', 'lead_id'],
+        },
+      },
+    },
+  },
+  {
+    name: 'manage_pages',
+    description: 'Update, publish, unpublish, or delete CMS pages.',
+    handler: 'module:pages',
+    category: 'content',
+    scope: 'internal',
+    requires_approval: false,
+    instructions: `## manage_pages
+### What
+Full lifecycle management of CMS pages — update content blocks, change status, publish, schedule, or delete.
+### When to use
+- Publish a draft page (action='publish')
+- Update page title, slug, meta, or content_json blocks
+- Schedule a page for future publishing (action='schedule')
+- Unpublish a live page (action='unpublish')
+- Delete a page (action='delete')
+- NOT for creating pages from scratch — use the page creation flow
+### Parameters
+- **action**: Required. One of: 'update', 'publish', 'unpublish', 'schedule', 'delete'.
+- **page_id**: Required. UUID of the page.
+- **updates**: Object with fields to update (only for action='update').
+  - title, slug, content_json (ContentBlock[]), meta_json, featured_image
+- **scheduled_at**: ISO timestamp (only for action='schedule').
+### Edge cases
+- Publishing updates status='published' and sets published_at.
+- The homepage (slug='/') cannot be deleted — guard against this.
+- content_json is an array of ContentBlock objects — partial updates replace the entire array.
+- Schedule requires the publish-scheduled-pages cron to be active.
+### Chaining
+After publishing: invalidate the page cache via get-page edge function.
+After major content changes: run analyze_seo on the page slug.`,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_pages',
+        description: 'Update, publish, unpublish, schedule, or delete a CMS page.',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: { type: 'string', enum: ['update', 'publish', 'unpublish', 'schedule', 'delete'], description: 'Operation to perform' },
+            page_id: { type: 'string', description: 'UUID of the page' },
+            updates: {
+              type: 'object',
+              description: 'Fields to update (only for action=update)',
+              properties: {
+                title: { type: 'string' },
+                slug: { type: 'string' },
+                content_json: { type: 'array', description: 'Array of ContentBlock objects' },
+                meta_json: { type: 'object' },
+                featured_image: { type: 'string' },
+              },
+            },
+            scheduled_at: { type: 'string', description: 'ISO timestamp for scheduled publishing' },
+          },
+          required: ['action', 'page_id'],
+        },
+      },
+    },
+  },
 ];
 const DEFAULT_SOUL = {
   purpose: 'I am FlowPilot — the autonomous intelligence layer of this FlowWink website. I observe, reason, and act across every module (content, CRM, marketing, support, analytics) to make this site run itself. My north star is measurable business outcomes: traffic, leads, conversions, and customer satisfaction.',
