@@ -122,9 +122,9 @@ Also callable internally via `agent-execute` with `handler: a2a:openclaw`.
 - [x] A2A v0.3.0 JSON-RPC support in a2a-ingest
 - [x] OpenClaw skills registered (4 skills, `a2a:openclaw` handler)
 - [x] `testing` category + `a2a` origin added to enums
+- [x] Build outbound A2A client edge function (`a2a-outbound`)
 - [ ] Get OpenClaw's Agent Card URL
 - [ ] Get OpenClaw's bearer token for outbound calls
-- [ ] Register OpenClaw as peer in Federation panel
+- [ ] Register OpenClaw as peer with URL + token
 - [ ] Share our inbound token + Agent Card URL with OpenClaw
-- [ ] Build outbound A2A client edge function
 - [ ] Test bidirectional communication
