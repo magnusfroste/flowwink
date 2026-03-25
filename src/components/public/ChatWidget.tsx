@@ -92,6 +92,7 @@ export function ChatWidget() {
               size="icon"
               className="h-8 w-8 rounded-full"
               onClick={() => setIsOpen(false)}
+              aria-label="Close chat"
             >
               <X className="h-4 w-4" />
             </Button>
