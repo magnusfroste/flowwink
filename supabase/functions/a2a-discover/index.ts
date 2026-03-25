@@ -101,10 +101,24 @@ Deno.serve(async (req) => {
       const cardUrl = `${peerUrl}/.well-known/agent-card.json`;
       console.log(`[a2a-discover] Fetching agent card from ${cardUrl}`);
 
-      const cardRes = await fetch(cardUrl, {
-        headers: { 'Accept': 'application/json' },
-        signal: AbortSignal.timeout(15000),
-      });
+      let cardRes: Response;
+      try {
+        cardRes = await fetch(cardUrl, {
+          headers: { 'Accept': 'application/json' },
+          signal: AbortSignal.timeout(15000),
+        });
+      } catch (fetchErr: any) {
+        const msg = fetchErr.message || String(fetchErr);
+        const hint = msg.includes('tls') || msg.includes('handshake')
+          ? ' — Tailscale Serve URLs are not reachable from cloud functions. Use `tailscale funnel` for a public HTTPS endpoint.'
+          : '';
+        return new Response(JSON.stringify({
+          error: `Cannot reach peer at ${cardUrl}: ${msg}${hint}`,
+        }), {
+          status: 502,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
 
       if (!cardRes.ok) {
         return new Response(JSON.stringify({
