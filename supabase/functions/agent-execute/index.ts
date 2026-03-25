@@ -2686,104 +2686,35 @@ async function executeWebhook(
 // =============================================================================
 
 async function executeA2ARequest(
-  supabase: any,
+  _supabase: any,
   peerName: string,
   args: Record<string, unknown>,
 ): Promise<unknown> {
-  // Look up the peer by name
-  const { data: peer, error: peerError } = await supabase
-    .from('a2a_peers')
-    .select('*')
-    .ilike('name', peerName)
-    .eq('status', 'active')
-    .single();
-
-  if (peerError || !peer) {
-    return { error: `A2A peer '${peerName}' not found or not active` };
-  }
+  // Delegate to the dedicated a2a-outbound edge function
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
   const { skill, ...skillArgs } = args as { skill: string; [key: string]: unknown };
   if (!skill) {
     return { error: 'Missing "skill" field in arguments — specify which skill to call on the peer' };
   }
 
-  // Log outbound activity
-  const { data: activityRow } = await supabase
-    .from('a2a_activity')
-    .insert({
-      peer_id: peer.id,
-      direction: 'outbound',
-      skill_name: skill,
-      input: skillArgs,
-      status: 'pending',
-    })
-    .select('id')
-    .single();
-
-  const startTime = Date.now();
-
   try {
-    // Determine peer endpoint and body format from capabilities
-    const peerUrl = peer.url.replace(/\/$/, '');
-    const caps = peer.capabilities as Record<string, unknown> || {};
-    const endpoint = (caps.endpoint as string) || '/functions/v1/a2a-negotiate';
-    const protocol = (caps.protocol as string) || 'a2a-negotiate';
-
-    // Build request body based on peer's protocol
-    let requestBody: Record<string, unknown>;
-    if (protocol === 'a2a-negotiate') {
-      // Standard A2A negotiate protocol: { type: "task", skill_id, input }
-      requestBody = {
-        type: 'task',
-        skill_id: skill,
-        input: skillArgs,
-      };
-    } else {
-      // Legacy/FlowWink protocol
-      requestBody = { skill, arguments: skillArgs };
-    }
-
-    const response = await fetch(`${peerUrl}${endpoint}`, {
+    const response = await fetch(`${supabaseUrl}/functions/v1/a2a-outbound`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${peer.outbound_token}`,
+        'Authorization': `Bearer ${serviceKey}`,
       },
-      body: JSON.stringify(requestBody),
+      body: JSON.stringify({
+        peer_name: peerName,
+        skill,
+        arguments: skillArgs,
+      }),
     });
 
-    const result = await response.json();
-    const durationMs = Date.now() - startTime;
-    const status = response.ok ? 'success' : 'error';
-
-    // Update activity log
-    if (activityRow?.id) {
-      await supabase.from('a2a_activity').update({
-        output: result,
-        status,
-        duration_ms: durationMs,
-        error_message: response.ok ? null : (result?.error || `HTTP ${response.status}`),
-      }).eq('id', activityRow.id);
-    }
-
-    // Update peer stats
-    await supabase.from('a2a_peers').update({
-      last_seen_at: new Date().toISOString(),
-      request_count: (peer.request_count || 0) + 1,
-    }).eq('id', peer.id);
-
-    return result;
+    return await response.json();
   } catch (err: any) {
-    const durationMs = Date.now() - startTime;
-
-    if (activityRow?.id) {
-      await supabase.from('a2a_activity').update({
-        status: 'error',
-        duration_ms: durationMs,
-        error_message: err.message || 'Network error',
-      }).eq('id', activityRow.id);
-    }
-
     return { error: `Failed to reach peer '${peerName}': ${err.message}` };
   }
 }
