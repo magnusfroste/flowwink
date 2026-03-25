@@ -99,7 +99,20 @@ curl -X POST https://rzhjotxffjfsdlhrdkpj.supabase.co/functions/v1/a2a-ingest \
 ```
 
 #### FlowPilot → OpenClaw (outbound)
-Requires outbound A2A client edge function (to be built after token exchange).
+Uses `a2a-outbound` edge function (service-role only):
+```bash
+curl -X POST https://rzhjotxffjfsdlhrdkpj.supabase.co/functions/v1/a2a-outbound \
+  -H "Authorization: Bearer <service_role_key>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "peer_name": "openclaw",
+    "skill": "openclaw_test",
+    "arguments": { "url": "https://demo.flowwink.com" }
+  }'
+```
+
+Supports JSON-RPC (default), native, and legacy protocols.
+Also callable internally via `agent-execute` with `handler: a2a:openclaw`.
 
 ---
 
