@@ -113,40 +113,61 @@ export default function FederationPage() {
     }
   };
 
-  const handleDiscover = async (peer: { id: string; name: string; url: string }) => {
+  const handleDiscover = async (peer: { id: string; name: string; url: string; capabilities?: unknown }) => {
     if (!peer.url) return;
     setDiscoveringPeerId(peer.id);
     try {
-      const { supabase } = await import('@/integrations/supabase/client');
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Not authenticated');
+      const peerUrl = peer.url.replace(/\/$/, '');
+      const cardUrl = `${peerUrl}/.well-known/agent-card.json`;
 
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/a2a-discover`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          },
-          body: JSON.stringify({ peer_id: peer.id, action: 'discover' }),
-        }
-      );
-      const data = await res.json();
-      if (res.ok && data.success) {
-        toast({
-          title: 'Skills discovered',
-          description: `Found ${data.agent_card?.skills?.length || 0} skills from ${data.agent_card?.name || peer.name}`,
-        });
-        queryClient.invalidateQueries({ queryKey: ['a2a-peers'] });
-      } else {
-        const errMsg = typeof data.error === 'object' ? data.error.message || JSON.stringify(data.error) : String(data.error || 'Unknown error');
-        toast({ title: 'Discovery failed', description: errMsg, variant: 'destructive' });
+      // Fetch agent card directly from the browser (avoids edge function network isolation)
+      const cardRes = await fetch(cardUrl, {
+        headers: { 'Accept': 'application/json' },
+        signal: AbortSignal.timeout(15000),
+      });
+
+      if (!cardRes.ok) {
+        throw new Error(`Agent card returned HTTP ${cardRes.status}`);
       }
+
+      const agentCard = await cardRes.json();
+
+      // Build updated capabilities
+      const existingCaps = (peer.capabilities && typeof peer.capabilities === 'object' && !Array.isArray(peer.capabilities))
+        ? peer.capabilities as Record<string, unknown>
+        : {};
+
+      const updatedCaps = {
+        ...existingCaps,
+        protocol: existingCaps.protocol || 'jsonrpc',
+        endpoint: existingCaps.endpoint || '/a2a/jsonrpc',
+        agent_name: agentCard.name || peer.name,
+        agent_description: agentCard.description || '',
+        skills: (agentCard.skills || []).map((s: { id?: string; name?: string; description?: string }) => ({
+          id: s.id,
+          name: s.name,
+          description: s.description || '',
+        })),
+        discovered_at: new Date().toISOString(),
+        protocol_version: agentCard.protocolVersion || 'unknown',
+        capabilities_raw: agentCard.capabilities || {},
+      };
+
+      // Save to database
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { error } = await (supabase.from('a2a_peers' as any) as any)
+        .update({ capabilities: updatedCaps })
+        .eq('id', peer.id);
+      if (error) throw error;
+
+      toast({
+        title: 'Skills discovered',
+        description: `Found ${updatedCaps.skills.length} skills from ${agentCard.name || peer.name}`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['a2a-peers'] });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Unknown error';
-      toast({ title: 'Discovery error', description: msg, variant: 'destructive' });
+      toast({ title: 'Discovery failed', description: msg, variant: 'destructive' });
     } finally {
       setDiscoveringPeerId(null);
     }
