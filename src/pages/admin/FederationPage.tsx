@@ -28,7 +28,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Globe, Plus, RefreshCw, Copy, Check, ArrowDownLeft, ArrowUpRight, AlertCircle } from 'lucide-react';
+import { Globe, Plus, RefreshCw, Copy, Check, ArrowDownLeft, ArrowUpRight, AlertCircle, Pencil } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useA2APeers, useCreateA2APeer, useUpdateA2APeer, useRegenerateToken, useA2AActivity } from '@/hooks/useA2A';
 import { formatDistanceToNow } from 'date-fns';
@@ -48,6 +48,11 @@ export default function FederationPage() {
   const [newPeerInboundToken, setNewPeerInboundToken] = useState('');
   const [showToken, setShowToken] = useState<string | null>(null);
   const [copiedToken, setCopiedToken] = useState(false);
+
+  const [editingPeer, setEditingPeer] = useState<typeof peers extends (infer T)[] | undefined ? T | null : null>(null);
+  const [editName, setEditName] = useState('');
+  const [editUrl, setEditUrl] = useState('');
+  const [editOutboundToken, setEditOutboundToken] = useState('');
 
   const [generatedInboundToken, setGeneratedInboundToken] = useState<string | null>(null);
 
@@ -104,6 +109,32 @@ export default function FederationPage() {
     if (result) {
       setShowToken(result.outbound_token);
     }
+  };
+
+  const openEditDialog = (peer: any) => {
+    setEditingPeer(peer);
+    setEditName(peer.name);
+    setEditUrl(peer.url || '');
+    setEditOutboundToken('');
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingPeer) return;
+    const updates: Record<string, string> = { id: (editingPeer as any).id };
+    if (editName !== (editingPeer as any).name) updates.name = editName;
+    if (editUrl !== ((editingPeer as any).url || '')) updates.url = editUrl;
+    await updatePeer.mutateAsync(updates as any);
+
+    if (editOutboundToken) {
+      // Update outbound token separately via the raw supabase call
+      const { supabase } = await import('@/integrations/supabase/client');
+      await (supabase.from('a2a_peers') as any)
+        .update({ outbound_token: editOutboundToken })
+        .eq('id', (editingPeer as any).id);
+    }
+
+    setEditingPeer(null);
+    toast({ title: 'Peer updated', description: `${editName} has been updated.` });
   };
 
   const activePeers = peers?.filter(p => p.status !== 'revoked') || [];
@@ -238,6 +269,51 @@ export default function FederationPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        {/* Edit Peer Dialog */}
+        <Dialog open={!!editingPeer} onOpenChange={(open) => !open && setEditingPeer(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Peer</DialogTitle>
+              <DialogDescription>
+                Update the connection details for {editName}.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Name</Label>
+                <Input value={editName} onChange={e => setEditName(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>URL</Label>
+                <Input
+                  placeholder="https://peer.example.com"
+                  value={editUrl}
+                  onChange={e => setEditUrl(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  The peer's A2A endpoint or Agent Card URL.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label>Outbound Token (leave empty to keep current)</Label>
+                <Input
+                  placeholder="Paste new token to update"
+                  value={editOutboundToken}
+                  onChange={e => setEditOutboundToken(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Token FlowPilot sends when calling this peer. Only updates if you enter a new value.
+                </p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditingPeer(null)}>Cancel</Button>
+              <Button onClick={handleSaveEdit} disabled={!editName || updatePeer.isPending}>
+                {updatePeer.isPending ? 'Saving...' : 'Save'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Add Peer */}
         <div className="flex justify-end">
@@ -354,7 +430,15 @@ export default function FederationPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       {peer.status !== 'revoked' && (
-                        <>
+                         <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openEditDialog(peer)}
+                          >
+                            <Pencil className="h-3 w-3 mr-1" />
+                            Edit
+                          </Button>
                           <Button
                             variant="outline"
                             size="sm"
