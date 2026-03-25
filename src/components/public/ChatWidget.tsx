@@ -131,6 +131,7 @@ export function ChatWidget() {
           onClick={() => setIsOpen(!isOpen)}
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
+          aria-label={isOpen ? 'Close chat' : settings.widgetButtonText || 'Open chat'}
         >
           {isOpen ? (
             <X className="h-5 w-5" />
