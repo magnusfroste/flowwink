@@ -561,8 +561,110 @@ async function executeModuleAction(
       return await executeWebinarsAction(supabase, skillName, args);
     }
 
+    case 'openclaw': {
+      return await executeOpenClawAction(supabase, skillName, args);
+    }
+
     default:
       return { error: `Unknown module: ${moduleName}` };
+  }
+}
+
+// =============================================================================
+// OpenClaw Beta Tester module handlers
+// =============================================================================
+
+async function executeOpenClawAction(
+  supabase: any,
+  skillName: string,
+  args: Record<string, unknown>,
+): Promise<unknown> {
+  switch (skillName) {
+    case 'openclaw_start_session': {
+      const { scenario, peer_name = 'openclaw', metadata = {} } = args as any;
+      if (!scenario) return { error: 'scenario is required' };
+
+      const { data, error } = await supabase
+        .from('beta_test_sessions')
+        .insert({ scenario, peer_name, metadata, status: 'running' })
+        .select('id, scenario, status, started_at')
+        .single();
+      if (error) throw new Error(`Session start failed: ${error.message}`);
+      return { success: true, session: data };
+    }
+
+    case 'openclaw_end_session': {
+      const { session_id, summary, status = 'completed' } = args as any;
+      if (!session_id) return { error: 'session_id is required' };
+
+      const { data: session } = await supabase
+        .from('beta_test_sessions')
+        .select('started_at')
+        .eq('id', session_id)
+        .single();
+
+      const durationMs = session
+        ? Date.now() - new Date(session.started_at).getTime()
+        : null;
+
+      const { error } = await supabase
+        .from('beta_test_sessions')
+        .update({ status, summary, completed_at: new Date().toISOString(), duration_ms: durationMs })
+        .eq('id', session_id);
+      if (error) throw new Error(`Session end failed: ${error.message}`);
+      return { success: true, session_id, duration_ms: durationMs };
+    }
+
+    case 'openclaw_report_finding': {
+      const { session_id, type, severity = 'medium', title, description, context = {}, screenshot_url } = args as any;
+      if (!session_id || !type || !title) return { error: 'session_id, type, and title are required' };
+
+      const { data, error } = await supabase
+        .from('beta_test_findings')
+        .insert({ session_id, type, severity, title, description, context, screenshot_url })
+        .select('id, type, severity, title')
+        .single();
+      if (error) throw new Error(`Finding report failed: ${error.message}`);
+      return { success: true, finding: data };
+    }
+
+    case 'openclaw_exchange': {
+      const { session_id, direction = 'openclaw_to_flowpilot', message_type = 'observation', content, payload = {} } = args as any;
+      if (!content) return { error: 'content is required' };
+
+      const { data, error } = await supabase
+        .from('beta_test_exchanges')
+        .insert({ session_id: session_id || null, direction, message_type, content, payload })
+        .select('id, direction, message_type, created_at')
+        .single();
+      if (error) throw new Error(`Exchange failed: ${error.message}`);
+      return { success: true, exchange: data };
+    }
+
+    case 'openclaw_get_status': {
+      const { data: sessions } = await supabase
+        .from('beta_test_sessions')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      const { data: findings } = await supabase
+        .from('beta_test_findings')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      const { data: exchanges } = await supabase
+        .from('beta_test_exchanges')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(30);
+
+      return { sessions: sessions || [], findings: findings || [], exchanges: exchanges || [] };
+    }
+
+    default:
+      return { error: `Unknown openclaw skill: ${skillName}` };
   }
 }
 
