@@ -35,11 +35,30 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-    // Auth: only service role or internal calls
+    // Auth: service role key OR authenticated admin user
     const authHeader = req.headers.get('authorization');
     const token = authHeader?.replace('Bearer ', '');
-    if (token !== serviceKey) {
-      return new Response(JSON.stringify({ error: 'Unauthorized — service role only' }), {
+    let isAuthorized = token === serviceKey;
+
+    // Also allow admin users via JWT
+    if (!isAuthorized && token) {
+      const anonKey = Deno.env.get('SUPABASE_ANON_KEY') || Deno.env.get('SUPABASE_PUBLISHABLE_KEY') || '';
+      const authClient = createClient(supabaseUrl, anonKey, {
+        global: { headers: { Authorization: `Bearer ${token}` } },
+      });
+      const { data: { user } } = await authClient.auth.getUser();
+      if (user) {
+        const { data: roles } = await createClient(supabaseUrl, serviceKey)
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .eq('role', 'admin');
+        isAuthorized = !!(roles && roles.length > 0);
+      }
+    }
+
+    if (!isAuthorized) {
+      return new Response(JSON.stringify({ error: 'Unauthorized — admin or service role only' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
