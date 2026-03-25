@@ -139,10 +139,7 @@ export default function FederationPage() {
           title: 'Skills discovered',
           description: `Found ${data.agent_card?.skills?.length || 0} skills from ${data.agent_card?.name || peer.name}`,
         });
-        // Refresh peers to show updated capabilities
-        const qc = await import('@tanstack/react-query').then(m => m.useQueryClient);
-        // Simple: just reload the page data
-        window.location.reload();
+        queryClient.invalidateQueries({ queryKey: ['a2a-peers'] });
       } else {
         const errMsg = typeof data.error === 'object' ? data.error.message || JSON.stringify(data.error) : String(data.error || 'Unknown error');
         toast({ title: 'Discovery failed', description: errMsg, variant: 'destructive' });
