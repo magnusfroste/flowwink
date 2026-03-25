@@ -495,7 +495,7 @@ Creates a new high-level objective for FlowPilot's autonomous operation.
 - **constraints**: Optional guardrails (e.g., no_destructive_actions, deadline, max budget).
 - **success_criteria**: Optional measurable criteria for completion.
 ### Edge cases
-- Check existing objectives first to avoid duplicates (use manage_leads... no, query agent_objectives).
+- Check existing objectives first to avoid duplicates (query agent_objectives table).
 - Objectives drive heartbeat behavior — be specific in goal text.
 - Keep active objectives to <5 to maintain focus.`,
     tool_definition: {
