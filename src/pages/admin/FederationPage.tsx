@@ -577,39 +577,102 @@ export default function FederationPage() {
                         <Globe className="h-5 w-5 text-primary" />
                       </div>
                       <div>
-                        <CardTitle className="text-base">{peer.name}</CardTitle>
+                        <CardTitle className="text-base">
+                          {((peer.capabilities as any)?.agent_name) || peer.name}
+                        </CardTitle>
                         <CardDescription className="font-mono text-xs">{peer.url}</CardDescription>
+                        {(peer.capabilities as any)?.agent_description && (
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {(peer.capabilities as any).agent_description}
+                          </p>
+                        )}
                       </div>
                     </div>
-                    <Badge variant={statusColor(peer.status)}>{peer.status}</Badge>
+                    <div className="flex items-center gap-2">
+                      {(peer.capabilities as any)?.protocol_version && (
+                        <Badge variant="outline" className="text-[10px]">
+                          A2A v{(peer.capabilities as any).protocol_version}
+                        </Badge>
+                      )}
+                      <Badge variant={statusColor(peer.status)}>{peer.status}</Badge>
+                    </div>
                   </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-3">
+                  {/* Discovered Skills */}
+                  {(() => {
+                    const skills = (peer.capabilities as any)?.skills;
+                    if (!skills?.length) return null;
+                    return (
+                      <div className="flex flex-wrap gap-1.5">
+                        {skills.map((skill: any) => (
+                          <Badge key={skill.id} variant="secondary" className="text-[11px] font-normal gap-1">
+                            <Cpu className="h-3 w-3" />
+                            {skill.name || skill.id}
+                          </Badge>
+                        ))}
+                      </div>
+                    );
+                  })()}
+
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-6 text-sm text-muted-foreground">
                       <span>{peer.request_count} requests</span>
                       {peer.last_seen_at && (
                         <span>Last seen {formatDistanceToNow(new Date(peer.last_seen_at), { addSuffix: true })}</span>
                       )}
-                      <span>Created {formatDistanceToNow(new Date(peer.created_at), { addSuffix: true })}</span>
+                      {(peer.capabilities as any)?.discovered_at && (
+                        <span className="text-xs">Skills discovered {formatDistanceToNow(new Date((peer.capabilities as any).discovered_at), { addSuffix: true })}</span>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       {peer.status !== 'revoked' && (
                          <>
                           {peer.url && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleTestConnection(peer)}
-                              disabled={testingPeerId === peer.id}
-                            >
-                              {testingPeerId === peer.id ? (
-                                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                              ) : (
-                                <Zap className="h-3 w-3 mr-1" />
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDiscover(peer)}
+                                disabled={discoveringPeerId === peer.id}
+                              >
+                                {discoveringPeerId === peer.id ? (
+                                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                ) : (
+                                  <Search className="h-3 w-3 mr-1" />
+                                )}
+                                Discover
+                              </Button>
+                              {(peer.capabilities as any)?.skills?.some((s: any) => s.id === 'openclaw_audit') && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleRunAudit(peer)}
+                                  disabled={auditingPeerId === peer.id}
+                                  className="border-primary/30 text-primary hover:bg-primary/5"
+                                >
+                                  {auditingPeerId === peer.id ? (
+                                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                  ) : (
+                                    <Shield className="h-3 w-3 mr-1" />
+                                  )}
+                                  Audit
+                                </Button>
                               )}
-                              Test
-                            </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleTestConnection(peer)}
+                                disabled={testingPeerId === peer.id}
+                              >
+                                {testingPeerId === peer.id ? (
+                                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                ) : (
+                                  <Zap className="h-3 w-3 mr-1" />
+                                )}
+                                Test
+                              </Button>
+                            </>
                           )}
                           <Button
                             variant="outline"
@@ -658,12 +721,24 @@ export default function FederationPage() {
                     </div>
                   </div>
                   {testResult && testResult.peerId === peer.id && (
-                    <div className={`mt-3 p-2 rounded text-xs font-mono ${
+                    <div className={`p-2 rounded text-xs font-mono ${
                       testResult.success 
                         ? 'bg-green-500/10 text-green-600 border border-green-500/20' 
                         : 'bg-destructive/10 text-destructive border border-destructive/20'
                     }`}>
                       {testResult.message}
+                    </div>
+                  )}
+                  {auditResult && auditResult.peerId === peer.id && (
+                    <div className={`p-3 rounded text-xs ${
+                      auditResult.success 
+                        ? 'bg-green-500/10 text-foreground border border-green-500/20' 
+                        : 'bg-destructive/10 text-destructive border border-destructive/20'
+                    }`}>
+                      <p className="font-medium mb-1">{auditResult.success ? '✓ Audit Complete' : '✗ Audit Failed'}</p>
+                      <pre className="whitespace-pre-wrap text-[11px] text-muted-foreground max-h-60 overflow-auto">
+                        {auditResult.text}
+                      </pre>
                     </div>
                   )}
                 </CardContent>
