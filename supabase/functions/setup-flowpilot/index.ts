@@ -3192,6 +3192,26 @@ Deno.serve(async (req) => {
       }
       
       console.log(`[setup-flowpilot] Seeded ${skillsSeeded} new skills (${existingNames.size} already existed)`);
+
+      // Backfill instructions on existing skills that lack them
+      const skillsToBackfill = DEFAULT_SKILLS.filter(
+        s => existingNames.has(s.name) && s.instructions && s.instructions.trim() !== ''
+      );
+      if (skillsToBackfill.length > 0) {
+        let backfilled = 0;
+        for (const skill of skillsToBackfill) {
+          const { data: updated } = await supabase
+            .from('agent_skills')
+            .update({ instructions: skill.instructions })
+            .eq('name', skill.name)
+            .is('instructions', null)
+            .select('id');
+          if (updated && updated.length > 0) backfilled++;
+        }
+        if (backfilled > 0) {
+          console.log(`[setup-flowpilot] Backfilled instructions on ${backfilled} existing skills`);
+        }
+      }
     }
 
     // 4. Seed soul & identity (with template overrides)
