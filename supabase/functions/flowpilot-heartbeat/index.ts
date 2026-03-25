@@ -233,7 +233,7 @@ serve(async (req) => {
       tokenBudget: TOKEN_BUDGET,
       // Essential categories for autonomous work (~42 skills instead of 91)
       // CRM + communication skills are available via chain_skills if needed
-      skillCategories: ['content', 'analytics', 'system', 'growth'],
+      skillCategories: ['content', 'analytics', 'system', 'growth', 'crm', 'communication', 'search'],
     });
 
     const timeoutPromise = new Promise<never>((_, reject) =>
