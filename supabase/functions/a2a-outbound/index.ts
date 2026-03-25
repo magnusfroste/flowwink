@@ -67,7 +67,7 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, serviceKey);
     const body: OutboundRequest = await req.json();
-    const { peer_name, peer_id, skill, arguments: args = {} } = body;
+    const { peer_name, peer_id, skill, arguments: args = {}, message: rawMessage } = body;
 
     if (!skill) {
       return new Response(JSON.stringify({ error: 'Missing "skill" field' }), {
