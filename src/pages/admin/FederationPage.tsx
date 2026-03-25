@@ -49,18 +49,30 @@ export default function FederationPage() {
   const [showToken, setShowToken] = useState<string | null>(null);
   const [copiedToken, setCopiedToken] = useState(false);
 
+  const [generatedInboundToken, setGeneratedInboundToken] = useState<string | null>(null);
+
   const handleCreatePeer = async () => {
-    if (!newPeerName || !newPeerUrl) return;
+    if (!newPeerName) return;
+
+    // Auto-generate inbound token if not provided
+    let inboundToken = newPeerInboundToken;
+    if (!inboundToken) {
+      const bytes = new Uint8Array(32);
+      crypto.getRandomValues(bytes);
+      inboundToken = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
 
     const result = await createPeer.mutateAsync({
       name: newPeerName,
-      url: newPeerUrl,
+      url: newPeerUrl || undefined,
       outbound_token: newPeerOutboundToken || undefined,
-      inbound_token: newPeerInboundToken || undefined,
+      inbound_token: inboundToken,
     });
 
     if (result) {
-      if (!newPeerOutboundToken) {
+      // Show the inbound token so user can share it with the peer
+      setGeneratedInboundToken(inboundToken);
+      if (!newPeerOutboundToken && newPeerUrl) {
         setShowToken(result.outbound_token);
       }
       setDialogOpen(false);
