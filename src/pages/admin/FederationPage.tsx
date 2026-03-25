@@ -55,8 +55,12 @@ export default function FederationPage() {
   const [editOutboundToken, setEditOutboundToken] = useState('');
 
   const [generatedInboundToken, setGeneratedInboundToken] = useState<string | null>(null);
-  const [testingPeerId, setTestingPeerId] = useState<string | null>(null);
+   const [testingPeerId, setTestingPeerId] = useState<string | null>(null);
   const [testResult, setTestResult] = useState<{ peerId: string; success: boolean; message: string } | null>(null);
+
+  const [discoveringPeerId, setDiscoveringPeerId] = useState<string | null>(null);
+  const [auditingPeerId, setAuditingPeerId] = useState<string | null>(null);
+  const [auditResult, setAuditResult] = useState<{ peerId: string; success: boolean; text: string } | null>(null);
 
   const handleTestConnection = async (peer: { id: string; name: string; url: string }) => {
     if (!peer.url) {
