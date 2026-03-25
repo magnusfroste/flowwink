@@ -28,7 +28,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Globe, Plus, RefreshCw, Copy, Check, ArrowDownLeft, ArrowUpRight, AlertCircle, Pencil } from 'lucide-react';
+import { Globe, Plus, RefreshCw, Copy, Check, ArrowDownLeft, ArrowUpRight, AlertCircle, Pencil, Zap, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useA2APeers, useCreateA2APeer, useUpdateA2APeer, useRegenerateToken, useA2AActivity } from '@/hooks/useA2A';
 import { formatDistanceToNow } from 'date-fns';
@@ -55,6 +55,53 @@ export default function FederationPage() {
   const [editOutboundToken, setEditOutboundToken] = useState('');
 
   const [generatedInboundToken, setGeneratedInboundToken] = useState<string | null>(null);
+  const [testingPeerId, setTestingPeerId] = useState<string | null>(null);
+  const [testResult, setTestResult] = useState<{ peerId: string; success: boolean; message: string } | null>(null);
+
+  const handleTestConnection = async (peer: { id: string; name: string; url: string }) => {
+    if (!peer.url) {
+      toast({ title: 'No URL', description: 'This peer has no outbound URL configured.', variant: 'destructive' });
+      return;
+    }
+    setTestingPeerId(peer.id);
+    setTestResult(null);
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/a2a-outbound`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({
+            peer_name: peer.name,
+            skill: 'ping',
+            arguments: { test: true },
+          }),
+        }
+      );
+      const data = await res.json();
+      if (res.ok && !data.error) {
+        setTestResult({ peerId: peer.id, success: true, message: `Connected! Response: ${JSON.stringify(data).slice(0, 120)}` });
+        toast({ title: 'Connection OK', description: `${peer.name} responded successfully.` });
+      } else {
+        setTestResult({ peerId: peer.id, success: false, message: data.error || `HTTP ${res.status}` });
+        toast({ title: 'Connection failed', description: data.error || `HTTP ${res.status}`, variant: 'destructive' });
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      setTestResult({ peerId: peer.id, success: false, message: msg });
+      toast({ title: 'Connection error', description: msg, variant: 'destructive' });
+    } finally {
+      setTestingPeerId(null);
+    }
+  };
 
   const handleCreatePeer = async () => {
     if (!newPeerName) return;
@@ -431,6 +478,21 @@ export default function FederationPage() {
                     <div className="flex items-center gap-2">
                       {peer.status !== 'revoked' && (
                          <>
+                          {peer.url && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleTestConnection(peer)}
+                              disabled={testingPeerId === peer.id}
+                            >
+                              {testingPeerId === peer.id ? (
+                                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                              ) : (
+                                <Zap className="h-3 w-3 mr-1" />
+                              )}
+                              Test
+                            </Button>
+                          )}
                           <Button
                             variant="outline"
                             size="sm"
@@ -477,6 +539,15 @@ export default function FederationPage() {
                       )}
                     </div>
                   </div>
+                  {testResult && testResult.peerId === peer.id && (
+                    <div className={`mt-3 p-2 rounded text-xs font-mono ${
+                      testResult.success 
+                        ? 'bg-green-500/10 text-green-600 border border-green-500/20' 
+                        : 'bg-destructive/10 text-destructive border border-destructive/20'
+                    }`}>
+                      {testResult.message}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}
