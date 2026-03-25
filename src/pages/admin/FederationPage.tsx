@@ -111,7 +111,116 @@ export default function FederationPage() {
     }
   };
 
-  const handleCreatePeer = async () => {
+  const handleDiscover = async (peer: { id: string; name: string; url: string }) => {
+    if (!peer.url) return;
+    setDiscoveringPeerId(peer.id);
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/a2a-discover`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({ peer_id: peer.id, action: 'discover' }),
+        }
+      );
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast({
+          title: 'Skills discovered',
+          description: `Found ${data.agent_card?.skills?.length || 0} skills from ${data.agent_card?.name || peer.name}`,
+        });
+        // Refresh peers to show updated capabilities
+        const qc = await import('@tanstack/react-query').then(m => m.useQueryClient);
+        // Simple: just reload the page data
+        window.location.reload();
+      } else {
+        const errMsg = typeof data.error === 'object' ? data.error.message || JSON.stringify(data.error) : String(data.error || 'Unknown error');
+        toast({ title: 'Discovery failed', description: errMsg, variant: 'destructive' });
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      toast({ title: 'Discovery error', description: msg, variant: 'destructive' });
+    } finally {
+      setDiscoveringPeerId(null);
+    }
+  };
+
+  const handleRunAudit = async (peer: { id: string; name: string; url: string }) => {
+    if (!peer.url) return;
+    setAuditingPeerId(peer.id);
+    setAuditResult(null);
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      toast({ title: 'Audit started', description: `Asking ${peer.name} to audit your site...` });
+
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/a2a-discover`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({
+            peer_id: peer.id,
+            action: 'audit',
+            site_url: window.location.origin,
+          }),
+        }
+      );
+      const data = await res.json();
+      
+      // Extract readable text from the result
+      let auditText = '';
+      const taskResult = data.result?.result;
+      if (taskResult?.artifacts?.length) {
+        for (const artifact of taskResult.artifacts) {
+          for (const part of artifact.parts || []) {
+            if (part.kind === 'text' || part.type === 'text') {
+              auditText += (part.text || '') + '\n';
+            }
+          }
+        }
+      }
+      if (!auditText && taskResult?.status?.message?.parts) {
+        for (const part of taskResult.status.message.parts) {
+          if (part.kind === 'text' || part.type === 'text') {
+            auditText += (part.text || '') + '\n';
+          }
+        }
+      }
+
+      if (data.success) {
+        setAuditResult({ peerId: peer.id, success: true, text: auditText || 'Audit completed — check objectives for findings.' });
+        toast({ title: 'Audit complete', description: 'Findings have been saved as objectives.' });
+      } else {
+        const errMsg = data.error
+          ? (typeof data.error === 'object' ? data.error.message || JSON.stringify(data.error) : String(data.error))
+          : 'Audit failed';
+        setAuditResult({ peerId: peer.id, success: false, text: errMsg });
+        toast({ title: 'Audit failed', description: errMsg, variant: 'destructive' });
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      setAuditResult({ peerId: peer.id, success: false, text: msg });
+      toast({ title: 'Audit error', description: msg, variant: 'destructive' });
+    } finally {
+      setAuditingPeerId(null);
+    }
+  };
+
     if (!newPeerName) return;
 
     // Auto-generate inbound token if not provided
