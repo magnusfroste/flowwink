@@ -1,5 +1,9 @@
 # OpenClaw ↔ FlowPilot: Peer Setup Guide
 
+## Status: Skills Registered ✅ — Awaiting Token Exchange
+
+---
+
 ## What FlowPilot Exposes (Ready Now)
 
 ### Agent Card
@@ -8,7 +12,7 @@ GET https://rzhjotxffjfsdlhrdkpj.supabase.co/functions/v1/agent-card
 ```
 
 Returns A2A v0.3.0 compliant Agent Card with:
-- 13 external skills (booking, CRM, content, search, etc.)
+- 13+ external skills (booking, CRM, content, search, etc.)
 - Bearer token auth
 - JSON-RPC + REST support
 
@@ -24,33 +28,33 @@ Supports two formats:
 
 ---
 
-## What You Need FROM OpenClaw
+## OpenClaw's Confirmed Skills (4 registered)
 
-Ask OpenClaw to provide these details:
+| Skill | Description | Handler | Trust |
+|-------|-------------|---------|-------|
+| `openclaw_test` | Run autonomous tests on a URL | `a2a:openclaw` | notify |
+| `openclaw_audit` | Code/architecture audit | `a2a:openclaw` | notify |
+| `openclaw_browse` | Browse and interact with web pages | `a2a:openclaw` | auto |
+| `openclaw_report` | Create structured bug reports | `a2a:openclaw` | auto |
 
-### 1. Agent Card URL (Required)
-> "What is your Agent Card URL? (e.g. `http://<ip>:18800/.well-known/agent-card.json`)"
-
-This tells FlowPilot what skills OpenClaw offers.
-
-### 2. Inbound Token (Required)
-> "Generate a bearer token for FlowPilot to use when calling you."
-
-This is the **outbound_token** we store in `a2a_peers` — the token FlowPilot sends TO OpenClaw.
-
-### 3. Your Capabilities / Skills (Good to know)
-> "What skills do you expose? Can you: code review, run tests, audit architecture, suggest improvements?"
-
-This helps us configure routing rules.
-
-### 4. Preferred Communication Mode
-> "Do you prefer native skill format or A2A v0.3.0 JSON-RPC?"
-
-Both are now supported by our `a2a-ingest`.
+All registered in `agent_skills` with `origin: a2a`, `category: testing`, `scope: internal`.
 
 ---
 
-## What You Give TO OpenClaw
+## What We Still Need FROM OpenClaw
+
+### 1. Agent Card URL (Pending)
+OpenClaw has no public agent-card endpoint yet. Needs to be configured in their gateway.
+
+### 2. Bearer Token for FlowPilot (Pending)
+OpenClaw needs to generate a token so FlowPilot can call their skills outbound.
+
+### 3. Preferred Format ✅
+JSON-RPC confirmed as preferred for A2A integration.
+
+---
+
+## What OpenClaw Needs FROM Us
 
 ### A2A Endpoint
 ```
@@ -67,7 +71,6 @@ Generate one in the Federation admin panel (`/admin/federation` → Add Peer →
 
 ### OpenClaw Config (what they paste)
 ```bash
-# On their OpenClaw instance:
 openclaw config set plugins.entries.a2a-gateway.config.peers '[{
   "name": "flowwink",
   "agentCardUrl": "https://rzhjotxffjfsdlhrdkpj.supabase.co/functions/v1/agent-card",
@@ -77,22 +80,17 @@ openclaw config set plugins.entries.a2a-gateway.config.peers '[{
 
 ---
 
-## Peer Registration in Federation Panel
+## Next Steps
 
-Once you have OpenClaw's details, register them:
+1. **OpenClaw configures their Agent Card endpoint** → gives us URL
+2. **OpenClaw generates a bearer token for FlowPilot** → we store as `outbound_token`
+3. **We register OpenClaw as peer** in Federation panel with their URL + token
+4. **We generate an inbound token** and share it with OpenClaw
+5. **Test bidirectional communication**
 
-| Field | Value |
-|-------|-------|
-| **Name** | `openclaw` |
-| **URL** | OpenClaw's Agent Card URL or gateway URL |
-| **Outbound Token** | Token OpenClaw gave you (for calls TO them) |
-| **Inbound Token** | Auto-generated (share with OpenClaw) |
+### Testing (once tokens exchanged)
 
----
-
-## Testing the Connection
-
-### OpenClaw → FlowPilot (inbound)
+#### OpenClaw → FlowPilot (inbound)
 ```bash
 curl -X POST https://rzhjotxffjfsdlhrdkpj.supabase.co/functions/v1/a2a-ingest \
   -H "Authorization: Bearer <inbound_token>" \
@@ -100,8 +98,8 @@ curl -X POST https://rzhjotxffjfsdlhrdkpj.supabase.co/functions/v1/a2a-ingest \
   -d '{"skill": "browse_blog", "arguments": {}}'
 ```
 
-### FlowPilot → OpenClaw (outbound)
-Not yet implemented — requires outbound A2A client edge function.
+#### FlowPilot → OpenClaw (outbound)
+Requires outbound A2A client edge function (to be built after token exchange).
 
 ---
 
@@ -109,8 +107,11 @@ Not yet implemented — requires outbound A2A client edge function.
 
 - [x] Agent Card endpoint deployed
 - [x] A2A v0.3.0 JSON-RPC support in a2a-ingest
+- [x] OpenClaw skills registered (4 skills, `a2a:openclaw` handler)
+- [x] `testing` category + `a2a` origin added to enums
 - [ ] Get OpenClaw's Agent Card URL
-- [ ] Get OpenClaw's bearer token
+- [ ] Get OpenClaw's bearer token for outbound calls
 - [ ] Register OpenClaw as peer in Federation panel
 - [ ] Share our inbound token + Agent Card URL with OpenClaw
+- [ ] Build outbound A2A client edge function
 - [ ] Test bidirectional communication

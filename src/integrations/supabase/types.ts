@@ -3364,6 +3364,7 @@ export type Database = {
         | "system"
         | "commerce"
         | "growth"
+        | "testing"
       agent_type: "flowpilot" | "chat"
       app_role: "writer" | "approver" | "admin" | "customer"
       automation_trigger_type: "cron" | "event" | "signal"
@@ -3371,7 +3372,7 @@ export type Database = {
       lead_status: "lead" | "opportunity" | "customer" | "lost"
       page_status: "draft" | "reviewing" | "published" | "archived"
       product_type: "one_time" | "recurring"
-      skill_origin: "bundled" | "managed" | "agent" | "user"
+      skill_origin: "bundled" | "managed" | "agent" | "user" | "a2a"
       skill_trust_level: "auto" | "notify" | "approve"
       webhook_event:
         | "page.published"
@@ -3569,6 +3570,7 @@ export const Constants = {
         "system",
         "commerce",
         "growth",
+        "testing",
       ],
       agent_type: ["flowpilot", "chat"],
       app_role: ["writer", "approver", "admin", "customer"],
@@ -3577,7 +3579,7 @@ export const Constants = {
       lead_status: ["lead", "opportunity", "customer", "lost"],
       page_status: ["draft", "reviewing", "published", "archived"],
       product_type: ["one_time", "recurring"],
-      skill_origin: ["bundled", "managed", "agent", "user"],
+      skill_origin: ["bundled", "managed", "agent", "user", "a2a"],
       skill_trust_level: ["auto", "notify", "approve"],
       webhook_event: [
         "page.published",
