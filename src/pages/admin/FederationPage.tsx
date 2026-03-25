@@ -478,6 +478,21 @@ export default function FederationPage() {
                     <div className="flex items-center gap-2">
                       {peer.status !== 'revoked' && (
                          <>
+                          {peer.url && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleTestConnection(peer)}
+                              disabled={testingPeerId === peer.id}
+                            >
+                              {testingPeerId === peer.id ? (
+                                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                              ) : (
+                                <Zap className="h-3 w-3 mr-1" />
+                              )}
+                              Test
+                            </Button>
+                          )}
                           <Button
                             variant="outline"
                             size="sm"
