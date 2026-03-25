@@ -221,6 +221,7 @@ export default function FederationPage() {
     }
   };
 
+  const handleCreatePeer = async () => {
     if (!newPeerName) return;
 
     // Auto-generate inbound token if not provided
