@@ -87,12 +87,16 @@ export default function FederationPage() {
         }
       );
       const data = await res.json();
-      if (res.ok && !data.error) {
+      const errorMsg = data.error
+        ? (typeof data.error === 'object' ? (data.error.message || JSON.stringify(data.error)) : String(data.error))
+        : null;
+      if (res.ok && !errorMsg) {
         setTestResult({ peerId: peer.id, success: true, message: `Connected! Response: ${JSON.stringify(data).slice(0, 120)}` });
         toast({ title: 'Connection OK', description: `${peer.name} responded successfully.` });
       } else {
-        setTestResult({ peerId: peer.id, success: false, message: data.error || `HTTP ${res.status}` });
-        toast({ title: 'Connection failed', description: data.error || `HTTP ${res.status}`, variant: 'destructive' });
+        const displayError = errorMsg || `HTTP ${res.status}`;
+        setTestResult({ peerId: peer.id, success: false, message: displayError });
+        toast({ title: 'Connection failed', description: displayError, variant: 'destructive' });
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Unknown error';
