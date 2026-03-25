@@ -385,7 +385,15 @@ export default function FederationPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       {peer.status !== 'revoked' && (
-                        <>
+                         <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openEditDialog(peer)}
+                          >
+                            <Pencil className="h-3 w-3 mr-1" />
+                            Edit
+                          </Button>
                           <Button
                             variant="outline"
                             size="sm"
