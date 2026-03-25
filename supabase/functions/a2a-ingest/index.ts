@@ -49,13 +49,61 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Parse request body
+    // Parse request body — support both native format and A2A v0.3.0 JSON-RPC
     const body = await req.json();
-    const { skill, arguments: args } = body;
+    let skill: string | undefined;
+    let args: Record<string, unknown> | undefined;
+    let isJsonRpc = false;
+    let jsonRpcId: string | number | null = null;
+
+    if (body.jsonrpc === '2.0' && body.method) {
+      // A2A v0.3.0 JSON-RPC format: { jsonrpc, method, id, params: { message: { parts } } }
+      isJsonRpc = true;
+      jsonRpcId = body.id ?? null;
+
+      if (body.method === 'message/send' || body.method === 'message/stream') {
+        const message = body.params?.message;
+        const textPart = message?.parts?.find((p: any) => p.type === 'text' || typeof p.text === 'string');
+        const text = textPart?.text || '';
+
+        // Extract skill from text: "skill:skill_name arg1=val1" or just treat as chat
+        const skillMatch = text.match(/^skill:(\S+)\s*(.*)/s);
+        if (skillMatch) {
+          skill = skillMatch[1];
+          // Try to parse remaining as JSON args, else pass as text
+          try {
+            args = JSON.parse(skillMatch[2]);
+          } catch {
+            args = { text: skillMatch[2].trim() };
+          }
+        } else {
+          // Default: route to chat/operate skill
+          skill = 'a2a_chat';
+          args = { text, parts: message?.parts };
+        }
+      } else {
+        // Unknown JSON-RPC method
+        return new Response(JSON.stringify({
+          jsonrpc: '2.0',
+          id: jsonRpcId,
+          error: { code: -32601, message: `Method not found: ${body.method}` },
+        }), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    } else {
+      // Native format: { skill, arguments }
+      skill = body.skill;
+      args = body.arguments;
+    }
 
     if (!skill) {
-      return new Response(JSON.stringify({ error: 'Missing "skill" field' }), {
-        status: 400,
+      const errorPayload = isJsonRpc
+        ? { jsonrpc: '2.0', id: jsonRpcId, error: { code: -32602, message: 'Could not determine skill from message' } }
+        : { error: 'Missing "skill" field' };
+      return new Response(JSON.stringify(errorPayload), {
+        status: isJsonRpc ? 200 : 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -141,6 +189,34 @@ Deno.serve(async (req) => {
         request_count: (peer.request_count || 0) + 1,
       })
       .eq('id', peer.id);
+
+    // Format response based on protocol
+    if (isJsonRpc) {
+      const jsonRpcResponse = status === 'success'
+        ? {
+            jsonrpc: '2.0',
+            id: jsonRpcId,
+            result: {
+              id: activityRow?.id || crypto.randomUUID(),
+              status: { state: 'completed' },
+              artifacts: [{
+                parts: [{ type: 'text', text: typeof result === 'string' ? result : JSON.stringify(result) }],
+              }],
+            },
+          }
+        : {
+            jsonrpc: '2.0',
+            id: jsonRpcId,
+            result: {
+              id: activityRow?.id || crypto.randomUUID(),
+              status: { state: 'failed', message: { parts: [{ type: 'text', text: errorMessage || 'Unknown error' }] } },
+            },
+          };
+      return new Response(JSON.stringify(jsonRpcResponse), {
+        status: 200, // JSON-RPC always returns 200
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     return new Response(JSON.stringify(result), {
       status: status === 'success' ? 200 : 500,
