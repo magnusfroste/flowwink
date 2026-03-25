@@ -138,7 +138,7 @@ Deno.serve(async (req) => {
             messageId,
             role: 'user',
             parts: [
-              { type: 'text', text: `skill:${skill} ${JSON.stringify(args)}` },
+              { type: 'text', text: rawMessage || `skill:${skill} ${JSON.stringify(args)}` },
             ],
           },
         },
