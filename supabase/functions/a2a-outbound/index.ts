@@ -127,12 +127,14 @@ Deno.serve(async (req) => {
     if (protocol === 'jsonrpc' || protocol === 'a2a') {
       // A2A v0.3.0 JSON-RPC — preferred
       endpoint = (caps.endpoint as string) || '/a2a/ingest';
+      const messageId = activityRow?.id || crypto.randomUUID();
       requestBody = {
         jsonrpc: '2.0',
-        id: activityRow?.id || crypto.randomUUID(),
+        id: messageId,
         method: 'message/send',
         params: {
           message: {
+            messageId,
             role: 'user',
             parts: [
               { type: 'text', text: `skill:${skill} ${JSON.stringify(args)}` },
