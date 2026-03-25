@@ -642,8 +642,8 @@ async function executeOpenClawAction(
     }
 
     case 'openclaw_get_status': {
-      // Return sessions, findings, exchanges AND pending test requests
-      const [sessionsRes, findingsRes, exchangesRes, pendingTestsRes] = await Promise.all([
+      // Return sessions, findings, exchanges, pending tests, AND site context
+      const [sessionsRes, findingsRes, exchangesRes, pendingTestsRes, siteMemory] = await Promise.all([
         supabase.from('beta_test_sessions').select('*').order('created_at', { ascending: false }).limit(20),
         supabase.from('beta_test_findings').select('*').order('created_at', { ascending: false }).limit(50),
         supabase.from('beta_test_exchanges').select('*').order('created_at', { ascending: false }).limit(30),
@@ -654,9 +654,15 @@ async function executeOpenClawAction(
           .is('payload->acknowledged_at', null)
           .order('created_at', { ascending: false })
           .limit(10),
+        supabase.from('agent_memory').select('value').eq('key', 'identity').single(),
       ]);
 
       return {
+        site: {
+          url: 'https://demo.flowwink.com',
+          name: 'FlowWink',
+          description: 'Autonomous Agentic CMS — test this URL, not any template/example domains',
+        },
         sessions: sessionsRes.data || [],
         findings: findingsRes.data || [],
         exchanges: exchangesRes.data || [],
