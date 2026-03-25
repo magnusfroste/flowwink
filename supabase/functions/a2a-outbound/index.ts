@@ -22,6 +22,7 @@ interface OutboundRequest {
   peer_id?: string;
   skill: string;
   arguments?: Record<string, unknown>;
+  message?: string; // Raw text message (bypasses skill: prefix)
 }
 
 Deno.serve(async (req) => {
