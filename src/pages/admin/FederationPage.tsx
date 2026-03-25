@@ -49,18 +49,30 @@ export default function FederationPage() {
   const [showToken, setShowToken] = useState<string | null>(null);
   const [copiedToken, setCopiedToken] = useState(false);
 
+  const [generatedInboundToken, setGeneratedInboundToken] = useState<string | null>(null);
+
   const handleCreatePeer = async () => {
-    if (!newPeerName || !newPeerUrl) return;
+    if (!newPeerName) return;
+
+    // Auto-generate inbound token if not provided
+    let inboundToken = newPeerInboundToken;
+    if (!inboundToken) {
+      const bytes = new Uint8Array(32);
+      crypto.getRandomValues(bytes);
+      inboundToken = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
 
     const result = await createPeer.mutateAsync({
       name: newPeerName,
-      url: newPeerUrl,
+      url: newPeerUrl || undefined,
       outbound_token: newPeerOutboundToken || undefined,
-      inbound_token: newPeerInboundToken || undefined,
+      inbound_token: inboundToken,
     });
 
     if (result) {
-      if (!newPeerOutboundToken) {
+      // Show the inbound token so user can share it with the peer
+      setGeneratedInboundToken(inboundToken);
+      if (!newPeerOutboundToken && newPeerUrl) {
         setShowToken(result.outbound_token);
       }
       setDialogOpen(false);
@@ -161,14 +173,54 @@ export default function FederationPage() {
           </Card>
         </div>
 
-        {/* Token reveal dialog */}
+        {/* Inbound token reveal dialog */}
+        <Dialog open={!!generatedInboundToken} onOpenChange={() => setGeneratedInboundToken(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Inbound Token — Share with Peer</DialogTitle>
+              <DialogDescription>
+                Give this token to the peer. They must include it as <code className="bg-muted px-1 rounded">Authorization: Bearer &lt;token&gt;</code> when calling your A2A endpoint. This is shown only once.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground">Token for peer</Label>
+              <div className="flex items-center gap-2 p-3 bg-muted rounded-md font-mono text-sm break-all">
+                <span className="flex-1">{generatedInboundToken}</span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => generatedInboundToken && handleCopyToken(generatedInboundToken)}
+                >
+                  {copiedToken ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                </Button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground">Endpoint</Label>
+              <div className="flex items-center gap-2 p-3 bg-muted rounded-md font-mono text-xs break-all">
+                <span className="flex-1">POST {import.meta.env.VITE_SUPABASE_URL}/functions/v1/a2a-ingest</span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleCopyToken(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/a2a-ingest`)}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button onClick={() => setGeneratedInboundToken(null)}>Done</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Outbound token reveal dialog */}
         <Dialog open={!!showToken} onOpenChange={() => setShowToken(null)}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Outbound Token Generated</DialogTitle>
               <DialogDescription>
-                Share this token with the peer so they can authenticate requests from your instance.
-                This is shown only once.
+                This token is used when your instance calls the peer's API.
               </DialogDescription>
             </DialogHeader>
             <div className="flex items-center gap-2 p-3 bg-muted rounded-md font-mono text-sm break-all">
@@ -205,47 +257,52 @@ export default function FederationPage() {
               </DialogHeader>
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Name</Label>
+                  <Label>Peer Name</Label>
                   <Input
-                    placeholder="e.g. SoundSpace"
+                    placeholder="e.g. OpenClaw"
                     value={newPeerName}
                     onChange={e => setNewPeerName(e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>URL</Label>
+                  <Label>URL (optional — only if you need to call them)</Label>
                   <Input
-                    placeholder="https://soundspace.app"
+                    placeholder="https://peer.example.com"
                     value={newPeerUrl}
                     onChange={e => setNewPeerUrl(e.target.value)}
                   />
-                </div>
-                <div className="space-y-2">
-                  <Label>Outbound Token — we send TO them (optional)</Label>
-                  <Input
-                    placeholder="Paste the peer's API key / token"
-                    value={newPeerOutboundToken}
-                    onChange={e => setNewPeerOutboundToken(e.target.value)}
-                  />
                   <p className="text-xs text-muted-foreground">
-                    Token we include in requests when calling their API. Leave empty to auto-generate.
+                    Leave empty for inbound-only peers that call your endpoint.
                   </p>
                 </div>
                 <div className="space-y-2">
-                  <Label>Inbound Token — they send TO us (optional)</Label>
+                  <Label>Inbound Token (optional — auto-generated if empty)</Label>
                   <Input
-                    placeholder="Token the peer will use to authenticate with us"
+                    placeholder="Leave empty to auto-generate"
                     value={newPeerInboundToken}
                     onChange={e => setNewPeerInboundToken(e.target.value)}
                   />
                   <p className="text-xs text-muted-foreground">
-                    This token is hashed and stored. The peer includes it as a Bearer token when calling our A2A endpoint.
+                    Token the peer sends as Bearer when calling your A2A endpoint. Auto-generated and shown after creation.
                   </p>
                 </div>
+                {newPeerUrl && (
+                  <div className="space-y-2">
+                    <Label>Outbound Token (optional — for calling their API)</Label>
+                    <Input
+                      placeholder="Paste the peer's API key / token"
+                      value={newPeerOutboundToken}
+                      onChange={e => setNewPeerOutboundToken(e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Token we include when calling their API. Leave empty to auto-generate.
+                    </p>
+                  </div>
+                )}
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-                <Button onClick={handleCreatePeer} disabled={!newPeerName || !newPeerUrl || createPeer.isPending}>
+                <Button onClick={handleCreatePeer} disabled={!newPeerName || createPeer.isPending}>
                   {createPeer.isPending ? 'Creating...' : 'Create'}
                 </Button>
               </DialogFooter>

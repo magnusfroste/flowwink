@@ -65,7 +65,7 @@ export function useCreateA2APeer() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (input: { name: string; url: string; outbound_token?: string; inbound_token?: string }) => {
+    mutationFn: async (input: { name: string; url?: string; outbound_token?: string; inbound_token?: string }) => {
       // Hash the inbound token if provided (token peer sends TO us)
       let hashedToken: string | null = null;
       if (input.inbound_token) {
@@ -77,7 +77,7 @@ export function useCreateA2APeer() {
 
       const insertData: Record<string, unknown> = {
         name: input.name,
-        url: input.url.replace(/\/$/, ''),
+        url: input.url ? input.url.replace(/\/$/, '') : '',
         inbound_token_hash: hashedToken,
       };
 
