@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -117,52 +118,18 @@ export default function FederationPage() {
     if (!peer.url) return;
     setDiscoveringPeerId(peer.id);
     try {
-      const peerUrl = peer.url.replace(/\/$/, '');
-      const cardUrl = `${peerUrl}/.well-known/agent-card.json`;
-
-      // Fetch agent card directly from the browser (avoids edge function network isolation)
-      const cardRes = await fetch(cardUrl, {
-        headers: { 'Accept': 'application/json' },
-        signal: AbortSignal.timeout(15000),
+      // Use edge function to discover (avoids CORS issues with direct browser fetch)
+      const { data, error } = await supabase.functions.invoke('a2a-discover', {
+        body: { peer_id: peer.id, action: 'discover' },
       });
 
-      if (!cardRes.ok) {
-        throw new Error(`Agent card returned HTTP ${cardRes.status}`);
-      }
-
-      const agentCard = await cardRes.json();
-
-      // Build updated capabilities
-      const existingCaps = (peer.capabilities && typeof peer.capabilities === 'object' && !Array.isArray(peer.capabilities))
-        ? peer.capabilities as Record<string, unknown>
-        : {};
-
-      const updatedCaps = {
-        ...existingCaps,
-        protocol: existingCaps.protocol || 'jsonrpc',
-        endpoint: existingCaps.endpoint || '/a2a/jsonrpc',
-        agent_name: agentCard.name || peer.name,
-        agent_description: agentCard.description || '',
-        skills: (agentCard.skills || []).map((s: { id?: string; name?: string; description?: string }) => ({
-          id: s.id,
-          name: s.name,
-          description: s.description || '',
-        })),
-        discovered_at: new Date().toISOString(),
-        protocol_version: agentCard.protocolVersion || 'unknown',
-        capabilities_raw: agentCard.capabilities || {},
-      };
-
-      // Save to database
-      const { supabase } = await import('@/integrations/supabase/client');
-      const { error } = await (supabase.from('a2a_peers' as any) as any)
-        .update({ capabilities: updatedCaps })
-        .eq('id', peer.id);
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
+      const card = data?.agent_card;
       toast({
         title: 'Skills discovered',
-        description: `Found ${updatedCaps.skills.length} skills from ${agentCard.name || peer.name}`,
+        description: `Found ${card?.skills?.length || 0} skills from ${card?.name || peer.name}`,
       });
       queryClient.invalidateQueries({ queryKey: ['a2a-peers'] });
     } catch (err: unknown) {
