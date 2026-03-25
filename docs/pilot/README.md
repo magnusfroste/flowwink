@@ -350,6 +350,126 @@ type BuiltInToolGroup =
 
 ---
 
+## Runtime Skill Loading Pipeline
+
+Understanding how skills flow from database to LLM context at runtime is critical for debugging and extending the system.
+
+### Phase 1: Tool Assembly (`loadSkillTools`)
+
+At the start of each `reason()` call, skills are loaded from `agent_skills`:
+
+```
+loadSkillTools(supabase, scope, categories?, budgetTier?)
+  │
+  ├── 1. Query agent_skills WHERE enabled=true AND scope IN [...]
+  │      └── Optional: filter by categories (e.g. ['content', 'crm'])
+  │
+  ├── 2. Load tool_policy from agent_memory
+  │      └── Blocked skills (admin-defined) are excluded
+  │
+  ├── 3. filterGatedSkills()
+  │      └── Check each skill's `requires[]` array:
+  │          ├── { type: 'skill', name } → is that skill enabled?
+  │          ├── { type: 'integration', key } → is integration active?
+  │          └── { type: 'module', id } → is module enabled?
+  │
+  ├── 4. Apply budget tier compression:
+  │      ├── 'full'    → include all, full descriptions
+  │      ├── 'compact' → truncate descriptions to 80 chars, drop param docs
+  │      └── 'drop'    → keep only top-20 most-used skills (by recent activity)
+  │
+  ├── 5. Normalize JSON schemas (fix missing types, array items, etc.)
+  │
+  └── Return: tool_definition[] (OpenAI function-calling format)
+```
+
+**Key detail:** At this phase, `instructions` are NOT loaded — only `name`, `tool_definition`, `scope`, `requires`, and `category`. This is the "list metadata only" pattern from OpenClaw LAW 3.
+
+### Phase 2: Lazy Instruction Loading (`fetchSkillInstructions`)
+
+Instructions are loaded **on-demand** when the LLM actually calls a skill:
+
+```
+reason() loop iteration N:
+  │
+  ├── LLM returns tool_calls: [{ name: 'generate_blog_post', ... }]
+  │
+  ├── executeBuiltInTool() or skill handler executes the call
+  │
+  ├── fetchSkillInstructions(['generate_blog_post'], alreadyLoaded)
+  │   ├── Skip if already loaded this session
+  │   ├── SELECT name, instructions FROM agent_skills WHERE name IN [...]
+  │   └── Append to conversation as system message:
+  │       "SKILL CONTEXT (instructions for skills you just used): ..."
+  │
+  └── LLM sees instructions on NEXT iteration (informs follow-up decisions)
+```
+
+This saves ~97% of instruction tokens — a skill with 2000-char instructions only costs ~10 chars (name + description) until actually invoked.
+
+### Phase 3: Dynamic Budget Degradation
+
+As token usage grows during a `reason()` session, skills are progressively compressed:
+
+```
+Token Usage    Tier       Behavior
+───────────    ────       ────────
+< 50%          full       All skills with full tool_definitions
+50–75%         compact    Descriptions truncated, param docs removed
+> 75%          drop       Only top-20 recently-used skills remain
+
+resolveSkillBudgetTier(budget, currentUsage) → 'full' | 'compact' | 'drop'
+```
+
+The tier is re-evaluated on **every iteration**. When it changes, `loadSkillTools` is called again with the new tier, dynamically shrinking the tool set mid-session.
+
+### Phase 4: Tool Execution Routing
+
+When the LLM calls a tool, `reason()` routes it:
+
+```
+tool_call.function.name
+  │
+  ├── isBuiltInTool(name)?
+  │   └── YES → executeBuiltInTool() → switch/case to handler
+  │
+  └── NO → DB skill handler routing:
+      ├── Load skill from agent_skills by name
+      ├── Parse handler string:
+      │   ├── 'edge:function-name'  → invoke Supabase Edge Function
+      │   ├── 'module:module-name'  → module API operation
+      │   ├── 'db:table-name'      → database query
+      │   └── 'webhook:url'        → external HTTP POST
+      └── Execute with parsed arguments + log to agent_activity
+```
+
+### Full Lifecycle Summary
+
+```
+DB: agent_skills (73+ rows)
+  │
+  │ loadSkillTools() — Phase 1
+  ▼
+Tool Definitions (name + JSON schema only, ~10 tokens/skill)
+  │
+  │ LLM decides to call a skill — Phase 2
+  ▼
+fetchSkillInstructions() — load full instructions on-demand (~500 tokens/skill)
+  │
+  │ Budget grows — Phase 3
+  ▼
+resolveSkillBudgetTier() — compress or drop skills dynamically
+  │
+  │ LLM emits tool_call — Phase 4
+  ▼
+Handler Router — execute via edge function / module / DB / webhook
+  │
+  ▼
+agent_activity — audit log with duration, tokens, status
+```
+
+---
+
 ## Building Your Own OpenClaw Agent
 
 Pilot is designed to be forked. To build a non-CMS agent:
