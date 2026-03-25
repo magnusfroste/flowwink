@@ -190,6 +190,34 @@ Deno.serve(async (req) => {
       })
       .eq('id', peer.id);
 
+    // Format response based on protocol
+    if (isJsonRpc) {
+      const jsonRpcResponse = status === 'success'
+        ? {
+            jsonrpc: '2.0',
+            id: jsonRpcId,
+            result: {
+              id: activityRow?.id || crypto.randomUUID(),
+              status: { state: 'completed' },
+              artifacts: [{
+                parts: [{ type: 'text', text: typeof result === 'string' ? result : JSON.stringify(result) }],
+              }],
+            },
+          }
+        : {
+            jsonrpc: '2.0',
+            id: jsonRpcId,
+            result: {
+              id: activityRow?.id || crypto.randomUUID(),
+              status: { state: 'failed', message: { parts: [{ type: 'text', text: errorMessage || 'Unknown error' }] } },
+            },
+          };
+      return new Response(JSON.stringify(jsonRpcResponse), {
+        status: 200, // JSON-RPC always returns 200
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     return new Response(JSON.stringify(result), {
       status: status === 'success' ? 200 : 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
