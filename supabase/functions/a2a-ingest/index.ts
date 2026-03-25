@@ -73,6 +73,15 @@ Deno.serve(async (req) => {
       .select('id')
       .single();
 
+    // Auto-inject peer context into skill arguments so skills like
+    // openclaw_start_session get peer_name without the caller needing to specify it
+    const enrichedArgs: Record<string, unknown> = {
+      ...(args || {}),
+      // Only inject if not already provided by the caller
+      ...(!args?.peer_name ? { peer_name: peer.name } : {}),
+      ...(!args?.peer_id ? { _a2a_peer_id: peer.id } : {}),
+    };
+
     // Execute skill via agent-execute
     let result: any;
     let status: 'success' | 'error' = 'success';
@@ -87,7 +96,7 @@ Deno.serve(async (req) => {
         },
         body: JSON.stringify({
           skill_name: skill,
-          arguments: args || {},
+          arguments: enrichedArgs,
           context: {
             source: 'a2a',
             peer_id: peer.id,

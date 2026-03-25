@@ -221,25 +221,25 @@ export default function FederationPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Their API Key (optional)</Label>
+                  <Label>Outbound Token — we send TO them (optional)</Label>
                   <Input
                     placeholder="Paste the peer's API key / token"
                     value={newPeerOutboundToken}
                     onChange={e => setNewPeerOutboundToken(e.target.value)}
                   />
                   <p className="text-xs text-muted-foreground">
-                    The token we send to authenticate with them. If left empty, one is auto-generated.
+                    Token we include in requests when calling their API. Leave empty to auto-generate.
                   </p>
                 </div>
                 <div className="space-y-2">
-                  <Label>Our Token for Them (optional)</Label>
+                  <Label>Inbound Token — they send TO us (optional)</Label>
                   <Input
-                    placeholder="Token they'll use to call us"
+                    placeholder="Token the peer will use to authenticate with us"
                     value={newPeerInboundToken}
                     onChange={e => setNewPeerInboundToken(e.target.value)}
                   />
                   <p className="text-xs text-muted-foreground">
-                    If the peer needs to send requests to us, paste their inbound token here.
+                    This token is hashed and stored. The peer includes it as a Bearer token when calling our A2A endpoint.
                   </p>
                 </div>
               </div>
