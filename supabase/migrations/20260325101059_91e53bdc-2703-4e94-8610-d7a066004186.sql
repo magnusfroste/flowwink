@@ -1,0 +1,1 @@
+DELETE FROM agent_skills WHERE name IN ('web_scrape', 'create_campaign', 'create_automation', 'remove_duplicate_resumes') AND enabled = false;
