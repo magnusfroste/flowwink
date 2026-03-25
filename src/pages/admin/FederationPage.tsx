@@ -539,6 +539,15 @@ export default function FederationPage() {
                       )}
                     </div>
                   </div>
+                  {testResult && testResult.peerId === peer.id && (
+                    <div className={`mt-3 p-2 rounded text-xs font-mono ${
+                      testResult.success 
+                        ? 'bg-green-500/10 text-green-600 border border-green-500/20' 
+                        : 'bg-destructive/10 text-destructive border border-destructive/20'
+                    }`}>
+                      {testResult.message}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}
