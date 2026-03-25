@@ -642,25 +642,97 @@ async function executeOpenClawAction(
     }
 
     case 'openclaw_get_status': {
-      const { data: sessions } = await supabase
-        .from('beta_test_sessions')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(20);
+      // Return sessions, findings, exchanges AND pending test requests
+      const [sessionsRes, findingsRes, exchangesRes, pendingTestsRes] = await Promise.all([
+        supabase.from('beta_test_sessions').select('*').order('created_at', { ascending: false }).limit(20),
+        supabase.from('beta_test_findings').select('*').order('created_at', { ascending: false }).limit(50),
+        supabase.from('beta_test_exchanges').select('*').order('created_at', { ascending: false }).limit(30),
+        supabase.from('beta_test_exchanges')
+          .select('*')
+          .eq('direction', 'flowpilot_to_openclaw')
+          .eq('message_type', 'test_request')
+          .is('payload->acknowledged_at', null)
+          .order('created_at', { ascending: false })
+          .limit(10),
+      ]);
 
-      const { data: findings } = await supabase
+      return {
+        sessions: sessionsRes.data || [],
+        findings: findingsRes.data || [],
+        exchanges: exchangesRes.data || [],
+        pending_test_requests: pendingTestsRes.data || [],
+      };
+    }
+
+    case 'scan_beta_findings': {
+      // FlowPilot heartbeat skill: scan unresolved findings and return summary
+      const { data: unresolvedFindings } = await supabase
         .from('beta_test_findings')
-        .select('*')
+        .select('id, type, severity, title, description, session_id, created_at')
+        .is('resolved_at', null)
         .order('created_at', { ascending: false })
         .limit(50);
 
-      const { data: exchanges } = await supabase
-        .from('beta_test_exchanges')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(30);
+      if (!unresolvedFindings?.length) {
+        return { success: true, summary: 'No unresolved findings.', findings: [], counts: {} };
+      }
 
-      return { sessions: sessions || [], findings: findings || [], exchanges: exchanges || [] };
+      const counts: Record<string, number> = {};
+      for (const f of unresolvedFindings) {
+        counts[f.severity] = (counts[f.severity] || 0) + 1;
+      }
+
+      return {
+        success: true,
+        summary: `${unresolvedFindings.length} unresolved findings: ${Object.entries(counts).map(([k, v]) => `${v} ${k}`).join(', ')}`,
+        findings: unresolvedFindings,
+        counts,
+        recommendation: counts['critical'] ? 'Create objective immediately for critical findings' :
+          counts['high'] ? 'Consider creating objective for high-severity findings' :
+          'Monitor — no urgent action needed',
+      };
+    }
+
+    case 'queue_beta_test': {
+      // FlowPilot queues a test scenario for OpenClaw to pick up
+      const { scenario, instructions, priority = 'normal' } = args as any;
+      if (!scenario) return { error: 'scenario is required' };
+
+      const { data, error } = await supabase
+        .from('beta_test_exchanges')
+        .insert({
+          direction: 'flowpilot_to_openclaw',
+          message_type: 'test_request',
+          content: scenario,
+          payload: { instructions, priority, acknowledged_at: null },
+        })
+        .select('id, created_at')
+        .single();
+      if (error) throw new Error(`Queue test failed: ${error.message}`);
+      return { success: true, test_request_id: data.id, scenario };
+    }
+
+    case 'resolve_finding': {
+      // Mark a finding as resolved
+      const { finding_id, resolution_note } = args as any;
+      if (!finding_id) return { error: 'finding_id is required' };
+
+      const { error } = await supabase
+        .from('beta_test_findings')
+        .update({ resolved_at: new Date().toISOString() })
+        .eq('id', finding_id);
+      if (error) throw new Error(`Resolve failed: ${error.message}`);
+
+      // Log resolution as exchange
+      if (resolution_note) {
+        await supabase.from('beta_test_exchanges').insert({
+          direction: 'flowpilot_to_openclaw',
+          message_type: 'resolution',
+          content: resolution_note,
+          payload: { finding_id },
+        });
+      }
+      return { success: true, finding_id, resolved: true };
     }
 
     default:
