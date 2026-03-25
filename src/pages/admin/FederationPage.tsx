@@ -111,6 +111,32 @@ export default function FederationPage() {
     }
   };
 
+  const openEditDialog = (peer: any) => {
+    setEditingPeer(peer);
+    setEditName(peer.name);
+    setEditUrl(peer.url || '');
+    setEditOutboundToken('');
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingPeer) return;
+    const updates: Record<string, string> = { id: (editingPeer as any).id };
+    if (editName !== (editingPeer as any).name) updates.name = editName;
+    if (editUrl !== ((editingPeer as any).url || '')) updates.url = editUrl;
+    await updatePeer.mutateAsync(updates as any);
+
+    if (editOutboundToken) {
+      // Update outbound token separately via the raw supabase call
+      const { supabase } = await import('@/integrations/supabase/client');
+      await (supabase.from('a2a_peers') as any)
+        .update({ outbound_token: editOutboundToken })
+        .eq('id', (editingPeer as any).id);
+    }
+
+    setEditingPeer(null);
+    toast({ title: 'Peer updated', description: `${editName} has been updated.` });
+  };
+
   const activePeers = peers?.filter(p => p.status !== 'revoked') || [];
   const totalRequests = peers?.reduce((sum, p) => sum + (p.request_count || 0), 0) || 0;
 
