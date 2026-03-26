@@ -109,7 +109,9 @@ export const DEFAULT_HEARTBEAT_PROTOCOL = `HEARTBEAT PROTOCOL:
 5. PROPOSE — If data warrants it, propose max 1 new objective via propose_objective.
 6. REFLECT — Call reflect to analyze the past 7 days. Save learnings to memory.
 
-OUTCOME SCORING: success | partial | neutral | negative | too_early (<48h)
+OUTCOME SCORING: success | partial | neutral | negative | too_early (<24h)
+HARD GATES: Immediately score as 'negative' if output contains: auth_failed, quota_hit, rate_limited, budget_exceeded, circuit_broken, timeout.
+Include quantitative evidence in outcome_data when available.
 Include quantitative evidence in outcome_data when available.
 
 PRIORITY: evaluate > advance highest-score objectives > automations > proposals

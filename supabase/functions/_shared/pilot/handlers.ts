@@ -1235,7 +1235,31 @@ export async function handleEvaluateOutcomes(supabase: any, args: {
 
   if (!filteredActivities.length) return { status: 'all_evaluated', count: 0, message: 'All recent activities have been evaluated.' };
 
+  // ─── Hard Gates: Auto-score obvious failures immediately ───────────────
+  const HARD_GATE_PATTERNS = ['auth_failed', 'quota_hit', 'rate_limited', 'budget_exceeded', 'circuit_broken', 'timeout', 'Unauthorized', '401', '403', '429'];
+  const autoScoredIds: string[] = [];
+
+  for (const a of filteredActivities) {
+    const outputStr = JSON.stringify(a.output || {});
+    const isHardFailure = HARD_GATE_PATTERNS.some(p => outputStr.includes(p));
+    if (isHardFailure) {
+      await supabase.from('agent_activity').update({
+        outcome_status: 'negative',
+        outcome_data: { auto_gate: true, reason: 'Hard gate: output contains failure indicator' },
+        outcome_evaluated_at: new Date().toISOString(),
+      }).eq('id', a.id);
+      autoScoredIds.push(a.id);
+    }
+  }
+
+  // Remove auto-scored from manual eval list
+  filteredActivities = filteredActivities.filter((a: any) => !autoScoredIds.includes(a.id));
+  if (!filteredActivities.length && autoScoredIds.length > 0) {
+    return { status: 'auto_evaluated', count: autoScoredIds.length, message: `${autoScoredIds.length} activities auto-scored as negative via hard gates.` };
+  }
+
   const now = new Date();
+  const EVAL_WINDOW_HOURS = 24; // Frostie recommendation: 72h → 24h
   const enrichedActivities = filteredActivities.map((a: any) => {
     const createdAt = new Date(a.created_at);
     const hoursAgo = Math.round((now.getTime() - createdAt.getTime()) / 3600_000);
@@ -1246,6 +1270,7 @@ export async function handleEvaluateOutcomes(supabase: any, args: {
       output_summary: JSON.stringify(a.output || {}).slice(0, 300),
       created_at: a.created_at,
       hours_ago: hoursAgo,
+      too_early: hoursAgo < EVAL_WINDOW_HOURS,
       duration_ms: a.duration_ms,
       current_outcome: a.outcome_status,
     };
