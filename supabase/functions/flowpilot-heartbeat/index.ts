@@ -167,6 +167,30 @@ serve(async (req) => {
   const traceId = generateTraceId('hb');
 
   try {
+    // Exponential backoff — check consecutive heartbeat failures
+    const { data: recentHeartbeats } = await supabase
+      .from('agent_activity')
+      .select('status')
+      .eq('skill_name', 'heartbeat')
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    const consecutiveFailures = (recentHeartbeats || []).findIndex((h: any) => h.status === 'success');
+    const failStreak = consecutiveFailures === -1 ? (recentHeartbeats || []).length : consecutiveFailures;
+    
+    if (failStreak >= 3) {
+      // Exponential backoff: skip every 2^(failStreak-2) runs
+      const skipProbability = 1 - (1 / Math.pow(2, failStreak - 2));
+      if (Math.random() < skipProbability) {
+        console.log(`[heartbeat] trace=${traceId} Backoff active (${failStreak} consecutive failures, ${Math.round(skipProbability * 100)}% skip rate) — skipping`);
+        return new Response(
+          JSON.stringify({ skipped: true, reason: 'exponential_backoff', fail_streak: failStreak, trace_id: traceId }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      console.log(`[heartbeat] trace=${traceId} Backoff: ${failStreak} failures but proceeding this run`);
+    }
+
     // Concurrency guard — only one heartbeat at a time (TTL: 10 minutes)
     const lockAcquired = await tryAcquireLock(supabase, 'heartbeat', 'heartbeat', 600);
     if (!lockAcquired) {
