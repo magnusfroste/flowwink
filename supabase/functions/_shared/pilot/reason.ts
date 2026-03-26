@@ -852,11 +852,24 @@ export async function reason(
         actionsExecuted.push(fnName);
 
         let result: any;
-        try {
-          result = await executeBuiltInTool(supabase, supabaseUrl, serviceKey, fnName, fnArgs, traceId);
-        } catch (err: any) {
-          result = { error: err.message };
-          turnErrors++;
+        let retryCount = 0;
+        let lastError = '';
+
+        // Self-Repair Phase 1: retry with param variation on failure
+        while (retryCount <= MAX_SELF_REPAIR_RETRIES) {
+          try {
+            const argsToUse = retryCount === 0 ? fnArgs : { ...fnArgs, _retry: retryCount, _prev_error: lastError };
+            result = await executeBuiltInTool(supabase, supabaseUrl, serviceKey, fnName, argsToUse, traceId);
+          } catch (err: any) {
+            result = { error: err.message };
+          }
+
+          const failed = !!(result?.error || result?.status === 'failed');
+          if (!failed || retryCount >= MAX_SELF_REPAIR_RETRIES) break;
+
+          lastError = result?.error || 'unknown';
+          retryCount++;
+          console.log(`[reason] trace=${traceId} Self-repair retry ${retryCount}/${MAX_SELF_REPAIR_RETRIES} for '${fnName}': ${lastError}`);
         }
 
         const failed = !!(result?.error || result?.status === 'failed');
@@ -867,6 +880,7 @@ export async function reason(
           if (skillFailureCounts[fnName] >= CIRCUIT_BREAKER_THRESHOLD) {
             circuitBrokenSkills.add(fnName);
             console.warn(`[reason] trace=${traceId} Circuit breaker tripped for '${fnName}' after ${skillFailureCounts[fnName]} failures`);
+          }
           }
         } else {
           // Reset failure count on success

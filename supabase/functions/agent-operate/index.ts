@@ -130,6 +130,15 @@ serve(async (req) => {
     });
 
     (async () => {
+      const operateTimeout = setTimeout(async () => {
+        console.warn(`[operate] Wall-clock timeout (${MAX_OPERATE_WALL_CLOCK_MS}ms) — closing stream`);
+        try {
+          await sseEvent(writer, encoder, 'error', { message: 'Operation timed out. Partial results may have been returned.' });
+          await sseEvent(writer, encoder, 'done', {});
+        } catch { /* writer closed */ }
+        try { await writer.close(); } catch { /* already closed */ }
+      }, MAX_OPERATE_WALL_CLOCK_MS);
+
       try {
         // Apply context pruning before starting
         let conversationMessages: any[] = await pruneConversationHistory(
@@ -155,7 +164,6 @@ serve(async (req) => {
           if (!aiResponse.ok) {
             const errText = await aiResponse.text();
             console.error('AI error:', aiResponse.status, errText);
-            // Parse actual error for better debugging
             let errorDetail = 'AI provider error';
             try {
               const parsed = JSON.parse(errText);
@@ -180,7 +188,6 @@ serve(async (req) => {
               await sseEvent(writer, encoder, 'skill_results', allSkillResults);
             }
             const finalContent = assistantMessage.content || 'Done.';
-            // Strip reply directives before streaming to client (OpenClaw L5)
             const { cleanContent } = parseReplyDirectives(finalContent);
             await streamFinalResponse(apiUrl, apiKey, model, conversationMessages, writer, encoder, cleanContent || finalContent);
             break;
@@ -205,7 +212,7 @@ serve(async (req) => {
               }
 
               if (!isBuiltInTool(fnName)) {
-                allSkillResults.push({ skill: fnName, status: result?.status || 'success', result: result?.result || result });
+                allSkillResults.push({ skill: fnName, status: result?.error ? 'failed' : (result?.status || 'success'), result: result?.result || result });
               }
 
               return { role: 'tool' as const, tool_call_id: tc.id, content: JSON.stringify(result) };
@@ -231,7 +238,7 @@ serve(async (req) => {
         console.error('agent-operate stream error:', err);
         try { await sseEvent(writer, encoder, 'error', { message: err.message || 'Internal error' }); } catch { /* writer closed */ }
       } finally {
-        // Release concurrency lock from the correct scope
+        clearTimeout(operateTimeout);
         if (lane) {
           try { await releaseLock(supabase, lane); } catch { /* best effort */ }
         }
