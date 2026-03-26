@@ -455,32 +455,47 @@ interface ProviderConfig {
   supportsToolCalling: boolean;
   isN8n: boolean;
   n8nConfig?: { webhookUrl: string; webhookType: string; apiKey?: string };
+  resolvedProvider: string; // Which provider was actually resolved
 }
 
-function resolveProvider(settings: ChatSettings | undefined, integrations: any): ProviderConfig {
-  const provider = settings?.aiProvider || 'openai';
-
+/**
+ * Try to resolve a specific provider. Returns null if not available (no API key).
+ */
+function tryResolveProvider(provider: string, settings: ChatSettings | undefined, integrations: any): ProviderConfig | null {
   if (provider === 'n8n') {
     const n8nConfig = integrations?.n8n?.config || {};
     const webhookUrl = settings?.n8nWebhookUrl || n8nConfig?.webhookUrl;
-    if (!webhookUrl) throw new Error('N8N webhook URL is not configured.');
+    if (!webhookUrl) return null;
     const n8nApiKey = Deno.env.get('N8N_API_KEY') || n8nConfig?.apiKey;
     return {
       apiKey: '', apiUrl: '', model: '',
-      supportsToolCalling: false, isN8n: true,
+      supportsToolCalling: false, isN8n: true, resolvedProvider: 'n8n',
       n8nConfig: { webhookUrl, webhookType: settings?.n8nWebhookType || n8nConfig?.webhookType || 'chat', apiKey: n8nApiKey },
+    };
+  }
+
+  if (provider === 'openai') {
+    const apiKey = settings?.openaiApiKey || Deno.env.get('OPENAI_API_KEY');
+    if (!apiKey) return null;
+    const baseUrl = settings?.openaiBaseUrl || 'https://api.openai.com/v1';
+    const rawModel = settings?.openaiModel || 'gpt-4.1-mini';
+    return {
+      apiKey,
+      apiUrl: `${baseUrl}/chat/completions`,
+      model: OPENAI_MIGRATE[rawModel] || rawModel,
+      supportsToolCalling: true, isN8n: false, resolvedProvider: 'openai',
     };
   }
 
   if (provider === 'gemini') {
     const apiKey = settings?.geminiApiKey || Deno.env.get('GEMINI_API_KEY');
-    if (!apiKey) throw new Error('Gemini API key is not configured');
+    if (!apiKey) return null;
     const rawModel = settings?.geminiModel || 'gemini-2.5-flash';
     return {
       apiKey,
       apiUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
       model: GEMINI_MIGRATE[rawModel] || rawModel,
-      supportsToolCalling: true, isN8n: false,
+      supportsToolCalling: true, isN8n: false, resolvedProvider: 'gemini',
     };
   }
 
@@ -489,7 +504,7 @@ function resolveProvider(settings: ChatSettings | undefined, integrations: any):
     const chatEndpoint = settings?.localEndpoint;
     const isPlaceholder = !chatEndpoint || chatEndpoint.includes('your-local-llm') || chatEndpoint.includes('placeholder');
     const endpoint = isPlaceholder ? localConfig?.endpoint : chatEndpoint;
-    if (!endpoint) throw new Error('Local endpoint is not configured.');
+    if (!endpoint) return null;
 
     const localApiKey = Deno.env.get('LOCAL_LLM_API_KEY') || localConfig?.apiKey || settings?.localApiKey;
     const baseEndpoint = endpoint.replace(/\/+$/, '');
@@ -501,21 +516,44 @@ function resolveProvider(settings: ChatSettings | undefined, integrations: any):
       apiUrl: `${baseEndpoint}${apiPath}`,
       model,
       supportsToolCalling: settings?.localSupportsToolCalling || false,
-      isN8n: false,
+      isN8n: false, resolvedProvider: 'local',
     };
   }
 
-  // OpenAI (default)
-  const apiKey = settings?.openaiApiKey || Deno.env.get('OPENAI_API_KEY');
-  if (!apiKey) throw new Error('OpenAI API key is not configured');
-  const baseUrl = settings?.openaiBaseUrl || 'https://api.openai.com/v1';
-  const rawModel = settings?.openaiModel || 'gpt-4.1-mini';
-  return {
-    apiKey,
-    apiUrl: `${baseUrl}/chat/completions`,
-    model: OPENAI_MIGRATE[rawModel] || rawModel,
-    supportsToolCalling: true, isN8n: false,
-  };
+  return null;
+}
+
+/**
+ * Resolve provider with automatic fallback chain.
+ * 
+ * Strategy:
+ * 1. Try the preferred provider (from settings)
+ * 2. If it fails (no API key), try fallback chain: OpenAI → Gemini → Local
+ * 3. Only throw if NO provider is available at all
+ */
+function resolveProviderWithFallback(settings: ChatSettings | undefined, integrations: any): ProviderConfig {
+  const preferred = settings?.aiProvider || 'openai';
+  
+  // Try preferred provider first
+  const preferredResult = tryResolveProvider(preferred, settings, integrations);
+  if (preferredResult) return preferredResult;
+
+  console.log(`[chat] Preferred provider '${preferred}' not available, trying fallback chain...`);
+
+  // Fallback chain: OpenAI → Gemini → Local → N8N
+  const fallbackOrder = ['openai', 'gemini', 'local', 'n8n'].filter(p => p !== preferred);
+  
+  for (const fallback of fallbackOrder) {
+    const result = tryResolveProvider(fallback, settings, integrations);
+    if (result) {
+      console.log(`[chat] Fallback resolved to '${fallback}'`);
+      return result;
+    }
+  }
+
+  throw new Error(
+    'No AI provider available. Please configure at least one AI provider (OpenAI, Gemini, or Local LLM) in Settings → System AI, or set API keys via the CLI (npm run cli → /set-keys).'
+  );
 }
 
 // ─── N8N webhook handler ─────────────────────────────────────────────────────
@@ -623,19 +661,8 @@ serve(async (req) => {
       .from('site_settings').select('value').eq('key', 'integrations').maybeSingle();
     const integrations = integrationSettings?.value as any;
 
-    // Check provider enabled
-    const aiProvider = settings?.aiProvider || 'openai';
-    if (aiProvider === 'openai' && !(integrations?.openai?.enabled ?? false)) {
-      return new Response(JSON.stringify({ error: 'OpenAI integration is disabled.' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-    if (aiProvider === 'gemini' && !(integrations?.gemini?.enabled ?? false)) {
-      return new Response(JSON.stringify({ error: 'Gemini integration is disabled.' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-
-    // Resolve provider
-    const provider = resolveProvider(settings, integrations);
+    // Resolve provider with automatic fallback (no hard "enabled" gates)
+    const provider = resolveProviderWithFallback(settings, integrations);
 
     // Load context in parallel: workspace files, knowledge base, skills, visitor history
     const shouldLoadKB = settings?.includeContentAsContext || settings?.includeKbArticles;
