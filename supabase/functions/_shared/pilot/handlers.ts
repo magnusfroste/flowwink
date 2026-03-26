@@ -1424,13 +1424,14 @@ export async function handleEvaluateOutcomes(supabase: any, args: {
     status: 'pending_evaluation',
     count: enrichedActivities.length,
     auto_scored: autoScoredIds.length > 0 ? autoScoredIds.length : undefined,
+    auto_paused_skills: autoPausedSkills.length > 0 ? autoPausedSkills : undefined,
     activities: enrichedActivities,
     correlation_data: correlationContext,
     skill_scorecard: scorecard,
     underperforming_skills: underperformingSkills.length > 0 ? underperformingSkills : undefined,
     recent_learnings: recentLearnings.length ? recentLearnings : undefined,
     eval_window_hours: EVAL_WINDOW_HOURS,
-    instructions: `For each activity, assess impact using correlation_data. Activities marked too_early (<${EVAL_WINDOW_HOURS}h) should use 'too_early' status unless hard evidence exists. Check skill_scorecard for patterns. ${underperformingSkills.length > 0 ? `⚠️ UNDERPERFORMING SKILLS (>60% negative, consider disabling): ${underperformingSkills.join(', ')}` : ''} Review recent_learnings to avoid repeating mistakes. Call record_outcome for each activity.`,
+    instructions: `For each activity, assess impact using correlation_data. Activities marked too_early (<${EVAL_WINDOW_HOURS}h) should use 'too_early' status unless hard evidence exists. Check skill_scorecard for patterns. ${autoPausedSkills.length > 0 ? `🛑 AUTO-PAUSED SKILLS (consecutive failures): ${autoPausedSkills.join(', ')}. ` : ''}${underperformingSkills.length > 0 ? `⚠️ UNDERPERFORMING SKILLS (>60% negative, consider disabling): ${underperformingSkills.join(', ')}. ` : ''}Review recent_learnings to avoid repeating mistakes. Call record_outcome for each activity.`,
   };
 }
 
