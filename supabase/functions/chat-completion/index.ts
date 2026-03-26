@@ -661,19 +661,8 @@ serve(async (req) => {
       .from('site_settings').select('value').eq('key', 'integrations').maybeSingle();
     const integrations = integrationSettings?.value as any;
 
-    // Check provider enabled
-    const aiProvider = settings?.aiProvider || 'openai';
-    if (aiProvider === 'openai' && !(integrations?.openai?.enabled ?? false)) {
-      return new Response(JSON.stringify({ error: 'OpenAI integration is disabled.' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-    if (aiProvider === 'gemini' && !(integrations?.gemini?.enabled ?? false)) {
-      return new Response(JSON.stringify({ error: 'Gemini integration is disabled.' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-
-    // Resolve provider
-    const provider = resolveProvider(settings, integrations);
+    // Resolve provider with automatic fallback (no hard "enabled" gates)
+    const provider = resolveProviderWithFallback(settings, integrations);
 
     // Load context in parallel: workspace files, knowledge base, skills, visitor history
     const shouldLoadKB = settings?.includeContentAsContext || settings?.includeKbArticles;
