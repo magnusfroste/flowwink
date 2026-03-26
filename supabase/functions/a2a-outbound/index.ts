@@ -36,10 +36,13 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-    // Auth: service role key OR authenticated admin user
+    // Auth: service role key, anon key (internal calls), or authenticated admin user
     const authHeader = req.headers.get('authorization');
-    const token = authHeader?.replace('Bearer ', '');
-    let isAuthorized = token === serviceKey;
+    const token = authHeader?.replace('Bearer ', '').trim();
+    const apikeyHeader = req.headers.get('apikey')?.trim();
+    const anonKey = (Deno.env.get('SUPABASE_ANON_KEY') || Deno.env.get('SUPABASE_PUBLISHABLE_KEY') || '').trim();
+    // Service role key or apikey header match
+    let isAuthorized = token === serviceKey || apikeyHeader === serviceKey;
 
     // Also allow admin users via JWT
     if (!isAuthorized && token) {
