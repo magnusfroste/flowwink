@@ -720,6 +720,9 @@ export async function reason(
     const loadedInstructions = new Set<string>();
     let consecutiveEmptyTurns = 0;
     let memoryFlushed = false;
+    const skillFailureCounts: Record<string, number> = {};  // Circuit breaker state
+    const circuitBrokenSkills = new Set<string>();           // Skills tripped by circuit breaker
+    const recentToolCalls: string[] = [];                    // Same-action detection buffer
 
     for (let i = 0; i < maxIterations; i++) {
       if (totalTokenUsage.total_tokens >= tokenBudget) {
