@@ -823,6 +823,30 @@ export async function reason(
         let fnArgs: any;
         try { fnArgs = JSON.parse(tc.function.arguments || '{}'); } catch { fnArgs = {}; }
 
+        // Circuit breaker — skip skills that have tripped
+        if (circuitBrokenSkills.has(fnName)) {
+          console.warn(`[reason] trace=${traceId} Circuit broken for '${fnName}' — skipping`);
+          conversationMessages.push({
+            role: 'tool', tool_call_id: tc.id,
+            content: JSON.stringify({ error: `Skill '${fnName}' is circuit-broken after ${CIRCUIT_BREAKER_THRESHOLD} consecutive failures. Try a different approach.`, status: 'circuit_broken' }),
+          });
+          turnErrors++;
+          continue;
+        }
+
+        // Same-action detection
+        recentToolCalls.push(fnName);
+        if (recentToolCalls.length > SAME_ACTION_LIMIT) recentToolCalls.shift();
+        if (recentToolCalls.length === SAME_ACTION_LIMIT && recentToolCalls.every(n => n === fnName)) {
+          console.warn(`[reason] trace=${traceId} Same tool '${fnName}' called ${SAME_ACTION_LIMIT}x consecutively — breaking`);
+          conversationMessages.push({
+            role: 'tool', tool_call_id: tc.id,
+            content: JSON.stringify({ error: `Loop detected: '${fnName}' called ${SAME_ACTION_LIMIT} times in a row. Try a different approach or summarize.`, status: 'loop_detected' }),
+          });
+          turnErrors++;
+          continue;
+        }
+
         console.log(`[reason] trace=${traceId} iter=${i} Executing: ${fnName}`, JSON.stringify(fnArgs).slice(0, 200));
         actionsExecuted.push(fnName);
 
@@ -834,13 +858,22 @@ export async function reason(
           turnErrors++;
         }
 
-        if (result?.error || result?.status === 'failed') {
+        const failed = !!(result?.error || result?.status === 'failed');
+        if (failed) {
           turnErrors++;
+          // Circuit breaker tracking
+          skillFailureCounts[fnName] = (skillFailureCounts[fnName] || 0) + 1;
+          if (skillFailureCounts[fnName] >= CIRCUIT_BREAKER_THRESHOLD) {
+            circuitBrokenSkills.add(fnName);
+            console.warn(`[reason] trace=${traceId} Circuit breaker tripped for '${fnName}' after ${skillFailureCounts[fnName]} failures`);
+          }
+        } else {
+          // Reset failure count on success
+          skillFailureCounts[fnName] = 0;
         }
 
         if (!isBuiltInTool(fnName)) {
-          const skillFailed = !!(result?.error || result?.status === 'failed');
-          skillResults.push({ skill: fnName, status: skillFailed ? 'failed' : 'success', result: result?.result || result });
+          skillResults.push({ skill: fnName, status: failed ? 'failed' : 'success', result: result?.result || result });
           calledSkillNames.push(fnName);
         }
 
@@ -855,6 +888,9 @@ export async function reason(
           conversationMessages.push({ role: 'system', content: 'Multiple consecutive tool errors detected. Stop calling failing tools and summarize what you accomplished.' });
         }
       }
+
+      // Report circuit-broken skills in resource meter
+      const brokenList = circuitBrokenSkills.size > 0 ? ` | Circuit-broken: ${[...circuitBrokenSkills].join(', ')}` : '';
 
       // Resource Awareness
       const budgetPct = Math.round((totalTokenUsage.total_tokens / tokenBudget) * 100);
