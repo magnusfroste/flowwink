@@ -36,12 +36,11 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-    // Auth: service role key OR authenticated admin user
+    // Auth: service role key OR authenticated admin user OR internal function call
     const authHeader = req.headers.get('authorization');
     const token = authHeader?.replace('Bearer ', '').trim();
-    const serviceKeyTrimmed = serviceKey.trim();
-    console.log(`[a2a-outbound] Auth check: token length=${token?.length}, serviceKey length=${serviceKeyTrimmed.length}, match=${token === serviceKeyTrimmed}`);
-    let isAuthorized = token === serviceKeyTrimmed;
+    const apikeyHeader = req.headers.get('apikey')?.trim();
+    let isAuthorized = token === serviceKey || apikeyHeader === serviceKey;
 
     // Also allow admin users via JWT
     if (!isAuthorized && token) {
