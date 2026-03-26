@@ -38,8 +38,10 @@ Deno.serve(async (req) => {
 
     // Auth: service role key OR authenticated admin user
     const authHeader = req.headers.get('authorization');
-    const token = authHeader?.replace('Bearer ', '');
-    let isAuthorized = token === serviceKey;
+    const token = authHeader?.replace('Bearer ', '').trim();
+    // Also accept apikey header (Supabase standard)
+    const apikeyHeader = req.headers.get('apikey');
+    let isAuthorized = token === serviceKey || apikeyHeader === serviceKey;
 
     // Also allow admin users via JWT
     if (!isAuthorized && token) {
