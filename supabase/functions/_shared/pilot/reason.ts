@@ -60,6 +60,9 @@ const MAX_CONTEXT_TOKENS = 80_000;
 const SUMMARY_THRESHOLD = 60_000;
 const DEFAULT_TOKEN_BUDGET = 80_000;
 const MEMORY_FLUSH_THRESHOLD = 0.80;
+const SKILL_TIMEOUT_MS = 30_000;
+const CIRCUIT_BREAKER_THRESHOLD = 3;
+const SAME_ACTION_LIMIT = 3;
 
 const BUILT_IN_TOOL_NAMES = new Set([
   'memory_write', 'memory_read', 'memory_delete',
@@ -576,6 +579,17 @@ async function summarizeMessages(messages: any[], supabase: any): Promise<string
   }
 }
 
+// ─── Skill Timeout Wrapper ───────────────────────────────────────────────────
+
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`Skill '${label}' timed out after ${ms}ms`)), ms)
+    ),
+  ]);
+}
+
 // ─── Tool Execution Router ───────────────────────────────────────────────────
 
 export async function executeBuiltInTool(
@@ -586,50 +600,50 @@ export async function executeBuiltInTool(
   fnArgs: any,
   traceId?: string,
 ): Promise<any> {
-  switch (fnName) {
-    case 'memory_write': return handleMemoryWrite(supabase, fnArgs);
-    case 'memory_read': return handleMemoryRead(supabase, fnArgs);
-    case 'objective_update_progress': return handleObjectiveUpdateProgress(supabase, fnArgs);
-    case 'objective_complete': return handleObjectiveComplete(supabase, fnArgs);
-    case 'objective_delete': return handleObjectiveDelete(supabase, fnArgs);
-    case 'memory_delete': return handleMemoryDelete(supabase, fnArgs);
-    case 'skill_create': return handleSkillCreate(supabase, fnArgs);
-    case 'skill_update': return handleSkillUpdate(supabase, fnArgs);
-    case 'skill_list': return handleSkillList(supabase, fnArgs);
-    case 'skill_disable': return handleSkillDisable(supabase, fnArgs);
-    case 'skill_enable': return handleSkillEnable(supabase, fnArgs);
-    case 'skill_delete': return handleSkillDelete(supabase, fnArgs);
-    case 'skill_instruct': return handleSkillInstruct(supabase, fnArgs);
-    case 'skill_read': return handleSkillRead(supabase, fnArgs);
-    case 'soul_update': return handleSoulUpdate(supabase, fnArgs);
-    case 'agents_update': return handleAgentsUpdate(supabase, fnArgs);
-    case 'heartbeat_protocol_update': return handleHeartbeatProtocolUpdate(supabase, fnArgs);
-    case 'automation_create': return handleAutomationCreate(supabase, fnArgs);
-    case 'automation_list': return handleAutomationList(supabase, fnArgs);
-    case 'automation_update': return handleAutomationUpdate(supabase, fnArgs);
-    case 'automation_delete': return handleAutomationDelete(supabase, fnArgs);
-    case 'reflect': return handleReflect(supabase, fnArgs);
-    case 'decompose_objective': return handleDecomposeObjective(supabase, fnArgs);
-    case 'advance_plan': return handleAdvancePlan(supabase, supabaseUrl, serviceKey, fnArgs);
-    case 'propose_objective': return handleProposeObjective(supabase, fnArgs);
-    case 'execute_automation': return handleExecuteAutomation(supabase, supabaseUrl, serviceKey, fnArgs);
-    case 'workflow_create': return handleWorkflowCreate(supabase, fnArgs);
-    case 'workflow_execute': return handleWorkflowExecute(supabase, supabaseUrl, serviceKey, fnArgs);
-    case 'workflow_list': return handleWorkflowList(supabase);
-    case 'workflow_update': return handleWorkflowUpdate(supabase, fnArgs);
-    case 'workflow_delete': return handleWorkflowDelete(supabase, fnArgs);
-    case 'delegate_task': return handleDelegateTask(supabase, supabaseUrl, serviceKey, fnArgs);
-    case 'skill_pack_list': return handleSkillPackList(supabase);
-    case 'skill_pack_install': return handleSkillPackInstall(supabase, fnArgs);
-    case 'chain_skills': return handleChainSkills(supabase, supabaseUrl, serviceKey, fnArgs);
-    case 'evaluate_outcomes': return handleEvaluateOutcomes(supabase, fnArgs);
-    case 'record_outcome': return handleRecordOutcome(supabase, fnArgs);
-  }
+  const execute = async () => {
+    switch (fnName) {
+      case 'memory_write': return handleMemoryWrite(supabase, fnArgs);
+      case 'memory_read': return handleMemoryRead(supabase, fnArgs);
+      case 'objective_update_progress': return handleObjectiveUpdateProgress(supabase, fnArgs);
+      case 'objective_complete': return handleObjectiveComplete(supabase, fnArgs);
+      case 'objective_delete': return handleObjectiveDelete(supabase, fnArgs);
+      case 'memory_delete': return handleMemoryDelete(supabase, fnArgs);
+      case 'skill_create': return handleSkillCreate(supabase, fnArgs);
+      case 'skill_update': return handleSkillUpdate(supabase, fnArgs);
+      case 'skill_list': return handleSkillList(supabase, fnArgs);
+      case 'skill_disable': return handleSkillDisable(supabase, fnArgs);
+      case 'skill_enable': return handleSkillEnable(supabase, fnArgs);
+      case 'skill_delete': return handleSkillDelete(supabase, fnArgs);
+      case 'skill_instruct': return handleSkillInstruct(supabase, fnArgs);
+      case 'skill_read': return handleSkillRead(supabase, fnArgs);
+      case 'soul_update': return handleSoulUpdate(supabase, fnArgs);
+      case 'agents_update': return handleAgentsUpdate(supabase, fnArgs);
+      case 'heartbeat_protocol_update': return handleHeartbeatProtocolUpdate(supabase, fnArgs);
+      case 'automation_create': return handleAutomationCreate(supabase, fnArgs);
+      case 'automation_list': return handleAutomationList(supabase, fnArgs);
+      case 'automation_update': return handleAutomationUpdate(supabase, fnArgs);
+      case 'automation_delete': return handleAutomationDelete(supabase, fnArgs);
+      case 'reflect': return handleReflect(supabase, fnArgs);
+      case 'decompose_objective': return handleDecomposeObjective(supabase, fnArgs);
+      case 'advance_plan': return handleAdvancePlan(supabase, supabaseUrl, serviceKey, fnArgs);
+      case 'propose_objective': return handleProposeObjective(supabase, fnArgs);
+      case 'execute_automation': return handleExecuteAutomation(supabase, supabaseUrl, serviceKey, fnArgs);
+      case 'workflow_create': return handleWorkflowCreate(supabase, fnArgs);
+      case 'workflow_execute': return handleWorkflowExecute(supabase, supabaseUrl, serviceKey, fnArgs);
+      case 'workflow_list': return handleWorkflowList(supabase);
+      case 'workflow_update': return handleWorkflowUpdate(supabase, fnArgs);
+      case 'workflow_delete': return handleWorkflowDelete(supabase, fnArgs);
+      case 'delegate_task': return handleDelegateTask(supabase, supabaseUrl, serviceKey, fnArgs);
+      case 'skill_pack_list': return handleSkillPackList(supabase);
+      case 'skill_pack_install': return handleSkillPackInstall(supabase, fnArgs);
+      case 'chain_skills': return handleChainSkills(supabase, supabaseUrl, serviceKey, fnArgs);
+      case 'evaluate_outcomes': return handleEvaluateOutcomes(supabase, fnArgs);
+      case 'record_outcome': return handleRecordOutcome(supabase, fnArgs);
+    }
 
-  // Not a built-in → delegate to agent-execute
-  const body: Record<string, any> = { skill_name: fnName, arguments: fnArgs, agent_type: 'flowpilot' };
-  if (traceId) body.trace_id = traceId;
-  try {
+    // Not a built-in → delegate to agent-execute
+    const body: Record<string, any> = { skill_name: fnName, arguments: fnArgs, agent_type: 'flowpilot' };
+    if (traceId) body.trace_id = traceId;
     const response = await fetch(`${supabaseUrl}/functions/v1/agent-execute`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceKey}` },
@@ -641,9 +655,14 @@ export async function executeBuiltInTool(
       return { error: `Skill ${fnName} failed: HTTP ${response.status}`, status: 'failed' };
     }
     return response.json();
+  };
+
+  // Wrap with timeout
+  try {
+    return await withTimeout(execute(), SKILL_TIMEOUT_MS, fnName);
   } catch (err: any) {
-    console.error(`[reason] trace=${traceId} agent-execute ${fnName} fetch error:`, err.message);
-    return { error: `Skill ${fnName} unreachable: ${err.message}`, status: 'failed' };
+    console.error(`[reason] trace=${traceId} ${fnName} error:`, err.message);
+    return { error: err.message, status: 'failed' };
   }
 }
 
@@ -701,6 +720,9 @@ export async function reason(
     const loadedInstructions = new Set<string>();
     let consecutiveEmptyTurns = 0;
     let memoryFlushed = false;
+    const skillFailureCounts: Record<string, number> = {};  // Circuit breaker state
+    const circuitBrokenSkills = new Set<string>();           // Skills tripped by circuit breaker
+    const recentToolCalls: string[] = [];                    // Same-action detection buffer
 
     for (let i = 0; i < maxIterations; i++) {
       if (totalTokenUsage.total_tokens >= tokenBudget) {
@@ -801,6 +823,30 @@ export async function reason(
         let fnArgs: any;
         try { fnArgs = JSON.parse(tc.function.arguments || '{}'); } catch { fnArgs = {}; }
 
+        // Circuit breaker — skip skills that have tripped
+        if (circuitBrokenSkills.has(fnName)) {
+          console.warn(`[reason] trace=${traceId} Circuit broken for '${fnName}' — skipping`);
+          conversationMessages.push({
+            role: 'tool', tool_call_id: tc.id,
+            content: JSON.stringify({ error: `Skill '${fnName}' is circuit-broken after ${CIRCUIT_BREAKER_THRESHOLD} consecutive failures. Try a different approach.`, status: 'circuit_broken' }),
+          });
+          turnErrors++;
+          continue;
+        }
+
+        // Same-action detection
+        recentToolCalls.push(fnName);
+        if (recentToolCalls.length > SAME_ACTION_LIMIT) recentToolCalls.shift();
+        if (recentToolCalls.length === SAME_ACTION_LIMIT && recentToolCalls.every(n => n === fnName)) {
+          console.warn(`[reason] trace=${traceId} Same tool '${fnName}' called ${SAME_ACTION_LIMIT}x consecutively — breaking`);
+          conversationMessages.push({
+            role: 'tool', tool_call_id: tc.id,
+            content: JSON.stringify({ error: `Loop detected: '${fnName}' called ${SAME_ACTION_LIMIT} times in a row. Try a different approach or summarize.`, status: 'loop_detected' }),
+          });
+          turnErrors++;
+          continue;
+        }
+
         console.log(`[reason] trace=${traceId} iter=${i} Executing: ${fnName}`, JSON.stringify(fnArgs).slice(0, 200));
         actionsExecuted.push(fnName);
 
@@ -812,13 +858,22 @@ export async function reason(
           turnErrors++;
         }
 
-        if (result?.error || result?.status === 'failed') {
+        const failed = !!(result?.error || result?.status === 'failed');
+        if (failed) {
           turnErrors++;
+          // Circuit breaker tracking
+          skillFailureCounts[fnName] = (skillFailureCounts[fnName] || 0) + 1;
+          if (skillFailureCounts[fnName] >= CIRCUIT_BREAKER_THRESHOLD) {
+            circuitBrokenSkills.add(fnName);
+            console.warn(`[reason] trace=${traceId} Circuit breaker tripped for '${fnName}' after ${skillFailureCounts[fnName]} failures`);
+          }
+        } else {
+          // Reset failure count on success
+          skillFailureCounts[fnName] = 0;
         }
 
         if (!isBuiltInTool(fnName)) {
-          const skillFailed = !!(result?.error || result?.status === 'failed');
-          skillResults.push({ skill: fnName, status: skillFailed ? 'failed' : 'success', result: result?.result || result });
+          skillResults.push({ skill: fnName, status: failed ? 'failed' : 'success', result: result?.result || result });
           calledSkillNames.push(fnName);
         }
 
@@ -834,13 +889,16 @@ export async function reason(
         }
       }
 
+      // Report circuit-broken skills in resource meter
+      const brokenList = circuitBrokenSkills.size > 0 ? ` | Circuit-broken: ${[...circuitBrokenSkills].join(', ')}` : '';
+
       // Resource Awareness
       const budgetPct = Math.round((totalTokenUsage.total_tokens / tokenBudget) * 100);
       const iterationsLeft = maxIterations - i - 1;
       if (i > 0) {
         conversationMessages.push({
           role: 'system',
-          content: `[Resource meter] Iteration ${i + 1}/${maxIterations} | Tokens: ${totalTokenUsage.total_tokens.toLocaleString()}/${tokenBudget.toLocaleString()} (${budgetPct}%) | Errors this turn: ${turnErrors}/${msg.tool_calls.length} | Remaining iterations: ${iterationsLeft}`,
+          content: `[Resource meter] Iteration ${i + 1}/${maxIterations} | Tokens: ${totalTokenUsage.total_tokens.toLocaleString()}/${tokenBudget.toLocaleString()} (${budgetPct}%) | Errors this turn: ${turnErrors}/${msg.tool_calls.length} | Remaining iterations: ${iterationsLeft}${brokenList}`,
         });
       }
 
