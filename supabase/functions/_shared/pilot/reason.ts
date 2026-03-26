@@ -898,7 +898,7 @@ export async function reason(
       if (i > 0) {
         conversationMessages.push({
           role: 'system',
-          content: `[Resource meter] Iteration ${i + 1}/${maxIterations} | Tokens: ${totalTokenUsage.total_tokens.toLocaleString()}/${tokenBudget.toLocaleString()} (${budgetPct}%) | Errors this turn: ${turnErrors}/${msg.tool_calls.length} | Remaining iterations: ${iterationsLeft}`,
+          content: `[Resource meter] Iteration ${i + 1}/${maxIterations} | Tokens: ${totalTokenUsage.total_tokens.toLocaleString()}/${tokenBudget.toLocaleString()} (${budgetPct}%) | Errors this turn: ${turnErrors}/${msg.tool_calls.length} | Remaining iterations: ${iterationsLeft}${brokenList}`,
         });
       }
 
