@@ -1343,6 +1343,14 @@ export async function handleEvaluateOutcomes(supabase: any, args: {
     s.rate = s.total > 0 ? Math.round(((s.success + s.partial * 0.5) / s.total) * 100) : 0;
   }
 
+  // ─── Scorecard Hard Gates: Flag underperforming skills ─────────────────
+  const underperformingSkills: string[] = [];
+  for (const [skillName, stats] of Object.entries(scorecard)) {
+    if (stats.total >= 5 && stats.negative / stats.total > 0.6) {
+      underperformingSkills.push(skillName);
+    }
+  }
+
   const { data: learnings } = await supabase
     .from('agent_memory')
     .select('key, value, created_at')
@@ -1361,11 +1369,14 @@ export async function handleEvaluateOutcomes(supabase: any, args: {
   return {
     status: 'pending_evaluation',
     count: enrichedActivities.length,
+    auto_scored: autoScoredIds.length > 0 ? autoScoredIds.length : undefined,
     activities: enrichedActivities,
     correlation_data: correlationContext,
     skill_scorecard: scorecard,
+    underperforming_skills: underperformingSkills.length > 0 ? underperformingSkills : undefined,
     recent_learnings: recentLearnings.length ? recentLearnings : undefined,
-    instructions: 'For each activity, assess impact using its causal_data AND the broad correlation_data. Check the skill_scorecard to see historical patterns. Review recent_learnings to avoid repeating mistakes. Call record_outcome for each activity.',
+    eval_window_hours: EVAL_WINDOW_HOURS,
+    instructions: `For each activity, assess impact using correlation_data. Activities marked too_early (<${EVAL_WINDOW_HOURS}h) should use 'too_early' status unless hard evidence exists. Check skill_scorecard for patterns. ${underperformingSkills.length > 0 ? `⚠️ UNDERPERFORMING SKILLS (>60% negative, consider disabling): ${underperformingSkills.join(', ')}` : ''} Review recent_learnings to avoid repeating mistakes. Call record_outcome for each activity.`,
   };
 }
 
