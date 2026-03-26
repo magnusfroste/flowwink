@@ -1254,8 +1254,62 @@ export async function handleEvaluateOutcomes(supabase: any, args: {
 
   // Remove auto-scored from manual eval list
   filteredActivities = filteredActivities.filter((a: any) => !autoScoredIds.includes(a.id));
+
+  // ─── Consecutive Failure Escalation: auto-pause systemically broken skills ──
+  const CONSECUTIVE_FAIL_THRESHOLD = 3;
+  const { data: recentFailures } = await supabase
+    .from('agent_activity')
+    .select('skill_name, outcome_status, created_at')
+    .eq('outcome_status', 'negative')
+    .order('created_at', { ascending: false })
+    .limit(50);
+
+  const autoPausedSkills: string[] = [];
+  if (recentFailures?.length) {
+    // Group by skill and check for consecutive failures
+    const skillStreaks: Record<string, number> = {};
+    for (const f of recentFailures) {
+      if (!f.skill_name) continue;
+      skillStreaks[f.skill_name] = (skillStreaks[f.skill_name] || 0) + 1;
+    }
+    
+    for (const [skillName, count] of Object.entries(skillStreaks)) {
+      if (count >= CONSECUTIVE_FAIL_THRESHOLD) {
+        // Check if it's truly consecutive (no successes in between)
+        const { data: recentForSkill } = await supabase
+          .from('agent_activity')
+          .select('outcome_status')
+          .eq('skill_name', skillName)
+          .not('outcome_status', 'is', null)
+          .order('created_at', { ascending: false })
+          .limit(CONSECUTIVE_FAIL_THRESHOLD);
+        
+        const allNegative = recentForSkill?.every((a: any) => a.outcome_status === 'negative');
+        if (allNegative) {
+          // Auto-pause the skill
+          await supabase.from('agent_skills').update({ enabled: false }).eq('name', skillName);
+          autoPausedSkills.push(skillName);
+          console.log(`[evaluate_outcomes] Auto-paused skill '${skillName}' after ${CONSECUTIVE_FAIL_THRESHOLD} consecutive failures`);
+          
+          // Log the auto-pause action
+          await supabase.from('agent_activity').insert({
+            agent: 'flowpilot',
+            skill_name: 'system_auto_pause',
+            input: { skill: skillName, reason: 'consecutive_failure_escalation', threshold: CONSECUTIVE_FAIL_THRESHOLD },
+            output: { paused: true },
+            status: 'success',
+          });
+        }
+      }
+    }
+  }
+
   if (!filteredActivities.length && autoScoredIds.length > 0) {
-    return { status: 'auto_evaluated', count: autoScoredIds.length, message: `${autoScoredIds.length} activities auto-scored as negative via hard gates.` };
+    return {
+      status: 'auto_evaluated', count: autoScoredIds.length,
+      auto_paused_skills: autoPausedSkills.length > 0 ? autoPausedSkills : undefined,
+      message: `${autoScoredIds.length} activities auto-scored as negative via hard gates.${autoPausedSkills.length > 0 ? ` Auto-paused skills: ${autoPausedSkills.join(', ')}` : ''}`,
+    };
   }
 
   const now = new Date();
@@ -1370,13 +1424,14 @@ export async function handleEvaluateOutcomes(supabase: any, args: {
     status: 'pending_evaluation',
     count: enrichedActivities.length,
     auto_scored: autoScoredIds.length > 0 ? autoScoredIds.length : undefined,
+    auto_paused_skills: autoPausedSkills.length > 0 ? autoPausedSkills : undefined,
     activities: enrichedActivities,
     correlation_data: correlationContext,
     skill_scorecard: scorecard,
     underperforming_skills: underperformingSkills.length > 0 ? underperformingSkills : undefined,
     recent_learnings: recentLearnings.length ? recentLearnings : undefined,
     eval_window_hours: EVAL_WINDOW_HOURS,
-    instructions: `For each activity, assess impact using correlation_data. Activities marked too_early (<${EVAL_WINDOW_HOURS}h) should use 'too_early' status unless hard evidence exists. Check skill_scorecard for patterns. ${underperformingSkills.length > 0 ? `⚠️ UNDERPERFORMING SKILLS (>60% negative, consider disabling): ${underperformingSkills.join(', ')}` : ''} Review recent_learnings to avoid repeating mistakes. Call record_outcome for each activity.`,
+    instructions: `For each activity, assess impact using correlation_data. Activities marked too_early (<${EVAL_WINDOW_HOURS}h) should use 'too_early' status unless hard evidence exists. Check skill_scorecard for patterns. ${autoPausedSkills.length > 0 ? `🛑 AUTO-PAUSED SKILLS (consecutive failures): ${autoPausedSkills.join(', ')}. ` : ''}${underperformingSkills.length > 0 ? `⚠️ UNDERPERFORMING SKILLS (>60% negative, consider disabling): ${underperformingSkills.join(', ')}. ` : ''}Review recent_learnings to avoid repeating mistakes. Call record_outcome for each activity.`,
   };
 }
 

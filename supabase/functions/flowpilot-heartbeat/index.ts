@@ -167,6 +167,30 @@ serve(async (req) => {
   const traceId = generateTraceId('hb');
 
   try {
+    // Exponential backoff — check consecutive heartbeat failures
+    const { data: recentHeartbeats } = await supabase
+      .from('agent_activity')
+      .select('status')
+      .eq('skill_name', 'heartbeat')
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    const consecutiveFailures = (recentHeartbeats || []).findIndex((h: any) => h.status === 'success');
+    const failStreak = consecutiveFailures === -1 ? (recentHeartbeats || []).length : consecutiveFailures;
+    
+    if (failStreak >= 3) {
+      // Exponential backoff: skip every 2^(failStreak-2) runs
+      const skipProbability = 1 - (1 / Math.pow(2, failStreak - 2));
+      if (Math.random() < skipProbability) {
+        console.log(`[heartbeat] trace=${traceId} Backoff active (${failStreak} consecutive failures, ${Math.round(skipProbability * 100)}% skip rate) — skipping`);
+        return new Response(
+          JSON.stringify({ skipped: true, reason: 'exponential_backoff', fail_streak: failStreak, trace_id: traceId }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      console.log(`[heartbeat] trace=${traceId} Backoff: ${failStreak} failures but proceeding this run`);
+    }
+
     // Concurrency guard — only one heartbeat at a time (TTL: 10 minutes)
     const lockAcquired = await tryAcquireLock(supabase, 'heartbeat', 'heartbeat', 600);
     if (!lockAcquired) {
@@ -284,15 +308,30 @@ serve(async (req) => {
     );
   } catch (err: any) {
     const duration = Date.now() - startTime;
-    console.error(`[heartbeat] trace=${traceId} Error:`, err);
+    const isTimeout = err.message?.includes('wall-clock timeout');
+    console.error(`[heartbeat] trace=${traceId} ${isTimeout ? 'Timeout' : 'Error'}:`, err);
+
+    // Checkpoint save — preserve partial progress on failure/timeout
+    try {
+      await saveHeartbeatState(supabase, {
+        last_run: new Date().toISOString(),
+        objectives_advanced: [],
+        next_priorities: [],
+        pending_actions: [],
+        token_usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+        iteration_count: 0,
+        error: err.message,
+        was_timeout: isTimeout,
+      });
+    } catch { /* best effort checkpoint */ }
 
     await supabase.from("agent_activity").insert({
       agent: "flowpilot",
       skill_name: "heartbeat",
       input: { trigger: "scheduled", trace_id: traceId },
-      output: {},
+      output: { checkpoint: true, was_timeout: isTimeout },
       status: "failed",
-      error_message: err.message || "Unknown error",
+      error_message: (err.message || "Unknown error").slice(0, 500),
       duration_ms: duration,
     });
 
