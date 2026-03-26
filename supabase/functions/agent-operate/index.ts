@@ -30,6 +30,7 @@ const corsHeaders = {
 };
 
 const MAX_TOOL_ITERATIONS = 6;
+const MAX_OPERATE_WALL_CLOCK_MS = 90_000; // 90s wall-clock for interactive operate
 
 function sseEvent(writer: WritableStreamDefaultWriter, encoder: TextEncoder, event: string, data: any) {
   const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;

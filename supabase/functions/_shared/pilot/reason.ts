@@ -63,6 +63,7 @@ const MEMORY_FLUSH_THRESHOLD = 0.80;
 const SKILL_TIMEOUT_MS = 30_000;
 const CIRCUIT_BREAKER_THRESHOLD = 3;
 const SAME_ACTION_LIMIT = 3;
+const MAX_SELF_REPAIR_RETRIES = 2;
 
 const BUILT_IN_TOOL_NAMES = new Set([
   'memory_write', 'memory_read', 'memory_delete',

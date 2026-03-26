@@ -90,51 +90,50 @@ serve(async (req) => {
       });
     }
 
-    // 4. Route to handler
+    // 4. Route to handler — wrapped in try/catch for normalized error handling
     let result: unknown;
     const handler = skill.handler as string;
 
-    if (handler.startsWith('edge:')) {
-      // Invoke another edge function
-      const fnName = handler.replace('edge:', '');
-      const response = await fetch(`${supabaseUrl}/functions/v1/${fnName}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${serviceKey}`,
-        },
-        body: JSON.stringify(args),
-      });
-      const edgeResult = await response.json();
-      // Propagate HTTP errors from edge functions so activity is correctly logged as failed
-      if (!response.ok && !edgeResult.error) {
-        edgeResult.error = `Edge function '${fnName}' returned HTTP ${response.status}`;
+    try {
+      if (handler.startsWith('edge:')) {
+        const fnName = handler.replace('edge:', '');
+        const response = await fetch(`${supabaseUrl}/functions/v1/${fnName}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${serviceKey}`,
+          },
+          body: JSON.stringify(args),
+        });
+        const edgeResult = await response.json();
+        if (!response.ok && !edgeResult.error) {
+          edgeResult.error = `Edge function '${fnName}' returned HTTP ${response.status}`;
+        }
+        result = edgeResult;
+
+      } else if (handler.startsWith('module:')) {
+        const moduleName = handler.replace('module:', '');
+        await autoActivateModule(supabase, moduleName);
+        result = await executeModuleAction(supabase, moduleName, skill.name, args);
+
+      } else if (handler.startsWith('db:')) {
+        const table = handler.replace('db:', '');
+        result = await executeDbAction(supabase, table, skill.name, args);
+
+      } else if (handler.startsWith('webhook:')) {
+        result = await executeWebhook(supabase, args);
+
+      } else if (handler.startsWith('a2a:')) {
+        const peerName = handler.replace('a2a:', '');
+        result = await executeA2ARequest(supabase, peerName, args);
+
+      } else {
+        result = { error: `Unknown handler type: ${handler}` };
       }
-      result = edgeResult;
-
-    } else if (handler.startsWith('module:')) {
-      // Module registry — route through the module's table
-      const moduleName = handler.replace('module:', '');
-      // Auto-activate module if not enabled
-      await autoActivateModule(supabase, moduleName);
-      result = await executeModuleAction(supabase, moduleName, skill.name, args);
-
-    } else if (handler.startsWith('db:')) {
-      // Direct DB operation
-      const table = handler.replace('db:', '');
-      result = await executeDbAction(supabase, table, skill.name, args);
-
-    } else if (handler.startsWith('webhook:')) {
-      // External webhook (N8N etc)
-      result = await executeWebhook(supabase, args);
-
-    } else if (handler.startsWith('a2a:')) {
-      // A2A Federation — route to peer agent
-      const peerName = handler.replace('a2a:', '');
-      result = await executeA2ARequest(supabase, peerName, args);
-
-    } else {
-      result = { error: `Unknown handler type: ${handler}` };
+    } catch (handlerErr: any) {
+      // Normalize all handler exceptions to {error: string} format
+      console.error(`[agent-execute] Handler '${handler}' threw:`, handlerErr.message);
+      result = { error: `Handler exception: ${handlerErr.message || 'Unknown error'}`, status: 'failed' };
     }
 
     // 5. Log activity (with objective context and trace_id if provided)
