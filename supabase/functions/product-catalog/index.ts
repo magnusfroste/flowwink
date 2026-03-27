@@ -30,9 +30,6 @@ serve(async (req: Request) => {
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
 
-    if (slug) {
-      query = query.eq("slug", slug);
-    }
     if (category) {
       query = query.eq("category", category);
     }
