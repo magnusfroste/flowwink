@@ -180,8 +180,9 @@ export const defaultModulesSettings: ModulesSettings = {
     category: 'data',
     autonomy: 'config-required',
     adminUI: true,
-    requiredIntegrations: ['stripe'],
-    optionalIntegrations: ['resend', 'stripe_webhook'],
+    optionalIntegrations: ['stripe', 'resend', 'stripe_webhook'],
+    sandboxMode: true, // Default to sandbox — no real payments until Stripe is configured
+    sandboxAutoPayDays: 0, // Instant payment simulation by default
   },
   contentApi: {
     enabled: false,
