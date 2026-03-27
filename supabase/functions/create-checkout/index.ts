@@ -47,29 +47,30 @@ serve(async (req: Request) => {
 
   try {
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeKey) {
-      throw new Error("Stripe secret key not configured");
-    }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Check if Stripe integration is enabled
+    // Check integration + module settings
     const { data: integrationSettings } = await supabase
       .from("site_settings")
       .select("value")
       .eq("key", "integrations")
       .maybeSingle();
 
+    const { data: moduleSettings } = await supabase
+      .from("site_settings")
+      .select("value")
+      .eq("key", "modules")
+      .maybeSingle();
+
     const stripeEnabled = (integrationSettings?.value as any)?.stripe?.enabled ?? false;
-    if (!stripeEnabled) {
-      logStep("Stripe integration is disabled");
-      return new Response(
-        JSON.stringify({ error: "Payments are currently disabled" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    const ecomConfig = (moduleSettings?.value as any)?.ecommerce ?? {};
+    const sandboxMode = ecomConfig.sandboxMode ?? (!stripeEnabled); // Auto-sandbox if Stripe is off
+    const sandboxAutoPayDays = ecomConfig.sandboxAutoPayDays ?? 0;
+
+    logStep("Mode check", { stripeEnabled, sandboxMode, sandboxAutoPayDays });
 
     const {
       items,
