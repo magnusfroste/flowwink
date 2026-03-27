@@ -78,6 +78,13 @@ export const navigationGroups: NavGroup[] = [
       { name: "Bookings", href: "/admin/bookings", icon: CalendarDays, moduleId: "bookings" },
       { name: "Booking Services", href: "/admin/bookings/services", icon: CalendarDays, moduleId: "bookings" },
       { name: "Booking Availability", href: "/admin/bookings/availability", icon: CalendarDays, moduleId: "bookings" },
+    ],
+  },
+  {
+    label: "E-commerce",
+    adminOnly: true,
+    items: [
+      { name: "Customers", href: "/admin/customers", icon: UserRound, moduleId: "ecommerce" },
       { name: "Products", href: "/admin/products", icon: Package, moduleId: "ecommerce" },
       { name: "Orders", href: "/admin/orders", icon: ShoppingCart, moduleId: "ecommerce" },
     ],
