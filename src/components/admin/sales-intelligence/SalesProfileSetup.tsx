@@ -113,6 +113,7 @@ export function SalesProfileSetup() {
               <Textarea
                 value={String(userData[field.key] || '')}
                 onChange={e => setUserData(prev => ({ ...prev, [field.key]: e.target.value }))}
+                placeholder={field.placeholder}
                 rows={2}
                 className="text-sm"
               />
@@ -120,6 +121,7 @@ export function SalesProfileSetup() {
               <Input
                 value={String(userData[field.key] || '')}
                 onChange={e => setUserData(prev => ({ ...prev, [field.key]: e.target.value }))}
+                placeholder={field.placeholder}
                 className="text-sm"
               />
             )}
