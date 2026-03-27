@@ -29,7 +29,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
   aiChatPosition: 'Embedded autonomous agent for site operations',
   blogPosts: flowwinkBlogPosts,
   kbCategories: flowwinkKbCategories,
-  requiredModules: ['blog', 'knowledgeBase', 'chat', 'liveSupport', 'newsletter', 'leads', 'deals', 'companies', 'forms', 'ecommerce', 'bookings', 'analytics', 'contentApi', 'webinars', 'resume'],
+  requiredModules: ['blog', 'knowledgeBase', 'chat', 'liveSupport', 'newsletter', 'leads', 'deals', 'companies', 'forms', 'ecommerce', 'bookings', 'analytics', 'contentApi', 'webinars', 'resume', 'tickets', 'federation', 'salesIntelligence', 'paidGrowth'],
   pages: [
     // ═══════════════════════════════════════════════════════════
     // HOME — The Pitch + Pricing (convince & convert in one scroll)
