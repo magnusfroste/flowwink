@@ -206,7 +206,7 @@ export function useUpdateTicket() {
     mutationFn: async ({ id, ...updates }: Partial<Ticket> & { id: string }) => {
       const { error } = await supabase
         .from('tickets')
-        .update({ ...updates, updated_at: new Date().toISOString() } as Record<string, unknown>)
+        .update({ ...updates, updated_at: new Date().toISOString() } as never)
         .eq('id', id);
 
       if (error) throw error;
