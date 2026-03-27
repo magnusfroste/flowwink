@@ -207,24 +207,28 @@ Deno.serve(async (req) => {
 
     const durationMs = Date.now() - startTime;
 
-    // Update activity log
+    // Update activity log — peer_unavailable is logged as status, not as a system error
+    const activityStatus = status === 'peer_unavailable' ? 'peer_unavailable' : status;
     if (activityRow?.id) {
       await supabase.from('a2a_activity').update({
         output: result,
-        status,
+        status: activityStatus === 'peer_unavailable' ? 'error' : activityStatus,
         duration_ms: durationMs,
         error_message: errorMessage,
       }).eq('id', activityRow.id);
     }
 
-    // Update peer stats
-    await supabase.from('a2a_peers').update({
-      last_seen_at: new Date().toISOString(),
-      request_count: (peer.request_count || 0) + 1,
-    }).eq('id', peer.id);
+    // Only update last_seen_at if peer actually responded
+    if (status === 'success') {
+      await supabase.from('a2a_peers').update({
+        last_seen_at: new Date().toISOString(),
+        request_count: (peer.request_count || 0) + 1,
+      }).eq('id', peer.id);
+    }
 
+    const httpStatus = status === 'success' ? 200 : status === 'peer_unavailable' ? 503 : 502;
     return new Response(JSON.stringify(result), {
-      status: status === 'success' ? 200 : 502,
+      status: httpStatus,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (err: any) {
