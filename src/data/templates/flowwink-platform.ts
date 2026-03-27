@@ -958,7 +958,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
                 id: 'eb-courses',
                 title: 'Online Courses',
                 description: '40+ expert-led lessons. Learn at your pace, apply immediately.',
-                image: '/templates/blog/team-brainstorming.jpg',
+                image: 'https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&w=800',
                 colSpan: 1,
                 rowSpan: 1,
                 ctaText: 'Start Learning',
