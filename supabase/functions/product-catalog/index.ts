@@ -25,7 +25,7 @@ serve(async (req: Request) => {
 
     let query = supabase
       .from("products")
-      .select("id, name, slug, description, type, price_cents, currency, image_url, category, stock_quantity, is_active, created_at", { count: "exact" })
+      .select("id, name, description, type, price_cents, currency, image_url, category, stock_quantity, is_active, created_at", { count: "exact" })
       .eq("is_active", true)
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
