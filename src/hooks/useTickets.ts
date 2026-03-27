@@ -233,14 +233,14 @@ export function useAddTicketComment() {
     }) => {
       const { error } = await supabase
         .from('ticket_comments')
-        .insert({
+        .insert([{
           ticket_id: input.ticket_id,
           content: input.content,
           is_internal: input.is_internal || false,
           author_type: 'agent',
           author_id: input.author_id || null,
           author_name: input.author_name || null,
-        } as Record<string, unknown>);
+        }]);
 
       if (error) throw error;
     },

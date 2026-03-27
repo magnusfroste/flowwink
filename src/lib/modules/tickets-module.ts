@@ -39,7 +39,7 @@ export const ticketsModule: ModuleDefinition<TicketModuleInput, TicketModuleOutp
 
       const { data, error } = await supabase
         .from('tickets')
-        .insert({
+        .insert([{
           subject: validated.subject,
           description: validated.description || null,
           priority: validated.priority,
@@ -49,7 +49,7 @@ export const ticketsModule: ModuleDefinition<TicketModuleInput, TicketModuleOutp
           lead_id: validated.lead_id || null,
           company_id: validated.company_id || null,
           source: validated.source,
-        } as Record<string, unknown>)
+        }])
         .select('id')
         .single();
 
