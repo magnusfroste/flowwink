@@ -18,7 +18,6 @@ serve(async (req: Request) => {
     );
 
     const url = new URL(req.url);
-    const slug = url.searchParams.get("slug");
     const category = url.searchParams.get("category");
     const limit = Math.min(parseInt(url.searchParams.get("limit") || "50"), 100);
     const offset = parseInt(url.searchParams.get("offset") || "0");
