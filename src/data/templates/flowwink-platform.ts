@@ -684,9 +684,9 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             title: 'Example: FlowPilot Resume Block Response',
             subtitle: '"Find me senior React consultants available for a 3-month project." — FlowPilot sourced, scored, and rendered these profiles autonomously from the CRM.',
             members: [
-              { id: 'res-1', name: 'Elena Vasquez', role: 'Senior React Developer', image: '/templates/team/elena-vasquez.jpg', bio: '8 years React & TypeScript. Available from July. Match score: 97%.', linkedin: 'https://linkedin.com' },
-              { id: 'res-2', name: 'Jonas Berg', role: 'Full-Stack Engineer', image: '/templates/team/jonas-berg.jpg', bio: '6 years React, Node.js, AWS. Available now. Match score: 94%.', linkedin: 'https://linkedin.com' },
-              { id: 'res-3', name: 'Priya Nair', role: 'Frontend Architect', image: '/templates/team/priya-nair.jpg', bio: '10 years frontend, design systems, React Native. Part-time available. Match score: 91%.', linkedin: 'https://linkedin.com' },
+              { id: 'res-1', name: 'Elena Vasquez', role: 'Senior React Developer', image: 'https://images.pexels.com/photos/3756679/pexels-photo-3756679.jpeg?auto=compress&w=400', bio: '8 years React & TypeScript. Available from July. Match score: 97%.', linkedin: 'https://linkedin.com' },
+              { id: 'res-2', name: 'Jonas Berg', role: 'Full-Stack Engineer', image: 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&w=400', bio: '6 years React, Node.js, AWS. Available now. Match score: 94%.', linkedin: 'https://linkedin.com' },
+              { id: 'res-3', name: 'Priya Nair', role: 'Frontend Architect', image: 'https://images.pexels.com/photos/3769021/pexels-photo-3769021.jpeg?auto=compress&w=400', bio: '10 years frontend, design systems, React Native. Part-time available. Match score: 91%.', linkedin: 'https://linkedin.com' },
             ],
             columns: 3,
             layout: 'grid',
