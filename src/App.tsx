@@ -186,6 +186,7 @@ const router = createBrowserRouter([
       { path: "/admin/companies/:id", element: <CompanyDetailPage /> },
       { path: "/admin/products", element: <ProductsPage /> },
       { path: "/admin/orders", element: <OrdersPage /> },
+      { path: "/admin/customers", element: <CustomersPage /> },
       { path: "/admin/bookings", element: <BookingsPage /> },
       { path: "/admin/bookings/services", element: <BookingServicesPage /> },
       { path: "/admin/bookings/availability", element: <BookingAvailabilityPage /> },
