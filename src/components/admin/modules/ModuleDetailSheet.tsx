@@ -531,6 +531,67 @@ export function ModuleDetailSheet({
               </>
             )}
 
+            {/* E-commerce Sandbox Settings */}
+            {moduleId === 'ecommerce' && moduleConfig && (
+              <>
+                <Separator />
+                <div>
+                  <h4 className="text-sm font-semibold mb-3">Payment Settings</h4>
+                  <div className="rounded-lg border p-4 bg-muted/20 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-sm font-medium">Payment Mode</span>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {moduleConfig.optionalIntegrations?.includes('stripe')
+                            ? 'Stripe is optional — sandbox mode activates automatically when Stripe is inactive.'
+                            : 'Configure Stripe in Integrations to enable real payments.'}
+                        </p>
+                      </div>
+                      <Badge variant={isEnabled ? 'default' : 'secondary'} className="text-xs">
+                        Sandbox
+                      </Badge>
+                    </div>
+                    <Separator />
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="sandbox-days" className="text-sm">
+                          Auto-pay delay
+                        </Label>
+                        <span className="text-sm font-mono text-muted-foreground">
+                          {(moduleConfig.sandboxAutoPayDays ?? 0) === 0
+                            ? 'Instant'
+                            : `${moduleConfig.sandboxAutoPayDays} days`}
+                        </span>
+                      </div>
+                      <Slider
+                        id="sandbox-days"
+                        min={0}
+                        max={30}
+                        step={1}
+                        value={[moduleConfig.sandboxAutoPayDays ?? 0]}
+                        onValueChange={([val]) => {
+                          if (!modules) return;
+                          const updated = {
+                            ...modules,
+                            ecommerce: {
+                              ...modules.ecommerce,
+                              sandboxAutoPayDays: val,
+                            },
+                          };
+                          updateModules.mutate(updated);
+                        }}
+                      />
+                      <p className="text-[11px] text-muted-foreground">
+                        {(moduleConfig.sandboxAutoPayDays ?? 0) === 0
+                          ? 'Orders are marked as paid immediately — ideal for quick testing.'
+                          : `Orders stay "pending" for ${moduleConfig.sandboxAutoPayDays} days before auto-payment — simulates real payment delays for FlowPilot and OpenClaw testing.`}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+
 
             <div className="rounded-lg border p-3 bg-muted/20">
               <div className="flex items-center gap-2 mb-2">
