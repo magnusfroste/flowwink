@@ -1365,7 +1365,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
       price_cents: 99000,
       currency: 'EUR',
       type: 'recurring',
-      image_url: '/templates/misc/money-growth.jpg',
+      image_url: 'https://images.pexels.com/photos/7567443/pexels-photo-7567443.jpeg?auto=compress&w=600',
       is_active: true,
     },
     {
