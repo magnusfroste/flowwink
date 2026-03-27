@@ -35,12 +35,15 @@ import {
 import { moduleRegistry } from "@/lib/module-registry";
 import type { ModuleCapability } from "@/types/module-contracts";
 import type { ModuleStats } from "@/hooks/useModuleStats";
-import type { ModuleAutonomy } from "@/hooks/useModules";
+import type { ModuleAutonomy, ModuleConfig, ModulesSettings } from "@/hooks/useModules";
+import { useModules, useUpdateModules } from "@/hooks/useModules";
 import { formatDistanceToNow } from "date-fns";
 import { useExtensionRelay } from "@/hooks/useExtensionRelay";
 import { toast } from "sonner";
 import JSZip from "jszip";
 import { FlowPilotDetails } from "./FlowPilotDetails";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
 
 interface ModuleDetailSheetProps {
   open: boolean;
@@ -48,6 +51,7 @@ interface ModuleDetailSheetProps {
   moduleId: string;
   moduleName: string;
   moduleDescription: string;
+  moduleConfig?: ModuleConfig;
   stats?: ModuleStats;
   isEnabled: boolean;
   autonomy: ModuleAutonomy;
@@ -474,6 +478,7 @@ export function ModuleDetailSheet({
   moduleId,
   moduleName,
   moduleDescription,
+  moduleConfig,
   stats,
   isEnabled,
   autonomy,
@@ -482,6 +487,8 @@ export function ModuleDetailSheet({
   // Get module info from registry
   const registryModule = moduleRegistry.list().find(m => m.id === moduleId);
   const apiExample = API_EXAMPLES[moduleId];
+  const { data: modules } = useModules();
+  const updateModules = useUpdateModules();
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -521,6 +528,67 @@ export function ModuleDetailSheet({
               <>
                 <Separator />
                 <FlowPilotDetails />
+              </>
+            )}
+
+            {/* E-commerce Sandbox Settings */}
+            {moduleId === 'ecommerce' && moduleConfig && (
+              <>
+                <Separator />
+                <div>
+                  <h4 className="text-sm font-semibold mb-3">Payment Settings</h4>
+                  <div className="rounded-lg border p-4 bg-muted/20 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-sm font-medium">Payment Mode</span>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {moduleConfig.optionalIntegrations?.includes('stripe')
+                            ? 'Stripe is optional — sandbox mode activates automatically when Stripe is inactive.'
+                            : 'Configure Stripe in Integrations to enable real payments.'}
+                        </p>
+                      </div>
+                      <Badge variant={isEnabled ? 'default' : 'secondary'} className="text-xs">
+                        Sandbox
+                      </Badge>
+                    </div>
+                    <Separator />
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="sandbox-days" className="text-sm">
+                          Auto-pay delay
+                        </Label>
+                        <span className="text-sm font-mono text-muted-foreground">
+                          {(moduleConfig.sandboxAutoPayDays ?? 0) === 0
+                            ? 'Instant'
+                            : `${moduleConfig.sandboxAutoPayDays} days`}
+                        </span>
+                      </div>
+                      <Slider
+                        id="sandbox-days"
+                        min={0}
+                        max={30}
+                        step={1}
+                        value={[moduleConfig.sandboxAutoPayDays ?? 0]}
+                        onValueChange={([val]) => {
+                          if (!modules) return;
+                          const updated = {
+                            ...modules,
+                            ecommerce: {
+                              ...modules.ecommerce,
+                              sandboxAutoPayDays: val,
+                            },
+                          };
+                          updateModules.mutate(updated);
+                        }}
+                      />
+                      <p className="text-[11px] text-muted-foreground">
+                        {(moduleConfig.sandboxAutoPayDays ?? 0) === 0
+                          ? 'Orders are marked as paid immediately — ideal for quick testing.'
+                          : `Orders stay "pending" for ${moduleConfig.sandboxAutoPayDays} days before auto-payment — simulates real payment delays for FlowPilot and OpenClaw testing.`}
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </>
             )}
 

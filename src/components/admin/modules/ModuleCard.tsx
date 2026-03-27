@@ -282,6 +282,7 @@ export function ModuleCard({
         moduleId={moduleId}
         moduleName={config.name}
         moduleDescription={config.description}
+        moduleConfig={config}
         stats={stats}
         isEnabled={isEnabled}
         autonomy={autonomy}
