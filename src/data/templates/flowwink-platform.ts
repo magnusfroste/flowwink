@@ -1356,7 +1356,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
       price_cents: 4900,
       currency: 'EUR',
       type: 'recurring',
-      image_url: '/templates/blog/server-infrastructure.jpg',
+      image_url: 'https://images.pexels.com/photos/325229/pexels-photo-325229.jpeg?auto=compress&w=600',
       is_active: true,
     },
     {
