@@ -1134,7 +1134,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
                 id: 'sc-team',
                 title: 'Dedicated Team',
                 description: 'Skilled professionals committed to exceeding your expectations.',
-                image: '/templates/misc/dedicated-team.jpg',
+                image: 'https://images.pexels.com/photos/3182812/pexels-photo-3182812.jpeg?auto=compress&w=1200',
                 ctaText: 'Meet the Team',
                 ctaUrl: '#services-features',
                 textAlignment: 'left',
