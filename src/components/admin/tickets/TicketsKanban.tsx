@@ -1,5 +1,5 @@
-import { useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useMemo } from "react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
@@ -10,8 +10,8 @@ import {
   TICKET_PRIORITY_COLORS,
   TICKET_PRIORITY_LABELS,
   TICKET_CATEGORY_LABELS,
-  useUpdateTicket,
 } from "@/hooks/useTickets";
+import { TicketDetailDrawer } from "./TicketDetailDrawer";
 import { formatDistanceToNow } from "date-fns";
 
 const KANBAN_COLUMNS: TicketStatus[] = ["new", "open", "in_progress", "waiting", "resolved"];
@@ -22,7 +22,7 @@ interface TicketsKanbanProps {
 }
 
 export function TicketsKanban({ tickets, isLoading }: TicketsKanbanProps) {
-  const updateTicket = useUpdateTicket();
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
 
   const columns = useMemo(() => {
     return KANBAN_COLUMNS.map((status) => ({
@@ -49,37 +49,49 @@ export function TicketsKanban({ tickets, isLoading }: TicketsKanbanProps) {
   }
 
   return (
-    <ScrollArea className="w-full">
-      <div className="flex gap-4 pb-4 min-w-max">
-        {columns.map((col) => (
-          <div key={col.status} className="w-[300px] flex-shrink-0">
-            <div className="flex items-center gap-2 mb-3 px-1">
-              <h3 className="text-sm font-medium text-muted-foreground">{col.label}</h3>
-              <Badge variant="secondary" className="text-xs">
-                {col.tickets.length}
-              </Badge>
+    <>
+      <ScrollArea className="w-full">
+        <div className="flex gap-4 pb-4 min-w-max">
+          {columns.map((col) => (
+            <div key={col.status} className="w-[300px] flex-shrink-0">
+              <div className="flex items-center gap-2 mb-3 px-1">
+                <h3 className="text-sm font-medium text-muted-foreground">{col.label}</h3>
+                <Badge variant="secondary" className="text-xs">
+                  {col.tickets.length}
+                </Badge>
+              </div>
+              <div className="space-y-2">
+                {col.tickets.map((ticket) => (
+                  <TicketCard
+                    key={ticket.id}
+                    ticket={ticket}
+                    onClick={() => setSelectedTicket(ticket)}
+                  />
+                ))}
+                {col.tickets.length === 0 && (
+                  <div className="rounded-lg border border-dashed border-muted-foreground/20 p-6 text-center text-xs text-muted-foreground">
+                    No tickets
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="space-y-2">
-              {col.tickets.map((ticket) => (
-                <TicketCard key={ticket.id} ticket={ticket} />
-              ))}
-              {col.tickets.length === 0 && (
-                <div className="rounded-lg border border-dashed border-muted-foreground/20 p-6 text-center text-xs text-muted-foreground">
-                  No tickets
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-      <ScrollBar orientation="horizontal" />
-    </ScrollArea>
+          ))}
+        </div>
+        <ScrollBar orientation="horizontal" />
+      </ScrollArea>
+
+      <TicketDetailDrawer
+        ticket={selectedTicket}
+        open={!!selectedTicket}
+        onOpenChange={(open) => !open && setSelectedTicket(null)}
+      />
+    </>
   );
 }
 
-function TicketCard({ ticket }: { ticket: Ticket }) {
+function TicketCard({ ticket, onClick }: { ticket: Ticket; onClick: () => void }) {
   return (
-    <Card className="cursor-pointer hover:shadow-sm transition-shadow">
+    <Card className="cursor-pointer hover:shadow-sm transition-shadow" onClick={onClick}>
       <CardContent className="p-3 space-y-2">
         <div className="flex items-start justify-between gap-2">
           <p className="text-sm font-medium leading-tight line-clamp-2">{ticket.subject}</p>
