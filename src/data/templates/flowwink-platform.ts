@@ -899,7 +899,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             title: 'Your Store With a Brain',
             subtitle: 'FlowPilot knows every product, recommends the right fit, handles checkout, and runs campaigns — all autonomously. Conversational commerce, not just a catalog.',
             backgroundType: 'image',
-            backgroundImage: '/templates/hero/abstract-gradient.jpg',
+            backgroundImage: 'https://images.pexels.com/photos/5632399/pexels-photo-5632399.jpeg?auto=compress&w=1920',
             heightMode: '60vh',
             contentAlignment: 'center',
             overlayOpacity: 50,
