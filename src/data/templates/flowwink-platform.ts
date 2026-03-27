@@ -1058,7 +1058,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
     {
       title: 'For E-Commerce',
       slug: 'for-ecommerce',
-      menu_order: 4,
+      menu_order: 5,
       showInMenu: true,
       meta: {
         description: 'FlowWink for e-commerce — AI shopping assistant, product catalog, Stripe checkout, and autonomous campaigns.',
