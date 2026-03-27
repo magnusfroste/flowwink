@@ -10,6 +10,7 @@
  * Page structure:
  *   Home             → Pitch + Pricing (convince & convert)
  *   FlowPilot        → The agent (differentiate, A2A)
+ *   For Agencies     → Primary target: digital agencies (white-label, multi-site)
  *   For Consultancies → Vertical elevator pitch (consult-agency best-of)
  *   For E-Commerce    → Vertical elevator pitch (digital-shop best-of)
  *   For Services      → Vertical elevator pitch (service-pro best-of)
