@@ -1116,7 +1116,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
                 id: 'sc-consult',
                 title: 'Expert Consultation',
                 description: 'Get personalized advice from our team of experienced professionals.',
-                image: '/templates/misc/expert-consultation.jpg',
+                image: 'https://images.pexels.com/photos/3184292/pexels-photo-3184292.jpeg?auto=compress&w=1200',
                 ctaText: 'Book Now',
                 ctaUrl: '#services-booking',
                 textAlignment: 'left',
