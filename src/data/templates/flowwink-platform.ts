@@ -948,7 +948,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
                 id: 'eb-templates',
                 title: 'Templates',
                 description: 'Professional pitch decks, brand kits, and social media packs. Download once, use forever.',
-                image: '/templates/misc/templates-product.jpg',
+                image: 'https://images.pexels.com/photos/196644/pexels-photo-196644.jpeg?auto=compress&w=800',
                 colSpan: 2,
                 rowSpan: 2,
                 ctaText: 'Browse Templates',
