@@ -1230,7 +1230,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             backgroundType: 'video',
             videoUrl: 'https://videos.pexels.com/video-files/3195394/3195394-uhd_2560_1440_25fps.mp4',
             videoType: 'direct',
-            videoPosterUrl: '/templates/misc/medical-facility.jpg',
+            videoPosterUrl: 'https://images.pexels.com/photos/247786/pexels-photo-247786.jpeg?auto=compress&w=1920',
             videoLoop: true,
             videoMuted: true,
             heightMode: '60vh',
