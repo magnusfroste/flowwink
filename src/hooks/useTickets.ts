@@ -170,7 +170,7 @@ export function useCreateTicket() {
     mutationFn: async (input: CreateTicketInput) => {
       const { data, error } = await supabase
         .from('tickets')
-        .insert({
+        .insert([{
           subject: input.subject,
           description: input.description || null,
           priority: input.priority || 'medium',
@@ -181,7 +181,7 @@ export function useCreateTicket() {
           company_id: input.company_id || null,
           source: input.source || 'manual',
           assigned_to: input.assigned_to || null,
-        } as Record<string, unknown>)
+        }])
         .select('id')
         .single();
 
