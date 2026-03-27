@@ -163,10 +163,10 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
           data: {
             heading: 'See it in action for your industry',
             links: [
+              { id: 'ql1-agency', label: 'Digital Agencies', url: '/for-agencies' },
               { id: 'ql1-consult', label: 'Consultancies', url: '/for-consultancies' },
               { id: 'ql1-ecom', label: 'E-Commerce', url: '/for-ecommerce' },
               { id: 'ql1-services', label: 'Service Business', url: '/for-services' },
-              { id: 'ql1-health', label: 'Healthcare', url: '/for-healthcare' },
             ],
             variant: 'dark',
             layout: 'split',
