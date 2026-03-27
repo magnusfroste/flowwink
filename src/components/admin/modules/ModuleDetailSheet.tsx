@@ -35,12 +35,15 @@ import {
 import { moduleRegistry } from "@/lib/module-registry";
 import type { ModuleCapability } from "@/types/module-contracts";
 import type { ModuleStats } from "@/hooks/useModuleStats";
-import type { ModuleAutonomy } from "@/hooks/useModules";
+import type { ModuleAutonomy, ModuleConfig, ModulesSettings } from "@/hooks/useModules";
+import { useModules, useUpdateModules } from "@/hooks/useModules";
 import { formatDistanceToNow } from "date-fns";
 import { useExtensionRelay } from "@/hooks/useExtensionRelay";
 import { toast } from "sonner";
 import JSZip from "jszip";
 import { FlowPilotDetails } from "./FlowPilotDetails";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
 
 interface ModuleDetailSheetProps {
   open: boolean;
@@ -48,6 +51,7 @@ interface ModuleDetailSheetProps {
   moduleId: string;
   moduleName: string;
   moduleDescription: string;
+  moduleConfig?: ModuleConfig;
   stats?: ModuleStats;
   isEnabled: boolean;
   autonomy: ModuleAutonomy;
