@@ -18,19 +18,19 @@ serve(async (req: Request) => {
     );
 
     const url = new URL(req.url);
-    const category = url.searchParams.get("category");
+    const categoryId = url.searchParams.get("category_id");
     const limit = Math.min(parseInt(url.searchParams.get("limit") || "50"), 100);
     const offset = parseInt(url.searchParams.get("offset") || "0");
 
     let query = supabase
       .from("products")
-      .select("id, name, description, type, price_cents, currency, image_url, category, stock_quantity, is_active, created_at", { count: "exact" })
+      .select("id, name, description, type, price_cents, currency, image_url, category_id, stock_quantity, is_active, created_at", { count: "exact" })
       .eq("is_active", true)
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
 
-    if (category) {
-      query = query.eq("category", category);
+    if (categoryId) {
+      query = query.eq("category_id", categoryId);
     }
 
     const { data: products, error, count } = await query;
