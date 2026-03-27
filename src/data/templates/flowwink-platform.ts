@@ -10,6 +10,7 @@
  * Page structure:
  *   Home             → Pitch + Pricing (convince & convert)
  *   FlowPilot        → The agent (differentiate, A2A)
+ *   For Agencies     → Primary target: digital agencies (white-label, multi-site)
  *   For Consultancies → Vertical elevator pitch (consult-agency best-of)
  *   For E-Commerce    → Vertical elevator pitch (digital-shop best-of)
  *   For Services      → Vertical elevator pitch (service-pro best-of)
@@ -29,7 +30,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
   aiChatPosition: 'Embedded autonomous agent for site operations',
   blogPosts: flowwinkBlogPosts,
   kbCategories: flowwinkKbCategories,
-  requiredModules: ['blog', 'knowledgeBase', 'chat', 'liveSupport', 'newsletter', 'leads', 'deals', 'companies', 'forms', 'ecommerce', 'bookings', 'analytics', 'contentApi', 'webinars', 'resume'],
+  requiredModules: ['blog', 'knowledgeBase', 'chat', 'liveSupport', 'newsletter', 'leads', 'deals', 'companies', 'forms', 'ecommerce', 'bookings', 'analytics', 'contentApi', 'webinars', 'resume', 'tickets', 'federation', 'salesIntelligence', 'paidGrowth'],
   pages: [
     // ═══════════════════════════════════════════════════════════
     // HOME — The Pitch + Pricing (convince & convert in one scroll)
@@ -104,8 +105,8 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
           data: {
             items: [
               { id: 's1', value: '58+', label: 'Block Types' },
-              { id: 's2', value: '30+', label: 'Agent Skills' },
-              { id: 's3', value: '21', label: 'Modules' },
+              { id: 's2', value: '40+', label: 'Agent Skills' },
+              { id: 's3', value: '22', label: 'Modules' },
               { id: 's4', value: '100%', label: 'Self-Hostable' },
             ],
             columns: 4,
@@ -163,10 +164,10 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
           data: {
             heading: 'See it in action for your industry',
             links: [
+              { id: 'ql1-agency', label: 'Digital Agencies', url: '/for-agencies' },
               { id: 'ql1-consult', label: 'Consultancies', url: '/for-consultancies' },
               { id: 'ql1-ecom', label: 'E-Commerce', url: '/for-ecommerce' },
               { id: 'ql1-services', label: 'Service Business', url: '/for-services' },
-              { id: 'ql1-health', label: 'Healthcare', url: '/for-healthcare' },
             ],
             variant: 'dark',
             layout: 'split',
@@ -178,18 +179,18 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
           type: 'bento-grid',
           data: {
             title: 'The Autonomous Loop',
-            subtitle: 'FlowPilot isn\'t a chatbot bolted onto a CMS. It\'s an autonomous operator with memory, goals, and 30+ skills — replacing your CMS, chatbot, marketing automation, and CRM with a single intelligence that never stops working.',
+            subtitle: 'FlowPilot isn\'t a chatbot bolted onto a CMS. It\'s an autonomous operator with memory, goals, and 40+ skills — replacing your CMS, chatbot, marketing automation, and CRM with a single intelligence that never stops working.',
             eyebrow: 'AGENTIC WEB',
             columns: 3,
             variant: 'glass',
             gap: 'md',
             staggeredReveal: true,
             items: [
-              { id: 'bg-skills', title: 'Skill Engine', description: 'Content creation, lead qualification, email campaigns, SEO analysis, A/B testing — 30+ skills that execute autonomously. FlowPilot doesn\'t suggest. It acts. And when it needs a capability it doesn\'t have, it builds one.', icon: 'Zap', span: 'wide', accentColor: '#3B82F6' },
+              { id: 'bg-skills', title: 'Skill Engine', description: 'Content creation, lead qualification, email campaigns, ticket triage, SEO analysis — 40+ skills that execute autonomously. FlowPilot doesn\'t suggest. It acts. And when it needs a capability it doesn\'t have, it builds one.', icon: 'Zap', span: 'wide', accentColor: '#3B82F6' },
               { id: 'bg-memory', title: 'Deep Organizational Memory', description: 'Every conversation, every lead interaction, every content decision — stored as persistent memory. FlowPilot learns your brand voice, remembers what converts, and gets sharper with every interaction. This isn\'t context. It\'s institutional knowledge.\n\n• Brand voice calibration from real conversations\n• Lead scoring refined by conversion outcomes\n• Content performance patterns across channels\n• Seasonal trends and audience behavior shifts', icon: 'Brain', span: 'large', accentColor: '#8B5CF6' },
               { id: 'bg-objectives', title: 'Goal-Driven Execution', description: 'Define business objectives. FlowPilot decomposes them into tasks, prioritizes by impact, executes step-by-step, and reports progress. You set "where" — it figures out "how."', icon: 'Target', accentColor: '#10B981' },
               { id: 'bg-browser', title: 'Browser Control', description: 'Research competitors on LinkedIn. Read login-walled articles. Scrape pricing pages behind paywalls. FlowPilot uses a Chrome Extension relay to browse with your authenticated session — no API keys, no scraping hacks, just your real browser doing the work.\n\n• Competitor pricing and positioning analysis\n• LinkedIn profile enrichment for lead research\n• Industry news monitoring and trend detection\n• Authenticated access — no credentials stored server-side', icon: 'Globe', span: 'large', accentColor: '#F97316' },
-              { id: 'bg-heartbeat', title: 'The 12-Hour Heartbeat', description: 'Twice daily, FlowPilot wakes up autonomously: reviews analytics, reflects on what worked, identifies gaps, and queues its next moves. Morning briefing lands in your inbox. No prompts required.', icon: 'Activity', accentColor: '#F59E0B' },
+              { id: 'bg-heartbeat', title: 'The 6-Hour Heartbeat', description: 'Four times daily, FlowPilot wakes up autonomously: evaluates objectives, plans next actions, advances goals, proposes new ones, checks automations, reflects on outcomes, and persists learnings. Morning briefing lands in your inbox. No prompts required.', icon: 'Activity', accentColor: '#F59E0B' },
               { id: 'bg-automations', title: 'Event-Driven Automation', description: 'Visitor asks a question → lead captured and scored. Blog post approved → distributed across channels. Form submitted → personalized follow-up sent. Every signal triggers intelligent action.', icon: 'GitBranch', accentColor: '#EC4899' },
               { id: 'bg-evolution', title: 'Self-Improving Intelligence', description: 'FlowPilot rewrites its own instructions based on outcomes. Skills that underperform get refined. New patterns get codified. The system doesn\'t just run — it evolves. Week over week, it becomes a better operator than the last version of itself.', icon: 'Sparkles', span: 'wide', accentColor: '#06B6D4' },
             ],
@@ -200,7 +201,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
           id: 'parallax-vision',
           type: 'parallax-section',
           data: {
-            backgroundImage: '/templates/blog/tech-network.jpg',
+            backgroundImage: 'https://images.pexels.com/photos/373543/pexels-photo-373543.jpeg?auto=compress&w=1920',
             title: 'Not a Chatbot. An Operator.',
             subtitle: 'FlowPilot doesn\'t wait for instructions. It has objectives, memory, and skills. It operates your entire digital presence while you sleep.',
             height: 'md',
@@ -500,7 +501,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             title: 'Meet FlowPilot',
             subtitle: 'The first autonomous agent that doesn\'t just answer questions — it operates your entire digital presence. Content, CRM, campaigns, bookings — all running on objectives, memory, and self-evolving skills.',
             backgroundType: 'image',
-            backgroundImage: '/templates/blog/ai-concept.jpg',
+            backgroundImage: 'https://images.pexels.com/photos/8386440/pexels-photo-8386440.jpeg?auto=compress&w=1920',
             heightMode: '80vh',
             contentAlignment: 'center',
             overlayOpacity: 65,
@@ -547,8 +548,8 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
           id: 'features-skills',
           type: 'features',
           data: {
-            title: '30+ Autonomous Skills',
-            subtitle: 'Each skill is a capability FlowPilot can execute independently. Skills have instructions, parameters, and self-improving documentation.',
+            title: '40+ Autonomous Skills',
+            subtitle: 'Each skill is a capability FlowPilot can execute independently. Skills have instructions, parameters, and self-improving documentation. Including ticket triage and A2A federation.',
             features: [
               { id: 'sk-blog', icon: 'FileText', title: 'blog_write', description: 'Research topics, write posts in brand voice, add SEO metadata, schedule for publishing.' },
               { id: 'sk-lead', icon: 'UserPlus', title: 'lead_qualify', description: 'Score leads, enrich with company data, generate qualification summary and next steps.' },
@@ -684,9 +685,9 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             title: 'Example: FlowPilot Resume Block Response',
             subtitle: '"Find me senior React consultants available for a 3-month project." — FlowPilot sourced, scored, and rendered these profiles autonomously from the CRM.',
             members: [
-              { id: 'res-1', name: 'Elena Vasquez', role: 'Senior React Developer', image: '/templates/team/elena-vasquez.jpg', bio: '8 years React & TypeScript. Available from July. Match score: 97%.', linkedin: 'https://linkedin.com' },
-              { id: 'res-2', name: 'Jonas Berg', role: 'Full-Stack Engineer', image: '/templates/team/jonas-berg.jpg', bio: '6 years React, Node.js, AWS. Available now. Match score: 94%.', linkedin: 'https://linkedin.com' },
-              { id: 'res-3', name: 'Priya Nair', role: 'Frontend Architect', image: '/templates/team/priya-nair.jpg', bio: '10 years frontend, design systems, React Native. Part-time available. Match score: 91%.', linkedin: 'https://linkedin.com' },
+              { id: 'res-1', name: 'Elena Vasquez', role: 'Senior React Developer', image: 'https://images.pexels.com/photos/3756679/pexels-photo-3756679.jpeg?auto=compress&w=400', bio: '8 years React & TypeScript. Available from July. Match score: 97%.', linkedin: 'https://linkedin.com' },
+              { id: 'res-2', name: 'Jonas Berg', role: 'Full-Stack Engineer', image: 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&w=400', bio: '6 years React, Node.js, AWS. Available now. Match score: 94%.', linkedin: 'https://linkedin.com' },
+              { id: 'res-3', name: 'Priya Nair', role: 'Frontend Architect', image: 'https://images.pexels.com/photos/3769021/pexels-photo-3769021.jpeg?auto=compress&w=400', bio: '10 years frontend, design systems, React Native. Part-time available. Match score: 91%.', linkedin: 'https://linkedin.com' },
             ],
             columns: 3,
             layout: 'grid',
@@ -712,12 +713,187 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
     },
 
     // ═══════════════════════════════════════════════════════════
+    // FOR AGENCIES — The Primary Target Audience
+    // ═══════════════════════════════════════════════════════════
+    {
+      title: 'For Agencies',
+      slug: 'for-agencies',
+      menu_order: 3,
+      showInMenu: true,
+      meta: {
+        description: 'FlowWink for digital agencies — white-label autonomous CMS, multi-site management, and AI-powered client delivery.',
+        showTitle: false,
+        titleAlignment: 'center',
+      },
+      blocks: [
+        {
+          id: 'hero-agency',
+          type: 'hero',
+          data: {
+            title: 'Scale Your Agency Without Scaling Your Team',
+            subtitle: 'FlowPilot handles content, lead nurturing, and client reporting for every site you manage. White-label, self-hosted, and autonomous — so you can take on more clients without more overhead.',
+            backgroundType: 'image',
+            backgroundImage: 'https://images.pexels.com/photos/3182826/pexels-photo-3182826.jpeg?auto=compress&w=1920',
+            heightMode: '70vh',
+            contentAlignment: 'center',
+            overlayOpacity: 60,
+            titleAnimation: 'slide-up',
+            primaryButton: { text: 'Talk to FlowPilot', url: '#agency-chat' },
+            secondaryButton: { text: 'See Pricing', url: '/#pricing-detailed' },
+            eyebrow: 'FlowWink for Digital Agencies',
+          },
+        },
+        {
+          id: 'agency-chat',
+          type: 'chat-launcher',
+          data: {
+            title: 'Ask About Agency Workflows',
+            subtitle: 'FlowPilot understands multi-site management, white-labeling, and autonomous client delivery. Ask anything.',
+            placeholder: 'How does FlowWink handle multi-client content management?',
+            showQuickActions: true,
+            quickActionCount: 4,
+            variant: 'hero-integrated',
+          },
+        },
+        {
+          id: 'agency-stats',
+          type: 'stats',
+          data: {
+            items: [
+              { id: 'as1', value: '10x', label: 'Client Capacity', icon: 'TrendingUp' },
+              { id: 'as2', value: '0', label: 'Extra Hires Needed', icon: 'Users' },
+              { id: 'as3', value: '24/7', label: 'Autonomous Operations', icon: 'Bot' },
+              { id: 'as4', value: '100%', label: 'White-Label', icon: 'Palette' },
+            ],
+            columns: 4,
+            variant: 'cards',
+          },
+        },
+        {
+          id: 'agency-two-col',
+          type: 'two-column',
+          data: {
+            eyebrow: 'THE AGENCY PROBLEM',
+            title: 'More Clients. Same Team. No Burnout.',
+            content: 'Every agency hits the same wall: growth requires headcount. Content writers, community managers, account executives, analysts — the overhead scales linearly with revenue.\n\nFlowWink breaks that equation. Each client gets their own FlowPilot instance — an autonomous operator that writes blog posts, qualifies leads, manages tickets, sends newsletters, and reports on performance. Your team focuses on strategy and creative. FlowPilot handles the execution.\n\n**The result?** Agencies running 50+ client sites with a team of 5.',
+            secondaryContent: '**What FlowPilot Handles Per Client**\n\n• Blog content creation & scheduling\n• Lead capture & qualification\n• Newsletter campaigns\n• Ticket triage & KB management\n• Performance analytics & briefings\n• Client-facing AI chat support',
+            layout: 'text-text',
+            contentFormat: 'markdown',
+            primaryButton: { text: 'Self-Host Free', url: 'https://github.com/magnusfroste/flowwink' },
+          },
+        },
+        {
+          id: 'agency-bento',
+          type: 'bento-grid',
+          data: {
+            title: 'Built for Agency Workflows',
+            subtitle: 'Every feature designed with multi-client delivery in mind.',
+            columns: 3,
+            variant: 'glass',
+            gap: 'md',
+            staggeredReveal: true,
+            items: [
+              { id: 'ab-whitelabel', title: 'Full White-Label', description: 'Your brand, your domain, your colors. Clients never see "FlowWink." Every instance is fully customizable with your agency\'s branding and design system.', icon: 'Palette', span: 'wide', accentColor: '#8B5CF6' },
+              { id: 'ab-multisite', title: 'Multi-Site from One Codebase', description: 'Deploy unlimited client sites from a single Docker image. Each site gets its own database, branding, and FlowPilot soul — completely isolated.', icon: 'Globe', accentColor: '#3B82F6' },
+              { id: 'ab-templates', title: 'Template Library', description: 'Build once, deploy everywhere. Create vertical-specific templates (law firms, clinics, restaurants) and spin up client sites in minutes, not weeks.', icon: 'Puzzle', accentColor: '#10B981' },
+              { id: 'ab-tickets', title: 'Built-In Ticketing', description: 'Every client site includes a full ticket system. FlowPilot auto-triages incoming tickets, responds from the Knowledge Base, and escalates when needed — reducing your support burden to near-zero.', icon: 'Inbox', span: 'wide', accentColor: '#F97316' },
+              { id: 'ab-federation', title: 'A2A Federation', description: 'Connect client FlowPilot instances together. A recruitment agency\'s site can query a staffing agency\'s consultant database directly — agent-to-agent, no human middleman.', icon: 'Network', accentColor: '#06B6D4' },
+              { id: 'ab-reporting', title: 'Autonomous Reporting', description: 'FlowPilot generates performance briefings for each client automatically. Weekly content summaries, lead pipeline updates, and ticket resolution metrics — delivered without you lifting a finger.', icon: 'BarChart3', accentColor: '#EC4899' },
+            ],
+          },
+        },
+        {
+          id: 'agency-timeline',
+          type: 'timeline',
+          data: {
+            title: 'Agency Onboarding in 3 Steps',
+            subtitle: 'From signup to autonomous client delivery.',
+            items: [
+              {
+                id: 'ao-1',
+                title: 'Deploy & Brand',
+                description: 'Self-host FlowWink or use managed cloud. Apply your agency branding, choose a template, configure the domain. 15 minutes.',
+                icon: 'Rocket',
+              },
+              {
+                id: 'ao-2',
+                title: 'Configure FlowPilot',
+                description: 'Set the client\'s business objectives, train the soul with their brand voice, seed the Knowledge Base with their FAQs. 30 minutes.',
+                icon: 'Bot',
+              },
+              {
+                id: 'ao-3',
+                title: 'Go Autonomous',
+                description: 'FlowPilot starts operating: writing content, handling leads, managing tickets, sending newsletters. You review and approve. It learns and improves.',
+                icon: 'Zap',
+              },
+            ],
+            layout: 'horizontal',
+          },
+        },
+        {
+          id: 'agency-testimonials',
+          type: 'testimonials',
+          data: {
+            title: 'What Agencies Say',
+            testimonials: [
+              {
+                id: 'at1',
+                content: 'We went from 12 to 45 client sites in 6 months without hiring a single new content manager. FlowPilot writes, schedules, and reports — we just review.',
+                author: 'Sarah Chen',
+                role: 'Founder',
+                company: 'Pixel & Co Digital',
+                rating: 5,
+              },
+              {
+                id: 'at2',
+                content: 'The white-labeling is seamless. Our clients think we built a custom CMS for them. The ticketing module alone saved us from needing Zendesk.',
+                author: 'David Moreau',
+                role: 'CTO',
+                company: 'AgenceNord',
+                rating: 5,
+              },
+              {
+                id: 'at3',
+                content: 'Self-hosting was non-negotiable for our enterprise clients. FlowWink gave us full data sovereignty with the automation we needed to scale.',
+                author: 'Lisa Johansson',
+                role: 'Managing Director',
+                company: 'Nordic Digital Group',
+                rating: 5,
+              },
+            ],
+            layout: 'carousel',
+            columns: 3,
+            showRating: true,
+            showAvatar: false,
+            variant: 'cards',
+            autoplay: true,
+            autoplaySpeed: 5,
+          },
+        },
+        {
+          id: 'cta-agency',
+          type: 'cta',
+          data: {
+            title: 'Your Agency, Supercharged',
+            subtitle: 'More clients. Less overhead. Full autonomy. Self-host for free or start a managed trial.',
+            buttonText: 'Self-Host Free',
+            buttonUrl: 'https://github.com/magnusfroste/flowwink',
+            secondaryButtonText: 'See Pricing',
+            secondaryButtonUrl: '/#pricing-detailed',
+            gradient: true,
+          },
+        },
+      ],
+    },
+
+    // ═══════════════════════════════════════════════════════════
     // FOR CONSULTANCIES — Vertical Elevator Pitch
     // ═══════════════════════════════════════════════════════════
     {
       title: 'For Consultancies',
       slug: 'for-consultancies',
-      menu_order: 3,
+      menu_order: 4,
       showInMenu: true,
       meta: {
         description: 'FlowWink for consulting firms — AI-powered consultant matching, live availability, and autonomous lead qualification.',
@@ -733,7 +909,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             title: 'The Consulting Firm That Never Sleeps',
             subtitle: 'FlowPilot knows every consultant profile, every assignment, every availability — updated in real time. Clients get answers instantly. You close deals faster.',
             backgroundType: 'image',
-            backgroundImage: '/templates/hero/team-collaboration.jpg',
+            backgroundImage: 'https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&w=1920',
             heightMode: '60vh',
             contentAlignment: 'center',
             overlayOpacity: 60,
@@ -883,7 +1059,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
     {
       title: 'For E-Commerce',
       slug: 'for-ecommerce',
-      menu_order: 4,
+      menu_order: 5,
       showInMenu: true,
       meta: {
         description: 'FlowWink for e-commerce — AI shopping assistant, product catalog, Stripe checkout, and autonomous campaigns.',
@@ -899,7 +1075,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             title: 'Your Store With a Brain',
             subtitle: 'FlowPilot knows every product, recommends the right fit, handles checkout, and runs campaigns — all autonomously. Conversational commerce, not just a catalog.',
             backgroundType: 'image',
-            backgroundImage: '/templates/hero/abstract-gradient.jpg',
+            backgroundImage: 'https://images.pexels.com/photos/5632399/pexels-photo-5632399.jpeg?auto=compress&w=1920',
             heightMode: '60vh',
             contentAlignment: 'center',
             overlayOpacity: 50,
@@ -948,7 +1124,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
                 id: 'eb-templates',
                 title: 'Templates',
                 description: 'Professional pitch decks, brand kits, and social media packs. Download once, use forever.',
-                image: '/templates/misc/templates-product.jpg',
+                image: 'https://images.pexels.com/photos/196644/pexels-photo-196644.jpeg?auto=compress&w=800',
                 colSpan: 2,
                 rowSpan: 2,
                 ctaText: 'Browse Templates',
@@ -958,7 +1134,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
                 id: 'eb-courses',
                 title: 'Online Courses',
                 description: '40+ expert-led lessons. Learn at your pace, apply immediately.',
-                image: '/templates/blog/team-brainstorming.jpg',
+                image: 'https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&w=800',
                 colSpan: 1,
                 rowSpan: 1,
                 ctaText: 'Start Learning',
@@ -968,7 +1144,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
                 id: 'eb-tools',
                 title: 'Design Systems',
                 description: 'Production-ready UI kits and component libraries. Ship faster, stay consistent.',
-                image: '/templates/misc/design-systems.jpg',
+                image: 'https://images.pexels.com/photos/326503/pexels-photo-326503.jpeg?auto=compress&w=800',
                 colSpan: 1,
                 rowSpan: 1,
                 ctaText: 'Explore Tools',
@@ -1040,7 +1216,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
     {
       title: 'For Service Business',
       slug: 'for-services',
-      menu_order: 5,
+      menu_order: 6,
       showInMenu: true,
       meta: {
         description: 'FlowWink for service businesses — online booking, real-time availability, and autonomous client management.',
@@ -1060,7 +1236,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             videoAutoplay: true,
             videoLoop: true,
             videoMuted: true,
-            backgroundImage: '/templates/hero/professional-handshake.jpg',
+            backgroundImage: 'https://images.pexels.com/photos/3184465/pexels-photo-3184465.jpeg?auto=compress&w=1920',
             heightMode: '60vh',
             contentAlignment: 'center',
             overlayOpacity: 60,
@@ -1097,7 +1273,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
                 { type: 'paragraph', content: [{ type: 'text', text: 'No chatbot scripts. No decision trees. Just an AI that understands your business as well as your best receptionist — and never takes a day off.' }] },
               ],
             },
-            imageUrl: '/templates/misc/service-team.jpg',
+            imageUrl: 'https://images.pexels.com/photos/3184465/pexels-photo-3184465.jpeg?auto=compress&w=800',
             imageAlt: 'Professional service team collaborating',
             imagePosition: 'right',
             imageObjectFit: 'cover',
@@ -1116,7 +1292,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
                 id: 'sc-consult',
                 title: 'Expert Consultation',
                 description: 'Get personalized advice from our team of experienced professionals.',
-                image: '/templates/misc/expert-consultation.jpg',
+                image: 'https://images.pexels.com/photos/3184292/pexels-photo-3184292.jpeg?auto=compress&w=1200',
                 ctaText: 'Book Now',
                 ctaUrl: '#services-booking',
                 textAlignment: 'left',
@@ -1125,7 +1301,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
                 id: 'sc-service',
                 title: 'Premium Services',
                 description: 'Quality craftsmanship delivered on time, every time.',
-                image: '/templates/misc/premium-services.jpg',
+                image: 'https://images.pexels.com/photos/3184339/pexels-photo-3184339.jpeg?auto=compress&w=1200',
                 ctaText: 'View Services',
                 ctaUrl: '#services-features',
                 textAlignment: 'left',
@@ -1134,7 +1310,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
                 id: 'sc-team',
                 title: 'Dedicated Team',
                 description: 'Skilled professionals committed to exceeding your expectations.',
-                image: '/templates/misc/dedicated-team.jpg',
+                image: 'https://images.pexels.com/photos/3182812/pexels-photo-3182812.jpeg?auto=compress&w=1200',
                 ctaText: 'Meet the Team',
                 ctaUrl: '#services-features',
                 textAlignment: 'left',
@@ -1212,7 +1388,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
     {
       title: 'For Healthcare',
       slug: 'for-healthcare',
-      menu_order: 6,
+      menu_order: 7,
       showInMenu: true,
       meta: {
         description: 'FlowWink for healthcare — HIPAA-compliant private AI, patient booking, and compliance-first design.',
@@ -1230,7 +1406,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             backgroundType: 'video',
             videoUrl: 'https://videos.pexels.com/video-files/3195394/3195394-uhd_2560_1440_25fps.mp4',
             videoType: 'direct',
-            videoPosterUrl: '/templates/misc/medical-facility.jpg',
+            videoPosterUrl: 'https://images.pexels.com/photos/247786/pexels-photo-247786.jpeg?auto=compress&w=1920',
             videoLoop: true,
             videoMuted: true,
             heightMode: '60vh',
@@ -1356,7 +1532,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
       price_cents: 4900,
       currency: 'EUR',
       type: 'recurring',
-      image_url: '/templates/blog/server-infrastructure.jpg',
+      image_url: 'https://images.pexels.com/photos/325229/pexels-photo-325229.jpeg?auto=compress&w=600',
       is_active: true,
     },
     {
@@ -1365,7 +1541,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
       price_cents: 99000,
       currency: 'EUR',
       type: 'recurring',
-      image_url: '/templates/misc/money-growth.jpg',
+      image_url: 'https://images.pexels.com/photos/7567443/pexels-photo-7567443.jpeg?auto=compress&w=600',
       is_active: true,
     },
     {
@@ -1374,7 +1550,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
       price_cents: 149900,
       currency: 'EUR',
       type: 'one_time',
-      image_url: '/templates/blog/ai-concept.jpg',
+      image_url: 'https://images.pexels.com/photos/8386440/pexels-photo-8386440.jpeg?auto=compress&w=600',
       is_active: true,
     },
     {
@@ -1383,7 +1559,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
       price_cents: 49900,
       currency: 'EUR',
       type: 'one_time',
-      image_url: '/templates/misc/templates-product.jpg',
+      image_url: 'https://images.pexels.com/photos/1181467/pexels-photo-1181467.jpeg?auto=compress&w=600',
       is_active: true,
     },
   ],
