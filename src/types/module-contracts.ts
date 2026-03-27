@@ -672,28 +672,6 @@ export const federationPeerOutputSchema = z.object({
 export type FederationPeerOutput = z.infer<typeof federationPeerOutputSchema>;
 
 // =============================================================================
-// OpenClaw Beta Tester Module
-// =============================================================================
-
-export const openclawSessionInputSchema = z.object({
-  scenario: z.string().min(1).max(500),
-  peer_name: z.string().default('openclaw'),
-  metadata: z.record(z.unknown()).optional(),
-});
-
-export type OpenClawSessionInput = z.infer<typeof openclawSessionInputSchema>;
-
-export const openclawSessionOutputSchema = z.object({
-  success: z.boolean(),
-  session_id: z.string(),
-  scenario: z.string(),
-  status: z.string(),
-  error: z.string().optional(),
-});
-
-export type OpenClawSessionOutput = z.infer<typeof openclawSessionOutputSchema>;
-
-// =============================================================================
 // Module Definition Interface
 // =============================================================================
 

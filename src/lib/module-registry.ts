@@ -33,7 +33,6 @@ import {
   browserControlModule,
   growthModule,
   federationModule,
-  openclawModule,
   ticketsModule,
 } from '@/lib/modules';
 
@@ -66,7 +65,7 @@ class ModuleRegistry {
       browserControlModule,
       growthModule,
       federationModule,
-      openclawModule,
+      
       ticketsModule,
     ];
 
