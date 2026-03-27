@@ -137,7 +137,7 @@ Deno.serve(async (req) => {
             messageId,
             role: 'user',
             parts: [
-              { type: 'text', text: rawMessage || `skill:${skill} ${JSON.stringify(args)}` },
+              { type: 'text', text: rawMessage || `skill:${effectiveSkill} ${JSON.stringify(args)}` },
             ],
           },
         },
@@ -145,11 +145,11 @@ Deno.serve(async (req) => {
     } else if (protocol === 'native') {
       // FlowWink native format
       endpoint = (caps.endpoint as string) || '/functions/v1/a2a-ingest';
-      requestBody = { skill, arguments: args };
+      requestBody = { skill: effectiveSkill, arguments: args, ...(rawMessage ? { message: rawMessage } : {}) };
     } else {
       // Legacy a2a-negotiate
       endpoint = (caps.endpoint as string) || '/functions/v1/a2a-negotiate';
-      requestBody = { type: 'task', skill_id: skill, input: args };
+      requestBody = { type: 'task', skill_id: effectiveSkill, input: args };
     }
 
     // Make the outbound call
