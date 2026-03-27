@@ -51,6 +51,7 @@ export interface ModulesSettings {
   companyInsights: ModuleConfig;
   flowpilot: ModuleConfig;
   openclaw: ModuleConfig;
+  tickets: ModuleConfig;
 }
 
 export const defaultModulesSettings: ModulesSettings = {
