@@ -236,3 +236,9 @@ verify_jwt = false
 
 [functions.update-autonomy-cron]
 verify_jwt = false
+
+[functions.product-catalog]
+verify_jwt = false
+
+[functions.order-status]
+verify_jwt = false
