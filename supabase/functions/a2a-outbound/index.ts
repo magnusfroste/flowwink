@@ -72,12 +72,8 @@ Deno.serve(async (req) => {
     const body: OutboundRequest = await req.json();
     const { peer_name, peer_id, skill, arguments: args = {}, message: rawMessage } = body;
 
-    if (!skill) {
-      return new Response(JSON.stringify({ error: 'Missing "skill" field' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    // Allow raw message-only calls (no skill required for natural language delegation)
+    const effectiveSkill = skill || 'message';
 
     // Look up peer
     let peerQuery = supabase.from('a2a_peers').select('*').eq('status', 'active');
