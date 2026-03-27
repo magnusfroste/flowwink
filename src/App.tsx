@@ -45,6 +45,7 @@ import CompaniesPage from "./pages/admin/CompaniesPage";
 import CompanyDetailPage from "./pages/admin/CompanyDetailPage";
 import ProductsPage from "./pages/admin/ProductsPage";
 import OrdersPage from "./pages/admin/OrdersPage";
+import CustomersPage from "./pages/admin/CustomersPage";
 import KnowledgeBaseAdminPage from "./pages/admin/KnowledgeBasePage";
 import AnalyticsDashboardPage from "./pages/admin/AnalyticsDashboardPage";
 import BookingsPage from "./pages/admin/BookingsPage";
