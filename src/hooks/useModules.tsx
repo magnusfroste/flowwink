@@ -23,8 +23,7 @@ export interface ModuleConfig {
   adminUI: boolean; // Whether admin interface is shown (default: true for view/config-required)
   requiredIntegrations?: string[]; // Module won't function without these
   optionalIntegrations?: string[]; // Enhanced functionality with these
-  // E-commerce sandbox settings
-  sandboxMode?: boolean; // When true, orders bypass payment gateway and are marked paid directly
+  // E-commerce sandbox settings (sandboxMode is derived: auto-on when Stripe is inactive)
   sandboxAutoPayDays?: number; // 0 = instant, >0 = mark as paid after N days (for testing flows)
 }
 
