@@ -500,7 +500,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             title: 'Meet FlowPilot',
             subtitle: 'The first autonomous agent that doesn\'t just answer questions — it operates your entire digital presence. Content, CRM, campaigns, bookings — all running on objectives, memory, and self-evolving skills.',
             backgroundType: 'image',
-            backgroundImage: '/templates/blog/ai-concept.jpg',
+            backgroundImage: 'https://images.pexels.com/photos/8386440/pexels-photo-8386440.jpeg?auto=compress&w=1920',
             heightMode: '80vh',
             contentAlignment: 'center',
             overlayOpacity: 65,
