@@ -33,7 +33,6 @@ import {
   browserControlModule,
   growthModule,
   federationModule,
-  openclawModule,
   ticketsModule,
 } from '@/lib/modules';
 
