@@ -200,7 +200,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
           id: 'parallax-vision',
           type: 'parallax-section',
           data: {
-            backgroundImage: '/templates/blog/tech-network.jpg',
+            backgroundImage: 'https://images.pexels.com/photos/373543/pexels-photo-373543.jpeg?auto=compress&w=1920',
             title: 'Not a Chatbot. An Operator.',
             subtitle: 'FlowPilot doesn\'t wait for instructions. It has objectives, memory, and skills. It operates your entire digital presence while you sleep.',
             height: 'md',
