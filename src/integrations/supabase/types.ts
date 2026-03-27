@@ -2964,6 +2964,131 @@ export type Database = {
           },
         ]
       }
+      ticket_comments: {
+        Row: {
+          author_id: string | null
+          author_name: string | null
+          author_type: string
+          content: string
+          created_at: string
+          id: string
+          is_internal: boolean
+          ticket_id: string
+        }
+        Insert: {
+          author_id?: string | null
+          author_name?: string | null
+          author_type?: string
+          content: string
+          created_at?: string
+          id?: string
+          is_internal?: boolean
+          ticket_id: string
+        }
+        Update: {
+          author_id?: string | null
+          author_name?: string | null
+          author_type?: string
+          content?: string
+          created_at?: string
+          id?: string
+          is_internal?: boolean
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_comments_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tickets: {
+        Row: {
+          assigned_to: string | null
+          category: Database["public"]["Enums"]["ticket_category"]
+          closed_at: string | null
+          company_id: string | null
+          contact_email: string | null
+          contact_name: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          lead_id: string | null
+          metadata: Json | null
+          priority: Database["public"]["Enums"]["ticket_priority"]
+          resolved_at: string | null
+          sla_deadline: string | null
+          source: string
+          source_id: string | null
+          status: Database["public"]["Enums"]["ticket_status"]
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          category?: Database["public"]["Enums"]["ticket_category"]
+          closed_at?: string | null
+          company_id?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          lead_id?: string | null
+          metadata?: Json | null
+          priority?: Database["public"]["Enums"]["ticket_priority"]
+          resolved_at?: string | null
+          sla_deadline?: string | null
+          source?: string
+          source_id?: string | null
+          status?: Database["public"]["Enums"]["ticket_status"]
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          category?: Database["public"]["Enums"]["ticket_category"]
+          closed_at?: string | null
+          company_id?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          lead_id?: string | null
+          metadata?: Json | null
+          priority?: Database["public"]["Enums"]["ticket_priority"]
+          resolved_at?: string | null
+          sla_deadline?: string | null
+          source?: string
+          source_id?: string | null
+          status?: Database["public"]["Enums"]["ticket_status"]
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tickets_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -3374,6 +3499,15 @@ export type Database = {
       product_type: "one_time" | "recurring"
       skill_origin: "bundled" | "managed" | "agent" | "user" | "a2a"
       skill_trust_level: "auto" | "notify" | "approve"
+      ticket_category: "bug" | "feature" | "question" | "billing" | "other"
+      ticket_priority: "low" | "medium" | "high" | "urgent"
+      ticket_status:
+        | "new"
+        | "open"
+        | "in_progress"
+        | "waiting"
+        | "resolved"
+        | "closed"
       webhook_event:
         | "page.published"
         | "page.updated"
@@ -3581,6 +3715,16 @@ export const Constants = {
       product_type: ["one_time", "recurring"],
       skill_origin: ["bundled", "managed", "agent", "user", "a2a"],
       skill_trust_level: ["auto", "notify", "approve"],
+      ticket_category: ["bug", "feature", "question", "billing", "other"],
+      ticket_priority: ["low", "medium", "high", "urgent"],
+      ticket_status: [
+        "new",
+        "open",
+        "in_progress",
+        "waiting",
+        "resolved",
+        "closed",
+      ],
       webhook_event: [
         "page.published",
         "page.updated",

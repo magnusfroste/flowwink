@@ -51,6 +51,7 @@ export interface ModulesSettings {
   companyInsights: ModuleConfig;
   flowpilot: ModuleConfig;
   openclaw: ModuleConfig;
+  tickets: ModuleConfig;
 }
 
 export const defaultModulesSettings: ModulesSettings = {
@@ -295,6 +296,15 @@ export const defaultModulesSettings: ModulesSettings = {
     autonomy: 'agent-capable',
     adminUI: true,
   },
+  tickets: {
+    enabled: true,
+    name: 'Tickets',
+    description: 'Helpdesk ticket management — Kanban pipeline with auto-categorization, KB matching, and SLA tracking',
+    icon: 'Headphones',
+    category: 'communication',
+    autonomy: 'agent-capable',
+    adminUI: true,
+  },
 };
 
 // Map sidebar items to module IDs
@@ -325,6 +335,7 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/flowpilot': 'flowpilot',
   '/admin/skills': 'flowpilot',
   '/admin/openclaw': 'openclaw',
+  '/admin/tickets': 'tickets',
 };
 
 export function useModules() {
