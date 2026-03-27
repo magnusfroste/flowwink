@@ -1383,7 +1383,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
       price_cents: 49900,
       currency: 'EUR',
       type: 'one_time',
-      image_url: '/templates/misc/templates-product.jpg',
+      image_url: 'https://images.pexels.com/photos/1181467/pexels-photo-1181467.jpeg?auto=compress&w=600',
       is_active: true,
     },
   ],
