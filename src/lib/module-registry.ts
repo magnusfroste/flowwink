@@ -65,7 +65,7 @@ class ModuleRegistry {
       browserControlModule,
       growthModule,
       federationModule,
-      openclawModule,
+      
       ticketsModule,
     ];
 
