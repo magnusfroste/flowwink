@@ -968,7 +968,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
                 id: 'eb-tools',
                 title: 'Design Systems',
                 description: 'Production-ready UI kits and component libraries. Ship faster, stay consistent.',
-                image: '/templates/misc/design-systems.jpg',
+                image: 'https://images.pexels.com/photos/326503/pexels-photo-326503.jpeg?auto=compress&w=800',
                 colSpan: 1,
                 rowSpan: 1,
                 ctaText: 'Explore Tools',
