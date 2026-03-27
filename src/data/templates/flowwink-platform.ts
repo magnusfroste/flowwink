@@ -1060,7 +1060,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             videoAutoplay: true,
             videoLoop: true,
             videoMuted: true,
-            backgroundImage: '/templates/hero/professional-handshake.jpg',
+            backgroundImage: 'https://images.pexels.com/photos/3184465/pexels-photo-3184465.jpeg?auto=compress&w=1920',
             heightMode: '60vh',
             contentAlignment: 'center',
             overlayOpacity: 60,
