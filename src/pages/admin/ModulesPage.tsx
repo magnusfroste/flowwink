@@ -12,6 +12,7 @@ import {
   Lock,
   UserCheck,
   Briefcase,
+  Ticket,
   Building2,
   Package,
   ShoppingCart,

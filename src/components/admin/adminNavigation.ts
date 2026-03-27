@@ -62,6 +62,7 @@ export const navigationGroups: NavGroup[] = [
     items: [
       { name: "AI Chat", href: "/admin/chat", icon: MessageSquare, moduleId: "chat" },
       { name: "Live Support", href: "/admin/live-support", icon: Headphones, moduleId: "liveSupport" },
+      { name: "Tickets", href: "/admin/tickets", icon: Inbox, moduleId: "tickets" },
     ],
   },
   {

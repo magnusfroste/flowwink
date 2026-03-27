@@ -207,6 +207,7 @@ const router = createBrowserRouter([
       { path: "/admin/company-insights", element: <CompanyInsightsPage /> },
       { path: "/admin/growth", element: <GrowthDashboardPage /> },
       { path: "/admin/openclaw", element: <OpenClawPage /> },
+      { path: "/admin/tickets", element: <TicketsPage /> },
       { path: "/admin/autonomy-tests", element: <AutonomyTestSuitePage /> },
       { path: "/preview/:id", element: <PreviewPage /> },
       { path: "/:slug", element: <PublicPage /> },

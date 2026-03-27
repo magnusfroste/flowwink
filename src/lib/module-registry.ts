@@ -67,6 +67,7 @@ class ModuleRegistry {
       growthModule,
       federationModule,
       openclawModule,
+      ticketsModule,
     ];
 
     for (const mod of builtIn) {
