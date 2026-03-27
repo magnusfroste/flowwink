@@ -548,7 +548,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
           type: 'features',
           data: {
             title: '30+ Autonomous Skills',
-            subtitle: 'Each skill is a capability FlowPilot can execute independently. Skills have instructions, parameters, and self-improving documentation.',
+            subtitle: 'Each skill is a capability FlowPilot can execute independently. Skills have instructions, parameters, and self-improving documentation. Including ticket triage and A2A federation.',
             features: [
               { id: 'sk-blog', icon: 'FileText', title: 'blog_write', description: 'Research topics, write posts in brand voice, add SEO metadata, schedule for publishing.' },
               { id: 'sk-lead', icon: 'UserPlus', title: 'lead_qualify', description: 'Score leads, enrich with company data, generate qualification summary and next steps.' },
