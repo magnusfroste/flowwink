@@ -45,6 +45,7 @@ import CompaniesPage from "./pages/admin/CompaniesPage";
 import CompanyDetailPage from "./pages/admin/CompanyDetailPage";
 import ProductsPage from "./pages/admin/ProductsPage";
 import OrdersPage from "./pages/admin/OrdersPage";
+import CustomersPage from "./pages/admin/CustomersPage";
 import KnowledgeBaseAdminPage from "./pages/admin/KnowledgeBasePage";
 import AnalyticsDashboardPage from "./pages/admin/AnalyticsDashboardPage";
 import BookingsPage from "./pages/admin/BookingsPage";
@@ -185,6 +186,7 @@ const router = createBrowserRouter([
       { path: "/admin/companies/:id", element: <CompanyDetailPage /> },
       { path: "/admin/products", element: <ProductsPage /> },
       { path: "/admin/orders", element: <OrdersPage /> },
+      { path: "/admin/customers", element: <CustomersPage /> },
       { path: "/admin/bookings", element: <BookingsPage /> },
       { path: "/admin/bookings/services", element: <BookingServicesPage /> },
       { path: "/admin/bookings/availability", element: <BookingAvailabilityPage /> },
