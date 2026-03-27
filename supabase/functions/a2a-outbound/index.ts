@@ -109,8 +109,8 @@ Deno.serve(async (req) => {
       .insert({
         peer_id: peer.id,
         direction: 'outbound',
-        skill_name: skill,
-        input: args,
+        skill_name: effectiveSkill,
+        input: rawMessage ? { message: rawMessage, ...args } : args,
         status: 'pending',
       })
       .select('id')
