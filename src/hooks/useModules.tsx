@@ -296,6 +296,15 @@ export const defaultModulesSettings: ModulesSettings = {
     autonomy: 'agent-capable',
     adminUI: true,
   },
+  tickets: {
+    enabled: true,
+    name: 'Tickets',
+    description: 'Helpdesk ticket management — Kanban pipeline with auto-categorization, KB matching, and SLA tracking',
+    icon: 'Headphones',
+    category: 'communication',
+    autonomy: 'agent-capable',
+    adminUI: true,
+  },
 };
 
 // Map sidebar items to module IDs
