@@ -20,12 +20,12 @@ interface UserProfileData {
 }
 
 const USER_FIELDS = [
-  { key: 'full_name', label: 'Your Name', type: 'input' },
-  { key: 'title', label: 'Title / Role', type: 'input' },
-  { key: 'email', label: 'Email', type: 'input' },
-  { key: 'personal_pitch', label: 'Personal Pitch', type: 'textarea' },
-  { key: 'tone', label: 'Preferred Tone', type: 'input' },
-  { key: 'signature', label: 'Email Signature', type: 'textarea' },
+  { key: 'full_name', label: 'Your Name', type: 'input', placeholder: 'e.g. Anna Lindberg' },
+  { key: 'title', label: 'Title / Role', type: 'input', placeholder: 'e.g. Head of Partnerships' },
+  { key: 'email', label: 'Email', type: 'input', placeholder: 'e.g. anna@yourcompany.com' },
+  { key: 'personal_pitch', label: 'Personal Pitch', type: 'textarea', placeholder: 'e.g. I help growing agencies streamline their digital operations with AI-powered tools — reducing manual work by 40% on average.' },
+  { key: 'tone', label: 'Preferred Tone', type: 'input', placeholder: 'e.g. Professional but friendly, solution-oriented' },
+  { key: 'signature', label: 'Email Signature', type: 'textarea', placeholder: 'e.g. Best regards,\nAnna Lindberg\nHead of Partnerships | YourCompany\n+46 70 123 45 67' },
 ] as const;
 
 export function SalesProfileSetup() {
