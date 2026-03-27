@@ -72,12 +72,8 @@ Deno.serve(async (req) => {
     const body: OutboundRequest = await req.json();
     const { peer_name, peer_id, skill, arguments: args = {}, message: rawMessage } = body;
 
-    if (!skill) {
-      return new Response(JSON.stringify({ error: 'Missing "skill" field' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    // Allow raw message-only calls (no skill required for natural language delegation)
+    const effectiveSkill = skill || 'message';
 
     // Look up peer
     let peerQuery = supabase.from('a2a_peers').select('*').eq('status', 'active');
@@ -113,8 +109,8 @@ Deno.serve(async (req) => {
       .insert({
         peer_id: peer.id,
         direction: 'outbound',
-        skill_name: skill,
-        input: args,
+        skill_name: effectiveSkill,
+        input: rawMessage ? { message: rawMessage, ...args } : args,
         status: 'pending',
       })
       .select('id')
@@ -141,7 +137,7 @@ Deno.serve(async (req) => {
             messageId,
             role: 'user',
             parts: [
-              { type: 'text', text: rawMessage || `skill:${skill} ${JSON.stringify(args)}` },
+              { type: 'text', text: rawMessage || `skill:${effectiveSkill} ${JSON.stringify(args)}` },
             ],
           },
         },
@@ -149,19 +145,22 @@ Deno.serve(async (req) => {
     } else if (protocol === 'native') {
       // FlowWink native format
       endpoint = (caps.endpoint as string) || '/functions/v1/a2a-ingest';
-      requestBody = { skill, arguments: args };
+      requestBody = { skill: effectiveSkill, arguments: args, ...(rawMessage ? { message: rawMessage } : {}) };
     } else {
       // Legacy a2a-negotiate
       endpoint = (caps.endpoint as string) || '/functions/v1/a2a-negotiate';
-      requestBody = { type: 'task', skill_id: skill, input: args };
+      requestBody = { type: 'task', skill_id: effectiveSkill, input: args };
     }
 
     // Make the outbound call
     let result: unknown;
-    let status: 'success' | 'error' = 'success';
+    let status: 'success' | 'error' | 'peer_unavailable' = 'success';
     let errorMessage: string | null = null;
 
     try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15_000); // 15s timeout
+
       const response = await fetch(`${peerUrl}${endpoint}`, {
         method: 'POST',
         headers: {
@@ -169,17 +168,18 @@ Deno.serve(async (req) => {
           'Authorization': `Bearer ${peer.outbound_token}`,
         },
         body: JSON.stringify(requestBody),
+        signal: controller.signal,
       });
 
-      result = await response.json();
+      clearTimeout(timeout);
+
+      result = await response.json().catch(() => ({ raw: await response.text().catch(() => '') }));
 
       if (!response.ok) {
         status = 'error';
-        // Extract error from JSON-RPC or plain format
         const r = result as any;
         errorMessage = r?.error?.message || r?.error || `HTTP ${response.status}`;
       } else if (protocol === 'jsonrpc' || protocol === 'a2a') {
-        // JSON-RPC: check for error in result
         const r = result as any;
         if (r?.error) {
           status = 'error';
@@ -191,31 +191,44 @@ Deno.serve(async (req) => {
         }
       }
     } catch (err: any) {
-      status = 'error';
-      errorMessage = err.message || 'Network error';
-      result = { error: errorMessage };
+      // Network errors (DNS, timeout, connection refused) = peer is simply unavailable
+      const isNetworkError = err.name === 'AbortError' ||
+        err.message?.includes('error trying to connect') ||
+        err.message?.includes('dns error') ||
+        err.message?.includes('Connection refused') ||
+        err.message?.includes('NetworkError');
+
+      status = isNetworkError ? 'peer_unavailable' : 'error';
+      errorMessage = isNetworkError
+        ? `Peer '${peer.name}' is currently offline or unreachable. This is normal — peers may restart.`
+        : (err.message || 'Unknown network error');
+      result = { status, message: errorMessage };
     }
 
     const durationMs = Date.now() - startTime;
 
-    // Update activity log
+    // Update activity log — peer_unavailable is logged as status, not as a system error
+    const activityStatus = status === 'peer_unavailable' ? 'peer_unavailable' : status;
     if (activityRow?.id) {
       await supabase.from('a2a_activity').update({
         output: result,
-        status,
+        status: activityStatus === 'peer_unavailable' ? 'error' : activityStatus,
         duration_ms: durationMs,
         error_message: errorMessage,
       }).eq('id', activityRow.id);
     }
 
-    // Update peer stats
-    await supabase.from('a2a_peers').update({
-      last_seen_at: new Date().toISOString(),
-      request_count: (peer.request_count || 0) + 1,
-    }).eq('id', peer.id);
+    // Only update last_seen_at if peer actually responded
+    if (status === 'success') {
+      await supabase.from('a2a_peers').update({
+        last_seen_at: new Date().toISOString(),
+        request_count: (peer.request_count || 0) + 1,
+      }).eq('id', peer.id);
+    }
 
+    const httpStatus = status === 'success' ? 200 : status === 'peer_unavailable' ? 503 : 502;
     return new Response(JSON.stringify(result), {
-      status: status === 'success' ? 200 : 502,
+      status: httpStatus,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (err: any) {

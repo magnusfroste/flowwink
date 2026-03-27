@@ -2693,11 +2693,32 @@ async function executeA2ARequest(
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-  const { skill, ...skillArgs } = args as { skill: string; [key: string]: unknown };
-  if (!skill) {
-    return { error: 'Missing "skill" field in arguments — specify which skill to call on the peer' };
+  const { skill, message, ...skillArgs } = args as { skill?: string; message?: string; [key: string]: unknown };
+
+  // Allow either structured skill call OR raw message for natural language delegation
+  if (!skill && !message) {
+    // Auto-construct a message from the remaining args if neither is provided
+    const fallbackMessage = Object.keys(skillArgs).length > 0
+      ? JSON.stringify(skillArgs)
+      : 'ping';
+    return executeA2AOutbound(supabaseUrl, serviceKey, peerName, 'message', { message: fallbackMessage });
   }
 
+  if (skill) {
+    return executeA2AOutbound(supabaseUrl, serviceKey, peerName, skill, skillArgs, undefined);
+  } else {
+    return executeA2AOutbound(supabaseUrl, serviceKey, peerName, 'message', {}, message);
+  }
+}
+
+async function executeA2AOutbound(
+  supabaseUrl: string,
+  serviceKey: string,
+  peerName: string,
+  skill: string,
+  skillArgs: Record<string, unknown>,
+  rawMessage?: string,
+): Promise<unknown> {
   try {
     const response = await fetch(`${supabaseUrl}/functions/v1/a2a-outbound`, {
       method: 'POST',
@@ -2709,12 +2730,37 @@ async function executeA2ARequest(
         peer_name: peerName,
         skill,
         arguments: skillArgs,
+        ...(rawMessage ? { message: rawMessage } : {}),
       }),
     });
 
+    // Distinguish between "peer is down" and actual errors
+    if (response.status === 502 || response.status === 503) {
+      const body = await response.json().catch(() => ({}));
+      return {
+        status: 'peer_unavailable',
+        peer: peerName,
+        message: `Peer '${peerName}' is currently unreachable. This is not a system error — the peer may be offline or restarting. Try again later.`,
+        detail: (body as any)?.error || 'No response from peer',
+      };
+    }
+
+    if (response.status === 404) {
+      return {
+        status: 'peer_not_found',
+        peer: peerName,
+        message: `Peer '${peerName}' not found or not active in federation registry.`,
+      };
+    }
+
     return await response.json();
   } catch (err: any) {
-    return { error: `Failed to reach peer '${peerName}': ${err.message}` };
+    // Network-level failures (DNS, timeout) = peer unavailable, not a system bug
+    return {
+      status: 'peer_unavailable',
+      peer: peerName,
+      message: `Peer '${peerName}' is currently unreachable (${err.message}). This is expected if the peer is offline.`,
+    };
   }
 }
 
