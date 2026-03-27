@@ -104,8 +104,8 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
           data: {
             items: [
               { id: 's1', value: '58+', label: 'Block Types' },
-              { id: 's2', value: '30+', label: 'Agent Skills' },
-              { id: 's3', value: '21', label: 'Modules' },
+              { id: 's2', value: '40+', label: 'Agent Skills' },
+              { id: 's3', value: '22', label: 'Modules' },
               { id: 's4', value: '100%', label: 'Self-Hostable' },
             ],
             columns: 4,
