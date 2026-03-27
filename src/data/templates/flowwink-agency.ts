@@ -42,7 +42,7 @@ const flowwinkAgencyPages: TemplatePage[] = [
           backgroundType: 'video',
           videoUrl: 'https://videos.pexels.com/video-files/3129671/3129671-uhd_2560_1440_30fps.mp4',
           videoType: 'direct',
-          videoPosterUrl: 'https://images.pexels.com/videos/3129671/free-video-3129671.jpg?auto=compress&w=1920',
+          videoPosterUrl: '/templates/hero/video-poster-1.jpg',
           videoAutoplay: true,
           videoLoop: true,
           videoMuted: true,

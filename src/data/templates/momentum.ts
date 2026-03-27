@@ -41,7 +41,7 @@ const momentumPages: StarterTemplate['pages'] = [
           backgroundType: 'video',
           videoUrl: 'https://videos.pexels.com/video-files/3209828/3209828-uhd_2560_1440_25fps.mp4',
           videoType: 'direct',
-          videoPosterUrl: 'https://images.pexels.com/videos/3209828/free-video-3209828.jpg?auto=compress&w=1920',
+          videoPosterUrl: '/templates/hero/video-poster-2.jpg',
           videoAutoplay: true,
           videoLoop: true,
           videoMuted: true,
