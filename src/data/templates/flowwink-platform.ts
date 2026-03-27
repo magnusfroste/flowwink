@@ -733,7 +733,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             title: 'The Consulting Firm That Never Sleeps',
             subtitle: 'FlowPilot knows every consultant profile, every assignment, every availability — updated in real time. Clients get answers instantly. You close deals faster.',
             backgroundType: 'image',
-            backgroundImage: '/templates/hero/team-collaboration.jpg',
+            backgroundImage: 'https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&w=1920',
             heightMode: '60vh',
             contentAlignment: 'center',
             overlayOpacity: 60,
