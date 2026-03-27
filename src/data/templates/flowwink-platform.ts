@@ -1215,7 +1215,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
     {
       title: 'For Service Business',
       slug: 'for-services',
-      menu_order: 5,
+      menu_order: 6,
       showInMenu: true,
       meta: {
         description: 'FlowWink for service businesses — online booking, real-time availability, and autonomous client management.',
