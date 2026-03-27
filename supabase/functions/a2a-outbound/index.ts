@@ -154,10 +154,13 @@ Deno.serve(async (req) => {
 
     // Make the outbound call
     let result: unknown;
-    let status: 'success' | 'error' = 'success';
+    let status: 'success' | 'error' | 'peer_unavailable' = 'success';
     let errorMessage: string | null = null;
 
     try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15_000); // 15s timeout
+
       const response = await fetch(`${peerUrl}${endpoint}`, {
         method: 'POST',
         headers: {
@@ -165,17 +168,18 @@ Deno.serve(async (req) => {
           'Authorization': `Bearer ${peer.outbound_token}`,
         },
         body: JSON.stringify(requestBody),
+        signal: controller.signal,
       });
 
-      result = await response.json();
+      clearTimeout(timeout);
+
+      result = await response.json().catch(() => ({ raw: await response.text().catch(() => '') }));
 
       if (!response.ok) {
         status = 'error';
-        // Extract error from JSON-RPC or plain format
         const r = result as any;
         errorMessage = r?.error?.message || r?.error || `HTTP ${response.status}`;
       } else if (protocol === 'jsonrpc' || protocol === 'a2a') {
-        // JSON-RPC: check for error in result
         const r = result as any;
         if (r?.error) {
           status = 'error';
@@ -187,9 +191,18 @@ Deno.serve(async (req) => {
         }
       }
     } catch (err: any) {
-      status = 'error';
-      errorMessage = err.message || 'Network error';
-      result = { error: errorMessage };
+      // Network errors (DNS, timeout, connection refused) = peer is simply unavailable
+      const isNetworkError = err.name === 'AbortError' ||
+        err.message?.includes('error trying to connect') ||
+        err.message?.includes('dns error') ||
+        err.message?.includes('Connection refused') ||
+        err.message?.includes('NetworkError');
+
+      status = isNetworkError ? 'peer_unavailable' : 'error';
+      errorMessage = isNetworkError
+        ? `Peer '${peer.name}' is currently offline or unreachable. This is normal — peers may restart.`
+        : (err.message || 'Unknown network error');
+      result = { status, message: errorMessage };
     }
 
     const durationMs = Date.now() - startTime;
