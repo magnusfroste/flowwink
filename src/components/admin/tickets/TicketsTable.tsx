@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Table,
   TableBody,
@@ -16,6 +17,7 @@ import {
   TICKET_PRIORITY_COLORS,
   TICKET_CATEGORY_LABELS,
 } from "@/hooks/useTickets";
+import { TicketDetailDrawer } from "./TicketDetailDrawer";
 import { formatDistanceToNow } from "date-fns";
 
 interface TicketsTableProps {
@@ -24,6 +26,8 @@ interface TicketsTableProps {
 }
 
 export function TicketsTable({ tickets, isLoading }: TicketsTableProps) {
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+
   if (isLoading) {
     return (
       <div className="space-y-2">
@@ -43,49 +47,61 @@ export function TicketsTable({ tickets, isLoading }: TicketsTableProps) {
   }
 
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Subject</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Priority</TableHead>
-            <TableHead>Category</TableHead>
-            <TableHead>Contact</TableHead>
-            <TableHead>Created</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {tickets.map((ticket) => (
-            <TableRow key={ticket.id}>
-              <TableCell className="font-medium max-w-[300px] truncate">
-                {ticket.subject}
-              </TableCell>
-              <TableCell>
-                <Badge variant="outline" className={`text-xs ${TICKET_STATUS_COLORS[ticket.status]}`}>
-                  {TICKET_STATUS_LABELS[ticket.status]}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                <Badge variant="outline" className={`text-xs ${TICKET_PRIORITY_COLORS[ticket.priority]}`}>
-                  {TICKET_PRIORITY_LABELS[ticket.priority]}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                <span className="text-sm text-muted-foreground">
-                  {TICKET_CATEGORY_LABELS[ticket.category]}
-                </span>
-              </TableCell>
-              <TableCell className="text-sm text-muted-foreground truncate max-w-[200px]">
-                {ticket.contact_name || ticket.contact_email || '—'}
-              </TableCell>
-              <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
-                {formatDistanceToNow(new Date(ticket.created_at), { addSuffix: true })}
-              </TableCell>
+    <>
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Subject</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Priority</TableHead>
+              <TableHead>Category</TableHead>
+              <TableHead>Contact</TableHead>
+              <TableHead>Created</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+          </TableHeader>
+          <TableBody>
+            {tickets.map((ticket) => (
+              <TableRow
+                key={ticket.id}
+                className="cursor-pointer"
+                onClick={() => setSelectedTicket(ticket)}
+              >
+                <TableCell className="font-medium max-w-[300px] truncate">
+                  {ticket.subject}
+                </TableCell>
+                <TableCell>
+                  <Badge variant="outline" className={`text-xs ${TICKET_STATUS_COLORS[ticket.status]}`}>
+                    {TICKET_STATUS_LABELS[ticket.status]}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge variant="outline" className={`text-xs ${TICKET_PRIORITY_COLORS[ticket.priority]}`}>
+                    {TICKET_PRIORITY_LABELS[ticket.priority]}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <span className="text-sm text-muted-foreground">
+                    {TICKET_CATEGORY_LABELS[ticket.category]}
+                  </span>
+                </TableCell>
+                <TableCell className="text-sm text-muted-foreground truncate max-w-[200px]">
+                  {ticket.contact_name || ticket.contact_email || '—'}
+                </TableCell>
+                <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                  {formatDistanceToNow(new Date(ticket.created_at), { addSuffix: true })}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      <TicketDetailDrawer
+        ticket={selectedTicket}
+        open={!!selectedTicket}
+        onOpenChange={(open) => !open && setSelectedTicket(null)}
+      />
+    </>
   );
 }
