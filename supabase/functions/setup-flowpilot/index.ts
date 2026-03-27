@@ -3121,6 +3121,132 @@ After major content changes: run analyze_seo on the page slug.`,
       },
     },
   },
+  // ── E-commerce A2A Skills ─────────────────────────────────────────────
+  {
+    name: 'browse_products',
+    description: 'Browse the product catalog. Returns active products with prices, images, and stock info.',
+    handler: 'edge:product-catalog',
+    category: 'commerce',
+    scope: 'external',
+    requires_approval: false,
+    trust_level: 'auto',
+    instructions: `## browse_products
+### What
+Returns the public product catalog via the product-catalog edge function.
+### When to use
+- External agent (OpenClaw) wants to browse available products
+- Visitor asks "what do you sell?" in chat
+- FlowPilot needs product context for recommendations
+### Parameters
+- **category**: Filter by product category slug.
+- **slug**: Get a specific product by slug.
+- **limit**: Max results (default 50, max 100).
+### Edge cases
+- Only returns is_active=true products.
+- Prices are in cents — divide by 100 for display.`,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'browse_products',
+        description: 'Browse the product catalog.',
+        parameters: {
+          type: 'object',
+          properties: {
+            category: { type: 'string', description: 'Filter by category' },
+            slug: { type: 'string', description: 'Get specific product by slug' },
+            limit: { type: 'number', description: 'Max results (default 50)' },
+          },
+        },
+      },
+    },
+  },
+  {
+    name: 'place_order',
+    description: 'Place an order via the checkout API. Supports sandbox mode for testing without payment.',
+    handler: 'edge:create-checkout',
+    category: 'commerce',
+    scope: 'external',
+    requires_approval: false,
+    trust_level: 'notify',
+    instructions: `## place_order
+### What
+Places an order through the create-checkout edge function. In sandbox mode, completes immediately without payment.
+### When to use
+- External agent (OpenClaw) tests the full purchase flow
+- Programmatic order creation for testing or automation
+### Parameters
+- **items**: Array of {productId, productName, priceCents, quantity}.
+- **customerName**: Buyer name.
+- **customerEmail**: Buyer email.
+- **currency**: ISO currency code (default SEK).
+### Edge cases
+- Sandbox mode auto-detected from module config — no Stripe needed.
+- Always use notify trust level so admin sees orders.`,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'place_order',
+        description: 'Place a product order.',
+        parameters: {
+          type: 'object',
+          properties: {
+            items: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  productId: { type: 'string' },
+                  productName: { type: 'string' },
+                  priceCents: { type: 'number' },
+                  quantity: { type: 'number' },
+                },
+                required: ['productId', 'productName', 'priceCents', 'quantity'],
+              },
+              description: 'Cart items',
+            },
+            customerName: { type: 'string', description: 'Customer name' },
+            customerEmail: { type: 'string', description: 'Customer email' },
+            currency: { type: 'string', description: 'Currency code (default SEK)' },
+          },
+          required: ['items', 'customerName', 'customerEmail'],
+        },
+      },
+    },
+  },
+  {
+    name: 'check_order_status',
+    description: 'Check the status of an existing order by ID.',
+    handler: 'edge:order-status',
+    category: 'commerce',
+    scope: 'external',
+    requires_approval: false,
+    trust_level: 'auto',
+    instructions: `## check_order_status
+### What
+Checks the current status of an order via the order-status edge function.
+### When to use
+- External agent wants to verify an order went through
+- Visitor asks about their order in chat
+- Automated follow-up workflows checking fulfillment
+### Parameters
+- **order_id**: The UUID of the order.
+- **email**: Optional email for guest verification.`,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'check_order_status',
+        description: 'Check order status by ID.',
+        parameters: {
+          type: 'object',
+          properties: {
+            order_id: { type: 'string', description: 'Order UUID' },
+            email: { type: 'string', description: 'Customer email (for guest verification)' },
+          },
+          required: ['order_id'],
+        },
+      },
+    },
+  },
 ];
 const DEFAULT_SOUL = {
   purpose: 'I am FlowPilot — the autonomous intelligence layer of this FlowWink website. I observe, reason, and act across every module (content, CRM, marketing, support, analytics) to make this site run itself. My north star is measurable business outcomes: traffic, leads, conversions, and customer satisfaction.',
