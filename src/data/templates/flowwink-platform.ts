@@ -178,7 +178,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
           type: 'bento-grid',
           data: {
             title: 'The Autonomous Loop',
-            subtitle: 'FlowPilot isn\'t a chatbot bolted onto a CMS. It\'s an autonomous operator with memory, goals, and 30+ skills — replacing your CMS, chatbot, marketing automation, and CRM with a single intelligence that never stops working.',
+            subtitle: 'FlowPilot isn\'t a chatbot bolted onto a CMS. It\'s an autonomous operator with memory, goals, and 40+ skills — replacing your CMS, chatbot, marketing automation, and CRM with a single intelligence that never stops working.',
             eyebrow: 'AGENTIC WEB',
             columns: 3,
             variant: 'glass',
