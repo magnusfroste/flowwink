@@ -712,12 +712,187 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
     },
 
     // ═══════════════════════════════════════════════════════════
+    // FOR AGENCIES — The Primary Target Audience
+    // ═══════════════════════════════════════════════════════════
+    {
+      title: 'For Agencies',
+      slug: 'for-agencies',
+      menu_order: 3,
+      showInMenu: true,
+      meta: {
+        description: 'FlowWink for digital agencies — white-label autonomous CMS, multi-site management, and AI-powered client delivery.',
+        showTitle: false,
+        titleAlignment: 'center',
+      },
+      blocks: [
+        {
+          id: 'hero-agency',
+          type: 'hero',
+          data: {
+            title: 'Scale Your Agency Without Scaling Your Team',
+            subtitle: 'FlowPilot handles content, lead nurturing, and client reporting for every site you manage. White-label, self-hosted, and autonomous — so you can take on more clients without more overhead.',
+            backgroundType: 'image',
+            backgroundImage: 'https://images.pexels.com/photos/3182826/pexels-photo-3182826.jpeg?auto=compress&w=1920',
+            heightMode: '70vh',
+            contentAlignment: 'center',
+            overlayOpacity: 60,
+            titleAnimation: 'slide-up',
+            primaryButton: { text: 'Talk to FlowPilot', url: '#agency-chat' },
+            secondaryButton: { text: 'See Pricing', url: '/#pricing-detailed' },
+            eyebrow: 'FlowWink for Digital Agencies',
+          },
+        },
+        {
+          id: 'agency-chat',
+          type: 'chat-launcher',
+          data: {
+            title: 'Ask About Agency Workflows',
+            subtitle: 'FlowPilot understands multi-site management, white-labeling, and autonomous client delivery. Ask anything.',
+            placeholder: 'How does FlowWink handle multi-client content management?',
+            showQuickActions: true,
+            quickActionCount: 4,
+            variant: 'hero-integrated',
+          },
+        },
+        {
+          id: 'agency-stats',
+          type: 'stats',
+          data: {
+            items: [
+              { id: 'as1', value: '10x', label: 'Client Capacity', icon: 'TrendingUp' },
+              { id: 'as2', value: '0', label: 'Extra Hires Needed', icon: 'Users' },
+              { id: 'as3', value: '24/7', label: 'Autonomous Operations', icon: 'Bot' },
+              { id: 'as4', value: '100%', label: 'White-Label', icon: 'Palette' },
+            ],
+            columns: 4,
+            variant: 'cards',
+          },
+        },
+        {
+          id: 'agency-two-col',
+          type: 'two-column',
+          data: {
+            eyebrow: 'THE AGENCY PROBLEM',
+            title: 'More Clients. Same Team. No Burnout.',
+            content: 'Every agency hits the same wall: growth requires headcount. Content writers, community managers, account executives, analysts — the overhead scales linearly with revenue.\n\nFlowWink breaks that equation. Each client gets their own FlowPilot instance — an autonomous operator that writes blog posts, qualifies leads, manages tickets, sends newsletters, and reports on performance. Your team focuses on strategy and creative. FlowPilot handles the execution.\n\n**The result?** Agencies running 50+ client sites with a team of 5.',
+            secondaryContent: '**What FlowPilot Handles Per Client**\n\n• Blog content creation & scheduling\n• Lead capture & qualification\n• Newsletter campaigns\n• Ticket triage & KB management\n• Performance analytics & briefings\n• Client-facing AI chat support',
+            layout: 'text-text',
+            contentFormat: 'markdown',
+            primaryButton: { text: 'Self-Host Free', url: 'https://github.com/magnusfroste/flowwink' },
+          },
+        },
+        {
+          id: 'agency-bento',
+          type: 'bento-grid',
+          data: {
+            title: 'Built for Agency Workflows',
+            subtitle: 'Every feature designed with multi-client delivery in mind.',
+            columns: 3,
+            variant: 'glass',
+            gap: 'md',
+            staggeredReveal: true,
+            items: [
+              { id: 'ab-whitelabel', title: 'Full White-Label', description: 'Your brand, your domain, your colors. Clients never see "FlowWink." Every instance is fully customizable with your agency\'s branding and design system.', icon: 'Palette', span: 'wide', accentColor: '#8B5CF6' },
+              { id: 'ab-multisite', title: 'Multi-Site from One Codebase', description: 'Deploy unlimited client sites from a single Docker image. Each site gets its own database, branding, and FlowPilot soul — completely isolated.', icon: 'Globe', accentColor: '#3B82F6' },
+              { id: 'ab-templates', title: 'Template Library', description: 'Build once, deploy everywhere. Create vertical-specific templates (law firms, clinics, restaurants) and spin up client sites in minutes, not weeks.', icon: 'Puzzle', accentColor: '#10B981' },
+              { id: 'ab-tickets', title: 'Built-In Ticketing', description: 'Every client site includes a full ticket system. FlowPilot auto-triages incoming tickets, responds from the Knowledge Base, and escalates when needed — reducing your support burden to near-zero.', icon: 'Inbox', span: 'wide', accentColor: '#F97316' },
+              { id: 'ab-federation', title: 'A2A Federation', description: 'Connect client FlowPilot instances together. A recruitment agency\'s site can query a staffing agency\'s consultant database directly — agent-to-agent, no human middleman.', icon: 'Network', accentColor: '#06B6D4' },
+              { id: 'ab-reporting', title: 'Autonomous Reporting', description: 'FlowPilot generates performance briefings for each client automatically. Weekly content summaries, lead pipeline updates, and ticket resolution metrics — delivered without you lifting a finger.', icon: 'BarChart3', accentColor: '#EC4899' },
+            ],
+          },
+        },
+        {
+          id: 'agency-timeline',
+          type: 'timeline',
+          data: {
+            title: 'Agency Onboarding in 3 Steps',
+            subtitle: 'From signup to autonomous client delivery.',
+            items: [
+              {
+                id: 'ao-1',
+                title: 'Deploy & Brand',
+                description: 'Self-host FlowWink or use managed cloud. Apply your agency branding, choose a template, configure the domain. 15 minutes.',
+                icon: 'Rocket',
+              },
+              {
+                id: 'ao-2',
+                title: 'Configure FlowPilot',
+                description: 'Set the client\'s business objectives, train the soul with their brand voice, seed the Knowledge Base with their FAQs. 30 minutes.',
+                icon: 'Bot',
+              },
+              {
+                id: 'ao-3',
+                title: 'Go Autonomous',
+                description: 'FlowPilot starts operating: writing content, handling leads, managing tickets, sending newsletters. You review and approve. It learns and improves.',
+                icon: 'Zap',
+              },
+            ],
+            layout: 'horizontal',
+          },
+        },
+        {
+          id: 'agency-testimonials',
+          type: 'testimonials',
+          data: {
+            title: 'What Agencies Say',
+            testimonials: [
+              {
+                id: 'at1',
+                content: 'We went from 12 to 45 client sites in 6 months without hiring a single new content manager. FlowPilot writes, schedules, and reports — we just review.',
+                author: 'Sarah Chen',
+                role: 'Founder',
+                company: 'Pixel & Co Digital',
+                rating: 5,
+              },
+              {
+                id: 'at2',
+                content: 'The white-labeling is seamless. Our clients think we built a custom CMS for them. The ticketing module alone saved us from needing Zendesk.',
+                author: 'David Moreau',
+                role: 'CTO',
+                company: 'AgenceNord',
+                rating: 5,
+              },
+              {
+                id: 'at3',
+                content: 'Self-hosting was non-negotiable for our enterprise clients. FlowWink gave us full data sovereignty with the automation we needed to scale.',
+                author: 'Lisa Johansson',
+                role: 'Managing Director',
+                company: 'Nordic Digital Group',
+                rating: 5,
+              },
+            ],
+            layout: 'carousel',
+            columns: 3,
+            showRating: true,
+            showAvatar: false,
+            variant: 'cards',
+            autoplay: true,
+            autoplaySpeed: 5,
+          },
+        },
+        {
+          id: 'cta-agency',
+          type: 'cta',
+          data: {
+            title: 'Your Agency, Supercharged',
+            subtitle: 'More clients. Less overhead. Full autonomy. Self-host for free or start a managed trial.',
+            buttonText: 'Self-Host Free',
+            buttonUrl: 'https://github.com/magnusfroste/flowwink',
+            secondaryButtonText: 'See Pricing',
+            secondaryButtonUrl: '/#pricing-detailed',
+            gradient: true,
+          },
+        },
+      ],
+    },
+
+    // ═══════════════════════════════════════════════════════════
     // FOR CONSULTANCIES — Vertical Elevator Pitch
     // ═══════════════════════════════════════════════════════════
     {
       title: 'For Consultancies',
       slug: 'for-consultancies',
-      menu_order: 3,
+      menu_order: 4,
       showInMenu: true,
       meta: {
         description: 'FlowWink for consulting firms — AI-powered consultant matching, live availability, and autonomous lead qualification.',
