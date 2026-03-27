@@ -1097,7 +1097,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
                 { type: 'paragraph', content: [{ type: 'text', text: 'No chatbot scripts. No decision trees. Just an AI that understands your business as well as your best receptionist — and never takes a day off.' }] },
               ],
             },
-            imageUrl: '/templates/misc/service-team.jpg',
+            imageUrl: 'https://images.pexels.com/photos/3184465/pexels-photo-3184465.jpeg?auto=compress&w=800',
             imageAlt: 'Professional service team collaborating',
             imagePosition: 'right',
             imageObjectFit: 'cover',
