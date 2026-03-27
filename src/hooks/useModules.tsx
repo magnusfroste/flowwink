@@ -23,6 +23,9 @@ export interface ModuleConfig {
   adminUI: boolean; // Whether admin interface is shown (default: true for view/config-required)
   requiredIntegrations?: string[]; // Module won't function without these
   optionalIntegrations?: string[]; // Enhanced functionality with these
+  // E-commerce sandbox settings
+  sandboxMode?: boolean; // When true, orders bypass payment gateway and are marked paid directly
+  sandboxAutoPayDays?: number; // 0 = instant, >0 = mark as paid after N days (for testing flows)
 }
 
 export interface ModulesSettings {
@@ -177,8 +180,9 @@ export const defaultModulesSettings: ModulesSettings = {
     category: 'data',
     autonomy: 'config-required',
     adminUI: true,
-    requiredIntegrations: ['stripe'],
-    optionalIntegrations: ['resend', 'stripe_webhook'],
+    optionalIntegrations: ['stripe', 'resend', 'stripe_webhook'],
+    sandboxMode: true, // Default to sandbox — no real payments until Stripe is configured
+    sandboxAutoPayDays: 0, // Instant payment simulation by default
   },
   contentApi: {
     enabled: false,

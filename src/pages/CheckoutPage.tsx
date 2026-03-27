@@ -81,8 +81,20 @@ export default function CheckoutPage() {
 
       if (error) throw error;
 
+      // Sandbox mode — order created without payment
+      if (data?.sandbox) {
+        clearCart();
+        toast.success(
+          data.status === 'paid'
+            ? 'Order placed successfully (sandbox mode)'
+            : `Order created — will be marked as paid in ${data.sandboxAutoPayDays || 'a few'} days (sandbox)`
+        );
+        navigate('/checkout/success', { state: { orderId: data.orderId, sandbox: true } });
+        return;
+      }
+
+      // Live mode — redirect to Stripe
       if (data?.url) {
-        // Redirect to Stripe Checkout
         window.location.href = data.url;
       } else {
         throw new Error('No checkout URL received');
