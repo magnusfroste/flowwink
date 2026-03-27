@@ -1125,7 +1125,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
                 id: 'sc-service',
                 title: 'Premium Services',
                 description: 'Quality craftsmanship delivered on time, every time.',
-                image: '/templates/misc/premium-services.jpg',
+                image: 'https://images.pexels.com/photos/3184339/pexels-photo-3184339.jpeg?auto=compress&w=1200',
                 ctaText: 'View Services',
                 ctaUrl: '#services-features',
                 textAlignment: 'left',
