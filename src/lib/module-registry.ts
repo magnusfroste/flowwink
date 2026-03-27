@@ -34,6 +34,7 @@ import {
   growthModule,
   federationModule,
   openclawModule,
+  ticketsModule,
 } from '@/lib/modules';
 
 // =============================================================================
