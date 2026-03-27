@@ -478,6 +478,7 @@ export function ModuleDetailSheet({
   moduleId,
   moduleName,
   moduleDescription,
+  moduleConfig,
   stats,
   isEnabled,
   autonomy,
@@ -486,6 +487,8 @@ export function ModuleDetailSheet({
   // Get module info from registry
   const registryModule = moduleRegistry.list().find(m => m.id === moduleId);
   const apiExample = API_EXAMPLES[moduleId];
+  const { data: modules } = useModules();
+  const updateModules = useUpdateModules();
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
