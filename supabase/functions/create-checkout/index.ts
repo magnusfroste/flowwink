@@ -91,6 +91,93 @@ serve(async (req: Request) => {
       throw new Error("Customer email is required");
     }
 
+    // ── SANDBOX MODE: Skip Stripe entirely ──
+    if (sandboxMode) {
+      logStep("Sandbox mode — creating order without payment");
+
+      const totalCents = items.reduce(
+        (sum, item) => sum + item.priceCents * item.quantity, 0
+      );
+
+      const orderStatus = sandboxAutoPayDays === 0 ? "paid" : "pending";
+
+      const { data: order, error: orderError } = await supabase
+        .from("orders")
+        .insert({
+          customer_email: customerEmail,
+          customer_name: customerName,
+          total_cents: totalCents,
+          currency: currency.toUpperCase(),
+          status: orderStatus,
+          user_id: userId || null,
+          metadata: {
+            sandbox: true,
+            sandbox_auto_pay_days: sandboxAutoPayDays,
+            sandbox_pay_at: sandboxAutoPayDays > 0
+              ? new Date(Date.now() + sandboxAutoPayDays * 86400000).toISOString()
+              : null,
+          },
+        })
+        .select()
+        .single();
+
+      if (orderError) {
+        logStep("Sandbox order error", orderError);
+        throw new Error("Could not create sandbox order");
+      }
+
+      // Create order items
+      const orderItems = items.map((item) => ({
+        order_id: order.id,
+        product_id: item.productId,
+        product_name: item.productName,
+        price_cents: item.priceCents,
+        quantity: item.quantity,
+      }));
+      await supabase.from("order_items").insert(orderItems);
+
+      logStep("Sandbox order created", { orderId: order.id, status: orderStatus });
+
+      // Trigger CMS webhooks for sandbox orders too
+      try {
+        const webhookEvent = orderStatus === "paid" ? "order.paid" : "order.created";
+        const { data: webhooks } = await supabase
+          .from("webhooks")
+          .select("*")
+          .eq("is_active", true)
+          .contains("events", [webhookEvent]);
+
+        if (webhooks && webhooks.length > 0) {
+          for (const webhook of webhooks) {
+            fetch(webhook.url, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", ...(webhook.headers || {}) },
+              body: JSON.stringify({
+                event: webhookEvent,
+                timestamp: new Date().toISOString(),
+                data: { id: order.id, total_cents: totalCents, customer_email: customerEmail, sandbox: true },
+              }),
+            }).catch(() => {});
+          }
+        }
+      } catch (_) {}
+
+      return new Response(
+        JSON.stringify({
+          sandbox: true,
+          orderId: order.id,
+          status: orderStatus,
+          redirectUrl: `${successUrl}?order_id=${order.id}&sandbox=true`,
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ── LIVE MODE: Stripe payment ──
+    if (!stripeKey) {
+      throw new Error("Stripe secret key not configured. Enable sandbox mode or configure Stripe.");
+    }
+
     const stripe = new Stripe(stripeKey, {
       apiVersion: "2025-08-27.basil",
     });
