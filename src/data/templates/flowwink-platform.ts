@@ -1387,7 +1387,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
     {
       title: 'For Healthcare',
       slug: 'for-healthcare',
-      menu_order: 6,
+      menu_order: 7,
       showInMenu: true,
       meta: {
         description: 'FlowWink for healthcare — HIPAA-compliant private AI, patient booking, and compliance-first design.',
