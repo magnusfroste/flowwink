@@ -170,8 +170,8 @@ Deno.serve(async (req) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          // OpenClaw authenticates via standard Bearer token
-          'Authorization': `Bearer ${peer.outbound_token}`,
+          // OpenResponses uses gateway_token (separate from A2A outbound_token)
+          'Authorization': `Bearer ${gatewayToken}`,
         },
         body: JSON.stringify(openResponsesBody),
         signal: controller.signal,
