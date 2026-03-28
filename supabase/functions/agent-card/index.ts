@@ -6,12 +6,49 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
 };
 
+const SENSITIVE_HEADERS = new Set([
+  'authorization',
+  'apikey',
+  'x-api-key',
+  'cookie',
+  'set-cookie',
+]);
+
+function summarizeHeaders(headers: Headers) {
+  return Array.from(headers.entries()).reduce<Record<string, string>>((acc, [key, value]) => {
+    acc[key] = SENSITIVE_HEADERS.has(key.toLowerCase()) ? '[redacted]' : value;
+    return acc;
+  }, {});
+}
+
+function extractNetworkInfo(headers: Headers) {
+  return {
+    cfConnectingIp: headers.get('cf-connecting-ip'),
+    xForwardedFor: headers.get('x-forwarded-for'),
+    xRealIp: headers.get('x-real-ip'),
+    trueClientIp: headers.get('true-client-ip'),
+    forwarded: headers.get('forwarded'),
+    via: headers.get('via'),
+    userAgent: headers.get('user-agent'),
+    host: headers.get('host'),
+    origin: headers.get('origin'),
+    referer: headers.get('referer'),
+  };
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    console.log('agent-card request', JSON.stringify({
+      method: req.method,
+      url: req.url,
+      network: extractNetworkInfo(req.headers),
+      headers: summarizeHeaders(req.headers),
+    }));
+
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, serviceKey);
