@@ -328,7 +328,7 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/company-insights': 'companyInsights',
   '/admin/flowpilot': 'flowpilot',
   '/admin/skills': 'flowpilot',
-  '/admin/openclaw': 'openclaw',
+  
   '/admin/tickets': 'tickets',
 };
 
