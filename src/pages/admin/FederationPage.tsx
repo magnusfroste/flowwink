@@ -126,7 +126,7 @@ export default function FederationPage() {
     setProbeTimeoutRef(timeoutId);
   };
 
-  const handleTestConnection = async (peer: { id: string; name: string; url: string }) => {
+  const handleTestConnection = async (peer: { id: string; name: string; url: string; capabilities?: unknown }) => {
     if (!peer.url) {
       toast({ title: 'No URL', description: 'This peer has no outbound URL configured.', variant: 'destructive' });
       return;
@@ -138,6 +138,22 @@ export default function FederationPage() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
 
+      const caps = (peer.capabilities && typeof peer.capabilities === 'object' && !Array.isArray(peer.capabilities))
+        ? peer.capabilities as Record<string, unknown>
+        : {};
+      const skills = Array.isArray(caps.skills) ? caps.skills as Array<Record<string, unknown>> : [];
+      const skillIds = skills
+        .map((skill) => typeof skill.id === 'string' ? skill.id : null)
+        .filter((id): id is string => Boolean(id));
+
+      const preferredSkill = skillIds.includes('healthcheck')
+        ? 'healthcheck'
+        : skillIds[0] ?? null;
+
+      const requestBody = preferredSkill
+        ? { peer_name: peer.name, skill: preferredSkill, arguments: {} }
+        : { peer_name: peer.name, message: 'ping' };
+
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/a2a-outbound`,
         {
@@ -147,10 +163,7 @@ export default function FederationPage() {
             'Authorization': `Bearer ${session.access_token}`,
             'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
           },
-          body: JSON.stringify({
-            peer_name: peer.name,
-            message: 'ping',
-          }),
+          body: JSON.stringify(requestBody),
         }
       );
       const data = await res.json();
@@ -158,8 +171,9 @@ export default function FederationPage() {
         ? (typeof data.error === 'object' ? (data.error.message || JSON.stringify(data.error)) : String(data.error))
         : null;
       if (res.ok && !errorMsg) {
+        const successLabel = preferredSkill ? `Skill \"${preferredSkill}\" responded.` : 'Peer responded successfully.';
         setTestResult({ peerId: peer.id, success: true, message: `Connected! Response: ${JSON.stringify(data).slice(0, 120)}` });
-        toast({ title: 'Connection OK', description: `${peer.name} responded successfully.` });
+        toast({ title: 'Connection OK', description: `${peer.name}: ${successLabel}` });
       } else {
         const displayError = errorMsg || `HTTP ${res.status}`;
         setTestResult({ peerId: peer.id, success: false, message: displayError });
