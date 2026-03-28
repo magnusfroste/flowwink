@@ -202,7 +202,7 @@ const digitalShopPages: TemplatePage[] = [
               id: 'bento-tools',
               title: 'Design Systems',
               description: 'Production-ready UI kits, icon packs, and component libraries for Figma and code. Ship faster, stay consistent.',
-              image: '/templates/misc/design-systems.jpg',
+              image: '/templates/products/design-system-pro.jpg',
               colSpan: 1,
               rowSpan: 1,
               ctaText: 'Explore Tools',
