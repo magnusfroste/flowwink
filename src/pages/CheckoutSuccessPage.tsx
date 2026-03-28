@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useCart } from '@/contexts/CartContext';
+import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { GuestAccountPrompt } from '@/components/checkout/GuestAccountPrompt';
 import { CheckCircle, Clock, XCircle, RefreshCw, Loader2 } from 'lucide-react';
 
 type OrderStatus = 'pending' | 'paid' | 'failed' | 'refunded';
