@@ -65,6 +65,55 @@ export default function FederationPage() {
   const [auditingPeerId, setAuditingPeerId] = useState<string | null>(null);
   const [auditResult, setAuditResult] = useState<{ peerId: string; success: boolean; text: string } | null>(null);
 
+  // Auto-discover state for Add Peer dialog
+  const [probeLoading, setProbeLoading] = useState(false);
+  const [probeResult, setProbeResult] = useState<{ success: boolean; agent_card?: any; found_at?: string; error?: string } | null>(null);
+  const [probeTimeoutRef, setProbeTimeoutRef] = useState<ReturnType<typeof setTimeout> | null>(null);
+
+  // Auto-probe when URL changes (debounced)
+  const handleUrlChange = (url: string) => {
+    setNewPeerUrl(url);
+    setProbeResult(null);
+
+    if (probeTimeoutRef) clearTimeout(probeTimeoutRef);
+
+    const trimmed = url.trim().replace(/\/$/, '');
+    if (!trimmed || !trimmed.startsWith('http')) return;
+
+    const timeoutId = setTimeout(async () => {
+      setProbeLoading(true);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+
+        const res = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/a2a-discover`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`,
+              'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            },
+            body: JSON.stringify({ action: 'probe', peer_url: trimmed }),
+          }
+        );
+        const data = await res.json();
+        setProbeResult(data);
+
+        // Auto-fill name from discovered card
+        if (data.success && data.agent_card?.name && !newPeerName) {
+          setNewPeerName(data.agent_card.name);
+        }
+      } catch {
+        setProbeResult({ success: false, error: 'Probe request failed' });
+      } finally {
+        setProbeLoading(false);
+      }
+    }, 800);
+    setProbeTimeoutRef(timeoutId);
+  };
+
   const handleTestConnection = async (peer: { id: string; name: string; url: string }) => {
     if (!peer.url) {
       toast({ title: 'No URL', description: 'This peer has no outbound URL configured.', variant: 'destructive' });
