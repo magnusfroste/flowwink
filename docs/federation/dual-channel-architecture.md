@@ -44,7 +44,7 @@ Both channels log to `a2a_activity` for unified observability.
 |--------|--------|
 | **Pattern** | FlowPilot commands, OpenClaw executes |
 | **Endpoint** | `POST {peer_url}/v1/responses` |
-| **Auth** | `x-openclaw-token` header |
+| **Auth** | `Authorization: Bearer {token}` |
 | **Format** | OpenAI Responses API |
 | **Response** | Synchronous, single response |
 | **Strength** | Direct LLM access — no serialization loss |
