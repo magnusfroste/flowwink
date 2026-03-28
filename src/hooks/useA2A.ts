@@ -128,33 +128,37 @@ export function useUpdateA2APeer() {
   });
 }
 
-export function useRegenerateToken() {
+export function useRegenerateInboundToken() {
   const qc = useQueryClient();
   const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (peerId: string) => {
-      // Generate new token client-side
+      // Generate new inbound token (what the peer sends TO us)
       const bytes = new Uint8Array(32);
       crypto.getRandomValues(bytes);
-      const newToken = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+      const rawToken = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
 
-      const { data, error } = await supabase
+      // Hash it for storage
+      const encoder = new TextEncoder();
+      const data = encoder.encode(rawToken);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashedToken = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+      const { error } = await supabase
         .from('a2a_peers' as any)
-        .update({ outbound_token: newToken })
-        .eq('id', peerId)
-        .select()
-        .single();
+        .update({ inbound_token_hash: hashedToken })
+        .eq('id', peerId);
 
       if (error) throw error;
-      return data as unknown as A2APeer;
+      return rawToken; // Return raw token to show once
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['a2a-peers'] });
-      toast({ title: 'Token regenerated', description: 'Share the new token with your peer.' });
+      toast({ title: 'Inbound token regenerated', description: 'Copy and share this token with your peer. It will only be shown once.' });
     },
     onError: () => {
-      toast({ title: 'Error', description: 'Failed to regenerate token', variant: 'destructive' });
+      toast({ title: 'Error', description: 'Failed to regenerate inbound token', variant: 'destructive' });
     },
   });
 }

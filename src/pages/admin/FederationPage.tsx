@@ -31,7 +31,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Globe, Plus, RefreshCw, Copy, Check, ArrowDownLeft, ArrowUpRight, AlertCircle, Pencil, Zap, Loader2, Search, Shield, Cpu } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useA2APeers, useCreateA2APeer, useUpdateA2APeer, useRegenerateToken, useA2AActivity } from '@/hooks/useA2A';
+import { useA2APeers, useCreateA2APeer, useUpdateA2APeer, useRegenerateInboundToken, useA2AActivity } from '@/hooks/useA2A';
 import { useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -41,7 +41,7 @@ export default function FederationPage() {
   const { data: activity, isLoading: activityLoading } = useA2AActivity();
   const createPeer = useCreateA2APeer();
   const updatePeer = useUpdateA2APeer();
-  const regenerateToken = useRegenerateToken();
+  const regenerateToken = useRegenerateInboundToken();
   const queryClient = useQueryClient();
 
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -331,9 +331,9 @@ export default function FederationPage() {
   };
 
   const handleRegenerate = async (peerId: string) => {
-    const result = await regenerateToken.mutateAsync(peerId);
-    if (result) {
-      setShowToken(result.outbound_token);
+    const rawToken = await regenerateToken.mutateAsync(peerId);
+    if (rawToken) {
+      setShowToken(rawToken);
     }
   };
 
@@ -839,9 +839,10 @@ export default function FederationPage() {
                             size="sm"
                             onClick={() => handleRegenerate(peer.id)}
                             disabled={regenerateToken.isPending}
+                            title="Generate a new inbound token for this peer to authenticate with"
                           >
                             <RefreshCw className="h-3 w-3 mr-1" />
-                            Regenerate
+                            New Inbound Token
                           </Button>
                           <Switch
                             checked={peer.status === 'active'}
