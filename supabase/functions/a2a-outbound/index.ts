@@ -186,9 +186,12 @@ Deno.serve(async (req) => {
 
     try {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 15_000); // 15s timeout
+      const timeout = setTimeout(() => controller.abort(), 55_000); // 55s timeout
 
-      const response = await fetch(`${peerUrl}${endpoint}`, {
+      const fullUrl = `${peerUrl}${endpoint}`;
+      console.log(`[a2a-outbound] Calling peer '${peer.name}' at ${fullUrl} (protocol: ${protocol})`);
+
+      const response = await fetch(fullUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
