@@ -182,7 +182,7 @@ const digitalShopPages: TemplatePage[] = [
               id: 'bento-templates',
               title: 'Templates',
               description: 'Professional pitch decks, brand kits, and social media packs used by 10,000+ creators. Download once, use forever.',
-              image: '/templates/misc/templates-product.jpg',
+              image: '/templates/products/creator-toolkit.jpg',
               colSpan: 2,
               rowSpan: 2,
               ctaText: 'Browse Templates',
