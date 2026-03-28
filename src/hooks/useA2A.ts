@@ -86,6 +86,9 @@ export function useCreateA2APeer() {
       if (input.outbound_token) {
         insertData.outbound_token = input.outbound_token;
       }
+      if (input.gateway_token) {
+        insertData.gateway_token = input.gateway_token;
+      }
 
       const { data, error } = await supabase
         .from('a2a_peers' as any)
