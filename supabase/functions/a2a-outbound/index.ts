@@ -228,6 +228,7 @@ Deno.serve(async (req) => {
       }
     } catch (err: any) {
       // Network errors (DNS, timeout, connection refused) = peer is simply unavailable
+      console.error(`[a2a-outbound] Fetch error for '${peer.name}':`, err.name, err.message);
       const isNetworkError = err.name === 'AbortError' ||
         err.message?.includes('error trying to connect') ||
         err.message?.includes('dns error') ||
