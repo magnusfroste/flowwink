@@ -1,0 +1,1 @@
+UPDATE public.a2a_peers SET url = 'https://clawone.froste.eu/a2a/jsonrpc', outbound_token = 'a1b2c3d4e5f6789012345678abcdef0123456789abcdef0123456789abcd', last_seen_at = now() WHERE name ILIKE '%claw%';
