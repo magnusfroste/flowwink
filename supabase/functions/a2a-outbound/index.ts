@@ -173,7 +173,13 @@ Deno.serve(async (req) => {
 
       clearTimeout(timeout);
 
-      result = await response.json().catch(() => ({ raw: await response.text().catch(() => '') }));
+      let resultText: string | null = null;
+      try {
+        result = await response.json();
+      } catch {
+        try { resultText = await response.text(); } catch { resultText = ''; }
+        result = { raw: resultText };
+      }
 
       if (!response.ok) {
         status = 'error';
