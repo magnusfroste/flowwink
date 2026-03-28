@@ -64,7 +64,6 @@ export default function CheckoutSuccessPage() {
   const [searchParams] = useSearchParams();
   const { clearCart } = useCart();
   const { user } = useAuth();
-  const { clearCart } = useCart();
   const sessionId = searchParams.get('session_id');
   const [order, setOrder] = useState<Order | null>(null);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
