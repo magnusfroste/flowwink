@@ -128,6 +128,7 @@ Deno.serve(async (req) => {
       // A2A v0.3.0 JSON-RPC — preferred
       endpoint = (caps.endpoint as string) || '/a2a/ingest';
       const messageId = activityRow?.id || crypto.randomUUID();
+      const textPayload = rawMessage || `skill:${effectiveSkill} ${JSON.stringify(args)}`;
       requestBody = {
         jsonrpc: '2.0',
         id: messageId,
@@ -137,7 +138,11 @@ Deno.serve(async (req) => {
             messageId,
             role: 'user',
             parts: [
-              { type: 'text', text: rawMessage || `skill:${effectiveSkill} ${JSON.stringify(args)}` },
+              {
+                kind: 'text',
+                type: 'text',
+                text: textPayload,
+              },
             ],
           },
         },
