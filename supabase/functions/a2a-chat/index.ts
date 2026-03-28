@@ -78,8 +78,24 @@ Respond helpfully and concisely. You represent the FlowWink platform. If asked a
       });
     }
 
-    const chatResult = await chatResponse.json();
-    const reply = chatResult.reply || chatResult.choices?.[0]?.message?.content || chatResult.content || 'Message received.';
+    // Parse SSE stream from chat-completion
+    const rawText = await chatResponse.text();
+    let reply = '';
+    
+    for (const line of rawText.split('\n')) {
+      if (!line.startsWith('data: ')) continue;
+      const data = line.slice(6).trim();
+      if (data === '[DONE]') break;
+      try {
+        const parsed = JSON.parse(data);
+        const delta = parsed.choices?.[0]?.delta?.content;
+        if (delta) reply += delta;
+      } catch {
+        // skip unparseable lines
+      }
+    }
+    
+    if (!reply) reply = 'Message received, but I could not generate a response.';
 
     console.log(`[a2a-chat] Replied to ${peerName}: ${reply.substring(0, 100)}...`);
 
