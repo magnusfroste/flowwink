@@ -11,10 +11,44 @@ const corsHeaders = {
 };
 
 interface DiscoverRequest {
-  peer_id: string;
-  action: 'discover' | 'audit' | 'test';
+  peer_id?: string;
+  peer_url?: string; // For pre-creation discovery (no peer_id yet)
+  action: 'discover' | 'audit' | 'test' | 'probe';
   site_url?: string;
   test_scenario?: string;
+}
+
+/** Try multiple well-known paths to find an agent card */
+async function fetchAgentCard(baseUrl: string): Promise<{ card: any; path: string } | null> {
+  const paths = [
+    '/.well-known/agent-card.json',
+    '/.well-known/agent.json',
+    '/agent-card',
+    '/agent-card.json',
+    '/a2a/agent-card',
+    '/functions/v1/agent-card',
+  ];
+
+  for (const path of paths) {
+    const url = `${baseUrl}${path}`;
+    try {
+      const res = await fetch(url, {
+        headers: { 'Accept': 'application/json' },
+        signal: AbortSignal.timeout(8000),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        // Validate it looks like an agent card
+        if (data && (data.name || data.skills || data.protocolVersion)) {
+          console.log(`[a2a-discover] Found agent card at ${url}`);
+          return { card: data, path };
+        }
+      }
+    } catch {
+      // Try next path
+    }
+  }
+  return null;
 }
 
 Deno.serve(async (req) => {
@@ -64,7 +98,48 @@ Deno.serve(async (req) => {
     }
 
     const body: DiscoverRequest = await req.json();
-    const { peer_id, action = 'discover' } = body;
+    const { peer_id, peer_url, action = 'discover' } = body;
+
+    // === ACTION: PROBE — pre-creation discovery by URL only ===
+    if (action === 'probe') {
+      if (!peer_url) {
+        return new Response(JSON.stringify({ error: 'peer_url required for probe' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const baseUrl = peer_url.replace(/\/$/, '');
+      const result = await fetchAgentCard(baseUrl);
+
+      if (!result) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'No agent card found at any standard path',
+          tried_paths: ['/.well-known/agent-card.json', '/.well-known/agent.json', '/agent-card', '/a2a/agent-card', '/functions/v1/agent-card'],
+        }), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      return new Response(JSON.stringify({
+        success: true,
+        found_at: result.path,
+        agent_card: {
+          name: result.card.name,
+          description: result.card.description,
+          skills: (result.card.skills || []).map((s: any) => ({
+            id: s.id,
+            name: s.name || s.id,
+            description: s.description || '',
+          })),
+          protocol_version: result.card.protocolVersion || 'unknown',
+        },
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     if (!peer_id) {
       return new Response(JSON.stringify({ error: 'peer_id required' }), {
@@ -96,40 +171,20 @@ Deno.serve(async (req) => {
 
     const peerUrl = peer.url.replace(/\/$/, '');
 
-    // === ACTION: DISCOVER ===
+    // === ACTION: DISCOVER — with fallback path discovery ===
     if (action === 'discover') {
-      const cardUrl = `${peerUrl}/.well-known/agent-card.json`;
-      console.log(`[a2a-discover] Fetching agent card from ${cardUrl}`);
+      const result = await fetchAgentCard(peerUrl);
 
-      let cardRes: Response;
-      try {
-        cardRes = await fetch(cardUrl, {
-          headers: { 'Accept': 'application/json' },
-          signal: AbortSignal.timeout(15000),
-        });
-      } catch (fetchErr: any) {
-        const msg = fetchErr.message || String(fetchErr);
-        const hint = msg.includes('tls') || msg.includes('handshake')
-          ? ' — Tailscale Serve URLs are not reachable from cloud functions. Use `tailscale funnel` for a public HTTPS endpoint.'
-          : '';
+      if (!result) {
         return new Response(JSON.stringify({
-          error: `Cannot reach peer at ${cardUrl}: ${msg}${hint}`,
+          error: `No agent card found at ${peerUrl} — tried /.well-known/agent-card.json and 5 other standard paths`,
         }), {
           status: 502,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
 
-      if (!cardRes.ok) {
-        return new Response(JSON.stringify({
-          error: `Failed to fetch agent card: HTTP ${cardRes.status}`,
-        }), {
-          status: 502,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-
-      const agentCard = await cardRes.json();
+      const agentCard = result.card;
 
       // Merge discovered info into capabilities
       const existingCaps = (peer.capabilities && typeof peer.capabilities === 'object' && !Array.isArray(peer.capabilities))
@@ -142,6 +197,7 @@ Deno.serve(async (req) => {
         endpoint: existingCaps.endpoint || '/a2a/jsonrpc',
         agent_name: agentCard.name || peer.name,
         agent_description: agentCard.description || '',
+        agent_card_path: result.path,
         skills: (agentCard.skills || []).map((s: any) => ({
           id: s.id,
           name: s.name,
@@ -156,7 +212,6 @@ Deno.serve(async (req) => {
         .from('a2a_peers')
         .update({ capabilities: updatedCaps })
         .eq('id', peer_id);
-
       return new Response(JSON.stringify({
         success: true,
         agent_card: {
