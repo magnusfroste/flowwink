@@ -138,6 +138,8 @@ Deno.serve(async (req) => {
       ...(!args?.peer_name ? { peer_name: peer.name } : {}),
       ...(!args?.peer_id ? { _a2a_peer_id: peer.id } : {}),
       _site_url: 'https://demo.flowwink.com',
+      // Pass responseSchema so chat/skills can format output accordingly
+      ...(responseSchema ? { responseSchema } : {}),
     };
 
     // Execute skill via agent-execute
