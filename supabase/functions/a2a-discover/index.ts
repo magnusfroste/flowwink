@@ -11,10 +11,44 @@ const corsHeaders = {
 };
 
 interface DiscoverRequest {
-  peer_id: string;
-  action: 'discover' | 'audit' | 'test';
+  peer_id?: string;
+  peer_url?: string; // For pre-creation discovery (no peer_id yet)
+  action: 'discover' | 'audit' | 'test' | 'probe';
   site_url?: string;
   test_scenario?: string;
+}
+
+/** Try multiple well-known paths to find an agent card */
+async function fetchAgentCard(baseUrl: string): Promise<{ card: any; path: string } | null> {
+  const paths = [
+    '/.well-known/agent-card.json',
+    '/.well-known/agent.json',
+    '/agent-card',
+    '/agent-card.json',
+    '/a2a/agent-card',
+    '/functions/v1/agent-card',
+  ];
+
+  for (const path of paths) {
+    const url = `${baseUrl}${path}`;
+    try {
+      const res = await fetch(url, {
+        headers: { 'Accept': 'application/json' },
+        signal: AbortSignal.timeout(8000),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        // Validate it looks like an agent card
+        if (data && (data.name || data.skills || data.protocolVersion)) {
+          console.log(`[a2a-discover] Found agent card at ${url}`);
+          return { card: data, path };
+        }
+      }
+    } catch {
+      // Try next path
+    }
+  }
+  return null;
 }
 
 Deno.serve(async (req) => {
