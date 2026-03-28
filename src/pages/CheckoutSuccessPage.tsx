@@ -65,6 +65,7 @@ export default function CheckoutSuccessPage() {
   const { clearCart } = useCart();
   const { user } = useAuth();
   const sessionId = searchParams.get('session_id');
+  const sandboxOrderId = searchParams.get('order_id') || (location.state as any)?.orderId;
   const [order, setOrder] = useState<Order | null>(null);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -74,17 +75,23 @@ export default function CheckoutSuccessPage() {
   }, [clearCart]);
 
   useEffect(() => {
-    if (!sessionId) {
+    if (!sessionId && !sandboxOrderId) {
       setIsLoading(false);
       return;
     }
 
     const fetchOrder = async () => {
-      const { data: orderData } = await supabase
+      let query = supabase
         .from('orders')
-        .select('id, status, total_cents, currency, customer_email, customer_name, created_at')
-        .eq('stripe_checkout_id', sessionId)
-        .maybeSingle();
+        .select('id, status, total_cents, currency, customer_email, customer_name, created_at');
+
+      if (sandboxOrderId) {
+        query = query.eq('id', sandboxOrderId);
+      } else {
+        query = query.eq('stripe_checkout_id', sessionId!);
+      }
+
+      const { data: orderData } = await query.maybeSingle();
 
       if (orderData) {
         setOrder(orderData as Order);
