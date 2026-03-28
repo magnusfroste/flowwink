@@ -109,7 +109,19 @@ Deno.serve(async (req) => {
         });
       }
 
-      const baseUrl = peer_url.replace(/\/$/, '');
+      // Strip known agent card paths in case user pasted the full URL
+      const knownPaths = [
+        '/.well-known/agent-card.json', '/.well-known/agent.json',
+        '/agent-card.json', '/agent-card',
+        '/a2a/agent-card', '/functions/v1/agent-card',
+      ];
+      let baseUrl = peer_url.replace(/\/$/, '');
+      for (const p of knownPaths) {
+        if (baseUrl.endsWith(p)) {
+          baseUrl = baseUrl.slice(0, -p.length);
+          break;
+        }
+      }
       const result = await fetchAgentCard(baseUrl);
 
       if (!result) {

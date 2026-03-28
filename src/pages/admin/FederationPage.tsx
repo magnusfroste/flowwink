@@ -77,7 +77,19 @@ export default function FederationPage() {
 
     if (probeTimeoutRef) clearTimeout(probeTimeoutRef);
 
-    const trimmed = url.trim().replace(/\/$/, '');
+    // Strip known agent card paths so users can paste the full URL
+    const knownPaths = [
+      '/.well-known/agent-card.json', '/.well-known/agent.json',
+      '/agent-card.json', '/agent-card',
+      '/a2a/agent-card', '/functions/v1/agent-card',
+    ];
+    let trimmed = url.trim().replace(/\/$/, '');
+    for (const p of knownPaths) {
+      if (trimmed.endsWith(p)) {
+        trimmed = trimmed.slice(0, -p.length);
+        break;
+      }
+    }
     if (!trimmed || !trimmed.startsWith('http')) return;
 
     const timeoutId = setTimeout(async () => {
