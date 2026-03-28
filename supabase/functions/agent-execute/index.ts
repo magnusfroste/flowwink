@@ -2685,6 +2685,65 @@ async function executeWebhook(
 }
 
 // =============================================================================
+// OpenResponses — direct LLM calls to OpenClaw via POST /v1/responses
+// Uses same peer credentials (url + outbound_token) from a2a_peers.
+// This is the "boss → worker" channel for structured task delegation.
+// =============================================================================
+
+async function executeOpenResponsesRequest(
+  peerName: string,
+  args: Record<string, unknown>,
+): Promise<unknown> {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+  const { prompt, message, system, response_format, model, timeout_ms, ...rest } = args as {
+    prompt?: string; message?: string; system?: string;
+    response_format?: string; model?: string; timeout_ms?: number;
+    [key: string]: unknown;
+  };
+
+  // Build the prompt from either explicit prompt, message, or remaining args
+  const effectivePrompt = prompt || message || (Object.keys(rest).length > 0 ? JSON.stringify(rest) : 'status');
+
+  try {
+    const response = await fetch(`${supabaseUrl}/functions/v1/openclaw-responses`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${serviceKey}`,
+      },
+      body: JSON.stringify({
+        peer_name: peerName,
+        prompt: effectivePrompt,
+        system,
+        response_format,
+        model,
+        timeout_ms,
+      }),
+    });
+
+    if (response.status === 503 || response.status === 502) {
+      const body = await response.json().catch(() => ({}));
+      return {
+        status: 'peer_unavailable',
+        peer: peerName,
+        message: `Peer '${peerName}' is currently unreachable via OpenResponses.`,
+        detail: (body as any)?.error || 'No response',
+      };
+    }
+
+    return await response.json();
+  } catch (err: any) {
+    return {
+      status: 'peer_unavailable',
+      peer: peerName,
+      message: `OpenResponses call to '${peerName}' failed: ${err.message}`,
+    };
+  }
+}
+
+// =============================================================================
 // A2A Federation — outbound requests to peer agents
 // =============================================================================
 
