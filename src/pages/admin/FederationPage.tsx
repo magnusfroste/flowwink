@@ -677,37 +677,39 @@ export default function FederationPage() {
                     </div>
 
                     {newPeerUrl && (
-                      <div className="space-y-1.5">
-                        <Label className="text-xs flex items-center gap-1.5">
-                          <ArrowUpRight className="h-3 w-3 text-green-500" />
-                          Outbound Token <span className="text-muted-foreground">(you → them)</span>
-                        </Label>
-                        <Input
-                          placeholder="Paste the token they gave you"
-                          value={newPeerOutboundToken}
-                          onChange={e => setNewPeerOutboundToken(e.target.value)}
-                          className="text-xs"
-                        />
-                        <p className="text-[10px] text-muted-foreground">
-                          The token you received from the peer for calling their A2A API.
-                        </p>
-                      </div>
+                      <>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs flex items-center gap-1.5">
+                            <ArrowUpRight className="h-3 w-3 text-green-500" />
+                            Outbound Token <span className="text-muted-foreground">(you → them)</span>
+                          </Label>
+                          <Input
+                            placeholder="Paste the token they gave you"
+                            value={newPeerOutboundToken}
+                            onChange={e => setNewPeerOutboundToken(e.target.value)}
+                            className="text-xs"
+                          />
+                          <p className="text-[10px] text-muted-foreground">
+                            The token you received from the peer for calling their A2A API.
+                          </p>
+                        </div>
 
-                      <div className="space-y-1.5">
-                        <Label className="text-xs flex items-center gap-1.5">
-                          <ArrowUpRight className="h-3 w-3 text-purple-500" />
-                          Gateway Token <span className="text-muted-foreground">(optional — /v1/responses)</span>
-                        </Label>
-                        <Input
-                          placeholder="Separate token for responses-style API"
-                          value={newPeerGatewayToken}
-                          onChange={e => setNewPeerGatewayToken(e.target.value)}
-                          className="text-xs"
-                        />
-                        <p className="text-[10px] text-muted-foreground">
-                          If the peer uses a different token for their /v1/responses endpoint.
-                        </p>
-                      </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs flex items-center gap-1.5">
+                            <ArrowUpRight className="h-3 w-3 text-purple-500" />
+                            Gateway Token <span className="text-muted-foreground">(optional — /v1/responses)</span>
+                          </Label>
+                          <Input
+                            placeholder="Separate token for responses-style API"
+                            value={newPeerGatewayToken}
+                            onChange={e => setNewPeerGatewayToken(e.target.value)}
+                            className="text-xs"
+                          />
+                          <p className="text-[10px] text-muted-foreground">
+                            If the peer uses a different token for their /v1/responses endpoint.
+                          </p>
+                        </div>
+                      </>
                     )}
                   </div>
                 </div>
