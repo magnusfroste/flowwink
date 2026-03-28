@@ -170,7 +170,7 @@ export function AdminSidebar() {
     return () => document.removeEventListener("keydown", down);
   }, []);
 
-  const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null) as React.RefObject<any>;
 
   // Focus input when search opens
   useEffect(() => {
