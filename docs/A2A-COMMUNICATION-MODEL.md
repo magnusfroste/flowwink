@@ -54,11 +54,18 @@ Server → { price_cents: 4500, currency: "SEK", lead_days: 14 }
 
 ### Mode 2: Chat (Conversational)
 
-Flexible, natural language, LLM-mediated.
+Flexible, natural language, LLM-mediated. **With per-peer conversation memory** — FlowPilot remembers every exchange.
 
 ```
 Client → { text: "Can you deliver 1000 branded flashlights in 2 weeks?" }
 Server → { result: "Yes. 1000 units, 2-week lead time, 45 000 SEK ex VAT." }
+```
+
+The caller can also suggest a response format (Postel's Law):
+
+```
+Client → { text: "Give me a site health summary", responseSchema: { pages: "number", leads: "number", issues: "string[]" } }
+Server → { result: { pages: 12, leads: 34, issues: ["Missing meta on /about"] } }
 ```
 
 - **When to use**: Exploratory questions, unknown capabilities, nuanced requests

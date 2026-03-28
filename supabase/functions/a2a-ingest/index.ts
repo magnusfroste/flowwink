@@ -55,6 +55,7 @@ Deno.serve(async (req) => {
     let args: Record<string, unknown> | undefined;
     let isJsonRpc = false;
     let jsonRpcId: string | number | null = null;
+    let responseSchema: Record<string, unknown> | undefined;
 
     if (body.jsonrpc === '2.0' && body.method) {
       // A2A v0.3.0 JSON-RPC format: { jsonrpc, method, id, params: { message: { parts } } }
@@ -81,6 +82,11 @@ Deno.serve(async (req) => {
           skill = 'a2a_chat';
           args = { text, parts: message?.parts };
         }
+
+        // Extract responseSchema if provided in params (Postel's Law: caller suggests format)
+        if (body.params?.responseSchema) {
+          responseSchema = body.params.responseSchema;
+        }
       } else {
         // Unknown JSON-RPC method
         return new Response(JSON.stringify({
@@ -96,6 +102,9 @@ Deno.serve(async (req) => {
       // Native format: { skill, arguments }
       skill = body.skill;
       args = body.arguments;
+      if (body.responseSchema || body.response_schema) {
+        responseSchema = body.responseSchema || body.response_schema;
+      }
     }
 
     if (!skill) {
@@ -129,6 +138,8 @@ Deno.serve(async (req) => {
       ...(!args?.peer_name ? { peer_name: peer.name } : {}),
       ...(!args?.peer_id ? { _a2a_peer_id: peer.id } : {}),
       _site_url: 'https://demo.flowwink.com',
+      // Pass responseSchema so chat/skills can format output accordingly
+      ...(responseSchema ? { responseSchema } : {}),
     };
 
     // Execute skill via agent-execute
