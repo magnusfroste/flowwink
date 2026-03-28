@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useCart } from '@/contexts/CartContext';
+import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { GuestAccountPrompt } from '@/components/checkout/GuestAccountPrompt';
 import { CheckCircle, Clock, XCircle, RefreshCw, Loader2 } from 'lucide-react';
 
 type OrderStatus = 'pending' | 'paid' | 'failed' | 'refunded';
@@ -58,9 +60,12 @@ const formatPrice = (cents: number, currency: string) => {
 
 export default function CheckoutSuccessPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const { clearCart } = useCart();
+  const { user } = useAuth();
   const sessionId = searchParams.get('session_id');
+  const sandboxOrderId = searchParams.get('order_id') || (location.state as any)?.orderId;
   const [order, setOrder] = useState<Order | null>(null);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -70,17 +75,23 @@ export default function CheckoutSuccessPage() {
   }, [clearCart]);
 
   useEffect(() => {
-    if (!sessionId) {
+    if (!sessionId && !sandboxOrderId) {
       setIsLoading(false);
       return;
     }
 
     const fetchOrder = async () => {
-      const { data: orderData } = await supabase
+      let query = supabase
         .from('orders')
-        .select('id, status, total_cents, currency, customer_email, customer_name, created_at')
-        .eq('stripe_checkout_id', sessionId)
-        .maybeSingle();
+        .select('id, status, total_cents, currency, customer_email, customer_name, created_at');
+
+      if (sandboxOrderId) {
+        query = query.eq('id', sandboxOrderId);
+      } else {
+        query = query.eq('stripe_checkout_id', sessionId!);
+      }
+
+      const { data: orderData } = await query.maybeSingle();
 
       if (orderData) {
         setOrder(orderData as Order);
@@ -189,7 +200,13 @@ export default function CheckoutSuccessPage() {
           )}
         </CardContent>
 
-        <CardFooter>
+        <CardFooter className="flex flex-col gap-4">
+          {!user && order && order.status === 'paid' && (
+            <GuestAccountPrompt
+              email={order.customer_email}
+              name={order.customer_name}
+            />
+          )}
           <Button onClick={() => navigate('/')} className="w-full">
             Back to Home
           </Button>

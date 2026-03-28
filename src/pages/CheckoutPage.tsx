@@ -86,10 +86,10 @@ export default function CheckoutPage() {
         clearCart();
         toast.success(
           data.status === 'paid'
-            ? 'Order placed successfully (sandbox mode)'
-            : `Order created — will be marked as paid in ${data.sandboxAutoPayDays || 'a few'} days (sandbox)`
+            ? 'Order placed successfully!'
+            : `Order created — payment pending`
         );
-        navigate('/checkout/success', { state: { orderId: data.orderId, sandbox: true } });
+        navigate(`/checkout/success?order_id=${data.orderId}&sandbox=true`);
         return;
       }
 
