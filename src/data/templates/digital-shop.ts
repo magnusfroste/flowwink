@@ -192,7 +192,7 @@ const digitalShopPages: TemplatePage[] = [
               id: 'bento-courses',
               title: 'Online Courses',
               description: '40+ expert-led lessons taught by industry practitioners. Learn at your pace, apply immediately.',
-              image: '/templates/blog/team-brainstorming.jpg',
+              image: '/templates/products/growth-masterclass.jpg',
               colSpan: 1,
               rowSpan: 1,
               ctaText: 'Start Learning',
