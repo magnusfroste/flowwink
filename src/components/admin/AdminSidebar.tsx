@@ -170,35 +170,17 @@ export function AdminSidebar() {
     return () => document.removeEventListener("keydown", down);
   }, []);
 
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Focus input when search opens
+  useEffect(() => {
+    if (searchOpen) {
+      setTimeout(() => searchInputRef.current?.focus(), 50);
+    }
+  }, [searchOpen]);
+
   return (
     <>
-      {/* Search Command Dialog */}
-      <CommandDialog open={searchOpen} onOpenChange={setSearchOpen}>
-        <CommandInput placeholder="Search pages..." />
-        <CommandList>
-          <CommandEmpty>No results found.</CommandEmpty>
-          {Object.entries(
-            allSearchItems.reduce<Record<string, typeof allSearchItems>>((acc, item) => {
-              (acc[item.group] ??= []).push(item);
-              return acc;
-            }, {})
-          ).map(([groupLabel, items]) => (
-            <CommandGroup key={groupLabel} heading={groupLabel}>
-              {items.map((item) => (
-                <CommandItem
-                  key={item.href}
-                  onSelect={() => handleSearchSelect(item.href)}
-                  className="cursor-pointer"
-                >
-                  <item.icon className="mr-2 h-4 w-4" />
-                  <span>{item.name}</span>
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          ))}
-        </CommandList>
-      </CommandDialog>
-
       <Sidebar collapsible="icon" className="border-r border-sidebar-border">
         {/* Logo */}
         <SidebarHeader className="flex !flex-row !gap-0 !py-0 !px-3 h-10 items-center justify-between shrink-0 border-b border-sidebar-border">
@@ -208,27 +190,64 @@ export function AdminSidebar() {
           <SidebarTrigger className="h-7 w-7 shrink-0" />
         </SidebarHeader>
 
-        {/* Search Button */}
+        {/* Inline Search */}
         <div className="px-2 pt-1.5 pb-0.5">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={() => setSearchOpen(true)}
-                className="flex items-center gap-2 w-full px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent rounded-md transition-colors"
-              >
-                <Search className="h-4 w-4" />
-                {!isCollapsed && (
-                  <>
-                    <span className="flex-1 text-left">Search...</span>
-                    <kbd className="hidden lg:inline-flex h-5 items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
-                      ⌘K
-                    </kbd>
-                  </>
-                )}
-              </button>
-            </TooltipTrigger>
-            {isCollapsed && <TooltipContent side="right">Search (⌘K)</TooltipContent>}
-          </Tooltip>
+          {!searchOpen ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => setSearchOpen(true)}
+                  className="flex items-center gap-2 w-full px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent rounded-md transition-colors"
+                >
+                  <Search className="h-4 w-4" />
+                  {!isCollapsed && (
+                    <>
+                      <span className="flex-1 text-left">Search...</span>
+                      <kbd className="hidden lg:inline-flex h-5 items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+                        ⌘K
+                      </kbd>
+                    </>
+                  )}
+                </button>
+              </TooltipTrigger>
+              {isCollapsed && <TooltipContent side="right">Search (⌘K)</TooltipContent>}
+            </Tooltip>
+          ) : (
+            <Command className="rounded-md border border-sidebar-border bg-sidebar shadow-none">
+              <CommandInput
+                ref={searchInputRef}
+                placeholder="Search..."
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') {
+                    setSearchOpen(false);
+                  }
+                }}
+                className="h-8 text-sm"
+              />
+              <CommandList className="max-h-[min(50vh,320px)] overflow-y-auto">
+                <CommandEmpty className="py-3 text-center text-xs text-sidebar-foreground/50">No results found.</CommandEmpty>
+                {Object.entries(
+                  allSearchItems.reduce<Record<string, typeof allSearchItems>>((acc, item) => {
+                    (acc[item.group] ??= []).push(item);
+                    return acc;
+                  }, {})
+                ).map(([groupLabel, items]) => (
+                  <CommandGroup key={groupLabel} heading={groupLabel}>
+                    {items.map((item) => (
+                      <CommandItem
+                        key={item.href}
+                        onSelect={() => handleSearchSelect(item.href)}
+                        className="cursor-pointer text-sm"
+                      >
+                        <item.icon className="mr-2 h-4 w-4" />
+                        <span>{item.name}</span>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                ))}
+              </CommandList>
+            </Command>
+          )}
         </div>
 
         {/* Navigation */}
