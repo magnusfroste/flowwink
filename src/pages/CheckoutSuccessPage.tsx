@@ -60,7 +60,10 @@ const formatPrice = (cents: number, currency: string) => {
 
 export default function CheckoutSuccessPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
+  const { clearCart } = useCart();
+  const { user } = useAuth();
   const { clearCart } = useCart();
   const sessionId = searchParams.get('session_id');
   const [order, setOrder] = useState<Order | null>(null);
