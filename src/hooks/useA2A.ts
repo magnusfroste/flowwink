@@ -7,6 +7,7 @@ export interface A2APeer {
   name: string;
   url: string;
   outbound_token: string;
+  gateway_token: string;
   inbound_token_hash: string | null;
   status: 'active' | 'paused' | 'revoked';
   capabilities: unknown;

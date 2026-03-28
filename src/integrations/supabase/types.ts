@@ -66,6 +66,7 @@ export type Database = {
           capabilities: Json
           created_at: string
           created_by: string | null
+          gateway_token: string | null
           id: string
           inbound_token_hash: string | null
           last_seen_at: string | null
@@ -80,6 +81,7 @@ export type Database = {
           capabilities?: Json
           created_at?: string
           created_by?: string | null
+          gateway_token?: string | null
           id?: string
           inbound_token_hash?: string | null
           last_seen_at?: string | null
@@ -94,6 +96,7 @@ export type Database = {
           capabilities?: Json
           created_at?: string
           created_by?: string | null
+          gateway_token?: string | null
           id?: string
           inbound_token_hash?: string | null
           last_seen_at?: string | null

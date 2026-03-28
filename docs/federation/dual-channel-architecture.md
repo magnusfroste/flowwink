@@ -29,8 +29,9 @@ Both channels use the **same peer record** in `a2a_peers`:
 
 | Field | Used by A2A | Used by OpenResponses |
 |-------|:-----------:|:---------------------:|
-| `url` | ✅ base URL for A2A gateway | ✅ base URL for /v1/responses |
-| `outbound_token` | ✅ as Bearer token | ✅ as x-openclaw-token |
+| `url` | ✅ base URL for A2A gateway (port 18800) | ✅ base URL for /v1/responses (port 18789) |
+| `outbound_token` | ✅ as Bearer token | — |
+| `gateway_token` | — | ✅ as Bearer token (separate auth) |
 | `capabilities` | ✅ protocol detection | — |
 | `status` | ✅ must be 'active' | ✅ must be 'active' |
 
