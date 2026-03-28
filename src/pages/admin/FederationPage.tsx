@@ -137,8 +137,7 @@ export default function FederationPage() {
           },
           body: JSON.stringify({
             peer_name: peer.name,
-            skill: 'ping',
-            arguments: { test: true },
+            message: 'ping',
           }),
         }
       );
