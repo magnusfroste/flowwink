@@ -41,6 +41,7 @@ Deno.serve(async (req) => {
     const token = authHeader?.replace(/^Bearer\s+/i, '').trim();
     const apikeyHeader = req.headers.get('apikey')?.trim();
     const trimmedServiceKey = serviceKey.trim();
+    console.log('Auth debug:', { hasToken: !!token, tokenLen: token?.length, serviceKeyLen: trimmedServiceKey.length, tokenPrefix: token?.substring(0, 10), serviceKeyPrefix: trimmedServiceKey.substring(0, 10), match: token === trimmedServiceKey });
     // Service role key match via Authorization header or apikey header
     let isAuthorized = (token === trimmedServiceKey) || (apikeyHeader === trimmedServiceKey);
 
