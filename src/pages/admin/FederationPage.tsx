@@ -41,7 +41,7 @@ export default function FederationPage() {
   const { data: activity, isLoading: activityLoading } = useA2AActivity();
   const createPeer = useCreateA2APeer();
   const updatePeer = useUpdateA2APeer();
-  const regenerateToken = useRegenerateToken();
+  const regenerateToken = useRegenerateInboundToken();
   const queryClient = useQueryClient();
 
   const [dialogOpen, setDialogOpen] = useState(false);
