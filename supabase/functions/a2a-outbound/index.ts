@@ -203,6 +203,8 @@ Deno.serve(async (req) => {
 
       clearTimeout(timeout);
 
+      console.log(`[a2a-outbound] Response from '${peer.name}': status=${response.status} content-type=${response.headers.get('content-type')}`);
+
       let resultText: string | null = null;
       try {
         result = await response.json();
