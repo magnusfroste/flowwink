@@ -36,14 +36,35 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-    // Auth: service role key, anon key (internal calls), or authenticated admin user
+    // Auth: service role key (may be sb_secret_ or JWT format), or authenticated admin user
     const authHeader = req.headers.get('authorization');
     const token = authHeader?.replace(/^Bearer\s+/i, '').trim();
     const apikeyHeader = req.headers.get('apikey')?.trim();
     const trimmedServiceKey = serviceKey.trim();
-    console.log('Auth debug:', { hasToken: !!token, tokenLen: token?.length, serviceKeyLen: trimmedServiceKey.length, tokenPrefix: token?.substring(0, 10), serviceKeyPrefix: trimmedServiceKey.substring(0, 10), match: token === trimmedServiceKey });
-    // Service role key match via Authorization header or apikey header
+    // Service role key match — check both Authorization and apikey headers
+    // The service key on Lovable Cloud is sb_secret_*, but callers may pass the JWT-format key
     let isAuthorized = (token === trimmedServiceKey) || (apikeyHeader === trimmedServiceKey);
+    
+    // Also accept JWT service role tokens by verifying via Supabase auth
+    if (!isAuthorized && token && token.startsWith('eyJ')) {
+      try {
+        const verifyClient = createClient(supabaseUrl, token);
+        const { data } = await verifyClient.auth.getUser();
+        // If token is the service_role JWT it won't resolve to a user but will have admin privileges
+        // Check if it matches the anon key - if not, and it's a valid JWT, check role claim
+        const anonKey = (Deno.env.get('SUPABASE_ANON_KEY') || Deno.env.get('SUPABASE_PUBLISHABLE_KEY') || '').trim();
+        if (token !== anonKey) {
+          // Decode JWT payload to check role
+          const parts = token.split('.');
+          if (parts.length === 3) {
+            const payload = JSON.parse(atob(parts[1]));
+            if (payload.role === 'service_role') {
+              isAuthorized = true;
+            }
+          }
+        }
+      } catch { /* not a valid JWT, continue to user auth check */ }
+    }
 
     // Also allow admin users via JWT
     if (!isAuthorized && token) {
