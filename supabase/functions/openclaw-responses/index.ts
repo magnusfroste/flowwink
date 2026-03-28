@@ -115,8 +115,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (!peer.url || !peer.outbound_token) {
-      return new Response(JSON.stringify({ error: `Peer '${peer.name}' missing URL or token` }), {
+    // OpenResponses uses gateway_token (port 18789), NOT outbound_token (A2A port 18800)
+    const gatewayToken = peer.gateway_token || peer.outbound_token;
+    if (!peer.url || !gatewayToken) {
+      return new Response(JSON.stringify({ error: `Peer '${peer.name}' missing URL or gateway token` }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
