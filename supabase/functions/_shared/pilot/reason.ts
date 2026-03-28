@@ -881,7 +881,6 @@ export async function reason(
             circuitBrokenSkills.add(fnName);
             console.warn(`[reason] trace=${traceId} Circuit breaker tripped for '${fnName}' after ${skillFailureCounts[fnName]} failures`);
           }
-          }
         } else {
           // Reset failure count on success
           skillFailureCounts[fnName] = 0;
