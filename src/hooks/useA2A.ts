@@ -66,7 +66,7 @@ export function useCreateA2APeer() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (input: { name: string; url?: string; outbound_token?: string; inbound_token?: string }) => {
+    mutationFn: async (input: { name: string; url?: string; outbound_token?: string; inbound_token?: string; gateway_token?: string }) => {
       // Hash the inbound token if provided (token peer sends TO us)
       let hashedToken: string | null = null;
       if (input.inbound_token) {
@@ -85,6 +85,9 @@ export function useCreateA2APeer() {
       // If user provides the peer's API key, use it as outbound token
       if (input.outbound_token) {
         insertData.outbound_token = input.outbound_token;
+      }
+      if (input.gateway_token) {
+        insertData.gateway_token = input.gateway_token;
       }
 
       const { data, error } = await supabase
