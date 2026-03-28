@@ -140,7 +140,7 @@ Deno.serve(async (req) => {
     const responsesUrl = `${peerUrl}/v1/responses`;
 
     const openResponsesBody: Record<string, unknown> = {
-      model: model || 'default',
+      model: model || 'openclaw',
       input: prompt,
     };
 
@@ -168,9 +168,7 @@ Deno.serve(async (req) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          // OpenClaw uses x-openclaw-token for gateway auth
-          // Also send as Bearer for compatibility
-          'x-openclaw-token': peer.outbound_token,
+          // OpenClaw authenticates via standard Bearer token
           'Authorization': `Bearer ${peer.outbound_token}`,
         },
         body: JSON.stringify(openResponsesBody),
