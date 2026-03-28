@@ -331,9 +331,9 @@ export default function FederationPage() {
   };
 
   const handleRegenerate = async (peerId: string) => {
-    const result = await regenerateToken.mutateAsync(peerId);
-    if (result) {
-      setShowToken(result.outbound_token);
+    const rawToken = await regenerateToken.mutateAsync(peerId);
+    if (rawToken) {
+      setShowToken(rawToken);
     }
   };
 
