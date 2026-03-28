@@ -299,6 +299,7 @@ export default function FederationPage() {
       url: newPeerUrl || undefined,
       outbound_token: newPeerOutboundToken || undefined,
       inbound_token: inboundToken,
+      gateway_token: newPeerGatewayToken || undefined,
     });
 
     if (result) {
