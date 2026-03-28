@@ -313,6 +313,7 @@ export default function FederationPage() {
       setNewPeerUrl('');
       setNewPeerOutboundToken('');
       setNewPeerInboundToken('');
+      setNewPeerGatewayToken('');
     }
   };
 
