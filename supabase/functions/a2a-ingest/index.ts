@@ -102,6 +102,9 @@ Deno.serve(async (req) => {
       // Native format: { skill, arguments }
       skill = body.skill;
       args = body.arguments;
+      if (body.responseSchema || body.response_schema) {
+        responseSchema = body.responseSchema || body.response_schema;
+      }
     }
 
     if (!skill) {
