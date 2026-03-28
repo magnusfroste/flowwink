@@ -41,18 +41,23 @@ const digitalShopPages: TemplatePage[] = [
         },
       },
 
-      // 2 ── Hero: full-bleed editorial ──
+      // 2 ── Hero: full-bleed editorial with video ──
       {
         id: 'hero-editorial',
         type: 'hero',
         data: {
           title: 'Curate Your\nDigital Workspace',
           subtitle: 'Premium templates, courses, and tools — crafted for creators who ship fast and look great doing it.',
-          backgroundType: 'image',
-          backgroundImage: '/templates/hero/abstract-gradient.jpg',
-          heightMode: '70vh',
+          backgroundType: 'video',
+          videoType: 'youtube',
+          videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+          videoMuted: true,
+          videoLoop: true,
+          videoAutoplay: true,
+          backgroundImage: '/templates/hero/digital-shop-hero.jpg',
+          heightMode: '80vh',
           contentAlignment: 'center',
-          overlayOpacity: 50,
+          overlayOpacity: 55,
           titleAnimation: 'slide-up',
           primaryButton: { text: 'Shop Collection', url: '#products-bestsellers' },
           secondaryButton: { text: 'Ask AI Assistant', url: '#ai-assistant-hero' },
