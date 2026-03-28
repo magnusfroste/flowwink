@@ -839,9 +839,10 @@ export default function FederationPage() {
                             size="sm"
                             onClick={() => handleRegenerate(peer.id)}
                             disabled={regenerateToken.isPending}
+                            title="Generate a new inbound token for this peer to authenticate with"
                           >
                             <RefreshCw className="h-3 w-3 mr-1" />
-                            Regenerate
+                            New Inbound Token
                           </Button>
                           <Switch
                             checked={peer.status === 'active'}
