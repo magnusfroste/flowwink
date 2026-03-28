@@ -49,6 +49,7 @@ export default function FederationPage() {
   const [newPeerUrl, setNewPeerUrl] = useState('');
   const [newPeerOutboundToken, setNewPeerOutboundToken] = useState('');
   const [newPeerInboundToken, setNewPeerInboundToken] = useState('');
+  const [newPeerGatewayToken, setNewPeerGatewayToken] = useState('');
   const [showToken, setShowToken] = useState<string | null>(null);
   const [copiedToken, setCopiedToken] = useState(false);
 
