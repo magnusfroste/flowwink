@@ -245,3 +245,6 @@ verify_jwt = false
 
 [functions.a2a-outbound]
 verify_jwt = false
+
+[functions.a2a-chat]
+verify_jwt = false
