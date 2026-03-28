@@ -152,7 +152,9 @@ Deno.serve(async (req) => {
     }
 
     if (response_format === 'json') {
-      openResponsesBody.text = { format: { type: 'json_object' } };
+      // OpenClaw doesn't support the `text` format key — inject JSON instruction into prompt instead
+      const jsonSuffix = '\n\nIMPORTANT: Respond with valid JSON only, no markdown or extra text.';
+      openResponsesBody.input = prompt + jsonSuffix;
     }
 
     console.log(`[openclaw-responses] Calling peer '${peer.name}' at ${responsesUrl}`);
