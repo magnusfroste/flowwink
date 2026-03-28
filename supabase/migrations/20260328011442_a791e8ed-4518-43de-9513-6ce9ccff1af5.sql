@@ -1,0 +1,47 @@
+UPDATE pages
+SET content_json = REPLACE(
+  REPLACE(
+    REPLACE(
+      REPLACE(
+        REPLACE(
+          REPLACE(
+            REPLACE(
+              REPLACE(
+                REPLACE(
+                  REPLACE(
+                    REPLACE(
+                      content_json::text,
+                      'https://rzhjotxffjfsdlhrdkpj.supabase.co/storage/v1/object/public/cms-images/templates/1774659615228-abstract-gradient.jpg',
+                      '/templates/hero/abstract-gradient.jpg'
+                    ),
+                    'https://rzhjotxffjfsdlhrdkpj.supabase.co/storage/v1/object/public/cms-images/templates/1774659615221-templates-product.jpg',
+                    '/templates/products/creator-toolkit.jpg'
+                  ),
+                  'https://rzhjotxffjfsdlhrdkpj.supabase.co/storage/v1/object/public/cms-images/templates/1774659615264-modern-office.jpg',
+                  '/templates/hero/modern-office.jpg'
+                ),
+                'https://rzhjotxffjfsdlhrdkpj.supabase.co/storage/v1/object/public/cms-images/templates/1774659616341-team-brainstorming.jpg',
+                '/templates/misc/our-team.jpg'
+              ),
+              'https://rzhjotxffjfsdlhrdkpj.supabase.co/storage/v1/object/public/cms-images/templates/1774659616338-design-systems.jpg',
+              '/templates/products/design-system-pro.jpg'
+            ),
+            'https://rzhjotxffjfsdlhrdkpj.supabase.co/storage/v1/object/public/cms-images/templates/1774659616333-money-growth.jpg',
+            '/templates/products/growth-masterclass.jpg'
+          ),
+          'https://rzhjotxffjfsdlhrdkpj.supabase.co/storage/v1/object/public/cms-images/templates/1774659616680-product-collection.jpg',
+          '/templates/products/social-media-pack.jpg'
+        ),
+        'https://rzhjotxffjfsdlhrdkpj.supabase.co/storage/v1/object/public/cms-images/templates/1774659616664-our-team.jpg',
+        '/templates/misc/our-team.jpg'
+      ),
+      'https://rzhjotxffjfsdlhrdkpj.supabase.co/storage/v1/object/public/cms-images/templates/1774659616666-dashboard-costs.jpg',
+      '/templates/products/pro-membership.jpg'
+    ),
+    'https://rzhjotxffjfsdlhrdkpj.supabase.co/storage/v1/object/public/cms-images/templates/1774659617659-entrepreneur-laptop.jpg',
+    '/templates/hero/digital-shop-hero.jpg'
+  ),
+  'https://rzhjotxffjfsdlhrdkpj.supabase.co/storage/v1/object/public/cms-images/templates/1774659617664-support-agent.jpg',
+  '/templates/team/support-agent.jpg'
+)::jsonb
+WHERE slug = 'home';
