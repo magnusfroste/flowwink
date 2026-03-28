@@ -405,39 +405,58 @@ export default function FederationPage() {
           </Card>
         </div>
 
-        {/* Inbound token reveal dialog */}
+        {/* Inbound token reveal dialog — post-creation wizard */}
         <Dialog open={!!generatedInboundToken} onOpenChange={() => setGeneratedInboundToken(null)}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Inbound Token — Share with Peer</DialogTitle>
+              <DialogTitle className="flex items-center gap-2">
+                <Check className="h-5 w-5 text-green-500" />
+                Peer Created — Share These Details
+              </DialogTitle>
               <DialogDescription>
-                Give this token to the peer. They must include it as <code className="bg-muted px-1 rounded">Authorization: Bearer &lt;token&gt;</code> when calling your A2A endpoint. This is shown only once.
+                Give the peer these two pieces of information so they can connect to you.
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground">Token for peer</Label>
-              <div className="flex items-center gap-2 p-3 bg-muted rounded-md font-mono text-sm break-all">
-                <span className="flex-1">{generatedInboundToken}</span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => generatedInboundToken && handleCopyToken(generatedInboundToken)}
-                >
-                  {copiedToken ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                </Button>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label className="text-xs font-medium flex items-center gap-1.5">
+                  <span className="h-5 w-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold">1</span>
+                  A2A Endpoint
+                </Label>
+                <div className="flex items-center gap-2 p-3 bg-muted rounded-md font-mono text-xs break-all">
+                  <span className="flex-1">{import.meta.env.VITE_SUPABASE_URL}/functions/v1/a2a-ingest</span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="shrink-0"
+                    onClick={() => handleCopyToken(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/a2a-ingest`)}
+                  >
+                    {copiedToken ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                </div>
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground">Endpoint</Label>
-              <div className="flex items-center gap-2 p-3 bg-muted rounded-md font-mono text-xs break-all">
-                <span className="flex-1">POST {import.meta.env.VITE_SUPABASE_URL}/functions/v1/a2a-ingest</span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleCopyToken(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/a2a-ingest`)}
-                >
-                  <Copy className="h-4 w-4" />
-                </Button>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium flex items-center gap-1.5">
+                  <span className="h-5 w-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold">2</span>
+                  Bearer Token <span className="text-destructive text-[10px]">(shown once)</span>
+                </Label>
+                <div className="flex items-center gap-2 p-3 bg-muted rounded-md font-mono text-xs break-all">
+                  <span className="flex-1">{generatedInboundToken}</span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="shrink-0"
+                    onClick={() => generatedInboundToken && handleCopyToken(generatedInboundToken)}
+                  >
+                    {copiedToken ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+              <div className="rounded-lg border border-border/50 p-3 bg-muted/30 text-xs text-muted-foreground space-y-1">
+                <p className="font-medium text-foreground">The peer should use:</p>
+                <code className="block bg-background rounded px-2 py-1.5 text-[11px]">
+                  Authorization: Bearer &lt;token&gt;
+                </code>
               </div>
             </div>
             <DialogFooter>
