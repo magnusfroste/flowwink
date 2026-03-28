@@ -123,6 +123,10 @@ serve(async (req) => {
       } else if (handler.startsWith('webhook:')) {
         result = await executeWebhook(supabase, args);
 
+      } else if (handler.startsWith('responses:')) {
+        const peerName = handler.replace('responses:', '');
+        result = await executeOpenResponsesRequest(peerName, args);
+
       } else if (handler.startsWith('a2a:')) {
         const peerName = handler.replace('a2a:', '');
         result = await executeA2ARequest(supabase, peerName, args);
