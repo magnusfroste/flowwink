@@ -608,7 +608,7 @@ const digitalShopProducts: TemplateProduct[] = [
     price_cents: 4900,
     currency: 'USD',
     type: 'one_time',
-    image_url: '/templates/misc/templates-product.jpg',
+    image_url: '/templates/products/creator-toolkit.jpg',
     is_active: true,
   },
   {
@@ -617,7 +617,7 @@ const digitalShopProducts: TemplateProduct[] = [
     price_cents: 7900,
     currency: 'USD',
     type: 'one_time',
-    image_url: '/templates/misc/design-systems.jpg',
+    image_url: '/templates/products/design-system-pro.jpg',
     is_active: true,
   },
   {
@@ -626,7 +626,7 @@ const digitalShopProducts: TemplateProduct[] = [
     price_cents: 19900,
     currency: 'USD',
     type: 'one_time',
-    image_url: '/templates/blog/team-brainstorming.jpg',
+    image_url: '/templates/products/growth-masterclass.jpg',
     is_active: true,
   },
   {
@@ -635,7 +635,7 @@ const digitalShopProducts: TemplateProduct[] = [
     price_cents: 3900,
     currency: 'USD',
     type: 'one_time',
-    image_url: '/templates/team/support-agent.jpg',
+    image_url: '/templates/products/social-media-pack.jpg',
     is_active: true,
   },
   {
@@ -644,7 +644,7 @@ const digitalShopProducts: TemplateProduct[] = [
     price_cents: 2900,
     currency: 'USD',
     type: 'recurring',
-    image_url: '/templates/misc/money-growth.jpg',
+    image_url: '/templates/products/pro-membership.jpg',
     is_active: true,
   },
 ];
