@@ -1,0 +1,1 @@
+ALTER TABLE public.a2a_peers ADD COLUMN IF NOT EXISTS gateway_token text DEFAULT '';
