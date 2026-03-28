@@ -186,9 +186,12 @@ Deno.serve(async (req) => {
 
     try {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 15_000); // 15s timeout
+      const timeout = setTimeout(() => controller.abort(), 55_000); // 55s timeout
 
-      const response = await fetch(`${peerUrl}${endpoint}`, {
+      const fullUrl = `${peerUrl}${endpoint}`;
+      console.log(`[a2a-outbound] Calling peer '${peer.name}' at ${fullUrl} (protocol: ${protocol})`);
+
+      const response = await fetch(fullUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -199,6 +202,8 @@ Deno.serve(async (req) => {
       });
 
       clearTimeout(timeout);
+
+      console.log(`[a2a-outbound] Response from '${peer.name}': status=${response.status} content-type=${response.headers.get('content-type')}`);
 
       let resultText: string | null = null;
       try {
@@ -225,6 +230,7 @@ Deno.serve(async (req) => {
       }
     } catch (err: any) {
       // Network errors (DNS, timeout, connection refused) = peer is simply unavailable
+      console.error(`[a2a-outbound] Fetch error for '${peer.name}':`, err.name, err.message);
       const isNetworkError = err.name === 'AbortError' ||
         err.message?.includes('error trying to connect') ||
         err.message?.includes('dns error') ||
