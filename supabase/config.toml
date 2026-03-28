@@ -242,3 +242,6 @@ verify_jwt = false
 
 [functions.order-status]
 verify_jwt = false
+
+[functions.a2a-outbound]
+verify_jwt = false
