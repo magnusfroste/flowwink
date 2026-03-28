@@ -213,7 +213,7 @@ export function AdminSidebar() {
               {isCollapsed && <TooltipContent side="right">Search (⌘K)</TooltipContent>}
             </Tooltip>
           ) : (
-            <Command className="rounded-md border border-sidebar-border bg-sidebar shadow-none">
+            <Command className="rounded-md border border-sidebar-border bg-sidebar text-sidebar-foreground shadow-none [&_[cmdk-group-heading]]:text-sidebar-foreground/50 [&_[cmdk-input-wrapper]]:border-sidebar-border [&_[cmdk-input-wrapper]_svg]:text-sidebar-foreground/50">
               <CommandInput
                 ref={searchInputRef}
                 placeholder="Search..."
@@ -222,7 +222,7 @@ export function AdminSidebar() {
                     setSearchOpen(false);
                   }
                 }}
-                className="h-8 text-sm"
+                className="h-8 text-sm text-sidebar-foreground placeholder:text-sidebar-foreground/40"
               />
               <CommandList className="max-h-[min(50vh,320px)] overflow-y-auto">
                 <CommandEmpty className="py-3 text-center text-xs text-sidebar-foreground/50">No results found.</CommandEmpty>
@@ -237,7 +237,7 @@ export function AdminSidebar() {
                       <CommandItem
                         key={item.href}
                         onSelect={() => handleSearchSelect(item.href)}
-                        className="cursor-pointer text-sm"
+                        className="cursor-pointer text-sm text-sidebar-foreground/80 hover:text-sidebar-foreground aria-selected:bg-sidebar-accent aria-selected:text-sidebar-accent-foreground"
                       >
                         <item.icon className="mr-2 h-4 w-4" />
                         <span>{item.name}</span>
