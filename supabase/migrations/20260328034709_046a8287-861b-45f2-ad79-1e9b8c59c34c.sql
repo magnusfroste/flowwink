@@ -1,0 +1,1 @@
+UPDATE public.a2a_peers SET url = 'https://clawone.froste.eu', capabilities = jsonb_set(COALESCE(capabilities, '{}'::jsonb), '{endpoint}', '"/a2a/jsonrpc"') WHERE name ILIKE '%claw%';
