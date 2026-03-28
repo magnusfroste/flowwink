@@ -200,7 +200,13 @@ export default function CheckoutSuccessPage() {
           )}
         </CardContent>
 
-        <CardFooter>
+        <CardFooter className="flex flex-col gap-4">
+          {!user && order && order.status === 'paid' && (
+            <GuestAccountPrompt
+              email={order.customer_email}
+              name={order.customer_name}
+            />
+          )}
           <Button onClick={() => navigate('/')} className="w-full">
             Back to Home
           </Button>
