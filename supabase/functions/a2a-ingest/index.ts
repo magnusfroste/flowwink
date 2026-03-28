@@ -55,6 +55,7 @@ Deno.serve(async (req) => {
     let args: Record<string, unknown> | undefined;
     let isJsonRpc = false;
     let jsonRpcId: string | number | null = null;
+    let responseSchema: Record<string, unknown> | undefined;
 
     if (body.jsonrpc === '2.0' && body.method) {
       // A2A v0.3.0 JSON-RPC format: { jsonrpc, method, id, params: { message: { parts } } }
