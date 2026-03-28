@@ -89,7 +89,7 @@ import FederationPage from "./pages/admin/FederationPage";
 import CompanyInsightsPage from "./pages/admin/CompanyInsightsPage";
 import AutonomyTestSuitePage from "./pages/admin/AutonomyTestSuitePage";
 import GrowthDashboardPage from "./pages/admin/GrowthDashboardPage";
-import OpenClawPage from "./pages/admin/OpenClawPage";
+
 import TicketsPage from "./pages/admin/TicketsPage";
 
 const TemplateGalleryPage = lazy(() => import("./pages/admin/TemplateGalleryPage"));
