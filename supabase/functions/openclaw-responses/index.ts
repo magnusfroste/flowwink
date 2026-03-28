@@ -140,7 +140,7 @@ Deno.serve(async (req) => {
     const responsesUrl = `${peerUrl}/v1/responses`;
 
     const openResponsesBody: Record<string, unknown> = {
-      model: model || 'default',
+      model: model || 'openclaw',
       input: prompt,
     };
 
