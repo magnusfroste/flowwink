@@ -525,62 +525,134 @@ export default function FederationPage() {
                 Connect Peer
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="sm:max-w-lg">
               <DialogHeader>
                 <DialogTitle>Connect New Peer</DialogTitle>
                 <DialogDescription>
-                  Add another FlowWink instance or A2A-compatible agent to your federation network.
+                  Register an A2A-compatible agent. We'll auto-detect their capabilities.
                 </DialogDescription>
               </DialogHeader>
-              <div className="space-y-4">
+              <div className="space-y-5">
+                {/* Step 1: URL */}
                 <div className="space-y-2">
-                  <Label>Peer Name</Label>
+                  <div className="flex items-center gap-2">
+                    <div className="h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">1</div>
+                    <Label className="font-medium">Peer URL</Label>
+                  </div>
+                  <div className="relative">
+                    <Input
+                      placeholder="https://peer.example.com"
+                      value={newPeerUrl}
+                      onChange={e => handleUrlChange(e.target.value)}
+                    />
+                    {probeLoading && (
+                      <Loader2 className="h-4 w-4 animate-spin absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Leave empty for inbound-only peers that only call your endpoint.
+                  </p>
+                  {/* Probe result */}
+                  {probeResult && (
+                    <div className={`rounded-lg border p-3 text-sm ${probeResult.success ? 'border-green-500/30 bg-green-500/5' : 'border-yellow-500/30 bg-yellow-500/5'}`}>
+                      {probeResult.success ? (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-green-700 dark:text-green-400">
+                            <Check className="h-4 w-4" />
+                            <span className="font-medium">Agent found: {probeResult.agent_card?.name}</span>
+                          </div>
+                          {probeResult.agent_card?.description && (
+                            <p className="text-xs text-muted-foreground">{probeResult.agent_card.description}</p>
+                          )}
+                          {probeResult.agent_card?.skills?.length > 0 && (
+                            <div className="flex flex-wrap gap-1">
+                              {probeResult.agent_card.skills.slice(0, 8).map((s: any) => (
+                                <Badge key={s.id} variant="secondary" className="text-[10px]">
+                                  {s.name || s.id}
+                                </Badge>
+                              ))}
+                              {probeResult.agent_card.skills.length > 8 && (
+                                <Badge variant="outline" className="text-[10px]">
+                                  +{probeResult.agent_card.skills.length - 8} more
+                                </Badge>
+                              )}
+                            </div>
+                          )}
+                          {probeResult.found_at && (
+                            <p className="text-[10px] text-muted-foreground font-mono">Card at: {probeResult.found_at}</p>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 text-yellow-700 dark:text-yellow-400">
+                          <AlertCircle className="h-4 w-4" />
+                          <span>No agent card found — you can still add manually</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Step 2: Name */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">2</div>
+                    <Label className="font-medium">Peer Name</Label>
+                  </div>
                   <Input
                     placeholder="e.g. OpenClaw"
                     value={newPeerName}
                     onChange={e => setNewPeerName(e.target.value)}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label>URL (optional — only if you need to call them)</Label>
-                  <Input
-                    placeholder="https://peer.example.com"
-                    value={newPeerUrl}
-                    onChange={e => setNewPeerUrl(e.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Leave empty for inbound-only peers that call your endpoint.
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  <Label>Inbound Token (optional — auto-generated if empty)</Label>
-                  <Input
-                    placeholder="Leave empty to auto-generate"
-                    value={newPeerInboundToken}
-                    onChange={e => setNewPeerInboundToken(e.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Token the peer sends as Bearer when calling your A2A endpoint. Auto-generated and shown after creation.
-                  </p>
-                </div>
-                {newPeerUrl && (
-                  <div className="space-y-2">
-                    <Label>Outbound Token (optional — for calling their API)</Label>
-                    <Input
-                      placeholder="Paste the peer's API key / token"
-                      value={newPeerOutboundToken}
-                      onChange={e => setNewPeerOutboundToken(e.target.value)}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Token we include when calling their API. Leave empty to auto-generate.
-                    </p>
+
+                {/* Step 3: Tokens */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">3</div>
+                    <Label className="font-medium">Authentication</Label>
                   </div>
-                )}
+
+                  <div className="rounded-lg border border-border/50 p-3 space-y-3 bg-muted/30">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs flex items-center gap-1.5">
+                        <ArrowDownLeft className="h-3 w-3 text-blue-500" />
+                        Inbound Token <span className="text-muted-foreground">(they → you)</span>
+                      </Label>
+                      <Input
+                        placeholder="Auto-generated if empty"
+                        value={newPeerInboundToken}
+                        onChange={e => setNewPeerInboundToken(e.target.value)}
+                        className="text-xs"
+                      />
+                      <p className="text-[10px] text-muted-foreground">
+                        You'll share this token with the peer after creation.
+                      </p>
+                    </div>
+
+                    {newPeerUrl && (
+                      <div className="space-y-1.5">
+                        <Label className="text-xs flex items-center gap-1.5">
+                          <ArrowUpRight className="h-3 w-3 text-green-500" />
+                          Outbound Token <span className="text-muted-foreground">(you → them)</span>
+                        </Label>
+                        <Input
+                          placeholder="Paste the token they gave you"
+                          value={newPeerOutboundToken}
+                          onChange={e => setNewPeerOutboundToken(e.target.value)}
+                          className="text-xs"
+                        />
+                        <p className="text-[10px] text-muted-foreground">
+                          The token you received from the peer for calling their API.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
+                <Button variant="outline" onClick={() => { setDialogOpen(false); setProbeResult(null); }}>Cancel</Button>
                 <Button onClick={handleCreatePeer} disabled={!newPeerName || createPeer.isPending}>
-                  {createPeer.isPending ? 'Creating...' : 'Create'}
+                  {createPeer.isPending ? 'Creating...' : 'Create Peer'}
                 </Button>
               </DialogFooter>
             </DialogContent>
