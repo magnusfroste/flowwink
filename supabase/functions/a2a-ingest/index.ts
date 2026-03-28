@@ -82,6 +82,11 @@ Deno.serve(async (req) => {
           skill = 'a2a_chat';
           args = { text, parts: message?.parts };
         }
+
+        // Extract responseSchema if provided in params (Postel's Law: caller suggests format)
+        if (body.params?.responseSchema) {
+          responseSchema = body.params.responseSchema;
+        }
       } else {
         // Unknown JSON-RPC method
         return new Response(JSON.stringify({
