@@ -50,7 +50,7 @@ const digitalShopPages: TemplatePage[] = [
           subtitle: 'Premium templates, courses, and tools — crafted for creators who ship fast and look great doing it.',
           backgroundType: 'video',
           videoType: 'youtube',
-          videoUrl: 'https://www.youtube.com/watch?v=zGDzdps75ns',
+          videoUrl: 'https://www.youtube.com/watch?v=P8268G_VKEg',
           videoMuted: true,
           videoLoop: true,
           videoAutoplay: true,
