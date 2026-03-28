@@ -129,7 +129,7 @@ const digitalShopPages: TemplatePage[] = [
               ] },
             ],
           },
-          image: '/templates/misc/templates-product.jpg',
+          image: '/templates/products/creator-toolkit.jpg',
           imageAlt: 'Creator Toolkit — 50+ premium templates',
           imageSide: 'left',
           imageAspectRatio: '4:5',
