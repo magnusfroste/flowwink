@@ -62,6 +62,7 @@ Respond helpfully and concisely. You represent the FlowWink platform. If asked a
           { role: 'user', content: `[A2A message from ${peerName}]: ${text}` },
         ],
         mode: 'agent',
+        stream: false,
       }),
     });
 
