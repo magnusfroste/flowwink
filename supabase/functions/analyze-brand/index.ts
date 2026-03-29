@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { extractBranding, type FirecrawlBranding } from '../_shared/extract-branding.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -22,14 +23,12 @@ serve(async (req) => {
 
     const apiKey = Deno.env.get('FIRECRAWL_API_KEY');
     if (!apiKey) {
-      console.error('FIRECRAWL_API_KEY not configured');
       return new Response(
-        JSON.stringify({ success: false, error: 'Firecrawl API-nyckel saknas. Lägg till FIRECRAWL_API_KEY i Cloud Secrets.' }),
+        JSON.stringify({ success: false, error: 'Firecrawl API key missing. Add FIRECRAWL_API_KEY in Cloud Secrets.' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Format URL
     let formattedUrl = url.trim();
     if (!formattedUrl.startsWith('http://') && !formattedUrl.startsWith('https://')) {
       formattedUrl = `https://${formattedUrl}`;
@@ -54,37 +53,29 @@ serve(async (req) => {
     if (!response.ok) {
       console.error('Firecrawl API error:', data);
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: data.error || `Firecrawl-fel: ${response.status}` 
-        }),
+        JSON.stringify({ success: false, error: data.error || `Firecrawl error: ${response.status}` }),
         { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Extract branding data from response
-    const branding = data.data?.branding || data.branding || {};
-    
-    // Log ALL color data for debugging
-    console.log('FULL branding.colors:', JSON.stringify(branding.colors || {}));
-    console.log('FULL branding.typography:', JSON.stringify(branding.typography || {}));
-    console.log('FULL branding.images:', JSON.stringify(branding.images || {}));
-    
-    console.log('Brand analysis successful');
-    
+    const rawBranding: FirecrawlBranding = data.data?.branding || data.branding || {};
+    const extracted = extractBranding(rawBranding);
+
+    console.log('Brand analysis successful:', JSON.stringify(extracted));
+
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        branding,
+      JSON.stringify({
+        success: true,
+        branding: rawBranding,
+        extracted,
         sourceUrl: formattedUrl,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
     console.error('Error analyzing brand:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Kunde inte analysera webbplatsen';
     return new Response(
-      JSON.stringify({ success: false, error: errorMessage }),
+      JSON.stringify({ success: false, error: error instanceof Error ? error.message : 'Could not analyze website' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
