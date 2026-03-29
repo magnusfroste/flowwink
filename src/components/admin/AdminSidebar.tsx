@@ -190,9 +190,9 @@ export function AdminSidebar() {
           <SidebarTrigger className="h-7 w-7 shrink-0" />
         </SidebarHeader>
 
-        {/* Inline Search */}
-        <div className="px-2 pt-1.5 pb-0.5">
-          {!searchOpen ? (
+        {/* Search trigger (always visible) */}
+        {!searchOpen && (
+          <div className="px-2 pt-1.5 pb-0.5">
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
@@ -212,20 +212,27 @@ export function AdminSidebar() {
               </TooltipTrigger>
               {isCollapsed && <TooltipContent side="right">Search (⌘K)</TooltipContent>}
             </Tooltip>
-          ) : (
-            <Command className="rounded-md border border-sidebar-border bg-sidebar text-sidebar-foreground shadow-none [&_[cmdk-group-heading]]:text-sidebar-foreground/50 [&_[cmdk-input-wrapper]]:border-sidebar-border [&_[cmdk-input-wrapper]_svg]:text-sidebar-foreground/50">
-              <CommandInput
-                ref={searchInputRef}
-                placeholder="Search..."
-                onKeyDown={(e) => {
-                  if (e.key === 'Escape') {
-                    setSearchOpen(false);
-                  }
-                }}
-                className="h-8 text-sm text-sidebar-foreground placeholder:text-sidebar-foreground/40"
-              />
-              <CommandList className="max-h-[min(50vh,320px)] overflow-y-auto">
-                <CommandEmpty className="py-3 text-center text-xs text-sidebar-foreground/50">No results found.</CommandEmpty>
+          </div>
+        )}
+
+        {/* Full-panel search (replaces navigation + footer when active) */}
+        {searchOpen ? (
+          <SidebarContent className="px-2 pt-1 pb-2 flex-1">
+            <Command className="flex flex-col h-full bg-transparent text-sidebar-foreground shadow-none [&_[cmdk-group-heading]]:text-sidebar-foreground/50 [&_[cmdk-input-wrapper]]:border-sidebar-border [&_[cmdk-input-wrapper]_svg]:text-sidebar-foreground/50">
+              <div className="px-1 pb-2">
+                <CommandInput
+                  ref={searchInputRef}
+                  placeholder="Search pages..."
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') {
+                      setSearchOpen(false);
+                    }
+                  }}
+                  className="h-8 text-sm text-sidebar-foreground placeholder:text-sidebar-foreground/40"
+                />
+              </div>
+              <CommandList className="flex-1 max-h-none overflow-y-auto">
+                <CommandEmpty className="py-6 text-center text-xs text-sidebar-foreground/50">No results found.</CommandEmpty>
                 {Object.entries(
                   allSearchItems.reduce<Record<string, typeof allSearchItems>>((acc, item) => {
                     (acc[item.group] ??= []).push(item);
@@ -247,9 +254,15 @@ export function AdminSidebar() {
                 ))}
               </CommandList>
             </Command>
-          )}
-        </div>
-
+            <button
+              onClick={() => setSearchOpen(false)}
+              className="mt-2 w-full py-1.5 text-xs text-sidebar-foreground/40 hover:text-sidebar-foreground/60 transition-colors"
+            >
+              Press Esc to close
+            </button>
+          </SidebarContent>
+        ) : (
+        <>
         {/* Navigation */}
         <SidebarContent ref={sidebarScrollRef} className="px-2 pt-1 pb-2">
           {filteredGroups.map((group, index) => {
