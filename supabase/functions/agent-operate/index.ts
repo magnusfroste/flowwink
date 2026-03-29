@@ -83,7 +83,64 @@ serve(async (req) => {
 
     // Build tools — normalize to ensure OpenAI compatibility
     const builtInTools = getBuiltInTools(['memory', 'objectives', 'self-mod', 'reflect', 'soul', 'planning', 'automations-exec', 'workflows', 'a2a', 'skill-packs']);
-    const rawTools = [...builtInTools, ...(available_skills || [])];
+    const externalSkills = available_skills || [];
+    
+    // Smart intent-based filtering (OpenClaw pattern):
+    // If total tools exceed OpenAI's 128 limit, use the last user message
+    // to score skill relevance and keep the most relevant ones
+    const MAX_TOOLS = 128;
+    const builtInCount = builtInTools.length;
+    const maxSkills = MAX_TOOLS - builtInCount;
+    
+    let filteredSkills = externalSkills;
+    if (externalSkills.length > maxSkills) {
+      const lastUserMsg = [...messages].reverse().find((m: any) => m.role === 'user')?.content?.toLowerCase() || '';
+      
+      // Score each skill by keyword relevance to user message
+      const scored = externalSkills.map((skill: any) => {
+        const name = (skill?.function?.name || '').toLowerCase().replace(/_/g, ' ');
+        const desc = (skill?.function?.description || '').toLowerCase();
+        let score = 0;
+        
+        // Direct name match in user message
+        const nameWords = name.split(' ');
+        for (const w of nameWords) {
+          if (w.length > 2 && lastUserMsg.includes(w)) score += 10;
+        }
+        
+        // "Use when" section keyword match
+        const useWhenMatch = desc.match(/use when:([^.]*)/);
+        if (useWhenMatch) {
+          const triggers = useWhenMatch[1].toLowerCase();
+          const triggerWords = triggers.split(/\s+/).filter((w: string) => w.length > 3);
+          for (const w of triggerWords) {
+            if (lastUserMsg.includes(w)) score += 5;
+          }
+        }
+        
+        // General description keyword overlap
+        const descWords = desc.split(/\s+/).filter((w: string) => w.length > 4);
+        for (const w of descWords) {
+          if (lastUserMsg.includes(w)) score += 1;
+        }
+        
+        // Boost commonly used skills (core CMS operations)
+        if (['manage_page', 'manage_blog_posts', 'write_blog_post', 'manage_leads', 'analyze_analytics', 'manage_site_settings'].includes(skill?.function?.name)) {
+          score += 3;
+        }
+        
+        return { skill, score };
+      });
+      
+      // Sort by relevance, keep top maxSkills
+      scored.sort((a: any, b: any) => b.score - a.score);
+      filteredSkills = scored.slice(0, maxSkills).map((s: any) => s.skill);
+      
+      const kept = scored.slice(0, maxSkills).filter((s: any) => s.score > 0).length;
+      console.log(`[agent-operate] Filtered ${externalSkills.length} skills → ${filteredSkills.length} (${kept} with intent match)`);
+    }
+    
+    const rawTools = [...builtInTools, ...filteredSkills];
     
     // OpenAI requires every property to have a 'type' field — fix any that don't
     const allTools = rawTools.map((tool: any) => {
@@ -95,18 +152,15 @@ serve(async (req) => {
             if (!p.type && !p.enum && !p.items && !p.oneOf && !p.anyOf) {
               p.type = 'string';
             }
-            // OpenAI requires array types to have an 'items' definition
             if (p.type === 'array' && !p.items) {
               p.items = { type: 'string' };
             }
-            // Recurse into nested object properties
             if (p.type === 'object' && p.properties) {
               fixProps(p.properties);
             }
           }
         };
         fixProps(tool?.function?.parameters?.properties);
-        // Remove empty required arrays (OpenAI doesn't like required: [])
         const params = tool?.function?.parameters;
         if (params?.required && Array.isArray(params.required) && params.required.length === 0) {
           delete params.required;
@@ -114,14 +168,6 @@ serve(async (req) => {
       } catch { /* safety net */ }
       return tool;
     });
-
-    // OpenAI enforces a maximum of 128 tools — drop lowest-priority skills if over
-    const MAX_TOOLS = 128;
-    if (allTools.length > MAX_TOOLS) {
-      console.warn(`[agent-operate] ${allTools.length} tools exceeds OpenAI limit of ${MAX_TOOLS}, trimming to fit`);
-      // Built-in tools come first and are always kept; trim from the end (lowest-priority skills)
-      allTools.length = MAX_TOOLS;
-    }
 
     // Set up SSE stream
     const { readable, writable } = new TransformStream();
