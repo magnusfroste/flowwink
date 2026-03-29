@@ -27,6 +27,7 @@ export {
   loadHeartbeatProtocol,
   saveHeartbeatProtocol,
   getDefaultHeartbeatProtocol,
+  completeBootstrap,
   truncateSection,
   GROUNDING_RULES,
   DEFAULT_HEARTBEAT_PROTOCOL,

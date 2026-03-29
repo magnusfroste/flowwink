@@ -18,6 +18,7 @@ import {
   loadHeartbeatProtocol,
   reason,
   parseReplyDirectives,
+  completeBootstrap,
 } from "../_shared/agent-reason.ts";
 import { tryAcquireLock, releaseLock } from "../_shared/concurrency.ts";
 import { generateTraceId } from "../_shared/trace.ts";
@@ -202,7 +203,7 @@ serve(async (req) => {
     }
 
     // 0. Integrity gate + context gathering in parallel
-    const [integrityContext, { soul, identity, agents }, memoryCtx, objectiveCtx, activityCtx, statsCtx, automationCtx, healingReport, cmsSchemaCtx, heartbeatStateCtx, siteMaturity, crossModuleCtx, customProtocol] = await Promise.all([
+    const [integrityContext, { soul, identity, agents, tools, user, bootstrap }, memoryCtx, objectiveCtx, activityCtx, statsCtx, automationCtx, healingReport, cmsSchemaCtx, heartbeatStateCtx, siteMaturity, crossModuleCtx, customProtocol] = await Promise.all([
       runIntegrityGate(supabase),
       loadWorkspaceFiles(supabase),
       loadMemories(supabase),
@@ -227,7 +228,7 @@ serve(async (req) => {
     // 2. Build system prompt via prompt compiler
     const systemPrompt = buildSystemPrompt({
       mode: 'heartbeat',
-      soulPrompt: buildWorkspacePrompt(soul, identity, agents, null, null),
+      soulPrompt: buildWorkspacePrompt(soul, identity, agents, tools, user, bootstrap),
       agents,
       memoryContext: memoryCtx,
       objectiveContext: objectiveCtx,
@@ -281,6 +282,12 @@ serve(async (req) => {
       token_usage: result.tokenUsage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
       iteration_count: result.actionsExecuted.length,
     });
+
+    // 4b. Complete bootstrap if it was active (OpenClaw BOOTSTRAP.md — one-time ritual)
+    if (bootstrap && !bootstrap.completed) {
+      await completeBootstrap(supabase);
+      console.log(`[heartbeat] trace=${traceId} Bootstrap ritual completed`);
+    }
 
     // 5. Log heartbeat with trace ID — use 'idle' distinction for NO_REPLY
     await supabase.from("agent_activity").insert({

@@ -67,7 +67,7 @@ serve(async (req) => {
     const { apiKey, apiUrl, model } = await resolveAiConfig(supabase, 'fast');
 
     // Load context in parallel
-    const [{ soul, identity, agents, tools, user }, memoryContext, objectiveContext, cmsSchemaCtx] = await Promise.all([
+    const [{ soul, identity, agents, tools, user, bootstrap }, memoryContext, objectiveContext, cmsSchemaCtx] = await Promise.all([
       loadWorkspaceFiles(supabase),
       loadMemories(supabase),
       loadObjectives(supabase),
@@ -77,7 +77,7 @@ serve(async (req) => {
     // Use prompt compiler (OpenClaw Layer 1)
     const systemPrompt = buildSystemPrompt({
       mode: 'operate',
-      soulPrompt: buildWorkspacePrompt(soul, identity, agents, tools, user),
+      soulPrompt: buildWorkspacePrompt(soul, identity, agents, tools, user, bootstrap),
       agents,
       memoryContext,
       objectiveContext,
