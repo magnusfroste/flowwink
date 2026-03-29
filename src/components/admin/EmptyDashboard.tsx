@@ -30,7 +30,7 @@ export function EmptyDashboard() {
             <div className="p-3 rounded-lg bg-primary/10 w-fit mb-2">
               <Sparkles className="h-6 w-6 text-primary" />
             </div>
-            <CardTitle className="font-serif text-lg">AI Copilot</CardTitle>
+            <CardTitle className="font-serif text-lg">FlowPilot (AI Agent)</CardTitle>
             <CardDescription>
               Describe what you want and let AI build it for you
             </CardDescription>
