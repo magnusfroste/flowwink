@@ -48,7 +48,7 @@ export default function TemplateGalleryPage() {
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
           <Button variant="ghost" size="icon" asChild>
-            <Link to="/admin/quick-start">
+            <Link to="/admin">
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
