@@ -115,6 +115,14 @@ serve(async (req) => {
       return tool;
     });
 
+    // OpenAI enforces a maximum of 128 tools — drop lowest-priority skills if over
+    const MAX_TOOLS = 128;
+    if (allTools.length > MAX_TOOLS) {
+      console.warn(`[agent-operate] ${allTools.length} tools exceeds OpenAI limit of ${MAX_TOOLS}, trimming to fit`);
+      // Built-in tools come first and are always kept; trim from the end (lowest-priority skills)
+      allTools.length = MAX_TOOLS;
+    }
+
     // Set up SSE stream
     const { readable, writable } = new TransformStream();
     const writer = writable.getWriter();
