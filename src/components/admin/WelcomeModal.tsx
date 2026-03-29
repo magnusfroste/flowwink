@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Sparkles, LayoutTemplate, FileText, ArrowRight, Bot, Settings } from 'lucide-react';
+import { Sparkles, LayoutTemplate, FileText, ArrowRight, Bot, Settings, Globe } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
