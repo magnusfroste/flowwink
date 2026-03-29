@@ -463,7 +463,7 @@ export default function AdminDashboard() {
 
   return (
     <AdminLayout>
-      <WelcomeModal />
+      
       <AdminPageContainer>
         <div className="flex items-center justify-between">
           <AdminPageHeader 
