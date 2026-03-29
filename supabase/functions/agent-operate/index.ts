@@ -10,6 +10,7 @@ import {
   pruneConversationHistory,
   fetchSkillInstructions,
   loadSkillTools,
+  loadSkillsRaw,
   getBuiltInTools,
   executeBuiltInTool,
   isBuiltInTool,
