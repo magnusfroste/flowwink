@@ -356,7 +356,7 @@ export default function CopilotPage() {
                 proactiveMessages={proactiveMessages}
                 onApproveAction={operate.approveAction}
                 onRejectAction={operate.rejectAction}
-                migrationMode={migrationMode}
+                
               />
             </div>
           </ResizablePanel>
