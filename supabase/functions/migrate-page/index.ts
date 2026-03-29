@@ -948,6 +948,7 @@ Your task is to take content from a scraped web page and transform it into struc
 
 ${BLOCK_TYPES_SCHEMA}
 
+${brandingHints ? `\n${brandingHints}\n` : ''}
 ${platformPrompt}
 
 === CONTENT QUALITY FILTER - CRITICAL ===
