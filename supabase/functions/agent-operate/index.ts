@@ -77,7 +77,7 @@ serve(async (req) => {
     // Use prompt compiler (OpenClaw Layer 1)
     const systemPrompt = buildSystemPrompt({
       mode: 'operate',
-      soulPrompt: buildWorkspacePrompt(soul, identity, agents),
+      soulPrompt: buildWorkspacePrompt(soul, identity, agents, tools, user),
       agents,
       memoryContext,
       objectiveContext,
