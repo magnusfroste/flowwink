@@ -210,8 +210,8 @@ export function UnifiedChat({
       <div className="flex flex-wrap gap-2 justify-center">
         {[
           { label: 'Analyze this week', action: 'Analyze my site traffic for this week' },
-          { label: 'Write a blog post', action: '/write_blog_post Write about our latest update' },
-          { label: 'Migrate a website', action: 'Migrate my website: https://example.com' },
+          { label: 'Write a blog post', action: 'I want to write a new blog post' },
+          { label: 'Migrate a website', action: 'I want to migrate an existing website to FlowWink' },
         ].map(qa => (
           <Button key={qa.label} variant="outline" size="sm" className="rounded-full" onClick={() => handleSend(qa.action)}>
             {qa.label}
