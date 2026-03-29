@@ -39,12 +39,18 @@ export default function CopilotPage() {
     const prompt = searchParams.get('prompt');
     if (prompt && !promptSentRef.current && operate.sendMessage) {
       promptSentRef.current = true;
-      // Clear the param so it doesn't re-trigger
       setSearchParams({}, { replace: true });
-      // Small delay to ensure chat is mounted
       setTimeout(() => operate.sendMessage(prompt), 600);
     }
   }, [searchParams, operate.sendMessage]);
+
+  // Migration mode: show a welcome message prompting for URL
+  const [migrationMode] = useState(() => searchParams.get('mode') === 'migrate');
+  useEffect(() => {
+    if (migrationMode) {
+      setSearchParams({}, { replace: true });
+    }
+  }, [migrationMode]);
 
   // Auto-detect extension on mount
   useEffect(() => {
