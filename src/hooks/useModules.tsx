@@ -299,6 +299,17 @@ export const defaultModulesSettings: ModulesSettings = {
     autonomy: 'agent-capable',
     adminUI: true,
   },
+  siteMigration: {
+    enabled: true,
+    name: 'Site Migration',
+    description: 'Clone external websites — discover pages, extract branding, and migrate content with visual fidelity',
+    icon: 'Snowflake',
+    category: 'content',
+    autonomy: 'agent-capable',
+    adminUI: false,
+    requiredIntegrations: ['firecrawl'],
+    optionalIntegrations: ['jina'],
+  },
 };
 
 // Map sidebar items to module IDs
