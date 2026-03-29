@@ -154,6 +154,21 @@ export function WelcomeModal() {
                 </div>
                 <Settings className="h-4 w-4 text-muted-foreground mt-1 shrink-0" />
               </Link>
+
+              <Link
+                to="/admin/integrations#ai"
+                onClick={handleClose}
+                className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+              >
+                <Globe className="h-5 w-5 text-muted-foreground mt-0.5 shrink-0" />
+                <div className="flex-1">
+                  <p className="font-medium text-sm">Clone Existing Website</p>
+                  <p className="text-sm text-muted-foreground">
+                    Requires AI + Firecrawl integration setup.
+                  </p>
+                </div>
+                <Settings className="h-4 w-4 text-muted-foreground mt-1 shrink-0" />
+              </Link>
             </>
           )}
 
