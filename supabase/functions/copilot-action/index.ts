@@ -73,13 +73,17 @@ serve(async (req) => {
   try {
     const { messages, currentModules, continueAfterToolCall } = await req.json();
 
-    // Get AI configuration from settings or environment
+    // Resolve AI via unified Layer 1 config
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
     let aiConfig;
     try {
-      aiConfig = await getAIConfiguration();
-    } catch (e) {
+      aiConfig = await resolveAiConfig(supabase, 'fast');
+    } catch {
       return new Response(
-        JSON.stringify({ error: 'AI not configured. Please add LOVABLE_API_KEY or OPENAI_API_KEY, or configure an AI provider in Chat Settings.' }),
+        JSON.stringify({ error: 'No AI provider configured. Add OPENAI_API_KEY, GEMINI_API_KEY, or configure AI in Settings.' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }

@@ -1320,10 +1320,6 @@ Respond only with JSON.`;
     const companyProfile = parsedBlocks.companyProfile;
     if (companyProfile && typeof companyProfile === 'object' && Object.keys(companyProfile).length > 0) {
       try {
-        const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-        const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-        const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.87.1");
-        const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
         // Check for existing profile and merge
         const { data: existing } = await supabase
