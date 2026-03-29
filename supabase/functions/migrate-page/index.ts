@@ -1187,13 +1187,8 @@ Respond only with JSON.`;
 
     const aiData = await aiResponse.json();
     
-    // Parse response based on provider
-    let aiContent = '';
-    if (useGemini) {
-      aiContent = aiData.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    } else {
-      aiContent = aiData.choices?.[0]?.message?.content || '';
-    }
+    // Unified response parsing (OpenAI-compatible format from all providers)
+    const aiContent = aiData.choices?.[0]?.message?.content || '';
     
     console.log('Step 4: AI response received, parsing...');
 
