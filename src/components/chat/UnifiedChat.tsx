@@ -162,6 +162,7 @@ export function UnifiedChat({
   onProactiveAction,
   onApproveAction,
   onRejectAction,
+  migrationMode = false,
   visitorChat,
   visitorSettings,
   conversationId,
