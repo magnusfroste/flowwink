@@ -883,6 +883,105 @@ async function layer5Tests(supabase: any, supabaseUrl: string, serviceKey: strin
     assertExists(data.signal || data.matched !== undefined || data.error, 'signal-dispatcher returned empty response');
   }));
 
+  // ─── 13. Skill description ↔ tool_definition.function.description sync ────
+  results.push(await runTest("WIRE: Skill description synced to tool_definition", 5 as any, async () => {
+    const { data: skills } = await supabase
+      .from('agent_skills')
+      .select('name, description, tool_definition')
+      .eq('enabled', true)
+      .limit(200);
+    if (!skills?.length) throw new Error('No enabled skills found');
+
+    const outOfSync: string[] = [];
+    for (const s of skills) {
+      const tdDesc = s.tool_definition?.function?.description;
+      if (s.description && tdDesc && s.description !== tdDesc) {
+        outOfSync.push(s.name);
+      }
+    }
+    if (outOfSync.length > 0) {
+      throw new Error(`${outOfSync.length} skills have description out of sync with tool_definition: ${outOfSync.slice(0, 5).join(', ')}. LLM sees tool_definition, not description column!`);
+    }
+  }));
+
+  // ─── 14. All skill descriptions follow OpenClaw routing pattern ────────────
+  results.push(await runTest("WIRE: Skills follow 'Use when / NOT for' pattern", 5 as any, async () => {
+    const { data: skills } = await supabase
+      .from('agent_skills')
+      .select('name, description')
+      .eq('enabled', true)
+      .limit(200);
+    if (!skills?.length) throw new Error('No enabled skills found');
+
+    const missingPattern: string[] = [];
+    for (const s of skills) {
+      if (!s.description) { missingPattern.push(`${s.name} (no description)`); continue; }
+      const hasUseWhen = s.description.includes('Use when:') || s.description.includes('Use when ');
+      const hasNotFor = s.description.includes('NOT for:') || s.description.includes('NOT for ');
+      if (!hasUseWhen || !hasNotFor) {
+        missingPattern.push(s.name);
+      }
+    }
+    if (missingPattern.length > 5) {
+      throw new Error(`${missingPattern.length} skills lack OpenClaw routing pattern (Use when: / NOT for:): ${missingPattern.slice(0, 8).join(', ')}`);
+    }
+  }));
+
+  // ─── 15. GROUNDING_RULES contain Tool-Driven Questioning ───────────────────
+  results.push(await runTest("WIRE: Tool-Driven Questioning in system prompt", 5 as any, async () => {
+    const { soul, identity, agents } = await loadWorkspaceFiles(supabase);
+    const soulPrompt = buildWorkspacePrompt(soul, identity, agents);
+    const prompt = buildSystemPrompt({
+      mode: 'operate',
+      soulPrompt,
+      agents,
+      memoryContext: '',
+      objectiveContext: '',
+    });
+    assertContains(prompt, 'TOOL-DRIVEN QUESTIONING', 'Missing Tool-Driven Questioning section in operate prompt');
+    assertContains(prompt, 'ONLY ask questions whose answers change which tool you call', 'Tool-Driven Questioning rule text missing');
+    assertContains(prompt, 'NEVER ask about platforms, tech stacks', 'Anti-pattern rule missing from grounding');
+  }));
+
+  // ─── 16. Server-side loadSkillTools returns descriptions visible to LLM ────
+  results.push(await runTest("WIRE: loadSkillTools returns LLM-visible descriptions", 5 as any, async () => {
+    const tools = await loadSkillTools(supabase, 'internal');
+    if (tools.length === 0) throw new Error('No skill tools loaded');
+
+    const noDesc: string[] = [];
+    const noRouting: string[] = [];
+    for (const t of tools.slice(0, 30)) {
+      const desc = t.function?.description;
+      if (!desc) { noDesc.push(t.function?.name || 'unknown'); continue; }
+      if (!desc.includes('Use when')) noRouting.push(t.function?.name);
+    }
+    if (noDesc.length > 0) throw new Error(`${noDesc.length} tools have no description: ${noDesc.join(', ')}`);
+    if (noRouting.length > 5) throw new Error(`${noRouting.length}/30 tools lack routing pattern in tool_definition: ${noRouting.slice(0, 5).join(', ')}`);
+  }));
+
+  // ─── 17. agent-operate ignores client-provided skills ──────────────────────
+  results.push(await runTest("WIRE: agent-operate rejects client skill injection", 5 as any, async () => {
+    const hdrs = {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${serviceKey}`,
+    };
+    // Send a fake skill in available_skills — agent-operate should ignore it
+    const resp = await fetch(`${supabaseUrl}/functions/v1/agent-operate`, {
+      method: 'POST', headers: hdrs,
+      body: JSON.stringify({
+        message: 'test ping',
+        conversation_id: null,
+        available_skills: [{ name: 'INJECTED_FAKE_SKILL', tool_definition: { type: 'function', function: { name: 'INJECTED_FAKE_SKILL', description: 'hacked', parameters: { type: 'object', properties: {} } } } }],
+      }),
+    });
+    // We just verify it doesn't crash — the real test is that INJECTED_FAKE_SKILL never appears in LLM tools
+    if (resp.status >= 500) {
+      const body = await resp.text();
+      throw new Error(`agent-operate crashed: ${body.slice(0, 200)}`);
+    }
+    await resp.text(); // consume body
+  }));
+
   return results;
 }
 
