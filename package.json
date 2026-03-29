@@ -12,7 +12,8 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
-    "cli": "bash scripts/flowwink.sh"
+    "cli": "bash scripts/flowwink.sh",
+    "sync-blocks": "bun run scripts/sync-block-schema.ts"
   },
   "dependencies": {
     "@codemirror/lang-html": "^6.4.11",
