@@ -37,6 +37,46 @@ function sseEvent(writer: WritableStreamDefaultWriter, encoder: TextEncoder, eve
   return writer.write(encoder.encode(payload));
 }
 
+function extractFirstUrl(text: string): string | null {
+  const match = text.match(/https?:\/\/[^\s]+/i);
+  return match?.[0] ?? null;
+}
+
+function isMigrationIntent(text: string): boolean {
+  const normalized = text.toLowerCase();
+  return (
+    normalized.includes('migrate') ||
+    normalized.includes('migration') ||
+    normalized.includes('clone website') ||
+    normalized.includes('copy website') ||
+    normalized.includes('existing website')
+  );
+}
+
+function createImmediateSseResponse(message: string) {
+  const { readable, writable } = new TransformStream();
+  const writer = writable.getWriter();
+  const encoder = new TextEncoder();
+
+  (async () => {
+    try {
+      await sseEvent(writer, encoder, 'delta', { content: message });
+      await sseEvent(writer, encoder, 'done', {});
+    } finally {
+      try { await writer.close(); } catch { /* already closed */ }
+    }
+  })();
+
+  return new Response(readable, {
+    headers: {
+      ...corsHeaders,
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+    },
+  });
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -44,6 +84,11 @@ serve(async (req) => {
 
   try {
     const { messages, available_skills, conversation_id } = await req.json();
+
+    const lastUserMsg = [...(messages || [])].reverse().find((m: any) => m.role === 'user')?.content?.trim() || '';
+    if (lastUserMsg && isMigrationIntent(lastUserMsg) && !extractFirstUrl(lastUserMsg)) {
+      return createImmediateSseResponse('Please send me the URL of the website you want to migrate, and I’ll start from that.');
+    }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
