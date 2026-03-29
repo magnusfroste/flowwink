@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { BLOCK_CREATION_TOOLS, toolNameToBlockType } from '../_shared/block-tools.ts';
 import { resolveAiConfig } from '../_shared/ai-config.ts';
 
 const corsHeaders = {
@@ -8,62 +7,113 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const COPILOT_SYSTEM_PROMPT = `You are FlowPilot, an AI migration agent that TAKES ACTION, not just describes actions. You help users migrate their ENTIRE website automatically.
+const BLOCK_TYPES = [
+  'hero', 'text', 'quote', 'cta', 'features', 'stats', 'testimonials', 'team',
+  'logos', 'timeline', 'accordion', 'image', 'gallery', 'youtube', 'two-column',
+  'separator', 'info-box', 'link-grid', 'form', 'chat', 'newsletter', 'map',
+  'booking', 'popup', 'pricing', 'comparison', 'trust-bar', 'category-nav',
+  'shipping-info', 'article-grid', 'announcement-bar', 'tabs', 'marquee',
+  'embed', 'lottie', 'table', 'countdown', 'progress', 'badge', 'social-proof',
+  'notification-toast', 'floating-cta', 'webinar', 'parallax-section',
+  'bento-grid', 'section-divider', 'featured-carousel', 'resume-matcher',
+  'featured-product', 'ai-assistant', 'quick-links', 'kb-featured', 'kb-hub',
+  'kb-search', 'kb-accordion', 'chat-launcher', 'cart', 'products', 'contact',
+];
+
+const COPILOT_SYSTEM_PROMPT = `You are FlowPilot, an AI website builder and migration agent. You help users create new websites or migrate existing ones.
 
 CORE BEHAVIOR:
-- You ARE the interface. Never tell users to "click a button" or "look at a panel".
-- When you create a block, you show it and ask for quick feedback.
-- Take action immediately, then ask for approval.
-- Be confident: "Here's your hero section" not "Would you like me to create..."
+- You ARE the interface. Take action immediately, then ask for feedback.
+- Be confident and concise: "Here's your hero section" not "Would you like me to..."
+- One block at a time → show it → ask for quick yes/no feedback → continue.
 
-CONVERSATION COMMANDS (users speak naturally, you act):
-- "yes" / "looks good" / "keep it" → You approve and move to next
-- "skip" / "next" / "pass" → You skip current block, continue
-- "make it shorter" / feedback → You regenerate with that feedback
-- "stop" / "pause" → You pause migration
-- "skip blog" / "just pages" → You skip entire phase
+HOW TO RESPOND TO USER INTENT:
 
-MIGRATION FLOW (you drive it):
-1. User pastes URL → You analyze and start migrating IMMEDIATELY
-2. EXTRACT CONTACT INFO: Look for phone, email, address, opening hours in the page content
-3. If you find contact info → Call update_footer ONCE with all the info you found
-4. You create first block → "Here's your hero section. Does this look right?"
-5. User says "yes" → "Done! Here's the features section..."
-6. Continue until page complete → "Page ready! Moving to About Us..."
-7. After all pages → "Pages done! Migrating your X blog posts..."
-8. After blog → "Now your knowledge base..."
-9. Final → "🎉 Complete! Here's your summary..."
+1. USER PASTES A URL → They want to migrate. Call migrate_url to analyze the site, then recreate it block by block.
+2. USER DESCRIBES A BUSINESS → They want a new site. Start building immediately with hero, then features, etc.
+3. USER SAYS "yes" / "looks good" → Approve current block, create the next one.
+4. USER GIVES FEEDBACK → Regenerate the current block with their feedback.
+5. USER SAYS "skip" / "next" → Skip current block, move to next.
 
-FOOTER EXTRACTION (do this ONCE per site):
-- When you scrape the homepage or contact page, look for:
-  * Phone numbers (e.g., "08-123 45 67", "+46 8 123 45 67")
-  * Email addresses (e.g., "info@example.com")
-  * Street addresses (e.g., "Main Street 123")
-  * Postal codes and cities (e.g., "123 45 Stockholm")
-  * Opening hours (weekdays and weekends)
-- Call update_footer with the extracted information
-- Only extract the MAIN contact info (not department-specific numbers)
-- If hours are complex, simplify to weekday/weekend format
+CREATING BLOCKS:
+- Use create_block with the appropriate type and content data.
+- Available types: ${BLOCK_TYPES.join(', ')}
+- The data object should contain the block's content fields (title, subtitle, items, etc.)
+- Match the content style to the user's business/brand.
+
+MIGRATION FLOW:
+1. User shares URL → call migrate_url to scrape and analyze
+2. Extract contact info → call update_footer once with phone, email, address, hours
+3. Recreate each section as a block, one at a time
+4. Ask for approval between each block
+
+FOOTER EXTRACTION (once per site):
+- Look for phone, email, address, postal code, opening hours
+- Call update_footer with all found contact details
 
 RESPONSE STYLE:
-- One sentence max before showing a block
-- "Here's your [section]. [Quick question or statement]"
-- "Done! Next up: [what's happening]"
-- Celebrate: "Perfect! ✨" "Added! 🎉"
-- Never explain what buttons to click
-- Never mention "the panel on the right" or "Site Overview"
+- Max one sentence before showing a block
+- "Here's your [section]. Look good?"
+- "Done! ✨ Next up: [what's coming]"
+- Never explain what buttons to click or mention UI panels`;
 
-BLOCK TYPES: hero, text, features, cta, testimonials, stats, team, logos, timeline, accordion, gallery, separator, contact, quote, pricing, booking, newsletter, products, chat, form, image, two-column, info-box, article-grid, youtube, map, popup, cart, kb-featured, kb-hub, kb-search, kb-accordion, announcement-bar, tabs, marquee, embed, lottie, table, countdown, progress, badge, social-proof, notification-toast, floating-cta, chat-launcher, webinar, parallax-section, bento-grid, section-divider, featured-carousel, resume-matcher, featured-product, trust-bar, category-nav, shipping-info, ai-assistant, quick-links, link-grid, comparison
-
-RULES:
-- Modules auto-enable - don't mention them
-- One block at a time
-- After creating block, ask for quick yes/no feedback
-- Track progress, avoid duplicates
-- Extract footer info ONCE when you first see contact details
-- If stuck, ask ONE specific question`;
-
-// AI configuration is now resolved via shared resolveAiConfig (Layer 1)
+const TOOLS = [
+  {
+    type: "function",
+    function: {
+      name: "create_block",
+      description: "Create a content block on the current page. Use the appropriate type for the content you want to add.",
+      parameters: {
+        type: "object",
+        properties: {
+          type: {
+            type: "string",
+            enum: BLOCK_TYPES,
+            description: "The block type to create"
+          },
+          data: {
+            type: "object",
+            description: "Block content data. Common fields: title, subtitle, content, items[], buttonText, buttonLink, imageSrc, backgroundColor. Fields vary by block type."
+          }
+        },
+        required: ["type", "data"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "migrate_url",
+      description: "Scrape and analyze a URL to migrate its content into CMS blocks. Use when user pastes a URL or wants to migrate an existing website.",
+      parameters: {
+        type: "object",
+        properties: {
+          url: { type: "string", description: "The full URL to migrate (e.g., https://example.com)" },
+          pageType: { type: "string", enum: ["landing", "about", "contact", "services", "pricing", "blog", "other"], description: "Type of page being migrated" }
+        },
+        required: ["url"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_footer",
+      description: "Update footer with contact information extracted from a migrated site.",
+      parameters: {
+        type: "object",
+        properties: {
+          phone: { type: "string", description: "Phone number" },
+          email: { type: "string", description: "Email address" },
+          address: { type: "string", description: "Street address" },
+          postalCode: { type: "string", description: "Postal code and city" },
+          weekdayHours: { type: "string", description: "Weekday opening hours" },
+          weekendHours: { type: "string", description: "Weekend opening hours" }
+        }
+      }
+    }
+  },
+];
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -73,7 +123,6 @@ serve(async (req) => {
   try {
     const { messages, currentModules, continueAfterToolCall } = await req.json();
 
-    // Resolve AI via unified Layer 1 config
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
@@ -88,52 +137,13 @@ serve(async (req) => {
       );
     }
 
-    const tools = [
-      // Migration-specific tools (manual)
-      {
-        type: "function",
-        function: {
-          name: "migrate_url",
-          description: "Scrape and analyze a URL to migrate its content into CMS blocks. Use when user wants to migrate an existing website.",
-          parameters: {
-            type: "object",
-            properties: {
-              url: { type: "string", description: "The full URL to migrate (e.g., https://example.com)" },
-              pageType: { type: "string", enum: ["landing", "about", "contact", "services", "pricing", "blog", "other"], description: "Type of page being migrated" }
-            },
-            required: ["url"]
-          }
-        }
-      },
-      {
-        type: "function",
-        function: {
-          name: "update_footer",
-          description: "Update footer with contact information extracted from the migrated site. Use when you find contact details like phone, email, address, or opening hours on the site.",
-          parameters: {
-            type: "object",
-            properties: {
-              phone: { type: "string", description: "Phone number" },
-              email: { type: "string", description: "Email address" },
-              address: { type: "string", description: "Street address" },
-              postalCode: { type: "string", description: "Postal code and city" },
-              weekdayHours: { type: "string", description: "Weekday opening hours" },
-              weekendHours: { type: "string", description: "Weekend opening hours" }
-            }
-          }
-        }
-      },
-      // Block creation tools — auto-generated from block-reference.ts
-      ...BLOCK_CREATION_TOOLS,
-    ];
-
     console.log('Copilot request:', { 
       messageCount: messages.length, 
       continueAfterToolCall,
-      model: aiConfig.model
+      model: aiConfig.model,
+      toolCount: TOOLS.length,
     });
 
-    // Call AI via unified OpenAI-compatible endpoint
     const response = await fetch(aiConfig.apiUrl, {
       method: 'POST',
       headers: {
@@ -146,7 +156,7 @@ serve(async (req) => {
           { role: 'system', content: COPILOT_SYSTEM_PROMPT },
           ...messages
         ],
-        tools,
+        tools: TOOLS,
         tool_choice: 'auto',
         temperature: 0.7,
       }),
@@ -181,40 +191,45 @@ serve(async (req) => {
       hasToolCalls: !!assistantMessage.tool_calls?.length 
     });
 
-    // Process tool calls if any
+    // Process tool calls
     let toolCall = null;
     let responseMessage = assistantMessage.content || '';
 
-    if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
+    if (assistantMessage.tool_calls?.length > 0) {
       const tc = assistantMessage.tool_calls[0];
-      toolCall = {
-        name: tc.function.name,
-        arguments: JSON.parse(tc.function.arguments),
-      };
+      const args = JSON.parse(tc.function.arguments);
 
-      // If there's no message but there's a tool call, generate a contextual message
-      if (!responseMessage) {
-        if (toolCall.name === 'activate_modules') {
-          responseMessage = `Based on your business, I recommend activating some modules that will help you get started. ${toolCall.arguments.reason}`;
-        } else if (toolCall.name === 'migrate_url') {
-          responseMessage = `I'll analyze ${toolCall.arguments.url} and help you migrate the content. Give me a moment to scan the page...`;
-        } else if (toolNameToBlockType(toolCall.name)) {
-          const blockType = toolNameToBlockType(toolCall.name);
+      if (tc.function.name === 'create_block') {
+        // Map unified create_block back to the legacy create_*_block format
+        // so the frontend handler continues to work
+        const blockType = args.type;
+        toolCall = {
+          name: `create_${blockType.replace(/-/g, '_')}_block`,
+          arguments: args.data || {},
+        };
+        if (!responseMessage) {
           responseMessage = `Creating a ${blockType} section for your page.`;
+        }
+      } else {
+        toolCall = {
+          name: tc.function.name,
+          arguments: args,
+        };
+        if (!responseMessage) {
+          if (tc.function.name === 'migrate_url') {
+            responseMessage = `I'll analyze ${args.url} and start migrating. Give me a moment...`;
+          }
         }
       }
     }
 
-    // Handle empty responses - ask for clarification
+    // Fallback for empty responses
     if (!responseMessage && !toolCall) {
-      responseMessage = "I'd love to help you build your website! Could you tell me a bit more about your business? For example:\n\n• What type of business is it? (restaurant, salon, agency, etc.)\n• What's the main goal of your website?\n• Any specific features you need?\n\nOr if you have an existing website, share the URL and I'll help you migrate it!";
+      responseMessage = "I'd love to help you build your website! You can:\n\n• **Paste a URL** to migrate an existing site\n• **Describe your business** and I'll create a site for you\n\nWhat would you like to do?";
     }
 
     return new Response(
-      JSON.stringify({
-        message: responseMessage,
-        toolCall,
-      }),
+      JSON.stringify({ message: responseMessage, toolCall }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
