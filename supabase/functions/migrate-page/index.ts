@@ -788,15 +788,22 @@ serve(async (req) => {
       );
     }
 
-    // Original migrate-page logic continues here
-    if (!openaiKey && !geminiKey) {
+    // Resolve AI provider via unified Layer 1 config
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    let aiConfig;
+    try {
+      aiConfig = await resolveAiConfig(supabase, 'reasoning');
+    } catch {
       return new Response(
-        JSON.stringify({ success: false, error: 'AI API key missing. Add OPENAI_API_KEY or GEMINI_API_KEY in Settings → Integrations.' }),
+        JSON.stringify({ success: false, error: 'No AI provider configured. Add OPENAI_API_KEY, GEMINI_API_KEY, or configure AI in Settings.' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const useGemini = !openaiKey && geminiKey;
+    console.log('AI provider resolved:', { model: aiConfig.model, apiUrl: aiConfig.apiUrl.substring(0, 40) });
 
     // Format URL
     let formattedUrl = url.trim();
