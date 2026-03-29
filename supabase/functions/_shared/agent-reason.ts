@@ -86,6 +86,7 @@ export {
   executeBuiltInTool,
   isBuiltInTool,
   loadSkillTools,
+  loadSkillsRaw,
   loadMemories,
   loadObjectives,
   loadHeartbeatState,
@@ -96,7 +97,7 @@ export {
   parseReplyDirectives,
   resolveSkillBudgetTier,
 } from './pilot/reason.ts';
-export type { ReplyDirective, SkillBudgetTier } from './pilot/reason.ts';
+export type { ReplyDirective, SkillBudgetTier, SkillCache } from './pilot/reason.ts';
 
 // ─── CMS Domain Pack (FlowWink-specific) ─────────────────────────────────────
 export {
