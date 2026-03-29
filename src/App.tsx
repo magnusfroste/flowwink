@@ -172,7 +172,7 @@ const router = createBrowserRouter([
       { path: "/admin/chat", element: <ChatSettingsPage /> },
       { path: "/admin/content-api", element: <ContentApiPage /> },
       { path: "/admin/campaigns", element: <ContentCampaignsPage /> },
-      { path: "/admin/quick-start", element: <QuickStartPage /> },
+      { path: "/admin/quick-start", element: <Navigate to="/admin" replace /> },
       
       { path: "/admin/templates", element: withPageFallback(<TemplateGalleryPage />) },
       { path: "/admin/global-blocks", element: <GlobalBlocksPage /> },

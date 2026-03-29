@@ -19,7 +19,7 @@ export function EmptyDashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-        {/* Copilot - Primary/Recommended */}
+        {/* FlowPilot - Primary/Recommended */}
         <Card className="border-primary/50 bg-primary/5 relative overflow-hidden">
           <div className="absolute top-3 right-3">
             <span className="text-xs font-medium bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
@@ -32,12 +32,12 @@ export function EmptyDashboard() {
             </div>
             <CardTitle className="font-serif text-lg">FlowPilot (AI Agent)</CardTitle>
             <CardDescription>
-              Describe what you want and let AI build it for you
+              Create a new site or migrate an existing one
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">
-              The fastest way to create a complete website. Just describe your vision.
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Describe your vision and let AI build it — or paste a URL to clone your current website.
             </p>
             <Button asChild className="w-full gap-2">
               <Link to="/admin/flowpilot">
@@ -59,8 +59,8 @@ export function EmptyDashboard() {
               Start with a pre-designed site template
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground">
               Professional layouts with pages, branding, and chat pre-configured.
             </p>
             <Button asChild variant="outline" className="w-full gap-2">
@@ -80,12 +80,12 @@ export function EmptyDashboard() {
             </div>
             <CardTitle className="font-serif text-lg">Blank Page</CardTitle>
             <CardDescription>
-              Start from scratch with full control
+              Build from scratch with full control
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">
-              Create pages manually using the block editor. Best for custom builds.
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Add blocks one by one. Best for custom builds and unique layouts.
             </p>
             <Button asChild variant="outline" className="w-full gap-2">
               <Link to="/admin/pages/new">

@@ -14,7 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { StatusBadge } from '@/components/StatusBadge';
-import { WelcomeModal } from '@/components/admin/WelcomeModal';
+
 import { LeadsDashboardWidget } from '@/components/admin/LeadsDashboardWidget';
 import { AeoDashboardWidget } from '@/components/admin/AeoDashboardWidget';
 import { ChatFeedbackDashboardWidget } from '@/components/admin/ChatFeedbackDashboardWidget';
