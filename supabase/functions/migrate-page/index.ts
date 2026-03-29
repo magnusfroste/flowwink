@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.87.1';
 import { BLOCK_TYPES_SCHEMA } from '../_shared/block-schema.ts';
 import { generateBrandingHints, extractBranding, type FirecrawlBranding } from '../_shared/extract-branding.ts';
+import { resolveAiConfig } from '../_shared/ai-config.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -749,8 +751,6 @@ serve(async (req) => {
     }
 
     const firecrawlKey = Deno.env.get('FIRECRAWL_API_KEY');
-    const openaiKey = Deno.env.get('OPENAI_API_KEY');
-    const geminiKey = Deno.env.get('GEMINI_API_KEY');
 
     if (!firecrawlKey) {
       return new Response(
@@ -788,15 +788,22 @@ serve(async (req) => {
       );
     }
 
-    // Original migrate-page logic continues here
-    if (!openaiKey && !geminiKey) {
+    // Resolve AI provider via unified Layer 1 config
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    let aiConfig;
+    try {
+      aiConfig = await resolveAiConfig(supabase, 'reasoning');
+    } catch {
       return new Response(
-        JSON.stringify({ success: false, error: 'AI API key missing. Add OPENAI_API_KEY or GEMINI_API_KEY in Settings → Integrations.' }),
+        JSON.stringify({ success: false, error: 'No AI provider configured. Add OPENAI_API_KEY, GEMINI_API_KEY, or configure AI in Settings.' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const useGemini = !openaiKey && geminiKey;
+    console.log('AI provider resolved:', { model: aiConfig.model, apiUrl: aiConfig.apiUrl.substring(0, 40) });
 
     // Format URL
     let formattedUrl = url.trim();
@@ -1137,48 +1144,23 @@ ${html.substring(0, 20000)}
 
 Respond only with JSON.`;
 
-    if (useGemini) {
-      // Use Google Gemini API
-      const model = 'gemini-2.0-flash-exp';
-      
-      aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: 'user',
-              parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }]
-            }
-          ],
-          generationConfig: {
-            temperature: 0.2,
-            maxOutputTokens: 16384,
-          }
-        }),
-      });
-    } else {
-      // Use OpenAI API
-      const model = 'gpt-4.1';
-      aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openaiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userPrompt }
-          ],
-          max_tokens: 16384,
-          temperature: 0.2,
-        }),
-      });
-    }
+    // Unified AI call via OpenAI-compatible endpoint (all providers)
+    aiResponse = await fetch(aiConfig.apiUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${aiConfig.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: aiConfig.model,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ],
+        max_tokens: 16384,
+        temperature: 0.2,
+      }),
+    });
 
     if (!aiResponse.ok) {
       const aiError = await aiResponse.text();
@@ -1205,13 +1187,8 @@ Respond only with JSON.`;
 
     const aiData = await aiResponse.json();
     
-    // Parse response based on provider
-    let aiContent = '';
-    if (useGemini) {
-      aiContent = aiData.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    } else {
-      aiContent = aiData.choices?.[0]?.message?.content || '';
-    }
+    // Unified response parsing (OpenAI-compatible format from all providers)
+    const aiContent = aiData.choices?.[0]?.message?.content || '';
     
     console.log('Step 4: AI response received, parsing...');
 
@@ -1343,10 +1320,6 @@ Respond only with JSON.`;
     const companyProfile = parsedBlocks.companyProfile;
     if (companyProfile && typeof companyProfile === 'object' && Object.keys(companyProfile).length > 0) {
       try {
-        const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-        const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-        const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.87.1");
-        const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
         // Check for existing profile and merge
         const { data: existing } = await supabase
