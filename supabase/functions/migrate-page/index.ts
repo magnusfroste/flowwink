@@ -839,8 +839,14 @@ serve(async (req) => {
     const screenshot = scrapeData.data?.screenshot || scrapeData.screenshot || null;
     const metadata = scrapeData.data?.metadata || scrapeData.metadata || {};
 
+    // Extract branding data
+    const rawBranding: FirecrawlBranding = scrapeData.data?.branding || scrapeData.branding || {};
+    const brandingHints = generateBrandingHints(rawBranding);
+    const extractedBrand = Object.keys(rawBranding).length > 0 ? extractBranding(rawBranding) : null;
+
     console.log('Step 2: Scraped content - Markdown:', markdown.length, 'chars, HTML:', html.length, 'chars');
     console.log('Screenshot available:', !!screenshot);
+    console.log('Branding extracted:', !!extractedBrand);
     console.log('Metadata:', JSON.stringify(metadata));
 
     // Detect platform
