@@ -460,6 +460,8 @@ export function AdminSidebar() {
             </DropdownMenuContent>
           </DropdownMenu>
         </SidebarFooter>
+        </>
+        )}
       </Sidebar>
     </>
   );
