@@ -34,6 +34,7 @@ import {
   growthModule,
   federationModule,
   ticketsModule,
+  siteMigrationModule,
 } from '@/lib/modules';
 
 // =============================================================================
