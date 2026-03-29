@@ -202,7 +202,7 @@ serve(async (req) => {
     }
 
     // 0. Integrity gate + context gathering in parallel
-    const [integrityContext, { soul, identity, agents }, memoryCtx, objectiveCtx, activityCtx, statsCtx, automationCtx, healingReport, cmsSchemaCtx, heartbeatStateCtx, siteMaturity, crossModuleCtx, customProtocol] = await Promise.all([
+    const [integrityContext, { soul, identity, agents, tools, user, bootstrap }, memoryCtx, objectiveCtx, activityCtx, statsCtx, automationCtx, healingReport, cmsSchemaCtx, heartbeatStateCtx, siteMaturity, crossModuleCtx, customProtocol] = await Promise.all([
       runIntegrityGate(supabase),
       loadWorkspaceFiles(supabase),
       loadMemories(supabase),
