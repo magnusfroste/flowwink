@@ -44,13 +44,6 @@ export default function CopilotPage() {
     }
   }, [searchParams, operate.sendMessage]);
 
-  // Migration mode: show a welcome message prompting for URL
-  const [migrationMode] = useState(() => searchParams.get('mode') === 'migrate');
-  useEffect(() => {
-    if (migrationMode) {
-      setSearchParams({}, { replace: true });
-    }
-  }, [migrationMode]);
 
   // Auto-detect extension on mount
   useEffect(() => {
