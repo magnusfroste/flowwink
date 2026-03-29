@@ -751,8 +751,6 @@ serve(async (req) => {
     }
 
     const firecrawlKey = Deno.env.get('FIRECRAWL_API_KEY');
-    const openaiKey = Deno.env.get('OPENAI_API_KEY');
-    const geminiKey = Deno.env.get('GEMINI_API_KEY');
 
     if (!firecrawlKey) {
       return new Response(
