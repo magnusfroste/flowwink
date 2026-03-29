@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { BLOCK_TYPES_SCHEMA } from '../_shared/block-schema.ts';
+import { generateBrandingHints, extractBranding, type FirecrawlBranding } from '../_shared/extract-branding.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
