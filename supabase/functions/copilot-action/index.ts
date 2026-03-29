@@ -130,11 +130,10 @@ serve(async (req) => {
     console.log('Copilot request:', { 
       messageCount: messages.length, 
       continueAfterToolCall,
-      provider: aiConfig.provider,
       model: aiConfig.model
     });
 
-    // Call AI
+    // Call AI via unified OpenAI-compatible endpoint
     const response = await fetch(aiConfig.apiUrl, {
       method: 'POST',
       headers: {
@@ -149,7 +148,7 @@ serve(async (req) => {
         ],
         tools,
         tool_choice: 'auto',
-        ...(aiConfig.provider === 'lovable' ? {} : { temperature: 0.7 }),
+        temperature: 0.7,
       }),
     });
 
