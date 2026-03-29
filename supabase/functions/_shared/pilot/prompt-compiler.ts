@@ -208,18 +208,36 @@ RULES:
   return assembled;
 }
 
-// ─── Workspace Files (Soul, Identity, Agents) ────────────────────────────────
+// ─── Workspace Files (OpenClaw Bootstrap Files) ──────────────────────────────
+// Maps to OpenClaw's on-disk workspace files, stored in agent_memory:
+//   SOUL.md     → key: 'soul'       (persona, boundaries, tone)
+//   IDENTITY.md → key: 'identity'   (agent name/vibe/emoji)
+//   AGENTS.md   → key: 'agents'     (operating instructions + "memory")
+//   TOOLS.md    → key: 'tools'      (user-maintained tool notes/conventions)
+//   USER.md     → key: 'user'       (user profile + preferred address)
 
-export async function loadWorkspaceFiles(supabase: any): Promise<{ soul: any; identity: any; agents: any }> {
+export interface WorkspaceFiles {
+  soul: any;
+  identity: any;
+  agents: any;
+  tools: any;
+  user: any;
+}
+
+export async function loadWorkspaceFiles(supabase: any): Promise<WorkspaceFiles> {
   const { data } = await supabase
     .from('agent_memory')
     .select('key, value')
-    .in('key', ['soul', 'identity', 'agents']);
+    .in('key', ['soul', 'identity', 'agents', 'tools', 'user']);
 
-  const soul = data?.find((m: any) => m.key === 'soul')?.value || {};
-  const identity = data?.find((m: any) => m.key === 'identity')?.value || {};
-  const agents = data?.find((m: any) => m.key === 'agents')?.value || null;
-  return { soul, identity, agents };
+  const find = (key: string) => data?.find((m: any) => m.key === key)?.value || null;
+  return {
+    soul: find('soul') || {},
+    identity: find('identity') || {},
+    agents: find('agents') || null,
+    tools: find('tools') || null,
+    user: find('user') || null,
+  };
 }
 
 /** @deprecated Use loadWorkspaceFiles instead */
@@ -228,17 +246,17 @@ export async function loadSoulIdentity(supabase: any): Promise<{ soul: any; iden
   return { soul: ws.soul, identity: ws.identity };
 }
 
-export function buildWorkspacePrompt(soul: any, identity: any, agents: any): string {
+export function buildWorkspacePrompt(soul: any, identity: any, agents: any, tools?: any, user?: any): string {
   let prompt = '';
 
-  // Layer 2a: Identity (generic defaults)
+  // Layer 2a: Identity (OpenClaw IDENTITY.md equivalent)
   if (identity.name || identity.role) {
     prompt += `\n\nIDENTITY:\nName: ${identity.name || 'Agent'}\nRole: ${identity.role || 'autonomous operator'}`;
     if (identity.capabilities?.length) prompt += `\nCapabilities: ${identity.capabilities.join(', ')}`;
     if (identity.boundaries?.length) prompt += `\nBoundaries: ${identity.boundaries.join('; ')}`;
   }
 
-  // Layer 2b: Soul
+  // Layer 2b: Soul (OpenClaw SOUL.md equivalent)
   let soulSection = '';
   if (soul.purpose) soulSection += `\n\nSOUL:\nPurpose: ${soul.purpose}`;
   if (soul.values?.length) soulSection += `\nValues: ${soul.values.join('; ')}`;
@@ -246,18 +264,49 @@ export function buildWorkspacePrompt(soul: any, identity: any, agents: any): str
   if (soul.philosophy) soulSection += `\nPhilosophy: ${soul.philosophy}`;
   prompt += truncateSection(soulSection, MAX_SOUL_CHARS);
 
-  // Layer 3: Agents (operational rules)
+  // Layer 2c: User profile (OpenClaw USER.md equivalent)
+  if (user) {
+    let userSection = '\n\nUSER PROFILE:';
+    if (typeof user === 'string') {
+      userSection += `\n${user}`;
+    } else {
+      if (user.name) userSection += `\nName: ${user.name}`;
+      if (user.preferred_address) userSection += `\nPreferred address: ${user.preferred_address}`;
+      if (user.language) userSection += `\nLanguage: ${user.language}`;
+      if (user.timezone) userSection += `\nTimezone: ${user.timezone}`;
+      if (user.notes) userSection += `\n${user.notes}`;
+    }
+    prompt += truncateSection(userSection, 1_000);
+  }
+
+  // Layer 3: Agents (OpenClaw AGENTS.md equivalent — operational rules)
   if (agents) {
     let agentsSection = `\n\nOPERATIONAL RULES (AGENTS):`;
-    if (agents.direct_action_rules) agentsSection += `\n${agents.direct_action_rules}`;
-    if (agents.self_improvement) agentsSection += `\n${agents.self_improvement}`;
-    if (agents.memory_guidelines) agentsSection += `\n${agents.memory_guidelines}`;
-    if (agents.browser_rules) agentsSection += `\n${agents.browser_rules}`;
-    if (agents.workflow_conventions) agentsSection += `\n${agents.workflow_conventions}`;
-    if (agents.a2a_conventions) agentsSection += `\n${agents.a2a_conventions}`;
-    if (agents.skill_pack_rules) agentsSection += `\n${agents.skill_pack_rules}`;
-    if (agents.custom_rules) agentsSection += `\n${agents.custom_rules}`;
+    if (typeof agents === 'string') {
+      // Support raw markdown (OpenClaw style)
+      agentsSection += `\n${agents}`;
+    } else {
+      if (agents.direct_action_rules) agentsSection += `\n${agents.direct_action_rules}`;
+      if (agents.self_improvement) agentsSection += `\n${agents.self_improvement}`;
+      if (agents.memory_guidelines) agentsSection += `\n${agents.memory_guidelines}`;
+      if (agents.browser_rules) agentsSection += `\n${agents.browser_rules}`;
+      if (agents.workflow_conventions) agentsSection += `\n${agents.workflow_conventions}`;
+      if (agents.a2a_conventions) agentsSection += `\n${agents.a2a_conventions}`;
+      if (agents.skill_pack_rules) agentsSection += `\n${agents.skill_pack_rules}`;
+      if (agents.custom_rules) agentsSection += `\n${agents.custom_rules}`;
+    }
     prompt += truncateSection(agentsSection, MAX_AGENTS_CHARS);
+  }
+
+  // Layer 3b: Tools notes (OpenClaw TOOLS.md equivalent)
+  if (tools) {
+    let toolsSection = '\n\nTOOL CONVENTIONS:';
+    if (typeof tools === 'string') {
+      toolsSection += `\n${tools}`;
+    } else if (tools.notes) {
+      toolsSection += `\n${tools.notes}`;
+    }
+    prompt += truncateSection(toolsSection, 2_000);
   }
 
   return truncateSection(prompt, MAX_BOOTSTRAP_TOTAL_CHARS);

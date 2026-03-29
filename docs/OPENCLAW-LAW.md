@@ -64,15 +64,29 @@ FlowWink is a **CMS-native** agentic system. These are intentional adaptations, 
 
 | Decision | OpenClaw | FlowWink | Rationale |
 |----------|----------|----------|-----------|
-| Storage | Markdown on disk | PostgreSQL + Supabase | Relational data, RLS, multi-user |
+| Storage | Markdown on disk | PostgreSQL (`agent_memory`) | Relational data, RLS, multi-user |
 | Transport | WebSocket daemon | HTTP/SSE edge functions | Serverless, scales to zero |
 | Memory | File-based (git) | DB-based (pgvector) | Structured queries, RLS |
-| Skills | File auto-discovery | DB table + handler routing | Admin UI, no SSH needed |
+| Skills | File auto-discovery (`SKILL.md`) | DB table + handler routing | Admin UI, no SSH needed |
+| Workspace | `SOUL.md`, `IDENTITY.md`, `AGENTS.md`, `TOOLS.md`, `USER.md` on disk | Same keys in `agent_memory` table | Identical semantics, DB-backed |
+| Skill Format | YAML frontmatter + `## When to Use` / `## When NOT to Use` | `description` with `Use when:` / `NOT for:` + `instructions` column | Same routing pattern, DB-native |
 | Channels | Multi-platform bridges | Web-only (chat + admin) | CMS visitors use website |
 | Isolation | Docker containers | Deno Edge Functions | Supabase-native |
 | Heartbeat | 30-min timer | 12h cron | CMS ops are less time-sensitive |
+| Intent Guards | None — skill descriptions handle all routing | None — removed in favor of OpenClaw pattern | Descriptions as routing logic |
+
+## 4. Workspace File Mapping
+
+| OpenClaw File | FlowWink `agent_memory` key | Purpose |
+|---------------|----------------------------|---------|
+| `SOUL.md` | `soul` | Persona, boundaries, tone |
+| `IDENTITY.md` | `identity` | Agent name, role, emoji |
+| `AGENTS.md` | `agents` | Operating instructions, conventions |
+| `TOOLS.md` | `tools` | User-maintained tool notes |
+| `USER.md` | `user` | User profile, preferred address |
+| `BOOTSTRAP.md` | N/A (handled by `setup-flowpilot`) | One-time first-run ritual |
 
 ---
 
-*This document supersedes all previous architectural descriptions. Revised: 2026-03-24.*
+*This document supersedes all previous architectural descriptions. Revised: 2026-03-29.*
 *Implementation details: [`docs/pilot/`](pilot/README.md)*

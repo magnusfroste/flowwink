@@ -22,6 +22,9 @@ import {
 /**
  * FlowPilot Operate — Interactive streaming agent
  * Thin SSE wrapper around the shared agent-reason core + prompt compiler.
+ *
+ * OpenClaw alignment: NO deterministic intent guards.
+ * Skill descriptions with "Use when / NOT for" patterns handle all routing.
  */
 
 const corsHeaders = {
@@ -37,46 +40,6 @@ function sseEvent(writer: WritableStreamDefaultWriter, encoder: TextEncoder, eve
   return writer.write(encoder.encode(payload));
 }
 
-function extractFirstUrl(text: string): string | null {
-  const match = text.match(/https?:\/\/[^\s]+/i);
-  return match?.[0] ?? null;
-}
-
-function isMigrationIntent(text: string): boolean {
-  const normalized = text.toLowerCase();
-  return (
-    normalized.includes('migrate') ||
-    normalized.includes('migration') ||
-    normalized.includes('clone website') ||
-    normalized.includes('copy website') ||
-    normalized.includes('existing website')
-  );
-}
-
-function createImmediateSseResponse(message: string) {
-  const { readable, writable } = new TransformStream();
-  const writer = writable.getWriter();
-  const encoder = new TextEncoder();
-
-  (async () => {
-    try {
-      await sseEvent(writer, encoder, 'delta', { content: message });
-      await sseEvent(writer, encoder, 'done', {});
-    } finally {
-      try { await writer.close(); } catch { /* already closed */ }
-    }
-  })();
-
-  return new Response(readable, {
-    headers: {
-      ...corsHeaders,
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
-    },
-  });
-}
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -84,11 +47,6 @@ serve(async (req) => {
 
   try {
     const { messages, available_skills, conversation_id } = await req.json();
-
-    const lastUserMsg = [...(messages || [])].reverse().find((m: any) => m.role === 'user')?.content?.trim() || '';
-    if (lastUserMsg && isMigrationIntent(lastUserMsg) && !extractFirstUrl(lastUserMsg)) {
-      return createImmediateSseResponse('Please send me the URL of the website you want to migrate, and I’ll start from that.');
-    }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -109,7 +67,7 @@ serve(async (req) => {
     const { apiKey, apiUrl, model } = await resolveAiConfig(supabase, 'fast');
 
     // Load context in parallel
-    const [{ soul, identity, agents }, memoryContext, objectiveContext, cmsSchemaCtx] = await Promise.all([
+    const [{ soul, identity, agents, tools, user }, memoryContext, objectiveContext, cmsSchemaCtx] = await Promise.all([
       loadWorkspaceFiles(supabase),
       loadMemories(supabase),
       loadObjectives(supabase),
@@ -119,7 +77,7 @@ serve(async (req) => {
     // Use prompt compiler (OpenClaw Layer 1)
     const systemPrompt = buildSystemPrompt({
       mode: 'operate',
-      soulPrompt: buildWorkspacePrompt(soul, identity, agents),
+      soulPrompt: buildWorkspacePrompt(soul, identity, agents, tools, user),
       agents,
       memoryContext,
       objectiveContext,
@@ -142,6 +100,7 @@ serve(async (req) => {
       const lastUserMsg = [...messages].reverse().find((m: any) => m.role === 'user')?.content?.toLowerCase() || '';
       
       // Score each skill by keyword relevance to user message
+      // Uses OpenClaw "Use when / NOT for" description patterns for routing
       const scored = externalSkills.map((skill: any) => {
         const name = (skill?.function?.name || '').toLowerCase().replace(/_/g, ' ');
         const desc = (skill?.function?.description || '').toLowerCase();
@@ -153,7 +112,7 @@ serve(async (req) => {
           if (w.length > 2 && lastUserMsg.includes(w)) score += 10;
         }
         
-        // "Use when" section keyword match
+        // "Use when" section keyword match (OpenClaw routing pattern)
         const useWhenMatch = desc.match(/use when:([^.]*)/);
         if (useWhenMatch) {
           const triggers = useWhenMatch[1].toLowerCase();
@@ -320,7 +279,7 @@ serve(async (req) => {
 
           conversationMessages.push(...toolResults);
 
-          // Lazy instruction loading
+          // Lazy instruction loading (OpenClaw Law 3)
           const calledSkillNames = assistantMessage.tool_calls
             .map((tc: any) => tc.function.name)
             .filter((n: string) => !isBuiltInTool(n));

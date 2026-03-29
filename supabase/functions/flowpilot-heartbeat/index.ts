@@ -227,7 +227,7 @@ serve(async (req) => {
     // 2. Build system prompt via prompt compiler
     const systemPrompt = buildSystemPrompt({
       mode: 'heartbeat',
-      soulPrompt: buildWorkspacePrompt(soul, identity, agents),
+      soulPrompt: buildWorkspacePrompt(soul, identity, agents, null, null),
       agents,
       memoryContext: memoryCtx,
       objectiveContext: objectiveCtx,

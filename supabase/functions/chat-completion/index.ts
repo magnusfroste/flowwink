@@ -704,7 +704,7 @@ serve(async (req) => {
     // Use prompt compiler — injects soul/identity personality + grounding
     const systemPrompt = buildSystemPrompt({
       mode: 'chat',
-      soulPrompt: buildWorkspacePrompt(soul, identity, agents),
+      soulPrompt: buildWorkspacePrompt(soul, identity, agents, null, null),
       agents,
       memoryContext: '',
       objectiveContext: '',
