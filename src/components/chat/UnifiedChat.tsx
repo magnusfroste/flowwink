@@ -314,7 +314,7 @@ export function UnifiedChat({
         onCancel={loading ? handleCancel : undefined}
         onReset={isAdmin ? onReset : undefined}
         isLoading={loading}
-        placeholder={isAdmin ? (migrationMode && isEmpty ? 'Paste your website URL here…' : 'Tell FlowPilot what to do…') : visitorSettings?.placeholder}
+        placeholder={isAdmin ? 'Tell FlowPilot what to do…' : visitorSettings?.placeholder}
         disabled={!isAdmin && visitorSettings?.enabled === false}
         skills={skills}
         scope={scope}
