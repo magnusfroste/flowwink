@@ -54,6 +54,7 @@ export interface ModulesSettings {
   flowpilot: ModuleConfig;
   
   tickets: ModuleConfig;
+  siteMigration: ModuleConfig;
 }
 
 export const defaultModulesSettings: ModulesSettings = {
@@ -298,6 +299,17 @@ export const defaultModulesSettings: ModulesSettings = {
     autonomy: 'agent-capable',
     adminUI: true,
   },
+  siteMigration: {
+    enabled: true,
+    name: 'Site Migration',
+    description: 'Clone external websites — discover pages, extract branding, and migrate content with visual fidelity',
+    icon: 'Snowflake',
+    category: 'content',
+    autonomy: 'agent-capable',
+    adminUI: false,
+    requiredIntegrations: ['firecrawl'],
+    optionalIntegrations: ['jina'],
+  },
 };
 
 // Map sidebar items to module IDs
@@ -330,6 +342,7 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/skills': 'flowpilot',
   
   '/admin/tickets': 'tickets',
+  '/admin/site-migration': 'siteMigration',
 };
 
 export function useModules() {
