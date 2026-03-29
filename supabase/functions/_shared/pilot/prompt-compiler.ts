@@ -222,13 +222,14 @@ export interface WorkspaceFiles {
   agents: any;
   tools: any;
   user: any;
+  bootstrap: any;
 }
 
 export async function loadWorkspaceFiles(supabase: any): Promise<WorkspaceFiles> {
   const { data } = await supabase
     .from('agent_memory')
     .select('key, value')
-    .in('key', ['soul', 'identity', 'agents', 'tools', 'user']);
+    .in('key', ['soul', 'identity', 'agents', 'tools', 'user', 'bootstrap']);
 
   const find = (key: string) => data?.find((m: any) => m.key === key)?.value || null;
   return {
@@ -237,7 +238,25 @@ export async function loadWorkspaceFiles(supabase: any): Promise<WorkspaceFiles>
     agents: find('agents') || null,
     tools: find('tools') || null,
     user: find('user') || null,
+    bootstrap: find('bootstrap') || null,
   };
+}
+
+/**
+ * Mark bootstrap as completed — called after the first heartbeat processes it.
+ * Equivalent to OpenClaw deleting BOOTSTRAP.md after the ritual completes.
+ */
+export async function completeBootstrap(supabase: any): Promise<void> {
+  const { data: existing } = await supabase
+    .from('agent_memory').select('id, value').eq('key', 'bootstrap').maybeSingle();
+
+  if (existing?.value && !existing.value.completed) {
+    await supabase.from('agent_memory').update({
+      value: { ...existing.value, completed: true, completed_at: new Date().toISOString() },
+      updated_at: new Date().toISOString(),
+    }).eq('id', existing.id);
+    console.log('[prompt-compiler] Bootstrap ritual marked as completed');
+  }
 }
 
 /** @deprecated Use loadWorkspaceFiles instead */
