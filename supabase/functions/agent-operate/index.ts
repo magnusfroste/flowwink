@@ -85,35 +85,29 @@ serve(async (req) => {
       cmsSchemaContext: cmsSchemaCtx,
     });
 
-    // Build tools — normalize to ensure OpenAI compatibility
+    // Build tools — server-side loading with gating + caching (OpenClaw alignment)
     const builtInTools = getBuiltInTools(['memory', 'objectives', 'self-mod', 'reflect', 'soul', 'planning', 'automations-exec', 'workflows', 'a2a', 'skill-packs']);
-    const externalSkills = available_skills || [];
+    const skillCache = await loadSkillsRaw(supabase, 'internal');
+    const externalSkills = await loadSkillTools(supabase, 'internal', undefined, 'full', skillCache);
     
-    // Smart intent-based filtering (OpenClaw pattern):
-    // If total tools exceed OpenAI's 128 limit, use the last user message
-    // to score skill relevance and keep the most relevant ones
+    // Respect OpenAI's 128 tool limit
     const MAX_TOOLS = 128;
-    const builtInCount = builtInTools.length;
-    const maxSkills = MAX_TOOLS - builtInCount;
+    const maxSkills = MAX_TOOLS - builtInTools.length;
     
     let filteredSkills = externalSkills;
     if (externalSkills.length > maxSkills) {
       const lastUserMsg = [...messages].reverse().find((m: any) => m.role === 'user')?.content?.toLowerCase() || '';
       
-      // Score each skill by keyword relevance to user message
-      // Uses OpenClaw "Use when / NOT for" description patterns for routing
       const scored = externalSkills.map((skill: any) => {
         const name = (skill?.function?.name || '').toLowerCase().replace(/_/g, ' ');
         const desc = (skill?.function?.description || '').toLowerCase();
         let score = 0;
         
-        // Direct name match in user message
         const nameWords = name.split(' ');
         for (const w of nameWords) {
           if (w.length > 2 && lastUserMsg.includes(w)) score += 10;
         }
         
-        // "Use when" section keyword match (OpenClaw routing pattern)
         const useWhenMatch = desc.match(/use when:([^.]*)/);
         if (useWhenMatch) {
           const triggers = useWhenMatch[1].toLowerCase();
@@ -123,21 +117,14 @@ serve(async (req) => {
           }
         }
         
-        // General description keyword overlap
         const descWords = desc.split(/\s+/).filter((w: string) => w.length > 4);
         for (const w of descWords) {
           if (lastUserMsg.includes(w)) score += 1;
         }
         
-        // Boost commonly used skills (core CMS operations)
-        if (['manage_page', 'manage_blog_posts', 'write_blog_post', 'manage_leads', 'analyze_analytics', 'manage_site_settings'].includes(skill?.function?.name)) {
-          score += 3;
-        }
-        
         return { skill, score };
       });
       
-      // Sort by relevance, keep top maxSkills
       scored.sort((a: any, b: any) => b.score - a.score);
       filteredSkills = scored.slice(0, maxSkills).map((s: any) => s.skill);
       
@@ -145,34 +132,7 @@ serve(async (req) => {
       console.log(`[agent-operate] Filtered ${externalSkills.length} skills → ${filteredSkills.length} (${kept} with intent match)`);
     }
     
-    const rawTools = [...builtInTools, ...filteredSkills];
-    
-    // OpenAI requires every property to have a 'type' field — fix any that don't
-    const allTools = rawTools.map((tool: any) => {
-      try {
-        const fixProps = (props: any) => {
-          if (!props || typeof props !== 'object') return;
-          for (const [, val] of Object.entries(props)) {
-            const p = val as any;
-            if (!p.type && !p.enum && !p.items && !p.oneOf && !p.anyOf) {
-              p.type = 'string';
-            }
-            if (p.type === 'array' && !p.items) {
-              p.items = { type: 'string' };
-            }
-            if (p.type === 'object' && p.properties) {
-              fixProps(p.properties);
-            }
-          }
-        };
-        fixProps(tool?.function?.parameters?.properties);
-        const params = tool?.function?.parameters;
-        if (params?.required && Array.isArray(params.required) && params.required.length === 0) {
-          delete params.required;
-        }
-      } catch { /* safety net */ }
-      return tool;
-    });
+    const allTools = [...builtInTools, ...filteredSkills];
 
     // Set up SSE stream
     const { readable, writable } = new TransformStream();
