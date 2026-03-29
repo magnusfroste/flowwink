@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { BLOCK_TYPES_SCHEMA } from '../_shared/block-schema.ts';
+import { generateBrandingHints, extractBranding, type FirecrawlBranding } from '../_shared/extract-branding.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -814,7 +815,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         url: formattedUrl,
-        formats: ['markdown', 'html', 'rawHtml', 'screenshot'],
+        formats: ['markdown', 'html', 'rawHtml', 'screenshot', 'branding'],
         onlyMainContent: false, // Get full page for better extraction
         waitFor: 3000, // Wait for JS to load
         includeTags: ['main', 'article', 'section', 'header', 'footer', 'aside', 'figure', 'video', 'iframe'],
@@ -838,8 +839,14 @@ serve(async (req) => {
     const screenshot = scrapeData.data?.screenshot || scrapeData.screenshot || null;
     const metadata = scrapeData.data?.metadata || scrapeData.metadata || {};
 
+    // Extract branding data
+    const rawBranding: FirecrawlBranding = scrapeData.data?.branding || scrapeData.branding || {};
+    const brandingHints = generateBrandingHints(rawBranding);
+    const extractedBrand = Object.keys(rawBranding).length > 0 ? extractBranding(rawBranding) : null;
+
     console.log('Step 2: Scraped content - Markdown:', markdown.length, 'chars, HTML:', html.length, 'chars');
     console.log('Screenshot available:', !!screenshot);
+    console.log('Branding extracted:', !!extractedBrand);
     console.log('Metadata:', JSON.stringify(metadata));
 
     // Detect platform
@@ -941,6 +948,7 @@ Your task is to take content from a scraped web page and transform it into struc
 
 ${BLOCK_TYPES_SCHEMA}
 
+${brandingHints ? `\n${brandingHints}\n` : ''}
 ${platformPrompt}
 
 === CONTENT QUALITY FILTER - CRITICAL ===
@@ -1390,6 +1398,7 @@ Respond only with JSON.`;
         title: parsedBlocks.title || metadata.title || 'Imported page',
         blocks,
         companyProfile: companyProfile || null,
+        branding: extractedBrand || null,
         metadata: {
           originalTitle: metadata.title,
           originalDescription: metadata.description,
@@ -1400,6 +1409,7 @@ Respond only with JSON.`;
           lottieAnimationsFound: extractedLotties.length,
           svgAnimationsFound: extractedSvgAnimations.length,
           screenshotAvailable: !!screenshot,
+          brandingExtracted: !!extractedBrand,
           scrapedAt: new Date().toISOString(),
         }
       }),
