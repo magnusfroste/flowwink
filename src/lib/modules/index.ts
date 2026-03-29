@@ -31,3 +31,4 @@ export { federationModule } from './federation-module';
 export { companyInsightsModule } from './company-insights-module';
 
 export { ticketsModule } from './tickets-module';
+export { siteMigrationModule, siteMigrationMeta } from './site-migration-module';
