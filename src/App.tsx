@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { createBrowserRouter, RouterProvider, Outlet } from "react-router-dom";
+import { createBrowserRouter, RouterProvider, Outlet, Navigate } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import { ThemeProvider } from "next-themes";
 import { lazy, Suspense } from "react";
@@ -25,7 +25,7 @@ import BrandingSettingsPage from "./pages/admin/BrandingSettingsPage";
 import ChatSettingsPage from "./pages/admin/ChatSettingsPage";
 import ContentApiPage from "./pages/admin/ContentApiPage";
 import ContentCampaignsPage from "./pages/admin/ContentCampaignsPage";
-import QuickStartPage from "./pages/admin/QuickStartPage";
+
 
 import GlobalBlocksPage from "./pages/admin/GlobalBlocksPage";
 import FormSubmissionsPage from "./pages/admin/FormSubmissionsPage";
@@ -172,7 +172,7 @@ const router = createBrowserRouter([
       { path: "/admin/chat", element: <ChatSettingsPage /> },
       { path: "/admin/content-api", element: <ContentApiPage /> },
       { path: "/admin/campaigns", element: <ContentCampaignsPage /> },
-      { path: "/admin/quick-start", element: <QuickStartPage /> },
+      { path: "/admin/quick-start", element: <Navigate to="/admin" replace /> },
       
       { path: "/admin/templates", element: withPageFallback(<TemplateGalleryPage />) },
       { path: "/admin/global-blocks", element: <GlobalBlocksPage /> },

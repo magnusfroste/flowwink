@@ -94,7 +94,7 @@ export const navigationGroups: NavGroup[] = [
     adminOnly: true,
     collapsible: false,
     items: [
-      { name: "Quick Start", href: "/admin/quick-start", icon: Rocket },
+      
       { name: "Templates", href: "/admin/templates", icon: Puzzle },
       { name: "Template Export", href: "/admin/template-export", icon: Puzzle },
       { name: "Branding", href: "/admin/branding", icon: Palette },
