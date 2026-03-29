@@ -125,6 +125,7 @@ interface UnifiedChatProps {
   onProactiveAction?: (action: ActionButton) => void;
   onApproveAction?: (activityId: string) => Promise<void>;
   onRejectAction?: (activityId: string) => Promise<void>;
+  migrationMode?: boolean;
 
   // Visitor mode (public chat) — delegates to ChatConversation internals
   visitorChat?: {
@@ -161,6 +162,7 @@ export function UnifiedChat({
   onProactiveAction,
   onApproveAction,
   onRejectAction,
+  migrationMode = false,
   visitorChat,
   visitorSettings,
   conversationId,
@@ -196,30 +198,44 @@ export function UnifiedChat({
   };
 
   // ─── Admin empty state ────────────────────────────────────────────────
-  const renderAdminEmpty = () => (
-    <div className="flex flex-col items-center justify-center h-full px-8 text-center gap-5">
-      <div className="p-3 rounded-2xl bg-primary/10">
-        <Terminal className="h-8 w-8 text-primary" />
-      </div>
-      <div className="space-y-2 max-w-md">
-        <h2 className="text-lg font-semibold">FlowPilot</h2>
-        <p className="text-sm text-muted-foreground">
-          Your autonomous CMS operator. Use <kbd className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground text-xs font-mono">/</kbd> to invoke skills, or just tell me what you need.
-        </p>
-      </div>
-      <div className="flex flex-wrap gap-2 justify-center">
-        {[
+  const renderAdminEmpty = () => {
+    const prompts = migrationMode
+      ? [
+          { label: '🌐 Migrate https://example.com', action: 'Migrate my website: https://example.com' },
+          { label: '📄 Clone a single page', action: 'Clone this page: https://' },
+        ]
+      : [
           { label: 'Analyze this week', action: 'Analyze my site traffic for this week' },
           { label: 'Write a blog post', action: '/write_blog_post Write about our latest update' },
           { label: 'Check leads', action: '/manage_leads Show recent lead activity' },
-        ].map(qa => (
-          <Button key={qa.label} variant="outline" size="sm" className="rounded-full" onClick={() => handleSend(qa.action)}>
-            {qa.label}
-          </Button>
-        ))}
+        ];
+
+    return (
+      <div className="flex flex-col items-center justify-center h-full px-8 text-center gap-5">
+        <div className="p-3 rounded-2xl bg-primary/10">
+          <Terminal className="h-8 w-8 text-primary" />
+        </div>
+        <div className="space-y-2 max-w-md">
+          <h2 className="text-lg font-semibold">
+            {migrationMode ? 'Migrate Your Website' : 'FlowPilot'}
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            {migrationMode
+              ? 'Paste your website URL below and FlowPilot will clone it — pages, branding, and content.'
+              : <>Your autonomous CMS operator. Use <kbd className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground text-xs font-mono">/</kbd> to invoke skills, or just tell me what you need.</>
+            }
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2 justify-center">
+          {prompts.map(qa => (
+            <Button key={qa.label} variant="outline" size="sm" className="rounded-full" onClick={() => handleSend(qa.action)}>
+              {qa.label}
+            </Button>
+          ))}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   // ─── Visitor empty state ──────────────────────────────────────────────
   const renderVisitorEmpty = () => (
@@ -314,7 +330,7 @@ export function UnifiedChat({
         onCancel={loading ? handleCancel : undefined}
         onReset={isAdmin ? onReset : undefined}
         isLoading={loading}
-        placeholder={isAdmin ? 'Tell FlowPilot what to do…' : visitorSettings?.placeholder}
+        placeholder={isAdmin ? (migrationMode && isEmpty ? 'Paste your website URL here…' : 'Tell FlowPilot what to do…') : visitorSettings?.placeholder}
         disabled={!isAdmin && visitorSettings?.enabled === false}
         skills={skills}
         scope={scope}
