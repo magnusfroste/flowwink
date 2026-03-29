@@ -1144,48 +1144,23 @@ ${html.substring(0, 20000)}
 
 Respond only with JSON.`;
 
-    if (useGemini) {
-      // Use Google Gemini API
-      const model = 'gemini-2.0-flash-exp';
-      
-      aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: 'user',
-              parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }]
-            }
-          ],
-          generationConfig: {
-            temperature: 0.2,
-            maxOutputTokens: 16384,
-          }
-        }),
-      });
-    } else {
-      // Use OpenAI API
-      const model = 'gpt-4.1';
-      aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openaiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userPrompt }
-          ],
-          max_tokens: 16384,
-          temperature: 0.2,
-        }),
-      });
-    }
+    // Unified AI call via OpenAI-compatible endpoint (all providers)
+    aiResponse = await fetch(aiConfig.apiUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${aiConfig.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: aiConfig.model,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ],
+        max_tokens: 16384,
+        temperature: 0.2,
+      }),
+    });
 
     if (!aiResponse.ok) {
       const aiError = await aiResponse.text();
