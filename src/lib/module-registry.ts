@@ -68,6 +68,7 @@ class ModuleRegistry {
       federationModule,
       
       ticketsModule,
+      siteMigrationModule,
     ];
 
     for (const mod of builtIn) {
