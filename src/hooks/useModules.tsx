@@ -54,6 +54,7 @@ export interface ModulesSettings {
   flowpilot: ModuleConfig;
   
   tickets: ModuleConfig;
+  siteMigration: ModuleConfig;
 }
 
 export const defaultModulesSettings: ModulesSettings = {
