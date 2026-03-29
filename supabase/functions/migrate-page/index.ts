@@ -1398,6 +1398,7 @@ Respond only with JSON.`;
         title: parsedBlocks.title || metadata.title || 'Imported page',
         blocks,
         companyProfile: companyProfile || null,
+        branding: extractedBrand || null,
         metadata: {
           originalTitle: metadata.title,
           originalDescription: metadata.description,
@@ -1408,6 +1409,7 @@ Respond only with JSON.`;
           lottieAnimationsFound: extractedLotties.length,
           svgAnimationsFound: extractedSvgAnimations.length,
           screenshotAvailable: !!screenshot,
+          brandingExtracted: !!extractedBrand,
           scrapedAt: new Date().toISOString(),
         }
       }),
