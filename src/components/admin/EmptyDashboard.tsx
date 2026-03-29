@@ -40,7 +40,7 @@ export function EmptyDashboard() {
               Paste your URL and FlowPilot clones your site — pages, branding, and content.
             </p>
             <Button asChild className="w-full gap-2">
-              <Link to="/admin/flowpilot?prompt=Migrate+my+existing+website">
+              <Link to="/admin/flowpilot?mode=migrate">
                 Migrate My Site
                 <ArrowRight className="h-4 w-4" />
               </Link>
