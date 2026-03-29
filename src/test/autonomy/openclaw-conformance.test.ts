@@ -474,6 +474,3 @@ describe("Pipeline Integrity — Skill Description Format", () => {
     expect(brokenSkill.description).not.toBe(brokenSkill.tool_definition.function.description);
   });
 });
-    expect(prompt).not.toContain("same language as the user");
-  });
-});
