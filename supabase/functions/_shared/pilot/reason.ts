@@ -326,12 +326,25 @@ async function filterGatedSkills(supabase: any, skills: any[]): Promise<any[]> {
 
 // ─── Load Skills from Registry ────────────────────────────────────────────────
 
-export async function loadSkillTools(
+/**
+ * Session-scoped skill cache. Avoids repeated DB queries within a single
+ * agent run — skills are loaded once, then re-formatted on tier changes.
+ */
+export interface SkillCache {
+  skills: any[];
+  scope: string;
+  categories?: string[];
+}
+
+/**
+ * Load raw skills from DB (once per session). Returns gated, unblocked skills.
+ * Pass the result as `cache` to subsequent `loadSkillTools` calls to skip DB.
+ */
+export async function loadSkillsRaw(
   supabase: any,
   scope: 'internal' | 'external',
   categories?: string[],
-  budgetTier?: SkillBudgetTier,
-): Promise<any[]> {
+): Promise<SkillCache> {
   const scopes = scope === 'internal' ? ['internal', 'both'] : ['external', 'both'];
 
   let query = supabase
@@ -354,13 +367,27 @@ export async function loadSkillTools(
     for (const name of policyRow.value.blocked) blockedSkills.add(name);
   }
 
-  if (!skills?.length) return [];
+  if (!skills?.length) return { skills: [], scope, categories };
 
   const unblockedSkills = blockedSkills.size > 0
     ? skills.filter((s: any) => !blockedSkills.has(s.name))
     : skills;
 
-  let gatedSkills = await filterGatedSkills(supabase, unblockedSkills);
+  const gatedSkills = await filterGatedSkills(supabase, unblockedSkills);
+  return { skills: gatedSkills, scope, categories };
+}
+
+export async function loadSkillTools(
+  supabase: any,
+  scope: 'internal' | 'external',
+  categories?: string[],
+  budgetTier?: SkillBudgetTier,
+  cache?: SkillCache,
+): Promise<any[]> {
+  // Use cache if available, otherwise load fresh
+  const { skills: gatedSkills } = cache || await loadSkillsRaw(supabase, scope, categories);
+
+  let filteredSkills = gatedSkills;
 
   // Tier 3: DROP — only keep top-used skills
   if (budgetTier === 'drop') {
@@ -709,8 +736,10 @@ export async function reason(
     const initialTier = resolveSkillBudgetTier(tokenBudget, 0);
     const builtInTools = getBuiltInTools(config.builtInToolGroups || ['memory', 'objectives', 'reflect']);
     let currentSkillTier: SkillBudgetTier = initialTier;
-    let skillTools = await loadSkillTools(supabase, config.scope, config.skillCategories, currentSkillTier);
-    console.log(`[reason] trace=${traceId} Loaded ${builtInTools.length} built-in + ${skillTools.length} skill tools (tier: ${currentSkillTier})${config.skillCategories ? ` (categories: ${config.skillCategories.join(',')})` : ' (ALL categories)'}`);
+    // Session cache: load raw skills once, reuse on tier changes
+    const skillCache = await loadSkillsRaw(supabase, config.scope, config.skillCategories);
+    let skillTools = await loadSkillTools(supabase, config.scope, config.skillCategories, currentSkillTier, skillCache);
+    console.log(`[reason] trace=${traceId} Loaded ${builtInTools.length} built-in + ${skillTools.length} skill tools (tier: ${currentSkillTier}, cached)${config.skillCategories ? ` (categories: ${config.skillCategories.join(',')})` : ' (ALL categories)'}`);
     let allTools = [...builtInTools, ...(config.additionalTools || []), ...skillTools];
 
     let conversationMessages = await pruneConversationHistory(messages, supabase);
@@ -766,7 +795,7 @@ export async function reason(
       if (newTier !== currentSkillTier) {
         console.log(`[reason] trace=${traceId} Skill budget tier changed: ${currentSkillTier} → ${newTier} at ${Math.round(totalTokenUsage.total_tokens / tokenBudget * 100)}%`);
         currentSkillTier = newTier;
-        skillTools = await loadSkillTools(supabase, config.scope, config.skillCategories, currentSkillTier);
+        skillTools = await loadSkillTools(supabase, config.scope, config.skillCategories, currentSkillTier, skillCache);
         allTools = [...builtInTools, ...(config.additionalTools || []), ...skillTools];
         console.log(`[reason] trace=${traceId} Reloaded ${skillTools.length} skill tools at ${currentSkillTier} tier`);
       }
