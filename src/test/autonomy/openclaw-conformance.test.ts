@@ -398,9 +398,12 @@ describe("Chat Language Matching", () => {
       soulPrompt: '',
       memoryContext: '',
       objectiveContext: '',
+    });
+    expect(prompt).not.toContain("same language as the user");
+  });
 });
 
-// ═══════════════════════════════════════════════════════════════════════════════
+
 // Pipeline Integrity — Catches the "descriptions not reaching LLM" bug class
 // ═══════════════════════════════════════════════════════════════════════════════
 
