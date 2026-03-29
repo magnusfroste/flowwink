@@ -67,7 +67,7 @@ serve(async (req) => {
     const { apiKey, apiUrl, model } = await resolveAiConfig(supabase, 'fast');
 
     // Load context in parallel
-    const [{ soul, identity, agents }, memoryContext, objectiveContext, cmsSchemaCtx] = await Promise.all([
+    const [{ soul, identity, agents, tools, user }, memoryContext, objectiveContext, cmsSchemaCtx] = await Promise.all([
       loadWorkspaceFiles(supabase),
       loadMemories(supabase),
       loadObjectives(supabase),
