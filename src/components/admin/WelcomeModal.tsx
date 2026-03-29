@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Sparkles, LayoutTemplate, FileText, ArrowRight, Bot, Settings } from 'lucide-react';
+import { Sparkles, LayoutTemplate, FileText, ArrowRight, Bot, Settings, Globe } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -106,6 +106,21 @@ export function WelcomeModal() {
                 </div>
                 <ArrowRight className="h-4 w-4 text-muted-foreground mt-1 shrink-0" />
               </Link>
+
+              <Link
+                to="/admin/flowpilot?prompt=Clone+my+existing+website"
+                onClick={handleClose}
+                className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+              >
+                <Globe className="h-5 w-5 text-muted-foreground mt-0.5 shrink-0" />
+                <div className="flex-1">
+                  <p className="font-medium text-sm">Clone Existing Website</p>
+                  <p className="text-sm text-muted-foreground">
+                    Migrate your current site. AI clones it for you.
+                  </p>
+                </div>
+                <ArrowRight className="h-4 w-4 text-muted-foreground mt-1 shrink-0" />
+              </Link>
             </>
           ) : (
             <>
@@ -135,6 +150,21 @@ export function WelcomeModal() {
                   <p className="font-medium text-sm">Use AI Copilot</p>
                   <p className="text-sm text-muted-foreground">
                     Requires OpenAI or Gemini API key setup.
+                  </p>
+                </div>
+                <Settings className="h-4 w-4 text-muted-foreground mt-1 shrink-0" />
+              </Link>
+
+              <Link
+                to="/admin/integrations#ai"
+                onClick={handleClose}
+                className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+              >
+                <Globe className="h-5 w-5 text-muted-foreground mt-0.5 shrink-0" />
+                <div className="flex-1">
+                  <p className="font-medium text-sm">Clone Existing Website</p>
+                  <p className="text-sm text-muted-foreground">
+                    Requires AI + Firecrawl integration setup.
                   </p>
                 </div>
                 <Settings className="h-4 w-4 text-muted-foreground mt-1 shrink-0" />
