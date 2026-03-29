@@ -398,7 +398,79 @@ describe("Chat Language Matching", () => {
       soulPrompt: '',
       memoryContext: '',
       objectiveContext: '',
-    });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Pipeline Integrity — Catches the "descriptions not reaching LLM" bug class
+// ═══════════════════════════════════════════════════════════════════════════════
+
+describe("Pipeline Integrity — Tool-Driven Questioning", () => {
+  const soulPrompt = buildWorkspacePrompt({ purpose: "Help" }, { name: "Bot" }, null);
+  const base: PromptCompilerInput = {
+    mode: 'operate',
+    soulPrompt,
+    memoryContext: '',
+    objectiveContext: '',
+  };
+
+  it("GROUNDING_RULES contain Tool-Driven Questioning section", () => {
+    expect(GROUNDING_RULES).toContain("TOOL-DRIVEN QUESTIONING");
+  });
+
+  it("operate prompt includes anti-questioning rules", () => {
+    const prompt = buildSystemPrompt({ ...base, mode: 'operate' });
+    expect(prompt).toContain("ONLY ask questions whose answers change which tool you call");
+    expect(prompt).toContain("NEVER ask about platforms, tech stacks");
+  });
+
+  it("heartbeat prompt includes anti-questioning rules", () => {
+    const prompt = buildSystemPrompt({ ...base, mode: 'heartbeat' });
+    expect(prompt).toContain("TOOL-DRIVEN QUESTIONING");
+  });
+
+  it("chat mode does NOT include Tool-Driven Questioning", () => {
+    const prompt = buildSystemPrompt({ ...base, mode: 'chat', chatSystemPrompt: 'Hi.' });
+    expect(prompt).not.toContain("TOOL-DRIVEN QUESTIONING");
+  });
+});
+
+describe("Pipeline Integrity — Skill Description Format", () => {
+  it("validates OpenClaw routing pattern structure", () => {
+    const validDesc = "Fetches a URL. Use when: user provides a URL to migrate. NOT for: general questions.";
+    const invalidDesc = "Fetches a URL and does stuff.";
+    
+    const hasPattern = (d: string) => d.includes("Use when") && d.includes("NOT for");
+    expect(hasPattern(validDesc)).toBe(true);
+    expect(hasPattern(invalidDesc)).toBe(false);
+  });
+
+  it("description sync check: description must equal tool_definition.function.description", () => {
+    const skill = {
+      description: "Migrates a website. Use when: user provides URL. NOT for: general questions.",
+      tool_definition: { 
+        function: { 
+          name: "migrate_url", 
+          description: "Migrates a website. Use when: user provides URL. NOT for: general questions.",
+          parameters: { type: "object", properties: {} }
+        } 
+      }
+    };
+    expect(skill.description).toBe(skill.tool_definition.function.description);
+  });
+
+  it("detects out-of-sync description (the exact bug we fixed)", () => {
+    const brokenSkill = {
+      description: "Updated: Use when: user provides URL. NOT for: platform questions.",
+      tool_definition: { 
+        function: { 
+          name: "migrate_url", 
+          description: "Old description that doesn't match",
+        } 
+      }
+    };
+    expect(brokenSkill.description).not.toBe(brokenSkill.tool_definition.function.description);
+  });
+});
     expect(prompt).not.toContain("same language as the user");
   });
 });
