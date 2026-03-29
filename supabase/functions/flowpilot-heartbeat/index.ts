@@ -18,6 +18,7 @@ import {
   loadHeartbeatProtocol,
   reason,
   parseReplyDirectives,
+  completeBootstrap,
 } from "../_shared/agent-reason.ts";
 import { tryAcquireLock, releaseLock } from "../_shared/concurrency.ts";
 import { generateTraceId } from "../_shared/trace.ts";
