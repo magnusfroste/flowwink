@@ -795,7 +795,7 @@ export async function reason(
       if (newTier !== currentSkillTier) {
         console.log(`[reason] trace=${traceId} Skill budget tier changed: ${currentSkillTier} → ${newTier} at ${Math.round(totalTokenUsage.total_tokens / tokenBudget * 100)}%`);
         currentSkillTier = newTier;
-        skillTools = await loadSkillTools(supabase, config.scope, config.skillCategories, currentSkillTier);
+        skillTools = await loadSkillTools(supabase, config.scope, config.skillCategories, currentSkillTier, skillCache);
         allTools = [...builtInTools, ...(config.additionalTools || []), ...skillTools];
         console.log(`[reason] trace=${traceId} Reloaded ${skillTools.length} skill tools at ${currentSkillTier} tier`);
       }
