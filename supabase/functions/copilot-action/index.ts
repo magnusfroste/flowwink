@@ -270,8 +270,8 @@ serve(async (req) => {
           responseMessage = `Based on your business, I recommend activating some modules that will help you get started. ${toolCall.arguments.reason}`;
         } else if (toolCall.name === 'migrate_url') {
           responseMessage = `I'll analyze ${toolCall.arguments.url} and help you migrate the content. Give me a moment to scan the page...`;
-        } else if (toolCall.name.startsWith('create_')) {
-          const blockType = toolCall.name.replace('create_', '').replace('_block', '');
+        } else if (toolNameToBlockType(toolCall.name)) {
+          const blockType = toolNameToBlockType(toolCall.name);
           responseMessage = `Creating a ${blockType} section for your page.`;
         }
       }
