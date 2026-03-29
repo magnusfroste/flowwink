@@ -125,6 +125,7 @@ interface UnifiedChatProps {
   onProactiveAction?: (action: ActionButton) => void;
   onApproveAction?: (activityId: string) => Promise<void>;
   onRejectAction?: (activityId: string) => Promise<void>;
+  migrationMode?: boolean;
 
   // Visitor mode (public chat) — delegates to ChatConversation internals
   visitorChat?: {
