@@ -736,8 +736,10 @@ export async function reason(
     const initialTier = resolveSkillBudgetTier(tokenBudget, 0);
     const builtInTools = getBuiltInTools(config.builtInToolGroups || ['memory', 'objectives', 'reflect']);
     let currentSkillTier: SkillBudgetTier = initialTier;
-    let skillTools = await loadSkillTools(supabase, config.scope, config.skillCategories, currentSkillTier);
-    console.log(`[reason] trace=${traceId} Loaded ${builtInTools.length} built-in + ${skillTools.length} skill tools (tier: ${currentSkillTier})${config.skillCategories ? ` (categories: ${config.skillCategories.join(',')})` : ' (ALL categories)'}`);
+    // Session cache: load raw skills once, reuse on tier changes
+    const skillCache = await loadSkillsRaw(supabase, config.scope, config.skillCategories);
+    let skillTools = await loadSkillTools(supabase, config.scope, config.skillCategories, currentSkillTier, skillCache);
+    console.log(`[reason] trace=${traceId} Loaded ${builtInTools.length} built-in + ${skillTools.length} skill tools (tier: ${currentSkillTier}, cached)${config.skillCategories ? ` (categories: ${config.skillCategories.join(',')})` : ' (ALL categories)'}`);
     let allTools = [...builtInTools, ...(config.additionalTools || []), ...skillTools];
 
     let conversationMessages = await pruneConversationHistory(messages, supabase);
