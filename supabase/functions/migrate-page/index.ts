@@ -815,7 +815,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         url: formattedUrl,
-        formats: ['markdown', 'html', 'rawHtml', 'screenshot'],
+        formats: ['markdown', 'html', 'rawHtml', 'screenshot', 'branding'],
         onlyMainContent: false, // Get full page for better extraction
         waitFor: 3000, // Wait for JS to load
         includeTags: ['main', 'article', 'section', 'header', 'footer', 'aside', 'figure', 'video', 'iframe'],
