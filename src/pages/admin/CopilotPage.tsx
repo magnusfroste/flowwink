@@ -22,6 +22,7 @@ export default function CopilotPage() {
   const operate = useAgentOperate();
   const relay = useExtensionRelay();
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [chatKey, setChatKey] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const { data: branding } = useBrandingSettings();
@@ -31,6 +32,19 @@ export default function CopilotPage() {
   const showEscalations = chatSettings?.showEscalationsInCopilot ?? false;
   const showPublicChats = chatSettings?.showPublicChatsInCopilot ?? false;
   const { messages: proactiveMessages } = useProactiveMessages(operate.conversationId ?? undefined);
+  const promptSentRef = useRef(false);
+
+  // Auto-send prompt from URL query param (e.g. ?prompt=Clone+my+website)
+  useEffect(() => {
+    const prompt = searchParams.get('prompt');
+    if (prompt && !promptSentRef.current && operate.sendMessage) {
+      promptSentRef.current = true;
+      // Clear the param so it doesn't re-trigger
+      setSearchParams({}, { replace: true });
+      // Small delay to ensure chat is mounted
+      setTimeout(() => operate.sendMessage(prompt), 600);
+    }
+  }, [searchParams, operate.sendMessage]);
 
   // Auto-detect extension on mount
   useEffect(() => {
