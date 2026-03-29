@@ -32,16 +32,22 @@ export function EmptyDashboard() {
             </div>
             <CardTitle className="font-serif text-lg">FlowPilot (AI Agent)</CardTitle>
             <CardDescription>
-              Create a new site or migrate an existing one
+              Migrate your existing website with AI
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-sm text-muted-foreground">
-              Describe your vision and let AI build it — or paste a URL to clone your current website.
+              Paste your URL and FlowPilot clones your site — pages, branding, and content.
             </p>
             <Button asChild className="w-full gap-2">
+              <Link to="/admin/flowpilot?prompt=Migrate+my+existing+website">
+                Migrate My Site
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+            <Button asChild variant="ghost" className="w-full gap-2 text-muted-foreground">
               <Link to="/admin/flowpilot">
-                Start with FlowPilot
+                Or create something new
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
