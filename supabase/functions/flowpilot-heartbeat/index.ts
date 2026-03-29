@@ -283,6 +283,12 @@ serve(async (req) => {
       iteration_count: result.actionsExecuted.length,
     });
 
+    // 4b. Complete bootstrap if it was active (OpenClaw BOOTSTRAP.md — one-time ritual)
+    if (bootstrap && !bootstrap.completed) {
+      await completeBootstrap(supabase);
+      console.log(`[heartbeat] trace=${traceId} Bootstrap ritual completed`);
+    }
+
     // 5. Log heartbeat with trace ID — use 'idle' distinction for NO_REPLY
     await supabase.from("agent_activity").insert({
       agent: "flowpilot",
