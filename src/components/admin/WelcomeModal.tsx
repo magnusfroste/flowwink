@@ -84,7 +84,7 @@ export function WelcomeModal() {
               >
                 <Bot className="h-5 w-5 text-primary mt-0.5 shrink-0" />
                 <div className="flex-1">
-                  <p className="font-medium text-sm">AI Copilot</p>
+                  <p className="font-medium text-sm">FlowPilot (AI Agent)</p>
                   <p className="text-sm text-muted-foreground">
                     Describe your site in plain language. AI builds it for you.
                   </p>
@@ -147,7 +147,7 @@ export function WelcomeModal() {
               >
                 <Bot className="h-5 w-5 text-muted-foreground mt-0.5 shrink-0" />
                 <div className="flex-1">
-                  <p className="font-medium text-sm">Use AI Copilot</p>
+                  <p className="font-medium text-sm">FlowPilot (AI Agent)</p>
                   <p className="text-sm text-muted-foreground">
                     Requires OpenAI or Gemini API key setup.
                   </p>
