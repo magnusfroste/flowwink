@@ -265,8 +265,21 @@ export async function loadSoulIdentity(supabase: any): Promise<{ soul: any; iden
   return { soul: ws.soul, identity: ws.identity };
 }
 
-export function buildWorkspacePrompt(soul: any, identity: any, agents: any, tools?: any, user?: any): string {
+export function buildWorkspacePrompt(soul: any, identity: any, agents: any, tools?: any, user?: any, bootstrap?: any): string {
   let prompt = '';
+
+  // Layer 0: Bootstrap (OpenClaw BOOTSTRAP.md equivalent — one-time first-run ritual)
+  if (bootstrap && !bootstrap.completed) {
+    let bootstrapSection = '\n\nBOOTSTRAP (FIRST-RUN RITUAL — execute these tasks, then they will not appear again):';
+    if (typeof bootstrap === 'string') {
+      bootstrapSection += `\n${bootstrap}`;
+    } else if (bootstrap.tasks) {
+      bootstrapSection += `\n${bootstrap.tasks}`;
+    } else if (bootstrap.instructions) {
+      bootstrapSection += `\n${bootstrap.instructions}`;
+    }
+    prompt += truncateSection(bootstrapSection, 2_000);
+  }
 
   // Layer 2a: Identity (OpenClaw IDENTITY.md equivalent)
   if (identity.name || identity.role) {
