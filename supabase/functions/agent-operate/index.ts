@@ -373,6 +373,14 @@ async function streamFinalResponse(
   fallbackContent: string,
 ) {
   try {
+    // Anthropic doesn't use OpenAI-compatible streaming — use fallback for Anthropic
+    const isAnthropic = apiUrl.includes('anthropic.com');
+    if (isAnthropic) {
+      await sseEvent(writer, encoder, 'delta', { content: fallbackContent });
+      await sseEvent(writer, encoder, 'done', {});
+      return;
+    }
+
     const streamResponse = await fetch(apiUrl, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
