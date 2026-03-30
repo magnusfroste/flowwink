@@ -155,7 +155,7 @@ export const defaultModulesSettings: ModulesSettings = {
     adminUI: true,
   },
   deals: {
-    enabled: true,
+    enabled: false,
     name: 'Deals',
     description: 'Pipeline management for sales opportunities',
     icon: 'Briefcase',
