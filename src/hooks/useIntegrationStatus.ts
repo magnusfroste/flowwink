@@ -137,9 +137,20 @@ export function useIsLocalLLMConfigured() {
 }
 
 // Combined helper: true if ANY AI provider is configured and not disabled
+export function useIsAnthropicConfigured() {
+  const { data: secretsStatus } = useIntegrationStatus();
+  const { data: enabledSettings } = useIntegrationsEnabledSettings();
+  
+  const hasKey = secretsStatus?.integrations?.anthropic ?? false;
+  const explicitlyDisabled = enabledSettings?.anthropic?.enabled === false;
+  
+  return hasKey && !explicitlyDisabled;
+}
+
 export function useIsAIConfigured() {
   const isOpenAI = useIsOpenAIConfigured();
   const isGemini = useIsGeminiConfigured();
+  const isAnthropic = useIsAnthropicConfigured();
   const isLocal = useIsLocalLLMConfigured();
-  return isOpenAI || isGemini || isLocal;
+  return isOpenAI || isGemini || isAnthropic || isLocal;
 }
