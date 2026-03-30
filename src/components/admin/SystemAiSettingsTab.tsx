@@ -253,6 +253,18 @@ export function SystemAiSettingsTab({ data, onChange }: SystemAiSettingsTabProps
               </div>
             </div>
           )}
+
+          {data.provider === 'local' && (
+            <Alert className="bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-900">
+              <Server className="h-4 w-4 text-green-600" />
+              <AlertTitle className="text-green-800 dark:text-green-200">Local LLM (HIPAA-compliant)</AlertTitle>
+              <AlertDescription className="text-green-700 dark:text-green-300">
+                System AI will use the Local LLM endpoint configured in{' '}
+                <Link to="/admin/integrations#ai" className="underline font-medium">Integrations</Link>.
+                Both fast and reasoning tiers use the same model. Your data never leaves your infrastructure.
+              </AlertDescription>
+            </Alert>
+          )}
         </CardContent>
       </Card>
 
