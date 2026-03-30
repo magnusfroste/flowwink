@@ -193,6 +193,44 @@ export function CopilotChat({
             </div>
           ))}
 
+          {/* Migration progress indicator */}
+          {migrationState && migrationState.isActive && discoveryStatus === 'migrating' && (
+            <div className="bg-muted/50 rounded-xl p-3 space-y-2 border border-border/50">
+              <div className="flex items-center gap-2 text-xs font-medium">
+                <Globe className="w-3.5 h-3.5 text-primary animate-pulse" />
+                <span>Migrating {migrationState.baseDomain || 'site'}</span>
+              </div>
+              {migrationState.pagesTotal > 0 && (
+                <>
+                  <Progress 
+                    value={(migrationState.pagesCompleted / migrationState.pagesTotal) * 100} 
+                    className="h-1.5" 
+                  />
+                  <div className="flex justify-between text-[10px] text-muted-foreground">
+                    <span>
+                      {migrationState.currentPageUrl 
+                        ? `Page ${migrationState.pagesCompleted + 1}/${migrationState.pagesTotal}: ${migrationState.pageTitle || new URL(migrationState.currentPageUrl).pathname}`
+                        : `${migrationState.pagesCompleted}/${migrationState.pagesTotal} pages`
+                      }
+                    </span>
+                    <span>{Math.round((migrationState.pagesCompleted / migrationState.pagesTotal) * 100)}%</span>
+                  </div>
+                </>
+              )}
+              {migrationState.pendingBlocks.length > 0 && (
+                <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                  <FileText className="w-3 h-3" />
+                  <span>
+                    Block {migrationState.currentBlockIndex + 1}/{migrationState.pendingBlocks.length}
+                    {migrationState.pendingBlocks[migrationState.currentBlockIndex]?.type 
+                      ? ` — ${migrationState.pendingBlocks[migrationState.currentBlockIndex].type}`
+                      : ''}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Quick action hints during migration - show only when NOT in discovery/migration mode */}
           {hasBlocks && !isLoading && suggestedNext.length > 0 && discoveryStatus !== 'migrating' && discoveryStatus !== 'ready' && (
             <div className="pt-2 space-y-2">
