@@ -36,7 +36,7 @@ import {
   SystemAiSettings,
   SchemaOrgType,
 } from '@/hooks/useSiteSettings';
-import { usePages } from '@/hooks/usePages';
+
 import { supabase } from '@/integrations/supabase/client';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, Save, Globe, Zap, ImageIcon, X, AlertTriangle, Code, Cookie, Info, Wrench, Home, Search, Lock, Clock, CheckCircle2, Circle, Bot, FileText, Building2, ExternalLink, Trash2, Sparkles, Server, Copy, Check } from 'lucide-react';
