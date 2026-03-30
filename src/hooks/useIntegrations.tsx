@@ -400,19 +400,19 @@ export function useToggleIntegration() {
   };
 }
 
-// Check if an integration is active (has key + is enabled)
+// Check if an integration is active (has key + not explicitly disabled)
 export function useIsIntegrationActive(key: keyof IntegrationsSettings) {
   const { data: secretsStatus } = useIntegrationStatus();
   const { data: integrationSettings } = useIntegrations();
 
   const hasKey = secretsStatus?.integrations?.[key] ?? false;
-  const isEnabled = integrationSettings?.[key]?.enabled ?? false;
+  const explicitlyDisabled = integrationSettings?.[key]?.enabled === false;
 
   return {
     hasKey,
-    isEnabled,
-    isActive: hasKey && isEnabled,
-    status: !hasKey ? 'not_configured' : isEnabled ? 'active' : 'disabled',
+    isEnabled: hasKey && !explicitlyDisabled,
+    isActive: hasKey && !explicitlyDisabled,
+    status: !hasKey ? 'not_configured' : explicitlyDisabled ? 'disabled' : 'active',
   } as const;
 }
 
@@ -428,8 +428,8 @@ export function useActiveIntegrationsCount() {
 
   for (const key of keys) {
     const hasKey = secretsStatus.integrations?.[key] ?? false;
-    const isEnabled = integrationSettings[key]?.enabled ?? false;
-    if (hasKey && isEnabled) active++;
+    const explicitlyDisabled = integrationSettings[key]?.enabled === false;
+    if (hasKey && !explicitlyDisabled) active++;
   }
 
   return { active, total: keys.length };
