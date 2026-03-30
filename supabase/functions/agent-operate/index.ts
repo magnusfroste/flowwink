@@ -297,6 +297,7 @@ serve(async (req) => {
         try { await sseEvent(writer, encoder, 'error', { message: err.message || 'Internal error' }); } catch { /* writer closed */ }
       } finally {
         clearTimeout(operateTimeout);
+        clearInterval(keepalive);
         if (lane) {
           try { await releaseLock(supabase, lane); } catch { /* best effort */ }
         }
