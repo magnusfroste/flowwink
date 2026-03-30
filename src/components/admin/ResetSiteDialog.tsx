@@ -225,10 +225,12 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
     if (options.products) {
       tasks.push({
         key: 'products',
-        label: 'Clearing products',
+        label: 'Clearing products & consultants',
         fn: async () => {
           const { error } = await supabase.from('products').delete().neq('id', '00000000-0000-0000-0000-000000000000');
           if (error) throw error;
+          const { error: cpErr } = await supabase.from('consultant_profiles').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (cpErr) throw cpErr;
         }
       });
     }
