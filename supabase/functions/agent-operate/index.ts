@@ -306,6 +306,15 @@ serve(async (req) => {
             }
           }
 
+          // Continuation nudge — prevent AI from describing next steps instead of calling tools
+          // Only add if we have remaining iterations and the task likely needs more tool calls
+          if (iteration < MAX_TOOL_ITERATIONS - 1) {
+            conversationMessages.push({
+              role: 'system',
+              content: 'IMPORTANT: If your task requires more steps, call the next tool NOW. Do NOT describe what you will do — just do it by calling the tool. Only respond with text when ALL tool calls are complete.',
+            });
+          }
+
           await sseEvent(writer, encoder, 'tool_done', { iteration: iteration + 1, tools: toolNames, results_count: toolResults.length });
         }
 
