@@ -31,7 +31,7 @@ interface SearchResult {
   content?: string;
 }
 
-async function getJinaConfig(): Promise<{ preferFreeTier: boolean }> {
+async function getIntegrationConfig(): Promise<{ preferFreeTier: boolean; firecrawlEnabled: boolean }> {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -42,9 +42,13 @@ async function getJinaConfig(): Promise<{ preferFreeTier: boolean }> {
       .eq('key', 'integrations')
       .maybeSingle();
     const jina = data?.value?.jina;
-    return { preferFreeTier: jina?.config?.preferFreeTier ?? true };
+    const firecrawl = data?.value?.firecrawl;
+    return {
+      preferFreeTier: jina?.config?.preferFreeTier ?? true,
+      firecrawlEnabled: firecrawl?.enabled !== false,
+    };
   } catch {
-    return { preferFreeTier: true };
+    return { preferFreeTier: true, firecrawlEnabled: true };
   }
 }
 
@@ -92,7 +96,10 @@ serve(async (req) => {
     let results: SearchResult[] = [];
     let provider = 'none';
 
-    const useFirecrawl = preferred_provider === 'firecrawl' || (preferred_provider === 'auto' && firecrawlKey);
+    const integrationConfig = await getIntegrationConfig();
+    const firecrawlAvailable = firecrawlKey && integrationConfig.firecrawlEnabled;
+
+    const useFirecrawl = preferred_provider === 'firecrawl' || (preferred_provider === 'auto' && firecrawlAvailable);
     const useJina = preferred_provider === 'jina' || preferred_provider === 'auto';
 
     // --- Strategy 1: Firecrawl Search (paid, higher quality) ---
@@ -132,7 +139,7 @@ serve(async (req) => {
 
     // --- Strategy 2: Jina Search (free first → API key → keyless fallback) ---
     if (results.length === 0 && useJina) {
-      const { preferFreeTier } = await getJinaConfig();
+      const { preferFreeTier } = integrationConfig;
 
       if (preferFreeTier) {
         // Try keyless first
