@@ -89,7 +89,7 @@ export const defaultModulesSettings: ModulesSettings = {
     adminUI: true,
   },
   blog: {
-    enabled: true,
+    enabled: false,
     name: 'Blog',
     description: 'Blog posts with categories, tags and RSS feed',
     icon: 'BookOpen',
