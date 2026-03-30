@@ -86,7 +86,11 @@ serve(async (req) => {
     let metadata: Record<string, unknown> = {};
     let provider = 'none';
 
-    const useFirecrawl = preferred_provider === 'firecrawl' || (preferred_provider === 'auto' && firecrawlKey);
+    // Check integration config (respects admin disable toggle)
+    const integrationConfig = await getIntegrationConfig();
+    const firecrawlAvailable = firecrawlKey && integrationConfig.firecrawlEnabled;
+
+    const useFirecrawl = preferred_provider === 'firecrawl' || (preferred_provider === 'auto' && firecrawlAvailable);
     const useJina = preferred_provider === 'jina' || preferred_provider === 'auto';
 
     // --- Strategy 1: Firecrawl Scrape (paid, higher quality, JS rendering) ---
