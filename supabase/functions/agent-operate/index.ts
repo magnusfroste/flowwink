@@ -164,6 +164,11 @@ serve(async (req) => {
         try { await writer.close(); } catch { /* already closed */ }
       }, MAX_OPERATE_WALL_CLOCK_MS);
 
+      // SSE keepalive to prevent gateway idle-timeout (sends comment every 10s)
+      const keepalive = setInterval(async () => {
+        try { await writer.write(encoder.encode(': keepalive\n\n')); } catch { clearInterval(keepalive); }
+      }, 10_000);
+
       try {
         // Apply context pruning before starting
         let conversationMessages: any[] = await pruneConversationHistory(
@@ -176,6 +181,7 @@ serve(async (req) => {
         let producedFinalResponse = false;
 
         for (let iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration++) {
+          const t0 = Date.now();
           const aiResponse = await fetch(apiUrl, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
@@ -186,6 +192,7 @@ serve(async (req) => {
               tool_choice: allTools.length > 0 ? 'auto' : undefined,
             }),
           });
+          console.log(`[operate] AI response in ${Date.now() - t0}ms (iteration ${iteration + 1}, tools=${allTools.length})`);
 
           if (!aiResponse.ok) {
             const errText = await aiResponse.text();
@@ -290,6 +297,7 @@ serve(async (req) => {
         try { await sseEvent(writer, encoder, 'error', { message: err.message || 'Internal error' }); } catch { /* writer closed */ }
       } finally {
         clearTimeout(operateTimeout);
+        clearInterval(keepalive);
         if (lane) {
           try { await releaseLock(supabase, lane); } catch { /* best effort */ }
         }
