@@ -30,6 +30,7 @@ export function PublicNavigation() {
   const { branding } = useBranding();
   const { resolvedTheme } = useTheme();
   const ecommerceEnabled = useIsModuleEnabled('ecommerce');
+  const blogModuleEnabled = useIsModuleEnabled('blog');
   
   // Use header global block settings
   const { data: headerBlock } = useHeaderBlock();
@@ -402,7 +403,7 @@ export function PublicNavigation() {
               </Link>
             ))}
             {/* Blog link */}
-            {blogSettings?.enabled && (
+            {blogModuleEnabled && blogSettings?.enabled && (
               <Link
                 to={`/${blogSettings.archiveSlug || 'blogg'}`}
                 className={getLinkClasses(location.pathname.startsWith(`/${blogSettings.archiveSlug || 'blogg'}`))}
@@ -461,7 +462,7 @@ export function PublicNavigation() {
                   {page.title}
                 </Link>
               ))}
-              {blogSettings?.enabled && (
+              {blogModuleEnabled && blogSettings?.enabled && (
                 <Link
                   to={`/${blogSettings.archiveSlug || 'blogg'}`}
                   onClick={() => setMobileMenuOpen(false)}
@@ -528,7 +529,7 @@ export function PublicNavigation() {
                   {page.title}
                 </Link>
               ))}
-              {blogSettings?.enabled && (
+              {blogModuleEnabled && blogSettings?.enabled && (
                 <Link
                   to={`/${blogSettings.archiveSlug || 'blogg'}`}
                   onClick={() => setMobileMenuOpen(false)}
@@ -590,7 +591,7 @@ export function PublicNavigation() {
                   {page.title}
                 </Link>
               ))}
-              {blogSettings?.enabled && (
+              {blogModuleEnabled && blogSettings?.enabled && (
                 <Link
                   to={`/${blogSettings.archiveSlug || 'blogg'}`}
                   onClick={() => setMobileMenuOpen(false)}
