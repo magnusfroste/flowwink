@@ -69,7 +69,7 @@ export const defaultModulesSettings: ModulesSettings = {
     optionalIntegrations: ['google_analytics', 'meta_pixel'],
   },
   bookings: {
-    enabled: true,
+    enabled: false,
     name: 'Bookings',
     description: 'Appointment scheduling with calendar view and email confirmations',
     icon: 'CalendarDays',
