@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { resolveAiConfig } from '../_shared/ai-config.ts';
+import { callAi } from '../_shared/ai-call.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
