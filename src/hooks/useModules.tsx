@@ -291,7 +291,7 @@ export const defaultModulesSettings: ModulesSettings = {
     adminUI: true,
   },
   tickets: {
-    enabled: true,
+    enabled: false,
     name: 'Tickets',
     description: 'Helpdesk ticket management — Kanban pipeline with auto-categorization, KB matching, and SLA tracking',
     icon: 'Headphones',
