@@ -168,10 +168,16 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
     if (options.bookings) {
       tasks.push({
         key: 'bookings',
-        label: 'Clearing bookings',
+        label: 'Clearing bookings & services',
         fn: async () => {
           const { error } = await supabase.from('bookings').delete().neq('id', '00000000-0000-0000-0000-000000000000');
           if (error) throw error;
+          const { error: availErr } = await supabase.from('booking_availability').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (availErr) throw availErr;
+          const { error: blockedErr } = await supabase.from('booking_blocked_dates').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (blockedErr) throw blockedErr;
+          const { error: svcErr } = await supabase.from('booking_services').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (svcErr) throw svcErr;
         }
       });
     }
