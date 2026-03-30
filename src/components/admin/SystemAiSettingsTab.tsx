@@ -38,8 +38,11 @@ export function SystemAiSettingsTab({ data, onChange }: SystemAiSettingsTabProps
         <Alert variant="destructive">
           <AlertTitle>No AI Provider Configured</AlertTitle>
           <AlertDescription>
-            You need to enable OpenAI or Gemini in Integrations and add the API key to Supabase Secrets 
-            before System AI features will work.
+            You need to enable OpenAI or Gemini in{' '}
+            <Link to="/admin/settings/integrations" className="underline font-medium hover:text-destructive-foreground inline-flex items-center gap-1">
+              Integrations <ExternalLink className="h-3 w-3" />
+            </Link>{' '}
+            and add the API key before System AI features will work.
           </AlertDescription>
         </Alert>
       )}
