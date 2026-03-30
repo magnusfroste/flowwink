@@ -700,9 +700,9 @@ export default function IntegrationsStatusPage() {
 
   for (const key of integrationKeys) {
     const hasKey = secretsStatus?.integrations?.[key] ?? false;
-    const isEnabled = integrationSettings?.[key]?.enabled ?? false;
+    const explicitlyDisabled = integrationSettings?.[key]?.enabled === false;
     if (hasKey) configuredCount++;
-    if (hasKey && isEnabled) activeCount++;
+    if (hasKey && !explicitlyDisabled) activeCount++;
   }
 
   // Helper to get the display config (pending if available, otherwise current)
