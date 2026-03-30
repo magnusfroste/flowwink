@@ -462,7 +462,7 @@ export function PublicNavigation() {
                   {page.title}
                 </Link>
               ))}
-              {blogSettings?.enabled && (
+              {blogModuleEnabled && blogSettings?.enabled && (
                 <Link
                   to={`/${blogSettings.archiveSlug || 'blogg'}`}
                   onClick={() => setMobileMenuOpen(false)}
