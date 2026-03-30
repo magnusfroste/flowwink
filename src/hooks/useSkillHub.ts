@@ -112,16 +112,45 @@ export function useApproveActivity() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, approved }: { id: string; approved: boolean }) => {
-      const { error } = await supabase
+      if (!approved) {
+        // Reject: just mark as failed
+        const { error } = await supabase
+          .from('agent_activity')
+          .update({ status: 'failed' } as any)
+          .eq('id', id);
+        if (error) throw error;
+        return;
+      }
+
+      // Approve: fetch activity details, then re-execute via agent-execute
+      const { data: activity, error: fetchErr } = await supabase
         .from('agent_activity')
-        .update({ status: approved ? 'success' : 'failed' } as any)
+        .select('*')
+        .eq('id', id)
+        .single();
+      if (fetchErr || !activity) throw new Error('Activity not found');
+
+      // Mark as approved first
+      await supabase
+        .from('agent_activity')
+        .update({ status: 'success' } as any)
         .eq('id', id);
-      if (error) throw error;
+
+      // Re-execute the skill
+      const { error: execErr } = await supabase.functions.invoke('agent-execute', {
+        body: {
+          skill_name: activity.skill_name,
+          arguments: activity.input || {},
+          agent_type: (activity as any).agent || 'flowpilot',
+          conversation_id: activity.conversation_id,
+        },
+      });
+      if (execErr) throw new Error(execErr.message);
     },
-    onSuccess: () => {
+    onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ['agent-activity'] });
-      toast.success('Activity updated');
+      toast.success(vars.approved ? 'Approved & executed' : 'Activity rejected');
     },
-    onError: () => toast.error('Failed to update activity'),
+    onError: (err: any) => toast.error('Failed', { description: err.message }),
   });
 }
