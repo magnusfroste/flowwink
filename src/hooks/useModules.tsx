@@ -137,7 +137,7 @@ export const defaultModulesSettings: ModulesSettings = {
     requiredIntegrations: ['resend'],
   },
   forms: {
-    enabled: true,
+    enabled: false,
     name: 'Forms',
     description: 'Form submissions and contact requests',
     icon: 'Inbox',
