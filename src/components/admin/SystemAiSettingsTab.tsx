@@ -40,10 +40,10 @@ export function SystemAiSettingsTab({ data, onChange }: SystemAiSettingsTabProps
           <AlertTitle>No AI Provider Configured</AlertTitle>
           <AlertDescription>
             You need to enable OpenAI or Gemini in{' '}
-            <Link to="/admin/settings/integrations" className="underline font-medium hover:text-destructive-foreground inline-flex items-center gap-1">
+            <Link to="/admin/integrations#ai" className="underline font-medium hover:text-destructive-foreground inline-flex items-center gap-1">
               Integrations <ExternalLink className="h-3 w-3" />
             </Link>{' '}
-            and add the API key before System AI features will work.
+            and add the API key, or configure a Local LLM endpoint, before System AI features will work.
           </AlertDescription>
         </Alert>
       )}
