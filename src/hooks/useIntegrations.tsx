@@ -83,10 +83,10 @@ export interface IntegrationsSettings {
   meta_ads: IntegrationConfig;
 }
 
-// Default settings - all disabled by default, requiring explicit activation
+// Default settings - auto-enabled when API key exists, admin can explicitly disable
 export const defaultIntegrationsSettings: IntegrationsSettings = {
   stripe: {
-    enabled: false,
+
     name: 'Stripe',
     description: 'Payment processing',
     icon: 'CreditCard',
@@ -97,7 +97,7 @@ export const defaultIntegrationsSettings: IntegrationsSettings = {
     docsLabel: 'Get API key',
   },
   stripe_webhook: {
-    enabled: false,
+
     name: 'Stripe Webhook',
     description: 'Payment event notifications',
     icon: 'CreditCard',
@@ -108,7 +108,7 @@ export const defaultIntegrationsSettings: IntegrationsSettings = {
     docsLabel: 'Configure webhook',
   },
   resend: {
-    enabled: false,
+
     name: 'Resend',
     description: 'Email delivery service',
     icon: 'Mail',
@@ -129,7 +129,7 @@ export const defaultIntegrationsSettings: IntegrationsSettings = {
     },
   },
   openai: {
-    enabled: false,
+
     name: 'OpenAI',
     description: 'GPT-4.1, GPT-4.1 Mini, GPT-4.1 Nano',
     icon: 'Bot',
@@ -144,7 +144,7 @@ export const defaultIntegrationsSettings: IntegrationsSettings = {
     },
   },
   gemini: {
-    enabled: false,
+
     name: 'Google Gemini',
     description: 'Gemini 2.0, 1.5 Pro',
     icon: 'Bot',
@@ -158,7 +158,7 @@ export const defaultIntegrationsSettings: IntegrationsSettings = {
     },
   },
   local_llm: {
-    enabled: false,
+
     name: 'Local LLM',
     description: 'Self-hosted AI (Ollama, vLLM)',
     icon: 'Server',
@@ -173,7 +173,7 @@ export const defaultIntegrationsSettings: IntegrationsSettings = {
     },
   },
   n8n: {
-    enabled: false,
+
     name: 'N8N',
     description: 'Workflow automation',
     icon: 'Webhook',
@@ -190,7 +190,7 @@ export const defaultIntegrationsSettings: IntegrationsSettings = {
     },
   },
   unsplash: {
-    enabled: false,
+
     name: 'Unsplash',
     description: 'Stock photo integration',
     icon: 'Image',
@@ -201,7 +201,7 @@ export const defaultIntegrationsSettings: IntegrationsSettings = {
     docsLabel: 'Get API key',
   },
   google_analytics: {
-    enabled: false,
+
     name: 'Google Analytics',
     description: 'Website traffic & attribution',
     icon: 'BarChart3',
@@ -215,7 +215,7 @@ export const defaultIntegrationsSettings: IntegrationsSettings = {
     },
   },
   meta_pixel: {
-    enabled: false,
+
     name: 'Meta Pixel',
     description: 'Facebook/Instagram ad tracking',
     icon: 'Target',
@@ -229,7 +229,7 @@ export const defaultIntegrationsSettings: IntegrationsSettings = {
     },
   },
   slack: {
-    enabled: false,
+
     name: 'Slack',
     description: 'Team notifications',
     icon: 'MessageSquare',
@@ -246,7 +246,7 @@ export const defaultIntegrationsSettings: IntegrationsSettings = {
     },
   },
   firecrawl: {
-    enabled: false,
+
     name: 'Firecrawl',
     description: 'Web scraping and search',
     icon: 'Flame',
@@ -257,7 +257,7 @@ export const defaultIntegrationsSettings: IntegrationsSettings = {
     docsLabel: 'Get API key',
   },
   hunter: {
-    enabled: false,
+
     name: 'Hunter.io',
     description: 'Email finder & domain search',
     icon: 'Target',
@@ -268,7 +268,7 @@ export const defaultIntegrationsSettings: IntegrationsSettings = {
     docsLabel: 'Get API key',
   },
   jina: {
-    enabled: false,
+
     name: 'Jina AI',
     description: 'Web search & reader API',
     icon: 'Search',
@@ -282,7 +282,7 @@ export const defaultIntegrationsSettings: IntegrationsSettings = {
     },
   },
   meta_ads: {
-    enabled: false,
+
     name: 'Meta Ads',
     description: 'Facebook & Instagram campaign management',
     icon: 'Megaphone',
