@@ -3,9 +3,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Info, Sparkles, ExternalLink } from 'lucide-react';
+import { Info, Sparkles, ExternalLink, Server } from 'lucide-react';
 import { SystemAiSettings, SystemAiProvider } from '@/hooks/useSiteSettings';
-import { useIsOpenAIConfigured, useIsGeminiConfigured } from '@/hooks/useIntegrationStatus';
+import { useIsOpenAIConfigured, useIsGeminiConfigured, useIsLocalLLMConfigured } from '@/hooks/useIntegrationStatus';
 import { Link } from 'react-router-dom';
 
 interface SystemAiSettingsTabProps {
@@ -16,7 +16,8 @@ interface SystemAiSettingsTabProps {
 export function SystemAiSettingsTab({ data, onChange }: SystemAiSettingsTabProps) {
   const openaiEnabled = useIsOpenAIConfigured();
   const geminiEnabled = useIsGeminiConfigured();
-  const hasAnyProvider = openaiEnabled || geminiEnabled;
+  const localEnabled = useIsLocalLLMConfigured();
+  const hasAnyProvider = openaiEnabled || geminiEnabled || localEnabled;
 
   const updateField = <K extends keyof SystemAiSettings>(key: K, value: SystemAiSettings[K]) => {
     onChange({ ...data, [key]: value });
