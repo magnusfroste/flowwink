@@ -1498,6 +1498,32 @@ Respond only with JSON.`;
       }
     }
 
+    // Step 7: Discover other pages on the site for proactive migration
+    let otherPages: { url: string; title: string; type: string }[] = [];
+    try {
+      const urlObj = new URL(formattedUrl);
+      const baseUrl = `${urlObj.protocol}//${urlObj.host}`;
+      const navLinks = extractNavLinks(rawHtml, baseUrl);
+      const sitemapPages = await fetchSitemap(baseUrl);
+      const seenUrls = new Set<string>([formattedUrl]);
+      
+      for (const link of navLinks) {
+        if (!seenUrls.has(link.url) && !shouldExcludeUrl(link.url, baseUrl)) {
+          seenUrls.add(link.url);
+          otherPages.push({ url: link.url, title: link.label, type: categorizeUrl(link.url, baseUrl, platform) });
+        }
+      }
+      for (const page of sitemapPages.slice(0, 30)) {
+        if (!seenUrls.has(page.url) && !shouldExcludeUrl(page.url, baseUrl)) {
+          seenUrls.add(page.url);
+          const slug = page.url.replace(baseUrl, '').split('/').filter(Boolean).pop() || '';
+          otherPages.push({ url: page.url, title: slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()), type: categorizeUrl(page.url, baseUrl, platform) });
+        }
+      }
+    } catch { /* site discovery is optional */ }
+
+    console.log(`Discovered ${otherPages.length} other pages on the site`);
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -1506,6 +1532,7 @@ Respond only with JSON.`;
         blocks,
         companyProfile: companyProfile || null,
         branding: extractedBrand || null,
+        otherPages,  // FlowPilot can use this to proactively offer migration of more pages
         metadata: {
           originalTitle: metadata.title,
           originalDescription: metadata.description,
