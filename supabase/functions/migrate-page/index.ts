@@ -1057,6 +1057,7 @@ For bold text: { "type": "text", "marks": [{ "type": "bold" }], "text": "Bold te
 For links: { "type": "text", "marks": [{ "type": "link", "attrs": { "href": "https://..." } }], "text": "Link text" }
 
 Respond ONLY with valid JSON, no other text:
+{
   "title": "Page main title",
   "blocks": [
     { 
