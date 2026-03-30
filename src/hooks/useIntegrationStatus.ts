@@ -83,15 +83,15 @@ function useIntegrationsEnabledSettings() {
   });
 }
 
-// Returns true ONLY if both key exists AND integration is enabled
+// Auto-enabled when key exists, unless explicitly disabled by admin
 export function useIsResendConfigured() {
   const { data: secretsStatus } = useIntegrationStatus();
   const { data: enabledSettings } = useIntegrationsEnabledSettings();
   
   const hasKey = secretsStatus?.integrations?.resend ?? false;
-  const isEnabled = enabledSettings?.resend?.enabled ?? false;
+  const explicitlyDisabled = enabledSettings?.resend?.enabled === false;
   
-  return hasKey && isEnabled;
+  return hasKey && !explicitlyDisabled;
 }
 
 export function useIsStripeConfigured() {
@@ -99,9 +99,9 @@ export function useIsStripeConfigured() {
   const { data: enabledSettings } = useIntegrationsEnabledSettings();
   
   const hasKey = secretsStatus?.integrations?.stripe ?? false;
-  const isEnabled = enabledSettings?.stripe?.enabled ?? false;
+  const explicitlyDisabled = enabledSettings?.stripe?.enabled === false;
   
-  return hasKey && isEnabled;
+  return hasKey && !explicitlyDisabled;
 }
 
 export function useIsOpenAIConfigured() {
@@ -109,9 +109,9 @@ export function useIsOpenAIConfigured() {
   const { data: enabledSettings } = useIntegrationsEnabledSettings();
   
   const hasKey = secretsStatus?.integrations?.openai ?? false;
-  const isEnabled = enabledSettings?.openai?.enabled ?? false;
+  const explicitlyDisabled = enabledSettings?.openai?.enabled === false;
   
-  return hasKey && isEnabled;
+  return hasKey && !explicitlyDisabled;
 }
 
 export function useIsGeminiConfigured() {
@@ -119,12 +119,12 @@ export function useIsGeminiConfigured() {
   const { data: enabledSettings } = useIntegrationsEnabledSettings();
   
   const hasKey = secretsStatus?.integrations?.gemini ?? false;
-  const isEnabled = enabledSettings?.gemini?.enabled ?? false;
+  const explicitlyDisabled = enabledSettings?.gemini?.enabled === false;
   
-  return hasKey && isEnabled;
+  return hasKey && !explicitlyDisabled;
 }
 
-// Combined helper: true if ANY AI provider is configured and enabled
+// Combined helper: true if ANY AI provider is configured and not disabled
 export function useIsAIConfigured() {
   const isOpenAI = useIsOpenAIConfigured();
   const isGemini = useIsGeminiConfigured();
