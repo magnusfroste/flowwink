@@ -10,6 +10,7 @@
  */
 
 import type { SiteMaturity } from '../types.ts';
+import { BLOCK_TYPES_SCHEMA } from '../block-schema.ts';
 
 // ─── CMS Schema Awareness ─────────────────────────────────────────────────────
 
