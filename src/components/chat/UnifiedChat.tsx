@@ -29,29 +29,46 @@ import type { AgentSkill } from '@/types/agent';
 function ToolStatusIndicator({ toolStatus }: { toolStatus: OperateMessage['toolStatus'] }) {
   if (!toolStatus || toolStatus.phase === 'done') return null;
 
+  const completedSteps = toolStatus.completedSteps ?? [];
+  // Deduplicate steps by tool+iteration
+  const uniqueSteps = completedSteps.filter((s, i, arr) =>
+    arr.findIndex(x => x.tool === s.tool && x.iteration === s.iteration) === i
+  );
+
   return (
-    <div className="flex items-center gap-2 text-xs text-muted-foreground animate-in fade-in slide-in-from-bottom-1 duration-200">
-      {toolStatus.phase === 'thinking' && (
-        <>
-          <Sparkles className="h-3 w-3 animate-pulse text-primary" />
-          <span>Thinking…</span>
-        </>
-      )}
-      {toolStatus.phase === 'executing' && (
-        <>
-          <Wrench className="h-3 w-3 animate-spin text-primary" />
-          <span>
-            Running {toolStatus.tools?.map(t => t.replace(/_/g, ' ')).join(', ')}
-            {toolStatus.iteration ? ` (step ${toolStatus.iteration})` : ''}
-          </span>
-        </>
-      )}
-      {toolStatus.phase === 'streaming' && (
-        <>
-          <Loader2 className="h-3 w-3 animate-spin text-primary" />
-          <span>Writing response…</span>
-        </>
-      )}
+    <div className="space-y-1 animate-in fade-in slide-in-from-bottom-1 duration-200">
+      {/* Completed steps log */}
+      {uniqueSteps.map((step, i) => (
+        <div key={`${step.tool}-${step.iteration}-${i}`} className="flex items-center gap-2 text-xs text-muted-foreground/70">
+          <Check className="h-3 w-3 text-primary/60 shrink-0" />
+          <span>{step.tool.replace(/_/g, ' ')}</span>
+        </div>
+      ))}
+
+      {/* Current phase */}
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        {toolStatus.phase === 'thinking' && (
+          <>
+            <Sparkles className="h-3 w-3 animate-pulse text-primary" />
+            <span>Thinking…{toolStatus.iteration ? ` (step ${toolStatus.iteration})` : ''}</span>
+          </>
+        )}
+        {toolStatus.phase === 'executing' && (
+          <>
+            <Wrench className="h-3 w-3 animate-spin text-primary" />
+            <span>
+              Running {toolStatus.tools?.map(t => t.replace(/_/g, ' ')).join(', ')}
+              {toolStatus.iteration ? ` (step ${toolStatus.iteration})` : ''}
+            </span>
+          </>
+        )}
+        {toolStatus.phase === 'streaming' && (
+          <>
+            <Loader2 className="h-3 w-3 animate-spin text-primary" />
+            <span>Writing response…</span>
+          </>
+        )}
+      </div>
     </div>
   );
 }

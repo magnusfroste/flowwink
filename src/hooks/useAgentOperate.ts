@@ -23,6 +23,8 @@ export interface OperateMessage {
     phase: 'thinking' | 'executing' | 'streaming' | 'done';
     tools?: string[];
     iteration?: number;
+    /** Accumulated log of completed tool steps for progress visibility */
+    completedSteps?: Array<{ tool: string; iteration: number; timestamp: number }>;
   };
   skillResults?: Array<{
     skill: string;
@@ -396,16 +398,26 @@ export function useAgentOperate() {
         onToolStart: (tools, iteration) => {
           setMessages(prev => prev.map(m =>
             m.id === assistantId
-              ? { ...m, toolStatus: { phase: 'executing', tools, iteration } }
+              ? { ...m, toolStatus: { ...m.toolStatus, phase: 'executing', tools, iteration } }
               : m
           ));
         },
         onToolDone: (tools, iteration) => {
-          setMessages(prev => prev.map(m =>
-            m.id === assistantId
-              ? { ...m, toolStatus: { phase: 'thinking', tools, iteration } }
-              : m
-          ));
+          setMessages(prev => prev.map(m => {
+            if (m.id !== assistantId) return m;
+            const prevSteps = m.toolStatus?.completedSteps ?? [];
+            const newSteps = (tools ?? []).map(t => ({ tool: t, iteration: iteration ?? 0, timestamp: Date.now() }));
+            return {
+              ...m,
+              toolStatus: {
+                ...m.toolStatus,
+                phase: 'thinking',
+                tools,
+                iteration,
+                completedSteps: [...prevSteps, ...newSteps],
+              },
+            };
+          }));
         },
         onSkillResults: async (results) => {
           // Check for relay_required responses from browser_fetch
