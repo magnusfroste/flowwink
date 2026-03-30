@@ -47,18 +47,19 @@ export async function loadCMSSchema(supabase: any): Promise<string> {
     if (Deno.env.get('OPENAI_API_KEY')) activeIntegrations.push('OpenAI');
     if (Deno.env.get('GEMINI_API_KEY')) activeIntegrations.push('Gemini');
 
-    const blockTypes = [
-      'hero', 'text', 'image', 'gallery', 'cta', 'contact', 'faq', 'pricing',
-      'testimonials', 'features', 'stats', 'team', 'video', 'map', 'newsletter',
-      'blog-list', 'product-list', 'booking', 'chat', 'parallax-section', 'marquee',
-      'consultant-profile', 'webinar', 'knowledge-base',
-    ];
-
     return `\n\nCMS SCHEMA AWARENESS:
 Enabled modules: ${enabledModules.length > 0 ? enabledModules.join(', ') : 'none configured'}
 Active integrations: ${activeIntegrations.length > 0 ? activeIntegrations.join(', ') : 'none'}
-Available block types: ${blockTypes.join(', ')}
-Data counts: ${pages.count ?? 0} pages, ${posts.count ?? 0} blog posts, ${leads.count ?? 0} leads, ${products.count ?? 0} products, ${bookings.count ?? 0} bookings, ${subscribers.count ?? 0} subscribers, ${kbArticles.count ?? 0} KB articles, ${skills.count ?? 0} active skills`;
+Data counts: ${pages.count ?? 0} pages, ${posts.count ?? 0} blog posts, ${leads.count ?? 0} leads, ${products.count ?? 0} products, ${bookings.count ?? 0} bookings, ${subscribers.count ?? 0} subscribers, ${kbArticles.count ?? 0} KB articles, ${skills.count ?? 0} active skills
+
+BLOCK TYPE REFERENCE (use EXACT field names when creating blocks):
+${BLOCK_TYPES_SCHEMA}
+
+CRITICAL — TipTap JSON format for rich text fields (type "tiptap"):
+Fields marked "tiptap" MUST use this JSON structure, NEVER raw HTML strings:
+{ "type": "doc", "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "Your text here" }] }] }
+For headings: { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "text": "Heading" }] }
+For bullet lists: { "type": "bulletList", "content": [{ "type": "listItem", "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "Item" }] }] }] }`;
   } catch (err) {
     console.error('[cms-schema] Failed to load:', err);
     return '';
