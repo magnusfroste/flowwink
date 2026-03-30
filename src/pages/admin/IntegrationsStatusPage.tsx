@@ -700,9 +700,9 @@ export default function IntegrationsStatusPage() {
 
   for (const key of integrationKeys) {
     const hasKey = secretsStatus?.integrations?.[key] ?? false;
-    const isEnabled = integrationSettings?.[key]?.enabled ?? false;
+    const explicitlyDisabled = integrationSettings?.[key]?.enabled === false;
     if (hasKey) configuredCount++;
-    if (hasKey && isEnabled) activeCount++;
+    if (hasKey && !explicitlyDisabled) activeCount++;
   }
 
   // Helper to get the display config (pending if available, otherwise current)
@@ -848,7 +848,8 @@ export default function IntegrationsStatusPage() {
                     const noSecretNeeded = ['local_llm', 'n8n', 'google_analytics', 'meta_pixel', 'slack'];
                     const requiresSecret = !noSecretNeeded.includes(key);
                     const hasKey = requiresSecret ? (secretsStatus?.integrations?.[key] ?? false) : true;
-                    const isEnabled = integrationSettings?.[key]?.enabled ?? false;
+                    const explicitlyDisabled = integrationSettings?.[key]?.enabled === false;
+                    const isEnabled = hasKey && !explicitlyDisabled;
                     const status: IntegrationStatus = !hasKey ? 'not_configured' : isEnabled ? 'active' : 'disabled';
                     const IconComponent = iconMap[integration.icon as keyof typeof iconMap] || Bot;
                     const currentConfig = getDisplayConfig(key) || integration.config;
