@@ -36,7 +36,7 @@ import {
   SystemAiSettings,
   SchemaOrgType,
 } from '@/hooks/useSiteSettings';
-import { usePages } from '@/hooks/usePages';
+
 import { supabase } from '@/integrations/supabase/client';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, Save, Globe, Zap, ImageIcon, X, AlertTriangle, Code, Cookie, Info, Wrench, Home, Search, Lock, Clock, CheckCircle2, Circle, Bot, FileText, Building2, ExternalLink, Trash2, Sparkles, Server, Copy, Check } from 'lucide-react';
@@ -165,7 +165,7 @@ export default function SiteSettingsPage() {
   const { data: aeoSettings, isLoading: aeoLoading } = useAeoSettings();
   const { data: systemAiSettings, isLoading: systemAiLoading } = useSystemAiSettings();
   
-  const { data: allPages } = usePages();
+  
   
   const updateSeo = useUpdateSeoSettings();
   const updatePerformance = useUpdatePerformanceSettings();
@@ -410,35 +410,7 @@ export default function SiteSettingsPage() {
 
           {/* General Tab */}
           <TabsContent value="general" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="font-serif">Homepage</CardTitle>
-                <CardDescription>Choose which page is displayed when visitors go to the site's root URL (/)</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="homepageSlug">Homepage</Label>
-                  <Select
-                    value={generalData.homepageSlug}
-                    onValueChange={(value) => setGeneralData(prev => ({ ...prev, homepageSlug: value }))}
-                  >
-                    <SelectTrigger id="homepageSlug" className="w-full max-w-md">
-                      <SelectValue placeholder="Select homepage" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {allPages?.map((page) => (
-                        <SelectItem key={page.id} value={page.slug}>
-                          {page.title} ({page.slug})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">
-                    The selected page is displayed when visitors open the website. The page must be published.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+
 
             {/* Content Workflow */}
             <Card>
