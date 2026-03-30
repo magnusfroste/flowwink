@@ -74,6 +74,7 @@ export function CopilotChat({
   onFinishPage,
   onStopAutoContinue,
   onReset,
+  migrationState,
   onAnalyzeSite,
   discoveryStatus,
 }: CopilotChatProps) {
