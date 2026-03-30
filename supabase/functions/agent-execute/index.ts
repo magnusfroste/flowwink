@@ -1403,7 +1403,7 @@ async function executeProductsAction(
   }
 
   if (action === 'create') {
-    const { name, description, price_cents, currency = 'SEK', type = 'one_time', slug, image_url, stripe_price_id } = args as any;
+    const { name, description, price_cents, currency = 'SEK', type = 'one_time', image_url, stripe_price_id } = args as any;
     if (!name || price_cents === undefined) throw new Error('name and price_cents required');
     const { data, error } = await supabase.from('products').insert({
       name, description, price_cents, currency, type,
