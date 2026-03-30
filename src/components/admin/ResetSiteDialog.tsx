@@ -563,6 +563,14 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
                     <Settings className="h-4 w-4 text-muted-foreground" />
                     Site Settings
                   </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox 
+                      checked={options.engineRoom} 
+                      onCheckedChange={(c) => setOptions(p => ({ ...p, engineRoom: !!c }))} 
+                    />
+                    <Sparkles className="h-4 w-4 text-muted-foreground" />
+                    Engine Room (objectives, memory, activity)
+                  </label>
                 </div>
               </div>
             </div>
