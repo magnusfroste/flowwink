@@ -23,6 +23,8 @@ export interface OperateMessage {
     phase: 'thinking' | 'executing' | 'streaming' | 'done';
     tools?: string[];
     iteration?: number;
+    /** Accumulated log of completed tool steps for progress visibility */
+    completedSteps?: Array<{ tool: string; iteration: number; timestamp: number }>;
   };
   skillResults?: Array<{
     skill: string;
