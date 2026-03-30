@@ -93,6 +93,7 @@ serve(async (req) => {
         firecrawl: !!Deno.env.get('FIRECRAWL_API_KEY'),
         openai: !!Deno.env.get('OPENAI_API_KEY'),
         gemini: !!Deno.env.get('GEMINI_API_KEY'),
+        anthropic: !!Deno.env.get('ANTHROPIC_API_KEY'),
         google_client_id: !!Deno.env.get('GOOGLE_CLIENT_ID'),
         google_client_secret: !!Deno.env.get('GOOGLE_CLIENT_SECRET'),
         hunter: !!Deno.env.get('HUNTER_API_KEY'),

@@ -158,6 +158,20 @@ export const defaultIntegrationsSettings: IntegrationsSettings = {
       model: 'gemini-2.0-flash-exp',
     },
   },
+  anthropic: {
+
+    name: 'Anthropic',
+    description: 'Claude Sonnet 4, Claude Opus 4',
+    icon: 'Bot',
+    category: 'ai',
+    features: ['AI Chat', 'Text generation', 'Content migration', 'Superior tool use'],
+    secretName: 'ANTHROPIC_API_KEY',
+    docsUrl: 'https://console.anthropic.com/settings/keys',
+    docsLabel: 'Get API key',
+    config: {
+      model: 'claude-sonnet-4-20250514',
+    },
+  },
   local_llm: {
 
     name: 'Local LLM',
