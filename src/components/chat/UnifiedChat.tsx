@@ -40,7 +40,7 @@ function ToolStatusIndicator({ toolStatus }: { toolStatus: OperateMessage['toolS
       {/* Completed steps log */}
       {uniqueSteps.map((step, i) => (
         <div key={`${step.tool}-${step.iteration}-${i}`} className="flex items-center gap-2 text-xs text-muted-foreground/70">
-          <Check className="h-3 w-3 text-green-500 shrink-0" />
+          <Check className="h-3 w-3 text-primary/60 shrink-0" />
           <span>{step.tool.replace(/_/g, ' ')}</span>
         </div>
       ))}
