@@ -165,7 +165,7 @@ export default function SiteSettingsPage() {
   const { data: aeoSettings, isLoading: aeoLoading } = useAeoSettings();
   const { data: systemAiSettings, isLoading: systemAiLoading } = useSystemAiSettings();
   
-  const { data: allPages } = usePages();
+  
   
   const updateSeo = useUpdateSeoSettings();
   const updatePerformance = useUpdatePerformanceSettings();
