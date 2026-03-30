@@ -71,6 +71,7 @@ export interface IntegrationsSettings {
   resend: IntegrationConfig;
   openai: IntegrationConfig;
   gemini: IntegrationConfig;
+  anthropic: IntegrationConfig;
   unsplash: IntegrationConfig;
   firecrawl: IntegrationConfig;
   local_llm: IntegrationConfig;

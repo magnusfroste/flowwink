@@ -610,10 +610,11 @@ export function useUpdateAeoSettings() {
 }
 
 // System AI settings (internal AI tools: text generation, company enrichment, lead qualification, etc.)
-export type SystemAiProvider = 'openai' | 'gemini' | 'local';
+export type SystemAiProvider = 'openai' | 'gemini' | 'anthropic' | 'local';
 
 export type OpenAiModel = 'gpt-4.1' | 'gpt-4.1-mini' | 'gpt-4.1-nano';
 export type GeminiModel = 'gemini-2.5-pro' | 'gemini-2.5-flash' | 'gemini-2.0-flash-exp' | 'gemini-1.5-pro' | 'gemini-1.5-flash';
+export type AnthropicModel = 'claude-sonnet-4-20250514' | 'claude-opus-4-20250514' | 'claude-3-5-haiku-20241022';
 
 export interface SystemAiSettings {
   provider: SystemAiProvider;
@@ -621,6 +622,8 @@ export interface SystemAiSettings {
   openaiReasoningModel: OpenAiModel;
   geminiModel: GeminiModel;
   geminiReasoningModel: GeminiModel;
+  anthropicModel: AnthropicModel;
+  anthropicReasoningModel: AnthropicModel;
   // Content generation preferences
   defaultTone: 'professional' | 'friendly' | 'formal';
   defaultLanguage: string;
@@ -632,6 +635,8 @@ const defaultSystemAiSettings: SystemAiSettings = {
   openaiReasoningModel: 'gpt-4.1',
   geminiModel: 'gemini-2.5-flash',
   geminiReasoningModel: 'gemini-2.5-pro',
+  anthropicModel: 'claude-sonnet-4-20250514',
+  anthropicReasoningModel: 'claude-sonnet-4-20250514',
   defaultTone: 'professional',
   defaultLanguage: 'en',
 };

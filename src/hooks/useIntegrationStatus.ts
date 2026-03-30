@@ -36,6 +36,7 @@ interface IntegrationsSettings {
   resend?: { enabled: boolean };
   openai?: { enabled: boolean; config?: { baseUrl?: string; model?: string } };
   gemini?: { enabled: boolean; config?: { model?: string } };
+  anthropic?: { enabled: boolean; config?: { model?: string } };
   unsplash?: { enabled: boolean };
   firecrawl?: { enabled: boolean };
   local_llm?: { enabled: boolean; config?: { endpoint?: string; model?: string } };
