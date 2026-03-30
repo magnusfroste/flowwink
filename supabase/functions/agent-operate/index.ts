@@ -189,15 +189,11 @@ serve(async (req) => {
           const MAX_RETRIES = 3;
           for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
             try {
-              aiResponse = await fetch(apiUrl, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  model,
-                  messages: conversationMessages,
-                  tools: allTools.length > 0 ? allTools : undefined,
-                  tool_choice: allTools.length > 0 ? 'auto' : undefined,
-                }),
+              aiResponse = await callAi({
+                apiKey, apiUrl, model,
+                messages: conversationMessages,
+                tools: allTools.length > 0 ? allTools : undefined,
+                tool_choice: allTools.length > 0 ? 'auto' : undefined,
               });
               break; // Success — exit retry loop
             } catch (fetchErr: any) {
