@@ -271,7 +271,7 @@ export const defaultModulesSettings: ModulesSettings = {
     optionalIntegrations: ['openai', 'gemini'],
   },
   companyInsights: {
-    enabled: true,
+    enabled: false,
     name: 'Business Identity',
     description: 'Unified business identity, financials, and market positioning — feeds Sales Intelligence, Chat, and SEO',
     icon: 'Building2',
