@@ -219,18 +219,18 @@ serve(async (req) => {
           console.log(`[operate] AI response in ${Date.now() - t0}ms (iteration ${iteration + 1}, tools=${allTools.length})`);
 
           if (!aiResponse!.ok) {
-            const errText = await aiResponse.text();
-            console.error('AI error:', aiResponse.status, errText);
+            const errText = await aiResponse!.text();
+            console.error('AI error:', aiResponse!.status, errText);
             let errorDetail = 'AI provider error';
             try {
               const parsed = JSON.parse(errText);
-              errorDetail = parsed?.error?.message || parsed?.message || `AI error ${aiResponse.status}`;
-            } catch { errorDetail = `AI error ${aiResponse.status}: ${errText.slice(0, 200)}`; }
+              errorDetail = parsed?.error?.message || parsed?.message || `AI error ${aiResponse!.status}`;
+            } catch { errorDetail = `AI error ${aiResponse!.status}: ${errText.slice(0, 200)}`; }
             await sseEvent(writer, encoder, 'error', { message: errorDetail });
             break;
           }
 
-          const aiData = await aiResponse.json();
+          const aiData = await aiResponse!.json();
           const choice = aiData.choices?.[0];
 
           if (!choice) {
