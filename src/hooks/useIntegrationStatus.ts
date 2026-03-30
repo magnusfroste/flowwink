@@ -17,6 +17,7 @@ interface IntegrationStatus {
     firecrawl: boolean;
     openai: boolean;
     gemini: boolean;
+    anthropic: boolean;
     local_llm: boolean;
     google_client_id: boolean;
     google_client_secret: boolean;
