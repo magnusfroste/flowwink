@@ -23,7 +23,7 @@ interface WebScrapeInput {
   preferred_provider?: 'firecrawl' | 'jina' | 'auto';
 }
 
-async function getJinaConfig(): Promise<{ preferFreeTier: boolean }> {
+async function getIntegrationConfig(): Promise<{ preferFreeTier: boolean; firecrawlEnabled: boolean }> {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -34,9 +34,13 @@ async function getJinaConfig(): Promise<{ preferFreeTier: boolean }> {
       .eq('key', 'integrations')
       .maybeSingle();
     const jina = data?.value?.jina;
-    return { preferFreeTier: jina?.config?.preferFreeTier ?? true };
+    const firecrawl = data?.value?.firecrawl;
+    return {
+      preferFreeTier: jina?.config?.preferFreeTier ?? true,
+      firecrawlEnabled: firecrawl?.enabled !== false, // default true if not explicitly disabled
+    };
   } catch {
-    return { preferFreeTier: true };
+    return { preferFreeTier: true, firecrawlEnabled: true };
   }
 }
 
