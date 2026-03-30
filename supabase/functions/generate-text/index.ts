@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { resolveAiConfig } from '../_shared/ai-config.ts';
+import { callAi } from '../_shared/ai-call.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -116,20 +117,15 @@ serve(async (req) => {
     
     console.log(`Generating text with action: ${action}, model: ${aiConfig.model}, input length: ${text.length}`);
 
-    // All providers use OpenAI-compatible API (including Gemini via openai compat endpoint)
-    const response = await fetch(aiConfig.apiUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${aiConfig.apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: aiConfig.model,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: text }
-        ],
-      }),
+    // All providers use unified callAi adapter (handles OpenAI, Gemini, Anthropic)
+    const response = await callAi({
+      apiKey: aiConfig.apiKey,
+      apiUrl: aiConfig.apiUrl,
+      model: aiConfig.model,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: text }
+      ],
     });
 
     if (!response.ok) {

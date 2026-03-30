@@ -17,6 +17,7 @@ interface IntegrationStatus {
     firecrawl: boolean;
     openai: boolean;
     gemini: boolean;
+    anthropic: boolean;
     local_llm: boolean;
     google_client_id: boolean;
     google_client_secret: boolean;
@@ -35,6 +36,7 @@ interface IntegrationsSettings {
   resend?: { enabled: boolean };
   openai?: { enabled: boolean; config?: { baseUrl?: string; model?: string } };
   gemini?: { enabled: boolean; config?: { model?: string } };
+  anthropic?: { enabled: boolean; config?: { model?: string } };
   unsplash?: { enabled: boolean };
   firecrawl?: { enabled: boolean };
   local_llm?: { enabled: boolean; config?: { endpoint?: string; model?: string } };
@@ -135,9 +137,20 @@ export function useIsLocalLLMConfigured() {
 }
 
 // Combined helper: true if ANY AI provider is configured and not disabled
+export function useIsAnthropicConfigured() {
+  const { data: secretsStatus } = useIntegrationStatus();
+  const { data: enabledSettings } = useIntegrationsEnabledSettings();
+  
+  const hasKey = secretsStatus?.integrations?.anthropic ?? false;
+  const explicitlyDisabled = enabledSettings?.anthropic?.enabled === false;
+  
+  return hasKey && !explicitlyDisabled;
+}
+
 export function useIsAIConfigured() {
   const isOpenAI = useIsOpenAIConfigured();
   const isGemini = useIsGeminiConfigured();
+  const isAnthropic = useIsAnthropicConfigured();
   const isLocal = useIsLocalLLMConfigured();
-  return isOpenAI || isGemini || isLocal;
+  return isOpenAI || isGemini || isAnthropic || isLocal;
 }

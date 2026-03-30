@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { callAi } from '../_shared/ai-call.ts';
 import {
   resolveAiConfig,
   loadWorkspaceFiles,
@@ -65,7 +66,7 @@ serve(async (req) => {
       }
     }
 
-    const { apiKey, apiUrl, model } = await resolveAiConfig(supabase, 'fast');
+    const { apiKey, apiUrl, model } = await resolveAiConfig(supabase, 'reasoning');
 
     // Load context in parallel
     const [{ soul, identity, agents, tools, user, bootstrap }, memoryContext, objectiveContext, cmsSchemaCtx] = await Promise.all([
@@ -188,15 +189,11 @@ serve(async (req) => {
           const MAX_RETRIES = 3;
           for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
             try {
-              aiResponse = await fetch(apiUrl, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  model,
-                  messages: conversationMessages,
-                  tools: allTools.length > 0 ? allTools : undefined,
-                  tool_choice: allTools.length > 0 ? 'auto' : undefined,
-                }),
+              aiResponse = await callAi({
+                apiKey, apiUrl, model,
+                messages: conversationMessages,
+                tools: allTools.length > 0 ? allTools : undefined,
+                tool_choice: allTools.length > 0 ? 'auto' : undefined,
               });
               break; // Success — exit retry loop
             } catch (fetchErr: any) {
@@ -376,6 +373,14 @@ async function streamFinalResponse(
   fallbackContent: string,
 ) {
   try {
+    // Anthropic doesn't use OpenAI-compatible streaming — use fallback for Anthropic
+    const isAnthropic = apiUrl.includes('anthropic.com');
+    if (isAnthropic) {
+      await sseEvent(writer, encoder, 'delta', { content: fallbackContent });
+      await sseEvent(writer, encoder, 'done', {});
+      return;
+    }
+
     const streamResponse = await fetch(apiUrl, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },

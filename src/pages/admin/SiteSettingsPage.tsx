@@ -258,6 +258,8 @@ export default function SiteSettingsPage() {
     openaiReasoningModel: 'gpt-4.1',
     geminiModel: 'gemini-2.5-flash',
     geminiReasoningModel: 'gemini-2.5-pro',
+    anthropicModel: 'claude-sonnet-4-20250514',
+    anthropicReasoningModel: 'claude-sonnet-4-20250514',
     defaultTone: 'professional',
     defaultLanguage: 'en',
   });

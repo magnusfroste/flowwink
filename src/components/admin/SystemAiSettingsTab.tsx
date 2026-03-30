@@ -5,7 +5,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Info, Sparkles, ExternalLink, Server } from 'lucide-react';
 import { SystemAiSettings, SystemAiProvider } from '@/hooks/useSiteSettings';
-import { useIsOpenAIConfigured, useIsGeminiConfigured, useIsLocalLLMConfigured } from '@/hooks/useIntegrationStatus';
+import { useIsOpenAIConfigured, useIsGeminiConfigured, useIsAnthropicConfigured, useIsLocalLLMConfigured } from '@/hooks/useIntegrationStatus';
 import { Link } from 'react-router-dom';
 
 interface SystemAiSettingsTabProps {
@@ -16,8 +16,9 @@ interface SystemAiSettingsTabProps {
 export function SystemAiSettingsTab({ data, onChange }: SystemAiSettingsTabProps) {
   const openaiEnabled = useIsOpenAIConfigured();
   const geminiEnabled = useIsGeminiConfigured();
+  const anthropicEnabled = useIsAnthropicConfigured();
   const localEnabled = useIsLocalLLMConfigured();
-  const hasAnyProvider = openaiEnabled || geminiEnabled || localEnabled;
+  const hasAnyProvider = openaiEnabled || geminiEnabled || anthropicEnabled || localEnabled;
 
   const updateField = <K extends keyof SystemAiSettings>(key: K, value: SystemAiSettings[K]) => {
     onChange({ ...data, [key]: value });
@@ -39,7 +40,7 @@ export function SystemAiSettingsTab({ data, onChange }: SystemAiSettingsTabProps
         <Alert variant="destructive">
           <AlertTitle>No AI Provider Configured</AlertTitle>
           <AlertDescription>
-            You need to enable OpenAI or Gemini in{' '}
+            You need to enable OpenAI, Gemini, or Anthropic in{' '}
             <Link to="/admin/integrations#ai" className="underline font-medium hover:text-destructive-foreground inline-flex items-center gap-1">
               Integrations <ExternalLink className="h-3 w-3" />
             </Link>{' '}
@@ -82,6 +83,16 @@ export function SystemAiSettingsTab({ data, onChange }: SystemAiSettingsTabProps
                     <div className="flex items-center gap-2">
                       Google Gemini
                       {geminiEnabled ? (
+                        <Badge variant="outline" className="text-xs">Enabled</Badge>
+                      ) : (
+                        <Badge variant="secondary" className="text-xs">Not configured</Badge>
+                      )}
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="anthropic" disabled={!anthropicEnabled}>
+                    <div className="flex items-center gap-2">
+                      Anthropic (Claude)
+                      {anthropicEnabled ? (
                         <Badge variant="outline" className="text-xs">Enabled</Badge>
                       ) : (
                         <Badge variant="secondary" className="text-xs">Not configured</Badge>
@@ -245,6 +256,48 @@ export function SystemAiSettingsTab({ data, onChange }: SystemAiSettingsTabProps
                     <SelectItem value="gemini-2.5-pro">Gemini 2.5 Pro</SelectItem>
                     <SelectItem value="gemini-2.5-flash">Gemini 2.5 Flash</SelectItem>
                     <SelectItem value="gemini-1.5-pro">Gemini 1.5 Pro</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Used for objectives, planning, content research, and deep analysis
+                </p>
+              </div>
+            </div>
+          )}
+
+          {data.provider === 'anthropic' && (
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Chat & Interaction Model</Label>
+                <Select
+                  value={data.anthropicModel}
+                  onValueChange={(value: SystemAiSettings['anthropicModel']) => updateField('anthropicModel', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="claude-sonnet-4-20250514">Claude Sonnet 4</SelectItem>
+                    <SelectItem value="claude-3-5-haiku-20241022">Claude 3.5 Haiku</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Used for real-time chat, tool calls, and quick tasks
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label>Research & Reasoning Model</Label>
+                <Select
+                  value={data.anthropicReasoningModel}
+                  onValueChange={(value: SystemAiSettings['anthropicReasoningModel']) => updateField('anthropicReasoningModel', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="claude-opus-4-20250514">Claude Opus 4</SelectItem>
+                    <SelectItem value="claude-sonnet-4-20250514">Claude Sonnet 4</SelectItem>
+                    <SelectItem value="claude-3-5-haiku-20241022">Claude 3.5 Haiku</SelectItem>
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">
