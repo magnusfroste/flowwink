@@ -888,7 +888,11 @@ async function executePagesAction(
 
       if (action === 'create') {
         if (!title) throw new Error('title is required');
-        const pageSlug = slug || title.toLowerCase().replace(/[^a-z0-9åäö]+/g, '-').replace(/(^-|-$)/g, '');
+        const baseSlug = (slug || title.toLowerCase().replace(/[^a-z0-9åäö]+/g, '-').replace(/(^-|-$)/g, ''));
+        // Ensure unique slug by appending timestamp suffix if slug already exists
+        const { count: slugExists } = await supabase
+          .from('pages').select('id', { count: 'exact', head: true }).eq('slug', baseSlug);
+        const pageSlug = (slugExists ?? 0) > 0 ? `${baseSlug}-${Date.now().toString(36)}` : baseSlug;
 
         // Check if this is the first page — auto-set as homepage
         const { count: existingPages } = await supabase
