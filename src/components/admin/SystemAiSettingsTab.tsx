@@ -88,6 +88,16 @@ export function SystemAiSettingsTab({ data, onChange }: SystemAiSettingsTabProps
                       )}
                     </div>
                   </SelectItem>
+                  <SelectItem value="local" disabled={!localEnabled}>
+                    <div className="flex items-center gap-2">
+                      Local LLM
+                      {localEnabled ? (
+                        <Badge variant="outline" className="text-xs">Enabled</Badge>
+                      ) : (
+                        <Badge variant="secondary" className="text-xs">Not configured</Badge>
+                      )}
+                    </div>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
