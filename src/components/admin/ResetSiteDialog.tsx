@@ -27,7 +27,8 @@ import {
   Loader2,
   CheckCircle2,
   XCircle,
-  ShieldAlert
+  ShieldAlert,
+  Sparkles
 } from 'lucide-react';
 
 interface ResetSiteDialogProps {
