@@ -8,8 +8,8 @@
  * - scope='visitor': Public chat with limited commands, standard completion
  */
 
-import { useRef, useEffect } from 'react';
-import { Terminal, Sparkles, Wrench, Loader2 } from 'lucide-react';
+import { useRef, useEffect, useState } from 'react';
+import { Terminal, Sparkles, Wrench, Loader2, Check, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { UnifiedChatInput } from './UnifiedChatInput';
@@ -56,9 +56,53 @@ function ToolStatusIndicator({ toolStatus }: { toolStatus: OperateMessage['toolS
   );
 }
 
+// ─── Inline approval buttons for pending_approval skills ──────────────────────
+
+function InlineApproval({ activityId, skillName, onApprove, onReject }: {
+  activityId: string;
+  skillName: string;
+  onApprove: (id: string) => Promise<void>;
+  onReject?: (id: string) => Promise<void>;
+}) {
+  const [state, setState] = useState<'idle' | 'approving' | 'rejecting' | 'done'>('idle');
+
+  const handleApprove = async () => {
+    setState('approving');
+    try { await onApprove(activityId); setState('done'); } catch { setState('idle'); }
+  };
+  const handleReject = async () => {
+    if (!onReject) return;
+    setState('rejecting');
+    try { await onReject(activityId); setState('done'); } catch { setState('idle'); }
+  };
+
+  if (state === 'done') {
+    return <p className="text-xs text-muted-foreground mt-1">✅ Handled</p>;
+  }
+
+  return (
+    <div className="flex gap-2 mt-1.5">
+      <Button size="sm" variant="default" className="h-7 text-xs gap-1" onClick={handleApprove} disabled={state !== 'idle'}>
+        {state === 'approving' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
+        Approve
+      </Button>
+      {onReject && (
+        <Button size="sm" variant="destructive" className="h-7 text-xs gap-1" onClick={handleReject} disabled={state !== 'idle'}>
+          {state === 'rejecting' ? <Loader2 className="h-3 w-3 animate-spin" /> : <X className="h-3 w-3" />}
+          Reject
+        </Button>
+      )}
+    </div>
+  );
+}
+
 // ─── Admin message bubble ─────────────────────────────────────────────────────
 
-function AdminMessage({ msg }: { msg: OperateMessage }) {
+function AdminMessage({ msg, onApproveAction, onRejectAction }: {
+  msg: OperateMessage;
+  onApproveAction?: (activityId: string) => Promise<void>;
+  onRejectAction?: (activityId: string) => Promise<void>;
+}) {
   const results = msg.skillResults?.length ? msg.skillResults : msg.skillResult ? [msg.skillResult] : [];
   const isStreaming = msg.role === 'assistant' && msg.toolStatus && msg.toolStatus.phase !== 'done';
   const showCursor = isStreaming && msg.toolStatus?.phase === 'streaming';
@@ -91,16 +135,27 @@ function AdminMessage({ msg }: { msg: OperateMessage }) {
 
         {results.length > 0 && (
           <div className="mt-2 pt-2 border-t border-border/30 space-y-1.5">
-            {results.map((sr, i) => (
-              <div key={i}>
-                <Badge variant={
-                  sr.status === 'success' ? 'default' :
-                  sr.status === 'pending_approval' ? 'secondary' : 'destructive'
-                } className="text-xs">
-                  {sr.skill.replace(/_/g, ' ')} — {sr.status}
-                </Badge>
-              </div>
-            ))}
+            {results.map((sr, i) => {
+              const resultObj = sr.result as Record<string, unknown> | undefined;
+              return (
+                <div key={i}>
+                  <Badge variant={
+                    sr.status === 'success' ? 'default' :
+                    sr.status === 'pending_approval' ? 'secondary' : 'destructive'
+                  } className="text-xs">
+                    {sr.skill.replace(/_/g, ' ')} — {sr.status === 'pending_approval' ? 'needs approval' : sr.status}
+                  </Badge>
+                  {sr.status === 'pending_approval' && resultObj?.activity_id && onApproveAction && (
+                    <InlineApproval
+                      activityId={resultObj.activity_id as string}
+                      skillName={sr.skill}
+                      onApprove={onApproveAction}
+                      onReject={onRejectAction}
+                    />
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
@@ -267,7 +322,7 @@ export function UnifiedChat({
                     />
                   );
                 }
-                return <AdminMessage key={item.data.id} msg={item.data} />;
+                return <AdminMessage key={item.data.id} msg={item.data} onApproveAction={onApproveAction} onRejectAction={onRejectAction} />;
               });
             })()}
           </div>
