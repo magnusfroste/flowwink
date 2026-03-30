@@ -20,6 +20,14 @@ export const AI_MODELS = {
     pro: 'gemini-2.5-pro',
   },
 
+  // Anthropic
+  anthropic: {
+    default: 'claude-sonnet-4-20250514',
+    chat: 'claude-sonnet-4-20250514',
+    fast: 'claude-3-5-haiku-20241022',
+    pro: 'claude-opus-4-20250514',
+  },
+
   // Local LLM (user-configurable)
   local_llm: {
     default: 'llama3',
