@@ -69,7 +69,7 @@ export const defaultModulesSettings: ModulesSettings = {
     optionalIntegrations: ['google_analytics', 'meta_pixel'],
   },
   bookings: {
-    enabled: true,
+    enabled: false,
     name: 'Bookings',
     description: 'Appointment scheduling with calendar view and email confirmations',
     icon: 'CalendarDays',
@@ -89,7 +89,7 @@ export const defaultModulesSettings: ModulesSettings = {
     adminUI: true,
   },
   blog: {
-    enabled: true,
+    enabled: false,
     name: 'Blog',
     description: 'Blog posts with categories, tags and RSS feed',
     icon: 'BookOpen',
@@ -137,7 +137,7 @@ export const defaultModulesSettings: ModulesSettings = {
     requiredIntegrations: ['resend'],
   },
   forms: {
-    enabled: true,
+    enabled: false,
     name: 'Forms',
     description: 'Form submissions and contact requests',
     icon: 'Inbox',
@@ -146,7 +146,7 @@ export const defaultModulesSettings: ModulesSettings = {
     adminUI: true,
   },
   leads: {
-    enabled: true,
+    enabled: false,
     name: 'Leads',
     description: 'AI-driven lead management with automatic qualification',
     icon: 'UserCheck',
@@ -155,7 +155,7 @@ export const defaultModulesSettings: ModulesSettings = {
     adminUI: true,
   },
   deals: {
-    enabled: true,
+    enabled: false,
     name: 'Deals',
     description: 'Pipeline management for sales opportunities',
     icon: 'Briefcase',
@@ -164,7 +164,7 @@ export const defaultModulesSettings: ModulesSettings = {
     adminUI: true,
   },
   companies: {
-    enabled: true,
+    enabled: false,
     name: 'Companies',
     description: 'Organization management with multiple contacts',
     icon: 'Building2',
@@ -193,7 +193,7 @@ export const defaultModulesSettings: ModulesSettings = {
     adminUI: true,
   },
   globalElements: {
-    enabled: true,
+    enabled: false,
     name: 'Global Elements',
     description: 'Header, footer and other reusable components',
     icon: 'LayoutGrid',
@@ -271,7 +271,7 @@ export const defaultModulesSettings: ModulesSettings = {
     optionalIntegrations: ['openai', 'gemini'],
   },
   companyInsights: {
-    enabled: true,
+    enabled: false,
     name: 'Business Identity',
     description: 'Unified business identity, financials, and market positioning — feeds Sales Intelligence, Chat, and SEO',
     icon: 'Building2',
@@ -291,7 +291,7 @@ export const defaultModulesSettings: ModulesSettings = {
     adminUI: true,
   },
   tickets: {
-    enabled: true,
+    enabled: false,
     name: 'Tickets',
     description: 'Helpdesk ticket management — Kanban pipeline with auto-categorization, KB matching, and SLA tracking',
     icon: 'Headphones',
