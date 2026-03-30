@@ -376,7 +376,7 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
             { key: 'branding', value: {} },
             { key: 'chat', value: { enabled: false, title: 'AI Assistant', placeholder: 'Ask a question...', welcomeMessage: 'Hi! How can I help you today?', aiProvider: 'openai', openaiModel: 'gpt-4o-mini', systemPrompt: '', toolCallingEnabled: false, widgetEnabled: false, blockEnabled: true, saveConversations: true, includeContentAsContext: false, feedbackEnabled: true } },
             { key: 'blog', value: { enabled: true, postsPerPage: 10, showAuthorBio: true, showReadingTime: true, showReviewer: false, archiveTitle: 'Blog', archiveSlug: 'blog', rssEnabled: true } },
-            { key: 'general', value: { homepageSlug: 'home', contentReviewEnabled: true } },
+            { key: 'general', value: { homepageSlug: 'home', contentReviewEnabled: false } },
             { key: 'cookie_banner', value: { enabled: true, title: 'We use cookies', description: 'We use cookies to improve your experience.', policyLinkText: 'Privacy Policy', policyLinkUrl: '/privacy', acceptButtonText: 'Accept all', rejectButtonText: 'Essential only' } },
             { key: 'maintenance', value: { enabled: false, title: 'Site under maintenance', message: 'We will be back soon.', expectedEndTime: '' } },
             { key: 'system_ai', value: { provider: 'openai', openaiModel: 'gpt-4.1-mini', openaiReasoningModel: 'gpt-4.1', geminiModel: 'gemini-2.5-flash', geminiReasoningModel: 'gemini-2.5-pro', defaultTone: 'professional', defaultLanguage: 'en' } },

@@ -457,7 +457,7 @@ export default function SiteSettingsPage() {
                     </p>
                   </div>
                   <Switch
-                    checked={generalData.contentReviewEnabled !== false}
+                    checked={generalData.contentReviewEnabled === true}
                     onCheckedChange={(checked) => setGeneralData(prev => ({ ...prev, contentReviewEnabled: checked }))}
                   />
                 </div>

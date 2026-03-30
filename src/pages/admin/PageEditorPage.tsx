@@ -32,7 +32,7 @@ export default function PageEditorPage() {
   const { toast } = useToast();
   const { isApprover } = useAuth();
   const { data: generalSettings } = useGeneralSettings();
-  const reviewEnabled = generalSettings?.contentReviewEnabled !== false;
+  const reviewEnabled = generalSettings?.contentReviewEnabled === true;
   
   const { data: page, isLoading, refetch } = usePage(id);
   const updatePage = useUpdatePage();

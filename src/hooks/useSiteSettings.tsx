@@ -13,7 +13,7 @@ export interface GeneralSettings {
 
 const defaultGeneralSettings: GeneralSettings = {
   homepageSlug: 'home',
-  contentReviewEnabled: true,
+  contentReviewEnabled: false,
 };
 
 export interface SeoSettings {
