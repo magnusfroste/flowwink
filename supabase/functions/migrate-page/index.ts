@@ -752,50 +752,120 @@ serve(async (req) => {
 
     const firecrawlKey = Deno.env.get('FIRECRAWL_API_KEY');
 
-    if (!firecrawlKey) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'FIRECRAWL_API_KEY is missing. Add it in Settings → Integrations.' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Check if Firecrawl is enabled in site_settings
+    let firecrawlEnabled = true;
+    try {
+      const { data: intRow } = await supabase
+        .from('site_settings')
+        .select('value')
+        .eq('key', 'integrations')
+        .maybeSingle();
+      if (intRow?.value?.firecrawl?.enabled === false) {
+        firecrawlEnabled = false;
+      }
+    } catch { /* default to enabled */ }
+
+    const useFirecrawl = !!firecrawlKey && firecrawlEnabled;
+
+    // Jina Reader fallback for scraping
+    async function jinaFallback(targetUrl: string): Promise<{ markdown: string; html: string; rawHtml: string; metadata: Record<string, unknown>; screenshot: string | null }> {
+      const jinaKey = Deno.env.get('JINA_API_KEY');
+      const headers: Record<string, string> = { 'Accept': 'application/json' };
+      if (jinaKey) headers['Authorization'] = `Bearer ${jinaKey}`;
+
+      console.log('[migrate-page] Using Jina Reader fallback for:', targetUrl);
+      const res = await fetch(`https://r.jina.ai/${targetUrl}`, { headers });
+      if (!res.ok) throw new Error(`Jina scrape failed: ${res.status}`);
+      const data = await res.json();
+      const content = data.data?.content || '';
+      const title = data.data?.title || '';
+      const pageUrl = data.data?.url || targetUrl;
+
+      // Also fetch HTML for structure analysis
+      let htmlContent = '';
+      try {
+        const htmlRes = await fetch(targetUrl, {
+          headers: { 'User-Agent': 'FlowPilot-Bot/1.0' },
+          signal: AbortSignal.timeout(10000),
+        });
+        if (htmlRes.ok) htmlContent = await htmlRes.text();
+      } catch { /* HTML fetch optional */ }
+
+      return {
+        markdown: content,
+        html: htmlContent,
+        rawHtml: htmlContent,
+        metadata: { title, url: pageUrl, description: '' },
+        screenshot: null,
+      };
     }
 
-    // Handle site analysis action
+    // Handle site analysis action (works with Jina too — uses nav extraction from HTML)
     if (action === 'analyze-site') {
       console.log('Analyzing site structure for:', url);
-      
-      // Format URL
       let formattedUrl = url.trim();
       if (!formattedUrl.startsWith('http://') && !formattedUrl.startsWith('https://')) {
         formattedUrl = `https://${formattedUrl}`;
       }
-      
-      const siteStructure = await analyzeSiteStructure(formattedUrl, firecrawlKey);
-      
-      console.log('Site analysis complete:', {
-        siteName: siteStructure.siteName,
-        platform: siteStructure.platform,
-        pagesFound: siteStructure.pages.length,
-        hasBlog: siteStructure.hasBlog,
-        hasKnowledgeBase: siteStructure.hasKnowledgeBase,
-      });
-      
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          ...siteStructure 
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+
+      if (useFirecrawl) {
+        const siteStructure = await analyzeSiteStructure(formattedUrl, firecrawlKey!);
+        return new Response(JSON.stringify({ success: true, ...siteStructure }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      } else {
+        // Jina-based site analysis: fetch HTML directly and extract nav + sitemap
+        const urlObj = new URL(formattedUrl);
+        const baseUrl = `${urlObj.protocol}//${urlObj.host}`;
+        let htmlContent = '';
+        let pageTitle = urlObj.host;
+        try {
+          const res = await fetch(baseUrl, { headers: { 'User-Agent': 'FlowPilot-Bot/1.0' }, signal: AbortSignal.timeout(10000) });
+          if (res.ok) htmlContent = await res.text();
+          const titleMatch = htmlContent.match(/<title[^>]*>([^<]+)<\/title>/i);
+          if (titleMatch) pageTitle = titleMatch[1].trim();
+        } catch { /* continue with what we have */ }
+
+        const platform = detectPlatform(htmlContent, {});
+        const navLinks = extractNavLinks(htmlContent, baseUrl);
+        const sitemapPages = await fetchSitemap(baseUrl);
+
+        // Combine and deduplicate
+        const allPages = new Map<string, { url: string; title: string; type: 'page' | 'blog' | 'kb'; source: 'nav' | 'sitemap' }>();
+        for (const link of navLinks) {
+          if (shouldExcludeUrl(link.url, baseUrl)) continue;
+          const type = categorizeUrl(link.url, baseUrl, platform);
+          allPages.set(link.url, { url: link.url, title: link.label, type, source: 'nav' });
+        }
+        for (const page of sitemapPages.slice(0, 50)) {
+          if (shouldExcludeUrl(page.url, baseUrl) || allPages.has(page.url)) continue;
+          const type = categorizeUrl(page.url, baseUrl, platform);
+          const slug = page.url.replace(baseUrl, '').split('/').filter(Boolean).pop() || 'home';
+          allPages.set(page.url, { url: page.url, title: slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()), type, source: 'sitemap' });
+        }
+
+        const pages = Array.from(allPages.values());
+        return new Response(JSON.stringify({
+          success: true,
+          siteName: pageTitle,
+          platform,
+          baseUrl,
+          pages,
+          navigation: navLinks.map(l => ({ label: l.label, url: l.url })),
+          hasBlog: pages.some(p => p.type === 'blog'),
+          hasKnowledgeBase: pages.some(p => p.type === 'kb'),
+        }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
     }
 
     // Resolve AI provider via unified Layer 1 config
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabaseUrl2 = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey2 = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase2 = createClient(supabaseUrl2, supabaseServiceKey2);
 
     let aiConfig;
     try {
-      aiConfig = await resolveAiConfig(supabase, 'reasoning');
+      aiConfig = await resolveAiConfig(supabase2, 'reasoning');
     } catch {
       return new Response(
         JSON.stringify({ success: false, error: 'No AI provider configured. Add OPENAI_API_KEY, GEMINI_API_KEY, or configure AI in Settings.' }),
@@ -811,40 +881,67 @@ serve(async (req) => {
       formattedUrl = `https://${formattedUrl}`;
     }
 
-    console.log('Step 1: Scraping URL with Firecrawl (enhanced):', formattedUrl);
+    // Step 1: Scrape URL — Firecrawl or Jina fallback
+    let markdown = '';
+    let html = '';
+    let rawHtml = '';
+    let screenshot: string | null = null;
+    let metadata: Record<string, unknown> = {};
+    let rawBranding: FirecrawlBranding = {};
 
-    // Step 1: Scrape with Firecrawl - enhanced options
-    const scrapeResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${firecrawlKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        url: formattedUrl,
-        formats: ['markdown', 'html', 'rawHtml', 'screenshot', 'branding'],
-        onlyMainContent: false, // Get full page for better extraction
-        waitFor: 3000, // Wait for JS to load
-        includeTags: ['main', 'article', 'section', 'header', 'footer', 'aside', 'figure', 'video', 'iframe'],
-        excludeTags: ['script', 'noscript', 'style'],
-      }),
-    });
+    if (useFirecrawl) {
+      console.log('Step 1: Scraping URL with Firecrawl:', formattedUrl);
+      const scrapeResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${firecrawlKey!}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          url: formattedUrl,
+          formats: ['markdown', 'html', 'rawHtml', 'screenshot', 'branding'],
+          onlyMainContent: false,
+          waitFor: 3000,
+          includeTags: ['main', 'article', 'section', 'header', 'footer', 'aside', 'figure', 'video', 'iframe'],
+          excludeTags: ['script', 'noscript', 'style'],
+        }),
+      });
 
-    const scrapeData = await scrapeResponse.json();
-
-    if (!scrapeResponse.ok) {
-      console.error('Firecrawl error:', scrapeData);
-      return new Response(
-        JSON.stringify({ success: false, error: `Could not scrape page: ${scrapeData.error || scrapeResponse.status}` }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      const scrapeData = await scrapeResponse.json();
+      if (!scrapeResponse.ok) {
+        console.warn('Firecrawl error, falling back to Jina:', scrapeData);
+        // Fall through to Jina
+        try {
+          const jina = await jinaFallback(formattedUrl);
+          markdown = jina.markdown; html = jina.html; rawHtml = jina.rawHtml;
+          metadata = jina.metadata; screenshot = jina.screenshot;
+        } catch (jinaErr) {
+          return new Response(
+            JSON.stringify({ success: false, error: `Could not scrape page: ${scrapeData.error || scrapeResponse.status}` }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+      } else {
+        markdown = scrapeData.data?.markdown || scrapeData.markdown || '';
+        html = scrapeData.data?.html || scrapeData.html || '';
+        rawHtml = scrapeData.data?.rawHtml || scrapeData.rawHtml || html;
+        screenshot = scrapeData.data?.screenshot || scrapeData.screenshot || null;
+        metadata = scrapeData.data?.metadata || scrapeData.metadata || {};
+        rawBranding = scrapeData.data?.branding || scrapeData.branding || {};
+      }
+    } else {
+      console.log('Step 1: Scraping URL with Jina Reader:', formattedUrl);
+      try {
+        const jina = await jinaFallback(formattedUrl);
+        markdown = jina.markdown; html = jina.html; rawHtml = jina.rawHtml;
+        metadata = jina.metadata; screenshot = jina.screenshot;
+      } catch (jinaErr) {
+        return new Response(
+          JSON.stringify({ success: false, error: `Could not scrape page: ${jinaErr instanceof Error ? jinaErr.message : 'Scraping failed'}` }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
-
-    const markdown = scrapeData.data?.markdown || scrapeData.markdown || '';
-    const html = scrapeData.data?.html || scrapeData.html || '';
-    const rawHtml = scrapeData.data?.rawHtml || scrapeData.rawHtml || html;
-    const screenshot = scrapeData.data?.screenshot || scrapeData.screenshot || null;
-    const metadata = scrapeData.data?.metadata || scrapeData.metadata || {};
 
     // Extract branding data
     const rawBranding: FirecrawlBranding = scrapeData.data?.branding || scrapeData.branding || {};
