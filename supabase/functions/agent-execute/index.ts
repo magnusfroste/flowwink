@@ -1405,13 +1405,12 @@ async function executeProductsAction(
   if (action === 'create') {
     const { name, description, price_cents, currency = 'SEK', type = 'one_time', slug, image_url, stripe_price_id } = args as any;
     if (!name || price_cents === undefined) throw new Error('name and price_cents required');
-    const productSlug = slug || name.toLowerCase().replace(/[^a-z0-9åäö]+/g, '-').replace(/(^-|-$)/g, '');
     const { data, error } = await supabase.from('products').insert({
-      name, slug: productSlug, description, price_cents, currency, type,
+      name, description, price_cents, currency, type,
       image_url, stripe_price_id, is_active: true,
-    }).select('id, name, slug, price_cents').single();
+    }).select('id, name, price_cents').single();
     if (error) throw new Error(`Create product failed: ${error.message}`);
-    return { product_id: data.id, name: data.name, slug: data.slug, price_cents: data.price_cents };
+    return { product_id: data.id, name: data.name, price_cents: data.price_cents };
   }
 
   if (action === 'update') {
