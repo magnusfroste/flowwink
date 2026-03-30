@@ -2368,7 +2368,23 @@ async function executeAnalyticsAction(
   switch (skillName) {
     case 'seo_audit_page': {
       const { slug } = args as any;
-      if (!slug) throw new Error('slug is required');
+
+      // If no slug provided, return a summary of all published pages for the agent to pick
+      if (!slug) {
+        const { data: pages } = await supabase.from('pages')
+          .select('slug, title, status')
+          .eq('status', 'published')
+          .order('created_at', { ascending: false }).limit(20);
+        const { data: posts } = await supabase.from('blog_posts')
+          .select('slug, title, status')
+          .eq('status', 'published')
+          .order('created_at', { ascending: false }).limit(20);
+        return {
+          message: 'No slug provided. Here are published pages and posts to audit:',
+          pages: (pages || []).map((p: any) => p.slug),
+          posts: (posts || []).map((p: any) => p.slug),
+        };
+      }
 
       // Fetch page or blog post
       let page: any = null;
