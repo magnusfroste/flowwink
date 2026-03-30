@@ -167,6 +167,7 @@ serve(async (req) => {
 
         const allSkillResults: any[] = [];
         const loadedInstructions = new Set<string>();
+        let producedFinalResponse = false;
 
         for (let iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration++) {
           const aiResponse = await fetch(apiUrl, {
@@ -209,6 +210,7 @@ serve(async (req) => {
             const finalContent = assistantMessage.content || 'Done.';
             const { cleanContent } = parseReplyDirectives(finalContent);
             await streamFinalResponse(apiUrl, apiKey, model, conversationMessages, writer, encoder, cleanContent || finalContent);
+            producedFinalResponse = true;
             break;
           }
 
@@ -252,6 +254,30 @@ serve(async (req) => {
           }
 
           await sseEvent(writer, encoder, 'tool_done', { iteration: iteration + 1, tools: toolNames, results_count: toolResults.length });
+        }
+
+        // Safety fallback: if we only executed tools and never emitted a final assistant reply,
+        // force a concise summary instead of closing silently.
+        if (!producedFinalResponse) {
+          if (allSkillResults.length > 0) {
+            await sseEvent(writer, encoder, 'skill_results', allSkillResults);
+          }
+          const forcedConversation = [
+            ...conversationMessages,
+            {
+              role: 'system',
+              content: 'Stop calling tools now. Summarize what was completed, what failed, and the next best step in max 6 lines.',
+            },
+          ];
+          await streamFinalResponse(
+            apiUrl,
+            apiKey,
+            model,
+            forcedConversation,
+            writer,
+            encoder,
+            'I completed several steps but reached the iteration limit. Please ask me to continue from this point if needed.',
+          );
         }
       } catch (err: any) {
         console.error('agent-operate stream error:', err);

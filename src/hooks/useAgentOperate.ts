@@ -391,7 +391,7 @@ export function useAgentOperate() {
           finalContent += chunk;
           setMessages(prev => prev.map(m =>
             m.id === assistantId
-              ? { ...m, content: finalContent, toolStatus: { phase: 'streaming' } }
+              ? { ...m, content: finalContent, toolStatus: { ...m.toolStatus, phase: 'streaming' } }
               : m
           ));
         },
@@ -426,7 +426,7 @@ export function useAgentOperate() {
               const relayUrl = result.result.url;
               setMessages(prev => prev.map(m =>
                 m.id === assistantId
-                  ? { ...m, content: `🔗 Fetching via browser relay: ${relayUrl}`, toolStatus: { phase: 'executing', tools: ['browser_relay'] } }
+                  ? { ...m, content: `🔗 Fetching via browser relay: ${relayUrl}`, toolStatus: { ...m.toolStatus, phase: 'executing', tools: ['browser_relay'] } }
                   : m
               ));
 
@@ -470,14 +470,14 @@ export function useAgentOperate() {
           finalContent = `Something went wrong: ${message}`;
           setMessages(prev => prev.map(m =>
             m.id === assistantId
-              ? { ...m, content: finalContent, toolStatus: { phase: 'done' } }
+              ? { ...m, content: finalContent, toolStatus: { ...m.toolStatus, phase: 'done' } }
               : m
           ));
         },
         onDone: () => {
           setMessages(prev => prev.map(m =>
             m.id === assistantId
-              ? { ...m, toolStatus: { phase: 'done' } }
+              ? { ...m, toolStatus: { ...m.toolStatus, phase: 'done' } }
               : m
           ));
         },
@@ -507,7 +507,7 @@ export function useAgentOperate() {
       const errorContent = `Something went wrong: ${err.message}`;
       setMessages(prev => prev.map(m =>
         m.id === assistantId
-          ? { ...m, content: errorContent, toolStatus: { phase: 'done' } }
+          ? { ...m, content: errorContent, toolStatus: { ...m.toolStatus, phase: 'done' } }
           : m
       ));
       toast.error('Agent error', { description: err.message });
