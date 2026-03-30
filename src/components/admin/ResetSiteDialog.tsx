@@ -51,6 +51,7 @@ interface ResetOptions {
   newsletters: boolean;
   bookings: boolean;
   orders: boolean;
+  engineRoom: boolean;
 }
 
 const defaultOptions: ResetOptions = {
@@ -67,6 +68,7 @@ const defaultOptions: ResetOptions = {
   newsletters: true,
   bookings: true,
   orders: true,
+  engineRoom: true,
 };
 
 interface ProgressItem {
