@@ -139,7 +139,7 @@ serve(async (req) => {
 
     // --- Strategy 2: Jina Search (free first → API key → keyless fallback) ---
     if (results.length === 0 && useJina) {
-      const { preferFreeTier } = await getJinaConfig();
+      const { preferFreeTier } = integrationConfig;
 
       if (preferFreeTier) {
         // Try keyless first
