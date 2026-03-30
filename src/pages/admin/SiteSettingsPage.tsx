@@ -451,7 +451,7 @@ export default function SiteSettingsPage() {
                   <div className="space-y-0.5">
                     <Label>Review workflow</Label>
                     <p className="text-sm text-muted-foreground">
-                      {generalData.contentReviewEnabled !== false
+                      {generalData.contentReviewEnabled === true
                         ? 'Content goes through a review step before publishing (draft → review → published)'
                         : 'All users can publish content directly without review (draft → published)'}
                     </p>
