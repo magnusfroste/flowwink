@@ -182,16 +182,40 @@ serve(async (req) => {
 
         for (let iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration++) {
           const t0 = Date.now();
-          const aiResponse = await fetch(apiUrl, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              model,
-              messages: conversationMessages,
-              tools: allTools.length > 0 ? allTools : undefined,
-              tool_choice: allTools.length > 0 ? 'auto' : undefined,
-            }),
-          });
+
+          // Retry logic for transient network errors (TLS handshake, connection reset)
+          let aiResponse: Response | null = null;
+          const MAX_RETRIES = 3;
+          for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+            try {
+              aiResponse = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  model,
+                  messages: conversationMessages,
+                  tools: allTools.length > 0 ? allTools : undefined,
+                  tool_choice: allTools.length > 0 ? 'auto' : undefined,
+                }),
+              });
+              break; // Success — exit retry loop
+            } catch (fetchErr: any) {
+              const isTransient = /tls handshake|connection reset|eof|ECONNRESET|socket hang up/i.test(fetchErr?.message || '');
+              console.warn(`[operate] Fetch attempt ${attempt}/${MAX_RETRIES} failed: ${fetchErr?.message}`);
+              if (!isTransient || attempt === MAX_RETRIES) {
+                console.error('agent-operate stream error:', fetchErr);
+                await sseEvent(writer, encoder, 'error', { message: `Network error connecting to AI provider. Please try again.` });
+                await sseEvent(writer, encoder, 'done', {});
+                clearInterval(keepalive);
+                clearTimeout(operateTimeout);
+                try { await writer.close(); } catch { /* already closed */ }
+                return;
+              }
+              // Wait before retry: 1s, 2s
+              await new Promise(r => setTimeout(r, attempt * 1000));
+            }
+          }
+
           console.log(`[operate] AI response in ${Date.now() - t0}ms (iteration ${iteration + 1}, tools=${allTools.length})`);
 
           if (!aiResponse.ok) {
