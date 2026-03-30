@@ -308,7 +308,51 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
       });
     }
 
-    if (options.settings) {
+    if (options.engineRoom) {
+      tasks.push({
+        key: 'engineRoom',
+        label: 'Resetting Engine Room (objectives, memory, activity)',
+        fn: async () => {
+          // Clear objective activities junction first
+          const { error: oaErr } = await supabase.from('agent_objective_activities').delete().neq('objective_id', '00000000-0000-0000-0000-000000000000');
+          if (oaErr) throw oaErr;
+          // Clear objectives
+          const { error: objErr } = await supabase.from('agent_objectives').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (objErr) throw objErr;
+          // Clear activity log
+          const { error: actErr } = await supabase.from('agent_activity').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (actErr) throw actErr;
+          // Clear memory (except soul/identity which get re-seeded)
+          const { error: memErr } = await supabase.from('agent_memory').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (memErr) throw memErr;
+          // Clear automations
+          const { error: autoErr } = await supabase.from('agent_automations').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (autoErr) throw autoErr;
+          // Clear chat conversations & messages
+          const { error: feedbackErr } = await supabase.from('chat_feedback').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (feedbackErr) throw feedbackErr;
+          const { error: msgErr } = await supabase.from('chat_messages').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (msgErr) throw msgErr;
+          const { error: convErr } = await supabase.from('chat_conversations').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (convErr) throw convErr;
+          // Clear workflows
+          const { error: wfErr } = await supabase.from('agent_workflows').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (wfErr) throw wfErr;
+          // Clear briefings
+          const { error: brErr } = await supabase.from('flowpilot_briefings').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (brErr) throw brErr;
+          // Clear content proposals & research
+          const { error: cpErr } = await supabase.from('content_proposals').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (cpErr) throw cpErr;
+          const { error: crErr } = await supabase.from('content_research').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (crErr) throw crErr;
+          // Clear installed template marker
+          const { error: tmplErr } = await supabase.from('installed_template').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (tmplErr) throw tmplErr;
+        }
+      });
+    }
+
       tasks.push({
         key: 'settings',
         label: 'Resetting settings to defaults',
