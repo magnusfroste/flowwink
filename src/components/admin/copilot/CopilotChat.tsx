@@ -1,8 +1,9 @@
 import { useRef, useEffect, useState } from 'react';
-import { Zap, ArrowUp, Loader2, CheckCircle2, Layout, Image, MessageSquare, Users, Wand2, Square, RotateCcw, AlertTriangle, Globe } from 'lucide-react';
+import { Zap, ArrowUp, Loader2, CheckCircle2, Layout, Image, MessageSquare, Users, Wand2, Square, RotateCcw, AlertTriangle, Globe, FileText } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import {
   AlertDialog,
@@ -73,6 +74,7 @@ export function CopilotChat({
   onFinishPage,
   onStopAutoContinue,
   onReset,
+  migrationState,
   onAnalyzeSite,
   discoveryStatus,
 }: CopilotChatProps) {
@@ -191,6 +193,44 @@ export function CopilotChat({
               </div>
             </div>
           ))}
+
+          {/* Migration progress indicator */}
+          {migrationState && migrationState.isActive && discoveryStatus === 'migrating' && (
+            <div className="bg-muted/50 rounded-xl p-3 space-y-2 border border-border/50">
+              <div className="flex items-center gap-2 text-xs font-medium">
+                <Globe className="w-3.5 h-3.5 text-primary animate-pulse" />
+                <span>Migrating {migrationState.baseDomain || 'site'}</span>
+              </div>
+              {migrationState.pagesTotal > 0 && (
+                <>
+                  <Progress 
+                    value={(migrationState.pagesCompleted / migrationState.pagesTotal) * 100} 
+                    className="h-1.5" 
+                  />
+                  <div className="flex justify-between text-[10px] text-muted-foreground">
+                    <span>
+                      {migrationState.currentPageUrl 
+                        ? `Page ${migrationState.pagesCompleted + 1}/${migrationState.pagesTotal}: ${migrationState.pageTitle || new URL(migrationState.currentPageUrl).pathname}`
+                        : `${migrationState.pagesCompleted}/${migrationState.pagesTotal} pages`
+                      }
+                    </span>
+                    <span>{Math.round((migrationState.pagesCompleted / migrationState.pagesTotal) * 100)}%</span>
+                  </div>
+                </>
+              )}
+              {migrationState.pendingBlocks.length > 0 && (
+                <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                  <FileText className="w-3 h-3" />
+                  <span>
+                    Block {migrationState.currentBlockIndex + 1}/{migrationState.pendingBlocks.length}
+                    {migrationState.pendingBlocks[migrationState.currentBlockIndex]?.type 
+                      ? ` — ${migrationState.pendingBlocks[migrationState.currentBlockIndex].type}`
+                      : ''}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Quick action hints during migration - show only when NOT in discovery/migration mode */}
           {hasBlocks && !isLoading && suggestedNext.length > 0 && discoveryStatus !== 'migrating' && discoveryStatus !== 'ready' && (

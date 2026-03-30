@@ -1047,6 +1047,15 @@ LOTTIE ANIMATIONS - CRITICAL:
 - For SVG animations, you can include them in "image" blocks if they are decorative
 
 === RESPONSE FORMAT ===
+
+CRITICAL — TIPTAP JSON FORMAT:
+Any block field marked as "tiptap" in the schema MUST be a JSON object, NEVER a raw HTML string.
+Correct format: { "type": "doc", "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "Your text" }] }] }
+WRONG format: "<p>Your text</p>" — this will break rendering.
+For multi-paragraph content, add multiple paragraph nodes inside the "content" array.
+For bold text: { "type": "text", "marks": [{ "type": "bold" }], "text": "Bold text" }
+For links: { "type": "text", "marks": [{ "type": "link", "attrs": { "href": "https://..." } }], "text": "Link text" }
+
 Respond ONLY with valid JSON, no other text:
 {
   "title": "Page main title",
@@ -1066,7 +1075,7 @@ Respond ONLY with valid JSON, no other text:
         "backgroundImage": "..."    // only if backgroundType is image
       } 
     },
-    { "id": "block-2", "type": "text", "data": { "content": "<p>...</p>" } },
+    { "id": "block-2", "type": "text", "data": { "content": { "type": "doc", "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "Your text here" }] }] } } },
     { "id": "block-3", "type": "lottie", "data": { "src": "https://lottie.host/...", "autoplay": true, "loop": true, "alt": "Animation description" } }
   ],
   "companyProfile": {
@@ -1312,6 +1321,39 @@ Respond only with JSON.`;
       
       return normalizedBlock;
     });
+
+    // Step 5b: Post-migration TipTap validation — auto-fix raw HTML strings
+    const TIPTAP_FIELDS = ['content', 'leftContent', 'rightContent', 'body', 'answer'];
+    const htmlToTiptap = (html: string): Record<string, unknown> => {
+      // Strip HTML tags to get plain text
+      const text = html.replace(/<[^>]*>/g, '').trim();
+      if (!text) return { type: 'doc', content: [{ type: 'paragraph', content: [] }] };
+      // Split by double newlines or <br> for paragraphs
+      const paragraphs = text.split(/\n\n|\n/).filter(p => p.trim());
+      return {
+        type: 'doc',
+        content: paragraphs.map(p => ({
+          type: 'paragraph',
+          content: [{ type: 'text', text: p.trim() }],
+        })),
+      };
+    };
+
+    let fixedCount = 0;
+    for (const block of blocks) {
+      const data = block.data as Record<string, unknown> | undefined;
+      if (!data) continue;
+      for (const field of TIPTAP_FIELDS) {
+        if (typeof data[field] === 'string') {
+          console.warn(`[TipTap fix] Block ${block.id} (${block.type}): field "${field}" was raw string, converting to TipTap JSON`);
+          data[field] = htmlToTiptap(data[field] as string);
+          fixedCount++;
+        }
+      }
+    }
+    if (fixedCount > 0) {
+      console.log(`[TipTap fix] Auto-corrected ${fixedCount} fields from raw HTML to TipTap JSON`);
+    }
 
     console.log('Step 5: Successfully mapped', blocks.length, 'blocks');
     console.log('Block types:', blocks.map((b: Record<string, unknown>) => b.type).join(', '));
