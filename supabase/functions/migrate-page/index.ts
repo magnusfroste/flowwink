@@ -1047,8 +1047,16 @@ LOTTIE ANIMATIONS - CRITICAL:
 - For SVG animations, you can include them in "image" blocks if they are decorative
 
 === RESPONSE FORMAT ===
+
+CRITICAL — TIPTAP JSON FORMAT:
+Any block field marked as "tiptap" in the schema MUST be a JSON object, NEVER a raw HTML string.
+Correct format: { "type": "doc", "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "Your text" }] }] }
+WRONG format: "<p>Your text</p>" — this will break rendering.
+For multi-paragraph content, add multiple paragraph nodes inside the "content" array.
+For bold text: { "type": "text", "marks": [{ "type": "bold" }], "text": "Bold text" }
+For links: { "type": "text", "marks": [{ "type": "link", "attrs": { "href": "https://..." } }], "text": "Link text" }
+
 Respond ONLY with valid JSON, no other text:
-{
   "title": "Page main title",
   "blocks": [
     { 
