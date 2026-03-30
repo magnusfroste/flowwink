@@ -1322,6 +1322,39 @@ Respond only with JSON.`;
       return normalizedBlock;
     });
 
+    // Step 5b: Post-migration TipTap validation — auto-fix raw HTML strings
+    const TIPTAP_FIELDS = ['content', 'leftContent', 'rightContent', 'body', 'answer'];
+    const htmlToTiptap = (html: string): Record<string, unknown> => {
+      // Strip HTML tags to get plain text
+      const text = html.replace(/<[^>]*>/g, '').trim();
+      if (!text) return { type: 'doc', content: [{ type: 'paragraph', content: [] }] };
+      // Split by double newlines or <br> for paragraphs
+      const paragraphs = text.split(/\n\n|\n/).filter(p => p.trim());
+      return {
+        type: 'doc',
+        content: paragraphs.map(p => ({
+          type: 'paragraph',
+          content: [{ type: 'text', text: p.trim() }],
+        })),
+      };
+    };
+
+    let fixedCount = 0;
+    for (const block of blocks) {
+      const data = block.data as Record<string, unknown> | undefined;
+      if (!data) continue;
+      for (const field of TIPTAP_FIELDS) {
+        if (typeof data[field] === 'string') {
+          console.warn(`[TipTap fix] Block ${block.id} (${block.type}): field "${field}" was raw string, converting to TipTap JSON`);
+          data[field] = htmlToTiptap(data[field] as string);
+          fixedCount++;
+        }
+      }
+    }
+    if (fixedCount > 0) {
+      console.log(`[TipTap fix] Auto-corrected ${fixedCount} fields from raw HTML to TipTap JSON`);
+    }
+
     console.log('Step 5: Successfully mapped', blocks.length, 'blocks');
     console.log('Block types:', blocks.map((b: Record<string, unknown>) => b.type).join(', '));
 
