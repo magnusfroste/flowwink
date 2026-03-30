@@ -1066,7 +1066,7 @@ Respond ONLY with valid JSON, no other text:
         "backgroundImage": "..."    // only if backgroundType is image
       } 
     },
-    { "id": "block-2", "type": "text", "data": { "content": "<p>...</p>" } },
+    { "id": "block-2", "type": "text", "data": { "content": { "type": "doc", "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "Your text here" }] }] } } },
     { "id": "block-3", "type": "lottie", "data": { "src": "https://lottie.host/...", "autoplay": true, "loop": true, "alt": "Animation description" } }
   ],
   "companyProfile": {
