@@ -8,8 +8,8 @@
  * - scope='visitor': Public chat with limited commands, standard completion
  */
 
-import { useRef, useEffect } from 'react';
-import { Terminal, Sparkles, Wrench, Loader2 } from 'lucide-react';
+import { useRef, useEffect, useState } from 'react';
+import { Terminal, Sparkles, Wrench, Loader2, Check, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { UnifiedChatInput } from './UnifiedChatInput';
