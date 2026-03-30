@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { resolveAiConfig } from '../_shared/ai-config.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -88,25 +89,16 @@ serve(async (req) => {
       );
     }
 
-    // Get AI provider from environment (defaults to OpenAI)
-    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
-    const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
-    
-    if (!OPENAI_API_KEY && !GEMINI_API_KEY) {
-      console.error('No AI API key configured');
-      return new Response(
-        JSON.stringify({ error: 'AI service not configured. Please add OPENAI_API_KEY or GEMINI_API_KEY to Supabase Secrets.' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Check if the AI integration is enabled and get system AI settings
+    // Create Supabase client to read settings
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get system AI settings
+    // Resolve AI provider using unified config
+    const aiConfig = await resolveAiConfig(supabase, 'fast');
+
+    // Get system AI settings for tone/language defaults
     const { data: systemAiRow } = await supabase
       .from('site_settings')
       .select('value')
@@ -114,104 +106,31 @@ serve(async (req) => {
       .maybeSingle();
 
     const systemAiSettings = systemAiRow?.value as {
-      provider?: 'openai' | 'gemini';
-      openaiModel?: string;
-      geminiModel?: string;
       defaultTone?: string;
       defaultLanguage?: string;
     } || {};
 
-    // Determine provider from settings (fallback to env-based logic)
-    const configuredProvider = systemAiSettings.provider;
-    let useGemini = false;
-    
-    if (configuredProvider === 'gemini' && GEMINI_API_KEY) {
-      useGemini = true;
-    } else if (configuredProvider === 'openai' && OPENAI_API_KEY) {
-      useGemini = false;
-    } else {
-      // Fallback: use whichever key is available
-      useGemini = !OPENAI_API_KEY && !!GEMINI_API_KEY;
-    }
-
-    const { data: integrationSettings } = await supabase
-      .from('site_settings')
-      .select('value')
-      .eq('key', 'integrations')
-      .maybeSingle();
-
-    const aiIntegrations = integrationSettings?.value as any;
-    
-    if (useGemini) {
-      const geminiEnabled = aiIntegrations?.gemini?.enabled ?? false;
-      if (!geminiEnabled) {
-        console.log('[generate-text] Gemini integration is disabled');
-        return new Response(
-          JSON.stringify({ error: 'Gemini integration is disabled. Enable it in Integrations settings.' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-    } else {
-      const openaiEnabled = aiIntegrations?.openai?.enabled ?? false;
-      if (!openaiEnabled) {
-        console.log('[generate-text] OpenAI integration is disabled');
-        return new Response(
-          JSON.stringify({ error: 'OpenAI integration is disabled. Enable it in Integrations settings.' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-    }
-
-    // Use tone and language from request or fall back to system settings
     const effectiveTone = tone || systemAiSettings.defaultTone || 'professional';
     const effectiveLanguage = systemAiSettings.defaultLanguage || undefined;
     const systemPrompt = getSystemPrompt(action, context, targetLanguage, effectiveTone, effectiveLanguage);
     
-    // Get model from settings
-    const geminiModel = systemAiSettings.geminiModel || 'gemini-2.0-flash-exp';
-    const openaiModel = systemAiSettings.openaiModel || 'gpt-4.1-mini';
-    
-    console.log(`Generating text with action: ${action}, provider: ${useGemini ? 'gemini' : 'openai'}, model: ${useGemini ? geminiModel : openaiModel}, input length: ${text.length}`);
+    console.log(`Generating text with action: ${action}, model: ${aiConfig.model}, input length: ${text.length}`);
 
-    let response: Response;
-
-    if (useGemini) {
-      // Use Google Gemini API
-      response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${GEMINI_API_KEY}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: 'user',
-              parts: [{ text: `${systemPrompt}\n\n${text}` }]
-            }
-          ],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 2048,
-          }
-        }),
-      });
-    } else {
-      // Use OpenAI API
-      response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${OPENAI_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: openaiModel,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: text }
-          ],
-        }),
-      });
-    }
+    // All providers use OpenAI-compatible API (including Gemini via openai compat endpoint)
+    const response = await fetch(aiConfig.apiUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${aiConfig.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: aiConfig.model,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: text }
+        ],
+      }),
+    });
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -237,16 +156,7 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    
-    // Parse response based on provider
-    let generatedText = '';
-    if (useGemini) {
-      // Gemini response format
-      generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    } else {
-      // OpenAI response format
-      generatedText = data.choices?.[0]?.message?.content || '';
-    }
+    const generatedText = data.choices?.[0]?.message?.content || '';
 
     if (!generatedText) {
       console.error('No text generated from AI');

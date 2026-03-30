@@ -50,7 +50,7 @@ export interface IntegrationProviderConfig {
 
 // Integration configuration type
 export interface IntegrationConfig {
-  enabled: boolean;
+  enabled?: boolean;
   name: string;
   description: string;
   icon: string;

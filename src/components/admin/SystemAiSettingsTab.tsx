@@ -3,9 +3,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Info, Sparkles, ExternalLink } from 'lucide-react';
+import { Info, Sparkles, ExternalLink, Server } from 'lucide-react';
 import { SystemAiSettings, SystemAiProvider } from '@/hooks/useSiteSettings';
-import { useIsOpenAIConfigured, useIsGeminiConfigured } from '@/hooks/useIntegrationStatus';
+import { useIsOpenAIConfigured, useIsGeminiConfigured, useIsLocalLLMConfigured } from '@/hooks/useIntegrationStatus';
 import { Link } from 'react-router-dom';
 
 interface SystemAiSettingsTabProps {
@@ -16,7 +16,8 @@ interface SystemAiSettingsTabProps {
 export function SystemAiSettingsTab({ data, onChange }: SystemAiSettingsTabProps) {
   const openaiEnabled = useIsOpenAIConfigured();
   const geminiEnabled = useIsGeminiConfigured();
-  const hasAnyProvider = openaiEnabled || geminiEnabled;
+  const localEnabled = useIsLocalLLMConfigured();
+  const hasAnyProvider = openaiEnabled || geminiEnabled || localEnabled;
 
   const updateField = <K extends keyof SystemAiSettings>(key: K, value: SystemAiSettings[K]) => {
     onChange({ ...data, [key]: value });
@@ -39,10 +40,10 @@ export function SystemAiSettingsTab({ data, onChange }: SystemAiSettingsTabProps
           <AlertTitle>No AI Provider Configured</AlertTitle>
           <AlertDescription>
             You need to enable OpenAI or Gemini in{' '}
-            <Link to="/admin/settings/integrations" className="underline font-medium hover:text-destructive-foreground inline-flex items-center gap-1">
+            <Link to="/admin/integrations#ai" className="underline font-medium hover:text-destructive-foreground inline-flex items-center gap-1">
               Integrations <ExternalLink className="h-3 w-3" />
             </Link>{' '}
-            and add the API key before System AI features will work.
+            and add the API key, or configure a Local LLM endpoint, before System AI features will work.
           </AlertDescription>
         </Alert>
       )}
@@ -81,6 +82,16 @@ export function SystemAiSettingsTab({ data, onChange }: SystemAiSettingsTabProps
                     <div className="flex items-center gap-2">
                       Google Gemini
                       {geminiEnabled ? (
+                        <Badge variant="outline" className="text-xs">Enabled</Badge>
+                      ) : (
+                        <Badge variant="secondary" className="text-xs">Not configured</Badge>
+                      )}
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="local" disabled={!localEnabled}>
+                    <div className="flex items-center gap-2">
+                      Local LLM
+                      {localEnabled ? (
                         <Badge variant="outline" className="text-xs">Enabled</Badge>
                       ) : (
                         <Badge variant="secondary" className="text-xs">Not configured</Badge>
@@ -241,6 +252,18 @@ export function SystemAiSettingsTab({ data, onChange }: SystemAiSettingsTabProps
                 </p>
               </div>
             </div>
+          )}
+
+          {data.provider === 'local' && (
+            <Alert className="bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-900">
+              <Server className="h-4 w-4 text-green-600" />
+              <AlertTitle className="text-green-800 dark:text-green-200">Local LLM (HIPAA-compliant)</AlertTitle>
+              <AlertDescription className="text-green-700 dark:text-green-300">
+                System AI will use the Local LLM endpoint configured in{' '}
+                <Link to="/admin/integrations#ai" className="underline font-medium">Integrations</Link>.
+                Both fast and reasoning tiers use the same model. Your data never leaves your infrastructure.
+              </AlertDescription>
+            </Alert>
           )}
         </CardContent>
       </Card>
