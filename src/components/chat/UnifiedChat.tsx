@@ -322,7 +322,7 @@ export function UnifiedChat({
                     />
                   );
                 }
-                return <AdminMessage key={item.data.id} msg={item.data} />;
+                return <AdminMessage key={item.data.id} msg={item.data} onApproveAction={onApproveAction} onRejectAction={onRejectAction} />;
               });
             })()}
           </div>
