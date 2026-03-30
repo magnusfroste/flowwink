@@ -889,6 +889,11 @@ async function executePagesAction(
       if (action === 'create') {
         if (!title) throw new Error('title is required');
         const pageSlug = slug || title.toLowerCase().replace(/[^a-z0-9åäö]+/g, '-').replace(/(^-|-$)/g, '');
+
+        // Check if this is the first page — auto-set as homepage
+        const { count: existingPages } = await supabase
+          .from('pages').select('id', { count: 'exact', head: true }).is('deleted_at', null);
+
         const { data, error } = await supabase.from('pages').insert({
           title,
           slug: pageSlug,
@@ -897,7 +902,18 @@ async function executePagesAction(
           meta_json: meta || {},
         }).select('id, title, slug, status').single();
         if (error) throw new Error(`Create page failed: ${error.message}`);
-        return { page_id: data.id, slug: data.slug, title: data.title, status: 'draft' };
+
+        // If this is the first page, set it as homepage
+        let setAsHomepage = false;
+        if ((existingPages ?? 0) <= 1) {
+          await supabase.from('site_settings').upsert(
+            { key: 'general', value: { homepageSlug: pageSlug } },
+            { onConflict: 'key' }
+          );
+          setAsHomepage = true;
+        }
+
+        return { page_id: data.id, slug: data.slug, title: data.title, status: 'draft', set_as_homepage: setAsHomepage };
       }
 
       if (action === 'update' && page_id) {
