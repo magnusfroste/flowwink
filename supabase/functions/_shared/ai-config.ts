@@ -1,7 +1,7 @@
 /**
  * AI Configuration Resolution
  * 
- * Resolves which AI provider (OpenAI, Gemini, Local) to use
+ * Resolves which AI provider (OpenAI, Gemini, Anthropic, Local) to use
  * based on site_settings and available environment variables.
  * 
  * This is the SINGLE source of truth for all AI provider resolution.
@@ -21,6 +21,7 @@ const GEMINI_MODEL_MIGRATION: Record<string, string> = {
 };
 function migrateOpenaiModel(m?: string): string { return (m && OPENAI_MODEL_MIGRATION[m]) || m || 'gpt-4.1-mini'; }
 function migrateGeminiModel(m?: string): string { return (m && GEMINI_MODEL_MIGRATION[m]) || m || 'gemini-2.5-flash'; }
+function migrateAnthropicModel(m?: string): string { return m || 'claude-sonnet-4-20250514'; }
 
 export async function resolveAiConfig(supabase: any, tier: AiTier = 'fast'): Promise<{ apiKey: string; apiUrl: string; model: string }> {
   let apiKey = '';
@@ -56,6 +57,13 @@ export async function resolveAiConfig(supabase: any, tier: AiTier = 'fast'): Pro
         return { apiKey, apiUrl, model };
       }
       // If local is configured but no endpoint, fall through to key-based providers
+    } else if (cfg.provider === 'anthropic' && Deno.env.get('ANTHROPIC_API_KEY')) {
+      apiKey = Deno.env.get('ANTHROPIC_API_KEY')!;
+      apiUrl = 'https://api.anthropic.com/v1/messages';
+      model = tier === 'reasoning'
+        ? migrateAnthropicModel(cfg.anthropicReasoningModel || 'claude-sonnet-4-20250514')
+        : migrateAnthropicModel(cfg.anthropicModel || 'claude-sonnet-4-20250514');
+      return { apiKey, apiUrl, model };
     } else if (cfg.provider === 'gemini' && Deno.env.get('GEMINI_API_KEY')) {
       apiKey = Deno.env.get('GEMINI_API_KEY')!;
       apiUrl = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
@@ -79,6 +87,13 @@ export async function resolveAiConfig(supabase: any, tier: AiTier = 'fast'): Pro
     return { apiKey, apiUrl, model };
   }
 
+  if (Deno.env.get('ANTHROPIC_API_KEY')) {
+    apiKey = Deno.env.get('ANTHROPIC_API_KEY')!;
+    apiUrl = 'https://api.anthropic.com/v1/messages';
+    model = tier === 'reasoning' ? 'claude-sonnet-4-20250514' : 'claude-sonnet-4-20250514';
+    return { apiKey, apiUrl, model };
+  }
+
   if (Deno.env.get('GEMINI_API_KEY')) {
     apiKey = Deno.env.get('GEMINI_API_KEY')!;
     apiUrl = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
@@ -86,5 +101,12 @@ export async function resolveAiConfig(supabase: any, tier: AiTier = 'fast'): Pro
     return { apiKey, apiUrl, model };
   }
 
-  throw new Error('No AI provider configured. Set OPENAI_API_KEY or GEMINI_API_KEY, or configure a Local LLM endpoint.');
+  throw new Error('No AI provider configured. Set OPENAI_API_KEY, ANTHROPIC_API_KEY, or GEMINI_API_KEY, or configure a Local LLM endpoint.');
+}
+
+/**
+ * Check if the resolved provider is Anthropic (uses different API format)
+ */
+export function isAnthropicProvider(apiUrl: string): boolean {
+  return apiUrl.includes('anthropic.com');
 }
