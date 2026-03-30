@@ -1394,7 +1394,7 @@ async function executeProductsAction(
   if (action === 'list') {
     const { is_active } = args as any;
     let query = supabase.from('products')
-      .select('id, name, slug, description, price_cents, currency, type, is_active, stock_quantity, track_inventory, created_at')
+      .select('id, name, description, price_cents, currency, type, is_active, stock_quantity, track_inventory, image_url, created_at')
       .order('created_at', { ascending: false }).limit(50);
     if (is_active !== undefined) query = query.eq('is_active', is_active);
     const { data, error } = await query;
