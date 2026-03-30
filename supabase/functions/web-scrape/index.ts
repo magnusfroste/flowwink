@@ -125,7 +125,7 @@ serve(async (req) => {
 
     // --- Strategy 2: Jina Reader (free first → API key → keyless fallback) ---
     if (!content && useJina) {
-      const { preferFreeTier } = await getJinaConfig();
+      const { preferFreeTier } = integrationConfig;
 
       if (preferFreeTier) {
         // Try keyless first
