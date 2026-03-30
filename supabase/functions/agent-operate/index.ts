@@ -218,7 +218,7 @@ serve(async (req) => {
 
           console.log(`[operate] AI response in ${Date.now() - t0}ms (iteration ${iteration + 1}, tools=${allTools.length})`);
 
-          if (!aiResponse.ok) {
+          if (!aiResponse!.ok) {
             const errText = await aiResponse.text();
             console.error('AI error:', aiResponse.status, errText);
             let errorDetail = 'AI provider error';
