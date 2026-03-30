@@ -858,14 +858,10 @@ serve(async (req) => {
       }
     }
 
-    // Resolve AI provider via unified Layer 1 config
-    const supabaseUrl2 = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey2 = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase2 = createClient(supabaseUrl2, supabaseServiceKey2);
-
+    // Resolve AI provider via unified Layer 1 config — reuse supabase client
     let aiConfig;
     try {
-      aiConfig = await resolveAiConfig(supabase2, 'reasoning');
+      aiConfig = await resolveAiConfig(supabase, 'reasoning');
     } catch {
       return new Response(
         JSON.stringify({ success: false, error: 'No AI provider configured. Add OPENAI_API_KEY, GEMINI_API_KEY, or configure AI in Settings.' }),
