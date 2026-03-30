@@ -97,8 +97,16 @@ function AdminMessage({ msg }: { msg: OperateMessage }) {
                   sr.status === 'success' ? 'default' :
                   sr.status === 'pending_approval' ? 'secondary' : 'destructive'
                 } className="text-xs">
-                  {sr.skill.replace(/_/g, ' ')} — {sr.status}
+                  {sr.skill.replace(/_/g, ' ')} — {sr.status === 'pending_approval' ? 'needs approval' : sr.status}
                 </Badge>
+                {sr.status === 'pending_approval' && sr.result?.activity_id && onApproveAction && (
+                  <InlineApproval
+                    activityId={sr.result.activity_id}
+                    skillName={sr.skill}
+                    onApprove={onApproveAction}
+                    onReject={onRejectAction}
+                  />
+                )}
               </div>
             ))}
           </div>
