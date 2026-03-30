@@ -385,7 +385,7 @@ export async function loadSkillTools(
   cache?: SkillCache,
 ): Promise<any[]> {
   // Use cache if available, otherwise load fresh
-  const { skills: gatedSkills } = cache || await loadSkillsRaw(supabase, scope, categories);
+  let { skills: gatedSkills } = cache || await loadSkillsRaw(supabase, scope, categories);
 
   let filteredSkills = gatedSkills;
 
