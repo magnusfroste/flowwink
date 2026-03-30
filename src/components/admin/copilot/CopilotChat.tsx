@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from 'react';
-import { Zap, ArrowUp, Loader2, CheckCircle2, Layout, Image, MessageSquare, Users, Wand2, Square, RotateCcw, AlertTriangle, Globe } from 'lucide-react';
+import { Zap, ArrowUp, Loader2, CheckCircle2, Layout, Image, MessageSquare, Users, Wand2, Square, RotateCcw, AlertTriangle, Globe, FileText } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
