@@ -352,6 +352,9 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
           // Clear installed template marker
           const { error: tmplErr } = await supabase.from('installed_template').delete().neq('id', '00000000-0000-0000-0000-000000000000');
           if (tmplErr) throw tmplErr;
+          // Clear audit logs
+          const { error: auditErr } = await supabase.from('audit_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (auditErr) throw auditErr;
         }
       });
     }
