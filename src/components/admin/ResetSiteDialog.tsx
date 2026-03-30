@@ -225,10 +225,12 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
     if (options.products) {
       tasks.push({
         key: 'products',
-        label: 'Clearing products',
+        label: 'Clearing products & consultants',
         fn: async () => {
           const { error } = await supabase.from('products').delete().neq('id', '00000000-0000-0000-0000-000000000000');
           if (error) throw error;
+          const { error: cpErr } = await supabase.from('consultant_profiles').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (cpErr) throw cpErr;
         }
       });
     }
@@ -350,6 +352,9 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
           // Clear installed template marker
           const { error: tmplErr } = await supabase.from('installed_template').delete().neq('id', '00000000-0000-0000-0000-000000000000');
           if (tmplErr) throw tmplErr;
+          // Clear audit logs
+          const { error: auditErr } = await supabase.from('audit_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (auditErr) throw auditErr;
         }
       });
     }
@@ -374,6 +379,10 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
             { key: 'store', value: { currency: 'USD', taxRate: 0, taxDisplay: 'hidden', taxLabel: 'VAT', storeName: '' } },
             { key: 'autonomy_schedule', value: { timezone: 'Europe/Stockholm', heartbeatEnabled: true, heartbeatHours: [0, 12], briefingEnabled: true, briefingHour: 8, learnEnabled: true, learnHour: 3 } },
             { key: 'modules', value: {} },
+            { key: 'footer', value: {} },
+            { key: 'integrations', value: {} },
+            { key: 'kb', value: { enabled: true, menuSlug: 'help', menuTitle: 'Help', showInMenu: true } },
+            { key: 'custom_themes', value: [] },
           ];
 
           for (const setting of defaultSettings) {
