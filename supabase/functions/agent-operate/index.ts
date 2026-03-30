@@ -245,6 +245,22 @@ serve(async (req) => {
                 result = { error: err.message };
               }
 
+              // Self-correction: if skill not found, suggest similar tools
+              const resultStr = JSON.stringify(result || '');
+              if (resultStr.includes('Skill not found') && !isBuiltInTool(fnName)) {
+                const similarTools = allTools
+                  .map((t: any) => t.function?.name)
+                  .filter((n: string) => {
+                    if (!n) return false;
+                    const words = fnName.toLowerCase().replace(/_/g, ' ').split(' ').filter((w: string) => w.length > 2);
+                    return words.some((w: string) => n.toLowerCase().includes(w));
+                  })
+                  .slice(0, 5);
+                if (similarTools.length > 0) {
+                  result = { error: `Tool "${fnName}" does not exist. Did you mean one of: ${similarTools.join(', ')}? Use the exact tool name from your available tools.` };
+                }
+              }
+
               if (!isBuiltInTool(fnName)) {
                 allSkillResults.push({ skill: fnName, status: result?.error ? 'failed' : (result?.status || 'success'), result: result?.result || result });
               }
