@@ -610,7 +610,7 @@ export function useUpdateAeoSettings() {
 }
 
 // System AI settings (internal AI tools: text generation, company enrichment, lead qualification, etc.)
-export type SystemAiProvider = 'openai' | 'gemini';
+export type SystemAiProvider = 'openai' | 'gemini' | 'local';
 
 export type OpenAiModel = 'gpt-4.1' | 'gpt-4.1-mini' | 'gpt-4.1-nano';
 export type GeminiModel = 'gemini-2.5-pro' | 'gemini-2.5-flash' | 'gemini-2.0-flash-exp' | 'gemini-1.5-pro' | 'gemini-1.5-flash';

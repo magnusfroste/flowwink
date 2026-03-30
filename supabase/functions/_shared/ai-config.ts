@@ -1,8 +1,11 @@
 /**
  * AI Configuration Resolution
  * 
- * Resolves which AI provider (OpenAI, Gemini, Lovable, Local) to use
+ * Resolves which AI provider (OpenAI, Gemini, Local) to use
  * based on site_settings and available environment variables.
+ * 
+ * This is the SINGLE source of truth for all AI provider resolution.
+ * Both System AI and AI Chat should use this layer.
  */
 
 export type AiTier = 'fast' | 'reasoning';
@@ -24,37 +27,64 @@ export async function resolveAiConfig(supabase: any, tier: AiTier = 'fast'): Pro
   let apiUrl = 'https://api.openai.com/v1/chat/completions';
   let model = tier === 'reasoning' ? 'gpt-4.1' : 'gpt-4.1-mini';
 
+  // 1. Read system_ai settings for configured provider
   const { data: settings } = await supabase
     .from('site_settings').select('value').eq('key', 'system_ai').maybeSingle();
 
+  // 2. Read integrations settings for local_llm config
+  const { data: integrationsRow } = await supabase
+    .from('site_settings').select('value').eq('key', 'integrations').maybeSingle();
+  const integrations = integrationsRow?.value as Record<string, any> | null;
+
   if (settings?.value) {
     const cfg = settings.value as Record<string, string>;
-    if (cfg.provider === 'gemini' && Deno.env.get('GEMINI_API_KEY')) {
+
+    if (cfg.provider === 'local') {
+      // Local LLM — read endpoint from integrations config
+      const localConfig = integrations?.local_llm?.config || {};
+      const endpoint = localConfig.endpoint;
+      
+      if (endpoint) {
+        const localApiKey = Deno.env.get('LOCAL_LLM_API_KEY') || localConfig.apiKey || '';
+        apiKey = localApiKey || 'local'; // Local LLMs may not need a key
+        const baseEndpoint = endpoint.replace(/\/+$/, '');
+        apiUrl = baseEndpoint.endsWith('/v1')
+          ? `${baseEndpoint}/chat/completions`
+          : `${baseEndpoint}/v1/chat/completions`;
+        // Local LLMs use a single model for both tiers
+        model = localConfig.model || cfg.localModel || 'llama3';
+        return { apiKey, apiUrl, model };
+      }
+      // If local is configured but no endpoint, fall through to key-based providers
+    } else if (cfg.provider === 'gemini' && Deno.env.get('GEMINI_API_KEY')) {
       apiKey = Deno.env.get('GEMINI_API_KEY')!;
       apiUrl = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
       model = tier === 'reasoning'
         ? migrateGeminiModel(cfg.geminiReasoningModel || 'gemini-2.5-pro')
         : migrateGeminiModel(cfg.geminiModel || cfg.model);
+      return { apiKey, apiUrl, model };
     } else if (cfg.provider === 'openai' && Deno.env.get('OPENAI_API_KEY')) {
       apiKey = Deno.env.get('OPENAI_API_KEY')!;
       model = tier === 'reasoning'
         ? migrateOpenaiModel(cfg.openaiReasoningModel || 'gpt-4.1')
         : migrateOpenaiModel(cfg.openaiModel || cfg.model);
+      return { apiKey, apiUrl, model };
     }
   }
 
-  if (!apiKey) {
-    const lovableKey = Deno.env.get('LOVABLE_API_KEY');
-    if (lovableKey) {
-      apiKey = lovableKey;
-      apiUrl = 'https://ai.gateway.lovable.dev/v1/chat/completions';
-      model = tier === 'reasoning' ? 'google/gemini-2.5-pro' : 'google/gemini-2.5-flash';
-    }
+  // 3. Fallback: auto-detect from available environment keys
+  if (Deno.env.get('OPENAI_API_KEY')) {
+    apiKey = Deno.env.get('OPENAI_API_KEY')!;
+    model = tier === 'reasoning' ? 'gpt-4.1' : 'gpt-4.1-mini';
+    return { apiKey, apiUrl, model };
   }
 
-  if (!apiKey) {
-    throw new Error('No AI provider configured. Set OPENAI_API_KEY, GEMINI_API_KEY, or LOVABLE_API_KEY.');
+  if (Deno.env.get('GEMINI_API_KEY')) {
+    apiKey = Deno.env.get('GEMINI_API_KEY')!;
+    apiUrl = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
+    model = tier === 'reasoning' ? 'gemini-2.5-pro' : 'gemini-2.5-flash';
+    return { apiKey, apiUrl, model };
   }
 
-  return { apiKey, apiUrl, model };
+  throw new Error('No AI provider configured. Set OPENAI_API_KEY or GEMINI_API_KEY, or configure a Local LLM endpoint.');
 }
