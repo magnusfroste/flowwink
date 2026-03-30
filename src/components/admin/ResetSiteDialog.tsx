@@ -354,20 +354,26 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
       });
     }
 
+    if (options.settings) {
       tasks.push({
         key: 'settings',
         label: 'Resetting settings to defaults',
         fn: async () => {
-          // Reset site_settings to defaults
           const defaultSettings = [
             { key: 'seo', value: { siteTitle: '', titleTemplate: '%s', defaultDescription: '', ogImage: '', twitterHandle: '', googleSiteVerification: '', robotsIndex: true, robotsFollow: true, developmentMode: false, requireAuthInDevMode: false } },
             { key: 'performance', value: { lazyLoadImages: true, prefetchLinks: true, minifyHtml: false, enableServiceWorker: false, imageCacheMaxAge: 31536000, cacheStaticAssets: true, enableEdgeCaching: false, edgeCacheTtlMinutes: 5 } },
             { key: 'branding', value: {} },
-            { key: 'chat', value: { enabled: false, welcomeMessage: 'Hello! How can I help you today?', placeholder: 'Type your message...', systemPrompt: '', model: 'gpt-4o-mini', maxTokens: 1000 } },
-            { key: 'blog', value: { postsPerPage: 10, showAuthor: true, showDate: true, showReadTime: true, enableComments: false, sidebarPosition: 'right', showCategories: true, showTags: true, showRelatedPosts: true } },
-            { key: 'general', value: { homepageSlug: 'home' } },
-            { key: 'cookie_banner', value: { enabled: true, title: 'We use cookies', description: 'We use cookies to improve your experience.', policyLinkText: 'Privacy Policy', policyLinkUrl: '/privacy', acceptButtonText: 'Accept', rejectButtonText: 'Decline' } },
-            { key: 'maintenance', value: { enabled: false, title: 'Under Maintenance', message: 'We will be back soon.', expectedEndTime: '' } },
+            { key: 'chat', value: { enabled: false, title: 'AI Assistant', placeholder: 'Ask a question...', welcomeMessage: 'Hi! How can I help you today?', aiProvider: 'openai', openaiModel: 'gpt-4o-mini', systemPrompt: '', toolCallingEnabled: false, widgetEnabled: false, blockEnabled: true, saveConversations: true, includeContentAsContext: false, feedbackEnabled: true } },
+            { key: 'blog', value: { enabled: true, postsPerPage: 10, showAuthorBio: true, showReadingTime: true, showReviewer: false, archiveTitle: 'Blog', archiveSlug: 'blog', rssEnabled: true } },
+            { key: 'general', value: { homepageSlug: 'home', contentReviewEnabled: true } },
+            { key: 'cookie_banner', value: { enabled: true, title: 'We use cookies', description: 'We use cookies to improve your experience.', policyLinkText: 'Privacy Policy', policyLinkUrl: '/privacy', acceptButtonText: 'Accept all', rejectButtonText: 'Essential only' } },
+            { key: 'maintenance', value: { enabled: false, title: 'Site under maintenance', message: 'We will be back soon.', expectedEndTime: '' } },
+            { key: 'system_ai', value: { provider: 'openai', openaiModel: 'gpt-4.1-mini', openaiReasoningModel: 'gpt-4.1', geminiModel: 'gemini-2.5-flash', geminiReasoningModel: 'gemini-2.5-pro', defaultTone: 'professional', defaultLanguage: 'en' } },
+            { key: 'aeo', value: { enabled: false } },
+            { key: 'custom_scripts', value: { headStart: '', headEnd: '', bodyStart: '', bodyEnd: '' } },
+            { key: 'store', value: { currency: 'USD', taxRate: 0, taxDisplay: 'hidden', taxLabel: 'VAT', storeName: '' } },
+            { key: 'autonomy_schedule', value: { timezone: 'Europe/Stockholm', heartbeatEnabled: true, heartbeatHours: [0, 12], briefingEnabled: true, briefingHour: 8, learnEnabled: true, learnHour: 3 } },
+            { key: 'modules', value: {} },
           ];
 
           for (const setting of defaultSettings) {
