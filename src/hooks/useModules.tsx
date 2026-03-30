@@ -146,7 +146,7 @@ export const defaultModulesSettings: ModulesSettings = {
     adminUI: true,
   },
   leads: {
-    enabled: true,
+    enabled: false,
     name: 'Leads',
     description: 'AI-driven lead management with automatic qualification',
     icon: 'UserCheck',
