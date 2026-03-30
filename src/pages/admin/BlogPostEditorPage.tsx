@@ -62,7 +62,7 @@ export default function BlogPostEditorPage() {
   const { data: post, isLoading } = useBlogPost(isNew ? undefined : id);
   const { data: blogSettings } = useBlogSettings();
   const { data: generalSettings } = useGeneralSettings();
-  const reviewEnabled = generalSettings?.contentReviewEnabled !== false;
+  const reviewEnabled = generalSettings?.contentReviewEnabled === true;
   const { data: authors } = useAuthors();
   const { data: categories } = useBlogCategories();
   const { data: tags } = useBlogTags();
