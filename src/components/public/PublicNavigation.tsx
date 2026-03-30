@@ -30,6 +30,7 @@ export function PublicNavigation() {
   const { branding } = useBranding();
   const { resolvedTheme } = useTheme();
   const ecommerceEnabled = useIsModuleEnabled('ecommerce');
+  const blogModuleEnabled = useIsModuleEnabled('blog');
   
   // Use header global block settings
   const { data: headerBlock } = useHeaderBlock();
