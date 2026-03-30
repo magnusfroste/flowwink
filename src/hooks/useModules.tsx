@@ -193,7 +193,7 @@ export const defaultModulesSettings: ModulesSettings = {
     adminUI: true,
   },
   globalElements: {
-    enabled: true,
+    enabled: false,
     name: 'Global Elements',
     description: 'Header, footer and other reusable components',
     icon: 'LayoutGrid',
