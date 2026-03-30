@@ -379,6 +379,10 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
             { key: 'store', value: { currency: 'USD', taxRate: 0, taxDisplay: 'hidden', taxLabel: 'VAT', storeName: '' } },
             { key: 'autonomy_schedule', value: { timezone: 'Europe/Stockholm', heartbeatEnabled: true, heartbeatHours: [0, 12], briefingEnabled: true, briefingHour: 8, learnEnabled: true, learnHour: 3 } },
             { key: 'modules', value: {} },
+            { key: 'footer', value: {} },
+            { key: 'integrations', value: {} },
+            { key: 'kb', value: { enabled: true, menuSlug: 'help', menuTitle: 'Help', showInMenu: true } },
+            { key: 'custom_themes', value: [] },
           ];
 
           for (const setting of defaultSettings) {
