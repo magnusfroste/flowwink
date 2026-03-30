@@ -403,7 +403,7 @@ export function PublicNavigation() {
               </Link>
             ))}
             {/* Blog link */}
-            {blogSettings?.enabled && (
+            {blogModuleEnabled && blogSettings?.enabled && (
               <Link
                 to={`/${blogSettings.archiveSlug || 'blogg'}`}
                 className={getLinkClasses(location.pathname.startsWith(`/${blogSettings.archiveSlug || 'blogg'}`))}
