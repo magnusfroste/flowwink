@@ -97,7 +97,6 @@ serve(async (req) => {
     let filteredSkills = externalSkills;
     if (externalSkills.length > maxSkills) {
       const lastUserMsg = [...messages].reverse().find((m: any) => m.role === 'user')?.content?.toLowerCase() || '';
-      const isMigrationIntent = /\b(migrera|migration|migrate|import|klona|clone|website|site|url)\b/.test(lastUserMsg);
 
       const scored = externalSkills.map((skill: any) => {
         const functionName = (skill?.function?.name || '').toLowerCase();
@@ -105,11 +104,13 @@ serve(async (req) => {
         const desc = (skill?.function?.description || '').toLowerCase();
         let score = 0;
 
+        // Match skill name words against user message
         const nameWords = name.split(' ');
         for (const w of nameWords) {
           if (w.length > 2 && lastUserMsg.includes(w)) score += 10;
         }
 
+        // Match 'Use when:' trigger phrases
         const useWhenMatch = desc.match(/use when:([^.]*)/);
         if (useWhenMatch) {
           const triggers = useWhenMatch[1].toLowerCase();
@@ -119,43 +120,21 @@ serve(async (req) => {
           }
         }
 
+        // General description word matching
         const descWords = desc.split(/\s+/).filter((w: string) => w.length > 4);
         for (const w of descWords) {
           if (lastUserMsg.includes(w)) score += 1;
-        }
-
-        // Keep full migration chain available when migration intent is detected
-        if (isMigrationIntent) {
-          if (functionName === 'migrate_url') score += 100;
-          if (functionName === 'manage_page') score += 90;
-          if (functionName === 'manage_page_blocks') score += 80;
         }
 
         return { skill, score, functionName };
       });
 
       scored.sort((a: any, b: any) => b.score - a.score);
+      filteredSkills = scored.map((s: any) => s.skill).slice(0, maxSkills);
 
-      // Force-include migration chain tools for robust migrate_url -> manage_page flow
-      const forcedSkillNames = isMigrationIntent
-        ? new Set(['migrate_url', 'manage_page', 'manage_page_blocks'])
-        : new Set<string>();
-
-      const forcedSkills = scored
-        .filter((s: any) => forcedSkillNames.has(s.functionName))
-        .map((s: any) => s.skill);
-
-      const rankedSkills = scored
-        .filter((s: any) => !forcedSkillNames.has(s.functionName))
-        .map((s: any) => s.skill);
-
-      filteredSkills = [...forcedSkills, ...rankedSkills].slice(0, maxSkills);
-
-      const kept = scored
-        .filter((s: any) => filteredSkills.includes(s.skill))
-        .filter((s: any) => s.score > 0).length;
+      const kept = scored.filter((s: any) => s.score > 0).length;
       console.log(
-        `[agent-operate] Filtered ${externalSkills.length} skills → ${filteredSkills.length} (${kept} with intent match, migration_intent=${isMigrationIntent}, forced=${forcedSkills.length})`,
+        `[agent-operate] Filtered ${externalSkills.length} skills → ${filteredSkills.length} (${kept} with intent match)`,
       );
     }
     
