@@ -164,7 +164,7 @@ export const defaultModulesSettings: ModulesSettings = {
     adminUI: true,
   },
   companies: {
-    enabled: true,
+    enabled: false,
     name: 'Companies',
     description: 'Organization management with multiple contacts',
     icon: 'Building2',
