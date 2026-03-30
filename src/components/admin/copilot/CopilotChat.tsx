@@ -3,6 +3,7 @@ import { Zap, ArrowUp, Loader2, CheckCircle2, Layout, Image, MessageSquare, User
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import {
   AlertDialog,
