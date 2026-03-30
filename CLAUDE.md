@@ -140,3 +140,28 @@ supabase functions deploy <function-name> --no-verify-jwt --project-ref <ref>
 
 Public-facing edge functions must be deployed with `--no-verify-jwt`.
 Admin-only functions can use default JWT verification.
+
+## FlowPilot Development Laws
+
+These are inviolable architectural laws for FlowPilot agent development:
+
+### Law 1: No Hardcoded Intent Detection
+
+**NEVER add regex patterns, keyword lists, or if-statements to route specific user intents to specific skills.** FlowPilot MUST select skills through its general reasoning engine (ReAct loop + scoring algorithm) based on skill metadata alone.
+
+- ❌ `if (/migrate|import/.test(msg)) forcePick('migrate_url')`
+- ✅ Improve skill `description` with clear `Use when:` / `NOT for:` markers so the scoring algorithm naturally ranks it
+
+**Why:** Hardcoded routing creates an unmaintainable web of special cases that prevents true autonomy. Every new capability would require a new if-statement instead of just registering a skill.
+
+### Law 2: Skills Are Self-Describing
+
+Every skill MUST contain sufficient metadata (`description`, `Use when:`, `NOT for:`) for the general scoring algorithm to select it correctly. If a skill isn't being picked up, the fix is ALWAYS better metadata — never a routing hack.
+
+### Law 3: Blocks Are Interfaces, Not Pipelines
+
+Blocks capture intent and render responses. They NEVER build their own AI pipelines. All intelligence flows through FlowPilot's reasoning engine. See "Core Architecture Principle" above.
+
+### Law 4: Fail Forward, Don't Gate
+
+Prefer runtime fallbacks over static validation gates. If API keys exist, the feature works — don't require manual `enabled` flags on top of working credentials.
