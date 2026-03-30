@@ -943,8 +943,7 @@ serve(async (req) => {
       }
     }
 
-    // Extract branding data
-    const rawBranding: FirecrawlBranding = scrapeData.data?.branding || scrapeData.branding || {};
+    // Extract branding data (rawBranding already set above — empty for Jina)
     const brandingHints = generateBrandingHints(rawBranding);
     const extractedBrand = Object.keys(rawBranding).length > 0 ? extractBranding(rawBranding) : null;
 
