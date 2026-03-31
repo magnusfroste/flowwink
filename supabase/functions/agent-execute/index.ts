@@ -1125,6 +1125,20 @@ async function executePagesAction(
       return { error: `Unknown block action: ${action}` };
     }
 
+    case 'create_page_block': {
+      // Convenience wrapper: maps to manage_page_blocks add action
+      const { page_id, block_type, block_data = {}, position } = args as any;
+      if (!page_id) return { error: 'page_id is required' };
+      if (!block_type) return { error: 'block_type is required' };
+      return executePagesAction(supabase, 'manage_page_blocks', {
+        action: 'add',
+        page_id,
+        block_type,
+        block_data,
+        position,
+      });
+    }
+
     default:
       return { error: `Unknown pages skill: ${skillName}` };
   }
