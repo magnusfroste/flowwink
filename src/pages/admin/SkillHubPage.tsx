@@ -77,9 +77,15 @@ export default function SkillHubPage() {
     return skills.filter((s) => {
       if (categoryFilter !== 'all' && s.category !== categoryFilter) return false;
       if (scopeFilter !== 'all' && s.scope !== scopeFilter) return false;
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        const nameMatch = s.name.toLowerCase().includes(q);
+        const descMatch = (s.description || '').toLowerCase().includes(q);
+        if (!nameMatch && !descMatch) return false;
+      }
       return true;
     });
-  }, [skills, categoryFilter, scopeFilter]);
+  }, [skills, categoryFilter, scopeFilter, searchQuery]);
 
   const handleEdit = (skill: AgentSkill) => {
     setEditingSkill(skill);
