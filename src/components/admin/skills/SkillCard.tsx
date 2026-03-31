@@ -35,7 +35,11 @@ interface SkillCardProps {
 export function SkillCard({ skill, onToggle, onEdit }: SkillCardProps) {
   return (
     <Card
-      className="cursor-pointer hover:shadow-md transition-shadow group"
+      className={`cursor-pointer transition-all group ${
+        skill.enabled
+          ? "border-primary/30 bg-primary/5 hover:shadow-sm"
+          : "border-border/50 bg-muted/20 hover:border-border"
+      }`}
       onClick={() => onEdit(skill)}
     >
       <CardContent className="p-4 space-y-3">

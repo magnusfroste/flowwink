@@ -795,7 +795,7 @@ export default function IntegrationsStatusPage() {
                 <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
                   {categoryLabel}
                 </h3>
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {categoryIntegrations.map((integration) => {
                     const key = integration.key;
                     // For these integrations, no vault secret required - just need config
@@ -810,20 +810,20 @@ export default function IntegrationsStatusPage() {
                     const hasConfigSection = ['openai', 'gemini', 'local_llm', 'n8n', 'resend', 'google_analytics', 'meta_pixel', 'slack', 'jina'].includes(key);
 
                     return (
-                      <Card 
-                        key={key} 
+                      <Card
+                        key={key}
                         className={
-                          status === 'active' 
-                            ? "border-primary/50" 
-                            : status === 'disabled' 
-                            ? "border-dashed opacity-75" 
+                          status === 'active'
+                            ? "border-primary/30 bg-primary/5 shadow-sm"
+                            : status === 'disabled'
+                            ? "border-border/50 bg-muted/20"
                             : "border-dashed opacity-60"
                         }
                       >
                         <CardHeader className="pb-3">
-                          <div className="flex items-start justify-between">
+                          <div className="flex items-start justify-between gap-3">
                             <div className="flex items-center gap-3">
-                              <div className={`p-2 rounded-lg ${status === 'active' ? "bg-primary/10" : "bg-muted"}`}>
+                              <div className={`h-10 w-10 rounded-lg flex items-center justify-center shrink-0 ${status === 'active' ? "bg-primary/10" : "bg-muted"}`}>
                                 <IconComponent className={`h-5 w-5 ${status === 'active' ? "text-primary" : "text-muted-foreground"}`} />
                               </div>
                               <div>
@@ -838,130 +838,66 @@ export default function IntegrationsStatusPage() {
                                 <CardDescription>{integration.description}</CardDescription>
                               </div>
                             </div>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div>
+                                  <Switch
+                                    checked={isEnabled}
+                                    onCheckedChange={(checked) => handleToggle(key, checked)}
+                                    disabled={!hasKey || updateIntegrations.isPending}
+                                  />
+                                </div>
+                              </TooltipTrigger>
+                              {!hasKey && (
+                                <TooltipContent>
+                                  <p>API key must be configured first</p>
+                                </TooltipContent>
+                              )}
+                            </Tooltip>
                           </div>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                          {/* Module usage */}
-                          {integrationModuleMap[key] && (
-                            <div>
-                              <p className="text-xs text-muted-foreground mb-1.5">Used by</p>
-                              <div className="flex flex-wrap gap-1.5">
-                                {integrationModuleMap[key].required.map((name) => (
-                                  <Badge key={name} variant="default" className="text-xs font-normal">
-                                    {name}
-                                  </Badge>
-                                ))}
-                                {integrationModuleMap[key].optional.map((name) => (
-                                  <Badge key={name} variant="secondary" className="text-xs font-normal">
-                                    {name}
-                                  </Badge>
-                                ))}
-                              </div>
+                        <CardContent className="pt-0 space-y-3">
+                          {/* Actions */}
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {(key === 'openai' || key === 'gemini') && (
+                              <TestAIConnectionButton provider={key} hasKey={hasKey} isEnabled={isEnabled} />
+                            )}
+                            {(key === 'local_llm' || key === 'n8n') && (
+                              <TestConfigConnectionButton provider={key} config={currentConfig} isEnabled={isEnabled} />
+                            )}
+                            {hasConfigSection && hasKey && isEnabled && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openDrawer(key, currentConfig)}
+                                className="gap-1.5"
+                              >
+                                <Settings className="h-3.5 w-3.5" />
+                                Configure
+                              </Button>
+                            )}
+                            <a
+                              href={integration.docsUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-xs text-primary hover:underline ml-auto"
+                            >
+                              {integration.docsLabel || 'Get API key'}
+                              <ExternalLink className="h-3 w-3" />
+                            </a>
+                          </div>
+
+                          {/* CLI Command — only if not yet configured */}
+                          {!hasKey && requiresSecret && (
+                            <div className="flex items-center gap-2">
+                              <code className="flex-1 text-xs bg-muted px-2 py-1.5 rounded font-mono truncate">
+                                supabase secrets set {integration.secretName}=...
+                              </code>
+                              <Button variant="ghost" size="sm" onClick={() => copyCommand(integration.secretName)}>
+                                <Copy className="h-3.5 w-3.5" />
+                              </Button>
                             </div>
                           )}
-
-                          {/* Features */}
-                          <div>
-                            <p className="text-xs text-muted-foreground mb-1.5">Enables</p>
-                            <div className="flex flex-wrap gap-1.5">
-                              {integration.features.map((feature) => (
-                                <Badge key={feature} variant="outline" className="text-xs font-normal">
-                                  {feature}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-
-                          {/* Toggle & Settings */}
-                          <div className="pt-3 border-t space-y-3">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <p className="text-sm font-medium">Enable integration</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {hasKey ? "Allow this integration to be used" : "Configure API key first"}
-                                </p>
-                              </div>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <div>
-                                    <Switch
-                                      checked={isEnabled}
-                                      onCheckedChange={(checked) => handleToggle(key, checked)}
-                                      disabled={!hasKey || updateIntegrations.isPending}
-                                    />
-                                  </div>
-                                </TooltipTrigger>
-                                {!hasKey && (
-                                  <TooltipContent>
-                                    <p>API key must be configured first</p>
-                                  </TooltipContent>
-                                )}
-                              </Tooltip>
-                            </div>
-
-                            {/* Actions */}
-                            <div className="flex items-center gap-2 flex-wrap">
-                              {/* Test Connection Button for AI integrations with secrets */}
-                              {(key === 'openai' || key === 'gemini') && (
-                                <TestAIConnectionButton 
-                                  provider={key} 
-                                  hasKey={hasKey} 
-                                  isEnabled={isEnabled} 
-                                />
-                              )}
-
-                              {/* Test Connection Button for config-based integrations */}
-                              {(key === 'local_llm' || key === 'n8n') && (
-                                <TestConfigConnectionButton 
-                                  provider={key} 
-                                  config={currentConfig}
-                                  isEnabled={isEnabled} 
-                                />
-                              )}
-
-                              {/* Configuration button — opens right drawer */}
-                              {hasConfigSection && hasKey && isEnabled && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => openDrawer(key, currentConfig)}
-                                  className="gap-1.5"
-                                >
-                                  <Settings className="h-3.5 w-3.5" />
-                                  Configure
-                                </Button>
-                              )}
-
-                              <a
-                                href={integration.docsUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
-                              >
-                                {integration.docsLabel || 'Get API key'}
-                                <ExternalLink className="h-3 w-3" />
-                              </a>
-                            </div>
-
-                            {/* CLI Command (only if not configured and requires secret) */}
-                            {!hasKey && requiresSecret && (
-                              <div className="space-y-1.5 pt-2">
-                                <p className="text-xs text-muted-foreground">CLI command:</p>
-                                <div className="flex items-center gap-2">
-                                  <code className="flex-1 text-xs bg-muted px-2 py-1.5 rounded font-mono truncate">
-                                    supabase secrets set {integration.secretName}=...
-                                  </code>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => copyCommand(integration.secretName)}
-                                  >
-                                    <Copy className="h-3.5 w-3.5" />
-                                  </Button>
-                                </div>
-                              </div>
-                            )}
-                          </div>
                         </CardContent>
                       </Card>
                     );
