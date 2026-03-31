@@ -56,7 +56,7 @@ function assertContains(str: string, substr: string, msg?: string) {
   if (!str.includes(substr)) throw new Error(msg || `"${str.slice(0, 100)}..." does not contain "${substr}"`);
 }
 
-async function runTest(name: string, layer: 1 | 2 | 3 | 4 | 5 | 6, fn: () => Promise<void>): Promise<TestResult> {
+async function runTest(name: string, layer: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9, fn: () => Promise<void>): Promise<TestResult> {
   const start = Date.now();
   try {
     await fn();
