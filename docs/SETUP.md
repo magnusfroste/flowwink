@@ -559,6 +559,34 @@ Each page, blog post, and KB article can have its own meta tags that override th
 
 ---
 
+## FlowPilot Bootstrap — Who Owns What
+
+Understanding what gets seeded where prevents duplicate data and confusion on upgrades.
+
+| Concern | Owner |
+|---|---|
+| Skills & soul — fresh install | `flowwink.sh /install` (automatic, no menu) |
+| Skills & soul — updating existing instance | "Sync Missing Skills" button in Modules UI, or `flowwink.sh /setup-flowpilot` → option 0 |
+| Objectives | Engine Room → Objectives tab (admin manages these) |
+| Automations & workflows | Engine Room → Automations tab (admin manages these) |
+| Heartbeat cron | `flowwink.sh /setup-flowpilot` → option 1 |
+| First-time objectives + automations | Auto-seeded by `useFlowPilotBootstrap` on first admin login |
+
+### Updating existing installations
+
+When a new version of FlowWink adds new default skills, existing installations won't get them automatically — only the DB data doesn't auto-update on deploy. To sync:
+
+1. Deploy the new code (git pull + `supabase functions deploy`)
+2. Click **"Sync Missing Skills"** in Admin → Modules → FlowPilot
+
+Objectives and automations are intentionally left to the admin — they are business decisions, not infrastructure.
+
+### Default starter config
+
+`src/data/flowpilotDefaults.ts` is the single source of truth for the 3 starter objectives, the Weekly Digest automation, and the Content Pipeline workflow. Both the frontend bootstrap hook and the `setup-flowpilot` edge function (`STARTER_FLOWPILOT`) must stay in sync with this file.
+
+---
+
 ## Support
 
 - **GitHub Issues**: [github.com/magnusfroste/flowwink/issues](https://github.com/magnusfroste/flowwink/issues)
