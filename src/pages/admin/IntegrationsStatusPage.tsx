@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { GmailIntegrationCard } from "@/components/admin/integrations/GmailIntegrationCard";
 import { useIntegrationModuleMap } from "@/hooks/useModuleReadiness";
@@ -14,6 +14,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from "@/components/ui/sheet";
 import { toast } from "sonner";
 import {
   CheckCircle2,
@@ -33,7 +34,6 @@ import {
   Loader2,
   Server,
   Webhook,
-  ChevronDown,
   Save,
   BarChart3,
   Target,
@@ -41,7 +41,6 @@ import {
   Search,
   Megaphone,
 } from "lucide-react";
-import { useUnsavedChanges, UnsavedChangesDialog } from "@/hooks/useUnsavedChanges";
 import {
   useIntegrations,
   useUpdateIntegrations,
@@ -613,8 +612,8 @@ function IntegrationConfigPanel({
 
 export default function IntegrationsStatusPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
-  const [pendingSettings, setPendingSettings] = useState<Partial<IntegrationsSettings> | null>(null);
+  const [openDrawerKey, setOpenDrawerKey] = useState<keyof IntegrationsSettings | null>(null);
+  const [drawerConfig, setDrawerConfig] = useState<IntegrationProviderConfig | undefined>(undefined);
 
   const { data: secretsStatus, isLoading: secretsLoading, refetch: refetchSecrets } = useIntegrationStatus();
   const { data: integrationSettings, isLoading: settingsLoading } = useIntegrations();
@@ -622,10 +621,6 @@ export default function IntegrationsStatusPage() {
   const integrationModuleMap = useIntegrationModuleMap();
 
   const isLoading = secretsLoading || settingsLoading;
-  const hasUnsavedChanges = pendingSettings !== null;
-
-  // Unsaved changes protection
-  const { blocker } = useUnsavedChanges({ hasChanges: hasUnsavedChanges });
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -647,46 +642,30 @@ export default function IntegrationsStatusPage() {
     });
   };
 
-  // Config changes are collected into pending state
-  const handleConfigChange = (key: keyof IntegrationsSettings, config: IntegrationProviderConfig) => {
-    setPendingSettings(prev => ({
-      ...prev,
-      [key]: { 
-        ...(integrationSettings?.[key] || {}),
-        config 
-      },
-    }));
+  const openDrawer = (key: keyof IntegrationsSettings, currentConfig: IntegrationProviderConfig | undefined) => {
+    setOpenDrawerKey(key);
+    setDrawerConfig(currentConfig);
   };
 
-  // Save all pending changes
-  const handleSave = async () => {
-    if (!pendingSettings) return;
-    
+  const closeDrawer = () => {
+    setOpenDrawerKey(null);
+    setDrawerConfig(undefined);
+  };
+
+  const handleDrawerSave = async () => {
+    if (!openDrawerKey) return;
     try {
-      await updateIntegrations.mutateAsync(pendingSettings);
-      setPendingSettings(null);
+      await updateIntegrations.mutateAsync({
+        [openDrawerKey]: {
+          ...(integrationSettings?.[openDrawerKey] || {}),
+          config: drawerConfig,
+        },
+      });
       toast.success("Settings saved");
-    } catch (error) {
+      closeDrawer();
+    } catch {
       toast.error("Failed to save settings");
     }
-  };
-
-  // Discard pending changes
-  const handleDiscard = () => {
-    setPendingSettings(null);
-    toast.success("Changes discarded");
-  };
-
-  const toggleCardExpanded = (key: string) => {
-    setExpandedCards(prev => {
-      const next = new Set(prev);
-      if (next.has(key)) {
-        next.delete(key);
-      } else {
-        next.add(key);
-      }
-      return next;
-    });
   };
 
   const coreSecretsConfigured = secretsStatus?.core
@@ -705,9 +684,8 @@ export default function IntegrationsStatusPage() {
     if (hasKey && !explicitlyDisabled) activeCount++;
   }
 
-  // Helper to get the display config (pending if available, otherwise current)
   const getDisplayConfig = (key: keyof IntegrationsSettings) => {
-    return pendingSettings?.[key]?.config || integrationSettings?.[key]?.config;
+    return integrationSettings?.[key]?.config;
   };
 
   // Group integrations by category
@@ -730,31 +708,7 @@ export default function IntegrationsStatusPage() {
         <AdminPageHeader
           title="Integrations"
           description="Manage external service integrations"
-        >
-          {hasUnsavedChanges && (
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                onClick={handleDiscard}
-                disabled={updateIntegrations.isPending}
-              >
-                Discard
-              </Button>
-              <Button 
-                onClick={handleSave} 
-                disabled={updateIntegrations.isPending}
-                className="gap-2"
-              >
-                {updateIntegrations.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Save className="h-4 w-4" />
-                )}
-                Save Changes
-              </Button>
-            </div>
-          )}
-        </AdminPageHeader>
+        />
         {/* System Status */}
         <Card>
           <CardHeader className="pb-3">
@@ -854,7 +808,6 @@ export default function IntegrationsStatusPage() {
                     const IconComponent = iconMap[integration.icon as keyof typeof iconMap] || Bot;
                     const currentConfig = getDisplayConfig(key) || integration.config;
                     const hasConfigSection = ['openai', 'gemini', 'local_llm', 'n8n', 'resend', 'google_analytics', 'meta_pixel', 'slack', 'jina'].includes(key);
-                    const isExpanded = expandedCards.has(key);
 
                     return (
                       <Card 
@@ -966,17 +919,16 @@ export default function IntegrationsStatusPage() {
                                 />
                               )}
 
-                              {/* Configuration toggle for AI integrations */}
+                              {/* Configuration button — opens right drawer */}
                               {hasConfigSection && hasKey && isEnabled && (
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => toggleCardExpanded(key)}
+                                  onClick={() => openDrawer(key, currentConfig)}
                                   className="gap-1.5"
                                 >
                                   <Settings className="h-3.5 w-3.5" />
                                   Configure
-                                  <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                                 </Button>
                               )}
 
@@ -990,17 +942,6 @@ export default function IntegrationsStatusPage() {
                                 <ExternalLink className="h-3 w-3" />
                               </a>
                             </div>
-
-                            {/* Configuration Panel */}
-                            {hasConfigSection && isExpanded && (
-                              <IntegrationConfigPanel
-                                integrationKey={key}
-                                config={currentConfig}
-                                onConfigChange={(config) => handleConfigChange(key, config)}
-                                hasKey={hasKey}
-                                isEnabled={isEnabled}
-                              />
-                            )}
 
                             {/* CLI Command (only if not configured and requires secret) */}
                             {!hasKey && requiresSecret && (
@@ -1055,7 +996,52 @@ export default function IntegrationsStatusPage() {
           </CardContent>
         </Card>
       </AdminPageContainer>
-      <UnsavedChangesDialog blocker={blocker} />
+
+      {/* Integration Config Drawer */}
+      {openDrawerKey && (() => {
+        const integration = integrationSettings?.[openDrawerKey] || defaultIntegrationsSettings[openDrawerKey];
+        const noSecretNeeded = ['local_llm', 'n8n', 'google_analytics', 'meta_pixel', 'slack'];
+        const requiresSecret = !noSecretNeeded.includes(openDrawerKey);
+        const hasKey = requiresSecret ? (secretsStatus?.integrations?.[openDrawerKey] ?? false) : true;
+        const explicitlyDisabled = integrationSettings?.[openDrawerKey]?.enabled === false;
+        const isEnabled = hasKey && !explicitlyDisabled;
+        return (
+          <Sheet open onOpenChange={(open) => { if (!open) closeDrawer(); }}>
+            <SheetContent className="sm:max-w-md flex flex-col overflow-y-auto">
+              <SheetHeader>
+                <SheetTitle>{integration.name}</SheetTitle>
+                <SheetDescription>{integration.description}</SheetDescription>
+              </SheetHeader>
+              <div className="flex-1 py-4">
+                <IntegrationConfigPanel
+                  integrationKey={openDrawerKey}
+                  config={drawerConfig}
+                  onConfigChange={setDrawerConfig}
+                  hasKey={hasKey}
+                  isEnabled={isEnabled}
+                />
+              </div>
+              <SheetFooter className="flex gap-2 pt-4 border-t">
+                <Button variant="outline" onClick={closeDrawer} className="flex-1">
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleDrawerSave}
+                  disabled={updateIntegrations.isPending}
+                  className="flex-1 gap-2"
+                >
+                  {updateIntegrations.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="h-4 w-4" />
+                  )}
+                  Save
+                </Button>
+              </SheetFooter>
+            </SheetContent>
+          </Sheet>
+        );
+      })()}
     </AdminLayout>
   );
 }

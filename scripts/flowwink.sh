@@ -16,6 +16,9 @@ DIM='\033[2m'
 BOLD='\033[1m'
 NC='\033[0m'
 
+# ─── Ensure we run from project root ───
+cd "$(dirname "$0")/.." || exit 1
+
 # ─── State ───
 PROJECT_REF=""
 PROJECT_NAME=""
@@ -308,6 +311,7 @@ cmd_set_keys() {
         "Unsplash|UNSPLASH_ACCESS_KEY|stock photo search in media library|https://unsplash.com/oauth/applications"
         "Gmail — Google OAuth|GOOGLE_CLIENT_ID|inbox scanning & email signals|https://console.cloud.google.com/apis/credentials"
         "Hunter.io|HUNTER_API_KEY|prospect research & email finder|https://hunter.io/api"
+        "Composio|COMPOSIO_API_KEY|tool integrations (Gmail, Calendar, etc)|https://app.composio.dev/settings"
         "N8N|N8N_API_KEY|webhook auth key (if required)|"
         "Site URL|SITE_URL|base URL for OAuth redirects|"
     )
@@ -385,9 +389,11 @@ cmd_set_keys() {
                 set_secret "GOOGLE_CLIENT_SECRET" "$val" ;;
             10) read -e -p "  HUNTER_API_KEY: " val
                 set_secret "HUNTER_API_KEY" "$val" ;;
-            11) read -e -p "  N8N_API_KEY: " val
+            11) read -e -p "  COMPOSIO_API_KEY: " val
+                set_secret "COMPOSIO_API_KEY" "$val" ;;
+            12) read -e -p "  N8N_API_KEY: " val
                 set_secret "N8N_API_KEY" "$val" ;;
-            12) read -e -p "  SITE_URL (e.g. https://yoursite.com): " val
+            13) read -e -p "  SITE_URL (e.g. https://yoursite.com): " val
                 set_secret "SITE_URL" "$val" ;;
         esac
         echo ""
@@ -647,7 +653,7 @@ cmd_install() {
     print_section "Full Installation"
     require_link || return 1
 
-    echo -e "  Runs: ${CYAN}/update-db${NC} → ${CYAN}/update-funcs${NC} → ${CYAN}/create-admin${NC} → ${CYAN}/env${NC}"
+    echo -e "  Runs: ${CYAN}/update-db${NC} → ${CYAN}/update-funcs${NC} → ${CYAN}/create-admin${NC} → ${CYAN}/env${NC} → ${CYAN}/setup-flowpilot${NC}"
     echo ""
     read -e -p "  Continue? [y/N]: " confirm
     [[ ! "$confirm" =~ ^[Yy]$ ]] && echo "" && return 0
@@ -656,6 +662,7 @@ cmd_install() {
     cmd_update_funcs
     cmd_create_admin
     cmd_env
+    cmd_setup_flowpilot
 
     read -e -p "  Configure API keys now? [y/N]: " keys
     [[ "$keys" =~ ^[Yy]$ ]] && cmd_set_keys
