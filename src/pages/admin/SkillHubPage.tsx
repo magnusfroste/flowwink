@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Plus, Zap, Timer, Save, Loader2 } from 'lucide-react';
+import { Plus, Zap, Timer, Save, Loader2, Search } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Input } from '@/components/ui/input';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -48,6 +49,7 @@ export default function SkillHubPage() {
   const [editingSkill, setEditingSkill] = useState<AgentSkill | null>(null);
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [scopeFilter, setScopeFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Autonomy schedule
   const { data: autonomySettings } = useAutonomyScheduleSettings();
@@ -76,9 +78,15 @@ export default function SkillHubPage() {
     return skills.filter((s) => {
       if (categoryFilter !== 'all' && s.category !== categoryFilter) return false;
       if (scopeFilter !== 'all' && s.scope !== scopeFilter) return false;
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        const nameMatch = s.name.toLowerCase().includes(q);
+        const descMatch = (s.description || '').toLowerCase().includes(q);
+        if (!nameMatch && !descMatch) return false;
+      }
       return true;
     });
-  }, [skills, categoryFilter, scopeFilter]);
+  }, [skills, categoryFilter, scopeFilter, searchQuery]);
 
   const handleEdit = (skill: AgentSkill) => {
     setEditingSkill(skill);
@@ -137,7 +145,16 @@ export default function SkillHubPage() {
         {/* Skills Tab */}
         <TabsContent value="skills" className="space-y-4">
           {/* Toolbar */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="relative w-48">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                placeholder="Search skills..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-8 h-9 text-sm"
+              />
+            </div>
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
               <SelectTrigger className="w-36">
                 <SelectValue placeholder="Category" />
