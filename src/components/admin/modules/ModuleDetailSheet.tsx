@@ -532,6 +532,14 @@ export function ModuleDetailSheet({
               </>
             )}
 
+            {/* Composio Details */}
+            {moduleId === 'composio' && (
+              <>
+                <Separator />
+                <ComposioPanel />
+              </>
+            )}
+
             {/* E-commerce Sandbox Settings */}
             {moduleId === 'ecommerce' && moduleConfig && (
               <>
