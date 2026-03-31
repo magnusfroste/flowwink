@@ -82,6 +82,7 @@ export interface IntegrationsSettings {
   hunter: IntegrationConfig;
   jina: IntegrationConfig;
   meta_ads: IntegrationConfig;
+  composio: IntegrationConfig;
 }
 
 // Default settings - auto-enabled when API key exists, admin can explicitly disable
