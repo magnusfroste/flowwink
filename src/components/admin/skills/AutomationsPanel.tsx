@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import {
-  Plus, Timer, Zap, Radio, Trash2, AlertCircle,
+  Plus, Timer, Zap, Radio, Trash2, AlertCircle, Info,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
