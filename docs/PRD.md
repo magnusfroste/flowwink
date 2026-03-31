@@ -1134,6 +1134,96 @@ for vårdorganisationer that/which Requires HIPAA:
 
 ---
 
+## 13. Email Architecture
+
+FlowWink uses a layered email architecture where each type of email is handled by the appropriate system. This ensures domain reputation is protected and admin setup is minimal.
+
+### 13.1 Email Systems Overview
+
+| Type | System | Provider | Admin Setup | Edge Function |
+|------|--------|----------|-------------|---------------|
+| **Auth emails** (password reset, magic link, verification) | Supabase Auth | Supabase native | None — works out of the box | N/A (Supabase handles internally) |
+| **Transactional** (order confirmation, booking ack, contact form) | Edge functions | Resend | `RESEND_API_KEY` as secret | `send-order-confirmation`, `send-booking-confirmation`, `send-contact-email` |
+| **Newsletter / bulk** (campaigns, subscriber list) | Newsletter module | Resend | Same `RESEND_API_KEY` | `newsletter-send` |
+| **Agent email** (FlowPilot reads/sends as a person) | Composio module | Gmail OAuth | Admin connects via OAuth in Composio panel | `composio-proxy` |
+
+### 13.2 Auth Emails (Supabase Native)
+
+Password reset, email verification, and magic link emails are handled entirely by the admin's own Supabase instance. No additional configuration is needed in FlowWink.
+
+- **Default templates** work immediately after Supabase setup
+- **Custom branding** can be configured in Supabase Dashboard → Authentication → Email Templates
+- **SMTP override** — admin can configure custom SMTP in Supabase Dashboard → Settings → SMTP if they want to send from their own domain
+
+FlowWink does NOT manage auth emails — this is Supabase's responsibility.
+
+### 13.3 Transactional Emails (Resend)
+
+All transactional emails use a single integration: **Resend** (`RESEND_API_KEY`).
+
+**Edge functions:**
+- `send-order-confirmation` — Sends branded HTML receipt with order items, totals, and order ID
+- `send-booking-confirmation` — Sends booking details + auto-creates/updates CRM lead + triggers AI qualification
+- `send-contact-email` — Generic email sender for contact form submissions
+
+**Shared pattern:**
+1. Fetch entity data from database (order/booking/contact)
+2. Read `site_settings` for branding (site name, sender config)
+3. Build inline HTML email template
+4. Send via Resend API
+5. Update entity with `confirmation_sent_at` timestamp
+
+**Sender configuration** is stored in `site_settings.integrations.resend.config.emailConfig`:
+```json
+{
+  "fromEmail": "noreply@example.com",
+  "fromName": "My Store"
+}
+```
+
+### 13.4 Newsletter / Bulk Email (Resend)
+
+The Newsletter module uses the same `RESEND_API_KEY` for sending campaigns to subscriber lists. This shares the Resend integration but uses a separate edge function (`newsletter-send`) with subscriber management, open/click tracking, and GDPR compliance.
+
+**Important:** Transactional and newsletter emails share the same Resend API key but should ideally use different sender domains/subdomains to protect transactional deliverability.
+
+### 13.5 Agent Email (Composio Gmail)
+
+FlowPilot uses Composio's managed OAuth to connect to Gmail, enabling the agent to:
+- **Read inbox** — scan recent emails, find specific messages
+- **Send email** — compose and send as the connected Gmail account
+- **Reply** — respond to specific threads
+
+This is NOT for automated transactional/marketing sends — it's for the AI agent to operate as a "digital employee" with a real mailbox.
+
+**Setup:** Admin → Modules → Composio → Connect Gmail (OAuth flow)
+
+### 13.6 Direct Gmail Integration (Legacy)
+
+A direct Google API Gmail integration exists as an alternative to Composio Gmail. It requires manual OAuth credential setup in Google Cloud Console, offering full control over scopes and app branding. This is more complex but provides direct API access without a third-party intermediary.
+
+### 13.7 Integration Dependencies
+
+| Module | Required Integration | Optional Integration |
+|--------|---------------------|---------------------|
+| **E-commerce** (orders) | Resend (order confirmations) | Stripe (payments) |
+| **Bookings** | Resend (booking confirmations) | — |
+| **Newsletter** | Resend (campaign sends) | — |
+| **FlowPilot Agent** | — | Composio Gmail (agent mailbox) |
+| **CRM** | — | Resend (manual email from lead detail) |
+
+### 13.8 Admin Setup Guide
+
+For a complete email setup, admin needs:
+
+1. **Create Resend account** → Get API key → Add as secret (`RESEND_API_KEY`)
+2. **Verify sender domain** in Resend dashboard (DNS records)
+3. **Configure sender** in Admin → Integrations → Resend → Settings (from email, from name)
+4. **(Optional)** Connect Gmail via Admin → Modules → Composio for FlowPilot agent email
+5. **(Optional)** Customize auth email templates in Supabase Dashboard
+
+---
+
 ## Appendix A: Roadmap
 
 ### Phase 1: MVP ✅ (Complete)
