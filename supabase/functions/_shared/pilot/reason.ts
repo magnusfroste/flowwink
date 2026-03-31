@@ -62,6 +62,10 @@ const SUMMARY_THRESHOLD = 60_000;
 const DEFAULT_TOKEN_BUDGET = 80_000;
 const MEMORY_FLUSH_THRESHOLD = 0.80;
 const SKILL_TIMEOUT_MS = 30_000;
+const SKILL_TIMEOUT_OVERRIDES_MS: Record<string, number> = {
+  migrate_url: 75_000,
+  scrape_url: 45_000,
+};
 const CIRCUIT_BREAKER_THRESHOLD = 3;
 const SAME_ACTION_LIMIT = 3;
 const MAX_SELF_REPAIR_RETRIES = 2;
@@ -619,6 +623,10 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
   ]);
 }
 
+function getSkillTimeoutMs(skillName: string): number {
+  return SKILL_TIMEOUT_OVERRIDES_MS[skillName] ?? SKILL_TIMEOUT_MS;
+}
+
 // ─── Tool Execution Router ───────────────────────────────────────────────────
 
 export async function executeBuiltInTool(
@@ -686,9 +694,10 @@ export async function executeBuiltInTool(
     return response.json();
   };
 
-  // Wrap with timeout
+  // Wrap with timeout (long-running skills get explicit overrides)
   try {
-    return await withTimeout(execute(), SKILL_TIMEOUT_MS, fnName);
+    const timeoutMs = getSkillTimeoutMs(fnName);
+    return await withTimeout(execute(), timeoutMs, fnName);
   } catch (err: any) {
     console.error(`[reason] trace=${traceId} ${fnName} error:`, err.message);
     return { error: err.message, status: 'failed' };

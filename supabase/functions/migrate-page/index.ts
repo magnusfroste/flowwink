@@ -750,6 +750,16 @@ serve(async (req) => {
       );
     }
 
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    if (!supabaseUrl || !serviceRoleKey) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Backend environment is not configured (missing service credentials).' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
+
     const firecrawlKey = Deno.env.get('FIRECRAWL_API_KEY');
 
     // Check if Firecrawl is enabled in site_settings
@@ -1244,6 +1254,9 @@ IMPORTANT: The "companyProfile" field is OPTIONAL. Only include it if you can ex
     const heroVideos = extractedVideos.filter(v => v.isHeroCandidate);
     const otherVideos = extractedVideos.filter(v => !v.isHeroCandidate);
 
+    const MAX_MARKDOWN_FOR_AI = 22000;
+    const MAX_HTML_FOR_AI = 10000;
+
     const userPrompt = `Analyze this web page and create CMS blocks:
 
 URL: ${formattedUrl}
@@ -1277,11 +1290,11 @@ ${extractedSvgAnimations.length > 0
   : 'No SVG animations found'}
 
 === MAIN CONTENT (Markdown) ===
-${markdown.substring(0, 40000)}
-${markdown.length > 40000 ? '\n... (content truncated)' : ''}
+${markdown.substring(0, MAX_MARKDOWN_FOR_AI)}
+${markdown.length > MAX_MARKDOWN_FOR_AI ? '\n... (content truncated)' : ''}
 
 === HTML FOR STRUCTURE ANALYSIS ===
-${html.substring(0, 20000)}
+${html.substring(0, MAX_HTML_FOR_AI)}
 
 === INSTRUCTIONS ===
 1. If HERO BACKGROUND VIDEO is found: Create HERO block with backgroundType: 'video', videoType, videoUrl
