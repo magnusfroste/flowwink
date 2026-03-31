@@ -311,6 +311,16 @@ export const defaultIntegrationsSettings: IntegrationsSettings = {
       adAccountId: '',
     },
   },
+  composio: {
+    name: 'Composio',
+    description: 'Connect to 1000+ apps via managed OAuth',
+    icon: 'Network',
+    category: 'automation',
+    features: ['Gmail', 'Slack', 'HubSpot', 'Sheets', 'Intent-based tool resolution'],
+    secretName: 'COMPOSIO_API_KEY',
+    docsUrl: 'https://docs.composio.dev',
+    docsLabel: 'Get API key',
+  },
 };
 
 // Category definitions
