@@ -871,7 +871,8 @@ async function executePagesAction(
   args: Record<string, unknown>,
 ): Promise<unknown> {
   switch (skillName) {
-    case 'manage_page': {
+    case 'manage_page':
+    case 'manage_pages': {
       const { action = 'list', page_id, slug, title, status, meta, blocks } = args as any;
 
       if (action === 'list') {
