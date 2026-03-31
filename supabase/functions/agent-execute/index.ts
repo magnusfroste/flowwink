@@ -878,7 +878,11 @@ async function executePagesAction(
         if (page_id) query = query.eq('id', page_id);
         else if (slug) query = query.eq('slug', slug);
         else throw new Error('page_id or slug required');
-        const { data, error } = await query.is('deleted_at', null).single();
+        // Use .limit(1) + manual pick to avoid "Cannot coerce to single JSON" when slug matches multiple rows
+        const { data: rows, error } = await query.is('deleted_at', null).order('created_at', { ascending: true }).limit(1);
+        if (error) throw new Error(`Get page failed: ${error.message}`);
+        if (!rows || rows.length === 0) throw new Error(`Page not found: ${page_id || slug}`);
+        const data = rows[0];
         if (error) throw new Error(`Get page failed: ${error.message}`);
         const blockSummary = (data.content_json as any[] || []).map((b: any, i: number) => ({
           index: i, id: b.id, type: b.type, hidden: b.hidden || false,
@@ -1001,12 +1005,25 @@ async function executePagesAction(
       const { action = 'list', page_id } = args as any;
       if (!page_id) throw new Error('page_id is required');
 
-      // Fetch current page blocks
+      // Fetch current page blocks and hydrate missing IDs
       const { data: page, error: fetchErr } = await supabase.from('pages')
         .select('id, content_json').eq('id', page_id).is('deleted_at', null).single();
       if (fetchErr || !page) throw new Error(`Page not found: ${page_id}`);
 
       const blocks = (page.content_json as any[]) || [];
+      // Hydrate blocks without IDs (from old migrations)
+      let hydrated = false;
+      for (let i = 0; i < blocks.length; i++) {
+        if (!blocks[i].id) {
+          blocks[i].id = crypto.randomUUID();
+          hydrated = true;
+        }
+      }
+      if (hydrated) {
+        await supabase.from('pages')
+          .update({ content_json: blocks, updated_at: new Date().toISOString() })
+          .eq('id', page_id);
+      }
 
       if (action === 'list') {
         return {
@@ -1106,6 +1123,20 @@ async function executePagesAction(
       }
 
       return { error: `Unknown block action: ${action}` };
+    }
+
+    case 'create_page_block': {
+      // Convenience wrapper: maps to manage_page_blocks add action
+      const { page_id, block_type, block_data = {}, position } = args as any;
+      if (!page_id) return { error: 'page_id is required' };
+      if (!block_type) return { error: 'block_type is required' };
+      return executePagesAction(supabase, 'manage_page_blocks', {
+        action: 'add',
+        page_id,
+        block_type,
+        block_data,
+        position,
+      });
     }
 
     default:
