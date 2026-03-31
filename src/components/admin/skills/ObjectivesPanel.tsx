@@ -299,7 +299,7 @@ function ObjectiveEditorSheet({
               value={constraintsText}
               onChange={(e) => setConstraintsText(e.target.value)}
               placeholder={'{\n  "max_posts_per_day": 1,\n  "token_budget": 50000,\n  "excluded_skills": ["newsletter_send"],\n  "deadline": "2026-04-30"\n}'}
-              rows={4}
+              rows={5}
               className="font-mono text-xs"
             />
             <p className="text-xs text-muted-foreground">
