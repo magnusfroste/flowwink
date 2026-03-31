@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import {
-  Plus, Timer, Zap, Radio, Trash2, AlertCircle,
+  Plus, Timer, Zap, Radio, Trash2, AlertCircle, Info,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -47,6 +47,14 @@ export function AutomationsPanel() {
 
   return (
     <div className="space-y-4">
+      <div className="flex items-start gap-2.5 rounded-lg border border-border/50 bg-muted/30 px-3.5 py-2.5 text-xs text-muted-foreground">
+        <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+        <p>
+          Automations run skills on a schedule or in response to events. You can create your own,
+          and FlowPilot may suggest new ones based on recurring patterns it detects.
+        </p>
+      </div>
+
       {/* Toolbar */}
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">

@@ -15,6 +15,7 @@ import {
   Lightbulb,
   Wrench,
   RefreshCw,
+  Info,
 } from 'lucide-react';
 
 // --- Data hooks ---
@@ -157,7 +158,16 @@ export function EvolutionPanel() {
   }
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
+    <div className="space-y-4">
+      <div className="flex items-start gap-2.5 rounded-lg border border-border/50 bg-muted/30 px-3.5 py-2.5 text-xs text-muted-foreground">
+        <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+        <p>
+          Evolution tracks how FlowPilot learns and improves over time — refining its soul,
+          creating new skills, and rewriting its own instructions based on real performance data.
+        </p>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
       {/* Learnings & Reflections */}
       <Card className="lg:col-span-2">
         <CardHeader className="pb-3">
@@ -334,6 +344,7 @@ export function EvolutionPanel() {
           )}
         </CardContent>
       </Card>
+    </div>
     </div>
   );
 }
