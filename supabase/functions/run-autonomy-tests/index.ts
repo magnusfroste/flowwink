@@ -1845,13 +1845,13 @@ async function layer9Tests(supabase: any, supabaseUrl: string, serviceKey: strin
 
   // Build tool definitions same as loadSkillTools does
   const skillTools = rawSkills
-    .filter((s: any) => s.enabled && s.tool_definition)
+    .filter((s: any) => s.tool_definition)
     .map((s: any) => ({
       ...s.tool_definition,
       function: {
-        ...s.tool_definition.function,
+        ...s.tool_definition?.function,
         name: s.name,
-        description: s.description || s.tool_definition.function?.description || '',
+        description: s.tool_definition?.function?.description || '',
       },
     }));
 
