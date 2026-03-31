@@ -15,6 +15,7 @@ import {
   Lightbulb,
   Wrench,
   RefreshCw,
+  Info,
 } from 'lucide-react';
 
 // --- Data hooks ---
