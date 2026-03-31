@@ -1836,21 +1836,22 @@ async function layer9Tests(supabase: any, supabaseUrl: string, serviceKey: strin
   const results: TestResult[] = [];
 
   // ── Phase A: Intent-Scorer Accuracy (deterministic, no AI cost) ──────────
-  const rawSkills = await loadSkillsRaw(supabase, 'internal');
-  if (!rawSkills || rawSkills.length === 0) {
+  const skillCache = await loadSkillsRaw(supabase, 'internal');
+  const rawSkills = skillCache.skills || [];
+  if (rawSkills.length === 0) {
     results.push({ name: 'L9: SKIP — no skills loaded', layer: 9 as any, status: 'skip', duration_ms: 0 });
     return results;
   }
 
   // Build tool definitions same as loadSkillTools does
   const skillTools = rawSkills
-    .filter((s: any) => s.enabled && s.tool_definition)
+    .filter((s: any) => s.tool_definition)
     .map((s: any) => ({
       ...s.tool_definition,
       function: {
-        ...s.tool_definition.function,
+        ...s.tool_definition?.function,
         name: s.name,
-        description: s.description || s.tool_definition.function?.description || '',
+        description: s.tool_definition?.function?.description || '',
       },
     }));
 
