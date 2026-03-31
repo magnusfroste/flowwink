@@ -49,7 +49,9 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, conversation_id } = await req.json();
+    const body = await req.json();
+    const messages = Array.isArray(body.messages) ? body.messages : [];
+    const conversation_id = body.conversation_id;
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;

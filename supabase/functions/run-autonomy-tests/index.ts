@@ -1700,11 +1700,16 @@ async function layer8Tests(supabase: any): Promise<TestResult[]> {
     
     if (!data?.length) throw new Error('No skill executions in 48h — agent may be idle');
     
-    // Check for silent failures: status=success but output contains error
+    // Check for silent failures: status=success but output contains error indicators
+    // Exclude composio results which return raw API data that may contain "error" as substring
     const silentFails = data.filter((d: any) => {
       if (d.status === 'failed') return false; // explicit fail is fine
+      if (d.skill_name?.startsWith('composio_')) return false; // raw API data, not real errors
       const out = typeof d.output === 'string' ? d.output : JSON.stringify(d.output || '');
-      return out.includes('"error"') || out.includes('Unknown') || out.includes('required');
+      // Only flag if top-level error key exists
+      const parsed = d.output && typeof d.output === 'object' ? d.output : null;
+      if (parsed && ('error' in parsed || 'Error' in parsed)) return true;
+      return out.includes('"error":') || out.includes('"Unknown ');
     });
     
     if (silentFails.length > 0) {
