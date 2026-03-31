@@ -311,6 +311,16 @@ export const defaultModulesSettings: ModulesSettings = {
     requiredIntegrations: ['firecrawl'],
     optionalIntegrations: ['jina'],
   },
+  composio: {
+    enabled: false,
+    name: 'Composio',
+    description: 'Connect to 1000+ external apps via managed OAuth — Gmail, Slack, HubSpot and more',
+    icon: 'Network',
+    category: 'system',
+    autonomy: 'agent-capable',
+    adminUI: false,
+    requiredIntegrations: ['composio'],
+  },
 };
 
 // Map sidebar items to module IDs

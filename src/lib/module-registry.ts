@@ -67,6 +67,7 @@ class ModuleRegistry {
       browserControlModule,
       growthModule,
       federationModule,
+      composioModule,
       
       ticketsModule,
       siteMigrationModule,

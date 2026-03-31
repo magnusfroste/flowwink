@@ -29,6 +29,7 @@ export { browserControlModule } from './browser-control-module';
 export { growthModule } from './growth-module';
 export { federationModule } from './federation-module';
 export { companyInsightsModule } from './company-insights-module';
+export { composioModule } from './composio-module';
 
 export { ticketsModule } from './tickets-module';
 export { siteMigrationModule, siteMigrationMeta } from './site-migration-module';
