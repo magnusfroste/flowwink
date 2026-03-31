@@ -30,6 +30,7 @@ interface ComposioApp {
   appName?: string;
   id?: string;
   status?: string;
+  toolkit?: { slug?: string };
 }
 
 interface ComposioTool {
