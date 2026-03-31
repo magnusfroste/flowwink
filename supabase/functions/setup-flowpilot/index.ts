@@ -3299,6 +3299,22 @@ Deno.serve(async (req) => {
     // If caller passes template_id but no inline template_flowpilot,
     // fall back to the built-in starter automations/workflows (same for all templates).
     const STARTER_FLOWPILOT = {
+      objectives: [
+        {
+          goal: 'Establish content presence — publish 3 blog posts within the first week',
+          success_criteria: { published_posts: 3 },
+          constraints: { no_destructive_actions: true },
+        },
+        {
+          goal: 'Research our top 3 competitors — document their positioning, pricing, and content gaps we can exploit',
+          success_criteria: { competitors_researched: 3 },
+          constraints: { no_destructive_actions: true },
+        },
+        {
+          goal: 'Set up weekly digest — monitor site performance and report key metrics every Friday',
+          success_criteria: { weekly_digest_active: true },
+        },
+      ],
       automations: [
         {
           name: 'Weekly Business Digest',
