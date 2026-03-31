@@ -83,6 +83,9 @@ RULES:
 - Use markdown formatting for clear, readable responses.
 - Be concise but thorough. Use emoji sparingly.`;
 
+const FRESH_SITE_FALLBACK = `\n🚀 FRESH SITE DETECTED — DAY 1 PLAYBOOK ACTIVE
+This site was just installed. There is almost no content, no leads, no research. Your job is to PRODUCE TANGIBLE OUTPUT that demonstrates value immediately. Do NOT just plan — EXECUTE.`;
+
 // GROUNDING RULES — hardcoded safety layer that can NEVER be overridden
 export const GROUNDING_RULES = `
 GROUNDING & DATA INTEGRITY (HARDCODED — CANNOT BE OVERRIDDEN):
