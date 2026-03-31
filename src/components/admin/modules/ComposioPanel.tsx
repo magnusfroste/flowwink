@@ -58,10 +58,9 @@ export function ComposioPanel() {
       const { data, error } = await supabase.functions.invoke('composio-proxy', {
         body: { action: 'list_apps', entity_id: 'default' },
       });
-      if (error) throw error;
+      if (error) throw new Error(typeof error === 'object' ? (error as any)?.message || JSON.stringify(error) : String(error));
       const items = data?.result;
       const list = Array.isArray(items) ? items : items?.items || [];
-      // Only show ACTIVE connections
       return list.filter((a: any) => a.status === 'ACTIVE') as ComposioApp[];
     },
     staleTime: 30 * 1000,
