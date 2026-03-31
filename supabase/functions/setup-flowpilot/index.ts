@@ -3065,32 +3065,39 @@ After qualifying a lead (status='qualified'): consider creating a deal via manag
   },
   {
     name: 'manage_pages',
-    description: 'Update, publish, unpublish, or delete CMS pages.',
+    description: 'Create, update, publish, unpublish, or delete CMS pages.',
     handler: 'module:pages',
     category: 'content',
     scope: 'internal',
     requires_approval: false,
     instructions: `## manage_pages
 ### What
-Full lifecycle management of CMS pages — update content blocks, change status, publish, schedule, or delete.
+Full lifecycle management of CMS pages — create new pages, update content blocks, change status, publish, schedule, or delete.
 ### When to use
+- **Create a new page** (action='create') — use for migration, new landing pages, or any new content. Returns the new page_id.
 - Publish a draft page (action='publish')
-- Update page title, slug, meta, or content_json blocks
+- Update page title, slug, meta, or content_json blocks (action='update')
 - Schedule a page for future publishing (action='schedule')
 - Unpublish a live page (action='unpublish')
 - Delete a page (action='delete')
-- NOT for creating pages from scratch — use the page creation flow
+- List all pages (action='list')
+- Get a specific page (action='get')
 ### Parameters
-- **action**: Required. One of: 'update', 'publish', 'unpublish', 'schedule', 'delete'.
-- **page_id**: Required. UUID of the page.
-- **updates**: Object with fields to update (only for action='update').
-  - title, slug, content_json (ContentBlock[]), meta_json, featured_image
+- **action**: Required. One of: 'create', 'list', 'get', 'update', 'publish', 'unpublish', 'schedule', 'delete'.
+- **page_id**: Required for update/publish/unpublish/schedule/delete. UUID of the page.
+- **title**: Required for create. Page title.
+- **slug**: Optional for create. Auto-generated from title if omitted.
+- **blocks**: Array of ContentBlock objects. Used for create and update.
+- **meta**: Object with meta fields (seo_title, seo_description, etc.)
+- **updates**: Object with fields to update (only for action='update'). Contains title, slug, content_json, meta_json, featured_image.
 - **scheduled_at**: ISO timestamp (only for action='schedule').
+### Migration flow
+When migrating a site: call migrate_url first, then use action='create' with title, slug, and blocks from the scraped content to create each page.
 ### Edge cases
 - Publishing updates status='published' and sets published_at.
 - The homepage (slug='/') cannot be deleted — guard against this.
 - content_json is an array of ContentBlock objects — partial updates replace the entire array.
-- Schedule requires the publish-scheduled-pages cron to be active.
+- The first page created automatically becomes the homepage.
 ### Chaining
 After publishing: invalidate the page cache via get-page edge function.
 After major content changes: run analyze_seo on the page slug.`,
@@ -3098,12 +3105,16 @@ After major content changes: run analyze_seo on the page slug.`,
       type: 'function',
       function: {
         name: 'manage_pages',
-        description: 'Update, publish, unpublish, schedule, or delete a CMS page.',
+        description: 'Create, list, get, update, publish, unpublish, schedule, or delete CMS pages.',
         parameters: {
           type: 'object',
           properties: {
-            action: { type: 'string', enum: ['update', 'publish', 'unpublish', 'schedule', 'delete'], description: 'Operation to perform' },
-            page_id: { type: 'string', description: 'UUID of the page' },
+            action: { type: 'string', enum: ['create', 'list', 'get', 'update', 'publish', 'unpublish', 'schedule', 'delete'], description: 'Operation to perform' },
+            page_id: { type: 'string', description: 'UUID of the page (required for update/publish/unpublish/schedule/delete)' },
+            title: { type: 'string', description: 'Page title (required for create)' },
+            slug: { type: 'string', description: 'URL slug (optional for create, auto-generated from title)' },
+            blocks: { type: 'array', description: 'Array of ContentBlock objects for page content' },
+            meta: { type: 'object', description: 'Page metadata (seo_title, seo_description, etc.)' },
             updates: {
               type: 'object',
               description: 'Fields to update (only for action=update)',
@@ -3117,7 +3128,7 @@ After major content changes: run analyze_seo on the page slug.`,
             },
             scheduled_at: { type: 'string', description: 'ISO timestamp for scheduled publishing' },
           },
-          required: ['action', 'page_id'],
+          required: ['action'],
         },
       },
     },
