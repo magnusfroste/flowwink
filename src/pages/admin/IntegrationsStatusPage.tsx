@@ -28,7 +28,7 @@ import {
   Database,
   RefreshCw,
   ExternalLink,
-  PauseCircle,
+  Key,
   Zap,
   Loader2,
   Server,
@@ -68,32 +68,36 @@ const iconMap = {
   Megaphone,
 };
 
-type IntegrationStatus = 'active' | 'disabled' | 'not_configured';
-
-function getStatusBadge(status: IntegrationStatus) {
-  switch (status) {
-    case 'active':
-      return (
-        <Badge variant="default" className="gap-1">
-          <CheckCircle2 className="h-3 w-3" />
-          Active
-        </Badge>
-      );
-    case 'disabled':
-      return (
-        <Badge variant="secondary" className="gap-1">
-          <PauseCircle className="h-3 w-3" />
-          Configured
-        </Badge>
-      );
-    case 'not_configured':
-      return (
-        <Badge variant="outline" className="gap-1 text-muted-foreground">
-          <XCircle className="h-3 w-3" />
-          Not configured
-        </Badge>
-      );
+// Returns true if a noSecretNeeded integration has its required config field set
+function hasRealCredential(
+  key: keyof IntegrationsSettings,
+  config: IntegrationProviderConfig | undefined,
+): boolean {
+  switch (key) {
+    case 'local_llm': return !!config?.endpoint;
+    case 'n8n': return !!config?.webhookUrl;
+    case 'google_analytics': return !!config?.measurementId;
+    case 'meta_pixel': return !!config?.pixelId;
+    case 'slack': return !!config?.webhookUrl;
+    default: return false;
   }
+}
+
+function getCredentialBadge(hasCredential: boolean, requiresSecret: boolean) {
+  if (hasCredential) {
+    return (
+      <Badge variant="outline" className="gap-1 border-emerald-200 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:border-emerald-800 dark:text-emerald-400">
+        <Key className="h-3 w-3" />
+        Ready
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="outline" className="gap-1 text-muted-foreground">
+      <XCircle className="h-3 w-3" />
+      {requiresSecret ? 'No API key' : 'Setup needed'}
+    </Badge>
+  );
 }
 
 // Test AI Connection Button Component
@@ -803,20 +807,23 @@ export default function IntegrationsStatusPage() {
                     const hasKey = requiresSecret ? (secretsStatus?.integrations?.[key] ?? false) : true;
                     const explicitlyDisabled = integrationSettings?.[key]?.enabled === false;
                     const isEnabled = hasKey && !explicitlyDisabled;
-                    const status: IntegrationStatus = !hasKey ? 'not_configured' : isEnabled ? 'active' : 'disabled';
                     const IconComponent = iconMap[integration.icon as keyof typeof iconMap] || Bot;
                     const currentConfig = getDisplayConfig(key) || integration.config;
                     const hasConfigSection = ['openai', 'gemini', 'local_llm', 'n8n', 'resend', 'google_analytics', 'meta_pixel', 'slack', 'jina'].includes(key);
+                    // Credential status: API key for secret-based; required config field for config-based
+                    const hasCredential = requiresSecret
+                      ? (secretsStatus?.integrations?.[key] ?? false)
+                      : hasRealCredential(key, currentConfig);
 
                     return (
                       <Card
                         key={key}
                         className={`transition-all ${
-                          status === 'active'
+                          isEnabled
                             ? "border-primary/30 bg-primary/5 shadow-sm"
-                            : status === 'disabled'
-                            ? "border-border/50 bg-muted/20"
-                            : "border-dashed opacity-60"
+                            : !hasKey
+                            ? "border-dashed opacity-60"
+                            : "border-border/50 bg-muted/20"
                         } ${hasConfigSection && hasKey && isEnabled ? "cursor-pointer hover:shadow-sm" : ""}`}
                         onClick={() => {
                           if (hasConfigSection && hasKey && isEnabled) openDrawer(key, currentConfig);
@@ -825,8 +832,8 @@ export default function IntegrationsStatusPage() {
                         <CardHeader className="pb-3">
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex items-center gap-3">
-                              <div className={`h-10 w-10 rounded-lg flex items-center justify-center shrink-0 ${status === 'active' ? "bg-primary/10" : "bg-muted"}`}>
-                                <IconComponent className={`h-5 w-5 ${status === 'active' ? "text-primary" : "text-muted-foreground"}`} />
+                              <div className={`h-10 w-10 rounded-lg flex items-center justify-center shrink-0 ${isEnabled ? "bg-primary/10" : "bg-muted"}`}>
+                                <IconComponent className={`h-5 w-5 ${isEnabled ? "text-primary" : "text-muted-foreground"}`} />
                               </div>
                               <div>
                                 <CardTitle className="text-base flex items-center gap-2">
@@ -834,7 +841,7 @@ export default function IntegrationsStatusPage() {
                                   {isLoading ? (
                                     <Skeleton className="h-5 w-20" />
                                   ) : (
-                                    getStatusBadge(status)
+                                    getCredentialBadge(hasCredential, requiresSecret)
                                   )}
                                 </CardTitle>
                                 <CardDescription>{integration.description}</CardDescription>
