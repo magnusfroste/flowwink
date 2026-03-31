@@ -42,6 +42,14 @@ export function WorkflowsPanel() {
 
   return (
     <div className="space-y-4">
+      <div className="flex items-start gap-2.5 rounded-lg border border-border/50 bg-muted/30 px-3.5 py-2.5 text-xs text-muted-foreground">
+        <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+        <p>
+          Workflows chain multiple skills into multi-step sequences. FlowPilot can also compose
+          workflows autonomously when it identifies repeating multi-skill patterns.
+        </p>
+      </div>
+
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <span>{workflows.filter((w) => w.enabled).length} active</span>
