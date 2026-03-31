@@ -200,8 +200,18 @@ RULES:
     parts.push(`\n- Max ${input.maxIterations || 8} tool iterations per heartbeat`);
 
     // Domain-specific playbook (e.g. Day 1 for fresh CMS sites)
-    if (input.siteMaturity?.isFresh && input.freshSitePlaybook) {
-      parts.push(input.freshSitePlaybook);
+    if (input.siteMaturity?.isFresh) {
+      if (input.freshSitePlaybook) {
+        parts.push(input.freshSitePlaybook);
+      } else {
+        // Auto-inject default CMS Day 1 Playbook
+        try {
+          const { CMS_DAY_1_PLAYBOOK } = await import('../domains/cms-context.ts');
+          parts.push(CMS_DAY_1_PLAYBOOK);
+        } catch {
+          parts.push('\n🚀 FRESH SITE DETECTED — Focus on producing tangible content output immediately.');
+        }
+      }
     }
   } else {
     // Operate mode
