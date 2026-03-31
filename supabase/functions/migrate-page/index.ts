@@ -1073,6 +1073,33 @@ QUALITY CHECK:
 
 Focus ONLY on main content (typically in <main>, <article>, or primary content area).
 
+ICONS — CRITICAL FOR FEATURES/STATS/TIMELINE:
+For every feature, stat, or timeline item, you MUST include a Lucide icon name.
+Use PascalCase icon names from the Lucide icon set: https://lucide.dev/icons
+Common mappings:
+- IoT/sensors/monitoring → "Activity", "Gauge", "Thermometer", "Wifi", "Radio", "Signal"
+- Security → "Shield", "Lock", "ShieldCheck"
+- Cloud/hosting → "Cloud", "Server", "Database"
+- Analytics/data → "BarChart3", "LineChart", "PieChart", "TrendingUp"
+- Communication → "MessageSquare", "Mail", "Phone", "Send"
+- People/team → "Users", "UserCircle", "Contact"
+- Location/map → "MapPin", "Navigation", "Globe"
+- Time/schedule → "Clock", "Calendar", "Timer"
+- Money/pricing → "DollarSign", "CreditCard", "Wallet"
+- Settings/tools → "Settings", "Wrench", "Cog"
+- Water → "Droplets", "Waves"
+- Temperature → "Thermometer", "ThermometerSun"
+- Sound/noise → "Volume2", "AudioLines"
+- Building/property → "Building2", "Home", "Warehouse"
+- Energy → "Zap", "BatteryCharging", "Lightbulb"
+- Transport/road → "Car", "Truck", "Route"
+- Weather → "CloudSun", "CloudRain", "Snowflake"
+- Animals/pest → "Bug", "Rat"
+- Air/ventilation → "Wind", "Fan"
+- Door/access → "DoorOpen", "KeyRound"
+- Industry/manufacturing → "Factory", "Hammer"
+NEVER leave icon as null or empty — always pick the best matching Lucide icon.
+
 HERO BLOCK - CRITICAL (VIDEO PRIORITY):
 - If the page has a clear hero/banner section, create a "hero" block
 - PRIORITY 1: If a HERO VIDEO is found (marked as isHeroCandidate: true), use video background:
