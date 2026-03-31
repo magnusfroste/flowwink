@@ -91,22 +91,23 @@ export function ComposioPanel() {
 
   const handleConnectApp = async (appName: string) => {
     try {
+      const redirectBack = `${window.location.origin}/admin/modules`;
       const { data, error } = await supabase.functions.invoke('composio-proxy', {
         body: { 
           action: 'connect_app', 
-          params: { app_name: appName },
+          params: { app_name: appName, redirect_uri: redirectBack },
           entity_id: 'default',
         },
       });
       if (error) throw error;
       
-      const redirectUrl = data?.result?.redirectUrl || data?.result?.connectionUrl;
-      if (redirectUrl) {
-        window.open(redirectUrl, '_blank');
-        toast.success('OAuth window opened — complete the connection there');
+      const oauthUrl = data?.result?.redirectUrl || data?.result?.connectionUrl || data?.result?.url;
+      if (oauthUrl) {
+        toast.success('Opening OAuth — complete login in the new tab');
+        window.open(oauthUrl, '_blank', 'noopener');
       } else {
-        toast.info('Connection initiated');
-        refetchApps();
+        logger.warn('[ComposioPanel] No redirect URL returned:', data);
+        toast.error('No OAuth URL returned — check Composio dashboard for this app\'s integration setup');
       }
     } catch (err) {
       logger.error('[ComposioPanel] Connect failed:', err);
