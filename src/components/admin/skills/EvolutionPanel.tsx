@@ -345,6 +345,7 @@ export function EvolutionPanel() {
         </CardContent>
       </Card>
     </div>
+    </div>
   );
 }
 
