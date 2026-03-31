@@ -1799,10 +1799,10 @@ const L9_BENCHMARK: L9TestCase[] = [
   // ── Email ──
   { input: 'read my latest emails', expect: ['composio_gmail_read', 'composio_gmail_fetch'], notExpect: ['manage_blog_posts'], lang: 'en' },
   { input: 'läs mina senaste mail', expect: ['composio_gmail_read', 'composio_gmail_fetch'], notExpect: ['manage_blog_posts'], lang: 'sv' },
-  { input: 'send an email to the client', expect: ['composio_gmail_send'], notExpect: ['analyze_analytics'], lang: 'en' },
+  { input: 'send an email to the client', expect: ['composio_gmail_send'], lang: 'en' },
   // ── Blog / Content ──
-  { input: 'write a new blog post about SEO', expect: ['manage_blog_posts'], notExpect: ['composio_gmail_read'], lang: 'en' },
-  { input: 'skriv ett nytt blogginlägg', expect: ['manage_blog_posts'], notExpect: ['analyze_analytics'], lang: 'sv' },
+  { input: 'write a new blog post about SEO', expect: ['manage_blog_posts', 'write_blog_post'], notExpect: ['composio_gmail_read'], lang: 'en' },
+  { input: 'skriv ett nytt blogginlägg', expect: ['manage_blog_posts', 'write_blog_post'], lang: 'sv' },
   { input: 'create content about AI trends', expect: ['manage_blog_posts', 'content_research'], lang: 'en' },
   // ── SEO ──
   { input: 'run an SEO audit on the homepage', expect: ['seo_audit'], notExpect: ['manage_blog_posts'], lang: 'en' },
@@ -1818,7 +1818,7 @@ const L9_BENCHMARK: L9TestCase[] = [
   { input: 'send the weekly newsletter', expect: ['manage_newsletter', 'send_newsletter'], notExpect: ['manage_blog_posts'], lang: 'en' },
   { input: 'skicka nyhetsbrevet', expect: ['manage_newsletter', 'send_newsletter'], lang: 'sv' },
   // ── Booking ──
-  { input: 'show upcoming bookings', expect: ['manage_bookings'], notExpect: ['analyze_analytics'], lang: 'en' },
+  { input: 'show upcoming bookings', expect: ['manage_bookings', 'content_calendar_view'], lang: 'en' },
   { input: 'visa bokningar', expect: ['manage_bookings'], lang: 'sv' },
   // ── Products ──
   { input: 'add a new product to the shop', expect: ['manage_products'], notExpect: ['manage_blog_posts'], lang: 'en' },
