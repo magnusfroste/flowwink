@@ -259,8 +259,8 @@ function ObjectiveEditorSheet({
   const handleSave = () => {
     let constraints = {};
     let success_criteria = {};
-    try { constraints = JSON.parse(constraintsText); } catch { /* keep empty */ }
-    try { success_criteria = JSON.parse(criteriaText); } catch { /* keep empty */ }
+    try { constraints = JSON.parse(constraintsText || '{}'); } catch { /* keep empty */ }
+    try { success_criteria = JSON.parse(criteriaText || '{}'); } catch { /* keep empty */ }
 
     onSave({
       ...(objective?.id ? { id: objective.id } : {}),
