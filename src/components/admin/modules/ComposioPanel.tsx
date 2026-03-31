@@ -142,9 +142,9 @@ export function ComposioPanel() {
                       {app.status && (
                         <div className="flex items-center gap-1 mt-0.5">
                           {app.status === 'active' ? (
-                            <CheckCircle2 className="h-3 w-3 text-green-500" />
+                            <CheckCircle2 className="h-3 w-3 text-primary" />
                           ) : (
-                            <AlertCircle className="h-3 w-3 text-yellow-500" />
+                            <AlertCircle className="h-3 w-3 text-muted-foreground" />
                           )}
                           <span className="text-xs text-muted-foreground capitalize">{app.status}</span>
                         </div>
