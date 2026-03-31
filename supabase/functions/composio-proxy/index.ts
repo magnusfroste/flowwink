@@ -73,23 +73,49 @@ Deno.serve(async (req) => {
       return json({ result: data });
     }
 
-    // Route: execute action
+    // Route: execute action (v3)
     if (action === 'execute') {
       const actionName = params?.action_name;
       if (!actionName) {
         return json({ error: 'action_name required in params' }, 400);
       }
 
-      const res = await fetch(`${COMPOSIO_V2}/actions/${actionName}/execute`, {
+      const toolkit = params?.toolkit || actionName.split('_')[0]?.toLowerCase();
+      const accountId = await getConnectedAccountId(toolkit);
+
+      const execBody: Record<string, unknown> = { input: params?.input || {} };
+      if (accountId) execBody.connected_account_id = accountId;
+
+      const res = await fetch(`${COMPOSIO_V3}/tools/execute/${actionName}`, {
         method: 'POST',
         headers: composioHeaders,
-        body: JSON.stringify({
-          entityId: entity_id || 'default',
-          input: params?.input || {},
-        }),
+        body: JSON.stringify(execBody),
       });
       const data = await res.json();
       return json({ result: data });
+    }
+
+    // Helper: find active connected account for a toolkit
+    async function getConnectedAccountId(toolkit: string): Promise<string | null> {
+      const res = await fetch(`${COMPOSIO_V3}/connected_accounts?user_id=${entity_id || 'default'}&status=ACTIVE&toolkit=${toolkit}`, {
+        headers: composioHeaders,
+      });
+      const data = await res.json();
+      const account = (data?.items || [])[0];
+      return account?.id || null;
+    }
+
+    // Helper: execute a tool via v3
+    async function executeToolV3(toolSlug: string, input: Record<string, unknown>, connectedAccountId: string) {
+      const res = await fetch(`${COMPOSIO_V3}/tools/execute/${toolSlug}`, {
+        method: 'POST',
+        headers: composioHeaders,
+        body: JSON.stringify({
+          connected_account_id: connectedAccountId,
+          input,
+        }),
+      });
+      return res.json();
     }
 
     // Route: Gmail send
@@ -99,6 +125,13 @@ Deno.serve(async (req) => {
         return json({ error: 'to, subject, and body required' }, 400);
       }
 
+      const accountId = await getConnectedAccountId('gmail');
+      if (!accountId) {
+        return json({ error: 'Gmail not connected. Connect Gmail first.' }, 400);
+      }
+
+      console.log(`[composio-proxy] Gmail send via v3, account: ${accountId}`);
+
       const input: Record<string, string> = {
         recipient_email: to,
         subject,
@@ -107,29 +140,23 @@ Deno.serve(async (req) => {
       if (cc) input.cc = cc;
       if (bcc) input.bcc = bcc;
 
-      const res = await fetch(`${COMPOSIO_V2}/actions/GMAIL_SEND_EMAIL/execute`, {
-        method: 'POST',
-        headers: composioHeaders,
-        body: JSON.stringify({ entityId: entity_id || 'default', input }),
-      });
-      const data = await res.json();
+      const data = await executeToolV3('GMAIL_SEND_EMAIL', input, accountId);
+      console.log('[composio-proxy] Gmail send response:', JSON.stringify(data).slice(0, 500));
       return json({ result: data });
     }
 
     // Route: Gmail read
     if (action === 'gmail_read') {
-      const query = params?.query || '';
-      const maxResults = params?.max_results || 5;
+      const accountId = await getConnectedAccountId('gmail');
+      if (!accountId) {
+        return json({ error: 'Gmail not connected. Connect Gmail first.' }, 400);
+      }
 
-      const res = await fetch(`${COMPOSIO_V2}/actions/GMAIL_FETCH_EMAILS/execute`, {
-        method: 'POST',
-        headers: composioHeaders,
-        body: JSON.stringify({
-          entityId: entity_id || 'default',
-          input: { query, max_results: maxResults },
-        }),
-      });
-      const data = await res.json();
+      const data = await executeToolV3('GMAIL_FETCH_EMAILS', {
+        query: params?.query || '',
+        max_results: params?.max_results || 5,
+      }, accountId);
+      console.log('[composio-proxy] Gmail read response:', JSON.stringify(data).slice(0, 300));
       return json({ result: data });
     }
 
