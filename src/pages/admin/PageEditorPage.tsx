@@ -62,8 +62,13 @@ export default function PageEditorPage() {
   useEffect(() => {
     if (page) {
       setTitle(page.title);
-      // Reset undo/redo history with fresh data
-      resetBlocks(JSON.parse(JSON.stringify(page.content_json || [])));
+      // Reset undo/redo history with fresh data — ensure all blocks have IDs
+      const rawBlocks: ContentBlock[] = JSON.parse(JSON.stringify(page.content_json || []));
+      const hydratedBlocks = rawBlocks.map((block, i) => ({
+        ...block,
+        id: block.id || `block-${Date.now()}-${i}`,
+      }));
+      resetBlocks(hydratedBlocks);
       setMeta(JSON.parse(JSON.stringify(page.meta_json || {})));
       setHasChanges(false);
     }
