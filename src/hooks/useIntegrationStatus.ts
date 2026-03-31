@@ -27,6 +27,7 @@ interface IntegrationStatus {
     slack: boolean;
     hunter: boolean;
     jina: boolean;
+    composio: boolean;
   };
 }
 
