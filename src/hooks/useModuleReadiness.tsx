@@ -14,7 +14,7 @@ export interface ModuleReadiness {
 
 /**
  * Check if a module's integration dependencies are satisfied.
- * An integration is "active" when it has a configured secret AND is enabled.
+ * Auto-enable logic: active when secret exists, unless explicitly disabled by admin.
  */
 export function useModuleReadiness(moduleId: keyof ModulesSettings): ModuleReadiness {
   const { data: modules } = useModules();
@@ -29,8 +29,9 @@ export function useModuleReadiness(moduleId: keyof ModulesSettings): ModuleReadi
     if (!integrations || !secretsStatus) return false;
     const noSecretNeeded = ['local_llm', 'n8n', 'google_analytics', 'meta_pixel', 'slack'];
     const hasKey = noSecretNeeded.includes(key) ? true : (secretsStatus.integrations?.[key as keyof IntegrationsSettings] ?? false);
-    const isEnabled = integrations[key as keyof IntegrationsSettings]?.enabled ?? false;
-    return hasKey && isEnabled;
+    // Auto-enable: active if key exists, unless explicitly disabled (enabled === false)
+    const explicitlyDisabled = integrations[key as keyof IntegrationsSettings]?.enabled === false;
+    return hasKey && !explicitlyDisabled;
   };
 
   const missingRequired = required.filter(k => !isIntegrationActive(k));
