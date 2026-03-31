@@ -233,9 +233,52 @@ serve(async (req) => {
         );
       }
 
+    } else if (provider === 'anthropic') {
+      const apiKey = Deno.env.get('ANTHROPIC_API_KEY');
+      if (!apiKey) {
+        return new Response(
+          JSON.stringify({ success: false, provider: 'anthropic', error: 'ANTHROPIC_API_KEY not configured' }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: AI_MODELS.anthropic.fast,
+          messages: [{ role: 'user', content: 'Say "OK"' }],
+          max_tokens: 5,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error('Anthropic API error:', response.status, errorData);
+        return new Response(
+          JSON.stringify({
+            success: false,
+            provider: 'anthropic',
+            error: `API returned ${response.status}: ${response.statusText}`
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const data = await response.json();
+      result = {
+        success: true,
+        provider: 'anthropic',
+        model: data.model || AI_MODELS.anthropic.default
+      };
+
     } else {
       return new Response(
-        JSON.stringify({ success: false, error: 'Invalid provider. Use "openai", "gemini", "local_llm", or "n8n".' }),
+        JSON.stringify({ success: false, error: 'Invalid provider. Use "openai", "gemini", "anthropic", "local_llm", or "n8n".' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
