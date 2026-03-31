@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
+import { DEFAULT_FLOWPILOT_BOOTSTRAP } from '@/data/flowpilotDefaults';
 import { formatDistanceToNow } from 'date-fns';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -252,47 +253,7 @@ export function FlowPilotDetails() {
         body: {
           seed_skills: true,
           seed_soul: true,
-          template_flowpilot: {
-            objectives: [
-              {
-                goal: 'Establish content presence — publish 3 blog posts within the first week',
-                success_criteria: { published_posts: 3 },
-                constraints: { no_destructive_actions: true },
-              },
-              {
-                goal: 'Configure lead capture — ensure at least one form or chat is active on the site',
-                success_criteria: { lead_capture_active: true },
-              },
-              {
-                goal: 'Set up weekly digest — monitor site performance and report key metrics every Friday',
-                success_criteria: { weekly_digest_active: true },
-              },
-            ],
-            automations: [
-              {
-                name: 'Weekly Business Digest',
-                description: 'Every Friday afternoon, analyze performance and generate a business digest with key metrics, wins, and next week priorities.',
-                trigger_type: 'cron',
-                trigger_config: { cron: '0 16 * * 5', timezone: 'UTC' },
-                skill_name: 'weekly_business_digest',
-                skill_arguments: {},
-                enabled: true,
-              },
-            ],
-            workflows: [
-              {
-                name: 'Content Pipeline',
-                description: 'Research a topic, generate a blog post proposal, write and publish.',
-                steps: [
-                  { id: 'step-1', skill_name: 'research_content', skill_args: { query: '{{topic}}' } },
-                  { id: 'step-2', skill_name: 'generate_content_proposal', skill_args: { research_context: '{{step-1.output}}' } },
-                  { id: 'step-3', skill_name: 'write_blog_post', skill_args: { proposal: '{{step-2.output}}' }, on_failure: 'stop' },
-                ],
-                trigger_type: 'manual',
-                enabled: true,
-              },
-            ],
-          },
+          template_flowpilot: DEFAULT_FLOWPILOT_BOOTSTRAP,
         },
       });
       if (error) throw error;
