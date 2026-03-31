@@ -42,6 +42,7 @@ import { useExtensionRelay } from "@/hooks/useExtensionRelay";
 import { toast } from "sonner";
 import JSZip from "jszip";
 import { FlowPilotDetails } from "./FlowPilotDetails";
+import { ComposioPanel } from "./ComposioPanel";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 
