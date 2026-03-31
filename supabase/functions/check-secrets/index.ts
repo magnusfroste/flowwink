@@ -24,6 +24,7 @@ interface SecretsStatus {
     google_client_secret: boolean;
     hunter: boolean;
     jina: boolean;
+    composio: boolean;
   };
 }
 
