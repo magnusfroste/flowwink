@@ -288,7 +288,7 @@ function ObjectiveEditorSheet({
               value={goal}
               onChange={(e) => setGoal(e.target.value)}
               placeholder="e.g. Publish 3 SEO-optimized blog posts per week to increase organic traffic by 20%"
-              rows={3}
+              rows={4}
             />
           </div>
 
@@ -299,7 +299,7 @@ function ObjectiveEditorSheet({
               value={constraintsText}
               onChange={(e) => setConstraintsText(e.target.value)}
               placeholder={'{\n  "max_posts_per_day": 1,\n  "token_budget": 50000,\n  "excluded_skills": ["newsletter_send"],\n  "deadline": "2026-04-30"\n}'}
-              rows={4}
+              rows={5}
               className="font-mono text-xs"
             />
             <p className="text-xs text-muted-foreground">
@@ -314,7 +314,7 @@ function ObjectiveEditorSheet({
               value={criteriaText}
               onChange={(e) => setCriteriaText(e.target.value)}
               placeholder={'{\n  "posts_published": 3,\n  "leads_generated": 10,\n  "avg_response_time_seconds": 30\n}'}
-              rows={4}
+              rows={5}
               className="font-mono text-xs"
             />
             <p className="text-xs text-muted-foreground">
