@@ -1005,12 +1005,25 @@ async function executePagesAction(
       const { action = 'list', page_id } = args as any;
       if (!page_id) throw new Error('page_id is required');
 
-      // Fetch current page blocks
+      // Fetch current page blocks and hydrate missing IDs
       const { data: page, error: fetchErr } = await supabase.from('pages')
         .select('id, content_json').eq('id', page_id).is('deleted_at', null).single();
       if (fetchErr || !page) throw new Error(`Page not found: ${page_id}`);
 
       const blocks = (page.content_json as any[]) || [];
+      // Hydrate blocks without IDs (from old migrations)
+      let hydrated = false;
+      for (let i = 0; i < blocks.length; i++) {
+        if (!blocks[i].id) {
+          blocks[i].id = crypto.randomUUID();
+          hydrated = true;
+        }
+      }
+      if (hydrated) {
+        await supabase.from('pages')
+          .update({ content_json: blocks, updated_at: new Date().toISOString() })
+          .eq('id', page_id);
+      }
 
       if (action === 'list') {
         return {
