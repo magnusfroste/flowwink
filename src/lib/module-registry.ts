@@ -33,6 +33,7 @@ import {
   browserControlModule,
   growthModule,
   federationModule,
+  composioModule,
   ticketsModule,
   siteMigrationModule,
 } from '@/lib/modules';
@@ -66,6 +67,7 @@ class ModuleRegistry {
       browserControlModule,
       growthModule,
       federationModule,
+      composioModule,
       
       ticketsModule,
       siteMigrationModule,

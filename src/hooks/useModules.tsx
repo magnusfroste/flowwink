@@ -55,6 +55,7 @@ export interface ModulesSettings {
   
   tickets: ModuleConfig;
   siteMigration: ModuleConfig;
+  composio: ModuleConfig;
 }
 
 export const defaultModulesSettings: ModulesSettings = {
@@ -309,6 +310,16 @@ export const defaultModulesSettings: ModulesSettings = {
     adminUI: false,
     requiredIntegrations: ['firecrawl'],
     optionalIntegrations: ['jina'],
+  },
+  composio: {
+    enabled: false,
+    name: 'Composio',
+    description: 'Connect to 1000+ external apps via managed OAuth — Gmail, Slack, HubSpot and more',
+    icon: 'Network',
+    category: 'system',
+    autonomy: 'agent-capable',
+    adminUI: false,
+    requiredIntegrations: ['composio'],
   },
 };
 

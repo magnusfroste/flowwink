@@ -672,6 +672,29 @@ export const federationPeerOutputSchema = z.object({
 export type FederationPeerOutput = z.infer<typeof federationPeerOutputSchema>;
 
 // =============================================================================
+// Composio Module
+// =============================================================================
+
+export const composioActionInputSchema = z.object({
+  action: z.enum(['search_tools', 'execute', 'list_apps', 'connect_app']),
+  intent: z.string().optional(),
+  app: z.string().optional(),
+  params: z.record(z.unknown()).optional(),
+  entity_id: z.string().optional(),
+});
+
+export type ComposioActionInput = z.infer<typeof composioActionInputSchema>;
+
+export const composioActionOutputSchema = z.object({
+  success: z.boolean(),
+  action: z.string(),
+  result: z.unknown().nullable(),
+  error: z.string().optional(),
+});
+
+export type ComposioActionOutput = z.infer<typeof composioActionOutputSchema>;
+
+// =============================================================================
 // Module Definition Interface
 // =============================================================================
 
