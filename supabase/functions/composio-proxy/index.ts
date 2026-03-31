@@ -73,20 +73,23 @@ Deno.serve(async (req) => {
       return json({ result: data });
     }
 
-    // Route: execute action
+    // Route: execute action (v3)
     if (action === 'execute') {
       const actionName = params?.action_name;
       if (!actionName) {
         return json({ error: 'action_name required in params' }, 400);
       }
 
-      const res = await fetch(`${COMPOSIO_V2}/actions/${actionName}/execute`, {
+      const toolkit = params?.toolkit || actionName.split('_')[0]?.toLowerCase();
+      const accountId = await getConnectedAccountId(toolkit);
+
+      const execBody: Record<string, unknown> = { input: params?.input || {} };
+      if (accountId) execBody.connected_account_id = accountId;
+
+      const res = await fetch(`${COMPOSIO_V3}/tools/execute/${actionName}`, {
         method: 'POST',
         headers: composioHeaders,
-        body: JSON.stringify({
-          entityId: entity_id || 'default',
-          input: params?.input || {},
-        }),
+        body: JSON.stringify(execBody),
       });
       const data = await res.json();
       return json({ result: data });
