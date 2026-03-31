@@ -92,6 +92,29 @@ Deno.serve(async (req) => {
       return json({ result: data });
     }
 
+    // Helper: find active connected account for a toolkit
+    async function getConnectedAccountId(toolkit: string): Promise<string | null> {
+      const res = await fetch(`${COMPOSIO_V3}/connected_accounts?user_id=${entity_id || 'default'}&status=ACTIVE&toolkit=${toolkit}`, {
+        headers: composioHeaders,
+      });
+      const data = await res.json();
+      const account = (data?.items || [])[0];
+      return account?.id || null;
+    }
+
+    // Helper: execute a tool via v3
+    async function executeToolV3(toolSlug: string, input: Record<string, unknown>, connectedAccountId: string) {
+      const res = await fetch(`${COMPOSIO_V3}/tools/execute/${toolSlug}`, {
+        method: 'POST',
+        headers: composioHeaders,
+        body: JSON.stringify({
+          connected_account_id: connectedAccountId,
+          input,
+        }),
+      });
+      return res.json();
+    }
+
     // Route: Gmail send
     if (action === 'gmail_send') {
       const { to, subject, body: emailBody, cc, bcc } = params || {};
@@ -99,19 +122,12 @@ Deno.serve(async (req) => {
         return json({ error: 'to, subject, and body required' }, 400);
       }
 
-      // Find active Gmail connected account
-      const caRes = await fetch(`${COMPOSIO_V3}/connected_accounts?user_id=${entity_id || 'default'}&status=ACTIVE&toolkit=gmail`, {
-        headers: composioHeaders,
-      });
-      const caData = await caRes.json();
-      const gmailAccount = (caData?.items || [])[0];
-      
-      if (!gmailAccount?.id) {
-        console.error('[composio-proxy] No active Gmail connection found');
+      const accountId = await getConnectedAccountId('gmail');
+      if (!accountId) {
         return json({ error: 'Gmail not connected. Connect Gmail first.' }, 400);
       }
 
-      console.log(`[composio-proxy] Using Gmail account: ${gmailAccount.id}`);
+      console.log(`[composio-proxy] Gmail send via v3, account: ${accountId}`);
 
       const input: Record<string, string> = {
         recipient_email: to,
@@ -121,34 +137,23 @@ Deno.serve(async (req) => {
       if (cc) input.cc = cc;
       if (bcc) input.bcc = bcc;
 
-      const res = await fetch(`${COMPOSIO_V2}/actions/GMAIL_SEND_EMAIL/execute`, {
-        method: 'POST',
-        headers: composioHeaders,
-        body: JSON.stringify({ 
-          connectedAccountId: gmailAccount.id,
-          entityId: entity_id || 'default', 
-          input,
-        }),
-      });
-      const data = await res.json();
+      const data = await executeToolV3('GMAIL_SEND_EMAIL', input, accountId);
       console.log('[composio-proxy] Gmail send response:', JSON.stringify(data).slice(0, 500));
       return json({ result: data });
     }
 
     // Route: Gmail read
     if (action === 'gmail_read') {
-      const query = params?.query || '';
-      const maxResults = params?.max_results || 5;
+      const accountId = await getConnectedAccountId('gmail');
+      if (!accountId) {
+        return json({ error: 'Gmail not connected. Connect Gmail first.' }, 400);
+      }
 
-      const res = await fetch(`${COMPOSIO_V2}/actions/GMAIL_FETCH_EMAILS/execute`, {
-        method: 'POST',
-        headers: composioHeaders,
-        body: JSON.stringify({
-          entityId: entity_id || 'default',
-          input: { query, max_results: maxResults },
-        }),
-      });
-      const data = await res.json();
+      const data = await executeToolV3('GMAIL_FETCH_EMAILS', {
+        query: params?.query || '',
+        max_results: params?.max_results || 5,
+      }, accountId);
+      console.log('[composio-proxy] Gmail read response:', JSON.stringify(data).slice(0, 300));
       return json({ result: data });
     }
 
