@@ -878,7 +878,11 @@ async function executePagesAction(
         if (page_id) query = query.eq('id', page_id);
         else if (slug) query = query.eq('slug', slug);
         else throw new Error('page_id or slug required');
-        const { data, error } = await query.is('deleted_at', null).single();
+        // Use .limit(1) + manual pick to avoid "Cannot coerce to single JSON" when slug matches multiple rows
+        const { data: rows, error } = await query.is('deleted_at', null).order('created_at', { ascending: true }).limit(1);
+        if (error) throw new Error(`Get page failed: ${error.message}`);
+        if (!rows || rows.length === 0) throw new Error(`Page not found: ${page_id || slug}`);
+        const data = rows[0];
         if (error) throw new Error(`Get page failed: ${error.message}`);
         const blockSummary = (data.content_json as any[] || []).map((b: any, i: number) => ({
           index: i, id: b.id, type: b.type, hidden: b.hidden || false,
