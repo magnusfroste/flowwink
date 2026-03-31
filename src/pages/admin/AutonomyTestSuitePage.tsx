@@ -81,7 +81,7 @@ export default function AutonomyTestSuitePage() {
       .select('id, created_at, layers, summary, duration_ms, l9_accuracy, triggered_by')
       .order('created_at', { ascending: false })
       .limit(50);
-    setHistory((data as HistoryEntry[]) || []);
+    setHistory((data as unknown as HistoryEntry[]) || []);
     setLoadingHistory(false);
   };
 
