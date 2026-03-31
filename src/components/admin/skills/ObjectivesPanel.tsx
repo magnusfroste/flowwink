@@ -296,12 +296,12 @@ function ObjectiveEditorSheet({
               id="constraints"
               value={constraintsText}
               onChange={(e) => setConstraintsText(e.target.value)}
-              placeholder='{"max_posts_per_day": 1, "excluded_skills": ["newsletter_send"]}'
+              placeholder={'{\n  "max_posts_per_day": 1,\n  "token_budget": 50000,\n  "excluded_skills": ["newsletter_send"],\n  "deadline": "2026-04-30"\n}'}
               rows={4}
               className="font-mono text-xs"
             />
             <p className="text-xs text-muted-foreground">
-              Guardrails: budgets, deadlines, excluded skills, rate limits.
+              Guardrails that limit FlowPilot — e.g. daily limits, token budgets, skill exclusions, deadlines.
             </p>
           </div>
 
