@@ -72,6 +72,16 @@ export function ObjectivesPanel() {
 
   return (
     <div className="space-y-4">
+      {/* How it works hint */}
+      <div className="flex items-start gap-2.5 rounded-lg border border-border/50 bg-muted/30 px-3.5 py-2.5 text-xs text-muted-foreground">
+        <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+        <p>
+          Objectives guide what FlowPilot works on. You can create your own, and FlowPilot may also
+          propose new objectives based on site performance, conversations, and trends — you'll always
+          be able to review and adjust them here.
+        </p>
+      </div>
+
       {/* Toolbar */}
       <div className="flex items-center gap-3">
         <Select value={statusFilter} onValueChange={setStatusFilter}>
