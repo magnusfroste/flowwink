@@ -58,7 +58,8 @@ export function ComposioPanel() {
         body: { action: 'list_apps', entity_id: 'default' },
       });
       if (error) throw error;
-      return (data?.result?.items || data?.result || []) as ComposioApp[];
+      const items = data?.result;
+      return (Array.isArray(items) ? items : items?.items || []) as ComposioApp[];
     },
     staleTime: 60 * 1000,
     retry: 1,
@@ -101,13 +102,19 @@ export function ComposioPanel() {
       });
       if (error) throw error;
       
-      const oauthUrl = data?.result?.redirectUrl || data?.result?.connectionUrl || data?.result?.url;
-      if (oauthUrl) {
+      const result = data?.result;
+      const oauthUrl = result?.redirect_url || result?.redirect_uri || result?.redirectUrl 
+        || result?.connectionData?.val?.redirectUrl;
+      
+      if (result?.error) {
+        logger.error('[ComposioPanel] Composio error:', result);
+        toast.error(result.error || 'Composio returned an error');
+      } else if (oauthUrl) {
         toast.success('Opening OAuth — complete login in the new tab');
         window.open(oauthUrl, '_blank', 'noopener');
       } else {
-        logger.warn('[ComposioPanel] No redirect URL returned:', data);
-        toast.error('No OAuth URL returned — check Composio dashboard for this app\'s integration setup');
+        logger.warn('[ComposioPanel] No redirect URL in response:', JSON.stringify(result));
+        toast.error('No OAuth URL returned — check Composio integration setup');
       }
     } catch (err) {
       logger.error('[ComposioPanel] Connect failed:', err);
