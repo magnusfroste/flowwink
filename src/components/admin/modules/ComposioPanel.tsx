@@ -60,14 +60,16 @@ export function ComposioPanel() {
       });
       if (error) throw error;
       const items = data?.result;
-      return (Array.isArray(items) ? items : items?.items || []) as ComposioApp[];
+      const list = Array.isArray(items) ? items : items?.items || [];
+      // Only show ACTIVE connections
+      return list.filter((a: any) => a.status === 'ACTIVE') as ComposioApp[];
     },
-    staleTime: 60 * 1000,
+    staleTime: 30 * 1000,
     retry: 1,
   });
 
   const isGmailConnected = Array.isArray(connectedApps) && connectedApps.some(
-    app => (app.appName || app.name || '').toLowerCase().includes('gmail')
+    app => (app.toolkit?.slug || app.appName || app.name || '').toLowerCase().includes('gmail')
   );
 
   const handleSearch = async () => {
