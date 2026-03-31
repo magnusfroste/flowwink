@@ -1143,7 +1143,12 @@ async function executePagesAction(
     case 'create_page_block': {
       // Convenience wrapper: maps to manage_page_blocks add action
       const { page_id, block_type, block_data = {}, position } = args as any;
-      if (!page_id) return { error: 'page_id is required' };
+      if (!page_id) {
+        return {
+          error: 'page_id is required. Create the page first with manage_page { action: "create", title, slug? } and then call create_page_block using the returned page_id.',
+          next_step: 'manage_page.create',
+        };
+      }
       if (!block_type) return { error: 'block_type is required' };
       return executePagesAction(supabase, 'manage_page_blocks', {
         action: 'add',
