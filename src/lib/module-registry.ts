@@ -33,6 +33,7 @@ import {
   browserControlModule,
   growthModule,
   federationModule,
+  composioModule,
   ticketsModule,
   siteMigrationModule,
 } from '@/lib/modules';
