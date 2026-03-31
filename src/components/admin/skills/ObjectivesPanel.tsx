@@ -314,7 +314,7 @@ function ObjectiveEditorSheet({
               value={criteriaText}
               onChange={(e) => setCriteriaText(e.target.value)}
               placeholder={'{\n  "posts_published": 3,\n  "leads_generated": 10,\n  "avg_response_time_seconds": 30\n}'}
-              rows={4}
+              rows={5}
               className="font-mono text-xs"
             />
             <p className="text-xs text-muted-foreground">
