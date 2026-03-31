@@ -58,7 +58,8 @@ export function ComposioPanel() {
         body: { action: 'list_apps', entity_id: 'default' },
       });
       if (error) throw error;
-      return (data?.result?.items || data?.result || []) as ComposioApp[];
+      const items = data?.result;
+      return (Array.isArray(items) ? items : items?.items || []) as ComposioApp[];
     },
     staleTime: 60 * 1000,
     retry: 1,
