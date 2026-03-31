@@ -285,7 +285,7 @@ function ObjectiveEditorSheet({
               id="goal"
               value={goal}
               onChange={(e) => setGoal(e.target.value)}
-              placeholder="e.g. Publish 3 blog posts this week"
+              placeholder="e.g. Publish 3 SEO-optimized blog posts per week to increase organic traffic by 20%"
               rows={3}
             />
           </div>
@@ -296,12 +296,12 @@ function ObjectiveEditorSheet({
               id="constraints"
               value={constraintsText}
               onChange={(e) => setConstraintsText(e.target.value)}
-              placeholder='{"max_posts_per_day": 1, "excluded_skills": ["newsletter_send"]}'
+              placeholder={'{\n  "max_posts_per_day": 1,\n  "token_budget": 50000,\n  "excluded_skills": ["newsletter_send"],\n  "deadline": "2026-04-30"\n}'}
               rows={4}
               className="font-mono text-xs"
             />
             <p className="text-xs text-muted-foreground">
-              Guardrails: budgets, deadlines, excluded skills, rate limits.
+              Guardrails that limit FlowPilot — e.g. daily limits, token budgets, skill exclusions, deadlines.
             </p>
           </div>
 
@@ -311,12 +311,12 @@ function ObjectiveEditorSheet({
               id="criteria"
               value={criteriaText}
               onChange={(e) => setCriteriaText(e.target.value)}
-              placeholder='{"posts_published": 3}'
+              placeholder={'{\n  "posts_published": 3,\n  "leads_generated": 10,\n  "avg_response_time_seconds": 30\n}'}
               rows={4}
               className="font-mono text-xs"
             />
             <p className="text-xs text-muted-foreground">
-              Measurable conditions for auto-completion.
+              Measurable targets — FlowPilot marks the objective complete when these are met.
             </p>
           </div>
         </div>
