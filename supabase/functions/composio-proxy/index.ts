@@ -69,7 +69,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Route: execute action
+    // Route: execute action (generic or skill-specific)
     if (action === 'execute') {
       const actionName = params?.action_name;
       if (!actionName) {
@@ -85,6 +85,59 @@ Deno.serve(async (req) => {
         body: JSON.stringify({
           entityId: entity_id || 'default',
           input: params?.input || {},
+        }),
+      });
+      const data = await res.json();
+
+      return new Response(JSON.stringify({ result: data }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Route: Gmail send (skill shortcut)
+    if (action === 'gmail_send') {
+      const { to, subject, body: emailBody, cc, bcc } = params || {};
+      if (!to || !subject || !emailBody) {
+        return new Response(JSON.stringify({ error: 'to, subject, and body required' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const input: Record<string, string> = {
+        recipient_email: to,
+        subject,
+        body: emailBody,
+      };
+      if (cc) input.cc = cc;
+      if (bcc) input.bcc = bcc;
+
+      const res = await fetch(`${COMPOSIO_BASE}/actions/GMAIL_SEND_EMAIL/execute`, {
+        method: 'POST',
+        headers: composioHeaders,
+        body: JSON.stringify({
+          entityId: entity_id || 'default',
+          input,
+        }),
+      });
+      const data = await res.json();
+
+      return new Response(JSON.stringify({ result: data }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Route: Gmail read (skill shortcut)
+    if (action === 'gmail_read') {
+      const query = params?.query || '';
+      const maxResults = params?.max_results || 5;
+
+      const res = await fetch(`${COMPOSIO_BASE}/actions/GMAIL_FETCH_EMAILS/execute`, {
+        method: 'POST',
+        headers: composioHeaders,
+        body: JSON.stringify({
+          entityId: entity_id || 'default',
+          input: { query, max_results: maxResults },
         }),
       });
       const data = await res.json();
