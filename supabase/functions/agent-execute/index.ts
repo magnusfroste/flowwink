@@ -107,7 +107,7 @@ serve(async (req) => {
             composio_search_tools: 'search_tools',
             composio_execute: 'execute',
           };
-          const action = skillToAction[skillName] || skillName.replace('composio_', '');
+          const action = skillToAction[skill.name] || skill.name.replace('composio_', '');
           edgeBody = { action, params: args };
         }
         
