@@ -24,7 +24,6 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
-import { DEFAULT_FLOWPILOT_BOOTSTRAP } from '@/data/flowpilotDefaults';
 import { formatDistanceToNow } from 'date-fns';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -246,64 +245,24 @@ export function FlowPilotDetails() {
     },
   });
 
-  const handleRebootstrap = async () => {
+  // Syncs any missing skills and soul to the latest version.
+  // Objectives and automations are managed in Engine Room — not touched here.
+  const handleSyncSkills = async () => {
     setIsBootstrapping(true);
     try {
       const { error } = await supabase.functions.invoke('setup-flowpilot', {
-        body: {
-          seed_skills: true,
-          seed_soul: true,
-          template_flowpilot: DEFAULT_FLOWPILOT_BOOTSTRAP,
-        },
+        body: { seed_skills: true, seed_soul: true },
       });
       if (error) throw error;
 
-      // Seed AGENTS document if missing
-      try {
-        const { data: existingAgents } = await supabase
-          .from('agent_memory')
-          .select('id')
-          .eq('key', 'agents')
-          .maybeSingle();
-
-        if (!existingAgents) {
-          await supabase.from('agent_memory').insert({
-            key: 'agents',
-            value: {
-              version: '1.0',
-              direct_action_rules: 'When a user asks you to DO something (delete, update, create, fix, clean up), ALWAYS execute it directly using the appropriate skill — NEVER create an automation instead.',
-              self_improvement: 'If a user asks you to do something you can\'t, consider creating a new skill. When you notice repetitive tasks, SUGGEST an automation.',
-              memory_guidelines: 'Save user preferences, facts, and context with memory_write. Check memory before answering questions about the site.',
-              browser_rules: 'When a user provides a URL, ALWAYS call browser_fetch. NEVER guess URLs for social profiles.',
-            },
-            category: 'preference',
-            created_by: 'flowpilot',
-          });
-          logger.log('[ReBootstrap] AGENTS document seeded');
-        }
-      } catch (agentsErr) {
-        logger.warn('[ReBootstrap] AGENTS seed failed (non-fatal):', agentsErr);
-      }
-
-      // Fire initial heartbeat
-      try {
-        await supabase.functions.invoke('flowpilot-heartbeat', {
-          body: { time: new Date().toISOString(), trigger: 're-bootstrap' },
-        });
-      } catch (hbErr) {
-        logger.warn('[ReBootstrap] Heartbeat failed (non-fatal):', hbErr);
-      }
-
       queryClient.invalidateQueries({ queryKey: ['agent-skills'] });
-      queryClient.invalidateQueries({ queryKey: ['agent-objectives'] });
-      queryClient.invalidateQueries({ queryKey: ['agent-automations'] });
       queryClient.invalidateQueries({ queryKey: ['flowpilot-bootstrap-check'] });
 
-      toast.success('FlowPilot bootstrap completed');
+      toast.success('Skills synced to latest version');
       refetch();
     } catch (err) {
-      console.error('Bootstrap failed:', err);
-      toast.error('Bootstrap failed — check AI provider configuration');
+      logger.error('[SyncSkills] Failed:', err);
+      toast.error('Sync failed — check AI provider configuration');
     } finally {
       setIsBootstrapping(false);
     }
@@ -433,16 +392,16 @@ export function FlowPilotDetails() {
       {/* Actions */}
       <div className="space-y-2">
         <Button
-          onClick={handleRebootstrap}
+          onClick={handleSyncSkills}
           disabled={isBootstrapping}
           variant="outline"
           size="sm"
           className="w-full h-8 text-xs"
         >
           {isBootstrapping ? (
-            <><RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" /> Running bootstrap…</>
+            <><RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" /> Syncing…</>
           ) : (
-            <><RefreshCw className="h-3.5 w-3.5 mr-1.5" /> Re-run Bootstrap</>
+            <><RefreshCw className="h-3.5 w-3.5 mr-1.5" /> Sync Missing Skills</>
           )}
         </Button>
         <Button
