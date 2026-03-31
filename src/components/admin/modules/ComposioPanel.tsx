@@ -102,7 +102,8 @@ export function ComposioPanel() {
       if (error) throw error;
       
       const result = data?.result;
-      const oauthUrl = result?.redirectUrl || result?.connectionUrl || result?.url || result?.redirectURL;
+      const oauthUrl = result?.redirect_url || result?.redirect_uri || result?.redirectUrl 
+        || result?.connectionData?.val?.redirectUrl;
       
       if (result?.error) {
         logger.error('[ComposioPanel] Composio error:', result);
