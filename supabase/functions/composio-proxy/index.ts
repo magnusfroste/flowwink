@@ -144,48 +144,71 @@ Deno.serve(async (req) => {
       return json({ result: data?.items || data });
     }
 
-    // Route: initiate connection (get OAuth URL) via v3
+    // Route: initiate connection (get OAuth URL)
     if (action === 'connect_app') {
       const appName = params?.app_name;
       if (!appName) {
         return json({ error: 'app_name required' }, 400);
       }
 
-      // Step 1: Find auth config (integration) for this app
-      console.log(`[composio-proxy] Looking up auth configs for app: ${appName}`);
-      const acRes = await fetch(`${COMPOSIO_V3}/auth_configs?toolkit=${appName.toLowerCase()}`, {
+      // Step 1: Find integration via v1 (reliable app name filtering)
+      console.log(`[composio-proxy] Looking up v1 integration for: ${appName}`);
+      const intRes = await fetch(`${COMPOSIO_V1}/integrations?appName=${appName.toUpperCase()}`, {
         headers: composioHeaders,
       });
-      const acData = await acRes.json();
-      console.log('[composio-proxy] Auth configs response:', JSON.stringify(acData).slice(0, 500));
+      const intData = await intRes.json();
+      console.log('[composio-proxy] v1 integrations:', JSON.stringify(intData).slice(0, 500));
 
-      const authConfigs = acData?.items || acData || [];
-      const authConfig = Array.isArray(authConfigs) ? authConfigs[0] : null;
+      const integrations = intData?.items || intData || [];
+      const integration = Array.isArray(integrations) ? integrations[0] : null;
 
-      if (!authConfig?.id) {
-        console.error('[composio-proxy] No auth config found for:', appName);
+      if (!integration?.id) {
         return json({
-          error: `No auth config found for "${appName}". Create one in Composio dashboard first.`,
-          hint: 'Go to app.composio.dev → Your app → Setup auth config',
-          raw: acData,
+          error: `No integration found for "${appName}". Set it up in Composio dashboard.`,
+          raw: intData,
         }, 404);
       }
 
-      console.log(`[composio-proxy] Using auth config ID: ${authConfig.id}`);
+      // Step 2: Find matching v3 auth_config by the v1 integration UUID
+      // The v1 integration.id maps to v3 auth_config.uuid (deprecated field)
+      console.log(`[composio-proxy] Looking up v3 auth_config for integration UUID: ${integration.id}`);
+      const acRes = await fetch(`${COMPOSIO_V3}/auth_configs`, {
+        headers: composioHeaders,
+      });
+      const acData = await acRes.json();
+      const authConfigs = acData?.items || [];
+      
+      // Match by deprecated.uuid or by name containing the app name
+      const matchedConfig = Array.isArray(authConfigs) 
+        ? authConfigs.find((ac: any) => 
+            ac.uuid === integration.id || 
+            ac.deprecated?.uuid === integration.id ||
+            (ac.name || '').toLowerCase().includes(appName.toLowerCase())
+          )
+        : null;
 
-      // Step 2: Initiate connection via v3
+      if (!matchedConfig?.id) {
+        console.error('[composio-proxy] No matching v3 auth_config. Available:', 
+          JSON.stringify(authConfigs.map((a: any) => ({ id: a.id, name: a.name, uuid: a.uuid })))
+        );
+        return json({
+          error: `No auth config found for "${appName}".`,
+          available: authConfigs.map((a: any) => ({ id: a.id, name: a.name })),
+        }, 404);
+      }
+
+      console.log(`[composio-proxy] Matched auth_config: ${matchedConfig.id} (${matchedConfig.name})`);
+
+      // Step 3: Initiate connection via v3
       const connectBody: Record<string, unknown> = {
-        auth_config: { id: authConfig.id },
-        connection: {
-          user_id: entity_id || 'default',
-        },
+        auth_config: { id: matchedConfig.id },
+        connection: { user_id: entity_id || 'default' },
       };
       if (params?.redirect_uri) {
         connectBody.redirect_uri = params.redirect_uri;
       }
-      
-      console.log('[composio-proxy] Initiating v3 connection:', JSON.stringify(connectBody));
 
+      console.log('[composio-proxy] Initiating v3 connection:', JSON.stringify(connectBody));
       const res = await fetch(`${COMPOSIO_V3}/connected_accounts`, {
         method: 'POST',
         headers: composioHeaders,
