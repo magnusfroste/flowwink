@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { loadSkillsRaw } from "../_shared/pilot/reason.ts";
+import { scoreSkillsByIntent, loadRecentUsageCounts } from "../_shared/pilot/intent-scorer.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
   resolveAiConfig,
@@ -35,7 +36,7 @@ const corsHeaders = {
 
 interface TestResult {
   name: string;
-  layer: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+  layer: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
   status: 'pass' | 'fail' | 'skip';
   duration_ms: number;
   error?: string;
@@ -55,7 +56,7 @@ function assertContains(str: string, substr: string, msg?: string) {
   if (!str.includes(substr)) throw new Error(msg || `"${str.slice(0, 100)}..." does not contain "${substr}"`);
 }
 
-async function runTest(name: string, layer: 1 | 2 | 3 | 4 | 5 | 6, fn: () => Promise<void>): Promise<TestResult> {
+async function runTest(name: string, layer: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9, fn: () => Promise<void>): Promise<TestResult> {
   const start = Date.now();
   try {
     await fn();
@@ -1782,6 +1783,220 @@ async function layer8Tests(supabase: any): Promise<TestResult[]> {
   return results;
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// LAYER 9: Skill Selection Accuracy Benchmark
+// Tests that the intent-scorer and AI both route natural language to correct skills
+// ═══════════════════════════════════════════════════════════════════════════════
+
+interface L9TestCase {
+  input: string;
+  expect: string[];      // At least one of these should be selected/top-ranked
+  notExpect?: string[];   // None of these should be selected
+  lang?: 'en' | 'sv';
+}
+
+const L9_BENCHMARK: L9TestCase[] = [
+  // ── Email ──
+  { input: 'read my latest emails', expect: ['composio_gmail_read', 'composio_gmail_fetch'], notExpect: ['manage_blog_posts'], lang: 'en' },
+  { input: 'läs mina senaste mail', expect: ['composio_gmail_read', 'composio_gmail_fetch'], notExpect: ['manage_blog_posts'], lang: 'sv' },
+  { input: 'send an email to the client', expect: ['composio_gmail_send'], notExpect: ['analyze_analytics'], lang: 'en' },
+  // ── Blog / Content ──
+  { input: 'write a new blog post about SEO', expect: ['manage_blog_posts'], notExpect: ['composio_gmail_read'], lang: 'en' },
+  { input: 'skriv ett nytt blogginlägg', expect: ['manage_blog_posts'], notExpect: ['analyze_analytics'], lang: 'sv' },
+  { input: 'create content about AI trends', expect: ['manage_blog_posts', 'content_research'], lang: 'en' },
+  // ── SEO ──
+  { input: 'run an SEO audit on the homepage', expect: ['seo_audit'], notExpect: ['manage_blog_posts'], lang: 'en' },
+  { input: 'check our search rankings', expect: ['seo_audit', 'analyze_analytics'], lang: 'en' },
+  // ── Analytics ──
+  { input: 'how is the website performing this week?', expect: ['analyze_analytics'], notExpect: ['manage_blog_posts'], lang: 'en' },
+  { input: 'visa statistik för veckan', expect: ['analyze_analytics'], lang: 'sv' },
+  // ── CRM / Leads ──
+  { input: 'show me all new leads', expect: ['manage_leads', 'manage_crm'], notExpect: ['manage_blog_posts'], lang: 'en' },
+  { input: 'visa nya leads', expect: ['manage_leads', 'manage_crm'], lang: 'sv' },
+  { input: 'create a deal for this prospect', expect: ['manage_deals', 'manage_crm'], lang: 'en' },
+  // ── Newsletter ──
+  { input: 'send the weekly newsletter', expect: ['manage_newsletter', 'send_newsletter'], notExpect: ['manage_blog_posts'], lang: 'en' },
+  { input: 'skicka nyhetsbrevet', expect: ['manage_newsletter', 'send_newsletter'], lang: 'sv' },
+  // ── Booking ──
+  { input: 'show upcoming bookings', expect: ['manage_bookings'], notExpect: ['analyze_analytics'], lang: 'en' },
+  { input: 'visa bokningar', expect: ['manage_bookings'], lang: 'sv' },
+  // ── Products ──
+  { input: 'add a new product to the shop', expect: ['manage_products'], notExpect: ['manage_blog_posts'], lang: 'en' },
+  { input: 'update product prices', expect: ['manage_products'], lang: 'en' },
+  // ── Site Settings ──
+  { input: 'change the site title and logo', expect: ['manage_site_settings'], notExpect: ['manage_blog_posts'], lang: 'en' },
+  // ── KB ──
+  { input: 'update the FAQ about shipping', expect: ['manage_kb', 'manage_kb_articles'], notExpect: ['manage_blog_posts'], lang: 'en' },
+  // ── Web Search ──
+  { input: 'search the web for competitor pricing', expect: ['web_search', 'firecrawl_search'], notExpect: ['manage_blog_posts'], lang: 'en' },
+  { input: 'sök på webben efter konkurrenter', expect: ['web_search', 'firecrawl_search'], lang: 'sv' },
+];
+
+async function layer9Tests(supabase: any, supabaseUrl: string, serviceKey: string): Promise<TestResult[]> {
+  const results: TestResult[] = [];
+
+  // ── Phase A: Intent-Scorer Accuracy (deterministic, no AI cost) ──────────
+  const rawSkills = await loadSkillsRaw(supabase, 'internal');
+  if (!rawSkills || rawSkills.length === 0) {
+    results.push({ name: 'L9: SKIP — no skills loaded', layer: 9 as any, status: 'skip', duration_ms: 0 });
+    return results;
+  }
+
+  // Build tool definitions same as loadSkillTools does
+  const skillTools = rawSkills
+    .filter((s: any) => s.enabled && s.tool_definition)
+    .map((s: any) => ({
+      ...s.tool_definition,
+      function: {
+        ...s.tool_definition.function,
+        name: s.name,
+        description: s.description || s.tool_definition.function?.description || '',
+      },
+    }));
+
+  const usageCounts = await loadRecentUsageCounts(supabase, 14);
+  let scorerPassed = 0;
+  let scorerTotal = 0;
+
+  for (const tc of L9_BENCHMARK) {
+    scorerTotal++;
+    results.push(await runTest(`L9-SCORER: "${tc.input.slice(0, 50)}…" → ${tc.expect[0]}`, 9 as any, async () => {
+      const scored = scoreSkillsByIntent(skillTools, tc.input, {
+        maxSkills: 15,
+        usageBoost: usageCounts,
+      });
+      const selectedNames = scored.map((t: any) => t.function?.name || '');
+
+      // Check expected: at least ONE expected skill in the window
+      const foundExpected = tc.expect.some(e => selectedNames.includes(e));
+
+      // Check for any skill name that partially matches expected (fuzzy)
+      const fuzzyFound = !foundExpected && tc.expect.some(e =>
+        selectedNames.some((n: string) => n.includes(e.split('_')[0]) || e.includes(n.split('_')[0]))
+      );
+
+      if (!foundExpected && !fuzzyFound) {
+        // Check if skill even exists in DB
+        const existsInDb = skillTools.some((t: any) => tc.expect.includes(t.function?.name));
+        if (!existsInDb) {
+          throw new Error(`SKIP: Expected skills [${tc.expect.join(',')}] not in DB`);
+        }
+        throw new Error(`Expected [${tc.expect.join(',')}] in top-15, got [${selectedNames.slice(0, 8).join(',')}]`);
+      }
+
+      // Check notExpect
+      if (tc.notExpect) {
+        const foundBad = tc.notExpect.filter(ne => selectedNames.includes(ne));
+        if (foundBad.length > 0) {
+          throw new Error(`Unwanted [${foundBad.join(',')}] appeared in window`);
+        }
+      }
+      scorerPassed++;
+    }));
+  }
+
+  // ── Phase B: AI Tool Selection Accuracy (uses tokens) ────────────────────
+  let aiConfig: any;
+  try {
+    aiConfig = await resolveAiConfig(supabase, 'fast');
+  } catch {
+    results.push({ name: 'L9-AI: SKIP — no AI provider', layer: 9 as any, status: 'skip', duration_ms: 0 });
+    // Return scorer-only results
+    const accuracy = scorerTotal > 0 ? Math.round((scorerPassed / scorerTotal) * 100) : 0;
+    results.push({ name: `L9-SUMMARY: Scorer accuracy ${accuracy}% (${scorerPassed}/${scorerTotal})`, layer: 9 as any, status: accuracy >= 70 ? 'pass' : 'fail', duration_ms: 0 });
+    return results;
+  }
+
+  // Select a subset of benchmark cases for AI testing (limit cost)
+  const aiTestCases = L9_BENCHMARK.filter((_, i) => i % 3 === 0).slice(0, 6);
+  let aiPassed = 0;
+  let aiTotal = 0;
+
+  const { soul, identity, agents } = await loadWorkspaceFiles(supabase);
+  const soulPrompt = buildWorkspacePrompt(soul, identity, agents);
+
+  for (const tc of aiTestCases) {
+    aiTotal++;
+    results.push(await runTest(`L9-AI: "${tc.input.slice(0, 40)}…" → ${tc.expect[0]}`, 9 as any, async () => {
+      // Build prompt with real tools filtered by intent scorer
+      const relevantTools = scoreSkillsByIntent(skillTools, tc.input, { maxSkills: 15, usageBoost: usageCounts });
+
+      const systemPrompt = buildSystemPrompt({
+        mode: 'operate',
+        soulPrompt,
+        agents,
+        memoryContext: '',
+        objectiveContext: '',
+        tokenBudget: 3000,
+        maxIterations: 1,
+      });
+
+      const messages = [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: tc.input },
+      ];
+
+      const body: any = {
+        model: aiConfig.model,
+        messages,
+        max_tokens: 300,
+        tools: relevantTools.slice(0, 15),
+        tool_choice: 'auto',
+      };
+
+      const resp = await fetch(aiConfig.apiUrl, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${aiConfig.apiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      if (!resp.ok) {
+        const errText = await resp.text();
+        throw new Error(`AI ${resp.status}: ${errText.slice(0, 150)}`);
+      }
+
+      const data = await resp.json();
+      const choice = data.choices?.[0]?.message;
+      const toolCalls = choice?.tool_calls || [];
+
+      if (toolCalls.length === 0) {
+        throw new Error(`AI chose no tools — expected one of [${tc.expect.join(',')}]`);
+      }
+
+      const calledNames = toolCalls.map((t: any) => t.function?.name);
+      const correct = tc.expect.some(e => calledNames.includes(e));
+      const fuzzy = !correct && tc.expect.some(e =>
+        calledNames.some((n: string) => n.includes(e.split('_')[0]))
+      );
+
+      if (!correct && !fuzzy) {
+        throw new Error(`AI called [${calledNames.join(',')}] — expected [${tc.expect.join(',')}]`);
+      }
+
+      // Check notExpect
+      if (tc.notExpect) {
+        const bad = tc.notExpect.filter(ne => calledNames.includes(ne));
+        if (bad.length > 0) throw new Error(`AI incorrectly called [${bad.join(',')}]`);
+      }
+
+      aiPassed++;
+    }));
+  }
+
+  // ── Summary ──
+  const totalTests = scorerTotal + aiTotal;
+  const totalPassed = scorerPassed + aiPassed;
+  const accuracy = totalTests > 0 ? Math.round((totalPassed / totalTests) * 100) : 0;
+  results.push({
+    name: `L9-SUMMARY: Overall accuracy ${accuracy}% (scorer: ${scorerPassed}/${scorerTotal}, AI: ${aiPassed}/${aiTotal})`,
+    layer: 9 as any,
+    status: accuracy >= 60 ? 'pass' : 'fail',
+    duration_ms: 0,
+  });
+
+  return results;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -1809,6 +2024,7 @@ serve(async (req) => {
     if (layerFilter.includes(6)) tasks.push(layer6Tests(supabase, supabaseUrl, serviceKey));
     if (layerFilter.includes(7)) tasks.push(layer7Tests(supabase, supabaseUrl, serviceKey));
     if (layerFilter.includes(8)) tasks.push(layer8Tests(supabase));
+    if (layerFilter.includes(9)) tasks.push(layer9Tests(supabase, supabaseUrl, serviceKey));
 
     const layerResults = await Promise.all(tasks);
     for (const lr of layerResults) allResults.push(...lr);
@@ -1816,10 +2032,32 @@ serve(async (req) => {
     const passed = allResults.filter(r => r.status === 'pass').length;
     const failed = allResults.filter(r => r.status === 'fail').length;
     const skipped = allResults.filter(r => r.status === 'skip').length;
+    const durationMs = Date.now() - startTime;
+
+    const summary = { total: allResults.length, passed, failed, skipped, duration_ms: durationMs };
+
+    // Calculate L9 accuracy
+    const l9Summary = allResults.find(r => r.layer === 9 && r.name.startsWith('L9-SUMMARY'));
+    const l9Accuracy = l9Summary ? parseFloat(l9Summary.name.match(/(\d+)%/)?.[1] || '0') : null;
+
+    // Persist run to DB
+    try {
+      await supabase.from('autonomy_test_runs').insert({
+        layers: layerFilter,
+        summary,
+        results: allResults,
+        duration_ms: durationMs,
+        l9_accuracy: l9Accuracy,
+        triggered_by: body.triggered_by || 'manual',
+      });
+    } catch (persistErr: any) {
+      console.error('[test-runner] Failed to persist results:', persistErr.message);
+    }
 
     return new Response(JSON.stringify({
-      summary: { total: allResults.length, passed, failed, skipped, duration_ms: Date.now() - startTime },
+      summary,
       results: allResults,
+      l9_accuracy: l9Accuracy,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

@@ -646,6 +646,39 @@ export type Database = {
         }
         Relationships: []
       }
+      autonomy_test_runs: {
+        Row: {
+          created_at: string
+          duration_ms: number
+          id: string
+          l9_accuracy: number | null
+          layers: number[]
+          results: Json
+          summary: Json
+          triggered_by: string
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number
+          id?: string
+          l9_accuracy?: number | null
+          layers?: number[]
+          results?: Json
+          summary?: Json
+          triggered_by?: string
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number
+          id?: string
+          l9_accuracy?: number | null
+          layers?: number[]
+          results?: Json
+          summary?: Json
+          triggered_by?: string
+        }
+        Relationships: []
+      }
       back_in_stock_requests: {
         Row: {
           created_at: string
