@@ -311,12 +311,12 @@ function ObjectiveEditorSheet({
               id="criteria"
               value={criteriaText}
               onChange={(e) => setCriteriaText(e.target.value)}
-              placeholder='{"posts_published": 3}'
+              placeholder={'{\n  "posts_published": 3,\n  "leads_generated": 10,\n  "avg_response_time_seconds": 30\n}'}
               rows={4}
               className="font-mono text-xs"
             />
             <p className="text-xs text-muted-foreground">
-              Measurable conditions for auto-completion.
+              Measurable targets — FlowPilot marks the objective complete when these are met.
             </p>
           </div>
         </div>
