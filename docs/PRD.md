@@ -1035,7 +1035,14 @@ for vårdorganisationer that/which Requires HIPAA:
 │   ├── generate-content-proposal (Multi-channel content)    │
 │   ├── web-search / web-scrape (Jina/Firecrawl)           │
 │   ├── business-digest (Weekly cross-module summary)        │
-│   └── newsletter-send (Email via Resend)                   │
+│   ├── newsletter-send (Email via Resend)                   │
+│   │                                                         │
+│   EMAIL:                                                    │
+│   ├── send-order-confirmation (Purchase receipt via Resend)│
+│   ├── send-booking-confirmation (Booking ack via Resend)   │
+│   ├── send-contact-email (Contact form reply via Resend)   │
+│   ├── composio-proxy (FlowPilot agent Gmail read/send)     │
+│   └── gmail-oauth-callback (Gmail OAuth flow handler)      │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
