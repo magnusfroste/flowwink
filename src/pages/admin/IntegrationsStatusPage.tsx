@@ -101,13 +101,13 @@ function getCredentialBadge(hasCredential: boolean, requiresSecret: boolean) {
 }
 
 // Test AI Connection Button Component
-function TestAIConnectionButton({ 
-  provider, 
-  hasKey, 
-  isEnabled 
-}: { 
-  provider: 'openai' | 'gemini'; 
-  hasKey: boolean; 
+function TestAIConnectionButton({
+  provider,
+  hasKey,
+  isEnabled
+}: {
+  provider: 'openai' | 'gemini' | 'anthropic';
+  hasKey: boolean;
   isEnabled: boolean;
 }) {
   const [isTesting, setIsTesting] = useState(false);
@@ -127,7 +127,8 @@ function TestAIConnectionButton({
       }
 
       if (data?.success) {
-        toast.success(`${provider === 'openai' ? 'OpenAI' : 'Gemini'} connection verified! Model: ${data.model}`);
+        const name = provider === 'openai' ? 'OpenAI' : provider === 'gemini' ? 'Gemini' : 'Anthropic';
+        toast.success(`${name} connection verified! Model: ${data.model}`);
       } else {
         toast.error(`Test failed: ${data?.error || 'Unknown error'}`);
       }
@@ -868,7 +869,7 @@ export default function IntegrationsStatusPage() {
                         <CardContent className="pt-0 space-y-3">
                           {/* Actions */}
                           <div className="flex items-center gap-2 flex-wrap" onClick={(e) => e.stopPropagation()}>
-                            {(key === 'openai' || key === 'gemini') && (
+                            {(key === 'openai' || key === 'gemini' || key === 'anthropic') && (
                               <TestAIConnectionButton provider={key} hasKey={hasKey} isEnabled={isEnabled} />
                             )}
                             {(key === 'local_llm' || key === 'n8n') && (
