@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Plus, Zap, Timer, Save, Loader2, Search } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Input } from '@/components/ui/input';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
