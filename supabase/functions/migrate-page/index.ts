@@ -1598,27 +1598,77 @@ Respond only with JSON.`;
       console.log(`[QUALITY] Found ${emptyTiptapFixed} empty TipTap fields across blocks`);
     }
 
-    // 3. Validate block type matches data shape (hero data in features block = wrong)
+    // 3. Per-block-type required field validation
+    // Maps block type → required fields (at least one must exist) and forbidden fields (indicate wrong data)
+    const BLOCK_CONTRACTS: Record<string, { required: string[][]; forbidden?: string[] }> = {
+      hero:          { required: [['title']] },
+      text:          { required: [['content']] },
+      quote:         { required: [['quote']] },
+      cta:           { required: [['buttonText', 'primaryButtonText', 'buttons']], forbidden: ['videoUrl', 'videoType'] },
+      features:      { required: [['features', 'items']], forbidden: ['backgroundType', 'videoUrl'] },
+      stats:         { required: [['stats']] },
+      testimonials:  { required: [['testimonials']] },
+      team:          { required: [['members']] },
+      logos:         { required: [['logos']] },
+      timeline:      { required: [['steps']] },
+      accordion:     { required: [['items']] },
+      image:         { required: [['src']] },
+      gallery:       { required: [['images']] },
+      youtube:       { required: [['videoId']] },
+      'two-column':  { required: [['content', 'imageSrc']] },
+      form:          { required: [['fields']] },
+      newsletter:    { required: [] }, // minimal requirements
+      map:           { required: [['address']] },
+      booking:       { required: [] },
+      pricing:       { required: [['tiers']] },
+      comparison:    { required: [['products', 'features']] },
+      tabs:          { required: [['tabs']] },
+      marquee:       { required: [['items']] },
+      embed:         { required: [['url']] },
+      lottie:        { required: [['src']] },
+      table:         { required: [['columns']] },
+      countdown:     { required: [['targetDate']] },
+      progress:      { required: [['items']] },
+      badge:         { required: [['badges']] },
+      'social-proof': { required: [['items']] },
+      'trust-bar':   { required: [['items']] },
+      'shipping-info': { required: [['items']] },
+      'link-grid':   { required: [['links']] },
+      'announcement-bar': { required: [['message']] },
+      'floating-cta': { required: [['buttonText']] },
+      'article-grid': { required: [] },
+    };
+
     for (const block of blocks) {
       const data = block.data as Record<string, unknown> | undefined;
-      if (!data) continue;
+      if (!data) { block._remove = true; continue; }
       const blockType = String(block.type);
-      
-      // Features block must have features/items array, not just hero fields
-      if (blockType === 'features' && !Array.isArray(data.features) && !Array.isArray(data.items)) {
-        console.warn(`[QUALITY] Block ${block.id}: "features" block missing features/items array — likely mistyped`);
-        // If it has hero-like fields, it's probably a misclassification
-        if (data.backgroundType || data.videoUrl) {
-          console.warn(`[QUALITY] Block ${block.id}: Features block has hero fields — removing as duplicate`);
+      const contract = BLOCK_CONTRACTS[blockType];
+      if (!contract) continue; // unknown type — keep as-is
+
+      // Check forbidden fields (indicates data from wrong block type pasted in)
+      if (contract.forbidden) {
+        const hasForbidden = contract.forbidden.some(f => data[f] !== undefined && data[f] !== null);
+        if (hasForbidden) {
+          console.warn(`[VALIDATE] Block ${block.id} (${blockType}): has forbidden fields ${contract.forbidden.filter(f => data[f]).join(',')} — removing`);
           block._remove = true;
+          continue;
         }
       }
-      
-      // CTA block should have buttonText or buttons
-      if (blockType === 'cta' && !data.buttonText && !data.buttons && !data.primaryButtonText) {
-        if (data.backgroundType || data.videoUrl) {
-          console.warn(`[QUALITY] Block ${block.id}: CTA block has hero fields — removing as duplicate`);
+
+      // Check required field groups (at least one field in each group must exist with a non-empty value)
+      for (const fieldGroup of contract.required) {
+        const hasAny = fieldGroup.some(f => {
+          const val = data[f];
+          if (val === undefined || val === null) return false;
+          if (typeof val === 'string' && val.trim() === '') return false;
+          if (Array.isArray(val) && val.length === 0) return false;
+          return true;
+        });
+        if (!hasAny) {
+          console.warn(`[VALIDATE] Block ${block.id} (${blockType}): missing required fields [${fieldGroup.join('|')}] — removing`);
           block._remove = true;
+          break;
         }
       }
     }
@@ -1627,10 +1677,9 @@ Respond only with JSON.`;
     const beforeRemoval = blocks.length;
     const cleanBlocks = blocks.filter((b: Record<string, unknown>) => !b._remove);
     if (cleanBlocks.length < beforeRemoval) {
-      console.log(`[QUALITY] Removed ${beforeRemoval - cleanBlocks.length} invalid/duplicate blocks`);
+      console.log(`[VALIDATE] Removed ${beforeRemoval - cleanBlocks.length} invalid blocks`);
       blocks.length = 0;
       blocks.push(...cleanBlocks);
-      // Clean up _remove flag
       for (const block of blocks) {
         delete (block as Record<string, unknown>)._remove;
       }
