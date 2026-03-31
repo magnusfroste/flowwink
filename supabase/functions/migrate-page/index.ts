@@ -1545,6 +1545,97 @@ Respond only with JSON.`;
     }
     console.log('Step 5c-d: Ensured block IDs and feature icons');
 
+    // Step 5e: Validate block data quality — detect AI hallucinations
+    // 1. Detect duplicate data across blocks (AI copying hero data everywhere)
+    if (blocks.length > 2) {
+      const dataFingerprints = blocks.map((b: Record<string, unknown>) => JSON.stringify(b.data));
+      const uniqueFingerprints = new Set(dataFingerprints);
+      if (uniqueFingerprints.size === 1 && blocks.length > 1) {
+        console.error('[QUALITY] CRITICAL: All blocks have identical data — AI hallucination detected');
+        // Keep only the first block (likely the correct hero) and warn
+        const heroBlock = blocks[0];
+        blocks.length = 0;
+        blocks.push(heroBlock);
+        console.warn('[QUALITY] Reduced to single hero block. Re-migration recommended.');
+      } else if (uniqueFingerprints.size < blocks.length * 0.5) {
+        console.warn(`[QUALITY] WARNING: Only ${uniqueFingerprints.size} unique data objects for ${blocks.length} blocks — possible duplication`);
+        // Remove consecutive duplicates
+        const deduped: Record<string, unknown>[] = [blocks[0]];
+        for (let i = 1; i < blocks.length; i++) {
+          if (dataFingerprints[i] !== dataFingerprints[i - 1]) {
+            deduped.push(blocks[i]);
+          } else {
+            console.warn(`[QUALITY] Removed duplicate block at index ${i} (type: ${blocks[i].type})`);
+          }
+        }
+        blocks.length = 0;
+        blocks.push(...deduped);
+      }
+    }
+
+    // 2. Fix empty TipTap paragraphs (missing content/text nodes)
+    let emptyTiptapFixed = 0;
+    for (const block of blocks) {
+      const data = block.data as Record<string, unknown> | undefined;
+      if (!data) continue;
+      for (const field of TIPTAP_FIELDS) {
+        const val = data[field] as Record<string, unknown> | undefined;
+        if (val && typeof val === 'object' && val.type === 'doc' && Array.isArray(val.content)) {
+          const content = val.content as Array<Record<string, unknown>>;
+          // Check if all paragraphs are empty (no content array or empty content)
+          const allEmpty = content.every(node => 
+            !node.content || (Array.isArray(node.content) && node.content.length === 0)
+          );
+          if (allEmpty && content.length > 0) {
+            // This is a placeholder-only TipTap doc — mark it so editors show it clearly
+            console.warn(`[QUALITY] Block ${block.id} (${block.type}): TipTap field "${field}" has empty paragraphs`);
+            emptyTiptapFixed++;
+          }
+        }
+      }
+    }
+    if (emptyTiptapFixed > 0) {
+      console.log(`[QUALITY] Found ${emptyTiptapFixed} empty TipTap fields across blocks`);
+    }
+
+    // 3. Validate block type matches data shape (hero data in features block = wrong)
+    for (const block of blocks) {
+      const data = block.data as Record<string, unknown> | undefined;
+      if (!data) continue;
+      const blockType = String(block.type);
+      
+      // Features block must have features/items array, not just hero fields
+      if (blockType === 'features' && !Array.isArray(data.features) && !Array.isArray(data.items)) {
+        console.warn(`[QUALITY] Block ${block.id}: "features" block missing features/items array — likely mistyped`);
+        // If it has hero-like fields, it's probably a misclassification
+        if (data.backgroundType || data.videoUrl) {
+          console.warn(`[QUALITY] Block ${block.id}: Features block has hero fields — removing as duplicate`);
+          block._remove = true;
+        }
+      }
+      
+      // CTA block should have buttonText or buttons
+      if (blockType === 'cta' && !data.buttonText && !data.buttons && !data.primaryButtonText) {
+        if (data.backgroundType || data.videoUrl) {
+          console.warn(`[QUALITY] Block ${block.id}: CTA block has hero fields — removing as duplicate`);
+          block._remove = true;
+        }
+      }
+    }
+    
+    // Remove blocks marked for removal
+    const beforeRemoval = blocks.length;
+    const cleanBlocks = blocks.filter((b: Record<string, unknown>) => !b._remove);
+    if (cleanBlocks.length < beforeRemoval) {
+      console.log(`[QUALITY] Removed ${beforeRemoval - cleanBlocks.length} invalid/duplicate blocks`);
+      blocks.length = 0;
+      blocks.push(...cleanBlocks);
+      // Clean up _remove flag
+      for (const block of blocks) {
+        delete (block as Record<string, unknown>)._remove;
+      }
+    }
+
     console.log('Step 5: Successfully mapped', blocks.length, 'blocks');
     console.log('Block types:', blocks.map((b: Record<string, unknown>) => b.type).join(', '));
 
