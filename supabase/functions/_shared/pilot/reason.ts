@@ -13,6 +13,7 @@ import type { ReasonConfig, ReasonResult, TokenUsage, HeartbeatState, BuiltInToo
 import { resolveAiConfig } from '../ai-config.ts';
 import { tryAcquireLock, releaseLock } from '../concurrency.ts';
 import { generateTraceId } from '../trace.ts';
+import { scoreSkillsByIntent, loadRecentUsageCounts } from './intent-scorer.ts';
 import {
   handleMemoryWrite,
   handleMemoryRead,
@@ -739,6 +740,14 @@ export async function reason(
     // Session cache: load raw skills once, reuse on tier changes
     const skillCache = await loadSkillsRaw(supabase, config.scope, config.skillCategories);
     let skillTools = await loadSkillTools(supabase, config.scope, config.skillCategories, currentSkillTier, skillCache);
+    
+    // Intent-based adaptive tool window (OpenClaw alignment: no hardcoded routing, just smart filtering)
+    const lastUserMsg = [...messages].reverse().find((m: any) => m.role === 'user')?.content || '';
+    if (lastUserMsg && skillTools.length > 25) {
+      const usageBoost = await loadRecentUsageCounts(supabase);
+      skillTools = scoreSkillsByIntent(skillTools, lastUserMsg, { maxSkills: 25, usageBoost });
+    }
+    
     console.log(`[reason] trace=${traceId} Loaded ${builtInTools.length} built-in + ${skillTools.length} skill tools (tier: ${currentSkillTier}, cached)${config.skillCategories ? ` (categories: ${config.skillCategories.join(',')})` : ' (ALL categories)'}`);
     let allTools = [...builtInTools, ...(config.additionalTools || []), ...skillTools];
 
