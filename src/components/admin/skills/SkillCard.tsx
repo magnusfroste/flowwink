@@ -1,6 +1,8 @@
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { MoreHorizontal } from 'lucide-react';
 import type { AgentSkill, AgentScope, AgentSkillCategory } from '@/types/agent';
 
 const SCOPE_COLORS: Record<AgentScope, string> = {
