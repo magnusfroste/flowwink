@@ -863,10 +863,35 @@ serve(async (req) => {
     try {
       aiConfig = await resolveAiConfig(supabase, 'reasoning');
     } catch {
-      return new Response(
-        JSON.stringify({ success: false, error: 'No AI provider configured. Add OPENAI_API_KEY, GEMINI_API_KEY, or configure AI in Settings.' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      // Fallback: direct env resolution in case site_settings config is missing/corrupt
+      const openaiKey = Deno.env.get('OPENAI_API_KEY');
+      const geminiKey = Deno.env.get('GEMINI_API_KEY');
+      const anthropicKey = Deno.env.get('ANTHROPIC_API_KEY');
+
+      if (openaiKey) {
+        aiConfig = {
+          apiKey: openaiKey,
+          apiUrl: 'https://api.openai.com/v1/chat/completions',
+          model: 'gpt-4.1',
+        };
+      } else if (geminiKey) {
+        aiConfig = {
+          apiKey: geminiKey,
+          apiUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+          model: 'gemini-2.5-pro',
+        };
+      } else if (anthropicKey) {
+        aiConfig = {
+          apiKey: anthropicKey,
+          apiUrl: 'https://api.anthropic.com/v1/messages',
+          model: 'claude-sonnet-4-20250514',
+        };
+      } else {
+        return new Response(
+          JSON.stringify({ success: false, error: 'No AI provider configured. Add OPENAI_API_KEY, GEMINI_API_KEY, or configure AI in Settings.' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
     console.log('AI provider resolved:', { model: aiConfig.model, apiUrl: aiConfig.apiUrl.substring(0, 40) });
