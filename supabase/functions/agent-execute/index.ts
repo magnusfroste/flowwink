@@ -97,13 +97,27 @@ serve(async (req) => {
     try {
       if (handler.startsWith('edge:')) {
         const fnName = handler.replace('edge:', '');
+        
+        // For composio-proxy, map skill_name to the expected action/params format
+        let edgeBody = args;
+        if (fnName === 'composio-proxy') {
+          const skillToAction: Record<string, string> = {
+            composio_gmail_read: 'gmail_read',
+            composio_gmail_send: 'gmail_send',
+            composio_search_tools: 'search_tools',
+            composio_execute: 'execute',
+          };
+          const action = skillToAction[skillName] || skillName.replace('composio_', '');
+          edgeBody = { action, params: args };
+        }
+        
         const response = await fetch(`${supabaseUrl}/functions/v1/${fnName}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${serviceKey}`,
           },
-          body: JSON.stringify(args),
+          body: JSON.stringify(edgeBody),
         });
         const edgeResult = await response.json();
         if (!response.ok && !edgeResult.error) {
