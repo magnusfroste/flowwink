@@ -5,7 +5,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const COMPOSIO_BASE = 'https://backend.composio.dev/api/v2';
+const COMPOSIO_V1 = 'https://backend.composio.dev/api/v1';
+const COMPOSIO_V2 = 'https://backend.composio.dev/api/v2';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -52,6 +53,12 @@ Deno.serve(async (req) => {
       'x-api-key': composioKey,
     };
 
+    const json = (data: unknown, status = 200) =>
+      new Response(JSON.stringify(data), {
+        status,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+
     // Route: search tools by intent
     if (action === 'search_tools') {
       const searchParams = new URLSearchParams();
@@ -59,27 +66,21 @@ Deno.serve(async (req) => {
       if (app) searchParams.set('apps', app);
       searchParams.set('limit', '5');
 
-      const res = await fetch(`${COMPOSIO_BASE}/actions?${searchParams}`, {
+      const res = await fetch(`${COMPOSIO_V2}/actions?${searchParams}`, {
         headers: composioHeaders,
       });
       const data = await res.json();
-
-      return new Response(JSON.stringify({ result: data }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return json({ result: data });
     }
 
-    // Route: execute action (generic or skill-specific)
+    // Route: execute action
     if (action === 'execute') {
       const actionName = params?.action_name;
       if (!actionName) {
-        return new Response(JSON.stringify({ error: 'action_name required in params' }), {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+        return json({ error: 'action_name required in params' }, 400);
       }
 
-      const res = await fetch(`${COMPOSIO_BASE}/actions/${actionName}/execute`, {
+      const res = await fetch(`${COMPOSIO_V2}/actions/${actionName}/execute`, {
         method: 'POST',
         headers: composioHeaders,
         body: JSON.stringify({
@@ -88,20 +89,14 @@ Deno.serve(async (req) => {
         }),
       });
       const data = await res.json();
-
-      return new Response(JSON.stringify({ result: data }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return json({ result: data });
     }
 
-    // Route: Gmail send (skill shortcut)
+    // Route: Gmail send
     if (action === 'gmail_send') {
       const { to, subject, body: emailBody, cc, bcc } = params || {};
       if (!to || !subject || !emailBody) {
-        return new Response(JSON.stringify({ error: 'to, subject, and body required' }), {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+        return json({ error: 'to, subject, and body required' }, 400);
       }
 
       const input: Record<string, string> = {
@@ -112,27 +107,21 @@ Deno.serve(async (req) => {
       if (cc) input.cc = cc;
       if (bcc) input.bcc = bcc;
 
-      const res = await fetch(`${COMPOSIO_BASE}/actions/GMAIL_SEND_EMAIL/execute`, {
+      const res = await fetch(`${COMPOSIO_V2}/actions/GMAIL_SEND_EMAIL/execute`, {
         method: 'POST',
         headers: composioHeaders,
-        body: JSON.stringify({
-          entityId: entity_id || 'default',
-          input,
-        }),
+        body: JSON.stringify({ entityId: entity_id || 'default', input }),
       });
       const data = await res.json();
-
-      return new Response(JSON.stringify({ result: data }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return json({ result: data });
     }
 
-    // Route: Gmail read (skill shortcut)
+    // Route: Gmail read
     if (action === 'gmail_read') {
       const query = params?.query || '';
       const maxResults = params?.max_results || 5;
 
-      const res = await fetch(`${COMPOSIO_BASE}/actions/GMAIL_FETCH_EMAILS/execute`, {
+      const res = await fetch(`${COMPOSIO_V2}/actions/GMAIL_FETCH_EMAILS/execute`, {
         method: 'POST',
         headers: composioHeaders,
         body: JSON.stringify({
@@ -141,54 +130,69 @@ Deno.serve(async (req) => {
         }),
       });
       const data = await res.json();
-
-      return new Response(JSON.stringify({ result: data }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return json({ result: data });
     }
 
     // Route: list connected apps
     if (action === 'list_apps') {
-      const res = await fetch(`${COMPOSIO_BASE}/connectedAccounts?user_uuid=${entity_id || 'default'}`, {
+      const res = await fetch(`${COMPOSIO_V1}/connectedAccounts?user_uuid=${entity_id || 'default'}&showActiveOnly=true`, {
         headers: composioHeaders,
       });
       const data = await res.json();
-
-      return new Response(JSON.stringify({ result: data }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      console.log('[composio-proxy] list_apps response:', JSON.stringify(data).slice(0, 500));
+      return json({ result: data });
     }
 
     // Route: initiate connection (get OAuth URL)
     if (action === 'connect_app') {
       const appName = params?.app_name;
       if (!appName) {
-        return new Response(JSON.stringify({ error: 'app_name required' }), {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+        return json({ error: 'app_name required' }, 400);
       }
 
-      const res = await fetch(`${COMPOSIO_BASE}/connectedAccounts`, {
+      // Step 1: Look up integration ID for this app
+      console.log(`[composio-proxy] Looking up integration for app: ${appName}`);
+      const intRes = await fetch(`${COMPOSIO_V1}/integrations?appName=${appName.toUpperCase()}`, {
+        headers: composioHeaders,
+      });
+      const intData = await intRes.json();
+      console.log('[composio-proxy] Integrations lookup:', JSON.stringify(intData).slice(0, 500));
+
+      // Get first integration or use the items array
+      const integrations = intData?.items || intData || [];
+      const integration = Array.isArray(integrations) ? integrations[0] : null;
+      
+      if (!integration?.id) {
+        console.error('[composio-proxy] No integration found for:', appName);
+        return json({ 
+          error: `No integration found for "${appName}". Set up the integration in Composio dashboard first.`,
+          hint: 'Go to app.composio.dev → Integrations → Add the app',
+          raw: intData,
+        }, 404);
+      }
+
+      console.log(`[composio-proxy] Using integration ID: ${integration.id}`);
+
+      // Step 2: Initiate connection with the integration ID
+      const connectBody = {
+        integrationId: integration.id,
+        entityId: entity_id || 'default',
+        ...(params?.redirect_uri ? { redirectUri: params.redirect_uri } : {}),
+      };
+      console.log('[composio-proxy] Initiating connection:', JSON.stringify(connectBody));
+
+      const res = await fetch(`${COMPOSIO_V1}/connectedAccounts`, {
         method: 'POST',
         headers: composioHeaders,
-        body: JSON.stringify({
-          integrationId: appName,
-          entityId: entity_id || 'default',
-          redirectUri: params?.redirect_uri || undefined,
-        }),
+        body: JSON.stringify(connectBody),
       });
       const data = await res.json();
+      console.log('[composio-proxy] Connection response:', JSON.stringify(data).slice(0, 500));
 
-      return new Response(JSON.stringify({ result: data }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return json({ result: data });
     }
 
-    return new Response(JSON.stringify({ error: `Unknown action: ${action}` }), {
-      status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return json({ error: `Unknown action: ${action}` }, 400);
   } catch (err) {
     console.error('[composio-proxy] Error:', err);
     return new Response(JSON.stringify({ error: err.message }), {
