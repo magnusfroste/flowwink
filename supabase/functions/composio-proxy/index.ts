@@ -106,12 +106,13 @@ Deno.serve(async (req) => {
     }
 
     // Helper: execute a tool via v3
-    async function executeToolV3(toolSlug: string, args: Record<string, unknown>, connectedAccountId: string) {
+    async function executeToolV3(toolSlug: string, args: Record<string, unknown>, connectedAccountId: string, userId = 'default') {
       const res = await fetch(`${COMPOSIO_V3}/tools/execute/${toolSlug}`, {
         method: 'POST',
         headers: composioHeaders,
         body: JSON.stringify({
           connected_account_id: connectedAccountId,
+          user_id: userId,
           arguments: args,
         }),
       });
