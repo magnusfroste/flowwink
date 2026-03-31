@@ -64,7 +64,7 @@ export function ComposioPanel() {
     retry: 1,
   });
 
-  const isGmailConnected = connectedApps?.some(
+  const isGmailConnected = Array.isArray(connectedApps) && connectedApps.some(
     app => (app.appName || app.name || '').toLowerCase().includes('gmail')
   );
 
