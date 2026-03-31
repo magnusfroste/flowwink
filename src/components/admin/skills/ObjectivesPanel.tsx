@@ -245,8 +245,10 @@ function ObjectiveEditorSheet({
   useEffect(() => {
     if (open) {
       setGoal(objective?.goal ?? '');
-      setConstraintsText(objective?.constraints ? JSON.stringify(objective.constraints, null, 2) : '{}');
-      setCriteriaText(objective?.success_criteria ? JSON.stringify(objective.success_criteria, null, 2) : '{}');
+      const c = objective?.constraints ? JSON.stringify(objective.constraints, null, 2) : '';
+      const s = objective?.success_criteria ? JSON.stringify(objective.success_criteria, null, 2) : '';
+      setConstraintsText(c === '{}' ? '' : c);
+      setCriteriaText(s === '{}' ? '' : s);
     }
   }, [open, objective]);
 
@@ -257,8 +259,8 @@ function ObjectiveEditorSheet({
   const handleSave = () => {
     let constraints = {};
     let success_criteria = {};
-    try { constraints = JSON.parse(constraintsText); } catch { /* keep empty */ }
-    try { success_criteria = JSON.parse(criteriaText); } catch { /* keep empty */ }
+    try { constraints = JSON.parse(constraintsText || '{}'); } catch { /* keep empty */ }
+    try { success_criteria = JSON.parse(criteriaText || '{}'); } catch { /* keep empty */ }
 
     onSave({
       ...(objective?.id ? { id: objective.id } : {}),
