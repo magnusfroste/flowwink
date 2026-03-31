@@ -55,6 +55,7 @@ export interface ModulesSettings {
   
   tickets: ModuleConfig;
   siteMigration: ModuleConfig;
+  composio: ModuleConfig;
 }
 
 export const defaultModulesSettings: ModulesSettings = {
