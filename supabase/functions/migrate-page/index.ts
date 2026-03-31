@@ -1073,6 +1073,33 @@ QUALITY CHECK:
 
 Focus ONLY on main content (typically in <main>, <article>, or primary content area).
 
+ICONS — CRITICAL FOR FEATURES/STATS/TIMELINE:
+For every feature, stat, or timeline item, you MUST include a Lucide icon name.
+Use PascalCase icon names from the Lucide icon set: https://lucide.dev/icons
+Common mappings:
+- IoT/sensors/monitoring → "Activity", "Gauge", "Thermometer", "Wifi", "Radio", "Signal"
+- Security → "Shield", "Lock", "ShieldCheck"
+- Cloud/hosting → "Cloud", "Server", "Database"
+- Analytics/data → "BarChart3", "LineChart", "PieChart", "TrendingUp"
+- Communication → "MessageSquare", "Mail", "Phone", "Send"
+- People/team → "Users", "UserCircle", "Contact"
+- Location/map → "MapPin", "Navigation", "Globe"
+- Time/schedule → "Clock", "Calendar", "Timer"
+- Money/pricing → "DollarSign", "CreditCard", "Wallet"
+- Settings/tools → "Settings", "Wrench", "Cog"
+- Water → "Droplets", "Waves"
+- Temperature → "Thermometer", "ThermometerSun"
+- Sound/noise → "Volume2", "AudioLines"
+- Building/property → "Building2", "Home", "Warehouse"
+- Energy → "Zap", "BatteryCharging", "Lightbulb"
+- Transport/road → "Car", "Truck", "Route"
+- Weather → "CloudSun", "CloudRain", "Snowflake"
+- Animals/pest → "Bug", "Rat"
+- Air/ventilation → "Wind", "Fan"
+- Door/access → "DoorOpen", "KeyRound"
+- Industry/manufacturing → "Factory", "Hammer"
+NEVER leave icon as null or empty — always pick the best matching Lucide icon.
+
 HERO BLOCK - CRITICAL (VIDEO PRIORITY):
 - If the page has a clear hero/banner section, create a "hero" block
 - PRIORITY 1: If a HERO VIDEO is found (marked as isHeroCandidate: true), use video background:
@@ -1446,6 +1473,77 @@ Respond only with JSON.`;
     if (fixedCount > 0) {
       console.log(`[TipTap fix] Auto-corrected ${fixedCount} fields from raw HTML to TipTap JSON`);
     }
+
+    // Step 5c: Ensure all blocks have unique IDs
+    for (let i = 0; i < blocks.length; i++) {
+      if (!blocks[i].id || String(blocks[i].id).trim() === '') {
+        blocks[i].id = `block-${Date.now()}-${i}`;
+      }
+    }
+
+    // Step 5d: Ensure features/stats/timeline items have icons (fallback to sensible defaults)
+    const ICON_FALLBACKS: Record<string, string> = {
+      features: 'Star',
+      stats: 'TrendingUp',
+      timeline: 'Circle',
+      'link-grid': 'Link',
+      'trust-bar': 'ShieldCheck',
+      'shipping-info': 'Truck',
+    };
+    const KEYWORD_ICON_MAP: [RegExp, string][] = [
+      [/temperatur|temp|värme|heat/i, 'Thermometer'],
+      [/vatten|water|h2o|leak/i, 'Droplets'],
+      [/luft|air|vent|ventil/i, 'Wind'],
+      [/ljud|noise|sound|audio/i, 'Volume2'],
+      [/säkerhet|security|safe|shield/i, 'ShieldCheck'],
+      [/rök|smoke|brand|fire/i, 'Flame'],
+      [/dörr|door|access/i, 'DoorOpen'],
+      [/väg|road|trafik|traffic/i, 'Route'],
+      [/väder|weather|climat/i, 'CloudSun'],
+      [/snö|snow/i, 'Snowflake'],
+      [/råtta|rat|pest|skadedjur/i, 'Bug'],
+      [/radon|strålning|radiation/i, 'AlertTriangle'],
+      [/sensor|iot|monitor/i, 'Activity'],
+      [/moln|cloud|server/i, 'Cloud'],
+      [/analys|ai|data|insikt/i, 'BarChart3'],
+      [/energi|energy|el|power/i, 'Zap'],
+      [/position|track|spår/i, 'MapPin'],
+      [/desk|arbetsplats|kontors/i, 'Monitor'],
+      [/besök|count|räkn/i, 'Users'],
+      [/kontakt|contact|mail/i, 'Mail'],
+      [/realtid|real.?time|live/i, 'Radio'],
+      [/plattform|platform|integration/i, 'Layers'],
+    ];
+
+    function guessIcon(text: string, fallback: string): string {
+      const combined = text.toLowerCase();
+      for (const [re, icon] of KEYWORD_ICON_MAP) {
+        if (re.test(combined)) return icon;
+      }
+      return fallback;
+    }
+
+    for (const block of blocks) {
+      const data = block.data as Record<string, unknown> | undefined;
+      if (!data) continue;
+      const blockType = String(block.type);
+      const fallbackIcon = ICON_FALLBACKS[blockType];
+      if (!fallbackIcon) continue;
+
+      // Check array fields that should have icons
+      const arrayFields = ['features', 'stats', 'steps', 'items', 'links'];
+      for (const field of arrayFields) {
+        const arr = data[field] as Array<Record<string, unknown>> | undefined;
+        if (!Array.isArray(arr)) continue;
+        for (const item of arr) {
+          if (!item.icon || String(item.icon).trim() === '' || item.icon === 'null') {
+            const searchText = `${item.title || ''} ${item.description || ''} ${item.label || ''}`;
+            item.icon = guessIcon(searchText, fallbackIcon);
+          }
+        }
+      }
+    }
+    console.log('Step 5c-d: Ensured block IDs and feature icons');
 
     console.log('Step 5: Successfully mapped', blocks.length, 'blocks');
     console.log('Block types:', blocks.map((b: Record<string, unknown>) => b.type).join(', '));
