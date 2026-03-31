@@ -576,51 +576,24 @@ cmd_setup_flowpilot() {
     echo ""
 
     local -a OPTIONS=(
-        "Sync missing skills (safe re-seed)"
-        "Seed objectives & automations from template"
+        "Sync missing skills & soul"
         "Register / renew heartbeat cron only"
         "Cancel"
     )
 
     _fw_select "${OPTIONS[@]}"
     local idx=$_FW_IDX
-    [ "$idx" -eq -1 ] || [ "$idx" -eq 3 ] && echo "" && return 0
+    [ "$idx" -eq -1 ] || [ "$idx" -eq 2 ] && echo "" && return 0
 
     echo ""
 
     local payload
     if [ "$idx" -eq 0 ]; then
-        # Sync missing skills
-        echo -e "  Syncing missing skills..."
-        payload="{\"seed_skills\":true,\"seed_soul\":false}"
-    elif [ "$idx" -eq 1 ]; then
-        # Seed objectives & automations from template
-        local -a TEMPLATES=(
-            "blank"
-            "consult-agency"
-            "digital-shop"
-            "flowwink-agency"
-            "flowwink-platform"
-            "helpcenter"
-            "launchpad"
-            "momentum"
-            "securehealth"
-            "service-pro"
-            "trustcorp"
-        )
-        echo "  Select template:"
-        echo ""
-        _fw_select "${TEMPLATES[@]}"
-        local tidx=$_FW_IDX
-        [ "$tidx" -eq -1 ] && echo "" && return 0
-        local template_id="${TEMPLATES[$tidx]}"
-        echo ""
-        echo -e "  Seeding FlowPilot from template ${BOLD}${template_id}${NC}..."
-        payload="{\"template_id\":\"${template_id}\",\"seed_skills\":false,\"seed_soul\":false}"
+        echo -e "  Syncing missing skills & soul..."
+        payload="{\"seed_skills\":true,\"seed_soul\":true}"
     else
-        # Register / renew heartbeat cron only (idx=2)
         echo -e "  Registering heartbeat cron..."
-        payload="{\"seed_skills\":false,\"seed_soul\":false,\"seed_objectives\":false}"
+        payload="{\"seed_skills\":false,\"seed_soul\":false}"
     fi
 
     local response
@@ -664,7 +637,24 @@ cmd_install() {
     cmd_update_funcs
     cmd_create_admin
     cmd_env
-    cmd_setup_flowpilot
+
+    # Seed skills + soul directly — no menu needed on fresh install.
+    # Objectives and automations are seeded automatically on first admin login.
+    print_section "Setup FlowPilot"
+    require_link || return 1
+    echo -e "  Seeding skills & soul..."
+    local fp_response
+    fp_response=$(curl -s -X POST "${SUPABASE_URL}/functions/v1/setup-flowpilot" \
+        -H "Authorization: Bearer ${SERVICE_ROLE_KEY}" \
+        -H "apikey: ${SERVICE_ROLE_KEY}" \
+        -H "Content-Type: application/json" \
+        -d "{\"seed_skills\":true,\"seed_soul\":true}" 2>&1)
+    if echo "$fp_response" | grep -qE '"success"\s*:\s*true'; then
+        echo -e "  ${GREEN}✓ FlowPilot setup complete${NC}"
+    else
+        echo -e "  ${YELLOW}⚠ FlowPilot setup may have failed — check logs${NC}"
+    fi
+    echo ""
 
     read -e -p "  Configure API keys now? [y/N]: " keys
     [[ "$keys" =~ ^[Yy]$ ]] && cmd_set_keys
