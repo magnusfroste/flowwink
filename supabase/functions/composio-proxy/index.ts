@@ -23,18 +23,26 @@ Deno.serve(async (req) => {
       });
     }
 
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_ANON_KEY')!,
-      { global: { headers: { Authorization: authHeader } } }
-    );
+    // Check if this is a service-role call (from agent-execute)
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const token = authHeader.replace('Bearer ', '');
+    const isServiceRole = serviceKey && token === serviceKey;
 
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    if (!isServiceRole) {
+      // Regular user auth
+      const supabaseClient = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_ANON_KEY')!,
+        { global: { headers: { Authorization: authHeader } } }
+      );
+
+      const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+      if (authError || !user) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
     }
 
     const composioKey = Deno.env.get('COMPOSIO_API_KEY');
