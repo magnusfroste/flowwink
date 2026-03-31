@@ -288,7 +288,7 @@ function ObjectiveEditorSheet({
               value={goal}
               onChange={(e) => setGoal(e.target.value)}
               placeholder="e.g. Publish 3 SEO-optimized blog posts per week to increase organic traffic by 20%"
-              rows={3}
+              rows={4}
             />
           </div>
 
