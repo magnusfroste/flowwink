@@ -1,0 +1,1 @@
+UPDATE public.agent_skills SET scope = 'both' WHERE name IN ('composio_gmail_read', 'composio_gmail_send');
