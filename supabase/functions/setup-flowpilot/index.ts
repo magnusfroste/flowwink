@@ -2573,7 +2573,8 @@ hero, text, cta, features, stats, testimonials, pricing, accordion, form, newsle
 Return a valid content_json array of ContentBlock objects with proper data for each block type.`,
     category: 'growth',
     scope: 'internal',
-    requires_approval: true,
+    requires_approval: false,
+    trust_level: 'notify',
     tool_definition: {
       type: 'function',
       function: {
