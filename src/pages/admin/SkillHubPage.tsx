@@ -48,6 +48,7 @@ export default function SkillHubPage() {
   const [editingSkill, setEditingSkill] = useState<AgentSkill | null>(null);
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [scopeFilter, setScopeFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Autonomy schedule
   const { data: autonomySettings } = useAutonomyScheduleSettings();
