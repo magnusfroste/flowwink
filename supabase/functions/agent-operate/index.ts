@@ -90,55 +90,19 @@ serve(async (req) => {
     // Build tools — server-side loading with gating + caching (OpenClaw alignment)
     const builtInTools = getBuiltInTools(['memory', 'objectives', 'self-mod', 'reflect', 'soul', 'planning', 'automations-exec', 'workflows', 'a2a', 'skill-packs']);
     const skillCache = await loadSkillsRaw(supabase, 'internal');
-    const externalSkills = await loadSkillTools(supabase, 'internal', undefined, 'full', skillCache);
+    const [externalSkills, usageBoost] = await Promise.all([
+      loadSkillTools(supabase, 'internal', undefined, 'full', skillCache),
+      loadRecentUsageCounts(supabase),
+    ]);
     
-    // Respect OpenAI's 128 tool limit
+    // Intent-based adaptive tool window — always active
+    const lastUserMsg = [...messages].reverse().find((m: any) => m.role === 'user')?.content || '';
     const MAX_TOOLS = 128;
     const maxSkills = MAX_TOOLS - builtInTools.length;
-    
-    let filteredSkills = externalSkills;
-    if (externalSkills.length > maxSkills) {
-      const lastUserMsg = [...messages].reverse().find((m: any) => m.role === 'user')?.content?.toLowerCase() || '';
-
-      const scored = externalSkills.map((skill: any) => {
-        const functionName = (skill?.function?.name || '').toLowerCase();
-        const name = functionName.replace(/_/g, ' ');
-        const desc = (skill?.function?.description || '').toLowerCase();
-        let score = 0;
-
-        // Match skill name words against user message
-        const nameWords = name.split(' ');
-        for (const w of nameWords) {
-          if (w.length > 2 && lastUserMsg.includes(w)) score += 10;
-        }
-
-        // Match 'Use when:' trigger phrases
-        const useWhenMatch = desc.match(/use when:([^.]*)/);
-        if (useWhenMatch) {
-          const triggers = useWhenMatch[1].toLowerCase();
-          const triggerWords = triggers.split(/\s+/).filter((w: string) => w.length > 3);
-          for (const w of triggerWords) {
-            if (lastUserMsg.includes(w)) score += 5;
-          }
-        }
-
-        // General description word matching
-        const descWords = desc.split(/\s+/).filter((w: string) => w.length > 4);
-        for (const w of descWords) {
-          if (lastUserMsg.includes(w)) score += 1;
-        }
-
-        return { skill, score, functionName };
-      });
-
-      scored.sort((a: any, b: any) => b.score - a.score);
-      filteredSkills = scored.map((s: any) => s.skill).slice(0, maxSkills);
-
-      const kept = scored.filter((s: any) => s.score > 0).length;
-      console.log(
-        `[agent-operate] Filtered ${externalSkills.length} skills → ${filteredSkills.length} (${kept} with intent match)`,
-      );
-    }
+    const filteredSkills = scoreSkillsByIntent(externalSkills, lastUserMsg, {
+      maxSkills: Math.min(maxSkills, 25),
+      usageBoost,
+    });
     
     const allTools = [...builtInTools, ...filteredSkills];
 
