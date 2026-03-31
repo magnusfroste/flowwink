@@ -3608,11 +3608,20 @@ Deno.serve(async (req) => {
       console.log('[setup-flowpilot] Seeded tool_policy memory key');
     }
 
-    // 5. Seed initial objectives from template
+    // 5. Seed initial objectives from template (idempotent — skip existing goals)
     let objectivesSeeded = 0;
     if (template_flowpilot?.objectives?.length) {
       console.log('[setup-flowpilot] Seeding template objectives...');
+      const { data: existingObjectives } = await supabase
+        .from('agent_objectives')
+        .select('goal');
+      const existingGoals = new Set((existingObjectives || []).map((o: { goal: string }) => o.goal));
+
       for (const obj of template_flowpilot.objectives) {
+        if (existingGoals.has(obj.goal)) {
+          console.log(`[setup-flowpilot] Skipping duplicate objective: ${obj.goal}`);
+          continue;
+        }
         const { error } = await supabase.from('agent_objectives').insert({
           goal: obj.goal,
           success_criteria: obj.success_criteria || {},
@@ -3624,6 +3633,7 @@ Deno.serve(async (req) => {
           console.error(`[setup-flowpilot] Failed to seed objective:`, error);
         } else {
           objectivesSeeded++;
+          existingGoals.add(obj.goal);
         }
       }
       console.log(`[setup-flowpilot] Seeded ${objectivesSeeded} objectives`);
