@@ -1,6 +1,8 @@
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { MoreHorizontal } from 'lucide-react';
 import type { AgentSkill, AgentScope, AgentSkillCategory } from '@/types/agent';
 
 const SCOPE_COLORS: Record<AgentScope, string> = {
@@ -46,15 +48,22 @@ export function SkillCard({ skill, onToggle, onEdit }: SkillCardProps) {
               </p>
             )}
           </div>
-          <Switch
-            checked={skill.enabled}
-            onCheckedChange={(v) => {
-              // prevent card click
-              onToggle(skill.id, v);
-            }}
-            onClick={(e) => e.stopPropagation()}
-            className="shrink-0"
-          />
+          <div className="flex items-center gap-1 shrink-0">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+              onClick={(e) => { e.stopPropagation(); onEdit(skill); }}
+            >
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+            <Switch
+              checked={skill.enabled}
+              onCheckedChange={(v) => onToggle(skill.id, v)}
+              onClick={(e) => e.stopPropagation()}
+              className="shrink-0"
+            />
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-1.5">
