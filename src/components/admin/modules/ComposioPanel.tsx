@@ -138,18 +138,20 @@ export function ComposioPanel() {
           entity_id: 'default',
         },
       });
-      if (error) throw error;
-      if (data?.result?.successfull || data?.result?.success) {
+      if (error) throw new Error(typeof error === 'object' ? (error as any)?.message || JSON.stringify(error) : String(error));
+      const result = data?.result;
+      if (result?.successfull || result?.success) {
         toast.success('Email sent via Gmail!');
         setTestTo('');
         setTestSubject('');
         setTestBody('');
       } else {
-        toast.error(data?.result?.error || 'Send failed — check Gmail connection');
+        const errMsg = typeof result?.error === 'string' ? result.error : 'Send failed — check Gmail connection';
+        toast.error(errMsg);
       }
     } catch (err) {
       logger.error('[ComposioPanel] Gmail send failed:', err);
-      toast.error('Failed to send email');
+      toast.error(err instanceof Error ? err.message : 'Failed to send email');
     } finally {
       setIsSending(false);
     }

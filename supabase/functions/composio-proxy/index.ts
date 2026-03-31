@@ -106,16 +106,22 @@ Deno.serve(async (req) => {
     }
 
     // Helper: execute a tool via v3
-    async function executeToolV3(toolSlug: string, input: Record<string, unknown>, connectedAccountId: string) {
+    async function executeToolV3(toolSlug: string, args: Record<string, unknown>, connectedAccountId: string) {
       const res = await fetch(`${COMPOSIO_V3}/tools/execute/${toolSlug}`, {
         method: 'POST',
         headers: composioHeaders,
         body: JSON.stringify({
           connected_account_id: connectedAccountId,
-          input,
+          arguments: args,
         }),
       });
-      return res.json();
+      const data = await res.json();
+      // Normalise: if Composio returns an error object, surface it cleanly
+      if (data?.error) {
+        const msg = data.error?.message || data.error?.suggested_fix || JSON.stringify(data.error);
+        return { success: false, error: msg };
+      }
+      return data;
     }
 
     // Route: Gmail send
