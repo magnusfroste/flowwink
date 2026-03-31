@@ -99,6 +99,20 @@ Deno.serve(async (req) => {
         return json({ error: 'to, subject, and body required' }, 400);
       }
 
+      // Find active Gmail connected account
+      const caRes = await fetch(`${COMPOSIO_V3}/connected_accounts?user_id=${entity_id || 'default'}&status=ACTIVE&toolkit=gmail`, {
+        headers: composioHeaders,
+      });
+      const caData = await caRes.json();
+      const gmailAccount = (caData?.items || [])[0];
+      
+      if (!gmailAccount?.id) {
+        console.error('[composio-proxy] No active Gmail connection found');
+        return json({ error: 'Gmail not connected. Connect Gmail first.' }, 400);
+      }
+
+      console.log(`[composio-proxy] Using Gmail account: ${gmailAccount.id}`);
+
       const input: Record<string, string> = {
         recipient_email: to,
         subject,
@@ -110,9 +124,14 @@ Deno.serve(async (req) => {
       const res = await fetch(`${COMPOSIO_V2}/actions/GMAIL_SEND_EMAIL/execute`, {
         method: 'POST',
         headers: composioHeaders,
-        body: JSON.stringify({ entityId: entity_id || 'default', input }),
+        body: JSON.stringify({ 
+          connectedAccountId: gmailAccount.id,
+          entityId: entity_id || 'default', 
+          input,
+        }),
       });
       const data = await res.json();
+      console.log('[composio-proxy] Gmail send response:', JSON.stringify(data).slice(0, 500));
       return json({ result: data });
     }
 
