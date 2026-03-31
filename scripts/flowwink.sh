@@ -593,7 +593,8 @@ cmd_setup_flowpilot() {
         # Sync missing skills
         echo -e "  Syncing missing skills..."
         payload="{\"seed_skills\":true,\"seed_soul\":false}"
-    elif [ "$idx" -eq 2 ]; then
+    elif [ "$idx" -eq 1 ]; then
+        # Seed objectives & automations from template
         local -a TEMPLATES=(
             "blank"
             "consult-agency"
@@ -617,6 +618,7 @@ cmd_setup_flowpilot() {
         echo -e "  Seeding FlowPilot from template ${BOLD}${template_id}${NC}..."
         payload="{\"template_id\":\"${template_id}\",\"seed_skills\":false,\"seed_soul\":false}"
     else
+        # Register / renew heartbeat cron only (idx=2)
         echo -e "  Registering heartbeat cron..."
         payload="{\"seed_skills\":false,\"seed_soul\":false,\"seed_objectives\":false}"
     fi
