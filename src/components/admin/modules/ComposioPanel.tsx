@@ -140,7 +140,7 @@ export function ComposioPanel() {
       });
       if (error) throw new Error(typeof error === 'object' ? (error as any)?.message || JSON.stringify(error) : String(error));
       const result = data?.result;
-      if (result?.successfull || result?.success) {
+      if (result?.successful || result?.successfull || result?.success) {
         toast.success('Email sent via Gmail!');
         setTestTo('');
         setTestSubject('');
