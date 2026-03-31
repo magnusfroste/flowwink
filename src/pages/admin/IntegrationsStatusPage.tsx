@@ -29,7 +29,6 @@ import {
   RefreshCw,
   ExternalLink,
   PauseCircle,
-  Settings,
   Zap,
   Loader2,
   Server,
@@ -812,13 +811,16 @@ export default function IntegrationsStatusPage() {
                     return (
                       <Card
                         key={key}
-                        className={
+                        className={`transition-all ${
                           status === 'active'
                             ? "border-primary/30 bg-primary/5 shadow-sm"
                             : status === 'disabled'
                             ? "border-border/50 bg-muted/20"
                             : "border-dashed opacity-60"
-                        }
+                        } ${hasConfigSection && hasKey && isEnabled ? "cursor-pointer hover:shadow-sm" : ""}`}
+                        onClick={() => {
+                          if (hasConfigSection && hasKey && isEnabled) openDrawer(key, currentConfig);
+                        }}
                       >
                         <CardHeader className="pb-3">
                           <div className="flex items-start justify-between gap-3">
@@ -840,7 +842,7 @@ export default function IntegrationsStatusPage() {
                             </div>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <div>
+                                <div onClick={(e) => e.stopPropagation()}>
                                   <Switch
                                     checked={isEnabled}
                                     onCheckedChange={(checked) => handleToggle(key, checked)}
@@ -858,23 +860,12 @@ export default function IntegrationsStatusPage() {
                         </CardHeader>
                         <CardContent className="pt-0 space-y-3">
                           {/* Actions */}
-                          <div className="flex items-center gap-2 flex-wrap">
+                          <div className="flex items-center gap-2 flex-wrap" onClick={(e) => e.stopPropagation()}>
                             {(key === 'openai' || key === 'gemini') && (
                               <TestAIConnectionButton provider={key} hasKey={hasKey} isEnabled={isEnabled} />
                             )}
                             {(key === 'local_llm' || key === 'n8n') && (
                               <TestConfigConnectionButton provider={key} config={currentConfig} isEnabled={isEnabled} />
-                            )}
-                            {hasConfigSection && hasKey && isEnabled && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => openDrawer(key, currentConfig)}
-                                className="gap-1.5"
-                              >
-                                <Settings className="h-3.5 w-3.5" />
-                                Configure
-                              </Button>
                             )}
                             <a
                               href={integration.docsUrl}

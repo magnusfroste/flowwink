@@ -108,12 +108,17 @@ export function ModuleCard({
 
   return (
     <>
-      <Card 
+      <Card
         className={`relative transition-all duration-200 ${
-          isEnabled 
-            ? "border-primary/30 bg-primary/5 shadow-sm" 
+          isEnabled
+            ? "border-primary/30 bg-primary/5 shadow-sm"
             : "border-border/50 bg-muted/20"
-        }`}
+        } ${(hasApi || stats || moduleId === 'browserControl' || moduleId === 'flowpilot') ? "cursor-pointer hover:shadow-sm" : ""}`}
+        onClick={() => {
+          if (hasApi || stats || moduleId === 'browserControl' || moduleId === 'flowpilot') {
+            setDetailOpen(true);
+          }
+        }}
       >
         {/* Top badges */}
         <div className="absolute -top-2 right-3 flex gap-1">
@@ -158,6 +163,7 @@ export function ModuleCard({
               onCheckedChange={onToggle}
               disabled={isCore || isUpdating}
               className="data-[state=checked]:bg-primary"
+              onClick={(e) => e.stopPropagation()}
             />
           </div>
         </CardHeader>
@@ -213,18 +219,6 @@ export function ModuleCard({
               )}
             </div>
 
-            {/* Info button */}
-            {(hasApi || stats || moduleId === 'browserControl' || moduleId === 'flowpilot') && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
-                onClick={() => setDetailOpen(true)}
-              >
-                <Info className="h-3.5 w-3.5 mr-1" />
-                Details
-              </Button>
-            )}
           </div>
 
           {/* Admin UI toggle for agent-capable modules */}
