@@ -45,6 +45,7 @@ interface IntegrationsSettings {
   google_analytics?: { enabled: boolean; config?: { measurementId?: string } };
   meta_pixel?: { enabled: boolean; config?: { pixelId?: string } };
   slack?: { enabled: boolean; config?: { webhookUrl?: string; notifyOnNewLead?: boolean; notifyOnDealWon?: boolean; notifyOnFormSubmit?: boolean } };
+  composio?: { enabled: boolean };
 }
 
 export function useIntegrationStatus() {
