@@ -1,5 +1,24 @@
 # FlowWink A2A Communication Model
 
+> **Status:** Production Ready | **Protocol:** JSON-RPC 2.0 / A2A v0.3.0 | **Audience:** Developers/Architects
+
+---
+
+## Table of Contents
+
+1. [Philosophy](#philosophy)
+2. [Architecture Overview](#architecture-overview)
+3. [The Five Edge Functions](#the-five-edge-functions)
+4. [Dual-Mode Protocol](#dual-mode-protocol)
+5. [OpenClaw Integration](#openclaw-integration)
+6. [Configuration Guide](#configuration-guide)
+7. [Peer Setup](#peer-setup)
+8. [Dual-Channel Architecture](#dual-channel-architecture)
+9. [Authentication](#authentication)
+10. [Troubleshooting](#troubleshooting)
+
+---
+
 ## Philosophy
 
 **The caller defines the game. The responder plays or declines.**
@@ -262,3 +281,241 @@ The peer can now call us and we can call them. No code changes needed.
 2. Set `handler` (e.g., `edge:my-function`, `module:crm`, `db:products`)
 3. The skill auto-appears in our Agent Card
 4. Peers can discover it and call it immediately
+
+---
+
+## OpenClaw Integration
+
+> OpenClaw (v2026.3+) supports A2A via the **`openclaw-a2a-gateway`** plugin, which implements Google's **A2A v0.3.0 protocol**.
+
+### How OpenClaw ↔ FlowPilot Works
+
+```
+OpenClaw Instance                          FlowPilot (FlowWink)
+┌─────────────────────┐                   ┌─────────────────────┐
+│  Gateway + A2A      │   JSON-RPC/REST   │  a2a-ingest         │
+│  Plugin             │ ◄───────────────► │  (edge function)    │
+│                     │   Bearer Token    │                     │
+│  /.well-known/      │                   │  /functions/v1/     │
+│   agent-card.json   │                   │   a2a-ingest        │
+│                     │                   │                     │
+│  Skills:           │                   │  Skills:            │
+│  - chat             │                   │  - beta_test_*      │
+│  - code_review      │                   │  - site_audit       │
+│  - test_scenario    │                   │  - content_review   │
+└─────────────────────┘                   └─────────────────────┘
+```
+
+### OpenClaw's A2A Plugin Features
+
+| Feature | Status | Relevance |
+|---------|--------|-----------|
+| **Agent Card** (`/.well-known/agent-card.json`) | ✅ Stable | FlowPilot should expose one |
+| **JSON-RPC + REST transports** | ✅ v0.3.0 | Our `a2a-ingest` already speaks REST |
+| **Bearer token auth** | ✅ Production | Matches our `inbound_token_hash` model |
+| **DNS-SD / mDNS discovery** | ✅ v1.2.0 | Not relevant for cloud (Supabase) |
+| **SSE streaming** | ✅ v1.0.0 | Future: live progress |
+| **Peer skills caching** | ✅ v1.1.0 | OpenClaw caches FlowPilot's skill list |
+| **HMAC push notifications** | ✅ v0.5.0 | Webhook callbacks on task completion |
+| **Rule-based routing** | ✅ v1.1.0 | Route by pattern to right FlowPilot skill |
+
+### Symbiosis Model: Architect ↔ Operator
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    SYMBIOSIS LOOP                            │
+│                                                             │
+│  OpenClaw (Architect)          FlowPilot (Operator)         │
+│  ┌──────────────┐              ┌──────────────┐             │
+│  │ Reads source │──versions──►│ Bootstrap    │             │
+│  │ code + docs  │              │ seeds skills │             │
+│  │              │◄──findings───│ reflects     │             │
+│  │ Reviews      │              │ learns       │             │
+│  └──────────────┘              └──────────────┘             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Configuration Guide
+
+### Prerequisites
+
+- OpenClaw ≥ 2026.3.0 with `openclaw-a2a-gateway` v1.2.0+ installed
+- FlowPilot peer registered in Federation admin (gives you an **Inbound Token**)
+- FlowPilot endpoint: `https://demo.flowwink.com/functions/v1/a2a-ingest`
+- Agent Card: `https://demo.flowwink.com/functions/v1/agent-card`
+
+### 1. Add FlowPilot as Peer
+
+```bash
+openclaw config set plugins.entries.a2a-gateway.config.peers '[
+  {
+    "name": "FlowPilot",
+    "agentCardUrl": "https://demo.flowwink.com/functions/v1/agent-card",
+    "auth": {
+      "type": "bearer",
+      "token": "<FLOWPILOT_INBOUND_TOKEN>"
+    }
+  }
+]'
+```
+
+### 2. Configure Routing Rules (Optional but Recommended)
+
+```bash
+openclaw config set plugins.entries.a2a-gateway.config.routing.rules '[
+  {
+    "name": "site-audit-to-flowpilot",
+    "match": { "pattern": "(audit|review|analyze|check).*(site|page|seo|content)" },
+    "target": { "peer": "FlowPilot" },
+    "priority": 10
+  },
+  {
+    "name": "booking-to-flowpilot",
+    "match": { "pattern": "(book|appointment|schedule|availability)" },
+    "target": { "peer": "FlowPilot" },
+    "priority": 10
+  }
+]'
+```
+
+### 3. Configure Timeouts
+
+FlowPilot's AI skills can take 10-30 seconds:
+
+```bash
+openclaw config set plugins.entries.a2a-gateway.config.timeouts.agentResponseTimeoutMs 120000
+```
+
+### 4. Add A2A Section to TOOLS.md
+
+Add to `~/.openclaw/workspace/TOOLS.md`:
+
+````markdown
+## A2A Gateway — FlowPilot Peer
+
+You have an A2A peer called **FlowPilot** — an autonomous CMS operator.
+
+### What FlowPilot Can Do
+- **Site audit**: SEO analysis, content quality, broken links
+- **Booking management**: Check availability, manage appointments
+- **CMS operations**: Publish pages, manage blog posts, handle leads
+- **Beta testing**: Run structured test scenarios
+
+### How to Send a Message
+
+```bash
+node ~/.openclaw/workspace/plugins/a2a-gateway/skill/scripts/a2a-send.mjs \
+  --peer-url https://demo.flowwink.com/functions/v1/a2a-ingest \
+  --token <FLOWPILOT_TOKEN> \
+  --message "YOUR MESSAGE HERE"
+```
+````
+
+---
+
+## Peer Setup
+
+### What FlowPilot Exposes
+
+### Agent Card
+```
+GET https://rzhjotxffjfsdlhrdkpj.supabase.co/functions/v1/agent-card
+```
+
+Returns A2A v0.3.0 compliant Agent Card with:
+- 13+ external skills (booking, CRM, content, search, etc.)
+- Bearer token auth
+- JSON-RPC + REST support
+
+### A2A Ingest Endpoint
+```
+POST https://rzhjotxffjfsdlhrdkpj.supabase.co/functions/v1/a2a-ingest
+Authorization: Bearer <inbound_token>
+```
+
+Supports:
+1. **Native**: `{ "skill": "skill_name", "arguments": { ... } }`
+2. **A2A v0.3.0 JSON-RPC**: `{ "jsonrpc": "2.0", "method": "message/send", "params": { ... } }`
+
+### OpenClaw's Confirmed Skills (4 registered)
+
+| Skill | Description | Handler | Trust |
+|-------|-------------|---------|-------|
+| `openclaw_test` | Run autonomous tests on a URL | `a2a:openclaw` | notify |
+| `openclaw_audit` | Code/architecture audit | `a2a:openclaw` | notify |
+| `openclaw_browse` | Browse and interact with web pages | `a2a:openclaw` | auto |
+| `openclaw_report` | Create structured bug reports | `a2a:openclaw` | auto |
+
+### Next Steps
+
+1. **OpenClaw configures their Agent Card endpoint** → gives us URL
+2. **OpenClaw generates a bearer token for FlowPilot** → we store as `outbound_token`
+3. **We register OpenClaw as peer** in Federation panel with their URL + token
+4. **Test bidirectional communication**
+
+---
+
+## Dual-Channel Architecture
+
+> FlowPilot communicates with OpenClaw peers through two complementary channels,
+> selected automatically based on the skill's `handler` prefix.
+
+### Architecture
+
+```
+FlowPilot agent-execute
+    │
+    ├── handler: "responses:openclaw"
+    │   └── openclaw-responses edge function
+    │       └── POST /v1/responses (port 18789)
+    │           └── OpenClaw's LLM processes directly
+    │           └── Synchronous structured response
+    │
+    └── handler: "a2a:openclaw"
+        └── a2a-outbound edge function
+            └── JSON-RPC message/send
+                └── A2A gateway plugin
+                └── Async task lifecycle
+```
+
+### When to Use Which
+
+| Aspect | OpenResponses (`responses:`) | A2A (`a2a:`) |
+|--------|------------------------------|---------------|
+| **Pattern** | FlowPilot commands, OpenClaw executes | Peer-to-peer, bidirectional |
+| **Format** | OpenAI Responses API | JSON-RPC 2.0 (A2A v0.3.0) |
+| **Response** | Synchronous, single response | Async task lifecycle |
+| **Best for** | QA testing, code audits, site browsing | Natural language chat, sharing findings |
+
+### Comparison Summary
+
+```
+┌──────────────────┬────────────────────────┬─────────────────────────┐
+│                  │ OpenResponses          │ A2A                     │
+│                  │ (responses:)           │ (a2a:)                  │
+├──────────────────┼────────────────────────┼─────────────────────────┤
+│ Initiator        │ Always FlowPilot       │ Either side             │
+│ LLM access       │ Direct (no middleman)  │ Via gateway serializer   │
+│ Task lifecycle   │ Sync (req/res)         │ Async (state machine)   │
+│ Agent Card       │ Not needed             │ Used for discovery       │
+│ Config needed    │ Gateway token only     │ A2A gateway plugin      │
+└──────────────────┴────────────────────────┴─────────────────────────┘
+```
+
+---
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| `401 Unauthorized` | Wrong token | Verify token matches FlowPilot's Federation admin inbound token |
+| Timeout errors | FlowPilot skill takes too long | Increase `agentResponseTimeoutMs` or use `--non-blocking --wait` |
+| Free-text responses instead of JSON | OpenClaw's LLM ignores responseSchema | Use `skill:` prefix for structured calls |
+| Agent doesn't call FlowPilot | Missing TOOLS.md section | Add the A2A section to TOOLS.md |
+| `peer_unavailable` | Peer is offline | Graceful degradation — system continues operating |
+
+---
+
+*Last updated: March 2026*
