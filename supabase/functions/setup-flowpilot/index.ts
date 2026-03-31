@@ -615,6 +615,48 @@ Creates a new high-level objective for FlowPilot's autonomous operation.
     },
   },
   {
+    name: 'migrate_url',
+    description: 'Migrate an external webpage into FlowWink-ready blocks with brand extraction and page discovery. After this, create page via manage_page, then add/adjust blocks via manage_page_blocks.',
+    handler: 'edge:migrate-page',
+    category: 'content',
+    scope: 'internal',
+    requires_approval: false,
+    instructions: `# Website Migration — Multi-Step Orchestration
+
+## CRITICAL RULE
+After calling migrate_url, you MUST IMMEDIATELY call manage_page with the returned blocks.
+Do NOT only summarize or ask follow-up if page creation has not happened yet.
+
+## Flow (execute tools, don't just describe)
+1. Call migrate_url with URL
+2. Call manage_page with action='create' using returned title + blocks
+3. Confirm page created (capture page_id/slug)
+4. Offer to migrate discovered otherPages
+
+## Required behavior
+- If migrate_url returns blocks: create page directly
+- If migrate_url returns otherPages: list them and ask if user wants bulk migration
+- Preserve source language unless user asks otherwise
+- Never fabricate blocks; use extracted content only`,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'migrate_url',
+        description: 'Extract and map an external page into CMS-ready blocks. Returns title, blocks, branding, and discovered pages.',
+        parameters: {
+          type: 'object',
+          properties: {
+            url: { type: 'string', description: 'The full URL to migrate (e.g. https://example.com)' },
+            pageType: { type: 'string', enum: ['page', 'blog', 'kb'], description: 'Target page type (default: page)' },
+            slug: { type: 'string', description: 'Optional target slug override' },
+            title: { type: 'string', description: 'Optional target title override' },
+          },
+          required: ['url'],
+        },
+      },
+    },
+  },
+  {
     name: 'lookup_order',
     description: 'Look up order status by order ID or customer email.',
     handler: 'module:orders',
