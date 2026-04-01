@@ -1546,11 +1546,14 @@ Respond only with JSON.`;
 
     console.log(`Discovered ${otherPages.length} other pages on the site`);
 
+    const pageTitle = parsedBlocks.title || metadata.title || 'Imported page';
+    const suggestedSlug = pageTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'imported-page';
+
     return new Response(
       JSON.stringify({
         success: true,
         sourceUrl: formattedUrl,
-        title: parsedBlocks.title || metadata.title || 'Imported page',
+        title: pageTitle,
         blocks,
         companyProfile: companyProfile || null,
         branding: extractedBrand || null,
@@ -1567,7 +1570,18 @@ Respond only with JSON.`;
           screenshotAvailable: !!screenshot,
           brandingExtracted: !!extractedBrand,
           scrapedAt: new Date().toISOString(),
-        }
+        },
+        // OpenClaw chaining hint — tells the reasoning loop what to do next
+        _next_action: {
+          tool: 'manage_page',
+          args: {
+            action: 'create',
+            title: pageTitle,
+            slug: suggestedSlug,
+            blocks: '{{blocks}}',  // placeholder — AI should use the blocks array from this response
+          },
+          instruction: `CRITICAL: You MUST now call manage_page with action='create', title='${pageTitle}', slug='${suggestedSlug}', and the blocks array from this result. Do NOT summarize or describe — call the tool immediately.`,
+        },
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
