@@ -49,7 +49,7 @@ export function ResearchPreview({
     );
   };
 
-  const hooks = research.content_hooks ?? {};
+  const hooks = (research.content_hooks ?? {}) as Record<string, string[]>;
   const allHooks = [
     ...(hooks.curiosity_hooks ?? []).map(h => ({ text: h, type: 'curiosity' })),
     ...(hooks.controversy_hooks ?? []).map(h => ({ text: h, type: 'controversy' })),
