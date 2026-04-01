@@ -93,7 +93,7 @@ cmd_help() {
     echo -e "  ${CYAN}/update-funcs${NC}    Re-deploy all edge functions (picks up code changes)"
     echo -e "  ${CYAN}/set-keys${NC}        Add or rotate API keys & Supabase secrets"
     echo -e "  ${CYAN}/create-admin${NC}    Create a new admin user account"
-    echo -e "  ${CYAN}/setup-flowpilot${NC} Patch FlowPilot: sync missing skills/soul or renew heartbeat cron"
+    echo -e "  ${CYAN}/patch-flowpilot${NC} Patch FlowPilot: sync missing skills/soul or renew heartbeat cron"
     echo ""
     echo -e "  ${BOLD}── Info ──────────────────────────────────────────────${NC}"
     echo -e "  ${CYAN}/env${NC}             Print environment variables needed for hosting (Vercel/Easypanel)"
@@ -631,7 +631,7 @@ cmd_install() {
     print_section "Full Installation"
     require_link || return 1
 
-    echo -e "  Runs: ${CYAN}/update-db${NC} → ${CYAN}/update-funcs${NC} → ${CYAN}/create-admin${NC} → ${CYAN}/env${NC} → ${CYAN}/setup-flowpilot${NC}"
+    echo -e "  Runs: ${CYAN}/update-db${NC} → ${CYAN}/update-funcs${NC} → ${CYAN}/create-admin${NC} → ${CYAN}/env${NC} → ${CYAN}/patch-flowpilot${NC}"
     echo ""
     read -e -p "  Continue? [y/N]: " confirm
     [[ ! "$confirm" =~ ^[Yy]$ ]] && echo "" && return 0
@@ -717,7 +717,7 @@ _fw_select() {
 FW_COMMANDS=(
     "/login" "/link" "/install"
     "/update-db" "/update-funcs" "/set-keys" "/create-admin"
-    "/setup-flowpilot"
+    "/patch-flowpilot"
     "/env" "/status" "/about" "/help" "/quit"
 )
 
@@ -883,7 +883,7 @@ while true; do
         /update-funcs|/update-functions) cmd_update_funcs ;;
         /set-keys|/set-secrets)      cmd_set_keys ;;
         /create-admin)               cmd_create_admin ;;
-        /setup-flowpilot)            cmd_setup_flowpilot ;;
+        /patch-flowpilot|/setup-flowpilot) cmd_setup_flowpilot ;;
         /env)                        cmd_env ;;
         /status)                     cmd_status ;;
         /about)                      cmd_about ;;
