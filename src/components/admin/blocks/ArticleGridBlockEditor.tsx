@@ -115,7 +115,8 @@ function SortableArticleItem({ id, index, article, onUpdate, onRemove }: Sortabl
   );
 }
 
-export function ArticleGridBlockEditor({ data, onChange, canEdit }: ArticleGridBlockEditorProps) {
+export function ArticleGridBlockEditor({ data: rawData, onChange, canEdit }: ArticleGridBlockEditorProps) {
+  const data = { ...rawData, articles: rawData.articles || [] };
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
