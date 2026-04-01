@@ -37,6 +37,18 @@ function formatFields(fields: BlockFieldInfo[]): string {
       return `${f.name}${req}: ${f.options.map(o => `'${o}'`).join(' | ')}`;
     }
     if (f.type === 'array') {
+      if (f.itemFields && f.itemFields.length > 0) {
+        const sub = f.itemFields.map(sf => {
+          const sreq = sf.required ? '' : '?';
+          if (sf.type === 'tiptap') return `${sf.name}${sreq}: <TiptapDoc>`;
+          if (sf.options) return `${sf.name}${sreq}: ${sf.options.map(o => `'${o}'`).join(' | ')}`;
+          return `${sf.name}${sreq}: ${sf.type}`;
+        }).join(', ');
+        const tiptapNote = f.itemFields.some(sf => sf.type === 'tiptap')
+          ? ' — fields marked <TiptapDoc> must be Tiptap JSON objects, never strings'
+          : '';
+        return `${f.name}${req}: [{ ${sub} }]${tiptapNote ? `  /*${tiptapNote} */` : ''}`;
+      }
       return `${f.name}${req}: [...]  /* ${f.description} */`;
     }
     if (f.type === 'tiptap') {
@@ -44,6 +56,26 @@ function formatFields(fields: BlockFieldInfo[]): string {
     }
     return `${f.name}${req}: ${f.type}`;
   }).join(', ');
+}
+
+/**
+ * Collect all { blockType, arrayField, itemField } triples where itemField.type === 'tiptap'.
+ * Used to generate the TIPTAP_NESTED_FIELDS export for normalize-blocks.ts.
+ */
+function collectNestedTiptapFields(blocks: BlockInfo[]): { blockType: string; arrayField: string; itemField: string }[] {
+  const result: { blockType: string; arrayField: string; itemField: string }[] = [];
+  for (const block of blocks) {
+    for (const field of block.fields) {
+      if (field.type === 'array' && field.itemFields) {
+        for (const sub of field.itemFields) {
+          if (sub.type === 'tiptap') {
+            result.push({ blockType: block.type, arrayField: field.name, itemField: sub.name });
+          }
+        }
+      }
+    }
+  }
+  return result;
 }
 
 // ── 2. Generate OpenAI tool definitions (for copilot-action) ─────────────────
@@ -115,9 +147,16 @@ const HEADER = `/**
 const promptSchema = generatePromptSchema();
 const toolDefs = generateToolDefinitions();
 
+// Collect all nested tiptap fields across all block types (importable + non-importable)
+const nestedTiptapFields = collectNestedTiptapFields(BLOCK_REFERENCE);
+
 // Block schema for migrate-page
 const schemaFile = `${HEADER}export const BLOCK_TYPES_SCHEMA = ${JSON.stringify(promptSchema, null, 2)};\n\n` +
-  `export const IMPORTABLE_BLOCK_TYPES = ${JSON.stringify(getImportableBlockTypes())} as const;\n`;
+  `export const IMPORTABLE_BLOCK_TYPES = ${JSON.stringify(getImportableBlockTypes())} as const;\n\n` +
+  `/**\n * Auto-generated list of nested array item fields that must be Tiptap JSON.\n` +
+  ` * Used by normalize-blocks.ts to auto-fix raw strings in nested arrays.\n` +
+  ` * Source: block-reference.ts fields with type:'array' and itemFields[].type:'tiptap'\n */\n` +
+  `export const TIPTAP_NESTED_FIELDS = ${JSON.stringify(nestedTiptapFields, null, 2)} as const;\n`;
 
 await Bun.write('supabase/functions/_shared/block-schema.ts', schemaFile);
 

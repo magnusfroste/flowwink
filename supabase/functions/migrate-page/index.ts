@@ -3,6 +3,13 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.87.1';
 import { BLOCK_TYPES_SCHEMA } from '../_shared/block-schema.ts';
 import { generateBrandingHints, extractBranding, type FirecrawlBranding } from '../_shared/extract-branding.ts';
 import { resolveAiConfig } from '../_shared/ai-config.ts';
+import {
+  TIPTAP_FIELDS,
+  normalizeBlockData,
+  applyIconFallbacks,
+  validateBlockContracts,
+  stripRemovedBlocks,
+} from '../_shared/normalize-blocks.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -1230,7 +1237,12 @@ Respond ONLY with valid JSON, no other text:
       } 
     },
     { "id": "block-2", "type": "text", "data": { "content": { "type": "doc", "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "Your text here" }] }] } } },
-    { "id": "block-3", "type": "lottie", "data": { "src": "https://lottie.host/...", "autoplay": true, "loop": true, "alt": "Animation description" } }
+    { "id": "block-3", "type": "lottie", "data": { "src": "https://lottie.host/...", "autoplay": true, "loop": true, "alt": "Animation description" } },
+    { "id": "block-4", "type": "features", "data": { "title": "Why choose us", "features": [{ "id": "f1", "icon": "ShieldCheck", "title": "Secure", "description": "Enterprise-grade security" }, { "id": "f2", "icon": "Zap", "title": "Fast", "description": "Sub-second response times" }, { "id": "f3", "icon": "Globe", "title": "Global", "description": "Available worldwide" }], "columns": "3", "variant": "cards" } },
+    { "id": "block-5", "type": "tabs", "data": { "tabs": [{ "id": "tab-1", "title": "Setup", "icon": "Settings", "content": { "type": "doc", "content": [{ "type": "heading", "attrs": { "level": 3 }, "content": [{ "type": "text", "text": "Get started" }] }, { "type": "paragraph", "content": [{ "type": "text", "text": "Connect and configure in minutes." }] }] } }, { "id": "tab-2", "title": "Monitor", "icon": "Activity", "content": { "type": "doc", "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "Track everything in real time." }] }] } }], "variant": "underline", "defaultTab": "tab-1" } },
+    { "id": "block-6", "type": "accordion", "data": { "title": "FAQ", "items": [{ "question": "How does it work?", "answer": { "type": "doc", "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "Connect to your systems and get real-time insights." }] }] } }, { "question": "What does it cost?", "answer": { "type": "doc", "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "Plans start from €49/month." }] }] } }] } },
+    { "id": "block-7", "type": "bento-grid", "data": { "title": "Everything you need", "items": [{ "id": "b1", "title": "Monitoring", "description": "Live sensor data", "icon": "Activity", "span": "wide" }, { "id": "b2", "title": "Alerts", "description": "Instant notifications", "icon": "Bell", "span": "normal" }, { "id": "b3", "title": "Analytics", "description": "Deep insights", "icon": "BarChart3", "span": "normal" }], "columns": 3, "variant": "default" } },
+    { "id": "block-8", "type": "two-column", "data": { "content": { "type": "doc", "content": [{ "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "text": "About us" }] }, { "type": "paragraph", "content": [{ "type": "text", "text": "We help businesses grow with smart technology." }] }] }, "imageSrc": "https://example.com/image.jpg", "imageAlt": "Team", "imagePosition": "right" } }
   ],
   "companyProfile": {
     "company_name": "Company name from the page",
@@ -1402,202 +1414,25 @@ Respond only with JSON.`;
         ...block,
         id: block.id || `block-${Date.now()}-${index}`,
       };
-      
-      // Normalize team block: AI returns 'image' but frontend expects 'photo'
-      if (normalizedBlock.type === 'team' && normalizedBlock.data) {
-        const data = normalizedBlock.data as Record<string, unknown>;
-        if (Array.isArray(data.members)) {
-          data.members = (data.members as Record<string, unknown>[]).map((member: Record<string, unknown>) => {
-            const normalizedMember: Record<string, unknown> = {
-              ...member,
-              id: member.id || `member-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-              photo: member.photo || member.image || '', // Map 'image' to 'photo'
-              role: member.role || '',
-            };
-            // Remove the old 'image' field if it exists
-            delete normalizedMember.image;
-            return normalizedMember;
-          });
-        }
-      }
-      
-      // Normalize table block: ensure columns have ids and rows map correctly
-      if (normalizedBlock.type === 'table' && normalizedBlock.data) {
-        const data = normalizedBlock.data as Record<string, unknown>;
-        
-        // Ensure columns have unique ids
-        if (Array.isArray(data.columns)) {
-          data.columns = (data.columns as Record<string, unknown>[]).map((col, colIndex) => ({
-            id: col.id || `col${colIndex + 1}`,
-            header: col.header || col.name || col.title || `Column ${colIndex + 1}`,
-            align: col.align || 'left',
-          }));
-        } else {
-          data.columns = [];
-        }
-        
-        // Normalize rows - handle various AI output formats
-        if (Array.isArray(data.rows)) {
-          const columns = data.columns as Array<{ id: string; header: string }>;
-          data.rows = (data.rows as unknown[]).map((row) => {
-            // If row is already an object with column ids as keys
-            if (row && typeof row === 'object' && !Array.isArray(row)) {
-              const rowObj = row as Record<string, unknown>;
-              const normalizedRow: Record<string, string> = {};
-              columns.forEach((col) => {
-                // Try to find value by column id or header
-                normalizedRow[col.id] = String(rowObj[col.id] ?? rowObj[col.header] ?? '');
-              });
-              return normalizedRow;
-            }
-            // If row is an array of values
-            if (Array.isArray(row)) {
-              const normalizedRow: Record<string, string> = {};
-              columns.forEach((col, colIndex) => {
-                normalizedRow[col.id] = String(row[colIndex] ?? '');
-              });
-              return normalizedRow;
-            }
-            // Fallback: empty row
-            const normalizedRow: Record<string, string> = {};
-            columns.forEach((col) => {
-              normalizedRow[col.id] = '';
-            });
-            return normalizedRow;
-          });
-        } else {
-          data.rows = [];
-        }
-        
-        // Set defaults for styling
-        data.variant = data.variant || 'default';
-        data.size = data.size || 'md';
-        data.stickyHeader = data.stickyHeader ?? false;
-        data.highlightOnHover = data.highlightOnHover ?? true;
-      }
-      
+      normalizeBlockData(normalizedBlock);
       return normalizedBlock;
     });
 
-    // Step 5b: Post-migration TipTap validation — auto-fix raw HTML strings
-    const TIPTAP_FIELDS = ['content', 'leftContent', 'rightContent', 'body', 'answer'];
-    const htmlToTiptap = (html: string): Record<string, unknown> => {
-      // Strip HTML tags to get plain text
-      const text = html.replace(/<[^>]*>/g, '').trim();
-      if (!text) return { type: 'doc', content: [{ type: 'paragraph', content: [] }] };
-      // Split by double newlines or <br> for paragraphs
-      const paragraphs = text.split(/\n\n|\n/).filter(p => p.trim());
-      return {
-        type: 'doc',
-        content: paragraphs.map(p => ({
-          type: 'paragraph',
-          content: [{ type: 'text', text: p.trim() }],
-        })),
-      };
-    };
+    // Step 5b–5e: Tiptap fix, icon fallbacks, contract validation
+    // (hallucination/duplicate detection below is migration-specific and stays here)
 
-    let fixedCount = 0;
-    for (const block of blocks) {
-      const data = block.data as Record<string, unknown> | undefined;
-      if (!data) continue;
-      for (const field of TIPTAP_FIELDS) {
-        if (typeof data[field] === 'string') {
-          console.warn(`[TipTap fix] Block ${block.id} (${block.type}): field "${field}" was raw string, converting to TipTap JSON`);
-          data[field] = htmlToTiptap(data[field] as string);
-          fixedCount++;
-        }
-      }
-    }
-    if (fixedCount > 0) {
-      console.log(`[TipTap fix] Auto-corrected ${fixedCount} fields from raw HTML to TipTap JSON`);
-    }
-
-    // Step 5c: Ensure all blocks have unique IDs
-    for (let i = 0; i < blocks.length; i++) {
-      if (!blocks[i].id || String(blocks[i].id).trim() === '') {
-        blocks[i].id = `block-${Date.now()}-${i}`;
-      }
-    }
-
-    // Step 5d: Ensure features/stats/timeline items have icons (fallback to sensible defaults)
-    const ICON_FALLBACKS: Record<string, string> = {
-      features: 'Star',
-      stats: 'TrendingUp',
-      timeline: 'Circle',
-      'link-grid': 'Link',
-      'trust-bar': 'ShieldCheck',
-      'shipping-info': 'Truck',
-    };
-    const KEYWORD_ICON_MAP: [RegExp, string][] = [
-      [/temperatur|temp|värme|heat/i, 'Thermometer'],
-      [/vatten|water|h2o|leak/i, 'Droplets'],
-      [/luft|air|vent|ventil/i, 'Wind'],
-      [/ljud|noise|sound|audio/i, 'Volume2'],
-      [/säkerhet|security|safe|shield/i, 'ShieldCheck'],
-      [/rök|smoke|brand|fire/i, 'Flame'],
-      [/dörr|door|access/i, 'DoorOpen'],
-      [/väg|road|trafik|traffic/i, 'Route'],
-      [/väder|weather|climat/i, 'CloudSun'],
-      [/snö|snow/i, 'Snowflake'],
-      [/råtta|rat|pest|skadedjur/i, 'Bug'],
-      [/radon|strålning|radiation/i, 'AlertTriangle'],
-      [/sensor|iot|monitor/i, 'Activity'],
-      [/moln|cloud|server/i, 'Cloud'],
-      [/analys|ai|data|insikt/i, 'BarChart3'],
-      [/energi|energy|el|power/i, 'Zap'],
-      [/position|track|spår/i, 'MapPin'],
-      [/desk|arbetsplats|kontors/i, 'Monitor'],
-      [/besök|count|räkn/i, 'Users'],
-      [/kontakt|contact|mail/i, 'Mail'],
-      [/realtid|real.?time|live/i, 'Radio'],
-      [/plattform|platform|integration/i, 'Layers'],
-    ];
-
-    function guessIcon(text: string, fallback: string): string {
-      const combined = text.toLowerCase();
-      for (const [re, icon] of KEYWORD_ICON_MAP) {
-        if (re.test(combined)) return icon;
-      }
-      return fallback;
-    }
-
-    for (const block of blocks) {
-      const data = block.data as Record<string, unknown> | undefined;
-      if (!data) continue;
-      const blockType = String(block.type);
-      const fallbackIcon = ICON_FALLBACKS[blockType];
-      if (!fallbackIcon) continue;
-
-      // Check array fields that should have icons
-      const arrayFields = ['features', 'stats', 'steps', 'items', 'links'];
-      for (const field of arrayFields) {
-        const arr = data[field] as Array<Record<string, unknown>> | undefined;
-        if (!Array.isArray(arr)) continue;
-        for (const item of arr) {
-          if (!item.icon || String(item.icon).trim() === '' || item.icon === 'null') {
-            const searchText = `${item.title || ''} ${item.description || ''} ${item.label || ''}`;
-            item.icon = guessIcon(searchText, fallbackIcon);
-          }
-        }
-      }
-    }
-    console.log('Step 5c-d: Ensured block IDs and feature icons');
-
-    // Step 5e: Validate block data quality — detect AI hallucinations
-    // 1. Detect duplicate data across blocks (AI copying hero data everywhere)
+    // Step 5b: Detect duplicate data across blocks (AI hallucination guard — migrate-page only)
     if (blocks.length > 2) {
       const dataFingerprints = blocks.map((b: Record<string, unknown>) => JSON.stringify(b.data));
       const uniqueFingerprints = new Set(dataFingerprints);
       if (uniqueFingerprints.size === 1 && blocks.length > 1) {
         console.error('[QUALITY] CRITICAL: All blocks have identical data — AI hallucination detected');
-        // Keep only the first block (likely the correct hero) and warn
         const heroBlock = blocks[0];
         blocks.length = 0;
         blocks.push(heroBlock);
         console.warn('[QUALITY] Reduced to single hero block. Re-migration recommended.');
       } else if (uniqueFingerprints.size < blocks.length * 0.5) {
         console.warn(`[QUALITY] WARNING: Only ${uniqueFingerprints.size} unique data objects for ${blocks.length} blocks — possible duplication`);
-        // Remove consecutive duplicates
         const deduped: Record<string, unknown>[] = [blocks[0]];
         for (let i = 1; i < blocks.length; i++) {
           if (dataFingerprints[i] !== dataFingerprints[i - 1]) {
@@ -1611,117 +1446,28 @@ Respond only with JSON.`;
       }
     }
 
-    // 2. Fix empty TipTap paragraphs (missing content/text nodes)
-    let emptyTiptapFixed = 0;
+    // Step 5c: Empty Tiptap paragraph detection (quality warning — logging only)
     for (const block of blocks) {
       const data = block.data as Record<string, unknown> | undefined;
       if (!data) continue;
       for (const field of TIPTAP_FIELDS) {
         const val = data[field] as Record<string, unknown> | undefined;
         if (val && typeof val === 'object' && val.type === 'doc' && Array.isArray(val.content)) {
-          const content = val.content as Array<Record<string, unknown>>;
-          // Check if all paragraphs are empty (no content array or empty content)
-          const allEmpty = content.every(node => 
-            !node.content || (Array.isArray(node.content) && node.content.length === 0)
+          const allEmpty = (val.content as Array<Record<string, unknown>>).every(
+            (node) => !node.content || (Array.isArray(node.content) && node.content.length === 0),
           );
-          if (allEmpty && content.length > 0) {
-            // This is a placeholder-only TipTap doc — mark it so editors show it clearly
+          if (allEmpty && (val.content as unknown[]).length > 0) {
             console.warn(`[QUALITY] Block ${block.id} (${block.type}): TipTap field "${field}" has empty paragraphs`);
-            emptyTiptapFixed++;
           }
         }
       }
     }
-    if (emptyTiptapFixed > 0) {
-      console.log(`[QUALITY] Found ${emptyTiptapFixed} empty TipTap fields across blocks`);
-    }
 
-    // 3. Per-block-type required field validation
-    // Maps block type → required fields (at least one must exist) and forbidden fields (indicate wrong data)
-    const BLOCK_CONTRACTS: Record<string, { required: string[][]; forbidden?: string[] }> = {
-      hero:          { required: [['title']] },
-      text:          { required: [['content']] },
-      quote:         { required: [['quote']] },
-      cta:           { required: [['buttonText', 'primaryButtonText', 'buttons']], forbidden: ['videoUrl', 'videoType'] },
-      features:      { required: [['features', 'items']], forbidden: ['backgroundType', 'videoUrl'] },
-      stats:         { required: [['stats']] },
-      testimonials:  { required: [['testimonials']] },
-      team:          { required: [['members']] },
-      logos:         { required: [['logos']] },
-      timeline:      { required: [['steps']] },
-      accordion:     { required: [['items']] },
-      image:         { required: [['src']] },
-      gallery:       { required: [['images']] },
-      youtube:       { required: [['videoId']] },
-      'two-column':  { required: [['content', 'imageSrc']] },
-      form:          { required: [['fields']] },
-      newsletter:    { required: [] }, // minimal requirements
-      map:           { required: [['address']] },
-      booking:       { required: [] },
-      pricing:       { required: [['tiers']] },
-      comparison:    { required: [['products', 'features']] },
-      tabs:          { required: [['tabs']] },
-      marquee:       { required: [['items']] },
-      embed:         { required: [['url']] },
-      lottie:        { required: [['src']] },
-      table:         { required: [['columns']] },
-      countdown:     { required: [['targetDate']] },
-      progress:      { required: [['items']] },
-      badge:         { required: [['badges']] },
-      'social-proof': { required: [['items']] },
-      'trust-bar':   { required: [['items']] },
-      'shipping-info': { required: [['items']] },
-      'link-grid':   { required: [['links']] },
-      'announcement-bar': { required: [['message']] },
-      'floating-cta': { required: [['buttonText']] },
-      'article-grid': { required: [] },
-    };
-
-    for (const block of blocks) {
-      const data = block.data as Record<string, unknown> | undefined;
-      if (!data) { block._remove = true; continue; }
-      const blockType = String(block.type);
-      const contract = BLOCK_CONTRACTS[blockType];
-      if (!contract) continue; // unknown type — keep as-is
-
-      // Check forbidden fields (indicates data from wrong block type pasted in)
-      if (contract.forbidden) {
-        const hasForbidden = contract.forbidden.some(f => data[f] !== undefined && data[f] !== null);
-        if (hasForbidden) {
-          console.warn(`[VALIDATE] Block ${block.id} (${blockType}): has forbidden fields ${contract.forbidden.filter(f => data[f]).join(',')} — removing`);
-          block._remove = true;
-          continue;
-        }
-      }
-
-      // Check required field groups (at least one field in each group must exist with a non-empty value)
-      for (const fieldGroup of contract.required) {
-        const hasAny = fieldGroup.some(f => {
-          const val = data[f];
-          if (val === undefined || val === null) return false;
-          if (typeof val === 'string' && val.trim() === '') return false;
-          if (Array.isArray(val) && val.length === 0) return false;
-          return true;
-        });
-        if (!hasAny) {
-          console.warn(`[VALIDATE] Block ${block.id} (${blockType}): missing required fields [${fieldGroup.join('|')}] — removing`);
-          block._remove = true;
-          break;
-        }
-      }
-    }
-    
-    // Remove blocks marked for removal
-    const beforeRemoval = blocks.length;
-    const cleanBlocks = blocks.filter((b: Record<string, unknown>) => !b._remove);
-    if (cleanBlocks.length < beforeRemoval) {
-      console.log(`[VALIDATE] Removed ${beforeRemoval - cleanBlocks.length} invalid blocks`);
-      blocks.length = 0;
-      blocks.push(...cleanBlocks);
-      for (const block of blocks) {
-        delete (block as Record<string, unknown>)._remove;
-      }
-    }
+    // Step 5d–5e: shared normalizer (tiptap fields already handled above in 5a map(),
+    // but applyIconFallbacks + validateBlockContracts run here)
+    applyIconFallbacks(blocks);
+    validateBlockContracts(blocks);
+    stripRemovedBlocks(blocks);
 
     console.log('Step 5: Successfully mapped', blocks.length, 'blocks');
     console.log('Block types:', blocks.map((b: Record<string, unknown>) => b.type).join(', '));

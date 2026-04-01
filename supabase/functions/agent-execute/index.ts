@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { normalizeBlockData, normalizeBlocks } from '../_shared/normalize-blocks.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -917,11 +918,13 @@ async function executePagesAction(
         const { count: existingPages } = await supabase
           .from('pages').select('id', { count: 'exact', head: true }).is('deleted_at', null);
 
+        const pageBlocks = blocks || [];
+        normalizeBlocks(pageBlocks);
         const { data, error } = await supabase.from('pages').insert({
           title,
           slug: pageSlug,
           status: 'draft',
-          content_json: blocks || [],
+          content_json: pageBlocks,
           meta_json: meta || {},
         }).select('id, title, slug, status').single();
         if (error) throw new Error(`Create page failed: ${error.message}`);
@@ -944,7 +947,10 @@ async function executePagesAction(
         if (title !== undefined) updates.title = title;
         if (slug !== undefined) updates.slug = slug;
         if (meta !== undefined) updates.meta_json = meta;
-        if (blocks !== undefined) updates.content_json = blocks;
+        if (blocks !== undefined) {
+          normalizeBlocks(blocks as unknown[]);
+          updates.content_json = blocks;
+        }
         const { data, error } = await supabase.from('pages')
           .update(updates).eq('id', page_id).select('id, title, slug, status').single();
         if (error) throw new Error(`Update page failed: ${error.message}`);
@@ -1061,6 +1067,7 @@ async function executePagesAction(
           spacing: {},
           animation: { type: 'fade-up' },
         };
+        normalizeBlockData(newBlock);
         const pos = position !== undefined ? Math.min(position, blocks.length) : blocks.length;
         blocks.splice(pos, 0, newBlock);
         await supabase.from('pages')
@@ -1075,6 +1082,7 @@ async function executePagesAction(
         const idx = blocks.findIndex((b: any) => b.id === block_id);
         if (idx === -1) throw new Error(`Block not found: ${block_id}`);
         blocks[idx] = { ...blocks[idx], data: { ...blocks[idx].data, ...block_data } };
+        normalizeBlockData(blocks[idx]);
         await supabase.from('pages')
           .update({ content_json: blocks, updated_at: new Date().toISOString() })
           .eq('id', page_id);
