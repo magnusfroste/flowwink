@@ -49,11 +49,12 @@ export function ResearchPreview({
     );
   };
 
+  const hooks = research.content_hooks ?? {};
   const allHooks = [
-    ...research.content_hooks.curiosity_hooks.map(h => ({ text: h, type: 'curiosity' })),
-    ...research.content_hooks.controversy_hooks.map(h => ({ text: h, type: 'controversy' })),
-    ...research.content_hooks.story_hooks.map(h => ({ text: h, type: 'story' })),
-    ...research.content_hooks.data_hooks.map(h => ({ text: h, type: 'data' })),
+    ...(hooks.curiosity_hooks ?? []).map(h => ({ text: h, type: 'curiosity' })),
+    ...(hooks.controversy_hooks ?? []).map(h => ({ text: h, type: 'controversy' })),
+    ...(hooks.story_hooks ?? []).map(h => ({ text: h, type: 'story' })),
+    ...(hooks.data_hooks ?? []).map(h => ({ text: h, type: 'data' })),
   ];
 
   return (
@@ -68,9 +69,9 @@ export function ResearchPreview({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm font-medium">{research.topic_analysis.main_theme}</p>
+            <p className="text-sm font-medium">{research.topic_analysis?.main_theme}</p>
             <div className="flex flex-wrap gap-1 mt-2">
-              {research.topic_analysis.sub_topics.slice(0, 4).map((topic, i) => (
+              {(research.topic_analysis?.sub_topics ?? []).slice(0, 4).map((topic, i) => (
                 <Badge key={i} variant="secondary" className="text-xs">
                   {topic}
                 </Badge>
@@ -92,7 +93,7 @@ export function ResearchPreview({
                     <Lightbulb className="h-4 w-4 text-amber-500" />
                     Content Angles
                     <Badge variant="outline" className="ml-2">
-                      {research.content_angles.length} options
+                      {(research.content_angles ?? []).length} options
                     </Badge>
                   </CardTitle>
                   {expandedSections.includes('angles') ? (
@@ -106,7 +107,7 @@ export function ResearchPreview({
             </CollapsibleTrigger>
             <CollapsibleContent>
               <CardContent className="space-y-3 pt-0">
-                {research.content_angles.map((angle, index) => (
+                {(research.content_angles ?? []).map((angle, index) => (
                   <div
                     key={index}
                     onClick={() => onAngleSelect(angle)}
@@ -228,7 +229,7 @@ export function ResearchPreview({
                 <div>
                   <p className="text-xs font-medium text-muted-foreground mb-1">Pain Points</p>
                   <ul className="text-sm space-y-1">
-                    {research.audience_insights.pain_points.slice(0, 3).map((p, i) => (
+                    {(research.audience_insights?.pain_points ?? []).slice(0, 3).map((p, i) => (
                       <li key={i} className="flex items-start gap-2">
                         <span className="text-destructive">•</span> {p}
                       </li>
@@ -238,7 +239,7 @@ export function ResearchPreview({
                 <div>
                   <p className="text-xs font-medium text-muted-foreground mb-1">Desires</p>
                   <ul className="text-sm space-y-1">
-                    {research.audience_insights.desires.slice(0, 3).map((d, i) => (
+                    {(research.audience_insights?.desires ?? []).slice(0, 3).map((d, i) => (
                       <li key={i} className="flex items-start gap-2">
                         <span className="text-green-500">•</span> {d}
                       </li>
@@ -274,7 +275,7 @@ export function ResearchPreview({
             <CollapsibleContent>
               <CardContent className="pt-0">
                 <div className="space-y-2">
-                  {research.competitive_landscape.differentiation_opportunities.map((opp, i) => (
+                  {(research.competitive_landscape?.differentiation_opportunities ?? []).map((opp, i) => (
                     <div key={i} className="p-2 rounded bg-muted/30 text-sm">
                       {opp}
                     </div>
@@ -310,10 +311,10 @@ export function ResearchPreview({
               <CollapsibleContent>
                 <CardContent className="pt-0">
                   <div className="flex flex-wrap gap-1">
-                    {research.seo_insights.primary_keywords.map((kw, i) => (
+                    {(research.seo_insights?.primary_keywords ?? []).map((kw, i) => (
                       <Badge key={i} variant="default" className="text-xs">{kw}</Badge>
                     ))}
-                    {research.seo_insights.secondary_keywords.map((kw, i) => (
+                    {(research.seo_insights?.secondary_keywords ?? []).map((kw, i) => (
                       <Badge key={i} variant="secondary" className="text-xs">{kw}</Badge>
                     ))}
                   </div>
