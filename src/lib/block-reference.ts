@@ -12,6 +12,8 @@ export interface BlockFieldInfo {
   description: string;
   default?: unknown;
   options?: string[];
+  /** For array fields: typed schema of each item's sub-fields. */
+  itemFields?: BlockFieldInfo[];
 }
 
 export interface BlockInfo {
@@ -176,7 +178,10 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
     category: 'content',
     fields: [
       { name: 'title', type: 'string', required: false, description: 'Section title' },
-      { name: 'items', type: 'array', required: true, description: 'Array of items [{ question, answer }]' },
+      { name: 'items', type: 'array', required: true, description: 'FAQ items', itemFields: [
+        { name: 'question', type: 'string', required: true, description: 'The question text' },
+        { name: 'answer', type: 'tiptap', required: true, description: 'The answer — rich text content' },
+      ]},
     ],
   },
 
@@ -533,7 +538,12 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
     fields: [
       { name: 'title', type: 'string', required: false, description: 'Section title' },
       { name: 'subtitle', type: 'string', required: false, description: 'Section subtitle' },
-      { name: 'tabs', type: 'array', required: true, description: 'Array of tabs [{ id, title, icon, content }]' },
+      { name: 'tabs', type: 'array', required: true, description: 'Tab items', itemFields: [
+        { name: 'id', type: 'string', required: true, description: 'Unique tab ID' },
+        { name: 'title', type: 'string', required: true, description: 'Tab label shown in the tab bar' },
+        { name: 'icon', type: 'string', required: false, description: 'Optional Lucide icon name' },
+        { name: 'content', type: 'tiptap', required: true, description: 'Tab body — rich text content' },
+      ]},
       { name: 'orientation', type: 'string', required: false, description: 'Tab orientation', default: 'horizontal', options: ['horizontal', 'vertical'] },
       { name: 'variant', type: 'string', required: false, description: 'Tab style', default: 'underline', options: ['underline', 'pills', 'boxed'] },
       { name: 'defaultTab', type: 'string', required: false, description: 'ID of default active tab' },
@@ -717,6 +727,21 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
       { name: 'maxItems', type: 'number', required: false, description: 'Max webinars to show', default: 5 },
       { name: 'showPast', type: 'boolean', required: false, description: 'Show past webinars with recordings', default: true },
       { name: 'variant', type: 'string', required: false, description: 'Display style', default: 'default', options: ['default', 'card', 'minimal'] },
+    ],
+  },
+  {
+    type: 'bento-grid',
+    name: 'Bento Grid',
+    description: 'Responsive masonry-style card grid with variable-span items. Great for showcasing features, services, or highlights with a visually varied layout.',
+    category: 'layout',
+    fields: [
+      { name: 'title', type: 'string', required: false, description: 'Section title' },
+      { name: 'subtitle', type: 'string', required: false, description: 'Section subtitle' },
+      { name: 'eyebrow', type: 'string', required: false, description: 'Small label displayed above the title' },
+      { name: 'items', type: 'array', required: true, description: 'Grid items [{ id, title, description?, icon?, span?, accentColor?, linkUrl?, linkLabel? }]. span: "normal" | "wide" | "tall" | "large"' },
+      { name: 'columns', type: 'number', required: false, description: 'Number of columns (3 or 4)', default: 3 },
+      { name: 'gap', type: 'string', required: false, description: 'Gap between items', options: ['sm', 'md', 'lg'] },
+      { name: 'variant', type: 'string', required: false, description: 'Visual style', options: ['default', 'glass', 'bordered'] },
     ],
   },
 ];

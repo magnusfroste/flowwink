@@ -59,7 +59,24 @@ CRITICAL — TipTap JSON format for rich text fields (type "tiptap"):
 Fields marked "tiptap" MUST use this JSON structure, NEVER raw HTML strings:
 { "type": "doc", "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "Your text here" }] }] }
 For headings: { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "text": "Heading" }] }
-For bullet lists: { "type": "bulletList", "content": [{ "type": "listItem", "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "Item" }] }] }] }`;
+For bullet lists: { "type": "bulletList", "content": [{ "type": "listItem", "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "Item" }] }] }] }
+
+COMPLEX BLOCK EXAMPLES (use exact structure):
+
+features — icon is REQUIRED on every item, use PascalCase Lucide names:
+{ "type": "features", "data": { "title": "Why choose us", "features": [{ "id": "f1", "icon": "ShieldCheck", "title": "Secure", "description": "Enterprise-grade security" }, { "id": "f2", "icon": "Zap", "title": "Fast", "description": "Sub-second response times" }, { "id": "f3", "icon": "Globe", "title": "Global", "description": "Available worldwide" }], "columns": "3", "variant": "cards" } }
+
+tabs — content field inside each tab MUST be Tiptap JSON, never a string:
+{ "type": "tabs", "data": { "title": "How it works", "tabs": [{ "id": "tab-1", "title": "Setup", "icon": "Settings", "content": { "type": "doc", "content": [{ "type": "heading", "attrs": { "level": 3 }, "content": [{ "type": "text", "text": "Get started in minutes" }] }, { "type": "paragraph", "content": [{ "type": "text", "text": "Connect your account and configure your preferences." }] }] } }, { "id": "tab-2", "title": "Monitor", "icon": "Activity", "content": { "type": "doc", "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "Track everything in real time from your dashboard." }] }] } }], "variant": "underline", "defaultTab": "tab-1" } }
+
+accordion — answer field MUST be Tiptap JSON, never a string:
+{ "type": "accordion", "data": { "title": "FAQ", "items": [{ "question": "How does it work?", "answer": { "type": "doc", "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "Our platform connects to your existing systems and provides real-time insights." }] }] } }, { "question": "What does it cost?", "answer": { "type": "doc", "content": [{ "type": "paragraph", "content": [{ "type": "text", "text": "Plans start from €49/month. No setup fee." }] }] } }] } }
+
+bento-grid — span controls card size: "normal" (1×1), "wide" (2×1), "tall" (1×2), "large" (2×2):
+{ "type": "bento-grid", "data": { "title": "Everything you need", "items": [{ "id": "b1", "title": "Real-time monitoring", "description": "Track all sensors live from one dashboard", "icon": "Activity", "span": "wide" }, { "id": "b2", "title": "Smart alerts", "description": "Instant notifications", "icon": "Bell", "span": "normal" }, { "id": "b3", "title": "Analytics", "description": "Deep insights into your data", "icon": "BarChart3", "span": "normal" }, { "id": "b4", "title": "API access", "description": "Connect any system", "icon": "Plug", "span": "large" }], "columns": 3, "variant": "default" } }
+
+two-column — content MUST be Tiptap JSON:
+{ "type": "two-column", "data": { "content": { "type": "doc", "content": [{ "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "text": "About us" }] }, { "type": "paragraph", "content": [{ "type": "text", "text": "We help businesses grow with smart technology and data." }] }] }, "imageSrc": "https://example.com/image.jpg", "imageAlt": "Team at work", "imagePosition": "right" } }`;
   } catch (err) {
     console.error('[cms-schema] Failed to load:', err);
     return '';
