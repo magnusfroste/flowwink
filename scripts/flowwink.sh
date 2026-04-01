@@ -91,7 +91,7 @@ cmd_help() {
     echo -e "  ${CYAN}/set-keys${NC}        Configure API keys & secrets"
     echo -e "  ${CYAN}/create-admin${NC}    Create an admin user"
     echo ""
-    echo -e "  ${CYAN}/setup-flowpilot${NC} Seed FlowPilot objectives, automations & cron"
+    echo -e "  ${CYAN}/setup-flowpilot${NC} Patch FlowPilot — sync skills, soul or renew cron"
     echo ""
     echo -e "  ${CYAN}/env${NC}             Show environment variables for hosting"
     echo -e "  ${CYAN}/status${NC}          Check deployment status"
@@ -560,7 +560,7 @@ cmd_status() {
 
 cmd_setup_flowpilot() {
     echo ""
-    print_section "Setup FlowPilot"
+    print_section "Patch FlowPilot"
     require_link || return 1
 
     if [ -z "$SERVICE_ROLE_KEY" ] || [ "$SERVICE_ROLE_KEY" = "null" ]; then
@@ -640,7 +640,7 @@ cmd_install() {
 
     # Seed skills + soul directly — no menu needed on fresh install.
     # Objectives and automations are seeded automatically on first admin login.
-    print_section "Setup FlowPilot"
+    print_section "Patch FlowPilot"
     require_link || return 1
     echo -e "  Seeding skills & soul..."
     local fp_response
