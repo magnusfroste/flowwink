@@ -22,10 +22,10 @@ export const AI_MODELS = {
 
   // Anthropic
   anthropic: {
-    default: 'claude-sonnet-4-20250514',
-    chat: 'claude-sonnet-4-20250514',
-    fast: 'claude-3-5-haiku-20241022',
-    pro: 'claude-opus-4-20250514',
+    default: 'claude-sonnet-4-6',
+    chat: 'claude-sonnet-4-6',
+    fast: 'claude-haiku-4-5-20251001',
+    pro: 'claude-opus-4-6',
   },
 
   // Local LLM (user-configurable)
