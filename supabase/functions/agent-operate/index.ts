@@ -271,11 +271,26 @@ serve(async (req) => {
           }
 
           // Continuation nudge — prevent AI from describing next steps instead of calling tools
-          // Only add if we have remaining iterations and the task likely needs more tool calls
+          // Enhanced: detect _next_action hints from tool results for targeted chaining
           if (iteration < MAX_TOOL_ITERATIONS - 1) {
+            // Check if any tool result contains a _next_action chaining hint
+            let chainingDirective = '';
+            for (const tr of toolResults) {
+              try {
+                const parsed = JSON.parse(tr.content);
+                const result = parsed?.result || parsed;
+                if (result?._next_action?.instruction) {
+                  chainingDirective = result._next_action.instruction;
+                  break;
+                }
+              } catch { /* ignore parse errors */ }
+            }
+
             conversationMessages.push({
               role: 'system',
-              content: 'IMPORTANT: If your task requires more steps, call the next tool NOW. Do NOT describe what you will do — just do it by calling the tool. Only respond with text when ALL tool calls are complete.',
+              content: chainingDirective
+                ? `MANDATORY NEXT STEP: ${chainingDirective}`
+                : 'IMPORTANT: If your task requires more steps, call the next tool NOW. Do NOT describe what you will do — just do it by calling the tool. Only respond with text when ALL tool calls are complete.',
             });
           }
 
