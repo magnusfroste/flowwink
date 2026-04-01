@@ -604,8 +604,9 @@ async function analyzeSiteStructure(url: string, firecrawlKey: string): Promise<
       url: baseUrl,
       formats: ['html', 'rawHtml'],
       onlyMainContent: false,
-      waitFor: 2000,
+      waitFor: 1000,
     }),
+    signal: AbortSignal.timeout(15000),
   });
   
   const scrapeData = await scrapeResponse.json();
