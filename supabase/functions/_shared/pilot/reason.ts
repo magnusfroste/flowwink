@@ -63,7 +63,7 @@ const DEFAULT_TOKEN_BUDGET = 80_000;
 const MEMORY_FLUSH_THRESHOLD = 0.80;
 const SKILL_TIMEOUT_MS = 30_000;
 const SKILL_TIMEOUT_OVERRIDES_MS: Record<string, number> = {
-  migrate_url: 75_000,
+  migrate_url: 120_000,
   scrape_url: 45_000,
 };
 const CIRCUIT_BREAKER_THRESHOLD = 3;
