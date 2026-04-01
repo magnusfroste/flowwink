@@ -263,7 +263,7 @@ serve(async (req) => {
           JSON.stringify({
             success: false,
             provider: 'anthropic',
-            error: `API returned ${response.status}: ${response.statusText}`
+            error: `API returned ${response.status}: ${errorData}`
           }),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
