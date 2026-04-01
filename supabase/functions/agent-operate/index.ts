@@ -259,6 +259,67 @@ serve(async (req) => {
 
           conversationMessages.push(...toolResults);
 
+          // Deterministic next-step execution for explicit _next_action hints.
+          // Keeps the OpenClaw atomic-tool model, but removes LLM flakiness in
+          // critical multi-step flows like migrate_url -> manage_page.
+          let autoChainSummary: string | null = null;
+          for (const tr of toolResults) {
+            try {
+              const parsed = JSON.parse(tr.content);
+              const result = parsed?.result || parsed;
+              const nextAction = result?._next_action;
+              if (!nextAction?.tool) continue;
+
+              const nextArgs = JSON.parse(JSON.stringify(nextAction.args || {}));
+
+              if (nextArgs.blocks === '{{blocks}}' && Array.isArray(result?.blocks)) {
+                nextArgs.blocks = result.blocks;
+              }
+              if (nextArgs.page_id === '{{page_id}}' && (result?.page_id || result?.id)) {
+                nextArgs.page_id = result.page_id || result.id;
+              }
+              if (!nextArgs.title && result?.title) {
+                nextArgs.title = result.title;
+              }
+              if (!nextArgs.slug && result?.slug) {
+                nextArgs.slug = result.slug;
+              }
+
+              console.log(`[operate] Auto-chaining mandatory next step: ${nextAction.tool}`);
+
+              let chainedResult: any;
+              try {
+                chainedResult = await executeBuiltInTool(supabase, supabaseUrl, serviceKey, nextAction.tool, nextArgs);
+              } catch (err: any) {
+                chainedResult = { error: err.message || `Auto-chain failed for ${nextAction.tool}` };
+              }
+
+              if (!isBuiltInTool(nextAction.tool)) {
+                allSkillResults.push({
+                  skill: nextAction.tool,
+                  status: chainedResult?.error ? 'failed' : (chainedResult?.status || 'success'),
+                  result: chainedResult?.result || chainedResult,
+                });
+              }
+
+              autoChainSummary = [
+                `AUTOMATIC TOOL CHAIN COMPLETE: ${nextAction.tool} was executed immediately after the previous tool result.`,
+                `Arguments used: ${JSON.stringify(nextArgs)}`,
+                `Result: ${JSON.stringify(chainedResult)}`,
+                nextAction.tool === 'manage_page'
+                  ? 'IMPORTANT: The page now already contains the migrated blocks. Do NOT call create_page_block or manage_page_blocks to recreate the same imported blocks again unless you are making an explicit adjustment.'
+                  : 'Continue only if another tool is still genuinely required.',
+              ].join('\n');
+              break;
+            } catch {
+              // Ignore malformed tool results and continue
+            }
+          }
+
+          if (autoChainSummary) {
+            conversationMessages.push({ role: 'system', content: autoChainSummary });
+          }
+
           // Lazy instruction loading (OpenClaw Law 3)
           const calledSkillNames = assistantMessage.tool_calls
             .map((tc: any) => tc.function.name)
