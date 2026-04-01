@@ -937,12 +937,13 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           url: formattedUrl,
-          formats: ['markdown', 'html', 'rawHtml', 'screenshot', 'branding'],
+          formats: ['markdown', 'html', 'rawHtml', 'branding'],
           onlyMainContent: false,
-          waitFor: 3000,
+          waitFor: 1000,
           includeTags: ['main', 'article', 'section', 'header', 'footer', 'aside', 'figure', 'video', 'iframe'],
           excludeTags: ['script', 'noscript', 'style'],
         }),
+        signal: AbortSignal.timeout(30000),
       });
 
       const scrapeData = await scrapeResponse.json();
