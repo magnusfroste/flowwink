@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { normalizeBlockData, normalizeBlocks } from '../_shared/normalize-blocks.ts';
+import { normalizeBlockData, normalizeBlocks, validateBlockData } from '../_shared/normalize-blocks.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -1060,6 +1060,19 @@ async function executePagesAction(
       if (action === 'add') {
         const { block_type, block_data = {}, position } = args as any;
         if (!block_type) throw new Error('block_type is required');
+
+        // Validate before saving — return actionable error so FlowPilot can self-correct
+        const validation = validateBlockData(block_type, block_data as Record<string, unknown>);
+        if (!validation.valid) {
+          return {
+            error: `Block validation failed for "${block_type}": ${validation.errors.join('; ')}`,
+            validation_errors: validation.errors,
+            hint: validation.hint,
+            example: validation.example,
+            status: 'validation_failed',
+          };
+        }
+
         const newBlock = {
           id: crypto.randomUUID(),
           type: block_type,
@@ -1081,12 +1094,36 @@ async function executePagesAction(
         if (!block_id || !block_data) throw new Error('block_id and block_data required');
         const idx = blocks.findIndex((b: any) => b.id === block_id);
         if (idx === -1) throw new Error(`Block not found: ${block_id}`);
-        blocks[idx] = { ...blocks[idx], data: { ...blocks[idx].data, ...block_data } };
+
+        // Merge first, then validate the merged result
+        const mergedData = { ...blocks[idx].data as Record<string, unknown>, ...block_data };
+        const blockType = String(blocks[idx].type);
+        const validation = validateBlockData(blockType, mergedData);
+        if (!validation.valid) {
+          return {
+            error: `Block validation failed for "${blockType}": ${validation.errors.join('; ')}`,
+            validation_errors: validation.errors,
+            hint: validation.hint,
+            example: validation.example,
+            current_data: blocks[idx].data,
+            status: 'validation_failed',
+          };
+        }
+
+        blocks[idx] = { ...blocks[idx], data: mergedData };
         normalizeBlockData(blocks[idx]);
         await supabase.from('pages')
           .update({ content_json: blocks, updated_at: new Date().toISOString() })
           .eq('id', page_id);
         return { page_id, block_id, type: blocks[idx].type, status: 'updated' };
+      }
+
+      if (action === 'get_block') {
+        const { block_id } = args as any;
+        if (!block_id) throw new Error('block_id is required');
+        const block = blocks.find((b: any) => b.id === block_id);
+        if (!block) throw new Error(`Block not found: ${block_id}`);
+        return { page_id, block_id, type: block.type, data: block.data };
       }
 
       if (action === 'remove') {

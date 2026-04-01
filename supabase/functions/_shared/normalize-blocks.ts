@@ -344,3 +344,172 @@ export function normalizeBlocks(
     stripRemovedBlocks(typed);
   }
 }
+
+// ---------------------------------------------------------------------------
+// Pre-save validation (agentic feedback loop)
+// ---------------------------------------------------------------------------
+
+/** Minimal filled example per block type — included in validation errors so the
+ *  AI can self-correct on retry without needing to guess the structure. */
+const BLOCK_HINTS: Record<string, Record<string, unknown>> = {
+  features: {
+    features: [
+      { id: 'f1', icon: 'ShieldCheck', title: 'Secure', description: 'Enterprise-grade security' },
+      { id: 'f2', icon: 'Zap', title: 'Fast', description: 'Sub-second response times' },
+    ],
+    columns: '3',
+    variant: 'cards',
+  },
+  stats: {
+    stats: [{ value: '10 000+', label: 'Customers', icon: 'Users' }, { value: '99.9%', label: 'Uptime', icon: 'Activity' }],
+  },
+  tabs: {
+    tabs: [
+      { id: 'tab-1', title: 'Overview', icon: 'Info',
+        content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Tab content here.' }] }] } },
+      { id: 'tab-2', title: 'Details', icon: 'List',
+        content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'More details here.' }] }] } },
+    ],
+    variant: 'underline',
+    defaultTab: 'tab-1',
+  },
+  accordion: {
+    items: [
+      { question: 'How does it work?',
+        answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'It connects to your existing systems.' }] }] } },
+      { question: 'What does it cost?',
+        answer: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Plans from €49/month.' }] }] } },
+    ],
+  },
+  'bento-grid': {
+    items: [
+      { id: 'b1', title: 'Monitoring', description: 'Live sensor data from all devices', icon: 'Activity', span: 'wide' },
+      { id: 'b2', title: 'Alerts', description: 'Instant notifications', icon: 'Bell', span: 'normal' },
+      { id: 'b3', title: 'Analytics', description: 'Deep insights', icon: 'BarChart3', span: 'normal' },
+    ],
+    columns: 3,
+    variant: 'default',
+  },
+  'two-column': {
+    content: { type: 'doc', content: [
+      { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Section title' }] },
+      { type: 'paragraph', content: [{ type: 'text', text: 'Describe your offer here.' }] },
+    ]},
+    imageSrc: 'https://example.com/image.jpg',
+    imageAlt: 'Descriptive alt text',
+    imagePosition: 'right',
+  },
+  pricing: {
+    tiers: [
+      { id: 't1', name: 'Starter', price: '€49', period: 'month',
+        features: ['Feature A', 'Feature B'], buttonText: 'Get started', buttonUrl: '/contact' },
+      { id: 't2', name: 'Pro', price: '€99', period: 'month', highlighted: true,
+        features: ['Everything in Starter', 'Feature C', 'Feature D'], buttonText: 'Get started', buttonUrl: '/contact' },
+    ],
+    variant: 'cards',
+  },
+  testimonials: {
+    testimonials: [
+      { id: 't1', content: 'This product changed how we work.', author: 'Anna S.', role: 'CEO', company: 'Acme AB', rating: 5 },
+    ],
+    layout: 'grid',
+    variant: 'cards',
+  },
+  team: {
+    members: [
+      { id: 'm1', name: 'Anna Svensson', role: 'CEO', bio: 'Leading the company since 2018.', photo: '' },
+    ],
+    columns: 3,
+  },
+};
+
+/** Minimal Tiptap doc — used in error messages when a Tiptap field is wrong. */
+const TIPTAP_HINT = '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Your text here"}]}]}';
+
+export interface BlockValidationResult {
+  valid: boolean;
+  errors: string[];
+  /** Human-readable hint describing correct structure — shown to the AI on retry. */
+  hint?: string;
+  /** Minimal filled example for this block type — helps the AI self-correct. */
+  example?: Record<string, unknown>;
+}
+
+/**
+ * Validate a single block's data before saving.
+ *
+ * Returns actionable feedback so FlowPilot can self-correct on retry:
+ *   { valid: false, errors: [...], hint: "...", example: {...} }
+ *
+ * Called by agent-execute before every add/update write.
+ */
+export function validateBlockData(
+  blockType: string,
+  blockData: Record<string, unknown>,
+): BlockValidationResult {
+  const errors: string[] = [];
+
+  const contract = BLOCK_CONTRACTS[blockType];
+  if (!contract) {
+    // Unknown block type — pass through (normalize handles it)
+    return { valid: true, errors: [] };
+  }
+
+  // 1. Forbidden fields
+  if (contract.forbidden) {
+    const bad = contract.forbidden.filter((f) => blockData[f] !== undefined && blockData[f] !== null);
+    if (bad.length > 0) {
+      errors.push(`"${blockType}" block has forbidden field(s): ${bad.join(', ')} — these belong to other block types`);
+    }
+  }
+
+  // 2. Required field groups
+  for (const group of contract.required) {
+    const hasAny = group.some((f) => {
+      const val = blockData[f];
+      if (val === undefined || val === null) return false;
+      if (typeof val === 'string' && val.trim() === '') return false;
+      if (Array.isArray(val) && val.length === 0) return false;
+      return true;
+    });
+    if (!hasAny) {
+      errors.push(
+        group.length === 1
+          ? `"${blockType}" block is missing required field: "${group[0]}"`
+          : `"${blockType}" block must have at least one of: ${group.map((f) => `"${f}"`).join(' | ')}`,
+      );
+    }
+  }
+
+  // 3. Top-level Tiptap fields must be objects, not strings
+  for (const field of TIPTAP_FIELDS) {
+    if (typeof blockData[field] === 'string') {
+      errors.push(
+        `"${blockType}" block: field "${field}" is a raw string — must be Tiptap JSON: ${TIPTAP_HINT}`,
+      );
+    }
+  }
+
+  // 4. Nested Tiptap fields inside arrays
+  for (const { blockType: bt, arrayField, itemField } of TIPTAP_NESTED_FIELDS) {
+    if (bt !== blockType) continue;
+    const arr = blockData[arrayField];
+    if (!Array.isArray(arr)) continue;
+    arr.forEach((item: Record<string, unknown>, i: number) => {
+      if (typeof item[itemField] === 'string') {
+        errors.push(
+          `"${blockType}" block: ${arrayField}[${i}].${itemField} is a raw string — must be Tiptap JSON: ${TIPTAP_HINT}`,
+        );
+      }
+    });
+  }
+
+  if (errors.length === 0) return { valid: true, errors: [] };
+
+  const example = BLOCK_HINTS[blockType];
+  const hint = example
+    ? `Correct "${blockType}" structure: ${JSON.stringify(example)}`
+    : `Check the block schema for "${blockType}" and ensure all required fields are present.`;
+
+  return { valid: false, errors, hint, example };
+}
