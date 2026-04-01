@@ -354,7 +354,7 @@ function validateBlock(block: ContentBlock, path: string): ValidationResult {
   // Validate content format if present
   if (block.data?.content) {
     const content = block.data.content;
-    if (typeof content === 'string') {
+    if (typeof content === 'string' && block.data?.contentFormat !== 'markdown') {
       warnings.push({
         path: `${path}.data.content`,
         message: 'Content is a string - use Tiptap format or text() helper for better compatibility',
