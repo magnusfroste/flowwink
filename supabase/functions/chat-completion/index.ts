@@ -795,104 +795,137 @@ serve(async (req) => {
       ...messages,
     ];
 
-    // Multi-iteration tool loop (non-streaming until final response)
-    for (let iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration++) {
-      const requestBody: any = {
+    // ─── Streaming-first tool loop ───────────────────────────────────────────
+    // Always streams immediately. Tool calls are detected from the stream,
+    // executed transparently, and the final answer is piped to the same
+    // output stream — so the client never waits for a full non-streaming round-trip.
+
+    const sseHeaders = { ...corsHeaders, 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' };
+    const enc = new TextEncoder();
+
+    async function streamIteration(msgs: any[], iteration: number): Promise<Response> {
+      const reqBody: any = {
         model: provider.model,
-        messages: conversationMessages,
+        messages: msgs,
+        stream: true,
       };
 
-      // Only include tools on first iteration or when we have tools
-      if (tools.length > 0) {
-        requestBody.tools = tools;
-        requestBody.tool_choice = 'auto';
+      if (tools.length > 0 && iteration < MAX_TOOL_ITERATIONS - 1) {
+        reqBody.tools = tools;
+        reqBody.tool_choice = 'auto';
       }
 
-      // Last chance: if no tools or last iteration, stream directly
-      if (tools.length === 0 || iteration === MAX_TOOL_ITERATIONS - 1) {
-        requestBody.stream = true;
-        const streamResp = await fetch(provider.apiUrl, {
-          method: 'POST', headers, body: JSON.stringify(requestBody),
-        });
+      const upstream = await fetch(provider.apiUrl, { method: 'POST', headers, body: JSON.stringify(reqBody) });
+      if (!upstream.ok) return handleAiError(upstream);
 
-        if (!streamResp.ok) {
-          return handleAiError(streamResp);
-        }
-
-        return new Response(streamResp.body, {
-          headers: { ...corsHeaders, 'Content-Type': 'text/event-stream' },
-        });
+      // No tools or last iteration — pipe directly, zero overhead
+      if (tools.length === 0 || iteration >= MAX_TOOL_ITERATIONS - 1) {
+        return new Response(upstream.body, { headers: sseHeaders });
       }
 
-      // Non-streaming call to detect tool calls
-      const aiResp = await fetch(provider.apiUrl, {
-        method: 'POST', headers, body: JSON.stringify(requestBody),
-      });
+      // Open an output pipe — client starts receiving immediately
+      const { readable, writable } = new TransformStream<Uint8Array, Uint8Array>();
+      const writer = writable.getWriter();
 
-      if (!aiResp.ok) {
-        return handleAiError(aiResp);
-      }
+      // Process stream in background without blocking the Response
+      (async () => {
+        const reader = upstream.body!.getReader();
+        const decoder = new TextDecoder();
+        let buf = '';
+        let responseType: 'content' | 'tool_calls' | null = null;
+        const tcMap: Record<number, { id: string; name: string; args: string }> = {};
 
-      const aiData = await aiResp.json();
-      const choice = aiData.choices?.[0];
-      if (!choice) throw new Error('No response from AI');
+        try {
+          outer: while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buf += decoder.decode(value, { stream: true });
 
-      const msg = choice.message;
+            let nl: number;
+            while ((nl = buf.indexOf('\n')) !== -1) {
+              let line = buf.slice(0, nl);
+              buf = buf.slice(nl + 1);
+              if (line.endsWith('\r')) line = line.slice(0, -1);
+              if (!line.startsWith('data: ')) continue;
 
-      // No tool calls → we already have the response, stream it as SSE
-      if (!msg.tool_calls?.length) {
-        const content = msg.content || 'Done.';
-        const encoder = new TextEncoder();
-        
-        // Simulate token-by-token SSE from the already-received content
-        // Split into word-level chunks for smooth streaming feel
-        const words = content.split(/(\s+)/);
-        const stream = new ReadableStream({
-          async start(controller) {
-            for (let i = 0; i < words.length; i++) {
-              const chunk = words[i];
-              if (!chunk) continue;
-              const data = JSON.stringify({ choices: [{ delta: { content: chunk }, finish_reason: null }] });
-              controller.enqueue(encoder.encode(`data: ${data}\n\n`));
+              const data = line.slice(6).trim();
+              if (data === '[DONE]') {
+                if (responseType !== 'tool_calls') {
+                  await writer.write(enc.encode('data: [DONE]\n\n'));
+                }
+                await writer.close();
+                break outer;
+              }
+
+              let parsed: any;
+              try { parsed = JSON.parse(data); } catch { continue; }
+
+              const delta = parsed.choices?.[0]?.delta;
+              const finishReason = parsed.choices?.[0]?.finish_reason;
+
+              // Detect response type on first meaningful delta
+              if (responseType === null) {
+                responseType = delta?.tool_calls ? 'tool_calls' : 'content';
+              }
+
+              if (responseType === 'content') {
+                // Pipe through immediately — real streaming
+                await writer.write(enc.encode(`${line}\n\n`));
+              } else {
+                // Accumulate tool call deltas
+                for (const tc of (delta?.tool_calls ?? [])) {
+                  const idx: number = tc.index ?? 0;
+                  if (!tcMap[idx]) tcMap[idx] = { id: '', name: '', args: '' };
+                  if (tc.id) tcMap[idx].id = tc.id;
+                  if (tc.function?.name) tcMap[idx].name += tc.function.name;
+                  if (tc.function?.arguments) tcMap[idx].args += tc.function.arguments;
+                }
+
+                if (finishReason === 'tool_calls') {
+                  console.log(`[chat] Tool iteration ${iteration + 1}:`, Object.values(tcMap).map(t => t.name));
+
+                  msgs.push({
+                    role: 'assistant', content: null,
+                    tool_calls: Object.values(tcMap).map(tc => ({
+                      id: tc.id, type: 'function',
+                      function: { name: tc.name, arguments: tc.args },
+                    })),
+                  });
+
+                  for (const tc of Object.values(tcMap)) {
+                    let fnArgs: any;
+                    try { fnArgs = JSON.parse(tc.args || '{}'); } catch { fnArgs = {}; }
+                    const result = await executeChatTool(
+                      supabase, supabaseUrl, serviceKey,
+                      tc.name, fnArgs,
+                      conversationId, customerEmail, customerName,
+                    );
+                    msgs.push({ role: 'tool', tool_call_id: tc.id, content: result });
+                  }
+
+                  // Recurse: pipe next iteration into same output stream
+                  const nextResp = await streamIteration(msgs, iteration + 1);
+                  const nextReader = nextResp.body!.getReader();
+                  while (true) {
+                    const { done: d, value: v } = await nextReader.read();
+                    if (d) break;
+                    await writer.write(v);
+                  }
+                  await writer.close();
+                }
+              }
             }
-            // Send finish
-            const doneData = JSON.stringify({ choices: [{ delta: {}, finish_reason: 'stop' }] });
-            controller.enqueue(encoder.encode(`data: ${doneData}\n\n`));
-            controller.enqueue(encoder.encode('data: [DONE]\n\n'));
-            controller.close();
-          },
-        });
+          }
+        } catch (e) {
+          console.error('[chat] Stream error:', e);
+          try { await writer.abort(e); } catch { /* ignore */ }
+        }
+      })();
 
-        return new Response(stream, {
-          headers: { ...corsHeaders, 'Content-Type': 'text/event-stream' },
-        });
-      }
-
-      // Tool calls detected — execute them
-      console.log(`[chat] Tool iteration ${iteration + 1}:`, msg.tool_calls.map((tc: any) => tc.function.name));
-
-      conversationMessages.push(msg);
-
-      for (const tc of msg.tool_calls) {
-        let fnArgs: any;
-        try { fnArgs = JSON.parse(tc.function.arguments || '{}'); } catch { fnArgs = {}; }
-
-        const result = await executeChatTool(
-          supabase, supabaseUrl, serviceKey,
-          tc.function.name, fnArgs,
-          conversationId, customerEmail, customerName,
-        );
-
-        conversationMessages.push({
-          role: 'tool', tool_call_id: tc.id, content: result,
-        });
-      }
-
-      // Continue loop for next iteration...
+      return new Response(readable, { headers: sseHeaders });
     }
 
-    // Should not reach here, but safety fallback
-    throw new Error('Tool loop exhausted');
+    return streamIteration(conversationMessages, 0);
 
   } catch (err: any) {
     console.error('Chat completion error:', err);
