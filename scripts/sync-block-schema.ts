@@ -28,6 +28,8 @@ function generatePromptSchema(): string {
   return schema;
 }
 
+const TIPTAP_EXAMPLE = `{"type":"doc","content":[{"type":"heading","attrs":{"level":2},"content":[{"type":"text","text":"Section Title"}]},{"type":"paragraph","content":[{"type":"text","text":"Your paragraph text here."}]}]}`;
+
 function formatFields(fields: BlockFieldInfo[]): string {
   return fields.map(f => {
     const req = f.required ? '' : '?';
@@ -36,6 +38,9 @@ function formatFields(fields: BlockFieldInfo[]): string {
     }
     if (f.type === 'array') {
       return `${f.name}${req}: [...]  /* ${f.description} */`;
+    }
+    if (f.type === 'tiptap') {
+      return `${f.name}${req}: ${TIPTAP_EXAMPLE}  /* Tiptap JSON doc — use type:"doc" with paragraph/heading/bulletList nodes */`;
     }
     return `${f.name}${req}: ${f.type}`;
   }).join(', ');
@@ -55,8 +60,8 @@ function fieldToJsonSchema(f: BlockFieldInfo): Record<string, unknown> {
   } else if (f.type === 'object') {
     base.type = 'object';
   } else if (f.type === 'tiptap') {
-    base.type = 'string';
-    base.description = `${f.description} (HTML content)`;
+    base.type = 'object';
+    base.description = `${f.description} (Tiptap JSON: {"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"..."}]}]})`;
   } else if (f.type === 'number') {
     base.type = 'number';
   } else if (f.type === 'boolean') {

@@ -719,6 +719,21 @@ export const BLOCK_REFERENCE: BlockInfo[] = [
       { name: 'variant', type: 'string', required: false, description: 'Display style', default: 'default', options: ['default', 'card', 'minimal'] },
     ],
   },
+  {
+    type: 'bento-grid',
+    name: 'Bento Grid',
+    description: 'Responsive masonry-style card grid with variable-span items. Great for showcasing features, services, or highlights with a visually varied layout.',
+    category: 'layout',
+    fields: [
+      { name: 'title', type: 'string', required: false, description: 'Section title' },
+      { name: 'subtitle', type: 'string', required: false, description: 'Section subtitle' },
+      { name: 'eyebrow', type: 'string', required: false, description: 'Small label displayed above the title' },
+      { name: 'items', type: 'array', required: true, description: 'Grid items [{ id, title, description?, icon?, span?, accentColor?, linkUrl?, linkLabel? }]. span: "normal" | "wide" | "tall" | "large"' },
+      { name: 'columns', type: 'number', required: false, description: 'Number of columns (3 or 4)', default: 3 },
+      { name: 'gap', type: 'string', required: false, description: 'Gap between items', options: ['sm', 'md', 'lg'] },
+      { name: 'variant', type: 'string', required: false, description: 'Visual style', options: ['default', 'glass', 'bordered'] },
+    ],
+  },
 ];
 
 /**

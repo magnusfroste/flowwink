@@ -130,8 +130,8 @@ export const BLOCK_CREATION_TOOLS = [
         "type": "object",
         "properties": {
           "content": {
-            "description": "Rich text content in Tiptap format (HTML content)",
-            "type": "string"
+            "description": "Rich text content in Tiptap format (Tiptap JSON: {\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"...\"}]}]})",
+            "type": "object"
           },
           "alignment": {
             "description": "Text alignment",
@@ -676,8 +676,8 @@ export const BLOCK_CREATION_TOOLS = [
         "type": "object",
         "properties": {
           "content": {
-            "description": "Rich text content (HTML content)",
-            "type": "string"
+            "description": "Rich text content (Tiptap JSON: {\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"...\"}]}]})",
+            "type": "object"
           },
           "imageSrc": {
             "description": "Image URL",
@@ -746,8 +746,8 @@ export const BLOCK_CREATION_TOOLS = [
             "type": "string"
           },
           "content": {
-            "description": "Box content (HTML content)",
-            "type": "string"
+            "description": "Box content (Tiptap JSON: {\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"...\"}]}]})",
+            "type": "object"
           },
           "variant": {
             "description": "Box style",
@@ -984,8 +984,8 @@ export const BLOCK_CREATION_TOOLS = [
         "type": "object",
         "properties": {
           "content": {
-            "description": "Popup content (HTML content)",
-            "type": "string"
+            "description": "Popup content (Tiptap JSON: {\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"...\"}]}]})",
+            "type": "object"
           },
           "trigger": {
             "description": "How to trigger",
@@ -2050,6 +2050,62 @@ export const BLOCK_CREATION_TOOLS = [
             ]
           }
         }
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "create_bento_grid_block",
+      "description": "Create a Bento Grid section: Responsive masonry-style card grid with variable-span items. Great for showcasing features, services, or highlights with a visually varied layout.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "description": "Section title",
+            "type": "string"
+          },
+          "subtitle": {
+            "description": "Section subtitle",
+            "type": "string"
+          },
+          "eyebrow": {
+            "description": "Small label displayed above the title",
+            "type": "string"
+          },
+          "items": {
+            "description": "Grid items [{ id, title, description?, icon?, span?, accentColor?, linkUrl?, linkLabel? }]. span: \"normal\" | \"wide\" | \"tall\" | \"large\"",
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "columns": {
+            "description": "Number of columns (3 or 4)",
+            "type": "number"
+          },
+          "gap": {
+            "description": "Gap between items",
+            "type": "string",
+            "enum": [
+              "sm",
+              "md",
+              "lg"
+            ]
+          },
+          "variant": {
+            "description": "Visual style",
+            "type": "string",
+            "enum": [
+              "default",
+              "glass",
+              "bordered"
+            ]
+          }
+        },
+        "required": [
+          "items"
+        ]
       }
     }
   }
