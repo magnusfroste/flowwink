@@ -871,6 +871,25 @@ async function executePagesAction(
   skillName: string,
   args: Record<string, unknown>,
 ): Promise<unknown> {
+  const resolvePageId = async (rawPageId: string): Promise<string> => {
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(rawPageId)) {
+      return rawPageId;
+    }
+
+    const { data: pageBySlug, error } = await supabase
+      .from('pages')
+      .select('id')
+      .eq('slug', rawPageId)
+      .is('deleted_at', null)
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) throw new Error(`Resolve page failed: ${error.message}`);
+    if (!pageBySlug?.id) throw new Error(`Page not found: ${rawPageId}`);
+    return pageBySlug.id;
+  };
+
   switch (skillName) {
     case 'manage_page':
     case 'manage_pages': {
@@ -1025,10 +1044,11 @@ async function executePagesAction(
     case 'manage_page_blocks': {
       const { action = 'list', page_id } = args as any;
       if (!page_id) throw new Error('page_id is required');
+      const resolvedPageId = await resolvePageId(page_id);
 
       // Fetch current page blocks and hydrate missing IDs
       const { data: page, error: fetchErr } = await supabase.from('pages')
-        .select('id, content_json').eq('id', page_id).is('deleted_at', null).single();
+        .select('id, content_json').eq('id', resolvedPageId).is('deleted_at', null).single();
       if (fetchErr || !page) throw new Error(`Page not found: ${page_id}`);
 
       const blocks = (page.content_json as any[]) || [];
@@ -1043,12 +1063,12 @@ async function executePagesAction(
       if (hydrated) {
         await supabase.from('pages')
           .update({ content_json: blocks, updated_at: new Date().toISOString() })
-          .eq('id', page_id);
+          .eq('id', resolvedPageId);
       }
 
       if (action === 'list') {
         return {
-          page_id,
+          page_id: resolvedPageId,
           block_count: blocks.length,
           blocks: blocks.map((b: any, i: number) => ({
             index: i, id: b.id, type: b.type, hidden: b.hidden || false,
@@ -1085,8 +1105,8 @@ async function executePagesAction(
         blocks.splice(pos, 0, newBlock);
         await supabase.from('pages')
           .update({ content_json: blocks, updated_at: new Date().toISOString() })
-          .eq('id', page_id);
-        return { page_id, block_id: newBlock.id, type: block_type, position: pos, total_blocks: blocks.length };
+          .eq('id', resolvedPageId);
+        return { page_id: resolvedPageId, block_id: newBlock.id, type: block_type, position: pos, total_blocks: blocks.length };
       }
 
       if (action === 'update') {
@@ -1114,8 +1134,8 @@ async function executePagesAction(
         normalizeBlockData(blocks[idx]);
         await supabase.from('pages')
           .update({ content_json: blocks, updated_at: new Date().toISOString() })
-          .eq('id', page_id);
-        return { page_id, block_id, type: blocks[idx].type, status: 'updated' };
+          .eq('id', resolvedPageId);
+        return { page_id: resolvedPageId, block_id, type: blocks[idx].type, status: 'updated' };
       }
 
       if (action === 'get_block') {
@@ -1123,7 +1143,7 @@ async function executePagesAction(
         if (!block_id) throw new Error('block_id is required');
         const block = blocks.find((b: any) => b.id === block_id);
         if (!block) throw new Error(`Block not found: ${block_id}`);
-        return { page_id, block_id, type: block.type, data: block.data };
+        return { page_id: resolvedPageId, block_id, type: block.type, data: block.data };
       }
 
       if (action === 'remove') {
@@ -1134,8 +1154,8 @@ async function executePagesAction(
         const removed = blocks.splice(idx, 1)[0];
         await supabase.from('pages')
           .update({ content_json: blocks, updated_at: new Date().toISOString() })
-          .eq('id', page_id);
-        return { page_id, removed_block_id: removed.id, removed_type: removed.type, remaining_blocks: blocks.length };
+          .eq('id', resolvedPageId);
+        return { page_id: resolvedPageId, removed_block_id: removed.id, removed_type: removed.type, remaining_blocks: blocks.length };
       }
 
       if (action === 'reorder') {
@@ -1152,8 +1172,8 @@ async function executePagesAction(
         }
         await supabase.from('pages')
           .update({ content_json: reordered, updated_at: new Date().toISOString() })
-          .eq('id', page_id);
-        return { page_id, new_order: reordered.map((b: any) => b.id), total_blocks: reordered.length };
+          .eq('id', resolvedPageId);
+        return { page_id: resolvedPageId, new_order: reordered.map((b: any) => b.id), total_blocks: reordered.length };
       }
 
       if (action === 'toggle_visibility') {
@@ -1164,8 +1184,8 @@ async function executePagesAction(
         blocks[idx].hidden = !blocks[idx].hidden;
         await supabase.from('pages')
           .update({ content_json: blocks, updated_at: new Date().toISOString() })
-          .eq('id', page_id);
-        return { page_id, block_id, hidden: blocks[idx].hidden };
+          .eq('id', resolvedPageId);
+        return { page_id: resolvedPageId, block_id, hidden: blocks[idx].hidden };
       }
 
       if (action === 'duplicate') {
@@ -1178,8 +1198,8 @@ async function executePagesAction(
         blocks.splice(idx + 1, 0, clone);
         await supabase.from('pages')
           .update({ content_json: blocks, updated_at: new Date().toISOString() })
-          .eq('id', page_id);
-        return { page_id, original_block_id: block_id, new_block_id: clone.id, position: idx + 1 };
+          .eq('id', resolvedPageId);
+        return { page_id: resolvedPageId, original_block_id: block_id, new_block_id: clone.id, position: idx + 1 };
       }
 
       return { error: `Unknown block action: ${action}` };
