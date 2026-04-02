@@ -189,7 +189,7 @@ const router = createBrowserRouter([
       { path: "/admin/bookings/availability", element: <BookingsPage /> },
       { path: "/admin/modules", element: <ModulesPage /> },
       { path: "/admin/integrations", element: <IntegrationsStatusPage /> },
-      { path: "/admin/webhooks", element: <WebhooksPage /> },
+      { path: "/admin/webhooks", element: <Navigate to="/admin/developer" replace /> },
       { path: "/admin/knowledge-base", element: <KnowledgeBaseAdminPage /> },
       { path: "/admin/knowledge-base/new", element: <KbArticleEditorPage /> },
       { path: "/admin/knowledge-base/:id", element: <KbArticleEditorPage /> },
