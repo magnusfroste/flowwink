@@ -370,6 +370,8 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   
   '/admin/tickets': 'tickets',
   '/admin/site-migration': 'siteMigration',
+  '/admin/templates': 'templates',
+  '/admin/template-export': 'templates',
 };
 
 export function useModules() {
