@@ -894,6 +894,19 @@ export default async function Home() {
           </CardContent>
         </Card>
       </div>
+  );
+}
+
+export default function ContentApiPage() {
+  return (
+    <AdminLayout>
+      <div className="space-y-8">
+        <AdminPageHeader
+          title="Content API"
+          description="Developer tools for multi-channel content delivery. REST & GraphQL."
+        />
+        <ContentApiContent />
+      </div>
     </AdminLayout>
   );
 }

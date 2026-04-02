@@ -527,6 +527,19 @@ export function WebhooksContent() {
           </form>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+export default function WebhooksPage() {
+  return (
+    <AdminLayout>
+      <AdminPageContainer>
+        <AdminPageHeader
+          title="Webhooks"
+          description="Automate with webhooks that trigger on various events"
+        />
+        <WebhooksContent />
       </AdminPageContainer>
     </AdminLayout>
   );

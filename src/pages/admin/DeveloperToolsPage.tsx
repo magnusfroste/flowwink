@@ -251,6 +251,19 @@ export function DevToolsContent() {
           </TabsContent>
         </Tabs>
       </div>
+  );
+}
+
+export default function DeveloperToolsPage() {
+  return (
+    <AdminLayout>
+      <div className="space-y-6">
+        <AdminPageHeader
+          title="Developer Tools"
+          description="Hidden tools for testing and debugging"
+        />
+        <DevToolsContent />
+      </div>
     </AdminLayout>
   );
 }
