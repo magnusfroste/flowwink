@@ -507,6 +507,16 @@ export default function BookingsPage() {
         services={services || []}
         initialDate={selectedDate}
       />
+          </TabsContent>
+
+          <TabsContent value="services" className="mt-0">
+            <BookingServicesTab />
+          </TabsContent>
+
+          <TabsContent value="availability" className="mt-0">
+            <BookingAvailabilityTab />
+          </TabsContent>
+        </Tabs>
       </AdminPageContainer>
     </AdminLayout>
   );
