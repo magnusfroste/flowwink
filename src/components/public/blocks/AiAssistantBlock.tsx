@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ChatConversation } from '@/components/chat/ChatConversation';
 import { useChatSettings } from '@/hooks/useSiteSettings';
+import { useIsModuleEnabled } from '@/hooks/useModules';
 
 export interface AiAssistantBlockData {
   title?: string;
