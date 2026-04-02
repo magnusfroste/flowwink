@@ -55,7 +55,7 @@ import CopilotPage from "./pages/admin/CopilotPage";
 import LiveSupportPage from "./pages/admin/LiveSupportPage";
 import TemplateExportPage from "./pages/admin/TemplateExportPage";
 import TemplateLivePreviewPage from "./pages/admin/TemplateLivePreviewPage";
-import TrashPage from "./pages/admin/TrashPage";
+
 import PreviewPage from "./pages/PreviewPage";
 import PublicPage from "./pages/PublicPage";
 import BlogArchivePage from "./pages/BlogArchivePage";
