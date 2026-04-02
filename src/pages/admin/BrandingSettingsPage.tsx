@@ -984,3 +984,7 @@ export function BrandingSettingsContent() {
     </AdminLayout>
   );
 }
+
+export default function BrandingSettingsPage() {
+  return <BrandingSettingsContent />;
+}
