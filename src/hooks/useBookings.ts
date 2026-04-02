@@ -14,6 +14,7 @@ export interface BookingService {
   is_active: boolean;
   color: string | null;
   sort_order: number | null;
+  product_id: string | null;
   created_at: string;
   updated_at: string;
   created_by: string | null;

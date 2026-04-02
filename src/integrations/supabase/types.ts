@@ -1177,6 +1177,7 @@ export type Database = {
           is_active: boolean
           name: string
           price_cents: number | null
+          product_id: string | null
           sort_order: number | null
           updated_at: string
         }
@@ -1191,6 +1192,7 @@ export type Database = {
           is_active?: boolean
           name: string
           price_cents?: number | null
+          product_id?: string | null
           sort_order?: number | null
           updated_at?: string
         }
@@ -1205,10 +1207,19 @@ export type Database = {
           is_active?: boolean
           name?: string
           price_cents?: number | null
+          product_id?: string | null
           sort_order?: number | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "booking_services_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       bookings: {
         Row: {

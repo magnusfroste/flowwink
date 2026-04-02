@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Pencil, Trash2, GripVertical, Clock, DollarSign } from 'lucide-react';
+import { Plus, Pencil, Trash2, GripVertical, Clock, DollarSign, Link2 } from 'lucide-react';
 import {
   useBookingServices,
   useCreateService,
@@ -7,6 +7,7 @@ import {
   useDeleteService,
   type BookingService,
 } from '@/hooks/useBookings';
+import { useProducts } from '@/hooks/useProducts';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -16,9 +17,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function BookingServicesTab() {
   const { data: services, isLoading } = useBookingServices();
+  const { data: products } = useProducts();
   const createService = useCreateService();
   const updateService = useUpdateService();
   const deleteService = useDeleteService();
@@ -33,6 +36,7 @@ export default function BookingServicesTab() {
     currency: 'SEK',
     color: '#3b82f6',
     is_active: true,
+    product_id: '' as string,
   });
 
   const openCreateDialog = () => {
@@ -45,6 +49,7 @@ export default function BookingServicesTab() {
       currency: 'USD',
       color: '#3b82f6',
       is_active: true,
+      product_id: '',
     });
     setDialogOpen(true);
   };
@@ -59,16 +64,18 @@ export default function BookingServicesTab() {
       currency: service.currency,
       color: service.color || '#3b82f6',
       is_active: service.is_active,
+      product_id: service.product_id || '',
     });
     setDialogOpen(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const payload = { ...formData, product_id: formData.product_id || null };
     if (editingService) {
-      await updateService.mutateAsync({ id: editingService.id, ...formData });
+      await updateService.mutateAsync({ id: editingService.id, ...payload });
     } else {
-      await createService.mutateAsync(formData);
+      await createService.mutateAsync(payload);
     }
     setDialogOpen(false);
   };
@@ -129,6 +136,12 @@ export default function BookingServicesTab() {
                     <div className="flex items-center gap-2">
                       <h3 className="font-medium">{service.name}</h3>
                       {!service.is_active && <Badge variant="secondary">Inactive</Badge>}
+                      {service.product_id && (
+                        <Badge variant="outline" className="gap-1">
+                          <Link2 className="h-3 w-3" />
+                          Product
+                        </Badge>
+                      )}
                     </div>
                     {service.description && (
                       <p className="text-sm text-muted-foreground truncate">{service.description}</p>
@@ -192,6 +205,26 @@ export default function BookingServicesTab() {
                 <Input value={formData.color} onChange={(e) => setFormData({ ...formData, color: e.target.value })} className="flex-1" />
               </div>
             </div>
+            {products && products.length > 0 && (
+              <div className="space-y-2">
+                <Label>Linked Product (for online payment)</Label>
+                <Select
+                  value={formData.product_id || 'none'}
+                  onValueChange={(v) => setFormData({ ...formData, product_id: v === 'none' ? '' : v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="No product linked" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No product (pay on site)</SelectItem>
+                    {products.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">Link to a product to enable Stripe payment at booking time.</p>
+              </div>
+            )}
             <div className="flex items-center justify-between">
               <Label htmlFor="is_active">Active</Label>
               <Switch id="is_active" checked={formData.is_active} onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })} />
