@@ -22,6 +22,7 @@ interface CheckoutRequest {
   currency: string;
   successUrl: string;
   cancelUrl: string;
+  bookingId?: string | null;
 }
 
 interface Product {
@@ -80,6 +81,7 @@ serve(async (req: Request) => {
       currency,
       successUrl,
       cancelUrl,
+      bookingId,
     }: CheckoutRequest = await req.json();
 
     logStep("Starting checkout", { customerEmail, itemCount: items.length });
@@ -116,6 +118,7 @@ serve(async (req: Request) => {
             sandbox_pay_at: sandboxAutoPayDays > 0
               ? new Date(Date.now() + sandboxAutoPayDays * 86400000).toISOString()
               : null,
+            booking_id: bookingId || null,
           },
         })
         .select()
@@ -304,7 +307,7 @@ serve(async (req: Request) => {
         currency: currency.toUpperCase(),
         status: "pending",
         user_id: userId || null,
-        metadata: { mode, hasRecurring, hasOneTime },
+        metadata: { mode, hasRecurring, hasOneTime, booking_id: bookingId || null },
       })
       .select()
       .single();
@@ -354,6 +357,7 @@ serve(async (req: Request) => {
       cancel_url: cancelUrl,
       metadata: {
         order_id: order.id,
+        booking_id: bookingId || undefined,
       },
     };
 
