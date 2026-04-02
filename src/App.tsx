@@ -30,11 +30,8 @@ import ContentCampaignsPage from "./pages/admin/ContentCampaignsPage";
 import GlobalBlocksPage from "./pages/admin/GlobalBlocksPage";
 import FormSubmissionsPage from "./pages/admin/FormSubmissionsPage";
 import NewsletterPage from "./pages/admin/NewsletterPage";
-import BlogPostsPage from "./pages/admin/BlogPostsPage";
+import BlogPage from "./pages/admin/BlogPage";
 import BlogPostEditorPage from "./pages/admin/BlogPostEditorPage";
-import BlogCategoriesPage from "./pages/admin/BlogCategoriesPage";
-import BlogTagsPage from "./pages/admin/BlogTagsPage";
-import BlogSettingsPage from "./pages/admin/BlogSettingsPage";
 import ModulesPage from "./pages/admin/ModulesPage";
 import WebhooksPage from "./pages/admin/WebhooksPage";
 import LeadsPage from "./pages/admin/LeadsPage";
@@ -157,11 +154,11 @@ const router = createBrowserRouter([
       { path: "/admin/pages/new", element: <NewPagePage /> },
       { path: "/admin/pages/trash", element: <TrashPage /> },
       { path: "/admin/pages/:id", element: <PageEditorPage /> },
-      { path: "/admin/blog", element: <BlogPostsPage /> },
+      { path: "/admin/blog", element: <BlogPage /> },
       { path: "/admin/blog/new", element: <BlogPostEditorPage /> },
-      { path: "/admin/blog/categories", element: <BlogCategoriesPage /> },
-      { path: "/admin/blog/tags", element: <BlogTagsPage /> },
-      { path: "/admin/blog/settings", element: <BlogSettingsPage /> },
+      { path: "/admin/blog/categories", element: <BlogPage /> },
+      { path: "/admin/blog/tags", element: <BlogPage /> },
+      { path: "/admin/blog/settings", element: <BlogPage /> },
       { path: "/admin/blog/:id", element: <BlogPostEditorPage /> },
       { path: "/admin/media", element: <MediaLibraryPage /> },
       { path: "/admin/users", element: <UsersPage /> },
