@@ -24,6 +24,7 @@ import BrandingSettingsPage from "./pages/admin/BrandingSettingsPage";
 
 import ChatSettingsPage from "./pages/admin/ChatSettingsPage";
 import ContentApiPage from "./pages/admin/ContentApiPage";
+import DeveloperPage from "./pages/admin/DeveloperPage";
 import ContentCampaignsPage from "./pages/admin/ContentCampaignsPage";
 
 
