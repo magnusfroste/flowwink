@@ -1,10 +1,12 @@
-import { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useMemo, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek, isToday, isSameMonth } from 'date-fns';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Clock, User, Mail, Phone, Filter, LayoutGrid, List, Check, X, MoreHorizontal, Settings, CalendarClock } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Clock, User, Mail, Phone, Filter, LayoutGrid, List, Check, X, MoreHorizontal } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import BookingServicesTab from '@/components/admin/booking/BookingServicesTab';
+import BookingAvailabilityTab from '@/components/admin/booking/BookingAvailabilityTab';
 import { StatCard } from '@/components/admin/StatCard';
 import { useBookings, useBookingServices, useUpdateBooking, useDeleteBooking, useBookingStats, type Booking } from '@/hooks/useBookings';
 import { Button } from '@/components/ui/button';
@@ -41,6 +43,18 @@ export default function BookingsPage() {
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
+  const location = useLocation();
+  const PATH_TO_TAB: Record<string, string> = {
+    '/admin/bookings': 'calendar',
+    '/admin/bookings/services': 'services',
+    '/admin/bookings/availability': 'availability',
+  };
+  const tabFromPath = PATH_TO_TAB[location.pathname] || 'calendar';
+  const [activeTab, setActiveTab] = useState(tabFromPath);
+
+  useEffect(() => {
+    setActiveTab(PATH_TO_TAB[location.pathname] || 'calendar');
+  }, [location.pathname]);
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
 
@@ -94,26 +108,17 @@ export default function BookingsPage() {
   return (
     <AdminLayout>
       <AdminPageContainer>
-        <AdminPageHeader
-        title="Bookings"
-        description="Manage bookings and view calendar overview"
-      >
-        <div className="flex items-center gap-2">
-          <Button variant="outline" asChild>
-            <Link to="/admin/bookings/services">
-              <Settings className="h-4 w-4 mr-2" />
-              Services
-            </Link>
-          </Button>
-          <Button variant="outline" asChild>
-            <Link to="/admin/bookings/availability">
-              <CalendarClock className="h-4 w-4 mr-2" />
-              Availability
-            </Link>
-          </Button>
-        </div>
-      </AdminPageHeader>
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <div className="flex items-center justify-between gap-4 mb-6">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Bookings</h1>
+            <TabsList>
+              <TabsTrigger value="calendar">Calendar</TabsTrigger>
+              <TabsTrigger value="services">Services</TabsTrigger>
+              <TabsTrigger value="availability">Availability</TabsTrigger>
+            </TabsList>
+          </div>
 
+          <TabsContent value="calendar" className="mt-0 space-y-6">
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-4">
         <StatCard
@@ -502,6 +507,16 @@ export default function BookingsPage() {
         services={services || []}
         initialDate={selectedDate}
       />
+          </TabsContent>
+
+          <TabsContent value="services" className="mt-0">
+            <BookingServicesTab />
+          </TabsContent>
+
+          <TabsContent value="availability" className="mt-0">
+            <BookingAvailabilityTab />
+          </TabsContent>
+        </Tabs>
       </AdminPageContainer>
     </AdminLayout>
   );
