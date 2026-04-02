@@ -263,7 +263,7 @@ export default function AdminDashboard() {
         return <AutomationHealthDashboardWidget key={widgetId} />;
 
       case 'flowpilot':
-        return <FlowPilotDashboardWidget key={widgetId} />;
+        return flowpilotEnabled ? <FlowPilotDashboardWidget key={widgetId} /> : null;
 
       case 'recent-pages':
         return (
