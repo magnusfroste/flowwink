@@ -994,8 +994,9 @@ export function BrandingSettingsContent({ embedded = false }: { embedded?: boole
 
         <UnsavedChangesDialog blocker={blocker} />
       </div>
-    </AdminLayout>
-  );
+    );
+
+  return embedded ? content : <AdminLayout>{content}</AdminLayout>;
 }
 
 export default function BrandingSettingsPage() {
