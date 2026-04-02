@@ -20,10 +20,8 @@ const PATH_TO_TAB: Record<string, string> = {
 
 export default function BlogPage() {
   const location = useLocation();
-  const [searchParams, setSearchParams] = useSearchParams();
   const tabFromPath = PATH_TO_TAB[location.pathname] || "posts";
-  const tabFromParams = searchParams.get("tab");
-  const [activeTab, setActiveTab] = useState<string>(tabFromParams || tabFromPath);
+  const [activeTab, setActiveTab] = useState<string>(tabFromPath);
 
   useEffect(() => {
     const resolved = PATH_TO_TAB[location.pathname] || "posts";
@@ -38,7 +36,7 @@ export default function BlogPage() {
           description="Manage posts, categories, tags, and settings"
         />
 
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList>
             <TabsTrigger value="posts" className="gap-2">
               <FileText className="h-4 w-4" />
