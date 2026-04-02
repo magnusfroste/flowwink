@@ -125,17 +125,13 @@ export function WebhooksContent() {
   };
 
   return (
-    <AdminLayout>
-      <AdminPageContainer>
-        <AdminPageHeader
-          title="Webhooks"
-          description="Automate with webhooks that trigger on various events"
-        >
+    <div className="space-y-4">
+        <div className="flex justify-end">
           <Button onClick={() => { resetForm(); setIsDialogOpen(true); }}>
             <Plus className="h-4 w-4 mr-2" />
             New Webhook
           </Button>
-        </AdminPageHeader>
+        </div>
 
         <Tabs defaultValue="webhooks" className="space-y-4">
         <TabsList>
