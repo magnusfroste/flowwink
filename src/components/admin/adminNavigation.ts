@@ -1,9 +1,9 @@
 import {
   LayoutDashboard, BarChart3, FileText, Users, Settings, BookOpen, Image, Mail,
-  Puzzle, Webhook, UserCheck, Briefcase, Building2, Package, Library, ShoppingCart,
+  Puzzle, UserCheck, Briefcase, Building2, Package, Library, ShoppingCart,
   CalendarDays, Plug, Bot, Zap, MessageSquare, Headphones, Megaphone, Code2,
-  Video, Target, Rocket, LayoutGrid, Inbox, UserCircle, Palette, FileUser,
-  Network, Snowflake, Store, UserRound,
+  Video, Target, Inbox, UserCircle, FileUser,
+  Network, Snowflake, UserRound,
 } from 'lucide-react';
 
 export type NavItem = {
