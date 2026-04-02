@@ -118,6 +118,7 @@ serve(async (req: Request) => {
             sandbox_pay_at: sandboxAutoPayDays > 0
               ? new Date(Date.now() + sandboxAutoPayDays * 86400000).toISOString()
               : null,
+            booking_id: bookingId || null,
           },
         })
         .select()
