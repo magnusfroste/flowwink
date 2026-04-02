@@ -194,7 +194,7 @@ const router = createBrowserRouter([
       { path: "/admin/flowpilot", element: <CopilotPage /> },
       { path: "/admin/skills", element: withPageFallback(<SkillHubPage />) },
       { path: "/admin/live-support", element: <LiveSupportPage /> },
-      { path: "/admin/template-export", element: <TemplateExportPage /> },
+      { path: "/admin/template-export", element: <Navigate to="/admin/templates" replace /> },
       { path: "/admin/developer-tools", element: <DeveloperToolsPage /> },
       { path: "/admin/template-live-preview", element: <TemplateLivePreviewPage /> },
       { path: "/admin/webinars", element: <WebinarsPage /> },
