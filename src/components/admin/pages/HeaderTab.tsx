@@ -6,6 +6,7 @@ import { HeaderBlockEditor } from '@/components/admin/blocks/HeaderBlockEditor';
 import { Save, Loader2, Eye } from 'lucide-react';
 import { useHeaderBlock, useUpdateHeaderBlock, defaultHeaderData } from '@/hooks/useGlobalBlocks';
 import type { HeaderBlockData } from '@/types/cms';
+import MenuOrderSection from './MenuOrderSection';
 
 export default function HeaderTab() {
   const { data: headerBlock, isLoading } = useHeaderBlock();
@@ -36,30 +37,34 @@ export default function HeaderTab() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="font-serif">Header</CardTitle>
-            <CardDescription>Configure the header navigation on all public pages</CardDescription>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => window.open('/', '_blank')}>
-              <Eye className="h-4 w-4 mr-2" />
-              Preview
-            </Button>
-            {hasChanges && (
-              <Button onClick={handleSave} disabled={updateHeader.isPending} size="sm">
-                {updateHeader.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-                Save
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="font-serif">Header Settings</CardTitle>
+              <CardDescription>Configure the header style and behavior</CardDescription>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => window.open('/', '_blank')}>
+                <Eye className="h-4 w-4 mr-2" />
+                Preview
               </Button>
-            )}
+              {hasChanges && (
+                <Button onClick={handleSave} disabled={updateHeader.isPending} size="sm">
+                  {updateHeader.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+                  Save
+                </Button>
+              )}
+            </div>
           </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <HeaderBlockEditor data={headerData} onChange={(data) => { setHeaderData(data); setHasChanges(true); }} />
-      </CardContent>
-    </Card>
+        </CardHeader>
+        <CardContent>
+          <HeaderBlockEditor data={headerData} onChange={(data) => { setHeaderData(data); setHasChanges(true); }} />
+        </CardContent>
+      </Card>
+
+      <MenuOrderSection />
+    </div>
   );
 }
