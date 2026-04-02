@@ -47,6 +47,7 @@ export interface ModulesSettings {
   companies: ModuleConfig;
   ecommerce: ModuleConfig;
   developer: ModuleConfig;
+  /** @deprecated Merged into pages module */
   globalElements: ModuleConfig;
   mediaLibrary: ModuleConfig;
   webinars: ModuleConfig;
