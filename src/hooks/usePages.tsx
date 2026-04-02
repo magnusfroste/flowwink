@@ -22,6 +22,8 @@ function parsePage(data: {
   scheduled_at?: string | null;
   deleted_at?: string | null;
   deleted_by?: string | null;
+  show_in_menu?: boolean;
+  menu_order?: number;
 }): Page {
   return {
     ...data,
@@ -31,6 +33,8 @@ function parsePage(data: {
     scheduled_at: data.scheduled_at ?? null,
     deleted_at: data.deleted_at ?? null,
     deleted_by: data.deleted_by ?? null,
+    show_in_menu: data.show_in_menu ?? false,
+    menu_order: data.menu_order ?? 999,
   };
 }
 
