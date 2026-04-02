@@ -104,10 +104,10 @@ export function useFlowPilotBootstrap() {
   });
 
   useEffect(() => {
-    if (isLoading || hasTriggered.current) return;
+    if (!isFlowPilotEnabled || isLoading || hasTriggered.current) return;
     if (skillCount === 0) {
       hasTriggered.current = true;
       bootstrap.mutate();
     }
-  }, [skillCount, isLoading]);
+  }, [skillCount, isLoading, isFlowPilotEnabled]);
 }
