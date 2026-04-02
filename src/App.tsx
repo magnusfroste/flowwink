@@ -46,8 +46,6 @@ import CustomersPage from "./pages/admin/CustomersPage";
 import KnowledgeBaseAdminPage from "./pages/admin/KnowledgeBasePage";
 import AnalyticsDashboardPage from "./pages/admin/AnalyticsDashboardPage";
 import BookingsPage from "./pages/admin/BookingsPage";
-import BookingServicesPage from "./pages/admin/BookingServicesPage";
-import BookingAvailabilityPage from "./pages/admin/BookingAvailabilityPage";
 import ProfilePage from "./pages/admin/ProfilePage";
 import KbArticleEditorPage from "./pages/admin/KbArticleEditorPage";
 import IntegrationsStatusPage from "./pages/admin/IntegrationsStatusPage";
