@@ -1,10 +1,12 @@
-import { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useMemo, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek, isToday, isSameMonth } from 'date-fns';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Clock, User, Mail, Phone, Filter, LayoutGrid, List, Check, X, MoreHorizontal, Settings, CalendarClock } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Clock, User, Mail, Phone, Filter, LayoutGrid, List, Check, X, MoreHorizontal, Package, CalendarClock } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import BookingServicesTab from '@/components/admin/booking/BookingServicesTab';
+import BookingAvailabilityTab from '@/components/admin/booking/BookingAvailabilityTab';
 import { StatCard } from '@/components/admin/StatCard';
 import { useBookings, useBookingServices, useUpdateBooking, useDeleteBooking, useBookingStats, type Booking } from '@/hooks/useBookings';
 import { Button } from '@/components/ui/button';
