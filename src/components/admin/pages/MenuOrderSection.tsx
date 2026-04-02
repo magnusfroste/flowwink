@@ -122,7 +122,7 @@ export default function MenuOrderSection() {
   const saveOrderMutation = useMutation({
     mutationFn: async () => {
       const updates = orderedIds.map((id, index) => {
-        const menuVisible = menuOverrides.has(id) ? menuOverrides.get(id)! : (pages?.find(p => p.id === id) as any)?.show_in_menu ?? false;
+        const menuVisible = menuOverrides.has(id) ? menuOverrides.get(id)! : pages?.find(p => p.id === id)?.show_in_menu ?? false;
         return supabase
           .from('pages')
           .update({ menu_order: index, show_in_menu: menuVisible })
