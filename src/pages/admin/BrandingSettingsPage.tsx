@@ -26,7 +26,7 @@ interface CustomTheme {
   settings: Partial<BrandingSettings>;
 };
 
-export default function BrandingSettingsPage() {
+export function BrandingSettingsContent() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: savedSettings, isLoading } = useBrandingSettings();
