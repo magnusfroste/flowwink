@@ -372,7 +372,7 @@ export default function PagesListPage() {
 
   // Sync tab from URL when navigating via redirect
   useEffect(() => {
-    if (tabFromUrl && tabFromUrl !== activeTab) {
+    if (tabFromUrl) {
       setActiveTab(tabFromUrl);
     }
   }, [tabFromUrl]);
