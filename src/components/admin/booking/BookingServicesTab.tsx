@@ -71,10 +71,11 @@ export default function BookingServicesTab() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const payload = { ...formData, product_id: formData.product_id || null };
     if (editingService) {
-      await updateService.mutateAsync({ id: editingService.id, ...formData });
+      await updateService.mutateAsync({ id: editingService.id, ...payload });
     } else {
-      await createService.mutateAsync(formData);
+      await createService.mutateAsync(payload);
     }
     setDialogOpen(false);
   };
