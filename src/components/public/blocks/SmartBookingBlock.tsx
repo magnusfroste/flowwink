@@ -505,6 +505,16 @@ export function SmartBookingBlock({ data, blockId, pageId }: SmartBookingBlockPr
               <p className="text-sm text-muted-foreground">
                 {selectedDate && format(selectedDate, 'EEEE, MMMM d, yyyy')} at {selectedSlot}
               </p>
+              {serviceRequiresPayment && selectedService && (
+                <p className="text-sm font-medium text-primary flex items-center gap-1 mt-1">
+                  <CreditCard className="h-4 w-4" />
+                  {new Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: selectedService.currency || 'USD',
+                  }).format(selectedService.price_cents! / 100)}
+                  {' — payment required'}
+                </p>
+              )}
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
