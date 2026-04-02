@@ -172,7 +172,7 @@ const router = createBrowserRouter([
       { path: "/admin/quick-start", element: <Navigate to="/admin" replace /> },
       
       { path: "/admin/templates", element: withPageFallback(<TemplateGalleryPage />) },
-      { path: "/admin/global-blocks", element: <Navigate to="/admin/pages?tab=global" replace /> },
+      { path: "/admin/global-blocks", element: <Navigate to="/admin/pages?tab=header" replace /> },
       { path: "/admin/forms", element: <FormSubmissionsPage /> },
       { path: "/admin/newsletter", element: <NewsletterPage /> },
       { path: "/admin/contacts", element: <LeadsPage /> },

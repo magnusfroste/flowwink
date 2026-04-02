@@ -1,13 +1,14 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Plus, Search, Filter, MoreHorizontal, Edit, Trash2, Copy, ArrowUpDown, Clock, LayoutTemplate, Home, GripVertical, Eye, Save, Loader2, FileText, Navigation, Palette } from 'lucide-react';
+import { Plus, Search, Filter, MoreHorizontal, Edit, Trash2, Copy, ArrowUpDown, Clock, LayoutTemplate, Home, GripVertical, Eye, Save, Loader2, FileText, Navigation, PanelBottom, Palette } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import PagesTrashTab from '@/components/admin/pages/PagesTrashTab';
-import GlobalElementsTab from '@/components/admin/pages/GlobalElementsTab';
+import HeaderTab from '@/components/admin/pages/HeaderTab';
+import FooterTab from '@/components/admin/pages/FooterTab';
 import BrandingTab from '@/components/admin/pages/BrandingTab';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -390,9 +391,13 @@ export default function PagesListPage() {
                   <FileText className="h-3.5 w-3.5" />
                   Pages
                 </TabsTrigger>
-                <TabsTrigger value="global" className="gap-1.5">
+                <TabsTrigger value="header" className="gap-1.5">
                   <Navigation className="h-3.5 w-3.5" />
-                  Header & Footer
+                  Header
+                </TabsTrigger>
+                <TabsTrigger value="footer" className="gap-1.5">
+                  <PanelBottom className="h-3.5 w-3.5" />
+                  Footer
                 </TabsTrigger>
                 <TabsTrigger value="branding" className="gap-1.5">
                   <Palette className="h-3.5 w-3.5" />
@@ -548,8 +553,12 @@ export default function PagesListPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="global" className="mt-0">
-            <GlobalElementsTab />
+          <TabsContent value="header" className="mt-0">
+            <HeaderTab />
+          </TabsContent>
+
+          <TabsContent value="footer" className="mt-0">
+            <FooterTab />
           </TabsContent>
 
           <TabsContent value="branding" className="mt-0">
