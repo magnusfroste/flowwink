@@ -4,8 +4,27 @@ import { useChatSettings } from '@/hooks/useSiteSettings';
 import { useIsModuleEnabled } from '@/hooks/useModules';
 import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
-...
+
+interface ChatBlockProps {
+  data: ChatBlockData;
+}
+
+const heightClasses = {
+  sm: 'h-[300px]',
+  md: 'h-[450px]',
+  lg: 'h-[600px]',
+  full: 'h-[calc(100vh-200px)] min-h-[400px]',
+};
+
+export function ChatBlock({ data }: ChatBlockProps) {
+  const { data: settings, isLoading } = useChatSettings();
   const chatModuleEnabled = useIsModuleEnabled('chat');
+
+  if (isLoading) {
+    return (
+      <div className={cn('bg-muted/50 animate-pulse rounded-xl', heightClasses[data.height || 'md'])} />
+    );
+  }
 
   if (!chatModuleEnabled || !settings?.blockEnabled) {
     return null;

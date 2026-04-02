@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { MessageCircle, X, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ChatConversation } from '@/components/chat/ChatConversation';
@@ -7,10 +7,47 @@ import { useIsModuleEnabled } from '@/hooks/useModules';
 import { useBranding } from '@/providers/BrandingProvider';
 import { ChatContextIndicator } from '@/components/chat/ChatContextIndicator';
 import { cn } from '@/lib/utils';
-...
-  }, []);
 
+const radiusMap: Record<string, { window: string; button: string }> = {
+  none: { window: 'rounded-none', button: 'rounded-none' },
+  sm: { window: 'rounded-lg', button: 'rounded-lg' },
+  md: { window: 'rounded-2xl', button: 'rounded-full' },
+  lg: { window: 'rounded-3xl', button: 'rounded-full' },
+};
+
+const shadowMap: Record<string, string> = {
+  none: 'shadow-none',
+  subtle: 'shadow-lg',
+  medium: 'shadow-xl',
+  strong: 'shadow-2xl',
+};
+
+const sizeMap = {
+  sm: { width: 'w-[320px]', height: 'h-[400px]', button: 'h-12 w-12' },
+  md: { width: 'w-[380px]', height: 'h-[500px]', button: 'h-14 w-14' },
+  lg: { width: 'w-[440px]', height: 'h-[600px]', button: 'h-16 w-16' },
+};
+
+export function ChatWidget() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [initialMessage, setInitialMessage] = useState<string | undefined>();
+  const { data: settings, isLoading } = useChatSettings();
+  const { branding } = useBranding();
   const chatModuleEnabled = useIsModuleEnabled('chat');
+
+  // Listen for external open-chat-widget events (from AiAssistantBlock, etc.)
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.message) {
+        setInitialMessage(detail.message);
+      }
+      setIsOpen(true);
+    };
+    window.addEventListener('open-chat-widget', handler);
+    return () => window.removeEventListener('open-chat-widget', handler);
+  }, []);
 
   if (isLoading || !chatModuleEnabled || !settings?.widgetEnabled) {
     return null;
