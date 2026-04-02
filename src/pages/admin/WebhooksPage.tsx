@@ -47,7 +47,7 @@ import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { WebhookStats } from '@/components/admin/WebhookStats';
 
-export default function WebhooksPage() {
+export function WebhooksContent() {
   const { webhooks, isLoading, createWebhook, updateWebhook, deleteWebhook, toggleWebhook, testWebhook, resendWebhook } = useWebhooks();
   const { toast } = useToast();
   
@@ -125,17 +125,13 @@ export default function WebhooksPage() {
   };
 
   return (
-    <AdminLayout>
-      <AdminPageContainer>
-        <AdminPageHeader
-          title="Webhooks"
-          description="Automate with webhooks that trigger on various events"
-        >
+    <div className="space-y-4">
+        <div className="flex justify-end">
           <Button onClick={() => { resetForm(); setIsDialogOpen(true); }}>
             <Plus className="h-4 w-4 mr-2" />
             New Webhook
           </Button>
-        </AdminPageHeader>
+        </div>
 
         <Tabs defaultValue="webhooks" className="space-y-4">
         <TabsList>
@@ -531,6 +527,19 @@ export default function WebhooksPage() {
           </form>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+export default function WebhooksPage() {
+  return (
+    <AdminLayout>
+      <AdminPageContainer>
+        <AdminPageHeader
+          title="Webhooks"
+          description="Automate with webhooks that trigger on various events"
+        />
+        <WebhooksContent />
       </AdminPageContainer>
     </AdminLayout>
   );

@@ -37,6 +37,7 @@ import {
   ticketsModule,
   siteMigrationModule,
   templatesModule,
+  developerModule,
 } from '@/lib/modules';
 
 // =============================================================================
@@ -72,6 +73,7 @@ class ModuleRegistry {
       ticketsModule,
       siteMigrationModule,
       templatesModule,
+      developerModule,
     ];
 
     for (const mod of builtIn) {

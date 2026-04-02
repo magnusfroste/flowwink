@@ -34,3 +34,4 @@ export { composioModule } from './composio-module';
 export { ticketsModule } from './tickets-module';
 export { siteMigrationModule, siteMigrationMeta } from './site-migration-module';
 export { templatesModule } from './templates-module';
+export { developerModule } from './developer-module';

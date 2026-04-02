@@ -19,7 +19,7 @@ interface WebhookLog {
   status: 'logged' | 'error';
 }
 
-export default function DeveloperToolsPage() {
+export function DevToolsContent() {
   const [mockWebhooks, setMockWebhooks] = useState(true);
   const [webhookLogs, setWebhookLogs] = useState<WebhookLog[]>([]);
   const [selectedEvent, setSelectedEvent] = useState('page.published');
@@ -60,12 +60,7 @@ export default function DeveloperToolsPage() {
   };
 
   return (
-    <AdminLayout>
-      <div className="space-y-6">
-        <AdminPageHeader
-          title="Developer Tools"
-          description="Hidden tools for testing and debugging. Access via URL or #developer-tools"
-        />
+      <div className="space-y-4">
 
         <div className="flex items-center gap-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
           <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
@@ -255,6 +250,19 @@ export default function DeveloperToolsPage() {
             </Card>
           </TabsContent>
         </Tabs>
+      </div>
+  );
+}
+
+export default function DeveloperToolsPage() {
+  return (
+    <AdminLayout>
+      <div className="space-y-6">
+        <AdminPageHeader
+          title="Developer Tools"
+          description="Hidden tools for testing and debugging"
+        />
+        <DevToolsContent />
       </div>
     </AdminLayout>
   );

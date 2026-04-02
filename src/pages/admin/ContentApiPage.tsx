@@ -167,7 +167,7 @@ const BLOCK_TYPES: BlockType[] = [
   { type: "stats", name: "Statistics", category: "Data", icon: BarChart3 },
 ];
 
-export default function ContentApiPage() {
+export function ContentApiContent() {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [graphqlQuery, setGraphqlQuery] = useState(GRAPHQL_EXAMPLES[0].query);
   const [graphqlResult, setGraphqlResult] = useState<string | null>(null);
@@ -392,12 +392,7 @@ export default async function Home() {
 }`;
 
   return (
-    <AdminLayout>
       <div className="space-y-8">
-        <AdminPageHeader
-          title="Content API"
-          description="Developer tools for multi-channel content delivery. REST & GraphQL."
-        />
 
         {/* Hero Section */}
         <Card className="overflow-hidden">
@@ -898,6 +893,19 @@ export default async function Home() {
             })()}
           </CardContent>
         </Card>
+      </div>
+  );
+}
+
+export default function ContentApiPage() {
+  return (
+    <AdminLayout>
+      <div className="space-y-8">
+        <AdminPageHeader
+          title="Content API"
+          description="Developer tools for multi-channel content delivery. REST & GraphQL."
+        />
+        <ContentApiContent />
       </div>
     </AdminLayout>
   );

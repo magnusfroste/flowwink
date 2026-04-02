@@ -38,7 +38,7 @@ export const navigationGroups: NavGroup[] = [
     items: [
       { name: "Pages", href: "/admin/pages", icon: FileText, moduleId: "pages" },
       { name: "Blog", href: "/admin/blog", icon: BookOpen, moduleId: "blog" },
-      { name: "Campaigns", href: "/admin/campaigns", icon: Megaphone, moduleId: "contentApi" },
+      { name: "Campaigns", href: "/admin/campaigns", icon: Megaphone, moduleId: "developer" },
       { name: "Knowledge Base", href: "/admin/knowledge-base", icon: Library, moduleId: "knowledgeBase" },
       { name: "Media Library", href: "/admin/media", icon: Image, moduleId: "mediaLibrary" },
     ],
@@ -94,13 +94,11 @@ export const navigationGroups: NavGroup[] = [
       { name: "Global Elements", href: "/admin/global-blocks", icon: LayoutGrid, moduleId: "globalElements" },
       { name: "Modules", href: "/admin/modules", icon: Puzzle },
       { name: "Integrations", href: "/admin/integrations", icon: Plug },
-      { name: "Content API", href: "/admin/content-api", icon: Code2, moduleId: "contentApi" },
-      { name: "Webhooks", href: "/admin/webhooks", icon: Webhook },
+      { name: "Developer", href: "/admin/developer", icon: Code2, moduleId: "developer" },
       
       { name: "Users", href: "/admin/users", icon: Users },
       { name: "Profile", href: "/admin/profile", icon: UserCircle },
       { name: "Settings", href: "/admin/settings", icon: Settings },
-      { name: "Developer Tools", href: "/admin/developer-tools", icon: Code2 },
     ],
   },
 ];

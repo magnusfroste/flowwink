@@ -24,6 +24,7 @@ import BrandingSettingsPage from "./pages/admin/BrandingSettingsPage";
 
 import ChatSettingsPage from "./pages/admin/ChatSettingsPage";
 import ContentApiPage from "./pages/admin/ContentApiPage";
+import DeveloperPage from "./pages/admin/DeveloperPage";
 import ContentCampaignsPage from "./pages/admin/ContentCampaignsPage";
 
 
@@ -165,7 +166,8 @@ const router = createBrowserRouter([
       { path: "/admin/branding", element: <BrandingSettingsPage /> },
       
       { path: "/admin/chat", element: <ChatSettingsPage /> },
-      { path: "/admin/content-api", element: <ContentApiPage /> },
+      { path: "/admin/content-api", element: <Navigate to="/admin/developer" replace /> },
+      { path: "/admin/developer", element: <DeveloperPage /> },
       { path: "/admin/campaigns", element: <ContentCampaignsPage /> },
       { path: "/admin/quick-start", element: <Navigate to="/admin" replace /> },
       
@@ -187,7 +189,7 @@ const router = createBrowserRouter([
       { path: "/admin/bookings/availability", element: <BookingsPage /> },
       { path: "/admin/modules", element: <ModulesPage /> },
       { path: "/admin/integrations", element: <IntegrationsStatusPage /> },
-      { path: "/admin/webhooks", element: <WebhooksPage /> },
+      { path: "/admin/webhooks", element: <Navigate to="/admin/developer" replace /> },
       { path: "/admin/knowledge-base", element: <KnowledgeBaseAdminPage /> },
       { path: "/admin/knowledge-base/new", element: <KbArticleEditorPage /> },
       { path: "/admin/knowledge-base/:id", element: <KbArticleEditorPage /> },
@@ -195,7 +197,7 @@ const router = createBrowserRouter([
       { path: "/admin/skills", element: withPageFallback(<SkillHubPage />) },
       { path: "/admin/live-support", element: <LiveSupportPage /> },
       { path: "/admin/template-export", element: <Navigate to="/admin/templates" replace /> },
-      { path: "/admin/developer-tools", element: <DeveloperToolsPage /> },
+      { path: "/admin/developer-tools", element: <Navigate to="/admin/developer" replace /> },
       { path: "/admin/template-live-preview", element: <TemplateLivePreviewPage /> },
       { path: "/admin/webinars", element: <WebinarsPage /> },
       { path: "/admin/sales-intelligence", element: <SalesIntelligencePage /> },
