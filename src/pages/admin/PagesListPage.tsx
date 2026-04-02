@@ -64,7 +64,7 @@ function PageRow({ page, homepageSlug, isAdmin, onDuplicate, onDelete, onSetHome
   onDelete: (id: string) => void;
   onSetHomepage: (slug: string) => void;
 }) {
-  const showInMenu = (page as any).show_in_menu;
+  const showInMenu = page.show_in_menu;
 
   return (
     <div className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors group">
@@ -189,7 +189,7 @@ export default function PagesListPage() {
           comparison = STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
           break;
         case 'menu_order':
-          comparison = ((a as any).menu_order ?? 999) - ((b as any).menu_order ?? 999);
+          comparison = (a.menu_order ?? 999) - (b.menu_order ?? 999);
           break;
       }
       return sortDirection === 'asc' ? comparison : -comparison;
@@ -264,14 +264,12 @@ export default function PagesListPage() {
                 </TabsTrigger>
               </TabsList>
               {activeTab === 'pages' && (
-                <>
-                  <Button size="sm" asChild>
-                    <Link to="/admin/pages/new">
-                      <Plus className="h-4 w-4 mr-2" />
-                      New Page
-                    </Link>
-                  </Button>
-                </>
+                <Button size="sm" asChild>
+                  <Link to="/admin/pages/new">
+                    <Plus className="h-4 w-4 mr-2" />
+                    New Page
+                  </Link>
+                </Button>
               )}
             </div>
           </div>

@@ -23,7 +23,7 @@ function SortableMenuRow({ page, homepageSlug, menuOverrides, onToggleMenu }: {
   onToggleMenu: (id: string, visible: boolean) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: page.id });
-  const showInMenu = menuOverrides.has(page.id) ? menuOverrides.get(page.id)! : (page as any).show_in_menu;
+  const showInMenu = menuOverrides.has(page.id) ? menuOverrides.get(page.id)! : page.show_in_menu;
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -90,7 +90,7 @@ export default function MenuOrderSection() {
   // Initialize order from pages
   useEffect(() => {
     if (pages) {
-      const sorted = [...pages].sort((a, b) => ((a as any).menu_order ?? 999) - ((b as any).menu_order ?? 999));
+      const sorted = [...pages].sort((a, b) => (a.menu_order ?? 999) - (b.menu_order ?? 999));
       setOrderedIds(sorted.map(p => p.id));
       setMenuOverrides(new Map());
       setHasChanges(false);
@@ -122,7 +122,7 @@ export default function MenuOrderSection() {
   const saveOrderMutation = useMutation({
     mutationFn: async () => {
       const updates = orderedIds.map((id, index) => {
-        const menuVisible = menuOverrides.has(id) ? menuOverrides.get(id)! : (pages?.find(p => p.id === id) as any)?.show_in_menu ?? false;
+        const menuVisible = menuOverrides.has(id) ? menuOverrides.get(id)! : pages?.find(p => p.id === id)?.show_in_menu ?? false;
         return supabase
           .from('pages')
           .update({ menu_order: index, show_in_menu: menuVisible })
