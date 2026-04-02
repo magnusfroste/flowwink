@@ -93,7 +93,7 @@ export default function ChatPage() {
     }
   };
 
-  if (!checkinId && (settingsLoading || !settings?.enabled || !settings?.landingPageEnabled)) return null;
+  if (!checkinId && (settingsLoading || !settings?.landingPageEnabled)) return null;
   if (settingsLoading) return null;
 
   return (

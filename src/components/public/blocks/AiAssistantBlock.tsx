@@ -34,7 +34,7 @@ export function AiAssistantBlock({ data }: AiAssistantBlockProps) {
   const [isFocused, setIsFocused] = useState(false);
   const [activeMessage, setActiveMessage] = useState<string | null>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
-  const { data: chatSettings } = useChatSettings();
+  const { data: _chatSettings } = useChatSettings();
 
   const {
     title = 'Find Your Perfect Product',
@@ -60,22 +60,15 @@ export function AiAssistantBlock({ data }: AiAssistantBlockProps) {
     const finalMessage = message || inputValue.trim();
     if (!finalMessage) return;
 
-    // If chat is not enabled, fall back to opening widget
-    if (!chatSettings?.enabled) {
-      window.dispatchEvent(new CustomEvent('open-chat-widget', {
-        detail: { message: finalMessage },
-      }));
-    } else {
-      // Expand inline chat with this message
-      setActiveMessage(finalMessage);
-    }
+    // Expand inline chat with this message
+    setActiveMessage(finalMessage);
     setInputValue('');
 
     // Scroll to chat after a tick
     setTimeout(() => {
       chatContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }, 100);
-  }, [inputValue, chatSettings?.enabled]);
+  }, [inputValue]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {

@@ -4,6 +4,7 @@ import { ArrowRight, Sparkles } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useChatSettings } from '@/hooks/useSiteSettings';
+import { useIsModuleEnabled } from '@/hooks/useModules';
 import { cn } from '@/lib/utils';
 
 export interface ChatLauncherBlockData {
@@ -38,7 +39,8 @@ export function ChatLauncherBlock({ data }: ChatLauncherBlockProps) {
   const quickActions = chatSettings?.suggestedPrompts?.slice(0, quickActionCount) || [];
 
   // Check if chat landing page is enabled
-  const isEnabled = chatSettings?.enabled && chatSettings?.landingPageEnabled;
+  const chatModuleEnabled = useIsModuleEnabled('chat');
+  const isEnabled = chatModuleEnabled && chatSettings?.landingPageEnabled;
 
   const handleSubmit = (message?: string) => {
     const finalMessage = message || inputValue.trim();

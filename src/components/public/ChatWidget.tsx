@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { MessageCircle, X, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ChatConversation } from '@/components/chat/ChatConversation';
 import { useChatSettings } from '@/hooks/useSiteSettings';
+import { useIsModuleEnabled } from '@/hooks/useModules';
 import { useBranding } from '@/providers/BrandingProvider';
 import { ChatContextIndicator } from '@/components/chat/ChatContextIndicator';
 import { cn } from '@/lib/utils';
@@ -33,6 +34,7 @@ export function ChatWidget() {
   const [initialMessage, setInitialMessage] = useState<string | undefined>();
   const { data: settings, isLoading } = useChatSettings();
   const { branding } = useBranding();
+  const chatModuleEnabled = useIsModuleEnabled('chat');
 
   // Listen for external open-chat-widget events (from AiAssistantBlock, etc.)
   useEffect(() => {
@@ -47,7 +49,7 @@ export function ChatWidget() {
     return () => window.removeEventListener('open-chat-widget', handler);
   }, []);
 
-  if (isLoading || !settings?.enabled || !settings?.widgetEnabled) {
+  if (isLoading || !chatModuleEnabled || !settings?.widgetEnabled) {
     return null;
   }
 

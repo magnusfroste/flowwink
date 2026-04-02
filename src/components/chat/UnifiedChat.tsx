@@ -387,7 +387,7 @@ export function UnifiedChat({
         onReset={isAdmin ? onReset : undefined}
         isLoading={loading}
         placeholder={isAdmin ? 'Tell FlowPilot what to do…' : visitorSettings?.placeholder}
-        disabled={!isAdmin && visitorSettings?.enabled === false}
+        disabled={false}
         skills={skills}
         scope={scope}
       />

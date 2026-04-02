@@ -1,6 +1,7 @@
 import { ChatBlockData } from '@/types/cms';
 import { ChatConversation } from '@/components/chat/ChatConversation';
 import { useChatSettings } from '@/hooks/useSiteSettings';
+import { useIsModuleEnabled } from '@/hooks/useModules';
 import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
 
@@ -17,6 +18,7 @@ const heightClasses = {
 
 export function ChatBlock({ data }: ChatBlockProps) {
   const { data: settings, isLoading } = useChatSettings();
+  const chatModuleEnabled = useIsModuleEnabled('chat');
 
   if (isLoading) {
     return (
@@ -24,7 +26,7 @@ export function ChatBlock({ data }: ChatBlockProps) {
     );
   }
 
-  if (!settings?.enabled || !settings?.blockEnabled) {
+  if (!chatModuleEnabled || !settings?.blockEnabled) {
     return null;
   }
 

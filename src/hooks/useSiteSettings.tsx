@@ -179,7 +179,8 @@ export type ChatWidgetStyle = 'floating' | 'pill' | 'expanded';
 export type ChatWidgetSize = 'sm' | 'md' | 'lg';
 
 export interface ChatSettings {
-  // Core
+  // Core — `enabled` is deprecated; module on/off is the single source of truth
+  /** @deprecated Use useIsModuleEnabled('chat') instead */
   enabled: boolean;
   title: string;
   placeholder: string;
