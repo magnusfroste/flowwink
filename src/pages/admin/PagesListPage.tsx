@@ -1,11 +1,12 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Search, Filter, MoreHorizontal, Edit, Trash2, Copy, ArrowUpDown, Clock, LayoutTemplate, Home, GripVertical, Eye, EyeOff, Save, Loader2 } from 'lucide-react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Plus, Search, Filter, MoreHorizontal, Edit, Trash2, Copy, ArrowUpDown, Clock, LayoutTemplate, Home, GripVertical, Eye, EyeOff, Save, Loader2, FileText } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import PagesTrashTab from '@/components/admin/pages/PagesTrashTab';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
