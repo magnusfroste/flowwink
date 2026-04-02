@@ -553,8 +553,12 @@ export default function PagesListPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="global" className="mt-0">
-            <GlobalElementsTab />
+          <TabsContent value="header" className="mt-0">
+            <HeaderTab />
+          </TabsContent>
+
+          <TabsContent value="footer" className="mt-0">
+            <FooterTab />
           </TabsContent>
 
           <TabsContent value="branding" className="mt-0">
