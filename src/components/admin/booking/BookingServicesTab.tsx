@@ -205,6 +205,26 @@ export default function BookingServicesTab() {
                 <Input value={formData.color} onChange={(e) => setFormData({ ...formData, color: e.target.value })} className="flex-1" />
               </div>
             </div>
+            {products && products.length > 0 && (
+              <div className="space-y-2">
+                <Label>Linked Product (for online payment)</Label>
+                <Select
+                  value={formData.product_id || 'none'}
+                  onValueChange={(v) => setFormData({ ...formData, product_id: v === 'none' ? '' : v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="No product linked" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No product (pay on site)</SelectItem>
+                    {products.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">Link to a product to enable Stripe payment at booking time.</p>
+              </div>
+            )}
             <div className="flex items-center justify-between">
               <Label htmlFor="is_active">Active</Label>
               <Switch id="is_active" checked={formData.is_active} onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })} />
