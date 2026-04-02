@@ -3232,6 +3232,227 @@ Checks the current status of an order via the order-status edge function.
       },
     },
   },
+  // ─── A2A / OpenClaw ───────────────────────────────────────────────────────
+  {
+    name: 'a2a_chat',
+    description: 'Handle incoming A2A messages from federation peers. Routes natural language messages to FlowPilot for intelligent response.',
+    handler: 'edge:a2a-chat',
+    category: 'system',
+    scope: 'external',
+    requires_approval: false,
+    trust_level: 'auto',
+    instructions: `## a2a_chat
+### What
+Default handler for inbound A2A messages from connected federation peers (e.g. OpenClaw, other FlowWink instances). Runs the message through FlowPilot chat-completion with full site intelligence and per-peer conversation memory (last 20 exchanges).
+### When to use
+- A peer sent plain text or an unstructured message with no explicit skill invocation
+- Default fallback when a2a-ingest cannot extract a specific skill from the message
+- Supports responseSchema for structured JSON responses
+### NOT for
+- Outbound messages to peers
+- Messages that already specify a skill via DataPart (those route directly)
+### Parameters
+- **text**: The message text from the peer
+- **peer_name**: Name of the sending peer
+- **parts**: Raw message parts (optional)`,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'a2a_chat',
+        description: 'Process inbound A2A chat messages from peers. Use when: receiving plain text messages from connected peers. NOT for: outbound requests or messages with explicit skill invocations.',
+        parameters: {
+          type: 'object',
+          properties: {
+            text: { type: 'string', description: 'The message text from the peer' },
+            peer_name: { type: 'string', description: 'Name of the sending peer' },
+            parts: { type: 'array', description: 'Raw message parts' },
+          },
+          required: ['text'],
+        },
+      },
+    },
+  },
+  {
+    name: 'openclaw_start_session',
+    description: 'Start a beta test session with a scenario description',
+    handler: 'module:openclaw',
+    category: 'system',
+    scope: 'internal',
+    requires_approval: false,
+    trust_level: 'auto',
+    instructions: `## openclaw_start_session
+### What
+Opens a new OpenClaw beta test session. Registers the session in the database before any findings or exchanges can be logged.
+### When to use
+- OpenClaw initiates a testing session — call this first
+- Returns a session_id used in all subsequent openclaw calls
+### Parameters
+- **scenario**: Short description of what is being tested
+- **peer_name**: Name of the tester (defaults to "openclaw")
+- **metadata**: Optional additional context`,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'openclaw_start_session',
+        description: 'Start a beta test session',
+        parameters: {
+          type: 'object',
+          properties: {
+            scenario: { type: 'string', description: 'Test scenario description' },
+            peer_name: { type: 'string', description: 'Name of the tester' },
+            metadata: { type: 'object', description: 'Optional metadata' },
+          },
+          required: ['scenario'],
+        },
+      },
+    },
+  },
+  {
+    name: 'openclaw_end_session',
+    description: 'End a beta test session with summary',
+    handler: 'module:openclaw',
+    category: 'system',
+    scope: 'internal',
+    requires_approval: false,
+    trust_level: 'auto',
+    instructions: `## openclaw_end_session
+### What
+Closes an active OpenClaw beta test session with a summary and final status.
+### When to use
+- A beta test session is complete
+- Call with the session_id from openclaw_start_session
+### NOT for
+- Ending sessions that were never started
+### Parameters
+- **session_id**: The session to close
+- **summary**: What was tested
+- **status**: Final status (e.g. "completed", "aborted")`,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'openclaw_end_session',
+        description: 'End a beta test session',
+        parameters: {
+          type: 'object',
+          properties: {
+            session_id: { type: 'string', description: 'Session ID to end' },
+            summary: { type: 'string', description: 'Session summary' },
+            status: { type: 'string', description: 'Final status' },
+          },
+          required: ['session_id'],
+        },
+      },
+    },
+  },
+  {
+    name: 'openclaw_report_finding',
+    description: 'Report a bug, UX issue, or suggestion from beta testing',
+    handler: 'module:openclaw',
+    category: 'system',
+    scope: 'internal',
+    requires_approval: false,
+    trust_level: 'auto',
+    instructions: `## openclaw_report_finding
+### What
+Logs a finding (bug, UX issue, suggestion, observation, or performance issue) discovered during a beta test session.
+### When to use
+- OpenClaw discovers something worth logging during an active session
+- Include as much context as possible in the description field
+### Parameters
+- **session_id**: Active session ID
+- **type**: bug | ux_issue | suggestion | observation | performance
+- **severity**: low | medium | high | critical
+- **title**: Short finding title
+- **description**: Detailed description
+- **context**: Additional structured context (optional)
+- **screenshot_url**: Optional screenshot URL`,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'openclaw_report_finding',
+        description: 'Report a finding from beta testing',
+        parameters: {
+          type: 'object',
+          properties: {
+            session_id: { type: 'string', description: 'Session ID' },
+            type: { type: 'string', enum: ['bug', 'ux_issue', 'suggestion', 'observation', 'performance'], description: 'Finding type' },
+            severity: { type: 'string', enum: ['low', 'medium', 'high', 'critical'], description: 'Severity level' },
+            title: { type: 'string', description: 'Finding title' },
+            description: { type: 'string', description: 'Detailed description' },
+            context: { type: 'object', description: 'Additional context' },
+            screenshot_url: { type: 'string', description: 'Screenshot URL' },
+          },
+          required: ['session_id', 'type', 'title'],
+        },
+      },
+    },
+  },
+  {
+    name: 'openclaw_exchange',
+    description: 'Send a message between OpenClaw and FlowPilot',
+    handler: 'module:openclaw',
+    category: 'system',
+    scope: 'internal',
+    requires_approval: false,
+    trust_level: 'auto',
+    instructions: `## openclaw_exchange
+### What
+Sends a structured message between OpenClaw and FlowPilot during a session.
+### When to use
+- Sending observations, questions, suggestions, learnings, or acknowledgments between agents
+### Parameters
+- **content**: The human-readable message body (required)
+- **session_id**: Optional session ID
+- **direction**: openclaw_to_flowpilot (default) | flowpilot_to_openclaw
+- **message_type**: observation | question | suggestion | learning | acknowledgment
+- **payload**: Optional structured payload`,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'openclaw_exchange',
+        description: 'Exchange a message between agents',
+        parameters: {
+          type: 'object',
+          properties: {
+            session_id: { type: 'string', description: 'Optional session ID' },
+            direction: { type: 'string', enum: ['openclaw_to_flowpilot', 'flowpilot_to_openclaw'], description: 'Message direction' },
+            message_type: { type: 'string', enum: ['observation', 'question', 'suggestion', 'learning', 'acknowledgment'], description: 'Message type' },
+            content: { type: 'string', description: 'Message content' },
+            payload: { type: 'object', description: 'Structured payload' },
+          },
+          required: ['content'],
+        },
+      },
+    },
+  },
+  {
+    name: 'openclaw_get_status',
+    description: 'Get current beta test status',
+    handler: 'module:openclaw',
+    category: 'system',
+    scope: 'internal',
+    requires_approval: false,
+    trust_level: 'auto',
+    instructions: `## openclaw_get_status
+### What
+Returns an overview of active beta test sessions — open sessions, recent findings, and pending messages from FlowPilot.
+### When to use
+- Checking overall state of ongoing beta testing
+- No arguments required
+### NOT for
+- Getting details of a specific session (use openclaw_exchange for that)`,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'openclaw_get_status',
+        description: 'Get beta test status overview',
+        parameters: {
+          type: 'object',
+          properties: {},
+        },
+      },
+    },
+  },
 ];
 const DEFAULT_SOUL = {
   purpose: 'I am FlowPilot — the autonomous intelligence layer of this FlowWink website. I observe, reason, and act across every module (content, CRM, marketing, support, analytics) to make this site run itself. My north star is measurable business outcomes: traffic, leads, conversions, and customer satisfaction.',
