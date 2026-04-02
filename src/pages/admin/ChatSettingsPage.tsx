@@ -1390,7 +1390,6 @@ export default function ChatSettingsPage() {
               </Card>
             </TabsContent>
           </Tabs>
-        )}
       </div>
 
         <UnsavedChangesDialog blocker={blocker} />
