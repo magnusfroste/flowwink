@@ -1,9 +1,9 @@
 import {
   LayoutDashboard, BarChart3, FileText, Users, Settings, BookOpen, Image, Mail,
-  Puzzle, Webhook, UserCheck, Briefcase, Building2, Package, Library, ShoppingCart,
+  Puzzle, UserCheck, Briefcase, Building2, Package, Library, ShoppingCart,
   CalendarDays, Plug, Bot, Zap, MessageSquare, Headphones, Megaphone, Code2,
-  Video, Target, Rocket, LayoutGrid, Inbox, UserCircle, Palette, FileUser,
-  Network, Snowflake, Store, UserRound,
+  Video, Target, Inbox, UserCircle, FileUser,
+  Network, Snowflake, UserRound,
 } from 'lucide-react';
 
 export type NavItem = {
@@ -90,8 +90,6 @@ export const navigationGroups: NavGroup[] = [
     items: [
       
       { name: "Templates", href: "/admin/templates", icon: Puzzle, moduleId: "templates" },
-      { name: "Branding", href: "/admin/branding", icon: Palette },
-      { name: "Global Elements", href: "/admin/global-blocks", icon: LayoutGrid, moduleId: "globalElements" },
       { name: "Modules", href: "/admin/modules", icon: Puzzle },
       { name: "Integrations", href: "/admin/integrations", icon: Plug },
       { name: "Developer", href: "/admin/developer", icon: Code2, moduleId: "developer" },

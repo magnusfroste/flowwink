@@ -26,7 +26,7 @@ interface CustomTheme {
   settings: Partial<BrandingSettings>;
 };
 
-export default function BrandingSettingsPage() {
+export function BrandingSettingsContent({ embedded = false }: { embedded?: boolean }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: savedSettings, isLoading } = useBrandingSettings();
@@ -284,18 +284,17 @@ export default function BrandingSettingsPage() {
   });
 
   if (isLoading) {
-    return (
-      <AdminLayout>
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
-      </AdminLayout>
+    const loader = (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
     );
+    return embedded ? loader : <AdminLayout>{loader}</AdminLayout>;
   }
 
-  return (
-    <AdminLayout>
-      <div className="space-y-6">
+  const content = (
+    <div className="space-y-6">
+      {!embedded && (
         <AdminPageHeader 
           title="Branding & Design"
           description="Customize the appearance of the public website"
@@ -306,6 +305,20 @@ export default function BrandingSettingsPage() {
             Save changes
           </Button>
         </AdminPageHeader>
+      )}
+      {embedded && (
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold">Branding & Design</h2>
+            <p className="text-sm text-muted-foreground">Customize the appearance of the public website</p>
+          </div>
+          <Button onClick={handleSave} disabled={updateSettings.isPending} size="sm" className="relative">
+            {hasChanges && <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-destructive" />}
+            {updateSettings.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            Save changes
+          </Button>
+        </div>
+      )}
 
         {/* Current Template Indicator */}
         <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg border">
@@ -981,6 +994,11 @@ export default function BrandingSettingsPage() {
 
         <UnsavedChangesDialog blocker={blocker} />
       </div>
-    </AdminLayout>
-  );
+    );
+
+  return embedded ? content : <AdminLayout>{content}</AdminLayout>;
+}
+
+export default function BrandingSettingsPage() {
+  return <BrandingSettingsContent />;
 }

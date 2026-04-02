@@ -1,12 +1,14 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Plus, Search, Filter, MoreHorizontal, Edit, Trash2, Copy, ArrowUpDown, Clock, LayoutTemplate, Home, GripVertical, Eye, Save, Loader2, FileText } from 'lucide-react';
+import { Plus, Search, Filter, MoreHorizontal, Edit, Trash2, Copy, ArrowUpDown, Clock, LayoutTemplate, Home, GripVertical, Eye, Save, Loader2, FileText, Navigation, Palette } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import PagesTrashTab from '@/components/admin/pages/PagesTrashTab';
+import GlobalElementsTab from '@/components/admin/pages/GlobalElementsTab';
+import BrandingTab from '@/components/admin/pages/BrandingTab';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -363,7 +365,17 @@ export default function PagesListPage() {
   );
 
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState(location.pathname === '/admin/pages/trash' ? 'trash' : 'pages');
+  const searchParams = new URLSearchParams(location.search);
+  const tabFromUrl = searchParams.get('tab');
+  const initialTab = tabFromUrl || (location.pathname === '/admin/pages/trash' ? 'trash' : 'pages');
+  const [activeTab, setActiveTab] = useState(initialTab);
+
+  // Sync tab from URL when navigating via redirect
+  useEffect(() => {
+    if (tabFromUrl) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [tabFromUrl]);
 
   return (
     <AdminLayout>
@@ -377,6 +389,14 @@ export default function PagesListPage() {
                 <TabsTrigger value="pages" className="gap-1.5">
                   <FileText className="h-3.5 w-3.5" />
                   Pages
+                </TabsTrigger>
+                <TabsTrigger value="global" className="gap-1.5">
+                  <Navigation className="h-3.5 w-3.5" />
+                  Header & Footer
+                </TabsTrigger>
+                <TabsTrigger value="branding" className="gap-1.5">
+                  <Palette className="h-3.5 w-3.5" />
+                  Branding
                 </TabsTrigger>
                 <TabsTrigger value="trash" className="gap-1.5">
                   <Trash2 className="h-3.5 w-3.5" />
@@ -526,6 +546,14 @@ export default function PagesListPage() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="global" className="mt-0">
+            <GlobalElementsTab />
+          </TabsContent>
+
+          <TabsContent value="branding" className="mt-0">
+            <BrandingTab />
           </TabsContent>
 
           <TabsContent value="trash" className="mt-0">

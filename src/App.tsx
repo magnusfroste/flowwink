@@ -28,7 +28,7 @@ import DeveloperPage from "./pages/admin/DeveloperPage";
 import ContentCampaignsPage from "./pages/admin/ContentCampaignsPage";
 
 
-import GlobalBlocksPage from "./pages/admin/GlobalBlocksPage";
+
 import FormSubmissionsPage from "./pages/admin/FormSubmissionsPage";
 import NewsletterPage from "./pages/admin/NewsletterPage";
 import BlogPage from "./pages/admin/BlogPage";
@@ -172,7 +172,7 @@ const router = createBrowserRouter([
       { path: "/admin/quick-start", element: <Navigate to="/admin" replace /> },
       
       { path: "/admin/templates", element: withPageFallback(<TemplateGalleryPage />) },
-      { path: "/admin/global-blocks", element: <GlobalBlocksPage /> },
+      { path: "/admin/global-blocks", element: <Navigate to="/admin/pages?tab=global" replace /> },
       { path: "/admin/forms", element: <FormSubmissionsPage /> },
       { path: "/admin/newsletter", element: <NewsletterPage /> },
       { path: "/admin/contacts", element: <LeadsPage /> },
