@@ -12,6 +12,8 @@ import type { Json } from '@/integrations/supabase/types';
  */
 export type ModuleAutonomy = 'view-required' | 'config-required' | 'agent-capable';
 
+export type BookingEmailProvider = 'resend' | 'composio_gmail';
+
 export interface ModuleConfig {
   enabled: boolean;
   name: string;
@@ -25,6 +27,9 @@ export interface ModuleConfig {
   optionalIntegrations?: string[]; // Enhanced functionality with these
   // E-commerce sandbox settings (sandboxMode is derived: auto-on when Stripe is inactive)
   sandboxAutoPayDays?: number; // 0 = instant, >0 = mark as paid after N days (for testing flows)
+  // Booking-specific settings
+  confirmationEmailEnabled?: boolean; // Send confirmation email on new booking
+  bookingEmailProvider?: BookingEmailProvider; // Which provider to use for booking emails
 }
 
 export interface ModulesSettings {
@@ -78,6 +83,8 @@ export const defaultModulesSettings: ModulesSettings = {
     autonomy: 'config-required',
     adminUI: true,
     optionalIntegrations: ['resend', 'stripe'],
+    confirmationEmailEnabled: false,
+    bookingEmailProvider: 'resend',
   },
   pages: {
     enabled: true,

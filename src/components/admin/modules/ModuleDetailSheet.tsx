@@ -31,11 +31,12 @@ import {
   RefreshCw,
   Plug,
   Globe,
+  Mail,
 } from "lucide-react";
 import { moduleRegistry } from "@/lib/module-registry";
 import type { ModuleCapability } from "@/types/module-contracts";
 import type { ModuleStats } from "@/hooks/useModuleStats";
-import type { ModuleAutonomy, ModuleConfig, ModulesSettings } from "@/hooks/useModules";
+import type { ModuleAutonomy, ModuleConfig, ModulesSettings, BookingEmailProvider } from "@/hooks/useModules";
 import { useModules, useUpdateModules } from "@/hooks/useModules";
 import { formatDistanceToNow } from "date-fns";
 import { useExtensionRelay } from "@/hooks/useExtensionRelay";
@@ -45,6 +46,8 @@ import { FlowPilotDetails } from "./FlowPilotDetails";
 import { ComposioPanel } from "./ComposioPanel";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface ModuleDetailSheetProps {
   open: boolean;
@@ -521,6 +524,92 @@ export function ModuleDetailSheet({
               <>
                 <Separator />
                 <BrowserControlSetup />
+              </>
+            )}
+
+            {/* Booking Email Settings */}
+            {moduleId === 'bookings' && moduleConfig && (
+              <>
+                <Separator />
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <Mail className="h-4 w-4 text-primary" />
+                    <h4 className="text-sm font-semibold">Confirmation Email</h4>
+                  </div>
+                  <div className="rounded-lg border p-4 bg-muted/20 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label htmlFor="booking-email-toggle" className="text-sm font-medium">
+                          Send confirmation email
+                        </Label>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Automatically email the customer when a booking is submitted
+                        </p>
+                      </div>
+                      <Switch
+                        id="booking-email-toggle"
+                        checked={moduleConfig.confirmationEmailEnabled ?? false}
+                        onCheckedChange={(checked) => {
+                          if (!modules) return;
+                          updateModules.mutate({
+                            ...modules,
+                            bookings: {
+                              ...modules.bookings,
+                              confirmationEmailEnabled: checked,
+                            },
+                          });
+                        }}
+                      />
+                    </div>
+
+                    {moduleConfig.confirmationEmailEnabled && (
+                      <>
+                        <Separator />
+                        <div className="space-y-2">
+                          <Label htmlFor="booking-email-provider" className="text-sm">
+                            Email Provider
+                          </Label>
+                          <Select
+                            value={moduleConfig.bookingEmailProvider ?? 'resend'}
+                            onValueChange={(value: BookingEmailProvider) => {
+                              if (!modules) return;
+                              updateModules.mutate({
+                                ...modules,
+                                bookings: {
+                                  ...modules.bookings,
+                                  bookingEmailProvider: value,
+                                },
+                              });
+                            }}
+                          >
+                            <SelectTrigger id="booking-email-provider">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="resend">
+                                <span className="flex items-center gap-2">
+                                  Resend
+                                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">API</Badge>
+                                </span>
+                              </SelectItem>
+                              <SelectItem value="composio_gmail">
+                                <span className="flex items-center gap-2">
+                                  Gmail (Composio)
+                                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">OAuth</Badge>
+                                </span>
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <p className="text-[11px] text-muted-foreground">
+                            {(moduleConfig.bookingEmailProvider ?? 'resend') === 'resend'
+                              ? 'Uses Resend API — emails sent from your configured domain.'
+                              : 'Uses Composio Gmail OAuth — emails sent from your connected Gmail account.'}
+                          </p>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
               </>
             )}
 
