@@ -1,29 +1,34 @@
-import { useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useLocation, useSearchParams } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminPageContainer } from "@/components/admin/AdminPageContainer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileText, FolderOpen, Tag, Settings } from "lucide-react";
 
-// Lazy-load tab content from existing pages (extract their inner content)
 import BlogPostsTab from "@/components/admin/blog/BlogPostsTab";
 import BlogCategoriesTab from "@/components/admin/blog/BlogCategoriesTab";
 import BlogTagsTab from "@/components/admin/blog/BlogTagsTab";
 import BlogSettingsTab from "@/components/admin/blog/BlogSettingsTab";
 
-const TAB_KEYS = ["posts", "categories", "tags", "settings"] as const;
-type BlogTab = typeof TAB_KEYS[number];
+const PATH_TO_TAB: Record<string, string> = {
+  "/admin/blog": "posts",
+  "/admin/blog/categories": "categories",
+  "/admin/blog/tags": "tags",
+  "/admin/blog/settings": "settings",
+};
 
 export default function BlogPage() {
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialTab = (searchParams.get("tab") as BlogTab) || "posts";
-  const [activeTab, setActiveTab] = useState<string>(initialTab);
+  const tabFromPath = PATH_TO_TAB[location.pathname] || "posts";
+  const tabFromParams = searchParams.get("tab");
+  const [activeTab, setActiveTab] = useState<string>(tabFromParams || tabFromPath);
 
-  const handleTabChange = (value: string) => {
-    setActiveTab(value);
-    setSearchParams(value === "posts" ? {} : { tab: value });
-  };
+  useEffect(() => {
+    const resolved = PATH_TO_TAB[location.pathname] || "posts";
+    setActiveTab(resolved);
+  }, [location.pathname]);
 
   return (
     <AdminLayout>
