@@ -22,6 +22,7 @@ interface CheckoutRequest {
   currency: string;
   successUrl: string;
   cancelUrl: string;
+  bookingId?: string | null;
 }
 
 interface Product {
