@@ -90,7 +90,7 @@ export default function BookingAvailabilityTab() {
           <div className="flex justify-end">
             <Button onClick={() => setAvailabilityDialogOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
-              Add Time Slot
+              Add Availability Window
             </Button>
           </div>
 
