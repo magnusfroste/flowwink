@@ -205,11 +205,12 @@ export const defaultModulesSettings: ModulesSettings = {
   globalElements: {
     enabled: false,
     name: 'Global Elements',
-    description: 'Header, footer and other reusable components',
+    description: 'Merged into Pages module — kept for backward compatibility',
     icon: 'LayoutGrid',
     category: 'system',
     autonomy: 'config-required',
-    adminUI: true,
+    adminUI: false,
+    core: false,
   },
   mediaLibrary: {
     enabled: true,
