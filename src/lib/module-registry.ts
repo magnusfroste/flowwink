@@ -36,6 +36,7 @@ import {
   composioModule,
   ticketsModule,
   siteMigrationModule,
+  templatesModule,
 } from '@/lib/modules';
 
 // =============================================================================
