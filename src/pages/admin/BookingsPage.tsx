@@ -43,6 +43,18 @@ export default function BookingsPage() {
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
+  const location = useLocation();
+  const PATH_TO_TAB: Record<string, string> = {
+    '/admin/bookings': 'calendar',
+    '/admin/bookings/services': 'services',
+    '/admin/bookings/availability': 'availability',
+  };
+  const tabFromPath = PATH_TO_TAB[location.pathname] || 'calendar';
+  const [activeTab, setActiveTab] = useState(tabFromPath);
+
+  useEffect(() => {
+    setActiveTab(PATH_TO_TAB[location.pathname] || 'calendar');
+  }, [location.pathname]);
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
 
