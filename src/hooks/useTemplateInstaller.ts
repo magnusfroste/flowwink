@@ -599,7 +599,7 @@ export function useTemplateInstaller() {
         }
       }
 
-      // FlowPilot is now a core module — bootstrapped automatically via useFlowPilotBootstrap.
+      // FlowPilot is an opt-in module — bootstrapped automatically via useFlowPilotBootstrap when enabled.
       // Templates no longer seed FlowPilot objectives, automations, or workflows.
 
       // Save installation manifest for future cleanup

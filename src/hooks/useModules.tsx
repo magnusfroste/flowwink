@@ -284,10 +284,9 @@ export const defaultModulesSettings: ModulesSettings = {
   flowpilot: {
     enabled: true,
     name: 'FlowPilot',
-    description: 'Autonomous AI operator — skills, objectives, automations and workflows',
+    description: 'Autonomous AI operator — skills, objectives, automations and workflows. Disable to use FlowWink as a traditional CMS without autonomous capabilities.',
     icon: 'Sparkles',
     category: 'system',
-    core: true,
     autonomy: 'agent-capable',
     adminUI: true,
   },

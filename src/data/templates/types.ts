@@ -128,9 +128,8 @@ export interface StarterTemplate {
   aeoSettings?: Partial<AeoSettings>;
   cookieBannerSettings?: Partial<CookieBannerSettings>;
   
-  // FlowPilot is a core module — no longer configured per template.
-  // Soul, objectives, automations and workflows are seeded generically
-  // via useFlowPilotBootstrap on first admin session.
+  // FlowPilot is an opt-in module — bootstrapped automatically via useFlowPilotBootstrap
+  // when enabled. Templates no longer seed FlowPilot objectives, automations, or workflows.
   
   // General settings
   siteSettings: {

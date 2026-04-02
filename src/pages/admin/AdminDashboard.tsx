@@ -115,6 +115,7 @@ export default function AdminDashboard() {
   const leadsEnabled = useIsModuleEnabled('leads');
   const chatEnabled = useIsModuleEnabled('chat');
   const liveSupportEnabled = useIsModuleEnabled('liveSupport');
+  const flowpilotEnabled = useIsModuleEnabled('flowpilot');
   const { layout, toggleWidget, reorderWidgets, resetLayout, isWidgetVisible } = useDashboardLayout();
   const [customizeOpen, setCustomizeOpen] = useState(false);
 
@@ -262,7 +263,7 @@ export default function AdminDashboard() {
         return <AutomationHealthDashboardWidget key={widgetId} />;
 
       case 'flowpilot':
-        return <FlowPilotDashboardWidget key={widgetId} />;
+        return flowpilotEnabled ? <FlowPilotDashboardWidget key={widgetId} /> : null;
 
       case 'recent-pages':
         return (

@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 import { DEFAULT_FLOWPILOT_BOOTSTRAP } from '@/data/flowpilotDefaults';
+import { useModules } from '@/hooks/useModules';
 
 /**
  * useFlowPilotBootstrap
@@ -16,6 +17,8 @@ import { DEFAULT_FLOWPILOT_BOOTSTRAP } from '@/data/flowpilotDefaults';
 export function useFlowPilotBootstrap() {
   const hasTriggered = useRef(false);
   const queryClient = useQueryClient();
+  const { data: modules } = useModules();
+  const isFlowPilotEnabled = modules?.flowpilot?.enabled ?? true;
 
   // Check if skills exist (lightweight query)
   const { data: skillCount, isLoading } = useQuery({
@@ -101,10 +104,10 @@ export function useFlowPilotBootstrap() {
   });
 
   useEffect(() => {
-    if (isLoading || hasTriggered.current) return;
+    if (!isFlowPilotEnabled || isLoading || hasTriggered.current) return;
     if (skillCount === 0) {
       hasTriggered.current = true;
       bootstrap.mutate();
     }
-  }, [skillCount, isLoading]);
+  }, [skillCount, isLoading, isFlowPilotEnabled]);
 }
