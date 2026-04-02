@@ -74,6 +74,9 @@ export function SmartBookingBlock({ data, blockId, pageId }: SmartBookingBlockPr
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  // Check if service has a linked product that requires payment
+  const serviceRequiresPayment = selectedService?.product_id && selectedService?.price_cents && selectedService.price_cents > 0;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -100,7 +103,7 @@ export function SmartBookingBlock({ data, blockId, pageId }: SmartBookingBlockPr
         notes: formData.notes || null,
         start_time: startTime.toISOString(),
         end_time: endTime.toISOString(),
-        status: 'pending',
+        status: serviceRequiresPayment ? 'awaiting_payment' : 'pending',
         metadata: {
           source: 'smart_booking_block',
           block_id: blockId,
@@ -110,7 +113,101 @@ export function SmartBookingBlock({ data, blockId, pageId }: SmartBookingBlockPr
 
       if (error) throw error;
 
-      // Trigger confirmation email (edge function checks module settings internally)
+      // If service requires payment, initiate checkout
+      if (serviceRequiresPayment && selectedService) {
+        try {
+          const checkoutResponse = await fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-checkout`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+              },
+              body: JSON.stringify({
+                items: [{
+                  productId: selectedService.product_id,
+                  productName: selectedService.name,
+                  priceCents: selectedService.price_cents,
+                  quantity: 1,
+                }],
+                customerName: formData.name,
+                customerEmail: formData.email,
+                userId: null,
+                currency: selectedService.currency || 'USD',
+                successUrl: `${window.location.origin}/checkout/success`,
+                cancelUrl: window.location.href,
+                bookingId: bookingData.id,
+              }),
+            }
+          );
+
+          const checkoutData = await checkoutResponse.json();
+
+          if (!checkoutResponse.ok) {
+            throw new Error(checkoutData.error || 'Checkout failed');
+          }
+
+          // Sandbox mode — payment simulated, confirm booking directly
+          if (checkoutData.sandbox) {
+            await supabase.from('bookings')
+              .update({ 
+                status: 'confirmed',
+                metadata: {
+                  source: 'smart_booking_block',
+                  block_id: blockId,
+                  page_id: pageId,
+                  payment: 'sandbox',
+                  order_id: checkoutData.orderId,
+                },
+              })
+              .eq('id', bookingData.id);
+
+            // Trigger confirmation email
+            try {
+              await fetch(
+                `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-booking-confirmation`,
+                {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+                  },
+                  body: JSON.stringify({ bookingId: bookingData.id }),
+                }
+              );
+            } catch (emailErr) {
+              logger.warn('Could not trigger confirmation email:', emailErr);
+            }
+
+            setStep('confirmed');
+            toast.success('Booking confirmed & payment processed!');
+            return;
+          }
+
+          // Live Stripe mode — redirect to checkout
+          if (checkoutData.url) {
+            // Save booking ID to localStorage so we can confirm on return
+            localStorage.setItem('pending_booking_id', bookingData.id);
+            window.location.href = checkoutData.url;
+            return;
+          }
+
+          throw new Error('No checkout URL received');
+        } catch (checkoutError) {
+          // Payment failed, but booking was created — mark as pending
+          await supabase.from('bookings')
+            .update({ status: 'pending' })
+            .eq('id', bookingData.id);
+          logger.error('Payment error:', checkoutError);
+          toast.error('Payment could not be initiated. Your booking has been saved — we will contact you.');
+          setStep('confirmed');
+          return;
+        }
+      }
+
+      // No payment needed — standard flow
+      // Trigger confirmation email
       try {
         await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-booking-confirmation`,
