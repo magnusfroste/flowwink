@@ -547,8 +547,8 @@ export function useAvailableSlots(date: string | null, serviceId: string | null)
         const startMinutes = startHour * 60 + startMin;
         const endMinutes = endHour * 60 + endMin;
 
-        // Generate 30-min slots within this availability window
-        for (let time = startMinutes; time + duration <= endMinutes; time += 30) {
+        // Generate slots using service duration as step
+        for (let time = startMinutes; time + duration <= endMinutes; time += duration) {
           const slotHour = Math.floor(time / 60);
           const slotMin = time % 60;
           const slotTime = `${slotHour.toString().padStart(2, '0')}:${slotMin.toString().padStart(2, '0')}`;
