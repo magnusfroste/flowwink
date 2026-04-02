@@ -81,6 +81,7 @@ serve(async (req: Request) => {
       currency,
       successUrl,
       cancelUrl,
+      bookingId,
     }: CheckoutRequest = await req.json();
 
     logStep("Starting checkout", { customerEmail, itemCount: items.length });
