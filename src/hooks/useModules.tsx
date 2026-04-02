@@ -47,6 +47,7 @@ export interface ModulesSettings {
   companies: ModuleConfig;
   ecommerce: ModuleConfig;
   developer: ModuleConfig;
+  /** @deprecated Merged into pages module */
   globalElements: ModuleConfig;
   mediaLibrary: ModuleConfig;
   webinars: ModuleConfig;
@@ -90,7 +91,7 @@ export const defaultModulesSettings: ModulesSettings = {
   pages: {
     enabled: true,
     name: 'Pages',
-    description: 'Create and manage web pages with block editor',
+    description: 'Pages, header, footer, branding and navigation — the complete visual layer',
     icon: 'FileText',
     category: 'content',
     core: true,
@@ -204,11 +205,12 @@ export const defaultModulesSettings: ModulesSettings = {
   globalElements: {
     enabled: false,
     name: 'Global Elements',
-    description: 'Header, footer and other reusable components',
+    description: 'Merged into Pages module — kept for backward compatibility',
     icon: 'LayoutGrid',
     category: 'system',
     autonomy: 'config-required',
-    adminUI: true,
+    adminUI: false,
+    core: false,
   },
   mediaLibrary: {
     enabled: true,
@@ -357,7 +359,7 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/orders': 'ecommerce',
   '/admin/customers': 'ecommerce',
   '/admin/developer': 'developer',
-  '/admin/global-blocks': 'globalElements',
+  '/admin/global-blocks': 'pages',
   '/admin/media': 'mediaLibrary',
   '/admin/webinars': 'webinars',
   '/admin/sales-intelligence': 'salesIntelligence',

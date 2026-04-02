@@ -146,7 +146,7 @@ export default function ModulesPage() {
         category,
         label: CATEGORY_LABELS[category],
         modules: Object.entries(localModules)
-          .filter(([_, config]) => config.category === category)
+          .filter(([id, config]) => config.category === category && id !== 'globalElements')
           .map(([id, config]) => ({ id: id as keyof ModulesSettings, ...config })),
       })).filter(group => group.modules.length > 0)
     : [];
