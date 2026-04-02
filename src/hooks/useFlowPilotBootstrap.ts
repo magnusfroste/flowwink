@@ -17,6 +17,8 @@ import { useModules } from '@/hooks/useModules';
 export function useFlowPilotBootstrap() {
   const hasTriggered = useRef(false);
   const queryClient = useQueryClient();
+  const { modules } = useModules();
+  const isFlowPilotEnabled = modules?.flowpilot?.enabled ?? true;
 
   // Check if skills exist (lightweight query)
   const { data: skillCount, isLoading } = useQuery({
