@@ -64,6 +64,7 @@ export default function BookingServicesTab() {
       currency: service.currency,
       color: service.color || '#3b82f6',
       is_active: service.is_active,
+      product_id: service.product_id || '',
     });
     setDialogOpen(true);
   };
