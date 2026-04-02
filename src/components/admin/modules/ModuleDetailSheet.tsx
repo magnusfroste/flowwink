@@ -611,7 +611,7 @@ export function ModuleDetailSheet({
                   </div>
                 </div>
               </>
-            )
+            )}
 
             {/* FlowPilot Details */}
             {moduleId === 'flowpilot' && (
