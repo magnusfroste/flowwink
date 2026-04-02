@@ -21,6 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 export default function BookingServicesTab() {
   const { data: services, isLoading } = useBookingServices();
+  const { data: products } = useProducts();
   const createService = useCreateService();
   const updateService = useUpdateService();
   const deleteService = useDeleteService();
