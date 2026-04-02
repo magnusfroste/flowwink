@@ -391,9 +391,13 @@ export default function PagesListPage() {
                   <FileText className="h-3.5 w-3.5" />
                   Pages
                 </TabsTrigger>
-                <TabsTrigger value="global" className="gap-1.5">
+                <TabsTrigger value="header" className="gap-1.5">
                   <Navigation className="h-3.5 w-3.5" />
-                  Header & Footer
+                  Header
+                </TabsTrigger>
+                <TabsTrigger value="footer" className="gap-1.5">
+                  <PanelBottom className="h-3.5 w-3.5" />
+                  Footer
                 </TabsTrigger>
                 <TabsTrigger value="branding" className="gap-1.5">
                   <Palette className="h-3.5 w-3.5" />
