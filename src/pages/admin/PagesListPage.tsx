@@ -189,7 +189,7 @@ export default function PagesListPage() {
           comparison = STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
           break;
         case 'menu_order':
-          comparison = ((a as any).menu_order ?? 999) - ((b as any).menu_order ?? 999);
+          comparison = (a.menu_order ?? 999) - (b.menu_order ?? 999);
           break;
       }
       return sortDirection === 'asc' ? comparison : -comparison;
