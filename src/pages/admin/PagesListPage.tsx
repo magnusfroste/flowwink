@@ -64,7 +64,7 @@ function PageRow({ page, homepageSlug, isAdmin, onDuplicate, onDelete, onSetHome
   onDelete: (id: string) => void;
   onSetHomepage: (slug: string) => void;
 }) {
-  const showInMenu = (page as any).show_in_menu;
+  const showInMenu = page.show_in_menu;
 
   return (
     <div className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors group">
