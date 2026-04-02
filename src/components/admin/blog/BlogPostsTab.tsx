@@ -54,14 +54,6 @@ export default function BlogPostsTab() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div />
-        <Button onClick={() => navigate("/admin/blog/new")}>
-          <Plus className="mr-2 h-4 w-4" />
-          New Post
-        </Button>
-      </div>
-
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
