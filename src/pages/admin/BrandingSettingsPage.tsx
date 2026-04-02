@@ -26,7 +26,7 @@ interface CustomTheme {
   settings: Partial<BrandingSettings>;
 };
 
-export function BrandingSettingsContent() {
+export function BrandingSettingsContent({ embedded = false }: { embedded?: boolean }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: savedSettings, isLoading } = useBrandingSettings();
