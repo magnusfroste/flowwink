@@ -31,6 +31,7 @@ import {
   RefreshCw,
   Plug,
   Globe,
+  Mail,
 } from "lucide-react";
 import { moduleRegistry } from "@/lib/module-registry";
 import type { ModuleCapability } from "@/types/module-contracts";
