@@ -38,6 +38,8 @@ export default function HeaderTab() {
 
   return (
     <div className="space-y-6">
+      <MenuOrderSection />
+
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -63,8 +65,6 @@ export default function HeaderTab() {
           <HeaderBlockEditor data={headerData} onChange={(data) => { setHeaderData(data); setHasChanges(true); }} />
         </CardContent>
       </Card>
-
-      <MenuOrderSection />
     </div>
   );
 }
