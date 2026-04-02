@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek, isToday, isSameMonth } from 'date-fns';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Clock, User, Mail, Phone, Filter, LayoutGrid, List, Check, X, MoreHorizontal, Package, CalendarClock } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Clock, User, Mail, Phone, Filter, LayoutGrid, List, Check, X, MoreHorizontal } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
