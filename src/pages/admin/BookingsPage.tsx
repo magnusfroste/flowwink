@@ -423,7 +423,7 @@ export default function BookingsPage() {
         for (const slot of dayAvail) {
           const [sh, sm] = slot.start_time.split(':').map(Number);
           const [eh, em] = slot.end_time.split(':').map(Number);
-          for (let t = sh * 60 + sm; t + 30 <= eh * 60 + em; t += 30) {
+          for (let t = sh * 60 + sm; t + minSlotDuration <= eh * 60 + em; t += minSlotDuration) {
             const timeStr = `${Math.floor(t / 60).toString().padStart(2, '0')}:${(t % 60).toString().padStart(2, '0')}`;
             if (!allSlotTimes.includes(timeStr)) allSlotTimes.push(timeStr);
           }
