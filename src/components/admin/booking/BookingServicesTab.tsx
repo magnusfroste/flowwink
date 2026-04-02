@@ -136,6 +136,12 @@ export default function BookingServicesTab() {
                     <div className="flex items-center gap-2">
                       <h3 className="font-medium">{service.name}</h3>
                       {!service.is_active && <Badge variant="secondary">Inactive</Badge>}
+                      {service.product_id && (
+                        <Badge variant="outline" className="gap-1">
+                          <Link2 className="h-3 w-3" />
+                          Product
+                        </Badge>
+                      )}
                     </div>
                     {service.description && (
                       <p className="text-sm text-muted-foreground truncate">{service.description}</p>
