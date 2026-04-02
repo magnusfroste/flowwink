@@ -28,7 +28,7 @@ import DeveloperPage from "./pages/admin/DeveloperPage";
 import ContentCampaignsPage from "./pages/admin/ContentCampaignsPage";
 
 
-import GlobalBlocksPage from "./pages/admin/GlobalBlocksPage";
+
 import FormSubmissionsPage from "./pages/admin/FormSubmissionsPage";
 import NewsletterPage from "./pages/admin/NewsletterPage";
 import BlogPage from "./pages/admin/BlogPage";
