@@ -90,8 +90,6 @@ export const navigationGroups: NavGroup[] = [
     items: [
       
       { name: "Templates", href: "/admin/templates", icon: Puzzle, moduleId: "templates" },
-      { name: "Branding", href: "/admin/branding", icon: Palette },
-      { name: "Global Elements", href: "/admin/global-blocks", icon: LayoutGrid, moduleId: "globalElements" },
       { name: "Modules", href: "/admin/modules", icon: Puzzle },
       { name: "Integrations", href: "/admin/integrations", icon: Plug },
       { name: "Developer", href: "/admin/developer", icon: Code2, moduleId: "developer" },

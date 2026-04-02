@@ -363,7 +363,10 @@ export default function PagesListPage() {
   );
 
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState(location.pathname === '/admin/pages/trash' ? 'trash' : 'pages');
+  const searchParams = new URLSearchParams(location.search);
+  const tabFromUrl = searchParams.get('tab');
+  const initialTab = tabFromUrl || (location.pathname === '/admin/pages/trash' ? 'trash' : 'pages');
+  const [activeTab, setActiveTab] = useState(initialTab);
 
   return (
     <AdminLayout>
