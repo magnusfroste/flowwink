@@ -1,0 +1,1 @@
+UPDATE agent_skills SET enabled = true WHERE name = 'create_page_block' AND enabled = false;
