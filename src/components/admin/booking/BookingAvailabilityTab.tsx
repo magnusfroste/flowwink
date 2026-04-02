@@ -167,7 +167,7 @@ export default function BookingAvailabilityTab() {
       <Dialog open={availabilityDialogOpen} onOpenChange={setAvailabilityDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add Time Slot</DialogTitle>
+            <DialogTitle>Add Availability Window</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleCreateAvailability} className="space-y-4">
             <div className="space-y-2">
