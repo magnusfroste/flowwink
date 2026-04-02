@@ -279,6 +279,7 @@ export default function BookingsPage() {
               {calendarDays.map((day) => {
                 const dayBookings = getBookingsForDate(day);
                 const isSelected = selectedDate && isSameDay(day, selectedDate);
+                const slots = getSlotsForDate(day);
 
                 return (
                   <button
@@ -292,11 +293,23 @@ export default function BookingsPage() {
                       !isSelected && 'hover:bg-muted/50'
                     )}
                   >
-                    <div className={cn(
-                      'text-sm font-medium mb-1',
-                      isToday(day) && 'text-primary'
-                    )}>
-                      {format(day, 'd')}
+                    <div className="flex items-center justify-between mb-1">
+                      <span className={cn(
+                        'text-sm font-medium',
+                        isToday(day) && 'text-primary'
+                      )}>
+                        {format(day, 'd')}
+                      </span>
+                      {slots.total > 0 && (
+                        <span className={cn(
+                          'text-[10px] font-medium px-1.5 py-0.5 rounded-full',
+                          slots.open > 0
+                            ? 'bg-success/10 text-success'
+                            : 'bg-muted text-muted-foreground'
+                        )}>
+                          {slots.open}/{slots.total}
+                        </span>
+                      )}
                     </div>
                     <div className="space-y-1">
                       {dayBookings.slice(0, 2).map((booking) => (
