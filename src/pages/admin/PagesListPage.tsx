@@ -264,15 +264,12 @@ export default function PagesListPage() {
                 </TabsTrigger>
               </TabsList>
               {activeTab === 'pages' && (
-                <>
-                  <Button size="sm" asChild>
-                    <Link to="/admin/pages/new">
-                      <Plus className="h-4 w-4 mr-2" />
-                      New Page
-                    </Link>
-                  </Button>
-                </>
-              )}
+                <Button size="sm" asChild>
+                  <Link to="/admin/pages/new">
+                    <Plus className="h-4 w-4 mr-2" />
+                    New Page
+                  </Link>
+                </Button>
             </div>
           </div>
 
