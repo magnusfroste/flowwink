@@ -224,8 +224,8 @@ const DEFAULT_BLOCK_DATA: BlockDataMap = {
   booking: {
     title: 'Book an Appointment',
     description: 'Schedule a time that works for you.',
-    mode: 'embed',
-    provider: 'calendly',
+    mode: 'smart',
+    provider: 'native',
     embedUrl: '',
     height: 'md',
     submitButtonText: 'Request Appointment',
