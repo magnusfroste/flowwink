@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek, isToday, isSameMonth } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek, isToday, isSameMonth, getDay } from 'date-fns';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Clock, User, Mail, Phone, Filter, LayoutGrid, List, Check, X, MoreHorizontal } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import BookingServicesTab from '@/components/admin/booking/BookingServicesTab';
 import BookingAvailabilityTab from '@/components/admin/booking/BookingAvailabilityTab';
 import { StatCard } from '@/components/admin/StatCard';
-import { useBookings, useBookingServices, useUpdateBooking, useDeleteBooking, useBookingStats, type Booking } from '@/hooks/useBookings';
+import { useBookings, useBookingServices, useAvailability, useBlockedDates, useUpdateBooking, useDeleteBooking, useBookingStats, type Booking, type BookingAvailability } from '@/hooks/useBookings';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
