@@ -306,15 +306,43 @@ const handler = async (req: Request): Promise<Response> => {
       </html>
     `;
 
-    // Send email
-    const emailResponse = await resend.emails.send({
-      from: `${emailConfig.fromName} <${emailConfig.fromEmail}>`,
-      to: [booking.customer_email],
-      subject: `Booking Confirmation - ${formattedDate}`,
-      html: emailHtml,
-    });
+    // Send email via selected provider
+    let emailId: string | undefined;
 
-    console.log("Email sent successfully:", emailResponse);
+    if (emailProvider === 'composio_gmail') {
+      // Send via Composio Gmail
+      console.log("[send-booking-confirmation] Sending via Composio Gmail");
+      const composioResponse = await supabase.functions.invoke('composio-proxy', {
+        body: {
+          action: 'GMAIL_SEND_EMAIL',
+          arguments: {
+            recipient_email: booking.customer_email,
+            subject: `Booking Confirmation - ${formattedDate}`,
+            body: emailHtml,
+            content_type: 'text/html',
+          },
+        },
+      });
+
+      if (composioResponse.error) {
+        console.error("[send-booking-confirmation] Composio Gmail error:", composioResponse.error);
+        throw new Error(`Composio Gmail failed: ${composioResponse.error.message || 'Unknown error'}`);
+      }
+
+      emailId = composioResponse.data?.id || 'composio-sent';
+      console.log("[send-booking-confirmation] Gmail sent successfully");
+    } else {
+      // Send via Resend (default)
+      const emailResponse = await resend.emails.send({
+        from: `${emailConfig.fromName} <${emailConfig.fromEmail}>`,
+        to: [booking.customer_email],
+        subject: `Booking Confirmation - ${formattedDate}`,
+        html: emailHtml,
+      });
+
+      emailId = emailResponse.data?.id;
+      console.log("[send-booking-confirmation] Resend sent successfully:", emailResponse);
+    }
 
     // Update booking with confirmation timestamp
     await supabase
@@ -323,7 +351,7 @@ const handler = async (req: Request): Promise<Response> => {
       .eq("id", bookingId);
 
     return new Response(
-      JSON.stringify({ success: true, emailId: emailResponse.data?.id }),
+      JSON.stringify({ success: true, emailId, provider: emailProvider }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
 
