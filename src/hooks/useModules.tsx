@@ -61,6 +61,7 @@ export interface ModulesSettings {
   tickets: ModuleConfig;
   siteMigration: ModuleConfig;
   composio: ModuleConfig;
+  templates: ModuleConfig;
 }
 
 export const defaultModulesSettings: ModulesSettings = {
@@ -327,6 +328,15 @@ export const defaultModulesSettings: ModulesSettings = {
     adminUI: false,
     requiredIntegrations: ['composio'],
   },
+  templates: {
+    enabled: true,
+    name: 'Templates',
+    description: 'Template gallery, export current site as reusable template, and import templates from file',
+    icon: 'Puzzle',
+    category: 'system',
+    autonomy: 'config-required',
+    adminUI: true,
+  },
 };
 
 // Map sidebar items to module IDs
@@ -360,6 +370,8 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   
   '/admin/tickets': 'tickets',
   '/admin/site-migration': 'siteMigration',
+  '/admin/templates': 'templates',
+  '/admin/template-export': 'templates',
 };
 
 export function useModules() {

@@ -89,8 +89,7 @@ export const navigationGroups: NavGroup[] = [
     collapsible: false,
     items: [
       
-      { name: "Templates", href: "/admin/templates", icon: Puzzle },
-      { name: "Template Export", href: "/admin/template-export", icon: Puzzle },
+      { name: "Templates", href: "/admin/templates", icon: Puzzle, moduleId: "templates" },
       { name: "Branding", href: "/admin/branding", icon: Palette },
       { name: "Global Elements", href: "/admin/global-blocks", icon: LayoutGrid, moduleId: "globalElements" },
       { name: "Modules", href: "/admin/modules", icon: Puzzle },

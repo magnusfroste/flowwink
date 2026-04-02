@@ -51,7 +51,7 @@ import KbArticleEditorPage from "./pages/admin/KbArticleEditorPage";
 import IntegrationsStatusPage from "./pages/admin/IntegrationsStatusPage";
 import CopilotPage from "./pages/admin/CopilotPage";
 import LiveSupportPage from "./pages/admin/LiveSupportPage";
-import TemplateExportPage from "./pages/admin/TemplateExportPage";
+
 import TemplateLivePreviewPage from "./pages/admin/TemplateLivePreviewPage";
 
 import PreviewPage from "./pages/PreviewPage";
@@ -194,7 +194,7 @@ const router = createBrowserRouter([
       { path: "/admin/flowpilot", element: <CopilotPage /> },
       { path: "/admin/skills", element: withPageFallback(<SkillHubPage />) },
       { path: "/admin/live-support", element: <LiveSupportPage /> },
-      { path: "/admin/template-export", element: <TemplateExportPage /> },
+      { path: "/admin/template-export", element: <Navigate to="/admin/templates" replace /> },
       { path: "/admin/developer-tools", element: <DeveloperToolsPage /> },
       { path: "/admin/template-live-preview", element: <TemplateLivePreviewPage /> },
       { path: "/admin/webinars", element: <WebinarsPage /> },
