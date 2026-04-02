@@ -35,6 +35,8 @@ export interface Page {
   scheduled_at: string | null;
   deleted_at: string | null;
   deleted_by: string | null;
+  show_in_menu?: boolean;
+  menu_order?: number;
 }
 
 export interface PageVersion {
