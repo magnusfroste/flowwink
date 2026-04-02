@@ -23,7 +23,7 @@ function SortableMenuRow({ page, homepageSlug, menuOverrides, onToggleMenu }: {
   onToggleMenu: (id: string, visible: boolean) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: page.id });
-  const showInMenu = menuOverrides.has(page.id) ? menuOverrides.get(page.id)! : (page as any).show_in_menu;
+  const showInMenu = menuOverrides.has(page.id) ? menuOverrides.get(page.id)! : page.show_in_menu;
 
   const style = {
     transform: CSS.Transform.toString(transform),
