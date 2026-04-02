@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { HeaderBlockEditor } from '@/components/admin/blocks/HeaderBlockEditor';
 import { Save, Loader2, Eye } from 'lucide-react';
@@ -24,15 +25,23 @@ export default function HeaderTab() {
     setHasChanges(false);
   };
 
-  if (isLoading) return <Skeleton className="h-96 w-full" />;
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <Skeleton className="h-96 w-full" />
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      <div className="bg-card rounded-lg border p-6">
-        <div className="flex items-center justify-between mb-6">
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold">Header</h2>
-            <p className="text-sm text-muted-foreground">Configure the header navigation on all public pages</p>
+            <CardTitle className="font-serif">Header</CardTitle>
+            <CardDescription>Configure the header navigation on all public pages</CardDescription>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => window.open('/', '_blank')}>
@@ -47,8 +56,10 @@ export default function HeaderTab() {
             )}
           </div>
         </div>
+      </CardHeader>
+      <CardContent>
         <HeaderBlockEditor data={headerData} onChange={(data) => { setHeaderData(data); setHasChanges(true); }} />
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
