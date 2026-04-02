@@ -196,19 +196,28 @@ const handler = async (req: Request): Promise<Response> => {
       // Continue with email sending - don't fail the booking confirmation
     }
 
-    // Fetch site settings for branding and email config
-    const { data: siteSettings } = await supabase
-      .from("site_settings")
-      .select("value")
-      .eq("key", "general")
-      .maybeSingle();
+    // Fetch site settings for branding, email config, and module settings
+    const [siteSettingsRes, integrationSettingsRes, moduleSettingsRes] = await Promise.all([
+      supabase.from("site_settings").select("value").eq("key", "general").maybeSingle(),
+      supabase.from("site_settings").select("value").eq("key", "integrations").maybeSingle(),
+      supabase.from("site_settings").select("value").eq("key", "modules").maybeSingle(),
+    ]);
 
-    const { data: integrationSettings } = await supabase
-      .from("site_settings")
-      .select("value")
-      .eq("key", "integrations")
-      .maybeSingle();
+    const siteSettings = siteSettingsRes.data;
+    const integrationSettings = integrationSettingsRes.data;
+    const moduleSettings = moduleSettingsRes.data;
 
+    // Check if confirmation email is enabled in module settings
+    const bookingsConfig = (moduleSettings?.value as any)?.bookings;
+    if (bookingsConfig && bookingsConfig.confirmationEmailEnabled === false) {
+      console.log("[send-booking-confirmation] Confirmation email disabled in module settings");
+      return new Response(
+        JSON.stringify({ success: true, skipped: true, reason: "confirmation_email_disabled" }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    const emailProvider = bookingsConfig?.bookingEmailProvider || 'resend';
     const siteName = (siteSettings?.value as { siteName?: string })?.siteName || "Our Website";
     
     // Get email configuration from integrations
@@ -218,7 +227,7 @@ const handler = async (req: Request): Promise<Response> => {
       fromName: siteName,
     };
 
-    console.log(`[send-booking-confirmation] Using sender: ${emailConfig.fromName} <${emailConfig.fromEmail}>`);
+    console.log(`[send-booking-confirmation] Provider: ${emailProvider}, Sender: ${emailConfig.fromName} <${emailConfig.fromEmail}>`);
 
     // Format date and time
     const startDate = new Date(booking.start_time);
