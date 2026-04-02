@@ -370,6 +370,13 @@ export default function PagesListPage() {
   const initialTab = tabFromUrl || (location.pathname === '/admin/pages/trash' ? 'trash' : 'pages');
   const [activeTab, setActiveTab] = useState(initialTab);
 
+  // Sync tab from URL when navigating via redirect
+  useEffect(() => {
+    if (tabFromUrl && tabFromUrl !== activeTab) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [tabFromUrl]);
+
   return (
     <AdminLayout>
       <AdminPageContainer>
