@@ -1,6 +1,6 @@
 import { Code2, Webhook, Terminal } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
+import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ContentApiContent } from '@/pages/admin/ContentApiPage';
 import { WebhooksContent } from '@/pages/admin/WebhooksPage';
@@ -9,41 +9,39 @@ import { DevToolsContent } from '@/pages/admin/DeveloperToolsPage';
 export default function DeveloperPage() {
   return (
     <AdminLayout>
-      <div className="space-y-6">
-        <AdminPageHeader
-          title="Developer"
-          description="API explorer, webhooks, and developer tools for integrating FlowWink with external systems"
-        />
+      <AdminPageContainer>
+        <Tabs defaultValue="api">
+          <div className="flex items-center justify-between gap-4 mb-6">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Developer</h1>
+            <TabsList>
+              <TabsTrigger value="api" className="gap-1.5">
+                <Code2 className="h-3.5 w-3.5" />
+                API Explorer
+              </TabsTrigger>
+              <TabsTrigger value="webhooks" className="gap-1.5">
+                <Webhook className="h-3.5 w-3.5" />
+                Webhooks
+              </TabsTrigger>
+              <TabsTrigger value="devtools" className="gap-1.5">
+                <Terminal className="h-3.5 w-3.5" />
+                Dev Tools
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
-        <Tabs defaultValue="api" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="api" className="gap-2">
-              <Code2 className="h-4 w-4" />
-              API Explorer
-            </TabsTrigger>
-            <TabsTrigger value="webhooks" className="gap-2">
-              <Webhook className="h-4 w-4" />
-              Webhooks
-            </TabsTrigger>
-            <TabsTrigger value="devtools" className="gap-2">
-              <Terminal className="h-4 w-4" />
-              Dev Tools
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="api">
+          <TabsContent value="api" className="mt-0">
             <ContentApiContent />
           </TabsContent>
 
-          <TabsContent value="webhooks">
+          <TabsContent value="webhooks" className="mt-0">
             <WebhooksContent />
           </TabsContent>
 
-          <TabsContent value="devtools">
+          <TabsContent value="devtools" className="mt-0">
             <DevToolsContent />
           </TabsContent>
         </Tabs>
-      </div>
+      </AdminPageContainer>
     </AdminLayout>
   );
 }
