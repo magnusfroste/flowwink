@@ -392,12 +392,7 @@ export default async function Home() {
 }`;
 
   return (
-    <AdminLayout>
       <div className="space-y-8">
-        <AdminPageHeader
-          title="Content API"
-          description="Developer tools for multi-channel content delivery. REST & GraphQL."
-        />
 
         {/* Hero Section */}
         <Card className="overflow-hidden">
