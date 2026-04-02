@@ -362,7 +362,8 @@ export default function PagesListPage() {
     </div>
   );
 
-  const [activeTab, setActiveTab] = useState('pages');
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState(location.pathname === '/admin/pages/trash' ? 'trash' : 'pages');
 
   return (
     <AdminLayout>
