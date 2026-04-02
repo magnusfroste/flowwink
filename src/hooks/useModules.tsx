@@ -91,7 +91,7 @@ export const defaultModulesSettings: ModulesSettings = {
   pages: {
     enabled: true,
     name: 'Pages',
-    description: 'Create and manage web pages with block editor',
+    description: 'Pages, header, footer, branding and navigation — the complete visual layer',
     icon: 'FileText',
     category: 'content',
     core: true,
