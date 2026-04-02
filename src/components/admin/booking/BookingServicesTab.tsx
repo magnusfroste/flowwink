@@ -36,6 +36,7 @@ export default function BookingServicesTab() {
     currency: 'SEK',
     color: '#3b82f6',
     is_active: true,
+    product_id: '' as string,
   });
 
   const openCreateDialog = () => {
