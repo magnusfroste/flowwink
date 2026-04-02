@@ -19,7 +19,7 @@ interface WebhookLog {
   status: 'logged' | 'error';
 }
 
-export default function DeveloperToolsPage() {
+export function DevToolsContent() {
   const [mockWebhooks, setMockWebhooks] = useState(true);
   const [webhookLogs, setWebhookLogs] = useState<WebhookLog[]>([]);
   const [selectedEvent, setSelectedEvent] = useState('page.published');
