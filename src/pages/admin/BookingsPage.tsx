@@ -64,8 +64,53 @@ export default function BookingsPage() {
   });
   const { data: stats } = useBookingStats();
   const { data: services } = useBookingServices();
+  const { data: availability } = useAvailability();
+  const { data: blockedDates } = useBlockedDates();
   const updateBooking = useUpdateBooking();
   const deleteBooking = useDeleteBooking();
+
+  // Compute available slot count for a given date
+  const getSlotsForDate = useCallback((date: Date): { total: number; booked: number; open: number } => {
+    if (!availability) return { total: 0, booked: 0, open: 0 };
+
+    const dayOfWeek = getDay(date); // 0=Sun
+    const dateStr = format(date, 'yyyy-MM-dd');
+
+    // Check if blocked
+    if (blockedDates?.some(b => b.date === dateStr && b.is_all_day)) {
+      return { total: 0, booked: 0, open: 0 };
+    }
+
+    // Get availability windows for this day
+    const dayAvailability = availability.filter(
+      a => a.day_of_week === dayOfWeek && a.is_active
+    );
+    if (dayAvailability.length === 0) return { total: 0, booked: 0, open: 0 };
+
+    // Generate 30-min slots
+    let totalSlots = 0;
+    const slotTimes: string[] = [];
+    for (const slot of dayAvailability) {
+      const [sh, sm] = slot.start_time.split(':').map(Number);
+      const [eh, em] = slot.end_time.split(':').map(Number);
+      const startMin = sh * 60 + sm;
+      const endMin = eh * 60 + em;
+      for (let t = startMin; t + 30 <= endMin; t += 30) {
+        const timeStr = `${Math.floor(t / 60).toString().padStart(2, '0')}:${(t % 60).toString().padStart(2, '0')}`;
+        if (!slotTimes.includes(timeStr)) {
+          slotTimes.push(timeStr);
+          totalSlots++;
+        }
+      }
+    }
+
+    // Count bookings for this date
+    const dayBookings = bookings?.filter(b =>
+      isSameDay(new Date(b.start_time), date) && b.status !== 'cancelled'
+    ) || [];
+
+    return { total: totalSlots, booked: dayBookings.length, open: Math.max(0, totalSlots - dayBookings.length) };
+  }, [availability, blockedDates, bookings]);
 
   const calendarDays = useMemo(() => {
     const start = startOfWeek(monthStart, { weekStartsOn: 1 });
