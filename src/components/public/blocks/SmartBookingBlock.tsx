@@ -92,7 +92,7 @@ export function SmartBookingBlock({ data, blockId, pageId }: SmartBookingBlockPr
       startTime.setHours(hours, minutes, 0, 0);
       const endTime = new Date(startTime.getTime() + duration * 60000);
 
-      const { error } = await supabase.from('bookings').insert({
+      const { data: bookingData, error } = await supabase.from('bookings').insert({
         service_id: selectedServiceId,
         customer_name: formData.name,
         customer_email: formData.email,
@@ -106,9 +106,26 @@ export function SmartBookingBlock({ data, blockId, pageId }: SmartBookingBlockPr
           block_id: blockId,
           page_id: pageId,
         },
-      });
+      }).select('id').single();
 
       if (error) throw error;
+
+      // Trigger confirmation email (edge function checks module settings internally)
+      try {
+        await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-booking-confirmation`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            },
+            body: JSON.stringify({ bookingId: bookingData.id }),
+          }
+        );
+      } catch (emailErr) {
+        logger.warn('Could not trigger confirmation email:', emailErr);
+      }
 
       // Trigger webhook if enabled
       if (data.triggerWebhook) {
