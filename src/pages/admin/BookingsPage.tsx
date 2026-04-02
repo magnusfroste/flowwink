@@ -108,26 +108,17 @@ export default function BookingsPage() {
   return (
     <AdminLayout>
       <AdminPageContainer>
-        <AdminPageHeader
-        title="Bookings"
-        description="Manage bookings and view calendar overview"
-      >
-        <div className="flex items-center gap-2">
-          <Button variant="outline" asChild>
-            <Link to="/admin/bookings/services">
-              <Settings className="h-4 w-4 mr-2" />
-              Services
-            </Link>
-          </Button>
-          <Button variant="outline" asChild>
-            <Link to="/admin/bookings/availability">
-              <CalendarClock className="h-4 w-4 mr-2" />
-              Availability
-            </Link>
-          </Button>
-        </div>
-      </AdminPageHeader>
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <div className="flex items-center justify-between gap-4 mb-6">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Bookings</h1>
+            <TabsList>
+              <TabsTrigger value="calendar">Calendar</TabsTrigger>
+              <TabsTrigger value="services">Services</TabsTrigger>
+              <TabsTrigger value="availability">Availability</TabsTrigger>
+            </TabsList>
+          </div>
 
+          <TabsContent value="calendar" className="mt-0 space-y-6">
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-4">
         <StatCard
