@@ -108,7 +108,7 @@ export function ChatConversation({
             ? ['Tell me about my latest project', 'I want to update my availability', 'What information do you need?']
             : suggestedPrompts,
           placeholder: checkinId ? 'Tell me about your latest project...' : settings?.placeholder,
-          enabled: settings?.enabled,
+          enabled: true,
           feedbackEnabled: checkinId ? false : (settings?.feedbackEnabled ?? true),
         }}
         conversationId={conversationId}

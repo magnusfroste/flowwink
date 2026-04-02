@@ -39,7 +39,8 @@ export function ChatLauncherBlock({ data }: ChatLauncherBlockProps) {
   const quickActions = chatSettings?.suggestedPrompts?.slice(0, quickActionCount) || [];
 
   // Check if chat landing page is enabled
-  const isEnabled = chatSettings?.enabled && chatSettings?.landingPageEnabled;
+  const chatModuleEnabled = useIsModuleEnabled('chat');
+  const isEnabled = chatModuleEnabled && chatSettings?.landingPageEnabled;
 
   const handleSubmit = (message?: string) => {
     const finalMessage = message || inputValue.trim();

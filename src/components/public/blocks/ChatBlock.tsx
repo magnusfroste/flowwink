@@ -1,30 +1,13 @@
 import { ChatBlockData } from '@/types/cms';
 import { ChatConversation } from '@/components/chat/ChatConversation';
 import { useChatSettings } from '@/hooks/useSiteSettings';
+import { useIsModuleEnabled } from '@/hooks/useModules';
 import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
+...
+  const chatModuleEnabled = useIsModuleEnabled('chat');
 
-interface ChatBlockProps {
-  data: ChatBlockData;
-}
-
-const heightClasses = {
-  sm: 'h-[300px]',
-  md: 'h-[450px]',
-  lg: 'h-[600px]',
-  full: 'h-[calc(100vh-200px)] min-h-[400px]',
-};
-
-export function ChatBlock({ data }: ChatBlockProps) {
-  const { data: settings, isLoading } = useChatSettings();
-
-  if (isLoading) {
-    return (
-      <div className={cn('bg-muted/50 animate-pulse rounded-xl', heightClasses[data.height || 'md'])} />
-    );
-  }
-
-  if (!settings?.enabled || !settings?.blockEnabled) {
+  if (!chatModuleEnabled || !settings?.blockEnabled) {
     return null;
   }
 

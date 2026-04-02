@@ -198,35 +198,25 @@ export default function ChatSettingsPage() {
         )}
 
         <div className="max-w-4xl space-y-6">
-        {/* Master toggle */}
+        {/* Provider status */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>AI Chat System</CardTitle>
-                <CardDescription>
-                  Enable AI-powered chat for your website
-                </CardDescription>
-              </div>
-              <Switch
-                checked={formData.enabled}
-                onCheckedChange={(enabled) => setFormData({ ...formData, enabled })}
-              />
-            </div>
+            <CardTitle>AI Chat System</CardTitle>
+            <CardDescription>
+              Configure AI-powered chat for your website. Toggle the chat module on/off from the Modules page.
+            </CardDescription>
           </CardHeader>
-          {formData.enabled && (
-            <CardContent className="pt-0">
-              <ActiveProviderIndicator
-                selectedProvider={formData.aiProvider}
-                isOpenAIConfigured={isOpenAIConfigured}
-                isGeminiConfigured={isGeminiConfigured}
-                integrationSettings={integrationSettings}
-              />
-            </CardContent>
-          )}
+          <CardContent className="pt-0">
+            <ActiveProviderIndicator
+              selectedProvider={formData.aiProvider}
+              isOpenAIConfigured={isOpenAIConfigured}
+              isGeminiConfigured={isGeminiConfigured}
+              integrationSettings={integrationSettings}
+            />
+          </CardContent>
         </Card>
 
-        {formData.enabled && (
+        {(
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
             <TabsList className="grid grid-cols-9 w-full">
               <TabsTrigger value="general">General</TabsTrigger>
