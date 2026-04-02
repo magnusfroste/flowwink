@@ -356,7 +356,7 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/products': 'ecommerce',
   '/admin/orders': 'ecommerce',
   '/admin/customers': 'ecommerce',
-  '/admin/content-hub': 'contentApi',
+  '/admin/developer': 'developer',
   '/admin/global-blocks': 'globalElements',
   '/admin/media': 'mediaLibrary',
   '/admin/webinars': 'webinars',
