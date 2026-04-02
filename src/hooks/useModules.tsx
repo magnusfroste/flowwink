@@ -83,6 +83,8 @@ export const defaultModulesSettings: ModulesSettings = {
     autonomy: 'config-required',
     adminUI: true,
     optionalIntegrations: ['resend', 'stripe'],
+    confirmationEmailEnabled: false,
+    bookingEmailProvider: 'resend',
   },
   pages: {
     enabled: true,
