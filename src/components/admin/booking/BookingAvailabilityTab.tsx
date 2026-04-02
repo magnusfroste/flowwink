@@ -90,7 +90,7 @@ export default function BookingAvailabilityTab() {
           <div className="flex justify-end">
             <Button onClick={() => setAvailabilityDialogOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
-              Add Time Slot
+              Add Availability Window
             </Button>
           </div>
 
@@ -167,7 +167,7 @@ export default function BookingAvailabilityTab() {
       <Dialog open={availabilityDialogOpen} onOpenChange={setAvailabilityDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add Time Slot</DialogTitle>
+            <DialogTitle>Add Availability Window</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleCreateAvailability} className="space-y-4">
             <div className="space-y-2">
