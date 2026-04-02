@@ -571,7 +571,12 @@ export function SmartBookingBlock({ data, blockId, pageId }: SmartBookingBlockPr
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Booking...
+                    {serviceRequiresPayment ? 'Processing...' : 'Booking...'}
+                  </>
+                ) : serviceRequiresPayment ? (
+                  <>
+                    <CreditCard className="mr-2 h-4 w-4" />
+                    {`Confirm & Pay ${selectedService ? new Intl.NumberFormat('en-US', { style: 'currency', currency: selectedService.currency || 'USD' }).format(selectedService.price_cents! / 100) : ''}`}
                   </>
                 ) : (
                   data.submitButtonText || 'Confirm Booking'
