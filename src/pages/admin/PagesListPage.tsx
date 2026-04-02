@@ -38,7 +38,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { StatusBadge } from '@/components/StatusBadge';
-import { MigratePageDialog } from '@/components/admin/MigratePageDialog';
+
 import { usePages, useDeletePage, useCreatePage } from '@/hooks/usePages';
 import { useAuth } from '@/hooks/useAuth';
 import { useGeneralSettings, useUpdateGeneralSettings } from '@/hooks/useSiteSettings';
@@ -265,7 +265,7 @@ export default function PagesListPage() {
               </TabsList>
               {activeTab === 'pages' && (
                 <>
-                  <MigratePageDialog />
+                  
                   <Button variant="outline" size="sm" asChild>
                     <Link to="/admin/templates">
                       <LayoutTemplate className="h-4 w-4 mr-2" />
