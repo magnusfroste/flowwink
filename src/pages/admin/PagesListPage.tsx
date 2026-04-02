@@ -7,6 +7,8 @@ import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import PagesTrashTab from '@/components/admin/pages/PagesTrashTab';
+import GlobalElementsTab from '@/components/admin/pages/GlobalElementsTab';
+import BrandingTab from '@/components/admin/pages/BrandingTab';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
