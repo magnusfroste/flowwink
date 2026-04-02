@@ -167,7 +167,7 @@ const BLOCK_TYPES: BlockType[] = [
   { type: "stats", name: "Statistics", category: "Data", icon: BarChart3 },
 ];
 
-export default function ContentApiPage() {
+export function ContentApiContent() {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [graphqlQuery, setGraphqlQuery] = useState(GRAPHQL_EXAMPLES[0].query);
   const [graphqlResult, setGraphqlResult] = useState<string | null>(null);
