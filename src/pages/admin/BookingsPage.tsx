@@ -410,64 +410,106 @@ export default function BookingsPage() {
         </Card>
       )}
 
-      {/* Selected date bookings panel */}
-      {selectedDate && viewMode === 'calendar' && (
-        <Card className="mt-4">
-          <CardHeader>
-            <CardTitle className="text-lg">
-              {format(selectedDate, 'EEEE, MMMM d')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {getBookingsForDate(selectedDate).length === 0 ? (
-              <p className="text-muted-foreground">No bookings on this day</p>
-            ) : (
-              <div className="space-y-3">
-                {getBookingsForDate(selectedDate).map((booking) => (
-                  <div
-                    key={booking.id}
-                    onClick={() => setSelectedBooking(booking)}
-                    className="p-3 border rounded-lg hover:bg-muted/50 cursor-pointer"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">
-                          {format(new Date(booking.start_time), 'HH:mm')} - {format(new Date(booking.end_time), 'HH:mm')}
-                        </span>
-                      </div>
-                      <Badge className={STATUS_COLORS[booking.status]} variant="secondary">
-                        {STATUS_LABELS[booking.status]}
-                      </Badge>
-                    </div>
-                    <div className="mt-2 flex items-center gap-4 text-sm text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <User className="h-3 w-3" />
-                        {booking.customer_name}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Mail className="h-3 w-3" />
-                        {booking.customer_email}
-                      </span>
-                      {booking.customer_phone && (
-                        <span className="flex items-center gap-1">
-                          <Phone className="h-3 w-3" />
-                          {booking.customer_phone}
-                        </span>
-                      )}
-                    </div>
-                    {booking.service && (
-                      <div className="mt-2">
-                        <Badge variant="outline">{booking.service.name}</Badge>
-                      </div>
-                    )}
-                  </div>
-                ))}
+      {/* Selected date panel with slots */}
+      {selectedDate && viewMode === 'calendar' && (() => {
+        const dayBookingsForPanel = getBookingsForDate(selectedDate);
+        const slots = getSlotsForDate(selectedDate);
+        const dayOfWeek = getDay(selectedDate);
+        const dayAvail = availability?.filter(a => a.day_of_week === dayOfWeek && a.is_active) || [];
+
+        const allSlotTimes: string[] = [];
+        for (const slot of dayAvail) {
+          const [sh, sm] = slot.start_time.split(':').map(Number);
+          const [eh, em] = slot.end_time.split(':').map(Number);
+          for (let t = sh * 60 + sm; t + 30 <= eh * 60 + em; t += 30) {
+            const timeStr = `${Math.floor(t / 60).toString().padStart(2, '0')}:${(t % 60).toString().padStart(2, '0')}`;
+            if (!allSlotTimes.includes(timeStr)) allSlotTimes.push(timeStr);
+          }
+        }
+        allSlotTimes.sort();
+
+        return (
+          <Card className="mt-4">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg">
+                  {format(selectedDate, 'EEEE, MMMM d')}
+                </CardTitle>
+                {slots.total > 0 && (
+                  <Badge variant="outline" className="text-xs">
+                    {slots.open} of {slots.total} slots open
+                  </Badge>
+                )}
               </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
+            </CardHeader>
+            <CardContent>
+              {allSlotTimes.length === 0 && dayBookingsForPanel.length === 0 ? (
+                <p className="text-muted-foreground">No availability configured for this day</p>
+              ) : (
+                <div className="space-y-2">
+                  {allSlotTimes.map(time => {
+                    const booking = dayBookingsForPanel.find(
+                      b => format(new Date(b.start_time), 'HH:mm') === time
+                    );
+
+                    if (booking) {
+                      return (
+                        <div
+                          key={time}
+                          onClick={() => setSelectedBooking(booking)}
+                          className="p-3 border rounded-lg hover:bg-muted/50 cursor-pointer"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Clock className="h-4 w-4 text-muted-foreground" />
+                              <span className="font-medium">
+                                {format(new Date(booking.start_time), 'HH:mm')} - {format(new Date(booking.end_time), 'HH:mm')}
+                              </span>
+                            </div>
+                            <Badge className={STATUS_COLORS[booking.status]} variant="secondary">
+                              {STATUS_LABELS[booking.status]}
+                            </Badge>
+                          </div>
+                          <div className="mt-2 flex items-center gap-4 text-sm text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <User className="h-3 w-3" />
+                              {booking.customer_name}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Mail className="h-3 w-3" />
+                              {booking.customer_email}
+                            </span>
+                          </div>
+                          {booking.service && (
+                            <div className="mt-2">
+                              <Badge variant="outline">{booking.service.name}</Badge>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div
+                        key={time}
+                        className="p-3 border border-dashed rounded-lg flex items-center justify-between text-muted-foreground"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4" />
+                          <span className="text-sm">{time}</span>
+                        </div>
+                        <Badge variant="outline" className="text-xs bg-success/5 text-success border-success/20">
+                          Available
+                        </Badge>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        );
+      })()}
 
       {/* Booking detail dialog */}
       <Dialog open={!!selectedBooking} onOpenChange={() => setSelectedBooking(null)}>
