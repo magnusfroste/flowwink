@@ -307,7 +307,7 @@ serve(async (req: Request) => {
         currency: currency.toUpperCase(),
         status: "pending",
         user_id: userId || null,
-        metadata: { mode, hasRecurring, hasOneTime },
+        metadata: { mode, hasRecurring, hasOneTime, booking_id: bookingId || null },
       })
       .select()
       .single();
