@@ -4,15 +4,21 @@ import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminPageContainer } from "@/components/admin/AdminPageContainer";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { STARTER_TEMPLATES, StarterTemplate } from "@/data/templates";
 import { TemplatePreview } from "@/components/admin/templates/TemplatePreview";
 import { TemplateVisualCard } from "@/components/admin/templates/TemplateVisualCard";
 import { InstallTemplateDialog } from "@/components/admin/templates/InstallTemplateDialog";
+import { TemplateExportTab } from "@/components/admin/templates/TemplateExportTab";
+import { TemplateImportTab } from "@/components/admin/templates/TemplateImportTab";
 import { 
   Search, 
   ArrowLeft,
   ArrowRight,
   Bot,
+  Library,
+  Download,
+  Upload,
 } from "lucide-react";
 
 export default function TemplateGalleryPage() {
@@ -46,7 +52,7 @@ export default function TemplateGalleryPage() {
     <AdminLayout>
       <AdminPageContainer maxWidth="max-w-5xl" className="mx-auto">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
+        <div className="flex items-center gap-4 mb-6">
           <Button variant="ghost" size="icon" asChild>
             <Link to="/admin">
               <ArrowLeft className="h-4 w-4" />
@@ -55,54 +61,86 @@ export default function TemplateGalleryPage() {
           <div className="flex-1">
             <h1 className="text-2xl font-bold">Templates</h1>
             <p className="text-muted-foreground">
-              What you see is what you get
+              Browse, install, export and import site templates
             </p>
           </div>
-          <div className="relative w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
-            />
-          </div>
         </div>
 
-        {/* Template grid */}
-        {filteredTemplates.length === 0 ? (
-          <div className="text-center py-16">
-            <p className="text-muted-foreground mb-4">No templates match your search</p>
-            <Button variant="outline" onClick={() => setSearchQuery('')}>
-              Clear search
-            </Button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {filteredTemplates.map((template) => (
-              <TemplateVisualCard
-                key={template.id}
-                template={template}
-                onPreview={handlePreview}
-                onSelect={handleSelect}
-              />
-            ))}
-          </div>
-        )}
+        <Tabs defaultValue="gallery" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="gallery" className="gap-2">
+              <Library className="h-4 w-4" />
+              Gallery
+            </TabsTrigger>
+            <TabsTrigger value="export" className="gap-2">
+              <Download className="h-4 w-4" />
+              Export
+            </TabsTrigger>
+            <TabsTrigger value="import" className="gap-2">
+              <Upload className="h-4 w-4" />
+              Import
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Copilot upsell */}
-        <div className="mt-16 text-center pb-8">
-          <p className="text-muted-foreground mb-3">
-            Can't find what you're looking for?
-          </p>
-          <Button variant="outline" asChild>
-             <Link to="/admin/flowpilot">
-               <Bot className="h-4 w-4 mr-2" />
-               Let FlowPilot build it for you
-              <ArrowRight className="h-4 w-4 ml-2" />
-            </Link>
-          </Button>
-        </div>
+          {/* Gallery Tab */}
+          <TabsContent value="gallery" className="space-y-6">
+            <div className="flex justify-end">
+              <div className="relative w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+            </div>
+
+            {filteredTemplates.length === 0 ? (
+              <div className="text-center py-16">
+                <p className="text-muted-foreground mb-4">No templates match your search</p>
+                <Button variant="outline" onClick={() => setSearchQuery('')}>
+                  Clear search
+                </Button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {filteredTemplates.map((template) => (
+                  <TemplateVisualCard
+                    key={template.id}
+                    template={template}
+                    onPreview={handlePreview}
+                    onSelect={handleSelect}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Copilot upsell */}
+            <div className="mt-16 text-center pb-8">
+              <p className="text-muted-foreground mb-3">
+                Can't find what you're looking for?
+              </p>
+              <Button variant="outline" asChild>
+                <Link to="/admin/flowpilot">
+                  <Bot className="h-4 w-4 mr-2" />
+                  Let FlowPilot build it for you
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Link>
+              </Button>
+            </div>
+          </TabsContent>
+
+          {/* Export Tab */}
+          <TabsContent value="export">
+            <TemplateExportTab />
+          </TabsContent>
+
+          {/* Import Tab */}
+          <TabsContent value="import">
+            <TemplateImportTab />
+          </TabsContent>
+        </Tabs>
       </AdminPageContainer>
 
       {/* Preview modal */}
