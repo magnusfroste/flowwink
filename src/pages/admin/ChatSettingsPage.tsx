@@ -216,7 +216,7 @@ export default function ChatSettingsPage() {
           </CardContent>
         </Card>
 
-        {(
+        
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
             <TabsList className="grid grid-cols-9 w-full">
               <TabsTrigger value="general">General</TabsTrigger>
