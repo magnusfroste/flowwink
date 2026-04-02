@@ -357,6 +357,7 @@ serve(async (req: Request) => {
       cancel_url: cancelUrl,
       metadata: {
         order_id: order.id,
+        booking_id: bookingId || undefined,
       },
     };
 
