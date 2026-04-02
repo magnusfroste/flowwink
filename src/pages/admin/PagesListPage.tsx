@@ -270,6 +270,7 @@ export default function PagesListPage() {
                     New Page
                   </Link>
                 </Button>
+              )}
             </div>
           </div>
 
