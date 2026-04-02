@@ -27,33 +27,42 @@ interface RestEndpoint {
 }
 
 const REST_ENDPOINTS: RestEndpoint[] = [
+  // Pages
   { id: "pages", name: "List Pages", method: "GET", path: "/pages", description: "Get all published pages" },
   { id: "page", name: "Get Page", method: "GET", path: "/page/:slug", description: "Get a single page by slug", params: [{ name: "slug", type: "string", description: "Page slug", required: true }] },
+  { id: "page-md", name: "Page as Markdown", method: "GET", path: "/page/:slug.md", description: "Export a page as Markdown", params: [{ name: "slug", type: "string", description: "Page slug (without .md)", required: true }] },
+  // Blog
   { id: "blog-posts", name: "Blog Posts", method: "GET", path: "/blog/posts", description: "List published blog posts", params: [{ name: "limit", type: "number", description: "Max results" }, { name: "category", type: "string", description: "Category slug" }] },
   { id: "blog-post", name: "Blog Post", method: "GET", path: "/blog/post/:slug", description: "Get blog post by slug", params: [{ name: "slug", type: "string", description: "Post slug", required: true }] },
   { id: "blog-categories", name: "Blog Categories", method: "GET", path: "/blog/categories", description: "List all blog categories" },
-  { id: "blog-tags", name: "Blog Tags", method: "GET", path: "/blog/tags", description: "List all blog tags" },
+  // Products
   { id: "products", name: "Products", method: "GET", path: "/products", description: "List all active products" },
-  { id: "product", name: "Product", method: "GET", path: "/product/:id", description: "Get product by ID", params: [{ name: "id", type: "string", description: "Product ID", required: true }] },
+  // Bookings
   { id: "booking-services", name: "Booking Services", method: "GET", path: "/booking/services", description: "List booking services" },
-  { id: "kb-categories", name: "KB Categories", method: "GET", path: "/kb/categories", description: "Knowledge base categories with articles" },
-  { id: "kb-article", name: "KB Article", method: "GET", path: "/kb/article/:slug", description: "Get KB article by slug", params: [{ name: "slug", type: "string", description: "Article slug", required: true }] },
-  { id: "global-blocks", name: "Global Blocks", method: "GET", path: "/global-blocks/:slot", description: "Get global blocks by slot", params: [{ name: "slot", type: "string", description: "header, footer, or popup", required: true }] },
-  { id: "settings", name: "Site Settings", method: "GET", path: "/settings", description: "Get all site settings" },
-  { 
-    id: "form-submit", name: "Submit Form", method: "POST", path: "/form/submit", 
-    description: "Submit a form (test form submissions)",
-    bodyTemplate: { block_id: "example-block-id", page_id: "example-page-id", form_name: "Contact Form", data: { name: "John Doe", email: "john@example.com", message: "Hello" } }
-  },
-  { 
-    id: "newsletter-subscribe", name: "Newsletter Subscribe", method: "POST", path: "/newsletter/subscribe", 
-    description: "Subscribe to newsletter",
-    bodyTemplate: { email: "subscriber@example.com", name: "Jane Doe" }
-  },
   { 
     id: "booking-create", name: "Create Booking", method: "POST", path: "/booking/create", 
     description: "Create a new booking",
     bodyTemplate: { service_id: "example-service-id", customer_name: "John Doe", customer_email: "john@example.com", customer_phone: "+46701234567", start_time: new Date(Date.now() + 86400000).toISOString(), notes: "Test booking" }
+  },
+  // Knowledge Base
+  { id: "kb-categories", name: "KB Categories", method: "GET", path: "/kb/categories", description: "Knowledge base categories with articles" },
+  { id: "kb-articles", name: "KB Articles", method: "GET", path: "/kb/articles", description: "List all published KB articles", params: [{ name: "category", type: "string", description: "Category slug" }, { name: "limit", type: "number", description: "Max results" }] },
+  { id: "kb-article", name: "KB Article", method: "GET", path: "/kb/article/:slug", description: "Get KB article by slug", params: [{ name: "slug", type: "string", description: "Article slug", required: true }] },
+  // Global Blocks
+  { id: "global-blocks", name: "Global Blocks", method: "GET", path: "/global-blocks", description: "Get global blocks (header, footer, popup)" },
+  // Settings
+  { id: "settings", name: "Site Settings", method: "GET", path: "/settings", description: "Get all site settings" },
+  // Forms
+  { 
+    id: "form-submit", name: "Submit Form", method: "POST", path: "/form/submit", 
+    description: "Submit a form (contact, lead capture, etc.)",
+    bodyTemplate: { block_id: "example-block-id", page_id: "example-page-id", form_name: "Contact Form", data: { name: "John Doe", email: "john@example.com", message: "Hello" } }
+  },
+  // Newsletter
+  { 
+    id: "newsletter-subscribe", name: "Newsletter Subscribe", method: "POST", path: "/newsletter/subscribe", 
+    description: "Subscribe to newsletter",
+    bodyTemplate: { email: "subscriber@example.com", name: "Jane Doe" }
   },
 ];
 
