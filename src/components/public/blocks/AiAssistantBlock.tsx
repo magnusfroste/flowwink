@@ -34,7 +34,7 @@ export function AiAssistantBlock({ data }: AiAssistantBlockProps) {
   const [isFocused, setIsFocused] = useState(false);
   const [activeMessage, setActiveMessage] = useState<string | null>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
-  const { data: chatSettings } = useChatSettings();
+  const { data: _chatSettings } = useChatSettings();
 
   const {
     title = 'Find Your Perfect Product',
