@@ -49,6 +49,7 @@ export default function BookingServicesTab() {
       currency: 'USD',
       color: '#3b82f6',
       is_active: true,
+      product_id: '',
     });
     setDialogOpen(true);
   };
