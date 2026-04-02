@@ -152,7 +152,7 @@ const router = createBrowserRouter([
       { path: "/admin/analytics", element: <AnalyticsDashboardPage /> },
       { path: "/admin/pages", element: <PagesListPage /> },
       { path: "/admin/pages/new", element: <NewPagePage /> },
-      { path: "/admin/pages/trash", element: <TrashPage /> },
+      { path: "/admin/pages/trash", element: <PagesListPage /> },
       { path: "/admin/pages/:id", element: <PageEditorPage /> },
       { path: "/admin/blog", element: <BlogPage /> },
       { path: "/admin/blog/new", element: <BlogPostEditorPage /> },
