@@ -254,6 +254,7 @@ export function useDeleteAvailability() {
 // Bookings
 export function useBookings(filters?: { status?: string; startDate?: Date; endDate?: Date }) {
   return useQuery({
+    refetchInterval: 30_000,
     queryKey: ['bookings', filters],
     queryFn: async () => {
       let query = supabase
