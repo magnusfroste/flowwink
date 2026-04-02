@@ -47,7 +47,7 @@ import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { WebhookStats } from '@/components/admin/WebhookStats';
 
-export default function WebhooksPage() {
+export function WebhooksContent() {
   const { webhooks, isLoading, createWebhook, updateWebhook, deleteWebhook, toggleWebhook, testWebhook, resendWebhook } = useWebhooks();
   const { toast } = useToast();
   
