@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Plus, Search, Filter, MoreHorizontal, Edit, Trash2, Copy, ArrowUpDown, Clock, LayoutTemplate, Home, GripVertical, Eye, Save, Loader2, FileText, Navigation, PanelBottom, Palette } from 'lucide-react';
+import { Plus, Search, Filter, MoreHorizontal, Edit, Trash2, Copy, ArrowUpDown, Clock, LayoutTemplate, Home, FileText, Navigation, PanelBottom, Palette, Eye } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 import { AdminLayout } from '@/components/admin/AdminLayout';
@@ -13,8 +13,6 @@ import BrandingTab from '@/components/admin/pages/BrandingTab';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Switch } from '@/components/ui/switch';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -46,12 +44,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { useGeneralSettings, useUpdateGeneralSettings } from '@/hooks/useSiteSettings';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
-import { useQueryClient, useMutation } from '@tanstack/react-query';
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
-import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { cn } from '@/lib/utils';
 import type { PageStatus, Page } from '@/types/cms';
 
 type SortField = 'title' | 'updated_at' | 'status' | 'menu_order';
@@ -64,50 +56,19 @@ const STATUS_ORDER: Record<PageStatus, number> = {
   archived: 4,
 };
 
-interface SortablePageRowProps {
+function PageRow({ page, homepageSlug, isAdmin, onDuplicate, onDelete, onSetHomepage }: {
   page: Page;
   homepageSlug: string;
   isAdmin: boolean;
-  isDragMode: boolean;
-  menuOverrides: Map<string, boolean>;
-  onToggleMenu: (id: string, visible: boolean) => void;
   onDuplicate: (page: { title: string; slug: string }) => void;
   onDelete: (id: string) => void;
   onSetHomepage: (slug: string) => void;
-}
-
-function SortablePageRow({ page, homepageSlug, isAdmin, isDragMode, menuOverrides, onToggleMenu, onDuplicate, onDelete, onSetHomepage }: SortablePageRowProps) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: page.id });
-  const showInMenu = menuOverrides.has(page.id) ? menuOverrides.get(page.id)! : (page as any).show_in_menu;
-
-  const style = isDragMode ? {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  } : undefined;
+}) {
+  const showInMenu = (page as any).show_in_menu;
 
   return (
-    <div
-      ref={isDragMode ? setNodeRef : undefined}
-      style={style}
-      className={cn(
-        "flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors group",
-        isDragMode && isDragging && "opacity-50 shadow-lg z-10",
-      )}
-    >
-      {isDragMode && (
-        <button
-          {...attributes}
-          {...listeners}
-          className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground mr-3 shrink-0"
-        >
-          <GripVertical className="h-5 w-5" />
-        </button>
-      )}
-
-      <Link
-        to={`/admin/pages/${page.id}`}
-        className="flex-1 min-w-0"
-      >
+    <div className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors group">
+      <Link to={`/admin/pages/${page.id}`} className="flex-1 min-w-0">
         <div className="flex items-center gap-4">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
@@ -143,64 +104,47 @@ function SortablePageRow({ page, homepageSlug, isAdmin, isDragMode, menuOverride
         </div>
       </Link>
 
-      {isDragMode ? (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div className="ml-3">
-              <Switch
-                checked={showInMenu}
-                onCheckedChange={(checked) => onToggleMenu(page.id, checked)}
-                aria-label={showInMenu ? 'Hide from menu' : 'Show in menu'}
-              />
-            </div>
-          </TooltipTrigger>
-          <TooltipContent>
-            {showInMenu ? 'Visible in navigation' : 'Hidden from navigation'}
-          </TooltipContent>
-        </Tooltip>
-      ) : (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="ml-4 opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem asChild>
-              <Link to={`/admin/pages/${page.id}`}>
-                <Edit className="h-4 w-4 mr-2" />
-                Edit
-              </Link>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="ml-4 opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem asChild>
+            <Link to={`/admin/pages/${page.id}`}>
+              <Edit className="h-4 w-4 mr-2" />
+              Edit
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onDuplicate(page)}>
+            <Copy className="h-4 w-4 mr-2" />
+            Duplicate
+          </DropdownMenuItem>
+          {page.slug !== homepageSlug && (
+            <DropdownMenuItem onClick={() => onSetHomepage(page.slug)}>
+              <Home className="h-4 w-4 mr-2" />
+              Set as Homepage
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onDuplicate(page)}>
-              <Copy className="h-4 w-4 mr-2" />
-              Duplicate
-            </DropdownMenuItem>
-            {page.slug !== homepageSlug && (
-              <DropdownMenuItem onClick={() => onSetHomepage(page.slug)}>
-                <Home className="h-4 w-4 mr-2" />
-                Set as Homepage
+          )}
+          {isAdmin && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => onDelete(page.id)}
+                className="text-destructive focus:text-destructive"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
               </DropdownMenuItem>
-            )}
-            {isAdmin && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => onDelete(page.id)}
-                  className="text-destructive focus:text-destructive"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete
-                </DropdownMenuItem>
-              </>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )}
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }
@@ -211,13 +155,8 @@ export default function PagesListPage() {
   const [sortField, setSortField] = useState<SortField>('updated_at');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [isDragMode, setIsDragMode] = useState(false);
-  const [orderedIds, setOrderedIds] = useState<string[]>([]);
-  const [menuOverrides, setMenuOverrides] = useState<Map<string, boolean>>(new Map());
-  const [hasOrderChanges, setHasOrderChanges] = useState(false);
 
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const { data: pages, isLoading } = usePages();
   const deletePage = useDeletePage();
   const createPage = useCreatePage();
@@ -227,81 +166,8 @@ export default function PagesListPage() {
 
   const homepageSlug = generalSettings?.homepageSlug || 'home';
 
-  // When entering drag mode, sort by menu_order and snapshot the order
-  useEffect(() => {
-    if (isDragMode && pages) {
-      const sorted = [...pages].sort((a, b) => ((a as any).menu_order ?? 999) - ((b as any).menu_order ?? 999));
-      setOrderedIds(sorted.map(p => p.id));
-      setMenuOverrides(new Map());
-      setHasOrderChanges(false);
-    }
-  }, [isDragMode, pages]);
-
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  );
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (over && active.id !== over.id) {
-      setOrderedIds((ids) => {
-        const oldIndex = ids.indexOf(active.id as string);
-        const newIndex = ids.indexOf(over.id as string);
-        return arrayMove(ids, oldIndex, newIndex);
-      });
-      setHasOrderChanges(true);
-    }
-  };
-
-  const handleToggleMenu = (id: string, visible: boolean) => {
-    setMenuOverrides(prev => new Map(prev).set(id, visible));
-    setHasOrderChanges(true);
-  };
-
-  const saveOrderMutation = useMutation({
-    mutationFn: async () => {
-      const updates = orderedIds.map((id, index) => {
-        const menuVisible = menuOverrides.has(id) ? menuOverrides.get(id)! : (pages?.find(p => p.id === id) as any)?.show_in_menu ?? false;
-        return supabase
-          .from('pages')
-          .update({ menu_order: index, show_in_menu: menuVisible })
-          .eq('id', id);
-      });
-
-      const results = await Promise.all(updates);
-      const errors = results.filter(r => r.error);
-      if (errors.length > 0) throw new Error('Failed to update some pages');
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pages'] });
-      queryClient.invalidateQueries({ queryKey: ['public-nav-pages'] });
-      setHasOrderChanges(false);
-      setIsDragMode(false);
-      toast.success('Menu order saved');
-    },
-    onError: () => {
-      toast.error('Failed to save menu order');
-    },
-  });
-
-  const handleSetAsHomepage = async (slug: string) => {
-    try {
-      await updateGeneralSettings.mutateAsync({ homepageSlug: slug });
-      toast.success(`"/${slug}" is now the homepage`);
-    } catch {
-      toast.error('Failed to set homepage');
-    }
-  };
-
-  // In drag mode, use orderedIds to determine display order
   const displayPages = useMemo(() => {
     if (!pages) return [];
-
-    if (isDragMode) {
-      const pageMap = new Map(pages.map(p => [p.id, p]));
-      return orderedIds.map(id => pageMap.get(id)).filter(Boolean) as Page[];
-    }
 
     const filtered = pages.filter(page => {
       const matchesSearch = page.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -328,7 +194,7 @@ export default function PagesListPage() {
       }
       return sortDirection === 'asc' ? comparison : -comparison;
     });
-  }, [pages, isDragMode, orderedIds, search, statusFilter, sortField, sortDirection]);
+  }, [pages, search, statusFilter, sortField, sortDirection]);
 
   const handleDuplicate = async (page: { title: string; slug: string }) => {
     const newSlug = `${page.slug}-copy-${Date.now()}`;
@@ -346,24 +212,14 @@ export default function PagesListPage() {
     }
   };
 
-  const pagesList = (
-    <div className="space-y-2">
-      {displayPages.map((page) => (
-        <SortablePageRow
-          key={page.id}
-          page={page}
-          homepageSlug={homepageSlug}
-          isAdmin={isAdmin}
-          isDragMode={isDragMode}
-          menuOverrides={menuOverrides}
-          onToggleMenu={handleToggleMenu}
-          onDuplicate={handleDuplicate}
-          onDelete={setDeleteId}
-          onSetHomepage={handleSetAsHomepage}
-        />
-      ))}
-    </div>
-  );
+  const handleSetAsHomepage = async (slug: string) => {
+    try {
+      await updateGeneralSettings.mutateAsync({ homepageSlug: slug });
+      toast.success(`"/${slug}" is now the homepage`);
+    } catch {
+      toast.error('Failed to set homepage');
+    }
+  };
 
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
@@ -371,7 +227,6 @@ export default function PagesListPage() {
   const initialTab = tabFromUrl || (location.pathname === '/admin/pages/trash' ? 'trash' : 'pages');
   const [activeTab, setActiveTab] = useState(initialTab);
 
-  // Sync tab from URL when navigating via redirect
   useEffect(() => {
     if (tabFromUrl) {
       setActiveTab(tabFromUrl);
@@ -408,13 +263,9 @@ export default function PagesListPage() {
                   Trash
                 </TabsTrigger>
               </TabsList>
-              {activeTab === 'pages' && !isDragMode && (
+              {activeTab === 'pages' && (
                 <>
                   <MigratePageDialog />
-                  <Button variant="outline" size="sm" onClick={() => setIsDragMode(true)}>
-                    <GripVertical className="h-4 w-4 mr-2" />
-                    Menu Order
-                  </Button>
                   <Button variant="outline" size="sm" asChild>
                     <Link to="/admin/templates">
                       <LayoutTemplate className="h-4 w-4 mr-2" />
@@ -429,93 +280,72 @@ export default function PagesListPage() {
                   </Button>
                 </>
               )}
-              {activeTab === 'pages' && isDragMode && (
-                <>
-                  <Button variant="outline" size="sm" onClick={() => { setIsDragMode(false); setHasOrderChanges(false); }}>
-                    Cancel
-                  </Button>
-                  <Button size="sm" onClick={() => saveOrderMutation.mutate()} disabled={!hasOrderChanges || saveOrderMutation.isPending}>
-                    {saveOrderMutation.isPending ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    ) : (
-                      <Save className="h-4 w-4 mr-2" />
-                    )}
-                    Save Order
-                  </Button>
-                </>
-              )}
             </div>
           </div>
 
           <TabsContent value="pages" className="mt-0">
-            {/* Filters — hidden in drag mode */}
-            {!isDragMode && (
-              <Card className="mb-6">
-                <CardContent className="pt-6">
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    <div className="relative flex-1">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        placeholder="Search by title or slug..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        className="pl-10"
-                      />
-                    </div>
-                    <Select
-                      value={statusFilter}
-                      onValueChange={(value) => setStatusFilter(value as PageStatus | 'all')}
-                    >
-                      <SelectTrigger className="w-full sm:w-[180px]">
-                        <Filter className="h-4 w-4 mr-2" />
-                        <SelectValue placeholder="Filter status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All statuses</SelectItem>
-                        <SelectItem value="draft">Draft</SelectItem>
-                        <SelectItem value="reviewing">Review</SelectItem>
-                        <SelectItem value="published">Published</SelectItem>
-                        <SelectItem value="archived">Archived</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Select
-                      value={`${sortField}-${sortDirection}`}
-                      onValueChange={(value) => {
-                        const [field, dir] = value.split('-') as [SortField, SortDirection];
-                        setSortField(field);
-                        setSortDirection(dir);
-                      }}
-                    >
-                      <SelectTrigger className="w-full sm:w-[200px]">
-                        <ArrowUpDown className="h-4 w-4 mr-2" />
-                        <SelectValue placeholder="Sort" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="updated_at-desc">Recently updated</SelectItem>
-                        <SelectItem value="updated_at-asc">Oldest updated</SelectItem>
-                        <SelectItem value="title-asc">Title A-Z</SelectItem>
-                        <SelectItem value="title-desc">Title Z-A</SelectItem>
-                        <SelectItem value="status-asc">Status (draft first)</SelectItem>
-                        <SelectItem value="status-desc">Status (published first)</SelectItem>
-                        <SelectItem value="menu_order-asc">Menu order</SelectItem>
-                      </SelectContent>
-                    </Select>
+            {/* Filters */}
+            <Card className="mb-6">
+              <CardContent className="pt-6">
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search by title or slug..."
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      className="pl-10"
+                    />
                   </div>
-                </CardContent>
-              </Card>
-            )}
+                  <Select
+                    value={statusFilter}
+                    onValueChange={(value) => setStatusFilter(value as PageStatus | 'all')}
+                  >
+                    <SelectTrigger className="w-full sm:w-[180px]">
+                      <Filter className="h-4 w-4 mr-2" />
+                      <SelectValue placeholder="Filter status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All statuses</SelectItem>
+                      <SelectItem value="draft">Draft</SelectItem>
+                      <SelectItem value="reviewing">Review</SelectItem>
+                      <SelectItem value="published">Published</SelectItem>
+                      <SelectItem value="archived">Archived</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select
+                    value={`${sortField}-${sortDirection}`}
+                    onValueChange={(value) => {
+                      const [field, dir] = value.split('-') as [SortField, SortDirection];
+                      setSortField(field);
+                      setSortDirection(dir);
+                    }}
+                  >
+                    <SelectTrigger className="w-full sm:w-[200px]">
+                      <ArrowUpDown className="h-4 w-4 mr-2" />
+                      <SelectValue placeholder="Sort" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="updated_at-desc">Recently updated</SelectItem>
+                      <SelectItem value="updated_at-asc">Oldest updated</SelectItem>
+                      <SelectItem value="title-asc">Title A-Z</SelectItem>
+                      <SelectItem value="title-desc">Title Z-A</SelectItem>
+                      <SelectItem value="status-asc">Status (draft first)</SelectItem>
+                      <SelectItem value="status-desc">Status (published first)</SelectItem>
+                      <SelectItem value="menu_order-asc">Menu order</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Pages List */}
             <Card>
               <CardHeader>
                 <CardTitle className="font-serif">
-                  {isDragMode ? 'Menu Order' : `${displayPages.length} ${displayPages.length === 1 ? 'page' : 'pages'}`}
+                  {`${displayPages.length} ${displayPages.length === 1 ? 'page' : 'pages'}`}
                 </CardTitle>
-                <CardDescription>
-                  {isDragMode
-                    ? 'Drag pages to set their navigation order. Only pages with the toggle ON appear in the header menu.'
-                    : 'Click on a page to edit it'}
-                </CardDescription>
+                <CardDescription>Click on a page to edit it</CardDescription>
               </CardHeader>
               <CardContent>
                 {isLoading ? (
@@ -540,14 +370,20 @@ export default function PagesListPage() {
                       </Button>
                     )}
                   </div>
-                ) : isDragMode ? (
-                  <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                    <SortableContext items={orderedIds} strategy={verticalListSortingStrategy}>
-                      {pagesList}
-                    </SortableContext>
-                  </DndContext>
                 ) : (
-                  pagesList
+                  <div className="space-y-2">
+                    {displayPages.map((page) => (
+                      <PageRow
+                        key={page.id}
+                        page={page}
+                        homepageSlug={homepageSlug}
+                        isAdmin={isAdmin}
+                        onDuplicate={handleDuplicate}
+                        onDelete={setDeleteId}
+                        onSetHomepage={handleSetAsHomepage}
+                      />
+                    ))}
+                  </div>
                 )}
               </CardContent>
             </Card>
