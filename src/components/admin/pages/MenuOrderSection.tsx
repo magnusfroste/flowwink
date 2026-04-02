@@ -90,7 +90,7 @@ export default function MenuOrderSection() {
   // Initialize order from pages
   useEffect(() => {
     if (pages) {
-      const sorted = [...pages].sort((a, b) => ((a as any).menu_order ?? 999) - ((b as any).menu_order ?? 999));
+      const sorted = [...pages].sort((a, b) => (a.menu_order ?? 999) - (b.menu_order ?? 999));
       setOrderedIds(sorted.map(p => p.id));
       setMenuOverrides(new Map());
       setHasChanges(false);
