@@ -265,13 +265,6 @@ export default function PagesListPage() {
               </TabsList>
               {activeTab === 'pages' && (
                 <>
-                  
-                  <Button variant="outline" size="sm" asChild>
-                    <Link to="/admin/templates">
-                      <LayoutTemplate className="h-4 w-4 mr-2" />
-                      Templates
-                    </Link>
-                  </Button>
                   <Button size="sm" asChild>
                     <Link to="/admin/pages/new">
                       <Plus className="h-4 w-4 mr-2" />
