@@ -20,7 +20,7 @@ export const developerModule: ModuleDefinition<Input, Output> = {
   name: 'Developer',
   version: '1.0.0',
   description: 'API explorer, webhooks, and developer tools for integrating with external systems',
-  capabilities: ['publish', 'preview'],
+  capabilities: ['webhook:trigger', 'data:read'],
   inputSchema,
   outputSchema,
 

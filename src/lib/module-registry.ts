@@ -73,6 +73,7 @@ class ModuleRegistry {
       ticketsModule,
       siteMigrationModule,
       templatesModule,
+      developerModule,
     ];
 
     for (const mod of builtIn) {

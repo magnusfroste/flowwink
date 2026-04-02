@@ -192,11 +192,11 @@ export const defaultModulesSettings: ModulesSettings = {
     optionalIntegrations: ['stripe', 'resend', 'stripe_webhook'],
     sandboxAutoPayDays: 0, // Instant payment simulation by default
   },
-  contentApi: {
+  developer: {
     enabled: false,
-    name: 'Content Hub',
-    description: 'REST and GraphQL API for headless CMS',
-    icon: 'Database',
+    name: 'Developer',
+    description: 'API explorer, webhooks, and developer tools for integrating with external systems',
+    icon: 'Code2',
     category: 'system',
     autonomy: 'config-required',
     adminUI: true,
