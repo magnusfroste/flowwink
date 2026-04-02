@@ -115,6 +115,7 @@ export default function AdminDashboard() {
   const leadsEnabled = useIsModuleEnabled('leads');
   const chatEnabled = useIsModuleEnabled('chat');
   const liveSupportEnabled = useIsModuleEnabled('liveSupport');
+  const flowpilotEnabled = useIsModuleEnabled('flowpilot');
   const { layout, toggleWidget, reorderWidgets, resetLayout, isWidgetVisible } = useDashboardLayout();
   const [customizeOpen, setCustomizeOpen] = useState(false);
 
