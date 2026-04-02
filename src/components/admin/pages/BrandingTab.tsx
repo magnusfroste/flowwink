@@ -1,10 +1,22 @@
-import { Navigate } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
+import { Loader2 } from 'lucide-react';
 
-/**
- * When the Branding tab is selected on the Pages page,
- * we redirect to the dedicated branding page which has its own
- * complex state management and unsaved-changes handling.
- */
+const LazyBrandingContent = lazy(() =>
+  import('@/pages/admin/BrandingSettingsPage').then(mod => ({
+    default: mod.BrandingSettingsContent,
+  }))
+);
+
 export default function BrandingTab() {
-  return <Navigate to="/admin/branding" replace />;
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      }
+    >
+      <LazyBrandingContent embedded />
+    </Suspense>
+  );
 }
