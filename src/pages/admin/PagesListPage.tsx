@@ -1,11 +1,12 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Search, Filter, MoreHorizontal, Edit, Trash2, Copy, ArrowUpDown, Clock, LayoutTemplate, Home, GripVertical, Eye, EyeOff, Save, Loader2 } from 'lucide-react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Plus, Search, Filter, MoreHorizontal, Edit, Trash2, Copy, ArrowUpDown, Clock, LayoutTemplate, Home, GripVertical, Eye, Save, Loader2, FileText } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import PagesTrashTab from '@/components/admin/pages/PagesTrashTab';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -361,159 +362,176 @@ export default function PagesListPage() {
     </div>
   );
 
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState(location.pathname === '/admin/pages/trash' ? 'trash' : 'pages');
+
   return (
     <AdminLayout>
       <AdminPageContainer>
-        <AdminPageHeader
-          title="Pages"
-          description={isDragMode ? "Drag to reorder menu items. Toggle visibility with the switch." : "Manage and edit your pages"}
-        >
-          {isDragMode ? (
-            <>
-              <Button variant="outline" onClick={() => { setIsDragMode(false); setHasOrderChanges(false); }}>
-                Cancel
-              </Button>
-              <Button onClick={() => saveOrderMutation.mutate()} disabled={!hasOrderChanges || saveOrderMutation.isPending}>
-                {saveOrderMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Save className="h-4 w-4 mr-2" />
-                )}
-                Save Order
-              </Button>
-            </>
-          ) : (
-            <>
-              <MigratePageDialog />
-              <Button variant="ghost" size="sm" asChild>
-                <Link to="/admin/pages/trash">
-                  <Trash2 className="h-4 w-4 mr-2" />
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          {/* Compact header row */}
+          <div className="flex items-center justify-between gap-4 mb-6">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Pages</h1>
+            <div className="flex items-center gap-3">
+              <TabsList>
+                <TabsTrigger value="pages" className="gap-1.5">
+                  <FileText className="h-3.5 w-3.5" />
+                  Pages
+                </TabsTrigger>
+                <TabsTrigger value="trash" className="gap-1.5">
+                  <Trash2 className="h-3.5 w-3.5" />
                   Trash
-                </Link>
-              </Button>
-              <Button variant="outline" onClick={() => setIsDragMode(true)}>
-                <GripVertical className="h-4 w-4 mr-2" />
-                Menu Order
-              </Button>
-              <Button variant="outline" asChild>
-                <Link to="/admin/templates">
-                  <LayoutTemplate className="h-4 w-4 mr-2" />
-                  Templates
-                </Link>
-              </Button>
-              <Button asChild>
-                <Link to="/admin/pages/new">
-                  <Plus className="h-4 w-4 mr-2" />
-                  New Page
-                </Link>
-              </Button>
-            </>
-          )}
-        </AdminPageHeader>
-
-        {/* Filters — hidden in drag mode */}
-        {!isDragMode && (
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search by title or slug..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                <Select
-                  value={statusFilter}
-                  onValueChange={(value) => setStatusFilter(value as PageStatus | 'all')}
-                >
-                  <SelectTrigger className="w-full sm:w-[180px]">
-                    <Filter className="h-4 w-4 mr-2" />
-                    <SelectValue placeholder="Filter status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All statuses</SelectItem>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="reviewing">Review</SelectItem>
-                    <SelectItem value="published">Published</SelectItem>
-                    <SelectItem value="archived">Archived</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select
-                  value={`${sortField}-${sortDirection}`}
-                  onValueChange={(value) => {
-                    const [field, dir] = value.split('-') as [SortField, SortDirection];
-                    setSortField(field);
-                    setSortDirection(dir);
-                  }}
-                >
-                  <SelectTrigger className="w-full sm:w-[200px]">
-                    <ArrowUpDown className="h-4 w-4 mr-2" />
-                    <SelectValue placeholder="Sort" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="updated_at-desc">Recently updated</SelectItem>
-                    <SelectItem value="updated_at-asc">Oldest updated</SelectItem>
-                    <SelectItem value="title-asc">Title A-Z</SelectItem>
-                    <SelectItem value="title-desc">Title Z-A</SelectItem>
-                    <SelectItem value="status-asc">Status (draft first)</SelectItem>
-                    <SelectItem value="status-desc">Status (published first)</SelectItem>
-                    <SelectItem value="menu_order-asc">Menu order</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Pages List */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-serif">
-              {isDragMode ? 'Menu Order' : `${displayPages.length} ${displayPages.length === 1 ? 'page' : 'pages'}`}
-            </CardTitle>
-            <CardDescription>
-              {isDragMode
-                ? 'Drag pages to set their navigation order. Only pages with the toggle ON appear in the header menu.'
-                : 'Click on a page to edit it'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="space-y-3">
-                {[...Array(5)].map((_, i) => (
-                  <Skeleton key={i} className="h-16 w-full" />
-                ))}
-              </div>
-            ) : displayPages.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground mb-4">
-                  {search || statusFilter !== 'all'
-                    ? 'No pages match your search'
-                    : 'No pages yet. Create your first page!'}
-                </p>
-                {!search && statusFilter === 'all' && (
-                  <Button asChild>
-                    <Link to="/admin/pages/new">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Create Page
+                </TabsTrigger>
+              </TabsList>
+              {activeTab === 'pages' && !isDragMode && (
+                <>
+                  <MigratePageDialog />
+                  <Button variant="outline" size="sm" onClick={() => setIsDragMode(true)}>
+                    <GripVertical className="h-4 w-4 mr-2" />
+                    Menu Order
+                  </Button>
+                  <Button variant="outline" size="sm" asChild>
+                    <Link to="/admin/templates">
+                      <LayoutTemplate className="h-4 w-4 mr-2" />
+                      Templates
                     </Link>
                   </Button>
-                )}
-              </div>
-            ) : isDragMode ? (
-              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                <SortableContext items={orderedIds} strategy={verticalListSortingStrategy}>
-                  {pagesList}
-                </SortableContext>
-              </DndContext>
-            ) : (
-              pagesList
+                  <Button size="sm" asChild>
+                    <Link to="/admin/pages/new">
+                      <Plus className="h-4 w-4 mr-2" />
+                      New Page
+                    </Link>
+                  </Button>
+                </>
+              )}
+              {activeTab === 'pages' && isDragMode && (
+                <>
+                  <Button variant="outline" size="sm" onClick={() => { setIsDragMode(false); setHasOrderChanges(false); }}>
+                    Cancel
+                  </Button>
+                  <Button size="sm" onClick={() => saveOrderMutation.mutate()} disabled={!hasOrderChanges || saveOrderMutation.isPending}>
+                    {saveOrderMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Save className="h-4 w-4 mr-2" />
+                    )}
+                    Save Order
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+
+          <TabsContent value="pages" className="mt-0">
+            {/* Filters — hidden in drag mode */}
+            {!isDragMode && (
+              <Card className="mb-6">
+                <CardContent className="pt-6">
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Search by title or slug..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                    <Select
+                      value={statusFilter}
+                      onValueChange={(value) => setStatusFilter(value as PageStatus | 'all')}
+                    >
+                      <SelectTrigger className="w-full sm:w-[180px]">
+                        <Filter className="h-4 w-4 mr-2" />
+                        <SelectValue placeholder="Filter status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All statuses</SelectItem>
+                        <SelectItem value="draft">Draft</SelectItem>
+                        <SelectItem value="reviewing">Review</SelectItem>
+                        <SelectItem value="published">Published</SelectItem>
+                        <SelectItem value="archived">Archived</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select
+                      value={`${sortField}-${sortDirection}`}
+                      onValueChange={(value) => {
+                        const [field, dir] = value.split('-') as [SortField, SortDirection];
+                        setSortField(field);
+                        setSortDirection(dir);
+                      }}
+                    >
+                      <SelectTrigger className="w-full sm:w-[200px]">
+                        <ArrowUpDown className="h-4 w-4 mr-2" />
+                        <SelectValue placeholder="Sort" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="updated_at-desc">Recently updated</SelectItem>
+                        <SelectItem value="updated_at-asc">Oldest updated</SelectItem>
+                        <SelectItem value="title-asc">Title A-Z</SelectItem>
+                        <SelectItem value="title-desc">Title Z-A</SelectItem>
+                        <SelectItem value="status-asc">Status (draft first)</SelectItem>
+                        <SelectItem value="status-desc">Status (published first)</SelectItem>
+                        <SelectItem value="menu_order-asc">Menu order</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </CardContent>
+              </Card>
             )}
-          </CardContent>
-        </Card>
+
+            {/* Pages List */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="font-serif">
+                  {isDragMode ? 'Menu Order' : `${displayPages.length} ${displayPages.length === 1 ? 'page' : 'pages'}`}
+                </CardTitle>
+                <CardDescription>
+                  {isDragMode
+                    ? 'Drag pages to set their navigation order. Only pages with the toggle ON appear in the header menu.'
+                    : 'Click on a page to edit it'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <div className="space-y-3">
+                    {[...Array(5)].map((_, i) => (
+                      <Skeleton key={i} className="h-16 w-full" />
+                    ))}
+                  </div>
+                ) : displayPages.length === 0 ? (
+                  <div className="text-center py-12">
+                    <p className="text-muted-foreground mb-4">
+                      {search || statusFilter !== 'all'
+                        ? 'No pages match your search'
+                        : 'No pages yet. Create your first page!'}
+                    </p>
+                    {!search && statusFilter === 'all' && (
+                      <Button asChild>
+                        <Link to="/admin/pages/new">
+                          <Plus className="h-4 w-4 mr-2" />
+                          Create Page
+                        </Link>
+                      </Button>
+                    )}
+                  </div>
+                ) : isDragMode ? (
+                  <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                    <SortableContext items={orderedIds} strategy={verticalListSortingStrategy}>
+                      {pagesList}
+                    </SortableContext>
+                  </DndContext>
+                ) : (
+                  pagesList
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="trash" className="mt-0">
+            <PagesTrashTab />
+          </TabsContent>
+        </Tabs>
       </AdminPageContainer>
 
       {/* Delete Confirmation Dialog */}

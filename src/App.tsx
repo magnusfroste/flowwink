@@ -55,7 +55,7 @@ import CopilotPage from "./pages/admin/CopilotPage";
 import LiveSupportPage from "./pages/admin/LiveSupportPage";
 import TemplateExportPage from "./pages/admin/TemplateExportPage";
 import TemplateLivePreviewPage from "./pages/admin/TemplateLivePreviewPage";
-import TrashPage from "./pages/admin/TrashPage";
+
 import PreviewPage from "./pages/PreviewPage";
 import PublicPage from "./pages/PublicPage";
 import BlogArchivePage from "./pages/BlogArchivePage";
@@ -152,7 +152,7 @@ const router = createBrowserRouter([
       { path: "/admin/analytics", element: <AnalyticsDashboardPage /> },
       { path: "/admin/pages", element: <PagesListPage /> },
       { path: "/admin/pages/new", element: <NewPagePage /> },
-      { path: "/admin/pages/trash", element: <TrashPage /> },
+      { path: "/admin/pages/trash", element: <PagesListPage /> },
       { path: "/admin/pages/:id", element: <PageEditorPage /> },
       { path: "/admin/blog", element: <BlogPage /> },
       { path: "/admin/blog/new", element: <BlogPostEditorPage /> },
