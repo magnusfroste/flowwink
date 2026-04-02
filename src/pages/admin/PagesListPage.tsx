@@ -265,7 +265,7 @@ export default function PagesListPage() {
               </TabsList>
               {activeTab === 'pages' && (
                 <>
-                  <MigratePageDialog />
+                  
                   <Button variant="outline" size="sm" asChild>
                     <Link to="/admin/templates">
                       <LayoutTemplate className="h-4 w-4 mr-2" />
