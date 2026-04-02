@@ -541,6 +541,14 @@ export default function PagesListPage() {
             </Card>
           </TabsContent>
 
+          <TabsContent value="global" className="mt-0">
+            <GlobalElementsTab />
+          </TabsContent>
+
+          <TabsContent value="branding" className="mt-0">
+            <BrandingTab />
+          </TabsContent>
+
           <TabsContent value="trash" className="mt-0">
             <PagesTrashTab />
           </TabsContent>
