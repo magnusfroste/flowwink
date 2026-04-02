@@ -4,6 +4,7 @@ import { ArrowRight, Sparkles } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useChatSettings } from '@/hooks/useSiteSettings';
+import { useIsModuleEnabled } from '@/hooks/useModules';
 import { cn } from '@/lib/utils';
 
 export interface ChatLauncherBlockData {
