@@ -1206,15 +1206,61 @@ async function executePagesAction(
     }
 
     case 'create_page_block': {
-      // Convenience wrapper: maps to manage_page_blocks add action
-      const { page_id, block_type, block_data = {}, position } = args as any;
+      // Supports single block OR batch: { blocks: [{ type, data }] }
+      const { page_id, block_type, block_data = {}, position, blocks: batchBlocks } = args as any;
       if (!page_id) {
         return {
           error: 'page_id is required. Create the page first with manage_page { action: "create", title, slug? } and then call create_page_block using the returned page_id.',
           next_step: 'manage_page.create',
         };
       }
-      if (!block_type) return { error: 'block_type is required' };
+
+      // ── Batch mode: add multiple blocks in one call ──
+      if (Array.isArray(batchBlocks) && batchBlocks.length > 0) {
+        const resolvedPageId = await resolvePageId(page_id);
+        const { data: page, error: fetchErr } = await supabase.from('pages')
+          .select('id, content_json').eq('id', resolvedPageId).is('deleted_at', null).single();
+        if (fetchErr || !page) throw new Error(`Page not found: ${page_id}`);
+
+        const existingBlocks = (page.content_json as any[]) || [];
+        const addedIds: string[] = [];
+        const errors: string[] = [];
+
+        for (const b of batchBlocks) {
+          if (!b.type) { errors.push('Block missing type'); continue; }
+          const bData = b.data || {};
+          const validation = validateBlockData(b.type, bData);
+          if (!validation.valid) {
+            errors.push(`${b.type}: ${validation.errors.join('; ')}`);
+            continue;
+          }
+          const newBlock = {
+            id: crypto.randomUUID(),
+            type: b.type,
+            data: bData,
+            spacing: {},
+            animation: { type: 'fade-up' },
+          };
+          normalizeBlockData(newBlock);
+          existingBlocks.push(newBlock);
+          addedIds.push(newBlock.id);
+        }
+
+        await supabase.from('pages')
+          .update({ content_json: existingBlocks, updated_at: new Date().toISOString() })
+          .eq('id', resolvedPageId);
+
+        return {
+          page_id: resolvedPageId,
+          blocks_added: addedIds.length,
+          block_ids: addedIds,
+          total_blocks: existingBlocks.length,
+          errors: errors.length > 0 ? errors : undefined,
+        };
+      }
+
+      // ── Single block mode (backward compatible) ──
+      if (!block_type) return { error: 'block_type is required (or use blocks[] array for batch)' };
       return executePagesAction(supabase, 'manage_page_blocks', {
         action: 'add',
         page_id,
