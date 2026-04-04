@@ -2015,14 +2015,18 @@ Manages newsletter subscribers: list, search, count, remove.
       type: 'function',
       function: {
         name: 'manage_newsletters',
-        description: 'Manage newsletters. Actions: list, get, create, update, delete.',
+        description: 'Manage newsletters. Actions: list, get, create, update, delete. Create supports AI generation: pass topic (or blog_content) instead of content_html to auto-generate newsletter content.',
         parameters: {
           type: 'object',
           properties: {
             action: { type: 'string', enum: ['list', 'get', 'create', 'update', 'delete'] },
             newsletter_id: { type: 'string', description: 'Newsletter UUID (for get/update/delete)' },
             subject: { type: 'string', description: 'Newsletter subject line' },
-            content_html: { type: 'string', description: 'HTML content of the newsletter' },
+            content_html: { type: 'string', description: 'HTML content (optional if topic or blog_content provided)' },
+            topic: { type: 'string', description: 'Topic for AI-generated content. Use instead of content_html to auto-generate.' },
+            blog_content: { type: 'string', description: 'Blog post text to adapt into newsletter format. Use for blog→newsletter chains.' },
+            tone: { type: 'string', description: 'Writing tone (default: professional)' },
+            language: { type: 'string', description: 'Content language code (default: en)' },
             status: { type: 'string', description: 'Filter by status (for list) or set status (for update)' },
             schedule_at: { type: 'string', description: 'ISO date to schedule send' },
             limit: { type: 'number', description: 'Max results (default 20)' },
@@ -2034,26 +2038,39 @@ Manages newsletter subscribers: list, search, count, remove.
     instructions: `# manage_newsletters
 
 ## What
-Full CRUD management of newsletters in the newsletters table.
+Full CRUD management of newsletters with optional AI content generation.
 
 ## When
 - User asks to create, edit, list, or delete newsletters
 - As part of a content campaign chain (research → blog → newsletter → social)
 - When FlowPilot autonomously creates newsletter drafts from content
 
+## AI Generation (create action)
+Three modes for creating newsletters:
+1. **From topic**: Pass \`topic\` — AI generates full newsletter HTML automatically
+2. **From blog**: Pass \`blog_content\` — AI adapts the blog text into email format
+3. **Manual**: Pass \`content_html\` directly (bypasses AI)
+
+Priority: content_html > blog_content > topic
+
 ## Actions
 | Action | Required fields | Result |
 |--------|----------------|--------|
 | list   | (optional: status, limit) | Array of newsletters with metrics |
 | get    | newsletter_id  | Full newsletter with content |
-| create | subject, content_html | New draft newsletter |
+| create | subject + (topic OR blog_content OR content_html) | New draft newsletter |
 | update | newsletter_id + fields | Updated newsletter |
 | delete | newsletter_id  | Deleted newsletter |
+
+## Chaining Example
+\`\`\`
+write_blog_post(topic="AI trends") → get excerpt → manage_newsletters(action=create, subject="This Week: AI Trends", blog_content=excerpt)
+\`\`\`
 
 ## Edge Cases
 - Always create as 'draft' unless schedule_at is provided
 - Use execute_newsletter_send to actually send (separate skill with approval gate)
-- content_html should be well-formed HTML for email rendering`,
+- AI generation requires GEMINI_API_KEY or OPENAI_API_KEY`,
   },
   {
     name: 'manage_consultant_profile',

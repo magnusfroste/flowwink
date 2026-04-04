@@ -2161,14 +2161,80 @@ async function executeNewsletterAction(
 
     if (action === 'create') {
       if (!subject) throw new Error('subject required for create');
+      let finalHtml = content_html as string | undefined;
+      const { topic, tone = 'professional', language = 'en', blog_content } = args as any;
+
+      // AI-generate newsletter content if topic provided but no content_html
+      if (!finalHtml && (topic || blog_content)) {
+        const geminiKey = Deno.env.get('GEMINI_API_KEY');
+        const openaiKey = Deno.env.get('OPENAI_API_KEY');
+        const sourceContext = blog_content
+          ? `Base the newsletter on this blog post content:\n\n${blog_content}\n\nAdapt it for email format — shorter, more direct, with a clear CTA.`
+          : `Topic: "${topic}"`;
+
+        const genPrompt = `Write a professional newsletter email about: ${sourceContext}
+Subject line: "${subject}"
+Tone: ${tone}
+Language: ${language}
+
+Write 300-600 words. Output clean HTML suitable for email (use <h2>, <p>, <ul>, <li>, <strong>, <em>, <a>).
+Include:
+- An engaging opening paragraph
+- 3-5 key points or tips
+- A clear call-to-action at the end
+Do NOT include <html>, <head>, <body> tags — just the inner content HTML.
+Do NOT include the subject line as a heading.
+Output ONLY the HTML content, no preamble or explanation.`;
+
+        if (geminiKey) {
+          try {
+            const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`;
+            const genResp = await fetch(geminiUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contents: [{ parts: [{ text: genPrompt }] }],
+                generationConfig: { maxOutputTokens: 4096, temperature: 0.7 },
+              }),
+            });
+            const genData = await genResp.json();
+            const raw = genData.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            finalHtml = raw.replace(/^```html\s*/i, '').replace(/```\s*$/, '').trim();
+            console.log(`[manage_newsletters] AI content generated via Gemini (${finalHtml.length} chars)`);
+          } catch (e) {
+            console.error('[manage_newsletters] Gemini generation failed:', e);
+          }
+        } else if (openaiKey) {
+          try {
+            const genResp = await fetch('https://api.openai.com/v1/chat/completions', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${openaiKey}` },
+              body: JSON.stringify({
+                model: 'gpt-4o-mini', max_tokens: 4096,
+                messages: [
+                  { role: 'system', content: `You are a newsletter copywriter. Tone: ${tone}. Language: ${language}.` },
+                  { role: 'user', content: genPrompt }
+                ],
+              }),
+            });
+            const genData = await genResp.json();
+            const raw = genData.choices?.[0]?.message?.content || '';
+            finalHtml = raw.replace(/^```html\s*/i, '').replace(/```\s*$/, '').trim();
+            console.log(`[manage_newsletters] AI content generated via OpenAI (${finalHtml.length} chars)`);
+          } catch (e) {
+            console.error('[manage_newsletters] OpenAI generation failed:', e);
+          }
+        }
+      }
+
       const { data, error } = await supabase.from('newsletters').insert({
         subject,
-        content_html: content_html || '',
+        content_html: finalHtml || '',
         status: schedule_at ? 'scheduled' : 'draft',
         scheduled_at: schedule_at || null,
       }).select().single();
       if (error) throw new Error(`Create newsletter failed: ${error.message}`);
-      return { newsletter_id: data.id, subject: data.subject, status: data.status };
+      return { newsletter_id: data.id, subject: data.subject, status: data.status, ai_generated: !!(finalHtml && !content_html) };
     }
 
     if (action === 'update') {
