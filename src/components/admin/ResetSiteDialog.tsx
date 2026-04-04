@@ -361,6 +361,19 @@ export function ResetSiteDialog({ open, onOpenChange }: ResetSiteDialogProps) {
           // Clear audit logs
           const { error: auditErr } = await supabase.from('audit_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
           if (auditErr) throw auditErr;
+          // Clear A2A activity logs
+          const { error: a2aActErr } = await supabase.from('a2a_activity').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (a2aActErr) throw a2aActErr;
+          // Clear beta test data (exchanges/findings first due to FK)
+          const { error: bteErr } = await supabase.from('beta_test_exchanges').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (bteErr) throw bteErr;
+          const { error: btfErr } = await supabase.from('beta_test_findings').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (btfErr) throw btfErr;
+          const { error: btsErr } = await supabase.from('beta_test_sessions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (btsErr) throw btsErr;
+          // Clear page view analytics
+          const { error: pvErr } = await supabase.from('page_views').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (pvErr) throw pvErr;
         }
       });
     }
