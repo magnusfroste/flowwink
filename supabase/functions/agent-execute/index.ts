@@ -2684,6 +2684,102 @@ async function executeDbAction(
       return { period, total_views: totalViews, unique_pages: uniqueSlugs.length, top_pages: topPages };
     }
 
+    case 'profiles': {
+      const { action = 'list', limit = 50 } = args as any;
+      if (action === 'list') {
+        const { data, error } = await supabase.from('profiles')
+          .select('id, email, full_name, role, created_at')
+          .order('created_at', { ascending: false })
+          .limit(limit);
+        if (error) throw new Error(`List users failed: ${error.message}`);
+        return { users: data || [], count: (data || []).length };
+      }
+      return { error: `Unknown profiles action: ${action}` };
+    }
+
+    case 'crm_tasks': {
+      const { action = 'list', title, description, due_date, priority, lead_id, deal_id, id, completed_at } = args as any;
+      if (action === 'create') {
+        const { data, error } = await supabase.from('crm_tasks')
+          .insert({ title, description, due_date, priority: priority || 'medium', lead_id, deal_id })
+          .select().single();
+        if (error) throw new Error(`Create task failed: ${error.message}`);
+        return { task_id: data.id, title: data.title, created: true };
+      }
+      if (action === 'list') {
+        let query = supabase.from('crm_tasks')
+          .select('id, title, description, priority, due_date, completed_at, lead_id, deal_id, created_at')
+          .is('completed_at', null)
+          .order('due_date', { ascending: true, nullsFirst: false })
+          .limit(50);
+        if (lead_id) query = query.eq('lead_id', lead_id);
+        if (deal_id) query = query.eq('deal_id', deal_id);
+        const { data, error } = await query;
+        if (error) throw new Error(`List tasks failed: ${error.message}`);
+        return { tasks: data || [], count: (data || []).length };
+      }
+      if (action === 'update' && id) {
+        const updates: Record<string, unknown> = {};
+        if (title !== undefined) updates.title = title;
+        if (description !== undefined) updates.description = description;
+        if (due_date !== undefined) updates.due_date = due_date;
+        if (priority !== undefined) updates.priority = priority;
+        if (completed_at !== undefined) updates.completed_at = completed_at;
+        updates.updated_at = new Date().toISOString();
+        const { error } = await supabase.from('crm_tasks').update(updates).eq('id', id);
+        if (error) throw new Error(`Update task failed: ${error.message}`);
+        return { task_id: id, updated: true };
+      }
+      return { error: `Unknown crm_tasks action: ${action}` };
+    }
+
+    case 'chat_conversations': {
+      if (skillName === 'support_list_conversations') {
+        const { status = 'active', limit = 20 } = args as any;
+        let query = supabase.from('chat_conversations')
+          .select('id, title, customer_name, customer_email, conversation_status, priority, sentiment_score, created_at, updated_at')
+          .order('updated_at', { ascending: false })
+          .limit(limit);
+        if (status !== 'all') query = query.eq('conversation_status', status);
+        const { data, error } = await query;
+        if (error) throw new Error(`List conversations failed: ${error.message}`);
+        return { conversations: data || [], count: (data || []).length };
+      }
+      if (skillName === 'support_assign_conversation') {
+        const { conversation_id, agent_id, priority, status: newStatus } = args as any;
+        if (!conversation_id) throw new Error('conversation_id is required');
+        const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
+        if (agent_id !== undefined) updates.assigned_agent_id = agent_id;
+        if (priority !== undefined) updates.priority = priority;
+        if (newStatus !== undefined) updates.conversation_status = newStatus;
+        const { error } = await supabase.from('chat_conversations').update(updates).eq('id', conversation_id);
+        if (error) throw new Error(`Assign conversation failed: ${error.message}`);
+        return { conversation_id, updated: true };
+      }
+      return { error: `Unknown chat_conversations skill: ${skillName}` };
+    }
+
+    case 'chat_feedback': {
+      const { period = 'week', limit = 100 } = args as any;
+      const now = new Date();
+      const since = new Date(now);
+      switch (period) {
+        case 'today': since.setHours(0, 0, 0, 0); break;
+        case 'week': since.setDate(now.getDate() - 7); break;
+        case 'month': since.setMonth(now.getMonth() - 1); break;
+      }
+      const { data, error } = await supabase.from('chat_feedback')
+        .select('id, rating, user_question, ai_response, created_at')
+        .gte('created_at', since.toISOString())
+        .order('created_at', { ascending: false })
+        .limit(limit);
+      if (error) throw new Error(`Get feedback failed: ${error.message}`);
+      const ratings = (data || []);
+      const positive = ratings.filter((r: any) => r.rating === 'positive').length;
+      const negative = ratings.filter((r: any) => r.rating === 'negative').length;
+      return { period, total: ratings.length, positive, negative, satisfaction_rate: ratings.length > 0 ? Math.round(positive / ratings.length * 100) : null, recent: ratings.slice(0, 10) };
+    }
+
     default:
       return { error: `Unknown db table: ${table}` };
   }
