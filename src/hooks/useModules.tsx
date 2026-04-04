@@ -63,6 +63,7 @@ export interface ModulesSettings {
   siteMigration: ModuleConfig;
   composio: ModuleConfig;
   templates: ModuleConfig;
+  invoicing: ModuleConfig;
 }
 
 export const defaultModulesSettings: ModulesSettings = {
@@ -339,6 +340,16 @@ export const defaultModulesSettings: ModulesSettings = {
     autonomy: 'config-required',
     adminUI: true,
   },
+  invoicing: {
+    enabled: false,
+    name: 'Invoicing',
+    description: 'Create, send, and track invoices — auto-generate from won deals with tax computation',
+    icon: 'Receipt',
+    category: 'data',
+    autonomy: 'agent-capable',
+    adminUI: true,
+    optionalIntegrations: ['stripe', 'resend'],
+  },
 };
 
 // Map sidebar items to module IDs
@@ -374,6 +385,7 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/site-migration': 'siteMigration',
   '/admin/templates': 'templates',
   '/admin/template-export': 'templates',
+  '/admin/invoices': 'invoicing',
 };
 
 export function useModules() {
