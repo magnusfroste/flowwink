@@ -616,7 +616,7 @@ Creates a new high-level objective for FlowPilot's autonomous operation.
   },
   {
     name: 'migrate_url',
-    description: 'Migrate an external webpage into FlowWink-ready blocks with brand extraction and page discovery. After this, create page via manage_page, then add/adjust blocks via manage_page_blocks.',
+    description: 'Migrate an external webpage into FlowWink-ready blocks with brand extraction and page discovery. Use when: user pastes a URL to migrate, importing content from an external website, rebuilding an existing site in FlowWink. NOT for: creating pages from scratch (use manage_page), adding blocks manually (use create_page_block), scraping for data extraction only (use scrape_url).',
     handler: 'edge:migrate-page',
     category: 'content',
     scope: 'internal',
@@ -1231,7 +1231,7 @@ This skill is primarily triggered by automations, not directly by users.
   // ─── Module Administration Skills ──────────────────────────────────────────
   {
     name: 'manage_page',
-    description: 'Full page lifecycle: list, get, create, update, publish, archive, delete, rollback. Use after migrate_url to create destination pages.',
+    description: 'Full page lifecycle management: list, get, create, update, publish, archive, delete, rollback. Use when: creating a new page, publishing a draft, listing all pages, updating page metadata, archiving old content, creating destination page after migrate_url. NOT for: adding/editing individual blocks (use create_page_block or manage_page_blocks), scraping external sites (use migrate_url).',
     handler: 'module:pages',
     category: 'content',
     scope: 'internal',
@@ -3164,7 +3164,7 @@ Returns the public product catalog via the product-catalog edge function.
   },
   {
     name: 'place_order',
-    description: 'Place an order via the checkout API. Supports sandbox mode for testing without payment.',
+    description: 'Place an order via the checkout API with sandbox mode support. Use when: external agent tests purchase flow, programmatic order creation, automated testing of checkout pipeline. NOT for: managing existing orders (use manage_orders), browsing products (use manage_products), payment configuration (use site_settings).',
     handler: 'edge:create-checkout',
     category: 'commerce',
     scope: 'external',
@@ -3855,7 +3855,7 @@ Use this to find email addresses and contact information for people at a company
   },
   {
     name: 'create_page_block',
-    description: 'Create a new content block on an existing page. Wrapper around manage_page_blocks add action.',
+    description: 'Create a new content block on an existing page. Supports batch mode for adding multiple blocks at once. Use when: building a page after manage_page created it, adding sections during migration, user asks to add a hero/features/CTA section. NOT for: creating pages (use manage_page), editing existing blocks (use manage_page_blocks), full page migrations (use migrate_url first).',
     handler: 'module:pages',
     category: 'content',
     scope: 'internal',
