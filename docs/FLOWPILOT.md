@@ -840,7 +840,7 @@ Bundled capability sets in `agent_skill_packs` table (3 seed packs, not yet inst
 
 | Table | Purpose |
 |-------|---------|
-| `agent_skills` | Skill registry — 73 skills (name, handler, scope, instructions, tool_definition) |
+| `agent_skills` | Skill registry — 106 skills (name, handler, scope, instructions, tool_definition) |
 | `agent_memory` | Persistent K-V memory incl. soul & identity (pgvector-ready) |
 | `agent_objectives` | Goal tracking with plan decomposition, priority scoring, locking |
 | `agent_activity` | Full execution audit trail with I/O, timing, status |
