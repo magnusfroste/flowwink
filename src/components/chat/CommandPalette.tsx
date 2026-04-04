@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Badge } from '@/components/ui/badge';
-import { Wrench, Target, Activity, HelpCircle, ArrowRightLeft } from 'lucide-react';
+import { Wrench, Target, Activity, HelpCircle, BarChart3, FileText, Users, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { AgentSkill } from '@/types/agent';
 
