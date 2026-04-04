@@ -2,7 +2,7 @@
 
 > **Your website runs itself.** FlowAgent is not a chatbot. It is an autonomous AI operator that writes your content, qualifies your leads, runs your campaigns, orchestrates multi-agent workflows, and learns from every interaction. You set the objectives. It does the rest.
 
-> **Version:** 3.0 | **Updated:** March 2026 | **Skills:** 73 registered + 32 built-in tools | **Autonomy:** 10/10
+> **Version:** 4.0 | **Updated:** April 2026 | **Skills:** 106 registered + 32 built-in tools | **Autonomy:** 10/10
 
 ---
 
@@ -157,7 +157,7 @@ The central innovation is `agent-reason` — a **shared importable module** (not
 │                                                                  │
 │  ┌──────────────┐    ┌──────────────────┐    ┌───────────────┐  │
 │  │ agent_skills  │───▸│  agent-execute   │───▸│ agent_activity│  │
-│  │  (73 skills)  │    │  (router)        │    │ (audit log)   │  │
+│  │  (106 skills) │    │  (router)        │    │ (audit log)   │  │
 │  └──────────────┘    └────────┬─────────┘    └───────────────┘  │
 │                               │                                  │
 │            ┌──────────┬───────┼────────┬──────────┐             │
@@ -189,7 +189,7 @@ The central innovation is `agent-reason` — a **shared importable module** (not
 
 ## 4. The Seven Core Capabilities
 
-### 4.1 Skill Engine (73 Registered Skills + 32 Built-in Tools)
+### 4.1 Skill Engine (106 Registered Skills + 32 Built-in Tools)
 
 Every capability is a **skill** — a database-driven, hot-reloadable tool definition in OpenAI function-calling format. FlowAgent can create new skills at runtime.
 
@@ -361,112 +361,156 @@ FlowAgent can modify its own behavior:
 
 ## 5. Complete Skill Inventory — VERIFIED FROM DATABASE
 
-> **Source of truth**: `SELECT name, handler, scope, category FROM agent_skills ORDER BY category, name;`
-> **Last verified**: 2026-03-19 | **Total**: 73 registered skills
+> **Source of truth**: `supabase/functions/setup-flowpilot/index.ts` → `DEFAULT_SKILLS[]`
+> See also: [`docs/SKILLS-SOURCE.md`](./SKILLS-SOURCE.md) for the portability model.
+> **Last verified**: 2026-04-04 | **Total**: 106 registered skills + 32 built-in tools
 
-### Content Skills (21 skills)
+### Content Skills (27 skills)
 
-| # | Skill | Handler | Scope | Approval | Status |
-|---|-------|---------|-------|----------|--------|
-| 1 | `browse_blog` | `module:blog` | external | ❌ | ✅ Verified |
-| 2 | `create_campaign` | `edge:generate-content-proposal` | internal | ❌ | ✅ Verified |
-| 3 | `create_page_block` | `edge:copilot-action` | internal | ❌ | ✅ Verified |
-| 4 | `extract_pdf_text` | `edge:extract-pdf-text` | internal | ❌ | ✅ Verified |
-| 5 | `generate_content_proposal` | `edge:generate-content-proposal` | internal | ✅ | ✅ Verified |
-| 6 | `generate_site_from_identity` | `edge:generate-site-from-identity` | both | ✅ | ✅ Verified |
-| 7 | `generate_social_post` | `edge:generate-social-post` | internal | ❌ | ✅ Verified |
-| 8 | `manage_blog_categories` | `module:blog` | internal | ❌ | ✅ Verified |
-| 9 | `manage_blog_posts` | `module:blog` | internal | ❌ | ✅ Verified |
-| 10 | `manage_consultant_profile` | `module:resume` | internal | ❌ | ✅ Verified |
-| 11 | `manage_global_blocks` | `module:globalElements` | internal | ❌ | ✅ Verified |
-| 12 | `manage_kb_article` | `module:kb` | internal | ❌ | ✅ Verified |
-| 13 | `manage_page` | `module:pages` | internal | ❌ | ✅ Verified |
-| 14 | `manage_page_blocks` | `module:pages` | internal | ❌ | ✅ Verified |
-| 15 | `manage_product` | `module:products` | internal | ❌ | ✅ Verified |
-| 16 | `match_consultant` | `module:resume` | both | ❌ | ✅ Verified |
-| 17 | `media_browse` | `module:media` | internal | ❌ | ✅ Verified |
-| 18 | `migrate_url` | `edge:copilot-action` | internal | ❌ | ✅ Verified |
-| 19 | `publish_scheduled_content` | `edge:publish-scheduled-pages` | internal | ❌ | ✅ Verified |
-| 20 | `research_content` | `edge:research-content` | internal | ❌ | ✅ Verified |
-| 21 | `write_blog_post` | `module:blog` | internal | ❌ | ✅ Verified |
+| # | Skill | Handler | Scope | Category |
+|---|-------|---------|-------|----------|
+| 1 | `browse_blog` | `module:blog` | both | content |
+| 2 | `content_calendar_view` | `module:blog` | internal | content |
+| 3 | `create_page_block` | `module:pages` | internal | content |
+| 4 | `extract_pdf_text` | `edge:extract-pdf-text` | internal | content |
+| 5 | `generate_content_proposal` | `edge:generate-content-proposal` | internal | content |
+| 6 | `generate_site_from_identity` | `edge:generate-site-from-identity` | both | content |
+| 7 | `generate_social_post` | `edge:generate-social-post` | internal | content |
+| 8 | `manage_blog_categories` | `module:blog` | internal | content |
+| 9 | `manage_blog_posts` | `module:blog` | internal | content |
+| 10 | `manage_consultant_profile` | `module:resume` | internal | content |
+| 11 | `manage_global_blocks` | `module:globalElements` | internal | content |
+| 12 | `manage_kb_article` | `module:kb` | internal | content |
+| 13 | `manage_newsletters` | `module:newsletter` | internal | content |
+| 14 | `manage_page` | `module:pages` | internal | content |
+| 15 | `manage_page_blocks` | `module:pages` | internal | content |
+| 16 | `match_consultant` | `module:resume` | internal | content |
+| 17 | `media_browse` | `module:media` | internal | content |
+| 18 | `migrate_url` | `edge:migrate-page` | internal | content |
+| 19 | `product_promoter` | `module:blog` | internal | content |
+| 20 | `publish_scheduled_content` | `edge:publish-scheduled-pages` | internal | content |
+| 21 | `research_content` | `edge:research-content` | internal | content |
+| 22 | `seo_content_brief` | `edge:research-content` | internal | content |
+| 23 | `site_branding_get` | `db:site_settings` | internal | content |
+| 24 | `site_branding_update` | `db:site_settings` | internal | content |
+| 25 | `social_post_batch` | `edge:generate-social-post` | internal | content |
+| 26 | `write_blog_post` | `module:blog` | internal | content |
 
-### CRM Skills (23 skills)
+### CRM Skills (27 skills)
 
-| # | Skill | Handler | Scope | Approval | Status |
-|---|-------|---------|-------|----------|--------|
-| 1 | `add_lead` | `module:crm` | both | ❌ | ✅ Verified |
-| 2 | `book_appointment` | `module:booking` | both | ❌ | ✅ Verified |
-| 3 | `browse_products` | `module:products` | external | ❌ | ✅ Verified |
-| 4 | `browse_services` | `module:booking` | external | ❌ | ✅ Verified |
-| 5 | `check_availability` | `module:booking` | external | ❌ | ✅ Verified |
-| 6 | `check_order` | `module:orders` | external | ❌ | ✅ Verified |
-| 7 | `contact_finder` | `edge:contact-finder` | internal | ❌ | ✅ Verified |
-| 8 | `enrich_company` | `edge:enrich-company` | internal | ❌ | ✅ Verified |
-| 9 | `lead_nurture_sequence` | `module:newsletter` | internal | ❌ | ✅ Verified |
-| 10 | `lookup_order` | `module:orders` | both | ❌ | ✅ Verified |
-| 11 | `manage_booking_availability` | `module:booking` | internal | ❌ | ✅ Verified |
-| 12 | `manage_bookings` | `module:booking` | internal | ❌ | ✅ Verified |
-| 13 | `manage_company` | `module:companies` | internal | ❌ | ✅ Verified |
-| 14 | `manage_deal` | `module:deals` | internal | ❌ | ✅ Verified |
-| 15 | `manage_form_submissions` | `module:forms` | internal | ❌ | ✅ Verified |
-| 16 | `manage_inventory` | `module:products` | internal | ❌ | ✅ Verified |
-| 17 | `manage_leads` | `module:crm` | internal | ❌ | ✅ Verified |
-| 18 | `manage_orders` | `module:orders` | internal | ❌ | ✅ Verified |
-| 19 | `prospect_fit_analysis` | `edge:prospect-fit-analysis` | internal | ❌ | ✅ Verified |
-| 20 | `prospect_research` | `edge:prospect-research` | internal | ❌ | ✅ Verified |
-| 21 | `qualify_lead` | `edge:qualify-lead` | internal | ❌ | ✅ Verified |
-| 22 | `sales_profile_setup` | `edge:sales-profile-setup` | internal | ❌ | ✅ Verified |
-| 23 | `manage_site_settings` | `db:site_settings` | internal | ❌ | ✅ Verified |
+| # | Skill | Handler | Scope | Category |
+|---|-------|---------|-------|----------|
+| 1 | `add_lead` | `module:crm` | both | crm |
+| 2 | `book_appointment` | `module:booking` | both | crm |
+| 3 | `browse_services` | `module:booking` | both | crm |
+| 4 | `cart_recovery_check` | `module:orders` | internal | crm |
+| 5 | `check_availability` | `module:booking` | both | crm |
+| 6 | `contact_finder` | `edge:contact-finder` | internal | crm |
+| 7 | `crm_task_create` | `db:crm_tasks` | internal | crm |
+| 8 | `crm_task_list` | `db:crm_tasks` | internal | crm |
+| 9 | `crm_task_update` | `db:crm_tasks` | internal | crm |
+| 10 | `deal_stale_check` | `module:deals` | internal | crm |
+| 11 | `enrich_company` | `edge:enrich-company` | internal | crm |
+| 12 | `lead_nurture_sequence` | `module:newsletter` | internal | crm |
+| 13 | `lead_pipeline_review` | `module:crm` | internal | crm |
+| 14 | `lookup_order` | `module:orders` | both | crm |
+| 15 | `manage_booking_availability` | `module:booking` | internal | crm |
+| 16 | `manage_bookings` | `module:booking` | internal | crm |
+| 17 | `manage_company` | `module:companies` | internal | crm |
+| 18 | `manage_deal` | `module:deals` | internal | crm |
+| 19 | `manage_form_submissions` | `module:forms` | internal | crm |
+| 20 | `manage_leads` | `module:crm` | both | crm |
+| 21 | `prospect_fit_analysis` | `edge:prospect-fit-analysis` | internal | crm |
+| 22 | `prospect_research` | `edge:prospect-research` | internal | crm |
+| 23 | `qualify_lead` | `edge:qualify-lead` | internal | crm |
+| 24 | `sales_profile_setup` | `edge:sales-profile-setup` | internal | crm |
+| 25 | `ticket_triage` | `ticket_triage` | internal | crm |
+| 26 | `users_list` | `db:profiles` | internal | crm |
 
-### Communication Skills (8 skills)
+### Communication Skills (11 skills)
 
-| # | Skill | Handler | Scope | Approval | Status |
-|---|-------|---------|-------|----------|--------|
-| 1 | `execute_newsletter_send` | `edge:newsletter-send` | internal | ✅ | ✅ Verified |
-| 2 | `manage_newsletter_subscribers` | `module:newsletter` | internal | ❌ | ✅ Verified |
-| 3 | `manage_webinar` | `module:webinars` | internal | ❌ | ✅ Verified |
-| 4 | `newsletter_subscribe` | `edge:newsletter-subscribe` | external | ❌ | ✅ Verified |
-| 5 | `register_webinar` | `module:webinars` | external | ❌ | ✅ Verified |
-| 6 | `scan_gmail_inbox` | `edge:gmail-inbox-scan` | internal | ❌ | ✅ Verified |
-| 7 | `send_newsletter` | `module:newsletter` | internal | ✅ | ✅ Verified |
-| 8 | `generate_social_post` | `edge:generate-social-post` | internal | ❌ | ✅ Verified |
+| # | Skill | Handler | Scope | Category |
+|---|-------|---------|-------|----------|
+| 1 | `composio_gmail_read` | `edge:composio-proxy` | both | communication |
+| 2 | `composio_gmail_send` | `edge:composio-proxy` | both | communication |
+| 3 | `execute_newsletter_send` | `edge:newsletter-send` | internal | communication |
+| 4 | `manage_newsletter_subscribers` | `module:newsletter` | internal | communication |
+| 5 | `manage_webinar` | `module:webinars` | internal | communication |
+| 6 | `newsletter_subscribe` | `edge:newsletter-subscribe` | external | communication |
+| 7 | `register_webinar` | `module:webinars` | external | communication |
+| 8 | `scan_gmail_inbox` | `edge:gmail-inbox-scan` | internal | communication |
+| 9 | `send_newsletter` | `module:newsletter` | internal | communication |
+| 10 | `support_assign_conversation` | `db:chat_conversations` | internal | communication |
+| 11 | `support_list_conversations` | `db:chat_conversations` | internal | communication |
 
-### Automation Skills (9 skills)
+### Automation Skills (4 skills)
 
-| # | Skill | Handler | Scope | Approval | Status |
-|---|-------|---------|-------|----------|--------|
-| 1 | `a2a_request` | `a2a:SoundSpace` | internal | ❌ | ✅ Verified |
-| 2 | `create_automation` | `module:automations` | internal | ❌ | ✅ Verified |
-| 3 | `create_objective` | `module:objectives` | internal | ❌ | ✅ Verified |
-| 4 | `manage_automations` | `module:automations` | internal | ❌ | ✅ Verified |
-| 5 | `memory_read` | `builtin:memory_read` | internal | ❌ | ✅ Verified |
-| 6 | `memory_write` | `builtin:memory_write` | internal | ❌ | ✅ Verified |
-| 7 | `process_signal` | `edge:signal-ingest` | internal | ❌ | ✅ Verified |
-| 8 | `remove_duplicate_resumes` | `module:cleanup_duplicates` | internal | ✅ | ⚠️ Disabled |
-| 9 | `update_settings` | `db:site_settings` | internal | ✅ | ✅ Verified |
+| # | Skill | Handler | Scope | Category |
+|---|-------|---------|-------|----------|
+| 1 | `a2a_request` | `a2a:SoundSpace` | internal | automation |
+| 2 | `create_objective` | `module:objectives` | internal | automation |
+| 3 | `manage_automations` | `module:automations` | internal | automation |
+| 4 | `process_signal` | `edge:signal-ingest` | internal | automation |
 
-### Search & Browser Skills (5 skills)
+### Search Skills (4 skills)
 
-| # | Skill | Handler | Scope | Approval | Status |
-|---|-------|---------|-------|----------|--------|
-| 1 | `browser_fetch` | `edge:browser-fetch` | internal | ❌ | ✅ Verified |
-| 2 | `scrape_url` | `edge:web-scrape` | internal | ❌ | ✅ Verified |
-| 3 | `search_web` | `edge:web-search` | both | ❌ | ✅ Verified |
-| 4 | `web_scrape` | `edge:web-scrape` | both | ❌ | ✅ Verified |
-| 5 | `web_search` | `edge:web-search` | both | ❌ | ✅ Verified |
+| # | Skill | Handler | Scope | Category |
+|---|-------|---------|-------|----------|
+| 1 | `browser_fetch` | `edge:browser-fetch` | internal | search |
+| 2 | `scrape_url` | `edge:web-scrape` | internal | search |
+| 3 | `search_web` | `edge:web-search` | internal | search |
 
-### Analytics Skills (8 skills)
+### Analytics Skills (9 skills)
 
-| # | Skill | Handler | Scope | Approval | Status |
-|---|-------|---------|-------|----------|--------|
-| 1 | `analyze_analytics` | `db:page_views` | internal | ❌ | ✅ Verified |
-| 2 | `analyze_chat_feedback` | `module:analytics` | internal | ❌ | ✅ Verified |
-| 3 | `competitor_monitor` | `edge:competitor-monitor` | internal | ❌ | ✅ Verified |
-| 4 | `competitor_watch` | `edge:firecrawl-scrape` | internal | ❌ | ✅ Verified |
-| 5 | `kb_gap_analysis` | `module:analytics` | internal | ❌ | ✅ Verified |
-| 6 | `learn_from_data` | `edge:flowpilot-learn` | internal | ❌ | ✅ Verified |
-| 7 | `seo_audit_page` | `module:analytics` | internal | ❌ | ✅ Verified |
-| 8 | `weekly_business_digest` | `edge:business-digest` | internal | ❌ | ✅ Verified |
+| # | Skill | Handler | Scope | Category |
+|---|-------|---------|-------|----------|
+| 1 | `analyze_analytics` | `db:page_views` | internal | analytics |
+| 2 | `analyze_chat_feedback` | `module:analytics` | internal | analytics |
+| 3 | `competitor_monitor` | `edge:competitor-monitor` | internal | analytics |
+| 4 | `inventory_report` | `module:products` | internal | analytics |
+| 5 | `kb_gap_analysis` | `module:analytics` | internal | analytics |
+| 6 | `learn_from_data` | `edge:flowpilot-learn` | internal | analytics |
+| 7 | `seo_audit_page` | `module:analytics` | internal | analytics |
+| 8 | `support_get_feedback` | `db:chat_feedback` | internal | analytics |
+| 9 | `weekly_business_digest` | `edge:business-digest` | internal | analytics |
+
+### System Skills (12 skills)
+
+| # | Skill | Handler | Scope | Category |
+|---|-------|---------|-------|----------|
+| 1 | `a2a_chat` | `edge:a2a-chat` | external | system |
+| 2 | `composio_execute` | `edge:composio-proxy` | internal | system |
+| 3 | `composio_search_tools` | `edge:composio-proxy` | internal | system |
+| 4 | `manage_site_settings` | `db:site_settings` | internal | system |
+| 5 | `openclaw_end_session` | `module:openclaw` | internal | system |
+| 6 | `openclaw_exchange` | `module:openclaw` | internal | system |
+| 7 | `openclaw_get_status` | `module:openclaw` | internal | system |
+| 8 | `openclaw_report_finding` | `module:openclaw` | internal | system |
+| 9 | `openclaw_start_session` | `module:openclaw` | internal | system |
+| 10 | `queue_beta_test` | `module:openclaw` | internal | system |
+| 11 | `resolve_finding` | `module:openclaw` | internal | system |
+| 12 | `scan_beta_findings` | `module:openclaw` | internal | system |
+
+### Commerce Skills (7 skills)
+
+| # | Skill | Handler | Scope | Category |
+|---|-------|---------|-------|----------|
+| 1 | `browse_products` | `module:products` | both | commerce |
+| 2 | `check_order_status` | `edge:order-status` | external | commerce |
+| 3 | `manage_inventory` | `module:products` | internal | commerce |
+| 4 | `manage_orders` | `module:orders` | internal | commerce |
+| 5 | `manage_product` | `module:products` | internal | commerce |
+| 6 | `place_order` | `edge:create-checkout` | external | commerce |
+
+### Growth Skills (5 skills)
+
+| # | Skill | Handler | Scope | Category |
+|---|-------|---------|-------|----------|
+| 1 | `ad_campaign_create` | `edge:ad-campaign-create` | internal | growth |
+| 2 | `ad_creative_generate` | `edge:ad-creative-generate` | internal | growth |
+| 3 | `ad_optimize` | `edge:ad-optimize` | internal | growth |
+| 4 | `ad_performance_check` | `edge:ad-performance-check` | internal | growth |
+| 5 | `landing_page_compose` | `edge:landing-page-compose` | internal | growth |
 
 ### Built-in Tools (32 tools in agent-reason — NOT in agent_skills table)
 
@@ -796,7 +840,7 @@ Bundled capability sets in `agent_skill_packs` table (3 seed packs, not yet inst
 
 | Table | Purpose |
 |-------|---------|
-| `agent_skills` | Skill registry — 73 skills (name, handler, scope, instructions, tool_definition) |
+| `agent_skills` | Skill registry — 106 skills (name, handler, scope, instructions, tool_definition) |
 | `agent_memory` | Persistent K-V memory incl. soul & identity (pgvector-ready) |
 | `agent_objectives` | Goal tracking with plan decomposition, priority scoring, locking |
 | `agent_activity` | Full execution audit trail with I/O, timing, status |
@@ -817,7 +861,7 @@ Bundled capability sets in `agent_skill_packs` table (3 seed packs, not yet inst
 
 | OpenClaw Concept | FlowAgent Implementation | Status |
 |------------------|--------------------------|--------|
-| Skill Registry | `agent_skills` table — 73 DB-driven, hot-reloadable | ✅ |
+| Skill Registry | `agent_skills` table — 106 DB-driven, hot-reloadable | ✅ |
 | Tool Definition | OpenAI function-calling JSON format | ✅ |
 | Tool Router | `agent-execute` — unified dispatcher | ✅ |
 | Handler Routing | `edge:`, `module:`, `db:`, `webhook:`, `a2a:` | ✅ |
