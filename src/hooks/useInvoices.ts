@@ -54,7 +54,7 @@ export function useInvoices(statusFilter?: InvoiceStatus) {
 
       const { data, error } = await query;
       if (error) throw error;
-      return (data || []) as Invoice[];
+      return (data || []) as unknown as Invoice[];
     },
   });
 }
@@ -70,7 +70,7 @@ export function useInvoice(id: string | undefined) {
         .eq('id', id)
         .single();
       if (error) throw error;
-      return data as Invoice;
+      return data as unknown as Invoice;
     },
     enabled: !!id,
   });
@@ -120,7 +120,7 @@ export function useCreateInvoice() {
         .single();
 
       if (error) throw error;
-      return data as Invoice;
+      return data as unknown as Invoice;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
@@ -151,7 +151,7 @@ export function useUpdateInvoice() {
         .single();
 
       if (error) throw error;
-      return data as Invoice;
+      return data as unknown as Invoice;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
