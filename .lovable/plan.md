@@ -1,83 +1,125 @@
 
 
-## Migration Quality Fix — Full-Site Interactive Migration Plan
+# Invoicing Module — Quote-to-Cash MVP
 
-### Problem Analysis
+## Current State
 
-After reviewing the entire migration pipeline, I found **three root causes** for poor migration quality:
+**What exists:**
+- `deals` table: lead_id, product_id, value_cents, stage (proposal → negotiation → won → lost)
+- `orders` table: customer_email, total_cents, status, Stripe integration
+- `products` table: price_cents, inventory tracking
+- Deal activities and CRM tasks linked to deals
 
-1. **TipTap format mismatch in `migrate-page`**: The AI prompt in `migrate-page/index.ts` (line 1069) shows `"content": "<p>...</p>"` as an example — raw HTML. But `text` and `two-column` blocks require TipTap JSON (`{ type: "doc", content: [...] }`). The `BLOCK_TYPES_SCHEMA` correctly marks these as `tiptap`, but the example contradicts it.
+**The gap:** No way to generate a formal quote/invoice from a deal. The flow breaks at "deal won" — there's no document to send the customer.
 
-2. **Two parallel migration systems**: There are TWO completely separate migration paths:
-   - **Copilot path** (old): `CopilotChat` → `copilot-action` → `create_block` tool → client-side block assembly
-   - **FlowPilot path** (new): `agent-operate` → `agent-execute` → `manage_page` → server-side page creation
-   
-   The FlowPilot path creates pages in one shot with no interactive review. The Copilot path has interactive block-by-block review but uses a simpler AI prompt without the detailed extraction logic.
+## What We Build
 
-3. **No interactive dialog during FlowPilot migration**: When FlowPilot runs `manage_page(create, blocks=[...])`, it dumps all blocks at once. No preview, no approval, no iterative refinement.
-
-### Plan
-
-#### Step 1: Fix TipTap format in `migrate-page` prompt
-**File**: `supabase/functions/migrate-page/index.ts`
-
-- Replace the raw HTML example on line 1069 with proper TipTap JSON example
-- Add explicit "NEVER use raw HTML strings for content fields" warning near the response format section
-- This fixes the root data quality issue for both migration paths
-
-#### Step 2: Unify migration under `migrate-page` edge function (Copilot path)
-**File**: `src/hooks/useCopilot.ts`
-
-The Copilot path (`analyzeSite` → `startMigration` → `migrate-page`) already has excellent interactive UX:
-- Discovers all pages via sitemap + nav
-- Shows page selector (CopilotSiteOverview)
-- Migrates page-by-page with block-by-block review
-- Auto-continues to next page
-
-This is the correct path. The problem is it goes through `migrate-page` which already has the full schema. **The issue is purely the TipTap format bug in Step 1.**
-
-#### Step 3: Enhance FlowPilot's migration to use interactive dialog
-**Files**: `supabase/functions/copilot-action/index.ts`, `supabase/functions/agent-execute/index.ts`
-
-Currently FlowPilot (Engine Room) migration creates pages silently. Enhance it to:
-- After scraping, present a summary in chat: "Found X sections. Here's what I'll create..."
-- Use `manage_page` with `action: 'create'` for the page, then `manage_page_blocks` to add blocks incrementally
-- Report progress per block in the chat stream: `✦ Created hero section`, `✦ Created features grid`, etc.
-- At the end, provide a link to preview the page
-
-#### Step 4: Add migration progress feedback in Copilot chat
-**File**: `src/components/admin/copilot/CopilotChat.tsx`
-
-- Show a migration progress indicator when `discoveryStatus === 'migrating'`
-- Display which page is being processed (e.g., "Migrating 2/5: About Us")
-- Show block creation steps as they happen (leveraging existing `toolCall` badge display)
-
-#### Step 5: Add post-migration quality check
-**File**: `supabase/functions/migrate-page/index.ts`
-
-- After AI returns blocks, validate that all `tiptap` fields contain proper JSON objects (not strings)
-- Auto-fix any raw HTML strings by wrapping them: `{ type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: stripped }] }] }`
-- Log quality warnings for blocks with missing required fields
-
-### Technical Details
+A single new module: **Invoicing** — covers both quotes and invoices as the same entity with a status lifecycle.
 
 ```text
-Migration Flow (Fixed):
-
-URL input → migrate-page (analyze-site)
-         → Page selector UI (CopilotSiteOverview)
-         → For each selected page:
-            1. migrate-page (scrape + AI mapping)
-            2. Validate TipTap fields (new)
-            3. Present blocks one-by-one in chat
-            4. User approves/skips/edits
-            5. Auto-save page to DB
-            6. Set first page as homepage
-         → Migration complete summary
+Deal (won) → Invoice (draft) → Invoice (sent) → Invoice (paid)
+                ↑                                      ↓
+         FlowPilot auto-creates              Stripe or manual mark
 ```
 
-### Priority Order
-1. **Step 1** (TipTap fix) — immediate quality improvement, single file change
-2. **Step 5** (validation) — safety net for any AI format errors
-3. **Steps 3-4** (interactive feedback) — UX polish for FlowPilot path
+## Database
+
+One new table: `invoices`
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | uuid | PK |
+| invoice_number | text | Auto-generated (INV-0001) |
+| deal_id | uuid | FK → deals (nullable) |
+| customer_email | text | Required |
+| customer_name | text | |
+| status | enum | draft, sent, paid, cancelled |
+| line_items | jsonb | Array of {description, qty, unit_price_cents} |
+| subtotal_cents | int | Computed on save |
+| tax_rate | numeric | Default 0.25 (25% moms) |
+| tax_cents | int | Computed |
+| total_cents | int | Computed |
+| currency | text | Default SEK |
+| due_date | date | |
+| paid_at | timestamptz | |
+| notes | text | Free text |
+| created_by | uuid | |
+| created_at / updated_at | timestamptz | |
+
+One new enum: `invoice_status` (draft, sent, paid, cancelled).
+
+RLS: Admin full access. Approver read + update. No public access.
+
+## Module Registration
+
+- Module ID: `invoicing`
+- Category: `data`
+- Autonomy: `agent-capable` (FlowPilot can create invoices from won deals)
+- Icon: `FileText` or `Receipt`
+- Dependencies: `deals` (optional — invoices can also be standalone)
+
+## Admin UI (Minimal)
+
+**InvoicesPage** (`/admin/invoices`):
+- Table view: number, customer, status badge, total, due date
+- Filters: status tabs (All / Draft / Sent / Paid)
+- Click row → detail sheet
+
+**Invoice Detail Sheet:**
+- Line items editor (description, qty, unit price — total auto-calculates)
+- Customer info (auto-filled from deal/lead)
+- Status actions: Send (→ email via Resend), Mark Paid, Cancel
+- "Generate PDF" button (edge function renders to PDF, stores in storage)
+
+## FlowPilot Integration
+
+Two new skills:
+
+1. **`create_invoice`** — Creates a draft invoice from a deal or standalone
+   - Input: deal_id OR {customer_email, line_items}
+   - Auto-populates from deal's product + value_cents
+   - Use when: "create invoice", "bill the client", "fakturera"
+
+2. **`send_invoice`** — Sends invoice email via Resend
+   - Input: invoice_id
+   - Generates PDF, attaches to email
+   - Use when: "send invoice", "skicka faktura"
+
+**Autonomous behavior:** When a deal moves to `won`, FlowPilot's heartbeat can auto-create a draft invoice and notify admin for approval (HIL pattern).
+
+## Edge Function
+
+**`generate-invoice-pdf`** — Deno function that:
+- Fetches invoice data
+- Renders a clean PDF using company profile (logo, address, org number from business identity)
+- Stores PDF in Supabase Storage (`invoices/` bucket)
+- Returns download URL
+
+## Implementation Steps
+
+1. **Migration**: Create `invoice_status` enum + `invoices` table with RLS
+2. **Hook**: `useInvoices.ts` — CRUD + status transitions
+3. **Module registration**: Add to `useModules.tsx`, sidebar, `App.tsx` route
+4. **Admin page**: `InvoicesPage.tsx` with table + detail sheet
+5. **FlowPilot skills**: Register `create_invoice` and `send_invoice`
+6. **PDF edge function**: `generate-invoice-pdf` (can be phase 2)
+7. **Email sending**: Reuse Resend integration for invoice delivery (phase 2)
+
+## Phase 1 (This Sprint)
+
+Steps 1-5: Table, hooks, UI, and FlowPilot skills. Invoices can be created, viewed, and managed. No PDF generation yet — that comes in phase 2.
+
+## Phase 2 (Next)
+
+- PDF generation edge function
+- Email delivery via Resend
+- Auto-create invoice on deal won (heartbeat automation)
+- Stripe payment link on invoice
+
+## Design Notes
+
+- Apple-inspired: clean table, minimal chrome, status badges with subtle colors
+- Invoice detail uses the same sheet pattern as deals/leads
+- Line items use inline editing (no modal)
+- FlowPilot handles the tedious parts — admin just reviews and approves
 
