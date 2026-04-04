@@ -1167,6 +1167,54 @@ async function layer7Tests(supabase: any, supabaseUrl: string, serviceKey: strin
     }
   }));
 
+  // ─── Command Tests ─────────────────────────────────────────────────────────
+  // Simulate slash commands via chat-completion and validate response structure
+
+  const COMMAND_TESTS = [
+    { command: '/help', mustContain: ['help'], description: 'should list commands or capabilities' },
+    { command: '/objectives', mustContain: ['objective', 'goal'], description: 'should reference objectives or goals' },
+    { command: '/activity', mustContain: ['activity', 'recent', 'action'], description: 'should reference recent activity' },
+    { command: '/status', mustContain: ['lead', 'chat', 'status', 'health', 'site'], description: 'should give site overview' },
+    { command: '/briefing', mustContain: ['briefing', 'summary', 'report', 'today'], description: 'should provide a briefing' },
+    { command: '/skills', mustContain: ['skill', 'capabilit', 'tool', 'enabled'], description: 'should list skills' },
+  ];
+
+  for (const tc of COMMAND_TESTS) {
+    results.push(await runTest(`CMD: ${tc.command} — ${tc.description}`, 7 as any, async () => {
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${serviceKey}`,
+      };
+
+      const resp = await fetch(`${supabaseUrl}/functions/v1/chat-completion`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: tc.command }],
+          sessionId: `test_cmd_${Date.now()}`,
+        }),
+      });
+
+      if (!resp.ok) {
+        const errText = await resp.text();
+        throw new Error(`chat-completion ${resp.status}: ${errText.slice(0, 150)}`);
+      }
+
+      const data = await resp.json();
+      const reply = (data.reply || data.content || data.message || '').toLowerCase();
+
+      if (!reply) {
+        throw new Error('Empty reply from chat-completion');
+      }
+
+      // At least one keyword should appear in the response
+      const found = tc.mustContain.some(kw => reply.includes(kw.toLowerCase()));
+      if (!found) {
+        throw new Error(`Response for ${tc.command} missing expected keywords [${tc.mustContain.join(',')}]. Got: "${reply.slice(0, 200)}"`);
+      }
+    }));
+  }
+
   return results;
 }
 

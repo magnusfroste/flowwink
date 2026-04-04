@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Badge } from '@/components/ui/badge';
-import { Wrench, Target, Activity, HelpCircle, ArrowRightLeft } from 'lucide-react';
+import { Wrench, Target, Activity, HelpCircle, BarChart3, FileText, Users, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { AgentSkill } from '@/types/agent';
 
@@ -25,9 +25,12 @@ interface CommandPaletteProps {
 
 const BUILTIN_COMMANDS: CommandItem[] = [
   { name: 'help', description: 'Show available commands', category: 'system', icon: <HelpCircle className="h-3.5 w-3.5" />, isBuiltin: true },
+  { name: 'status', description: 'Quick site health overview', category: 'system', icon: <BarChart3 className="h-3.5 w-3.5" />, isBuiltin: true },
   { name: 'objectives', description: 'View active goals', category: 'system', icon: <Target className="h-3.5 w-3.5" />, isBuiltin: true },
   { name: 'activity', description: 'Recent agent activity', category: 'system', icon: <Activity className="h-3.5 w-3.5" />, isBuiltin: true },
-  { name: 'migrate', description: 'Migrate a website', category: 'system', icon: <ArrowRightLeft className="h-3.5 w-3.5" />, isBuiltin: true },
+  { name: 'briefing', description: 'Daily summary & action items', category: 'system', icon: <FileText className="h-3.5 w-3.5" />, isBuiltin: true },
+  { name: 'leads', description: 'Recent leads & pipeline', category: 'crm', icon: <Users className="h-3.5 w-3.5" />, isBuiltin: true },
+  { name: 'skills', description: 'List active capabilities', category: 'system', icon: <Sparkles className="h-3.5 w-3.5" />, isBuiltin: true },
 ];
 
 const VISITOR_BUILTINS: CommandItem[] = [
