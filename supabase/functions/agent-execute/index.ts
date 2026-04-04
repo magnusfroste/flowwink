@@ -1342,7 +1342,19 @@ async function executeKbAction(
       );
       categoryId = match?.id ?? cats[0].id;
     }
-    if (!categoryId) throw new Error('No KB categories found — create a KB category first');
+    if (!categoryId) {
+      // Auto-create a default "General" category
+      const catSlug = category.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'general';
+      const { data: newCat, error: catErr } = await supabase.from('kb_categories').insert({
+        name: category || 'General',
+        slug: catSlug,
+        description: 'Auto-created category',
+        icon: 'HelpCircle',
+        is_active: true,
+      }).select('id').single();
+      if (catErr) throw new Error(`Failed to auto-create KB category: ${catErr.message}`);
+      categoryId = newCat.id;
+    }
 
     const { data, error } = await supabase.from('kb_articles').insert({
       title, question,
