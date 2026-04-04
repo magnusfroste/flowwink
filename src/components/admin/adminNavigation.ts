@@ -36,7 +36,7 @@ export const navigationGroups: NavGroup[] = [
   {
     label: "Content",
     items: [
-      { name: "Pages", href: "/admin/pages", icon: FileText, moduleId: "pages" },
+      { name: "Website", href: "/admin/pages", icon: FileText, moduleId: "pages" },
       { name: "Blog", href: "/admin/blog", icon: BookOpen, moduleId: "blog" },
       { name: "Campaigns", href: "/admin/campaigns", icon: Megaphone, moduleId: "developer" },
       { name: "Knowledge Base", href: "/admin/knowledge-base", icon: Library, moduleId: "knowledgeBase" },
