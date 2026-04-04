@@ -1231,7 +1231,7 @@ This skill is primarily triggered by automations, not directly by users.
   // ─── Module Administration Skills ──────────────────────────────────────────
   {
     name: 'manage_page',
-    description: 'Full page lifecycle: list, get, create, update, publish, archive, delete, rollback. Use after migrate_url to create destination pages.',
+    description: 'Full page lifecycle management: list, get, create, update, publish, archive, delete, rollback. Use when: creating a new page, publishing a draft, listing all pages, updating page metadata, archiving old content, creating destination page after migrate_url. NOT for: adding/editing individual blocks (use create_page_block or manage_page_blocks), scraping external sites (use migrate_url).',
     handler: 'module:pages',
     category: 'content',
     scope: 'internal',
