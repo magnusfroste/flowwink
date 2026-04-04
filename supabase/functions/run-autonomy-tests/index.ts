@@ -1816,12 +1816,12 @@ const L9_BENCHMARK: L9TestCase[] = [
   { input: 'how is the website performing this week?', expect: ['analyze_analytics'], notExpect: ['manage_blog_posts'], lang: 'en' },
   { input: 'visa statistik för veckan', expect: ['analyze_analytics'], lang: 'sv' },
   // ── CRM / Leads ──
-  { input: 'show me all new leads', expect: ['manage_leads', 'manage_crm'], notExpect: ['manage_blog_posts'], lang: 'en' },
-  { input: 'visa nya leads', expect: ['manage_leads', 'manage_crm'], lang: 'sv' },
-  { input: 'create a deal for this prospect', expect: ['manage_deals', 'manage_crm'], lang: 'en' },
+  { input: 'show me all new leads', expect: ['manage_leads'], notExpect: ['manage_blog_posts'], lang: 'en' },
+  { input: 'visa nya leads', expect: ['manage_leads'], lang: 'sv' },
+  { input: 'create a deal for this prospect', expect: ['manage_deal'], lang: 'en' },
   // ── Newsletter ──
-  { input: 'send the weekly newsletter', expect: ['manage_newsletter', 'send_newsletter'], notExpect: ['manage_blog_posts'], lang: 'en' },
-  { input: 'skicka nyhetsbrevet', expect: ['manage_newsletter', 'send_newsletter'], lang: 'sv' },
+  { input: 'send the weekly newsletter', expect: ['manage_newsletters', 'send_newsletter'], notExpect: ['manage_blog_posts'], lang: 'en' },
+  { input: 'skicka nyhetsbrevet', expect: ['manage_newsletters', 'send_newsletter'], lang: 'sv' },
   // ── Booking ──
   { input: 'show upcoming bookings', expect: ['manage_bookings', 'content_calendar_view'], lang: 'en' },
   { input: 'visa bokningar', expect: ['manage_bookings'], lang: 'sv' },
