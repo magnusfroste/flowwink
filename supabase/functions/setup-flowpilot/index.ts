@@ -279,7 +279,7 @@ BEGIN DELETE FROM agent_locks WHERE lane = p_lane; END; $$;
 const DEFAULT_SKILLS = [
   {
     name: 'write_blog_post',
-    description: 'Create a draft blog post with title, topic, tone, and optional pre-written content. If content is provided it will be used directly; otherwise AI generates it.',
+    description: 'Create a draft blog post with title, topic, tone, and optional pre-written content. If content is provided it will be used directly; otherwise AI generates it. Use when: writing a new article; generating blog content from a topic; creating a draft for review. NOT for: managing existing posts (manage_blog_posts); generating multi-channel content (generate_content_proposal).',
     handler: 'module:blog',
     category: 'content',
     scope: 'internal',
@@ -305,7 +305,7 @@ Creates a draft blog post in the CMS with title, topic, tone, and content.
       type: 'function',
       function: {
         name: 'write_blog_post',
-        description: 'Create a draft blog post. IMPORTANT: Always provide the content parameter with the full blog post text in markdown. If you have source material, write the blog content yourself and pass it in the content field.',
+        description: 'Create a draft blog post with title, topic, tone, and optional pre-written content. If content is provided it will be used directly; otherwise AI generates it. Use when: writing a new article; generating blog content from a topic; creating a draft for review. NOT for: managing existing posts (manage_blog_posts); generating multi-channel content (generate_content_proposal).',
         parameters: {
           type: 'object',
           properties: {
@@ -322,7 +322,7 @@ Creates a draft blog post in the CMS with title, topic, tone, and content.
   },
   {
     name: 'add_lead',
-    description: 'Add a new lead to the CRM.',
+    description: 'Add a new lead to the CRM. Use when: capturing a new prospect; a visitor submits contact info; importing leads from external sources. NOT for: updating existing leads (manage_leads); qualifying leads (qualify_lead).',
     handler: 'module:crm',
     category: 'crm',
     scope: 'both',
@@ -347,7 +347,7 @@ Adds a new lead to the CRM system.
       type: 'function',
       function: {
         name: 'add_lead',
-        description: 'Add a lead to the CRM system.',
+        description: 'Add a new lead to the CRM. Use when: capturing a new prospect; a visitor submits contact info; importing leads from external sources. NOT for: updating existing leads (manage_leads); qualifying leads (qualify_lead).',
         parameters: {
           type: 'object',
           properties: {
@@ -363,7 +363,7 @@ Adds a new lead to the CRM system.
   },
   {
     name: 'book_appointment',
-    description: 'Create a booking for a customer.',
+    description: 'Create a booking for a customer. Use when: a customer wants to schedule an appointment; confirming a service reservation; creating a booking from a chat conversation. NOT for: checking availability (check_availability); managing existing bookings (manage_bookings).',
     handler: 'module:booking',
     category: 'crm',
     scope: 'both',
@@ -389,7 +389,7 @@ Creates a booking for a customer at a specific date and time.
       type: 'function',
       function: {
         name: 'book_appointment',
-        description: 'Book an appointment for a customer.',
+        description: 'Create a booking for a customer. Use when: a customer wants to schedule an appointment; confirming a service reservation; creating a booking from a chat conversation. NOT for: checking availability (check_availability); managing existing bookings (manage_bookings).',
         parameters: {
           type: 'object',
           properties: {
@@ -406,7 +406,7 @@ Creates a booking for a customer at a specific date and time.
   },
   {
     name: 'analyze_analytics',
-    description: 'Get page view analytics for a given period.',
+    description: 'Get page view analytics for a given period. Use when: reviewing website traffic; analyzing page performance; generating traffic reports. NOT for: analyzing chat feedback (analyze_chat_feedback); generating business digests (weekly_business_digest).',
     handler: 'db:page_views',
     category: 'analytics',
     scope: 'internal',
@@ -427,7 +427,7 @@ Retrieves page view analytics for a given time period.
       type: 'function',
       function: {
         name: 'analyze_analytics',
-        description: 'Analyze site traffic and page views.',
+        description: 'Get page view analytics for a given period. Use when: reviewing website traffic; analyzing page performance; generating traffic reports. NOT for: analyzing chat feedback (analyze_chat_feedback); generating business digests (weekly_business_digest).',
         parameters: {
           type: 'object',
           properties: {
@@ -439,7 +439,7 @@ Retrieves page view analytics for a given time period.
   },
   {
     name: 'send_newsletter',
-    description: 'Create a newsletter draft.',
+    description: 'Create a newsletter draft. Use when: starting a new email campaign; composing content for an upcoming newsletter; setting up subscriber update structure. NOT for: sending the newsletter (execute_newsletter_send); managing existing newsletters (manage_newsletters).',
     handler: 'module:newsletter',
     category: 'communication',
     scope: 'internal',
@@ -463,7 +463,7 @@ Creates a newsletter draft (does NOT send immediately). Requires approval.
       type: 'function',
       function: {
         name: 'send_newsletter',
-        description: 'Create a newsletter draft or schedule for sending.',
+        description: 'Create a newsletter draft. Use when: starting a new email campaign; composing content for an upcoming newsletter; setting up subscriber update structure. NOT for: sending the newsletter (execute_newsletter_send); managing existing newsletters (manage_newsletters).',
         parameters: {
           type: 'object',
           properties: {
@@ -478,7 +478,7 @@ Creates a newsletter draft (does NOT send immediately). Requires approval.
   },
   {
     name: 'create_objective',
-    description: 'Create a new high-level objective for FlowPilot to work toward.',
+    description: 'Create a new high-level objective for FlowPilot to work toward. Use when: defining a new strategic goal; initiating a new project; setting a long-term target for operations. NOT for: creating CRM tasks (crm_task_create); managing automations (manage_automations).',
     handler: 'module:objectives',
     category: 'automation',
     scope: 'internal',
@@ -502,7 +502,7 @@ Creates a new high-level objective for FlowPilot's autonomous operation.
       type: 'function',
       function: {
         name: 'create_objective',
-        description: 'Create a goal for autonomous operation.',
+        description: 'Create a new high-level objective for FlowPilot to work toward. Use when: defining a new strategic goal; initiating a new project; setting a long-term target for operations. NOT for: creating CRM tasks (crm_task_create); managing automations (manage_automations).',
         parameters: {
           type: 'object',
           properties: {
@@ -517,7 +517,7 @@ Creates a new high-level objective for FlowPilot's autonomous operation.
   },
   {
     name: 'search_web',
-    description: 'Search the web for information. Supports Firecrawl (paid, high quality) and Jina (free tier available). Agent chooses provider based on need.',
+    description: 'Search the web for information. Supports Firecrawl and Jina providers. Use when: researching a topic; finding current information; answering questions requiring web data. NOT for: scraping a specific URL (scrape_url); fetching login-walled content (browser_fetch).',
     handler: 'edge:web-search',
     category: 'search',
     scope: 'internal',
@@ -551,7 +551,7 @@ Creates a new high-level objective for FlowPilot's autonomous operation.
       type: 'function',
       function: {
         name: 'search_web',
-        description: 'Search the web for information. Set preferred_provider based on task needs.',
+        description: 'Search the web for information. Supports Firecrawl and Jina providers. Use when: researching a topic; finding current information; answering questions requiring web data. NOT for: scraping a specific URL (scrape_url); fetching login-walled content (browser_fetch).',
         parameters: {
           type: 'object',
           properties: {
@@ -566,7 +566,7 @@ Creates a new high-level objective for FlowPilot's autonomous operation.
   },
   {
     name: 'scrape_url',
-    description: 'Scrape a single URL and extract its content as markdown. Supports Firecrawl (JS rendering, paid) and Jina Reader (free tier available).',
+    description: 'Scrape a single URL and extract content as markdown. Supports Firecrawl and Jina Reader. Use when: extracting content from a public webpage; converting web pages to markdown; needing text from an accessible URL. NOT for: accessing login-walled sites (browser_fetch); searching multiple pages (search_web).',
     handler: 'edge:web-scrape',
     category: 'search',
     scope: 'internal',
@@ -601,7 +601,7 @@ Creates a new high-level objective for FlowPilot's autonomous operation.
       type: 'function',
       function: {
         name: 'scrape_url',
-        description: 'Scrape a URL and extract content. Set preferred_provider based on site type.',
+        description: 'Scrape a single URL and extract content as markdown. Supports Firecrawl and Jina Reader. Use when: extracting content from a public webpage; converting web pages to markdown; needing text from an accessible URL. NOT for: accessing login-walled sites (browser_fetch); searching multiple pages (search_web).',
         parameters: {
           type: 'object',
           properties: {
@@ -642,7 +642,7 @@ Do NOT only summarize or ask follow-up if page creation has not happened yet.
       type: 'function',
       function: {
         name: 'migrate_url',
-        description: 'Extract and map an external page into CMS-ready blocks. Returns title, blocks, branding, and discovered pages.',
+        description: 'Migrate an external webpage into FlowWink-ready blocks with brand extraction and page discovery. Use when: user pastes a URL to migrate, importing content from an external website, rebuilding an existing site in FlowWink. NOT for: creating pages from scratch (use manage_page), adding blocks manually (use create_page_block), scraping for data extraction only (use scrape_url).',
         parameters: {
           type: 'object',
           properties: {
@@ -658,7 +658,7 @@ Do NOT only summarize or ask follow-up if page creation has not happened yet.
   },
   {
     name: 'lookup_order',
-    description: 'Look up order status by order ID or customer email.',
+    description: 'Look up order status by order ID or customer email. Use when: a customer inquires about their order; verifying order progress; retrieving order details for support. NOT for: managing orders (manage_orders); browsing products (browse_products).',
     handler: 'module:orders',
     category: 'crm',
     scope: 'both',
@@ -681,7 +681,7 @@ Looks up order status by order ID or customer email.
       type: 'function',
       function: {
         name: 'lookup_order',
-        description: 'Look up order information.',
+        description: 'Look up order status by order ID or customer email. Use when: a customer inquires about their order; verifying order progress; retrieving order details for support. NOT for: managing orders (manage_orders); browsing products (browse_products).',
         parameters: {
           type: 'object',
           properties: {
@@ -694,7 +694,7 @@ Looks up order status by order ID or customer email.
   },
   {
     name: 'qualify_lead',
-    description: 'AI-powered lead qualification and scoring. Analyzes lead activities, company data, and engagement to produce a score and summary.',
+    description: 'AI-powered lead qualification and scoring. Analyzes lead activities, company data, and engagement to produce a score and summary. Use when: evaluating a lead quality; automating lead scoring; prioritizing sales pipeline. NOT for: adding new leads (add_lead); managing lead records (manage_leads).',
     handler: 'edge:qualify-lead',
     category: 'crm',
     scope: 'internal',
@@ -716,7 +716,7 @@ AI-powered lead qualification that analyzes activities, company data, and engage
       type: 'function',
       function: {
         name: 'qualify_lead',
-        description: 'Qualify and score a lead using AI analysis.',
+        description: 'AI-powered lead qualification and scoring. Analyzes lead activities, company data, and engagement to produce a score and summary. Use when: evaluating a lead quality; automating lead scoring; prioritizing sales pipeline. NOT for: adding new leads (add_lead); managing lead records (manage_leads).',
         parameters: {
           type: 'object',
           properties: {
@@ -729,7 +729,7 @@ AI-powered lead qualification that analyzes activities, company data, and engage
   },
   {
     name: 'enrich_company',
-    description: 'Enrich a company record with industry, size, website info via domain scraping and AI analysis.',
+    description: 'Enrich a company record with industry, size, website info via domain scraping and AI analysis. Use when: needing more details about a prospect; automatically populating company data; improving lead scoring. NOT for: researching individual prospects (prospect_research); basic company CRUD (manage_company).',
     handler: 'edge:enrich-company',
     category: 'crm',
     scope: 'internal',
@@ -752,7 +752,7 @@ Enriches a company record with industry, size, website info via domain scraping 
       type: 'function',
       function: {
         name: 'enrich_company',
-        description: 'Enrich company data from its domain.',
+        description: 'Enrich a company record with industry, size, website info via domain scraping and AI analysis. Use when: needing more details about a prospect; automatically populating company data; improving lead scoring. NOT for: researching individual prospects (prospect_research); basic company CRUD (manage_company).',
         parameters: {
           type: 'object',
           properties: {
@@ -765,7 +765,7 @@ Enriches a company record with industry, size, website info via domain scraping 
   },
   {
     name: 'research_content',
-    description: 'Deep AI research on a topic — audience insights, content angles, hooks, competitive landscape, and recommended structure.',
+    description: 'Deep AI research on a topic — audience insights, content angles, hooks, competitive landscape, and recommended structure. Use when: planning content strategy; understanding a topic before writing; needing competitive analysis. NOT for: writing a blog post (write_blog_post); generating multi-channel content (generate_content_proposal).',
     handler: 'edge:research-content',
     category: 'content',
     scope: 'internal',
@@ -789,7 +789,7 @@ Deep AI research on a topic — audience insights, content angles, hooks, compet
       type: 'function',
       function: {
         name: 'research_content',
-        description: 'Research a topic for content creation.',
+        description: 'Deep AI research on a topic — audience insights, content angles, hooks, competitive landscape, and recommended structure. Use when: planning content strategy; understanding a topic before writing; needing competitive analysis. NOT for: writing a blog post (write_blog_post); generating multi-channel content (generate_content_proposal).',
         parameters: {
           type: 'object',
           properties: {
@@ -805,7 +805,7 @@ Deep AI research on a topic — audience insights, content angles, hooks, compet
   },
   {
     name: 'generate_content_proposal',
-    description: 'Generate multi-channel content (blog, newsletter, LinkedIn, X) from a topic with brand voice and tone control.',
+    description: 'Generate multi-channel content (blog, newsletter, LinkedIn, X) from a topic with brand voice and tone control. Use when: a user requests new content for multiple platforms; needing a content strategy for a given topic; planning a campaign that spans several channels. NOT for: writing a single blog post draft (write_blog_post); performing deep research on a topic (research_content).',
     handler: 'edge:generate-content-proposal',
     category: 'content',
     scope: 'internal',
@@ -830,7 +830,7 @@ Generates multi-channel content (blog, newsletter, LinkedIn, X) from a topic wit
       type: 'function',
       function: {
         name: 'generate_content_proposal',
-        description: 'Generate content across multiple channels.',
+        description: 'Generate multi-channel content (blog, newsletter, LinkedIn, X) from a topic with brand voice and tone control. Use when: a user requests new content for multiple platforms; needing a content strategy for a given topic; planning a campaign that spans several channels. NOT for: writing a single blog post draft (write_blog_post); performing deep research on a topic (research_content).',
         parameters: {
           type: 'object',
           properties: {
@@ -848,7 +848,7 @@ Generates multi-channel content (blog, newsletter, LinkedIn, X) from a topic wit
   },
   {
     name: 'prospect_research',
-    description: 'Research a company — scrape website, find contacts via Hunter.io, analyze with AI.',
+    description: 'Research a company — scrape website, find contacts via Hunter.io, analyze with AI. Use when: preparing for outreach; gathering intelligence on a prospect; building a company profile from scratch. NOT for: enriching existing company records (enrich_company); managing companies (manage_company).',
     handler: 'edge:prospect-research',
     category: 'crm',
     scope: 'internal',
@@ -870,7 +870,7 @@ Researches a company — scrapes website, finds contacts via Hunter.io, analyzes
       type: 'function',
       function: {
         name: 'prospect_research',
-        description: 'Research a prospect company and find contacts.',
+        description: 'Research a company — scrape website, find contacts via Hunter.io, analyze with AI. Use when: preparing for outreach; gathering intelligence on a prospect; building a company profile from scratch. NOT for: enriching existing company records (enrich_company); managing companies (manage_company).',
         parameters: {
           type: 'object',
           properties: {
@@ -884,7 +884,7 @@ Researches a company — scrapes website, finds contacts via Hunter.io, analyzes
   },
   {
     name: 'prospect_fit_analysis',
-    description: 'Analyze how well a prospect company fits your ideal customer profile.',
+    description: 'Analyze how well a prospect company fits your ideal customer profile. Use when: evaluating a new prospect; scoring company fit before outreach; comparing prospects against ICP criteria. NOT for: researching a company (prospect_research); enriching company data (enrich_company).',
     handler: 'edge:prospect-fit-analysis',
     category: 'crm',
     scope: 'internal',
@@ -906,7 +906,7 @@ Analyzes how well a prospect company fits your ideal customer profile using AI.
       type: 'function',
       function: {
         name: 'prospect_fit_analysis',
-        description: 'Analyze prospect-company fit.',
+        description: 'Analyze how well a prospect company fits your ideal customer profile. Use when: evaluating a new prospect; scoring company fit before outreach; comparing prospects against ICP criteria. NOT for: researching a company (prospect_research); enriching company data (enrich_company).',
         parameters: {
           type: 'object',
           properties: {
@@ -919,7 +919,7 @@ Analyzes how well a prospect company fits your ideal customer profile using AI.
   },
   {
     name: 'weekly_business_digest',
-    description: 'Generate a cross-module business summary covering views, leads, bookings, orders, posts, newsletters.',
+    description: 'Generate a cross-module business summary covering views, leads, bookings, orders, posts, newsletters. Use when: weekly business review; executive summary needed; monitoring overall business health. NOT for: analyzing specific analytics (analyze_analytics); learning from data (learn_from_data).',
     handler: 'edge:business-digest',
     category: 'analytics',
     scope: 'internal',
@@ -941,7 +941,7 @@ Generates a cross-module business summary covering views, leads, bookings, order
       type: 'function',
       function: {
         name: 'weekly_business_digest',
-        description: 'Generate a business digest report.',
+        description: 'Generate a cross-module business summary covering views, leads, bookings, orders, posts, newsletters. Use when: weekly business review; executive summary needed; monitoring overall business health. NOT for: analyzing specific analytics (analyze_analytics); learning from data (learn_from_data).',
         parameters: {
           type: 'object',
           properties: {
@@ -954,7 +954,7 @@ Generates a cross-module business summary covering views, leads, bookings, order
   },
   {
     name: 'publish_scheduled_content',
-    description: 'Check and publish pages and blog posts that are due for scheduled publishing.',
+    description: 'Check and publish pages and blog posts that are due for scheduled publishing. Use when: automated publish cycle runs; checking if any content is ready to go live; processing scheduled content queue. NOT for: manually publishing a specific page (manage_page); writing new blog posts (write_blog_post).',
     handler: 'edge:publish-scheduled-pages',
     category: 'content',
     scope: 'internal',
@@ -974,14 +974,14 @@ Checks and publishes pages and blog posts that have passed their scheduled publi
       type: 'function',
       function: {
         name: 'publish_scheduled_content',
-        description: 'Publish pages/posts that have passed their scheduled date.',
+        description: 'Check and publish pages and blog posts that are due for scheduled publishing. Use when: automated publish cycle runs; checking if any content is ready to go live; processing scheduled content queue. NOT for: manually publishing a specific page (manage_page); writing new blog posts (write_blog_post).',
         parameters: { type: 'object', properties: {} },
       },
     },
   },
   {
     name: 'scan_gmail_inbox',
-    description: 'Scan connected Gmail inbox for business signals — new leads, partnership inquiries, support requests.',
+    description: 'Scan connected Gmail inbox for business signals — new leads, partnership inquiries, support requests. Use when: identifying incoming business opportunities from email; automating email categorization; flagging important emails. NOT for: sending emails (composio_gmail_send); managing leads directly (manage_leads).',
     handler: 'edge:gmail-inbox-scan',
     category: 'communication',
     scope: 'internal',
@@ -1004,7 +1004,7 @@ Scans connected Gmail inbox for business signals — new leads, partnership inqu
       type: 'function',
       function: {
         name: 'scan_gmail_inbox',
-        description: 'Scan Gmail for business-relevant emails and extract signals.',
+        description: 'Scan connected Gmail inbox for business signals — new leads, partnership inquiries, support requests. Use when: identifying incoming business opportunities from email; automating email categorization; flagging important emails. NOT for: sending emails (composio_gmail_send); managing leads directly (manage_leads).',
         parameters: {
           type: 'object',
           properties: {
@@ -1017,7 +1017,7 @@ Scans connected Gmail inbox for business signals — new leads, partnership inqu
   },
   {
     name: 'execute_newsletter_send',
-    description: 'Actually send a prepared newsletter to all confirmed subscribers via email.',
+    description: 'Actually send a prepared newsletter to all confirmed subscribers via email. Use when: newsletter is approved and ready to send; executing a scheduled send; distributing content to subscriber list. NOT for: creating newsletters (manage_newsletters); managing subscribers (manage_newsletter_subscribers).',
     handler: 'edge:newsletter-send',
     category: 'communication',
     scope: 'internal',
@@ -1039,7 +1039,7 @@ Actually sends a prepared newsletter to all confirmed subscribers via email. Req
       type: 'function',
       function: {
         name: 'execute_newsletter_send',
-        description: 'Send a newsletter to subscribers.',
+        description: 'Actually send a prepared newsletter to all confirmed subscribers via email. Use when: newsletter is approved and ready to send; executing a scheduled send; distributing content to subscriber list. NOT for: creating newsletters (manage_newsletters); managing subscribers (manage_newsletter_subscribers).',
         parameters: {
           type: 'object',
           properties: {
@@ -1052,7 +1052,7 @@ Actually sends a prepared newsletter to all confirmed subscribers via email. Req
   },
   {
     name: 'learn_from_data',
-    description: 'Analyze page views, chat feedback, and lead conversions to distill learnings into persistent memory.',
+    description: 'Analyze page views, chat feedback, and lead conversions to distill learnings into persistent memory. Use when: heartbeat learning cycle; extracting insights from operational data; building institutional knowledge. NOT for: analyzing analytics directly (analyze_analytics); generating business digests (weekly_business_digest).',
     handler: 'edge:flowpilot-learn',
     category: 'analytics',
     scope: 'internal',
@@ -1074,14 +1074,14 @@ Analyzes page views, chat feedback, and lead conversions to distill learnings in
       type: 'function',
       function: {
         name: 'learn_from_data',
-        description: 'Analyze platform data and save learnings to memory.',
+        description: 'Analyze page views, chat feedback, and lead conversions to distill learnings into persistent memory. Use when: heartbeat learning cycle; extracting insights from operational data; building institutional knowledge. NOT for: analyzing analytics directly (analyze_analytics); generating business digests (weekly_business_digest).',
         parameters: { type: 'object', properties: {} },
       },
     },
   },
   {
     name: 'extract_pdf_text',
-    description: 'Extract text content from any PDF document — resumes, contracts, reports, invoices, etc. Uses AI vision to read the PDF and return structured text.',
+    description: 'Extract text content from any PDF document. Uses AI vision to read the PDF and return structured text. Use when: a user uploads a PDF and asks for its content; you need to extract data from a document; converting PDF documents into searchable text. NOT for: browsing web pages (browser_fetch); analyzing images without text.',
     handler: 'edge:extract-pdf-text',
     category: 'content',
     scope: 'internal',
@@ -1101,7 +1101,7 @@ For non-resume PDFs, return the extracted text directly to the user.`,
       type: 'function',
       function: {
         name: 'extract_pdf_text',
-        description: 'Extract all text from a PDF file. Use when a user attaches a PDF or references a PDF URL. Works for any document type: resumes, contracts, reports, invoices.',
+        description: 'Extract text content from any PDF document. Uses AI vision to read the PDF and return structured text. Use when: a user uploads a PDF and asks for its content; you need to extract data from a document; converting PDF documents into searchable text. NOT for: browsing web pages (browser_fetch); analyzing images without text.',
         parameters: {
           type: 'object',
           properties: {
@@ -1115,7 +1115,7 @@ For non-resume PDFs, return the extracted text directly to the user.`,
   // ─── Operator Skills ───────────────────────────────────────────────────────
   {
     name: 'browser_fetch',
-    description: 'Fetch content from any URL — automatically picks the right strategy. For login-walled sites (LinkedIn, X, Facebook), uses the Chrome Extension relay (user\'s real browser session, ToS-safe). For public URLs, uses Firecrawl server-side scraping. This is the PRIMARY tool for reading web pages.',
+    description: 'Fetch content from any URL — auto-picks strategy. For login-walled sites uses Chrome Extension relay; for public URLs uses Firecrawl. PRIMARY tool for reading web pages. Use when: needing content from any webpage; accessing data behind a login; performing web research. NOT for: scraping public URLs only (scrape_url); searching the web (search_web).\'s real browser session, ToS-safe). For public URLs, uses Firecrawl server-side scraping. This is the PRIMARY tool for reading web pages.',
     handler: 'edge:browser-fetch',
     category: 'search',
     scope: 'internal',
@@ -1155,7 +1155,7 @@ When calling write_blog_post, ALWAYS provide the 'content' parameter with the fu
       type: 'function',
       function: {
         name: 'browser_fetch',
-        description: 'Fetch content from any URL. Automatically uses Chrome Extension relay for login-walled sites (LinkedIn, X) and Firecrawl for public URLs. This is the preferred way to read web pages.',
+        description: 'Fetch content from any URL — auto-picks strategy. For login-walled sites uses Chrome Extension relay; for public URLs uses Firecrawl. PRIMARY tool for reading web pages. Use when: needing content from any webpage; accessing data behind a login; performing web research. NOT for: scraping public URLs only (scrape_url); searching the web (search_web).',
         parameters: {
           type: 'object',
           properties: {
@@ -1169,7 +1169,7 @@ When calling write_blog_post, ALWAYS provide the 'content' parameter with the fu
   },
   {
     name: 'scrape_url',
-    description: 'Server-side URL scraping via Firecrawl. For public pages only. Prefer browser_fetch which auto-routes between relay and scraping.',
+    description: 'Scrape a single URL and extract content as markdown. Supports Firecrawl and Jina Reader. Use when: extracting content from a public webpage; converting web pages to markdown; needing text from an accessible URL. NOT for: accessing login-walled sites (browser_fetch); searching multiple pages (search_web).',
     handler: 'edge:scrape-url',
     category: 'search',
     scope: 'internal',
@@ -1182,7 +1182,7 @@ When calling write_blog_post, ALWAYS provide the 'content' parameter with the fu
       type: 'function',
       function: {
         name: 'scrape_url',
-        description: 'Fetch and extract content from any URL. Returns title, description, and clean markdown text. Use for reading web pages, LinkedIn posts, articles, etc.',
+        description: 'Scrape a single URL and extract content as markdown. Supports Firecrawl and Jina Reader. Use when: extracting content from a public webpage; converting web pages to markdown; needing text from an accessible URL. NOT for: accessing login-walled sites (browser_fetch); searching multiple pages (search_web).',
         parameters: {
           type: 'object',
           properties: {
@@ -1196,7 +1196,7 @@ When calling write_blog_post, ALWAYS provide the 'content' parameter with the fu
   },
   {
     name: 'process_signal',
-    description: 'Process an incoming signal captured by the Chrome extension or external webhook. Analyzes the content and determines next actions.',
+    description: 'Process an incoming signal from Chrome extension or external webhook. Analyzes content and determines next actions. Use when: a website event is detected; an external system sends an update; responding to real-time data. NOT for: managing automations (manage_automations); scanning Gmail (scan_gmail_inbox).',
     handler: 'edge:signal-ingest',
     category: 'automation',
     scope: 'internal',
@@ -1214,7 +1214,7 @@ This skill is primarily triggered by automations, not directly by users.
       type: 'function',
       function: {
         name: 'process_signal',
-        description: 'Process a captured signal from an external operator.',
+        description: 'Process an incoming signal from Chrome extension or external webhook. Analyzes content and determines next actions. Use when: a website event is detected; an external system sends an update; responding to real-time data. NOT for: managing automations (manage_automations); scanning Gmail (scan_gmail_inbox).',
         parameters: {
           type: 'object',
           properties: {
@@ -1256,7 +1256,7 @@ Full page lifecycle management: list, get, create, update, publish, archive, del
       type: 'function',
       function: {
         name: 'manage_page',
-        description: 'Manage CMS pages. Actions: list, get, create, update, publish, archive, delete, rollback. For migration flows: call migrate_url first, then manage_page action=create, then manage_page_blocks.',
+        description: 'Full page lifecycle management: list, get, create, update, publish, archive, delete, rollback. Use when: creating a new page, publishing a draft, listing all pages, updating page metadata, archiving old content, creating destination page after migrate_url. NOT for: adding/editing individual blocks (use create_page_block or manage_page_blocks), scraping external sites (use migrate_url).',
         parameters: {
           type: 'object',
           properties: {
@@ -1287,7 +1287,7 @@ Full page lifecycle management: list, get, create, update, publish, archive, del
   },
   {
     name: 'manage_page_blocks',
-    description: 'Manipulate blocks on a page: list, add, update, remove, reorder, duplicate, toggle visibility.',
+    description: 'Manipulate blocks on a page: list, add, update, remove, reorder, duplicate, toggle visibility. Use when: designing a page layout; repositioning elements; showing/hiding specific content blocks. NOT for: managing global site blocks (manage_global_blocks); creating new pages (manage_page).',
     handler: 'module:pages',
     category: 'content',
     scope: 'internal',
@@ -1313,7 +1313,7 @@ Granular block-level operations on pages: add, update, remove, reorder blocks.
       type: 'function',
       function: {
         name: 'manage_page_blocks',
-        description: 'Manage blocks on a specific page. For text blocks, block_data must use Tiptap JSON: { content: { type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: "Your text here" }] }, { type: "heading", attrs: { level: 2 }, content: [{ type: "text", text: "Section Title" }] }] } }. For other blocks see manage_page description.',
+        description: 'Manipulate blocks on a page: list, add, update, remove, reorder, duplicate, toggle visibility. Use when: designing a page layout; repositioning elements; showing/hiding specific content blocks. NOT for: managing global site blocks (manage_global_blocks); creating new pages (manage_page).',
         parameters: {
           type: 'object',
           properties: {
@@ -1336,7 +1336,7 @@ Granular block-level operations on pages: add, update, remove, reorder blocks.
   },
   {
     name: 'manage_blog_posts',
-    description: 'Manage existing blog posts: list, get, update, publish, unpublish, delete.',
+    description: 'Manage existing blog posts: list, get, update, publish, unpublish, delete. Use when: modifying a blog post; changing publication status; performing bulk operations on blog posts. NOT for: creating a new blog post draft (write_blog_post); browsing visitor-facing posts (browse_blog).',
     handler: 'module:blog',
     category: 'content',
     scope: 'internal',
@@ -1359,7 +1359,7 @@ Manages existing blog posts: list, get, update, publish, unpublish, delete.
       type: 'function',
       function: {
         name: 'manage_blog_posts',
-        description: 'Manage blog posts. Actions: list, get, update, publish, unpublish, delete.',
+        description: 'Manage existing blog posts: list, get, update, publish, unpublish, delete. Use when: modifying a blog post; changing publication status; performing bulk operations on blog posts. NOT for: creating a new blog post draft (write_blog_post); browsing visitor-facing posts (browse_blog).',
         parameters: {
           type: 'object',
           properties: {
@@ -1379,7 +1379,7 @@ Manages existing blog posts: list, get, update, publish, unpublish, delete.
   },
   {
     name: 'manage_blog_categories',
-    description: 'Manage blog categories and tags: list, create, delete categories/tags.',
+    description: 'Manage blog categories and tags: list, create, delete. Use when: organizing blog content into new categories; listing existing blog categories; cleaning up unused tags. NOT for: managing individual blog posts (manage_blog_posts); browsing published blog posts (browse_blog).',
     handler: 'module:blog',
     category: 'content',
     scope: 'internal',
@@ -1401,7 +1401,7 @@ Manages blog categories and tags: list, create, delete.
       type: 'function',
       function: {
         name: 'manage_blog_categories',
-        description: 'Manage blog categories and tags.',
+        description: 'Manage blog categories and tags: list, create, delete. Use when: organizing blog content into new categories; listing existing blog categories; cleaning up unused tags. NOT for: managing individual blog posts (manage_blog_posts); browsing published blog posts (browse_blog).',
         parameters: {
           type: 'object',
           properties: {
@@ -1417,7 +1417,7 @@ Manages blog categories and tags: list, create, delete.
   },
   {
     name: 'browse_blog',
-    description: 'Browse published blog posts (visitor-facing).',
+    description: 'Browse published blog posts (visitor-facing). Use when: a user asks to see latest blog articles; you need to find existing blog content to link to; displaying content on a public-facing blog page. NOT for: managing blog post drafts (manage_blog_posts); listing blog categories (manage_blog_categories).',
     handler: 'module:blog',
     category: 'content',
     scope: 'both',
@@ -1439,7 +1439,7 @@ Browse published blog posts (visitor-facing, read-only).
       type: 'function',
       function: {
         name: 'browse_blog',
-        description: 'List published blog posts for visitors.',
+        description: 'Browse published blog posts (visitor-facing). Use when: a user asks to see latest blog articles; you need to find existing blog content to link to; displaying content on a public-facing blog page. NOT for: managing blog post drafts (manage_blog_posts); listing blog categories (manage_blog_categories).',
         parameters: {
           type: 'object',
           properties: {
@@ -1452,7 +1452,7 @@ Browse published blog posts (visitor-facing, read-only).
   },
   {
     name: 'manage_kb_article',
-    description: 'Manage knowledge base articles: list, get, create, update, publish, unpublish.',
+    description: 'Manage knowledge base articles: list, get, create, update, publish, unpublish. Use when: creating a new support article; updating an existing KB entry; controlling KB content visibility. NOT for: analyzing KB gaps (kb_gap_analysis); managing blog posts (manage_blog_posts).',
     handler: 'module:kb',
     category: 'content',
     scope: 'internal',
@@ -1475,7 +1475,7 @@ Manages knowledge base articles: list, get, create, update, publish, unpublish.
       type: 'function',
       function: {
         name: 'manage_kb_article',
-        description: 'Manage KB articles.',
+        description: 'Manage knowledge base articles: list, get, create, update, publish, unpublish. Use when: creating a new support article; updating an existing KB entry; controlling KB content visibility. NOT for: analyzing KB gaps (kb_gap_analysis); managing blog posts (manage_blog_posts).',
         parameters: {
           type: 'object',
           properties: {
@@ -1495,7 +1495,7 @@ Manages knowledge base articles: list, get, create, update, publish, unpublish.
   },
   {
     name: 'manage_global_blocks',
-    description: 'Manage global blocks (header, footer, etc): list, get, update, toggle active status.',
+    description: 'Manage global blocks (header, footer, etc): list, get, update, toggle active status. Use when: changing header/footer content; reviewing active global elements; toggling visibility of a global block. NOT for: managing page-specific blocks (manage_page_blocks); updating site branding (site_branding_update).',
     handler: 'module:globalElements',
     category: 'content',
     scope: 'internal',
@@ -1517,7 +1517,7 @@ Manages global blocks (header, footer, announcement bar, etc.): list, get, updat
       type: 'function',
       function: {
         name: 'manage_global_blocks',
-        description: 'Manage global blocks like header, footer.',
+        description: 'Manage global blocks (header, footer, etc): list, get, update, toggle active status. Use when: changing header/footer content; reviewing active global elements; toggling visibility of a global block. NOT for: managing page-specific blocks (manage_page_blocks); updating site branding (site_branding_update).',
         parameters: {
           type: 'object',
           properties: {
@@ -1532,7 +1532,7 @@ Manages global blocks (header, footer, announcement bar, etc.): list, get, updat
   },
   {
     name: 'manage_leads',
-    description: 'Full lead management: list, get, update status/score, delete leads.',
+    description: 'Full lead management: list, get, update status/score, delete leads. Use when: changing lead status; adding follow-up notes; cleaning up unqualified leads. NOT for: adding a new lead (add_lead); qualifying leads with AI (qualify_lead).',
     handler: 'module:crm',
     category: 'crm',
     scope: 'internal',
@@ -1557,7 +1557,7 @@ Full lead management: list, get, update status/score, delete.
       type: 'function',
       function: {
         name: 'manage_leads',
-        description: 'Manage CRM leads. Actions: list, get, update, delete.',
+        description: 'Full lead management: list, get, update status/score, delete leads. Use when: changing lead status; adding follow-up notes; cleaning up unqualified leads. NOT for: adding a new lead (add_lead); qualifying leads with AI (qualify_lead).',
         parameters: {
           type: 'object',
           properties: {
@@ -1575,7 +1575,7 @@ Full lead management: list, get, update status/score, delete.
   },
   {
     name: 'manage_deal',
-    description: 'Manage deals: list, create, update, move stage.',
+    description: 'Manage deals: list, create, update, move stage. Use when: creating a new sales opportunity; updating deal progress; moving a deal to next pipeline stage. NOT for: managing leads (manage_leads); creating CRM tasks (crm_task_create).',
     handler: 'module:deals',
     category: 'crm',
     scope: 'internal',
@@ -1599,7 +1599,7 @@ Manages sales deals: list, create, update, move between stages.
       type: 'function',
       function: {
         name: 'manage_deal',
-        description: 'Manage sales deals.',
+        description: 'Manage deals: list, create, update, move stage. Use when: creating a new sales opportunity; updating deal progress; moving a deal to next pipeline stage. NOT for: managing leads (manage_leads); creating CRM tasks (crm_task_create).',
         parameters: {
           type: 'object',
           properties: {
@@ -1619,7 +1619,7 @@ Manages sales deals: list, create, update, move between stages.
   },
   {
     name: 'manage_company',
-    description: 'Manage companies: list, get, create, update, delete.',
+    description: 'Manage companies: list, get, create, update, delete. Use when: adding a new company to CRM; updating company contact info; removing an inactive company. NOT for: enriching company data (enrich_company); prospect research (prospect_research).',
     handler: 'module:companies',
     category: 'crm',
     scope: 'internal',
@@ -1642,7 +1642,7 @@ Manages CRM companies: list, get, create, update, delete.
       type: 'function',
       function: {
         name: 'manage_company',
-        description: 'Manage CRM companies.',
+        description: 'Manage companies: list, get, create, update, delete. Use when: adding a new company to CRM; updating company contact info; removing an inactive company. NOT for: enriching company data (enrich_company); prospect research (prospect_research).',
         parameters: {
           type: 'object',
           properties: {
@@ -1664,7 +1664,7 @@ Manages CRM companies: list, get, create, update, delete.
   },
   {
     name: 'browse_products',
-    description: 'Browse products in the catalog (visitor-facing).',
+    description: 'Browse the product catalog. Returns active products with prices, images, and stock info. Use when: a customer asks for available products; displaying items for sale; needing product details for an order. NOT for: managing products (manage_product); checking order status (check_order_status).',
     handler: 'module:products',
     category: 'commerce',
     scope: 'both',
@@ -1686,7 +1686,7 @@ Browse products in the catalog (visitor-facing, read-only).
       type: 'function',
       function: {
         name: 'browse_products',
-        description: 'Browse available products.',
+        description: 'Browse the product catalog. Returns active products with prices, images, and stock info. Use when: a customer asks for available products; displaying items for sale; needing product details for an order. NOT for: managing products (manage_product); checking order status (check_order_status).',
         parameters: {
           type: 'object',
           properties: {
@@ -1699,7 +1699,7 @@ Browse products in the catalog (visitor-facing, read-only).
   },
   {
     name: 'manage_product',
-    description: 'Manage products: create, update, delete, manage variants.',
+    description: 'Manage products: create, update, delete, manage variants. Use when: adding a new item to the store; updating product details or pricing; handling product options (size, color). NOT for: managing inventory (manage_inventory); browsing products (browse_products).',
     handler: 'module:products',
     category: 'commerce',
     scope: 'internal',
@@ -1722,7 +1722,7 @@ Manages products in the catalog: create, update, delete, manage variants.
       type: 'function',
       function: {
         name: 'manage_product',
-        description: 'Manage products in the catalog.',
+        description: 'Manage products: create, update, delete, manage variants. Use when: adding a new item to the store; updating product details or pricing; handling product options (size, color). NOT for: managing inventory (manage_inventory); browsing products (browse_products).',
         parameters: {
           type: 'object',
           properties: {
@@ -1739,7 +1739,7 @@ Manages products in the catalog: create, update, delete, manage variants.
   },
   {
     name: 'manage_inventory',
-    description: 'Manage product inventory: list stock, update quantities, set low-stock alerts.',
+    description: 'Manage product inventory: list stock, update quantities, set low-stock alerts. Use when: adjusting stock levels; setting up low-stock notifications; auditing inventory counts. NOT for: managing product details (manage_product); browsing products (browse_products).',
     handler: 'module:products',
     category: 'commerce',
     scope: 'internal',
@@ -1763,7 +1763,7 @@ Manages product inventory: list stock levels, update quantities, check low-stock
       type: 'function',
       function: {
         name: 'manage_inventory',
-        description: 'Manage product inventory levels.',
+        description: 'Manage product inventory: list stock, update quantities, set low-stock alerts. Use when: adjusting stock levels; setting up low-stock notifications; auditing inventory counts. NOT for: managing product details (manage_product); browsing products (browse_products).',
         parameters: {
           type: 'object',
           properties: {
@@ -1779,7 +1779,7 @@ Manages product inventory: list stock levels, update quantities, check low-stock
   },
   {
     name: 'manage_orders',
-    description: 'Manage orders: list, get details, update status, view stats.',
+    description: 'Manage orders: list, get details, update status, view stats. Use when: reviewing customer orders; changing fulfillment status; analyzing sales trends. NOT for: checking status by ID (check_order_status); browsing products (browse_products).',
     handler: 'module:orders',
     category: 'commerce',
     scope: 'internal',
@@ -1803,7 +1803,7 @@ Manages e-commerce orders: list, get details, update status, view stats.
       type: 'function',
       function: {
         name: 'manage_orders',
-        description: 'Manage e-commerce orders.',
+        description: 'Manage orders: list, get details, update status, view stats. Use when: reviewing customer orders; changing fulfillment status; analyzing sales trends. NOT for: checking status by ID (check_order_status); browsing products (browse_products).',
         parameters: {
           type: 'object',
           properties: {
@@ -1820,7 +1820,7 @@ Manages e-commerce orders: list, get details, update status, view stats.
   },
   {
     name: 'check_availability',
-    description: 'Check booking availability for a specific date.',
+    description: 'Check booking availability for a specific date. Use when: a customer wants to know if a slot is open; determining if a service can be booked; verifying potential appointment times. NOT for: creating a booking (book_appointment); managing availability settings (manage_booking_availability).',
     handler: 'module:booking',
     category: 'crm',
     scope: 'both',
@@ -1842,7 +1842,7 @@ Checks booking availability for a specific date.
       type: 'function',
       function: {
         name: 'check_availability',
-        description: 'Check available booking slots for a date.',
+        description: 'Check booking availability for a specific date. Use when: a customer wants to know if a slot is open; determining if a service can be booked; verifying potential appointment times. NOT for: creating a booking (book_appointment); managing availability settings (manage_booking_availability).',
         parameters: {
           type: 'object',
           properties: {
@@ -1856,7 +1856,7 @@ Checks booking availability for a specific date.
   },
   {
     name: 'browse_services',
-    description: 'List available booking services.',
+    description: 'List available booking services. Use when: a user asks what services are offered; displaying service options; selecting a service for booking. NOT for: checking availability (check_availability); managing booking settings (manage_booking_availability).',
     handler: 'module:booking',
     category: 'crm',
     scope: 'both',
@@ -1876,14 +1876,14 @@ Lists available booking services (visitor-facing).
       type: 'function',
       function: {
         name: 'browse_services',
-        description: 'List available booking services.',
+        description: 'List available booking services. Use when: a user asks what services are offered; displaying service options; selecting a service for booking. NOT for: checking availability (check_availability); managing booking settings (manage_booking_availability).',
         parameters: { type: 'object', properties: {} },
       },
     },
   },
   {
     name: 'manage_booking_availability',
-    description: 'Manage booking hours and blocked dates.',
+    description: 'Manage booking hours and blocked dates. Use when: setting up service availability; blocking holiday dates; adjusting operating hours. NOT for: checking availability (check_availability); creating bookings (book_appointment).',
     handler: 'module:booking',
     category: 'crm',
     scope: 'internal',
@@ -1907,7 +1907,7 @@ Manages booking hours and blocked dates for the scheduling system.
       type: 'function',
       function: {
         name: 'manage_booking_availability',
-        description: 'Manage booking availability hours and blocked dates.',
+        description: 'Manage booking hours and blocked dates. Use when: setting up service availability; blocking holiday dates; adjusting operating hours. NOT for: checking availability (check_availability); creating bookings (book_appointment).',
         parameters: {
           type: 'object',
           properties: {
@@ -1925,7 +1925,7 @@ Manages booking hours and blocked dates for the scheduling system.
   },
   {
     name: 'manage_bookings',
-    description: 'List, view, update or cancel bookings.',
+    description: 'List, view, update or cancel bookings. Use when: reviewing scheduled appointments; modifying a booking time; cancelling an appointment. NOT for: managing availability settings (manage_booking_availability); browsing services (browse_services).',
     handler: 'module:booking',
     category: 'crm',
     scope: 'internal',
@@ -1948,7 +1948,7 @@ Lists, views, updates, or cancels bookings.
       type: 'function',
       function: {
         name: 'manage_bookings',
-        description: 'Manage bookings: list, update status, cancel.',
+        description: 'List, view, update or cancel bookings. Use when: reviewing scheduled appointments; modifying a booking time; cancelling an appointment. NOT for: managing availability settings (manage_booking_availability); browsing services (browse_services).',
         parameters: {
           type: 'object',
           properties: {
@@ -1965,7 +1965,7 @@ Lists, views, updates, or cancels bookings.
   },
   {
     name: 'manage_newsletter_subscribers',
-    description: 'Manage newsletter subscribers: list, search, count, remove.',
+    description: 'Manage newsletter subscribers: list, search, count, remove. Use when: reviewing subscriber list; finding a specific subscriber; removing unsubscribed users. NOT for: sending newsletters (execute_newsletter_send); creating newsletter content (manage_newsletters).',
     handler: 'module:newsletter',
     category: 'communication',
     scope: 'internal',
@@ -1988,7 +1988,7 @@ Manages newsletter subscribers: list, search, count, remove.
       type: 'function',
       function: {
         name: 'manage_newsletter_subscribers',
-        description: 'Manage newsletter subscribers.',
+        description: 'Manage newsletter subscribers: list, search, count, remove. Use when: reviewing subscriber list; finding a specific subscriber; removing unsubscribed users. NOT for: sending newsletters (execute_newsletter_send); creating newsletter content (manage_newsletters).',
         parameters: {
           type: 'object',
           properties: {
@@ -2005,7 +2005,7 @@ Manages newsletter subscribers: list, search, count, remove.
   },
   {
     name: 'manage_newsletters',
-    description: 'Manage newsletters: list, get, create, update, delete. Full CRUD on newsletter drafts and scheduled sends.',
+    description: 'Manage newsletters: list, get, create, update, delete. Full CRUD on newsletter drafts and scheduled sends. Use when: creating a new newsletter campaign; editing planned newsletter content; deleting an outdated newsletter. NOT for: sending a newsletter (execute_newsletter_send); managing subscribers (manage_newsletter_subscribers).',
     handler: 'module:newsletter',
     category: 'content',
     scope: 'internal',
@@ -2015,7 +2015,7 @@ Manages newsletter subscribers: list, search, count, remove.
       type: 'function',
       function: {
         name: 'manage_newsletters',
-        description: 'Manage newsletters. Actions: list, get, create, update, delete. Create supports AI generation: pass topic (or blog_content) instead of content_html to auto-generate newsletter content.',
+        description: 'Manage newsletters: list, get, create, update, delete. Full CRUD on newsletter drafts and scheduled sends. Use when: creating a new newsletter campaign; editing planned newsletter content; deleting an outdated newsletter. NOT for: sending a newsletter (execute_newsletter_send); managing subscribers (manage_newsletter_subscribers).',
         parameters: {
           type: 'object',
           properties: {
@@ -2074,7 +2074,7 @@ write_blog_post(topic="AI trends") → get excerpt → manage_newsletters(action
   },
   {
     name: 'manage_consultant_profile',
-    description: 'Manage consultant/resume profiles: list, create, update, delete, deduplicate.',
+    description: 'Manage consultant/resume profiles: list, create, update, delete, deduplicate. Use when: adding a new consultant; updating skills or availability; cleaning up duplicate entries. NOT for: matching consultants to jobs (match_consultant); managing company profiles (manage_company).',
     handler: 'module:resume',
     category: 'content',
     scope: 'internal',
@@ -2096,7 +2096,7 @@ Manages consultant/resume profiles: list, create, update, delete, find duplicate
       type: 'function',
       function: {
         name: 'manage_consultant_profile',
-        description: 'Manage consultant profiles. Actions: list, create, update, delete, find_duplicates.',
+        description: 'Manage consultant/resume profiles: list, create, update, delete, deduplicate. Use when: adding a new consultant; updating skills or availability; cleaning up duplicate entries. NOT for: matching consultants to jobs (match_consultant); managing company profiles (manage_company).',
         parameters: {
           type: 'object',
           properties: {
@@ -2115,7 +2115,7 @@ Manages consultant/resume profiles: list, create, update, delete, find duplicate
   },
   {
     name: 'match_consultant',
-    description: 'Match consultants to a job description using AI.',
+    description: 'Match consultants to a job description using AI. Use when: finding suitable candidates for an open position; a user provides a job description and needs recommendations; identifying best-fit consultants. NOT for: managing consultant profiles (manage_consultant_profile); researching companies (prospect_research).',
     handler: 'module:resume',
     category: 'content',
     scope: 'internal',
@@ -2137,7 +2137,7 @@ AI-powered matching of consultants to a job description.
       type: 'function',
       function: {
         name: 'match_consultant',
-        description: 'Find best matching consultants for a job.',
+        description: 'Match consultants to a job description using AI. Use when: finding suitable candidates for an open position; a user provides a job description and needs recommendations; identifying best-fit consultants. NOT for: managing consultant profiles (manage_consultant_profile); researching companies (prospect_research).',
         parameters: {
           type: 'object',
           properties: {
@@ -2151,7 +2151,7 @@ AI-powered matching of consultants to a job description.
   },
   {
     name: 'media_browse',
-    description: 'Browse, search, and manage media files in the media library. Supports listing, getting URLs, deleting single files, and clearing entire library.',
+    description: 'Browse, search, and manage media files in the media library. Supports listing, getting URLs, deleting files, and clearing library. Use when: finding an uploaded image; managing media assets; cleaning up unused files. NOT for: uploading new files (N/A); updating site branding logo (site_branding_update).',
     handler: 'module:media',
     category: 'content',
     scope: 'internal',
@@ -2175,7 +2175,7 @@ Browse, search, and manage files in the media library.
       type: 'function',
       function: {
         name: 'media_browse',
-        description: 'Manage media library: list, search, delete, clear all files.',
+        description: 'Browse, search, and manage media files in the media library. Supports listing, getting URLs, deleting files, and clearing library. Use when: finding an uploaded image; managing media assets; cleaning up unused files. NOT for: uploading new files (N/A); updating site branding logo (site_branding_update).',
         parameters: {
           type: 'object',
           properties: {
@@ -2191,7 +2191,7 @@ Browse, search, and manage files in the media library.
   },
   {
     name: 'manage_form_submissions',
-    description: 'View and manage form submissions.',
+    description: 'View and manage form submissions. Use when: reviewing customer inquiries from website forms; processing collected data; deleting spam submissions. NOT for: analyzing feedback sentiment (analyze_chat_feedback); managing leads (manage_leads).',
     handler: 'module:forms',
     category: 'crm',
     scope: 'internal',
@@ -2213,7 +2213,7 @@ Views and manages form submissions from website forms.
       type: 'function',
       function: {
         name: 'manage_form_submissions',
-        description: 'View and manage form submissions.',
+        description: 'View and manage form submissions. Use when: reviewing customer inquiries from website forms; processing collected data; deleting spam submissions. NOT for: analyzing feedback sentiment (analyze_chat_feedback); managing leads (manage_leads).',
         parameters: {
           type: 'object',
           properties: {
@@ -2229,7 +2229,7 @@ Views and manages form submissions from website forms.
   },
   {
     name: 'manage_webinar',
-    description: 'Manage webinars and registrations.',
+    description: 'Manage webinars and registrations. Use when: setting up a new webinar; updating webinar details; reviewing registered attendees. NOT for: managing bookings (manage_bookings); creating events (N/A).',
     handler: 'module:webinars',
     category: 'communication',
     scope: 'internal',
@@ -2249,7 +2249,7 @@ Manages webinars and registrations.
       type: 'function',
       function: {
         name: 'manage_webinar',
-        description: 'Manage webinars: list, create, update, view registrations.',
+        description: 'Manage webinars and registrations. Use when: setting up a new webinar; updating webinar details; reviewing registered attendees. NOT for: managing bookings (manage_bookings); creating events (N/A).',
         parameters: {
           type: 'object',
           properties: {
@@ -2264,7 +2264,7 @@ Manages webinars and registrations.
   },
   {
     name: 'manage_site_settings',
-    description: 'Read and update site settings including module configuration, site name, theme, etc.',
+    description: 'Read and update site settings including module configuration, site name, theme, etc. Use when: retrieving global configurations; changing website name; enabling or disabling modules. NOT for: updating site branding (site_branding_update); managing global blocks (manage_global_blocks).',
     handler: 'db:site_settings',
     category: 'system',
     scope: 'internal',
@@ -2288,7 +2288,7 @@ Reads and updates site settings including module configuration, site name, theme
       type: 'function',
       function: {
         name: 'manage_site_settings',
-        description: 'Read and update site settings. Keys: modules, site_name, theme, ai_config, chat_config, etc.',
+        description: 'Read and update site settings including module configuration, site name, theme, etc. Use when: retrieving global configurations; changing website name; enabling or disabling modules. NOT for: updating site branding (site_branding_update); managing global blocks (manage_global_blocks).',
         parameters: {
           type: 'object',
           properties: {
@@ -2303,7 +2303,7 @@ Reads and updates site settings including module configuration, site name, theme
   },
   {
     name: 'seo_audit_page',
-    description: 'Run an SEO audit on a page or blog post, checking title, meta, content depth, images, links.',
+    description: 'Run an SEO audit on a page or blog post, checking title, meta, content depth, images, links. Use when: optimizing a page for search engines; reviewing SEO before publishing; identifying SEO issues. NOT for: analyzing page traffic (analyze_analytics); updating page content (manage_page).',
     handler: 'module:analytics',
     category: 'analytics',
     scope: 'internal',
@@ -2324,7 +2324,7 @@ Runs an SEO audit on a page or blog post, checking title, meta, content depth, i
       type: 'function',
       function: {
         name: 'seo_audit_page',
-        description: 'Run SEO audit on a page/post by slug.',
+        description: 'Run an SEO audit on a page or blog post, checking title, meta, content depth, images, links. Use when: optimizing a page for search engines; reviewing SEO before publishing; identifying SEO issues. NOT for: analyzing page traffic (analyze_analytics); updating page content (manage_page).',
         parameters: {
           type: 'object',
           properties: {
@@ -2337,7 +2337,7 @@ Runs an SEO audit on a page or blog post, checking title, meta, content depth, i
   },
   {
     name: 'kb_gap_analysis',
-    description: 'Analyze chat data to find questions not covered by KB articles, underperforming articles, and content gaps.',
+    description: 'Analyze chat data to find questions not covered by KB articles, underperforming articles, and content gaps. Use when: improving knowledge base coverage; identifying frequently asked but unanswered questions; planning KB content. NOT for: managing KB articles (manage_kb_article); analyzing feedback sentiment (analyze_chat_feedback).',
     handler: 'module:analytics',
     category: 'analytics',
     scope: 'internal',
@@ -2358,7 +2358,7 @@ Analyzes chat data to find questions not covered by KB articles, underperforming
       type: 'function',
       function: {
         name: 'kb_gap_analysis',
-        description: 'Find knowledge base content gaps from chat data.',
+        description: 'Analyze chat data to find questions not covered by KB articles, underperforming articles, and content gaps. Use when: improving knowledge base coverage; identifying frequently asked but unanswered questions; planning KB content. NOT for: managing KB articles (manage_kb_article); analyzing feedback sentiment (analyze_chat_feedback).',
         parameters: {
           type: 'object',
           properties: {
@@ -2370,7 +2370,7 @@ Analyzes chat data to find questions not covered by KB articles, underperforming
   },
   {
     name: 'analyze_chat_feedback',
-    description: 'Analyze chat feedback: summary stats, negative feedback drill-down.',
+    description: 'Analyze chat feedback: summary stats, negative feedback drill-down. Use when: monitoring customer satisfaction; identifying knowledge gaps; reviewing support quality. NOT for: getting raw feedback data (support_get_feedback); analyzing KB gaps (kb_gap_analysis).',
     handler: 'module:analytics',
     category: 'analytics',
     scope: 'internal',
@@ -2392,7 +2392,7 @@ Analyzes chat feedback: summary statistics, negative feedback drill-down.
       type: 'function',
       function: {
         name: 'analyze_chat_feedback',
-        description: 'Analyze visitor chat feedback.',
+        description: 'Analyze chat feedback: summary stats, negative feedback drill-down. Use when: monitoring customer satisfaction; identifying knowledge gaps; reviewing support quality. NOT for: getting raw feedback data (support_get_feedback); analyzing KB gaps (kb_gap_analysis).',
         parameters: {
           type: 'object',
           properties: {
@@ -2406,7 +2406,7 @@ Analyzes chat feedback: summary statistics, negative feedback drill-down.
   },
   {
     name: 'manage_automations',
-    description: 'Create and manage agent automations (cron jobs, event triggers, signal handlers).',
+    description: 'Create and manage agent automations (cron jobs, event triggers, signal handlers). Use when: setting up recurring tasks; defining automatic event responses; implementing signal processing logic. NOT for: creating objectives (create_objective); processing incoming signals (process_signal).',
     handler: 'module:automations',
     category: 'automation',
     scope: 'internal',
@@ -2432,7 +2432,7 @@ Creates and manages agent automations (cron jobs, event triggers, signal handler
       type: 'function',
       function: {
         name: 'manage_automations',
-        description: 'Create and manage agent automations.',
+        description: 'Create and manage agent automations (cron jobs, event triggers, signal handlers). Use when: setting up recurring tasks; defining automatic event responses; implementing signal processing logic. NOT for: creating objectives (create_objective); processing incoming signals (process_signal).',
         parameters: {
           type: 'object',
           properties: {
@@ -2452,7 +2452,7 @@ Creates and manages agent automations (cron jobs, event triggers, signal handler
   // ─── Paid Growth Skills ─────────────────────────────────────────────────────
   {
     name: 'ad_campaign_create',
-    description: 'Create a new ad campaign with objective, budget, target audience, and platform. Requires approval due to budget commitment.',
+    description: 'Create a new ad campaign with objective, budget, target audience, and platform. Requires approval due to budget commitment. Use when: launching a marketing initiative; defining advertising parameters; allocating ad budget. NOT for: generating ad creatives (ad_creative_generate); optimizing existing campaigns (ad_optimize).',
     handler: 'edge:ad-campaign-create',
     category: 'growth',
     scope: 'internal',
@@ -2476,7 +2476,7 @@ Creates a new ad campaign with objective, budget, target audience, and platform.
       type: 'function',
       function: {
         name: 'ad_campaign_create',
-        description: 'Create a new ad campaign. Requires approval because it commits budget.',
+        description: 'Create a new ad campaign with objective, budget, target audience, and platform. Requires approval due to budget commitment. Use when: launching a marketing initiative; defining advertising parameters; allocating ad budget. NOT for: generating ad creatives (ad_creative_generate); optimizing existing campaigns (ad_optimize).',
         parameters: {
           type: 'object',
           properties: {
@@ -2496,7 +2496,7 @@ Creates a new ad campaign with objective, budget, target audience, and platform.
   },
   {
     name: 'ad_creative_generate',
-    description: 'Generate ad creative (headline, body, CTA) using AI based on campaign objective and target audience.',
+    description: 'Generate ad creative (headline, body, CTA) using AI based on campaign objective and target audience. Use when: creating ad copy for a campaign; generating variations for A/B testing; needing creative inspiration. NOT for: creating campaigns (ad_campaign_create); checking ad performance (ad_performance_check).',
     handler: 'edge:ad-creative-generate',
     category: 'growth',
     scope: 'internal',
@@ -2519,7 +2519,7 @@ Generates ad creative (headline, body, CTA) using AI based on campaign objective
       type: 'function',
       function: {
         name: 'ad_creative_generate',
-        description: 'Generate ad copy and creative using AI.',
+        description: 'Generate ad creative (headline, body, CTA) using AI based on campaign objective and target audience. Use when: creating ad copy for a campaign; generating variations for A/B testing; needing creative inspiration. NOT for: creating campaigns (ad_campaign_create); checking ad performance (ad_performance_check).',
         parameters: {
           type: 'object',
           properties: {
@@ -2536,7 +2536,7 @@ Generates ad creative (headline, body, CTA) using AI based on campaign objective
   },
   {
     name: 'ad_performance_check',
-    description: 'Check ad campaign performance metrics: spend, impressions, clicks, CTR, CPC, conversions.',
+    description: 'Check ad campaign performance metrics: spend, impressions, clicks, CTR, CPC, conversions. Use when: monitoring campaign metrics; building performance reports; evaluating ROI. NOT for: optimizing campaigns (ad_optimize); creating campaigns (ad_campaign_create).',
     handler: 'edge:ad-performance-check',
     category: 'growth',
     scope: 'internal',
@@ -2558,7 +2558,7 @@ Checks ad campaign performance metrics: spend, impressions, clicks, CTR, CPC, co
       type: 'function',
       function: {
         name: 'ad_performance_check',
-        description: 'Get performance metrics for ad campaigns.',
+        description: 'Check ad campaign performance metrics: spend, impressions, clicks, CTR, CPC, conversions. Use when: monitoring campaign metrics; building performance reports; evaluating ROI. NOT for: optimizing campaigns (ad_optimize); creating campaigns (ad_campaign_create).',
         parameters: {
           type: 'object',
           properties: {
@@ -2571,7 +2571,7 @@ Checks ad campaign performance metrics: spend, impressions, clicks, CTR, CPC, co
   },
   {
     name: 'ad_optimize',
-    description: 'Analyze campaign performance and recommend optimizations: pause underperformers, scale winners, adjust budgets. Requires approval.',
+    description: 'Analyze campaign performance and recommend optimizations: pause underperformers, scale winners, adjust budgets. Requires approval. Use when: reviewing campaign results; optimizing ad spend; identifying underperforming ads. NOT for: creating campaigns (ad_campaign_create); generating creatives (ad_creative_generate).',
     handler: 'edge:ad-optimize',
     category: 'growth',
     scope: 'internal',
@@ -2594,7 +2594,7 @@ Analyzes campaign performance and recommends optimizations. Requires approval fo
       type: 'function',
       function: {
         name: 'ad_optimize',
-        description: 'Optimize ad campaigns based on performance data. Requires approval for budget changes.',
+        description: 'Analyze campaign performance and recommend optimizations: pause underperformers, scale winners, adjust budgets. Requires approval. Use when: reviewing campaign results; optimizing ad spend; identifying underperforming ads. NOT for: creating campaigns (ad_campaign_create); generating creatives (ad_creative_generate).',
         parameters: {
           type: 'object',
           properties: {
@@ -2611,7 +2611,7 @@ Analyzes campaign performance and recommends optimizations. Requires approval fo
   // ─── Composable Content Skills ──────────────────────────────────────────────
   {
     name: 'landing_page_compose',
-    description: 'Autonomously compose a landing page from the block library based on a campaign goal, target audience, and optional ad campaign reference. Uses AI to select optimal block types, generate copy, and publish as a draft page.',
+    description: 'Autonomously compose a landing page from the block library based on campaign goal, target audience, and optional ad campaign reference. Use when: building a campaign landing page; creating a targeted page for an ad; composing a page from AI-generated content. NOT for: migrating existing pages (migrate_url); managing individual blocks (manage_page_blocks).',
     handler: 'edge:landing-page-compose',
     instructions: `You compose high-converting landing pages by selecting from the platform's block library.
 
@@ -2639,7 +2639,7 @@ Return a valid content_json array of ContentBlock objects with proper data for e
       type: 'function',
       function: {
         name: 'landing_page_compose',
-        description: 'Compose a landing page from blocks based on campaign goal and audience. Creates a draft page ready for review.',
+        description: 'Autonomously compose a landing page from the block library based on campaign goal, target audience, and optional ad campaign reference. Use when: building a campaign landing page; creating a targeted page for an ad; composing a page from AI-generated content. NOT for: migrating existing pages (migrate_url); managing individual blocks (manage_page_blocks).',
         parameters: {
           type: 'object',
           properties: {
@@ -2663,7 +2663,7 @@ Return a valid content_json array of ContentBlock objects with proper data for e
   // ─── Live Support ─────────────────────────────────────────────────────────
   {
     name: 'support_list_conversations',
-    description: 'List support conversations filtered by status (waiting_agent, with_agent, escalated, closed). Returns customer name, email, priority, sentiment, and escalation reason.',
+    description: 'List support conversations filtered by status. Returns customer name, email, priority, sentiment, and escalation reason. Use when: reviewing support queue; monitoring overall support load; identifying high-priority issues. NOT for: assigning conversations (support_assign_conversation); analyzing feedback (analyze_chat_feedback).',
     handler: 'db:chat_conversations',
     category: 'communication',
     scope: 'internal',
@@ -2685,7 +2685,7 @@ Lists support conversations filtered by status.
       type: 'function',
       function: {
         name: 'support_list_conversations',
-        description: 'List support conversations by status. Use to monitor escalated or waiting conversations.',
+        description: 'List support conversations filtered by status. Returns customer name, email, priority, sentiment, and escalation reason. Use when: reviewing support queue; monitoring overall support load; identifying high-priority issues. NOT for: assigning conversations (support_assign_conversation); analyzing feedback (analyze_chat_feedback).',
         parameters: {
           type: 'object',
           properties: {
@@ -2699,7 +2699,7 @@ Lists support conversations filtered by status.
   },
   {
     name: 'support_assign_conversation',
-    description: 'Assign or reassign a support conversation to an agent. Updates conversation status to with_agent.',
+    description: 'Assign or reassign a support conversation to an agent. Use when: a customer query needs agent attention; re-routing a conversation to a specialist; ensuring no support ticket is unassigned. NOT for: listing conversations (support_list_conversations); getting feedback (support_get_feedback).',
     handler: 'db:chat_conversations',
     category: 'communication',
     scope: 'internal',
@@ -2721,7 +2721,7 @@ Assigns or reassigns a support conversation to an agent.
       type: 'function',
       function: {
         name: 'support_assign_conversation',
-        description: 'Assign a conversation to an agent or change its status.',
+        description: 'Assign or reassign a support conversation to an agent. Use when: a customer query needs agent attention; re-routing a conversation to a specialist; ensuring no support ticket is unassigned. NOT for: listing conversations (support_list_conversations); getting feedback (support_get_feedback).',
         parameters: {
           type: 'object',
           properties: {
@@ -2736,7 +2736,7 @@ Assigns or reassigns a support conversation to an agent.
   },
   {
     name: 'support_get_feedback',
-    description: 'Retrieve chat feedback ratings and comments. Useful for monitoring customer satisfaction and identifying knowledge gaps.',
+    description: 'Retrieve chat feedback ratings and comments. Useful for monitoring customer satisfaction and identifying knowledge gaps. Use when: pulling raw feedback data; building satisfaction reports; reviewing individual feedback entries. NOT for: analyzing feedback trends (analyze_chat_feedback); listing support conversations (support_list_conversations).',
     handler: 'db:chat_feedback',
     category: 'analytics',
     scope: 'internal',
@@ -2758,7 +2758,7 @@ Retrieves chat feedback ratings and comments for quality monitoring.
       type: 'function',
       function: {
         name: 'support_get_feedback',
-        description: 'Get chat feedback to analyze customer satisfaction and common issues.',
+        description: 'Retrieve chat feedback ratings and comments. Useful for monitoring customer satisfaction and identifying knowledge gaps. Use when: pulling raw feedback data; building satisfaction reports; reviewing individual feedback entries. NOT for: analyzing feedback trends (analyze_chat_feedback); listing support conversations (support_list_conversations).',
         parameters: {
           type: 'object',
           properties: {
@@ -2774,7 +2774,7 @@ Retrieves chat feedback ratings and comments for quality monitoring.
   // ─── CRM Tasks ────────────────────────────────────────────────────────────
   {
     name: 'crm_task_list',
-    description: 'List CRM tasks with optional filters for lead, deal, priority, and completion status.',
+    description: 'List CRM tasks with optional filters for lead, deal, priority, and completion status. Use when: reviewing upcoming tasks; checking tasks for a specific lead; auditing task completion. NOT for: creating a new task (crm_task_create); updating a task (crm_task_update).',
     handler: 'db:crm_tasks',
     category: 'crm',
     scope: 'internal',
@@ -2798,7 +2798,7 @@ Lists CRM tasks with optional filters.
       type: 'function',
       function: {
         name: 'crm_task_list',
-        description: 'List CRM tasks. Filter by lead, deal, priority, or completion status.',
+        description: 'List CRM tasks with optional filters for lead, deal, priority, and completion status. Use when: reviewing upcoming tasks; checking tasks for a specific lead; auditing task completion. NOT for: creating a new task (crm_task_create); updating a task (crm_task_update).',
         parameters: {
           type: 'object',
           properties: {
@@ -2815,7 +2815,7 @@ Lists CRM tasks with optional filters.
   },
   {
     name: 'crm_task_create',
-    description: 'Create a new CRM task with title, description, due date, priority, and optional lead/deal link.',
+    description: 'Create a new CRM task with title, description, due date, priority, and optional lead/deal link. Use when: needing to follow up on a lead; assigning a task related to a deal; reminding agents about upcoming actions. NOT for: listing tasks (crm_task_list); adding a new lead (add_lead).',
     handler: 'db:crm_tasks',
     category: 'crm',
     scope: 'internal',
@@ -2839,7 +2839,7 @@ Creates a new CRM task with title, description, due date, and priority.
       type: 'function',
       function: {
         name: 'crm_task_create',
-        description: 'Create a CRM task. Link to a lead or deal for context.',
+        description: 'Create a new CRM task with title, description, due date, priority, and optional lead/deal link. Use when: needing to follow up on a lead; assigning a task related to a deal; reminding agents about upcoming actions. NOT for: listing tasks (crm_task_list); adding a new lead (add_lead).',
         parameters: {
           type: 'object',
           properties: {
@@ -2857,7 +2857,7 @@ Creates a new CRM task with title, description, due date, and priority.
   },
   {
     name: 'crm_task_update',
-    description: 'Update an existing CRM task — change title, description, priority, due date, or mark as completed.',
+    description: 'Update an existing CRM task — change title, description, priority, due date, or mark as completed. Use when: modifying a pending task; marking a task as done; rescheduling a deadline. NOT for: creating a new task (crm_task_create); listing tasks (crm_task_list).',
     handler: 'db:crm_tasks',
     category: 'crm',
     scope: 'internal',
@@ -2880,7 +2880,7 @@ Updates an existing CRM task — change title, priority, due date, or mark as co
       type: 'function',
       function: {
         name: 'crm_task_update',
-        description: 'Update a CRM task. Use completed_at to mark complete.',
+        description: 'Update an existing CRM task — change title, description, priority, due date, or mark as completed. Use when: modifying a pending task; marking a task as done; rescheduling a deadline. NOT for: creating a new task (crm_task_create); listing tasks (crm_task_list).',
         parameters: {
           type: 'object',
           properties: {
@@ -2900,7 +2900,7 @@ Updates an existing CRM task — change title, priority, due date, or mark as co
   // ─── Branding & Site Identity ─────────────────────────────────────────────
   {
     name: 'site_branding_get',
-    description: 'Read current site branding settings including logo, colors, fonts, and favicon from site_settings.',
+    description: 'Read current site branding settings including logo, colors, fonts, and favicon. Use when: retrieving current brand settings; checking active color scheme; verifying logo URL. NOT for: updating branding (site_branding_update); managing site settings (manage_site_settings).',
     handler: 'db:site_settings',
     category: 'content',
     scope: 'internal',
@@ -2921,7 +2921,7 @@ Reads current site branding settings: logo, colors, fonts, favicon.
       type: 'function',
       function: {
         name: 'site_branding_get',
-        description: 'Get current site branding (logo, colors, fonts, favicon).',
+        description: 'Read current site branding settings including logo, colors, fonts, and favicon. Use when: retrieving current brand settings; checking active color scheme; verifying logo URL. NOT for: updating branding (site_branding_update); managing site settings (manage_site_settings).',
         parameters: {
           type: 'object',
           properties: {},
@@ -2932,7 +2932,7 @@ Reads current site branding settings: logo, colors, fonts, favicon.
   },
   {
     name: 'site_branding_update',
-    description: 'Update site branding settings — logo URL, primary/accent colors, font family, favicon.',
+    description: 'Update site branding settings — logo URL, primary/accent colors, font family, favicon. Use when: changing the site logo; updating brand colors; applying a new visual identity. NOT for: reading current branding (site_branding_get); managing global blocks (manage_global_blocks).',
     handler: 'db:site_settings',
     category: 'content',
     scope: 'internal',
@@ -2956,7 +2956,7 @@ Updates site branding settings — logo, colors, fonts, favicon. Requires approv
       type: 'function',
       function: {
         name: 'site_branding_update',
-        description: 'Update branding settings. Requires approval.',
+        description: 'Update site branding settings — logo URL, primary/accent colors, font family, favicon. Use when: changing the site logo; updating brand colors; applying a new visual identity. NOT for: reading current branding (site_branding_get); managing global blocks (manage_global_blocks).',
         parameters: {
           type: 'object',
           properties: {
@@ -2975,7 +2975,7 @@ Updates site branding settings — logo, colors, fonts, favicon. Requires approv
   // ─── User & Role Management ───────────────────────────────────────────────
   {
     name: 'users_list',
-    description: 'List platform users with their roles from user_roles table. Shows email, role, and last sign-in.',
+    description: 'List platform users with their roles. Shows email, role, and last sign-in. Use when: admin needs to review team members; checking user access levels; auditing platform users. NOT for: managing user roles (N/A); creating new users (N/A).',
     handler: 'db:profiles',
     category: 'crm',
     scope: 'internal',
@@ -2997,7 +2997,7 @@ Lists platform users with their roles.
       type: 'function',
       function: {
         name: 'users_list',
-        description: 'List platform users and their assigned roles.',
+        description: 'List platform users with their roles. Shows email, role, and last sign-in. Use when: admin needs to review team members; checking user access levels; auditing platform users. NOT for: managing user roles (N/A); creating new users (N/A).',
         parameters: {
           type: 'object',
           properties: {
@@ -3012,7 +3012,7 @@ Lists platform users with their roles.
   // ── manage_* CRUD skills (OpenClaw feedback: highest-impact gap) ──────────
   {
     name: 'manage_blog_posts',
-    description: 'Update, publish, unpublish, or delete existing blog posts.',
+    description: 'Manage existing blog posts: list, get, update, publish, unpublish, delete. Use when: modifying a blog post; changing publication status; performing bulk operations on blog posts. NOT for: creating a new blog post draft (write_blog_post); browsing visitor-facing posts (browse_blog).',
     handler: 'module:blog',
     category: 'content',
     scope: 'internal',
@@ -3042,7 +3042,7 @@ After publishing: consider calling search_web to share on social, or check analy
       type: 'function',
       function: {
         name: 'manage_blog_posts',
-        description: 'Update, publish, unpublish, or delete an existing blog post.',
+        description: 'Manage existing blog posts: list, get, update, publish, unpublish, delete. Use when: modifying a blog post; changing publication status; performing bulk operations on blog posts. NOT for: creating a new blog post draft (write_blog_post); browsing visitor-facing posts (browse_blog).',
         parameters: {
           type: 'object',
           properties: {
@@ -3069,7 +3069,7 @@ After publishing: consider calling search_web to share on social, or check analy
   },
   {
     name: 'manage_leads',
-    description: 'Update lead status, score, notes, or delete a lead from the CRM.',
+    description: 'Full lead management: list, get, update status/score, delete leads. Use when: changing lead status; adding follow-up notes; cleaning up unqualified leads. NOT for: adding a new lead (add_lead); qualifying leads with AI (qualify_lead).',
     handler: 'module:crm',
     category: 'crm',
     scope: 'both',
@@ -3098,7 +3098,7 @@ After qualifying a lead (status='qualified'): consider creating a deal via manag
       type: 'function',
       function: {
         name: 'manage_leads',
-        description: 'Update or delete an existing CRM lead.',
+        description: 'Full lead management: list, get, update status/score, delete leads. Use when: changing lead status; adding follow-up notes; cleaning up unqualified leads. NOT for: adding a new lead (add_lead); qualifying leads with AI (qualify_lead).',
         parameters: {
           type: 'object',
           properties: {
@@ -3126,7 +3126,7 @@ After qualifying a lead (status='qualified'): consider creating a deal via manag
   // ── E-commerce A2A Skills ─────────────────────────────────────────────
   {
     name: 'browse_products',
-    description: 'Browse the product catalog. Returns active products with prices, images, and stock info.',
+    description: 'Browse the product catalog. Returns active products with prices, images, and stock info. Use when: a customer asks for available products; displaying items for sale; needing product details for an order. NOT for: managing products (manage_product); checking order status (check_order_status).',
     handler: 'edge:product-catalog',
     category: 'commerce',
     scope: 'external',
@@ -3150,7 +3150,7 @@ Returns the public product catalog via the product-catalog edge function.
       type: 'function',
       function: {
         name: 'browse_products',
-        description: 'Browse the product catalog.',
+        description: 'Browse the product catalog. Returns active products with prices, images, and stock info. Use when: a customer asks for available products; displaying items for sale; needing product details for an order. NOT for: managing products (manage_product); checking order status (check_order_status).',
         parameters: {
           type: 'object',
           properties: {
@@ -3188,7 +3188,7 @@ Places an order through the create-checkout edge function. In sandbox mode, comp
       type: 'function',
       function: {
         name: 'place_order',
-        description: 'Place a product order.',
+        description: 'Place an order via the checkout API with sandbox mode support. Use when: external agent tests purchase flow, programmatic order creation, automated testing of checkout pipeline. NOT for: managing existing orders (use manage_orders), browsing products (use manage_products), payment configuration (use site_settings).',
         parameters: {
           type: 'object',
           properties: {
@@ -3217,7 +3217,7 @@ Places an order through the create-checkout edge function. In sandbox mode, comp
   },
   {
     name: 'check_order_status',
-    description: 'Check the status of an existing order by ID.',
+    description: 'Check the status of an existing order by ID. Use when: a user inquires about their purchase; verifying order progress; providing delivery updates. NOT for: managing orders (manage_orders); looking up orders by email (lookup_order).',
     handler: 'edge:order-status',
     category: 'commerce',
     scope: 'external',
@@ -3237,7 +3237,7 @@ Checks the current status of an order via the order-status edge function.
       type: 'function',
       function: {
         name: 'check_order_status',
-        description: 'Check order status by ID.',
+        description: 'Check the status of an existing order by ID. Use when: a user inquires about their purchase; verifying order progress; providing delivery updates. NOT for: managing orders (manage_orders); looking up orders by email (lookup_order).',
         parameters: {
           type: 'object',
           properties: {
@@ -3252,7 +3252,7 @@ Checks the current status of an order via the order-status edge function.
   // ─── A2A / OpenClaw ───────────────────────────────────────────────────────
   {
     name: 'a2a_chat',
-    description: 'Handle incoming A2A messages from federation peers. Routes natural language messages to FlowPilot for intelligent response.',
+    description: 'Handle incoming A2A messages from federation peers. Routes natural language messages to FlowPilot for intelligent response. Use when: a peer agent sends a chat message; processing cross-agent communication; responding to federation requests. NOT for: outbound A2A calls (N/A); managing A2A peers (N/A).',
     handler: 'edge:a2a-chat',
     category: 'system',
     scope: 'external',
@@ -3276,7 +3276,7 @@ Default handler for inbound A2A messages from connected federation peers (e.g. O
       type: 'function',
       function: {
         name: 'a2a_chat',
-        description: 'Process inbound A2A chat messages from peers. Use when: receiving plain text messages from connected peers. NOT for: outbound requests or messages with explicit skill invocations.',
+        description: 'Handle incoming A2A messages from federation peers. Routes natural language messages to FlowPilot for intelligent response. Use when: a peer agent sends a chat message; processing cross-agent communication; responding to federation requests. NOT for: outbound A2A calls (N/A); managing A2A peers (N/A).',
         parameters: {
           type: 'object',
           properties: {
@@ -3291,7 +3291,7 @@ Default handler for inbound A2A messages from connected federation peers (e.g. O
   },
   {
     name: 'openclaw_start_session',
-    description: 'Start a beta test session with a scenario description',
+    description: 'Start a beta test session with a scenario description. Use when: initiating a new round of beta testing; defining test scope and purpose; preparing OpenClaw for a new testing task. NOT for: ending a session (openclaw_end_session); getting status (openclaw_get_status).',
     handler: 'module:openclaw',
     category: 'system',
     scope: 'internal',
@@ -3311,7 +3311,7 @@ Opens a new OpenClaw beta test session. Registers the session in the database be
       type: 'function',
       function: {
         name: 'openclaw_start_session',
-        description: 'Start a beta test session',
+        description: 'Start a beta test session with a scenario description. Use when: initiating a new round of beta testing; defining test scope and purpose; preparing OpenClaw for a new testing task. NOT for: ending a session (openclaw_end_session); getting status (openclaw_get_status).',
         parameters: {
           type: 'object',
           properties: {
@@ -3326,7 +3326,7 @@ Opens a new OpenClaw beta test session. Registers the session in the database be
   },
   {
     name: 'openclaw_end_session',
-    description: 'End a beta test session with summary',
+    description: 'End a beta test session with summary. Use when: concluding a beta testing round; collecting final session feedback; marking a test as complete. NOT for: starting a new test session (openclaw_start_session); reporting findings (openclaw_report_finding).',
     handler: 'module:openclaw',
     category: 'system',
     scope: 'internal',
@@ -3348,7 +3348,7 @@ Closes an active OpenClaw beta test session with a summary and final status.
       type: 'function',
       function: {
         name: 'openclaw_end_session',
-        description: 'End a beta test session',
+        description: 'End a beta test session with summary. Use when: concluding a beta testing round; collecting final session feedback; marking a test as complete. NOT for: starting a new test session (openclaw_start_session); reporting findings (openclaw_report_finding).',
         parameters: {
           type: 'object',
           properties: {
@@ -3363,7 +3363,7 @@ Closes an active OpenClaw beta test session with a summary and final status.
   },
   {
     name: 'openclaw_report_finding',
-    description: 'Report a bug, UX issue, or suggestion from beta testing',
+    description: 'Report a bug, UX issue, or suggestion from beta testing. Use when: documenting observed problems during a test; submitting improvement ideas; logging defects. NOT for: getting test status (openclaw_get_status); sending a general message (openclaw_exchange).',
     handler: 'module:openclaw',
     category: 'system',
     scope: 'internal',
@@ -3387,7 +3387,7 @@ Logs a finding (bug, UX issue, suggestion, observation, or performance issue) di
       type: 'function',
       function: {
         name: 'openclaw_report_finding',
-        description: 'Report a finding from beta testing',
+        description: 'Report a bug, UX issue, or suggestion from beta testing. Use when: documenting observed problems during a test; submitting improvement ideas; logging defects. NOT for: getting test status (openclaw_get_status); sending a general message (openclaw_exchange).',
         parameters: {
           type: 'object',
           properties: {
@@ -3406,7 +3406,7 @@ Logs a finding (bug, UX issue, suggestion, observation, or performance issue) di
   },
   {
     name: 'openclaw_exchange',
-    description: 'Send a message between OpenClaw and FlowPilot',
+    description: 'Send a message between OpenClaw and FlowPilot. Use when: passing information between systems; requesting an action from the other AI; synchronizing state or data. NOT for: generalized A2A chat (a2a_chat); reporting findings (openclaw_report_finding).',
     handler: 'module:openclaw',
     category: 'system',
     scope: 'internal',
@@ -3427,7 +3427,7 @@ Sends a structured message between OpenClaw and FlowPilot during a session.
       type: 'function',
       function: {
         name: 'openclaw_exchange',
-        description: 'Exchange a message between agents',
+        description: 'Send a message between OpenClaw and FlowPilot. Use when: passing information between systems; requesting an action from the other AI; synchronizing state or data. NOT for: generalized A2A chat (a2a_chat); reporting findings (openclaw_report_finding).',
         parameters: {
           type: 'object',
           properties: {
@@ -3444,7 +3444,7 @@ Sends a structured message between OpenClaw and FlowPilot during a session.
   },
   {
     name: 'openclaw_get_status',
-    description: 'Get current beta test status',
+    description: 'Get current beta test status. Use when: checking progress of an ongoing beta test; verifying if a test session is active; monitoring testing phase. NOT for: starting a new session (openclaw_start_session); ending a session (openclaw_end_session).',
     handler: 'module:openclaw',
     category: 'system',
     scope: 'internal',
@@ -3462,7 +3462,7 @@ Returns an overview of active beta test sessions — open sessions, recent findi
       type: 'function',
       function: {
         name: 'openclaw_get_status',
-        description: 'Get beta test status overview',
+        description: 'Get current beta test status. Use when: checking progress of an ongoing beta test; verifying if a test session is active; monitoring testing phase. NOT for: starting a new session (openclaw_start_session); ending a session (openclaw_end_session).',
         parameters: {
           type: 'object',
           properties: {},
