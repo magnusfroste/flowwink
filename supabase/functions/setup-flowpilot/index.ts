@@ -3164,7 +3164,7 @@ Returns the public product catalog via the product-catalog edge function.
   },
   {
     name: 'place_order',
-    description: 'Place an order via the checkout API. Supports sandbox mode for testing without payment.',
+    description: 'Place an order via the checkout API with sandbox mode support. Use when: external agent tests purchase flow, programmatic order creation, automated testing of checkout pipeline. NOT for: managing existing orders (use manage_orders), browsing products (use manage_products), payment configuration (use site_settings).',
     handler: 'edge:create-checkout',
     category: 'commerce',
     scope: 'external',
