@@ -2,7 +2,7 @@
 
 > **Your website runs itself.** FlowAgent is not a chatbot. It is an autonomous AI operator that writes your content, qualifies your leads, runs your campaigns, orchestrates multi-agent workflows, and learns from every interaction. You set the objectives. It does the rest.
 
-> **Version:** 3.0 | **Updated:** March 2026 | **Skills:** 73 registered + 32 built-in tools | **Autonomy:** 10/10
+> **Version:** 4.0 | **Updated:** April 2026 | **Skills:** 106 registered + 32 built-in tools | **Autonomy:** 10/10
 
 ---
 
