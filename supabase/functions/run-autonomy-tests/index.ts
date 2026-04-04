@@ -1195,16 +1195,49 @@ async function layer7Tests(supabase: any, supabaseUrl: string, serviceKey: strin
         }),
       });
 
+      const rawText = await resp.text();
+
       if (!resp.ok) {
-        const errText = await resp.text();
-        throw new Error(`chat-completion ${resp.status}: ${errText.slice(0, 150)}`);
+        throw new Error(`chat-completion ${resp.status}: ${rawText.slice(0, 150)}`);
       }
 
-      const data = await resp.json();
-      const reply = (data.reply || data.content || data.message || '').toLowerCase();
+      // chat-completion returns SSE stream: "data: {...}\n\n" chunks
+      // Parse all SSE chunks and concatenate content
+      let reply = '';
+      const lines = rawText.split('\n');
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const jsonStr = line.slice(6).trim();
+        if (jsonStr === '[DONE]') break;
+        try {
+          const chunk = JSON.parse(jsonStr);
+          // Handle different SSE payload shapes
+          const delta = chunk.choices?.[0]?.delta?.content
+            || chunk.choices?.[0]?.message?.content
+            || chunk.reply
+            || chunk.content
+            || chunk.message
+            || '';
+          reply += delta;
+        } catch {
+          // Non-JSON SSE line, skip
+        }
+      }
+
+      // Fallback: try direct JSON parse (non-streaming response)
+      if (!reply) {
+        try {
+          const data = JSON.parse(rawText);
+          reply = data.reply || data.content || data.message || '';
+        } catch {
+          // not JSON either
+        }
+      }
+
+      reply = reply.toLowerCase();
 
       if (!reply) {
-        throw new Error('Empty reply from chat-completion');
+        throw new Error(`Empty reply from chat-completion. Raw: ${rawText.slice(0, 200)}`);
       }
 
       // At least one keyword should appear in the response
