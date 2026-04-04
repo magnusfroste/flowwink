@@ -3855,7 +3855,7 @@ Use this to find email addresses and contact information for people at a company
   },
   {
     name: 'create_page_block',
-    description: 'Create a new content block on an existing page. Wrapper around manage_page_blocks add action.',
+    description: 'Create a new content block on an existing page. Supports batch mode for adding multiple blocks at once. Use when: building a page after manage_page created it, adding sections during migration, user asks to add a hero/features/CTA section. NOT for: creating pages (use manage_page), editing existing blocks (use manage_page_blocks), full page migrations (use migrate_url first).',
     handler: 'module:pages',
     category: 'content',
     scope: 'internal',
