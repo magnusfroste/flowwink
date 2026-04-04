@@ -3470,6 +3470,1111 @@ Returns an overview of active beta test sessions — open sessions, recent findi
       },
     },
   },
+  {
+    name: 'a2a_request',
+    description: 'Send a request to a connected A2A peer agent. Use when: delegating tasks to external agents, requesting music generation or audits from peers. NOT for: handling incoming peer messages (use a2a_chat).',
+    handler: 'a2a:SoundSpace',
+    category: 'automation',
+    scope: 'internal',
+    requires_approval: false,
+    trust_level: 'auto',
+    instructions: `## A2A Federation Request
+
+You can use this skill to delegate tasks to connected peer agents via the A2A protocol.
+
+### Currently Connected Peers
+- **SoundSpace** — AI music and sound effects generation
+
+### How to Use
+When a user asks for music or sound effects, use this skill with:
+- \`skill\`: The peer skill to invoke (e.g. \`generate_music\`, \`generate_sfx\`)
+- \`prompt\`: Descriptive prompt for what to generate
+- \`duration\`: Optional duration in seconds
+
+### Examples
+- "Create ambient background music for a meditation app" → \`skill: generate_music, prompt: "calm ambient meditation music with soft pads and nature sounds", duration: 60\`
+- "Generate a notification sound" → \`skill: generate_sfx, prompt: "short pleasant notification chime", duration: 2\`
+
+### Important
+- The peer must be active and connected in the Federation module
+- Requests are logged in a2a_activity for audit trail
+- If the peer is unreachable, report the error clearly to the user`,
+    tool_definition: {
+      "type": "function",
+      "function": {
+            "name": "a2a_request",
+            "parameters": {
+                  "type": "object",
+                  "required": [
+                        "skill",
+                        "prompt"
+                  ],
+                  "properties": {
+                        "skill": {
+                              "type": "string",
+                              "description": "The skill name to call on the peer (e.g. generate_track)"
+                        },
+                        "prompt": {
+                              "type": "string",
+                              "description": "The prompt or description for the requested action"
+                        },
+                        "duration": {
+                              "type": "number",
+                              "description": "Duration in seconds (for music/audio generation)"
+                        }
+                  }
+            },
+            "description": "Send a request to a connected A2A peer agent. Use when: delegating tasks to external agents, requesting music generation or audits from peers. NOT for: handling incoming peer messages (use a2a_chat)."
+      }
+},
+  },
+  {
+    name: 'cart_recovery_check',
+    description: 'Lists orders with abandoned or incomplete status. Use when: reviewing abandoned carts, recovery campaigns, checking incomplete orders. NOT for: checking specific order status (use check_order).',
+    handler: 'module:orders',
+    category: 'crm',
+    scope: 'internal',
+    requires_approval: true,
+    trust_level: 'approve',
+    instructions: `Identify orders needing follow-up. After listing, create a recovery campaign.`,
+    tool_definition: {
+      "type": "function",
+      "function": {
+            "name": "cart_recovery_check",
+            "parameters": {
+                  "type": "object",
+                  "properties": {
+                        "limit": {
+                              "type": "number"
+                        },
+                        "days_back": {
+                              "type": "number"
+                        }
+                  }
+            },
+            "description": "Lists orders with abandoned or incomplete status. Use when: reviewing abandoned carts, recovery campaigns, checking incomplete orders. NOT for: checking specific order status (use check_order)."
+      }
+},
+  },
+  {
+    name: 'competitor_monitor',
+    description: 'Scan a competitor website and analyze their content strategy and positioning. Use when: user wants competitive analysis, studying competitor content. NOT for: migrating competitor sites (use migrate_url), general web search (use search_web).',
+    handler: 'edge:competitor-monitor',
+    category: 'analytics',
+    scope: 'internal',
+    requires_approval: false,
+    trust_level: 'auto',
+    instructions: `## Competitor Monitor Skill
+
+When asked to monitor a competitor:
+1. Use browser_fetch or search_web to gather their latest content
+2. Analyze their website structure, blog topics, messaging, and product positioning
+3. Compare with our own content strategy and identify gaps/opportunities
+4. Store findings in agent_memory under category "context" with key "competitor:[domain]"
+5. If patterns emerge across multiple scans, update the weekly digest
+
+### Output format
+Return a structured analysis with: company_name, domain, recent_content (titles/topics), positioning_summary, our_gaps, opportunities`,
+    tool_definition: {
+      "type": "function",
+      "function": {
+            "name": "competitor_monitor",
+            "parameters": {
+                  "type": "object",
+                  "required": [
+                        "domain",
+                        "company_name"
+                  ],
+                  "properties": {
+                        "domain": {
+                              "type": "string",
+                              "description": "Competitor domain (e.g. competitor.com)"
+                        },
+                        "focus_areas": {
+                              "type": "array",
+                              "items": {
+                                    "type": "string"
+                              },
+                              "description": "Areas to focus on: content, pricing, features, messaging, seo"
+                        },
+                        "company_name": {
+                              "type": "string",
+                              "description": "Competitor company name"
+                        }
+                  }
+            },
+            "description": "Scan a competitor website and analyze their content strategy and positioning. Use when: user wants competitive analysis, studying competitor content. NOT for: migrating competitor sites (use migrate_url), general web search (use search_web)."
+      }
+},
+  },
+  {
+    name: 'composio_execute',
+    description: 'Execute an action in a connected external app via Composio. Use when: you have found the right tool via composio_search_tools and want to run it. NOT for: searching tools (use composio_search_tools first). Requires a specific action_name from search results.',
+    handler: 'edge:composio-proxy',
+    category: 'system',
+    scope: 'internal',
+    requires_approval: false,
+    trust_level: 'notify',
+    instructions: `Execute a Composio action. You must first use composio_search_tools to find the action_name. Pass the action_name and input parameters. The entity_id maps to the user/lead context.`,
+    tool_definition: {
+      "type": "function",
+      "function": {
+            "name": "composio_execute",
+            "parameters": {
+                  "type": "object",
+                  "required": [
+                        "action_name"
+                  ],
+                  "properties": {
+                        "input": {
+                              "type": "object",
+                              "description": "Input parameters for the action"
+                        },
+                        "entity_id": {
+                              "type": "string",
+                              "description": "Optional: Composio entity ID (defaults to default)"
+                        },
+                        "action_name": {
+                              "type": "string",
+                              "description": "The Composio action identifier from search results (e.g. GMAIL_SEND_EMAIL)"
+                        }
+                  }
+            },
+            "description": "Execute an action in a connected external app via Composio. Use when: you have found the right tool via composio_search_tools and want to run it. NOT for: searching tools (use composio_search_tools first). Requires a specific action_name from search results."
+      }
+},
+  },
+  {
+    name: 'composio_gmail_read',
+    description: 'Read recent emails from Gmail via Composio. Use when: FlowPilot needs context about recent communication with a lead/customer, or needs to check for replies. NOT for: processing high-volume inboxes.',
+    handler: 'edge:composio-proxy',
+    category: 'communication',
+    scope: 'both',
+    requires_approval: false,
+    trust_level: 'auto',
+    instructions: ``,
+    tool_definition: {
+      "type": "function",
+      "function": {
+            "name": "composio_gmail_read",
+            "parameters": {
+                  "type": "object",
+                  "required": [],
+                  "properties": {
+                        "query": {
+                              "type": "string",
+                              "description": "Gmail search query (e.g. from:user@example.com or subject:proposal)"
+                        },
+                        "max_results": {
+                              "type": "integer",
+                              "default": 5,
+                              "description": "Max emails to return (default 5)"
+                        }
+                  }
+            },
+            "description": "Read recent emails from Gmail via Composio. Use when: FlowPilot needs context about recent communication with a lead/customer, or needs to check for replies. NOT for: processing high-volume inboxes."
+      }
+},
+  },
+  {
+    name: 'composio_gmail_send',
+    description: 'Send an email via Gmail through Composio. Use when: FlowPilot needs to send a follow-up, confirmation, or outreach email to a lead/customer. NOT for: bulk newsletters (use Resend/newsletter module instead).',
+    handler: 'edge:composio-proxy',
+    category: 'communication',
+    scope: 'both',
+    requires_approval: false,
+    trust_level: 'notify',
+    instructions: ``,
+    tool_definition: {
+      "type": "function",
+      "function": {
+            "name": "composio_gmail_send",
+            "parameters": {
+                  "type": "object",
+                  "required": [
+                        "to",
+                        "subject",
+                        "body"
+                  ],
+                  "properties": {
+                        "cc": {
+                              "type": "string",
+                              "description": "CC recipients (comma-separated)"
+                        },
+                        "to": {
+                              "type": "string",
+                              "description": "Recipient email address"
+                        },
+                        "bcc": {
+                              "type": "string",
+                              "description": "BCC recipients (comma-separated)"
+                        },
+                        "body": {
+                              "type": "string",
+                              "description": "Email body (plain text or HTML)"
+                        },
+                        "subject": {
+                              "type": "string",
+                              "description": "Email subject line"
+                        }
+                  }
+            },
+            "description": "Send an email via Gmail through Composio. Use when: FlowPilot needs to send a follow-up, confirmation, or outreach email to a lead/customer. NOT for: bulk newsletters (use Resend/newsletter module instead)."
+      }
+},
+  },
+  {
+    name: 'composio_search_tools',
+    description: 'Search for available tools and actions across 1000+ connected apps using intent-based discovery. Use when: user wants to perform an action in an external app (Gmail, Slack, HubSpot, Sheets, etc.) and you need to find the right tool. NOT for: internal FlowWink operations.',
+    handler: 'edge:composio-proxy',
+    category: 'system',
+    scope: 'internal',
+    requires_approval: false,
+    trust_level: 'auto',
+    instructions: `Search Composio for available tools matching an intent. Pass a natural language description of what you want to do. Returns matching actions with their parameters. Always search before executing.`,
+    tool_definition: {
+      "type": "function",
+      "function": {
+            "name": "composio_search_tools",
+            "parameters": {
+                  "type": "object",
+                  "required": [
+                        "intent"
+                  ],
+                  "properties": {
+                        "app": {
+                              "type": "string",
+                              "description": "Optional: filter by specific app name (e.g. gmail, slack, hubspot)"
+                        },
+                        "intent": {
+                              "type": "string",
+                              "description": "Natural language description of what you want to do"
+                        }
+                  }
+            },
+            "description": "Search for available tools and actions across 1000+ connected apps using intent-based discovery. Use when: user wants to perform an action in an external app (Gmail, Slack, HubSpot, Sheets, etc.) and you need to find the right tool. NOT for: internal FlowWink operations."
+      }
+},
+  },
+  {
+    name: 'contact_finder',
+    description: 'Find business contacts by company domain. Use when: prospecting by company domain, finding email addresses for outreach. NOT for: managing existing leads (use manage_leads).',
+    handler: 'edge:contact-finder',
+    category: 'crm',
+    scope: 'internal',
+    requires_approval: false,
+    trust_level: 'auto',
+    instructions: `## Contact Finder Skill
+
+Use this to find email addresses and contact information for people at a company.
+
+### Actions
+- **domain_search**: Find all known contacts at a domain. Good for building a contact list.
+- **email_finder**: Find a specific person's email by their name + company domain. Good for targeted outreach.
+
+### When to use
+- After identifying a prospect company (you need the domain)
+- When preparing introduction letters (find the decision maker)
+- Lead enrichment: add contacts to existing companies
+
+### Requirements
+- Requires HUNTER_API_KEY secret. Will soft-fail without it.
+- Extract domain from company URL: "https://www.acme.com/about" → "acme.com"
+
+### Tips
+- Always strip "www." from domains
+- Check confidence scores: >90 is reliable, <50 is risky
+- For domain_search, limit to 10 to conserve API credits`,
+    tool_definition: {
+      "type": "function",
+      "function": {
+            "name": "contact_finder",
+            "parameters": {
+                  "type": "object",
+                  "required": [
+                        "domain"
+                  ],
+                  "properties": {
+                        "limit": {
+                              "type": "number",
+                              "description": "Max contacts for domain_search (default 10)"
+                        },
+                        "action": {
+                              "enum": [
+                                    "domain_search",
+                                    "email_finder"
+                              ],
+                              "type": "string",
+                              "description": "Search type (default: domain_search)"
+                        },
+                        "domain": {
+                              "type": "string",
+                              "description": "Company domain (e.g. acme.com)"
+                        },
+                        "last_name": {
+                              "type": "string",
+                              "description": "Last name (required for email_finder)"
+                        },
+                        "first_name": {
+                              "type": "string",
+                              "description": "First name (required for email_finder)"
+                        }
+                  }
+            },
+            "description": "Find business contacts by company domain. Use when: prospecting by company domain, finding email addresses for outreach. NOT for: managing existing leads (use manage_leads)."
+      }
+},
+  },
+  {
+    name: 'content_calendar_view',
+    description: 'Lists scheduled and draft content, identifies content gaps. Use when: reviewing editorial calendar, checking upcoming content, finding content gaps. NOT for: creating content (use write_blog_post), publishing content (use manage_blog_posts).',
+    handler: 'module:blog',
+    category: 'content',
+    scope: 'internal',
+    requires_approval: false,
+    trust_level: 'auto',
+    instructions: `Audit the content pipeline. Analyze gaps in topics, frequency, and SEO coverage.`,
+    tool_definition: {
+      "type": "function",
+      "function": {
+            "name": "content_calendar_view",
+            "parameters": {
+                  "type": "object",
+                  "properties": {
+                        "include_drafts": {
+                              "type": "boolean"
+                        },
+                        "look_ahead_days": {
+                              "type": "number"
+                        }
+                  }
+            },
+            "description": "Lists scheduled and draft content, identifies content gaps. Use when: reviewing editorial calendar, checking upcoming content, finding content gaps. NOT for: creating content (use write_blog_post), publishing content (use manage_blog_posts)."
+      }
+},
+  },
+  {
+    name: 'create_page_block',
+    description: 'Create a new content block on an existing page. Wrapper around manage_page_blocks add action.',
+    handler: 'module:pages',
+    category: 'content',
+    scope: 'internal',
+    requires_approval: false,
+    trust_level: 'auto',
+    instructions: `Use this only after a page exists. Required: page_id and block_type. If page_id is missing, first call manage_page with action=create and use the returned page_id. Then call create_page_block.`,
+    tool_definition: {
+      "type": "function",
+      "function": {
+            "name": "create_page_block",
+            "parameters": {
+                  "type": "object",
+                  "required": [
+                        "page_id",
+                        "block_type"
+                  ],
+                  "properties": {
+                        "action": {
+                              "type": "string",
+                              "const": "add",
+                              "description": "Action to perform"
+                        },
+                        "blocks": {
+                              "type": "array",
+                              "items": {
+                                    "type": "object",
+                                    "required": [
+                                          "type",
+                                          "data"
+                                    ],
+                                    "properties": {
+                                          "data": {
+                                                "type": "object",
+                                                "description": "Block-specific data"
+                                          },
+                                          "type": {
+                                                "type": "string",
+                                                "description": "Block type"
+                                          }
+                                    }
+                              },
+                              "description": "BATCH MODE: Array of blocks to add in one call. Each: {type, data}. Use this to add 5-20 blocks at once instead of calling one at a time."
+                        },
+                        "page_id": {
+                              "type": "string",
+                              "description": "UUID of the page to add the block to"
+                        },
+                        "position": {
+                              "type": "integer",
+                              "description": "Position to insert the block at (0-indexed, default: end)"
+                        },
+                        "block_data": {
+                              "type": "object",
+                              "description": "Content data for the block"
+                        },
+                        "block_type": {
+                              "type": "string",
+                              "description": "Type of block to create (hero, text, features, etc.)"
+                        }
+                  }
+            },
+            "description": "Create content blocks on a page. Supports BATCH: pass blocks[] array with multiple {type,data} objects to add 5-20 blocks in ONE call. Also supports single block via block_type + block_data. Use batch mode when building full pages \u2014 much more efficient than one block at a time. Available block types: hero, text, cta, features, stats, testimonials, pricing, accordion, form, newsletter, quote, two-column, info-box, logos, comparison, social-proof, countdown, chat-launcher, separator, tabs, marquee, embed, table, progress, badge, floating-cta, notification-toast, parallax-section, bento-grid, section-divider, gallery, image, youtube, map, team, timeline, products, announcement-bar, lottie, webinar, featured-carousel, quick-links, trust-bar, category-nav, shipping-info, ai-assistant."
+      }
+},
+  },
+  {
+    name: 'deal_stale_check',
+    description: 'Identifies deals that have stalled and suggests actions. Use when: heartbeat pipeline review, finding stuck deals. NOT for: managing deals directly (use manage_deal).',
+    handler: 'module:deals',
+    category: 'crm',
+    scope: 'internal',
+    requires_approval: false,
+    trust_level: 'auto',
+    instructions: `Find deals stuck in a stage. Suggest follow-up or re-engagement strategies.`,
+    tool_definition: {
+      "type": "function",
+      "function": {
+            "name": "deal_stale_check",
+            "parameters": {
+                  "type": "object",
+                  "properties": {
+                        "stale_days": {
+                              "type": "number"
+                        },
+                        "stage_filter": {
+                              "type": "string"
+                        }
+                  }
+            },
+            "description": "Identifies deals that have stalled and suggests actions. Use when: heartbeat pipeline review, finding stuck deals. NOT for: managing deals directly (use manage_deal)."
+      }
+},
+  },
+  {
+    name: 'generate_site_from_identity',
+    description: 'Generate a complete website from the Business Identity profile. Use when: setting up a brand new site, user says "build my website", generating initial site structure. NOT for: editing existing pages (use manage_page), migrating external sites (use migrate_url).',
+    handler: 'edge:generate-site-from-identity',
+    category: 'content',
+    scope: 'both',
+    requires_approval: true,
+    trust_level: 'approve',
+    instructions: `Use when a client has filled in their Business Identity and wants a website generated. AI analyzes available data fields and composes appropriate blocks. Requires approval. Page created as draft.`,
+    tool_definition: {
+      "type": "function",
+      "function": {
+            "name": "generate_site_from_identity",
+            "parameters": {
+                  "type": "object",
+                  "properties": {
+                        "page_title": {
+                              "type": "string",
+                              "description": "Optional override for page title. Defaults to company name."
+                        },
+                        "include_footer": {
+                              "type": "boolean",
+                              "description": "Generate global footer. Default true."
+                        },
+                        "include_header": {
+                              "type": "boolean",
+                              "description": "Generate global header. Default true."
+                        },
+                        "include_landing_page": {
+                              "type": "boolean",
+                              "description": "Generate landing page. Default true."
+                        }
+                  },
+                  "additionalProperties": false
+            },
+            "description": "Generate a complete website from the Business Identity profile. Use when: setting up a brand new site, user says \"build my website\", generating initial site structure. NOT for: editing existing pages (use manage_page), migrating external sites (use migrate_url)."
+      }
+},
+  },
+  {
+    name: 'generate_social_post',
+    description: 'Generate social media posts from existing blog content or content proposals. Use when: user wants LinkedIn/X posts from an article, repurposing blog content for social. NOT for: writing blog posts (use write_blog_post), batch social posts (use social_post_batch).',
+    handler: 'edge:generate-social-post',
+    category: 'content',
+    scope: 'internal',
+    requires_approval: false,
+    trust_level: 'auto',
+    instructions: `## Social Post Generation Skill
+
+When generating social posts:
+1. If a blog_post_id or proposal_id is provided, fetch the source content first
+2. Adapt the content for the target platform:
+   - LinkedIn: Professional tone, 1300 chars max, use line breaks, include hashtags
+   - X/Twitter: Concise, 280 chars max, punchy hook, 1-2 hashtags
+3. Always include a call-to-action or link back to the original content
+4. Generate 2-3 variants for A/B testing when possible
+5. Store generated posts in content_proposals channel_variants
+
+### Platform guidelines
+- LinkedIn: Start with a hook question or bold statement. Use emoji sparingly. End with hashtags.
+- X: Lead with the most compelling insight. Thread format for longer content.`,
+    tool_definition: {
+      "type": "function",
+      "function": {
+            "name": "generate_social_post",
+            "parameters": {
+                  "type": "object",
+                  "required": [
+                        "platforms"
+                  ],
+                  "properties": {
+                        "tone": {
+                              "enum": [
+                                    "professional",
+                                    "casual",
+                                    "bold",
+                                    "educational"
+                              ],
+                              "type": "string",
+                              "description": "Writing tone"
+                        },
+                        "topic": {
+                              "type": "string",
+                              "description": "Topic for freeform posts (when no source_id)"
+                        },
+                        "platforms": {
+                              "type": "array",
+                              "items": {
+                                    "enum": [
+                                          "linkedin",
+                                          "x"
+                                    ],
+                                    "type": "string"
+                              },
+                              "description": "Target platforms"
+                        },
+                        "source_id": {
+                              "type": "string",
+                              "description": "ID of the blog post or proposal to repurpose"
+                        },
+                        "source_type": {
+                              "enum": [
+                                    "blog_post",
+                                    "proposal",
+                                    "freeform"
+                              ],
+                              "type": "string",
+                              "description": "Type of source content"
+                        }
+                  }
+            },
+            "description": "Generate social media posts from existing blog content or content proposals. Use when: user wants LinkedIn/X posts from an article, repurposing blog content for social. NOT for: writing blog posts (use write_blog_post), batch social posts (use social_post_batch)."
+      }
+},
+  },
+  {
+    name: 'inventory_report',
+    description: 'Generates product inventory status report. Use when: checking stock levels, reviewing inventory health. NOT for: updating inventory (use manage_inventory), managing products (use manage_product).',
+    handler: 'module:products',
+    category: 'analytics',
+    scope: 'internal',
+    requires_approval: false,
+    trust_level: 'auto',
+    instructions: `Get a product catalog snapshot. Identify items to promote or restock.`,
+    tool_definition: {
+      "type": "function",
+      "function": {
+            "name": "inventory_report",
+            "parameters": {
+                  "type": "object",
+                  "properties": {
+                        "category_filter": {
+                              "type": "string"
+                        },
+                        "low_stock_threshold": {
+                              "type": "number"
+                        }
+                  }
+            },
+            "description": "Generates product inventory status report. Use when: checking stock levels, reviewing inventory health. NOT for: updating inventory (use manage_inventory), managing products (use manage_product)."
+      }
+},
+  },
+  {
+    name: 'lead_nurture_sequence',
+    description: 'Create automated email nurture sequences for new leads. Use when: setting up drip campaigns, automating lead follow-up emails. NOT for: sending single emails (use send_email), managing leads (use manage_leads).',
+    handler: 'module:newsletter',
+    category: 'crm',
+    scope: 'internal',
+    requires_approval: false,
+    trust_level: 'auto',
+    instructions: `Welcome: 3 emails over 7 days (intro, value prop, CTA). Re-engage: 2 emails. Upsell: 2 emails. Use company context from sales intelligence. Personalize with lead name.`,
+    tool_definition: {
+      "type": "function",
+      "function": {
+            "name": "lead_nurture_sequence",
+            "parameters": {
+                  "type": "object",
+                  "required": [
+                        "lead_id",
+                        "sequence_type"
+                  ],
+                  "properties": {
+                        "lead_id": {
+                              "type": "string",
+                              "description": "Lead UUID"
+                        },
+                        "email_count": {
+                              "type": "number",
+                              "description": "Number of emails"
+                        },
+                        "sequence_type": {
+                              "enum": [
+                                    "welcome",
+                                    "re-engage",
+                                    "upsell"
+                              ],
+                              "type": "string",
+                              "description": "Sequence type"
+                        }
+                  }
+            },
+            "description": "Create automated email nurture sequences for new leads. Use when: setting up drip campaigns, automating lead follow-up emails. NOT for: sending single emails (use send_email), managing leads (use manage_leads)."
+      }
+},
+  },
+  {
+    name: 'lead_pipeline_review',
+    description: 'Reviews leads by status and score, suggests follow-up. Use when: heartbeat pipeline review, prioritizing lead outreach. NOT for: updating lead status (use manage_leads).',
+    handler: 'module:crm',
+    category: 'crm',
+    scope: 'internal',
+    requires_approval: false,
+    trust_level: 'auto',
+    instructions: `Audit the lead pipeline. Use prospect_research to enrich hot leads. Suggest follow-up actions.`,
+    tool_definition: {
+      "type": "function",
+      "function": {
+            "name": "lead_pipeline_review",
+            "parameters": {
+                  "type": "object",
+                  "properties": {
+                        "limit": {
+                              "type": "number"
+                        },
+                        "status_filter": {
+                              "enum": [
+                                    "new",
+                                    "contacted",
+                                    "qualified",
+                                    "all"
+                              ],
+                              "type": "string"
+                        },
+                        "days_since_contact": {
+                              "type": "number"
+                        }
+                  }
+            },
+            "description": "Reviews leads by status and score, suggests follow-up. Use when: heartbeat pipeline review, prioritizing lead outreach. NOT for: updating lead status (use manage_leads)."
+      }
+},
+  },
+  {
+    name: 'newsletter_subscribe',
+    description: 'Subscribe a visitor to the newsletter. Use when: visitor wants to sign up for emails, newsletter opt-in. NOT for: managing subscribers (use manage_newsletter_subscribers), sending newsletters (use execute_newsletter_send).',
+    handler: 'edge:newsletter-subscribe',
+    category: 'communication',
+    scope: 'external',
+    requires_approval: false,
+    trust_level: 'auto',
+    instructions: `## Newsletter Subscribe
+When a visitor wants to subscribe to the newsletter, collect their email and optionally name.
+Confirm the subscription was successful.`,
+    tool_definition: {
+      "type": "function",
+      "function": {
+            "name": "newsletter_subscribe",
+            "parameters": {
+                  "type": "object",
+                  "required": [
+                        "email"
+                  ],
+                  "properties": {
+                        "name": {
+                              "type": "string",
+                              "description": "Optional subscriber name"
+                        },
+                        "email": {
+                              "type": "string",
+                              "description": "Email address to subscribe"
+                        }
+                  }
+            },
+            "description": "Subscribe a visitor to the newsletter. Use when: visitor wants to sign up for emails, newsletter opt-in. NOT for: managing subscribers (use manage_newsletter_subscribers), sending newsletters (use execute_newsletter_send)."
+      }
+},
+  },
+  {
+    name: 'product_promoter',
+    description: 'Creates a promotional blog post for a product. Use when: user wants to promote a product via blog, creating product-focused articles. NOT for: general blog writing (use write_blog_post), managing products (use manage_product).',
+    handler: 'module:blog',
+    category: 'content',
+    scope: 'internal',
+    requires_approval: false,
+    trust_level: 'auto',
+    instructions: `Use to create SEO-friendly blog posts promoting products. Combine with search_web to research positioning.`,
+    tool_definition: {
+      "type": "function",
+      "function": {
+            "name": "product_promoter",
+            "parameters": {
+                  "type": "object",
+                  "required": [
+                        "product_name",
+                        "key_benefits"
+                  ],
+                  "properties": {
+                        "publish": {
+                              "type": "boolean"
+                        },
+                        "key_benefits": {
+                              "type": "array",
+                              "items": {
+                                    "type": "string"
+                              }
+                        },
+                        "product_name": {
+                              "type": "string"
+                        },
+                        "target_audience": {
+                              "type": "string"
+                        }
+                  }
+            },
+            "description": "Creates a promotional blog post for a product. Use when: user wants to promote a product via blog, creating product-focused articles. NOT for: general blog writing (use write_blog_post), managing products (use manage_product)."
+      }
+},
+  },
+  {
+    name: 'queue_beta_test',
+    description: 'Queue a test scenario for OpenClaw to execute on next poll. Use when: scheduling tests for asynchronous execution. NOT for: running tests immediately (use openclaw_test).',
+    handler: 'module:openclaw',
+    category: 'system',
+    scope: 'internal',
+    requires_approval: false,
+    trust_level: 'auto',
+    instructions: `# Queue Beta Test
+
+Queue a test scenario for OpenClaw to pick up.`,
+    tool_definition: {
+      "type": "function",
+      "function": {
+            "name": "queue_beta_test",
+            "parameters": {
+                  "type": "object",
+                  "required": [
+                        "scenario"
+                  ],
+                  "properties": {
+                        "priority": {
+                              "enum": [
+                                    "normal",
+                                    "high",
+                                    "critical"
+                              ],
+                              "type": "string"
+                        },
+                        "scenario": {
+                              "type": "string"
+                        },
+                        "instructions": {
+                              "type": "string"
+                        }
+                  }
+            },
+            "description": "Queue a test scenario for OpenClaw to execute on next poll. Use when: scheduling tests for asynchronous execution. NOT for: running tests immediately (use openclaw_test)."
+      }
+},
+  },
+  {
+    name: 'register_webinar',
+    description: 'Register a visitor for an upcoming webinar. Use when: visitor wants to sign up for a webinar. NOT for: managing webinars (use manage_webinar).',
+    handler: 'module:webinars',
+    category: 'communication',
+    scope: 'external',
+    requires_approval: false,
+    trust_level: 'auto',
+    instructions: `## Webinar Registration
+Help visitors register for upcoming webinars. Collect name, email, and optional phone.
+Only show upcoming webinars. Confirm registration details.`,
+    tool_definition: {
+      "type": "function",
+      "function": {
+            "name": "register_webinar",
+            "parameters": {
+                  "type": "object",
+                  "required": [
+                        "action"
+                  ],
+                  "properties": {
+                        "name": {
+                              "type": "string",
+                              "description": "Attendee name"
+                        },
+                        "email": {
+                              "type": "string",
+                              "description": "Attendee email"
+                        },
+                        "phone": {
+                              "type": "string",
+                              "description": "Optional phone"
+                        },
+                        "action": {
+                              "enum": [
+                                    "list_upcoming",
+                                    "register"
+                              ],
+                              "type": "string",
+                              "default": "list_upcoming"
+                        },
+                        "webinar_id": {
+                              "type": "string",
+                              "description": "Webinar to register for"
+                        }
+                  }
+            },
+            "description": "Register a visitor for an upcoming webinar. Use when: visitor wants to sign up for a webinar. NOT for: managing webinars (use manage_webinar)."
+      }
+},
+  },
+  {
+    name: 'resolve_finding',
+    description: 'Mark a beta test finding as resolved. Use when: closing fixed issues, updating finding status. NOT for: reporting new findings (use openclaw_report_finding).',
+    handler: 'module:openclaw',
+    category: 'system',
+    scope: 'internal',
+    requires_approval: false,
+    trust_level: 'auto',
+    instructions: `# Resolve Finding
+
+Marks a finding as resolved after fix.`,
+    tool_definition: {
+      "type": "function",
+      "function": {
+            "name": "resolve_finding",
+            "parameters": {
+                  "type": "object",
+                  "required": [
+                        "finding_id"
+                  ],
+                  "properties": {
+                        "finding_id": {
+                              "type": "string"
+                        },
+                        "resolution_note": {
+                              "type": "string"
+                        }
+                  }
+            },
+            "description": "Mark a beta test finding as resolved. Use when: closing fixed issues, updating finding status. NOT for: reporting new findings (use openclaw_report_finding)."
+      }
+},
+  },
+  {
+    name: 'sales_profile_setup',
+    description: 'Set up or update the Sales Intelligence company profile or user profile. Use when: configuring sales profile, updating company positioning for prospecting. NOT for: managing business identity (use manage_business_identity).',
+    handler: 'edge:sales-profile-setup',
+    category: 'crm',
+    scope: 'internal',
+    requires_approval: false,
+    trust_level: 'auto',
+    instructions: `Use this skill when the user wants to set up their Sales Intelligence profile. For company profiles, ask about: ICP (ideal customer profile), value proposition, key differentiators, competitors, pricing strategy. For user profiles, ask about: their name, title, personal pitch, preferred tone, and email signature. Always confirm the data before saving.`,
+    tool_definition: {
+      "type": "function",
+      "function": {
+            "name": "sales_profile_setup",
+            "parameters": {
+                  "type": "object",
+                  "required": [
+                        "type",
+                        "data"
+                  ],
+                  "properties": {
+                        "data": {
+                              "type": "object",
+                              "description": "Profile data. For company: icp, value_proposition, differentiators, competitors, pricing_notes, industry. For user: full_name, title, email, personal_pitch, tone, signature."
+                        },
+                        "type": {
+                              "enum": [
+                                    "company",
+                                    "user"
+                              ],
+                              "type": "string",
+                              "description": "Profile type: company (shared business profile) or user (personal sales profile)"
+                        }
+                  }
+            },
+            "description": "Set up or update the Sales Intelligence company profile or user profile. Use when: configuring sales profile, updating company positioning for prospecting. NOT for: managing business identity (use manage_business_identity)."
+      }
+},
+  },
+  {
+    name: 'scan_beta_findings',
+    description: 'Scan unresolved beta test findings from OpenClaw. Use when: reviewing outstanding QA issues, finding unresolved bugs. NOT for: resolving findings (use resolve_finding).',
+    handler: 'module:openclaw',
+    category: 'system',
+    scope: 'internal',
+    requires_approval: false,
+    trust_level: 'auto',
+    instructions: `# Scan Beta Findings
+
+## Decision Table
+| Severity | Count | Action |
+|----------|-------|--------|
+| critical | ≥1 | Create objective immediately |
+| high | ≥2 | Create objective |
+| medium | ≥3 | Group into improvement objective |
+| low | any | Monitor |`,
+    tool_definition: {
+      "type": "function",
+      "function": {
+            "name": "scan_beta_findings",
+            "parameters": {
+                  "type": "object",
+                  "required": [],
+                  "properties": {}
+            },
+            "description": "Scan unresolved beta test findings from OpenClaw. Use when: reviewing outstanding QA issues, finding unresolved bugs. NOT for: resolving findings (use resolve_finding)."
+      }
+},
+  },
+  {
+    name: 'seo_content_brief',
+    description: 'Generates SEO content brief with keywords and outline. Use when: planning SEO-optimized content, keyword research, creating content outlines. NOT for: writing full articles (use write_blog_post), technical SEO audits (use seo_audit).',
+    handler: 'edge:research-content',
+    category: 'content',
+    scope: 'internal',
+    requires_approval: false,
+    trust_level: 'auto',
+    instructions: `Use before writing SEO-targeted content. Returns keywords, questions, competitor gaps, and outline.`,
+    tool_definition: {
+      "type": "function",
+      "function": {
+            "name": "seo_content_brief",
+            "parameters": {
+                  "type": "object",
+                  "required": [
+                        "topic"
+                  ],
+                  "properties": {
+                        "topic": {
+                              "type": "string"
+                        },
+                        "content_type": {
+                              "enum": [
+                                    "blog_post",
+                                    "landing_page",
+                                    "kb_article"
+                              ],
+                              "type": "string"
+                        },
+                        "target_audience": {
+                              "type": "string"
+                        }
+                  }
+            },
+            "description": "Generates SEO content brief with keywords and outline. Use when: planning SEO-optimized content, keyword research, creating content outlines. NOT for: writing full articles (use write_blog_post), technical SEO audits (use seo_audit)."
+      }
+},
+  },
+  {
+    name: 'social_post_batch',
+    description: 'Creates social media posts for multiple platforms in batch. Use when: user wants posts for several platforms at once, bulk social content creation. NOT for: single platform post (use generate_social_post), blog writing (use write_blog_post).',
+    handler: 'edge:generate-social-post',
+    category: 'content',
+    scope: 'internal',
+    requires_approval: true,
+    trust_level: 'approve',
+    instructions: `After publishing blog content, create social variants. Requires approval before posting.`,
+    tool_definition: {
+      "type": "function",
+      "function": {
+            "name": "social_post_batch",
+            "parameters": {
+                  "type": "object",
+                  "required": [
+                        "blog_post_id"
+                  ],
+                  "properties": {
+                        "tone": {
+                              "enum": [
+                                    "professional",
+                                    "casual",
+                                    "inspirational"
+                              ],
+                              "type": "string"
+                        },
+                        "platforms": {
+                              "type": "array",
+                              "items": {
+                                    "enum": [
+                                          "linkedin",
+                                          "x",
+                                          "instagram"
+                                    ],
+                                    "type": "string"
+                              }
+                        },
+                        "blog_post_id": {
+                              "type": "string"
+                        }
+                  }
+            },
+            "description": "Creates social media posts for multiple platforms in batch. Use when: user wants posts for several platforms at once, bulk social content creation. NOT for: single platform post (use generate_social_post), blog writing (use write_blog_post)."
+      }
+},
+  },
+  {
+    name: 'ticket_triage',
+    description: 'Auto-categorize incoming tickets, match against KB articles, and propose solutions. Use when: triaging new support requests, automated ticket routing. NOT for: escalating conversations (use escalation_handler).',
+    handler: 'ticket_triage',
+    category: 'crm',
+    scope: 'internal',
+    requires_approval: false,
+    trust_level: 'auto',
+    instructions: `You are triaging a support ticket. Follow these steps:
+
+1. CATEGORIZE: Analyze the ticket subject and description to determine the category (bug, feature, question, billing, other) and priority (low, medium, high, urgent).
+
+2. KB MATCH: Search the Knowledge Base for articles that match the ticket content.
+
+3. AUTO-RESPOND: If a KB article provides a clear answer, draft a response and add it as a ticket comment. Set status to waiting.
+
+4. ESCALATE: If no KB match or the issue is complex, set status to open and leave for human agent.
+
+5. UPDATE: Always update the ticket with your determined category and priority.
+
+Rules:
+- Never auto-close tickets
+- Always be empathetic and professional
+- For billing issues, always escalate to human`,
+    tool_definition: {
+      "type": "function",
+      "function": {
+            "name": "ticket_triage",
+            "parameters": {
+                  "type": "object",
+                  "required": [
+                        "ticket_id"
+                  ],
+                  "properties": {
+                        "ticket_id": {
+                              "type": "string",
+                              "description": "UUID of the ticket to triage"
+                        },
+                        "auto_respond": {
+                              "type": "boolean",
+                              "description": "Whether to auto-respond if KB match found"
+                        }
+                  }
+            },
+            "description": "Auto-categorize incoming tickets, match against KB articles, and propose solutions. Use when: triaging new support requests, automated ticket routing. NOT for: escalating conversations (use escalation_handler)."
+      }
+},
+  },
 ];
 const DEFAULT_SOUL = {
   purpose: 'I am FlowPilot — the autonomous intelligence layer of this FlowWink website. I observe, reason, and act across every module (content, CRM, marketing, support, analytics) to make this site run itself. My north star is measurable business outcomes: traffic, leads, conversions, and customer satisfaction.',
