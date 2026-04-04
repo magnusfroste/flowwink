@@ -2260,8 +2260,67 @@ Output ONLY the HTML content, no preamble or explanation.`;
     return { error: `Unknown newsletters action: ${action}` };
   }
 
+  // lead_nurture_sequence — AI-generated nurture email for a lead
+  if (skillName === 'lead_nurture_sequence') {
+    const { lead_id, sequence_type = 'welcome', tone = 'professional', language = 'en' } = args as any;
+    if (!lead_id) throw new Error('lead_id is required');
+
+    // Fetch lead info
+    const { data: lead, error: leadErr } = await supabase.from('leads')
+      .select('id, email, name, status, source, score')
+      .eq('id', lead_id).single();
+    if (leadErr || !lead) throw new Error('Lead not found');
+
+    // Generate nurture email via AI
+    const geminiKey = Deno.env.get('GEMINI_API_KEY');
+    const openaiKey = Deno.env.get('OPENAI_API_KEY');
+    const prompt = `Create a ${sequence_type} nurture email for a lead named "${lead.name || 'there'}" (source: ${lead.source || 'website'}).
+Tone: ${tone}. Language: ${language}.
+Return ONLY a JSON object with "subject" and "body_html" keys. The body_html should be a complete email in HTML format with inline styles.`;
+
+    let subject = `${sequence_type.charAt(0).toUpperCase() + sequence_type.slice(1)} — ${lead.name || lead.email}`;
+    let bodyHtml = `<p>Hi ${lead.name || 'there'},</p><p>Thank you for your interest!</p>`;
+
+    try {
+      let aiResponse: any;
+      if (geminiKey) {
+        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.7, maxOutputTokens: 2048, responseMimeType: 'application/json' } }),
+        });
+        const data = await resp.json();
+        const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        aiResponse = JSON.parse(raw);
+      } else if (openaiKey) {
+        const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${openaiKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model: 'gpt-4.1-mini', messages: [{ role: 'user', content: prompt }], response_format: { type: 'json_object' } }),
+        });
+        const data = await resp.json();
+        aiResponse = JSON.parse(data.choices?.[0]?.message?.content || '{}');
+      }
+      if (aiResponse?.subject) subject = aiResponse.subject;
+      if (aiResponse?.body_html) bodyHtml = aiResponse.body_html;
+    } catch (e) {
+      console.error('[lead_nurture_sequence] AI generation failed, using fallback:', e);
+    }
+
+    // Create newsletter draft
+    const { data: nl, error: nlErr } = await supabase.from('newsletters').insert({
+      subject,
+      content_html: bodyHtml,
+      status: 'draft',
+    }).select('id, subject, status').single();
+    if (nlErr) throw new Error(`Newsletter creation failed: ${nlErr.message}`);
+
+    return { newsletter_id: nl.id, subject: nl.subject, status: nl.status, lead_email: lead.email, sequence_type };
+  }
+
   // send_newsletter — legacy handler (create draft)
   const { subject, content, schedule_at } = args as any;
+  if (!subject) throw new Error('subject is required');
   const { data, error } = await supabase.from('newsletters').insert({
     subject, content_html: content,
     status: schedule_at ? 'scheduled' : 'draft',
