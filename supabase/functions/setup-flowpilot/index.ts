@@ -1115,7 +1115,7 @@ For non-resume PDFs, return the extracted text directly to the user.`,
   // ─── Operator Skills ───────────────────────────────────────────────────────
   {
     name: 'browser_fetch',
-    description: 'Fetch content from any URL — auto-picks strategy. For login-walled sites uses Chrome Extension relay; for public URLs uses Firecrawl. PRIMARY tool for reading web pages. Use when: needing content from any webpage; accessing data behind a login; performing web research. NOT for: scraping public URLs only (scrape_url); searching the web (search_web).'s real browser session, ToS-safe). For public URLs, uses Firecrawl server-side scraping. This is the PRIMARY tool for reading web pages.',
+    description: 'Fetch content from any URL — auto-picks strategy. For login-walled sites uses Chrome Extension relay; for public URLs uses Firecrawl. PRIMARY tool for reading web pages. Use when: needing content from any webpage; accessing data behind a login; performing web research. NOT for: scraping public URLs only (scrape_url); searching the web (search_web).\'s real browser session, ToS-safe). For public URLs, uses Firecrawl server-side scraping. This is the PRIMARY tool for reading web pages.',
     handler: 'edge:browser-fetch',
     category: 'search',
     scope: 'internal',
