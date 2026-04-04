@@ -861,7 +861,7 @@ Bundled capability sets in `agent_skill_packs` table (3 seed packs, not yet inst
 
 | OpenClaw Concept | FlowAgent Implementation | Status |
 |------------------|--------------------------|--------|
-| Skill Registry | `agent_skills` table — 73 DB-driven, hot-reloadable | ✅ |
+| Skill Registry | `agent_skills` table — 106 DB-driven, hot-reloadable | ✅ |
 | Tool Definition | OpenAI function-calling JSON format | ✅ |
 | Tool Router | `agent-execute` — unified dispatcher | ✅ |
 | Handler Routing | `edge:`, `module:`, `db:`, `webhook:`, `a2a:` | ✅ |
