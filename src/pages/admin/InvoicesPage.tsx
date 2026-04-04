@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { AdminPageLayout } from '@/components/admin/AdminPageLayout';
+import { AdminLayout } from '@/components/admin/AdminLayout';
+import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
+import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Plus } from 'lucide-react';
@@ -31,90 +33,89 @@ export default function InvoicesPage() {
   };
 
   return (
-    <AdminPageLayout
-      title="Invoices"
-      description="Manage invoices and track payments"
-      actions={
+    <AdminLayout>
+      <AdminPageHeader title="Invoices" description="Manage invoices and track payments">
         <Button size="sm" onClick={() => setCreateOpen(true)}>
           <Plus className="h-4 w-4 mr-1" /> New Invoice
         </Button>
-      }
-    >
-      <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
-        <TabsList>
-          <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="draft">Draft</TabsTrigger>
-          <TabsTrigger value="sent">Sent</TabsTrigger>
-          <TabsTrigger value="paid">Paid</TabsTrigger>
-          <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
-        </TabsList>
-      </Tabs>
+      </AdminPageHeader>
+      <AdminPageContainer>
+        <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
+          <TabsList>
+            <TabsTrigger value="all">All</TabsTrigger>
+            <TabsTrigger value="draft">Draft</TabsTrigger>
+            <TabsTrigger value="sent">Sent</TabsTrigger>
+            <TabsTrigger value="paid">Paid</TabsTrigger>
+            <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
+          </TabsList>
+        </Tabs>
 
-      <div className="mt-4 rounded-lg border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Number</TableHead>
-              <TableHead>Customer</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Total</TableHead>
-              <TableHead>Due Date</TableHead>
-              <TableHead>Created</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
+        <div className="mt-4 rounded-lg border">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                  Loading…
-                </TableCell>
+                <TableHead>Number</TableHead>
+                <TableHead>Customer</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Total</TableHead>
+                <TableHead>Due Date</TableHead>
+                <TableHead>Created</TableHead>
               </TableRow>
-            ) : invoices.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                  No invoices yet
-                </TableCell>
-              </TableRow>
-            ) : (
-              invoices.map((inv) => (
-                <TableRow
-                  key={inv.id}
-                  className="cursor-pointer"
-                  onClick={() => setSelectedId(inv.id)}
-                >
-                  <TableCell className="font-mono text-sm">{inv.invoice_number}</TableCell>
-                  <TableCell>
-                    <div>{inv.customer_name}</div>
-                    <div className="text-xs text-muted-foreground">{inv.customer_email}</div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="secondary" className={STATUS_COLORS[inv.status]}>
-                      {inv.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right font-mono">
-                    {formatAmount(inv.total_cents, inv.currency)}
-                  </TableCell>
-                  <TableCell>
-                    {inv.due_date ? format(new Date(inv.due_date), 'yyyy-MM-dd') : '—'}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground text-sm">
-                    {format(new Date(inv.created_at), 'yyyy-MM-dd')}
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                    Loading…
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+              ) : invoices.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                    No invoices yet
+                  </TableCell>
+                </TableRow>
+              ) : (
+                invoices.map((inv) => (
+                  <TableRow
+                    key={inv.id}
+                    className="cursor-pointer"
+                    onClick={() => setSelectedId(inv.id)}
+                  >
+                    <TableCell className="font-mono text-sm">{inv.invoice_number}</TableCell>
+                    <TableCell>
+                      <div>{inv.customer_name}</div>
+                      <div className="text-xs text-muted-foreground">{inv.customer_email}</div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary" className={STATUS_COLORS[inv.status]}>
+                        {inv.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right font-mono">
+                      {formatAmount(inv.total_cents, inv.currency)}
+                    </TableCell>
+                    <TableCell>
+                      {inv.due_date ? format(new Date(inv.due_date), 'yyyy-MM-dd') : '—'}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-sm">
+                      {format(new Date(inv.created_at), 'yyyy-MM-dd')}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
 
-      <InvoiceDetailSheet
-        invoiceId={selectedId}
-        open={!!selectedId}
-        onOpenChange={(open) => !open && setSelectedId(null)}
-      />
+        <InvoiceDetailSheet
+          invoiceId={selectedId}
+          open={!!selectedId}
+          onOpenChange={(open) => !open && setSelectedId(null)}
+        />
 
-      <CreateInvoiceDialog open={createOpen} onOpenChange={setCreateOpen} />
-    </AdminPageLayout>
+        <CreateInvoiceDialog open={createOpen} onOpenChange={setCreateOpen} />
+      </AdminPageContainer>
+    </AdminLayout>
   );
 }
