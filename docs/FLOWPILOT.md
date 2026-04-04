@@ -361,10 +361,11 @@ FlowAgent can modify its own behavior:
 
 ## 5. Complete Skill Inventory — VERIFIED FROM DATABASE
 
-> **Source of truth**: `SELECT name, handler, scope, category FROM agent_skills ORDER BY category, name;`
-> **Last verified**: 2026-03-19 | **Total**: 73 registered skills
+> **Source of truth**: `supabase/functions/setup-flowpilot/index.ts` → `DEFAULT_SKILLS[]`
+> See also: [`docs/SKILLS-SOURCE.md`](./SKILLS-SOURCE.md) for the portability model.
+> **Last verified**: 2026-04-04 | **Total**: 106 registered skills + 32 built-in tools
 
-### Content Skills (21 skills)
+### Content Skills (27 skills)
 
 | # | Skill | Handler | Scope | Approval | Status |
 |---|-------|---------|-------|----------|--------|
