@@ -2698,39 +2698,43 @@ async function executeDbAction(
     }
 
     case 'crm_tasks': {
-      const { action = 'list', title, description, due_date, priority, lead_id, deal_id, id, completed_at } = args as any;
-      if (action === 'create') {
+      // Route by skill name since each skill has different parameters
+      if (skillName === 'crm_task_create') {
+        const { title, description, due_date, priority, lead_id, deal_id } = args as any;
+        if (!title) throw new Error('title is required');
         const { data, error } = await supabase.from('crm_tasks')
           .insert({ title, description, due_date, priority: priority || 'medium', lead_id, deal_id })
           .select().single();
         if (error) throw new Error(`Create task failed: ${error.message}`);
         return { task_id: data.id, title: data.title, created: true };
       }
-      if (action === 'list') {
+      if (skillName === 'crm_task_list') {
+        const { lead_id, deal_id, include_completed = false, limit = 50 } = args as any;
         let query = supabase.from('crm_tasks')
           .select('id, title, description, priority, due_date, completed_at, lead_id, deal_id, created_at')
-          .is('completed_at', null)
           .order('due_date', { ascending: true, nullsFirst: false })
-          .limit(50);
+          .limit(limit);
+        if (!include_completed) query = query.is('completed_at', null);
         if (lead_id) query = query.eq('lead_id', lead_id);
         if (deal_id) query = query.eq('deal_id', deal_id);
         const { data, error } = await query;
         if (error) throw new Error(`List tasks failed: ${error.message}`);
         return { tasks: data || [], count: (data || []).length };
       }
-      if (action === 'update' && id) {
-        const updates: Record<string, unknown> = {};
+      if (skillName === 'crm_task_update') {
+        const { id, title, description, due_date, priority, completed_at } = args as any;
+        if (!id) throw new Error('id is required');
+        const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
         if (title !== undefined) updates.title = title;
         if (description !== undefined) updates.description = description;
         if (due_date !== undefined) updates.due_date = due_date;
         if (priority !== undefined) updates.priority = priority;
         if (completed_at !== undefined) updates.completed_at = completed_at;
-        updates.updated_at = new Date().toISOString();
         const { error } = await supabase.from('crm_tasks').update(updates).eq('id', id);
         if (error) throw new Error(`Update task failed: ${error.message}`);
         return { task_id: id, updated: true };
       }
-      return { error: `Unknown crm_tasks action: ${action}` };
+      return { error: `Unknown crm_tasks skill: ${skillName}` };
     }
 
     case 'chat_conversations': {
