@@ -2020,6 +2020,77 @@ export type Database = {
         }
         Relationships: []
       }
+      invoices: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          currency: string
+          customer_email: string
+          customer_name: string
+          deal_id: string | null
+          due_date: string | null
+          id: string
+          invoice_number: string
+          line_items: Json
+          notes: string | null
+          paid_at: string | null
+          status: Database["public"]["Enums"]["invoice_status"]
+          subtotal_cents: number
+          tax_cents: number
+          tax_rate: number
+          total_cents: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          customer_email: string
+          customer_name?: string
+          deal_id?: string | null
+          due_date?: string | null
+          id?: string
+          invoice_number: string
+          line_items?: Json
+          notes?: string | null
+          paid_at?: string | null
+          status?: Database["public"]["Enums"]["invoice_status"]
+          subtotal_cents?: number
+          tax_cents?: number
+          tax_rate?: number
+          total_cents?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          customer_email?: string
+          customer_name?: string
+          deal_id?: string | null
+          due_date?: string | null
+          id?: string
+          invoice_number?: string
+          line_items?: Json
+          notes?: string | null
+          paid_at?: string | null
+          status?: Database["public"]["Enums"]["invoice_status"]
+          subtotal_cents?: number
+          tax_cents?: number
+          tax_rate?: number
+          total_cents?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       kb_articles: {
         Row: {
           answer_json: Json | null
@@ -3541,6 +3612,7 @@ export type Database = {
       app_role: "writer" | "approver" | "admin" | "customer"
       automation_trigger_type: "cron" | "event" | "signal"
       deal_stage: "proposal" | "negotiation" | "closed_won" | "closed_lost"
+      invoice_status: "draft" | "sent" | "paid" | "cancelled"
       lead_status: "lead" | "opportunity" | "customer" | "lost"
       page_status: "draft" | "reviewing" | "published" | "archived"
       product_type: "one_time" | "recurring"
@@ -3757,6 +3829,7 @@ export const Constants = {
       app_role: ["writer", "approver", "admin", "customer"],
       automation_trigger_type: ["cron", "event", "signal"],
       deal_stage: ["proposal", "negotiation", "closed_won", "closed_lost"],
+      invoice_status: ["draft", "sent", "paid", "cancelled"],
       lead_status: ["lead", "opportunity", "customer", "lost"],
       page_status: ["draft", "reviewing", "published", "archived"],
       product_type: ["one_time", "recurring"],
