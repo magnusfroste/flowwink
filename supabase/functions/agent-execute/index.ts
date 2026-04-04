@@ -404,13 +404,26 @@ async function executeModuleAction(
       if (skillName === 'manage_leads') {
         return await executeLeadsAction(supabase, args);
       }
-      // add_lead — original handler
+      // add_lead — upsert to handle duplicate emails gracefully
       const { email, name, source = 'chat', phone } = args as any;
+      // Check if lead already exists
+      const { data: existing } = await supabase.from('leads')
+        .select('id, email, status, name').eq('email', email).maybeSingle();
+      if (existing) {
+        // Update existing lead with any new info
+        const updates: Record<string, unknown> = {};
+        if (name && name !== existing.name) updates.name = name;
+        if (phone) updates.phone = phone;
+        if (Object.keys(updates).length > 0) {
+          await supabase.from('leads').update(updates).eq('id', existing.id);
+        }
+        return { lead_id: existing.id, email: existing.email, status: existing.status, existing: true };
+      }
       const { data, error } = await supabase.from('leads').insert({
         email, name, source, phone,
       }).select().single();
       if (error) throw new Error(`Lead insert failed: ${error.message}`);
-      return { lead_id: data.id, email: data.email, status: data.status };
+      return { lead_id: data.id, email: data.email, status: data.status, existing: false };
     }
 
     case 'booking': {
