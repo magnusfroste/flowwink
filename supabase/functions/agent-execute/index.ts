@@ -2600,6 +2600,32 @@ async function executeDbAction(
 ): Promise<unknown> {
   switch (table) {
     case 'site_settings': {
+      // Skill-specific routing for branding skills
+      if (skillName === 'site_branding_get') {
+        const { data, error } = await supabase.from('site_settings')
+          .select('key, value').eq('key', 'branding').maybeSingle();
+        if (error) throw new Error(`Get branding failed: ${error.message}`);
+        return { branding: data?.value || {} };
+      }
+
+      if (skillName === 'site_branding_update') {
+        const { logo_url, primary_color, accent_color, font_family, favicon_url } = args as any;
+        // Read current branding, merge updates
+        const { data: existing } = await supabase.from('site_settings')
+          .select('value').eq('key', 'branding').maybeSingle();
+        const current = existing?.value || {};
+        const updated = { ...current };
+        if (logo_url !== undefined) updated.logo_url = logo_url;
+        if (primary_color !== undefined) updated.primary_color = primary_color;
+        if (accent_color !== undefined) updated.accent_color = accent_color;
+        if (font_family !== undefined) updated.font_family = font_family;
+        if (favicon_url !== undefined) updated.favicon_url = favicon_url;
+        const { error } = await supabase.from('site_settings')
+          .upsert({ key: 'branding', value: updated }, { onConflict: 'key' });
+        if (error) throw new Error(`Branding update failed: ${error.message}`);
+        return { branding: updated, updated: true };
+      }
+
       const { action = 'update', key, value } = args as any;
 
       if (action === 'get_all') {
