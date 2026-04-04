@@ -616,7 +616,7 @@ Creates a new high-level objective for FlowPilot's autonomous operation.
   },
   {
     name: 'migrate_url',
-    description: 'Migrate an external webpage into FlowWink-ready blocks with brand extraction and page discovery. After this, create page via manage_page, then add/adjust blocks via manage_page_blocks.',
+    description: 'Migrate an external webpage into FlowWink-ready blocks with brand extraction and page discovery. Use when: user pastes a URL to migrate, importing content from an external website, rebuilding an existing site in FlowWink. NOT for: creating pages from scratch (use manage_page), adding blocks manually (use create_page_block), scraping for data extraction only (use scrape_url).',
     handler: 'edge:migrate-page',
     category: 'content',
     scope: 'internal',
