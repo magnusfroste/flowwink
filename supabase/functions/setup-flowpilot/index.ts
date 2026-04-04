@@ -3652,7 +3652,7 @@ Return a structured analysis with: company_name, domain, recent_content (titles/
     scope: 'both',
     requires_approval: false,
     trust_level: 'auto',
-    instructions: ``,
+    instructions: `Read emails from the connected Gmail account via Composio OAuth. Use the 'query' parameter with standard Gmail search syntax (e.g. "from:user@example.com", "subject:proposal", "is:unread"). Returns subject, sender, date, and snippet for each match. Requires an active Composio Gmail connection. If no query is provided, returns the most recent emails.`,
     tool_definition: {
       "type": "function",
       "function": {
@@ -3684,7 +3684,7 @@ Return a structured analysis with: company_name, domain, recent_content (titles/
     scope: 'both',
     requires_approval: false,
     trust_level: 'notify',
-    instructions: ``,
+    instructions: `Send an email from the connected Gmail account via Composio OAuth. Requires 'to' (recipient), 'subject', and 'body' (plain text or HTML). Optional: 'cc' and 'bcc' for additional recipients. Use for individual follow-ups, confirmations, or outreach — NOT for bulk sends or newsletters (use the newsletter module instead). Requires an active Composio Gmail connection.`,
     tool_definition: {
       "type": "function",
       "function": {
