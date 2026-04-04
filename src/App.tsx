@@ -87,6 +87,7 @@ import AutonomyTestSuitePage from "./pages/admin/AutonomyTestSuitePage";
 import GrowthDashboardPage from "./pages/admin/GrowthDashboardPage";
 
 import TicketsPage from "./pages/admin/TicketsPage";
+import InvoicesPage from "./pages/admin/InvoicesPage";
 
 const TemplateGalleryPage = lazy(() => import("./pages/admin/TemplateGalleryPage"));
 const SkillHubPage = lazy(() => import("./pages/admin/SkillHubPage"));
@@ -207,6 +208,7 @@ const router = createBrowserRouter([
       { path: "/admin/growth", element: <GrowthDashboardPage /> },
       
       { path: "/admin/tickets", element: <TicketsPage /> },
+      { path: "/admin/invoices", element: <InvoicesPage /> },
       { path: "/admin/autonomy-tests", element: <AutonomyTestSuitePage /> },
       { path: "/preview/:id", element: <PreviewPage /> },
       { path: "/:slug", element: <PublicPage /> },
