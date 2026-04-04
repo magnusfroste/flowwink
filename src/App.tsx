@@ -91,7 +91,7 @@ import TicketsPage from "./pages/admin/TicketsPage";
 const TemplateGalleryPage = lazy(() => import("./pages/admin/TemplateGalleryPage"));
 const SkillHubPage = lazy(() => import("./pages/admin/SkillHubPage"));
 
-console.info("[boot] App.tsx evaluated");
+console.info("[boot] App.tsx evaluated", new Date().toISOString());
 const queryClient = new QueryClient();
 
 const withPageFallback = (element: JSX.Element) => (
