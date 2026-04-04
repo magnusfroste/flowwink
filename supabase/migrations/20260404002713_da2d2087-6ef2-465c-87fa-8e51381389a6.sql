@@ -1,0 +1,1 @@
+UPDATE agent_skills SET handler = 'edge:web-scrape' WHERE name = 'competitor_watch';
