@@ -663,13 +663,62 @@ async function executeOpenClawAction(
       const { session_id, direction = 'openclaw_to_flowpilot', message_type = 'observation', content, payload = {} } = args as any;
       if (!content) return { error: 'content is required' };
 
+      // Save to local exchange log
       const { data, error } = await supabase
         .from('beta_test_exchanges')
         .insert({ session_id: session_id || null, direction, message_type, content, payload })
         .select('id, direction, message_type, created_at')
         .single();
       if (error) throw new Error(`Exchange failed: ${error.message}`);
-      return { success: true, exchange: data };
+
+      // Actually send to ClawOne via A2A when direction is outbound
+      let peerResponse: any = null;
+      if (direction === 'flowpilot_to_openclaw') {
+        try {
+          const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+          const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+          const outboundRes = await fetch(`${supabaseUrl}/functions/v1/a2a-outbound`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${serviceKey}`,
+            },
+            body: JSON.stringify({
+              peer_name: 'Clawone',
+              skill: 'message',
+              message: `[${message_type}] ${content}`,
+            }),
+          });
+          const outboundData = await outboundRes.json();
+          peerResponse = outboundData;
+
+          // Extract text from A2A response
+          let responseText = '';
+          if (outboundData?.result?.status?.message?.parts) {
+            responseText = outboundData.result.status.message.parts.map((p: any) => p.text).filter(Boolean).join('\n');
+          } else if (outboundData?.result?.artifacts) {
+            responseText = outboundData.result.artifacts.flatMap((a: any) => a.parts || []).map((p: any) => p.text).filter(Boolean).join('\n');
+          } else if (outboundData?.error?.message) {
+            responseText = `⚠️ ${outboundData.error.message}`;
+          }
+
+          // Log ClawOne's reply back as an inbound exchange
+          if (responseText) {
+            await supabase.from('beta_test_exchanges').insert({
+              session_id: session_id || null,
+              direction: 'openclaw_to_flowpilot',
+              message_type: 'acknowledgment',
+              content: responseText,
+              payload: { raw_response: outboundData },
+            });
+          }
+        } catch (fetchErr: any) {
+          console.error('[openclaw_exchange] A2A outbound call failed:', fetchErr.message);
+          peerResponse = { error: fetchErr.message };
+        }
+      }
+
+      return { success: true, exchange: data, peer_response: peerResponse };
     }
 
     case 'openclaw_get_status': {
