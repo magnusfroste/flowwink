@@ -29,7 +29,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Globe, Plus, RefreshCw, Copy, Check, ArrowDownLeft, ArrowUpRight, AlertCircle, Pencil, Zap, Loader2, Search, Shield, Cpu } from 'lucide-react';
+import { Globe, Plus, RefreshCw, Copy, Check, ArrowDownLeft, ArrowUpRight, AlertCircle, Pencil, Zap, Loader2, Search, Shield, Cpu, MessageCircle } from 'lucide-react';
+import { A2ATestChat } from '@/components/admin/federation/A2ATestChat';
 import { useToast } from '@/hooks/use-toast';
 import { useA2APeers, useCreateA2APeer, useUpdateA2APeer, useRegenerateInboundToken, useA2AActivity } from '@/hooks/useA2A';
 import { useQueryClient } from '@tanstack/react-query';
@@ -832,6 +833,7 @@ export default function FederationPage() {
                                   Audit
                                 </Button>
                               )}
+                              <A2ATestChat peer={{ id: peer.id, name: peer.name, url: peer.url, status: peer.status }} />
                               <Button
                                 variant="outline"
                                 size="sm"
