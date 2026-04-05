@@ -3237,13 +3237,15 @@ async function executeA2ARequest(
     const fallbackMessage = Object.keys(skillArgs).length > 0
       ? JSON.stringify(skillArgs)
       : 'ping';
-    return executeA2AOutbound(supabaseUrl, serviceKey, peerName, 'message', { message: fallbackMessage });
+    return executeA2AOutbound(supabaseUrl, serviceKey, peerName, 'message', {}, fallbackMessage);
   }
 
-  if (skill) {
+  if (skill && skill !== 'message') {
     return executeA2AOutbound(supabaseUrl, serviceKey, peerName, skill, skillArgs, undefined);
   } else {
-    return executeA2AOutbound(supabaseUrl, serviceKey, peerName, 'message', {}, message);
+    // Text message — always send as rawMessage so it reaches the peer as plain text
+    const textContent = message || (skillArgs as any)?.message || JSON.stringify(skillArgs);
+    return executeA2AOutbound(supabaseUrl, serviceKey, peerName, 'message', {}, textContent);
   }
 }
 

@@ -95,7 +95,8 @@ Deno.serve(async (req) => {
     const { peer_name, peer_id, skill, arguments: args = {}, message: rawMessage } = body;
 
     // Allow raw message-only calls (no skill required for natural language delegation)
-    const effectiveSkill = skill || 'message';
+    // If a raw message is provided, always treat as plain text (not a skill call)
+    const effectiveSkill = (rawMessage && !skill) ? 'message' : (skill || 'message');
 
     // Look up peer
     let peerQuery = supabase.from('a2a_peers').select('*').eq('status', 'active');
