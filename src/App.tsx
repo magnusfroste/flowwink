@@ -88,6 +88,7 @@ import GrowthDashboardPage from "./pages/admin/GrowthDashboardPage";
 
 import TicketsPage from "./pages/admin/TicketsPage";
 import InvoicesPage from "./pages/admin/InvoicesPage";
+import QuotesPage from "./pages/admin/QuotesPage";
 
 const TemplateGalleryPage = lazy(() => import("./pages/admin/TemplateGalleryPage"));
 const SkillHubPage = lazy(() => import("./pages/admin/SkillHubPage"));
@@ -209,6 +210,7 @@ const router = createBrowserRouter([
       
       { path: "/admin/tickets", element: <TicketsPage /> },
       { path: "/admin/invoices", element: <InvoicesPage /> },
+      { path: "/admin/quotes", element: <QuotesPage /> },
       { path: "/admin/autonomy-tests", element: <AutonomyTestSuitePage /> },
       { path: "/preview/:id", element: <PreviewPage /> },
       { path: "/:slug", element: <PublicPage /> },
