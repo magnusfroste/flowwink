@@ -116,7 +116,7 @@ const A2A_TOOLS = [
   {
     type: 'function', function: {
       name: 'delegate_task',
-      description: "Delegate a subtask to a specialized agent with persistent session memory.",
+      description: "Delegate a subtask to a specialized agent (internal specialist or external A2A peer like ClawOne). Use when: objectives mention federation, audit, delegation, or peer review. Sessions are persistent — each agent remembers prior conversations.",
       parameters: {
         type: 'object',
         properties: {

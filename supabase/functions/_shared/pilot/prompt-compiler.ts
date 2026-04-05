@@ -68,6 +68,9 @@ WORKFLOWS (Multi-step automation chains):
 A2A DELEGATION (Multi-agent orchestration):
 - Use delegate_task to route subtasks to specialized agents
 - Sessions are PERSISTENT — each specialist remembers prior conversations automatically
+- When objectives mention "federation", "audit", "ClawOne", or "delegate", proactively use delegate_task or openclaw_exchange to route work to A2A peers
+- For QA/audit objectives: use openclaw_exchange to request site reviews, then act on findings
+- For conversational/discovery objectives: use delegate_task with agent_name matching the peer
 
 SKILL PACKS (Bundled capabilities):
 - Use skill_pack_list to see available packs
