@@ -5,7 +5,7 @@ import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Plus } from 'lucide-react';
-import { useInvoices, type InvoiceStatus } from '@/hooks/useInvoices';
+import { useInvoices, getInvoiceCustomerName, getInvoiceCustomerEmail, getInvoiceCompanyName, type InvoiceStatus } from '@/hooks/useInvoices';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
@@ -76,33 +76,39 @@ export default function InvoicesPage() {
                   </TableCell>
                 </TableRow>
               ) : (
-                invoices.map((inv) => (
-                  <TableRow
-                    key={inv.id}
-                    className="cursor-pointer"
-                    onClick={() => setSelectedId(inv.id)}
-                  >
-                    <TableCell className="font-mono text-sm">{inv.invoice_number}</TableCell>
-                    <TableCell>
-                      <div>{inv.customer_name}</div>
-                      <div className="text-xs text-muted-foreground">{inv.customer_email}</div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary" className={STATUS_COLORS[inv.status]}>
-                        {inv.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right font-mono">
-                      {formatAmount(inv.total_cents, inv.currency)}
-                    </TableCell>
-                    <TableCell>
-                      {inv.due_date ? format(new Date(inv.due_date), 'yyyy-MM-dd') : '—'}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground text-sm">
-                      {format(new Date(inv.created_at), 'yyyy-MM-dd')}
-                    </TableCell>
-                  </TableRow>
-                ))
+                invoices.map((inv) => {
+                  const name = getInvoiceCustomerName(inv);
+                  const email = getInvoiceCustomerEmail(inv);
+                  const company = getInvoiceCompanyName(inv);
+                  return (
+                    <TableRow
+                      key={inv.id}
+                      className="cursor-pointer"
+                      onClick={() => setSelectedId(inv.id)}
+                    >
+                      <TableCell className="font-mono text-sm">{inv.invoice_number}</TableCell>
+                      <TableCell>
+                        <div>{name}</div>
+                        {company && <div className="text-xs text-muted-foreground">{company}</div>}
+                        <div className="text-xs text-muted-foreground">{email}</div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className={STATUS_COLORS[inv.status]}>
+                          {inv.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right font-mono">
+                        {formatAmount(inv.total_cents, inv.currency)}
+                      </TableCell>
+                      <TableCell>
+                        {inv.due_date ? format(new Date(inv.due_date), 'yyyy-MM-dd') : '—'}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground text-sm">
+                        {format(new Date(inv.created_at), 'yyyy-MM-dd')}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>

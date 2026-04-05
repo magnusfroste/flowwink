@@ -5,8 +5,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { Trash2, Plus } from 'lucide-react';
-import { useInvoice, useUpdateInvoice, useDeleteInvoice, computeInvoiceTotals, type InvoiceLineItem, type InvoiceStatus } from '@/hooks/useInvoices';
+import { Trash2, Plus, Building2 } from 'lucide-react';
+import {
+  useInvoice, useUpdateInvoice, useDeleteInvoice, computeInvoiceTotals,
+  getInvoiceCustomerName, getInvoiceCustomerEmail, getInvoiceCompanyName,
+  type InvoiceLineItem, type InvoiceStatus,
+} from '@/hooks/useInvoices';
 
 interface Props {
   invoiceId: string | null;
@@ -98,6 +102,9 @@ export function InvoiceDetailSheet({ invoiceId, open, onOpenChange }: Props) {
 
   if (!invoice) return null;
 
+  const customerName = getInvoiceCustomerName(invoice);
+  const customerEmail = getInvoiceCustomerEmail(invoice);
+  const companyName = getInvoiceCompanyName(invoice);
   const actions = STATUS_ACTIONS[invoice.status] || [];
 
   return (
@@ -111,10 +118,16 @@ export function InvoiceDetailSheet({ invoiceId, open, onOpenChange }: Props) {
         </SheetHeader>
 
         <div className="mt-6 space-y-6">
-          {/* Customer info */}
+          {/* Customer info from lead */}
           <div className="space-y-1">
-            <p className="font-medium">{invoice.customer_name}</p>
-            <p className="text-sm text-muted-foreground">{invoice.customer_email}</p>
+            <p className="font-medium">{customerName}</p>
+            <p className="text-sm text-muted-foreground">{customerEmail}</p>
+            {companyName && (
+              <p className="text-sm text-muted-foreground flex items-center gap-1">
+                <Building2 className="h-3 w-3" />
+                {companyName}
+              </p>
+            )}
           </div>
 
           {/* Line items */}
