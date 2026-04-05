@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { Trash2, Plus, Building2 } from 'lucide-react';
+import { Trash2, Plus, Building2, Download, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import {
   useInvoice, useUpdateInvoice, useDeleteInvoice, computeInvoiceTotals,
   getInvoiceCustomerName, getInvoiceCustomerEmail, getInvoiceCompanyName,
