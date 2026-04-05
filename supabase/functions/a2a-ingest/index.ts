@@ -11,11 +11,21 @@ const corsHeaders = {
 // =============================================================================
 
 function serializeParts(parts: any[]): string {
-  if (!Array.isArray(parts)) return '';
+  if (!Array.isArray(parts)) {
+    // Some peers send a single string instead of parts array
+    if (typeof parts === 'string') return parts;
+    return '';
+  }
   return parts.map(p => {
-    // TextPart
+    if (typeof p === 'string') return p;
+    // TextPart — support both `text` and `content` fields
     if (p.type === 'text' || p.kind === 'text') {
-      return p.text || '';
+      return p.text || p.content || '';
+    }
+    // Message-wrapped part (some peers nest content inside message objects)
+    if (p.type === 'message' && p.content) {
+      if (typeof p.content === 'string') return p.content;
+      if (Array.isArray(p.content)) return serializeParts(p.content);
     }
     // FilePart (URI or inline)
     if (p.type === 'file' || p.kind === 'file') {
@@ -33,12 +43,13 @@ function serializeParts(parts: any[]): string {
     if (p.type === 'data' || p.kind === 'data') {
       const data = p.data || p.value || p;
       const json = typeof data === 'string' ? data : JSON.stringify(data);
-      // Truncate at 2KB like OpenClaw does
       const truncated = json.length > 2048 ? json.substring(0, 2048) + '...' : json;
       return `[Data (${p.mimeType || 'application/json'}): ${truncated}]`;
     }
+    // Fallback: if part has text or content field directly
+    if (p.text) return p.text;
+    if (p.content) return typeof p.content === 'string' ? p.content : JSON.stringify(p.content);
     // Unknown part — serialize as text
-    if (typeof p === 'string') return p;
     return JSON.stringify(p);
   }).filter(Boolean).join('\n');
 }
