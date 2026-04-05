@@ -272,7 +272,11 @@ Deno.serve(async (req) => {
     }
 
     const httpStatus = status === 'success' ? 200 : status === 'peer_unavailable' ? 503 : 502;
-    return new Response(JSON.stringify(result), {
+    // Ensure error responses always include a clear error message
+    const responseBody = status !== 'success'
+      ? { error: { message: errorMessage || `Peer returned an error`, code: status }, result }
+      : result;
+    return new Response(JSON.stringify(responseBody), {
       status: httpStatus,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
