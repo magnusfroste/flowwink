@@ -151,7 +151,12 @@ Deno.serve(async (req) => {
       // A2A v0.3.0 JSON-RPC — preferred
       endpoint = (caps.endpoint as string) || '/a2a/ingest';
       const messageId = activityRow?.id || crypto.randomUUID();
-      const textPayload = rawMessage || `skill:${effectiveSkill} ${JSON.stringify(args)}`;
+      // For 'message' skill: send raw text, not serialized skill:message {}
+      const textPayload = rawMessage
+        ? rawMessage
+        : (effectiveSkill === 'message' && Object.keys(args).length === 0)
+          ? 'ping'
+          : `skill:${effectiveSkill} ${JSON.stringify(args)}`;
       requestBody = {
         jsonrpc: '2.0',
         id: messageId,
