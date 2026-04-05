@@ -135,8 +135,28 @@ Deno.serve(async (req) => {
         const message = body.params?.message;
         const parts = message?.parts || [];
 
+        // Debug: log raw inbound payload structure
+        console.log(`[a2a-ingest] Inbound from peer, method=${body.method}, messageId=${message?.messageId || 'none'}`);
+        console.log(`[a2a-ingest] Parts count=${parts.length}, raw parts:`, JSON.stringify(parts).substring(0, 500));
+        
+        // Some peers put text directly on the message object
+        if (parts.length === 0 && message?.text) {
+          console.log(`[a2a-ingest] No parts but message.text found, using it`);
+          parts.push({ type: 'text', text: message.text });
+        }
+        // Some peers use message.content instead of parts
+        if (parts.length === 0 && message?.content) {
+          console.log(`[a2a-ingest] No parts but message.content found, using it`);
+          if (typeof message.content === 'string') {
+            parts.push({ type: 'text', text: message.content });
+          } else if (Array.isArray(message.content)) {
+            parts.push(...message.content);
+          }
+        }
+
         // Serialize ALL part types (TextPart, FilePart, DataPart)
         const fullText = serializeParts(parts);
+        console.log(`[a2a-ingest] Serialized text (${fullText.length} chars): ${fullText.substring(0, 200)}`);
 
         // Check for DataPart with structured skill invocation
         const dataPart = parts.find((p: any) =>
