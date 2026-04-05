@@ -95,7 +95,8 @@ Deno.serve(async (req) => {
     const { peer_name, peer_id, skill, arguments: args = {}, message: rawMessage } = body;
 
     // Allow raw message-only calls (no skill required for natural language delegation)
-    const effectiveSkill = skill || 'message';
+    // If a raw message is provided, always treat as plain text (not a skill call)
+    const effectiveSkill = (rawMessage && !skill) ? 'message' : (skill || 'message');
 
     // Look up peer
     let peerQuery = supabase.from('a2a_peers').select('*').eq('status', 'active');
@@ -150,7 +151,12 @@ Deno.serve(async (req) => {
       // A2A v0.3.0 JSON-RPC — preferred
       endpoint = (caps.endpoint as string) || '/a2a/ingest';
       const messageId = activityRow?.id || crypto.randomUUID();
-      const textPayload = rawMessage || `skill:${effectiveSkill} ${JSON.stringify(args)}`;
+      // For 'message' skill: send raw text, not serialized skill:message {}
+      const textPayload = rawMessage
+        ? rawMessage
+        : (effectiveSkill === 'message' && Object.keys(args).length === 0)
+          ? 'ping'
+          : `skill:${effectiveSkill} ${JSON.stringify(args)}`;
       requestBody = {
         jsonrpc: '2.0',
         id: messageId,
