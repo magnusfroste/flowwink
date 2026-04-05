@@ -41,6 +41,7 @@ export function InvoiceDetailSheet({ invoiceId, open, onOpenChange }: Props) {
   const [taxRate, setTaxRate] = useState(0.25);
   const [notes, setNotes] = useState('');
   const [dueDate, setDueDate] = useState('');
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   useEffect(() => {
     if (invoice) {
@@ -84,6 +85,31 @@ export function InvoiceDetailSheet({ invoiceId, open, onOpenChange }: Props) {
     if (confirm('Delete this invoice?')) {
       deleteInvoice.mutate(invoice.id);
       onOpenChange(false);
+    }
+  };
+
+  const handleDownloadPdf = async () => {
+    if (!invoice) return;
+    setPdfLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-invoice-pdf', {
+        body: { invoice_id: invoice.id },
+      });
+      if (error) throw error;
+
+      // data is already an ArrayBuffer/Blob from the response
+      const blob = data instanceof Blob ? data : new Blob([data], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${invoice.invoice_number}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      const { toast } = await import('sonner');
+      toast.error(err.message || 'Failed to generate PDF');
+    } finally {
+      setPdfLoading(false);
     }
   };
 
