@@ -31,6 +31,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Globe, Plus, RefreshCw, Copy, Check, ArrowDownLeft, ArrowUpRight, AlertCircle, Pencil, Zap, Loader2, Search, Shield, Cpu, MessageCircle } from 'lucide-react';
 import { A2ATestChat } from '@/components/admin/federation/A2ATestChat';
+import { A2AActivityLog } from '@/components/admin/federation/A2AActivityLog';
 import { useToast } from '@/hooks/use-toast';
 import { useA2APeers, useCreateA2APeer, useUpdateA2APeer, useRegenerateInboundToken, useA2AActivity } from '@/hooks/useA2A';
 import { useQueryClient } from '@tanstack/react-query';
@@ -926,62 +927,9 @@ export default function FederationPage() {
         {/* Activity Log */}
         <div>
           <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4">
-            Recent Activity
+            Communication Log
           </h2>
-          {activityLoading ? (
-            <Skeleton className="h-48" />
-          ) : !activity?.length ? (
-            <Card>
-              <CardContent className="py-8 text-center text-muted-foreground text-sm">
-                No federation activity yet
-              </CardContent>
-            </Card>
-          ) : (
-            <Card>
-              <CardContent className="p-0">
-                <div className="divide-y">
-                  {activity.map(item => {
-                    const peer = peers?.find(p => p.id === item.peer_id);
-                    return (
-                      <div key={item.id} className="flex items-center gap-4 px-4 py-3">
-                        <div className="shrink-0">
-                          {item.direction === 'inbound' ? (
-                            <ArrowDownLeft className="h-4 w-4 text-primary" />
-                          ) : (
-                            <ArrowUpRight className="h-4 w-4 text-accent-foreground" />
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-sm">{peer?.name || 'Unknown'}</span>
-                            <span className="text-muted-foreground text-sm">→</span>
-                            <code className="text-xs bg-muted px-1.5 py-0.5 rounded">{item.skill_name || 'unknown'}</code>
-                          </div>
-                          {item.error_message && (
-                            <p className="text-xs text-destructive mt-0.5 flex items-center gap-1">
-                              <AlertCircle className="h-3 w-3" />
-                              {item.error_message}
-                            </p>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-3 shrink-0">
-                          <Badge variant={item.status === 'success' ? 'default' : item.status === 'error' ? 'destructive' : 'secondary'}>
-                            {item.status}
-                          </Badge>
-                          {item.duration_ms && (
-                            <span className="text-xs text-muted-foreground">{item.duration_ms}ms</span>
-                          )}
-                          <span className="text-xs text-muted-foreground">
-                            {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          <A2AActivityLog />
         </div>
       </div>
     </AdminLayout>
