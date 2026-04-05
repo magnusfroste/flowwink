@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { Trash2, Plus, Building2 } from 'lucide-react';
+import { Trash2, Plus, Building2, Download, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import {
   useInvoice, useUpdateInvoice, useDeleteInvoice, computeInvoiceTotals,
   getInvoiceCustomerName, getInvoiceCustomerEmail, getInvoiceCompanyName,
@@ -40,6 +41,7 @@ export function InvoiceDetailSheet({ invoiceId, open, onOpenChange }: Props) {
   const [taxRate, setTaxRate] = useState(0.25);
   const [notes, setNotes] = useState('');
   const [dueDate, setDueDate] = useState('');
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   useEffect(() => {
     if (invoice) {
@@ -83,6 +85,31 @@ export function InvoiceDetailSheet({ invoiceId, open, onOpenChange }: Props) {
     if (confirm('Delete this invoice?')) {
       deleteInvoice.mutate(invoice.id);
       onOpenChange(false);
+    }
+  };
+
+  const handleDownloadPdf = async () => {
+    if (!invoice) return;
+    setPdfLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-invoice-pdf', {
+        body: { invoice_id: invoice.id },
+      });
+      if (error) throw error;
+
+      // data is already an ArrayBuffer/Blob from the response
+      const blob = data instanceof Blob ? data : new Blob([data], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${invoice.invoice_number}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      const { toast } = await import('sonner');
+      toast.error(err.message || 'Failed to generate PDF');
+    } finally {
+      setPdfLoading(false);
     }
   };
 
@@ -216,6 +243,10 @@ export function InvoiceDetailSheet({ invoiceId, open, onOpenChange }: Props) {
           <div className="flex flex-wrap gap-2 pt-2">
             <Button onClick={handleSave} disabled={updateInvoice.isPending}>
               Save Changes
+            </Button>
+            <Button variant="outline" onClick={handleDownloadPdf} disabled={pdfLoading}>
+              {pdfLoading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Download className="h-4 w-4 mr-1" />}
+              PDF
             </Button>
             {actions.map((action) => (
               <Button
