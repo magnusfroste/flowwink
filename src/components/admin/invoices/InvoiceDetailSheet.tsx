@@ -244,6 +244,10 @@ export function InvoiceDetailSheet({ invoiceId, open, onOpenChange }: Props) {
             <Button onClick={handleSave} disabled={updateInvoice.isPending}>
               Save Changes
             </Button>
+            <Button variant="outline" onClick={handleDownloadPdf} disabled={pdfLoading}>
+              {pdfLoading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Download className="h-4 w-4 mr-1" />}
+              PDF
+            </Button>
             {actions.map((action) => (
               <Button
                 key={action.next}
