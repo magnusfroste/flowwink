@@ -11,12 +11,21 @@ export interface InvoiceLineItem {
   unit_price_cents: number;
 }
 
+export interface InvoiceLead {
+  id: string;
+  name: string | null;
+  email: string;
+  company_id: string | null;
+  companies: { name: string } | null;
+}
+
 export interface Invoice {
   id: string;
   invoice_number: string;
   deal_id: string | null;
-  customer_email: string;
-  customer_name: string;
+  lead_id: string | null;
+  customer_email: string | null;
+  customer_name: string | null;
   status: InvoiceStatus;
   line_items: InvoiceLineItem[];
   subtotal_cents: number;
@@ -30,6 +39,20 @@ export interface Invoice {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+  leads: InvoiceLead | null;
+}
+
+/** Resolve display name: lead name > override > fallback */
+export function getInvoiceCustomerName(inv: Invoice): string {
+  return inv.leads?.name || inv.customer_name || '—';
+}
+
+export function getInvoiceCustomerEmail(inv: Invoice): string {
+  return inv.leads?.email || inv.customer_email || '';
+}
+
+export function getInvoiceCompanyName(inv: Invoice): string | null {
+  return inv.leads?.companies?.name || null;
 }
 
 export function computeInvoiceTotals(lineItems: InvoiceLineItem[], taxRate: number) {
@@ -39,13 +62,15 @@ export function computeInvoiceTotals(lineItems: InvoiceLineItem[], taxRate: numb
   return { subtotal_cents, tax_cents, total_cents };
 }
 
+const INVOICE_SELECT = '*, leads(id, name, email, company_id, companies(name))';
+
 export function useInvoices(statusFilter?: InvoiceStatus) {
   return useQuery({
     queryKey: ['invoices', statusFilter],
     queryFn: async () => {
       let query = supabase
         .from('invoices')
-        .select('*')
+        .select(INVOICE_SELECT)
         .order('created_at', { ascending: false });
 
       if (statusFilter) {
@@ -66,7 +91,7 @@ export function useInvoice(id: string | undefined) {
       if (!id) return null;
       const { data, error } = await supabase
         .from('invoices')
-        .select('*')
+        .select(INVOICE_SELECT)
         .eq('id', id)
         .single();
       if (error) throw error;
@@ -82,8 +107,7 @@ export function useCreateInvoice() {
 
   return useMutation({
     mutationFn: async (input: {
-      customer_email: string;
-      customer_name: string;
+      lead_id: string;
       line_items: InvoiceLineItem[];
       tax_rate?: number;
       currency?: string;
@@ -105,8 +129,9 @@ export function useCreateInvoice() {
         .from('invoices')
         .insert({
           invoice_number,
-          customer_email: input.customer_email,
-          customer_name: input.customer_name,
+          lead_id: input.lead_id,
+          customer_email: '',
+          customer_name: '',
           line_items: input.line_items as any,
           tax_rate: taxRate,
           ...totals,
@@ -116,7 +141,7 @@ export function useCreateInvoice() {
           notes: input.notes || null,
           created_by: user?.id || null,
         })
-        .select()
+        .select(INVOICE_SELECT)
         .single();
 
       if (error) throw error;
@@ -135,19 +160,22 @@ export function useUpdateInvoice() {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<Invoice> & { id: string }) => {
+      // Strip joined data before sending to DB
+      const { leads, ...dbUpdates } = updates as any;
+
       // Recompute totals if line_items or tax_rate changed
       let computed = {};
-      if (updates.line_items || updates.tax_rate !== undefined) {
-        const lineItems = updates.line_items || [];
-        const taxRate = updates.tax_rate ?? 0.25;
+      if (dbUpdates.line_items || dbUpdates.tax_rate !== undefined) {
+        const lineItems = dbUpdates.line_items || [];
+        const taxRate = dbUpdates.tax_rate ?? 0.25;
         computed = computeInvoiceTotals(lineItems, taxRate);
       }
 
       const { data, error } = await supabase
         .from('invoices')
-        .update({ ...updates, ...computed } as any)
+        .update({ ...dbUpdates, ...computed } as any)
         .eq('id', id)
-        .select()
+        .select(INVOICE_SELECT)
         .single();
 
       if (error) throw error;
@@ -175,5 +203,20 @@ export function useDeleteInvoice() {
       toast.success('Invoice deleted');
     },
     onError: (err: Error) => toast.error(err.message),
+  });
+}
+
+/** Hook to fetch leads for the lead picker */
+export function useLeadsForPicker() {
+  return useQuery({
+    queryKey: ['leads-picker'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('leads')
+        .select('id, name, email, company_id, companies(name)')
+        .order('name');
+      if (error) throw error;
+      return (data || []) as unknown as InvoiceLead[];
+    },
   });
 }

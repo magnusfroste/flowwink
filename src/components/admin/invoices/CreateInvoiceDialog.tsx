@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useCreateInvoice, type InvoiceLineItem } from '@/hooks/useInvoices';
+import { useCreateInvoice, useLeadsForPicker, type InvoiceLineItem } from '@/hooks/useInvoices';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface Props {
   open: boolean;
@@ -12,25 +12,25 @@ interface Props {
 
 export function CreateInvoiceDialog({ open, onOpenChange }: Props) {
   const createInvoice = useCreateInvoice();
-  const [email, setEmail] = useState('');
-  const [name, setName] = useState('');
+  const { data: leads = [] } = useLeadsForPicker();
+  const [leadId, setLeadId] = useState('');
   const [lineItems] = useState<InvoiceLineItem[]>([
     { description: '', qty: 1, unit_price_cents: 0 },
   ]);
 
+  const selectedLead = leads.find((l) => l.id === leadId);
+
   const handleCreate = () => {
-    if (!email) return;
+    if (!leadId) return;
     createInvoice.mutate(
       {
-        customer_email: email,
-        customer_name: name,
+        lead_id: leadId,
         line_items: lineItems,
       },
       {
         onSuccess: () => {
           onOpenChange(false);
-          setEmail('');
-          setName('');
+          setLeadId('');
         },
       }
     );
@@ -44,20 +44,41 @@ export function CreateInvoiceDialog({ open, onOpenChange }: Props) {
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label>Customer Name</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Acme Corp" />
+            <Label>Customer (Lead)</Label>
+            <Select value={leadId} onValueChange={setLeadId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a lead…" />
+              </SelectTrigger>
+              <SelectContent>
+                {leads.map((lead) => (
+                  <SelectItem key={lead.id} value={lead.id}>
+                    <span>{lead.name || lead.email}</span>
+                    {lead.companies?.name && (
+                      <span className="text-muted-foreground ml-2">— {lead.companies.name}</span>
+                    )}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          <div className="space-y-2">
-            <Label>Customer Email</Label>
-            <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="billing@acme.com" type="email" />
-          </div>
+
+          {selectedLead && (
+            <div className="rounded-md border p-3 text-sm space-y-0.5">
+              <p className="font-medium">{selectedLead.name || 'No name'}</p>
+              <p className="text-muted-foreground">{selectedLead.email}</p>
+              {selectedLead.companies?.name && (
+                <p className="text-muted-foreground">{selectedLead.companies.name}</p>
+              )}
+            </div>
+          )}
+
           <p className="text-xs text-muted-foreground">
             Line items can be added after creation.
           </p>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={handleCreate} disabled={!email || createInvoice.isPending}>
+          <Button onClick={handleCreate} disabled={!leadId || createInvoice.isPending}>
             Create Draft
           </Button>
         </DialogFooter>
