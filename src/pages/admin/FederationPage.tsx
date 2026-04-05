@@ -833,6 +833,7 @@ export default function FederationPage() {
                                   Audit
                                 </Button>
                               )}
+                              <A2ATestChat peer={{ id: peer.id, name: peer.name, url: peer.url, status: peer.status }} />
                               <Button
                                 variant="outline"
                                 size="sm"
