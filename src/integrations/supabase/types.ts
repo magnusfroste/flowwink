@@ -2925,6 +2925,97 @@ export type Database = {
         }
         Relationships: []
       }
+      quotes: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          deal_id: string | null
+          id: string
+          invoice_id: string | null
+          lead_id: string | null
+          line_items: Json
+          notes: string | null
+          quote_number: string
+          rejected_at: string | null
+          sent_at: string | null
+          status: Database["public"]["Enums"]["quote_status"]
+          subtotal_cents: number
+          tax_cents: number
+          tax_rate: number
+          total_cents: number
+          updated_at: string
+          valid_until: string | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          deal_id?: string | null
+          id?: string
+          invoice_id?: string | null
+          lead_id?: string | null
+          line_items?: Json
+          notes?: string | null
+          quote_number: string
+          rejected_at?: string | null
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["quote_status"]
+          subtotal_cents?: number
+          tax_cents?: number
+          tax_rate?: number
+          total_cents?: number
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          deal_id?: string | null
+          id?: string
+          invoice_id?: string | null
+          lead_id?: string | null
+          line_items?: Json
+          notes?: string | null
+          quote_number?: string
+          rejected_at?: string | null
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["quote_status"]
+          subtotal_cents?: number
+          tax_cents?: number
+          tax_rate?: number
+          total_cents?: number
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotes_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sales_intelligence_profiles: {
         Row: {
           created_at: string
@@ -3626,6 +3717,7 @@ export type Database = {
       lead_status: "lead" | "opportunity" | "customer" | "lost"
       page_status: "draft" | "reviewing" | "published" | "archived"
       product_type: "one_time" | "recurring"
+      quote_status: "draft" | "sent" | "accepted" | "rejected" | "expired"
       skill_origin: "bundled" | "managed" | "agent" | "user" | "a2a"
       skill_trust_level: "auto" | "notify" | "approve"
       ticket_category: "bug" | "feature" | "question" | "billing" | "other"
@@ -3843,6 +3935,7 @@ export const Constants = {
       lead_status: ["lead", "opportunity", "customer", "lost"],
       page_status: ["draft", "reviewing", "published", "archived"],
       product_type: ["one_time", "recurring"],
+      quote_status: ["draft", "sent", "accepted", "rejected", "expired"],
       skill_origin: ["bundled", "managed", "agent", "user", "a2a"],
       skill_trust_level: ["auto", "notify", "approve"],
       ticket_category: ["bug", "feature", "question", "billing", "other"],

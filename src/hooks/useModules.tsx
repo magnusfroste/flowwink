@@ -342,8 +342,8 @@ export const defaultModulesSettings: ModulesSettings = {
   },
   invoicing: {
     enabled: false,
-    name: 'Invoicing',
-    description: 'Create, send, and track invoices — auto-generate from won deals with tax computation',
+    name: 'Quotes & Invoicing',
+    description: 'Create quotes, convert to invoices on acceptance, track payments — full Quote-to-Cash flow',
     icon: 'Receipt',
     category: 'data',
     autonomy: 'agent-capable',
@@ -386,6 +386,7 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/templates': 'templates',
   '/admin/template-export': 'templates',
   '/admin/invoices': 'invoicing',
+  '/admin/quotes': 'invoicing',
 };
 
 export function useModules() {
