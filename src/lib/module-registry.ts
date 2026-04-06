@@ -38,6 +38,8 @@ import {
   siteMigrationModule,
   templatesModule,
   developerModule,
+  invoicingModule,
+  accountingModule,
 } from '@/lib/modules';
 
 // =============================================================================
@@ -74,6 +76,8 @@ class ModuleRegistry {
       siteMigrationModule,
       templatesModule,
       developerModule,
+      invoicingModule,
+      accountingModule,
     ];
 
     for (const mod of builtIn) {

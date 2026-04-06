@@ -109,6 +109,45 @@ export type Database = {
         }
         Relationships: []
       }
+      accounting_templates: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          id: string
+          is_system: boolean
+          keywords: string[] | null
+          template_lines: Json
+          template_name: string
+          updated_at: string
+          usage_count: number
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          is_system?: boolean
+          keywords?: string[] | null
+          template_lines?: Json
+          template_name: string
+          updated_at?: string
+          usage_count?: number
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          is_system?: boolean
+          keywords?: string[] | null
+          template_lines?: Json
+          template_name?: string
+          updated_at?: string
+          usage_count?: number
+        }
+        Relationships: []
+      }
       ad_campaigns: {
         Row: {
           budget_cents: number
@@ -1289,6 +1328,42 @@ export type Database = {
           },
         ]
       }
+      chart_of_accounts: {
+        Row: {
+          account_category: string
+          account_code: string
+          account_name: string
+          account_type: string
+          created_at: string
+          id: string
+          is_active: boolean
+          normal_balance: string
+          updated_at: string
+        }
+        Insert: {
+          account_category: string
+          account_code: string
+          account_name: string
+          account_type: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          normal_balance: string
+          updated_at?: string
+        }
+        Update: {
+          account_category?: string
+          account_code?: string
+          account_name?: string
+          account_type?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          normal_balance?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       chat_conversations: {
         Row: {
           assigned_agent_id: string | null
@@ -2097,6 +2172,94 @@ export type Database = {
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journal_entries: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string
+          entry_date: string
+          id: string
+          invoice_id: string | null
+          reference_number: string | null
+          source: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description: string
+          entry_date?: string
+          id?: string
+          invoice_id?: string | null
+          reference_number?: string | null
+          source?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          entry_date?: string
+          id?: string
+          invoice_id?: string | null
+          reference_number?: string | null
+          source?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journal_entries_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journal_entry_lines: {
+        Row: {
+          account_code: string
+          account_name: string
+          created_at: string
+          credit_cents: number
+          debit_cents: number
+          description: string | null
+          id: string
+          journal_entry_id: string
+        }
+        Insert: {
+          account_code: string
+          account_name: string
+          created_at?: string
+          credit_cents?: number
+          debit_cents?: number
+          description?: string | null
+          id?: string
+          journal_entry_id: string
+        }
+        Update: {
+          account_code?: string
+          account_name?: string
+          created_at?: string
+          credit_cents?: number
+          debit_cents?: number
+          description?: string | null
+          id?: string
+          journal_entry_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journal_entry_lines_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
             referencedColumns: ["id"]
           },
         ]
