@@ -11,7 +11,7 @@
  * for INSERT-if-not-exists (pilot pattern for future module migration).
  */
 
-import type { ModulesSettings } from '@/hooks/useModules';
+import type { ModulesSettings, ModuleConfig } from '@/hooks/useModules';
 
 /**
  * Maps each module to the skill names it owns.
@@ -240,7 +240,7 @@ export function getModuleSkillNames(moduleId: keyof ModulesSettings): string[] {
 export function getEnabledModuleSkillNames(modules: ModulesSettings): string[] {
   const names: string[] = [];
   for (const [id, config] of Object.entries(modules)) {
-    if (config.enabled) {
+    if ((config as ModuleConfig).enabled) {
       const skills = MODULE_SKILL_MAP[id as keyof ModulesSettings];
       if (skills) names.push(...skills);
     }
