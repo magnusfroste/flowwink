@@ -2369,7 +2369,44 @@ Analyzes chat data to find questions not covered by KB articles, underperforming
     },
   },
   {
-    name: 'analyze_chat_feedback',
+    name: 'handbook_search',
+    description: 'Search and read chapters from the synced handbook (Agentic Handbook / Clawable). Use when: visitor asks about AI agents, FlowPilot architecture, agentic design, OpenClaw, heartbeat protocol, skills ecosystem, federation, or any topic covered in the handbook. NOT for: managing KB articles (manage_kb_article); general web search (web_search).',
+    handler: 'module:handbook',
+    category: 'content',
+    scope: 'both',
+    requires_approval: false,
+    instructions: `## handbook_search
+### What
+Searches and retrieves chapters from the synced GitHub handbook repository.
+### When to use
+- Visitor asks about agentic architecture, FlowPilot, OpenClaw, skills, heartbeat, federation
+- Admin wants to reference handbook content
+- Any question about how FlowPilot works architecturally
+### Parameters
+- **query**: Search term to find relevant chapters (searches title and content)
+- **slug**: Specific chapter slug to retrieve full content
+- **limit**: Max results for search (default 5)
+### Usage patterns
+1. Search: handbook_search(query: "heartbeat") → get snippets
+2. Read: handbook_search(slug: "05-heartbeat-protocol") → full chapter
+3. TOC: handbook_search() → list all chapters`,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'handbook_search',
+        description: 'Search and read chapters from the synced handbook (Agentic Handbook / Clawable). Use when: visitor asks about AI agents, FlowPilot architecture, agentic design, OpenClaw, heartbeat protocol, skills ecosystem, federation, or any topic covered in the handbook. NOT for: managing KB articles (manage_kb_article); general web search (web_search).',
+        parameters: {
+          type: 'object',
+          properties: {
+            query: { type: 'string', description: 'Search term to find relevant chapters' },
+            slug: { type: 'string', description: 'Specific chapter slug to retrieve full content' },
+            limit: { type: 'number', description: 'Max results (default 5)' },
+          },
+        },
+      },
+    },
+  },
+  {
     description: 'Analyze chat feedback: summary stats, negative feedback drill-down. Use when: monitoring customer satisfaction; identifying knowledge gaps; reviewing support quality. NOT for: getting raw feedback data (support_get_feedback); analyzing KB gaps (kb_gap_analysis).',
     handler: 'module:analytics',
     category: 'analytics',
