@@ -35,6 +35,8 @@ import { useModules, useUpdateModules, defaultModulesSettings, type ModulesSetti
 import { useModuleStats } from "@/hooks/useModuleStats";
 import { ModuleCard } from "@/components/admin/modules/ModuleCard";
 import { moduleRegistry } from "@/lib/module-registry";
+import { bootstrapModule, teardownModule } from "@/lib/module-bootstrap";
+import '@/lib/module-bootstraps'; // Register all module bootstraps
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   FileText,
@@ -126,6 +128,13 @@ export default function ModulesPage() {
     
     setLocalModules(updated);
     await updateModules.mutateAsync(updated);
+
+    // Bootstrap or teardown module skills/data
+    if (enabled) {
+      bootstrapModule(moduleId, updated).catch(() => {});
+    } else {
+      teardownModule(moduleId).catch(() => {});
+    }
   };
 
   const handleAdminUIToggle = async (moduleId: keyof ModulesSettings, adminUI: boolean) => {

@@ -286,4 +286,50 @@ HMAC-SHA256 signatures · Retry with exponential backoff · Auto-disable after 5
 
 ---
 
+## 12. Module Bootstrap Architecture
+
+When a module is enabled, it can optionally run a **bootstrap** that seeds everything it needs:
+
+```
+Module.enable("accounting")
+  → Always: Seed reference data (chart of accounts, templates)
+  → Always: Run migrations if tables missing
+  → If FlowPilot.enabled: Register skills + automations in agent registry
+  → If !FlowPilot.enabled: Skip skills (pure UI module)
+
+Module.disable("accounting")
+  → Deactivate skills (enabled=false, data preserved)
+  → Deactivate automations
+  → Reference data untouched
+
+FlowPilot.enable()
+  → Scan all enabled modules → seed their skills
+
+FlowPilot.disable()
+  → Skills become irrelevant (no agent runs them)
+  → Modules continue working as traditional UI
+```
+
+### Implementation
+
+- **Registry**: `src/lib/module-bootstrap.ts` — core bootstrap/teardown engine
+- **Bootstraps**: `src/lib/module-bootstraps/*.ts` — per-module seed configs
+- **Hook point**: `ModulesPage.tsx` `handleToggle` calls `bootstrapModule()` / `teardownModule()`
+- **Idempotent**: Safe to run multiple times (check-then-insert pattern)
+
+### Pilot: Accounting Module
+
+The accounting module (`src/lib/module-bootstraps/accounting.ts`) seeds:
+- **43 BAS 2024 accounts** (chart of accounts)
+- **7 transaction templates** (invoice, payment, payroll, rent, etc.)
+- **3 skills** (`manage_journal_entry`, `accounting_reports`, `manage_accounting_template`)
+- **1 automation** (`Invoice Reconciliation` — daily cron checking for unbooked invoices)
+
+| Reference doc | Path |
+|---|---|
+| [MODULE-API.md](./MODULE-API.md) | Technical module API |
+| [SKILLS-SOURCE.md](./SKILLS-SOURCE.md) | Skill registry source of truth |
+
+---
+
 *The autonomous agentic web that runs your business. That's FlowWink.*
