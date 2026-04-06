@@ -59,7 +59,7 @@ export function useUpdateHandbookConfig() {
         .eq('key', 'handbook_config')
         .maybeSingle();
 
-      const value = config as unknown as Record<string, unknown>;
+      const value = config as unknown as Json;
       if (existing) {
         const { error } = await supabase
           .from('site_settings')
@@ -69,7 +69,7 @@ export function useUpdateHandbookConfig() {
       } else {
         const { error } = await supabase
           .from('site_settings')
-          .insert({ key: 'handbook_config', value });
+          .insert([{ key: 'handbook_config', value }]);
         if (error) throw error;
       }
     },
