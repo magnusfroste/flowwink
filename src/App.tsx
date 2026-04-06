@@ -90,6 +90,7 @@ import TicketsPage from "./pages/admin/TicketsPage";
 import InvoicesPage from "./pages/admin/InvoicesPage";
 import QuotesPage from "./pages/admin/QuotesPage";
 import AccountingPage from "./pages/admin/AccountingPage";
+import HandbookPage from "./pages/admin/HandbookPage";
 
 const TemplateGalleryPage = lazy(() => import("./pages/admin/TemplateGalleryPage"));
 const SkillHubPage = lazy(() => import("./pages/admin/SkillHubPage"));
