@@ -361,6 +361,15 @@ export const defaultModulesSettings: ModulesSettings = {
     autonomy: 'agent-capable',
     adminUI: true,
   },
+  handbook: {
+    enabled: false,
+    name: 'Handbook',
+    description: 'Sync and display markdown documentation from a GitHub repository — enables FlowPilot to discuss content with visitors',
+    icon: 'BookMarked',
+    category: 'content',
+    autonomy: 'agent-capable',
+    adminUI: true,
+  },
 };
 
 // Map sidebar items to module IDs
