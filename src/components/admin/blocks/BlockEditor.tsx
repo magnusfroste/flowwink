@@ -79,6 +79,7 @@ import { ShippingInfoBlockEditor } from './ShippingInfoBlockEditor';
 import { AiAssistantBlockEditor } from './AiAssistantBlockEditor';
 import { SmartBookingBlockEditor } from './SmartBookingBlockEditor';
 import { ResumeMatcherBlockEditor } from './ResumeMatcherBlockEditor';
+import { HandbookBlockEditor } from './HandbookBlockEditor';
 import type { ProductsBlockData } from '@/components/public/blocks/ProductsBlock';
 import type { CartBlockData } from '@/components/public/blocks/CartBlock';
 import type { KbFeaturedBlockData } from '@/components/public/blocks/KbFeaturedBlock';
