@@ -35,6 +35,8 @@ import { useModules, useUpdateModules, defaultModulesSettings, type ModulesSetti
 import { useModuleStats } from "@/hooks/useModuleStats";
 import { ModuleCard } from "@/components/admin/modules/ModuleCard";
 import { moduleRegistry } from "@/lib/module-registry";
+import { bootstrapModule, teardownModule } from "@/lib/module-bootstrap";
+import '@/lib/module-bootstraps'; // Register all module bootstraps
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   FileText,
