@@ -408,6 +408,7 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/invoices': 'invoicing',
   '/admin/quotes': 'invoicing',
   '/admin/accounting': 'accounting',
+  '/admin/handbook': 'handbook',
 };
 
 export function useModules() {
