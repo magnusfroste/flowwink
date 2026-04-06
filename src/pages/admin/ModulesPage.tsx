@@ -128,6 +128,13 @@ export default function ModulesPage() {
     
     setLocalModules(updated);
     await updateModules.mutateAsync(updated);
+
+    // Bootstrap or teardown module skills/data
+    if (enabled) {
+      bootstrapModule(moduleId, updated).catch(() => {});
+    } else {
+      teardownModule(moduleId).catch(() => {});
+    }
   };
 
   const handleAdminUIToggle = async (moduleId: keyof ModulesSettings, adminUI: boolean) => {
