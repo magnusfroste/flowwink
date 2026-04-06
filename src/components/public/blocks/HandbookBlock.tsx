@@ -173,11 +173,41 @@ export function HandbookBlock({ data }: HandbookBlockProps) {
           )}
 
           {/* Content */}
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0" id="handbook-content">
             {activeChapter ? (
-              <article className="prose prose-sm dark:prose-invert max-w-none">
-                <ReactMarkdown>{activeChapter.content}</ReactMarkdown>
-              </article>
+              <div className="space-y-8">
+                <article className="prose prose-sm dark:prose-invert max-w-none">
+                  <ReactMarkdown components={markdownComponents}>{activeChapter.content}</ReactMarkdown>
+                </article>
+
+                {/* Prev / Next navigation */}
+                <nav className="flex items-center justify-between border-t pt-6">
+                  {prevChapter ? (
+                    <button
+                      onClick={() => navigateToSlug(prevChapter.slug)}
+                      className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      <div className="text-left">
+                        <span className="text-xs text-muted-foreground/60 block">Previous</span>
+                        <span className="font-medium">{prevChapter.title}</span>
+                      </div>
+                    </button>
+                  ) : <div />}
+                  {nextChapter ? (
+                    <button
+                      onClick={() => navigateToSlug(nextChapter.slug)}
+                      className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors text-right"
+                    >
+                      <div>
+                        <span className="text-xs text-muted-foreground/60 block">Next</span>
+                        <span className="font-medium">{nextChapter.title}</span>
+                      </div>
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  ) : <div />}
+                </nav>
+              </div>
             ) : (
               <div className="flex items-center justify-center h-full text-muted-foreground">
                 <div className="text-center space-y-2">
