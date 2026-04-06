@@ -48,7 +48,7 @@ export function HandbookBlock({ data }: HandbookBlockProps) {
     queryFn: async () => {
       const q = supabase
         .from('handbook_chapters')
-        .select('id, slug, title, sort_order, raw_content, frontmatter')
+        .select('id, slug, title, sort_order, content, frontmatter')
         .order('sort_order', { ascending: true });
 
       if (maxChapters) q.limit(maxChapters);
@@ -63,7 +63,7 @@ export function HandbookBlock({ data }: HandbookBlockProps) {
     if (!search.trim()) return chapters;
     const q = search.toLowerCase();
     return chapters.filter(
-      (c) => c.title.toLowerCase().includes(q) || c.raw_content?.toLowerCase().includes(q)
+      (c) => c.title.toLowerCase().includes(q) || c.content?.toLowerCase().includes(q)
     );
   }, [chapters, search]);
 
@@ -146,7 +146,7 @@ export function HandbookBlock({ data }: HandbookBlockProps) {
             {activeChapter ? (
               <article className="prose prose-sm dark:prose-invert max-w-none">
                 <h1>{activeChapter.title}</h1>
-                <ReactMarkdown>{activeChapter.raw_content}</ReactMarkdown>
+                <ReactMarkdown>{activeChapter.content}</ReactMarkdown>
               </article>
             ) : (
               <div className="flex items-center justify-center h-full text-muted-foreground">
@@ -178,7 +178,7 @@ export function HandbookBlock({ data }: HandbookBlockProps) {
               {activeSlug === ch.slug && (
                 <div className="px-4 pb-4 border-t">
                   <article className="prose prose-sm dark:prose-invert max-w-none pt-4">
-                    <ReactMarkdown>{ch.raw_content}</ReactMarkdown>
+                    <ReactMarkdown>{ch.content}</ReactMarkdown>
                   </article>
                 </div>
               )}
