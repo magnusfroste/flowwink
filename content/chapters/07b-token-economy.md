@@ -253,6 +253,50 @@ making recommendations."
 
 This pattern — **pointers in context, data in memory** — is how you scale beyond the context window without losing capability.
 
+## The Context Stack — Where Every Token Goes
+
+Understanding the total context cost requires seeing the full stack. Here is a real breakdown from a FlowPilot instance with 109 skills:
+
+```
+Layer                                   Tokens     % of 128K
+────────────────────────────────────────────────────────────
+System prompt + GROUNDING_RULES         ~3,000     2.3%
+Soul + Agents + Identity                ~2,000     1.6%
+CMS Schema awareness                   ~2,000     1.6%
+Skill metadata (80 filtered skills)    ~8,000     6.3%
+Memories (semantic search results)     ~2,000     1.6%
+Objectives + progress                  ~2,000     1.6%
+Conversation history                   ~5-15K     4-12%
+────────────────────────────────────────────────────────────
+Total:                                 ~25-35K    ~20-27%
+```
+
+The key insight: **with 109 skills, the system uses only ~25% of the context window.** This leaves 75% for the model's reasoning chain and tool call responses.
+
+### Scaling Thresholds
+
+This headroom is not infinite. Here is where the architecture faces pressure:
+
+| Skill Count | Context Cost | Status | Required Action |
+|---|---|---|---|
+| **50-100** | ~5-8K tokens | ✅ Comfortable | Current filtering works |
+| **100-200** | ~8-16K tokens | ⚠️ Manageable | Intent scoring must be aggressive |
+| **200-500** | ~16-40K tokens | 🔴 Critical | Need hierarchical skill registries — category → sub-skill lookup |
+| **500+** | ~40K+ tokens | 🚫 Architectural limit | Must move to multi-agent delegation or external skill index |
+
+The **200-skill threshold** is the most important planning milestone. Beyond it, the current flat-list-with-filtering approach starts competing with conversation history for context space.
+
+### The On-Demand Pattern
+
+Data that *exists* but doesn't belong in the prompt should be accessed via tool calls. Accounting templates stored in `agent_memory` are a perfect example:
+
+```
+WRONG:  Load all 50 BAS templates into the system prompt (25K tokens)
+RIGHT:  Agent calls memory_read("bas_template_1930") when needed (~200 tokens)
+```
+
+This **pointers in context, data on demand** pattern is how you keep the context stack lean while giving the agent access to unlimited knowledge.
+
 ---
 
 ## The Anti-Patterns
