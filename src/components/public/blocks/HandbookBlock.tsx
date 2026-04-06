@@ -145,7 +145,6 @@ export function HandbookBlock({ data }: HandbookBlockProps) {
           <div className="flex-1 min-w-0">
             {activeChapter ? (
               <article className="prose prose-sm dark:prose-invert max-w-none">
-                <h1>{activeChapter.title}</h1>
                 <ReactMarkdown>{activeChapter.content}</ReactMarkdown>
               </article>
             ) : (
