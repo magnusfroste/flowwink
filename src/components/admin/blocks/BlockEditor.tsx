@@ -1143,6 +1143,14 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
             isEditing={isEditing}
           />
         );
+      case 'handbook':
+        return (
+          <HandbookBlockEditor
+            data={block.data as unknown as HandbookBlockData}
+            onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+            isEditing={isEditing}
+          />
+        );
       default:
         return <div className="p-4 text-muted-foreground">Unknown block type</div>;
     }
