@@ -238,7 +238,7 @@ export function HandbookBlock({ data }: HandbookBlockProps) {
               {activeSlug === ch.slug && (
                 <div className="px-4 pb-4 border-t">
                   <article className="prose prose-sm dark:prose-invert max-w-none pt-4">
-                    <ReactMarkdown>{ch.content}</ReactMarkdown>
+                    <ReactMarkdown components={markdownComponents}>{ch.content}</ReactMarkdown>
                   </article>
                 </div>
               )}
