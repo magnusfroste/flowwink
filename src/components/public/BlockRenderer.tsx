@@ -110,6 +110,7 @@ import type { CategoryNavBlockData } from './blocks/CategoryNavBlock';
 import type { ShippingInfoBlockData } from './blocks/ShippingInfoBlock';
 import type { AiAssistantBlockData } from './blocks/AiAssistantBlock';
 import type { QuickLinksBlockData } from './blocks/QuickLinksBlock';
+import type { HandbookBlockData } from './blocks/HandbookBlock';
 
 interface BlockRendererProps {
   block: ContentBlock;
@@ -308,6 +309,8 @@ export function BlockRenderer({ block, pageId, index = 0, resolvedBackground }: 
         return <AiAssistantBlock data={block.data as unknown as AiAssistantBlockData} />;
       case 'quick-links':
         return <QuickLinksBlock data={block.data as unknown as QuickLinksBlockData} />;
+      case 'handbook':
+        return <HandbookBlock data={block.data as unknown as HandbookBlockData} />;
       default:
         return null;
     }
