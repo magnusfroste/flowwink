@@ -2071,6 +2071,54 @@ export type Database = {
         }
         Relationships: []
       }
+      handbook_chapters: {
+        Row: {
+          content: string
+          created_at: string
+          file_path: string
+          frontmatter: Json
+          id: string
+          repo_name: string
+          repo_owner: string
+          sha: string
+          slug: string
+          sort_order: number
+          synced_at: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          file_path: string
+          frontmatter?: Json
+          id?: string
+          repo_name: string
+          repo_owner: string
+          sha?: string
+          slug?: string
+          sort_order?: number
+          synced_at?: string
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          file_path?: string
+          frontmatter?: Json
+          id?: string
+          repo_name?: string
+          repo_owner?: string
+          sha?: string
+          slug?: string
+          sort_order?: number
+          synced_at?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       installed_template: {
         Row: {
           id: string
