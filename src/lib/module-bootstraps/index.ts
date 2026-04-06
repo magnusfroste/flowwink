@@ -3,12 +3,18 @@
  * 
  * Import this file to register all module bootstraps.
  * Each module file calls registerBootstrap() on import.
+ * 
+ * The skill-map (skill-map.ts) handles name-based enable/disable
+ * for ALL modules, even those without a dedicated bootstrap file.
  */
 
-// Pilot: Accounting
+// Skill name mapping (imported by module-bootstrap.ts)
+import './skill-map';
+
+// Modules with dedicated bootstraps (seedData, full SkillSeed definitions, automations):
 import './accounting';
 
-// Future modules register here:
+// Future modules with custom seedData can add their bootstrap here:
 // import './invoicing';
-// import './handbook';
-// import './ecommerce';
+// import './ecommerce';  // e.g. seed default shipping methods
+// import './bookings';   // e.g. seed default availability hours

@@ -1,10 +1,11 @@
 /**
  * Module Bootstrap System
  * 
- * When a module is enabled, its bootstrap function runs to seed:
- * 1. Reference data (e.g. chart of accounts, templates)
- * 2. Skills (only if FlowPilot module is enabled)
- * 3. Automations (only if FlowPilot module is enabled)
+ * When a module is enabled, its bootstrap function runs to:
+ * 1. Seed reference data (e.g. chart of accounts, templates)
+ * 2. Enable skills owned by the module (by name)
+ * 3. Seed full skill definitions (only if module has SkillSeed[])
+ * 4. Seed automations (only if FlowPilot module is enabled)
  * 
  * When disabled, skills and automations are deactivated (not deleted).
  * Reference data is preserved.
@@ -14,6 +15,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Json } from '@/integrations/supabase/types';
 import { logger } from '@/lib/logger';
 import type { ModulesSettings } from '@/hooks/useModules';
+import { getModuleSkillNames } from '@/lib/module-bootstraps/skill-map';
 
 export interface SkillSeed {
   name: string;
@@ -38,7 +40,7 @@ export interface AutomationSeed {
 export interface ModuleBootstrap {
   /** Seed reference data — always runs on enable */
   seedData?: () => Promise<void>;
-  /** Skills to register — only if FlowPilot is enabled */
+  /** Full skill definitions to INSERT if not exists — only if FlowPilot is enabled */
   skills?: SkillSeed[];
   /** Automations to register — only if FlowPilot is enabled */
   automations?: AutomationSeed[];
@@ -62,13 +64,8 @@ export async function bootstrapModule(
   const bootstrap = bootstrapRegistry[moduleId];
   const result = { seededSkills: 0, seededAutomations: 0, errors: [] as string[] };
 
-  if (!bootstrap) {
-    logger.log(`[module-bootstrap] No bootstrap registered for ${moduleId}`);
-    return result;
-  }
-
-  // 1. Always seed reference data
-  if (bootstrap.seedData) {
+  // 1. Always seed reference data (if bootstrap registered)
+  if (bootstrap?.seedData) {
     try {
       await bootstrap.seedData();
       logger.log(`[module-bootstrap] Seeded reference data for ${moduleId}`);
@@ -86,8 +83,26 @@ export async function bootstrapModule(
     return result;
   }
 
-  // 3. Seed skills (check-then-insert/update by name)
-  if (bootstrap.skills?.length) {
+  // 3. Enable existing skills by name (from skill-map)
+  const skillNames = getModuleSkillNames(moduleId);
+  if (skillNames.length > 0) {
+    try {
+      const { error } = await supabase
+        .from('agent_skills')
+        .update({ enabled: true })
+        .in('name', skillNames);
+      if (error) throw error;
+      result.seededSkills += skillNames.length;
+      logger.log(`[module-bootstrap] Enabled ${skillNames.length} skills for ${moduleId}`);
+    } catch (err) {
+      const msg = `Enable skills for ${moduleId}: ${err instanceof Error ? err.message : 'Unknown'}`;
+      result.errors.push(msg);
+      logger.error(`[module-bootstrap] ${msg}`);
+    }
+  }
+
+  // 4. Seed full skill definitions (INSERT if not exists) — for modules with SkillSeed[]
+  if (bootstrap?.skills?.length) {
     for (const skill of bootstrap.skills) {
       try {
         const { data: existing } = await supabase
@@ -97,7 +112,7 @@ export async function bootstrapModule(
           .maybeSingle();
 
         if (existing) {
-          // Re-enable if it was disabled
+          // Re-enable and update description/instructions
           await supabase
             .from('agent_skills')
             .update({ enabled: true, description: skill.description, instructions: skill.instructions || null })
@@ -129,11 +144,10 @@ export async function bootstrapModule(
     }
   }
 
-  // 4. Seed automations (upsert by name)
-  if (bootstrap.automations?.length) {
+  // 5. Seed automations (upsert by name)
+  if (bootstrap?.automations?.length) {
     for (const auto of bootstrap.automations) {
       try {
-        // Check if exists first
         const { data: existing } = await supabase
           .from('agent_automations')
           .select('id')
@@ -163,23 +177,33 @@ export async function bootstrapModule(
     }
   }
 
-  logger.log(`[module-bootstrap] ${moduleId}: ${result.seededSkills} skills, ${result.seededAutomations} automations seeded`);
+  logger.log(`[module-bootstrap] ${moduleId}: ${result.seededSkills} skills, ${result.seededAutomations} automations`);
   return result;
 }
 
 /**
  * Deactivate skills and automations for a disabled module.
+ * Uses the skill-map for name-based disable + any registered SkillSeed[].
  * Does NOT delete data — just sets enabled=false.
  */
 export async function teardownModule(
   moduleId: keyof ModulesSettings
 ): Promise<void> {
   const bootstrap = bootstrapRegistry[moduleId];
-  if (!bootstrap) return;
 
-  // Disable skills by name
-  if (bootstrap.skills?.length) {
-    const skillNames = bootstrap.skills.map(s => s.name);
+  // Disable skills by name from skill-map
+  const skillNames = getModuleSkillNames(moduleId);
+  
+  // Also include any SkillSeed names from bootstrap
+  if (bootstrap?.skills?.length) {
+    for (const s of bootstrap.skills) {
+      if (!skillNames.includes(s.name)) {
+        skillNames.push(s.name);
+      }
+    }
+  }
+
+  if (skillNames.length > 0) {
     const { error } = await supabase
       .from('agent_skills')
       .update({ enabled: false })
@@ -188,7 +212,7 @@ export async function teardownModule(
   }
 
   // Disable automations by name
-  if (bootstrap.automations?.length) {
+  if (bootstrap?.automations?.length) {
     const autoNames = bootstrap.automations.map(a => a.name);
     const { error } = await supabase
       .from('agent_automations')
@@ -197,7 +221,7 @@ export async function teardownModule(
     if (error) logger.error(`[module-bootstrap] Failed to disable automations for ${moduleId}:`, error);
   }
 
-  logger.log(`[module-bootstrap] Teardown complete for ${moduleId}`);
+  logger.log(`[module-bootstrap] Teardown complete for ${moduleId} (${skillNames.length} skills disabled)`);
 }
 
 export function getBootstrapRegistry() {
