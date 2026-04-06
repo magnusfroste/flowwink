@@ -2407,6 +2407,7 @@ Searches and retrieves chapters from the synced GitHub handbook repository.
     },
   },
   {
+    name: 'analyze_chat_feedback',
     description: 'Analyze chat feedback: summary stats, negative feedback drill-down. Use when: monitoring customer satisfaction; identifying knowledge gaps; reviewing support quality. NOT for: getting raw feedback data (support_get_feedback); analyzing KB gaps (kb_gap_analysis).',
     handler: 'module:analytics',
     category: 'analytics',
