@@ -454,6 +454,12 @@ const BLOCK_GROUPS: BlockGroup[] = [
         description: 'KB articles as expandable FAQ items',
       },
       {
+        type: 'handbook',
+        label: 'Handbook',
+        icon: <Book className="h-5 w-5" />,
+        description: 'Synced handbook chapters from GitHub repository',
+      },
+      {
         type: 'webinar',
         label: 'Webinar',
         icon: <Video className="h-5 w-5" />,
