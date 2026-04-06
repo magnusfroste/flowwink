@@ -11,6 +11,7 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import type { Json } from '@/integrations/supabase/types';
 import { logger } from '@/lib/logger';
 import type { ModulesSettings } from '@/hooks/useModules';
 
@@ -28,7 +29,7 @@ export interface SkillSeed {
 export interface AutomationSeed {
   name: string;
   description: string;
-  trigger_type: 'cron' | 'event' | 'webhook';
+  trigger_type: 'cron' | 'event' | 'signal';
   trigger_config: Record<string, unknown>;
   skill_name: string;
   skill_arguments: Record<string, unknown>;
