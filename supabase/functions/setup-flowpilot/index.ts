@@ -4575,6 +4575,115 @@ Rules:
       }
 },
   },
+  // ─── Accounting Skills ──────────────────────────────────────────────────────
+  {
+    name: 'manage_journal_entry',
+    description: 'Create, list, or void double-entry journal entries in the accounting ledger. Supports BAS 2024 chart of accounts. Use when: booking a transaction; recording an expense; logging a payment; posting a salary; creating an accounting entry. NOT for: reading reports (use accounting_reports); managing chart of accounts.',
+    handler: 'db:journal_entries',
+    category: 'commerce',
+    scope: 'internal',
+    requires_approval: false,
+    instructions: `## manage_journal_entry
+### What
+Creates or lists double-entry journal entries with debit/credit lines using BAS 2024 accounts.
+### When to use
+- Admin asks to book/record a transaction
+- Invoice is paid and needs journal entry
+- Salary, rent, VAT, or other recurring transactions
+- Heartbeat detects unboooked invoices
+- NOT for viewing balance sheet or P&L (use accounting_reports)
+### Parameters
+- **action**: 'create' | 'list' | 'void'. Default: 'create'.
+- **entry_date**: ISO date string (YYYY-MM-DD). Defaults to today.
+- **description**: Human-readable description of the transaction.
+- **reference_number**: Optional reference (invoice number, receipt ID).
+- **template_name**: Optional. Name of accounting template to use for auto-populating lines. Templates include: Löneutbetalning, Momsredovisning, Lokalhyra, Försäljning kontant, Försäljning faktura, Inköp kontant, Leverantörsbetalning, Banköverföring, Avskrivning inventarier, Preliminärskatt, Arbetsgivaravgifter, Kundförlust, Periodisering, Utdelning, Aktieägartillskott.
+- **lines**: Array of {account_code, account_name, debit_cents, credit_cents, description}. Sum of debits MUST equal sum of credits.
+### Common BAS 2024 accounts
+- 1910 Kassa, 1920 PlusGiro, 1930 Företagskonto, 1940 Bank
+- 2440 Leverantörsskulder, 2610 Utgående moms 25%, 2640 Ingående moms
+- 3010 Försäljning varor, 3040 Försäljning tjänster
+- 5010 Lokalhyra, 5410 Förbrukningsinventarier, 7010 Löner, 7510 Arbetsgivaravgifter
+### Edge cases
+- Unbalanced entries (debit ≠ credit) will be rejected
+- If template_name is provided, lines from template are used as base — override amounts as needed
+- Voiding creates a reversal entry, not a deletion`,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_journal_entry',
+        description: 'Create, list, or void double-entry journal entries in the accounting ledger. Supports BAS 2024 chart of accounts. Use when: booking a transaction; recording an expense; logging a payment; posting a salary; creating an accounting entry. NOT for: reading reports (use accounting_reports); managing chart of accounts.',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: { type: 'string', enum: ['create', 'list', 'void'], description: 'Action to perform. Default: create.' },
+            entry_date: { type: 'string', description: 'Transaction date (YYYY-MM-DD). Defaults to today.' },
+            description: { type: 'string', description: 'Description of the transaction' },
+            reference_number: { type: 'string', description: 'Optional reference (invoice no, receipt ID)' },
+            template_name: { type: 'string', description: 'Name of an accounting template to use for auto-populating lines' },
+            entry_id: { type: 'string', description: 'Journal entry ID (required for void action)' },
+            lines: {
+              type: 'array',
+              description: 'Debit/credit lines. Sum of debits must equal sum of credits.',
+              items: {
+                type: 'object',
+                properties: {
+                  account_code: { type: 'string', description: 'BAS 2024 account code (e.g. 1930)' },
+                  account_name: { type: 'string', description: 'Account name (e.g. Företagskonto)' },
+                  debit_cents: { type: 'number', description: 'Debit amount in cents (öre)' },
+                  credit_cents: { type: 'number', description: 'Credit amount in cents (öre)' },
+                  description: { type: 'string', description: 'Line description' },
+                },
+                required: ['account_code', 'account_name', 'debit_cents', 'credit_cents'],
+              },
+            },
+          },
+          required: ['action'],
+        },
+      },
+    },
+  },
+  {
+    name: 'accounting_reports',
+    description: 'Generate accounting reports: balance sheet, profit & loss, general ledger, or account balances. Use when: reviewing financial status; checking account balances; generating monthly reports; assessing profitability. NOT for: creating journal entries (use manage_journal_entry).',
+    handler: 'db:journal_entries',
+    category: 'commerce',
+    scope: 'internal',
+    requires_approval: false,
+    instructions: `## accounting_reports
+### What
+Reads accounting data and generates financial reports from the general ledger.
+### When to use
+- Admin asks about financial status, balances, or profitability
+- Monthly/quarterly reporting
+- Checking specific account activity
+- NOT for creating transactions (use manage_journal_entry)
+### Parameters
+- **report_type**: 'balance_sheet' | 'profit_loss' | 'ledger' | 'account_balance'
+- **period**: 'month' | 'quarter' | 'year' | 'all'. Default: 'all'.
+- **account_code**: Optional. Filter to a specific account.
+### Report types
+- **balance_sheet**: Assets vs Liabilities + Equity. Shows if books are balanced.
+- **profit_loss**: Income minus expenses for the period.
+- **ledger**: All posted entries, optionally filtered by account.
+- **account_balance**: Summary balances per account with debit/credit totals.`,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'accounting_reports',
+        description: 'Generate accounting reports: balance sheet, profit & loss, general ledger, or account balances. Use when: reviewing financial status; checking account balances; generating monthly reports; assessing profitability. NOT for: creating journal entries (use manage_journal_entry).',
+        parameters: {
+          type: 'object',
+          properties: {
+            report_type: { type: 'string', enum: ['balance_sheet', 'profit_loss', 'ledger', 'account_balance'], description: 'Type of financial report' },
+            period: { type: 'string', enum: ['month', 'quarter', 'year', 'all'], description: 'Time period. Default: all.' },
+            account_code: { type: 'string', description: 'Filter to specific account code' },
+          },
+          required: ['report_type'],
+        },
+      },
+    },
+  },
 ];
 const DEFAULT_SOUL = {
   purpose: 'I am FlowPilot — the autonomous intelligence layer of this FlowWink website. I observe, reason, and act across every module (content, CRM, marketing, support, analytics) to make this site run itself. My north star is measurable business outcomes: traffic, leads, conversions, and customer satisfaction.',

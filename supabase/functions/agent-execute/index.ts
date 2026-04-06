@@ -2858,6 +2858,226 @@ async function executeDbAction(
       return { period, total: ratings.length, positive, negative, satisfaction_rate: ratings.length > 0 ? Math.round(positive / ratings.length * 100) : null, recent: ratings.slice(0, 10) };
     }
 
+    case 'journal_entries': {
+      // ─── Accounting: Journal Entries & Reports ─────────────────────────
+      if (skillName === 'accounting_reports') {
+        const { report_type, period = 'all', account_code } = args as any;
+
+        // Determine date filter
+        let sinceDate: string | null = null;
+        if (period !== 'all') {
+          const now = new Date();
+          const since = new Date(now);
+          if (period === 'month') since.setMonth(now.getMonth() - 1);
+          else if (period === 'quarter') since.setMonth(now.getMonth() - 3);
+          else if (period === 'year') since.setFullYear(now.getFullYear() - 1);
+          sinceDate = since.toISOString();
+        }
+
+        // Fetch posted lines with optional filters
+        let linesQuery = supabase.from('journal_entry_lines').select(`
+          account_code, account_name, debit_cents, credit_cents, description,
+          journal_entries!inner(id, entry_date, description, status)
+        `).eq('journal_entries.status', 'posted');
+
+        if (sinceDate) linesQuery = linesQuery.gte('journal_entries.entry_date', sinceDate);
+        if (account_code) linesQuery = linesQuery.eq('account_code', account_code);
+
+        const { data: lines, error: linesErr } = await linesQuery;
+        if (linesErr) throw new Error(`Accounting query failed: ${linesErr.message}`);
+
+        // Fetch chart of accounts for classification
+        const { data: chart } = await supabase.from('chart_of_accounts')
+          .select('account_code, account_name, account_type, account_category, normal_balance')
+          .eq('is_active', true);
+        const chartMap = new Map((chart || []).map((a: any) => [a.account_code, a]));
+
+        // Aggregate balances
+        const balanceMap = new Map<string, { account_code: string; account_name: string; account_type: string; debit_total: number; credit_total: number; balance: number }>();
+        for (const line of (lines || []) as any[]) {
+          const existing = balanceMap.get(line.account_code) || {
+            account_code: line.account_code,
+            account_name: line.account_name,
+            account_type: chartMap.get(line.account_code)?.account_type || 'unknown',
+            debit_total: 0, credit_total: 0, balance: 0,
+          };
+          existing.debit_total += Number(line.debit_cents || 0);
+          existing.credit_total += Number(line.credit_cents || 0);
+          balanceMap.set(line.account_code, existing);
+        }
+
+        // Calculate balances based on normal_balance
+        for (const [code, bal] of balanceMap) {
+          const normalBalance = chartMap.get(code)?.normal_balance || 'debit';
+          bal.balance = normalBalance === 'debit'
+            ? bal.debit_total - bal.credit_total
+            : bal.credit_total - bal.debit_total;
+        }
+
+        const balances = Array.from(balanceMap.values()).sort((a, b) => a.account_code.localeCompare(b.account_code));
+
+        if (report_type === 'account_balance' || report_type === 'ledger') {
+          return { report_type, period, accounts: balances, total_accounts: balances.length };
+        }
+
+        if (report_type === 'balance_sheet') {
+          const assets = balances.filter(b => b.account_type === 'asset' && b.balance !== 0);
+          const liabilities = balances.filter(b => b.account_type === 'liability' && b.balance !== 0);
+          const equity = balances.filter(b => b.account_type === 'equity' && b.balance !== 0);
+          const totalAssets = assets.reduce((s, a) => s + a.balance, 0);
+          const totalLiabilities = liabilities.reduce((s, a) => s + a.balance, 0);
+          const totalEquity = equity.reduce((s, a) => s + a.balance, 0);
+          return {
+            report_type: 'balance_sheet', period,
+            assets, liabilities, equity,
+            total_assets_cents: totalAssets,
+            total_liabilities_cents: totalLiabilities,
+            total_equity_cents: totalEquity,
+            balanced: totalAssets === totalLiabilities + totalEquity,
+          };
+        }
+
+        if (report_type === 'profit_loss') {
+          const income = balances.filter(b => b.account_type === 'income' && b.balance !== 0);
+          const expenses = balances.filter(b => b.account_type === 'expense' && b.balance !== 0);
+          const totalIncome = income.reduce((s, a) => s + a.balance, 0);
+          const totalExpenses = expenses.reduce((s, a) => s + a.balance, 0);
+          return {
+            report_type: 'profit_loss', period,
+            income, expenses,
+            total_income_cents: totalIncome,
+            total_expenses_cents: totalExpenses,
+            net_result_cents: totalIncome - totalExpenses,
+            profitable: totalIncome > totalExpenses,
+          };
+        }
+
+        return { error: `Unknown report_type: ${report_type}` };
+      }
+
+      // ─── manage_journal_entry ──────────────────────────────────────────
+      const { action = 'create' } = args as any;
+
+      if (action === 'list') {
+        const { data, error } = await supabase.from('journal_entries')
+          .select('id, entry_date, description, reference_number, status, source, created_at')
+          .order('entry_date', { ascending: false })
+          .limit(50);
+        if (error) throw new Error(`List entries failed: ${error.message}`);
+        return { entries: data, count: (data || []).length };
+      }
+
+      if (action === 'void') {
+        const { entry_id } = args as any;
+        if (!entry_id) throw new Error('entry_id is required for void action');
+
+        // Get original entry + lines
+        const { data: original, error: origErr } = await supabase.from('journal_entries')
+          .select('*').eq('id', entry_id).single();
+        if (origErr) throw new Error(`Entry not found: ${origErr.message}`);
+
+        const { data: origLines } = await supabase.from('journal_entry_lines')
+          .select('*').eq('journal_entry_id', entry_id);
+
+        // Mark original as voided
+        await supabase.from('journal_entries').update({ status: 'voided' }).eq('id', entry_id);
+
+        // Create reversal entry
+        const { data: reversal, error: revErr } = await supabase.from('journal_entries')
+          .insert({
+            entry_date: new Date().toISOString().split('T')[0],
+            description: `Reversal: ${original.description}`,
+            reference_number: `REV-${original.reference_number || entry_id.slice(0, 8)}`,
+            status: 'posted',
+            source: 'flowpilot',
+          }).select('id').single();
+        if (revErr) throw new Error(`Reversal failed: ${revErr.message}`);
+
+        // Reverse lines (swap debit/credit)
+        if (origLines && origLines.length > 0) {
+          await supabase.from('journal_entry_lines').insert(
+            origLines.map((l: any) => ({
+              journal_entry_id: reversal.id,
+              account_code: l.account_code,
+              account_name: l.account_name,
+              debit_cents: l.credit_cents,
+              credit_cents: l.debit_cents,
+              description: `Reversal: ${l.description || ''}`,
+            }))
+          );
+        }
+
+        return { voided: true, original_id: entry_id, reversal_id: reversal.id };
+      }
+
+      // action === 'create'
+      const { entry_date, description, reference_number, template_name } = args as any;
+      let { lines: entryLines } = args as any;
+
+      // If template_name provided, fetch template and use its lines as base
+      if (template_name && (!entryLines || entryLines.length === 0)) {
+        const { data: tmpl } = await supabase.from('accounting_templates')
+          .select('template_lines').ilike('template_name', `%${template_name}%`).limit(1).maybeSingle();
+        if (tmpl?.template_lines) {
+          // Template lines need amounts filled in — return template for agent to populate
+          return {
+            status: 'template_loaded',
+            template_name,
+            template_lines: tmpl.template_lines,
+            message: `Template '${template_name}' loaded. Please provide amounts (debit_cents/credit_cents) for each line and call again with action='create' and the populated lines.`,
+          };
+        }
+      }
+
+      if (!entryLines || entryLines.length === 0) {
+        throw new Error('lines array is required for create action');
+      }
+
+      // Validate balance
+      const totalDebit = entryLines.reduce((s: number, l: any) => s + (l.debit_cents || 0), 0);
+      const totalCredit = entryLines.reduce((s: number, l: any) => s + (l.credit_cents || 0), 0);
+      if (totalDebit !== totalCredit) {
+        throw new Error(`Unbalanced: debit ${totalDebit} ≠ credit ${totalCredit}. Each entry must balance.`);
+      }
+
+      const { data: entry, error: entryErr } = await supabase.from('journal_entries')
+        .insert({
+          entry_date: entry_date || new Date().toISOString().split('T')[0],
+          description: description || 'FlowPilot transaction',
+          reference_number: reference_number || null,
+          status: 'posted',
+          source: 'flowpilot',
+        }).select('id').single();
+      if (entryErr) throw new Error(`Create entry failed: ${entryErr.message}`);
+
+      const { error: linesErr2 } = await supabase.from('journal_entry_lines')
+        .insert(entryLines.map((l: any) => ({
+          journal_entry_id: entry.id,
+          account_code: l.account_code,
+          account_name: l.account_name,
+          debit_cents: l.debit_cents || 0,
+          credit_cents: l.credit_cents || 0,
+          description: l.description || null,
+        })));
+      if (linesErr2) throw new Error(`Create lines failed: ${linesErr2.message}`);
+
+      // Increment template usage if used
+      if (template_name) {
+        await supabase.from('accounting_templates')
+          .update({ usage_count: supabase.rpc ? undefined : undefined })
+          .ilike('template_name', `%${template_name}%`);
+      }
+
+      return {
+        created: true,
+        entry_id: entry.id,
+        entry_date: entry_date || new Date().toISOString().split('T')[0],
+        total_debit_cents: totalDebit,
+        total_credit_cents: totalCredit,
+        lines_count: entryLines.length,
+      };
+    }
+
     default:
       return { error: `Unknown db table: ${table}` };
   }
