@@ -56,7 +56,7 @@ export const MODULE_SKILL_MAP: Partial<Record<keyof ModulesSettings, string[]>> 
   ],
 
   handbook: [
-    // No skills yet
+    'handbook_search',
   ],
 
   // ═══ Data / CRM ═══
@@ -65,6 +65,9 @@ export const MODULE_SKILL_MAP: Partial<Record<keyof ModulesSettings, string[]>> 
     'manage_leads',
     'lead_pipeline_review',
     'lead_nurture_sequence',
+    'crm_task_list',
+    'crm_task_create',
+    'crm_task_update',
   ],
 
   deals: [
@@ -214,6 +217,7 @@ export const MODULE_SKILL_MAP: Partial<Record<keyof ModulesSettings, string[]>> 
 export const CORE_SKILLS = [
   'create_objective',
   'manage_site_settings',
+  'site_branding_get',
   'site_branding_update',
   'users_list',
   'publish_scheduled_content',
