@@ -343,6 +343,7 @@ const MODULE_HANDLER_TO_SETTING: Record<string, string> = {
   companies: 'companies',
   forms: 'forms',
   webinars: 'webinars',
+  handbook: 'handbook',
 };
 
 async function autoActivateModule(
