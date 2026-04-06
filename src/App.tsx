@@ -214,6 +214,7 @@ const router = createBrowserRouter([
       { path: "/admin/invoices", element: <InvoicesPage /> },
       { path: "/admin/quotes", element: <QuotesPage /> },
       { path: "/admin/accounting", element: <AccountingPage /> },
+      { path: "/admin/handbook", element: <HandbookPage /> },
       { path: "/admin/autonomy-tests", element: <AutonomyTestSuitePage /> },
       { path: "/preview/:id", element: <PreviewPage /> },
       { path: "/:slug", element: <PublicPage /> },
