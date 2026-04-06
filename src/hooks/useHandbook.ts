@@ -29,7 +29,7 @@ export interface HandbookConfig {
 const DEFAULT_CONFIG: HandbookConfig = {
   repoOwner: 'magnusfroste',
   repoName: 'clawable',
-  path: 'content/chapters',
+  path: 'src/content/chapters',
   branch: 'main',
 };
 
