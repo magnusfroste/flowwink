@@ -71,6 +71,7 @@ import {
   FileUser,
   ShieldCheck,
   Truck,
+  Book,
 } from 'lucide-react';
 import { ContentBlockType } from '@/types/cms';
 import { useAllBlockModuleStatus } from '@/hooks/useBlockModuleStatus';
