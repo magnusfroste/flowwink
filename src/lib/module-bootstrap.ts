@@ -111,7 +111,7 @@ export async function bootstrapModule(
               category: skill.category,
               handler: skill.handler,
               scope: skill.scope,
-              tool_definition: skill.tool_definition as unknown as Record<string, unknown>,
+              tool_definition: skill.tool_definition as Json,
               instructions: skill.instructions || null,
               requires_approval: skill.requires_approval ?? false,
               enabled: true,
@@ -147,9 +147,9 @@ export async function bootstrapModule(
               name: auto.name,
               description: auto.description,
               trigger_type: auto.trigger_type,
-              trigger_config: auto.trigger_config as unknown as Record<string, unknown>,
+              trigger_config: auto.trigger_config as Json,
               skill_name: auto.skill_name,
-              skill_arguments: auto.skill_arguments as unknown as Record<string, unknown>,
+              skill_arguments: auto.skill_arguments as Json,
               enabled: true,
             }]);
           if (error) throw error;
