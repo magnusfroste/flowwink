@@ -64,6 +64,7 @@ export interface ModulesSettings {
   composio: ModuleConfig;
   templates: ModuleConfig;
   invoicing: ModuleConfig;
+  accounting: ModuleConfig;
 }
 
 export const defaultModulesSettings: ModulesSettings = {
@@ -350,6 +351,15 @@ export const defaultModulesSettings: ModulesSettings = {
     adminUI: true,
     optionalIntegrations: ['stripe', 'resend'],
   },
+  accounting: {
+    enabled: false,
+    name: 'Accounting',
+    description: 'Double-entry bookkeeping with BAS 2024 chart of accounts, journal entries, general ledger, balance sheet and P&L reports',
+    icon: 'BookOpen',
+    category: 'data',
+    autonomy: 'agent-capable',
+    adminUI: true,
+  },
 };
 
 // Map sidebar items to module IDs
@@ -387,6 +397,7 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/template-export': 'templates',
   '/admin/invoices': 'invoicing',
   '/admin/quotes': 'invoicing',
+  '/admin/accounting': 'accounting',
 };
 
 export function useModules() {
