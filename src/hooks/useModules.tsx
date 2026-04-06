@@ -65,6 +65,7 @@ export interface ModulesSettings {
   templates: ModuleConfig;
   invoicing: ModuleConfig;
   accounting: ModuleConfig;
+  handbook: ModuleConfig;
 }
 
 export const defaultModulesSettings: ModulesSettings = {
