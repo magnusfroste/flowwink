@@ -132,6 +132,15 @@ export default function ModulesPage() {
     // Bootstrap or teardown module skills/data
     if (enabled) {
       bootstrapModule(moduleId, updated).catch(() => {});
+      
+      // When FlowPilot is turned ON, seed skills for all already-enabled modules
+      if (moduleId === 'flowpilot') {
+        Object.entries(updated).forEach(([id, config]) => {
+          if (id !== 'flowpilot' && config.enabled) {
+            bootstrapModule(id as keyof ModulesSettings, updated).catch(() => {});
+          }
+        });
+      }
     } else {
       teardownModule(moduleId).catch(() => {});
     }
