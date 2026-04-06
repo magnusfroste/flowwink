@@ -26,7 +26,7 @@ interface Chapter {
   slug: string;
   title: string;
   sort_order: number;
-  raw_content: string;
+  content: string;
   frontmatter: Record<string, unknown> | null;
 }
 
