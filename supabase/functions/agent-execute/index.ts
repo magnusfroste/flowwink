@@ -596,9 +596,70 @@ async function executeModuleAction(
       return await executeOpenClawAction(supabase, skillName, args);
     }
 
+    case 'handbook': {
+      return await executeHandbookAction(supabase, skillName, args);
+    }
+
     default:
       return { error: `Unknown module: ${moduleName}` };
   }
+}
+
+// =============================================================================
+// Handbook module handler
+// =============================================================================
+
+async function executeHandbookAction(
+  supabase: any,
+  skillName: string,
+  args: Record<string, unknown>,
+): Promise<unknown> {
+  const { query, slug, limit = 5 } = args as any;
+
+  if (slug) {
+    // Fetch specific chapter by slug
+    const { data, error } = await supabase
+      .from('handbook_chapters')
+      .select('title, slug, content, sort_order, frontmatter')
+      .eq('slug', slug)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!data) return { error: `Chapter "${slug}" not found` };
+    return { chapter: data };
+  }
+
+  if (query) {
+    // Search across chapters
+    const q = `%${query}%`;
+    const { data, error } = await supabase
+      .from('handbook_chapters')
+      .select('title, slug, content, sort_order')
+      .or(`title.ilike.${q},content.ilike.${q}`)
+      .order('sort_order', { ascending: true })
+      .limit(Number(limit));
+    if (error) throw new Error(error.message);
+
+    // Trim content to relevant snippet
+    const results = (data || []).map((ch: any) => {
+      const idx = ch.content.toLowerCase().indexOf(query.toLowerCase());
+      const start = Math.max(0, idx - 200);
+      const end = Math.min(ch.content.length, idx + 500);
+      return {
+        title: ch.title,
+        slug: ch.slug,
+        snippet: ch.content.slice(start, end),
+      };
+    });
+    return { results, total: results.length };
+  }
+
+  // List all chapters (TOC)
+  const { data, error } = await supabase
+    .from('handbook_chapters')
+    .select('title, slug, sort_order, frontmatter')
+    .order('sort_order', { ascending: true });
+  if (error) throw new Error(error.message);
+  return { chapters: data };
 }
 
 // =============================================================================
