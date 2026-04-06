@@ -68,6 +68,37 @@ export function HandbookBlock({ data }: HandbookBlockProps) {
   }, [chapters, search]);
 
   const activeChapter = chapters.find((c) => c.slug === activeSlug) ?? null;
+  const activeIndex = activeChapter ? chapters.indexOf(activeChapter) : -1;
+  const prevChapter = activeIndex > 0 ? chapters[activeIndex - 1] : null;
+  const nextChapter = activeIndex >= 0 && activeIndex < chapters.length - 1 ? chapters[activeIndex + 1] : null;
+
+  const navigateToSlug = useCallback((slug: string) => {
+    setActiveSlug(slug);
+    // Scroll content area to top
+    document.getElementById('handbook-content')?.scrollTo(0, 0);
+  }, []);
+
+  // Intercept .md links in markdown content and navigate within the block
+  const markdownComponents = useMemo(() => ({
+    a: ({ href, children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement> & { children?: React.ReactNode }) => {
+      if (href && href.endsWith('.md')) {
+        // Extract slug from filename: "05c-concurrency-observability.md" → "05c-concurrency-observability"
+        const slug = href.replace(/^.*\//, '').replace(/\.md$/, '');
+        const target = chapters.find((c) => c.slug === slug);
+        if (target) {
+          return (
+            <button
+              className="text-primary underline hover:text-primary/80 transition-colors"
+              onClick={() => navigateToSlug(slug)}
+            >
+              {children}
+            </button>
+          );
+        }
+      }
+      return <a href={href} target="_blank" rel="noopener noreferrer" {...props}>{children}</a>;
+    },
+  }), [chapters, navigateToSlug]);
 
   if (isLoading) {
     return (
