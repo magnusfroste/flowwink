@@ -106,6 +106,7 @@ import type { FeaturedProductBlockData } from '@/components/public/blocks/Featur
 import type { TrustBarBlockData } from '@/components/public/blocks/TrustBarBlock';
 import type { CategoryNavBlockData } from '@/components/public/blocks/CategoryNavBlock';
 import type { ShippingInfoBlockData } from '@/components/public/blocks/ShippingInfoBlock';
+import type { HandbookBlockData } from '@/components/public/blocks/HandbookBlock';
 import type { AiAssistantBlockData } from '@/components/public/blocks/AiAssistantBlock';
 
 interface NewsletterBlockData {
