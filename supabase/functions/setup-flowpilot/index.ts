@@ -5067,6 +5067,74 @@ Deno.serve(async (req) => {
           console.log(`[setup-flowpilot] Backfilled instructions on ${backfilled} existing skills`);
         }
       }
+
+      // ═══ MODULE-AWARE SKILL ACTIVATION ═══
+      // After seeding, read module config and disable skills for inactive modules.
+      // Core skills (not owned by any module) stay enabled.
+      // This ensures first-boot only enables skills for active modules.
+      try {
+        const { data: modulesSetting } = await supabase
+          .from('site_settings')
+          .select('value')
+          .eq('key', 'modules')
+          .maybeSingle();
+
+        if (modulesSetting?.value) {
+          const modules = modulesSetting.value as Record<string, { enabled?: boolean }>;
+          
+          // Module → skill name mapping (mirrors src/lib/module-bootstraps/skill-map.ts)
+          const MODULE_SKILL_OWNERS: Record<string, string[]> = {
+            blog: ['write_blog_post','manage_blog_posts','manage_blog_categories','browse_blog','content_calendar_view','product_promoter','seo_content_brief','social_post_batch','generate_social_post','research_content','generate_content_proposal'],
+            pages: ['manage_page','manage_page_blocks','create_page_block','manage_global_blocks','generate_site_from_identity','landing_page_compose'],
+            knowledgeBase: ['manage_kb_article'],
+            mediaLibrary: ['media_browse'],
+            handbook: ['handbook_search'],
+            leads: ['add_lead','manage_leads','lead_pipeline_review','lead_nurture_sequence','crm_task_list','crm_task_create','crm_task_update'],
+            deals: ['manage_deal','deal_stale_check'],
+            companies: ['manage_company'],
+            forms: ['manage_form_submissions'],
+            bookings: ['book_appointment','check_availability','browse_services','manage_booking_availability','manage_bookings'],
+            ecommerce: ['browse_products','manage_product','manage_inventory','manage_orders','lookup_order','check_order_status','place_order','cart_recovery_check','inventory_report'],
+            newsletter: ['send_newsletter','manage_newsletters','execute_newsletter_send','manage_newsletter_subscribers','newsletter_subscribe'],
+            liveSupport: ['support_list_conversations','support_assign_conversation'],
+            webinars: ['manage_webinar','register_webinar'],
+            analytics: ['analyze_analytics','seo_audit_page','kb_gap_analysis','analyze_chat_feedback','weekly_business_digest','support_get_feedback','competitor_monitor'],
+            salesIntelligence: ['prospect_research','prospect_fit_analysis','qualify_lead','enrich_company','contact_finder','sales_profile_setup'],
+            paidGrowth: ['ad_campaign_create','ad_creative_generate','ad_performance_check','ad_optimize'],
+            resume: ['manage_consultant_profile','match_consultant'],
+            federation: ['a2a_chat','a2a_request','openclaw_start_session','openclaw_end_session','openclaw_report_finding','openclaw_exchange','openclaw_get_status','queue_beta_test','resolve_finding','scan_beta_findings'],
+            siteMigration: ['migrate_url'],
+            composio: ['composio_execute','composio_search_tools','composio_gmail_read','composio_gmail_send'],
+            tickets: ['ticket_triage'],
+            accounting: ['manage_journal_entry','accounting_reports','manage_accounting_template'],
+          };
+
+          // Collect skills that should be disabled (module is off)
+          const skillsToDisable: string[] = [];
+          for (const [moduleId, skillNames] of Object.entries(MODULE_SKILL_OWNERS)) {
+            const moduleConfig = modules[moduleId];
+            if (!moduleConfig?.enabled) {
+              skillsToDisable.push(...skillNames);
+            }
+          }
+
+          if (skillsToDisable.length > 0) {
+            const { error: disableErr } = await supabase
+              .from('agent_skills')
+              .update({ enabled: false })
+              .in('name', skillsToDisable);
+            if (disableErr) {
+              console.warn('[setup-flowpilot] Failed to disable module-inactive skills:', disableErr.message);
+            } else {
+              console.log(`[setup-flowpilot] Disabled ${skillsToDisable.length} skills for inactive modules`);
+            }
+          }
+        } else {
+          console.log('[setup-flowpilot] No modules config found — all skills remain enabled (first boot default)');
+        }
+      } catch (modErr) {
+        console.warn('[setup-flowpilot] Module-aware skill activation failed (non-fatal):', modErr);
+      }
     }
 
     // 4. Seed soul & identity (with template overrides)
