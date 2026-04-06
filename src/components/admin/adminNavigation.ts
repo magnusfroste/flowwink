@@ -3,7 +3,7 @@ import {
   Puzzle, UserCheck, Briefcase, Building2, Package, Library, ShoppingCart,
   CalendarDays, Plug, Bot, Zap, MessageSquare, Headphones, Megaphone, Code2, FileText as FileQuote,
   Video, Target, Inbox, UserCircle, FileUser, Receipt,
-  Network, Snowflake, UserRound,
+  Network, Snowflake, UserRound, BookMarked,
 } from 'lucide-react';
 
 export type NavItem = {
@@ -41,6 +41,7 @@ export const navigationGroups: NavGroup[] = [
       { name: "Campaigns", href: "/admin/campaigns", icon: Megaphone, moduleId: "developer" },
       { name: "Knowledge Base", href: "/admin/knowledge-base", icon: Library, moduleId: "knowledgeBase" },
       { name: "Media Library", href: "/admin/media", icon: Image, moduleId: "mediaLibrary" },
+      { name: "Handbook", href: "/admin/handbook", icon: BookMarked, moduleId: "handbook" },
     ],
   },
   {
