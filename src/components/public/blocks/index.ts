@@ -59,3 +59,4 @@ export { CategoryNavBlock } from './CategoryNavBlock';
 export { ShippingInfoBlock } from './ShippingInfoBlock';
 export { AiAssistantBlock } from './AiAssistantBlock';
 export { QuickLinksBlock } from './QuickLinksBlock';
+export { HandbookBlock } from './HandbookBlock';

@@ -73,6 +73,7 @@ const BLOCK_LABELS: Record<ContentBlockType, string> = {
   'shipping-info': 'Shipping Info',
   'ai-assistant': 'AI Shopping Assistant',
   'quick-links': 'Quick Links',
+  'handbook': 'Handbook',
 };
 
 interface BlockWrapperProps {

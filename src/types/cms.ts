@@ -134,7 +134,8 @@ export type ContentBlockType =
   | 'category-nav'
   | 'shipping-info'
   | 'ai-assistant'
-  | 'quick-links';
+  | 'quick-links'
+  | 'handbook';
 
 // Form field types
 export type FormFieldType = 'text' | 'email' | 'phone' | 'textarea' | 'checkbox';

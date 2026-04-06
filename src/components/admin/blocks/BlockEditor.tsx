@@ -79,6 +79,7 @@ import { ShippingInfoBlockEditor } from './ShippingInfoBlockEditor';
 import { AiAssistantBlockEditor } from './AiAssistantBlockEditor';
 import { SmartBookingBlockEditor } from './SmartBookingBlockEditor';
 import { ResumeMatcherBlockEditor } from './ResumeMatcherBlockEditor';
+import { HandbookBlockEditor } from './HandbookBlockEditor';
 import type { ProductsBlockData } from '@/components/public/blocks/ProductsBlock';
 import type { CartBlockData } from '@/components/public/blocks/CartBlock';
 import type { KbFeaturedBlockData } from '@/components/public/blocks/KbFeaturedBlock';
@@ -105,6 +106,7 @@ import type { FeaturedProductBlockData } from '@/components/public/blocks/Featur
 import type { TrustBarBlockData } from '@/components/public/blocks/TrustBarBlock';
 import type { CategoryNavBlockData } from '@/components/public/blocks/CategoryNavBlock';
 import type { ShippingInfoBlockData } from '@/components/public/blocks/ShippingInfoBlock';
+import type { HandbookBlockData } from '@/components/public/blocks/HandbookBlock';
 import type { AiAssistantBlockData } from '@/components/public/blocks/AiAssistantBlock';
 
 interface NewsletterBlockData {
@@ -1137,6 +1139,14 @@ export function BlockEditor({ blocks, onChange, canEdit }: BlockEditorProps) {
         return (
           <ShippingInfoBlockEditor
             data={block.data as unknown as ShippingInfoBlockData}
+            onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
+            isEditing={isEditing}
+          />
+        );
+      case 'handbook':
+        return (
+          <HandbookBlockEditor
+            data={block.data as unknown as HandbookBlockData}
             onChange={(data) => handleUpdateBlock(block.id, data as unknown as Record<string, unknown>)}
             isEditing={isEditing}
           />

@@ -71,6 +71,7 @@ import {
   FileUser,
   ShieldCheck,
   Truck,
+  Book,
 } from 'lucide-react';
 import { ContentBlockType } from '@/types/cms';
 import { useAllBlockModuleStatus } from '@/hooks/useBlockModuleStatus';
@@ -452,6 +453,12 @@ const BLOCK_GROUPS: BlockGroup[] = [
         label: 'KB Accordion',
         icon: <HelpCircle className="h-5 w-5" />,
         description: 'KB articles as expandable FAQ items',
+      },
+      {
+        type: 'handbook',
+        label: 'Handbook',
+        icon: <Book className="h-5 w-5" />,
+        description: 'Synced handbook chapters from GitHub repository',
       },
       {
         type: 'webinar',
