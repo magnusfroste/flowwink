@@ -85,29 +85,40 @@ export async function bootstrapModule(
     return result;
   }
 
-  // 3. Seed skills (upsert by name)
+  // 3. Seed skills (check-then-insert/update by name)
   if (bootstrap.skills?.length) {
     for (const skill of bootstrap.skills) {
       try {
-        const { error } = await supabase
+        const { data: existing } = await supabase
           .from('agent_skills')
-          .upsert(
-            {
+          .select('id')
+          .eq('name', skill.name)
+          .maybeSingle();
+
+        if (existing) {
+          // Re-enable if it was disabled
+          await supabase
+            .from('agent_skills')
+            .update({ enabled: true, description: skill.description, instructions: skill.instructions || null })
+            .eq('id', existing.id);
+        } else {
+          const { error } = await supabase
+            .from('agent_skills')
+            .insert([{
               name: skill.name,
               description: skill.description,
               category: skill.category,
               handler: skill.handler,
               scope: skill.scope,
-              tool_definition: skill.tool_definition,
+              tool_definition: skill.tool_definition as unknown as Record<string, unknown>,
               instructions: skill.instructions || null,
               requires_approval: skill.requires_approval ?? false,
               enabled: true,
-              origin: 'bundled',
-              trust_level: 'notify',
-            },
-            { onConflict: 'name' }
-          );
-        if (error) throw error;
+              origin: 'bundled' as const,
+              trust_level: 'notify' as const,
+            }]);
+          if (error) throw error;
+        }
         result.seededSkills++;
       } catch (err) {
         const msg = `Skill ${skill.name}: ${err instanceof Error ? err.message : 'Unknown'}`;
@@ -131,15 +142,15 @@ export async function bootstrapModule(
         if (!existing) {
           const { error } = await supabase
             .from('agent_automations')
-            .insert({
+            .insert([{
               name: auto.name,
               description: auto.description,
               trigger_type: auto.trigger_type,
-              trigger_config: auto.trigger_config,
+              trigger_config: auto.trigger_config as unknown as Record<string, unknown>,
               skill_name: auto.skill_name,
-              skill_arguments: auto.skill_arguments,
+              skill_arguments: auto.skill_arguments as unknown as Record<string, unknown>,
               enabled: true,
-            });
+            }]);
           if (error) throw error;
           result.seededAutomations++;
         }
