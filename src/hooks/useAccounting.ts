@@ -281,7 +281,7 @@ export function useAccountingTemplates() {
         .select('*')
         .order('usage_count', { ascending: false });
       if (error) throw error;
-      return data as AccountingTemplate[];
+      return data as unknown as AccountingTemplate[];
     },
   });
 }

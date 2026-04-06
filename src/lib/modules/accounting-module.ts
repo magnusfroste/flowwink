@@ -71,7 +71,11 @@ export const accountingModule: ModuleDefinition<AccountingInput, AccountingOutpu
         .insert(
           validated.lines.map((l) => ({
             journal_entry_id: data.id,
-            ...l,
+            account_code: l.account_code,
+            account_name: l.account_name,
+            debit_cents: l.debit_cents,
+            credit_cents: l.credit_cents,
+            description: l.description || null,
           }))
         );
 
