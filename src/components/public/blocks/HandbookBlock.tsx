@@ -1,8 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
-import { Book, ChevronRight, Search } from 'lucide-react';
+import { Book, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -68,6 +68,37 @@ export function HandbookBlock({ data }: HandbookBlockProps) {
   }, [chapters, search]);
 
   const activeChapter = chapters.find((c) => c.slug === activeSlug) ?? null;
+  const activeIndex = activeChapter ? chapters.indexOf(activeChapter) : -1;
+  const prevChapter = activeIndex > 0 ? chapters[activeIndex - 1] : null;
+  const nextChapter = activeIndex >= 0 && activeIndex < chapters.length - 1 ? chapters[activeIndex + 1] : null;
+
+  const navigateToSlug = useCallback((slug: string) => {
+    setActiveSlug(slug);
+    // Scroll content area to top
+    document.getElementById('handbook-content')?.scrollTo(0, 0);
+  }, []);
+
+  // Intercept .md links in markdown content and navigate within the block
+  const markdownComponents = useMemo(() => ({
+    a: ({ href, children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement> & { children?: React.ReactNode }) => {
+      if (href && href.endsWith('.md')) {
+        // Extract slug from filename: "05c-concurrency-observability.md" → "05c-concurrency-observability"
+        const slug = href.replace(/^.*\//, '').replace(/\.md$/, '');
+        const target = chapters.find((c) => c.slug === slug);
+        if (target) {
+          return (
+            <button
+              className="text-primary underline hover:text-primary/80 transition-colors"
+              onClick={() => navigateToSlug(slug)}
+            >
+              {children}
+            </button>
+          );
+        }
+      }
+      return <a href={href} target="_blank" rel="noopener noreferrer" {...props}>{children}</a>;
+    },
+  }), [chapters, navigateToSlug]);
 
   if (isLoading) {
     return (
@@ -142,11 +173,41 @@ export function HandbookBlock({ data }: HandbookBlockProps) {
           )}
 
           {/* Content */}
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0" id="handbook-content">
             {activeChapter ? (
-              <article className="prose prose-sm dark:prose-invert max-w-none">
-                <ReactMarkdown>{activeChapter.content}</ReactMarkdown>
-              </article>
+              <div className="space-y-8">
+                <article className="prose prose-sm dark:prose-invert max-w-none">
+                  <ReactMarkdown components={markdownComponents}>{activeChapter.content}</ReactMarkdown>
+                </article>
+
+                {/* Prev / Next navigation */}
+                <nav className="flex items-center justify-between border-t pt-6">
+                  {prevChapter ? (
+                    <button
+                      onClick={() => navigateToSlug(prevChapter.slug)}
+                      className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      <div className="text-left">
+                        <span className="text-xs text-muted-foreground/60 block">Previous</span>
+                        <span className="font-medium">{prevChapter.title}</span>
+                      </div>
+                    </button>
+                  ) : <div />}
+                  {nextChapter ? (
+                    <button
+                      onClick={() => navigateToSlug(nextChapter.slug)}
+                      className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors text-right"
+                    >
+                      <div>
+                        <span className="text-xs text-muted-foreground/60 block">Next</span>
+                        <span className="font-medium">{nextChapter.title}</span>
+                      </div>
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  ) : <div />}
+                </nav>
+              </div>
             ) : (
               <div className="flex items-center justify-center h-full text-muted-foreground">
                 <div className="text-center space-y-2">
@@ -177,7 +238,7 @@ export function HandbookBlock({ data }: HandbookBlockProps) {
               {activeSlug === ch.slug && (
                 <div className="px-4 pb-4 border-t">
                   <article className="prose prose-sm dark:prose-invert max-w-none pt-4">
-                    <ReactMarkdown>{ch.content}</ReactMarkdown>
+                    <ReactMarkdown components={markdownComponents}>{ch.content}</ReactMarkdown>
                   </article>
                 </div>
               )}
