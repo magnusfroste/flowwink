@@ -32,7 +32,7 @@ Each skill has:
 - **`tool_definition`** — OpenAI function-calling JSON schema
 - **`instructions`** — rich knowledge for the skill (optional)
 
-## Current Counts (106 skills, 9 categories)
+## Current Counts (109 skills, 9 categories)
 
 | Category | Count |
 |----------|-------|
@@ -40,11 +40,12 @@ Each skill has:
 | CRM | 27 |
 | Communication | 11 |
 | Analytics | 9 |
-| Commerce | 7 |
+| Commerce | 8 |
 | System | 12 |
 | Growth | 5 |
 | Automation | 4 |
 | Search | 4 |
+| **+ Runtime** | **∞** |
 
 ## Built-in Tools (32 tools)
 

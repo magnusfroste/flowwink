@@ -4684,6 +4684,71 @@ Reads accounting data and generates financial reports from the general ledger.
       },
     },
   },
+  {
+    name: 'manage_accounting_template',
+    description: 'Create, list, update, or delete accounting templates (konteringsmallar) for the double-entry bookkeeping system. Enables FlowPilot to autonomously learn new transaction patterns and store them as reusable templates with BAS 2024 account mappings. Use when: a new transaction type is encountered that has no template; admin asks to create a booking template; optimizing existing templates; learning from successful journal entries. NOT for: creating journal entries (use manage_journal_entry); generating reports (use accounting_reports).',
+    handler: 'db:accounting_templates',
+    category: 'commerce',
+    scope: 'internal',
+    requires_approval: false,
+    instructions: `## manage_accounting_template
+### What
+CRUD operations for accounting templates (konteringsmallar). Templates define reusable debit/credit line patterns for common transactions like salary payments, rent, VAT, purchases, etc.
+### When to use
+- Creating a new template when FlowPilot encounters a novel transaction type
+- Listing available templates to find the right one for a transaction
+- Updating a template to improve accuracy (e.g., fix account codes)
+- Deleting obsolete or duplicate templates
+### Autonomous template creation
+When FlowPilot successfully books a new type of transaction manually (without a template), it SHOULD create a template for future use. This is the "black belt" of bookkeeping — learning from experience.
+### Template anatomy
+Each template has:
+- **template_name**: Unique, descriptive name (e.g., "Löneutbetalning", "Inköp kontorsmaterial")
+- **description**: What this template is for and when to use it
+- **category**: salary, tax, rent, purchase, sale, depreciation, adjustment, other
+- **keywords**: Array of trigger words for matching (Swedish terms preferred)
+- **template_lines**: Array of {account_code, account_name, type: 'debit'|'credit', description}
+### Best practices
+- Always use correct BAS 2024 account codes
+- Include both Swedish and English keywords for matching
+- Keep descriptions specific enough for accurate auto-matching
+- Each template must have at least one debit and one credit line
+- Mark system templates (is_system: true) for built-in ones only`,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_accounting_template',
+        description: 'Create, list, update, or delete accounting templates. Use when: learning new transaction patterns; admin asks to create a booking template; optimizing templates. NOT for: creating journal entries (use manage_journal_entry).',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: { type: 'string', enum: ['create', 'list', 'update', 'delete'], description: 'Operation to perform' },
+            template_name: { type: 'string', description: 'Name of the template (required for create/update)' },
+            description: { type: 'string', description: 'What this template is for' },
+            category: { type: 'string', description: 'Template category: salary, tax, rent, purchase, sale, depreciation, adjustment, other' },
+            keywords: { type: 'array', items: { type: 'string' }, description: 'Trigger words for matching this template' },
+            template_lines: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  account_code: { type: 'string', description: 'BAS 2024 account code' },
+                  account_name: { type: 'string', description: 'Account name' },
+                  type: { type: 'string', enum: ['debit', 'credit'] },
+                  description: { type: 'string', description: 'Line description' },
+                },
+                required: ['account_code', 'account_name', 'type'],
+              },
+              description: 'Debit/credit line definitions',
+            },
+            template_id: { type: 'string', description: 'Template ID (required for update/delete)' },
+            search: { type: 'string', description: 'Search term for list action' },
+          },
+          required: ['action'],
+        },
+      },
+    },
+  },
 ];
 const DEFAULT_SOUL = {
   purpose: 'I am FlowPilot — the autonomous intelligence layer of this FlowWink website. I observe, reason, and act across every module (content, CRM, marketing, support, analytics) to make this site run itself. My north star is measurable business outcomes: traffic, leads, conversions, and customer satisfaction.',

@@ -3078,6 +3078,82 @@ async function executeDbAction(
       };
     }
 
+    case 'accounting_templates': {
+      // ─── Accounting: Template CRUD ──────────────────────────────────────
+      const { action = 'list' } = args as any;
+
+      if (action === 'list') {
+        const { search } = args as any;
+        let query = supabase.from('accounting_templates')
+          .select('*')
+          .order('usage_count', { ascending: false });
+        if (search) {
+          query = query.or(`template_name.ilike.%${search}%,description.ilike.%${search}%,category.ilike.%${search}%`);
+        }
+        const { data, error } = await query.limit(50);
+        if (error) throw new Error(`List templates failed: ${error.message}`);
+        return { templates: data, count: (data || []).length };
+      }
+
+      if (action === 'create') {
+        const { template_name, description: desc, category, keywords, template_lines } = args as any;
+        if (!template_name) throw new Error('template_name is required');
+        if (!template_lines || template_lines.length === 0) throw new Error('template_lines with at least one debit and one credit line required');
+
+        const hasDebit = template_lines.some((l: any) => l.type === 'debit');
+        const hasCredit = template_lines.some((l: any) => l.type === 'credit');
+        if (!hasDebit || !hasCredit) throw new Error('Template must have at least one debit and one credit line');
+
+        const { data, error } = await supabase.from('accounting_templates')
+          .insert({
+            template_name,
+            description: desc || '',
+            category: category || 'other',
+            keywords: keywords || [],
+            template_lines,
+            is_system: false,
+            usage_count: 0,
+          })
+          .select('id, template_name')
+          .single();
+        if (error) throw new Error(`Create template failed: ${error.message}`);
+        return { created: true, template_id: data.id, template_name: data.template_name };
+      }
+
+      if (action === 'update') {
+        const { template_id, template_name, description: desc, category, keywords, template_lines } = args as any;
+        if (!template_id) throw new Error('template_id is required for update');
+        const updates: any = {};
+        if (template_name) updates.template_name = template_name;
+        if (desc) updates.description = desc;
+        if (category) updates.category = category;
+        if (keywords) updates.keywords = keywords;
+        if (template_lines) {
+          const hasDebit = template_lines.some((l: any) => l.type === 'debit');
+          const hasCredit = template_lines.some((l: any) => l.type === 'credit');
+          if (!hasDebit || !hasCredit) throw new Error('Template must have at least one debit and one credit line');
+          updates.template_lines = template_lines;
+        }
+        updates.updated_at = new Date().toISOString();
+
+        const { error } = await supabase.from('accounting_templates')
+          .update(updates).eq('id', template_id);
+        if (error) throw new Error(`Update template failed: ${error.message}`);
+        return { updated: true, template_id };
+      }
+
+      if (action === 'delete') {
+        const { template_id } = args as any;
+        if (!template_id) throw new Error('template_id is required for delete');
+        const { error } = await supabase.from('accounting_templates')
+          .delete().eq('id', template_id).eq('is_system', false);
+        if (error) throw new Error(`Delete template failed: ${error.message}`);
+        return { deleted: true, template_id, note: 'System templates cannot be deleted' };
+      }
+
+      throw new Error(`Unknown accounting_templates action: ${action}`);
+    }
+
     default:
       return { error: `Unknown db table: ${table}` };
   }
