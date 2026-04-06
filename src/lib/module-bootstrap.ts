@@ -62,7 +62,7 @@ export async function bootstrapModule(
   const result = { seededSkills: 0, seededAutomations: 0, errors: [] as string[] };
 
   if (!bootstrap) {
-    logger.info(`[module-bootstrap] No bootstrap registered for ${moduleId}`);
+    logger.log(`[module-bootstrap] No bootstrap registered for ${moduleId}`);
     return result;
   }
 
@@ -70,7 +70,7 @@ export async function bootstrapModule(
   if (bootstrap.seedData) {
     try {
       await bootstrap.seedData();
-      logger.info(`[module-bootstrap] Seeded reference data for ${moduleId}`);
+      logger.log(`[module-bootstrap] Seeded reference data for ${moduleId}`);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Unknown error seeding data';
       result.errors.push(msg);
@@ -81,7 +81,7 @@ export async function bootstrapModule(
   // 2. Skills + automations only if FlowPilot is enabled
   const flowpilotEnabled = allModules.flowpilot?.enabled ?? true;
   if (!flowpilotEnabled) {
-    logger.info(`[module-bootstrap] FlowPilot disabled — skipping skills/automations for ${moduleId}`);
+    logger.log(`[module-bootstrap] FlowPilot disabled — skipping skills/automations for ${moduleId}`);
     return result;
   }
 
@@ -151,7 +151,7 @@ export async function bootstrapModule(
     }
   }
 
-  logger.info(`[module-bootstrap] ${moduleId}: ${result.seededSkills} skills, ${result.seededAutomations} automations seeded`);
+  logger.log(`[module-bootstrap] ${moduleId}: ${result.seededSkills} skills, ${result.seededAutomations} automations seeded`);
   return result;
 }
 
@@ -185,7 +185,7 @@ export async function teardownModule(
     if (error) logger.error(`[module-bootstrap] Failed to disable automations for ${moduleId}:`, error);
   }
 
-  logger.info(`[module-bootstrap] Teardown complete for ${moduleId}`);
+  logger.log(`[module-bootstrap] Teardown complete for ${moduleId}`);
 }
 
 export function getBootstrapRegistry() {

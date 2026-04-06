@@ -118,7 +118,7 @@ async function seedChartOfAccounts() {
     .select('id', { count: 'exact', head: true });
 
   if ((count ?? 0) > 0) {
-    logger.info('[accounting-bootstrap] Chart of accounts already populated, skipping');
+    logger.log('[accounting-bootstrap] Chart of accounts already populated, skipping');
     return;
   }
 
@@ -179,7 +179,7 @@ async function seedChartOfAccounts() {
 
   const { error } = await supabase.from('chart_of_accounts').insert(accounts);
   if (error) throw error;
-  logger.info(`[accounting-bootstrap] Seeded ${accounts.length} BAS 2024 accounts`);
+  logger.log(`[accounting-bootstrap] Seeded ${accounts.length} BAS 2024 accounts`);
 }
 
 /** Seed default accounting templates if table is empty */
@@ -189,7 +189,7 @@ async function seedAccountingTemplates() {
     .select('id', { count: 'exact', head: true });
 
   if ((count ?? 0) > 0) {
-    logger.info('[accounting-bootstrap] Accounting templates already populated, skipping');
+    logger.log('[accounting-bootstrap] Accounting templates already populated, skipping');
     return;
   }
 
@@ -281,7 +281,7 @@ async function seedAccountingTemplates() {
 
   const { error } = await supabase.from('accounting_templates').insert(templates);
   if (error) throw error;
-  logger.info(`[accounting-bootstrap] Seeded ${templates.length} accounting templates`);
+  logger.log(`[accounting-bootstrap] Seeded ${templates.length} accounting templates`);
 }
 
 // Register the accounting module bootstrap
