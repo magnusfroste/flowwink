@@ -1,7 +1,7 @@
 ---
 title: "The Token Economy"
 description: "Context budget management — how to run 100+ skills without hitting the context ceiling. Prompt compilation, lazy loading, and graceful degradation."
-order: 10.5
+order: 10.3
 icon: "calculator"
 ---
 
@@ -294,6 +294,87 @@ Without monitoring, the token economy is theoretical. With it, it's a managed re
 
 ---
 
+## Cost Modeling Worksheet
+
+Before deploying an autonomous agent, estimate your monthly cost. The variables are predictable:
+
+```
+Monthly Cost = (heartbeat_runs/day × 30)
+             × avg_tokens_per_run
+             × model_cost_per_token
+             + (operate_sessions/day × 30)
+             × avg_tokens_per_session
+             × model_cost_per_token
+```
+
+### The Variables
+
+| Variable | How to Estimate | Typical Range |
+|----------|----------------|--------------|
+| `heartbeat_runs/day` | Admin-configured schedule | 2 (twice daily) |
+| `avg_tokens_per_run` | From activity logs after first week | 8,000–15,000 |
+| `operate_sessions/day` | How often admin interacts | 2–10 |
+| `avg_tokens_per_session` | From activity logs | 3,000–8,000 |
+| `model_cost_per_token` | Provider pricing page | See table below |
+
+### Reference Pricing (2026)
+
+| Model | Input $/M tokens | Output $/M tokens | Best for |
+|-------|-----------------|-------------------|----------|
+| gpt-4.1-mini | $0.40 | $1.60 | Heartbeat default, most operations |
+| gpt-4.1 | $2.00 | $8.00 | Complex planning, content generation |
+| gemini-2.5-pro | $1.25 | $10.00 | Long context, multimodal |
+| claude-3-5-haiku | $0.80 | $4.00 | Fast, capable, good tool use |
+
+*Prices change frequently — verify against current provider pricing.*
+
+### Example: Small B2B Site
+
+```
+Heartbeat: 2/day × 30 = 60 runs/month
+  @ 10,000 tokens avg × $0.40/M = $0.24/month
+
+Operate: 5/day × 30 = 150 sessions/month
+  @ 5,000 tokens avg × $0.40/M = $0.30/month
+
+Reasoning tier (10% of runs for complex tasks):
+  6 runs × 20,000 tokens × $2.00/M = $0.24/month
+
+Total: ~$0.78/month on fast model + occasional reasoning
+```
+
+### Example: Active Marketing Agency
+
+```
+Heartbeat: 4/day × 30 = 120 runs/month
+  @ 15,000 tokens avg × $0.40/M = $0.72/month
+
+Operate: 20/day × 30 = 600 sessions/month
+  @ 8,000 tokens avg × $0.40/M = $1.92/month
+
+Reasoning tier (30% of runs):
+  36 runs × 25,000 tokens × $2.00/M = $1.80/month
+
+Total: ~$4.44/month
+```
+
+### The Ceiling Check
+
+Before going live, calculate your worst-case scenario:
+
+```
+Worst case = max_heartbeat_frequency
+           × max_tokens_per_run (128K limit)
+           × most_expensive_model
+           × 30 days
+```
+
+If the worst case is acceptable, deploy. If not, set lower `budget.limit` per run or reduce heartbeat frequency.
+
+The numbers are almost always surprisingly small. The agent is not expensive — it's the *predictability* that matters. A $5/month agent that can't explain its costs is worse than a $50/month agent where every token is accounted for.
+
+---
+
 *The token economy is not about limits — it's about allocation. Every token spent on skill metadata is a token not available for reasoning. Every reasoning token spent on the wrong model is money wasted. The discipline is spending each token where it creates the most value.*
 
-*Next: how agents create their own skills at runtime. [Skill Self-Creation →](06b-skill-self-creation.md)*
+*Next: the three diverging inference APIs and how proxies preserve your freedom to switch. [The API Layer →](05b-api-layer.md)*

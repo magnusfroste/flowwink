@@ -252,6 +252,67 @@ The Engine Room answers the operator's core question: **"What is my agent doing 
 
 ---
 
+## Tool Hallucination Recovery
+
+LLMs sometimes "hallucinate" tool calls — requesting tools that don't exist or passing malformed parameters. Without recovery, this crashes the reasoning loop and leaves the agent in an undefined state.
+
+FlowPilot handles this with a structured recovery pattern:
+
+```
+1. LLM calls non-existent tool
+   → Catch the "unknown tool" error
+   → Do NOT abort the session
+
+2. Inject correction message into conversation:
+   "Tool 'X' doesn't exist. Available tools: [list of valid tool names]
+    Please try again with one of the available tools."
+
+3. Re-enter reasoning loop (max 2 retries)
+
+4. If still failing after retries:
+   → Log error with full details (tool name attempted, parameters, context)
+   → Exit gracefully with summary of what was accomplished
+   → Flag the stall in agent_activity for review
+```
+
+### Why This Happens
+
+Hallucinated tool calls are more common than you'd expect, especially when:
+- The agent has been given context about tools that no longer exist (stale skill definitions)
+- The model infers a tool should exist based on domain knowledge ("surely there's a `send_sms` skill")
+- The model confuses skill names across similar domains
+
+### The Recovery Loop
+
+```typescript
+for (let attempt = 0; attempt < MAX_TOOL_RETRIES; attempt++) {
+  const result = await executeTool(toolName, params);
+
+  if (result.error === 'UNKNOWN_TOOL') {
+    const availableTools = skills.map(s => s.name).join(', ');
+    conversation.push({
+      role: 'system',
+      content: `Tool '${toolName}' does not exist. Available tools: ${availableTools}. Please use one of these.`
+    });
+    continue; // Re-enter reasoning loop
+  }
+
+  if (result.error === 'INVALID_PARAMS') {
+    conversation.push({
+      role: 'system',
+      content: `Tool call failed: ${result.error}. Schema: ${JSON.stringify(skill.tool_definition)}`
+    });
+    continue;
+  }
+
+  break; // Success
+}
+```
+
+The recovery message is injected as a `system` role message — not a `user` message — so the agent understands it as infrastructure feedback, not user input.
+
+---
+
 ## The Anti-Patterns
 
 | Anti-Pattern | Consequence | Fix |

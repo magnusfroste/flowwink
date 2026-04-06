@@ -16,15 +16,17 @@ icon: "user-group"
 Autonomy isn't binary. It's a spectrum, and different actions sit at different points:
 
 ```
-Full Human Control ◄──────────────────────► Full Autonomy
-     │                                              │
-     │  Newsletter send    Lead qualification       │
-     │  Site settings      Blog drafting            │
-     │  Financial actions  Content research          │
-     │  User management    Analytics reporting       │
-     │                     Web search                │
-     │                                              │
-     └── requires_approval=true ──── requires_approval=false ──┘
+Full Human Control ◄────────────────────────────────────────────────► Full Autonomy
+       │                        │                                              │
+   APPROVE                   NOTIFY                                          AUTO
+       │                        │                                              │
+  Newsletter send          Blog draft               Web search                │
+  Site settings            Memory write             Analytics query           │
+  Financial actions        Content proposal         Lead scoring              │
+  User management          A2A message sent         Reporting                 │
+       │                        │                                              │
+  Block until human        Execute, then            Execute silently,
+  confirms                 report to admin          log to activity
 ```
 
 ---
@@ -61,6 +63,32 @@ Is the action reversible?
 
 ---
 
+## The Three Trust Tiers
+
+FlowPilot implements three execution modes, not two. The binary `requires_approval` flag is the simplified view. The full implementation has:
+
+| Tier | Value | Behavior | Example |
+|------|-------|----------|---------|
+| **Auto** | `auto` | Execute silently, log to activity | Web search, analytics lookup, lead scoring |
+| **Notify** | `notify` | Execute, then send report to admin | Blog draft created, memory written, A2A message sent |
+| **Approve** | `approve` | Block execution until admin confirms | Newsletter send, financial transaction, site settings |
+
+### Why Three Tiers?
+
+The binary model creates a false choice: either the agent waits for human approval on everything useful, or it acts silently on everything. **Notify** breaks the deadlock.
+
+A blog draft is not dangerous — but the admin probably wants to know it happened. With `notify`, the agent creates the draft immediately (no blocking) and sends a summary to the Activity Feed. The admin reviews at their convenience. If they don't like it, they delete it. No harm done.
+
+A newsletter send is irreversible — 10,000 people will receive it. That requires `approve`: the agent queues it, the admin must explicitly confirm.
+
+```
+auto:    Act → Log
+notify:  Act → Log → Notify admin
+approve: Queue → Wait → Admin confirms → Act → Log
+```
+
+---
+
 ## The Approval Workflow
 
 When `requires_approval = true`:
@@ -85,19 +113,50 @@ agent-execute checks requires_approval
 
 ---
 
+## The tool_policy Override
+
+Beyond per-skill trust tiers, FlowPilot implements a **global policy override** stored in `agent_memory`:
+
+```json
+{
+  "key": "tool_policy",
+  "category": "system",
+  "value": {
+    "blocked_skills": ["send_newsletter", "execute_payment"],
+    "forced_approve": ["write_blog_post"],
+    "forced_auto": ["qualify_lead"]
+  }
+}
+```
+
+This lets operators temporarily adjust agent behavior without editing skill definitions:
+
+| Use Case | tool_policy action |
+|----------|--------------------|
+| "Pause all outbound communications this week" | Add email/newsletter skills to `blocked_skills` |
+| "I'm monitoring everything right now" | Move all content skills to `forced_approve` |
+| "I trust the agent completely on CRM" | Move CRM skills to `forced_auto` |
+| "Something went wrong — freeze the agent" | Block all skills except read-only |
+
+The policy is checked before skill execution and takes precedence over the skill's default tier. It's temporary by design — the admin removes it when the situation resolves.
+
+---
+
 ## Real-World Autonomy Decisions
 
-| Skill | Autonomy | Rationale |
-|-------|----------|-----------|
-| `search_web` | Full | No cost, no risk, read-only |
-| `write_blog_post` | Full | Drafts only, publishing is separate |
-| `qualify_lead` | Full | Analysis, no external impact |
-| `generate_content_proposal` | Approval | Multi-channel content creation |
-| `execute_newsletter_send` | Approval | Irreversible, reaches real people |
-| `send_newsletter` | Approval | External communication |
-| `update_settings` | Approval | Affects entire site |
-| `manage_product` | Full | Internal data management |
-| `book_appointment` | Full | Low risk, customer-initiated |
+| Skill | Trust Tier | Rationale |
+|-------|------------|-----------|
+| `search_web` | `auto` | No cost, no risk, read-only |
+| `qualify_lead` | `auto` | Analysis, no external impact |
+| `analytics_report` | `auto` | Read-only, informational |
+| `write_blog_post` | `notify` | Creates content, admin wants to know |
+| `memory_write` | `notify` | Modifies agent state |
+| `a2a_message` | `notify` | External agent communication |
+| `generate_content_proposal` | `notify` | Multi-channel content plan |
+| `execute_newsletter_send` | `approve` | Irreversible, reaches real people |
+| `update_settings` | `approve` | Affects entire site |
+| `manage_product` | `auto` | Internal data management |
+| `book_appointment` | `auto` | Low risk, customer-initiated |
 
 ---
 
@@ -170,7 +229,8 @@ The human doesn't disappear in an agentic system. Their role shifts:
 | Full autonomy on everything | One bad hallucination = disaster | Approval gates on destructive actions |
 | Approval on everything | Agent can't operate autonomously | Graduated autonomy based on risk |
 | No approval workflow | Admin can't review pending actions | Activity Feed with approve/reject |
-| Binary autonomy | All-or-nothing approach | Spectrum-based decision tree |
+| Binary autonomy | All-or-nothing approach | Three-tier trust model (auto/notify/approve) |
+| No tool_policy | Can't temporarily adjust behavior | Global policy override in agent_memory |
 
 ---
 

@@ -1,7 +1,7 @@
 ---
 title: "The API Layer"
 description: "The three diverging inference APIs, why agentic tools enforce strict formats, and how proxies like LiteLLM preserve your freedom to switch."
-order: 10.5
+order: 10.7
 icon: "arrows-right-left"
 ---
 
@@ -285,6 +285,70 @@ Looking at the three APIs together, the design philosophies are explicit:
 
 ---
 
+## SSE Keepalive — Surviving Long-Running Operations
+
+Long-running agent operations hit a practical infrastructure problem: **HTTP timeouts**. A heartbeat that takes 45-90 seconds will be killed by intermediate proxies, load balancers, and CDN edge nodes that assume a stalled connection after 30 seconds.
+
+The solution: **Server-Sent Events (SSE) with keepalive pings**.
+
+### The Pattern
+
+Instead of a single HTTP response at the end of a long operation, the edge function streams partial updates throughout:
+
+```typescript
+// Edge function: stream keepalive during long-running agent operation
+const encoder = new TextEncoder();
+const stream = new ReadableStream({
+  async start(controller) {
+    // Start the keepalive ticker
+    const keepalive = setInterval(() => {
+      controller.enqueue(encoder.encode(': keepalive\n\n'));
+    }, 10_000); // Every 10 seconds
+
+    try {
+      // Run the actual agent operation
+      const result = await runHeartbeat(supabase, config);
+
+      // Send the final result
+      controller.enqueue(encoder.encode(`data: ${JSON.stringify(result)}\n\n`));
+    } finally {
+      clearInterval(keepalive);
+      controller.close();
+    }
+  }
+});
+
+return new Response(stream, {
+  headers: {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+  }
+});
+```
+
+### Why This Works
+
+The SSE keepalive sends a comment line (`: keepalive`) every 10 seconds. Comment lines are valid SSE format but ignored by the client. They serve one purpose: **reset the timeout counter on every intermediate hop**.
+
+The proxy sees traffic. The CDN sees traffic. Nobody kills the connection. The agent finishes its work.
+
+### When You Need This
+
+Any agent operation that might exceed 25 seconds needs keepalive:
+
+| Operation | Typical Duration | Needs Keepalive? |
+|-----------|-----------------|-----------------|
+| Simple tool call | 1-3s | No |
+| Heartbeat (minimal) | 15-30s | Sometimes |
+| Heartbeat (full cycle) | 45-90s | Yes |
+| Multi-step plan execution | 60-180s | Yes |
+| Large content generation | 30-60s | Yes |
+
+The 10-second interval is conservative. Most proxies timeout at 30-60 seconds, so 10s gives comfortable headroom.
+
+---
+
 ## The Key Takeaway for Autonomous Agents
 
 The API format question is not academic. For long-running autonomous agents like FlowPilot — agents that run heartbeat cycles at 00:00 with critical business data — the format determines:
@@ -301,3 +365,5 @@ The architecture should outlast any single model provider. If Claude disappears 
 ---
 
 *The inference layer is not commodity infrastructure. It is the interface between your agent's reasoning and the capabilities it needs. Build it to be replaceable — because in this ecosystem, everything changes faster than you think.*
+
+*Next: how agents grow over time — feedback loops, reflection, and compound learning. [Feedback Loops →](08-feedback-loops.md)*

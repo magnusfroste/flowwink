@@ -142,6 +142,63 @@ The 73 skills in FlowPilot's current library are organized by business function.
 
 ---
 
+## Skill Gating — Capability Before Permission
+
+There's a layer that runs *before* trust levels: **skill gating**. Gating is about whether a skill is even available to the agent, not whether it requires approval.
+
+A skill is gated when its prerequisites aren't met. The most common gate: **missing integration credentials**.
+
+```
+send_newsletter skill:
+  Gate: Email integration has valid API key configured
+  → API key present: skill is visible to agent
+  → API key missing: skill is invisible (not loaded into prompt)
+```
+
+The agent never sees a gated skill. It doesn't try to call it and fail — it simply isn't offered the tool. This prevents a class of errors where the agent attempts to use a capability that has no backend to run it.
+
+### Common Gates
+
+| Gate Type | Condition | Example |
+|-----------|-----------|---------|
+| **Integration key** | Valid API key configured | `send_newsletter` requires email provider key |
+| **Module enabled** | Module is active for this instance | `book_appointment` requires Booking module |
+| **Feature flag** | Admin has enabled the feature | `execute_payment` requires Payments enabled |
+| **Role scope** | Caller has required permissions | Internal skills invisible in visitor scope |
+| **Environment** | Correct deployment environment | Debug skills only in development |
+
+### Implementation
+
+```typescript
+// When loading skills for a session
+const allSkills = await supabase.from('agent_skills').select('*').eq('enabled', true);
+
+// Filter by gates
+const availableSkills = allSkills.filter(skill => {
+  if (skill.requires_integration) {
+    const hasKey = integrations[skill.requires_integration]?.api_key != null;
+    if (!hasKey) return false; // Gated — invisible to agent
+  }
+  if (skill.requires_module) {
+    const moduleEnabled = modules[skill.requires_module]?.enabled;
+    if (!moduleEnabled) return false; // Gated — module not active
+  }
+  return true;
+});
+```
+
+### Why Gating Matters for UX
+
+Without gating, the agent will attempt to use skills it can't actually execute — then fail, retry, and generate confusing error logs. With gating, the skill simply doesn't exist from the agent's perspective. A cleaner model:
+
+- Agent never attempts `send_newsletter` without a configured email provider
+- Agent never tries to create a booking if the booking module is disabled
+- Agent instructions don't need to say "check if X is configured before calling Y"
+
+Gating is a compile-time constraint. Trust levels are a runtime constraint. Both are necessary.
+
+---
+
 ## The OpenClaw Pattern: File vs. Database
 
 OpenClaw uses file-based `SKILL.md` files with automatic discovery. Flowwink uses database-driven skills with admin UI management. Both follow the same concept — a skill is a knowledge container — but the implementation differs significantly:
@@ -152,7 +209,7 @@ OpenClaw uses file-based `SKILL.md` files with automatic discovery. Flowwink use
 | Storage | Markdown files on disk | PostgreSQL rows |
 | Modification | Edit file, restart/reload | Hot-reloadable (no restart) |
 | Admin UI | No (terminal-first) | Yes (Skill Hub page) |
-| Multi-tenant | No (single user) | Yes (RLS per tenant) |
+| Multi-instance | No (single user) | Yes (RLS per instance) |
 | Versioning | Git | Database history |
 | Loading | Lazy: model reads `SKILL.md` on demand | Full tool definitions injected per session |
 | Registry | ClawHub marketplace | Curated 73-skill library |
@@ -183,4 +240,4 @@ The difference is not the tool. The difference is the knowledge.
 
 *Skills are the vocabulary of the agent. The richer the vocabulary, the more nuanced the agent's actions. Invest in skill instructions the way you'd invest in employee training.*
 
-*Next: the memory system that gives the agent its identity across time. [Memory Architecture →](07-memory-architecture.md)*
+*Next: how agents evolve beyond their initial configuration by creating their own skills. [Skill Self-Creation →](06b-skill-self-creation.md)*

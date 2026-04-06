@@ -330,6 +330,23 @@ These prevent the heartbeat from:
 - Burning through API credits (token budget)
 - Getting stuck in loops (iteration cap)
 
+### The Continuation Nudge
+
+There's a fifth failure mode not covered by the table above: **the agent stalls mid-task** — it generates neither a tool call nor a final answer. This happens when the model produces a reasoning block without a conclusion, effectively going silent.
+
+FlowPilot detects this and injects a **continuation nudge** — a system message inserted into the conversation that prompts the agent to either act or conclude:
+
+```
+System: "It looks like you paused mid-task. Please either:
+1. Call the next appropriate tool to continue, or
+2. Provide a summary of what you've accomplished and any blockers.
+Do not leave the task incomplete without explanation."
+```
+
+The nudge fires after detecting N consecutive turns with no tool call and no `HEARTBEAT_OK` signal. Maximum 2 nudges per session — if the agent still doesn't respond meaningfully, the session aborts and logs a stall event.
+
+Without the nudge, stalls are invisible: the heartbeat appears to have run, token costs are incurred, but nothing actually happened.
+
 ---
 
 ## The Heartbeat Report
@@ -379,4 +396,4 @@ The agent can also create, modify, and disable automations. This is part of its 
 
 *The heartbeat is the agent's metabolism. Just as a heartbeat sustains life by circulating blood, the agent's heartbeat sustains autonomous operation by cycling through healing, planning, executing, and learning.*
 
-*Next: the skills that give the agent its vocabulary. [The Skills Ecosystem →](06-skills-ecosystem.md)*
+*Next: concurrency, trace IDs, and the observability layer that keeps agents from colliding. [Concurrency & Observability →](05c-concurrency-observability.md)*

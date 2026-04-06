@@ -358,4 +358,4 @@ These five tests catch the most common production failures. Start here, expand a
 
 *Testing agents is not about proving they always do the right thing. It is about proving they never do the dangerous thing — and building confidence that the most common paths work as designed. The rest is monitoring, logging, and human review.*
 
-*Next: ClawStack — running agent swarms on real infrastructure. [ClawStack →](17-clawstack.md)*
+*Next: circuit breakers, exponential backoff, and the five-layer safety stack. [Resilience Patterns →](14c-resilience-patterns.md)*

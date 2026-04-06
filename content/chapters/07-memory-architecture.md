@@ -243,4 +243,4 @@ This ensures the agent doesn't lose important information when conversations get
 
 *Memory is what transforms a stateless function into a persistent entity. Without it, the agent is a goldfish. With it, the agent is a colleague.*
 
-*Next: how the agent learns and improves through feedback loops. [Feedback Loops →](08-feedback-loops.md)*
+*Next: managing the scarcest resource — prompt compilation, lazy loading, and the token budget. [The Token Economy →](07b-token-economy.md)*
