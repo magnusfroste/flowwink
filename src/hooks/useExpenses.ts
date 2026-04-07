@@ -135,6 +135,29 @@ export function useUpdateExpenseStatus() {
   });
 }
 
+export function useSubmitExpenses() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { error } = await supabase
+        .from('expenses')
+        .update({ status: 'submitted' })
+        .in('id', ids)
+        .eq('status', 'draft');
+      if (error) throw error;
+    },
+    onSuccess: (_data, ids) => {
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      toast({ title: `${ids.length} expense(s) submitted` });
+    },
+    onError: (err: Error) => {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    },
+  });
+}
+
 // ============================================================
 // Expense Reports
 // ============================================================
