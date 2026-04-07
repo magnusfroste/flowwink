@@ -30,19 +30,27 @@ export function AddExpenseDialog() {
 
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [description, setDescription] = useState('');
-  const [amount, setAmount] = useState('');
-  const [vat, setVat] = useState('');
+  const [total, setTotal] = useState('');
+  const [vatRate, setVatRate] = useState('25');
+  const [vatOverride, setVatOverride] = useState('');
   const [category, setCategory] = useState('other');
   const [vendor, setVendor] = useState('');
   const [currency, setCurrency] = useState('SEK');
   const [isRepresentation, setIsRepresentation] = useState(false);
   const [attendees, setAttendees] = useState<Attendee[]>([]);
 
+  const totalNum = parseFloat(total || '0');
+  const computedVat = vatOverride
+    ? parseFloat(vatOverride)
+    : totalNum - totalNum / (1 + parseFloat(vatRate) / 100);
+  const netAmount = totalNum - computedVat;
+
   function reset() {
     setDate(new Date().toISOString().slice(0, 10));
     setDescription('');
-    setAmount('');
-    setVat('');
+    setTotal('');
+    setVatRate('25');
+    setVatOverride('');
     setCategory('other');
     setVendor('');
     setCurrency('SEK');
