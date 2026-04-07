@@ -18,9 +18,9 @@ export interface Expense {
   vendor: string | null;
   account_code: string | null;
   is_representation: boolean;
-  attendees: { name: string; company: string }[] | null;
+  attendees: unknown[] | null;
   receipt_url: string | null;
-  receipt_data: Record<string, unknown> | null;
+  receipt_data: unknown | null;
   status: string;
   report_id: string | null;
   created_at: string;
@@ -33,12 +33,14 @@ export interface ExpenseReport {
   period: string;
   status: string;
   total_cents: number;
-  expense_count: number;
   submitted_at: string | null;
   approved_at: string | null;
   approved_by: string | null;
-  booked_entry_id: string | null;
+  journal_entry_id: string | null;
+  notes: string | null;
+  currency: string;
   created_at: string;
+  updated_at: string;
 }
 
 // ============================================================
@@ -60,7 +62,7 @@ export function useExpenses(statusFilter?: string) {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data as Expense[];
+      return data as unknown as Expense[];
     },
   });
 }
@@ -143,7 +145,7 @@ export function useExpenseReports() {
         .select('*')
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return data as ExpenseReport[];
+      return data as unknown as ExpenseReport[];
     },
   });
 }
