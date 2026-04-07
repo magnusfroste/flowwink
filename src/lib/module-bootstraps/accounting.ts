@@ -11,6 +11,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 import { registerBootstrap, type SkillSeed, type AutomationSeed } from '@/lib/module-bootstrap';
+import { BAS_2024_ACCOUNTS } from '@/data/bas2024-accounts';
 
 const ACCOUNTING_SKILLS: SkillSeed[] = [
   {
@@ -115,71 +116,21 @@ const ACCOUNTING_AUTOMATIONS: AutomationSeed[] = [
 async function seedChartOfAccounts() {
   const { count } = await supabase
     .from('chart_of_accounts')
-    .select('id', { count: 'exact', head: true });
+    .select('id', { count: 'exact', head: true })
+    .eq('locale', 'se-bas2024');
 
   if ((count ?? 0) > 0) {
-    logger.log('[accounting-bootstrap] Chart of accounts already populated, skipping');
+    logger.log('[accounting-bootstrap] BAS 2024 chart already populated, skipping');
     return;
   }
 
-  // Core BAS 2024 accounts
-  const accounts = [
-    // Tillgångar (Assets)
-    { account_code: '1510', account_name: 'Kundfordringar', account_type: 'asset', account_category: 'Omsättningstillgångar', normal_balance: 'debit' },
-    { account_code: '1910', account_name: 'Kassa', account_type: 'asset', account_category: 'Omsättningstillgångar', normal_balance: 'debit' },
-    { account_code: '1920', account_name: 'PlusGiro', account_type: 'asset', account_category: 'Omsättningstillgångar', normal_balance: 'debit' },
-    { account_code: '1930', account_name: 'Företagskonto', account_type: 'asset', account_category: 'Omsättningstillgångar', normal_balance: 'debit' },
-    { account_code: '1940', account_name: 'Övriga bankkonton', account_type: 'asset', account_category: 'Omsättningstillgångar', normal_balance: 'debit' },
-    // Skulder (Liabilities)
-    { account_code: '2440', account_name: 'Leverantörsskulder', account_type: 'liability', account_category: 'Kortfristiga skulder', normal_balance: 'credit' },
-    { account_code: '2610', account_name: 'Utgående moms 25%', account_type: 'liability', account_category: 'Kortfristiga skulder', normal_balance: 'credit' },
-    { account_code: '2620', account_name: 'Utgående moms 12%', account_type: 'liability', account_category: 'Kortfristiga skulder', normal_balance: 'credit' },
-    { account_code: '2630', account_name: 'Utgående moms 6%', account_type: 'liability', account_category: 'Kortfristiga skulder', normal_balance: 'credit' },
-    { account_code: '2640', account_name: 'Ingående moms', account_type: 'liability', account_category: 'Kortfristiga skulder', normal_balance: 'debit' },
-    { account_code: '2650', account_name: 'Momsredovisning', account_type: 'liability', account_category: 'Kortfristiga skulder', normal_balance: 'credit' },
-    { account_code: '2710', account_name: 'Personalskatt', account_type: 'liability', account_category: 'Kortfristiga skulder', normal_balance: 'credit' },
-    { account_code: '2730', account_name: 'Arbetsgivaravgifter', account_type: 'liability', account_category: 'Kortfristiga skulder', normal_balance: 'credit' },
-    { account_code: '2920', account_name: 'Upplupna semesterlöner', account_type: 'liability', account_category: 'Kortfristiga skulder', normal_balance: 'credit' },
-    // Eget kapital (Equity)
-    { account_code: '2010', account_name: 'Eget kapital', account_type: 'equity', account_category: 'Eget kapital', normal_balance: 'credit' },
-    { account_code: '2019', account_name: 'Årets resultat', account_type: 'equity', account_category: 'Eget kapital', normal_balance: 'credit' },
-    // Intäkter (Revenue)
-    { account_code: '3010', account_name: 'Försäljning tjänster', account_type: 'revenue', account_category: 'Intäkter', normal_balance: 'credit' },
-    { account_code: '3011', account_name: 'Försäljning varor', account_type: 'revenue', account_category: 'Intäkter', normal_balance: 'credit' },
-    { account_code: '3040', account_name: 'Försäljning tjänster utomlands', account_type: 'revenue', account_category: 'Intäkter', normal_balance: 'credit' },
-    { account_code: '3740', account_name: 'Öresutjämning', account_type: 'revenue', account_category: 'Övriga intäkter', normal_balance: 'credit' },
-    { account_code: '3911', account_name: 'Hyresintäkter', account_type: 'revenue', account_category: 'Övriga intäkter', normal_balance: 'credit' },
-    // Kostnader (Expenses)
-    { account_code: '4010', account_name: 'Inköp material och varor', account_type: 'expense', account_category: 'Rörelsens kostnader', normal_balance: 'debit' },
-    { account_code: '5010', account_name: 'Lokalhyra', account_type: 'expense', account_category: 'Övriga externa kostnader', normal_balance: 'debit' },
-    { account_code: '5090', account_name: 'Övriga lokalkostnader', account_type: 'expense', account_category: 'Övriga externa kostnader', normal_balance: 'debit' },
-    { account_code: '5410', account_name: 'Förbrukningsinventarier', account_type: 'expense', account_category: 'Övriga externa kostnader', normal_balance: 'debit' },
-    { account_code: '5460', account_name: 'Förbrukningsmaterial', account_type: 'expense', account_category: 'Övriga externa kostnader', normal_balance: 'debit' },
-    { account_code: '5800', account_name: 'Resekostnader', account_type: 'expense', account_category: 'Övriga externa kostnader', normal_balance: 'debit' },
-    { account_code: '5910', account_name: 'Annonsering', account_type: 'expense', account_category: 'Övriga externa kostnader', normal_balance: 'debit' },
-    { account_code: '6110', account_name: 'Kontorsmaterial', account_type: 'expense', account_category: 'Övriga externa kostnader', normal_balance: 'debit' },
-    { account_code: '6200', account_name: 'Telefon & internet', account_type: 'expense', account_category: 'Övriga externa kostnader', normal_balance: 'debit' },
-    { account_code: '6212', account_name: 'Domäner & hosting', account_type: 'expense', account_category: 'Övriga externa kostnader', normal_balance: 'debit' },
-    { account_code: '6230', account_name: 'Datakommunikation', account_type: 'expense', account_category: 'Övriga externa kostnader', normal_balance: 'debit' },
-    { account_code: '6530', account_name: 'Redovisningstjänster', account_type: 'expense', account_category: 'Övriga externa kostnader', normal_balance: 'debit' },
-    { account_code: '6540', account_name: 'IT-tjänster', account_type: 'expense', account_category: 'Övriga externa kostnader', normal_balance: 'debit' },
-    { account_code: '6570', account_name: 'Bankkostnader', account_type: 'expense', account_category: 'Övriga externa kostnader', normal_balance: 'debit' },
-    { account_code: '6970', account_name: 'Tidningar & facklitteratur', account_type: 'expense', account_category: 'Övriga externa kostnader', normal_balance: 'debit' },
-    // Personalkostnader
-    { account_code: '7010', account_name: 'Löner', account_type: 'expense', account_category: 'Personalkostnader', normal_balance: 'debit' },
-    { account_code: '7210', account_name: 'Löner tjänstemän', account_type: 'expense', account_category: 'Personalkostnader', normal_balance: 'debit' },
-    { account_code: '7510', account_name: 'Arbetsgivaravgifter', account_type: 'expense', account_category: 'Personalkostnader', normal_balance: 'debit' },
-    { account_code: '7690', account_name: 'Övriga personalkostnader', account_type: 'expense', account_category: 'Personalkostnader', normal_balance: 'debit' },
-    // Finansiella poster
-    { account_code: '8310', account_name: 'Ränteintäkter', account_type: 'revenue', account_category: 'Finansiella poster', normal_balance: 'credit' },
-    { account_code: '8410', account_name: 'Räntekostnader', account_type: 'expense', account_category: 'Finansiella poster', normal_balance: 'debit' },
-    // Skatt
-    { account_code: '8910', account_name: 'Skatt på årets resultat', account_type: 'expense', account_category: 'Skatt', normal_balance: 'debit' },
-  ];
-
-  const { error } = await supabase.from('chart_of_accounts').insert(accounts);
-  if (error) throw error;
-  logger.log(`[accounting-bootstrap] Seeded ${accounts.length} BAS 2024 accounts`);
+  // Insert in batches of 50 to avoid payload limits
+  for (let i = 0; i < BAS_2024_ACCOUNTS.length; i += 50) {
+    const batch = BAS_2024_ACCOUNTS.slice(i, i + 50);
+    const { error } = await supabase.from('chart_of_accounts').insert(batch);
+    if (error) throw error;
+  }
+  logger.log(`[accounting-bootstrap] Seeded ${BAS_2024_ACCOUNTS.length} BAS 2024 accounts`);
 }
 
 /** Seed default accounting templates if table is empty */
