@@ -2922,6 +2922,57 @@ async function executeDbAction(
 
     case 'journal_entries': {
       // ─── Accounting: Journal Entries & Reports ─────────────────────────
+      if (skillName === 'suggest_accounting_template') {
+        const { min_occurrences = 3, since_date } = args as any;
+
+        let query = supabase.from('journal_entry_lines').select(`
+          account_code, account_name, debit_cents, credit_cents,
+          journal_entries!inner(id, entry_date, description, status)
+        `).eq('journal_entries.status', 'posted');
+        if (since_date) query = query.gte('journal_entries.entry_date', since_date);
+        const { data: lines, error } = await query.limit(1000);
+        if (error) throw new Error(`Query failed: ${error.message}`);
+
+        // Group lines by journal_entry_id, then find recurring account patterns
+        const entryMap = new Map<string, { accounts: string[]; description: string }>();
+        for (const l of (lines || []) as any[]) {
+          const eid = l.journal_entries.id;
+          if (!entryMap.has(eid)) entryMap.set(eid, { accounts: [], description: l.journal_entries.description });
+          entryMap.get(eid)!.accounts.push(l.account_code);
+        }
+
+        // Create pattern signatures
+        const patternCounts = new Map<string, { count: number; descriptions: string[]; accounts: string[] }>();
+        for (const [, entry] of entryMap) {
+          const sig = entry.accounts.sort().join(',');
+          const existing = patternCounts.get(sig) || { count: 0, descriptions: [], accounts: entry.accounts };
+          existing.count++;
+          if (existing.descriptions.length < 5) existing.descriptions.push(entry.description);
+          patternCounts.set(sig, existing);
+        }
+
+        // Filter by min_occurrences and check against existing templates
+        const { data: existingTemplates } = await supabase.from('accounting_templates').select('template_lines');
+        const existingSigs = new Set((existingTemplates || []).map((t: any) => {
+          const codes = (t.template_lines || []).map((l: any) => l.account_code).sort();
+          return codes.join(',');
+        }));
+
+        const suggestions = [];
+        for (const [sig, pattern] of patternCounts) {
+          if (pattern.count >= min_occurrences && !existingSigs.has(sig)) {
+            suggestions.push({
+              account_codes: pattern.accounts,
+              occurrences: pattern.count,
+              sample_descriptions: pattern.descriptions,
+              suggested_keywords: pattern.descriptions.flatMap((d: string) => d.toLowerCase().split(/\s+/).filter((w: string) => w.length > 3)).filter((v: string, i: number, a: string[]) => a.indexOf(v) === i).slice(0, 5),
+            });
+          }
+        }
+
+        return { suggestions: suggestions.sort((a, b) => b.occurrences - a.occurrences).slice(0, 10), analyzed_entries: entryMap.size };
+      }
+
       if (skillName === 'accounting_reports') {
         const { report_type, period = 'all', account_code } = args as any;
 
