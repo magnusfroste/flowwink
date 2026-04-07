@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 import { registerBootstrap, type SkillSeed, type AutomationSeed } from '@/lib/module-bootstrap';
 import { BAS_2024_ACCOUNTS } from '@/data/bas2024-accounts';
+import { BAS_2024_TEMPLATES } from '@/data/templates-bas2024';
 
 const ACCOUNTING_SKILLS: SkillSeed[] = [
   {
@@ -137,102 +138,21 @@ async function seedChartOfAccounts() {
 async function seedAccountingTemplates() {
   const { count } = await supabase
     .from('accounting_templates')
-    .select('id', { count: 'exact', head: true });
+    .select('id', { count: 'exact', head: true })
+    .eq('locale', 'se-bas2024');
 
   if ((count ?? 0) > 0) {
-    logger.log('[accounting-bootstrap] Accounting templates already populated, skipping');
+    logger.log('[accounting-bootstrap] BAS 2024 templates already populated, skipping');
     return;
   }
 
-  const templates = [
-    {
-      template_name: 'Försäljning tjänster 25% moms',
-      description: 'Fakturerad tjänsteförsäljning med 25% moms',
-      category: 'revenue',
-      keywords: ['faktura', 'försäljning', 'tjänst', 'konsult', 'arvode', 'invoice', 'sale'],
-      is_system: true,
-      template_lines: [
-        { account_code: '1510', account_name: 'Kundfordringar', debit_pct: 125, credit_pct: 0 },
-        { account_code: '3010', account_name: 'Försäljning tjänster', debit_pct: 0, credit_pct: 100 },
-        { account_code: '2610', account_name: 'Utgående moms 25%', debit_pct: 0, credit_pct: 25 },
-      ],
-    },
-    {
-      template_name: 'Inbetalning kundfordran',
-      description: 'Kund betalar faktura — bankkonto ökar, kundfordran minskar',
-      category: 'payment',
-      keywords: ['betalning', 'inbetalning', 'betald', 'payment', 'received', 'paid'],
-      is_system: true,
-      template_lines: [
-        { account_code: '1930', account_name: 'Företagskonto', debit_pct: 100, credit_pct: 0 },
-        { account_code: '1510', account_name: 'Kundfordringar', debit_pct: 0, credit_pct: 100 },
-      ],
-    },
-    {
-      template_name: 'Leverantörsfaktura med 25% moms',
-      description: 'Inkommande faktura med avdragsgill moms',
-      category: 'expense',
-      keywords: ['leverantör', 'inköp', 'faktura', 'supplier', 'purchase', 'vendor'],
-      is_system: true,
-      template_lines: [
-        { account_code: '4010', account_name: 'Inköp material och varor', debit_pct: 100, credit_pct: 0 },
-        { account_code: '2640', account_name: 'Ingående moms', debit_pct: 25, credit_pct: 0 },
-        { account_code: '2440', account_name: 'Leverantörsskulder', debit_pct: 0, credit_pct: 125 },
-      ],
-    },
-    {
-      template_name: 'Löneutbetalning',
-      description: 'Bruttolön med skatt och arbetsgivaravgifter',
-      category: 'payroll',
-      keywords: ['lön', 'salary', 'payroll', 'löner'],
-      is_system: true,
-      template_lines: [
-        { account_code: '7210', account_name: 'Löner tjänstemän', debit_pct: 100, credit_pct: 0 },
-        { account_code: '2710', account_name: 'Personalskatt', debit_pct: 0, credit_pct: 30 },
-        { account_code: '1930', account_name: 'Företagskonto', debit_pct: 0, credit_pct: 70 },
-        { account_code: '7510', account_name: 'Arbetsgivaravgifter', debit_pct: 31.42, credit_pct: 0 },
-        { account_code: '2730', account_name: 'Arbetsgivaravgifter', debit_pct: 0, credit_pct: 31.42 },
-      ],
-    },
-    {
-      template_name: 'Hyra kontor',
-      description: 'Månadshyra för kontor',
-      category: 'expense',
-      keywords: ['hyra', 'kontor', 'lokal', 'rent', 'office'],
-      is_system: true,
-      template_lines: [
-        { account_code: '5010', account_name: 'Lokalhyra', debit_pct: 100, credit_pct: 0 },
-        { account_code: '1930', account_name: 'Företagskonto', debit_pct: 0, credit_pct: 100 },
-      ],
-    },
-    {
-      template_name: 'IT-tjänster & hosting',
-      description: 'SaaS, hosting, domäner och IT-konsulter',
-      category: 'expense',
-      keywords: ['hosting', 'saas', 'domän', 'server', 'IT', 'software', 'subscription'],
-      is_system: true,
-      template_lines: [
-        { account_code: '6540', account_name: 'IT-tjänster', debit_pct: 80, credit_pct: 0 },
-        { account_code: '2640', account_name: 'Ingående moms', debit_pct: 20, credit_pct: 0 },
-        { account_code: '1930', account_name: 'Företagskonto', debit_pct: 0, credit_pct: 100 },
-      ],
-    },
-    {
-      template_name: 'Bankkostnader',
-      description: 'Bankavgifter, kortavgifter, transaktionsavgifter',
-      category: 'expense',
-      keywords: ['bank', 'avgift', 'stripe', 'kort', 'fee', 'transaction'],
-      is_system: true,
-      template_lines: [
-        { account_code: '6570', account_name: 'Bankkostnader', debit_pct: 100, credit_pct: 0 },
-        { account_code: '1930', account_name: 'Företagskonto', debit_pct: 0, credit_pct: 100 },
-      ],
-    },
-  ];
-
-  const { error } = await supabase.from('accounting_templates').insert(templates);
-  if (error) throw error;
-  logger.log(`[accounting-bootstrap] Seeded ${templates.length} accounting templates`);
+  // Insert in batches of 20
+  for (let i = 0; i < BAS_2024_TEMPLATES.length; i += 20) {
+    const batch = BAS_2024_TEMPLATES.slice(i, i + 20);
+    const { error } = await supabase.from('accounting_templates').insert(batch);
+    if (error) throw error;
+  }
+  logger.log(`[accounting-bootstrap] Seeded ${BAS_2024_TEMPLATES.length} BAS 2024 templates`);
 }
 
 // Register the accounting module bootstrap
