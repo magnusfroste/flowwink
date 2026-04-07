@@ -22,6 +22,37 @@ Every business has **directional work** (strategy, decisions — requires humans
 
 FlowWink evolves into an Odoo-inspired ERP shell where FlowPilot functions as the primary autonomous operator for the full **Quote-to-Cash** lifecycle. The UI is a cockpit for exception handling, not a traditional form-based admin.
 
+### Module Ecosystem (Odoo Model)
+
+FlowWink follows Odoo's module ecosystem model with three tiers:
+
+| Tier | Name | Origin | Trust | Status |
+|------|------|--------|-------|--------|
+| **1** | **Core Modules** | Bundled in repo | `bundled` / full trust | ✅ Active (23 modules) |
+| **2** | **Community-Submitted** | PR → FlowWink review → merge | `bundled` after review | 🔜 Next |
+| **3** | **External/Marketplace** | Loaded at runtime from external source | `community` + admin install | 🔮 Future |
+
+**How it works:**
+
+- **Tier 1**: All current modules (Blog, CRM, Ecommerce, Accounting, etc.). Skills declared in `skill-map.ts`, lifecycle managed via `registerBootstrap()`.
+- **Tier 2**: Developers submit modules following the `new-module.md` workflow. After FlowWink team review and merge, the module ships as bundled with full trust. Modules can declare **skills + automations + seedData** — same power as core modules (e.g., Accounting pilot with BAS 2024 chart of accounts, templates, and scheduled automations).
+- **Tier 3**: Future plugin-loader pattern. DB support exists (`agent_skill_packs` table, `origin='community'`, `trust_level` field) but runtime loading is not yet implemented.
+
+**Bootstrap Contract** (applies to Tier 1 + 2):
+
+```typescript
+registerBootstrap('myModule', {
+  seedData: async () => { /* seed reference data */ },
+  skills: [{ name, description, category, handler, scope, tool_definition }],
+  automations: [{ name, trigger_type, trigger_config, skill_name, skill_arguments }],
+});
+```
+
+When enabled: seeds data → enables skills → registers automations.  
+When disabled: sets `enabled=false` on skills/automations. Data preserved.  
+FlowPilot off: skills/automations skipped entirely (shell mode).  
+FlowPilot enabled later: retroactive scan bootstraps all active modules.
+
 ### Design Principles
 
 1. **Agents, not automation** — FlowPilot reasons about context and adapts, not follows scripts.
