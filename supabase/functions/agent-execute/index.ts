@@ -611,8 +611,194 @@ async function executeModuleAction(
 }
 
 // =============================================================================
-// Handbook module handler
+// Timesheets module handler
 // =============================================================================
+
+async function executeTimesheetsAction(
+  supabase: any,
+  skillName: string,
+  args: Record<string, unknown>,
+): Promise<unknown> {
+  switch (skillName) {
+    case 'log_time': {
+      const { action = 'list', project_id, project_name, entry_date, hours, description, is_billable, user_id, entry_id, week_offset = 0 } = args as any;
+
+      if (action === 'create') {
+        let resolvedProjectId = project_id;
+        // Look up project by name if no ID
+        if (!resolvedProjectId && project_name) {
+          const { data: proj } = await supabase
+            .from('projects')
+            .select('id')
+            .ilike('name', `%${project_name}%`)
+            .eq('is_active', true)
+            .limit(1)
+            .single();
+          if (proj) resolvedProjectId = proj.id;
+          else return { error: `No active project matching "${project_name}"` };
+        }
+        if (!resolvedProjectId) return { error: 'project_id or project_name required' };
+
+        const { data, error } = await supabase.from('time_entries').insert([{
+          user_id: user_id || (await supabase.auth.getUser()).data?.user?.id,
+          project_id: resolvedProjectId,
+          entry_date: entry_date || new Date().toISOString().slice(0, 10),
+          hours: hours || 0,
+          description: description || null,
+          is_billable: is_billable ?? true,
+        }]).select('*, projects(name)').single();
+        if (error) return { error: error.message };
+        return { success: true, entry: data, message: `Logged ${hours}h on ${data.projects?.name || 'project'}` };
+      }
+
+      if (action === 'delete') {
+        if (!entry_id) return { error: 'entry_id required' };
+        const { error } = await supabase.from('time_entries').delete().eq('id', entry_id).eq('is_invoiced', false);
+        if (error) return { error: error.message };
+        return { success: true };
+      }
+
+      // list
+      const now = new Date();
+      const day = now.getDay();
+      const monday = new Date(now);
+      monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1) + (week_offset as number) * 7);
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+      const ws = monday.toISOString().slice(0, 10);
+      const we = sunday.toISOString().slice(0, 10);
+
+      let query = supabase.from('time_entries').select('*, projects(name, color, client_name)').gte('entry_date', ws).lte('entry_date', we).order('entry_date');
+      if (user_id) query = query.eq('user_id', user_id);
+      if (project_id) query = query.eq('project_id', project_id);
+      const { data, error } = await query;
+      if (error) return { error: error.message };
+      const total = (data || []).reduce((s: number, e: any) => s + Number(e.hours), 0);
+      return { entries: data, total_hours: total, period: `${ws} to ${we}` };
+    }
+
+    case 'manage_projects': {
+      const { action = 'list', project_id, name, client_name, description, color, hourly_rate_cents, currency, is_billable } = args as any;
+
+      if (action === 'create') {
+        const { data, error } = await supabase.from('projects').insert([{
+          name: name || 'New Project',
+          client_name: client_name || null,
+          description: description || null,
+          color: color || '#6366f1',
+          hourly_rate_cents: hourly_rate_cents || 0,
+          currency: currency || 'SEK',
+          is_billable: is_billable ?? true,
+        }]).select().single();
+        if (error) return { error: error.message };
+        return { success: true, project: data };
+      }
+
+      if (action === 'update' || action === 'deactivate') {
+        if (!project_id) return { error: 'project_id required' };
+        const updates: any = {};
+        if (name) updates.name = name;
+        if (client_name !== undefined) updates.client_name = client_name;
+        if (description !== undefined) updates.description = description;
+        if (color) updates.color = color;
+        if (hourly_rate_cents !== undefined) updates.hourly_rate_cents = hourly_rate_cents;
+        if (currency) updates.currency = currency;
+        if (is_billable !== undefined) updates.is_billable = is_billable;
+        if (action === 'deactivate') updates.is_active = false;
+        const { error } = await supabase.from('projects').update(updates).eq('id', project_id);
+        if (error) return { error: error.message };
+        return { success: true };
+      }
+
+      // list
+      const { data, error } = await supabase.from('projects').select('*').eq('is_active', true).order('name');
+      if (error) return { error: error.message };
+      return { projects: data };
+    }
+
+    case 'timesheet_summary': {
+      const { period = 'this_week', start_date, end_date, project_id, user_id, billable_only, include_revenue } = args as any;
+
+      let ws: string, we: string;
+      const now = new Date();
+
+      switch (period) {
+        case 'this_week': {
+          const day = now.getDay();
+          const monday = new Date(now);
+          monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
+          const sunday = new Date(monday);
+          sunday.setDate(monday.getDate() + 6);
+          ws = monday.toISOString().slice(0, 10);
+          we = sunday.toISOString().slice(0, 10);
+          break;
+        }
+        case 'last_week': {
+          const day = now.getDay();
+          const monday = new Date(now);
+          monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1) - 7);
+          const sunday = new Date(monday);
+          sunday.setDate(monday.getDate() + 6);
+          ws = monday.toISOString().slice(0, 10);
+          we = sunday.toISOString().slice(0, 10);
+          break;
+        }
+        case 'this_month': {
+          ws = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+          we = now.toISOString().slice(0, 10);
+          break;
+        }
+        case 'last_month': {
+          const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+          const lastDay = new Date(now.getFullYear(), now.getMonth(), 0);
+          ws = lastMonth.toISOString().slice(0, 10);
+          we = lastDay.toISOString().slice(0, 10);
+          break;
+        }
+        default:
+          ws = start_date || now.toISOString().slice(0, 10);
+          we = end_date || now.toISOString().slice(0, 10);
+      }
+
+      let query = supabase.from('time_entries').select('*, projects(name, hourly_rate_cents, currency)').gte('entry_date', ws).lte('entry_date', we);
+      if (project_id) query = query.eq('project_id', project_id);
+      if (user_id) query = query.eq('user_id', user_id);
+      if (billable_only) query = query.eq('is_billable', true);
+      const { data: entries, error } = await query;
+      if (error) return { error: error.message };
+
+      // Group by project
+      const byProject = new Map<string, { name: string; hours: number; billable_hours: number; revenue_cents: number; currency: string }>();
+      for (const e of entries || []) {
+        const key = e.project_id;
+        const existing = byProject.get(key) || { name: e.projects?.name || 'Unknown', hours: 0, billable_hours: 0, revenue_cents: 0, currency: e.projects?.currency || 'SEK' };
+        existing.hours += Number(e.hours);
+        if (e.is_billable) {
+          existing.billable_hours += Number(e.hours);
+          if (include_revenue && e.projects?.hourly_rate_cents) {
+            existing.revenue_cents += Number(e.hours) * e.projects.hourly_rate_cents;
+          }
+        }
+        byProject.set(key, existing);
+      }
+
+      const totalHours = (entries || []).reduce((s: number, e: any) => s + Number(e.hours), 0);
+      const totalBillable = (entries || []).filter((e: any) => e.is_billable).reduce((s: number, e: any) => s + Number(e.hours), 0);
+
+      return {
+        period: `${ws} to ${we}`,
+        total_hours: totalHours,
+        billable_hours: totalBillable,
+        by_project: Array.from(byProject.values()),
+        entry_count: (entries || []).length,
+      };
+    }
+
+    default:
+      return { error: `Unknown timesheets skill: ${skillName}` };
+  }
+}
+
 
 async function executeHandbookAction(
   supabase: any,
