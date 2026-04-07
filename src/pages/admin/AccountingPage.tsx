@@ -4,6 +4,7 @@ import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { JournalTab } from '@/components/admin/accounting/JournalTab';
 import { LedgerTab } from '@/components/admin/accounting/LedgerTab';
+import { OpeningBalancesTab } from '@/components/admin/accounting/OpeningBalancesTab';
 import { ProfitLossTab } from '@/components/admin/accounting/ProfitLossTab';
 import { BalanceSheetTab } from '@/components/admin/accounting/BalanceSheetTab';
 import { TemplatesTab } from '@/components/admin/accounting/TemplatesTab';
@@ -23,6 +24,7 @@ export default function AccountingPage() {
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList>
             <TabsTrigger value="journal">Journal</TabsTrigger>
+            <TabsTrigger value="opening">Opening Balances</TabsTrigger>
             <TabsTrigger value="ledger">General Ledger</TabsTrigger>
             <TabsTrigger value="pnl">Profit & Loss</TabsTrigger>
             <TabsTrigger value="balance">Balance Sheet</TabsTrigger>
@@ -32,6 +34,9 @@ export default function AccountingPage() {
 
           <TabsContent value="journal">
             <JournalTab />
+          </TabsContent>
+          <TabsContent value="opening">
+            <OpeningBalancesTab />
           </TabsContent>
           <TabsContent value="ledger">
             <LedgerTab />
