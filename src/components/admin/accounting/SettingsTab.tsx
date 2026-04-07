@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Settings, Globe, Check, Database, RefreshCw } from 'lucide-react';
 import { useAccountingLocale, ACCOUNTING_LOCALES } from '@/hooks/useAccountingLocale';
 import { useChartOfAccounts } from '@/hooks/useAccounting';
+import { IFRS_TEMPLATES } from '@/data/templates-ifrs';
+import { US_GAAP_TEMPLATES } from '@/data/templates-usgaap';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useState } from 'react';
@@ -152,7 +154,7 @@ function getAccountsForLocale(locale: string) {
 function getTemplatesForLocale(locale: string) {
   if (locale === 'ifrs-generic') return IFRS_TEMPLATES;
   if (locale === 'us-gaap') return US_GAAP_TEMPLATES;
-  return [];
+  return []; // BAS 2024 templates are seeded by the bootstrap
 }
 
 const IFRS_ACCOUNTS = [
