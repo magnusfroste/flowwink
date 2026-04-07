@@ -76,6 +76,7 @@ export const navigationGroups: NavGroup[] = [
       { name: "Quotes", href: "/admin/quotes", icon: FileQuote, moduleId: "invoicing" },
       { name: "Invoices", href: "/admin/invoices", icon: Receipt, moduleId: "invoicing" },
       { name: "Accounting", href: "/admin/accounting", icon: BookOpen, moduleId: "accounting" },
+      { name: "Expenses", href: "/admin/expenses", icon: Receipt, moduleId: "expenses" },
     ],
   },
   {
