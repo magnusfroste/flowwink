@@ -2,7 +2,7 @@
 
 > **The autonomous agentic web that runs your business.**
 > 
-> Version: 4.0 | Updated: April 2026 | Modules: 23 | Skills: 109 + ∞ runtime
+> Version: 4.1 | Updated: April 2026 | Modules: 24 | Skills: 111 + ∞ runtime
 
 ---
 
@@ -28,7 +28,7 @@ FlowWink follows Odoo's module ecosystem model with three tiers:
 
 | Tier | Name | Origin | Trust | Status |
 |------|------|--------|-------|--------|
-| **1** | **Core Modules** | Bundled in repo | `bundled` / full trust | ✅ Active (23 modules) |
+| **1** | **Core Modules** | Bundled in repo | `bundled` / full trust | ✅ Active (24 modules) |
 | **2** | **Community-Submitted** | PR → FlowWink review → merge | `bundled` after review | 🔜 Next |
 | **3** | **External/Marketplace** | Loaded at runtime from external source | `community` + admin install | 🔮 Future |
 
@@ -74,7 +74,7 @@ FlowPilot enabled later: retroactive scan bootstraps all active modules.
 │ Pages    │ Leads    │ News-    │ Analytics│ Global Elements    │
 │ Blog     │ Deals    │ letter   │ Sales    │ Federation (A2A)   │
 │ KB       │ Companies│ AI Chat  │ Intel    │ Accounting         │
-│ Forms    │ Products │ Live     │          │                    │
+│ Forms    │ Products │ Live     │          │ Expense Reporting  │
 │ Content  │ Orders   │ Support  │          │                    │
 │ Hub      │ Bookings │ Webinars │          │                    │
 │          │ Invoices │          │          │                    │
