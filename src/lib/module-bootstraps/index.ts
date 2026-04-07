@@ -14,6 +14,7 @@ import './skill-map';
 // Modules with dedicated bootstraps (seedData, full SkillSeed definitions, automations):
 import './accounting';
 import './expenses';
+import './timesheets';
 
 // Future modules with custom seedData can add their bootstrap here:
 // import './invoicing';
