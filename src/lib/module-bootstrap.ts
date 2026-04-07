@@ -233,6 +233,13 @@ export async function teardownModule(
   }
 
   logger.log(`[module-bootstrap] Teardown complete for ${moduleId} (${skillNames.length} skills disabled)`);
+
+  // Recompute expected_skill_hash after disabling skills
+  if (skillNames.length > 0) {
+    try {
+      await supabase.functions.invoke('instance-health', { body: {} });
+    } catch { /* non-fatal */ }
+  }
 }
 
 export function getBootstrapRegistry() {
