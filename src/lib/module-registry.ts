@@ -40,6 +40,7 @@ import {
   developerModule,
   invoicingModule,
   accountingModule,
+  expensesModule,
 } from '@/lib/modules';
 
 // =============================================================================
@@ -78,6 +79,7 @@ class ModuleRegistry {
       developerModule,
       invoicingModule,
       accountingModule,
+      expensesModule,
     ];
 
     for (const mod of builtIn) {

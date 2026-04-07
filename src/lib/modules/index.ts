@@ -37,3 +37,4 @@ export { templatesModule } from './templates-module';
 export { developerModule } from './developer-module';
 export { invoicingModule } from './invoicing-module';
 export { accountingModule } from './accounting-module';
+export { expensesModule } from './expenses-module';
