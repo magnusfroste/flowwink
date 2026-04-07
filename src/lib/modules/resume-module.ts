@@ -31,7 +31,7 @@ export type ResumeMatchOutput = z.infer<typeof resumeMatchOutputSchema>;
 
 export const resumeModule: ModuleDefinition<ResumeMatchInput, ResumeMatchOutput> = {
   id: 'resume',
-  name: 'Resume',
+  name: 'Consultants',
   version: '1.0.0',
   description: 'Match consultant profiles against job descriptions with AI-powered scoring and cover letters',
   capabilities: ['data:read', 'content:produce'],
