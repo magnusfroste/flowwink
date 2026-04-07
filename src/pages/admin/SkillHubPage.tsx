@@ -42,6 +42,7 @@ export default function SkillHubPage() {
 
   const { data: skills = [], isLoading } = useSkills();
   const toggle = useToggleSkill();
+  const toggleMcp = useToggleMcpExposed();
   const upsert = useUpsertSkill();
   const remove = useDeleteSkill();
 
