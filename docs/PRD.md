@@ -2,7 +2,7 @@
 
 > **The autonomous agentic web that runs your business.**
 > 
-> Version: 4.1 | Updated: April 2026 | Modules: 24 | Skills: 111 + ∞ runtime
+> Version: 4.2 | Updated: April 2026 | Modules: 25 | Skills: 114 + ∞ runtime
 
 ---
 
@@ -367,6 +367,19 @@ The expenses module (`src/lib/module-bootstraps/expenses.ts`) is a standalone mo
 - **Representation rule**: Expenses categorized as `representation` require an `attendees` list (name + company) — Swedish tax compliance
 - **Autonomous workflow**: Draft → Submit → Approve → Book (FlowPilot generates journal entries: net cost to expense account, VAT to 2640, liability to 2820)
 - **Receipt scanning**: Uses multimodal AI vision (Gemini/OpenAI) via the `analyze-receipt` edge function to extract vendor, date, amount, VAT, and suggest account codes
+
+### Timesheets Module
+
+The timesheets module (`src/lib/module-bootstraps/timesheets.ts`) tracks employee hours per project with billing integration:
+
+- **Tables**: `projects` (name, client, color, hourly_rate, billable), `time_entries` (user, project, date, hours, description, billable, invoiced)
+- **3 skills**: `log_time` (create/list/delete time entries), `manage_projects` (CRUD for projects), `timesheet_summary` (period summaries with revenue calculation)
+- **1 automation**: `Weekly Timesheet Reminder` (Fridays 15:00 — checks if employees have logged ≥35h and reminds those who haven't)
+- **Weekly view**: Grid layout with projects as rows, weekdays as columns, quick-add for logging hours inline
+- **Billable tracking**: Projects have hourly rates; `timesheet_summary` can calculate revenue from billable hours
+- **Invoice integration** (planned): Mark billable entries as invoiced when creating client invoices
+- **FlowPilot chat**: Natural language time logging — "jag jobbade 4 timmar på Website Redesign idag" triggers `log_time`
+- **RLS**: Users see own entries, admins see all; invoiced entries cannot be deleted
 
 | Reference doc | Path |
 |---|---|
