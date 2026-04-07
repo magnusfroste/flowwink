@@ -245,9 +245,6 @@ const US_GAAP_ACCOUNTS = [
   { account_code: '7000', account_name: 'Interest Expense', account_type: 'expense', account_category: 'Financial', normal_balance: 'debit', locale: 'us-gaap' },
   { account_code: '8000', account_name: 'Income Tax Expense', account_type: 'expense', account_category: 'Tax', normal_balance: 'debit', locale: 'us-gaap' },
 ];
-
-const IFRS_TEMPLATES = [
-  {
     template_name: 'Service Invoice (with VAT)',
     description: 'Invoice for services rendered with VAT',
     category: 'revenue',
