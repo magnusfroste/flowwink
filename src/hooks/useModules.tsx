@@ -67,6 +67,7 @@ export interface ModulesSettings {
   accounting: ModuleConfig;
   expenses: ModuleConfig;
   handbook: ModuleConfig;
+  timesheets: ModuleConfig;
 }
 
 export const defaultModulesSettings: ModulesSettings = {
@@ -381,6 +382,15 @@ export const defaultModulesSettings: ModulesSettings = {
     autonomy: 'agent-capable',
     adminUI: true,
   },
+  timesheets: {
+    enabled: false,
+    name: 'Timesheets',
+    description: 'Track time per project and client — weekly views, billable hours, and invoicing integration',
+    icon: 'Timer',
+    category: 'data',
+    autonomy: 'agent-capable',
+    adminUI: true,
+  },
 };
 
 // Map sidebar items to module IDs
@@ -421,6 +431,7 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/accounting': 'accounting',
   '/admin/expenses': 'expenses',
   '/admin/handbook': 'handbook',
+  '/admin/timesheets': 'timesheets',
 };
 
 export function useModules() {
