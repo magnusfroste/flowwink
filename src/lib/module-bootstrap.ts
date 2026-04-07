@@ -178,6 +178,17 @@ export async function bootstrapModule(
   }
 
   logger.log(`[module-bootstrap] ${moduleId}: ${result.seededSkills} skills, ${result.seededAutomations} automations`);
+
+  // 6. Recompute expected_skill_hash after skill changes
+  if (result.seededSkills > 0) {
+    try {
+      await supabase.functions.invoke('instance-health', { body: {} });
+      logger.log(`[module-bootstrap] Triggered hash recompute after ${moduleId} bootstrap`);
+    } catch (hashErr) {
+      logger.warn(`[module-bootstrap] Hash recompute failed (non-fatal):`, hashErr);
+    }
+  }
+
   return result;
 }
 
@@ -222,6 +233,13 @@ export async function teardownModule(
   }
 
   logger.log(`[module-bootstrap] Teardown complete for ${moduleId} (${skillNames.length} skills disabled)`);
+
+  // Recompute expected_skill_hash after disabling skills
+  if (skillNames.length > 0) {
+    try {
+      await supabase.functions.invoke('instance-health', { body: {} });
+    } catch { /* non-fatal */ }
+  }
 }
 
 export function getBootstrapRegistry() {

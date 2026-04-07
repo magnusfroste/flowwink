@@ -1018,15 +1018,27 @@ export async function handleHeartbeatProtocolUpdate(supabase: any, args: { actio
 // ─── Automation CRUD ──────────────────────────────────────────────────────────
 
 export async function handleAutomationCreate(supabase: any, args: any) {
+  if (!args.name || !args.skill_name) {
+    return { status: 'error', error: 'name and skill_name are required' };
+  }
+
   const { data: skill } = await supabase
     .from('agent_skills').select('id').eq('name', args.skill_name).eq('enabled', true).maybeSingle();
+
+  // Validate skill_id is a proper UUID (prevent truncated IDs)
+  const skillId = skill?.id;
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (skillId && !UUID_RE.test(skillId)) {
+    console.warn(`[automation_create] Invalid skill UUID: ${skillId}`);
+    return { status: 'error', error: `Skill '${args.skill_name}' has invalid UUID format` };
+  }
 
   const { data, error } = await supabase.from('agent_automations').insert({
     name: args.name,
     description: args.description || null,
     trigger_type: args.trigger_type || 'cron',
     trigger_config: args.trigger_config || {},
-    skill_id: skill?.id || null,
+    skill_id: skillId || null,
     skill_name: args.skill_name,
     skill_arguments: args.skill_arguments || {},
     enabled: args.enabled ?? false,
