@@ -2,7 +2,8 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { MoreHorizontal, Shield } from 'lucide-react';
 import type { AgentSkill, AgentScope, AgentSkillCategory } from '@/types/agent';
 
 const SCOPE_COLORS: Record<AgentScope, string> = {
@@ -30,9 +31,10 @@ interface SkillCardProps {
   skill: AgentSkill;
   onToggle: (id: string, enabled: boolean) => void;
   onEdit: (skill: AgentSkill) => void;
+  onToggleMcp?: (id: string, exposed: boolean) => void;
 }
 
-export function SkillCard({ skill, onToggle, onEdit }: SkillCardProps) {
+export function SkillCard({ skill, onToggle, onEdit, onToggleMcp }: SkillCardProps) {
   return (
     <Card
       className={`cursor-pointer transition-all group ${
@@ -53,6 +55,23 @@ export function SkillCard({ skill, onToggle, onEdit }: SkillCardProps) {
             )}
           </div>
           <div className="flex items-center gap-1 shrink-0">
+            {onToggleMcp && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={`h-7 w-7 transition-colors ${skill.mcp_exposed ? 'text-primary' : 'opacity-30 hover:opacity-60'}`}
+                    onClick={(e) => { e.stopPropagation(); onToggleMcp(skill.id, !skill.mcp_exposed); }}
+                  >
+                    <Shield className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  {skill.mcp_exposed ? 'Exposed via MCP' : 'Not exposed via MCP'}
+                </TooltipContent>
+              </Tooltip>
+            )}
             <Button
               variant="ghost"
               size="icon"

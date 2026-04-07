@@ -35,6 +35,21 @@ export function useToggleSkill() {
   });
 }
 
+export function useToggleMcpExposed() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, mcp_exposed }: { id: string; mcp_exposed: boolean }) => {
+      const { error } = await supabase
+        .from('agent_skills')
+        .update({ mcp_exposed } as any)
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['agent-skills'] }),
+    onError: () => toast.error('Failed to update MCP exposure'),
+  });
+}
+
 export function useUpsertSkill() {
   const qc = useQueryClient();
   return useMutation({
