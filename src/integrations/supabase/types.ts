@@ -3242,6 +3242,47 @@ export type Database = {
         }
         Relationships: []
       }
+      product_stock: {
+        Row: {
+          created_at: string
+          id: string
+          last_counted_at: string | null
+          product_id: string
+          quantity_on_hand: number
+          quantity_reserved: number
+          reorder_point: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_counted_at?: string | null
+          product_id: string
+          quantity_on_hand?: number
+          quantity_reserved?: number
+          reorder_point?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_counted_at?: string | null
+          product_id?: string
+          quantity_on_hand?: number
+          quantity_reserved?: number
+          reorder_point?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_stock_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           allow_backorder: boolean
@@ -3587,6 +3628,50 @@ export type Database = {
           value?: Json
         }
         Relationships: []
+      }
+      stock_moves: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          move_type: string
+          notes: string | null
+          product_id: string
+          quantity: number
+          reference_id: string | null
+          reference_type: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          move_type?: string
+          notes?: string | null
+          product_id: string
+          quantity: number
+          reference_id?: string | null
+          reference_type?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          move_type?: string
+          notes?: string | null
+          product_id?: string
+          quantity?: number
+          reference_id?: string | null
+          reference_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_moves_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       support_agents: {
         Row: {
