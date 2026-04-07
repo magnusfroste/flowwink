@@ -44,6 +44,7 @@ import CompanyDetailPage from "./pages/admin/CompanyDetailPage";
 import ProductsPage from "./pages/admin/ProductsPage";
 import OrdersPage from "./pages/admin/OrdersPage";
 import CustomersPage from "./pages/admin/CustomersPage";
+import InventoryPage from "./pages/admin/InventoryPage";
 import KnowledgeBaseAdminPage from "./pages/admin/KnowledgeBasePage";
 import AnalyticsDashboardPage from "./pages/admin/AnalyticsDashboardPage";
 import BookingsPage from "./pages/admin/BookingsPage";
@@ -190,6 +191,7 @@ const router = createBrowserRouter([
       { path: "/admin/products", element: <ProductsPage /> },
       { path: "/admin/orders", element: <OrdersPage /> },
       { path: "/admin/customers", element: <CustomersPage /> },
+      { path: "/admin/inventory", element: <InventoryPage /> },
       { path: "/admin/bookings", element: <BookingsPage /> },
       { path: "/admin/bookings/services", element: <BookingsPage /> },
       { path: "/admin/bookings/availability", element: <BookingsPage /> },
