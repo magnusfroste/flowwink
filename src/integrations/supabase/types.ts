@@ -1964,6 +1964,174 @@ export type Database = {
           },
         ]
       }
+      expense_attachments: {
+        Row: {
+          created_at: string
+          expense_id: string
+          file_name: string | null
+          file_size_bytes: number | null
+          file_type: string | null
+          file_url: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          expense_id: string
+          file_name?: string | null
+          file_size_bytes?: number | null
+          file_type?: string | null
+          file_url: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          expense_id?: string
+          file_name?: string | null
+          file_size_bytes?: number | null
+          file_type?: string | null
+          file_url?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_attachments_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expense_reports: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          currency: string
+          id: string
+          journal_entry_id: string | null
+          notes: string | null
+          period: string
+          status: string
+          submitted_at: string | null
+          total_cents: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          journal_entry_id?: string | null
+          notes?: string | null
+          period: string
+          status?: string
+          submitted_at?: string | null
+          total_cents?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          journal_entry_id?: string | null
+          notes?: string | null
+          period?: string
+          status?: string
+          submitted_at?: string | null
+          total_cents?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_reports_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expenses: {
+        Row: {
+          account_code: string | null
+          amount_cents: number
+          attendees: Json | null
+          category: string
+          created_at: string
+          currency: string
+          description: string
+          expense_date: string
+          id: string
+          is_representation: boolean
+          receipt_analyzed: boolean
+          receipt_data: Json | null
+          receipt_url: string | null
+          report_id: string | null
+          status: string
+          updated_at: string
+          user_id: string
+          vat_cents: number
+          vendor: string | null
+        }
+        Insert: {
+          account_code?: string | null
+          amount_cents?: number
+          attendees?: Json | null
+          category?: string
+          created_at?: string
+          currency?: string
+          description?: string
+          expense_date?: string
+          id?: string
+          is_representation?: boolean
+          receipt_analyzed?: boolean
+          receipt_data?: Json | null
+          receipt_url?: string | null
+          report_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+          vat_cents?: number
+          vendor?: string | null
+        }
+        Update: {
+          account_code?: string | null
+          amount_cents?: number
+          attendees?: Json | null
+          category?: string
+          created_at?: string
+          currency?: string
+          description?: string
+          expense_date?: string
+          id?: string
+          is_representation?: boolean
+          receipt_analyzed?: boolean
+          receipt_data?: Json | null
+          receipt_url?: string | null
+          report_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          vat_cents?: number
+          vendor?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "expense_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       flowpilot_briefings: {
         Row: {
           action_items: Json
