@@ -3140,6 +3140,128 @@ async function executeDbAction(
       };
     }
 
+    case 'opening_balances': {
+      // ─── Accounting: Opening Balances CRUD ──────────────────────────────
+      const { action = 'list' } = args as any;
+
+      if (action === 'list') {
+        const { fiscal_year, locale } = args as any;
+        let query = supabase.from('opening_balances')
+          .select('*')
+          .order('account_code');
+        if (fiscal_year) query = query.eq('fiscal_year', fiscal_year);
+        if (locale) query = query.eq('locale', locale);
+        const { data, error } = await query.limit(500);
+        if (error) throw new Error(`List opening balances failed: ${error.message}`);
+        
+        const totalDebit = (data || []).filter((r: any) => r.balance_type === 'debit').reduce((s: number, r: any) => s + r.amount_cents, 0);
+        const totalCredit = (data || []).filter((r: any) => r.balance_type === 'credit').reduce((s: number, r: any) => s + r.amount_cents, 0);
+        return { balances: data, count: (data || []).length, total_debit_cents: totalDebit, total_credit_cents: totalCredit, balanced: totalDebit === totalCredit };
+      }
+
+      if (action === 'set') {
+        const { fiscal_year, account_code, amount_cents, balance_type, locale = 'se-bas2024' } = args as any;
+        if (!fiscal_year || !account_code || amount_cents === undefined || !balance_type) {
+          throw new Error('fiscal_year, account_code, amount_cents, and balance_type are required');
+        }
+
+        // Upsert by fiscal_year + account_code + locale
+        const { data: existing } = await supabase.from('opening_balances')
+          .select('id')
+          .eq('fiscal_year', fiscal_year)
+          .eq('account_code', account_code)
+          .eq('locale', locale)
+          .maybeSingle();
+
+        if (existing) {
+          const { error } = await supabase.from('opening_balances')
+            .update({ amount_cents, balance_type })
+            .eq('id', existing.id);
+          if (error) throw new Error(`Update opening balance failed: ${error.message}`);
+          return { updated: true, account_code, fiscal_year, amount_cents, balance_type };
+        } else {
+          const { error } = await supabase.from('opening_balances')
+            .insert({ fiscal_year, account_code, amount_cents, balance_type, locale });
+          if (error) throw new Error(`Insert opening balance failed: ${error.message}`);
+          return { created: true, account_code, fiscal_year, amount_cents, balance_type };
+        }
+      }
+
+      if (action === 'delete') {
+        const { fiscal_year, account_code, locale = 'se-bas2024' } = args as any;
+        if (!fiscal_year || !account_code) throw new Error('fiscal_year and account_code required');
+        const { error } = await supabase.from('opening_balances')
+          .delete()
+          .eq('fiscal_year', fiscal_year)
+          .eq('account_code', account_code)
+          .eq('locale', locale);
+        if (error) throw new Error(`Delete opening balance failed: ${error.message}`);
+        return { deleted: true, account_code, fiscal_year };
+      }
+
+      throw new Error(`Unknown opening_balances action: ${action}`);
+    }
+
+    case 'chart_of_accounts': {
+      // ─── Accounting: Chart of Accounts CRUD ─────────────────────────────
+      const { action = 'list' } = args as any;
+
+      if (action === 'list') {
+        const { locale, search, account_type } = args as any;
+        let query = supabase.from('chart_of_accounts')
+          .select('*')
+          .eq('is_active', true)
+          .order('account_code');
+        if (locale) query = query.eq('locale', locale);
+        if (account_type) query = query.eq('account_type', account_type);
+        if (search) query = query.or(`account_code.ilike.%${search}%,account_name.ilike.%${search}%`);
+        const { data, error } = await query.limit(500);
+        if (error) throw new Error(`List accounts failed: ${error.message}`);
+        return { accounts: data, count: (data || []).length };
+      }
+
+      if (action === 'add') {
+        const { account_code, account_name, account_type, account_category, normal_balance, locale = 'se-bas2024' } = args as any;
+        if (!account_code || !account_name || !account_type || !normal_balance) {
+          throw new Error('account_code, account_name, account_type, and normal_balance are required');
+        }
+        const { data, error } = await supabase.from('chart_of_accounts')
+          .insert({ account_code, account_name, account_type, account_category: account_category || account_type, normal_balance, locale, is_active: true })
+          .select('id, account_code, account_name')
+          .single();
+        if (error) throw new Error(`Add account failed: ${error.message}`);
+        return { created: true, ...data };
+      }
+
+      if (action === 'update') {
+        const { account_code, locale = 'se-bas2024', account_name, account_category } = args as any;
+        if (!account_code) throw new Error('account_code is required');
+        const updates: any = {};
+        if (account_name) updates.account_name = account_name;
+        if (account_category) updates.account_category = account_category;
+        updates.updated_at = new Date().toISOString();
+        const { error } = await supabase.from('chart_of_accounts')
+          .update(updates)
+          .eq('account_code', account_code)
+          .eq('locale', locale);
+        if (error) throw new Error(`Update account failed: ${error.message}`);
+        return { updated: true, account_code };
+      }
+
+      if (action === 'deactivate') {
+        const { account_code, locale = 'se-bas2024' } = args as any;
+        if (!account_code) throw new Error('account_code is required');
+        const { error } = await supabase.from('chart_of_accounts')
+          .update({ is_active: false, updated_at: new Date().toISOString() })
+          .eq('account_code', account_code)
+          .eq('locale', locale);
+        if (error) throw new Error(`Deactivate account failed: ${error.message}`);
+        return { deactivated: true, account_code };
+      }
+
+      throw new Error(`Unknown chart_of_accounts action: ${action}`);
+    }
+
     case 'accounting_templates': {
       // ─── Accounting: Template CRUD ──────────────────────────────────────
       const { action = 'list' } = args as any;
