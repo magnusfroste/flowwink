@@ -2,7 +2,7 @@ import {
   LayoutDashboard, BarChart3, FileText, Users, Settings, BookOpen, Image, Mail,
   Puzzle, UserCheck, Briefcase, Building2, Package, Library, ShoppingCart,
   CalendarDays, Plug, Bot, Zap, MessageSquare, Headphones, Megaphone, Code2, FileText as FileQuote,
-  Video, Target, Inbox, UserCircle, FileUser, Receipt,
+  Video, Target, Inbox, UserCircle, FileUser, Receipt, Timer,
   Network, Snowflake, UserRound, BookMarked,
 } from 'lucide-react';
 
@@ -77,6 +77,7 @@ export const navigationGroups: NavGroup[] = [
       { name: "Invoices", href: "/admin/invoices", icon: Receipt, moduleId: "invoicing" },
       { name: "Accounting", href: "/admin/accounting", icon: BookOpen, moduleId: "accounting" },
       { name: "Expenses", href: "/admin/expenses", icon: Receipt, moduleId: "expenses" },
+      { name: "Timesheets", href: "/admin/timesheets", icon: Timer, moduleId: "timesheets" },
     ],
   },
   {
