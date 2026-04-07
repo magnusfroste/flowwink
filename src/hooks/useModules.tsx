@@ -249,7 +249,7 @@ export const defaultModulesSettings: ModulesSettings = {
   },
   resume: {
     enabled: false,
-    name: 'Resume',
+    name: 'Consultants',
     description: 'AI-powered consultant matching with tailored CVs and cover letters',
     icon: 'FileUser',
     category: 'data',
