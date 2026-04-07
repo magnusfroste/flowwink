@@ -202,6 +202,8 @@ export const MODULE_SKILL_MAP: Partial<Record<keyof ModulesSettings, string[]>> 
     'manage_opening_balances',
     'manage_chart_of_accounts',
     'suggest_accounting_template',
+    'manage_expenses',
+    'analyze_receipt',
   ],
 
   developer: [

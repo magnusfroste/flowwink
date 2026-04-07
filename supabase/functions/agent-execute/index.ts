@@ -3389,6 +3389,226 @@ async function executeDbAction(
       throw new Error(`Unknown accounting_templates action: ${action}`);
     }
 
+    case 'expenses': {
+      // ─── Expense Reporting CRUD ─────────────────────────────────────────
+      const { action = 'list' } = args as any;
+
+      if (action === 'list') {
+        const { user_id, status, period } = args as any;
+        let query = supabase.from('expenses')
+          .select('id, expense_date, description, amount_cents, vat_cents, currency, category, vendor, account_code, is_representation, attendees, receipt_url, receipt_analyzed, receipt_data, status, report_id, created_at')
+          .order('expense_date', { ascending: false });
+        if (user_id) query = query.eq('user_id', user_id);
+        if (status) query = query.eq('status', status);
+        if (period) {
+          const [y, m] = period.split('-');
+          query = query.gte('expense_date', `${y}-${m}-01`).lt('expense_date', `${y}-${String(Number(m) + 1).padStart(2, '0')}-01`);
+        }
+        const { data, error } = await query.limit(200);
+        if (error) throw new Error(`List expenses failed: ${error.message}`);
+        return { expenses: data, count: (data || []).length };
+      }
+
+      if (action === 'create') {
+        const { user_id, expense_date, description: desc, amount_cents, vat_cents, currency, category, vendor, account_code, is_representation, attendees, receipt_url, receipt_data } = args as any;
+        if (!user_id) throw new Error('user_id is required');
+        if (is_representation && (!attendees || attendees.length === 0)) {
+          throw new Error('Representation expenses require attendees [{name, company}]');
+        }
+        const { data, error } = await supabase.from('expenses')
+          .insert({
+            user_id,
+            expense_date: expense_date || new Date().toISOString().split('T')[0],
+            description: desc || '',
+            amount_cents: amount_cents || 0,
+            vat_cents: vat_cents || 0,
+            currency: currency || 'SEK',
+            category: category || 'other',
+            vendor: vendor || null,
+            account_code: account_code || null,
+            is_representation: is_representation || false,
+            attendees: attendees || null,
+            receipt_url: receipt_url || null,
+            receipt_analyzed: !!receipt_data,
+            receipt_data: receipt_data || null,
+          })
+          .select('id')
+          .single();
+        if (error) throw new Error(`Create expense failed: ${error.message}`);
+        return { created: true, expense_id: data.id };
+      }
+
+      if (action === 'update') {
+        const { expense_id, ...updates } = args as any;
+        if (!expense_id) throw new Error('expense_id is required');
+        delete updates.action;
+        if (updates.is_representation && (!updates.attendees || updates.attendees.length === 0)) {
+          throw new Error('Representation expenses require attendees');
+        }
+        updates.updated_at = new Date().toISOString();
+        const { error } = await supabase.from('expenses').update(updates).eq('id', expense_id);
+        if (error) throw new Error(`Update expense failed: ${error.message}`);
+        return { updated: true, expense_id };
+      }
+
+      if (action === 'delete') {
+        const { expense_id } = args as any;
+        if (!expense_id) throw new Error('expense_id is required');
+        const { error } = await supabase.from('expenses').delete().eq('id', expense_id).eq('status', 'draft');
+        if (error) throw new Error(`Delete expense failed: ${error.message}`);
+        return { deleted: true, expense_id };
+      }
+
+      if (action === 'submit_report') {
+        // Submit a monthly expense report — group expenses and change status
+        const { user_id, period } = args as any;
+        if (!user_id || !period) throw new Error('user_id and period (YYYY-MM) required');
+
+        // Find or create report
+        const { data: existing } = await supabase.from('expense_reports')
+          .select('id, status').eq('user_id', user_id).eq('period', period).maybeSingle();
+
+        if (existing && existing.status !== 'draft') {
+          return { error: `Report for ${period} already ${existing.status}` };
+        }
+
+        // Sum expenses for this period
+        const [y, m] = period.split('-');
+        const nextMonth = String(Number(m) + 1).padStart(2, '0');
+        const { data: expenses } = await supabase.from('expenses')
+          .select('id, amount_cents')
+          .eq('user_id', user_id)
+          .eq('status', 'draft')
+          .gte('expense_date', `${y}-${m}-01`)
+          .lt('expense_date', `${y}-${nextMonth}-01`);
+
+        if (!expenses || expenses.length === 0) {
+          return { error: `No draft expenses found for ${period}` };
+        }
+
+        const totalCents = expenses.reduce((s: number, e: any) => s + (e.amount_cents || 0), 0);
+        const expenseIds = expenses.map((e: any) => e.id);
+
+        let reportId: string;
+        if (existing) {
+          reportId = existing.id;
+          await supabase.from('expense_reports')
+            .update({ total_cents: totalCents, status: 'submitted', submitted_at: new Date().toISOString() })
+            .eq('id', reportId);
+        } else {
+          const { data: report, error: rErr } = await supabase.from('expense_reports')
+            .insert({ user_id, period, total_cents: totalCents, status: 'submitted', submitted_at: new Date().toISOString() })
+            .select('id').single();
+          if (rErr) throw new Error(`Create report failed: ${rErr.message}`);
+          reportId = report.id;
+        }
+
+        // Link expenses to report and mark as submitted
+        await supabase.from('expenses')
+          .update({ report_id: reportId, status: 'submitted' })
+          .in('id', expenseIds);
+
+        return { submitted: true, report_id: reportId, period, expense_count: expenseIds.length, total_cents: totalCents };
+      }
+
+      if (action === 'approve_report') {
+        const { report_id, approved_by } = args as any;
+        if (!report_id) throw new Error('report_id required');
+        const { error } = await supabase.from('expense_reports')
+          .update({ status: 'approved', approved_at: new Date().toISOString(), approved_by: approved_by || null })
+          .eq('id', report_id).eq('status', 'submitted');
+        if (error) throw new Error(`Approve report failed: ${error.message}`);
+        // Also approve all linked expenses
+        await supabase.from('expenses').update({ status: 'approved' }).eq('report_id', report_id);
+        return { approved: true, report_id };
+      }
+
+      if (action === 'book_report') {
+        // FlowPilot books approved report as a journal entry
+        const { report_id } = args as any;
+        if (!report_id) throw new Error('report_id required');
+
+        const { data: report, error: rErr } = await supabase.from('expense_reports')
+          .select('*').eq('id', report_id).eq('status', 'approved').single();
+        if (rErr || !report) throw new Error('Report not found or not approved');
+
+        // Get all expenses in this report
+        const { data: expenses } = await supabase.from('expenses')
+          .select('*').eq('report_id', report_id).eq('status', 'approved');
+
+        if (!expenses || expenses.length === 0) throw new Error('No approved expenses in report');
+
+        // Group by account_code for journal entry lines
+        const accountMap = new Map<string, { debit: number; credit: number; name: string }>();
+        let totalNet = 0;
+        let totalVat = 0;
+
+        for (const exp of expenses) {
+          const code = exp.account_code || '6992'; // Default: Övriga diverse kostnader
+          const net = (exp.amount_cents || 0) - (exp.vat_cents || 0);
+          const vat = exp.vat_cents || 0;
+          totalNet += net;
+          totalVat += vat;
+
+          if (!accountMap.has(code)) accountMap.set(code, { debit: 0, credit: 0, name: exp.vendor || 'Expense' });
+          accountMap.get(code)!.debit += net;
+        }
+
+        // Build journal entry lines
+        const lines: any[] = [];
+        for (const [code, amounts] of accountMap) {
+          lines.push({
+            account_code: code,
+            account_name: amounts.name,
+            debit_cents: amounts.debit,
+            credit_cents: 0,
+          });
+        }
+        if (totalVat > 0) {
+          lines.push({ account_code: '2640', account_name: 'Ingående moms', debit_cents: totalVat, credit_cents: 0 });
+        }
+        // Credit: employee reimbursement account
+        lines.push({ account_code: '2820', account_name: 'Kortfristiga skulder till anställda', debit_cents: 0, credit_cents: totalNet + totalVat });
+
+        // Create journal entry
+        const { data: entry, error: jeErr } = await supabase.from('journal_entries')
+          .insert({
+            entry_date: new Date().toISOString().split('T')[0],
+            description: `Expense report ${report.period}`,
+            reference_number: `EXP-${report.period}`,
+            status: 'posted',
+            source: 'flowpilot',
+          })
+          .select('id').single();
+        if (jeErr) throw new Error(`Create journal entry failed: ${jeErr.message}`);
+
+        const { error: lErr } = await supabase.from('journal_entry_lines')
+          .insert(lines.map(l => ({ ...l, journal_entry_id: entry.id })));
+        if (lErr) throw new Error(`Create journal lines failed: ${lErr.message}`);
+
+        // Mark report as booked
+        await supabase.from('expense_reports')
+          .update({ status: 'booked', journal_entry_id: entry.id })
+          .eq('id', report_id);
+
+        return { booked: true, report_id, journal_entry_id: entry.id, total_cents: totalNet + totalVat, line_count: lines.length };
+      }
+
+      if (action === 'list_reports') {
+        const { user_id, status: reportStatus } = args as any;
+        let query = supabase.from('expense_reports')
+          .select('id, user_id, period, status, total_cents, currency, submitted_at, approved_at, journal_entry_id, created_at')
+          .order('period', { ascending: false });
+        if (user_id) query = query.eq('user_id', user_id);
+        if (reportStatus) query = query.eq('status', reportStatus);
+        const { data, error } = await query.limit(50);
+        if (error) throw new Error(`List reports failed: ${error.message}`);
+        return { reports: data, count: (data || []).length };
+      }
+
+      throw new Error(`Unknown expenses action: ${action}`);
+    }
+
     default:
       return { error: `Unknown db table: ${table}` };
   }
