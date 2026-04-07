@@ -89,6 +89,15 @@ const SYNONYM_MAP: Record<string, string[]> = {
   expense: ['expense', 'receipt', 'reimburse', 'manage_expenses'],
   utlägg: ['expense', 'receipt', 'reimburse', 'manage_expenses'],
   kvitto: ['expense', 'receipt', 'manage_expenses'],
+  // Timesheets
+  timesheets: ['time', 'hours', 'project', 'log_time', 'timesheet'],
+  tidsrapport: ['time', 'hours', 'project', 'log_time', 'timesheet_summary'],
+  timmar: ['time', 'hours', 'log_time', 'timesheet'],
+  logga: ['time', 'log_time', 'log', 'hours'],
+  jobbade: ['time', 'log_time', 'hours', 'worked'],
+  timesheet: ['time', 'hours', 'log_time', 'timesheet_summary'],
+  projekt: ['project', 'manage_projects', 'time', 'client'],
+  fakturerbar: ['billable', 'time', 'timesheet_summary', 'revenue'],
 };
 
 // ─── Scorer ──────────────────────────────────────────────────────────────────
