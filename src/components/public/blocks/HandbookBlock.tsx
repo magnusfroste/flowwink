@@ -1,11 +1,12 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
-import { Book, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { Book, ChevronLeft, ChevronRight, Search, PanelLeftClose, PanelLeft } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
 import ReactMarkdown from 'react-markdown';
 
 export interface HandbookBlockData {
@@ -42,6 +43,7 @@ export function HandbookBlock({ data }: HandbookBlockProps) {
 
   const [activeSlug, setActiveSlug] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [tocCollapsed, setTocCollapsed] = useState(false);
 
   const { data: chapters = [], isLoading } = useQuery({
     queryKey: ['handbook-chapters-public'],
@@ -59,6 +61,13 @@ export function HandbookBlock({ data }: HandbookBlockProps) {
     },
   });
 
+  // Auto-select foreword (first chapter) when chapters load
+  useEffect(() => {
+    if (chapters.length > 0 && !activeSlug) {
+      setActiveSlug(chapters[0].slug);
+    }
+  }, [chapters, activeSlug]);
+
   const filtered = useMemo(() => {
     if (!search.trim()) return chapters;
     const q = search.toLowerCase();
@@ -74,15 +83,12 @@ export function HandbookBlock({ data }: HandbookBlockProps) {
 
   const navigateToSlug = useCallback((slug: string) => {
     setActiveSlug(slug);
-    // Scroll content area to top
     document.getElementById('handbook-content')?.scrollTo(0, 0);
   }, []);
 
-  // Intercept .md links in markdown content and navigate within the block
   const markdownComponents = useMemo(() => ({
     a: ({ href, children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement> & { children?: React.ReactNode }) => {
       if (href && href.endsWith('.md')) {
-        // Extract slug from filename: "05c-concurrency-observability.md" → "05c-concurrency-observability"
         const slug = href.replace(/^.*\//, '').replace(/\.md$/, '');
         const target = chapters.find((c) => c.slug === slug);
         if (target) {
@@ -143,33 +149,56 @@ export function HandbookBlock({ data }: HandbookBlockProps) {
 
       {layout === 'sidebar' ? (
         <div className="flex gap-6 min-h-[400px]">
-          {/* TOC sidebar */}
+          {/* Collapsible TOC sidebar */}
           {showToc && (
-            <ScrollArea className="w-64 flex-shrink-0 border rounded-lg bg-muted/20">
-              <nav className="p-3 space-y-0.5">
-                {filtered.map((ch) => (
-                  <button
-                    key={ch.slug}
-                    onClick={() => setActiveSlug(ch.slug)}
-                    className={cn(
-                      'w-full text-left px-3 py-2 rounded-md text-sm transition-colors flex items-center gap-2',
-                      'hover:bg-muted',
-                      activeSlug === ch.slug
-                        ? 'bg-primary/10 text-primary font-medium'
-                        : 'text-muted-foreground'
-                    )}
-                  >
-                    <ChevronRight
-                      className={cn(
-                        'h-3 w-3 flex-shrink-0 transition-transform',
-                        activeSlug === ch.slug && 'rotate-90'
-                      )}
-                    />
-                    <span className="truncate">{ch.title}</span>
-                  </button>
-                ))}
-              </nav>
-            </ScrollArea>
+            <div className={cn(
+              'flex-shrink-0 transition-all duration-300 ease-in-out',
+              tocCollapsed ? 'w-10' : 'w-64'
+            )}>
+              <div className="border rounded-lg bg-muted/20 h-full relative">
+                {/* Toggle button */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute -right-3 top-3 z-10 h-6 w-6 rounded-full border bg-background shadow-sm hover:bg-muted"
+                  onClick={() => setTocCollapsed(!tocCollapsed)}
+                >
+                  {tocCollapsed ? (
+                    <PanelLeft className="h-3 w-3" />
+                  ) : (
+                    <PanelLeftClose className="h-3 w-3" />
+                  )}
+                </Button>
+
+                {!tocCollapsed && (
+                  <ScrollArea className="h-full">
+                    <nav className="p-3 space-y-0.5">
+                      {filtered.map((ch) => (
+                        <button
+                          key={ch.slug}
+                          onClick={() => setActiveSlug(ch.slug)}
+                          className={cn(
+                            'w-full text-left px-3 py-2 rounded-md text-sm transition-colors flex items-center gap-2',
+                            'hover:bg-muted',
+                            activeSlug === ch.slug
+                              ? 'bg-primary/10 text-primary font-medium'
+                              : 'text-muted-foreground'
+                          )}
+                        >
+                          <ChevronRight
+                            className={cn(
+                              'h-3 w-3 flex-shrink-0 transition-transform',
+                              activeSlug === ch.slug && 'rotate-90'
+                            )}
+                          />
+                          <span className="truncate">{ch.title}</span>
+                        </button>
+                      ))}
+                    </nav>
+                  </ScrollArea>
+                )}
+              </div>
+            </div>
           )}
 
           {/* Content */}
