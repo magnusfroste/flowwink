@@ -1,12 +1,13 @@
 import { useState } from 'react';
-import { useExpenses } from '@/hooks/useExpenses';
+import { useExpenses, useSubmitExpenses } from '@/hooks/useExpenses';
 import { AddExpenseDialog } from './AddExpenseDialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Receipt, Users, AlertCircle } from 'lucide-react';
+import { Receipt, Users, AlertCircle, Send } from 'lucide-react';
 import { format } from 'date-fns';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -36,10 +37,40 @@ function formatCents(cents: number, currency = 'SEK'): string {
 
 export function ExpensesListTab() {
   const [statusFilter, setStatusFilter] = useState('all');
+  const [selected, setSelected] = useState<Set<string>>(new Set());
   const { data: expenses, isLoading } = useExpenses(statusFilter);
+  const submitExpenses = useSubmitExpenses();
 
   const totalAmount = expenses?.reduce((s, e) => s + e.amount_cents, 0) ?? 0;
   const draftCount = expenses?.filter(e => e.status === 'draft').length ?? 0;
+  const drafts = expenses?.filter(e => e.status === 'draft') ?? [];
+  const allDraftsSelected = drafts.length > 0 && drafts.every(d => selected.has(d.id));
+
+  const toggleOne = (id: string) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleAllDrafts = () => {
+    if (allDraftsSelected) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(drafts.map(d => d.id)));
+    }
+  };
+
+  const handleSubmit = () => {
+    const ids = Array.from(selected);
+    if (!ids.length) return;
+    submitExpenses.mutate(ids, { onSuccess: () => setSelected(new Set()) });
+  };
+
+  const selectedAmount = expenses
+    ?.filter(e => selected.has(e.id))
+    .reduce((s, e) => s + e.amount_cents, 0) ?? 0;
 
   return (
     <div className="space-y-4">
@@ -71,21 +102,33 @@ export function ExpensesListTab() {
         </Card>
       </div>
 
-      {/* Filter + Add */}
+      {/* Filter + Actions */}
       <div className="flex items-center justify-between gap-3">
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All statuses</SelectItem>
-            <SelectItem value="draft">Draft</SelectItem>
-            <SelectItem value="submitted">Submitted</SelectItem>
-            <SelectItem value="approved">Approved</SelectItem>
-            <SelectItem value="rejected">Rejected</SelectItem>
-            <SelectItem value="booked">Booked</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-3">
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All statuses</SelectItem>
+              <SelectItem value="draft">Draft</SelectItem>
+              <SelectItem value="submitted">Submitted</SelectItem>
+              <SelectItem value="approved">Approved</SelectItem>
+              <SelectItem value="rejected">Rejected</SelectItem>
+              <SelectItem value="booked">Booked</SelectItem>
+            </SelectContent>
+          </Select>
+          {selected.size > 0 && (
+            <Button
+              onClick={handleSubmit}
+              disabled={submitExpenses.isPending}
+              size="sm"
+            >
+              <Send className="h-4 w-4 mr-1.5" />
+              Submit {selected.size} ({formatCents(selectedAmount)})
+            </Button>
+          )}
+        </div>
         <AddExpenseDialog />
       </div>
 
@@ -95,6 +138,15 @@ export function ExpensesListTab() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10">
+                  {drafts.length > 0 && (
+                    <Checkbox
+                      checked={allDraftsSelected}
+                      onCheckedChange={toggleAllDrafts}
+                      aria-label="Select all drafts"
+                    />
+                  )}
+                </TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead>Description</TableHead>
                 <TableHead>Category</TableHead>
@@ -108,23 +160,32 @@ export function ExpensesListTab() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                     Loading expenses...
                   </TableCell>
                 </TableRow>
               ) : !expenses?.length ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                     <div className="flex flex-col items-center gap-2">
                       <Receipt className="h-8 w-8 text-muted-foreground/50" />
                       <p>No expenses yet</p>
-                      <p className="text-xs">FlowPilot can create expenses from receipt photos</p>
+                      <p className="text-xs">Add expenses during the month, then submit them all at once</p>
                     </div>
                   </TableCell>
                 </TableRow>
               ) : (
                 expenses.map((expense) => (
-                  <TableRow key={expense.id}>
+                  <TableRow key={expense.id} className={selected.has(expense.id) ? 'bg-primary/5' : ''}>
+                    <TableCell>
+                      {expense.status === 'draft' && (
+                        <Checkbox
+                          checked={selected.has(expense.id)}
+                          onCheckedChange={() => toggleOne(expense.id)}
+                          aria-label={`Select ${expense.description}`}
+                        />
+                      )}
+                    </TableCell>
                     <TableCell className="whitespace-nowrap">
                       {format(new Date(expense.expense_date), 'yyyy-MM-dd')}
                     </TableCell>
