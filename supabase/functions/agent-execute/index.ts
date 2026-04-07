@@ -601,6 +601,10 @@ async function executeModuleAction(
       return await executeHandbookAction(supabase, skillName, args);
     }
 
+    case 'timesheets': {
+      return await executeTimesheetsAction(supabase, skillName, args);
+    }
+
     default:
       return { error: `Unknown module: ${moduleName}` };
   }
