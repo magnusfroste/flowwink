@@ -79,7 +79,7 @@ export function useCreateExpense() {
 
       const { data, error } = await supabase
         .from('expenses')
-        .insert({
+        .insert([{
           user_id: input.user_id || null,
           expense_date: input.expense_date || new Date().toISOString().slice(0, 10),
           description: input.description || '',
@@ -90,10 +90,10 @@ export function useCreateExpense() {
           vendor: input.vendor || null,
           account_code: input.account_code || null,
           is_representation: input.is_representation || false,
-          attendees: input.attendees || null,
+          attendees: (input.attendees as any) || null,
           receipt_url: input.receipt_url || null,
           status: 'draft',
-        })
+        }])
         .select()
         .single();
 

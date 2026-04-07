@@ -31,7 +31,6 @@ export function ExpenseReportsTab() {
           <TableHeader>
             <TableRow>
               <TableHead>Period</TableHead>
-              <TableHead className="text-right">Expenses</TableHead>
               <TableHead className="text-right">Total</TableHead>
               <TableHead>Submitted</TableHead>
               <TableHead>Approved</TableHead>
@@ -41,13 +40,13 @@ export function ExpenseReportsTab() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                   Loading reports...
                 </TableCell>
               </TableRow>
             ) : !reports?.length ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                   <div className="flex flex-col items-center gap-2">
                     <FileText className="h-8 w-8 text-muted-foreground/50" />
                     <p>No monthly reports yet</p>
@@ -59,7 +58,6 @@ export function ExpenseReportsTab() {
               reports.map((report) => (
                 <TableRow key={report.id}>
                   <TableCell className="font-medium">{report.period}</TableCell>
-                  <TableCell className="text-right">{report.expense_count}</TableCell>
                   <TableCell className="text-right font-medium">
                     {formatCents(report.total_cents)}
                   </TableCell>
