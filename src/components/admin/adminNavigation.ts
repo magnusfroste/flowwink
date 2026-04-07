@@ -86,6 +86,7 @@ export const navigationGroups: NavGroup[] = [
     items: [
       { name: "Customers", href: "/admin/customers", icon: UserRound, moduleId: "ecommerce" },
       { name: "Products", href: "/admin/products", icon: Package, moduleId: "ecommerce" },
+      { name: "Inventory", href: "/admin/inventory", icon: Package, moduleId: "inventory" },
       { name: "Orders", href: "/admin/orders", icon: ShoppingCart, moduleId: "ecommerce" },
     ],
   },

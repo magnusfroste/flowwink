@@ -103,6 +103,12 @@ export const MODULE_SKILL_MAP: Partial<Record<keyof ModulesSettings, string[]>> 
     'inventory_report',
   ],
 
+  inventory: [
+    'check_stock',
+    'adjust_stock',
+    'low_stock_report',
+  ],
+
   // ═══ Communication ═══
   newsletter: [
     'send_newsletter',

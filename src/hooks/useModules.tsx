@@ -68,6 +68,7 @@ export interface ModulesSettings {
   expenses: ModuleConfig;
   handbook: ModuleConfig;
   timesheets: ModuleConfig;
+  inventory: ModuleConfig;
 }
 
 export const defaultModulesSettings: ModulesSettings = {
@@ -391,6 +392,15 @@ export const defaultModulesSettings: ModulesSettings = {
     autonomy: 'agent-capable',
     adminUI: true,
   },
+  inventory: {
+    enabled: false,
+    name: 'Inventory',
+    description: 'Stock levels, movements and reorder points — auto-decrements on orders, low-stock alerts',
+    icon: 'Package',
+    category: 'data',
+    autonomy: 'agent-capable',
+    adminUI: true,
+  },
 };
 
 // Map sidebar items to module IDs
@@ -432,6 +442,7 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/expenses': 'expenses',
   '/admin/handbook': 'handbook',
   '/admin/timesheets': 'timesheets',
+  '/admin/inventory': 'inventory',
 };
 
 export function useModules() {
