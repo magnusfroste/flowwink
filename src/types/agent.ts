@@ -28,6 +28,7 @@ export interface AgentSkill {
   instructions: string | null;
   requires_approval: boolean;
   enabled: boolean;
+  mcp_exposed?: boolean;
   created_at: string;
   updated_at: string;
 }
