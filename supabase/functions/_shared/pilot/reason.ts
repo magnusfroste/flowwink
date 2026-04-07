@@ -882,17 +882,21 @@ export async function reason(
           continue;
         }
 
-        // Same-action detection
-        recentToolCalls.push(fnName);
-        if (recentToolCalls.length > SAME_ACTION_LIMIT) recentToolCalls.shift();
-        if (recentToolCalls.length === SAME_ACTION_LIMIT && recentToolCalls.every(n => n === fnName)) {
-          console.warn(`[reason] trace=${traceId} Same tool '${fnName}' called ${SAME_ACTION_LIMIT}x consecutively — breaking`);
-          conversationMessages.push({
-            role: 'tool', tool_call_id: tc.id,
-            content: JSON.stringify({ error: `Loop detected: '${fnName}' called ${SAME_ACTION_LIMIT} times in a row. Try a different approach or summarize.`, status: 'loop_detected' }),
-          });
-          turnErrors++;
-          continue;
+        // Same-action detection (skip batch-oriented tools like record_outcome which
+        // legitimately runs N times with different arguments during outcome evaluation)
+        const BATCH_EXEMPT_TOOLS = new Set(['record_outcome', 'memory_write', 'objective_update_progress']);
+        if (!BATCH_EXEMPT_TOOLS.has(fnName)) {
+          recentToolCalls.push(fnName);
+          if (recentToolCalls.length > SAME_ACTION_LIMIT) recentToolCalls.shift();
+          if (recentToolCalls.length === SAME_ACTION_LIMIT && recentToolCalls.every(n => n === fnName)) {
+            console.warn(`[reason] trace=${traceId} Same tool '${fnName}' called ${SAME_ACTION_LIMIT}x consecutively — breaking`);
+            conversationMessages.push({
+              role: 'tool', tool_call_id: tc.id,
+              content: JSON.stringify({ error: `Loop detected: '${fnName}' called ${SAME_ACTION_LIMIT} times in a row. Try a different approach or summarize.`, status: 'loop_detected' }),
+            });
+            turnErrors++;
+            continue;
+          }
         }
 
         console.log(`[reason] trace=${traceId} iter=${i} Executing: ${fnName}`, JSON.stringify(fnArgs).slice(0, 200));
