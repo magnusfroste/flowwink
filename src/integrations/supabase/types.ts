@@ -2758,6 +2758,42 @@ export type Database = {
         }
         Relationships: []
       }
+      opening_balances: {
+        Row: {
+          account_code: string
+          account_name: string
+          amount_cents: number
+          balance_type: string
+          created_at: string
+          fiscal_year: number
+          id: string
+          locale: string
+          updated_at: string
+        }
+        Insert: {
+          account_code: string
+          account_name: string
+          amount_cents?: number
+          balance_type?: string
+          created_at?: string
+          fiscal_year?: number
+          id?: string
+          locale?: string
+          updated_at?: string
+        }
+        Update: {
+          account_code?: string
+          account_name?: string
+          amount_cents?: number
+          balance_type?: string
+          created_at?: string
+          fiscal_year?: number
+          id?: string
+          locale?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           created_at: string

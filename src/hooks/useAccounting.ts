@@ -230,8 +230,30 @@ export function useAccountBalances() {
 
       if (error) throw error;
 
+      // Fetch opening balances for current fiscal year
+      const currentYear = new Date().getFullYear();
+      const { data: openingData } = await supabase
+        .from('opening_balances')
+        .select('*')
+        .eq('fiscal_year', currentYear);
+
       // Aggregate by account
       const map = new Map<string, AccountBalance>();
+
+      // Seed with opening balances first
+      for (const ob of openingData || []) {
+        const amountCents = Number((ob as any).amount_cents || 0);
+        const balType = (ob as any).balance_type || 'debit';
+        map.set((ob as any).account_code, {
+          account_code: (ob as any).account_code,
+          account_name: (ob as any).account_name,
+          account_type: '',
+          debit_total: balType === 'debit' ? amountCents : 0,
+          credit_total: balType === 'credit' ? amountCents : 0,
+          balance: 0,
+        });
+      }
+
       for (const line of lines || []) {
         const existing = map.get(line.account_code) || {
           account_code: line.account_code,
