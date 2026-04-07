@@ -7,6 +7,7 @@ import { LedgerTab } from '@/components/admin/accounting/LedgerTab';
 import { ProfitLossTab } from '@/components/admin/accounting/ProfitLossTab';
 import { BalanceSheetTab } from '@/components/admin/accounting/BalanceSheetTab';
 import { TemplatesTab } from '@/components/admin/accounting/TemplatesTab';
+import { SettingsTab } from '@/components/admin/accounting/SettingsTab';
 
 export default function AccountingPage() {
   const [tab, setTab] = useState('journal');
@@ -26,6 +27,7 @@ export default function AccountingPage() {
             <TabsTrigger value="pnl">Profit & Loss</TabsTrigger>
             <TabsTrigger value="balance">Balance Sheet</TabsTrigger>
             <TabsTrigger value="templates">Templates</TabsTrigger>
+            <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
 
           <TabsContent value="journal">
@@ -42,6 +44,9 @@ export default function AccountingPage() {
           </TabsContent>
           <TabsContent value="templates">
             <TemplatesTab />
+          </TabsContent>
+          <TabsContent value="settings">
+            <SettingsTab />
           </TabsContent>
         </Tabs>
       </div>

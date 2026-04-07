@@ -117,6 +117,7 @@ export type Database = {
           id: string
           is_system: boolean
           keywords: string[] | null
+          locale: string
           template_lines: Json
           template_name: string
           updated_at: string
@@ -129,6 +130,7 @@ export type Database = {
           id?: string
           is_system?: boolean
           keywords?: string[] | null
+          locale?: string
           template_lines?: Json
           template_name: string
           updated_at?: string
@@ -141,6 +143,7 @@ export type Database = {
           id?: string
           is_system?: boolean
           keywords?: string[] | null
+          locale?: string
           template_lines?: Json
           template_name?: string
           updated_at?: string
@@ -1337,6 +1340,7 @@ export type Database = {
           created_at: string
           id: string
           is_active: boolean
+          locale: string
           normal_balance: string
           updated_at: string
         }
@@ -1348,6 +1352,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean
+          locale?: string
           normal_balance: string
           updated_at?: string
         }
@@ -1359,6 +1364,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean
+          locale?: string
           normal_balance?: string
           updated_at?: string
         }

@@ -8,6 +8,7 @@ import { Plus, Trash2, FileText } from 'lucide-react';
 import { useCreateJournalEntry } from '@/hooks/useAccounting';
 import { useChartOfAccounts, useAccountingTemplates } from '@/hooks/useAccounting';
 import type { TemplateLine } from '@/hooks/useAccounting';
+import { useAccountingLocale } from '@/hooks/useAccountingLocale';
 
 interface LineInput {
   account_code: string;
@@ -36,9 +37,10 @@ export function NewJournalEntryDialog({ open, onOpenChange }: Props) {
   const [reference, setReference] = useState('');
   const [lines, setLines] = useState<LineInput[]>([emptyLine(), emptyLine()]);
 
+  const { locale } = useAccountingLocale();
   const createEntry = useCreateJournalEntry();
-  const { data: accounts } = useChartOfAccounts();
-  const { data: templates } = useAccountingTemplates();
+  const { data: accounts } = useChartOfAccounts(locale);
+  const { data: templates } = useAccountingTemplates(locale);
 
   const updateLine = (index: number, updates: Partial<LineInput>) => {
     setLines((prev) =>

@@ -70,15 +70,19 @@ export interface AccountBalance {
 // Chart of Accounts
 // ============================================================
 
-export function useChartOfAccounts() {
+export function useChartOfAccounts(locale?: string) {
   return useQuery({
-    queryKey: ['chart-of-accounts'],
+    queryKey: ['chart-of-accounts', locale],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('chart_of_accounts')
         .select('*')
         .eq('is_active', true)
         .order('account_code');
+      if (locale) {
+        query = query.eq('locale', locale);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return data as ChartAccount[];
     },
@@ -272,14 +276,18 @@ export function useAccountBalances() {
 // Accounting Templates
 // ============================================================
 
-export function useAccountingTemplates() {
+export function useAccountingTemplates(locale?: string) {
   return useQuery({
-    queryKey: ['accounting-templates'],
+    queryKey: ['accounting-templates', locale],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('accounting_templates')
         .select('*')
         .order('usage_count', { ascending: false });
+      if (locale) {
+        query = query.eq('locale', locale);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return data as unknown as AccountingTemplate[];
     },

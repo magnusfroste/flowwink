@@ -6,10 +6,12 @@ import { Search, FileText, Tag } from 'lucide-react';
 import { useAccountingTemplates } from '@/hooks/useAccounting';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { TemplateLine } from '@/hooks/useAccounting';
+import { useAccountingLocale } from '@/hooks/useAccountingLocale';
 
 export function TemplatesTab() {
+  const { locale } = useAccountingLocale();
   const [search, setSearch] = useState('');
-  const { data: templates, isLoading } = useAccountingTemplates();
+  const { data: templates, isLoading } = useAccountingTemplates(locale);
 
   const filtered = (templates || []).filter(
     (t) =>
