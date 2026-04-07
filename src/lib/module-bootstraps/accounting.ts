@@ -100,6 +100,85 @@ const ACCOUNTING_SKILLS: SkillSeed[] = [
       },
     },
   },
+  {
+    name: 'manage_opening_balances',
+    description: 'Create, list, update, or delete opening balances (ingående balanser / IB) for a fiscal year. Use when: admin wants to set initial account balances, migrating from another system, starting a new fiscal year. NOT for: journal entries (use manage_journal_entry), reports (use accounting_reports).',
+    category: 'commerce',
+    handler: 'db:opening_balances',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_opening_balances',
+        description: 'CRUD for opening balances per fiscal year',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: { type: 'string', enum: ['list', 'set', 'delete'] },
+            fiscal_year: { type: 'number', description: 'Fiscal year, e.g. 2024' },
+            account_code: { type: 'string' },
+            amount_cents: { type: 'number' },
+            balance_type: { type: 'string', enum: ['debit', 'credit'] },
+            locale: { type: 'string', description: 'Chart locale, e.g. se-bas2024' },
+          },
+          required: ['action'],
+        },
+      },
+    },
+    instructions: 'Opening balances must balance (total debit = total credit). Each account should have only one IB per fiscal year. Use the chart_of_accounts to validate account codes.',
+  },
+  {
+    name: 'manage_chart_of_accounts',
+    description: 'List, add, update, or deactivate accounts in the chart of accounts. Supports multiple locales (se-bas2024, ifrs, us-gaap). Use when: admin asks about available accounts, needs to add a custom account, or deactivate unused accounts. NOT for: journal entries (use manage_journal_entry), opening balances (use manage_opening_balances).',
+    category: 'commerce',
+    handler: 'db:chart_of_accounts',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_chart_of_accounts',
+        description: 'CRUD for chart of accounts across locales',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: { type: 'string', enum: ['list', 'add', 'update', 'deactivate'] },
+            locale: { type: 'string', description: 'e.g. se-bas2024, ifrs, us-gaap' },
+            account_code: { type: 'string' },
+            account_name: { type: 'string' },
+            account_type: { type: 'string', enum: ['asset', 'liability', 'equity', 'income', 'expense'] },
+            account_category: { type: 'string' },
+            normal_balance: { type: 'string', enum: ['debit', 'credit'] },
+            search: { type: 'string', description: 'Search term for listing' },
+          },
+          required: ['action'],
+        },
+      },
+    },
+    instructions: 'When listing, group by account_type for clarity. BAS 2024 uses 4-digit codes (1xxx=assets, 2xxx=liabilities, 3xxx=income, 4-7xxx=expenses, 8xxx=financial). IFRS and US GAAP use similar groupings. Custom accounts should follow the locale convention.',
+  },
+  {
+    name: 'suggest_accounting_template',
+    description: 'Analyze recent journal entries to identify recurring transaction patterns and suggest new reusable templates. Use when: heartbeat detects repeated similar bookings, admin asks FlowPilot to learn from past transactions, or after importing historical data. NOT for: creating entries (use manage_journal_entry), managing existing templates (use manage_accounting_template).',
+    category: 'commerce',
+    handler: 'db:journal_entries',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'suggest_accounting_template',
+        description: 'Analyze journal entries and suggest reusable templates',
+        parameters: {
+          type: 'object',
+          properties: {
+            min_occurrences: { type: 'number', description: 'Minimum times a pattern must appear to suggest (default 3)' },
+            since_date: { type: 'string', description: 'Only analyze entries after this date' },
+            locale: { type: 'string', description: 'Filter by chart locale' },
+          },
+        },
+      },
+    },
+    instructions: 'Group journal entries by their account_code combinations. If the same set of accounts appears 3+ times, suggest it as a template. Include common descriptions as keywords. Return structured suggestions that can be passed to manage_accounting_template to create.',
+  },
 ];
 
 const ACCOUNTING_AUTOMATIONS: AutomationSeed[] = [
