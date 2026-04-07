@@ -218,7 +218,7 @@ export function HandbookBlock({ data }: HandbookBlockProps) {
             {activeChapter ? (
               <div className="space-y-8">
                 <article className="prose prose-sm dark:prose-invert max-w-none">
-                  <ReactMarkdown components={markdownComponents}>{activeChapter.content}</ReactMarkdown>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{activeChapter.content}</ReactMarkdown>
                 </article>
 
                 {/* Prev / Next navigation */}
@@ -279,7 +279,7 @@ export function HandbookBlock({ data }: HandbookBlockProps) {
               {activeSlug === ch.slug && (
                 <div className="px-4 pb-4 border-t">
                   <article className="prose prose-sm dark:prose-invert max-w-none pt-4">
-                    <ReactMarkdown components={markdownComponents}>{ch.content}</ReactMarkdown>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{ch.content}</ReactMarkdown>
                   </article>
                 </div>
               )}
