@@ -11,7 +11,7 @@ export interface ProductStock {
   last_counted_at: string | null;
   updated_at: string;
   created_at: string;
-  products?: { name: string; price_cents: number; currency: string; status: string } | null;
+  products?: { name: string; price_cents: number; currency: string } | null;
 }
 
 export interface StockMove {
@@ -33,7 +33,7 @@ export function useProductStock() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('product_stock')
-        .select('*, products(name, price_cents, currency, status)')
+        .select('*, products(name, price_cents, currency)')
         .order('updated_at', { ascending: false });
       if (error) throw error;
       return (data ?? []) as ProductStock[];

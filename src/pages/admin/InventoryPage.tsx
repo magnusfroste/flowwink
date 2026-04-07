@@ -40,7 +40,7 @@ export default function InventoryPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from('products')
-        .select('id, name, status')
+        .select('id, name')
         .order('name');
       return data ?? [];
     },
@@ -258,10 +258,7 @@ export default function InventoryPage() {
                 <div className="space-y-2">
                   {untrackedProducts.map(p => (
                     <div key={p.id} className="flex items-center justify-between p-3 rounded-lg border">
-                      <div>
-                        <p className="font-medium text-sm">{p.name}</p>
-                        <p className="text-xs text-muted-foreground">{p.status}</p>
-                      </div>
+                      <p className="font-medium text-sm">{p.name}</p>
                       <Button size="sm" variant="outline" onClick={() => initStock.mutate(p.id)} className="gap-1">
                         <Plus className="h-3 w-3" /> Enable Tracking
                       </Button>
