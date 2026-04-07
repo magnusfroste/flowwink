@@ -2,7 +2,7 @@
 
 > **The autonomous agentic web that runs your business.**
 > 
-> Version: 4.3 | Updated: April 2026 | Modules: 26 | Skills: 117 + ∞ runtime
+> Version: 4.4 | Updated: April 2026 | Modules: 26 | Skills: 117 + ∞ runtime
 
 ---
 
@@ -84,9 +84,37 @@ FlowPilot enabled later: retroactive scan bootstraps all active modules.
        ▼
 ┌──────────────────────────────────────────────────────────────────┐
 │                     FLOWPILOT (Autonomous Agent)                 │
-│  109 skills · pgvector memory · heartbeat · self-healing · A2A  │
+│  117 skills · pgvector memory · heartbeat · self-healing · A2A  │
 │  See FLOWPILOT.md for the agent's full architecture              │
 └──────────────────────────────────────────────────────────────────┘
+
+### Three-Channel Architecture
+
+FlowWink exposes its capabilities through three complementary channels:
+
+| Channel | Purpose | Auth | Transport |
+|---------|---------|------|-----------|
+| **Skills** (internal) | FlowPilot autonomy — agent reasons and executes | Service role JWT | Edge Function (`agent-execute`) |
+| **A2A** (federation) | Peer-to-peer agent collaboration (e.g. OpenClaw) | Bearer token (hashed) | JSON-RPC via `a2a-ingest` |
+| **MCP** (universal) | External AI clients (Cursor, Claude Desktop) | API Key (SHA-256 hashed) | Streamable HTTP via `mcp-server` |
+
+The MCP server dynamically exposes skills where `mcp_exposed = true` in the `agent_skills` table. Admin controls which skills are public via the Engine Room UI (shield toggle). API keys are managed under **Setup → API Keys**.
+
+**MCP Client Configuration (Cursor / Claude Desktop):**
+
+```json
+{
+  "mcpServers": {
+    "flowwink": {
+      "transport": "streamable-http",
+      "url": "https://<project-ref>.supabase.co/functions/v1/mcp-server",
+      "headers": {
+        "Authorization": "Bearer fwk_<your-api-key>"
+      }
+    }
+  }
+}
+```
 ```
 
 ### Request Flow
