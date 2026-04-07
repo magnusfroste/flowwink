@@ -90,6 +90,7 @@ import TicketsPage from "./pages/admin/TicketsPage";
 import InvoicesPage from "./pages/admin/InvoicesPage";
 import QuotesPage from "./pages/admin/QuotesPage";
 import AccountingPage from "./pages/admin/AccountingPage";
+import ExpensesPage from "./pages/admin/ExpensesPage";
 import HandbookPage from "./pages/admin/HandbookPage";
 
 const TemplateGalleryPage = lazy(() => import("./pages/admin/TemplateGalleryPage"));
@@ -214,6 +215,7 @@ const router = createBrowserRouter([
       { path: "/admin/invoices", element: <InvoicesPage /> },
       { path: "/admin/quotes", element: <QuotesPage /> },
       { path: "/admin/accounting", element: <AccountingPage /> },
+      { path: "/admin/expenses", element: <ExpensesPage /> },
       { path: "/admin/handbook", element: <HandbookPage /> },
       { path: "/admin/autonomy-tests", element: <AutonomyTestSuitePage /> },
       { path: "/preview/:id", element: <PreviewPage /> },
