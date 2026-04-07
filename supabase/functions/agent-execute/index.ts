@@ -3124,22 +3124,135 @@ async function executeDbAction(
       }
 
       // action === 'create'
-      const { entry_date, description, reference_number, template_name } = args as any;
+      const { entry_date, description, reference_number, template_name, auto_confirm } = args as any;
       let { lines: entryLines } = args as any;
 
-      // If template_name provided, fetch template and use its lines as base
-      if (template_name && (!entryLines || entryLines.length === 0)) {
-        const { data: tmpl } = await supabase.from('accounting_templates')
-          .select('template_lines').ilike('template_name', `%${template_name}%`).limit(1).maybeSingle();
-        if (tmpl?.template_lines) {
-          // Template lines need amounts filled in — return template for agent to populate
+      // ─── Template-First Matching (OpenClaw instrument principle) ────────
+      // FlowPilot MUST use templates. If no template matches, escalate.
+      if (!entryLines || entryLines.length === 0) {
+        // Fetch all templates for matching
+        const { data: allTemplates } = await supabase.from('accounting_templates')
+          .select('id, template_name, description, keywords, template_lines, usage_count, category');
+
+        if (!allTemplates || allTemplates.length === 0) {
           return {
-            status: 'template_loaded',
-            template_name,
-            template_lines: tmpl.template_lines,
-            message: `Template '${template_name}' loaded. Please provide amounts (debit_cents/credit_cents) for each line and call again with action='create' and the populated lines.`,
+            status: 'escalate',
+            confidence: 0,
+            message: 'No accounting templates exist. Please create journal entries manually first so FlowPilot can learn patterns.',
           };
         }
+
+        // Score each template against the description/template_name
+        const searchTerms = `${template_name || ''} ${description || ''}`.toLowerCase().trim();
+        if (!searchTerms) {
+          throw new Error('Either description or template_name is required to match a template.');
+        }
+
+        const searchWords = searchTerms.split(/\s+/).filter((w: string) => w.length > 2);
+
+        interface TemplateMatch {
+          template: any;
+          score: number;
+          matchDetails: string[];
+        }
+
+        const scored: TemplateMatch[] = allTemplates.map((t: any) => {
+          let score = 0;
+          const details: string[] = [];
+
+          // 1. Keyword match (strongest signal — 40 points per match)
+          const keywords: string[] = t.keywords || [];
+          for (const kw of keywords) {
+            const kwLower = kw.toLowerCase();
+            if (searchTerms.includes(kwLower)) {
+              score += 40;
+              details.push(`keyword:${kw}`);
+            }
+            // Partial match (word overlap)
+            for (const sw of searchWords) {
+              if (kwLower.includes(sw) || sw.includes(kwLower)) {
+                score += 15;
+                details.push(`partial:${sw}~${kw}`);
+              }
+            }
+          }
+
+          // 2. Template name match (30 points for exact contain, 15 for word overlap)
+          const nameLower = t.template_name.toLowerCase();
+          if (searchTerms.includes(nameLower) || nameLower.includes(searchTerms)) {
+            score += 30;
+            details.push('name:exact');
+          } else {
+            const nameWords = nameLower.split(/\s+/);
+            const nameOverlap = searchWords.filter((sw: string) => 
+              nameWords.some((nw: string) => nw.includes(sw) || sw.includes(nw))
+            );
+            if (nameOverlap.length > 0) {
+              score += 15 * nameOverlap.length;
+              details.push(`name:words(${nameOverlap.join(',')})`);
+            }
+          }
+
+          // 3. Description match (10 points per word overlap)
+          const descLower = (t.description || '').toLowerCase();
+          for (const sw of searchWords) {
+            if (descLower.includes(sw)) {
+              score += 10;
+              details.push(`desc:${sw}`);
+            }
+          }
+
+          // 4. Usage frequency boost (max 10 points)
+          score += Math.min(10, (t.usage_count || 0) * 2);
+
+          return { template: t, score, matchDetails: details };
+        });
+
+        // Sort by score descending
+        scored.sort((a: TemplateMatch, b: TemplateMatch) => b.score - a.score);
+
+        const best = scored[0];
+        const maxPossibleScore = 100; // normalize to percentage
+        const confidence = Math.min(100, Math.round((best.score / maxPossibleScore) * 100));
+
+        // ─── Confidence Zones ────────────────────────────────────────────
+        if (confidence < 70) {
+          // 🔴 ESCALATE — no reliable match
+          return {
+            status: 'escalate',
+            confidence,
+            message: `No template matched with sufficient confidence (${confidence}%). Please create this journal entry manually. FlowPilot will learn from it.`,
+            top_candidates: scored.slice(0, 3).map((s: TemplateMatch) => ({
+              name: s.template.template_name,
+              confidence: Math.min(100, Math.round((s.score / maxPossibleScore) * 100)),
+              match_details: s.matchDetails,
+            })),
+          };
+        }
+
+        if (confidence < 95 || !auto_confirm) {
+          // 🟡 PROPOSE — good match but needs confirmation
+          return {
+            status: 'propose',
+            confidence,
+            template_id: best.template.id,
+            template_name: best.template.template_name,
+            template_lines: best.template.template_lines,
+            match_details: best.matchDetails,
+            message: `Template '${best.template.template_name}' matched with ${confidence}% confidence. Please confirm and provide amounts (debit_cents/credit_cents) for each line, then call again with action='create', the populated lines, and auto_confirm=true.`,
+          };
+        }
+
+        // 🟢 AUTO-BOOK — very high confidence, use template lines
+        // (Only reaches here if auto_confirm=true AND confidence ≥ 95%)
+        entryLines = best.template.template_lines;
+        // Log which template was used
+        console.log(`[accounting] Auto-booking with template '${best.template.template_name}' (${confidence}% confidence)`);
+
+        // Increment usage count
+        await supabase.from('accounting_templates')
+          .update({ usage_count: (best.template.usage_count || 0) + 1 })
+          .eq('id', best.template.id);
       }
 
       if (!entryLines || entryLines.length === 0) {
@@ -3173,13 +3286,6 @@ async function executeDbAction(
           description: l.description || null,
         })));
       if (linesErr2) throw new Error(`Create lines failed: ${linesErr2.message}`);
-
-      // Increment template usage if used
-      if (template_name) {
-        await supabase.from('accounting_templates')
-          .update({ usage_count: supabase.rpc ? undefined : undefined })
-          .ilike('template_name', `%${template_name}%`);
-      }
 
       return {
         created: true,

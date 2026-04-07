@@ -67,6 +67,28 @@ const SYNONYM_MAP: Record<string, string[]> = {
   // Skills / Automation
   skill: ['skill', 'tool', 'automation', 'workflow'],
   automation: ['automation', 'workflow', 'schedule', 'cron'],
+  // Accounting / Bookkeeping
+  bokföra: ['journal', 'accounting', 'entry', 'template', 'manage_journal_entry'],
+  bokför: ['journal', 'accounting', 'entry', 'template', 'manage_journal_entry'],
+  bokföring: ['journal', 'accounting', 'entry', 'ledger', 'report'],
+  verifikation: ['journal', 'accounting', 'entry', 'manage_journal_entry'],
+  kontera: ['journal', 'accounting', 'entry', 'template', 'manage_journal_entry'],
+  kontering: ['journal', 'accounting', 'entry', 'template'],
+  lön: ['journal', 'accounting', 'salary', 'template', 'manage_journal_entry'],
+  löner: ['journal', 'accounting', 'salary', 'template'],
+  salary: ['journal', 'accounting', 'salary', 'template', 'manage_journal_entry'],
+  journal: ['journal', 'accounting', 'entry', 'manage_journal_entry'],
+  accounting: ['journal', 'accounting', 'entry', 'ledger', 'report'],
+  redovisning: ['journal', 'accounting', 'ledger', 'report'],
+  resultaträkning: ['accounting', 'report', 'profit_loss', 'accounting_reports'],
+  balansräkning: ['accounting', 'report', 'balance_sheet', 'accounting_reports'],
+  huvudbok: ['accounting', 'ledger', 'report', 'accounting_reports'],
+  moms: ['journal', 'accounting', 'vat', 'tax', 'manage_journal_entry'],
+  faktura: ['journal', 'accounting', 'invoice', 'manage_journal_entry'],
+  hyra: ['journal', 'accounting', 'rent', 'template', 'manage_journal_entry'],
+  expense: ['expense', 'receipt', 'reimburse', 'manage_expenses'],
+  utlägg: ['expense', 'receipt', 'reimburse', 'manage_expenses'],
+  kvitto: ['expense', 'receipt', 'manage_expenses'],
 };
 
 // ─── Scorer ──────────────────────────────────────────────────────────────────
