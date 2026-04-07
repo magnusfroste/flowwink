@@ -188,7 +188,9 @@ export function AddExpenseDialog() {
                 <span>VAT: {computedVat.toFixed(2)} {currency}</span>
               </div>
             </div>
-          )
+          )}
+
+          {/* Representation toggle */}
           <div className="flex items-center gap-3 pt-1">
             <Switch id="exp-rep" checked={isRepresentation} onCheckedChange={(v) => {
               setIsRepresentation(v);
