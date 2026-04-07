@@ -174,6 +174,86 @@ export function useDeleteTimeEntry() {
 }
 
 // ============================================================
+// Project Members
+// ============================================================
+
+export interface ProjectMember {
+  id: string;
+  project_id: string;
+  user_id: string;
+  role: string;
+  hourly_rate_override_cents: number | null;
+  tracks_time: boolean;
+  created_at: string;
+  profiles?: { full_name: string | null; email: string | null };
+}
+
+export function useProjectMembers(projectId?: string) {
+  return useQuery({
+    queryKey: ['project-members', projectId],
+    enabled: !!projectId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('project_members')
+        .select('*, profiles(full_name, email)')
+        .eq('project_id', projectId!);
+      if (error) throw error;
+      return data as unknown as ProjectMember[];
+    },
+  });
+}
+
+export function useAddProjectMember() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (input: { project_id: string; user_id: string; role?: string }) => {
+      const { data, error } = await supabase
+        .from('project_members')
+        .insert([{
+          project_id: input.project_id,
+          user_id: input.user_id,
+          role: input.role || 'member',
+        }])
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ['project-members', vars.project_id] });
+      toast({ title: 'Member added' });
+    },
+    onError: (err: Error) => {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    },
+  });
+}
+
+export function useRemoveProjectMember() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (input: { id: string; project_id: string }) => {
+      const { error } = await supabase
+        .from('project_members')
+        .delete()
+        .eq('id', input.id);
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ['project-members', vars.project_id] });
+      toast({ title: 'Member removed' });
+    },
+    onError: (err: Error) => {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    },
+  });
+}
+
+// ============================================================
 // Weekly summary helper
 // ============================================================
 
