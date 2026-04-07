@@ -65,6 +65,7 @@ export interface ModulesSettings {
   templates: ModuleConfig;
   invoicing: ModuleConfig;
   accounting: ModuleConfig;
+  expenses: ModuleConfig;
   handbook: ModuleConfig;
 }
 
@@ -361,6 +362,16 @@ export const defaultModulesSettings: ModulesSettings = {
     autonomy: 'agent-capable',
     adminUI: true,
   },
+  expenses: {
+    enabled: false,
+    name: 'Expense Reporting',
+    description: 'Employee expense reporting with receipt scanning, monthly approval workflow, and autonomous journal entry booking',
+    icon: 'Receipt',
+    category: 'data',
+    autonomy: 'agent-capable',
+    adminUI: true,
+    requiredIntegrations: [],
+  },
   handbook: {
     enabled: false,
     name: 'Handbook',
@@ -408,6 +419,7 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/invoices': 'invoicing',
   '/admin/quotes': 'invoicing',
   '/admin/accounting': 'accounting',
+  '/admin/expenses': 'expenses',
   '/admin/handbook': 'handbook',
 };
 
