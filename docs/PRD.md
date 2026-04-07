@@ -161,6 +161,7 @@ Admin   → PageEditorPage.tsx → BlockEditor.tsx → [Name]BlockEditor.tsx
 | **Global Elements** | Header, footer, announcement bars, reusable components | Enabled |
 | **Federation** | Agent-to-Agent (A2A) peer management for cross-agent collaboration | Disabled |
 | **Accounting** | Double-entry bookkeeping (BAS 2024), journal entries, balance sheet, P&L, autonomous templates | Disabled |
+| **Expense Reporting** | Employee expense reporting with receipt scanning (AI vision), monthly approval workflow, and autonomous journal entry booking | Disabled |
 
 ### Module Dependencies
 
@@ -353,8 +354,19 @@ FlowPilot.disable()
 The accounting module (`src/lib/module-bootstraps/accounting.ts`) seeds:
 - **43 BAS 2024 accounts** (chart of accounts)
 - **7 transaction templates** (invoice, payment, payroll, rent, etc.)
-- **3 skills** (`manage_journal_entry`, `accounting_reports`, `manage_accounting_template`)
+- **6 skills** (`manage_journal_entry`, `accounting_reports`, `manage_accounting_template`, `manage_opening_balances`, `manage_chart_of_accounts`, `suggest_accounting_template`)
 - **1 automation** (`Invoice Reconciliation` — daily cron checking for unbooked invoices)
+
+### Expense Reporting Module
+
+The expenses module (`src/lib/module-bootstraps/expenses.ts`) is a standalone module with a dependency on Accounting for journal entry booking:
+
+- **Tables**: `expenses`, `expense_reports`, `expense_attachments`
+- **2 skills**: `manage_expenses` (full CRUD + approval workflow), `analyze_receipt` (AI vision extraction)
+- **1 automation**: `Monthly Expense Processing` (1st of each month — collects drafts, submits reports, prompts admin)
+- **Representation rule**: Expenses categorized as `representation` require an `attendees` list (name + company) — Swedish tax compliance
+- **Autonomous workflow**: Draft → Submit → Approve → Book (FlowPilot generates journal entries: net cost to expense account, VAT to 2640, liability to 2820)
+- **Receipt scanning**: Uses multimodal AI vision (Gemini/OpenAI) via the `analyze-receipt` edge function to extract vendor, date, amount, VAT, and suggest account codes
 
 | Reference doc | Path |
 |---|---|
