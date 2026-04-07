@@ -568,6 +568,7 @@ export type Database = {
           handler: string
           id: string
           instructions: string | null
+          mcp_exposed: boolean | null
           name: string
           origin: Database["public"]["Enums"]["skill_origin"]
           requires: Json | null
@@ -585,6 +586,7 @@ export type Database = {
           handler: string
           id?: string
           instructions?: string | null
+          mcp_exposed?: boolean | null
           name: string
           origin?: Database["public"]["Enums"]["skill_origin"]
           requires?: Json | null
@@ -602,6 +604,7 @@ export type Database = {
           handler?: string
           id?: string
           instructions?: string | null
+          mcp_exposed?: boolean | null
           name?: string
           origin?: Database["public"]["Enums"]["skill_origin"]
           requires?: Json | null
@@ -655,6 +658,42 @@ export type Database = {
           trigger_config?: Json | null
           trigger_type?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      api_keys: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          key_hash: string
+          key_prefix: string
+          last_used_at: string | null
+          name: string
+          scopes: string[] | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          key_hash: string
+          key_prefix: string
+          last_used_at?: string | null
+          name: string
+          scopes?: string[] | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          key_hash?: string
+          key_prefix?: string
+          last_used_at?: string | null
+          name?: string
+          scopes?: string[] | null
         }
         Relationships: []
       }
