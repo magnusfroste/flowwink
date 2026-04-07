@@ -32,7 +32,7 @@ Each skill has:
 - **`tool_definition`** — OpenAI function-calling JSON schema
 - **`instructions`** — rich knowledge for the skill (optional)
 
-## Current Counts (109 skills, 9 categories)
+## Current Counts (106 skills, 9 categories)
 
 | Category | Count |
 |----------|-------|
@@ -44,7 +44,7 @@ Each skill has:
 | System | 12 |
 | Growth | 5 |
 | Automation | 4 |
-| Search | 4 |
+| Search | 3 |
 | **+ Runtime** | **∞** |
 
 ## Built-in Tools (32 tools)
