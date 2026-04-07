@@ -71,8 +71,8 @@ export function AddExpenseDialog() {
   }
 
   async function handleSubmit() {
-    const amountCents = Math.round(parseFloat(amount || '0') * 100);
-    const vatCents = Math.round(parseFloat(vat || '0') * 100);
+    const amountCents = Math.round(netAmount * 100);
+    const vatCents = Math.round(computedVat * 100);
 
     await createExpense.mutateAsync({
       expense_date: date,
@@ -90,7 +90,7 @@ export function AddExpenseDialog() {
     setOpen(false);
   }
 
-  const canSubmit = description.trim() && amount && parseFloat(amount) > 0;
+  const canSubmit = description.trim() && total && parseFloat(total) > 0;
   const needsAttendees = isRepresentation && attendees.filter((a) => a.name.trim()).length === 0;
 
   return (
