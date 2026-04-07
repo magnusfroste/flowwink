@@ -77,10 +77,13 @@ export function useCreateExpense() {
         throw new Error('Representation expenses require attendees (name + company)');
       }
 
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
       const { data, error } = await supabase
         .from('expenses')
         .insert([{
-          user_id: input.user_id || null,
+          user_id: user.id,
           expense_date: input.expense_date || new Date().toISOString().slice(0, 10),
           description: input.description || '',
           amount_cents: input.amount_cents || 0,
