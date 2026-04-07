@@ -8,6 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 export interface HandbookBlockData {
   title?: string;
@@ -104,6 +105,17 @@ export function HandbookBlock({ data }: HandbookBlockProps) {
       }
       return <a href={href} target="_blank" rel="noopener noreferrer" {...props}>{children}</a>;
     },
+    table: ({ children, ...props }: React.HTMLAttributes<HTMLTableElement> & { children?: React.ReactNode }) => (
+      <div className="overflow-x-auto my-4">
+        <table className="min-w-full border border-border text-sm" {...props}>{children}</table>
+      </div>
+    ),
+    th: ({ children, ...props }: React.ThHTMLAttributes<HTMLTableCellElement> & { children?: React.ReactNode }) => (
+      <th className="border border-border bg-muted/50 px-3 py-2 text-left font-semibold" {...props}>{children}</th>
+    ),
+    td: ({ children, ...props }: React.TdHTMLAttributes<HTMLTableCellElement> & { children?: React.ReactNode }) => (
+      <td className="border border-border px-3 py-2" {...props}>{children}</td>
+    ),
   }), [chapters, navigateToSlug]);
 
   if (isLoading) {
@@ -206,7 +218,7 @@ export function HandbookBlock({ data }: HandbookBlockProps) {
             {activeChapter ? (
               <div className="space-y-8">
                 <article className="prose prose-sm dark:prose-invert max-w-none">
-                  <ReactMarkdown components={markdownComponents}>{activeChapter.content}</ReactMarkdown>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{activeChapter.content}</ReactMarkdown>
                 </article>
 
                 {/* Prev / Next navigation */}
@@ -267,7 +279,7 @@ export function HandbookBlock({ data }: HandbookBlockProps) {
               {activeSlug === ch.slug && (
                 <div className="px-4 pb-4 border-t">
                   <article className="prose prose-sm dark:prose-invert max-w-none pt-4">
-                    <ReactMarkdown components={markdownComponents}>{ch.content}</ReactMarkdown>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{ch.content}</ReactMarkdown>
                   </article>
                 </div>
               )}
