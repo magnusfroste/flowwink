@@ -2,7 +2,7 @@
 
 > **The autonomous agentic web that runs your business.**
 > 
-> Version: 4.2 | Updated: April 2026 | Modules: 25 | Skills: 114 + ∞ runtime
+> Version: 4.3 | Updated: April 2026 | Modules: 26 | Skills: 117 + ∞ runtime
 
 ---
 
@@ -145,7 +145,8 @@ Admin   → PageEditorPage.tsx → BlockEditor.tsx → [Name]BlockEditor.tsx
 | **Orders** | Order management with Stripe webhooks and confirmation emails | Enabled |
 | **Bookings** | Appointment scheduling with calendar, services, and email confirmations | Enabled |
 | **Invoices** | Quote-to-invoice lifecycle with PDF generation and email delivery | Enabled |
-| **Consultant Profiles** | Team expertise with AI-powered resume matching | Disabled |
+| **Consultants** | Team expertise with AI-powered resume matching and cover letters | Disabled |
+| **Inventory** | Stock levels, movements, reorder points — auto-decrements on orders | Disabled |
 
 ### Insights
 
@@ -380,6 +381,25 @@ The timesheets module (`src/lib/module-bootstraps/timesheets.ts`) tracks employe
 - **Invoice integration** (planned): Mark billable entries as invoiced when creating client invoices
 - **FlowPilot chat**: Natural language time logging — "jag jobbade 4 timmar på Website Redesign idag" triggers `log_time`
 - **RLS**: Users see own entries, admins see all; invoiced entries cannot be deleted
+
+| Reference doc | Path |
+|---|---|
+| [MODULE-API.md](./MODULE-API.md) | Technical module API |
+| [SKILLS-SOURCE.md](./SKILLS-SOURCE.md) | Skill registry source of truth |
+
+---
+
+### Inventory Module
+
+The inventory module tracks stock levels across all e-commerce products with automatic order integration:
+
+- **Tables**: `product_stock` (product_id, quantity_on_hand, quantity_reserved, reorder_point), `stock_moves` (product_id, quantity, move_type, reference_type, reference_id, notes)
+- **3 skills**: `check_stock` (query stock levels), `adjust_stock` (manual in/out/adjustment), `low_stock_report` (products below reorder point)
+- **Auto-decrement**: Database trigger on `orders` table automatically creates stock moves and decrements `quantity_on_hand` when orders are placed
+- **Admin UI**: Three-tab layout — Stock Levels (with inline reorder point editing), Movements log, and Untracked products (enable tracking per product)
+- **KPI cards**: Tracked products, stock value, low stock count, out of stock count
+- **E-commerce integration**: Leverages existing `back_in_stock_requests` table for notifications
+- **RLS**: Authenticated users can view; writers/admins can modify stock and create moves
 
 | Reference doc | Path |
 |---|---|
