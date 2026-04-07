@@ -249,9 +249,17 @@ const ACCOUNTING_AUTOMATIONS: AutomationSeed[] = [
     name: 'Invoice Reconciliation',
     description: 'Daily check for sent invoices without matching journal entries. FlowPilot reviews and books them autonomously using the correct accounting template.',
     trigger_type: 'cron',
-    trigger_config: { cron: '0 8 * * *', expression: '0 8 * * *' }, // Daily at 08:00
+    trigger_config: { cron: '0 8 * * *', expression: '0 8 * * *' },
     skill_name: 'accounting_reports',
     skill_arguments: { type: 'unbooked_invoices' },
+  },
+  {
+    name: 'Monthly Expense Processing',
+    description: 'On the 1st of each month, FlowPilot reviews all draft expenses from the previous month, submits reports per employee, and prompts admin for approval.',
+    trigger_type: 'cron',
+    trigger_config: { cron: '0 9 1 * *', expression: '0 9 1 * *' },
+    skill_name: 'manage_expenses',
+    skill_arguments: { action: 'list', status: 'draft' },
   },
 ];
 
