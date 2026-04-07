@@ -142,15 +142,23 @@ export function AddExpenseDialog() {
             <Input id="exp-vendor" placeholder="Restaurant name, airline…" value={vendor} onChange={(e) => setVendor(e.target.value)} />
           </div>
 
-          {/* Amount + VAT + Currency */}
+          {/* Total + VAT rate + Currency */}
           <div className="grid grid-cols-3 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="exp-amount">Amount</Label>
-              <Input id="exp-amount" type="number" step="0.01" min="0" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} />
+              <Label htmlFor="exp-total">Total (incl. VAT)</Label>
+              <Input id="exp-total" type="number" step="0.01" min="0" placeholder="0.00" value={total} onChange={(e) => setTotal(e.target.value)} />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="exp-vat">VAT</Label>
-              <Input id="exp-vat" type="number" step="0.01" min="0" placeholder="0.00" value={vat} onChange={(e) => setVat(e.target.value)} />
+              <Label>VAT Rate</Label>
+              <Select value={vatRate} onValueChange={(v) => { setVatRate(v); setVatOverride(''); }}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="25">25%</SelectItem>
+                  <SelectItem value="12">12%</SelectItem>
+                  <SelectItem value="6">6%</SelectItem>
+                  <SelectItem value="0">0%</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1.5">
               <Label>Currency</Label>
@@ -168,7 +176,19 @@ export function AddExpenseDialog() {
             </div>
           </div>
 
-          {/* Representation toggle */}
+          {/* VAT override + summary */}
+          {totalNum > 0 && (
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="space-y-1.5">
+                <Label htmlFor="exp-vat-override" className="text-xs text-muted-foreground">VAT override (optional)</Label>
+                <Input id="exp-vat-override" type="number" step="0.01" min="0" placeholder={computedVat.toFixed(2)} value={vatOverride} onChange={(e) => setVatOverride(e.target.value)} />
+              </div>
+              <div className="flex flex-col justify-end text-muted-foreground text-xs space-y-0.5 pb-2">
+                <span>Net: {netAmount.toFixed(2)} {currency}</span>
+                <span>VAT: {computedVat.toFixed(2)} {currency}</span>
+              </div>
+            </div>
+          )
           <div className="flex items-center gap-3 pt-1">
             <Switch id="exp-rep" checked={isRepresentation} onCheckedChange={(v) => {
               setIsRepresentation(v);
