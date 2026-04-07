@@ -75,6 +75,8 @@ export function NewJournalEntryDialog({ open, onOpenChange }: Props) {
   const totalCredit = lines.reduce((s, l) => s + l.credit_cents, 0);
   const isBalanced = totalDebit === totalCredit && totalDebit > 0;
 
+  const formatKr = (cents: number) => (cents / 100).toLocaleString('sv-SE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
   const handleSubmit = async () => {
     await createEntry.mutateAsync({
       entry_date: date,
@@ -184,21 +186,23 @@ export function NewJournalEntryDialog({ open, onOpenChange }: Props) {
                 <Input
                   type="number"
                   min={0}
-                  value={line.debit_cents || ''}
+                  step="0.01"
+                  value={line.debit_cents ? (line.debit_cents / 100).toString() : ''}
                   onChange={(e) =>
-                    updateLine(i, { debit_cents: Number(e.target.value) || 0, credit_cents: 0 })
+                    updateLine(i, { debit_cents: Math.round((Number(e.target.value) || 0) * 100), credit_cents: 0 })
                   }
-                  placeholder="0"
+                  placeholder="0.00"
                   className="text-right text-sm"
                 />
                 <Input
                   type="number"
                   min={0}
-                  value={line.credit_cents || ''}
+                  step="0.01"
+                  value={line.credit_cents ? (line.credit_cents / 100).toString() : ''}
                   onChange={(e) =>
-                    updateLine(i, { credit_cents: Number(e.target.value) || 0, debit_cents: 0 })
+                    updateLine(i, { credit_cents: Math.round((Number(e.target.value) || 0) * 100), debit_cents: 0 })
                   }
-                  placeholder="0"
+                  placeholder="0.00"
                   className="text-right text-sm"
                 />
                 <Button
@@ -227,14 +231,14 @@ export function NewJournalEntryDialog({ open, onOpenChange }: Props) {
           <div className="flex items-center justify-between border-t pt-4">
             <div className="flex gap-6 text-sm">
               <span>
-                Debit: <strong>{totalDebit}</strong>
+                Debit: <strong>{formatKr(totalDebit)}</strong>
               </span>
               <span>
-                Credit: <strong>{totalCredit}</strong>
+                Credit: <strong>{formatKr(totalCredit)}</strong>
               </span>
               {!isBalanced && totalDebit + totalCredit > 0 && (
                 <span className="text-destructive font-medium">
-                  Diff: {Math.abs(totalDebit - totalCredit)}
+                  Diff: {formatKr(Math.abs(totalDebit - totalCredit))}
                 </span>
               )}
             </div>
