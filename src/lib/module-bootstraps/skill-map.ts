@@ -209,6 +209,12 @@ export const MODULE_SKILL_MAP: Partial<Record<keyof ModulesSettings, string[]>> 
     'analyze_receipt',
   ],
 
+  timesheets: [
+    'log_time',
+    'manage_projects',
+    'timesheet_summary',
+  ],
+
   developer: [
     // Developer module is UI-only (API Explorer, Webhooks)
   ],
