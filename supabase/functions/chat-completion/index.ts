@@ -27,9 +27,11 @@ const MAX_TOOL_ITERATIONS = 4;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+type ChatContent = string | Array<{ type: 'text'; text: string } | { type: 'image_url'; image_url: { url: string } }>;
+
 interface ChatMessage {
   role: 'user' | 'assistant' | 'system' | 'tool';
-  content: string;
+  content: ChatContent;
   tool_call_id?: string;
   tool_calls?: ToolCall[];
 }
