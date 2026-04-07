@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useExpenses } from '@/hooks/useExpenses';
+import { AddExpenseDialog } from './AddExpenseDialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -70,8 +71,8 @@ export function ExpensesListTab() {
         </Card>
       </div>
 
-      {/* Filter */}
-      <div className="flex items-center gap-3">
+      {/* Filter + Add */}
+      <div className="flex items-center justify-between gap-3">
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Filter by status" />
@@ -85,6 +86,7 @@ export function ExpensesListTab() {
             <SelectItem value="booked">Booked</SelectItem>
           </SelectContent>
         </Select>
+        <AddExpenseDialog />
       </div>
 
       {/* Table */}
