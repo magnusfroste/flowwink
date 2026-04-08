@@ -1189,6 +1189,300 @@ async function executeGraphQL(
       };
     }
 
+    // ============= Orders Queries =============
+
+    if (normalizedQuery.includes('orders') && !normalizedQuery.includes('order(')) {
+      const limitMatch = normalizedQuery.match(/limit:\s*(\d+)/);
+      const offsetMatch = normalizedQuery.match(/offset:\s*(\d+)/);
+      const statusMatch = normalizedQuery.match(/status:\s*["']?([^"'\s),]+)["']?/);
+      const limit = limitMatch ? parseInt(limitMatch[1]) : (variables.limit as number) || 50;
+      const offset = offsetMatch ? parseInt(offsetMatch[1]) : (variables.offset as number) || 0;
+      const status = statusMatch?.[1] || (variables.status as string);
+
+      let query = supabase
+        .from('orders')
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      if (status) query = query.eq('status', status);
+
+      const { data: orders, error, count } = await query;
+      if (error) throw error;
+
+      return {
+        data: {
+          orders: {
+            // deno-lint-ignore no-explicit-any
+            nodes: (orders || []).map((o: any) => ({
+              id: o.id, customerEmail: o.customer_email, customerName: o.customer_name,
+              totalCents: o.total_cents, currency: o.currency, status: o.status,
+              items: o.items, createdAt: o.created_at,
+            })),
+            totalCount: count || 0,
+          },
+        },
+      };
+    }
+
+    // Query: order(id)
+    const orderIdMatch = normalizedQuery.match(/order\s*\(\s*id:\s*["']?([^"'\s)]+)["']?\s*\)/);
+    const orderId = orderIdMatch?.[1] || (variables.id as string);
+    if (orderId && normalizedQuery.includes('order(')) {
+      const { data: order, error } = await supabase.from('orders').select('*').eq('id', orderId).maybeSingle();
+      if (error) throw error;
+      if (!order) return { data: { order: null } };
+      // deno-lint-ignore no-explicit-any
+      const o = order as any;
+      return { data: { order: { id: o.id, customerEmail: o.customer_email, customerName: o.customer_name, totalCents: o.total_cents, currency: o.currency, status: o.status, items: o.items, createdAt: o.created_at } } };
+    }
+
+    // ============= Leads Queries =============
+
+    if (normalizedQuery.includes('leads') && !normalizedQuery.includes('lead(')) {
+      const limitMatch = normalizedQuery.match(/limit:\s*(\d+)/);
+      const offsetMatch = normalizedQuery.match(/offset:\s*(\d+)/);
+      const statusMatch = normalizedQuery.match(/status:\s*["']?([^"'\s),]+)["']?/);
+      const limit = limitMatch ? parseInt(limitMatch[1]) : (variables.limit as number) || 50;
+      const offset = offsetMatch ? parseInt(offsetMatch[1]) : (variables.offset as number) || 0;
+      const status = statusMatch?.[1] || (variables.status as string);
+
+      let query = supabase.from('leads').select('*', { count: 'exact' }).order('created_at', { ascending: false }).range(offset, offset + limit - 1);
+      if (status) query = query.eq('status', status);
+
+      const { data: leads, error, count } = await query;
+      if (error) throw error;
+
+      return {
+        data: {
+          leads: {
+            // deno-lint-ignore no-explicit-any
+            nodes: (leads || []).map((l: any) => ({
+              id: l.id, name: l.name, email: l.email, phone: l.phone,
+              status: l.status, score: l.score, source: l.source, createdAt: l.created_at,
+            })),
+            totalCount: count || 0,
+          },
+        },
+      };
+    }
+
+    // Query: lead(id)
+    const leadIdMatch = normalizedQuery.match(/lead\s*\(\s*id:\s*["']?([^"'\s)]+)["']?\s*\)/);
+    const leadId = leadIdMatch?.[1] || (variables.id as string);
+    if (leadId && normalizedQuery.includes('lead(')) {
+      const { data: lead, error } = await supabase.from('leads').select('*').eq('id', leadId).maybeSingle();
+      if (error) throw error;
+      if (!lead) return { data: { lead: null } };
+      // deno-lint-ignore no-explicit-any
+      const l = lead as any;
+      return { data: { lead: { id: l.id, name: l.name, email: l.email, phone: l.phone, status: l.status, score: l.score, source: l.source, createdAt: l.created_at } } };
+    }
+
+    // ============= Deals Queries =============
+
+    if (normalizedQuery.includes('deals')) {
+      const limitMatch = normalizedQuery.match(/limit:\s*(\d+)/);
+      const offsetMatch = normalizedQuery.match(/offset:\s*(\d+)/);
+      const stageMatch = normalizedQuery.match(/stage:\s*["']?([^"'\s),]+)["']?/);
+      const limit = limitMatch ? parseInt(limitMatch[1]) : (variables.limit as number) || 50;
+      const offset = offsetMatch ? parseInt(offsetMatch[1]) : (variables.offset as number) || 0;
+      const stage = stageMatch?.[1] || (variables.stage as string);
+
+      let query = supabase.from('deals').select('*', { count: 'exact' }).order('created_at', { ascending: false }).range(offset, offset + limit - 1);
+      if (stage) query = query.eq('stage', stage);
+
+      const { data: deals, error, count } = await query;
+      if (error) throw error;
+
+      return {
+        data: {
+          deals: {
+            // deno-lint-ignore no-explicit-any
+            nodes: (deals || []).map((d: any) => ({
+              id: d.id, valueCents: d.value_cents, currency: d.currency,
+              stage: d.stage, expectedClose: d.expected_close, notes: d.notes,
+              leadId: d.lead_id, createdAt: d.created_at,
+            })),
+            totalCount: count || 0,
+          },
+        },
+      };
+    }
+
+    // ============= Companies Queries =============
+
+    if (normalizedQuery.includes('companies')) {
+      const limitMatch = normalizedQuery.match(/limit:\s*(\d+)/);
+      const offsetMatch = normalizedQuery.match(/offset:\s*(\d+)/);
+      const limit = limitMatch ? parseInt(limitMatch[1]) : (variables.limit as number) || 50;
+      const offset = offsetMatch ? parseInt(offsetMatch[1]) : (variables.offset as number) || 0;
+
+      const { data: companies, error, count } = await supabase.from('companies').select('*', { count: 'exact' }).order('created_at', { ascending: false }).range(offset, offset + limit - 1);
+      if (error) throw error;
+
+      return {
+        data: {
+          companies: {
+            // deno-lint-ignore no-explicit-any
+            nodes: (companies || []).map((c: any) => ({
+              id: c.id, name: c.name, domain: c.domain, industry: c.industry,
+              size: c.size, website: c.website, phone: c.phone, createdAt: c.created_at,
+            })),
+            totalCount: count || 0,
+          },
+        },
+      };
+    }
+
+    // ============= Tickets Queries =============
+
+    if (normalizedQuery.includes('tickets')) {
+      const limitMatch = normalizedQuery.match(/limit:\s*(\d+)/);
+      const offsetMatch = normalizedQuery.match(/offset:\s*(\d+)/);
+      const statusMatch = normalizedQuery.match(/status:\s*["']?([^"'\s),]+)["']?/);
+      const limit = limitMatch ? parseInt(limitMatch[1]) : (variables.limit as number) || 50;
+      const offset = offsetMatch ? parseInt(offsetMatch[1]) : (variables.offset as number) || 0;
+      const status = statusMatch?.[1] || (variables.status as string);
+
+      let query = supabase.from('support_tickets').select('*', { count: 'exact' }).order('created_at', { ascending: false }).range(offset, offset + limit - 1);
+      if (status) query = query.eq('status', status);
+
+      const { data: tickets, error, count } = await query;
+      if (error) throw error;
+
+      return {
+        data: {
+          tickets: {
+            // deno-lint-ignore no-explicit-any
+            nodes: (tickets || []).map((t: any) => ({
+              id: t.id, title: t.title, description: t.description,
+              status: t.status, priority: t.priority,
+              customerEmail: t.customer_email, customerName: t.customer_name,
+              createdAt: t.created_at,
+            })),
+            totalCount: count || 0,
+          },
+        },
+      };
+    }
+
+    // ============= Invoices Queries =============
+
+    if (normalizedQuery.includes('invoices')) {
+      const limitMatch = normalizedQuery.match(/limit:\s*(\d+)/);
+      const offsetMatch = normalizedQuery.match(/offset:\s*(\d+)/);
+      const statusMatch = normalizedQuery.match(/status:\s*["']?([^"'\s),]+)["']?/);
+      const limit = limitMatch ? parseInt(limitMatch[1]) : (variables.limit as number) || 50;
+      const offset = offsetMatch ? parseInt(offsetMatch[1]) : (variables.offset as number) || 0;
+      const status = statusMatch?.[1] || (variables.status as string);
+
+      let query = supabase.from('invoices').select('*', { count: 'exact' }).order('created_at', { ascending: false }).range(offset, offset + limit - 1);
+      if (status) query = query.eq('status', status);
+
+      const { data: invoices, error, count } = await query;
+      if (error) throw error;
+
+      return {
+        data: {
+          invoices: {
+            // deno-lint-ignore no-explicit-any
+            nodes: (invoices || []).map((i: any) => ({
+              id: i.id, invoiceNumber: i.invoice_number, totalCents: i.total_cents,
+              currency: i.currency, status: i.status, dueDate: i.due_date,
+              issuedAt: i.issued_at, paidAt: i.paid_at, createdAt: i.created_at,
+            })),
+            totalCount: count || 0,
+          },
+        },
+      };
+    }
+
+    // ============= Webinars Queries =============
+
+    if (normalizedQuery.includes('webinars')) {
+      const limitMatch = normalizedQuery.match(/limit:\s*(\d+)/);
+      const limit = limitMatch ? parseInt(limitMatch[1]) : (variables.limit as number) || 20;
+
+      let query = supabase.from('webinars').select('*').order('scheduled_at', { ascending: true }).limit(limit);
+
+      const upcomingMatch = normalizedQuery.match(/upcoming:\s*(true|false)/);
+      const upcoming = upcomingMatch ? upcomingMatch[1] === 'true' : (variables.upcoming as boolean);
+      if (upcoming) {
+        query = query.gte('scheduled_at', new Date().toISOString());
+      }
+
+      const { data: webinars, error } = await query;
+      if (error) throw error;
+
+      return {
+        data: {
+          // deno-lint-ignore no-explicit-any
+          webinars: (webinars || []).map((w: any) => ({
+            id: w.id, title: w.title, description: w.description,
+            scheduledAt: w.scheduled_at, durationMinutes: w.duration_minutes,
+            status: w.status, registrationUrl: w.registration_url,
+            maxAttendees: w.max_attendees,
+          })),
+        },
+      };
+    }
+
+    // ============= Consultants Queries =============
+
+    if (normalizedQuery.includes('consultants')) {
+      const { data: consultants, error } = await supabase
+        .from('consultant_profiles')
+        .select('*')
+        .eq('is_active', true)
+        .order('name', { ascending: true });
+
+      if (error) throw error;
+
+      return {
+        data: {
+          // deno-lint-ignore no-explicit-any
+          consultants: (consultants || []).map((c: any) => ({
+            id: c.id, name: c.name, title: c.title, summary: c.summary,
+            skills: c.skills || [], hourlyRateCents: c.hourly_rate_cents,
+            currency: c.currency, availability: c.availability,
+            avatarUrl: c.avatar_url, isActive: c.is_active,
+          })),
+        },
+      };
+    }
+
+    // ============= Media Queries =============
+
+    if (normalizedQuery.includes('media')) {
+      const limitMatch = normalizedQuery.match(/limit:\s*(\d+)/);
+      const offsetMatch = normalizedQuery.match(/offset:\s*(\d+)/);
+      const limit = limitMatch ? parseInt(limitMatch[1]) : (variables.limit as number) || 50;
+      const offset = offsetMatch ? parseInt(offsetMatch[1]) : (variables.offset as number) || 0;
+
+      const { data: media, error, count } = await supabase
+        .from('media')
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      if (error) throw error;
+
+      return {
+        data: {
+          media: {
+            // deno-lint-ignore no-explicit-any
+            nodes: (media || []).map((m: any) => ({
+              id: m.id, fileName: m.file_name, fileUrl: m.file_url,
+              mimeType: m.mime_type, fileSizeBytes: m.file_size_bytes,
+              alt: m.alt, createdAt: m.created_at,
+            })),
+            totalCount: count || 0,
+          },
+        },
+      };
+    }
+
     return { errors: [{ message: 'Unknown query' }] };
   } catch (error) {
     console.error('[GraphQL] Error:', error);
