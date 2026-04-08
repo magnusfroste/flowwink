@@ -8,11 +8,21 @@
 
 ---
 
+## Vision
+
+> **Every business will have an autonomous AI operator. FlowWink is the operating system for that world.**
+
+## Mission
+
+> **Give every business a self-hosted AI operator that manages their website, qualifies their leads, creates their content, fulfills their orders, and grows their business — around the clock, without being prompted.**
+
+---
+
 ## A new kind of business software
 
 For decades, business software has been a collection of tools you operate manually — CMS, CRM, ERP, email, e-commerce — each requiring human input at every step.
 
-**FlowWink is a Business Operating System (BOS):** a unified platform where an autonomous AI agent called **FlowPilot** runs your content, leads, orders, campaigns, accounting, and fulfillment — continuously, around the clock, without hand-holding.
+**FlowWink is a Business Operating System (BOS):** a unified platform where an autonomous AI operator called **FlowPilot** runs your content, leads, orders, campaigns, accounting, and fulfillment — continuously, around the clock, without hand-holding.
 
 You set the direction. FlowPilot operates the business.
 
