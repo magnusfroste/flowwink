@@ -1,18 +1,18 @@
 # FlowWink — Product & System Reference
 
-> **The autonomous agentic web that runs your business.**
+> **The Business Operating System — powered by an autonomous AI agent.**
 > 
-> Version: 4.5 | Updated: April 2026 | Modules: 27 | Skills: 118 + ∞ runtime
+> Version: 5.0 | Updated: April 2026 | Modules: 27 | Skills: 118 + ∞ runtime
 
 ---
 
 ## 1. Vision & Positioning
 
-FlowWink is the world's first **Autonomous Agentic CMS** — a self-hosted platform where an AI agent (FlowPilot) runs your entire digital presence. Built for era three of the web:
+FlowWink is a **Business Operating System (BOS)** — a self-hosted platform where an autonomous AI agent (FlowPilot) operates your entire business. Built for era three of business software:
 
-1. **Static web** (1990s–2000s) — HTML pages. You write it, it sits there.
-2. **Dynamic web** (2000s–2020s) — CMS platforms. You update it, it publishes.
-3. **Agentic web** (2025–) — AI agents. You direct it, it runs.
+1. **Tools era** (1990s–2010s) — Separate apps. You operate each one manually.
+2. **SaaS era** (2010s–2020s) — Cloud platforms. Easier to use, still human-driven.
+3. **Agent era** (2025–) — AI operators. You set direction, the agent runs the business.
 
 ### The Core Insight
 
@@ -20,7 +20,7 @@ Every business has **directional work** (strategy, decisions — requires humans
 
 ### Odoo-Inspired ERP for SMBs
 
-FlowWink evolves into an Odoo-inspired ERP shell where FlowPilot functions as the primary autonomous operator for the full **Quote-to-Cash** lifecycle. The UI is a cockpit for exception handling, not a traditional form-based admin.
+FlowWink is an Odoo-inspired BOS where FlowPilot functions as the primary autonomous operator for the full **Quote-to-Cash** lifecycle. The UI is a cockpit for exception handling, not a traditional form-based admin.
 
 ### Module Ecosystem (Odoo Model)
 
@@ -474,4 +474,4 @@ The SLA Monitor (`src/pages/admin/SlaMonitorPage.tsx`) enables policy-based serv
 
 ---
 
-*The autonomous agentic web that runs your business. That's FlowWink.*
+*The Business Operating System. FlowPilot runs the business so you can build it.*

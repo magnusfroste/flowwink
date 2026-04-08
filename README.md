@@ -1,6 +1,6 @@
 # FlowWink
 
-> **The autonomous agentic web that runs your business.**
+> **The Business Operating System — powered by an autonomous AI agent.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Docker Image](https://img.shields.io/badge/Docker-ghcr.io-blue)](https://github.com/magnusfroste/flowwink/pkgs/container/flowwink)
@@ -8,13 +8,13 @@
 
 ---
 
-## A new era for the web
+## A new kind of business software
 
-The web is changing. For 30 years a website has been a passive artifact — something you build, maintain, and operate manually. That era is ending.
+For decades, business software has been a collection of tools you operate manually — CMS, CRM, ERP, email, e-commerce — each requiring human input at every step.
 
-**FlowWink is the first platform built for what comes next:** a web where your entire digital presence — content, leads, campaigns, orders, relationships — runs autonomously. Not scheduled. Not templated. **Autonomously.** An AI agent called **FlowPilot** understands your business objectives and executes on them continuously, around the clock, without hand-holding.
+**FlowWink is a Business Operating System (BOS):** a unified platform where an autonomous AI agent called **FlowPilot** runs your content, leads, orders, campaigns, accounting, and fulfillment — continuously, around the clock, without hand-holding.
 
-You set the direction. FlowPilot runs the business.
+You set the direction. FlowPilot operates the business.
 
 ---
 
@@ -236,7 +236,7 @@ FlowPilot routes to whichever provider is configured. Use your own API keys. Run
 | Intercom | AI chat with KB integration and lead capture |
 | Shopify (simple) | Products, orders, and Stripe checkout |
 
-One platform. One agent. Self-host free.
+One operating system. One agent. Self-host free.
 
 ---
 
@@ -331,6 +331,6 @@ MIT — see [LICENSE](LICENSE) for details.
 
 ---
 
-*Stop managing. Start directing. FlowPilot runs the business so you can build it.*
+*Stop managing tools. Start directing outcomes. FlowPilot is your Business Operating System.*
 
 **Made in Sweden 🇸🇪**
