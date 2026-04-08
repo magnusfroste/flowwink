@@ -2,7 +2,7 @@
 
 > **Your website runs itself.** FlowPilot is not a chatbot. It is an autonomous AI operator that writes your content, qualifies your leads, books your accounting entries, runs your campaigns, orchestrates multi-agent workflows, and learns from every interaction. You set the objectives. It does the rest.
 
-> **Version:** 4.1 | **Updated:** April 2026 | **Skills:** 109 registered + 32 built-in tools + ∞ runtime-created | **Autonomy:** 10/10
+> **Version:** 4.2 | **Updated:** April 2026 | **Skills:** 110 registered + 32 built-in tools + ∞ runtime-created | **Autonomy:** 10/10
 
 ---
 
@@ -765,6 +765,11 @@ Bundled capability sets in `agent_skill_packs` table (3 seed packs, not yet inst
 | `update-kb-feedback` | KB article feedback tracking |
 | `run-autonomy-tests` | Autonomy conformance suite |
 | `a2a-ingest` | A2A peer communication handler |
+
+### Operations
+| Function | Purpose |
+|----------|---------|
+| `sla-check` | Evaluate SLA policies, detect violations, auto-resolve |
 
 ### Growth
 | Function | Purpose |
