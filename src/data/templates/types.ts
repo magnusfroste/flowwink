@@ -14,6 +14,11 @@ import { TemplateKbCategory } from '@/data/template-kb-articles';
 export type HelpStyle = 'kb-classic' | 'ai-hub' | 'hybrid' | 'none';
 
 // Product definition for e-commerce templates
+export interface TemplateProductStock {
+  quantity_on_hand: number;
+  reorder_point?: number;
+}
+
 export interface TemplateProduct {
   name: string;
   description: string;
@@ -22,6 +27,7 @@ export interface TemplateProduct {
   type: 'one_time' | 'recurring';
   image_url?: string;
   is_active?: boolean;
+  stock?: TemplateProductStock;
 }
 
 // Consultant profile for consulting/agency templates
