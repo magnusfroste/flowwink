@@ -2,7 +2,9 @@ import {
   LayoutDashboard, BarChart3, FileText, Users, Settings, BookOpen, Image, Mail,
   Puzzle, UserCheck, Briefcase, Building2, Package, Library, ShoppingCart,
   CalendarDays, Plug, Bot, Zap, MessageSquare, Headphones, Megaphone, Code2, FileText as FileQuote,
-  Video, Target, Inbox, UserCircle, FileUser, Receipt, Timer,
+  Video, Target, Inbox, UserCircle, FileUser, Receipt, Timer, Wallet,
+  Network, Snowflake, UserRound, BookMarked, KeyRound,
+} from 'lucide-react';
   Network, Snowflake, UserRound, BookMarked, KeyRound,
 } from 'lucide-react';
 
@@ -73,10 +75,16 @@ export const navigationGroups: NavGroup[] = [
       { name: "Consultants", href: "/admin/resume", icon: FileUser, moduleId: "resume" },
       { name: "Deals", href: "/admin/deals", icon: Briefcase, moduleId: "deals" },
       { name: "Bookings", href: "/admin/bookings", icon: CalendarDays, moduleId: "bookings" },
+    ],
+  },
+  {
+    label: "Finance",
+    adminOnly: true,
+    items: [
       { name: "Quotes", href: "/admin/quotes", icon: FileQuote, moduleId: "invoicing" },
       { name: "Invoices", href: "/admin/invoices", icon: Receipt, moduleId: "invoicing" },
       { name: "Accounting", href: "/admin/accounting", icon: BookOpen, moduleId: "accounting" },
-      { name: "Expenses", href: "/admin/expenses", icon: Receipt, moduleId: "expenses" },
+      { name: "Expenses", href: "/admin/expenses", icon: Wallet, moduleId: "expenses" },
       { name: "Timesheets", href: "/admin/timesheets", icon: Timer, moduleId: "timesheets" },
     ],
   },
