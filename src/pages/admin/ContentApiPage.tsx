@@ -37,6 +37,10 @@ const REST_ENDPOINTS: RestEndpoint[] = [
   { id: "blog-categories", name: "Blog Categories", method: "GET", path: "/blog/categories", description: "List all blog categories" },
   // Products
   { id: "products", name: "Products", method: "GET", path: "/products", description: "List all active products" },
+  { id: "product", name: "Get Product", method: "GET", path: "/product/:id", description: "Get product by ID", params: [{ name: "id", type: "string", description: "Product ID", required: true }] },
+  // Orders
+  { id: "orders", name: "Orders", method: "GET", path: "/orders", description: "List orders (requires auth)", params: [{ name: "status", type: "string", description: "Filter by status" }, { name: "limit", type: "number", description: "Max results" }] },
+  { id: "order", name: "Get Order", method: "GET", path: "/order/:id", description: "Get order by ID", params: [{ name: "id", type: "string", description: "Order ID", required: true }] },
   // Bookings
   { id: "booking-services", name: "Booking Services", method: "GET", path: "/booking/services", description: "List booking services" },
   { 
@@ -44,10 +48,25 @@ const REST_ENDPOINTS: RestEndpoint[] = [
     description: "Create a new booking",
     bodyTemplate: { service_id: "example-service-id", customer_name: "John Doe", customer_email: "john@example.com", customer_phone: "+46701234567", start_time: new Date(Date.now() + 86400000).toISOString(), notes: "Test booking" }
   },
+  // CRM / Leads
+  { id: "leads", name: "Leads", method: "GET", path: "/leads", description: "List CRM leads (requires auth)", params: [{ name: "status", type: "string", description: "Filter by status" }, { name: "limit", type: "number", description: "Max results" }] },
+  { id: "lead", name: "Get Lead", method: "GET", path: "/lead/:id", description: "Get lead by ID", params: [{ name: "id", type: "string", description: "Lead ID", required: true }] },
+  // Deals
+  { id: "deals", name: "Deals", method: "GET", path: "/deals", description: "List deals (requires auth)", params: [{ name: "stage", type: "string", description: "Filter by stage" }, { name: "limit", type: "number", description: "Max results" }] },
+  // Companies
+  { id: "companies", name: "Companies", method: "GET", path: "/companies", description: "List companies (requires auth)", params: [{ name: "limit", type: "number", description: "Max results" }] },
+  // Tickets
+  { id: "tickets", name: "Tickets", method: "GET", path: "/tickets", description: "List support tickets (requires auth)", params: [{ name: "status", type: "string", description: "Filter by status" }, { name: "limit", type: "number", description: "Max results" }] },
   // Knowledge Base
   { id: "kb-categories", name: "KB Categories", method: "GET", path: "/kb/categories", description: "Knowledge base categories with articles" },
   { id: "kb-articles", name: "KB Articles", method: "GET", path: "/kb/articles", description: "List all published KB articles", params: [{ name: "category", type: "string", description: "Category slug" }, { name: "limit", type: "number", description: "Max results" }] },
   { id: "kb-article", name: "KB Article", method: "GET", path: "/kb/article/:slug", description: "Get KB article by slug", params: [{ name: "slug", type: "string", description: "Article slug", required: true }] },
+  // Invoicing
+  { id: "invoices", name: "Invoices", method: "GET", path: "/invoices", description: "List invoices (requires auth)", params: [{ name: "status", type: "string", description: "Filter by status" }, { name: "limit", type: "number", description: "Max results" }] },
+  // Webinars
+  { id: "webinars", name: "Webinars", method: "GET", path: "/webinars", description: "List upcoming webinars", params: [{ name: "limit", type: "number", description: "Max results" }] },
+  // Consultants
+  { id: "consultants", name: "Consultants", method: "GET", path: "/consultants", description: "List active consultant profiles" },
   // Global Blocks
   { id: "global-blocks", name: "Global Blocks", method: "GET", path: "/global-blocks", description: "Get global blocks (header, footer, popup)" },
   // Settings
@@ -64,14 +83,24 @@ const REST_ENDPOINTS: RestEndpoint[] = [
     description: "Subscribe to newsletter",
     bodyTemplate: { email: "subscriber@example.com", name: "Jane Doe" }
   },
+  // Media
+  { id: "media", name: "Media Library", method: "GET", path: "/media", description: "List media assets", params: [{ name: "limit", type: "number", description: "Max results" }] },
 ];
 
 const GRAPHQL_EXAMPLES: { name: string; query: string }[] = [
   { name: "Pages", query: `query {\n  pages {\n    id\n    title\n    slug\n    status\n  }\n}` },
   { name: "Blog Posts", query: `query {\n  blogPosts(limit: 5) {\n    title\n    slug\n    excerpt\n    author {\n      full_name\n    }\n    categories {\n      name\n    }\n  }\n}` },
   { name: "Products", query: `query {\n  products {\n    id\n    name\n    price_cents\n    currency\n    type\n  }\n}` },
+  { name: "Orders", query: `query {\n  orders(limit: 10) {\n    id\n    customer_email\n    total_cents\n    currency\n    status\n    items\n  }\n}` },
+  { name: "Leads", query: `query {\n  leads(limit: 10) {\n    id\n    name\n    email\n    status\n    score\n    source\n  }\n}` },
+  { name: "Deals", query: `query {\n  deals(limit: 10) {\n    id\n    lead {\n      name\n      email\n    }\n    value_cents\n    stage\n    expected_close\n  }\n}` },
+  { name: "Companies", query: `query {\n  companies {\n    id\n    name\n    domain\n    industry\n    size\n  }\n}` },
+  { name: "Tickets", query: `query {\n  tickets(limit: 10) {\n    id\n    title\n    status\n    priority\n    created_at\n  }\n}` },
   { name: "Knowledge Base", query: `query {\n  kbCategories {\n    name\n    slug\n    icon\n    articles {\n      title\n      slug\n    }\n  }\n}` },
+  { name: "Invoices", query: `query {\n  invoices(limit: 10) {\n    id\n    invoice_number\n    total_cents\n    currency\n    status\n    due_date\n  }\n}` },
   { name: "Booking Services", query: `query {\n  bookingServices {\n    id\n    name\n    duration_minutes\n    price_cents\n  }\n}` },
+  { name: "Webinars", query: `query {\n  webinars {\n    id\n    title\n    starts_at\n    status\n    max_attendees\n  }\n}` },
+  { name: "Consultants", query: `query {\n  consultants {\n    id\n    name\n    title\n    skills\n    hourly_rate_cents\n  }\n}` },
   { name: "Site Settings", query: `query {\n  siteSettings {\n    key\n    value\n  }\n}` },
 ];
 
