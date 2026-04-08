@@ -322,5 +322,6 @@ export default function InventoryPage() {
         </DialogContent>
       </Dialog>
     </div>
+    </AdminLayout>
   );
 }
