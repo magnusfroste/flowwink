@@ -174,6 +174,8 @@ export function ContentApiContent() {
     }
   };
 
+  const mcpUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/mcp-server`;
+
   const reactExample = `import { useQuery } from '@tanstack/react-query';
 
 function usePages() {
