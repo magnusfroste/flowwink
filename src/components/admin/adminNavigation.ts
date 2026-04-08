@@ -5,8 +5,6 @@ import {
   Video, Target, Inbox, UserCircle, FileUser, Receipt, Timer, Wallet,
   Network, Snowflake, UserRound, BookMarked, KeyRound,
 } from 'lucide-react';
-  Network, Snowflake, UserRound, BookMarked, KeyRound,
-} from 'lucide-react';
 
 export type NavItem = {
   name: string;
