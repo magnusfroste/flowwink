@@ -3053,12 +3053,20 @@ export type Database = {
           currency: string
           customer_email: string
           customer_name: string | null
+          delivered_at: string | null
+          fulfillment_notes: string | null
+          fulfillment_status: string
           id: string
           metadata: Json | null
+          packed_at: string | null
+          picked_at: string | null
+          shipped_at: string | null
           status: string
           stripe_checkout_id: string | null
           stripe_payment_intent: string | null
           total_cents: number
+          tracking_number: string | null
+          tracking_url: string | null
           updated_at: string
           user_id: string | null
         }
@@ -3068,12 +3076,20 @@ export type Database = {
           currency?: string
           customer_email: string
           customer_name?: string | null
+          delivered_at?: string | null
+          fulfillment_notes?: string | null
+          fulfillment_status?: string
           id?: string
           metadata?: Json | null
+          packed_at?: string | null
+          picked_at?: string | null
+          shipped_at?: string | null
           status?: string
           stripe_checkout_id?: string | null
           stripe_payment_intent?: string | null
           total_cents: number
+          tracking_number?: string | null
+          tracking_url?: string | null
           updated_at?: string
           user_id?: string | null
         }
@@ -3083,12 +3099,20 @@ export type Database = {
           currency?: string
           customer_email?: string
           customer_name?: string | null
+          delivered_at?: string | null
+          fulfillment_notes?: string | null
+          fulfillment_status?: string
           id?: string
           metadata?: Json | null
+          packed_at?: string | null
+          picked_at?: string | null
+          shipped_at?: string | null
           status?: string
           stripe_checkout_id?: string | null
           stripe_payment_intent?: string | null
           total_cents?: number
+          tracking_number?: string | null
+          tracking_url?: string | null
           updated_at?: string
           user_id?: string | null
         }
