@@ -308,16 +308,19 @@ See **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** for full deployment guides.
 
 | Document | What it covers |
 |----------|---------------|
-| **[docs/flowpilot.md](docs/flowpilot.md)** | Complete FlowPilot agent reference — skills, heartbeat, tools |
-| **[docs/MODULES.md](docs/MODULES.md)** | Module documentation — all 22 modules |
+| **[docs/FLOWPILOT.md](docs/FLOWPILOT.md)** | Complete FlowPilot agent reference — skills, heartbeat, tools |
+| **[docs/SKILLS-SOURCE.md](docs/SKILLS-SOURCE.md)** | Skill registry — all registered skills |
 | **[docs/MODULE-API.md](docs/MODULE-API.md)** | Module contract system, typed schemas, plugin architecture |
 | **[docs/OPENCLAW-LAW.md](docs/OPENCLAW-LAW.md)** | Agentic architecture laws |
+| **[docs/PRD.md](docs/PRD.md)** | Product requirements — modules, capabilities |
+| **[docs/ELEVATOR-PITCH.md](docs/ELEVATOR-PITCH.md)** | BOS positioning, vision, competitive landscape |
 | **[docs/SETUP.md](docs/SETUP.md)** | Supabase setup, environment variables, migrations |
 | **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** | Docker, Easypanel, Railway, Fly.io guides |
 | **[docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md)** | Architecture, extending the platform, writing skills |
 | **[docs/SECURITY.md](docs/SECURITY.md)** | RLS policies, auth patterns, security model |
 | **[docs/TESTING.md](docs/TESTING.md)** | Autonomous test framework (L1–L8) |
-| **[docs/VISION.md](docs/VISION.md)** | Product vision and philosophy |
+| **[docs/A2A-COMMUNICATION-MODEL.md](docs/A2A-COMMUNICATION-MODEL.md)** | Agent-to-Agent federation protocol |
+| **[docs/pilot/](docs/pilot/)** | Pilot engine internals — architecture, handlers, reasoning |
 
 ---
 

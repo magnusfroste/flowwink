@@ -77,6 +77,14 @@ Quick reference for all documentation. Each document has a clear purpose and tar
 | [CONTRIBUTING.md](./CONTRIBUTING.md) | How to contribute | Contributors |
 | [DEVELOPER_GUIDE.md](./DEVELOPER_GUIDE.md) | Architecture, extending the platform | Developers |
 
+## Pilot Engine Internals
+
+| Document | Purpose | Audience |
+|----------|---------|----------|
+| [pilot/README.md](./pilot/README.md) | Pilot engine overview — serverless OpenClaw | Developers |
+| [pilot/architecture.md](./pilot/architecture.md) | Engine architecture and data flow | Developers |
+| [pilot/handlers-reference.md](./pilot/handlers-reference.md) | Built-in tool handler reference | Developers |
+
 ---
 
 ## Primary References (Single Source of Truth)
