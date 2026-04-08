@@ -43,8 +43,11 @@ export default function ApiKeysPage() {
 
   const mcpUrl = `${window.location.origin.replace('://', '://').split('/')[0]}//${import.meta.env.VITE_SUPABASE_PROJECT_ID ? `${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co` : 'your-project.supabase.co'}/functions/v1/mcp-server`;
 
+  return <ApiKeysContent keys={keys} isLoading={isLoading} mcpUrl={mcpUrl} dialogOpen={dialogOpen} setDialogOpen={setDialogOpen} handleCloseDialog={handleCloseDialog} newKeyName={newKeyName} setNewKeyName={setNewKeyName} handleCreate={handleCreate} createKey={createKey} createdKey={createdKey} handleCopy={handleCopy} revokeKey={revokeKey} />;
+}
+
+export function ApiKeysContent({ keys, isLoading, mcpUrl, dialogOpen, setDialogOpen, handleCloseDialog, newKeyName, setNewKeyName, handleCreate, createKey, createdKey, handleCopy, revokeKey }: any) {
   return (
-    <AdminLayout>
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div>
