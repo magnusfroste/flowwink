@@ -34,6 +34,8 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { Package, Eye, RefreshCw, ShoppingBag, TrendingUp, Clock, CheckCircle, Mail, Loader2 } from 'lucide-react';
 import type { Tables } from '@/integrations/supabase/types';
+import { FulfillmentStepper } from '@/components/admin/orders/FulfillmentStepper';
+import { FulfillmentActions } from '@/components/admin/orders/FulfillmentActions';
 
 type Order = Tables<'orders'>;
 type OrderItem = Tables<'order_items'>;
@@ -46,6 +48,22 @@ const STATUS_LABELS: Record<string, string> = {
   cancelled: 'Cancelled',
   refunded: 'Refunded',
   failed: 'Failed',
+};
+
+const FULFILLMENT_LABELS: Record<string, string> = {
+  unfulfilled: 'Unfulfilled',
+  picked: 'Picked',
+  packed: 'Packed',
+  shipped: 'Shipped',
+  delivered: 'Delivered',
+};
+
+const FULFILLMENT_COLORS: Record<string, string> = {
+  unfulfilled: 'bg-muted text-muted-foreground',
+  picked: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+  packed: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+  shipped: 'bg-indigo-500/10 text-indigo-600 border-indigo-500/20',
+  delivered: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
 };
 
 const STATUS_COLORS: Record<string, string> = {
@@ -241,15 +259,15 @@ export default function OrdersPage() {
           ) : (
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Order</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Total</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead className="w-20"></TableHead>
-                </TableRow>
+                 <TableRow>
+                   <TableHead>Order</TableHead>
+                   <TableHead>Customer</TableHead>
+                   <TableHead>Status</TableHead>
+                   <TableHead>Fulfillment</TableHead>
+                   <TableHead>Total</TableHead>
+                   <TableHead>Date</TableHead>
+                   <TableHead className="w-20"></TableHead>
+                 </TableRow>
               </TableHeader>
               <TableBody>
                 {orders?.map((order) => (
@@ -267,25 +285,18 @@ export default function OrdersPage() {
                       <Badge className={STATUS_COLORS[order.status] || ''}>
                         {STATUS_LABELS[order.status] || order.status}
                       </Badge>
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {formatPrice(order.total_cents, order.currency)}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {format(new Date(order.created_at), 'PPp')}
-                    </TableCell>
-                    <TableCell>
-                      {order.confirmation_sent_at ? (
-                        <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50 dark:bg-green-900/20 dark:border-green-800">
-                          <Mail className="h-3 w-3 mr-1" />
-                          Sent
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="text-muted-foreground">
-                          Not Sent
-                        </Badge>
-                      )}
-                    </TableCell>
+                     </TableCell>
+                     <TableCell>
+                       <Badge className={FULFILLMENT_COLORS[(order as any).fulfillment_status] || 'bg-muted text-muted-foreground'}>
+                         {FULFILLMENT_LABELS[(order as any).fulfillment_status] || 'Unfulfilled'}
+                       </Badge>
+                     </TableCell>
+                     <TableCell className="font-medium">
+                       {formatPrice(order.total_cents, order.currency)}
+                     </TableCell>
+                     <TableCell className="text-muted-foreground">
+                       {format(new Date(order.created_at), 'PPp')}
+                     </TableCell>
                     <TableCell>
                       <Button
                         variant="ghost"
@@ -348,6 +359,42 @@ export default function OrdersPage() {
                       <SelectItem value="refunded">Refunded</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Fulfillment Progress */}
+              <div>
+                <h3 className="font-semibold mb-3">Fulfillment</h3>
+                <FulfillmentStepper
+                  status={(selectedOrder as any).fulfillment_status || 'unfulfilled'}
+                  pickedAt={(selectedOrder as any).picked_at}
+                  packedAt={(selectedOrder as any).packed_at}
+                  shippedAt={(selectedOrder as any).shipped_at}
+                  deliveredAt={(selectedOrder as any).delivered_at}
+                />
+                {(selectedOrder as any).tracking_number && (
+                  <div className="mt-3 text-sm">
+                    <span className="text-muted-foreground">Tracking: </span>
+                    {(selectedOrder as any).tracking_url ? (
+                      <a href={(selectedOrder as any).tracking_url} target="_blank" rel="noopener noreferrer" className="text-primary underline">
+                        {(selectedOrder as any).tracking_number}
+                      </a>
+                    ) : (
+                      <span className="font-mono">{(selectedOrder as any).tracking_number}</span>
+                    )}
+                  </div>
+                )}
+                <div className="mt-4">
+                  <FulfillmentActions
+                    orderId={selectedOrder.id}
+                    currentStatus={(selectedOrder as any).fulfillment_status || 'unfulfilled'}
+                    trackingNumber={(selectedOrder as any).tracking_number}
+                    trackingUrl={(selectedOrder as any).tracking_url}
+                    fulfillmentNotes={(selectedOrder as any).fulfillment_notes}
+                    onUpdated={() => setSelectedOrder(null)}
+                  />
                 </div>
               </div>
 

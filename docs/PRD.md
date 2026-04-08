@@ -170,7 +170,7 @@ Admin   → PageEditorPage.tsx → BlockEditor.tsx → [Name]BlockEditor.tsx
 | **Deals** | Sales pipeline (prospect → won/lost) with activity tracking | Enabled |
 | **Companies** | Organization management with AI enrichment and domain detection | Enabled |
 | **Products** | Product catalog with Stripe Checkout integration | Enabled |
-| **Orders** | Order management with Stripe webhooks and confirmation emails | Enabled |
+| **Orders** | Order management with Stripe webhooks, confirmation emails, and **fulfillment tracking** (unfulfilled → picked → packed → shipped → delivered) | Enabled |
 | **Bookings** | Appointment scheduling with calendar, services, and email confirmations | Enabled |
 | **Invoices** | Quote-to-invoice lifecycle with PDF generation and email delivery | Enabled |
 | **Consultants** | Team expertise with AI-powered resume matching and cover letters | Disabled |
@@ -439,6 +439,18 @@ The inventory module tracks stock levels across all e-commerce products with aut
 |---|---|
 | [MODULE-API.md](./MODULE-API.md) | Technical module API |
 | [SKILLS-SOURCE.md](./SKILLS-SOURCE.md) | Skill registry source of truth |
+
+---
+
+### Order Fulfillment Flow
+
+The fulfillment flow extends the Orders module with warehouse-style tracking from payment to delivery:
+
+- **Columns on `orders`**: `fulfillment_status` (unfulfilled → picked → packed → shipped → delivered), `picked_at`, `packed_at`, `shipped_at`, `delivered_at`, `tracking_number`, `tracking_url`, `fulfillment_notes`
+- **Auto-timestamping**: Database trigger automatically fills in earlier timestamps when status advances (e.g. marking as "shipped" auto-sets picked_at and packed_at if not already set)
+- **Order status sync**: Advancing to "shipped" sets order status to `shipped`; "delivered" sets it to `completed`
+- **Admin UI**: Visual stepper showing fulfillment progress with timestamps, tracking info display, and one-click advancement buttons per stage
+- **SLA-ready**: Timestamps enable SLA Monitor to track `fulfillment_time` policies (e.g. "orders must ship within 4 hours of payment")
 
 ---
 
