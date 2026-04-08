@@ -610,6 +610,7 @@ const digitalShopProducts: TemplateProduct[] = [
     type: 'one_time',
     image_url: '/templates/products/creator-toolkit.jpg',
     is_active: true,
+    stock: { quantity_on_hand: 999, reorder_point: 0 },
   },
   {
     name: 'Design System Pro',
@@ -619,6 +620,7 @@ const digitalShopProducts: TemplateProduct[] = [
     type: 'one_time',
     image_url: '/templates/products/design-system-pro.jpg',
     is_active: true,
+    stock: { quantity_on_hand: 999, reorder_point: 0 },
   },
   {
     name: 'Growth Masterclass',
@@ -628,6 +630,7 @@ const digitalShopProducts: TemplateProduct[] = [
     type: 'one_time',
     image_url: '/templates/products/growth-masterclass.jpg',
     is_active: true,
+    stock: { quantity_on_hand: 50, reorder_point: 10 },
   },
   {
     name: 'Social Media Pack',
@@ -637,6 +640,7 @@ const digitalShopProducts: TemplateProduct[] = [
     type: 'one_time',
     image_url: '/templates/products/social-media-pack.jpg',
     is_active: true,
+    stock: { quantity_on_hand: 999, reorder_point: 0 },
   },
   {
     name: 'Pro Membership',
@@ -648,7 +652,6 @@ const digitalShopProducts: TemplateProduct[] = [
     is_active: true,
   },
 ];
-
 // ═══════════════════════════════════════════════
 // TEMPLATE EXPORT
 // ═══════════════════════════════════════════════
@@ -663,7 +666,7 @@ export const digitalShopTemplate: StarterTemplate = {
   aiChatPosition: 'Widget for customer support',
   helpStyle: 'none',
   pages: digitalShopPages,
-  requiredModules: ['ecommerce', 'chat', 'forms', 'blog'],
+  requiredModules: ['ecommerce', 'chat', 'forms', 'blog', 'inventory'],
   blogPosts: digitalShopBlogPosts,
   products: digitalShopProducts,
   branding: {
