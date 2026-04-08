@@ -174,6 +174,8 @@ export function ContentApiContent() {
     }
   };
 
+  const mcpUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/mcp-server`;
+
   const reactExample = `import { useQuery } from '@tanstack/react-query';
 
 function usePages() {
@@ -243,11 +245,12 @@ export default async function Home() {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="rest-explorer" className="space-y-4">
-            <TabsList className="grid grid-cols-4 w-full max-w-lg">
+            <TabsList className="grid grid-cols-5 w-full max-w-xl">
               <TabsTrigger value="rest-explorer">REST</TabsTrigger>
               <TabsTrigger value="graphql-explorer">GraphQL</TabsTrigger>
               <TabsTrigger value="react">React</TabsTrigger>
               <TabsTrigger value="nextjs">Next.js</TabsTrigger>
+              <TabsTrigger value="mcp">MCP</TabsTrigger>
             </TabsList>
 
             {/* REST Explorer */}
@@ -411,6 +414,68 @@ export default async function Home() {
                 <Button size="sm" variant="ghost" className="absolute top-2 right-2" onClick={() => copyCode(nextjsExample, "nextjs")}>
                   {copiedCode === "nextjs" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                 </Button>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="mcp" className="space-y-4">
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Connect external AI clients (Cursor, Claude Desktop, etc.) to FlowWink via the MCP protocol.
+                  Manage API keys in the <strong>MCP Keys</strong> tab.
+                </p>
+
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Cursor IDE — <code className="text-xs">.cursor/mcp.json</code></label>
+                  <div className="relative">
+                    <pre className="p-4 bg-muted rounded-lg text-sm overflow-x-auto">{`{
+  "mcpServers": {
+    "flowwink": {
+      "url": "${mcpUrl}",
+      "headers": {
+        "Authorization": "Bearer fwk_your_key_here"
+      }
+    }
+  }
+}`}</pre>
+                    <Button size="sm" variant="ghost" className="absolute top-2 right-2" onClick={() => copyCode(`{\n  "mcpServers": {\n    "flowwink": {\n      "url": "${mcpUrl}",\n      "headers": {\n        "Authorization": "Bearer fwk_your_key_here"\n      }\n    }\n  }\n}`, "mcp-cursor")}>
+                      {copiedCode === "mcp-cursor" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Claude Desktop — <code className="text-xs">claude_desktop_config.json</code></label>
+                  <div className="relative">
+                    <pre className="p-4 bg-muted rounded-lg text-sm overflow-x-auto">{`{
+  "mcpServers": {
+    "flowwink": {
+      "type": "streamable-http",
+      "url": "${mcpUrl}",
+      "headers": {
+        "Authorization": "Bearer fwk_your_key_here"
+      }
+    }
+  }
+}`}</pre>
+                    <Button size="sm" variant="ghost" className="absolute top-2 right-2" onClick={() => copyCode(`{\n  "mcpServers": {\n    "flowwink": {\n      "type": "streamable-http",\n      "url": "${mcpUrl}",\n      "headers": {\n        "Authorization": "Bearer fwk_your_key_here"\n      }\n    }\n  }\n}`, "mcp-claude")}>
+                      {copiedCode === "mcp-claude" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Discover tools via curl</label>
+                  <div className="relative">
+                    <pre className="p-4 bg-muted rounded-lg text-sm overflow-x-auto">{`curl -X POST ${mcpUrl} \\
+  -H "Content-Type: application/json" \\
+  -H "Accept: application/json, text/event-stream" \\
+  -H "Authorization: Bearer fwk_your_key_here" \\
+  -d '{"jsonrpc":"2.0","method":"tools/list","id":1}'`}</pre>
+                    <Button size="sm" variant="ghost" className="absolute top-2 right-2" onClick={() => copyCode(`curl -X POST ${mcpUrl} \\\n  -H "Content-Type: application/json" \\\n  -H "Accept: application/json, text/event-stream" \\\n  -H "Authorization: Bearer fwk_your_key_here" \\\n  -d '{"jsonrpc":"2.0","method":"tools/list","id":1}'`, "mcp-curl")}>
+                      {copiedCode === "mcp-curl" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
               </div>
             </TabsContent>
           </Tabs>
