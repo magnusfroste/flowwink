@@ -3668,6 +3668,98 @@ export type Database = {
         }
         Relationships: []
       }
+      sla_policies: {
+        Row: {
+          created_at: string
+          description: string | null
+          enabled: boolean
+          entity_type: string
+          id: string
+          metric: string
+          name: string
+          priority: string | null
+          threshold_minutes: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          entity_type: string
+          id?: string
+          metric: string
+          name: string
+          priority?: string | null
+          threshold_minutes: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          entity_type?: string
+          id?: string
+          metric?: string
+          name?: string
+          priority?: string | null
+          threshold_minutes?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sla_violations: {
+        Row: {
+          actual_minutes: number
+          created_at: string
+          entity_id: string
+          entity_type: string
+          id: string
+          metric: string
+          notes: string | null
+          policy_id: string
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          threshold_minutes: number
+        }
+        Insert: {
+          actual_minutes: number
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          id?: string
+          metric: string
+          notes?: string | null
+          policy_id: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          threshold_minutes: number
+        }
+        Update: {
+          actual_minutes?: number
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          metric?: string
+          notes?: string | null
+          policy_id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          threshold_minutes?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sla_violations_policy_id_fkey"
+            columns: ["policy_id"]
+            isOneToOne: false
+            referencedRelation: "sla_policies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stock_moves: {
         Row: {
           created_at: string
