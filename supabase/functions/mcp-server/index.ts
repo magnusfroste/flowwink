@@ -1,5 +1,5 @@
-import { Hono } from "npm:hono@4";
-import { McpServer, StreamableHttpTransport } from "npm:mcp-lite@^0.10.0";
+import { Hono } from "hono";
+import { McpServer, StreamableHttpTransport } from "mcp-lite";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
