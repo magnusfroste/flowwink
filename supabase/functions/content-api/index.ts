@@ -594,8 +594,7 @@ async function executeGraphQL(
               excerpt: p.excerpt,
               featuredImage: p.featured_image,
               featuredImageAlt: p.featured_image_alt,
-              // deno-lint-ignore no-explicit-any
-              content: (p.content_json || []).map((b: any) => ({ id: b.id, type: b.type, data: b.data })),
+              content: p.content_json || null,
               author: p.author ? {
                 id: p.author.id,
                 fullName: p.author.full_name,
@@ -652,8 +651,7 @@ async function executeGraphQL(
             excerpt: p.excerpt,
             featuredImage: p.featured_image,
             featuredImageAlt: p.featured_image_alt,
-            // deno-lint-ignore no-explicit-any
-            content: (p.content_json || []).map((b: any) => ({ id: b.id, type: b.type, data: b.data })),
+            content: p.content_json || null,
             author: p.author ? {
               id: p.author.id,
               fullName: p.author.full_name,
@@ -1288,12 +1286,7 @@ Deno.serve(async (req) => {
         excerpt: p.excerpt,
         featuredImage: p.featured_image,
         featuredImageAlt: p.featured_image_alt,
-        // deno-lint-ignore no-explicit-any
-        content: (p.content_json || []).map((b: any) => ({
-          id: b.id,
-          type: b.type,
-          data: b.data,
-        })),
+        content: p.content_json || null,
         author: p.author ? {
           id: p.author.id,
           fullName: p.author.full_name,
