@@ -2,7 +2,7 @@
 
 > **The autonomous agentic web that runs your business.**
 > 
-> Version: 4.4 | Updated: April 2026 | Modules: 26 | Skills: 117 + ∞ runtime
+> Version: 4.5 | Updated: April 2026 | Modules: 27 | Skills: 118 + ∞ runtime
 
 ---
 
@@ -135,7 +135,7 @@ Admin   → PageEditorPage.tsx → BlockEditor.tsx → [Name]BlockEditor.tsx
 
 ---
 
-## 3. Modules (23 total)
+## 3. Modules (24 total)
 
 ### Core (always enabled)
 
@@ -192,6 +192,12 @@ Admin   → PageEditorPage.tsx → BlockEditor.tsx → [Name]BlockEditor.tsx
 | **Accounting** | Double-entry bookkeeping (BAS 2024), journal entries, balance sheet, P&L, autonomous templates | Disabled |
 | **Expense Reporting** | Employee expense reporting with receipt scanning (AI vision), monthly approval workflow, and autonomous journal entry booking | Disabled |
 
+### Operations
+
+| Module | Description | Default |
+|--------|-------------|---------|
+| **SLA Monitor** | Policy-based service level tracking across tickets, orders, leads, and bookings with automatic violation detection and severity scoring | Disabled |
+
 ### Module Dependencies
 
 - **Orders** → Products
@@ -206,7 +212,7 @@ Admin   → PageEditorPage.tsx → BlockEditor.tsx → [Name]BlockEditor.tsx
 |-------|-------------|----------|
 | `view-required` | Needs admin UI for meaningful interaction | Leads, Analytics |
 | `config-required` | Needs initial setup, then runs autonomously | Blog, Newsletter |
-| `agent-capable` | Admin UI optional — FlowPilot manages fully | Bookings, Accounting, Invoices |
+| `agent-capable` | Admin UI optional — FlowPilot manages fully | Bookings, Accounting, Invoices, SLA Monitor |
 
 ---
 
@@ -428,6 +434,26 @@ The inventory module tracks stock levels across all e-commerce products with aut
 - **KPI cards**: Tracked products, stock value, low stock count, out of stock count
 - **E-commerce integration**: Leverages existing `back_in_stock_requests` table for notifications
 - **RLS**: Authenticated users can view; writers/admins can modify stock and create moves
+
+| Reference doc | Path |
+|---|---|
+| [MODULE-API.md](./MODULE-API.md) | Technical module API |
+| [SKILLS-SOURCE.md](./SKILLS-SOURCE.md) | Skill registry source of truth |
+
+---
+
+### SLA Monitor Module
+
+The SLA Monitor (`src/pages/admin/SlaMonitorPage.tsx`) enables policy-based service level tracking with autonomous violation detection:
+
+- **Tables**: `sla_policies` (entity_type, metric, target_minutes, severity, enabled), `sla_violations` (policy_id, entity_type, entity_id, severity, actual_minutes, target_minutes, resolved_at)
+- **1 skill**: `sla_check` (evaluate all active SLA policies, detect violations, auto-resolve when entities are handled)
+- **Edge Function**: `sla-check` — iterates over active policies, queries entity tables for breaches, upserts violations, and auto-resolves previously violated entities that are now handled
+- **Supported entity types**: `ticket`, `order`, `lead`, `booking`
+- **Supported metrics**: `first_response_time`, `resolution_time`, `fulfillment_time`, `follow_up_time`
+- **Severity levels**: `warning` (approaching SLA), `breach` (exceeded SLA), `critical` (2x exceeded)
+- **Admin UI**: Policy management (create/toggle/delete) + violations dashboard with severity badges and resolution status
+- **Autonomy**: FlowPilot runs `sla_check` during heartbeat to proactively detect and escalate SLA breaches. Fully `agent-capable` — no admin intervention needed after initial policy setup
 
 | Reference doc | Path |
 |---|---|
