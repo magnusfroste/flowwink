@@ -483,7 +483,7 @@ export function useTemplateInstaller() {
         });
       }
 
-      // Create products
+      // Create products + stock
       const createdProductIds: string[] = [];
       if (opts.products) {
         const productsToCreate = templateProducts || [];
@@ -501,7 +501,19 @@ export function useTemplateInstaller() {
             sort_order: i,
             stripe_price_id: null,
           });
-          if (created?.id) createdProductIds.push(created.id);
+          if (created?.id) {
+            createdProductIds.push(created.id);
+            // Seed stock if template provides it
+            if (product.stock) {
+              try {
+                await supabase.from('product_stock').insert({
+                  product_id: created.id,
+                  quantity_on_hand: product.stock.quantity_on_hand,
+                  reorder_point: product.stock.reorder_point ?? 0,
+                });
+              } catch { /* non-fatal — stock seeding is best-effort */ }
+            }
+          }
         }
       }
 
