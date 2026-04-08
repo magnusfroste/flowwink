@@ -1,6 +1,6 @@
 # FlowWink
 
-> **The Business Operating System — powered by an autonomous AI agent.**
+> **The Business Operating System — powered by an autonomous AI operator.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Docker Image](https://img.shields.io/badge/Docker-ghcr.io-blue)](https://github.com/magnusfroste/flowwink/pkgs/container/flowwink)
@@ -10,11 +10,11 @@
 
 ## Vision
 
-> **Every business will have an autonomous AI operator. FlowWink is the operating system for that world.**
+> **Every business will have an agentic operator. FlowWink is the operating system it runs on.**
 
 ## Mission
 
-> **Give every business a self-hosted AI operator that manages their website, qualifies their leads, creates their content, fulfills their orders, and grows their business — around the clock, without being prompted.**
+> **Give every business a self-hosted agentic operator that runs their website, qualifies their leads, creates their content, fulfills their orders, and grows their business — around the clock, without being prompted.**
 
 ---
 
