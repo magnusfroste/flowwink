@@ -1,55 +1,72 @@
 # FlowWink Documentation
 
+> **FlowWink — The Business Operating System, powered by an autonomous AI operator.**
+
 Quick reference for all documentation. Each document has a clear purpose and target audience.
 
 ---
 
-## Quick Start (New Users)
+## Quick Start
 
 | Document | Purpose | Audience |
 |----------|---------|----------|
 | [DOCKER-QUICKSTART.md](./DOCKER-QUICKSTART.md) | Deploy with Docker in 5 minutes | Users/Admins |
+| [SETUP.md](./SETUP.md) | Backend setup and environment | Developers |
 | [UPGRADING.md](./UPGRADING.md) | Update to new versions | Users/Admins |
 
 ---
 
-## Setup & Deployment (Developers)
+## Product & Vision
 
 | Document | Purpose | Audience |
 |----------|---------|----------|
-| [SETUP.md](./SETUP.md) | Supabase backend setup | Developers |
-| [DEPLOYMENT.md](./DEPLOYMENT.md) | Production deployment | Developers |
-| [MAINTENANCE.md](./MAINTENANCE.md) | Backups, updates, troubleshooting | DevOps |
+| [PRD.md](./PRD.md) | Product requirements — modules, capabilities, architecture | Product/Dev |
+| [ELEVATOR-PITCH.md](./ELEVATOR-PITCH.md) | BOS positioning, vision, competitive landscape | All |
+| [COMPETITOR-COMPARISON.md](./COMPETITOR-COMPARISON.md) | Feature comparison vs WordPress, Webflow, HubSpot etc. | Product |
+| [INTEGRATIONS-STRATEGY.md](./INTEGRATIONS-STRATEGY.md) | Go-to-market wedge and integration playbook | Product/Growth |
+| [FEEDBACK-LOOPS.md](./FEEDBACK-LOOPS.md) | Growth engine — automated business loops | Product/Growth |
 
 ---
 
-## Features & Modules (Users/Admins)
+## FlowPilot — The Agentic Operator
 
 | Document | Purpose | Audience |
 |----------|---------|----------|
-| [MODULES.md](./MODULES.md) | What each module does | Users/Admins |
+| [FLOWPILOT.md](./FLOWPILOT.md) | Complete agent reference — skills, heartbeat, tools, memory | Developers |
+| [SKILLS-SOURCE.md](./SKILLS-SOURCE.md) | Skill registry — all registered skills | Developers |
+| [OPENCLAW-LAW.md](./OPENCLAW-LAW.md) | Agentic architecture laws (inviolable) | Developers |
+| [COMMANDS.md](./COMMANDS.md) | Slash commands for FlowPilot | Users/Admins |
+| [TESTING.md](./TESTING.md) | Autonomy test framework (L1–L8) | Developers |
+
+---
+
+## Modules & Features
+
+| Document | Purpose | Audience |
+|----------|---------|----------|
+| [MODULE-API.md](./MODULE-API.md) | Module contract system, typed schemas, plugin architecture | Developers |
 | [SITE-MIGRATION.md](./SITE-MIGRATION.md) | Import content from existing websites | Users/Admins |
-| [TEMPLATE-AUTHORING.md](./TEMPLATE-AUTHORING.md) | Create site templates | Users/Admins |
+| [TEMPLATE-AUTHORING.md](./TEMPLATE-AUTHORING.md) | Create site templates | Developers |
+| [AI_DEPENDENCIES.md](./AI_DEPENDENCIES.md) | AI provider requirements per feature | Developers |
 
 ---
 
-## Technical (Developers)
+## Federation & APIs
 
 | Document | Purpose | Audience |
 |----------|---------|----------|
-| [DEVELOPER_GUIDE.md](./DEVELOPER_GUIDE.md) | Architecture, extending FlowWink | Developers |
-| [MODULE-API.md](./MODULE-API.md) | Module API contracts | Developers |
-| [HEADLESS-API.md](./HEADLESS-API.md) | REST/GraphQL API | Developers |
-| [SECURITY.md](./SECURITY.md) | Auth, security architecture | Security Review |
+| [A2A-COMMUNICATION-MODEL.md](./A2A-COMMUNICATION-MODEL.md) | Agent-to-Agent federation protocol | Developers |
+| [HEADLESS-API.md](./HEADLESS-API.md) | REST/GraphQL content API | Developers |
 
 ---
 
-## Product & Strategy
+## Deployment & Operations
 
 | Document | Purpose | Audience |
 |----------|---------|----------|
-| [PRD.md](./PRD.md) | Product requirements | Product/Dev |
-| [VISION.md](./VISION.md) | Vision and roadmap | All |
+| [DEPLOYMENT.md](./DEPLOYMENT.md) | Production deployment (Docker, Easypanel, Railway, Fly.io) | DevOps |
+| [MAINTENANCE.md](./MAINTENANCE.md) | Backups, updates, troubleshooting | DevOps |
+| [SECURITY.md](./SECURITY.md) | Auth, RLS policies, security architecture | Security |
 
 ---
 
@@ -58,24 +75,20 @@ Quick reference for all documentation. Each document has a clear purpose and tar
 | Document | Purpose | Audience |
 |----------|---------|----------|
 | [CONTRIBUTING.md](./CONTRIBUTING.md) | How to contribute | Contributors |
+| [DEVELOPER_GUIDE.md](./DEVELOPER_GUIDE.md) | Architecture, extending the platform | Developers |
 
 ---
 
-## Document Conventions
+## Primary References (Single Source of Truth)
 
-Each document follows this structure:
+These three documents form the system's canonical reference:
 
-```markdown
-# Title
+1. **[PRD.md](./PRD.md)** — What the system does (modules, capabilities)
+2. **[FLOWPILOT.md](./FLOWPILOT.md)** — How the operator works (agent logic, skills)
+3. **[SKILLS-SOURCE.md](./SKILLS-SOURCE.md)** — Skill registry (all registered skills)
 
-> **Audience:** [User/Admin/Developer/Security]
-> **Last Updated:** YYYY-MM-DD
-
-## Content...
-
-## Troubleshooting (optional)
-```
+When in doubt, these are authoritative.
 
 ---
 
-*Last updated: February 2026*
+*Last updated: April 2026*
