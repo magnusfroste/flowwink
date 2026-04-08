@@ -8,24 +8,24 @@
 | Category | FlowWink | Webflow | Storyblok | Contentful | WordPress |
 |----------|--------|---------|-----------|------------|-----------|
 | **Type** | BOS + Agentic Operator | Visual Builder | Visual + Headless | Pure Headless | Traditional CMS |
-| **Målgrupp** | SMB, Healthcare | Designers, Agencies | Developers, Marketers | Enterprise | Alla |
-| **Teknisk nivå** | Låg | Låg | Medel | Hög | Låg-Medel |
-| **Pris** | 💰 Låg | 💰💰 Medel | 💰💰 Medel | 💰💰💰 Hög | 💰 Gratis/Self-host |
+| **Target** | SMB, Agencies | Designers, Agencies | Developers, Marketers | Enterprise | Everyone |
+| **Technical Level** | Low | Low | Medium | High | Low-Medium |
+| **Price** | 💰 Low | 💰💰 Medium | 💰💰 Medium | 💰💰💰 High | 💰 Free/Self-host |
 
 ---
 
 ## Website Builders: FlowWink vs Weebly, Webflow, Squarespace
 
-### Arkitektur-Jämförelse: Head vs Headless
+### Architecture Comparison: Head vs Headless
 
-| Platform | Arkitektur | Webbplats | API | Målgrupp |
+| Platform | Architecture | Website | API | Target |
 |----------|------------|-----------|-----|----------|
-| **FlowWink** | **Head + Headless** | ✅ Inbyggd, färdig | ✅ REST + GraphQL | SMB, Healthcare, Developers |
-| **Webflow** | **Head-only** | ✅ Visuell designer | ⚠️ Begränsad (CMS API) | Designers, Agencies |
-| **Squarespace** | **Head-only** | ✅ Templates | ❌ Ingen headless API | Small business, Creators |
-| **Weebly** | **Head-only** | ✅ Drag & drop | ❌ Ingen headless API | Beginners, Small shops |
+| **FlowWink** | **Head + Headless** | ✅ Built-in, ready | ✅ REST + GraphQL | SMB, Agencies, Developers |
+| **Webflow** | **Head-only** | ✅ Visual designer | ⚠️ Limited (CMS API) | Designers, Agencies |
+| **Squarespace** | **Head-only** | ✅ Templates | ❌ No headless API | Small business, Creators |
+| **Weebly** | **Head-only** | ✅ Drag & drop | ❌ No headless API | Beginners, Small shops |
 
-#### Vad Betyder Detta?
+#### What This Means
 
 **Head-only (Weebly, Webflow, Squarespace)**:
 ```
@@ -40,16 +40,16 @@
    │  (Only)  │
    └──────────┘
 ```
-- ✅ Snabb att komma igång
-- ❌ Innehåll låst till en webbplats
-- ❌ Kan inte använda innehåll i app/signage/etc.
-- ❌ Måste bygga om allt om du vill byta plattform
+- ✅ Quick to get started
+- ❌ Content locked to one website
+- ❌ Cannot use content in app/signage/etc.
+- ❌ Must rebuild everything to switch platforms
 
 **Head + Headless (FlowWink)**:
 ```
 ┌─────────────────────────────────────┐
 │           FLOWWINK                  │
-│  (Inbyggd Site + Open API)         │
+│  (Built-in Site + Open API)         │
 └─────────────────────────────────────┘
          │
          ├──────────────┬──────────────┐
@@ -59,162 +59,201 @@
    │(Built-in)│  │   App    │  │ Channels │
    └──────────┘  └──────────┘  └──────────┘
 ```
-- ✅ Färdig webbplats direkt
-- ✅ Innehåll tillgängligt via API
-- ✅ Bygg egen frontend om du vill
-- ✅ Framtidssäker: Lägg till kanaler senare
+- ✅ Ready-made website out of the box
+- ✅ Content available via API
+- ✅ Build your own frontend if you want
+- ✅ Future-proof: Add channels later
 
-### Block-System Jämförelse
+### Block System Comparison
 
-| Funktion | FlowWink | Webflow | Squarespace | Weebly |
+| Feature | FlowWink | Webflow | Squarespace | Weebly |
 |----------|--------|---------|-------------|--------|
-| **Antal block/element** | 46 block | ~50 elements | ~20 sections | ~15 sections |
-| **Drag & drop** | ✅ Ja | ✅ Ja | ✅ Ja | ✅ Ja |
-| **Block-kategorier** | 8 kategorier | Element library | Section library | Element library |
-| **Custom blocks** | ✅ Via kod | ✅ Custom code | ❌ Nej | ❌ Nej |
-| **Block-återanvändning** | ✅ Global blocks | ✅ Symbols | ⚠️ Begränsad | ❌ Nej |
-| **Block-animationer** | ✅ Per block | ✅ Interactions | ⚠️ Begränsad | ❌ Nej |
+| **Block/element count** | 50+ blocks | ~50 elements | ~20 sections | ~15 sections |
+| **Drag & drop** | ✅ Yes | ✅ Yes | ✅ Yes | ✅ Yes |
+| **Block categories** | 8 categories | Element library | Section library | Element library |
+| **Custom blocks** | ✅ Via code | ✅ Custom code | ❌ No | ❌ No |
+| **Block reuse** | ✅ Global blocks | ✅ Symbols | ⚠️ Limited | ❌ No |
+| **Block animations** | ✅ Per block | ✅ Interactions | ⚠️ Limited | ❌ No |
 
-#### FlowWink Block-Kategorier (46 block)
+### Feature Comparison: Website Builders
 
-| Kategori | Block | Användning |
-|----------|-------|------------|
-| **Text & Media** (5) | Text, Image, Gallery, Quote, YouTube | Grundläggande innehåll |
-| **Layout** (3) | Hero, TwoColumn, Separator | Sidstruktur |
-| **Navigation** (1) | LinkGrid | Meny och länkar |
-| **Information** (6) | InfoBox, Stats, Accordion, ArticleGrid, Features, Timeline | Informationsvisning |
-| **Social Proof** (3) | Testimonials, Logos, Team | Trovärdighet |
-| **Konvertering** (7) | CTA, Pricing, Comparison, Booking, SmartBooking, Form, Newsletter | Lead generation |
-| **Kontakt** (2) | Contact, Map | Kontaktinformation |
-| **Interaktivt** (8) | Chat, Popup, AnnouncementBar, Tabs, Countdown, Progress, NotificationToast, FloatingCTA | Engagement |
-| **E-commerce** (2) | Products, Cart | Försäljning |
-| **Knowledge Base** (4) | KbFeatured, KbHub, KbSearch, KbAccordion | Support & FAQ |
-| **Avancerat** (5) | Marquee, Embed, Table, Badge, SocialProof | Specialfunktioner |
-
-#### Webflow Elements (~50)
-
-**Grundläggande**: Text, Heading, Paragraph, Link, Button, Image, Video  
-**Layout**: Container, Section, Div Block, Grid, Flex Box  
-**Formulär**: Form, Input, Textarea, Checkbox, Radio, Select  
-**Media**: Lightbox, Slider, Tabs, Dropdown  
-**E-commerce**: Product, Add to Cart, Checkout  
-**CMS**: Collection List, Collection Item  
-
-**Styrka**: Extremt flexibel design-kontroll  
-**Svaghet**: Kräver design-kunskap, ingen färdig struktur
-
-#### Squarespace Sections (~20)
-
-**Layout**: Banner, Gallery, Text, Quote  
-**Media**: Image, Video, Audio, Slideshow  
-**Formulär**: Contact Form, Newsletter  
-**E-commerce**: Products, Store Page  
-**Social**: Instagram Feed, Social Links  
-**Avancerat**: Code Block, Markdown  
-
-**Styrka**: Vackra templates, enkelt att använda  
-**Svaghet**: Begränsad flexibilitet, färre block-typer
-
-#### Weebly Elements (~15)
-
-**Grundläggande**: Title, Text, Image, Gallery, Slideshow  
-**Media**: Video, Audio, Map  
-**Formulär**: Contact Form, Survey  
-**E-commerce**: Product, Shopping Cart  
-**Social**: Social Icons, Facebook Like  
-**Avancerat**: HTML/CSS, Embed Code  
-
-**Styrka**: Mycket enkelt för nybörjare  
-**Svaghet**: Mest begränsad, föråldrad teknologi
-
-### Funktionsjämförelse: Website Builders
-
-| Funktion | FlowWink | Webflow | Squarespace | Weebly |
+| Feature | FlowWink | Webflow | Squarespace | Weebly |
 |----------|--------|---------|-------------|--------|
-| **Visuell editor** | ✅ Block-baserad | ✅ Pixel-perfect | ✅ Template-baserad | ✅ Drag & drop |
-| **Responsiv design** | ✅ Automatisk | ✅ Manuell kontroll | ✅ Automatisk | ✅ Automatisk |
-| **SEO-verktyg** | ✅ Avancerad | ✅ Avancerad | ✅ Bra | ⚠️ Grundläggande |
-| **Blogg** | ✅ Komplett | ✅ CMS Collections | ✅ Inbyggd | ✅ Grundläggande |
-| **E-commerce** | ⚠️ Grundläggande | ✅ Avancerad | ✅ Komplett | ✅ Grundläggande |
-| **Formulär** | ✅ Anpassningsbara | ✅ Avancerade | ✅ Grundläggande | ✅ Grundläggande |
-| **Medlemskap** | ❌ Ej än | ✅ Ja | ✅ Ja | ⚠️ Begränsad |
-| **Multilingual** | ❌ Ej än | ⚠️ Manuellt | ⚠️ Begränsad | ❌ Nej |
-| **Custom code** | ✅ Full access | ✅ Full access | ⚠️ Begränsad | ⚠️ Begränsad |
-| **API Access** | ✅ REST + GraphQL | ⚠️ CMS API | ❌ Ingen | ❌ Ingen |
-| **Webhooks** | ✅ N8N integration | ⚠️ Begränsad | ❌ Ingen | ❌ Ingen |
-| **Version control** | ✅ Ja | ⚠️ Backups | ❌ Nej | ❌ Nej |
-| **Approval workflow** | ✅ Inbyggd | ❌ Nej | ❌ Nej | ❌ Nej |
-| **AI-funktioner** | ✅ Chat, Migration, Brand | ❌ Nej | ⚠️ AI Content | ❌ Nej |
+| **Visual editor** | ✅ Block-based | ✅ Pixel-perfect | ✅ Template-based | ✅ Drag & drop |
+| **Responsive design** | ✅ Automatic | ✅ Manual control | ✅ Automatic | ✅ Automatic |
+| **SEO tools** | ✅ Advanced | ✅ Advanced | ✅ Good | ⚠️ Basic |
+| **Blog** | ✅ Complete | ✅ CMS Collections | ✅ Built-in | ✅ Basic |
+| **E-commerce** | ✅ Products + Orders + Inventory | ✅ Advanced | ✅ Complete | ✅ Basic |
+| **Forms** | ✅ Customizable | ✅ Advanced | ✅ Basic | ✅ Basic |
+| **Membership** | ❌ Not yet | ✅ Yes | ✅ Yes | ⚠️ Limited |
+| **Multilingual** | ❌ Not yet | ⚠️ Manual | ⚠️ Limited | ❌ No |
+| **Custom code** | ✅ Full access | ✅ Full access | ⚠️ Limited | ⚠️ Limited |
+| **API Access** | ✅ REST + GraphQL | ⚠️ CMS API | ❌ None | ❌ None |
+| **Webhooks** | ✅ Built-in | ⚠️ Limited | ❌ None | ❌ None |
+| **Version control** | ✅ Yes | ⚠️ Backups | ❌ No | ❌ No |
+| **Approval workflow** | ✅ Built-in | ❌ No | ❌ No | ❌ No |
+| **Autonomous AI operator** | ✅ FlowPilot (118 skills) | ❌ No | ⚠️ AI Content | ❌ No |
 
-### Prissättning (2024)
+### Use Cases: Which Platform?
 
-| Platform | Startpris/mån | Mellanpris/mån | Pro/mån | Kommentar |
-|----------|---------------|----------------|---------|-----------|
-| **FlowWink** | 💰 Gratis (self-host) | - | - | Self-host eller managed |
-| **Webflow** | $14 (Basic) | $23 (CMS) | $39 (Business) | + $29/mån för CMS API |
-| **Squarespace** | $16 (Personal) | $23 (Business) | $49 (Commerce) | Årlig betalning |
-| **Weebly** | $10 (Personal) | $12 (Professional) | $26 (Performance) | Årlig betalning |
-
-**FlowWink Fördel**: Self-host gratis, eller managed hosting till lägre kostnad än konkurrenterna.
-
-### Användningsfall: Vilken Plattform?
-
-| Scenario | Bästa Val | Varför? |
+| Scenario | Best Choice | Why? |
 |----------|-----------|---------|
-| **Snabb webbplats + framtida API** | ✅ **FlowWink** | Head + Headless i ett |
-| **Pixel-perfect design-kontroll** | Webflow | Bäst för designers |
-| **Vacker portfolio/blogg** | Squarespace | Vackraste templates |
-| **Absolut enklast för nybörjare** | Weebly | Lägst inlärningskurva |
-| **Healthcare/GDPR-kritiskt** | ✅ **FlowWink** | Compliance inbyggd |
-| **Redaktionellt arbetsflöde** | ✅ **FlowWink** | Enda med approval flow |
-| **E-commerce fokus** | Squarespace/Webflow | Mer e-commerce features |
-| **Innehåll till app + webb** | ✅ **FlowWink** | Enda med headless API |
-| **Budget-begränsad** | ✅ **FlowWink** (self-host) | Gratis att self-hosta |
-| **Snabb time-to-market** | ✅ **FlowWink** / Squarespace | Färdiga templates |
+| **Website + API for the future** | ✅ **FlowWink** | Head + Headless in one |
+| **Pixel-perfect design control** | Webflow | Best for designers |
+| **Beautiful portfolio/blog** | Squarespace | Most beautiful templates |
+| **Easiest for beginners** | Weebly | Lowest learning curve |
+| **Autonomous business operations** | ✅ **FlowWink** | Only platform with an agentic operator |
+| **Editorial workflow** | ✅ **FlowWink** | Only one with approval flow |
+| **E-commerce focus** | Squarespace/Webflow | More e-commerce features |
+| **Content for app + web** | ✅ **FlowWink** | Only one with headless API |
+| **Budget-constrained** | ✅ **FlowWink** (self-host) | Free to self-host |
 
-### Teknisk Jämförelse
+### Technical Comparison
 
-| Aspekt | FlowWink | Webflow | Squarespace | Weebly |
+| Aspect | FlowWink | Webflow | Squarespace | Weebly |
 |--------|--------|---------|-------------|--------|
 | **Hosting** | Supabase + Vercel/Self | Webflow CDN | Squarespace | Weebly/Square |
-| **Databas** | PostgreSQL (Supabase) | Webflow CMS | Proprietary | Proprietary |
+| **Database** | PostgreSQL (Supabase) | Webflow CMS | Proprietary | Proprietary |
 | **Frontend** | React + Vite | Proprietary | Proprietary | Proprietary |
 | **Backend** | Supabase Edge Functions | Webflow Logic | Proprietary | Proprietary |
-| **Export möjlighet** | ✅ Full export | ⚠️ Begränsad | ❌ Låst | ❌ Låst |
-| **Git integration** | ✅ GitHub | ❌ Nej | ❌ Nej | ❌ Nej |
-| **Self-hosting** | ✅ Ja | ❌ Nej | ❌ Nej | ❌ Nej |
-| **Open source** | ✅ MIT License | ❌ Nej | ❌ Nej | ❌ Nej |
+| **Data export** | ✅ Full export | ⚠️ Limited | ❌ Locked | ❌ Locked |
+| **Git integration** | ✅ GitHub | ❌ No | ❌ No | ❌ No |
+| **Self-hosting** | ✅ Yes | ❌ No | ❌ No | ❌ No |
+| **Open source** | ✅ MIT License | ❌ No | ❌ No | ❌ No |
 
-### Migration Till/Från FlowWink
+---
 
-**Från Website Builders → FlowWink**:
-- ✅ **AI Migration**: Automatisk import från befintlig webbplats
-- ✅ **Content scraping**: Extraherar text, bilder, struktur
-- ✅ **Brand analysis**: Analyserar färger, typsnitt
-- ⏱️ **Tid**: Minuter till timmar (vs veckor manuellt)
+## Core Platform
 
-**Från FlowWink → Annan Plattform**:
-- ✅ **Full export**: Alla data i JSON/SQL
-- ✅ **Open source**: Ingen vendor lock-in
-- ✅ **Standard tech**: React, PostgreSQL, REST/GraphQL
-- ✅ **Self-host**: Behåll full kontroll
+| Feature | FlowWink | Webflow | Storyblok | Contentful | WordPress |
+|----------|--------|---------|-----------|------------|-----------|
+| **Visual website builder** | ✅ Yes | ✅ Yes | ✅ Yes | ⚠️ Studio add-on | ✅ Yes |
+| **Headless API** | ✅ REST + GraphQL | ⚠️ Limited | ✅ REST + GraphQL | ✅ REST + GraphQL | ⚠️ Plugin required |
+| **Zero-code setup** | ✅ Yes | ✅ Yes | ⚠️ Partial | ❌ No | ⚠️ Limited |
+| **Self-hosted option** | ✅ Yes | ❌ No | ❌ No | ❌ No | ✅ Yes |
+| **Managed hosting** | ✅ Included | ✅ Yes | ✅ Yes | ✅ Yes | ⚠️ Extra cost |
 
-**Från Webflow/Squarespace/Weebly → Annan Plattform**:
-- ❌ **Låst innehåll**: Svår/omöjlig export
-- ❌ **Proprietary**: Måste bygga om från scratch
-- ⏱️ **Tid**: Veckor till månader
+---
 
-### Sammanfattning: FlowWink Unika Position
+## Content Management
 
-**FlowWink = Website Builder + Headless CMS**
+| Feature | FlowWink | Webflow | Storyblok | Contentful | WordPress |
+|----------|--------|---------|-----------|------------|-----------|
+| **Block-based editor** | ✅ 50+ block types | ✅ Sections | ✅ Bloks | ⚠️ Limited | ✅ Gutenberg |
+| **Drag-and-drop** | ✅ Yes | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
+| **Rich text editor** | ✅ Tiptap | ✅ Yes | ✅ Yes | ✅ Yes | ✅ Classic/Gutenberg |
+| **Media library** | ✅ WebP optimization | ✅ Yes | ✅ Yes | ✅ Yes | ✅ Yes |
+| **Image optimization** | ✅ Automatic WebP | ✅ CDN | ✅ CDN | ✅ CDN transforms | ⚠️ Plugin required |
+| **Version control** | ✅ Yes | ⚠️ Backups | ✅ Yes | ✅ Yes | ✅ Revisions |
+
+---
+
+## Editorial Workflow (Competitive Edge)
+
+| Feature | FlowWink | Webflow | Storyblok | Contentful | WordPress |
+|----------|--------|---------|-----------|------------|-----------|
+| **Roles (Writer/Approver/Admin)** | ✅ Built-in | ❌ No | ⚠️ Limited | ⚠️ Enterprise | ✅ Yes |
+| **Approval workflow** | ✅ Draft→Review→Publish | ❌ No | ⚠️ Limited | 💰 Enterprise | ⚠️ Plugin |
+| **Scheduling** | ✅ Built-in | ✅ Yes | ✅ Yes | ✅ Yes | ✅ Yes |
+| **Live preview** | ✅ Yes | ✅ Yes | ✅ Yes | ⚠️ Setup required | ✅ Yes |
+| **Audit logging** | ✅ GDPR-compliant | ❌ No | ⚠️ Limited | 💰 Enterprise | ⚠️ Plugin |
+
+---
+
+## AI & Automation (FlowWink's Decisive Advantage)
+
+| Feature | FlowWink | Webflow | Storyblok | Contentful | WordPress |
+|----------|--------|---------|-----------|------------|-----------|
+| **Autonomous AI operator** | ✅ FlowPilot (118 skills) | ❌ No | ❌ No | ❌ No | ❌ No |
+| **AI chat (visitor-facing)** | ✅ Multi-provider | 💰 Paid add-on | ❌ No | 💰 Paid add-on | ⚠️ Plugin |
+| **AI content migration** | ✅ Automatic | ❌ No | ❌ No | ❌ No | ❌ No |
+| **AI brand analysis** | ✅ Yes | ❌ No | ❌ No | ❌ No | ❌ No |
+| **Knowledge Base (CAG)** | ✅ CMS-driven | ❌ No | ❌ No | ❌ No | ❌ No |
+| **Webhook integration** | ✅ Built-in | ⚠️ Limited | ✅ Yes | ✅ Yes | ⚠️ Plugin |
+| **A2A federation** | ✅ JSON-RPC 2.0 | ❌ No | ❌ No | ❌ No | ❌ No |
+| **MCP server** | ✅ Built-in | ❌ No | ❌ No | ❌ No | ❌ No |
+| **Local AI support** | ✅ Ollama/LM Studio/vLLM | ❌ No | ❌ No | ❌ No | ❌ No |
+
+---
+
+## Built-in Modules (37 modules vs plugins)
+
+| Feature | FlowWink | Webflow | Storyblok | Contentful | WordPress |
+|----------|--------|---------|-----------|------------|-----------|
+| **Blog** | ✅ Complete | ✅ CMS Collections | ⚠️ Custom setup | ❌ No | ✅ Built-in |
+| **Newsletter** | ✅ Built-in | ❌ No | ❌ No | ❌ No | ⚠️ Plugin |
+| **Forms** | ✅ Built-in | ✅ Yes | ⚠️ Custom | ❌ No | ⚠️ Plugin |
+| **CRM (Leads/Deals)** | ✅ Built-in | ❌ No | ❌ No | ❌ No | ❌ No |
+| **Invoicing** | ✅ Built-in | ❌ No | ❌ No | ❌ No | ⚠️ Plugin |
+| **Accounting** | ✅ Built-in | ❌ No | ❌ No | ❌ No | ❌ No |
+| **Inventory** | ✅ Built-in | ❌ No | ❌ No | ❌ No | ❌ No |
+| **Timesheets** | ✅ Built-in | ❌ No | ❌ No | ❌ No | ❌ No |
+| **Support tickets** | ✅ Built-in + AI triage | ❌ No | ❌ No | ❌ No | ❌ No |
+| **Open/click tracking** | ✅ Built-in | ❌ No | ❌ No | ❌ No | ⚠️ Plugin |
+| **GDPR export/delete** | ✅ Built-in | ❌ No | ❌ No | ❌ No | ⚠️ Plugin |
+
+---
+
+## SEO & Performance
+
+| Feature | FlowWink | Webflow | Storyblok | Contentful | WordPress |
+|----------|--------|---------|-----------|------------|-----------|
+| **SEO settings** | ✅ Global + per page | ✅ Yes | ⚠️ Custom | ❌ Manual | ✅ Yoast/plugins |
+| **Meta tags** | ✅ Automatic | ✅ Yes | ⚠️ Custom | ❌ Manual | ✅ Plugin |
+| **Open Graph** | ✅ Built-in | ✅ Yes | ⚠️ Custom | ❌ Manual | ✅ Plugin |
+| **Edge caching** | ✅ Configurable | ✅ CDN | ✅ CDN | ✅ CDN | ⚠️ Plugin |
+| **Lazy loading** | ✅ Automatic | ✅ Yes | ❌ Frontend | ❌ Frontend | ⚠️ Plugin |
+
+---
+
+## Compliance & Security
+
+| Feature | FlowWink | Webflow | Storyblok | Contentful | WordPress |
+|----------|--------|---------|-----------|------------|-----------|
+| **GDPR compliance** | ✅ Built-in | ⚠️ Partial | ⚠️ Partial | ⚠️ Enterprise | ⚠️ Plugin |
+| **Cookie banner** | ✅ Configurable | ❌ No | ❌ No | ❌ No | ⚠️ Plugin |
+| **WCAG 2.1 AA** | ✅ Yes | ⚠️ Manual | ❌ Frontend | ❌ Frontend | ⚠️ Theme-dependent |
+| **Row Level Security** | ✅ Supabase RLS | ❌ No | ⚠️ Limited | ✅ Spaces | ⚠️ Plugin |
+| **Audit trail** | ✅ Complete | ❌ No | ⚠️ Limited | 💰 Enterprise | ⚠️ Plugin |
+| **2FA** | ✅ Via Supabase | ✅ Yes | ✅ Yes | ✅ Yes | ⚠️ Plugin |
+
+---
+
+## Multi-channel Delivery
+
+| Feature | FlowWink | Webflow | Storyblok | Contentful | WordPress |
+|----------|--------|---------|-----------|------------|-----------|
+| **REST API** | ✅ Yes | ⚠️ Limited | ✅ Yes | ✅ Yes | ✅ Yes |
+| **GraphQL** | ✅ Yes | ❌ No | ✅ Yes | ✅ Yes | ⚠️ Plugin |
+| **Webhooks** | ✅ Built-in | ⚠️ Limited | ✅ Yes | ✅ Yes | ⚠️ Plugin |
+| **Content Hub** | ✅ Visual dashboard | ❌ No | ❌ No | ❌ No | ❌ No |
+| **API Explorer** | ✅ Built-in | ❌ No | ✅ Yes | ✅ Playground | ❌ No |
+| **Code samples** | ✅ React, Next.js, curl | ⚠️ Limited | ✅ SDK docs | ✅ SDK docs | ⚠️ Limited |
+| **MCP support** | ✅ Built-in server | ❌ No | ❌ No | ❌ No | ❌ No |
+
+---
+
+## Pricing & Setup
+
+| Aspect | FlowWink | Webflow | Storyblok | Contentful | WordPress |
+|--------|--------|---------|-----------|------------|-----------|
+| **Starting price** | 💰 Free (self-host) | 💰💰 $14-39/mo | 💰💰 Medium | 💰💰💰 High | 💰 Free/Self-host |
+| **Enterprise features** | ✅ Included | 💰💰 Extra | 💰💰 Extra | 💰💰💰 Extra | 💰💰 Plugins |
+| **Setup time** | ⏱️ Minutes | ⏱️ Hours | ⏱️ Days | ⏱️ Weeks | ⏱️ Hours |
+| **Developer requirement** | 👤 None | 👤 None | 👥 1-2 devs | 👥👥 Team | 👤 None-1 dev |
+| **Maintenance** | ✅ Minimal | ✅ Minimal | ⚠️ Ongoing | ⚠️ Ongoing | ⚠️ Plugins/Updates |
+
+---
+
+## FlowWink's Unique Position
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                    KONKURRENTER                         │
+│                    COMPETITORS                           │
 ├─────────────────────────────────────────────────────────┤
 │                                                         │
-│  Webflow/Squarespace/Weebly    Storyblok/Contentful   │
-│  (Website Builder)              (Headless CMS)         │
+│  Webflow/Squarespace          Storyblok/Contentful     │
+│  (Website Builder)             (Headless CMS)          │
 │         │                              │               │
 │         ▼                              ▼               │
 │   ┌──────────┐                  ┌──────────┐          │
@@ -222,228 +261,48 @@
 │   │  (Only)  │                  │  (Only)  │          │
 │   └──────────┘                  └──────────┘          │
 │                                                         │
-│         Du måste välja EN eller bygga båda             │
+│         You must choose ONE or build both              │
 └─────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────┐
 │                      FLOWWINK                           │
 ├─────────────────────────────────────────────────────────┤
 │                                                         │
-│              Website + API i samma plattform           │
+│       Website + API + Autonomous Operator               │
 │                                                         │
-│         ┌──────────┐         ┌──────────┐             │
-│         │ Website  │         │   API    │             │
-│         │(Built-in)│         │(Built-in)│             │
-│         └──────────┘         └──────────┘             │
+│  ┌──────────┐  ┌──────────┐  ┌──────────────────┐     │
+│  │ Website  │  │   API    │  │    FlowPilot     │     │
+│  │(Built-in)│  │(Built-in)│  │ (Runs everything)│     │
+│  └──────────┘  └──────────┘  └──────────────────┘     │
 │                                                         │
-│         Du får BÅDA utan extra arbete                  │
+│       You get ALL THREE without extra work             │
 └─────────────────────────────────────────────────────────┘
 ```
 
-**Välj FlowWink om du vill**:
-- ✅ Snabb webbplats NU + API för framtiden
-- ✅ Redaktionellt arbetsflöde (Writer → Approver → Admin)
-- ✅ GDPR/WCAG compliance inbyggd
-- ✅ AI-funktioner (chat, migration, brand analysis)
-- ✅ Ingen vendor lock-in (open source, self-host)
-- ✅ Lägre kostnad (self-host gratis)
-
-**Välj Webflow om du vill**:
-- Pixel-perfect design-kontroll
-- Avancerad e-commerce
-- Är designer/byrå
-
-**Välj Squarespace om du vill**:
-- Vackraste templates out-of-the-box
-- E-commerce + blogg
-- Minsta tekniska kunskap
-
-**Välj Weebly om du vill**:
-- Absolut enklast för nybörjare
-- Grundläggande webbplats + shop
-- Lägsta budget
+**Choose FlowWink if you want**:
+- ✅ An autonomous operator that runs your business 24/7
+- ✅ Website NOW + API for the future
+- ✅ Editorial workflow (Writer → Approver → Admin)
+- ✅ 37 built-in modules (CRM, commerce, finance, support...)
+- ✅ No vendor lock-in (open source, self-host)
+- ✅ Free to self-host
 
 ---
 
-## Core Platform
+## When to Choose What
 
-| Funktion | FlowWink | Webflow | Storyblok | Contentful | WordPress |
-|----------|--------|---------|-----------|------------|-----------|
-| **Visuell webbplatsbyggare** | ✅ Ja | ✅ Ja | ✅ Ja | ⚠️ Studio add-on | ✅ Ja |
-| **Headless API** | ✅ REST + GraphQL | ⚠️ Begränsad | ✅ REST + GraphQL | ✅ REST + GraphQL | ⚠️ Plugin krävs |
-| **Zero-code setup** | ✅ Ja | ✅ Ja | ⚠️ Delvis | ❌ Nej | ⚠️ Begränsad |
-| **Self-hosted option** | ✅ Ja | ❌ Nej | ❌ Nej | ❌ Nej | ✅ Ja |
-| **Managed hosting** | ✅ Inkluderad | ✅ Ja | ✅ Ja | ✅ Ja | ⚠️ Extra kostnad |
-
----
-
-## Content Management
-
-| Funktion | FlowWink | Webflow | Storyblok | Contentful | WordPress |
-|----------|--------|---------|-----------|------------|-----------|
-| **Block-baserad editor** | ✅ 46 blocktyper | ✅ Sections | ✅ Bloks | ⚠️ Begränsad | ✅ Gutenberg |
-| **Drag-and-drop** | ✅ Ja | ✅ Ja | ✅ Ja | ❌ Nej | ✅ Ja |
-| **Rich text editor** | ✅ Tiptap | ✅ Ja | ✅ Ja | ✅ Ja | ✅ Classic/Gutenberg |
-| **Mediabibliotek** | ✅ WebP-optimering | ✅ Ja | ✅ Ja | ✅ Ja | ✅ Ja |
-| **Bildoptimering** | ✅ Automatisk WebP | ✅ CDN | ✅ CDN | ✅ CDN transforms | ⚠️ Plugin krävs |
-| **Versionshantering** | ✅ Ja | ⚠️ Backups | ✅ Ja | ✅ Ja | ✅ Revisioner |
-
----
-
-## Editorial Workflow (Competitive Edge)
-
-| Funktion | FlowWink | Webflow | Storyblok | Contentful | WordPress |
-|----------|--------|---------|-----------|------------|-----------|
-| **Roller (Writer/Approver/Admin)** | ✅ Inbyggd | ❌ Nej | ⚠️ Begränsad | ⚠️ Enterprise | ✅ Ja |
-| **Approval workflow** | ✅ Draft→Review→Publish | ❌ Nej | ⚠️ Begränsad | 💰 Enterprise | ⚠️ Plugin |
-| **Schemaläggning** | ✅ Inbyggd | ✅ Ja | ✅ Ja | ✅ Ja | ✅ Ja |
-| **Live preview** | ✅ Ja | ✅ Ja | ✅ Ja | ⚠️ Setup krävs | ✅ Ja |
-| **Audit logging** | ✅ GDPR-compliant | ❌ Nej | ⚠️ Begränsad | 💰 Enterprise | ⚠️ Plugin |
-
----
-
-## AI & Automation
-
-| Funktion | FlowWink | Webflow | Storyblok | Contentful | WordPress |
-|----------|--------|---------|-----------|------------|-----------|
-| **AI Chat-assistent** | ✅ Multi-provider | 💰 Betald add-on | ❌ Nej | 💰 Betald add-on | ⚠️ Plugin |
-| **AI Content Migration** | ✅ Automatisk | ❌ Nej | ❌ Nej | ❌ Nej | ❌ Nej |
-| **AI Brand Analysis** | ✅ Ja | ❌ Nej | ❌ Nej | ❌ Nej | ❌ Nej |
-| **Knowledge Base (CAG)** | ✅ CMS-driven | ❌ Nej | ❌ Nej | ❌ Nej | ❌ Nej |
-| **N8N/Webhook Integration** | ✅ Inbyggd | ⚠️ Begränsad | ✅ Ja | ✅ Ja | ⚠️ Plugin |
-| **HIPAA-ready AI** | ✅ Local AI option | ❌ Nej | ❌ Nej | ❌ Nej | ❌ Nej |
-
----
-
-## Built-in Modules (Competitive Edge)
-
-| Funktion | FlowWink | Webflow | Storyblok | Contentful | WordPress |
-|----------|--------|---------|-----------|------------|-----------|
-| **Bloggmodul** | ✅ Komplett | ✅ CMS Collections | ⚠️ Custom setup | ❌ Nej | ✅ Inbyggd |
-| **Nyhetsbrev** | ✅ Inbyggd | ❌ Nej | ❌ Nej | ❌ Nej | ⚠️ Plugin |
-| **Formulär** | ✅ Inbyggd | ✅ Ja | ⚠️ Custom | ❌ Nej | ⚠️ Plugin |
-| **RSS Feed** | ✅ Automatisk | ✅ Ja | ❌ Nej | ❌ Nej | ✅ Ja |
-| **Öppnings-/Klickspårning** | ✅ Inbyggd | ❌ Nej | ❌ Nej | ❌ Nej | ⚠️ Plugin |
-| **GDPR Export/Delete** | ✅ Inbyggd | ❌ Nej | ❌ Nej | ❌ Nej | ⚠️ Plugin |
-
----
-
-## SEO & Performance
-
-| Funktion | FlowWink | Webflow | Storyblok | Contentful | WordPress |
-|----------|--------|---------|-----------|------------|-----------|
-| **SEO-inställningar** | ✅ Global + per sida | ✅ Ja | ⚠️ Custom | ❌ Manuellt | ✅ Yoast/plugins |
-| **Meta tags** | ✅ Automatisk | ✅ Ja | ⚠️ Custom | ❌ Manuellt | ✅ Plugin |
-| **Open Graph** | ✅ Inbyggd | ✅ Ja | ⚠️ Custom | ❌ Manuellt | ✅ Plugin |
-| **Edge caching** | ✅ Konfigurerbar | ✅ CDN | ✅ CDN | ✅ CDN | ⚠️ Plugin |
-| **Lazy loading** | ✅ Automatisk | ✅ Ja | ❌ Frontend | ❌ Frontend | ⚠️ Plugin |
-
----
-
-## Branding & Design
-
-| Funktion | FlowWink | Webflow | Storyblok | Contentful | WordPress |
-|----------|--------|---------|-----------|------------|-----------|
-| **Design system** | ✅ CSS variables | ✅ Classes | ❌ N/A | ❌ N/A | ⚠️ Tema-beroende |
-| **Predefined themes** | ✅ 4 healthcare themes | ✅ Templates | ❌ N/A | ❌ N/A | ✅ Tusentals |
-| **Custom branding** | ✅ Färger, typsnitt, logotyp | ✅ Full kontroll | ⚠️ Custom | ❌ N/A | ✅ Customizer |
-| **Dark mode** | ✅ Inbyggd | ⚠️ Manuellt | ❌ N/A | ❌ N/A | ⚠️ Tema-beroende |
-| **Responsive design** | ✅ Automatisk | ✅ Ja | ❌ Frontend | ❌ Frontend | ⚠️ Tema-beroende |
-
----
-
-## Compliance & Security
-
-| Funktion | FlowWink | Webflow | Storyblok | Contentful | WordPress |
-|----------|--------|---------|-----------|------------|-----------|
-| **GDPR compliance** | ✅ Inbyggd | ⚠️ Delvis | ⚠️ Delvis | ⚠️ Enterprise | ⚠️ Plugin |
-| **Cookie banner** | ✅ Konfigurerbar | ❌ Nej | ❌ Nej | ❌ Nej | ⚠️ Plugin |
-| **WCAG 2.1 AA** | ✅ Ja | ⚠️ Manuellt | ❌ Frontend | ❌ Frontend | ⚠️ Tema-beroende |
-| **Row Level Security** | ✅ Supabase RLS | ❌ Nej | ⚠️ Begränsad | ✅ Spaces | ⚠️ Plugin |
-| **Audit trail** | ✅ Komplett | ❌ Nej | ⚠️ Begränsad | 💰 Enterprise | ⚠️ Plugin |
-| **2FA** | ✅ Via Supabase | ✅ Ja | ✅ Ja | ✅ Ja | ⚠️ Plugin |
-
----
-
-## Multi-channel Delivery
-
-| Funktion | FlowWink | Webflow | Storyblok | Contentful | WordPress |
-|----------|--------|---------|-----------|------------|-----------|
-| **REST API** | ✅ Ja | ⚠️ Begränsad | ✅ Ja | ✅ Ja | ✅ Ja |
-| **GraphQL** | ✅ Ja | ❌ Nej | ✅ Ja | ✅ Ja | ⚠️ Plugin |
-| **Webhooks** | ✅ N8N integration | ⚠️ Begränsad | ✅ Ja | ✅ Ja | ⚠️ Plugin |
-| **Content Hub** | ✅ Visual dashboard | ❌ Nej | ❌ Nej | ❌ Nej | ❌ Nej |
-| **API Explorer** | ✅ Inbyggd | ❌ Nej | ✅ Ja | ✅ Playground | ❌ Nej |
-| **Code samples** | ✅ React, Next.js, curl | ⚠️ Begränsad | ✅ SDK docs | ✅ SDK docs | ⚠️ Begränsad |
-
----
-
-## Pricing & Setup
-
-| Aspekt | FlowWink | Webflow | Storyblok | Contentful | WordPress |
-|--------|--------|---------|-----------|------------|-----------|
-| **Startpris** | 💰 Låg | 💰💰 Medel | 💰💰 Medel | 💰💰💰 Hög | 💰 Gratis/Self-host |
-| **Enterprise features** | ✅ Inkluderade | 💰💰 Extra | 💰💰 Extra | 💰💰💰 Extra | 💰💰 Plugins |
-| **Setup-tid** | ⏱️ Minuter | ⏱️ Timmar | ⏱️ Dagar | ⏱️ Veckor | ⏱️ Timmar |
-| **Utvecklarkrav** | 👤 Ingen | 👤 Ingen | 👥 1-2 devs | 👥👥 Team | 👤 Ingen-1 dev |
-| **Underhåll** | ✅ Minimalt | ✅ Minimalt | ⚠️ Kontinuerligt | ⚠️ Kontinuerligt | ⚠️ Plugins/Updates |
-
----
-
-## Unika FlowWink-fördelar
-
-### 1. Head + Headless i ett
-```
-┌─────────────────────────────────────────────────────────┐
-│                    FLOWWINK UNIKT                       │
-├─────────────────────────────────────────────────────────┤
-│  ✅ Komplett webbplats PLUS headless API               │
-│  ✅ Ingen frontend-utveckling krävs                     │
-│  ✅ Samma innehåll → Alla kanaler                       │
-│  ✅ Välj: Använd inbyggd site ELLER bygg egen frontend │
-└─────────────────────────────────────────────────────────┘
-```
-
-### 2. AI-First Platform
-- **AI Chat**: Multi-provider (Lovable AI, Local, N8N)
-- **AI Migration**: Automatisk import från befintliga webbplatser
-- **AI Branding**: Analysera och extrahera varumärkesidentitet
-- **Knowledge Base**: CMS-drivet kontext för AI-svar
-
-### 3. Zero-Developer Setup
-- Starta på minuter, inte veckor
-- Ingen koderfarenhet krävs
-- Visuell blockbyggare
-- Predefined healthcare-teman
-
-### 4. Healthcare-Ready
-- GDPR compliance inbyggd
-- WCAG 2.1 AA tillgänglighet
-- HIPAA-ready med lokal AI
-- Audit logging för compliance
-
-### 5. Svenska marknaden
-- Svenskt gränssnitt för publik webbplats
-- Svenska standardtexter (cookie banner, etc.)
-- Anpassad för svensk sjukvård och organisationer
-
----
-
-## Sammanfattning: När välja FlowWink?
-
-| Scenario | Rekommendation |
+| Scenario | Recommendation |
 |----------|----------------|
-| Vill ha komplett webbplats + API | ✅ **FlowWink** |
-| Visuell byggare + headless API | ✅ **FlowWink** eller Storyblok |
-| Behöver redaktionellt arbetsflöde | ✅ **FlowWink** |
-| Behöver AI-funktioner ut-ur-boxen | ✅ **FlowWink** |
-| Designfokuserad byrå | Webflow |
-| Enterprise med stor budget | Contentful |
-| Blogger/enkel site | WordPress |
-| Svensk sjukvårdsorganisation | ✅ **FlowWink** |
-| GDPR + WCAG compliance kritiskt | ✅ **FlowWink** |
-| Snabb time-to-market | ✅ **FlowWink** |
+| Want an autonomous business operator | ✅ **FlowWink** |
+| Want website + API in one | ✅ **FlowWink** |
+| Need editorial workflow | ✅ **FlowWink** |
+| Need AI features out-of-the-box | ✅ **FlowWink** |
+| Design-focused agency | Webflow |
+| Enterprise with large budget | Contentful |
+| Simple blog/portfolio | WordPress |
+| GDPR + WCAG compliance critical | ✅ **FlowWink** |
+| Budget-constrained | ✅ **FlowWink** (self-host) |
 
 ---
 
-*Dokumentet uppdaterat: December 2024*
+*Last updated: April 2026*

@@ -1,5 +1,9 @@
 # FlowWink
 
+<p align="center">
+  <img src=".github/social-preview.jpg" alt="FlowWink — The Business Operating System" width="100%" />
+</p>
+
 > **The Business Operating System — powered by an autonomous AI operator.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -56,19 +60,20 @@ FlowPilot is not a chatbot, a copilot, or a content suggester. It is an **autono
 
 ---
 
-## Modules — 22 integrated domains
+## Modules — 37 integrated domains
 
 FlowWink follows an **Odoo-inspired modular architecture** where each module owns its data, views, and FlowPilot integration. Modules are registered as plugins with typed contracts.
 
 | Category | Modules |
 |----------|---------|
-| **Content** | Pages, Blog, Knowledge Base, Global Blocks, Media |
+| **Content** | Pages, Blog, Knowledge Base, Global Blocks, Media, Templates, Handbook |
 | **CRM** | Leads, Companies, Deals, Forms, Sales Intelligence |
-| **Commerce** | Products, Orders, Bookings |
+| **Commerce** | Products, Orders, Bookings, Invoicing, Inventory |
+| **Finance** | Accounting, Expenses, Timesheets |
 | **Communication** | Newsletter, Webinars |
-| **Support** | Tickets (Kanban + auto-triage via FlowPilot) |
-| **Growth** | Growth Dashboard, Company Insights, Resume/CV |
-| **System** | FlowPilot, Federation (A2A), Browser Control |
+| **Support** | Tickets (Kanban + auto-triage via FlowPilot), Live Support |
+| **Growth** | Analytics, Paid Growth, Company Insights, Resume/CV, Content Hub |
+| **System** | FlowPilot, Federation (A2A), Browser Control, Developer, Site Migration |
 
 Each module provides:
 - **Data layer** — Supabase table + RLS policies
@@ -92,14 +97,15 @@ Each module provides:
 7. REMEMBER  — Save insights to semantic memory for future cycles
 ```
 
-### Skills — 40+ across your business
+### Skills — 118 across your business
 
 | Domain | Skills |
 |--------|--------|
 | **CMS** | Pages (create/publish/rollback), block manipulation, Global Elements |
 | **Content** | Blog posts, KB articles, content research, SEO briefs, social batches |
 | **CRM** | Leads, Companies, Deals, Form processing, Lead qualification, Company enrichment |
-| **Commerce** | Products, Orders, Bookings |
+| **Commerce** | Products, Orders, Bookings, Invoicing, Inventory management |
+| **Finance** | Accounting entries, Expense tracking, Timesheet analysis |
 | **Communication** | Newsletter campaigns, Webinars |
 | **Support** | Ticket triage, KB-powered auto-resolve |
 | **Intelligence** | Analytics, SEO audits, web research, browser automation, prospect research |
@@ -244,9 +250,11 @@ FlowPilot routes to whichever provider is configured. Use your own API keys. Run
 | Jasper / Copy.ai | FlowPilot writing directly into your CMS |
 | Zapier / N8N | Workflow DAGs with conditional branching |
 | Intercom | AI chat with KB integration and lead capture |
-| Shopify (simple) | Products, orders, and Stripe checkout |
+| Shopify (simple) | Products, orders, inventory, and Stripe checkout |
+| QuickBooks / Xero | Invoicing, accounting, expense tracking |
+| Toggl / Harvest | Timesheets with project-based tracking |
 
-One operating system. One agent. Self-host free.
+One operating system. One operator. Self-host free.
 
 ---
 
@@ -338,12 +346,18 @@ See **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** for full deployment guides.
 
 Contributions are welcome. Open an issue or submit a pull request. See **[docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)**.
 
+## Learn More — The Agentic Handbook
+
+Understand the architecture behind FlowPilot and autonomous business agents:
+
+📖 **[The Agentic Handbook](https://github.com/magnusfroste/clawable)** — A practical guide to building agentic systems, with real-world patterns from FlowWink's implementation.
+
 ## License
 
 MIT — see [LICENSE](LICENSE) for details.
 
 ---
 
-*Stop managing tools. Start directing outcomes. FlowPilot is your Business Operating System.*
+*Stop managing tools. Start directing outcomes. FlowPilot is your agentic operator.*
 
 **Made in Sweden 🇸🇪**
