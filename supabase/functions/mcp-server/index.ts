@@ -140,7 +140,7 @@ async function createMcpServer(): Promise<McpServer> {
       name: fn.name,
       description: fn.description || skill.description || skill.name,
       inputSchema: (fn.parameters as any) || {
-        type: "object",
+        type: "object" as const,
         properties: {},
       },
       handler: async (args: Record<string, unknown>) => {
