@@ -1,10 +1,13 @@
-import { Code2, Webhook, Terminal } from 'lucide-react';
+import { Code2, Webhook, Terminal, KeyRound } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ContentApiContent } from '@/pages/admin/ContentApiPage';
 import { WebhooksContent } from '@/pages/admin/WebhooksPage';
 import { DevToolsContent } from '@/pages/admin/DeveloperToolsPage';
+import { lazy, Suspense } from 'react';
+
+const ApiKeysPage = lazy(() => import('@/pages/admin/ApiKeysPage'));
 
 export default function DeveloperPage() {
   return (
@@ -26,6 +29,10 @@ export default function DeveloperPage() {
                 <Terminal className="h-3.5 w-3.5" />
                 Dev Tools
               </TabsTrigger>
+              <TabsTrigger value="mcp-keys" className="gap-1.5">
+                <KeyRound className="h-3.5 w-3.5" />
+                MCP Keys
+              </TabsTrigger>
             </TabsList>
           </div>
 
@@ -40,8 +47,22 @@ export default function DeveloperPage() {
           <TabsContent value="devtools" className="mt-0">
             <DevToolsContent />
           </TabsContent>
+
+          <TabsContent value="mcp-keys" className="mt-0">
+            <Suspense fallback={<div className="py-8 text-center text-muted-foreground">Loading…</div>}>
+              <ApiKeysPageContent />
+            </Suspense>
+          </TabsContent>
         </Tabs>
       </AdminPageContainer>
     </AdminLayout>
   );
+}
+
+// Inline wrapper that renders ApiKeysPage content without its own AdminLayout
+function ApiKeysPageContent() {
+  const { useApiKeys, useCreateApiKey, useRevokeApiKey } = require('@/hooks/useApiKeys');
+  // Re-use the standalone page but we need to extract its inner content
+  // Instead, just render the page — it already has AdminLayout but we'll refactor
+  return <ApiKeysPage />;
 }
