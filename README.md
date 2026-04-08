@@ -1,5 +1,9 @@
 # FlowWink
 
+<p align="center">
+  <img src=".github/social-preview.jpg" alt="FlowWink — The Business Operating System" width="100%" />
+</p>
+
 > **The Business Operating System — powered by an autonomous AI operator.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
