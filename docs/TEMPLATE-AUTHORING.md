@@ -1131,7 +1131,7 @@ FlowWink includes 16 built-in modules:
 | Blog | Posts, categories, tags, authors | Active |
 | Newsletter | Subscribers, campaigns, tracking | Active |
 | Knowledge Base | FAQ articles, categories, search | Active |
-| AI Chat | Content-aware AI assistant | Active |
+| AI Chat | FlowPilot-powered visitor chat | Active |
 | Forms | Custom forms with webhooks | Active |
 | Leads | Lead capture and management | Active |
 | Deals | Sales pipeline and tracking | Active |

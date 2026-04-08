@@ -28,7 +28,7 @@ The next generation of business software isn't a tool. It's an operating system 
 
 ## Mission
 
-> FlowWink gives every business a self-hosted autonomous AI consultant — one that manages their website, qualifies their leads, creates their content, and grows their business around the clock, without being prompted.
+> FlowWink gives every business a self-hosted agentic operator — one that runs their website, qualifies their leads, creates their content, fulfills their orders, and grows their business around the clock, without being prompted.
 
 ---
 

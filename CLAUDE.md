@@ -29,7 +29,7 @@ bun run scripts/templates-to-json.ts
 
 ## Architecture
 
-FlowWink is a self-hosted CMS + AI consultant platform built on React + Supabase. Each deployment is a single-tenant site for one customer.
+FlowWink is a self-hosted Business Operating System (BOS) built on React + Supabase. An autonomous AI operator called FlowPilot runs content, leads, orders, and growth — around the clock. Each deployment is a single-tenant site for one customer.
 
 ### Request flow
 
