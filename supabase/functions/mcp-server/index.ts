@@ -152,11 +152,14 @@ async function createMcpServer(): Promise<McpServer> {
   }
 
   // Resource: list all modules
-  server.resource("flowwink://modules", {
-    name: "FlowWink Modules",
-    description: "List of all available FlowWink modules and their status",
-    mimeType: "application/json",
-    handler: async () => {
+  server.resource(
+    "flowwink://modules",
+    {
+      name: "FlowWink Modules",
+      description: "List of all available FlowWink modules and their status",
+      mimeType: "application/json",
+    },
+    async (uri) => {
       const sb = serviceClient();
       const { data } = await sb
         .from("site_settings")
@@ -167,14 +170,14 @@ async function createMcpServer(): Promise<McpServer> {
       return {
         contents: [
           {
-            uri: "flowwink://modules",
+            uri: uri.href,
             mimeType: "application/json",
             text: JSON.stringify(data?.value ?? {}, null, 2),
           },
         ],
       };
     },
-  });
+  );
 
   return server;
 }
@@ -196,18 +199,26 @@ app.use("/*", async (c, next) => {
   if (!auth.valid) {
     return c.json({ error: "Invalid or expired API key" }, 401);
   }
-  // Store scopes for potential scope checks
   c.set("apiKeyScopes" as any, auth.scopes);
   return next();
 });
 
-// MCP transport
-const transport = new StreamableHttpTransport();
+// MCP transport — bind once, reuse handler
+let mcpHandler: ((req: Request) => Promise<Response>) | null = null;
+
+async function getMcpHandler() {
+  if (!mcpHandler) {
+    const server = await createMcpServer();
+    const transport = new StreamableHttpTransport();
+    mcpHandler = transport.bind(server);
+  }
+  return mcpHandler;
+}
 
 app.all("/*", async (c) => {
-  const server = await createMcpServer();
-  const response = await transport.handleRequest(c.req.raw, server);
-  // Add CORS headers to response
+  const handler = await getMcpHandler();
+  const response = await handler(c.req.raw);
+  // Add CORS headers
   const headers = new Headers(response.headers);
   for (const [k, v] of Object.entries(corsHeaders)) {
     headers.set(k, v);
