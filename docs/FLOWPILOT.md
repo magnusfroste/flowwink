@@ -760,7 +760,7 @@ Bundled capability sets in `agent_skill_packs` table (3 seed packs, not yet inst
 | `test-ai-connection` | AI provider connectivity test |
 | `create-user` | User creation |
 | `parse-resume` | Resume PDF parsing |
-| `resume-match` | AI consultant matching |
+| `resume-match` | Consultant profile matching |
 | `extract-pdf-text` | PDF text extraction |
 | `update-kb-feedback` | KB article feedback tracking |
 | `run-autonomy-tests` | Autonomy conformance suite |

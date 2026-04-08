@@ -1,12 +1,13 @@
-# FlowWink vs Konkurrenter - Funktionsjämförelse
+# FlowWink vs Competitors — Feature Comparison
 
-> **Last Updated:** December 2024
+> **Last Updated:** April 2026
+> **Category:** Business Operating System (BOS) with autonomous AI operator
 
-## Översikt
+## Overview
 
-| Kategori | FlowWink | Webflow | Storyblok | Contentful | WordPress |
+| Category | FlowWink | Webflow | Storyblok | Contentful | WordPress |
 |----------|--------|---------|-----------|------------|-----------|
-| **Typ** | Head + Headless | Visual Builder | Visual + Headless | Pure Headless | Traditional CMS |
+| **Type** | BOS + Agentic Operator | Visual Builder | Visual + Headless | Pure Headless | Traditional CMS |
 | **Målgrupp** | SMB, Healthcare | Designers, Agencies | Developers, Marketers | Enterprise | Alla |
 | **Teknisk nivå** | Låg | Låg | Medel | Hög | Låg-Medel |
 | **Pris** | 💰 Låg | 💰💰 Medel | 💰💰 Medel | 💰💰💰 Hög | 💰 Gratis/Self-host |
