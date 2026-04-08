@@ -126,6 +126,9 @@ export function ApiKeysContent() {
           <p className="text-xs text-muted-foreground">
             Use this URL in Cursor, Claude Desktop, or any MCP-compatible client with a Bearer token from the keys below.
           </p>
+          <p className="text-xs text-muted-foreground mt-1 font-mono bg-background/60 p-1.5 rounded">
+            Tip: Send <code className="font-semibold">{"{"}"jsonrpc":"2.0","method":"tools/list","id":1{"}"}</code> to discover available tools.
+          </p>
         </CardContent>
       </Card>
 
