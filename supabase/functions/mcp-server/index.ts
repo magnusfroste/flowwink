@@ -134,7 +134,7 @@ async function createMcpServer(): Promise<McpServer> {
 
   for (const skill of skills) {
     const fn = skill.tool_definition?.function;
-    if (!fn) continue;
+    if (!fn?.name) continue;
 
     server.tool({
       name: fn.name,
