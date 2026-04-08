@@ -134,13 +134,13 @@ async function createMcpServer(): Promise<McpServer> {
 
   for (const skill of skills) {
     const fn = skill.tool_definition?.function;
-    if (!fn) continue;
+    if (!fn?.name) continue;
 
     server.tool({
       name: fn.name,
       description: fn.description || skill.description || skill.name,
       inputSchema: (fn.parameters as any) || {
-        type: "object",
+        type: "object" as const,
         properties: {},
       },
       handler: async (args: Record<string, unknown>) => {
