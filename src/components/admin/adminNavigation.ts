@@ -97,6 +97,13 @@ export const navigationGroups: NavGroup[] = [
     ],
   },
   {
+    label: "Operations",
+    adminOnly: true,
+    items: [
+      { name: "SLA Monitor", href: "/admin/sla", icon: Shield, moduleId: "sla" },
+    ],
+  },
+  {
     label: "Setup",
     adminOnly: true,
     collapsible: false,
