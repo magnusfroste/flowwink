@@ -341,7 +341,7 @@ type BlogPost {
   excerpt: String
   featuredImage: String
   featuredImageAlt: String
-  content: [Block!]!
+  content: JSON
   author: Author
   publishedAt: String
   readingTimeMinutes: Int
