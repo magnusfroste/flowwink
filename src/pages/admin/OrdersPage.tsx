@@ -285,25 +285,18 @@ export default function OrdersPage() {
                       <Badge className={STATUS_COLORS[order.status] || ''}>
                         {STATUS_LABELS[order.status] || order.status}
                       </Badge>
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {formatPrice(order.total_cents, order.currency)}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {format(new Date(order.created_at), 'PPp')}
-                    </TableCell>
-                    <TableCell>
-                      {order.confirmation_sent_at ? (
-                        <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50 dark:bg-green-900/20 dark:border-green-800">
-                          <Mail className="h-3 w-3 mr-1" />
-                          Sent
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="text-muted-foreground">
-                          Not Sent
-                        </Badge>
-                      )}
-                    </TableCell>
+                     </TableCell>
+                     <TableCell>
+                       <Badge className={FULFILLMENT_COLORS[(order as any).fulfillment_status] || 'bg-muted text-muted-foreground'}>
+                         {FULFILLMENT_LABELS[(order as any).fulfillment_status] || 'Unfulfilled'}
+                       </Badge>
+                     </TableCell>
+                     <TableCell className="font-medium">
+                       {formatPrice(order.total_cents, order.currency)}
+                     </TableCell>
+                     <TableCell className="text-muted-foreground">
+                       {format(new Date(order.created_at), 'PPp')}
+                     </TableCell>
                     <TableCell>
                       <Button
                         variant="ghost"
