@@ -5,9 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ContentApiContent } from '@/pages/admin/ContentApiPage';
 import { WebhooksContent } from '@/pages/admin/WebhooksPage';
 import { DevToolsContent } from '@/pages/admin/DeveloperToolsPage';
-import { lazy, Suspense } from 'react';
-
-const ApiKeysPage = lazy(() => import('@/pages/admin/ApiKeysPage'));
+import { ApiKeysContent } from '@/pages/admin/ApiKeysPage';
 
 export default function DeveloperPage() {
   return (
@@ -49,20 +47,10 @@ export default function DeveloperPage() {
           </TabsContent>
 
           <TabsContent value="mcp-keys" className="mt-0">
-            <Suspense fallback={<div className="py-8 text-center text-muted-foreground">Loading…</div>}>
-              <ApiKeysPageContent />
-            </Suspense>
+            <ApiKeysContent />
           </TabsContent>
         </Tabs>
       </AdminPageContainer>
     </AdminLayout>
   );
-}
-
-// Inline wrapper that renders ApiKeysPage content without its own AdminLayout
-function ApiKeysPageContent() {
-  const { useApiKeys, useCreateApiKey, useRevokeApiKey } = require('@/hooks/useApiKeys');
-  // Re-use the standalone page but we need to extract its inner content
-  // Instead, just render the page — it already has AdminLayout but we'll refactor
-  return <ApiKeysPage />;
 }
