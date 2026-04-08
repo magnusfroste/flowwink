@@ -34,6 +34,8 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { Package, Eye, RefreshCw, ShoppingBag, TrendingUp, Clock, CheckCircle, Mail, Loader2 } from 'lucide-react';
 import type { Tables } from '@/integrations/supabase/types';
+import { FulfillmentStepper } from '@/components/admin/orders/FulfillmentStepper';
+import { FulfillmentActions } from '@/components/admin/orders/FulfillmentActions';
 
 type Order = Tables<'orders'>;
 type OrderItem = Tables<'order_items'>;
@@ -46,6 +48,22 @@ const STATUS_LABELS: Record<string, string> = {
   cancelled: 'Cancelled',
   refunded: 'Refunded',
   failed: 'Failed',
+};
+
+const FULFILLMENT_LABELS: Record<string, string> = {
+  unfulfilled: 'Unfulfilled',
+  picked: 'Picked',
+  packed: 'Packed',
+  shipped: 'Shipped',
+  delivered: 'Delivered',
+};
+
+const FULFILLMENT_COLORS: Record<string, string> = {
+  unfulfilled: 'bg-muted text-muted-foreground',
+  picked: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+  packed: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+  shipped: 'bg-indigo-500/10 text-indigo-600 border-indigo-500/20',
+  delivered: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
 };
 
 const STATUS_COLORS: Record<string, string> = {
