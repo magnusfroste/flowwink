@@ -56,19 +56,20 @@ FlowPilot is not a chatbot, a copilot, or a content suggester. It is an **autono
 
 ---
 
-## Modules — 22 integrated domains
+## Modules — 37 integrated domains
 
 FlowWink follows an **Odoo-inspired modular architecture** where each module owns its data, views, and FlowPilot integration. Modules are registered as plugins with typed contracts.
 
 | Category | Modules |
 |----------|---------|
-| **Content** | Pages, Blog, Knowledge Base, Global Blocks, Media |
+| **Content** | Pages, Blog, Knowledge Base, Global Blocks, Media, Templates, Handbook |
 | **CRM** | Leads, Companies, Deals, Forms, Sales Intelligence |
-| **Commerce** | Products, Orders, Bookings |
+| **Commerce** | Products, Orders, Bookings, Invoicing, Inventory |
+| **Finance** | Accounting, Expenses, Timesheets |
 | **Communication** | Newsletter, Webinars |
-| **Support** | Tickets (Kanban + auto-triage via FlowPilot) |
-| **Growth** | Growth Dashboard, Company Insights, Resume/CV |
-| **System** | FlowPilot, Federation (A2A), Browser Control |
+| **Support** | Tickets (Kanban + auto-triage via FlowPilot), Live Support |
+| **Growth** | Analytics, Paid Growth, Company Insights, Resume/CV, Content Hub |
+| **System** | FlowPilot, Federation (A2A), Browser Control, Developer, Site Migration |
 
 Each module provides:
 - **Data layer** — Supabase table + RLS policies
@@ -92,14 +93,15 @@ Each module provides:
 7. REMEMBER  — Save insights to semantic memory for future cycles
 ```
 
-### Skills — 40+ across your business
+### Skills — 118 across your business
 
 | Domain | Skills |
 |--------|--------|
 | **CMS** | Pages (create/publish/rollback), block manipulation, Global Elements |
 | **Content** | Blog posts, KB articles, content research, SEO briefs, social batches |
 | **CRM** | Leads, Companies, Deals, Form processing, Lead qualification, Company enrichment |
-| **Commerce** | Products, Orders, Bookings |
+| **Commerce** | Products, Orders, Bookings, Invoicing, Inventory management |
+| **Finance** | Accounting entries, Expense tracking, Timesheet analysis |
 | **Communication** | Newsletter campaigns, Webinars |
 | **Support** | Ticket triage, KB-powered auto-resolve |
 | **Intelligence** | Analytics, SEO audits, web research, browser automation, prospect research |
