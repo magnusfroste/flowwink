@@ -259,15 +259,15 @@ export default function OrdersPage() {
           ) : (
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Order</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Total</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead className="w-20"></TableHead>
-                </TableRow>
+                 <TableRow>
+                   <TableHead>Order</TableHead>
+                   <TableHead>Customer</TableHead>
+                   <TableHead>Status</TableHead>
+                   <TableHead>Fulfillment</TableHead>
+                   <TableHead>Total</TableHead>
+                   <TableHead>Date</TableHead>
+                   <TableHead className="w-20"></TableHead>
+                 </TableRow>
               </TableHeader>
               <TableBody>
                 {orders?.map((order) => (
