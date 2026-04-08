@@ -2,7 +2,7 @@ import {
   LayoutDashboard, BarChart3, FileText, Users, Settings, BookOpen, Image, Mail,
   Puzzle, UserCheck, Briefcase, Building2, Package, Library, ShoppingCart,
   CalendarDays, Plug, Bot, Zap, MessageSquare, Headphones, Megaphone, Code2, FileText as FileQuote,
-  Video, Target, Inbox, UserCircle, FileUser, Receipt, Timer, Wallet,
+  Video, Target, Inbox, UserCircle, FileUser, Receipt, Timer, Wallet, Shield,
   Network, Snowflake, UserRound, BookMarked, KeyRound,
 } from 'lucide-react';
 
