@@ -442,6 +442,18 @@ The inventory module tracks stock levels across all e-commerce products with aut
 
 ---
 
+### Order Fulfillment Flow
+
+The fulfillment flow extends the Orders module with warehouse-style tracking from payment to delivery:
+
+- **Columns on `orders`**: `fulfillment_status` (unfulfilled → picked → packed → shipped → delivered), `picked_at`, `packed_at`, `shipped_at`, `delivered_at`, `tracking_number`, `tracking_url`, `fulfillment_notes`
+- **Auto-timestamping**: Database trigger automatically fills in earlier timestamps when status advances (e.g. marking as "shipped" auto-sets picked_at and packed_at if not already set)
+- **Order status sync**: Advancing to "shipped" sets order status to `shipped`; "delivered" sets it to `completed`
+- **Admin UI**: Visual stepper showing fulfillment progress with timestamps, tracking info display, and one-click advancement buttons per stage
+- **SLA-ready**: Timestamps enable SLA Monitor to track `fulfillment_time` policies (e.g. "orders must ship within 4 hours of payment")
+
+---
+
 ### SLA Monitor Module
 
 The SLA Monitor (`src/pages/admin/SlaMonitorPage.tsx`) enables policy-based service level tracking with autonomous violation detection:
