@@ -95,7 +95,7 @@ import AccountingPage from "./pages/admin/AccountingPage";
 import ExpensesPage from "./pages/admin/ExpensesPage";
 import HandbookPage from "./pages/admin/HandbookPage";
 import TimesheetsPage from "./pages/admin/TimesheetsPage";
-import ApiKeysPage from "./pages/admin/ApiKeysPage";
+
 
 const TemplateGalleryPage = lazy(() => import("./pages/admin/TemplateGalleryPage"));
 const SkillHubPage = lazy(() => import("./pages/admin/SkillHubPage"));
@@ -224,7 +224,7 @@ const router = createBrowserRouter([
       { path: "/admin/expenses", element: <ExpensesPage /> },
       { path: "/admin/handbook", element: <HandbookPage /> },
       { path: "/admin/timesheets", element: <TimesheetsPage /> },
-      { path: "/admin/api-keys", element: <ApiKeysPage /> },
+      { path: "/admin/api-keys", element: <Navigate to="/admin/developer?tab=mcp-keys" replace /> },
       { path: "/admin/autonomy-tests", element: <AutonomyTestSuitePage /> },
       { path: "/preview/:id", element: <PreviewPage /> },
       { path: "/:slug", element: <PublicPage /> },
