@@ -152,8 +152,7 @@ async function createMcpServer(): Promise<McpServer> {
   }
 
   // Resource: list all modules
-  server.resource({
-    uri: "flowwink://modules",
+  server.resource("flowwink://modules", {
     name: "FlowWink Modules",
     description: "List of all available FlowWink modules and their status",
     mimeType: "application/json",
