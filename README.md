@@ -246,9 +246,11 @@ FlowPilot routes to whichever provider is configured. Use your own API keys. Run
 | Jasper / Copy.ai | FlowPilot writing directly into your CMS |
 | Zapier / N8N | Workflow DAGs with conditional branching |
 | Intercom | AI chat with KB integration and lead capture |
-| Shopify (simple) | Products, orders, and Stripe checkout |
+| Shopify (simple) | Products, orders, inventory, and Stripe checkout |
+| QuickBooks / Xero | Invoicing, accounting, expense tracking |
+| Toggl / Harvest | Timesheets with project-based tracking |
 
-One operating system. One agent. Self-host free.
+One operating system. One operator. Self-host free.
 
 ---
 
