@@ -243,11 +243,12 @@ export default async function Home() {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="rest-explorer" className="space-y-4">
-            <TabsList className="grid grid-cols-4 w-full max-w-lg">
+            <TabsList className="grid grid-cols-5 w-full max-w-xl">
               <TabsTrigger value="rest-explorer">REST</TabsTrigger>
               <TabsTrigger value="graphql-explorer">GraphQL</TabsTrigger>
               <TabsTrigger value="react">React</TabsTrigger>
               <TabsTrigger value="nextjs">Next.js</TabsTrigger>
+              <TabsTrigger value="mcp">MCP</TabsTrigger>
             </TabsList>
 
             {/* REST Explorer */}
