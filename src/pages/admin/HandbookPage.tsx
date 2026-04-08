@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BookMarked, RefreshCw, Settings2, ChevronRight, Loader2 } from 'lucide-react';
+import { BookMarked, RefreshCw, Settings2, Loader2 } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
