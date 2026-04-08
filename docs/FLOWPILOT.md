@@ -2,7 +2,7 @@
 
 > **Your website runs itself.** FlowPilot is not a chatbot. It is an autonomous AI operator that writes your content, qualifies your leads, books your accounting entries, runs your campaigns, orchestrates multi-agent workflows, and learns from every interaction. You set the objectives. It does the rest.
 
-> **Version:** 4.1 | **Updated:** April 2026 | **Skills:** 109 registered + 32 built-in tools + ∞ runtime-created | **Autonomy:** 10/10
+> **Version:** 4.2 | **Updated:** April 2026 | **Skills:** 110 registered + 32 built-in tools + ∞ runtime-created | **Autonomy:** 10/10
 
 ---
 
@@ -460,7 +460,7 @@ FlowAgent can modify its own behavior:
 | 2 | `scrape_url` | `edge:web-scrape` | internal | search |
 | 3 | `search_web` | `edge:web-search` | internal | search |
 
-### Analytics Skills (9 skills)
+### Analytics Skills (10 skills)
 
 | # | Skill | Handler | Scope | Category |
 |---|-------|---------|-------|----------|
@@ -471,8 +471,9 @@ FlowAgent can modify its own behavior:
 | 5 | `kb_gap_analysis` | `module:analytics` | internal | analytics |
 | 6 | `learn_from_data` | `edge:flowpilot-learn` | internal | analytics |
 | 7 | `seo_audit_page` | `module:analytics` | internal | analytics |
-| 8 | `support_get_feedback` | `db:chat_feedback` | internal | analytics |
-| 9 | `weekly_business_digest` | `edge:business-digest` | internal | analytics |
+| 8 | `sla_check` | `edge:sla-check` | internal | analytics |
+| 9 | `support_get_feedback` | `db:chat_feedback` | internal | analytics |
+| 10 | `weekly_business_digest` | `edge:business-digest` | internal | analytics |
 
 ### System Skills (12 skills)
 
@@ -765,6 +766,11 @@ Bundled capability sets in `agent_skill_packs` table (3 seed packs, not yet inst
 | `run-autonomy-tests` | Autonomy conformance suite |
 | `a2a-ingest` | A2A peer communication handler |
 
+### Operations
+| Function | Purpose |
+|----------|---------|
+| `sla-check` | Evaluate SLA policies, detect violations, auto-resolve |
+
 ### Growth
 | Function | Purpose |
 |----------|---------|
@@ -852,6 +858,8 @@ Bundled capability sets in `agent_skill_packs` table (3 seed packs, not yet inst
 | `a2a_activity` | A2A communication audit trail |
 | `flowpilot_briefings` | Morning briefing archive |
 | `audit_logs` | General system audit trail |
+| `sla_policies` | SLA policy definitions (entity type, metric, target minutes, severity) |
+| `sla_violations` | SLA violation log with severity and resolution tracking |
 
 ---
 
