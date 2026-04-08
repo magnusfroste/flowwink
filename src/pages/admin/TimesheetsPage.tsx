@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { WeeklyTimesheetTab } from '@/components/admin/timesheets/WeeklyTimesheetTab';
@@ -6,6 +7,7 @@ import { ProjectsTab } from '@/components/admin/timesheets/ProjectsTab';
 
 export default function TimesheetsPage() {
   return (
+    <AdminLayout>
     <div className="space-y-6">
       <AdminPageHeader
         title="Timesheets"
@@ -26,5 +28,6 @@ export default function TimesheetsPage() {
         </TabsContent>
       </Tabs>
     </div>
+    </AdminLayout>
   );
 }

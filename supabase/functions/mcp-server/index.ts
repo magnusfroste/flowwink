@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { McpServer, StreamableHttpTransport } from "mcp-lite";
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

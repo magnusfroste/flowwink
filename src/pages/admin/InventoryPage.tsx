@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -74,6 +75,7 @@ export default function InventoryPage() {
   };
 
   return (
+    <AdminLayout>
     <div className="space-y-6">
       <AdminPageHeader
         title="Inventory"
@@ -320,5 +322,6 @@ export default function InventoryPage() {
         </DialogContent>
       </Dialog>
     </div>
+    </AdminLayout>
   );
 }
