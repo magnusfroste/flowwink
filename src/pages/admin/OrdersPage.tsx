@@ -364,6 +364,42 @@ export default function OrdersPage() {
 
               <Separator />
 
+              {/* Fulfillment Progress */}
+              <div>
+                <h3 className="font-semibold mb-3">Fulfillment</h3>
+                <FulfillmentStepper
+                  status={(selectedOrder as any).fulfillment_status || 'unfulfilled'}
+                  pickedAt={(selectedOrder as any).picked_at}
+                  packedAt={(selectedOrder as any).packed_at}
+                  shippedAt={(selectedOrder as any).shipped_at}
+                  deliveredAt={(selectedOrder as any).delivered_at}
+                />
+                {(selectedOrder as any).tracking_number && (
+                  <div className="mt-3 text-sm">
+                    <span className="text-muted-foreground">Tracking: </span>
+                    {(selectedOrder as any).tracking_url ? (
+                      <a href={(selectedOrder as any).tracking_url} target="_blank" rel="noopener noreferrer" className="text-primary underline">
+                        {(selectedOrder as any).tracking_number}
+                      </a>
+                    ) : (
+                      <span className="font-mono">{(selectedOrder as any).tracking_number}</span>
+                    )}
+                  </div>
+                )}
+                <div className="mt-4">
+                  <FulfillmentActions
+                    orderId={selectedOrder.id}
+                    currentStatus={(selectedOrder as any).fulfillment_status || 'unfulfilled'}
+                    trackingNumber={(selectedOrder as any).tracking_number}
+                    trackingUrl={(selectedOrder as any).tracking_url}
+                    fulfillmentNotes={(selectedOrder as any).fulfillment_notes}
+                    onUpdated={() => setSelectedOrder(null)}
+                  />
+                </div>
+              </div>
+
+              <Separator />
+
               {/* Order Items */}
               <div>
                 <h3 className="font-semibold mb-3">Products</h3>
