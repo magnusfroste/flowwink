@@ -69,6 +69,7 @@ export interface ModulesSettings {
   handbook: ModuleConfig;
   timesheets: ModuleConfig;
   inventory: ModuleConfig;
+  sla: ModuleConfig;
 }
 
 export const defaultModulesSettings: ModulesSettings = {
@@ -401,6 +402,15 @@ export const defaultModulesSettings: ModulesSettings = {
     autonomy: 'agent-capable',
     adminUI: true,
   },
+  sla: {
+    enabled: false,
+    name: 'SLA Monitor',
+    description: 'Define response and resolution time targets — FlowPilot monitors compliance and flags breaches automatically',
+    icon: 'Shield',
+    category: 'insights',
+    autonomy: 'agent-capable',
+    adminUI: true,
+  },
 };
 
 // Map sidebar items to module IDs
@@ -443,6 +453,7 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/handbook': 'handbook',
   '/admin/timesheets': 'timesheets',
   '/admin/inventory': 'inventory',
+  '/admin/sla': 'sla',
 };
 
 export function useModules() {
