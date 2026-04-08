@@ -14,15 +14,15 @@ SaaS solved distribution. It never solved the work.
 
 You pay for HubSpot, Webflow, Mailchimp, Notion — and then you still have to use them. Every tool hands the work back to a human. That's not software that scales. That's software that delegates the burden back to you.
 
-**The agentic web changes this fundamentally.**
+**The agent era changes this fundamentally.**
 
-The next generation of business software doesn't wait to be used. It acts.
+The next generation of business software isn't a tool. It's an operating system with an autonomous operator built in.
 
 ---
 
 ## Vision
 
-> The web is becoming agentic. Every business will have an AI that runs it. We're building the infrastructure for that world.
+> Every business will have an AI operator that runs it. FlowWink is the operating system for that world.
 
 ---
 
@@ -51,7 +51,7 @@ FlowPilot — our autonomous agent — has:
 - **Heartbeat** — wakes every night, analyzes, acts, reports
 - **70+ Skills** — content, CRM, SEO, email, e-commerce, prospecting
 
-It's not a CMS with AI. It's **an autonomous business operator with a website.**
+It's not a CMS with AI. It's **a Business Operating System with an autonomous operator.**
 
 ---
 
@@ -122,15 +122,15 @@ FlowPilot serves three roles simultaneously:
 
 No AI product today occupies this space. General-purpose assistants (ChatGPT, Claude) lack business context. CMS tools (WordPress, Webflow) lack agency. CRM platforms (HubSpot, Salesforce) bolt on AI as an afterthought.
 
-FlowWink owns the category: **autonomous business operations**.
+FlowWink owns the category: **Business Operating System (BOS)**.
 
 ---
 
 ## The Trajectory
 
-1. **Today** — Self-hosted agentic CMS for SMBs and agencies. One FlowPilot per deployment. Full autonomy out of the box.
-2. **Next** — FlowWink as an operating layer. Skill marketplace. Federated agents across deployments.
-3. **Endgame** — The infrastructure of the agentic web. Every business runs on an agent. FlowWink is the standard.
+1. **Today** — Self-hosted Business Operating System for SMBs and agencies. One FlowPilot per deployment. Full autonomy out of the box.
+2. **Next** — FlowWink as a BOS platform. Skill marketplace. Federated agents across deployments.
+3. **Endgame** — The standard operating system for autonomous businesses. Every company runs on an agent. FlowWink is the default.
 
 ---
 

@@ -1,6 +1,6 @@
-# FlowPilot — Autonomous Agentic Intelligence Engine
+# FlowPilot — The Autonomous Business Operator
 
-> **Your website runs itself.** FlowPilot is not a chatbot. It is an autonomous AI operator that writes your content, qualifies your leads, books your accounting entries, runs your campaigns, orchestrates multi-agent workflows, and learns from every interaction. You set the objectives. It does the rest.
+> **Your business runs itself.** FlowPilot is not a chatbot. It is the autonomous AI operator at the heart of the FlowWink Business Operating System (BOS). It writes your content, qualifies your leads, books your accounting entries, manages fulfillment, runs your campaigns, orchestrates multi-agent workflows, and learns from every interaction. You set the objectives. It does the rest.
 
 > **Version:** 4.2 | **Updated:** April 2026 | **Skills:** 110 registered + 32 built-in tools + ∞ runtime-created | **Autonomy:** 10/10
 
