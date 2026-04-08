@@ -1,10 +1,11 @@
-import { Code2, Webhook, Terminal } from 'lucide-react';
+import { Code2, Webhook, Terminal, KeyRound } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ContentApiContent } from '@/pages/admin/ContentApiPage';
 import { WebhooksContent } from '@/pages/admin/WebhooksPage';
 import { DevToolsContent } from '@/pages/admin/DeveloperToolsPage';
+import { ApiKeysContent } from '@/pages/admin/ApiKeysPage';
 
 export default function DeveloperPage() {
   return (
@@ -26,6 +27,10 @@ export default function DeveloperPage() {
                 <Terminal className="h-3.5 w-3.5" />
                 Dev Tools
               </TabsTrigger>
+              <TabsTrigger value="mcp-keys" className="gap-1.5">
+                <KeyRound className="h-3.5 w-3.5" />
+                MCP Keys
+              </TabsTrigger>
             </TabsList>
           </div>
 
@@ -39,6 +44,10 @@ export default function DeveloperPage() {
 
           <TabsContent value="devtools" className="mt-0">
             <DevToolsContent />
+          </TabsContent>
+
+          <TabsContent value="mcp-keys" className="mt-0">
+            <ApiKeysContent />
           </TabsContent>
         </Tabs>
       </AdminPageContainer>
