@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BookMarked, RefreshCw, Settings2, ChevronRight, Loader2 } from 'lucide-react';
+import { BookMarked, RefreshCw, Settings2, Loader2 } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -174,17 +174,12 @@ export default function HandbookPage() {
                       <button
                         key={ch.id}
                         onClick={() => setSelectedSlug(ch.slug)}
-                        className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors flex items-center gap-2 ${
+                      className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
                           selectedChapter?.slug === ch.slug
                             ? 'bg-primary/10 text-primary font-medium'
                             : 'hover:bg-muted text-foreground/80'
                         }`}
                       >
-                        <ChevronRight
-                          className={`h-3 w-3 shrink-0 transition-transform ${
-                            selectedChapter?.slug === ch.slug ? 'rotate-90' : ''
-                          }`}
-                        />
                         <span className="truncate">{ch.title}</span>
                       </button>
                     ))}
