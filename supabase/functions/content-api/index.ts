@@ -292,6 +292,31 @@ type Query {
 
   # Site Settings
   siteSettings: SiteSettings
+
+  # Orders
+  orders(limit: Int, offset: Int, status: String): OrderConnection!
+  order(id: String!): Order
+
+  # CRM
+  leads(limit: Int, offset: Int, status: String): LeadConnection!
+  lead(id: String!): Lead
+  deals(limit: Int, offset: Int, stage: String): DealConnection!
+  companies(limit: Int, offset: Int): CompanyConnection!
+
+  # Support
+  tickets(limit: Int, offset: Int, status: String): TicketConnection!
+
+  # Invoicing
+  invoices(limit: Int, offset: Int, status: String): InvoiceConnection!
+
+  # Webinars
+  webinars(limit: Int, upcoming: Boolean): [Webinar!]!
+
+  # Consultants
+  consultants(active: Boolean): [Consultant!]!
+
+  # Media
+  media(limit: Int, offset: Int): MediaConnection!
 }
 
 type PageConnection {
@@ -443,6 +468,142 @@ type SiteSettings {
   footer: JSON
   cookieBanner: JSON
   kb: JSON
+}
+
+type OrderConnection {
+  nodes: [Order!]!
+  totalCount: Int!
+}
+
+type Order {
+  id: String!
+  customerEmail: String!
+  customerName: String
+  totalCents: Int!
+  currency: String!
+  status: String!
+  items: JSON
+  createdAt: String!
+}
+
+type LeadConnection {
+  nodes: [Lead!]!
+  totalCount: Int!
+}
+
+type Lead {
+  id: String!
+  name: String
+  email: String!
+  phone: String
+  status: String!
+  score: Int
+  source: String
+  createdAt: String!
+}
+
+type DealConnection {
+  nodes: [Deal!]!
+  totalCount: Int!
+}
+
+type Deal {
+  id: String!
+  valueCents: Int!
+  currency: String!
+  stage: String!
+  expectedClose: String
+  notes: String
+  leadId: String!
+  createdAt: String!
+}
+
+type CompanyConnection {
+  nodes: [Company!]!
+  totalCount: Int!
+}
+
+type Company {
+  id: String!
+  name: String!
+  domain: String
+  industry: String
+  size: String
+  website: String
+  phone: String
+  createdAt: String!
+}
+
+type TicketConnection {
+  nodes: [Ticket!]!
+  totalCount: Int!
+}
+
+type Ticket {
+  id: String!
+  title: String!
+  description: String
+  status: String!
+  priority: String!
+  customerEmail: String
+  customerName: String
+  createdAt: String!
+}
+
+type InvoiceConnection {
+  nodes: [Invoice!]!
+  totalCount: Int!
+}
+
+type Invoice {
+  id: String!
+  invoiceNumber: String!
+  totalCents: Int!
+  currency: String!
+  status: String!
+  dueDate: String
+  issuedAt: String
+  paidAt: String
+  createdAt: String!
+}
+
+type Webinar {
+  id: String!
+  title: String!
+  description: String
+  scheduledAt: String!
+  durationMinutes: Int
+  status: String!
+  registrationUrl: String
+  maxAttendees: Int
+}
+
+type Consultant {
+  id: String!
+  name: String!
+  title: String
+  summary: String
+  skills: [String!]!
+  hourlyRateCents: Int
+  currency: String!
+  availability: String
+  avatarUrl: String
+  isActive: Boolean!
+}
+
+type MediaConnection {
+  nodes: [MediaAsset!]!
+  totalCount: Int!
+}
+
+type MediaAsset {
+  id: String!
+  fileName: String!
+  fileUrl: String!
+  mimeType: String
+  fileSizeBytes: Int
+  alt: String
+  createdAt: String!
 }
 
 scalar JSON
