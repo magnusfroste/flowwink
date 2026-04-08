@@ -113,7 +113,6 @@ export const navigationGroups: NavGroup[] = [
       { name: "Modules", href: "/admin/modules", icon: Puzzle },
       { name: "Integrations", href: "/admin/integrations", icon: Plug },
       { name: "Developer", href: "/admin/developer", icon: Code2, moduleId: "developer" },
-      { name: "API Keys", href: "/admin/api-keys", icon: KeyRound, moduleId: "developer" },
       
       { name: "Users", href: "/admin/users", icon: Users },
       { name: "Profile", href: "/admin/profile", icon: UserCircle },
