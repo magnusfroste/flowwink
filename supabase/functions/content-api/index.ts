@@ -292,6 +292,31 @@ type Query {
 
   # Site Settings
   siteSettings: SiteSettings
+
+  # Orders
+  orders(limit: Int, offset: Int, status: String): OrderConnection!
+  order(id: String!): Order
+
+  # CRM
+  leads(limit: Int, offset: Int, status: String): LeadConnection!
+  lead(id: String!): Lead
+  deals(limit: Int, offset: Int, stage: String): DealConnection!
+  companies(limit: Int, offset: Int): CompanyConnection!
+
+  # Support
+  tickets(limit: Int, offset: Int, status: String): TicketConnection!
+
+  # Invoicing
+  invoices(limit: Int, offset: Int, status: String): InvoiceConnection!
+
+  # Webinars
+  webinars(limit: Int, upcoming: Boolean): [Webinar!]!
+
+  # Consultants
+  consultants(active: Boolean): [Consultant!]!
+
+  # Media
+  media(limit: Int, offset: Int): MediaConnection!
 }
 
 type PageConnection {
@@ -443,6 +468,142 @@ type SiteSettings {
   footer: JSON
   cookieBanner: JSON
   kb: JSON
+}
+
+type OrderConnection {
+  nodes: [Order!]!
+  totalCount: Int!
+}
+
+type Order {
+  id: String!
+  customerEmail: String!
+  customerName: String
+  totalCents: Int!
+  currency: String!
+  status: String!
+  items: JSON
+  createdAt: String!
+}
+
+type LeadConnection {
+  nodes: [Lead!]!
+  totalCount: Int!
+}
+
+type Lead {
+  id: String!
+  name: String
+  email: String!
+  phone: String
+  status: String!
+  score: Int
+  source: String
+  createdAt: String!
+}
+
+type DealConnection {
+  nodes: [Deal!]!
+  totalCount: Int!
+}
+
+type Deal {
+  id: String!
+  valueCents: Int!
+  currency: String!
+  stage: String!
+  expectedClose: String
+  notes: String
+  leadId: String!
+  createdAt: String!
+}
+
+type CompanyConnection {
+  nodes: [Company!]!
+  totalCount: Int!
+}
+
+type Company {
+  id: String!
+  name: String!
+  domain: String
+  industry: String
+  size: String
+  website: String
+  phone: String
+  createdAt: String!
+}
+
+type TicketConnection {
+  nodes: [Ticket!]!
+  totalCount: Int!
+}
+
+type Ticket {
+  id: String!
+  title: String!
+  description: String
+  status: String!
+  priority: String!
+  customerEmail: String
+  customerName: String
+  createdAt: String!
+}
+
+type InvoiceConnection {
+  nodes: [Invoice!]!
+  totalCount: Int!
+}
+
+type Invoice {
+  id: String!
+  invoiceNumber: String!
+  totalCents: Int!
+  currency: String!
+  status: String!
+  dueDate: String
+  issuedAt: String
+  paidAt: String
+  createdAt: String!
+}
+
+type Webinar {
+  id: String!
+  title: String!
+  description: String
+  scheduledAt: String!
+  durationMinutes: Int
+  status: String!
+  registrationUrl: String
+  maxAttendees: Int
+}
+
+type Consultant {
+  id: String!
+  name: String!
+  title: String
+  summary: String
+  skills: [String!]!
+  hourlyRateCents: Int
+  currency: String!
+  availability: String
+  avatarUrl: String
+  isActive: Boolean!
+}
+
+type MediaConnection {
+  nodes: [MediaAsset!]!
+  totalCount: Int!
+}
+
+type MediaAsset {
+  id: String!
+  fileName: String!
+  fileUrl: String!
+  mimeType: String
+  fileSizeBytes: Int
+  alt: String
+  createdAt: String!
 }
 
 scalar JSON
@@ -1023,6 +1184,300 @@ async function executeGraphQL(
             footer: settingsMap.footer || null,
             cookieBanner: settingsMap.cookie_banner || null,
             kb: settingsMap.kb || null,
+          },
+        },
+      };
+    }
+
+    // ============= Orders Queries =============
+
+    if (normalizedQuery.includes('orders') && !normalizedQuery.includes('order(')) {
+      const limitMatch = normalizedQuery.match(/limit:\s*(\d+)/);
+      const offsetMatch = normalizedQuery.match(/offset:\s*(\d+)/);
+      const statusMatch = normalizedQuery.match(/status:\s*["']?([^"'\s),]+)["']?/);
+      const limit = limitMatch ? parseInt(limitMatch[1]) : (variables.limit as number) || 50;
+      const offset = offsetMatch ? parseInt(offsetMatch[1]) : (variables.offset as number) || 0;
+      const status = statusMatch?.[1] || (variables.status as string);
+
+      let query = supabase
+        .from('orders')
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      if (status) query = query.eq('status', status);
+
+      const { data: orders, error, count } = await query;
+      if (error) throw error;
+
+      return {
+        data: {
+          orders: {
+            // deno-lint-ignore no-explicit-any
+            nodes: (orders || []).map((o: any) => ({
+              id: o.id, customerEmail: o.customer_email, customerName: o.customer_name,
+              totalCents: o.total_cents, currency: o.currency, status: o.status,
+              items: o.items, createdAt: o.created_at,
+            })),
+            totalCount: count || 0,
+          },
+        },
+      };
+    }
+
+    // Query: order(id)
+    const orderIdMatch = normalizedQuery.match(/order\s*\(\s*id:\s*["']?([^"'\s)]+)["']?\s*\)/);
+    const orderId = orderIdMatch?.[1] || (variables.id as string);
+    if (orderId && normalizedQuery.includes('order(')) {
+      const { data: order, error } = await supabase.from('orders').select('*').eq('id', orderId).maybeSingle();
+      if (error) throw error;
+      if (!order) return { data: { order: null } };
+      // deno-lint-ignore no-explicit-any
+      const o = order as any;
+      return { data: { order: { id: o.id, customerEmail: o.customer_email, customerName: o.customer_name, totalCents: o.total_cents, currency: o.currency, status: o.status, items: o.items, createdAt: o.created_at } } };
+    }
+
+    // ============= Leads Queries =============
+
+    if (normalizedQuery.includes('leads') && !normalizedQuery.includes('lead(')) {
+      const limitMatch = normalizedQuery.match(/limit:\s*(\d+)/);
+      const offsetMatch = normalizedQuery.match(/offset:\s*(\d+)/);
+      const statusMatch = normalizedQuery.match(/status:\s*["']?([^"'\s),]+)["']?/);
+      const limit = limitMatch ? parseInt(limitMatch[1]) : (variables.limit as number) || 50;
+      const offset = offsetMatch ? parseInt(offsetMatch[1]) : (variables.offset as number) || 0;
+      const status = statusMatch?.[1] || (variables.status as string);
+
+      let query = supabase.from('leads').select('*', { count: 'exact' }).order('created_at', { ascending: false }).range(offset, offset + limit - 1);
+      if (status) query = query.eq('status', status);
+
+      const { data: leads, error, count } = await query;
+      if (error) throw error;
+
+      return {
+        data: {
+          leads: {
+            // deno-lint-ignore no-explicit-any
+            nodes: (leads || []).map((l: any) => ({
+              id: l.id, name: l.name, email: l.email, phone: l.phone,
+              status: l.status, score: l.score, source: l.source, createdAt: l.created_at,
+            })),
+            totalCount: count || 0,
+          },
+        },
+      };
+    }
+
+    // Query: lead(id)
+    const leadIdMatch = normalizedQuery.match(/lead\s*\(\s*id:\s*["']?([^"'\s)]+)["']?\s*\)/);
+    const leadId = leadIdMatch?.[1] || (variables.id as string);
+    if (leadId && normalizedQuery.includes('lead(')) {
+      const { data: lead, error } = await supabase.from('leads').select('*').eq('id', leadId).maybeSingle();
+      if (error) throw error;
+      if (!lead) return { data: { lead: null } };
+      // deno-lint-ignore no-explicit-any
+      const l = lead as any;
+      return { data: { lead: { id: l.id, name: l.name, email: l.email, phone: l.phone, status: l.status, score: l.score, source: l.source, createdAt: l.created_at } } };
+    }
+
+    // ============= Deals Queries =============
+
+    if (normalizedQuery.includes('deals')) {
+      const limitMatch = normalizedQuery.match(/limit:\s*(\d+)/);
+      const offsetMatch = normalizedQuery.match(/offset:\s*(\d+)/);
+      const stageMatch = normalizedQuery.match(/stage:\s*["']?([^"'\s),]+)["']?/);
+      const limit = limitMatch ? parseInt(limitMatch[1]) : (variables.limit as number) || 50;
+      const offset = offsetMatch ? parseInt(offsetMatch[1]) : (variables.offset as number) || 0;
+      const stage = stageMatch?.[1] || (variables.stage as string);
+
+      let query = supabase.from('deals').select('*', { count: 'exact' }).order('created_at', { ascending: false }).range(offset, offset + limit - 1);
+      if (stage) query = query.eq('stage', stage);
+
+      const { data: deals, error, count } = await query;
+      if (error) throw error;
+
+      return {
+        data: {
+          deals: {
+            // deno-lint-ignore no-explicit-any
+            nodes: (deals || []).map((d: any) => ({
+              id: d.id, valueCents: d.value_cents, currency: d.currency,
+              stage: d.stage, expectedClose: d.expected_close, notes: d.notes,
+              leadId: d.lead_id, createdAt: d.created_at,
+            })),
+            totalCount: count || 0,
+          },
+        },
+      };
+    }
+
+    // ============= Companies Queries =============
+
+    if (normalizedQuery.includes('companies')) {
+      const limitMatch = normalizedQuery.match(/limit:\s*(\d+)/);
+      const offsetMatch = normalizedQuery.match(/offset:\s*(\d+)/);
+      const limit = limitMatch ? parseInt(limitMatch[1]) : (variables.limit as number) || 50;
+      const offset = offsetMatch ? parseInt(offsetMatch[1]) : (variables.offset as number) || 0;
+
+      const { data: companies, error, count } = await supabase.from('companies').select('*', { count: 'exact' }).order('created_at', { ascending: false }).range(offset, offset + limit - 1);
+      if (error) throw error;
+
+      return {
+        data: {
+          companies: {
+            // deno-lint-ignore no-explicit-any
+            nodes: (companies || []).map((c: any) => ({
+              id: c.id, name: c.name, domain: c.domain, industry: c.industry,
+              size: c.size, website: c.website, phone: c.phone, createdAt: c.created_at,
+            })),
+            totalCount: count || 0,
+          },
+        },
+      };
+    }
+
+    // ============= Tickets Queries =============
+
+    if (normalizedQuery.includes('tickets')) {
+      const limitMatch = normalizedQuery.match(/limit:\s*(\d+)/);
+      const offsetMatch = normalizedQuery.match(/offset:\s*(\d+)/);
+      const statusMatch = normalizedQuery.match(/status:\s*["']?([^"'\s),]+)["']?/);
+      const limit = limitMatch ? parseInt(limitMatch[1]) : (variables.limit as number) || 50;
+      const offset = offsetMatch ? parseInt(offsetMatch[1]) : (variables.offset as number) || 0;
+      const status = statusMatch?.[1] || (variables.status as string);
+
+      let query = supabase.from('support_tickets').select('*', { count: 'exact' }).order('created_at', { ascending: false }).range(offset, offset + limit - 1);
+      if (status) query = query.eq('status', status);
+
+      const { data: tickets, error, count } = await query;
+      if (error) throw error;
+
+      return {
+        data: {
+          tickets: {
+            // deno-lint-ignore no-explicit-any
+            nodes: (tickets || []).map((t: any) => ({
+              id: t.id, title: t.title, description: t.description,
+              status: t.status, priority: t.priority,
+              customerEmail: t.customer_email, customerName: t.customer_name,
+              createdAt: t.created_at,
+            })),
+            totalCount: count || 0,
+          },
+        },
+      };
+    }
+
+    // ============= Invoices Queries =============
+
+    if (normalizedQuery.includes('invoices')) {
+      const limitMatch = normalizedQuery.match(/limit:\s*(\d+)/);
+      const offsetMatch = normalizedQuery.match(/offset:\s*(\d+)/);
+      const statusMatch = normalizedQuery.match(/status:\s*["']?([^"'\s),]+)["']?/);
+      const limit = limitMatch ? parseInt(limitMatch[1]) : (variables.limit as number) || 50;
+      const offset = offsetMatch ? parseInt(offsetMatch[1]) : (variables.offset as number) || 0;
+      const status = statusMatch?.[1] || (variables.status as string);
+
+      let query = supabase.from('invoices').select('*', { count: 'exact' }).order('created_at', { ascending: false }).range(offset, offset + limit - 1);
+      if (status) query = query.eq('status', status);
+
+      const { data: invoices, error, count } = await query;
+      if (error) throw error;
+
+      return {
+        data: {
+          invoices: {
+            // deno-lint-ignore no-explicit-any
+            nodes: (invoices || []).map((i: any) => ({
+              id: i.id, invoiceNumber: i.invoice_number, totalCents: i.total_cents,
+              currency: i.currency, status: i.status, dueDate: i.due_date,
+              issuedAt: i.issued_at, paidAt: i.paid_at, createdAt: i.created_at,
+            })),
+            totalCount: count || 0,
+          },
+        },
+      };
+    }
+
+    // ============= Webinars Queries =============
+
+    if (normalizedQuery.includes('webinars')) {
+      const limitMatch = normalizedQuery.match(/limit:\s*(\d+)/);
+      const limit = limitMatch ? parseInt(limitMatch[1]) : (variables.limit as number) || 20;
+
+      let query = supabase.from('webinars').select('*').order('scheduled_at', { ascending: true }).limit(limit);
+
+      const upcomingMatch = normalizedQuery.match(/upcoming:\s*(true|false)/);
+      const upcoming = upcomingMatch ? upcomingMatch[1] === 'true' : (variables.upcoming as boolean);
+      if (upcoming) {
+        query = query.gte('scheduled_at', new Date().toISOString());
+      }
+
+      const { data: webinars, error } = await query;
+      if (error) throw error;
+
+      return {
+        data: {
+          // deno-lint-ignore no-explicit-any
+          webinars: (webinars || []).map((w: any) => ({
+            id: w.id, title: w.title, description: w.description,
+            scheduledAt: w.scheduled_at, durationMinutes: w.duration_minutes,
+            status: w.status, registrationUrl: w.registration_url,
+            maxAttendees: w.max_attendees,
+          })),
+        },
+      };
+    }
+
+    // ============= Consultants Queries =============
+
+    if (normalizedQuery.includes('consultants')) {
+      const { data: consultants, error } = await supabase
+        .from('consultant_profiles')
+        .select('*')
+        .eq('is_active', true)
+        .order('name', { ascending: true });
+
+      if (error) throw error;
+
+      return {
+        data: {
+          // deno-lint-ignore no-explicit-any
+          consultants: (consultants || []).map((c: any) => ({
+            id: c.id, name: c.name, title: c.title, summary: c.summary,
+            skills: c.skills || [], hourlyRateCents: c.hourly_rate_cents,
+            currency: c.currency, availability: c.availability,
+            avatarUrl: c.avatar_url, isActive: c.is_active,
+          })),
+        },
+      };
+    }
+
+    // ============= Media Queries =============
+
+    if (normalizedQuery.includes('media')) {
+      const limitMatch = normalizedQuery.match(/limit:\s*(\d+)/);
+      const offsetMatch = normalizedQuery.match(/offset:\s*(\d+)/);
+      const limit = limitMatch ? parseInt(limitMatch[1]) : (variables.limit as number) || 50;
+      const offset = offsetMatch ? parseInt(offsetMatch[1]) : (variables.offset as number) || 0;
+
+      const { data: media, error, count } = await supabase
+        .from('media')
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      if (error) throw error;
+
+      return {
+        data: {
+          media: {
+            // deno-lint-ignore no-explicit-any
+            nodes: (media || []).map((m: any) => ({
+              id: m.id, fileName: m.file_name, fileUrl: m.file_url,
+              mimeType: m.mime_type, fileSizeBytes: m.file_size_bytes,
+              alt: m.alt, createdAt: m.created_at,
+            })),
+            totalCount: count || 0,
           },
         },
       };
@@ -1775,6 +2230,132 @@ Deno.serve(async (req) => {
       });
     }
 
+    // ============= REST: GET /orders =============
+    if (pathParts.length === 1 && pathParts[0] === 'orders') {
+      const limit = parseInt(url.searchParams.get('limit') || '50');
+      const offset = parseInt(url.searchParams.get('offset') || '0');
+      const status = url.searchParams.get('status');
+      let query = supabase.from('orders').select('*', { count: 'exact' }).order('created_at', { ascending: false }).range(offset, offset + limit - 1);
+      if (status) query = query.eq('status', status);
+      const { data, error, count } = await query;
+      if (error) throw error;
+      // deno-lint-ignore no-explicit-any
+      return new Response(JSON.stringify({ orders: (data || []).map((o: any) => ({ id: o.id, customerEmail: o.customer_email, customerName: o.customer_name, totalCents: o.total_cents, currency: o.currency, status: o.status, items: o.items, createdAt: o.created_at })), total: count || 0 }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // ============= REST: GET /order/:id =============
+    if (pathParts.length === 2 && pathParts[0] === 'order') {
+      const { data, error } = await supabase.from('orders').select('*').eq('id', pathParts[1]).maybeSingle();
+      if (error) throw error;
+      if (!data) return new Response(JSON.stringify({ error: 'Order not found' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      // deno-lint-ignore no-explicit-any
+      const o = data as any;
+      return new Response(JSON.stringify({ id: o.id, customerEmail: o.customer_email, customerName: o.customer_name, totalCents: o.total_cents, currency: o.currency, status: o.status, items: o.items, createdAt: o.created_at }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // ============= REST: GET /leads =============
+    if (pathParts.length === 1 && pathParts[0] === 'leads') {
+      const limit = parseInt(url.searchParams.get('limit') || '50');
+      const offset = parseInt(url.searchParams.get('offset') || '0');
+      const status = url.searchParams.get('status');
+      let query = supabase.from('leads').select('*', { count: 'exact' }).order('created_at', { ascending: false }).range(offset, offset + limit - 1);
+      if (status) query = query.eq('status', status);
+      const { data, error, count } = await query;
+      if (error) throw error;
+      // deno-lint-ignore no-explicit-any
+      return new Response(JSON.stringify({ leads: (data || []).map((l: any) => ({ id: l.id, name: l.name, email: l.email, phone: l.phone, status: l.status, score: l.score, source: l.source, createdAt: l.created_at })), total: count || 0 }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // ============= REST: GET /lead/:id =============
+    if (pathParts.length === 2 && pathParts[0] === 'lead') {
+      const { data, error } = await supabase.from('leads').select('*').eq('id', pathParts[1]).maybeSingle();
+      if (error) throw error;
+      if (!data) return new Response(JSON.stringify({ error: 'Lead not found' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      // deno-lint-ignore no-explicit-any
+      const l = data as any;
+      return new Response(JSON.stringify({ id: l.id, name: l.name, email: l.email, phone: l.phone, status: l.status, score: l.score, source: l.source, createdAt: l.created_at }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // ============= REST: GET /deals =============
+    if (pathParts.length === 1 && pathParts[0] === 'deals') {
+      const limit = parseInt(url.searchParams.get('limit') || '50');
+      const offset = parseInt(url.searchParams.get('offset') || '0');
+      const stage = url.searchParams.get('stage');
+      let query = supabase.from('deals').select('*', { count: 'exact' }).order('created_at', { ascending: false }).range(offset, offset + limit - 1);
+      if (stage) query = query.eq('stage', stage);
+      const { data, error, count } = await query;
+      if (error) throw error;
+      // deno-lint-ignore no-explicit-any
+      return new Response(JSON.stringify({ deals: (data || []).map((d: any) => ({ id: d.id, valueCents: d.value_cents, currency: d.currency, stage: d.stage, expectedClose: d.expected_close, notes: d.notes, leadId: d.lead_id, createdAt: d.created_at })), total: count || 0 }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // ============= REST: GET /companies =============
+    if (pathParts.length === 1 && pathParts[0] === 'companies') {
+      const limit = parseInt(url.searchParams.get('limit') || '50');
+      const offset = parseInt(url.searchParams.get('offset') || '0');
+      const { data, error, count } = await supabase.from('companies').select('*', { count: 'exact' }).order('created_at', { ascending: false }).range(offset, offset + limit - 1);
+      if (error) throw error;
+      // deno-lint-ignore no-explicit-any
+      return new Response(JSON.stringify({ companies: (data || []).map((c: any) => ({ id: c.id, name: c.name, domain: c.domain, industry: c.industry, size: c.size, website: c.website, phone: c.phone, createdAt: c.created_at })), total: count || 0 }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // ============= REST: GET /tickets =============
+    if (pathParts.length === 1 && pathParts[0] === 'tickets') {
+      const limit = parseInt(url.searchParams.get('limit') || '50');
+      const offset = parseInt(url.searchParams.get('offset') || '0');
+      const status = url.searchParams.get('status');
+      let query = supabase.from('support_tickets').select('*', { count: 'exact' }).order('created_at', { ascending: false }).range(offset, offset + limit - 1);
+      if (status) query = query.eq('status', status);
+      const { data, error, count } = await query;
+      if (error) throw error;
+      // deno-lint-ignore no-explicit-any
+      return new Response(JSON.stringify({ tickets: (data || []).map((t: any) => ({ id: t.id, title: t.title, description: t.description, status: t.status, priority: t.priority, customerEmail: t.customer_email, customerName: t.customer_name, createdAt: t.created_at })), total: count || 0 }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // ============= REST: GET /invoices =============
+    if (pathParts.length === 1 && pathParts[0] === 'invoices') {
+      const limit = parseInt(url.searchParams.get('limit') || '50');
+      const offset = parseInt(url.searchParams.get('offset') || '0');
+      const status = url.searchParams.get('status');
+      let query = supabase.from('invoices').select('*', { count: 'exact' }).order('created_at', { ascending: false }).range(offset, offset + limit - 1);
+      if (status) query = query.eq('status', status);
+      const { data, error, count } = await query;
+      if (error) throw error;
+      // deno-lint-ignore no-explicit-any
+      return new Response(JSON.stringify({ invoices: (data || []).map((i: any) => ({ id: i.id, invoiceNumber: i.invoice_number, totalCents: i.total_cents, currency: i.currency, status: i.status, dueDate: i.due_date, issuedAt: i.issued_at, paidAt: i.paid_at, createdAt: i.created_at })), total: count || 0 }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // ============= REST: GET /webinars =============
+    if (pathParts.length === 1 && pathParts[0] === 'webinars') {
+      const limit = parseInt(url.searchParams.get('limit') || '20');
+      let query = supabase.from('webinars').select('*').order('scheduled_at', { ascending: true }).limit(limit);
+      if (url.searchParams.get('upcoming') === 'true') {
+        query = query.gte('scheduled_at', new Date().toISOString());
+      }
+      const { data, error } = await query;
+      if (error) throw error;
+      // deno-lint-ignore no-explicit-any
+      return new Response(JSON.stringify({ webinars: (data || []).map((w: any) => ({ id: w.id, title: w.title, description: w.description, scheduledAt: w.scheduled_at, durationMinutes: w.duration_minutes, status: w.status, registrationUrl: w.registration_url, maxAttendees: w.max_attendees })) }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // ============= REST: GET /consultants =============
+    if (pathParts.length === 1 && pathParts[0] === 'consultants') {
+      const { data, error } = await supabase.from('consultant_profiles').select('*').eq('is_active', true).order('name', { ascending: true });
+      if (error) throw error;
+      // deno-lint-ignore no-explicit-any
+      return new Response(JSON.stringify({ consultants: (data || []).map((c: any) => ({ id: c.id, name: c.name, title: c.title, summary: c.summary, skills: c.skills || [], hourlyRateCents: c.hourly_rate_cents, currency: c.currency, availability: c.availability, avatarUrl: c.avatar_url })) }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // ============= REST: GET /media =============
+    if (pathParts.length === 1 && pathParts[0] === 'media') {
+      const limit = parseInt(url.searchParams.get('limit') || '50');
+      const offset = parseInt(url.searchParams.get('offset') || '0');
+      const { data, error, count } = await supabase.from('media').select('*', { count: 'exact' }).order('created_at', { ascending: false }).range(offset, offset + limit - 1);
+      if (error) throw error;
+      // deno-lint-ignore no-explicit-any
+      return new Response(JSON.stringify({ media: (data || []).map((m: any) => ({ id: m.id, fileName: m.file_name, fileUrl: m.file_url, mimeType: m.mime_type, fileSizeBytes: m.file_size_bytes, alt: m.alt, createdAt: m.created_at })), total: count || 0 }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
     // ============= Unknown Route =============
     return new Response(
       JSON.stringify({ 
@@ -1796,21 +2377,21 @@ Deno.serve(async (req) => {
             'GET /content-api/settings',
             'POST /content-api/form/submit',
             'POST /content-api/newsletter/subscribe',
+            'GET /content-api/orders',
+            'GET /content-api/order/:id',
+            'GET /content-api/leads',
+            'GET /content-api/lead/:id',
+            'GET /content-api/deals',
+            'GET /content-api/companies',
+            'GET /content-api/tickets',
+            'GET /content-api/invoices',
+            'GET /content-api/webinars',
+            'GET /content-api/consultants',
+            'GET /content-api/media',
           ],
           graphql: {
             endpoint: 'POST /content-api/graphql',
             schema: 'GET /content-api/graphql',
-            examples: [
-              '{ pages { nodes { slug title } totalCount } }',
-              '{ page(slug: "hem") { title blocks { type data } } }',
-              '{ blogPosts(limit: 10, featured: true) { nodes { slug title excerpt } } }',
-              '{ products { nodes { name priceCents currency } } }',
-              '{ bookingServices { name durationMinutes priceCents } }',
-              '{ kbCategories { name slug icon } }',
-              '{ kbArticles(categorySlug: "getting-started") { title question answerText } }',
-              '{ globalBlocks(slot: "header") { type data } }',
-              '{ siteSettings { branding seo } }',
-            ],
           },
         },
       }),
