@@ -170,7 +170,7 @@ Admin   → PageEditorPage.tsx → BlockEditor.tsx → [Name]BlockEditor.tsx
 | **Deals** | Sales pipeline (prospect → won/lost) with activity tracking | Enabled |
 | **Companies** | Organization management with AI enrichment and domain detection | Enabled |
 | **Products** | Product catalog with Stripe Checkout integration | Enabled |
-| **Orders** | Order management with Stripe webhooks and confirmation emails | Enabled |
+| **Orders** | Order management with Stripe webhooks, confirmation emails, and **fulfillment tracking** (unfulfilled → picked → packed → shipped → delivered) | Enabled |
 | **Bookings** | Appointment scheduling with calendar, services, and email confirmations | Enabled |
 | **Invoices** | Quote-to-invoice lifecycle with PDF generation and email delivery | Enabled |
 | **Consultants** | Team expertise with AI-powered resume matching and cover letters | Disabled |
