@@ -224,7 +224,7 @@ const router = createBrowserRouter([
       { path: "/admin/expenses", element: <ExpensesPage /> },
       { path: "/admin/handbook", element: <HandbookPage /> },
       { path: "/admin/timesheets", element: <TimesheetsPage /> },
-      { path: "/admin/api-keys", element: <ApiKeysPage /> },
+      { path: "/admin/api-keys", element: <Navigate to="/admin/developer?tab=mcp-keys" replace /> },
       { path: "/admin/autonomy-tests", element: <AutonomyTestSuitePage /> },
       { path: "/preview/:id", element: <PreviewPage /> },
       { path: "/:slug", element: <PublicPage /> },

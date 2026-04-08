@@ -3,7 +3,7 @@ import {
   Puzzle, UserCheck, Briefcase, Building2, Package, Library, ShoppingCart,
   CalendarDays, Plug, Bot, Zap, MessageSquare, Headphones, Megaphone, Code2, FileText as FileQuote,
   Video, Target, Inbox, UserCircle, FileUser, Receipt, Timer, Wallet, Shield,
-  Network, Snowflake, UserRound, BookMarked, KeyRound,
+  Network, Snowflake, UserRound, BookMarked,
 } from 'lucide-react';
 
 export type NavItem = {
