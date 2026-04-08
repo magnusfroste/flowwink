@@ -342,12 +342,18 @@ See **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** for full deployment guides.
 
 Contributions are welcome. Open an issue or submit a pull request. See **[docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)**.
 
+## Learn More — The Agentic Handbook
+
+Understand the architecture behind FlowPilot and autonomous business agents:
+
+📖 **[The Agentic Handbook](https://github.com/magnusfroste/clawable)** — A practical guide to building agentic systems, with real-world patterns from FlowWink's implementation.
+
 ## License
 
 MIT — see [LICENSE](LICENSE) for details.
 
 ---
 
-*Stop managing tools. Start directing outcomes. FlowPilot is your Business Operating System.*
+*Stop managing tools. Start directing outcomes. FlowPilot is your agentic operator.*
 
 **Made in Sweden 🇸🇪**
