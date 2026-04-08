@@ -22,7 +22,6 @@ Quick reference for all documentation. Each document has a clear purpose and tar
 |----------|---------|----------|
 | [PRD.md](./PRD.md) | Product requirements — modules, capabilities, architecture | Product/Dev |
 | [ELEVATOR-PITCH.md](./ELEVATOR-PITCH.md) | BOS positioning, vision, competitive landscape | All |
-| [COMPETITOR-COMPARISON.md](./COMPETITOR-COMPARISON.md) | Feature comparison vs WordPress, Webflow, HubSpot etc. | Product |
 | [INTEGRATIONS-STRATEGY.md](./INTEGRATIONS-STRATEGY.md) | Go-to-market wedge and integration playbook | Product/Growth |
 | [FEEDBACK-LOOPS.md](./FEEDBACK-LOOPS.md) | Growth engine — automated business loops | Product/Growth |
 

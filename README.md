@@ -240,19 +240,24 @@ FlowPilot routes to whichever provider is configured. Use your own API keys. Run
 
 ## What FlowWink replaces
 
-| What you used to need | FlowWink replaces it with |
-|-----------------------|--------------------------|
-| WordPress / Webflow | Visual block editor, 50+ block types |
-| HubSpot / Pipedrive | CRM with AI qualification and deal pipeline |
-| Mailchimp / Klaviyo | Newsletter with autonomous campaign creation |
-| Calendly | Booking system with AI follow-up |
-| Zendesk / Freshdesk | Tickets with Kanban board + AI triage from KB |
-| Jasper / Copy.ai | FlowPilot writing directly into your CMS |
-| Zapier / N8N | Workflow DAGs with conditional branching |
-| Intercom | AI chat with KB integration and lead capture |
-| Shopify (simple) | Products, orders, inventory, and Stripe checkout |
-| QuickBooks / Xero | Invoicing, accounting, expense tracking |
-| Toggl / Harvest | Timesheets with project-based tracking |
+FlowWink draws inspiration from the best-in-class platforms across every business domain — and unifies them under one autonomous operator.
+
+| Category | Platforms that inspired | FlowWink's BOS module |
+|----------|----------------------|----------------------|
+| **Website** | WordPress, Webflow, Squarespace, Weebly | Visual block editor, 50+ blocks, headless API |
+| **CRM & Sales** | HubSpot, Pipedrive, Salesforce | Leads, deals, companies — AI-qualified and enriched |
+| **Email & Marketing** | Mailchimp, Klaviyo, ConvertKit | Newsletter with autonomous segmentation and campaigns |
+| **Booking** | Calendly, Acuity | Service bookings with AI follow-up |
+| **Support** | Zendesk, Freshdesk, Intercom | Tickets + live chat with AI triage from Knowledge Base |
+| **Content & Copy** | Jasper, Copy.ai, Surfer SEO | FlowPilot writes, optimizes, and publishes into CMS |
+| **Automation** | Zapier, n8n, Make | Workflow DAGs with conditional branching |
+| **E-Commerce** | Shopify, WooCommerce | Products, orders, inventory, Stripe checkout |
+| **Finance** | QuickBooks, Xero, FreshBooks | Invoicing, double-entry accounting, expenses |
+| **Time Tracking** | Toggl, Harvest, Clockify | Timesheets with project-based tracking |
+| **ERP** | Odoo, ERPNext | Modular architecture — 37 domains, one platform |
+| **Headless CMS** | Contentful, Storyblok, Strapi | REST + GraphQL content API, multi-channel delivery |
+
+**The difference:** those platforms give you tools. FlowWink gives you an operator that *uses* the tools.
 
 One operating system. One operator. Self-host free.
 
