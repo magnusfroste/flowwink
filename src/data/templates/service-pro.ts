@@ -16,7 +16,7 @@ const serviceProPages: TemplatePage[] = [
     showInMenu: true,
     meta: {
       seoTitle: 'ServicePro — Professional Booking & Service Management',
-      description: 'Professional services delivered with excellence',
+      description: 'Expert services with seamless online booking. 5,000+ happy clients, same-day appointments, and a 100% satisfaction guarantee.',
       showTitle: false,
       titleAlignment: 'center',
     },
@@ -371,7 +371,7 @@ const serviceProPages: TemplatePage[] = [
     showInMenu: true,
     meta: {
       seoTitle: 'Our Services — Expert Solutions | ServicePro',
-      description: 'Explore our range of professional services',
+      description: 'Browse our full range of professional services — consultation, premium care, and flexible scheduling. Book online instantly.',
       showTitle: false,
       titleAlignment: 'center',
     },
@@ -448,7 +448,7 @@ const serviceProPages: TemplatePage[] = [
     showInMenu: true,
     meta: {
       seoTitle: 'Book an Appointment Online | ServicePro',
-      description: 'Book your appointment online',
+      description: 'Reserve your appointment in under 60 seconds. Real-time availability, instant confirmation, and same-day slots available.',
       showTitle: false,
       titleAlignment: 'center',
     },
@@ -500,7 +500,7 @@ const serviceProPages: TemplatePage[] = [
     showInMenu: true,
     meta: {
       seoTitle: 'About ServicePro — Professional Service Excellence',
-      description: 'Learn about our team and mission',
+      description: 'Meet the team behind ServicePro. 10+ years of expertise, thousands of happy clients, and a commitment to service excellence.',
       showTitle: false,
       titleAlignment: 'center',
     },
@@ -563,7 +563,7 @@ const serviceProPages: TemplatePage[] = [
     showInMenu: true,
     meta: {
       seoTitle: 'Contact — Reach Our Team | ServicePro',
-      description: 'Get in touch with our team',
+      description: 'Have a question or need help? Reach our team by phone, email, or chat. We respond within hours, not days.',
       showTitle: false,
       titleAlignment: 'center',
     },
