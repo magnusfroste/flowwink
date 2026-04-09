@@ -900,12 +900,20 @@ async function executeOpenClawAction(
 
     case 'openclaw_report_finding': {
       const { session_id, type, severity = 'medium', title, description, context = {}, screenshot_url, auto_objective = true } = args as any;
-      if (!type || !title) return { error: 'type and title are required' };
+      const normalizedType = typeof type === 'string'
+        ? ({ observation: 'suggestion', seo: 'suggestion', seo_audit: 'suggestion' } as Record<string, string>)[type.trim()] ?? type.trim()
+        : '';
+      const validFindingTypes = ['bug', 'ux_issue', 'suggestion', 'positive', 'performance', 'missing_feature'];
+
+      if (!normalizedType || !title) return { error: 'type and title are required' };
+      if (!validFindingTypes.includes(normalizedType)) {
+        return { error: `invalid finding type "${normalizedType}". Allowed: ${validFindingTypes.join(', ')}` };
+      }
 
       // Save finding (session_id now optional for MCP-driven reports)
       const { data, error } = await supabase
         .from('beta_test_findings')
-        .insert({ session_id: session_id || null, type, severity, title, description, context, screenshot_url })
+        .insert({ session_id: session_id || null, type: normalizedType, severity, title, description, context, screenshot_url })
         .select('id, type, severity, title')
         .single();
       if (error) throw new Error(`Finding report failed: ${error.message}`);
@@ -913,13 +921,21 @@ async function executeOpenClawAction(
       // Auto-create objective for high/critical findings
       let objective = null;
       if (auto_objective && (severity === 'high' || severity === 'critical')) {
-        const goalPrefix = type === 'bug' ? 'Fix' : type === 'ux_issue' ? 'Improve UX' : 'Address';
+        const goalPrefix = normalizedType === 'bug'
+          ? 'Fix'
+          : normalizedType === 'ux_issue'
+            ? 'Improve UX'
+            : normalizedType === 'missing_feature'
+              ? 'Add'
+              : normalizedType === 'performance'
+                ? 'Optimize'
+                : 'Address';
         const { data: obj } = await supabase
           .from('agent_objectives')
           .insert({
             goal: `${goalPrefix}: ${title}`,
             status: 'active',
-            constraints: { source: 'openclaw_report_finding', finding_id: data.id, severity, type, created_by: 'peer_report' },
+            constraints: { source: 'openclaw_report_finding', finding_id: data.id, severity, type: normalizedType, created_by: 'peer_report' },
             success_criteria: { description_met: description || title },
           })
           .select('id, goal')
@@ -927,7 +943,7 @@ async function executeOpenClawAction(
         objective = obj;
       }
 
-      return { success: true, finding: data, objective };
+      return { success: true, finding: data, normalized_type: normalizedType, objective };
     }
 
     case 'openclaw_exchange': {
