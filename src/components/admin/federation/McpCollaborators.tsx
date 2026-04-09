@@ -1,9 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Cpu, Clock, KeyRound, ShieldCheck } from 'lucide-react';
+import { Cpu, Clock, KeyRound, ShieldCheck, Copy } from 'lucide-react';
 import { useApiKeys } from '@/hooks/useApiKeys';
 import { formatDistanceToNow } from 'date-fns';
+import { toast } from 'sonner';
 
 export function McpCollaborators() {
   const { data: allKeys, isLoading } = useApiKeys();
