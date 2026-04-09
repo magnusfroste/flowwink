@@ -17,7 +17,7 @@ const launchpadPages: StarterTemplate['pages'] = [
     showInMenu: true,
     meta: {
       seoTitle: 'LaunchPad — Launch Your Startup with AI-Powered Growth Tools',
-      description: 'Launch your vision with our cutting-edge platform',
+      description: 'Launch your startup with AI-powered deployment, auto-scaling, and 120+ integrations. From idea to live product in days — start free.',
       showTitle: false,
       titleAlignment: 'center',
     },
@@ -392,7 +392,7 @@ const launchpadPages: StarterTemplate['pages'] = [
     showInMenu: true,
     meta: {
       seoTitle: 'Pricing Plans — Flexible Plans for Growing Startups | LaunchPad',
-      description: 'Simple, transparent pricing that scales with you',
+      description: 'Start free, scale as you grow. Compare Starter, Pro, and Team plans with transparent pricing and no hidden fees.',
       showTitle: false,
       titleAlignment: 'center',
     },
@@ -525,7 +525,7 @@ const launchpadPages: StarterTemplate['pages'] = [
     showInMenu: true,
     meta: {
       seoTitle: 'Contact Us — Get in Touch with the LaunchPad Team',
-      description: 'Get in touch with our team',
+      description: 'Questions about LaunchPad? Reach out for a personalized demo, enterprise pricing, or technical support. We respond fast.',
       showTitle: false,
       titleAlignment: 'center',
     },
@@ -634,7 +634,7 @@ const launchpadPages: StarterTemplate['pages'] = [
     showInMenu: false,
     meta: {
       seoTitle: 'Terms of Service | LaunchPad',
-      description: 'Terms and conditions for using our services',
+      description: 'Read the terms and conditions governing your use of the LaunchPad platform, including SLA, data handling, and acceptable use.',
       showTitle: true,
       titleAlignment: 'left',
     },
