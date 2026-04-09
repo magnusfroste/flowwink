@@ -432,7 +432,7 @@ const digitalShopPages: TemplatePage[] = [
     showInMenu: false,
     meta: {
       seoTitle: 'Shopping Cart | Digital Shop',
-      description: 'Review your cart and proceed to checkout',
+      description: 'Review your selected items, update quantities, and proceed to secure Stripe checkout with instant digital delivery.',
       showTitle: true,
       titleAlignment: 'center',
     },

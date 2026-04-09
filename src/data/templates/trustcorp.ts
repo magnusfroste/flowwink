@@ -17,7 +17,7 @@ const trustcorpPages: StarterTemplate['pages'] = [
     showInMenu: true,
     meta: {
       seoTitle: 'TrustCorp — Enterprise Security & Compliance Solutions',
-      description: 'Enterprise solutions you can trust',
+      description: 'Enterprise consulting, private cloud, and AI solutions built for organizations that demand security, compliance, and scalability.',
       showTitle: false,
       titleAlignment: 'center',
     },
@@ -284,7 +284,7 @@ const trustcorpPages: StarterTemplate['pages'] = [
     slug: 'case-studies',
     menu_order: 3,
     showInMenu: true,
-    meta: { seoTitle: 'Case Studies — Proven Enterprise Results | TrustCorp', description: 'Real results from real clients', showTitle: false, titleAlignment: 'center' },
+    meta: { seoTitle: 'Case Studies — Proven Enterprise Results | TrustCorp', description: 'See how Fortune 500 companies transformed their operations with TrustCorp — real results, measurable impact.', showTitle: false, titleAlignment: 'center' },
     blocks: [
       { id: 'hero-1', type: 'hero', data: { title: 'Client Success Stories', subtitle: 'Real results from industry leaders', backgroundType: 'color', heightMode: 'auto', contentAlignment: 'center', overlayOpacity: 0 } },
       {
@@ -331,7 +331,7 @@ const trustcorpPages: StarterTemplate['pages'] = [
     slug: 'about',
     menu_order: 4,
     showInMenu: true,
-    meta: { seoTitle: 'About TrustCorp — Leading Enterprise Security Provider', description: 'Learn about our company and mission', showTitle: false, titleAlignment: 'center' },
+    meta: { seoTitle: 'About TrustCorp — Leading Enterprise Security Provider', description: '25+ years of enterprise excellence. Learn about our mission, values, and the team powering 500+ organizations worldwide.', showTitle: false, titleAlignment: 'center' },
     blocks: [
       { id: 'hero-1', type: 'hero', data: { title: 'About TrustCorp', subtitle: '25 years of delivering excellence', backgroundType: 'image', backgroundImage: '/templates/hero/modern-office.jpg', heightMode: '60vh', contentAlignment: 'center', overlayOpacity: 60 } },
       {
@@ -393,7 +393,7 @@ const trustcorpPages: StarterTemplate['pages'] = [
     slug: 'contact',
     menu_order: 5,
     showInMenu: true,
-    meta: { seoTitle: 'Contact — Speak to Our Enterprise Team | TrustCorp', description: 'Connect with our enterprise team', showTitle: false, titleAlignment: 'center' },
+    meta: { seoTitle: 'Contact — Speak to Our Enterprise Team | TrustCorp', description: 'Schedule a consultation with our enterprise team. Discuss security, compliance, cloud migration, or custom solutions.', showTitle: false, titleAlignment: 'center' },
     blocks: [
       { id: 'hero-1', type: 'hero', data: { title: 'Contact Our Team', subtitle: 'Let\'s discuss how we can help your organization', backgroundType: 'color', heightMode: 'auto', contentAlignment: 'center', overlayOpacity: 0 } },
       { id: 'chat-1', type: 'chat-launcher', data: { title: 'Private Enterprise Assistant', subtitle: 'All conversations are processed on your infrastructure', placeholder: 'Ask about our enterprise solutions...', showQuickActions: true, quickActionCount: 4, variant: 'card' } },

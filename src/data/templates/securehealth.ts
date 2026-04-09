@@ -118,7 +118,7 @@ const securehealthPages: StarterTemplate['pages'] = [
     slug: 'resources',
     menu_order: 4,
     showInMenu: true,
-    meta: { seoTitle: 'Patient Resources & Health Guides | SecureHealth', description: 'Helpful resources and frequently asked questions', showTitle: false, titleAlignment: 'center' },
+    meta: { seoTitle: 'Patient Resources & Health Guides | SecureHealth', description: 'Access patient guides, health resources, and FAQs. Everything you need to manage your care with confidence.', showTitle: false, titleAlignment: 'center' },
     blocks: [
       { id: 'hero-1', type: 'hero', data: { title: 'Patient Resources', subtitle: 'Everything you need to know about your care', backgroundType: 'color', heightMode: 'auto', contentAlignment: 'center', overlayOpacity: 0 } },
       { id: 'chat-1', type: 'chat-launcher', data: { title: 'Private AI Health Assistant', subtitle: 'HIPAA-compliant — all conversations stay private', placeholder: 'Ask about appointments, services, or health information...', showQuickActions: true, quickActionCount: 4, variant: 'card' } },
@@ -171,7 +171,7 @@ const securehealthPages: StarterTemplate['pages'] = [
     slug: 'contact',
     menu_order: 6,
     showInMenu: true,
-    meta: { seoTitle: 'Contact — Reach Our Care Team | SecureHealth', description: 'Book an appointment or reach our care team', showTitle: false, titleAlignment: 'center' },
+    meta: { seoTitle: 'Contact — Reach Our Care Team | SecureHealth', description: 'Book an appointment, ask a question, or reach our care team. Same-day responses and 24/7 emergency line available.', showTitle: false, titleAlignment: 'center' },
     blocks: [
       { id: 'hero-1', type: 'hero', data: { title: 'Contact Us', subtitle: 'We\'re here to help with your healthcare needs', backgroundType: 'color', heightMode: 'auto', contentAlignment: 'center', overlayOpacity: 0 } },
       { id: 'chat-1', type: 'chat-launcher', data: { title: 'Book with AI Assistant', subtitle: 'Private and HIPAA-compliant', placeholder: 'Ask about booking, services, or availability...', showQuickActions: true, quickActionCount: 4, variant: 'card' } },
