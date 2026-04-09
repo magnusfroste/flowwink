@@ -249,7 +249,7 @@ async function createMcpServer(): Promise<McpServer> {
 
 // ---------- Hono app ----------
 
-const app = new Hono();
+const app = new Hono().basePath("/mcp-server");
 
 // CORS preflight
 app.options("/*", (c) => {
@@ -272,7 +272,6 @@ app.use("/*", async (c, next) => {
 // REST compatibility layer — for agents without MCP clients
 // ══════════════════════════════════════════════════════════
 
-// GET /rest/tools — list all exposed tools
 app.get("/rest/tools", async (c) => {
   const skills = await loadExposedSkills();
   const tools = skills
@@ -286,7 +285,6 @@ app.get("/rest/tools", async (c) => {
   return c.json({ tools, count: tools.length }, 200, corsHeaders);
 });
 
-// GET /rest/resources — list available resources
 app.get("/rest/resources", (c) => {
   const resources = [
     { key: "health",   description: "Site statistics: pages, posts, leads, bookings, orders, products, active objectives" },
@@ -299,14 +297,12 @@ app.get("/rest/resources", (c) => {
   return c.json({ resources }, 200, corsHeaders);
 });
 
-// GET /rest/resources/:key — fetch a specific resource
 app.get("/rest/resources/:key", async (c) => {
   const key = c.req.param("key");
   const data = await fetchResource(key);
   return c.json({ resource: key, data }, 200, corsHeaders);
 });
 
-// POST /rest/execute — execute a tool by name
 app.post("/rest/execute", async (c) => {
   const body = await c.req.json();
   const { tool, arguments: args } = body;
@@ -314,7 +310,6 @@ app.post("/rest/execute", async (c) => {
     return c.json({ error: "Missing 'tool' field in request body" }, 400, corsHeaders);
   }
 
-  // Map tool name back to skill name
   const skills = await loadExposedSkills();
   const match = skills.find((s) => s.tool_definition?.function?.name === tool);
   if (!match) {
