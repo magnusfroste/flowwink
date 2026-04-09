@@ -189,9 +189,24 @@ async function fetchResource(resourceKey: string): Promise<unknown> {
       }
       return identity;
     }
-    default:
+    case "templates": {
+      return (templateAuditData as unknown[]).map((t: any) => ({
+        id: t.id, name: t.name, category: t.category,
+        description: t.description, tagline: t.tagline,
+        summary: t.summary, requiredModules: t.requiredModules,
+        hasHeaderSettings: t.hasHeaderSettings, hasFooterSettings: t.hasFooterSettings,
+        hasSeoSettings: t.hasSeoSettings,
+      }));
+    }
+    default: {
+      // Check for templates/:id pattern
+      if (resourceKey.startsWith("template:")) {
+        const templateId = resourceKey.replace("template:", "");
+        const template = (templateAuditData as any[]).find((t: any) => t.id === templateId);
+        return template || { error: `Template not found: ${templateId}` };
+      }
       return { error: `Unknown resource: ${resourceKey}` };
-  }
+    }
 }
 
 // ---------- MCP server factory ----------
