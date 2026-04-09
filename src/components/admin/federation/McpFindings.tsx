@@ -1,10 +1,12 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AlertTriangle, Bug, Lightbulb, ThumbsUp, Zap, Package, CheckCircle2 } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { Button } from '@/components/ui/button';
+import { AlertTriangle, Bug, Lightbulb, ThumbsUp, Zap, Package, CheckCircle2, X, RotateCcw } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
+import { toast } from 'sonner';
 
 const TYPE_CONFIG: Record<string, { icon: typeof Bug; label: string }> = {
   bug: { icon: Bug, label: 'Bug' },
@@ -23,6 +25,8 @@ const SEVERITY_VARIANT: Record<string, 'destructive' | 'default' | 'secondary' |
 };
 
 export function McpFindings() {
+  const queryClient = useQueryClient();
+
   const { data: findings, isLoading } = useQuery({
     queryKey: ['mcp-findings'],
     queryFn: async () => {
@@ -35,6 +39,41 @@ export function McpFindings() {
       return data;
     },
     refetchInterval: 15000,
+  });
+
+  const resolveMutation = useMutation({
+    mutationFn: async ({ id, resolve }: { id: string; resolve: boolean }) => {
+      const { error } = await supabase
+        .from('beta_test_findings')
+        .update({ resolved_at: resolve ? new Date().toISOString() : null })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['mcp-findings'] });
+    },
+    onError: () => {
+      toast.error('Failed to update finding');
+    },
+  });
+
+  const resolveAllMutation = useMutation({
+    mutationFn: async () => {
+      const openIds = findings?.filter(f => !f.resolved_at).map(f => f.id) || [];
+      if (openIds.length === 0) return;
+      const { error } = await supabase
+        .from('beta_test_findings')
+        .update({ resolved_at: new Date().toISOString() })
+        .in('id', openIds);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['mcp-findings'] });
+      toast.success('All findings resolved');
+    },
+    onError: () => {
+      toast.error('Failed to resolve findings');
+    },
   });
 
   if (isLoading) {
@@ -67,6 +106,21 @@ export function McpFindings() {
         <span className="text-orange-500 dark:text-orange-400">{open} open</span>
         <span>·</span>
         <span className="text-green-500">{resolved} resolved</span>
+        {open > 0 && (
+          <>
+            <span>·</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-5 text-[11px] px-2 text-muted-foreground hover:text-foreground"
+              onClick={() => resolveAllMutation.mutate()}
+              disabled={resolveAllMutation.isPending}
+            >
+              <CheckCircle2 className="h-3 w-3 mr-1" />
+              Resolve all
+            </Button>
+          </>
+        )}
       </div>
 
       <div className="space-y-1.5">
@@ -77,7 +131,7 @@ export function McpFindings() {
             f.severity === 'critical' || f.severity === 'high' ? 'text-destructive' : 'text-muted-foreground';
 
           return (
-            <div key={f.id} className="flex items-start gap-3 px-3 py-2.5 rounded-lg hover:bg-muted/50 transition-colors text-sm">
+            <div key={f.id} className="group flex items-start gap-3 px-3 py-2.5 rounded-lg hover:bg-muted/50 transition-colors text-sm">
               <Icon className={`h-4 w-4 shrink-0 mt-0.5 ${iconColor}`} />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
@@ -95,9 +149,25 @@ export function McpFindings() {
                   <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{f.description}</p>
                 )}
               </div>
-              <span className="text-[11px] text-muted-foreground whitespace-nowrap shrink-0">
-                {formatDistanceToNow(new Date(f.created_at), { addSuffix: true })}
-              </span>
+              <div className="flex items-center gap-1 shrink-0">
+                <span className="text-[11px] text-muted-foreground whitespace-nowrap">
+                  {formatDistanceToNow(new Date(f.created_at), { addSuffix: true })}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={() => resolveMutation.mutate({ id: f.id, resolve: !f.resolved_at })}
+                  disabled={resolveMutation.isPending}
+                  title={f.resolved_at ? 'Reopen' : 'Resolve'}
+                >
+                  {f.resolved_at ? (
+                    <RotateCcw className="h-3 w-3 text-muted-foreground" />
+                  ) : (
+                    <X className="h-3 w-3 text-muted-foreground" />
+                  )}
+                </Button>
+              </div>
             </div>
           );
         })}
