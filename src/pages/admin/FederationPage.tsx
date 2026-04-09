@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -32,6 +33,7 @@ import {
 import { Globe, Plus, RefreshCw, Copy, Check, ArrowDownLeft, ArrowUpRight, AlertCircle, Pencil, Zap, Loader2, Search, Shield, Cpu, MessageCircle } from 'lucide-react';
 import { A2ATestChat } from '@/components/admin/federation/A2ATestChat';
 import { A2AActivityLog } from '@/components/admin/federation/A2AActivityLog';
+import { AgentInvites } from '@/components/admin/federation/AgentInvites';
 import { useToast } from '@/hooks/use-toast';
 import { useA2APeers, useCreateA2APeer, useUpdateA2APeer, useRegenerateInboundToken, useA2AActivity } from '@/hooks/useA2A';
 import { useQueryClient } from '@tanstack/react-query';
@@ -385,9 +387,16 @@ export default function FederationPage() {
       <div className="space-y-8">
         <AdminPageHeader
           title="Federation"
-          description="Connect your FlowWink instance with other agents via A2A protocol"
+          description="Connect with external agents via A2A protocol or invite MCP collaborators"
         />
 
+        <Tabs defaultValue="a2a-peers" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="a2a-peers">A2A Peers</TabsTrigger>
+            <TabsTrigger value="agent-invites">Agent Invites (MCP)</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="a2a-peers" className="space-y-8">
         {/* Summary */}
         <div className="grid gap-4 sm:grid-cols-3">
           <Card>
@@ -931,6 +940,12 @@ export default function FederationPage() {
           </h2>
           <A2AActivityLog />
         </div>
+          </TabsContent>
+
+          <TabsContent value="agent-invites">
+            <AgentInvites />
+          </TabsContent>
+        </Tabs>
       </div>
     </AdminLayout>
   );
