@@ -36,6 +36,7 @@ import { A2AActivityLog } from '@/components/admin/federation/A2AActivityLog';
 import { AgentInvites } from '@/components/admin/federation/AgentInvites';
 import { McpCollaborators } from '@/components/admin/federation/McpCollaborators';
 import { McpActivityLog } from '@/components/admin/federation/McpActivityLog';
+import { McpFindings } from '@/components/admin/federation/McpFindings';
 import { useToast } from '@/hooks/use-toast';
 import { useA2APeers, useCreateA2APeer, useUpdateA2APeer, useRegenerateInboundToken, useA2AActivity } from '@/hooks/useA2A';
 import { useQueryClient } from '@tanstack/react-query';
