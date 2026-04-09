@@ -33,11 +33,15 @@ function serviceClient() {
 async function authenticateApiKey(
   authHeader: string | null,
 ): Promise<{ valid: boolean; keyId?: string; scopes?: string[] }> {
-  if (!authHeader?.startsWith("Bearer ")) return { valid: false };
+  if (!authHeader?.startsWith("Bearer ")) {
+    console.error("Auth: missing or malformed header");
+    return { valid: false };
+  }
   const raw = authHeader.replace("Bearer ", "").trim();
   if (!raw) return { valid: false };
 
   const hash = await sha256(raw);
+  console.log("Auth: key_prefix=", raw.substring(0, 12), "hash=", hash.substring(0, 16));
   const sb = serviceClient();
 
   const { data, error } = await sb
@@ -46,7 +50,10 @@ async function authenticateApiKey(
     .eq("key_hash", hash)
     .single();
 
-  if (error || !data) return { valid: false };
+  if (error || !data) {
+    console.error("Auth: no matching key found, error=", error?.message);
+    return { valid: false };
+  }
 
   if (data.expires_at && new Date(data.expires_at) < new Date()) {
     return { valid: false };
