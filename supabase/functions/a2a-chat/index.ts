@@ -45,11 +45,48 @@ Deno.serve(async (req) => {
     const peerId = body._a2a_peer_id || body.context?.peer_id || null;
     const responseSchema = body.responseSchema || body.response_schema || null;
     const isOutbound = body.outbound === true; // Bridge mode: FlowPilot initiates to peer
+    const isPassthrough = body.passthrough === true; // Skip AI, send text directly to peer
 
     if (!text.trim()) {
       return new Response(JSON.stringify({ result: 'No message provided' }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // --- PASSTHROUGH MODE: skip AI, send text directly to peer ---
+    if (isOutbound && isPassthrough) {
+      // Load history to save this exchange
+      const memoryKey = `${MEMORY_KEY_PREFIX}${peerId || peerName}`;
+      const { data: memoryRow } = await supabase
+        .from('agent_memory').select('value').eq('key', memoryKey).maybeSingle();
+      const history: ConversationEntry[] = Array.isArray(memoryRow?.value) ? memoryRow.value as ConversationEntry[] : [];
+
+      // Save to conversation history
+      const updatedHistory = [...history, { role: 'assistant' as const, content: text, timestamp: new Date().toISOString() }].slice(-MAX_HISTORY);
+      await supabase.from('agent_memory').upsert({ key: memoryKey, value: updatedHistory, category: 'conversation', created_by: 'flowpilot', updated_at: new Date().toISOString() }, { onConflict: 'key' });
+
+      // Deliver via a2a-outbound
+      const outboundPayload: Record<string, unknown> = { message: text };
+      if (peerId) outboundPayload.peer_id = peerId;
+      else outboundPayload.peer_name = peerName;
+
+      let outboundResult: unknown = null;
+      try {
+        const resp = await fetch(`${supabaseUrl}/functions/v1/a2a-outbound`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceKey}` },
+          body: JSON.stringify(outboundPayload),
+        });
+        outboundResult = await resp.json().catch(() => ({ status: resp.status }));
+        console.log(`[a2a-chat] PASSTHROUGH to ${peerName}: status=${resp.status}`);
+      } catch (err: any) {
+        console.error(`[a2a-chat] PASSTHROUGH delivery failed for ${peerName}:`, err.message);
+        outboundResult = { error: err.message };
+      }
+
+      return new Response(JSON.stringify({ result: text, outbound_delivered: true, passthrough: true, outbound_result: outboundResult }), {
+        status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
