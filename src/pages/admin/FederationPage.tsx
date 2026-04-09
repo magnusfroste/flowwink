@@ -940,6 +940,12 @@ export default function FederationPage() {
           </h2>
           <A2AActivityLog />
         </div>
+          </TabsContent>
+
+          <TabsContent value="agent-invites">
+            <AgentInvites />
+          </TabsContent>
+        </Tabs>
       </div>
     </AdminLayout>
   );
