@@ -4517,7 +4517,7 @@ export type Database = {
         | "commerce"
         | "growth"
         | "testing"
-      agent_type: "flowpilot" | "chat"
+      agent_type: "flowpilot" | "chat" | "mcp"
       app_role: "writer" | "approver" | "admin" | "customer"
       automation_trigger_type: "cron" | "event" | "signal"
       deal_stage: "proposal" | "negotiation" | "closed_won" | "closed_lost"
@@ -4735,7 +4735,7 @@ export const Constants = {
         "growth",
         "testing",
       ],
-      agent_type: ["flowpilot", "chat"],
+      agent_type: ["flowpilot", "chat", "mcp"],
       app_role: ["writer", "approver", "admin", "customer"],
       automation_trigger_type: ["cron", "event", "signal"],
       deal_stage: ["proposal", "negotiation", "closed_won", "closed_lost"],
