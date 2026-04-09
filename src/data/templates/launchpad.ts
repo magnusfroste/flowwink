@@ -16,6 +16,7 @@ const launchpadPages: StarterTemplate['pages'] = [
     menu_order: 1,
     showInMenu: true,
     meta: {
+      seoTitle: 'LaunchPad — Launch Your Startup with AI-Powered Growth Tools',
       description: 'Launch your vision with our cutting-edge platform',
       showTitle: false,
       titleAlignment: 'center',
@@ -275,6 +276,7 @@ const launchpadPages: StarterTemplate['pages'] = [
     menu_order: 2,
     showInMenu: true,
     meta: {
+      seoTitle: 'Product — Ship Faster with AI-Powered Tools | LaunchPad',
       description: 'Explore our powerful features designed for modern teams',
       showTitle: false,
       titleAlignment: 'center',
@@ -389,6 +391,7 @@ const launchpadPages: StarterTemplate['pages'] = [
     menu_order: 3,
     showInMenu: true,
     meta: {
+      seoTitle: 'Pricing Plans — Flexible Plans for Growing Startups | LaunchPad',
       description: 'Simple, transparent pricing that scales with you',
       showTitle: false,
       titleAlignment: 'center',
@@ -521,6 +524,7 @@ const launchpadPages: StarterTemplate['pages'] = [
     menu_order: 4,
     showInMenu: true,
     meta: {
+      seoTitle: 'Contact Us — Get in Touch with the LaunchPad Team',
       description: 'Get in touch with our team',
       showTitle: false,
       titleAlignment: 'center',
@@ -585,6 +589,7 @@ const launchpadPages: StarterTemplate['pages'] = [
     menu_order: 99,
     showInMenu: false,
     meta: {
+      seoTitle: 'Privacy Policy — Data Protection | LaunchPad',
       description: 'How we collect, use and protect your personal data under GDPR',
       showTitle: true,
       titleAlignment: 'left',
@@ -628,6 +633,7 @@ const launchpadPages: StarterTemplate['pages'] = [
     menu_order: 100,
     showInMenu: false,
     meta: {
+      seoTitle: 'Terms of Service | LaunchPad',
       description: 'Terms and conditions for using our services',
       showTitle: true,
       titleAlignment: 'left',
@@ -668,6 +674,7 @@ const launchpadPages: StarterTemplate['pages'] = [
     menu_order: 101,
     showInMenu: false,
     meta: {
+      seoTitle: 'Cookie Policy | LaunchPad',
       description: 'Information about how we use cookies on our website',
       showTitle: true,
       titleAlignment: 'left',
@@ -711,6 +718,7 @@ const launchpadPages: StarterTemplate['pages'] = [
     menu_order: 5,
     showInMenu: false,
     meta: {
+      seoTitle: 'Help Center — Support & Resources | LaunchPad',
       description: 'Get answers to frequently asked questions about LaunchPad',
       showTitle: false,
       titleAlignment: 'center',

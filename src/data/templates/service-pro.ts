@@ -15,6 +15,7 @@ const serviceProPages: TemplatePage[] = [
     menu_order: 1,
     showInMenu: true,
     meta: {
+      seoTitle: 'ServicePro — Professional Booking & Service Management',
       description: 'Professional services delivered with excellence',
       showTitle: false,
       titleAlignment: 'center',
@@ -369,6 +370,7 @@ const serviceProPages: TemplatePage[] = [
     menu_order: 2,
     showInMenu: true,
     meta: {
+      seoTitle: 'Our Services — Expert Solutions | ServicePro',
       description: 'Explore our range of professional services',
       showTitle: false,
       titleAlignment: 'center',
@@ -445,6 +447,7 @@ const serviceProPages: TemplatePage[] = [
     menu_order: 3,
     showInMenu: true,
     meta: {
+      seoTitle: 'Book an Appointment Online | ServicePro',
       description: 'Book your appointment online',
       showTitle: false,
       titleAlignment: 'center',
@@ -496,6 +499,7 @@ const serviceProPages: TemplatePage[] = [
     menu_order: 4,
     showInMenu: true,
     meta: {
+      seoTitle: 'About ServicePro — Professional Service Excellence',
       description: 'Learn about our team and mission',
       showTitle: false,
       titleAlignment: 'center',
@@ -558,6 +562,7 @@ const serviceProPages: TemplatePage[] = [
     menu_order: 5,
     showInMenu: true,
     meta: {
+      seoTitle: 'Contact — Reach Our Team | ServicePro',
       description: 'Get in touch with our team',
       showTitle: false,
       titleAlignment: 'center',

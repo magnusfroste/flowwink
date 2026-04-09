@@ -23,6 +23,7 @@ const digitalShopPages: TemplatePage[] = [
     menu_order: 1,
     showInMenu: true,
     meta: {
+      seoTitle: 'Digital Shop — Premium Digital Products & Downloads',
       description: 'Curated digital products for modern creators. Templates, courses, and tools — instant delivery.',
       showTitle: false,
       titleAlignment: 'center',
@@ -430,6 +431,7 @@ const digitalShopPages: TemplatePage[] = [
     menu_order: 2,
     showInMenu: false,
     meta: {
+      seoTitle: 'Shopping Cart | Digital Shop',
       description: 'Review your cart and proceed to checkout',
       showTitle: true,
       titleAlignment: 'center',
@@ -458,6 +460,7 @@ const digitalShopPages: TemplatePage[] = [
     menu_order: 3,
     showInMenu: true,
     meta: {
+      seoTitle: 'About — Our Story & Mission | Digital Shop',
       description: 'Our story, mission, and values — learn what drives us',
       showTitle: false,
       titleAlignment: 'center',
@@ -542,6 +545,7 @@ const digitalShopPages: TemplatePage[] = [
     menu_order: 4,
     showInMenu: true,
     meta: {
+      seoTitle: 'Contact — Customer Support | Digital Shop',
       description: 'Get in touch with our team — we typically respond within 24 hours',
       showTitle: true,
       titleAlignment: 'center',

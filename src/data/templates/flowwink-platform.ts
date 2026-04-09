@@ -42,6 +42,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
       menu_order: 1,
       showInMenu: true,
       meta: {
+        seoTitle: 'FlowWink Platform — AI-Powered Business Operating System',
         description: 'FlowWink is the first autonomous agentic CMS. FlowPilot writes your content, qualifies your leads, runs your campaigns, and learns from every interaction.',
         showTitle: false,
         titleAlignment: 'center',
@@ -489,6 +490,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
       menu_order: 2,
       showInMenu: true,
       meta: {
+        seoTitle: 'FlowPilot — The Autonomous AI Operator | FlowWink',
         description: 'Meet FlowPilot — the autonomous AI agent that operates your digital presence. Skills, memory, objectives, A2A protocol, and self-evolution.',
         showTitle: false,
         titleAlignment: 'center',
@@ -721,6 +723,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
       menu_order: 3,
       showInMenu: true,
       meta: {
+        seoTitle: 'For Agencies — White-Label Client Sites | FlowWink',
         description: 'FlowWink for digital agencies — white-label autonomous CMS, multi-site management, and AI-powered client delivery.',
         showTitle: false,
         titleAlignment: 'center',
@@ -896,6 +899,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
       menu_order: 4,
       showInMenu: true,
       meta: {
+        seoTitle: 'For Consultancies — AI-Powered Talent Matching | FlowWink',
         description: 'FlowWink for consulting firms — AI-powered consultant matching, live availability, and autonomous lead qualification.',
         showTitle: false,
         titleAlignment: 'center',
@@ -1062,6 +1066,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
       menu_order: 5,
       showInMenu: true,
       meta: {
+        seoTitle: 'For E-Commerce — Autonomous Digital Storefront | FlowWink',
         description: 'FlowWink for e-commerce — AI shopping assistant, product catalog, Stripe checkout, and autonomous campaigns.',
         showTitle: false,
         titleAlignment: 'center',
@@ -1219,6 +1224,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
       menu_order: 6,
       showInMenu: true,
       meta: {
+        seoTitle: 'For Services — Smart Booking & Management | FlowWink',
         description: 'FlowWink for service businesses — online booking, real-time availability, and autonomous client management.',
         showTitle: false,
         titleAlignment: 'center',
@@ -1391,6 +1397,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
       menu_order: 7,
       showInMenu: true,
       meta: {
+        seoTitle: 'For Healthcare — HIPAA-Ready Patient Platform | FlowWink',
         description: 'FlowWink for healthcare — HIPAA-compliant private AI, patient booking, and compliance-first design.',
         showTitle: false,
         titleAlignment: 'center',

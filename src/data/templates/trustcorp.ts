@@ -16,6 +16,7 @@ const trustcorpPages: StarterTemplate['pages'] = [
     menu_order: 1,
     showInMenu: true,
     meta: {
+      seoTitle: 'TrustCorp — Enterprise Security & Compliance Solutions',
       description: 'Enterprise solutions you can trust',
       showTitle: false,
       titleAlignment: 'center',
@@ -186,6 +187,7 @@ const trustcorpPages: StarterTemplate['pages'] = [
     menu_order: 2,
     showInMenu: true,
     meta: {
+      seoTitle: 'Support Center — Enterprise Help & Resources | TrustCorp',
       description: 'Comprehensive enterprise services tailored to your needs',
       showTitle: false,
       titleAlignment: 'center',
@@ -282,7 +284,7 @@ const trustcorpPages: StarterTemplate['pages'] = [
     slug: 'case-studies',
     menu_order: 3,
     showInMenu: true,
-    meta: { description: 'Real results from real clients', showTitle: false, titleAlignment: 'center' },
+    meta: { seoTitle: 'Case Studies — Proven Enterprise Results | TrustCorp', description: 'Real results from real clients', showTitle: false, titleAlignment: 'center' },
     blocks: [
       { id: 'hero-1', type: 'hero', data: { title: 'Client Success Stories', subtitle: 'Real results from industry leaders', backgroundType: 'color', heightMode: 'auto', contentAlignment: 'center', overlayOpacity: 0 } },
       {
@@ -329,7 +331,7 @@ const trustcorpPages: StarterTemplate['pages'] = [
     slug: 'about',
     menu_order: 4,
     showInMenu: true,
-    meta: { description: 'Learn about our company and mission', showTitle: false, titleAlignment: 'center' },
+    meta: { seoTitle: 'About TrustCorp — Leading Enterprise Security Provider', description: 'Learn about our company and mission', showTitle: false, titleAlignment: 'center' },
     blocks: [
       { id: 'hero-1', type: 'hero', data: { title: 'About TrustCorp', subtitle: '25 years of delivering excellence', backgroundType: 'image', backgroundImage: '/templates/hero/modern-office.jpg', heightMode: '60vh', contentAlignment: 'center', overlayOpacity: 60 } },
       {
@@ -391,7 +393,7 @@ const trustcorpPages: StarterTemplate['pages'] = [
     slug: 'contact',
     menu_order: 5,
     showInMenu: true,
-    meta: { description: 'Connect with our enterprise team', showTitle: false, titleAlignment: 'center' },
+    meta: { seoTitle: 'Contact — Speak to Our Enterprise Team | TrustCorp', description: 'Connect with our enterprise team', showTitle: false, titleAlignment: 'center' },
     blocks: [
       { id: 'hero-1', type: 'hero', data: { title: 'Contact Our Team', subtitle: 'Let\'s discuss how we can help your organization', backgroundType: 'color', heightMode: 'auto', contentAlignment: 'center', overlayOpacity: 0 } },
       { id: 'chat-1', type: 'chat-launcher', data: { title: 'Private Enterprise Assistant', subtitle: 'All conversations are processed on your infrastructure', placeholder: 'Ask about our enterprise solutions...', showQuickActions: true, quickActionCount: 4, variant: 'card' } },
@@ -430,7 +432,7 @@ const trustcorpPages: StarterTemplate['pages'] = [
     slug: 'privacy-policy',
     menu_order: 99,
     showInMenu: false,
-    meta: { description: 'How we collect, use and protect your personal data under GDPR', showTitle: true, titleAlignment: 'left' },
+    meta: { seoTitle: 'Privacy Policy — Data Protection & GDPR | TrustCorp', description: 'How we collect, use and protect your personal data under GDPR', showTitle: true, titleAlignment: 'left' },
     blocks: [
       { id: 'text-1', type: 'text', data: { content: { type: 'doc', content: [
         { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Introduction' }] },
@@ -460,7 +462,7 @@ const trustcorpPages: StarterTemplate['pages'] = [
     slug: 'terms-of-service',
     menu_order: 100,
     showInMenu: false,
-    meta: { description: 'Terms and conditions for using our enterprise services', showTitle: true, titleAlignment: 'left' },
+    meta: { seoTitle: 'Terms of Service — Enterprise Agreement | TrustCorp', description: 'Terms and conditions for using our enterprise services', showTitle: true, titleAlignment: 'left' },
     blocks: [
       { id: 'text-1', type: 'text', data: { content: { type: 'doc', content: [
         { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Agreement to Terms' }] },
@@ -487,7 +489,7 @@ const trustcorpPages: StarterTemplate['pages'] = [
     slug: 'cookie-policy',
     menu_order: 101,
     showInMenu: false,
-    meta: { description: 'Information about how we use cookies for enterprise clients', showTitle: true, titleAlignment: 'left' },
+    meta: { seoTitle: 'Cookie Policy — How We Use Cookies | TrustCorp', description: 'Information about how we use cookies for enterprise clients', showTitle: true, titleAlignment: 'left' },
     blocks: [
       { id: 'text-1', type: 'text', data: { content: { type: 'doc', content: [
         { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'What Are Cookies?' }] },

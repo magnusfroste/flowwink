@@ -15,7 +15,7 @@ const securehealthPages: StarterTemplate['pages'] = [
     isHomePage: true,
     menu_order: 1,
     showInMenu: true,
-    meta: { description: 'Your health, your privacy — trusted care with complete data security', showTitle: false, titleAlignment: 'center' },
+    meta: { seoTitle: 'SecureHealth — Trusted Healthcare with Complete Data Privacy', description: 'Your health, your privacy — trusted care with complete data security', showTitle: false, titleAlignment: 'center' },
     blocks: [
       { id: 'hero-1', type: 'hero', data: { title: 'Your Health, Your Privacy', subtitle: 'Trusted care with complete data security. Your information never leaves our servers.', backgroundType: 'video', videoUrl: 'https://videos.pexels.com/video-files/3195394/3195394-uhd_2560_1440_25fps.mp4', videoType: 'direct', videoPosterUrl: '/templates/misc/medical-facility.jpg', videoLoop: true, videoMuted: true, heightMode: '80vh', contentAlignment: 'center', overlayOpacity: 60, titleAnimation: 'slide-up', showScrollIndicator: true, primaryButton: { text: 'Book Appointment', url: '/book' }, secondaryButton: { text: 'Ask Our Private AI', url: '#chat-launcher-home' } } },
       { id: 'divider-hero-badges', type: 'section-divider', data: { shape: 'curved', height: 'sm' } },
@@ -91,7 +91,7 @@ const securehealthPages: StarterTemplate['pages'] = [
     slug: 'services',
     menu_order: 2,
     showInMenu: true,
-    meta: { description: 'Comprehensive healthcare services for you and your family', showTitle: false, titleAlignment: 'center' },
+    meta: { seoTitle: 'Healthcare Services — Comprehensive Care | SecureHealth', description: 'Comprehensive healthcare services for you and your family', showTitle: false, titleAlignment: 'center' },
     blocks: [
       { id: 'hero-1', type: 'hero', data: { title: 'Our Medical Services', subtitle: 'Comprehensive care for every stage of life', backgroundType: 'color', heightMode: 'auto', contentAlignment: 'center', overlayOpacity: 0 } },
       { id: 'link-grid-1', type: 'link-grid', data: { columns: 3, links: [{ icon: 'HeartPulse', title: 'Primary Care', description: 'General health checkups and preventive care', url: '/services' }, { icon: 'Stethoscope', title: 'Specialists', description: 'Expert care across all medical fields', url: '/services' }, { icon: 'Baby', title: 'Pediatrics', description: 'Caring for children of all ages', url: '/services' }, { icon: 'Brain', title: 'Mental Health', description: 'Private counseling and therapy', url: '/services' }, { icon: 'Activity', title: 'Diagnostics', description: 'Advanced testing and imaging', url: '/services' }, { icon: 'Pill', title: 'Pharmacy', description: 'On-site prescription services', url: '/contact' }] } },
@@ -105,7 +105,7 @@ const securehealthPages: StarterTemplate['pages'] = [
     slug: 'about',
     menu_order: 3,
     showInMenu: true,
-    meta: { description: 'Learn about our practice and our commitment to privacy', showTitle: false, titleAlignment: 'center' },
+    meta: { seoTitle: 'About SecureHealth — Our Commitment to Privacy & Care', description: 'Learn about our practice and our commitment to privacy', showTitle: false, titleAlignment: 'center' },
     blocks: [
       { id: 'hero-1', type: 'hero', data: { title: 'About Our Practice', subtitle: '20+ years of compassionate, patient-centered care', backgroundType: 'image', backgroundImage: '/templates/misc/hospital.jpg', heightMode: '60vh', contentAlignment: 'center', overlayOpacity: 60 } },
       { id: 'two-col-1', type: 'two-column', data: { eyebrow: 'OUR PRACTICE', title: 'Our Story', titleSize: 'large', content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'For over 20 years, we\'ve been providing compassionate, patient-centered care to our community. Our team of board-certified specialists is committed to your health and well-being.' }] }, { type: 'paragraph', content: [{ type: 'text', text: 'We believe that quality healthcare should come with complete privacy. That\'s why we\'ve invested in state-of-the-art, on-premise technology that keeps your data exactly where it belongs.' }] }] }, imageSrc: '/templates/team/nurse.jpg', imageAlt: 'Medical team', imagePosition: 'right' } },
@@ -118,7 +118,7 @@ const securehealthPages: StarterTemplate['pages'] = [
     slug: 'resources',
     menu_order: 4,
     showInMenu: true,
-    meta: { description: 'Helpful resources and frequently asked questions', showTitle: false, titleAlignment: 'center' },
+    meta: { seoTitle: 'Patient Resources & Health Guides | SecureHealth', description: 'Helpful resources and frequently asked questions', showTitle: false, titleAlignment: 'center' },
     blocks: [
       { id: 'hero-1', type: 'hero', data: { title: 'Patient Resources', subtitle: 'Everything you need to know about your care', backgroundType: 'color', heightMode: 'auto', contentAlignment: 'center', overlayOpacity: 0 } },
       { id: 'chat-1', type: 'chat-launcher', data: { title: 'Private AI Health Assistant', subtitle: 'HIPAA-compliant — all conversations stay private', placeholder: 'Ask about appointments, services, or health information...', showQuickActions: true, quickActionCount: 4, variant: 'card' } },
@@ -171,7 +171,7 @@ const securehealthPages: StarterTemplate['pages'] = [
     slug: 'contact',
     menu_order: 6,
     showInMenu: true,
-    meta: { description: 'Book an appointment or reach our care team', showTitle: false, titleAlignment: 'center' },
+    meta: { seoTitle: 'Contact — Reach Our Care Team | SecureHealth', description: 'Book an appointment or reach our care team', showTitle: false, titleAlignment: 'center' },
     blocks: [
       { id: 'hero-1', type: 'hero', data: { title: 'Contact Us', subtitle: 'We\'re here to help with your healthcare needs', backgroundType: 'color', heightMode: 'auto', contentAlignment: 'center', overlayOpacity: 0 } },
       { id: 'chat-1', type: 'chat-launcher', data: { title: 'Book with AI Assistant', subtitle: 'Private and HIPAA-compliant', placeholder: 'Ask about booking, services, or availability...', showQuickActions: true, quickActionCount: 4, variant: 'card' } },
@@ -185,7 +185,7 @@ const securehealthPages: StarterTemplate['pages'] = [
     slug: 'faq',
     menu_order: 7,
     showInMenu: true,
-    meta: { description: 'Frequently asked questions about our healthcare services, appointments, and patient care', showTitle: false, titleAlignment: 'center' },
+    meta: { seoTitle: 'Frequently Asked Questions — Patient Care | SecureHealth', description: 'Frequently asked questions about our healthcare services, appointments, and patient care', showTitle: false, titleAlignment: 'center' },
     blocks: [
       { id: 'hero-faq', type: 'hero', data: { title: 'Patient FAQ', subtitle: 'Find answers to common questions about our services, appointments, and patient care', backgroundType: 'color', heightMode: 'auto', contentAlignment: 'center', overlayOpacity: 0 } },
       { id: 'accordion-appointments', type: 'accordion', data: { title: 'Appointments & Scheduling', items: [
@@ -217,7 +217,7 @@ const securehealthPages: StarterTemplate['pages'] = [
     slug: 'privacy-policy',
     menu_order: 99,
     showInMenu: false,
-    meta: { description: 'How we collect, use and protect your personal and health data under GDPR and HIPAA', showTitle: true, titleAlignment: 'left' },
+    meta: { seoTitle: 'Privacy Policy — GDPR & HIPAA Compliance | SecureHealth', description: 'How we collect, use and protect your personal and health data under GDPR and HIPAA', showTitle: true, titleAlignment: 'left' },
     blocks: [
       { id: 'text-1', type: 'text', data: { content: { type: 'doc', content: [
         { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Introduction' }] },
@@ -247,7 +247,7 @@ const securehealthPages: StarterTemplate['pages'] = [
     slug: 'terms-of-service',
     menu_order: 100,
     showInMenu: false,
-    meta: { description: 'Terms and conditions for using our healthcare services', showTitle: true, titleAlignment: 'left' },
+    meta: { seoTitle: 'Terms of Service — Healthcare Agreement | SecureHealth', description: 'Terms and conditions for using our healthcare services', showTitle: true, titleAlignment: 'left' },
     blocks: [
       { id: 'text-1', type: 'text', data: { content: { type: 'doc', content: [
         { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Agreement to Terms' }] },
@@ -274,7 +274,7 @@ const securehealthPages: StarterTemplate['pages'] = [
     slug: 'cookie-policy',
     menu_order: 101,
     showInMenu: false,
-    meta: { description: 'Information about how we use cookies on our healthcare website', showTitle: true, titleAlignment: 'left' },
+    meta: { seoTitle: 'Cookie Policy — Healthcare Website | SecureHealth', description: 'Information about how we use cookies on our healthcare website', showTitle: true, titleAlignment: 'left' },
     blocks: [
       { id: 'text-1', type: 'text', data: { content: { type: 'doc', content: [
         { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'What Are Cookies?' }] },
@@ -302,7 +302,7 @@ const securehealthPages: StarterTemplate['pages'] = [
     slug: 'accessibility',
     menu_order: 99,
     showInMenu: false,
-    meta: { description: 'Our commitment to making healthcare accessible to everyone', showTitle: true, titleAlignment: 'left' },
+    meta: { seoTitle: 'Accessibility — Making Healthcare Available to All | SecureHealth', description: 'Our commitment to making healthcare accessible to everyone', showTitle: true, titleAlignment: 'left' },
     blocks: [
       { id: 'text-accessibility', type: 'text', data: { content: { type: 'doc', content: [
         { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Our Commitment to Accessibility' }] },
