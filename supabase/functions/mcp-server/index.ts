@@ -245,6 +245,7 @@ async function createMcpServer(): Promise<McpServer> {
     { key: "activity", uri: "flowwink://activity", name: "Recent Activity",   description: "Last 20 FlowPilot actions with skill name, status, duration, and timestamps" },
     { key: "peers",    uri: "flowwink://peers",    name: "Federation Peers",  description: "Connected A2A/MCP peers with status, capabilities, and last seen time" },
     { key: "identity", uri: "flowwink://identity", name: "FlowPilot Identity", description: "FlowPilot's soul, identity, and agent configuration" },
+    { key: "templates", uri: "flowwink://templates", name: "Site Templates",    description: "All available starter templates with SEO audit summaries — page counts, meta descriptions, title lengths, product images, blog post quality" },
   ];
 
   for (const r of resourceDefs) {
