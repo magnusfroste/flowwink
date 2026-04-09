@@ -251,8 +251,11 @@ async function createMcpServer(): Promise<McpServer> {
 
 const app = new Hono();
 
+// Use basePath to handle Supabase's path prefix
+const base = new Hono().basePath("/mcp-server");
+
 // CORS preflight
-app.options("/*", (c) => {
+base.options("/*", (c) => {
   return c.newResponse(null, 204, corsHeaders);
 });
 
