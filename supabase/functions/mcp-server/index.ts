@@ -274,6 +274,7 @@ app.use("/*", async (c, next) => {
 
 // GET /rest/tools — list all exposed tools
 app.get("/rest/tools", async (c) => {
+  console.log("REST /rest/tools hit");
   const skills = await loadExposedSkills();
   const tools = skills
     .filter((s) => s.tool_definition?.function?.name)
