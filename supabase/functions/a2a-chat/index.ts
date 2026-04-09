@@ -85,7 +85,11 @@ Deno.serve(async (req) => {
       ? `\n\nIMPORTANT: The peer has requested a specific response format. You MUST respond with valid JSON matching this schema:\n${JSON.stringify(responseSchema, null, 2)}\nDo NOT wrap it in markdown code blocks. Return raw JSON only.`
       : '';
 
-    const systemPrompt = `You are ${agentName}, an autonomous CMS operator for FlowWink (demo.flowwink.com). You are in a conversation with federation peer "${peerName}" via the A2A protocol.
+    const conversationDirection = isOutbound
+      ? `You are INITIATING a message to peer "${peerName}". The "user" message below is your internal prompt/intent — compose a natural, direct message to send to the peer.`
+      : `You are RESPONDING to a message from federation peer "${peerName}" via the A2A protocol.`;
+
+    const systemPrompt = `You are ${agentName}, an autonomous CMS operator for FlowWink (demo.flowwink.com). ${conversationDirection}
 
 ${soulText ? `Your soul/personality:\n${soulText}\n` : ''}
 
