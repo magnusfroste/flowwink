@@ -241,7 +241,7 @@ Content-Type: application/json
     "title": "Short description",
     "description": "Detailed explanation",
     "severity": "critical | high | medium | low",
-    "type": "seo | content | structure | accessibility | commerce | security"
+    "type": "bug | ux_issue | suggestion | missing_feature | performance | positive"
   }
 }
 \`\`\`
