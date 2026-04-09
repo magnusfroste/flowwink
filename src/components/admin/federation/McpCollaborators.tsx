@@ -1,9 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Cpu, Clock, KeyRound, ShieldCheck } from 'lucide-react';
+import { Cpu, Clock, KeyRound, ShieldCheck, Copy } from 'lucide-react';
 import { useApiKeys } from '@/hooks/useApiKeys';
 import { formatDistanceToNow } from 'date-fns';
+import { toast } from 'sonner';
 
 export function McpCollaborators() {
   const { data: allKeys, isLoading } = useApiKeys();
@@ -116,6 +118,17 @@ export function McpCollaborators() {
                         <span className="flex items-center gap-1">
                           <KeyRound className="h-3 w-3" />
                           <code className="bg-muted px-1 rounded">{key.key_prefix}...</code>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-5 w-5 ml-0.5"
+                            onClick={() => {
+                              navigator.clipboard.writeText(key.key_prefix);
+                              toast.info('Key prefix copied — full key is only available at creation time');
+                            }}
+                          >
+                            <Copy className="h-3 w-3" />
+                          </Button>
                         </span>
                         <span>
                           Created {formatDistanceToNow(new Date(key.created_at), { addSuffix: true })}
