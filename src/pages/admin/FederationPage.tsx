@@ -387,9 +387,16 @@ export default function FederationPage() {
       <div className="space-y-8">
         <AdminPageHeader
           title="Federation"
-          description="Connect your FlowWink instance with other agents via A2A protocol"
+          description="Connect with external agents via A2A protocol or invite MCP collaborators"
         />
 
+        <Tabs defaultValue="a2a-peers" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="a2a-peers">A2A Peers</TabsTrigger>
+            <TabsTrigger value="agent-invites">Agent Invites (MCP)</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="a2a-peers" className="space-y-8">
         {/* Summary */}
         <div className="grid gap-4 sm:grid-cols-3">
           <Card>
