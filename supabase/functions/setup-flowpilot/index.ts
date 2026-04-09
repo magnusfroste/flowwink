@@ -3223,7 +3223,7 @@ Closes an active OpenClaw beta test session with a summary and final status.
   },
   {
     name: 'openclaw_report_finding',
-    description: 'Report a bug, UX issue, or suggestion from beta testing. Use when: documenting observed problems during a test; submitting improvement ideas; logging defects. NOT for: getting test status (openclaw_get_status); sending a general message (openclaw_exchange).',
+    description: 'Report a bug, UX issue, suggestion, positive note, missing feature, or performance issue from beta testing. Use when: documenting observed problems during a test; submitting improvement ideas; logging defects. NOT for: getting test status (openclaw_get_status); sending a general message (openclaw_exchange).',
     handler: 'module:openclaw',
     category: 'system',
     scope: 'internal',
@@ -3231,13 +3231,13 @@ Closes an active OpenClaw beta test session with a summary and final status.
     trust_level: 'auto',
     instructions: `## openclaw_report_finding
 ### What
-Logs a finding (bug, UX issue, suggestion, observation, or performance issue) discovered during a beta test session.
+Logs a finding (bug, UX issue, suggestion, positive note, missing feature, or performance issue) discovered during a beta test session.
 ### When to use
 - OpenClaw discovers something worth logging during an active session
 - Include as much context as possible in the description field
 ### Parameters
-- **session_id**: Active session ID
-- **type**: bug | ux_issue | suggestion | observation | performance
+- **session_id**: Optional active session ID
+- **type**: bug | ux_issue | suggestion | positive | performance | missing_feature
 - **severity**: low | medium | high | critical
 - **title**: Short finding title
 - **description**: Detailed description
@@ -3247,19 +3247,19 @@ Logs a finding (bug, UX issue, suggestion, observation, or performance issue) di
       type: 'function',
       function: {
         name: 'openclaw_report_finding',
-        description: 'Report a bug, UX issue, or suggestion from beta testing. Use when: documenting observed problems during a test; submitting improvement ideas; logging defects. NOT for: getting test status (openclaw_get_status); sending a general message (openclaw_exchange).',
+        description: 'Report a bug, UX issue, suggestion, positive note, missing feature, or performance issue from beta testing. Use when: documenting observed problems during a test; submitting improvement ideas; logging defects. NOT for: getting test status (openclaw_get_status); sending a general message (openclaw_exchange).',
         parameters: {
           type: 'object',
           properties: {
-            session_id: { type: 'string', description: 'Session ID' },
-            type: { type: 'string', enum: ['bug', 'ux_issue', 'suggestion', 'observation', 'performance'], description: 'Finding type' },
+            session_id: { type: 'string', description: 'Optional session ID' },
+            type: { type: 'string', enum: ['bug', 'ux_issue', 'suggestion', 'positive', 'performance', 'missing_feature'], description: 'Finding type' },
             severity: { type: 'string', enum: ['low', 'medium', 'high', 'critical'], description: 'Severity level' },
             title: { type: 'string', description: 'Finding title' },
             description: { type: 'string', description: 'Detailed description' },
             context: { type: 'object', description: 'Additional context' },
             screenshot_url: { type: 'string', description: 'Screenshot URL' },
           },
-          required: ['session_id', 'type', 'title'],
+          required: ['type', 'title'],
         },
       },
     },
