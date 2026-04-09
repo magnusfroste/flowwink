@@ -346,6 +346,7 @@ async function getMcpHandler() {
 }
 
 app.all("/*", async (c) => {
+  console.log("MCP catch-all hit, path:", c.req.path, "url:", c.req.url);
   const handler = await getMcpHandler();
   const response = await handler(c.req.raw);
   const headers = new Headers(response.headers);
