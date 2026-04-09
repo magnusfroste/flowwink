@@ -259,6 +259,8 @@ app.options("/*", (c) => {
 // Auth middleware
 app.use("/*", async (c, next) => {
   if (c.req.method === "OPTIONS") return next();
+  
+  console.log("Request path:", c.req.path, "method:", c.req.method);
 
   const auth = await authenticateApiKey(c.req.header("Authorization"));
   if (!auth.valid) {
