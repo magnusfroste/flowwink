@@ -207,6 +207,7 @@ async function fetchResource(resourceKey: string): Promise<unknown> {
       }
       return { error: `Unknown resource: ${resourceKey}` };
     }
+  }
 }
 
 // ---------- MCP server factory ----------
