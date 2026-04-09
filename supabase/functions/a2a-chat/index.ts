@@ -1,11 +1,15 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 /**
- * a2a-chat — Conversational A2A endpoint with peer memory.
+ * a2a-chat — The conversational bridge between FlowPilot and peers.
+ *
+ * Works bidirectionally:
+ *   1. INBOUND (default): Peer sends message → FlowPilot thinks → responds
+ *   2. OUTBOUND (outbound: true): FlowPilot initiates → thinks → sends to peer via a2a-outbound
  *
  * Maintains per-peer conversation history in agent_memory so
  * FlowPilot and peers like OpenClaw can have rich, multi-turn
- * dialogues with full context.
+ * dialogues with full context regardless of who initiates.
  *
  * Also injects site health/stats so the peer gets actionable
  * intelligence without having to ask for it.
