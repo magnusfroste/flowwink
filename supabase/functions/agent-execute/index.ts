@@ -4017,44 +4017,56 @@ async function executeAnalyticsAction(
         score -= 5;
       }
 
-      // Content depth — count text blocks
+      // Content depth — count text in CMS blocks (pages) and TipTap docs (blog posts)
       let wordCount = 0;
       let headingCount = 0;
       let imageCount = 0;
       let linkCount = 0;
 
-      const walkBlocks = (items: any[]) => {
-        for (const block of items) {
-          const data = block.data || block;
-          const blockType = block.type || '';
-          if (blockType === 'heading' || data.level) headingCount++;
-          if (blockType === 'image' || data.src) imageCount++;
-          
-          // Count text
-          const text = data.text || data.content || '';
-          if (typeof text === 'string') {
-            wordCount += text.split(/\s+/).filter(Boolean).length;
-          }
+      // Recursively walk any node tree (TipTap or CMS blocks)
+      const walkNodes = (nodes: any[]) => {
+        for (const node of nodes) {
+          const nodeType = node.type || '';
 
-          // Tiptap JSON
-          if (block.content && Array.isArray(block.content)) {
-            for (const node of block.content) {
-              if (node.type === 'text' && node.text) {
-                wordCount += node.text.split(/\s+/).filter(Boolean).length;
-              }
-              if (node.marks) {
-                for (const mark of node.marks) {
-                  if (mark.type === 'link') linkCount++;
-                }
+          // Headings
+          if (nodeType === 'heading' || node.level) headingCount++;
+
+          // Images
+          if (nodeType === 'image' || node.src) imageCount++;
+
+          // Text leaf nodes (TipTap)
+          if (nodeType === 'text' && typeof node.text === 'string') {
+            wordCount += node.text.split(/\s+/).filter(Boolean).length;
+            if (node.marks) {
+              for (const mark of node.marks) {
+                if (mark.type === 'link') linkCount++;
               }
             }
           }
 
-          if (block.children) walkBlocks(block.children);
+          // CMS block data text fields
+          const data = node.data || {};
+          if (typeof data.text === 'string') {
+            wordCount += data.text.split(/\s+/).filter(Boolean).length;
+          }
+          if (typeof data.content === 'string') {
+            wordCount += data.content.split(/\s+/).filter(Boolean).length;
+          }
+
+          // Recurse into children/content arrays
+          if (Array.isArray(node.content)) walkNodes(node.content);
+          if (Array.isArray(node.children)) walkNodes(node.children);
         }
       };
 
-      if (Array.isArray(blocks)) walkBlocks(blocks);
+      // content_json can be: array of CMS blocks (pages) or TipTap doc object (blog posts)
+      const contentJson = page.content_json || blocks;
+      if (Array.isArray(contentJson)) {
+        walkNodes(contentJson);
+      } else if (contentJson && typeof contentJson === 'object' && Array.isArray(contentJson.content)) {
+        // TipTap doc: { type: "doc", content: [...] }
+        walkNodes(contentJson.content);
+      }
 
       if (wordCount < 300 && page.type === 'blog_post') {
         issues.push(`Content too thin (${wordCount} words, recommended 800+)`);
