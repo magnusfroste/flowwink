@@ -173,20 +173,49 @@ ${siteIntel}
       updated_at: new Date().toISOString(),
     }, { onConflict: 'key' });
 
-    console.log(`[a2a-chat] Conversation with ${peerName}: ${history.length} prior exchanges, replied: ${reply.substring(0, 80)}...`);
+    console.log(`[a2a-chat] ${isOutbound ? 'OUTBOUND' : 'INBOUND'} conversation with ${peerName}: ${history.length} prior exchanges, replied: ${reply.substring(0, 80)}...`);
 
-    // --- 8. If responseSchema was requested, try to parse as JSON ---
+    // --- 8. If outbound mode, deliver via a2a-outbound ---
+    let outboundResult: unknown = null;
+    if (isOutbound) {
+      try {
+        const outboundPayload: Record<string, unknown> = {
+          message: reply,
+        };
+        if (peerId) outboundPayload.peer_id = peerId;
+        else outboundPayload.peer_name = peerName;
+
+        const outboundResponse = await fetch(`${supabaseUrl}/functions/v1/a2a-outbound`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${serviceKey}`,
+          },
+          body: JSON.stringify(outboundPayload),
+        });
+
+        outboundResult = await outboundResponse.json().catch(() => ({ status: outboundResponse.status }));
+        console.log(`[a2a-chat] Outbound delivery to ${peerName}: status=${outboundResponse.status}`);
+      } catch (err: any) {
+        console.error(`[a2a-chat] Outbound delivery failed for ${peerName}:`, err.message);
+        outboundResult = { error: err.message };
+      }
+    }
+
+    // --- 9. If responseSchema was requested, try to parse as JSON ---
     let result: unknown = reply;
     if (responseSchema) {
       try {
         result = JSON.parse(reply);
       } catch {
-        // LLM didn't return valid JSON — return as-is with a hint
         result = { _raw: reply, _schema_compliance: false };
       }
     }
 
-    return new Response(JSON.stringify({ result }), {
+    return new Response(JSON.stringify({
+      result,
+      ...(isOutbound ? { outbound_delivered: true, outbound_result: outboundResult } : {}),
+    }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
