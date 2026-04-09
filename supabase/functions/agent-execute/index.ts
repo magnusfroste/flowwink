@@ -899,16 +899,36 @@ async function executeOpenClawAction(
     }
 
     case 'openclaw_report_finding': {
-      const { session_id, type, severity = 'medium', title, description, context = {}, screenshot_url } = args as any;
-      if (!session_id || !type || !title) return { error: 'session_id, type, and title are required' };
+      const { session_id, type, severity = 'medium', title, description, context = {}, screenshot_url, auto_objective = true } = args as any;
+      if (!type || !title) return { error: 'type and title are required' };
 
+      // Save finding (session_id now optional for MCP-driven reports)
       const { data, error } = await supabase
         .from('beta_test_findings')
-        .insert({ session_id, type, severity, title, description, context, screenshot_url })
+        .insert({ session_id: session_id || null, type, severity, title, description, context, screenshot_url })
         .select('id, type, severity, title')
         .single();
       if (error) throw new Error(`Finding report failed: ${error.message}`);
-      return { success: true, finding: data };
+
+      // Auto-create objective for high/critical findings
+      let objective = null;
+      if (auto_objective && (severity === 'high' || severity === 'critical')) {
+        const goalPrefix = type === 'bug' ? 'Fix' : type === 'ux_issue' ? 'Improve UX' : 'Address';
+        const { data: obj } = await supabase
+          .from('agent_objectives')
+          .insert({
+            goal: `${goalPrefix}: ${title}`,
+            status: 'active',
+            created_by: 'peer_report',
+            constraints: { source: 'openclaw_report_finding', finding_id: data.id, severity, type },
+            success_criteria: { description_met: description || title },
+          })
+          .select('id, goal')
+          .single();
+        objective = obj;
+      }
+
+      return { success: true, finding: data, objective };
     }
 
     case 'openclaw_exchange': {
