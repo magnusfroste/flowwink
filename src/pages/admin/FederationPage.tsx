@@ -947,6 +947,12 @@ export default function FederationPage() {
 
           <TabsContent value="mcp-collaborators" className="space-y-8">
             <McpCollaborators />
+            <div>
+              <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4">
+                MCP Activity Log
+              </h2>
+              <McpActivityLog />
+            </div>
           </TabsContent>
 
           <TabsContent value="agent-invites">
