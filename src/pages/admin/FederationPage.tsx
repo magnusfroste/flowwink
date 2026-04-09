@@ -33,6 +33,7 @@ import {
 import { Globe, Plus, RefreshCw, Copy, Check, ArrowDownLeft, ArrowUpRight, AlertCircle, Pencil, Zap, Loader2, Search, Shield, Cpu, MessageCircle } from 'lucide-react';
 import { A2ATestChat } from '@/components/admin/federation/A2ATestChat';
 import { A2AActivityLog } from '@/components/admin/federation/A2AActivityLog';
+import { AgentInvites } from '@/components/admin/federation/AgentInvites';
 import { useToast } from '@/hooks/use-toast';
 import { useA2APeers, useCreateA2APeer, useUpdateA2APeer, useRegenerateInboundToken, useA2AActivity } from '@/hooks/useA2A';
 import { useQueryClient } from '@tanstack/react-query';
