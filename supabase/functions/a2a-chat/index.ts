@@ -45,6 +45,7 @@ Deno.serve(async (req) => {
     const peerId = body._a2a_peer_id || body.context?.peer_id || null;
     const responseSchema = body.responseSchema || body.response_schema || null;
     const isOutbound = body.outbound === true; // Bridge mode: FlowPilot initiates to peer
+    const isPassthrough = body.passthrough === true; // Skip AI, send text directly to peer
 
     if (!text.trim()) {
       return new Response(JSON.stringify({ result: 'No message provided' }), {
