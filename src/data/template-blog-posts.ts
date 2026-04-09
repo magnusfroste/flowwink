@@ -18,7 +18,7 @@ const ul = (...items: string[]) => ({ type: 'bulletList', content: items.map(li)
 // =====================================================
 export const launchpadBlogPosts: TemplateBlogPost[] = [
   {
-    title: 'From Zero to MVP: A Step-by-Step Guide for First-Time Founders',
+    title: 'From Zero to MVP: A Guide for First-Time Founders',
     slug: 'zero-to-mvp-guide-first-time-founders',
     excerpt: 'Building your first product can feel overwhelming. Here is a practical roadmap that takes you from idea to launch without the usual pitfalls.',
     featured_image: '/templates/blog/team-brainstorming.jpg',
@@ -140,7 +140,7 @@ export const trustcorpBlogPosts: TemplateBlogPost[] = [
     meta: { description: 'A pragmatic guide to digital transformation for enterprises in 2024. Learn what separates successful transformations from failed initiatives.' },
   },
   {
-    title: 'Private AI: Why Data Sovereignty Is the New Boardroom Priority',
+    title: 'Private AI: Data Sovereignty in the Boardroom',
     slug: 'private-ai-data-sovereignty-boardroom-priority',
     excerpt: 'As AI becomes essential infrastructure, the question of where that AI runs—and who controls your data—has become a strategic imperative.',
     featured_image: '/templates/blog/tech-network.jpg',
@@ -166,7 +166,7 @@ export const trustcorpBlogPosts: TemplateBlogPost[] = [
     meta: { description: 'Understand why data sovereignty and private AI have become board-level priorities. Learn the risks of cloud AI and the case for on-premise deployment.' },
   },
   {
-    title: 'Building Resilient Organizations: Lessons from the Front Lines',
+    title: 'Building Resilient Organizations: Front-Line Lessons',
     slug: 'building-resilient-organizations-lessons',
     excerpt: 'The past few years have stress-tested every organization. Here are the patterns that separated those who thrived from those who merely survived.',
     featured_image: '/templates/blog/team-brainstorming.jpg',
@@ -237,7 +237,7 @@ export const securehealthBlogPosts: TemplateBlogPost[] = [
     meta: { description: 'A comprehensive guide to preventive care and essential health screenings at every age. Learn why prevention is the best medicine.' },
   },
   {
-    title: 'Your Health Data, Your Privacy: How We Protect Your Information',
+    title: 'Your Health Data, Your Privacy: How We Protect It',
     slug: 'health-data-privacy-protection',
     excerpt: 'In an age of data breaches, understanding how your health information is protected has never been more important.',
     featured_image: '/templates/blog/digital-security.jpg',
@@ -399,7 +399,7 @@ export const flowwinkBlogPosts: TemplateBlogPost[] = [
     meta: { description: 'Discover why autonomous CMS is the future. Learn how FlowPilot operates your entire online presence — content, leads, campaigns — while you focus on strategy.' },
   },
   {
-    title: 'FlowPilot: How an Autonomous Agent Manages Your Entire Online Presence',
+    title: 'FlowPilot: An Autonomous Agent for Your Presence',
     slug: 'flowpilot-autonomous-agent-manages-online-presence',
     excerpt: 'Meet FlowPilot — an OpenClaw-inspired autonomous agent with persistent memory, self-evolving skills, and goal-driven objectives that manages content, CRM, email, and e-commerce.',
     featured_image: '/templates/blog/ai-concept.jpg',
@@ -430,7 +430,7 @@ export const flowwinkBlogPosts: TemplateBlogPost[] = [
     meta: { description: 'Deep dive into FlowPilot — the autonomous agent that manages your entire online presence with persistent memory, self-evolving skills, and goal-driven objectives.' },
   },
   {
-    title: 'Self-Hosted AI: Why Privacy Is the Ultimate Competitive Advantage',
+    title: 'Self-Hosted AI: Privacy as Competitive Advantage',
     slug: 'self-hosted-ai-privacy-competitive-advantage',
     excerpt: 'When your AI agent manages content, leads, and customer data, where it runs matters. Self-hosted AI is not just safer — it is strategically superior.',
     featured_image: '/templates/blog/server-infrastructure.jpg',
@@ -461,7 +461,7 @@ export const flowwinkBlogPosts: TemplateBlogPost[] = [
     meta: { description: 'Learn why self-hosted AI is strategically superior for autonomous CMS. Privacy, control, and competitive advantage through self-hosted FlowPilot.' },
   },
   {
-    title: 'The Autonomous Loop: How FlowPilot Reflects, Plans, and Self-Improves',
+    title: 'The Autonomous Loop: How FlowPilot Self-Improves',
     slug: 'autonomous-loop-flowpilot-reflects-plans-improves',
     excerpt: 'On a configurable schedule, FlowPilot runs a heartbeat cycle — reflecting on performance, planning next actions, and evolving its own capabilities. Here is how it works.',
     featured_image: '/templates/blog/team-brainstorming.jpg',
@@ -494,7 +494,7 @@ export const flowwinkBlogPosts: TemplateBlogPost[] = [
     meta: { description: 'Understanding the Autonomous Loop — how FlowPilot continuously reflects, plans, executes, and self-improves every 12 hours without human intervention.' },
   },
   {
-    title: 'From 4 Products to 1 Agent: Replacing Your CMS, Chatbot, CRM, and Marketing Stack',
+    title: 'From 4 Products to 1 Agent: Replace Your Stack',
     slug: 'replacing-cms-chatbot-crm-marketing-stack',
     excerpt: 'Most businesses run a CMS, a chatbot, a CRM, and marketing automation as separate products. FlowPilot replaces all four with a single autonomous agent.',
     featured_image: '/templates/blog/unified-platform.jpg',
@@ -535,7 +535,7 @@ export const flowwinkBlogPosts: TemplateBlogPost[] = [
     meta: { description: 'Learn how FlowPilot replaces your CMS, chatbot, CRM, and marketing automation with a single autonomous agent. Reduce costs and eliminate integration headaches.' },
   },
   {
-    title: 'Skill Engine Deep Dive: How FlowPilot Learns New Capabilities',
+    title: 'Skill Engine: How FlowPilot Learns New Skills',
     slug: 'skill-engine-deep-dive-flowpilot-capabilities',
     excerpt: 'FlowPilot ships with 30+ skills and can create new ones autonomously. Here is how the skill engine works — registration, routing, approval, and self-evolution.',
     featured_image: '/templates/blog/server-infrastructure.jpg',
@@ -656,7 +656,7 @@ export const flowwinkBlogPosts: TemplateBlogPost[] = [
     meta: { description: 'Explore FlowPilot\'s Agent-to-Agent (A2A) protocol — how autonomous agents discover capabilities, authenticate, and collaborate across organizational boundaries.' },
   },
   {
-    title: 'Content Authority: How FlowPilot Builds Your Thought Leadership Automatically',
+    title: 'Content Authority: FlowPilot and Thought Leadership',
     slug: 'content-authority-flowpilot-thought-leadership',
     excerpt: 'FlowPilot now monitors competitors, identifies content gaps, researches trending topics, and drafts thought leadership pieces — all autonomously through its Content Authority skills.',
     featured_image: '/templates/blog/content-strategy.jpg',
@@ -690,7 +690,7 @@ export const flowwinkBlogPosts: TemplateBlogPost[] = [
     meta: { description: 'How FlowPilot builds thought leadership automatically with competitor monitoring, content research, social post generation, and multi-channel distribution.' },
   },
   {
-    title: 'The 7-Step FlowAgent Loop: Self-Heal, Propose, Plan, Advance, Automate, Reflect, Remember',
+    title: 'The 7-Step FlowAgent Loop Explained',
     slug: 'flowagent-7-step-autonomous-loop',
     excerpt: 'FlowPilot\'s reasoning engine has evolved into a 7-step autonomous loop. Understanding each phase reveals how an AI agent maintains, improves, and operates your entire digital presence.',
     featured_image: '/templates/blog/process-diagram.jpg',
@@ -722,7 +722,7 @@ export const flowwinkBlogPosts: TemplateBlogPost[] = [
     meta: { description: 'Deep dive into the 7-step FlowAgent loop — Self-Heal, Propose, Plan, Advance, Automate, Reflect, Remember — the reasoning engine behind autonomous CMS operations.' },
   },
   {
-    title: 'Module Registry: The Data Orchestration Layer Behind FlowWink',
+    title: 'Module Registry: Orchestration Behind FlowWink',
     slug: 'module-registry-data-orchestration-layer',
     excerpt: 'FlowWink\'s Module Registry API organizes 15+ platform features into versioned, Zod-validated modules that FlowPilot can orchestrate. Here is how data flows between modules.',
     featured_image: '/templates/misc/analytics-dashboard.jpg',
@@ -795,7 +795,7 @@ export const flowwinkBlogPosts: TemplateBlogPost[] = [
     meta: { description: 'How Google\'s A2A protocol is shaping the agentic web and what it means for FlowPilot — from isolated assistant to networked consultant.' },
   },
   {
-    title: 'Running AI Models Locally: Privacy, Performance, and Practical Guidance',
+    title: 'Running AI Models Locally: A Practical Guide',
     slug: 'running-ai-models-locally-privacy-performance',
     excerpt: 'Open-source LLMs have reached a tipping point. Models like Llama, Mistral, and Gemma can run on modest hardware with quality that rivals cloud APIs. Here is how to set it up with FlowWink.',
     featured_image: '/templates/blog/server-infrastructure.jpg',
@@ -876,7 +876,7 @@ export const flowwinkBlogPosts: TemplateBlogPost[] = [
     meta: { description: 'The agentic web is transforming how businesses operate online. Understand the three waves of agent autonomy and why self-hosted AI agents are the future.' },
   },
   {
-    title: 'MCP, Function Calling, and Tool Use: How FlowPilot Stays Framework-Agnostic',
+    title: 'MCP and Tool Use: How FlowPilot Stays Agnostic',
     slug: 'mcp-function-calling-tool-use-framework-agnostic',
     excerpt: 'OpenAI function calling, Anthropic MCP, Google A2A — the AI ecosystem is fragmenting into competing standards. FlowPilot\'s skill engine is designed to work with all of them.',
     featured_image: '/templates/blog/code-frameworks.jpg',
@@ -918,7 +918,7 @@ export const flowwinkBlogPosts: TemplateBlogPost[] = [
 // =====================================================
 export const agencyBlogPosts: TemplateBlogPost[] = [
   {
-    title: 'The Hidden Cost of Webflow: Why Agencies Are Switching to Self-Hosted',
+    title: 'The Hidden Cost of Webflow for Agencies',
     slug: 'hidden-cost-webflow-agencies-switching-self-hosted',
     excerpt: 'Webflow charges €20-200 per client site. For agencies managing 20+ sites, that adds up fast. Here is a better way.',
     featured_image: '/templates/blog/dashboard-costs.jpg',
@@ -999,7 +999,7 @@ export const agencyBlogPosts: TemplateBlogPost[] = [
     meta: { description: 'Learn how to price client websites with setup fees and recurring monthly management for predictable agency revenue. Includes practical examples and margin analysis.' },
   },
   {
-    title: 'White-Label Best Practices: Delivering Client Sites That Look Like Yours',
+    title: 'White-Label Best Practices for Client Sites',
     slug: 'white-label-best-practices-client-sites',
     excerpt: 'White-labeling is not just about removing logos. It is about creating a seamless experience that builds your agency brand.',
     featured_image: '/templates/blog/designer-branding.jpg',
@@ -1224,7 +1224,7 @@ export const digitalShopBlogPosts: TemplateBlogPost[] = [
 // =====================================================
 export const consultAgencyBlogPosts: TemplateBlogPost[] = [
   {
-    title: 'The Consultant Shortage Is a Myth — Your Pipeline Is the Problem',
+    title: 'The Consultant Shortage Is a Pipeline Problem',
     slug: 'consultant-shortage-myth-pipeline-problem',
     excerpt: 'Companies claim they cannot find talent. The truth? Most consulting firms have deep benches but broken matching. Here is how agentic technology is closing the gap.',
     featured_image: '/templates/blog/team-brainstorming.jpg',
@@ -1254,7 +1254,7 @@ export const consultAgencyBlogPosts: TemplateBlogPost[] = [
     meta: { description: 'How agentic technology solves the consultant matching problem. Move from manual bench management to instant, data-driven talent matching.' },
   },
   {
-    title: 'Why Your Consulting Website Should Answer Client Briefs at 2 AM',
+    title: 'Your Consulting Website Should Answer Briefs 24/7',
     slug: 'consulting-website-answer-briefs-24-7',
     excerpt: 'Enterprise clients do not work on your schedule. An agentic web presence qualifies leads and matches consultants around the clock.',
     featured_image: '/templates/blog/developer-workspace.jpg',
@@ -1283,7 +1283,7 @@ export const consultAgencyBlogPosts: TemplateBlogPost[] = [
     meta: { description: 'Enterprise clients expect instant responses. Learn how agentic consulting websites qualify briefs and match consultants 24/7.' },
   },
   {
-    title: 'Building a Consultant Brand: From Bench Resource to Trusted Advisor',
+    title: 'From Bench Resource to Trusted Advisor',
     slug: 'building-consultant-brand-trusted-advisor',
     excerpt: 'The best consulting firms do not sell hours — they sell expertise. Here is how to position your consultants as thought leaders.',
     featured_image: '/templates/blog/server-infrastructure.jpg',
