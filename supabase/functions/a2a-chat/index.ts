@@ -1,11 +1,15 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 /**
- * a2a-chat — Conversational A2A endpoint with peer memory.
+ * a2a-chat — The conversational bridge between FlowPilot and peers.
+ *
+ * Works bidirectionally:
+ *   1. INBOUND (default): Peer sends message → FlowPilot thinks → responds
+ *   2. OUTBOUND (outbound: true): FlowPilot initiates → thinks → sends to peer via a2a-outbound
  *
  * Maintains per-peer conversation history in agent_memory so
  * FlowPilot and peers like OpenClaw can have rich, multi-turn
- * dialogues with full context.
+ * dialogues with full context regardless of who initiates.
  *
  * Also injects site health/stats so the peer gets actionable
  * intelligence without having to ask for it.
@@ -40,6 +44,7 @@ Deno.serve(async (req) => {
     const peerName = body.peer_name || body.context?.peer_name || 'unknown';
     const peerId = body._a2a_peer_id || body.context?.peer_id || null;
     const responseSchema = body.responseSchema || body.response_schema || null;
+    const isOutbound = body.outbound === true; // Bridge mode: FlowPilot initiates to peer
 
     if (!text.trim()) {
       return new Response(JSON.stringify({ result: 'No message provided' }), {
@@ -80,7 +85,11 @@ Deno.serve(async (req) => {
       ? `\n\nIMPORTANT: The peer has requested a specific response format. You MUST respond with valid JSON matching this schema:\n${JSON.stringify(responseSchema, null, 2)}\nDo NOT wrap it in markdown code blocks. Return raw JSON only.`
       : '';
 
-    const systemPrompt = `You are ${agentName}, an autonomous CMS operator for FlowWink (demo.flowwink.com). You are in a conversation with federation peer "${peerName}" via the A2A protocol.
+    const conversationDirection = isOutbound
+      ? `You are INITIATING a message to peer "${peerName}". The "user" message below is your internal prompt/intent — compose a natural, direct message to send to the peer.`
+      : `You are RESPONDING to a message from federation peer "${peerName}" via the A2A protocol.`;
+
+    const systemPrompt = `You are ${agentName}, an autonomous CMS operator for FlowWink (demo.flowwink.com). ${conversationDirection}
 
 ${soulText ? `Your soul/personality:\n${soulText}\n` : ''}
 
@@ -164,20 +173,49 @@ ${siteIntel}
       updated_at: new Date().toISOString(),
     }, { onConflict: 'key' });
 
-    console.log(`[a2a-chat] Conversation with ${peerName}: ${history.length} prior exchanges, replied: ${reply.substring(0, 80)}...`);
+    console.log(`[a2a-chat] ${isOutbound ? 'OUTBOUND' : 'INBOUND'} conversation with ${peerName}: ${history.length} prior exchanges, replied: ${reply.substring(0, 80)}...`);
 
-    // --- 8. If responseSchema was requested, try to parse as JSON ---
+    // --- 8. If outbound mode, deliver via a2a-outbound ---
+    let outboundResult: unknown = null;
+    if (isOutbound) {
+      try {
+        const outboundPayload: Record<string, unknown> = {
+          message: reply,
+        };
+        if (peerId) outboundPayload.peer_id = peerId;
+        else outboundPayload.peer_name = peerName;
+
+        const outboundResponse = await fetch(`${supabaseUrl}/functions/v1/a2a-outbound`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${serviceKey}`,
+          },
+          body: JSON.stringify(outboundPayload),
+        });
+
+        outboundResult = await outboundResponse.json().catch(() => ({ status: outboundResponse.status }));
+        console.log(`[a2a-chat] Outbound delivery to ${peerName}: status=${outboundResponse.status}`);
+      } catch (err: any) {
+        console.error(`[a2a-chat] Outbound delivery failed for ${peerName}:`, err.message);
+        outboundResult = { error: err.message };
+      }
+    }
+
+    // --- 9. If responseSchema was requested, try to parse as JSON ---
     let result: unknown = reply;
     if (responseSchema) {
       try {
         result = JSON.parse(reply);
       } catch {
-        // LLM didn't return valid JSON — return as-is with a hint
         result = { _raw: reply, _schema_compliance: false };
       }
     }
 
-    return new Response(JSON.stringify({ result }), {
+    return new Response(JSON.stringify({
+      result,
+      ...(isOutbound ? { outbound_delivered: true, outbound_result: outboundResult } : {}),
+    }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
