@@ -47,12 +47,10 @@ async function authenticateApiKey(
 
   if (error || !data) return { valid: false };
 
-  // Check expiry
   if (data.expires_at && new Date(data.expires_at) < new Date()) {
     return { valid: false };
   }
 
-  // Touch last_used_at (fire-and-forget)
   sb.from("api_keys")
     .update({ last_used_at: new Date().toISOString() })
     .eq("id", data.id)
@@ -99,7 +97,6 @@ async function executeSkill(
   skillName: string,
   args: Record<string, unknown>,
 ): Promise<string> {
-  const sb = serviceClient();
   const url = `${Deno.env.get("SUPABASE_URL")}/functions/v1/agent-execute`;
   const res = await fetch(url, {
     method: "POST",
@@ -121,6 +118,81 @@ async function executeSkill(
   return body;
 }
 
+// ---------- resource fetchers ----------
+
+async function fetchResource(resourceKey: string): Promise<unknown> {
+  const sb = serviceClient();
+
+  switch (resourceKey) {
+    case "health": {
+      const [pages, posts, leads, bookings, orders, products, objectives] = await Promise.all([
+        sb.from("pages").select("id", { count: "exact", head: true }),
+        sb.from("blog_posts").select("id", { count: "exact", head: true }),
+        sb.from("leads").select("id", { count: "exact", head: true }),
+        sb.from("bookings").select("id", { count: "exact", head: true }).eq("status", "confirmed"),
+        sb.from("orders").select("id", { count: "exact", head: true }),
+        sb.from("products").select("id", { count: "exact", head: true }),
+        sb.from("agent_objectives").select("id, goal, status").eq("status", "active").limit(10),
+      ]);
+      return {
+        counts: {
+          pages: pages.count ?? 0,
+          blog_posts: posts.count ?? 0,
+          leads: leads.count ?? 0,
+          active_bookings: bookings.count ?? 0,
+          orders: orders.count ?? 0,
+          products: products.count ?? 0,
+        },
+        active_objectives: objectives.data ?? [],
+        timestamp: new Date().toISOString(),
+      };
+    }
+    case "skills": {
+      const { data } = await sb
+        .from("agent_skills")
+        .select("name, description, category, scope, trust_level, enabled, mcp_exposed")
+        .order("category");
+      return data ?? [];
+    }
+    case "modules": {
+      const { data } = await sb
+        .from("site_settings")
+        .select("value")
+        .eq("key", "modules")
+        .single();
+      return data?.value ?? {};
+    }
+    case "activity": {
+      const { data } = await sb
+        .from("agent_activity")
+        .select("id, skill_name, status, duration_ms, error_message, created_at")
+        .order("created_at", { ascending: false })
+        .limit(20);
+      return data ?? [];
+    }
+    case "peers": {
+      const { data } = await sb
+        .from("a2a_peers")
+        .select("id, name, status, capabilities, last_seen_at, request_count")
+        .order("name");
+      return data ?? [];
+    }
+    case "identity": {
+      const { data } = await sb
+        .from("agent_memory")
+        .select("key, value, category")
+        .in("key", ["soul", "identity", "agents", "tools", "user"]);
+      const identity: Record<string, unknown> = {};
+      for (const row of data ?? []) {
+        identity[row.key] = row.value;
+      }
+      return identity;
+    }
+    default:
+      return { error: `Unknown resource: ${resourceKey}` };
+  }
+}
+
 // ---------- MCP server factory ----------
 
 async function createMcpServer(): Promise<McpServer> {
@@ -129,7 +201,6 @@ async function createMcpServer(): Promise<McpServer> {
     version: "1.0.0",
   });
 
-  // Register tools from exposed skills
   const skills = await loadExposedSkills();
 
   for (const skill of skills) {
@@ -151,150 +222,28 @@ async function createMcpServer(): Promise<McpServer> {
     });
   }
 
-  // ── Resources: read-only inspection for external agents ──
+  const resourceDefs: Array<{ key: string; uri: string; name: string; description: string }> = [
+    { key: "modules",  uri: "flowwink://modules",  name: "FlowWink Modules",  description: "All available modules and their enabled/disabled status" },
+    { key: "health",   uri: "flowwink://health",   name: "Site Health",       description: "Current site statistics: pages, posts, leads, bookings, orders, products, active objectives" },
+    { key: "skills",   uri: "flowwink://skills",   name: "Skill Registry",    description: "All FlowPilot skills with category, scope, trust level, and enabled status" },
+    { key: "activity", uri: "flowwink://activity", name: "Recent Activity",   description: "Last 20 FlowPilot actions with skill name, status, duration, and timestamps" },
+    { key: "peers",    uri: "flowwink://peers",    name: "Federation Peers",  description: "Connected A2A/MCP peers with status, capabilities, and last seen time" },
+    { key: "identity", uri: "flowwink://identity", name: "FlowPilot Identity", description: "FlowPilot's soul, identity, and agent configuration" },
+  ];
 
-  // Modules overview
-  server.resource(
-    "flowwink://modules",
-    {
-      name: "FlowWink Modules",
-      description: "All available modules and their enabled/disabled status",
-      mimeType: "application/json",
-    },
-    async (uri) => {
-      const sb = serviceClient();
-      const { data } = await sb
-        .from("site_settings")
-        .select("value")
-        .eq("key", "modules")
-        .single();
-      return {
-        contents: [{ uri: uri.href, mimeType: "application/json", text: JSON.stringify(data?.value ?? {}, null, 2) }],
-      };
-    },
-  );
+  for (const r of resourceDefs) {
+    server.resource(
+      r.uri,
+      { name: r.name, description: r.description, mimeType: "application/json" },
+      async (uri) => {
+        const data = await fetchResource(r.key);
+        return {
+          contents: [{ uri: uri.href, mimeType: "application/json", text: JSON.stringify(data, null, 2) }],
+        };
+      },
+    );
+  }
 
-  // Site health & stats
-  server.resource(
-    "flowwink://health",
-    {
-      name: "Site Health",
-      description: "Current site statistics: pages, posts, leads, bookings, orders, products, active objectives",
-      mimeType: "application/json",
-    },
-    async (uri) => {
-      const sb = serviceClient();
-      const [pages, posts, leads, bookings, orders, products, objectives] = await Promise.all([
-        sb.from("pages").select("id", { count: "exact", head: true }),
-        sb.from("blog_posts").select("id", { count: "exact", head: true }),
-        sb.from("leads").select("id", { count: "exact", head: true }),
-        sb.from("bookings").select("id", { count: "exact", head: true }).eq("status", "confirmed"),
-        sb.from("orders").select("id", { count: "exact", head: true }),
-        sb.from("products").select("id", { count: "exact", head: true }),
-        sb.from("agent_objectives").select("id, goal, status").eq("status", "active").limit(10),
-      ]);
-      const health = {
-        counts: {
-          pages: pages.count ?? 0,
-          blog_posts: posts.count ?? 0,
-          leads: leads.count ?? 0,
-          active_bookings: bookings.count ?? 0,
-          orders: orders.count ?? 0,
-          products: products.count ?? 0,
-        },
-        active_objectives: objectives.data ?? [],
-        timestamp: new Date().toISOString(),
-      };
-      return {
-        contents: [{ uri: uri.href, mimeType: "application/json", text: JSON.stringify(health, null, 2) }],
-      };
-    },
-  );
-
-  // Skill registry
-  server.resource(
-    "flowwink://skills",
-    {
-      name: "Skill Registry",
-      description: "All FlowPilot skills with category, scope, trust level, and enabled status",
-      mimeType: "application/json",
-    },
-    async (uri) => {
-      const sb = serviceClient();
-      const { data } = await sb
-        .from("agent_skills")
-        .select("name, description, category, scope, trust_level, enabled, mcp_exposed")
-        .order("category");
-      return {
-        contents: [{ uri: uri.href, mimeType: "application/json", text: JSON.stringify(data ?? [], null, 2) }],
-      };
-    },
-  );
-
-  // Recent activity log
-  server.resource(
-    "flowwink://activity",
-    {
-      name: "Recent Activity",
-      description: "Last 20 FlowPilot actions with skill name, status, duration, and timestamps",
-      mimeType: "application/json",
-    },
-    async (uri) => {
-      const sb = serviceClient();
-      const { data } = await sb
-        .from("agent_activity")
-        .select("id, skill_name, status, duration_ms, error_message, created_at")
-        .order("created_at", { ascending: false })
-        .limit(20);
-      return {
-        contents: [{ uri: uri.href, mimeType: "application/json", text: JSON.stringify(data ?? [], null, 2) }],
-      };
-    },
-  );
-
-  // Federation peers
-  server.resource(
-    "flowwink://peers",
-    {
-      name: "Federation Peers",
-      description: "Connected A2A/MCP peers with status, capabilities, and last seen time",
-      mimeType: "application/json",
-    },
-    async (uri) => {
-      const sb = serviceClient();
-      const { data } = await sb
-        .from("a2a_peers")
-        .select("id, name, status, capabilities, last_seen_at, request_count")
-        .order("name");
-      return {
-        contents: [{ uri: uri.href, mimeType: "application/json", text: JSON.stringify(data ?? [], null, 2) }],
-      };
-    },
-  );
-
-  // FlowPilot identity & soul
-  server.resource(
-    "flowwink://identity",
-    {
-      name: "FlowPilot Identity",
-      description: "FlowPilot's soul, identity, and agent configuration",
-      mimeType: "application/json",
-    },
-    async (uri) => {
-      const sb = serviceClient();
-      const { data } = await sb
-        .from("agent_memory")
-        .select("key, value, category")
-        .in("key", ["soul", "identity", "agents", "tools", "user"]);
-      const identity: Record<string, unknown> = {};
-      for (const row of data ?? []) {
-        identity[row.key] = row.value;
-      }
-      return {
-        contents: [{ uri: uri.href, mimeType: "application/json", text: JSON.stringify(identity, null, 2) }],
-      };
-    },
-  );
   return server;
 }
 
@@ -319,7 +268,71 @@ app.use("/*", async (c, next) => {
   return next();
 });
 
-// MCP transport — bind once, reuse handler
+// ══════════════════════════════════════════════════════════
+// REST compatibility layer — for agents without MCP clients
+// ══════════════════════════════════════════════════════════
+
+// GET /rest/tools — list all exposed tools
+app.get("/rest/tools", async (c) => {
+  const skills = await loadExposedSkills();
+  const tools = skills
+    .filter((s) => s.tool_definition?.function?.name)
+    .map((s) => ({
+      name: s.tool_definition.function.name,
+      description: s.tool_definition.function.description || s.description,
+      category: s.category,
+      parameters: s.tool_definition.function.parameters || {},
+    }));
+  return c.json({ tools, count: tools.length }, 200, corsHeaders);
+});
+
+// GET /rest/resources — list available resources
+app.get("/rest/resources", (c) => {
+  const resources = [
+    { key: "health",   description: "Site statistics: pages, posts, leads, bookings, orders, products, active objectives" },
+    { key: "skills",   description: "Full skill registry with category, scope, trust level, enabled status" },
+    { key: "modules",  description: "Module configuration (enabled/disabled)" },
+    { key: "activity", description: "Last 20 FlowPilot actions" },
+    { key: "peers",    description: "Federation peers with status and capabilities" },
+    { key: "identity", description: "FlowPilot soul, identity, and agent configuration" },
+  ];
+  return c.json({ resources }, 200, corsHeaders);
+});
+
+// GET /rest/resources/:key — fetch a specific resource
+app.get("/rest/resources/:key", async (c) => {
+  const key = c.req.param("key");
+  const data = await fetchResource(key);
+  return c.json({ resource: key, data }, 200, corsHeaders);
+});
+
+// POST /rest/execute — execute a tool by name
+app.post("/rest/execute", async (c) => {
+  const body = await c.req.json();
+  const { tool, arguments: args } = body;
+  if (!tool) {
+    return c.json({ error: "Missing 'tool' field in request body" }, 400, corsHeaders);
+  }
+
+  // Map tool name back to skill name
+  const skills = await loadExposedSkills();
+  const match = skills.find((s) => s.tool_definition?.function?.name === tool);
+  if (!match) {
+    return c.json({ error: `Unknown tool: ${tool}` }, 404, corsHeaders);
+  }
+
+  const result = await executeSkill(match.name, args || {});
+  try {
+    return c.json({ tool, result: JSON.parse(result) }, 200, corsHeaders);
+  } catch {
+    return c.json({ tool, result }, 200, corsHeaders);
+  }
+});
+
+// ══════════════════════════════════════════════════════════
+// Native MCP transport (JSON-RPC over POST)
+// ══════════════════════════════════════════════════════════
+
 let mcpHandler: ((req: Request) => Promise<Response>) | null = null;
 
 async function getMcpHandler() {
@@ -334,7 +347,6 @@ async function getMcpHandler() {
 app.all("/*", async (c) => {
   const handler = await getMcpHandler();
   const response = await handler(c.req.raw);
-  // Add CORS headers
   const headers = new Headers(response.headers);
   for (const [k, v] of Object.entries(corsHeaders)) {
     headers.set(k, v);
