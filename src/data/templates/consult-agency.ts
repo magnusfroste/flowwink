@@ -465,6 +465,7 @@ export const consultAgencyTemplate: StarterTemplate = {
       menu_order: 2,
       showInMenu: true,
       meta: {
+        seoTitle: 'Our Consultants — Expert Talent Network | ConsultAgency',
         description: 'Browse our network of 300+ senior technology consultants. Filter by competency, stack, and availability.',
         showTitle: false,
         titleAlignment: 'center',
@@ -629,6 +630,7 @@ export const consultAgencyTemplate: StarterTemplate = {
       menu_order: 3,
       showInMenu: true,
       meta: {
+        seoTitle: 'For Clients — Find the Right Consultant | ConsultAgency',
         description: 'How we match your brief to the right consultant in 48 hours. Transparent process, fixed rates, continuity guarantee.',
         showTitle: false,
         titleAlignment: 'center',
@@ -792,6 +794,7 @@ export const consultAgencyTemplate: StarterTemplate = {
       menu_order: 4,
       showInMenu: true,
       meta: {
+        seoTitle: 'Join Our Network — Consultant Application | ConsultAgency',
         description: 'Join our network of 300+ senior technology consultants. Interesting assignments, competitive rates, zero downtime between engagements.',
         showTitle: false,
         titleAlignment: 'center',

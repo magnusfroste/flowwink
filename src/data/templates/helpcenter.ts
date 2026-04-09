@@ -118,6 +118,7 @@ const hybridHelpPages: TemplatePage[] = [
     menu_order: 2,
     showInMenu: true,
     meta: {
+      seoTitle: 'Help Center — Browse Articles & Guides',
       description: 'Complete knowledge base with guides, tutorials, and answers.',
       showTitle: true,
       titleAlignment: 'center',

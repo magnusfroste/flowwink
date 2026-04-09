@@ -276,6 +276,7 @@ const launchpadPages: StarterTemplate['pages'] = [
     menu_order: 2,
     showInMenu: true,
     meta: {
+      seoTitle: 'Product — Ship Faster with AI-Powered Tools | LaunchPad',
       description: 'Explore our powerful features designed for modern teams',
       showTitle: false,
       titleAlignment: 'center',
@@ -588,6 +589,7 @@ const launchpadPages: StarterTemplate['pages'] = [
     menu_order: 99,
     showInMenu: false,
     meta: {
+      seoTitle: 'Privacy Policy — Data Protection | LaunchPad',
       description: 'How we collect, use and protect your personal data under GDPR',
       showTitle: true,
       titleAlignment: 'left',
@@ -631,6 +633,7 @@ const launchpadPages: StarterTemplate['pages'] = [
     menu_order: 100,
     showInMenu: false,
     meta: {
+      seoTitle: 'Terms of Service | LaunchPad',
       description: 'Terms and conditions for using our services',
       showTitle: true,
       titleAlignment: 'left',
@@ -671,6 +674,7 @@ const launchpadPages: StarterTemplate['pages'] = [
     menu_order: 101,
     showInMenu: false,
     meta: {
+      seoTitle: 'Cookie Policy | LaunchPad',
       description: 'Information about how we use cookies on our website',
       showTitle: true,
       titleAlignment: 'left',
@@ -714,6 +718,7 @@ const launchpadPages: StarterTemplate['pages'] = [
     menu_order: 5,
     showInMenu: false,
     meta: {
+      seoTitle: 'Help Center — Support & Resources | LaunchPad',
       description: 'Get answers to frequently asked questions about LaunchPad',
       showTitle: false,
       titleAlignment: 'center',

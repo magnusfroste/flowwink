@@ -275,6 +275,7 @@ const flowwinkAgencyPages: TemplatePage[] = [
     menu_order: 2,
     showInMenu: true,
     meta: {
+      seoTitle: 'ROI Calculator — See Your Savings | FlowWink Agency',
       description: 'Calculate how much your agency can save by switching to FlowWink. Compare costs vs Webflow, Squarespace, and other platforms.',
       showTitle: false,
       titleAlignment: 'center',
@@ -391,6 +392,7 @@ const flowwinkAgencyPages: TemplatePage[] = [
     menu_order: 3,
     showInMenu: true,
     meta: {
+      seoTitle: 'How It Works — From Setup to Scale | FlowWink Agency',
       description: 'Learn how FlowWink works for agencies. From deployment to client handoff in 5 minutes.',
       showTitle: false,
       titleAlignment: 'center',
@@ -499,6 +501,7 @@ const flowwinkAgencyPages: TemplatePage[] = [
     menu_order: 4,
     showInMenu: true,
     meta: {
+      seoTitle: 'Features — Complete Agency Toolkit | FlowWink Agency',
       description: 'FlowWink features for agencies - Visual editor, Content API, autonomous AI agent, blog, forms, CRM, and more.',
       showTitle: false,
       titleAlignment: 'center',
@@ -597,6 +600,7 @@ const flowwinkAgencyPages: TemplatePage[] = [
     menu_order: 5,
     showInMenu: true,
     meta: {
+      seoTitle: 'Pricing — Simple, Transparent Plans | FlowWink Agency',
       description: 'FlowWink pricing for agencies - Self-host free forever, or choose managed hosting with priority support.',
       showTitle: false,
       titleAlignment: 'center',

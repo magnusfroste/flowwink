@@ -431,6 +431,7 @@ const digitalShopPages: TemplatePage[] = [
     menu_order: 2,
     showInMenu: false,
     meta: {
+      seoTitle: 'Shopping Cart | Digital Shop',
       description: 'Review your cart and proceed to checkout',
       showTitle: true,
       titleAlignment: 'center',
