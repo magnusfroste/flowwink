@@ -15,6 +15,7 @@ const momentumPages: StarterTemplate['pages'] = [
     menu_order: 1,
     showInMenu: true,
     meta: {
+      seoTitle: 'Momentum — Accelerate Your Business Growth',
       description: 'Ship faster. Scale smarter. The developer platform that turns ideas into production.',
       showTitle: false,
       titleAlignment: 'center',

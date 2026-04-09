@@ -17,6 +17,7 @@ const hybridHelpPages: TemplatePage[] = [
     menu_order: 1,
     showInMenu: true,
     meta: {
+      seoTitle: 'Help Center — Find Answers & Get Support',
       description: 'Welcome to our Help Center - search our knowledge base or chat with AI for instant answers.',
       showTitle: false,
       titleAlignment: 'center',
@@ -151,6 +152,7 @@ const hybridHelpPages: TemplatePage[] = [
     menu_order: 3,
     showInMenu: true,
     meta: {
+      seoTitle: 'Contact Support — We\'re Here to Help',
       description: 'Get in touch with our support team.',
       showTitle: false,
       titleAlignment: 'center',

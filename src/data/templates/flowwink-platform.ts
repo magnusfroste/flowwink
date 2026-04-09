@@ -42,6 +42,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
       menu_order: 1,
       showInMenu: true,
       meta: {
+        seoTitle: 'FlowWink Platform — AI-Powered Business Operating System',
         description: 'FlowWink is the first autonomous agentic CMS. FlowPilot writes your content, qualifies your leads, runs your campaigns, and learns from every interaction.',
         showTitle: false,
         titleAlignment: 'center',

@@ -16,6 +16,7 @@ const flowwinkAgencyPages: TemplatePage[] = [
     menu_order: 1,
     showInMenu: true,
     meta: {
+      seoTitle: 'FlowWink Agency — Digital Solutions That Drive Results',
       description: 'FlowWink for agencies - One platform, unlimited client sites, zero SaaS fees. Build faster, charge more, own everything.',
       showTitle: false,
       titleAlignment: 'center',
@@ -689,6 +690,7 @@ const flowwinkAgencyPages: TemplatePage[] = [
     menu_order: 6,
     showInMenu: true,
     meta: {
+      seoTitle: 'Contact — Start Your Project | FlowWink Agency',
       description: 'Contact the FlowWink team - demos, partnerships, and support for agencies.',
       showTitle: false,
       titleAlignment: 'center',

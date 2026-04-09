@@ -39,6 +39,7 @@ export const consultAgencyTemplate: StarterTemplate = {
       menu_order: 1,
       showInMenu: true,
       meta: {
+        seoTitle: 'ConsultAgency — Expert Business Consulting Services',
         description: 'Elite IT consulting firm. We match senior specialists to the assignments that need them most — in 48 hours.',
         showTitle: false,
         titleAlignment: 'center',

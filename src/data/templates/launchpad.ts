@@ -16,6 +16,7 @@ const launchpadPages: StarterTemplate['pages'] = [
     menu_order: 1,
     showInMenu: true,
     meta: {
+      seoTitle: 'LaunchPad — Launch Your Startup with AI-Powered Growth Tools',
       description: 'Launch your vision with our cutting-edge platform',
       showTitle: false,
       titleAlignment: 'center',
@@ -389,6 +390,7 @@ const launchpadPages: StarterTemplate['pages'] = [
     menu_order: 3,
     showInMenu: true,
     meta: {
+      seoTitle: 'Pricing Plans — Flexible Plans for Growing Startups | LaunchPad',
       description: 'Simple, transparent pricing that scales with you',
       showTitle: false,
       titleAlignment: 'center',
@@ -521,6 +523,7 @@ const launchpadPages: StarterTemplate['pages'] = [
     menu_order: 4,
     showInMenu: true,
     meta: {
+      seoTitle: 'Contact Us — Get in Touch with the LaunchPad Team',
       description: 'Get in touch with our team',
       showTitle: false,
       titleAlignment: 'center',
