@@ -167,32 +167,61 @@ export function AgentInvites() {
       const mcpUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/mcp-server`;
       const instructions = selectedMission === 'custom' ? customInstructions : mission.instructions;
 
-      const prompt = `You have been invited to inspect and audit a FlowWink site as an MCP agent.
+      const prompt = `You have been invited to inspect and audit a FlowWink site.
 
 ## Connection
 
-- **MCP Endpoint**: ${mcpUrl}
+- **Base URL**: ${mcpUrl}
 - **Authentication**: Bearer ${rawKey}
-- **Protocol**: MCP over Streamable HTTP (POST with Accept: application/json, text/event-stream)
+
+### Option A: REST API (recommended for agents with web_fetch/curl)
+
+Use standard HTTP requests — no MCP client needed:
+
+\`\`\`
+# List all available tools
+GET ${mcpUrl}/rest/tools
+Authorization: Bearer ${rawKey}
+
+# List available resources
+GET ${mcpUrl}/rest/resources
+Authorization: Bearer ${rawKey}
+
+# Read a specific resource (health, skills, modules, activity, peers, identity)
+GET ${mcpUrl}/rest/resources/health
+Authorization: Bearer ${rawKey}
+
+# Execute a tool
+POST ${mcpUrl}/rest/execute
+Authorization: Bearer ${rawKey}
+Content-Type: application/json
+
+{"tool": "tool_name_here", "arguments": {"key": "value"}}
+\`\`\`
+
+### Option B: Native MCP (for MCP-compatible clients like Cursor, Claude Desktop)
+
+- **Protocol**: MCP over Streamable HTTP (POST with JSON-RPC)
+- Call \`tools/list\` and \`resources/list\` to discover capabilities
 
 ## Quick Start
 
-1. Connect to the MCP server using the endpoint and key above
-2. Call \`tools/list\` to discover available tools
-3. Call \`resources/list\` to see inspection resources
+1. Verify your connection: \`GET ${mcpUrl}/rest/resources/health\`
+2. Discover tools: \`GET ${mcpUrl}/rest/tools\`
+3. Read site context: \`GET ${mcpUrl}/rest/resources/skills\`
 
 ## Key Resources
 
-Start by reading these resources for context:
 ${mission.focusResources.map(r => {
   const info = MCP_RESOURCES.find(mr => mr.uri === r);
-  return `- \`${r}\` — ${info?.description || ''}`;
+  const key = r.replace('flowwink://', '');
+  return '- `/rest/resources/' + key + '` — ' + (info?.description || '');
 }).join('\n')}
 
 ## Key Tools
 
 These tools are most relevant for your mission:
-${mission.focusTools.map(t => `- \`${t}\``).join('\n')}
+${mission.focusTools.map(t => '- `' + t + '`').join('\n')}
 
 ## Your Mission: ${mission.name}
 
@@ -200,17 +229,28 @@ ${instructions}
 
 ## Reporting Protocol
 
-Use the \`openclaw_report_finding\` tool to report issues. Each finding needs:
-- \`title\`: Short description of the issue
-- \`description\`: Detailed explanation with specifics
-- \`severity\`: critical | high | medium | low
-- \`type\`: seo | content | structure | accessibility | commerce | security
+Use the \`openclaw_report_finding\` tool to report issues:
+\`\`\`
+POST ${mcpUrl}/rest/execute
+Authorization: Bearer ${rawKey}
+Content-Type: application/json
 
-**Important**: Findings with severity "high" or "critical" automatically create objectives for FlowPilot, which will attempt to fix them autonomously in its next cycle.
+{
+  "tool": "openclaw_report_finding",
+  "arguments": {
+    "title": "Short description",
+    "description": "Detailed explanation",
+    "severity": "critical | high | medium | low",
+    "type": "seo | content | structure | accessibility | commerce | security"
+  }
+}
+\`\`\`
 
-## Health Check
+**Important**: Findings with severity "high" or "critical" automatically create objectives for FlowPilot, which will attempt to fix them autonomously.
 
-To verify your connection, read \`flowwink://health\` — it should return site statistics and active objectives.`;
+## Verify Connection
+
+\`GET ${mcpUrl}/rest/resources/health\` — should return site statistics and active objectives.`;
 
       setGeneratedPrompt(prompt);
       toast.success('Invite prompt generated with API key');
