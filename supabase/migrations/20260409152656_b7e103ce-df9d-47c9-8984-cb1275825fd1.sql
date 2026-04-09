@@ -1,0 +1,1 @@
+ALTER TYPE public.agent_type ADD VALUE IF NOT EXISTS 'mcp';
