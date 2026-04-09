@@ -1,0 +1,2256 @@
+[
+  {
+    "id": "launchpad",
+    "name": "LaunchPad",
+    "description": "Modern, conversion-focused template for SaaS and tech startups. Features bold hero with video support, social proof stats, and a helpful AI chat widget.",
+    "category": "startup",
+    "tagline": "Perfect for startups & SaaS",
+    "helpStyle": "none",
+    "requiredModules": [
+      "blog",
+      "knowledgeBase",
+      "chat",
+      "newsletter",
+      "leads",
+      "forms"
+    ],
+    "hasHeaderSettings": true,
+    "hasFooterSettings": true,
+    "hasSeoSettings": true,
+    "hasCookieBanner": true,
+    "branding": {
+      "primaryColor": "250 84% 54%",
+      "accentColor": null,
+      "fontFamily": null
+    },
+    "pages": [
+      {
+        "slug": "home",
+        "title": "Home",
+        "isHomePage": true,
+        "blockCount": 16,
+        "blockTypes": [
+          "announcement-bar",
+          "hero",
+          "section-divider",
+          "stats",
+          "logos",
+          "marquee",
+          "two-column",
+          "bento-grid",
+          "parallax-section",
+          "testimonials",
+          "badge",
+          "chat-launcher",
+          "accordion",
+          "newsletter",
+          "cta",
+          "floating-cta"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Launch your vision with our cutting-edge platform",
+        "metaTitle": null,
+        "titleLength": 4,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 49
+      },
+      {
+        "slug": "product",
+        "title": "Product",
+        "isHomePage": false,
+        "blockCount": 6,
+        "blockTypes": [
+          "hero",
+          "features",
+          "timeline",
+          "two-column",
+          "two-column",
+          "cta"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Explore our powerful features designed for modern teams",
+        "metaTitle": null,
+        "titleLength": 7,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 55
+      },
+      {
+        "slug": "pricing",
+        "title": "Pricing",
+        "isHomePage": false,
+        "blockCount": 6,
+        "blockTypes": [
+          "hero",
+          "countdown",
+          "pricing",
+          "comparison",
+          "accordion",
+          "cta"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Simple, transparent pricing that scales with you",
+        "metaTitle": null,
+        "titleLength": 7,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 48
+      },
+      {
+        "slug": "contact",
+        "title": "Contact",
+        "isHomePage": false,
+        "blockCount": 4,
+        "blockTypes": [
+          "hero",
+          "chat-launcher",
+          "booking",
+          "contact"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Get in touch with our team",
+        "metaTitle": null,
+        "titleLength": 7,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 26
+      },
+      {
+        "slug": "privacy-policy",
+        "title": "Privacy Policy",
+        "isHomePage": false,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ],
+        "hasMeta": true,
+        "metaDescription": "How we collect, use and protect your personal data under GDPR",
+        "metaTitle": null,
+        "titleLength": 14,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 61
+      },
+      {
+        "slug": "terms-of-service",
+        "title": "Terms of Service",
+        "isHomePage": false,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Terms and conditions for using our services",
+        "metaTitle": null,
+        "titleLength": 16,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 43
+      },
+      {
+        "slug": "cookie-policy",
+        "title": "Cookie Policy",
+        "isHomePage": false,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Information about how we use cookies on our website",
+        "metaTitle": null,
+        "titleLength": 13,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 51
+      },
+      {
+        "slug": "help",
+        "title": "Help Center",
+        "isHomePage": false,
+        "blockCount": 5,
+        "blockTypes": [
+          "hero",
+          "accordion",
+          "accordion",
+          "accordion",
+          "cta"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Get answers to frequently asked questions about LaunchPad",
+        "metaTitle": null,
+        "titleLength": 11,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 57
+      }
+    ],
+    "blogPosts": [
+      {
+        "slug": "zero-to-mvp-guide-first-time-founders",
+        "title": "From Zero to MVP: A Step-by-Step Guide for First-Time Founders",
+        "titleLength": 62,
+        "hasExcerpt": true,
+        "excerptLength": 141,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      },
+      {
+        "slug": "developer-experience-competitive-advantage",
+        "title": "Why Developer Experience Is the New Competitive Advantage",
+        "titleLength": 57,
+        "hasExcerpt": true,
+        "excerptLength": 118,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      },
+      {
+        "slug": "art-of-pricing-scaling-lessons",
+        "title": "The Art of Pricing: Lessons from Scaling to 10K Customers",
+        "titleLength": 57,
+        "hasExcerpt": true,
+        "excerptLength": 149,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      }
+    ],
+    "products": [],
+    "consultants": 0,
+    "bookingServices": 0,
+    "summary": {
+      "totalPages": 8,
+      "totalBlogPosts": 3,
+      "totalProducts": 0,
+      "pagesWithoutMetaDesc": 0,
+      "pagesWithShortTitles": 8,
+      "pagesWithLongTitles": 0,
+      "blogPostsWithoutMetaDesc": 0,
+      "blogPostsWithLongTitles": 1,
+      "blogPostsWithoutImages": 0,
+      "productsWithoutImages": 0
+    }
+  },
+  {
+    "id": "momentum",
+    "name": "Momentum",
+    "description": "Stunning single-page template with YC-style dark gradient design. Bold typography, smooth animations, and maximum impact.",
+    "category": "startup",
+    "tagline": "One page. Maximum impact.",
+    "helpStyle": "none",
+    "requiredModules": [
+      "blog",
+      "chat",
+      "forms",
+      "leads"
+    ],
+    "hasHeaderSettings": true,
+    "hasFooterSettings": true,
+    "hasSeoSettings": true,
+    "hasCookieBanner": true,
+    "branding": {
+      "primaryColor": "250 91% 64%",
+      "accentColor": "180 100% 50%",
+      "fontFamily": null
+    },
+    "pages": [
+      {
+        "slug": "home",
+        "title": "Home",
+        "isHomePage": true,
+        "blockCount": 14,
+        "blockTypes": [
+          "announcement-bar",
+          "hero",
+          "section-divider",
+          "stats",
+          "marquee",
+          "bento-grid",
+          "two-column",
+          "two-column",
+          "parallax-section",
+          "social-proof",
+          "quote",
+          "chat-launcher",
+          "accordion",
+          "cta"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Ship faster. Scale smarter. The developer platform that turns ideas into production.",
+        "metaTitle": null,
+        "titleLength": 4,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 84
+      }
+    ],
+    "blogPosts": [
+      {
+        "slug": "ship-days-not-months-development-paradigm",
+        "title": "Ship in Days, Not Months: The New Development Paradigm",
+        "titleLength": 54,
+        "hasExcerpt": true,
+        "excerptLength": 130,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      },
+      {
+        "slug": "bet-everything-developer-experience",
+        "title": "Why We Bet Everything on Developer Experience",
+        "titleLength": 45,
+        "hasExcerpt": true,
+        "excerptLength": 108,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      }
+    ],
+    "products": [],
+    "consultants": 0,
+    "bookingServices": 0,
+    "summary": {
+      "totalPages": 1,
+      "totalBlogPosts": 2,
+      "totalProducts": 0,
+      "pagesWithoutMetaDesc": 0,
+      "pagesWithShortTitles": 1,
+      "pagesWithLongTitles": 0,
+      "blogPostsWithoutMetaDesc": 0,
+      "blogPostsWithLongTitles": 0,
+      "blogPostsWithoutImages": 0,
+      "productsWithoutImages": 0
+    }
+  },
+  {
+    "id": "trustcorp",
+    "name": "TrustCorp",
+    "description": "Professional template for established enterprises. Emphasizes trust, scale, and data sovereignty with a prominent private AI assistant.",
+    "category": "enterprise",
+    "tagline": "For enterprises that demand excellence",
+    "helpStyle": "none",
+    "requiredModules": [
+      "blog",
+      "knowledgeBase",
+      "chat",
+      "forms",
+      "leads"
+    ],
+    "hasHeaderSettings": true,
+    "hasFooterSettings": true,
+    "hasSeoSettings": true,
+    "hasCookieBanner": true,
+    "branding": {
+      "primaryColor": "220 70% 35%",
+      "accentColor": null,
+      "fontFamily": null
+    },
+    "pages": [
+      {
+        "slug": "home",
+        "title": "Home",
+        "isHomePage": true,
+        "blockCount": 10,
+        "blockTypes": [
+          "hero",
+          "section-divider",
+          "logos",
+          "bento-grid",
+          "stats",
+          "testimonials",
+          "social-proof",
+          "badge",
+          "tabs",
+          "cta"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Enterprise solutions you can trust",
+        "metaTitle": null,
+        "titleLength": 4,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 34
+      },
+      {
+        "slug": "services",
+        "title": "Services",
+        "isHomePage": false,
+        "blockCount": 7,
+        "blockTypes": [
+          "hero",
+          "two-column",
+          "two-column",
+          "chat-launcher",
+          "accordion",
+          "info-box",
+          "cta"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Comprehensive enterprise services tailored to your needs",
+        "metaTitle": null,
+        "titleLength": 8,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 56
+      },
+      {
+        "slug": "case-studies",
+        "title": "Case Studies",
+        "isHomePage": false,
+        "blockCount": 4,
+        "blockTypes": [
+          "hero",
+          "article-grid",
+          "two-column",
+          "quote"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Real results from real clients",
+        "metaTitle": null,
+        "titleLength": 12,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 30
+      },
+      {
+        "slug": "about",
+        "title": "About",
+        "isHomePage": false,
+        "blockCount": 5,
+        "blockTypes": [
+          "hero",
+          "two-column",
+          "stats",
+          "team",
+          "cta"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Learn about our company and mission",
+        "metaTitle": null,
+        "titleLength": 5,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 35
+      },
+      {
+        "slug": "contact",
+        "title": "Contact",
+        "isHomePage": false,
+        "blockCount": 5,
+        "blockTypes": [
+          "hero",
+          "chat-launcher",
+          "contact",
+          "accordion",
+          "booking"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Connect with our enterprise team",
+        "metaTitle": null,
+        "titleLength": 7,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 32
+      },
+      {
+        "slug": "privacy-policy",
+        "title": "Privacy Policy",
+        "isHomePage": false,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ],
+        "hasMeta": true,
+        "metaDescription": "How we collect, use and protect your personal data under GDPR",
+        "metaTitle": null,
+        "titleLength": 14,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 61
+      },
+      {
+        "slug": "terms-of-service",
+        "title": "Terms of Service",
+        "isHomePage": false,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Terms and conditions for using our enterprise services",
+        "metaTitle": null,
+        "titleLength": 16,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 54
+      },
+      {
+        "slug": "cookie-policy",
+        "title": "Cookie Policy",
+        "isHomePage": false,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Information about how we use cookies for enterprise clients",
+        "metaTitle": null,
+        "titleLength": 13,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 59
+      },
+      {
+        "slug": "support",
+        "title": "Support Center",
+        "isHomePage": false,
+        "blockCount": 6,
+        "blockTypes": [
+          "hero",
+          "link-grid",
+          "accordion",
+          "accordion",
+          "accordion",
+          "cta"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Enterprise support center - Get help with our solutions and services",
+        "metaTitle": null,
+        "titleLength": 14,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 68
+      }
+    ],
+    "blogPosts": [
+      {
+        "slug": "digital-transformation-2024-beyond-buzzwords",
+        "title": "Digital Transformation in 2024: Beyond the Buzzwords",
+        "titleLength": 52,
+        "hasExcerpt": true,
+        "excerptLength": 141,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      },
+      {
+        "slug": "private-ai-data-sovereignty-boardroom-priority",
+        "title": "Private AI: Why Data Sovereignty Is the New Boardroom Priority",
+        "titleLength": 62,
+        "hasExcerpt": true,
+        "excerptLength": 136,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      },
+      {
+        "slug": "building-resilient-organizations-lessons",
+        "title": "Building Resilient Organizations: Lessons from the Front Lines",
+        "titleLength": 62,
+        "hasExcerpt": true,
+        "excerptLength": 144,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      }
+    ],
+    "products": [],
+    "consultants": 0,
+    "bookingServices": 0,
+    "summary": {
+      "totalPages": 9,
+      "totalBlogPosts": 3,
+      "totalProducts": 0,
+      "pagesWithoutMetaDesc": 0,
+      "pagesWithShortTitles": 9,
+      "pagesWithLongTitles": 0,
+      "blogPostsWithoutMetaDesc": 0,
+      "blogPostsWithLongTitles": 2,
+      "blogPostsWithoutImages": 0,
+      "productsWithoutImages": 0
+    }
+  },
+  {
+    "id": "securehealth",
+    "name": "SecureHealth",
+    "description": "Compliance-first template for healthcare, legal, and finance. Features a prominent Private AI assistant with HIPAA-compliant messaging.",
+    "category": "compliance",
+    "tagline": "For organizations where cloud AI is not an option",
+    "helpStyle": "none",
+    "requiredModules": [
+      "blog",
+      "knowledgeBase",
+      "chat",
+      "forms",
+      "bookings"
+    ],
+    "hasHeaderSettings": true,
+    "hasFooterSettings": true,
+    "hasSeoSettings": true,
+    "hasCookieBanner": true,
+    "branding": {
+      "primaryColor": "199 89% 35%",
+      "accentColor": null,
+      "fontFamily": null
+    },
+    "pages": [
+      {
+        "slug": "home",
+        "title": "Home",
+        "isHomePage": true,
+        "blockCount": 11,
+        "blockTypes": [
+          "hero",
+          "section-divider",
+          "badge",
+          "info-box",
+          "link-grid",
+          "stats",
+          "chat-launcher",
+          "accordion",
+          "testimonials",
+          "parallax-section",
+          "tabs"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Your health, your privacy — trusted care with complete data security",
+        "metaTitle": null,
+        "titleLength": 4,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 68
+      },
+      {
+        "slug": "services",
+        "title": "Services",
+        "isHomePage": false,
+        "blockCount": 5,
+        "blockTypes": [
+          "hero",
+          "link-grid",
+          "two-column",
+          "info-box",
+          "cta"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Comprehensive healthcare services for you and your family",
+        "metaTitle": null,
+        "titleLength": 8,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 57
+      },
+      {
+        "slug": "about",
+        "title": "About Us",
+        "isHomePage": false,
+        "blockCount": 4,
+        "blockTypes": [
+          "hero",
+          "two-column",
+          "stats",
+          "team"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Learn about our practice and our commitment to privacy",
+        "metaTitle": null,
+        "titleLength": 8,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 54
+      },
+      {
+        "slug": "resources",
+        "title": "Patient Resources",
+        "isHomePage": false,
+        "blockCount": 4,
+        "blockTypes": [
+          "hero",
+          "chat-launcher",
+          "accordion",
+          "info-box"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Helpful resources and frequently asked questions",
+        "metaTitle": null,
+        "titleLength": 17,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 48
+      },
+      {
+        "slug": "book",
+        "title": "Book Appointment",
+        "isHomePage": false,
+        "blockCount": 6,
+        "blockTypes": [
+          "hero",
+          "features",
+          "booking",
+          "info-box",
+          "accordion",
+          "contact"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Schedule your appointment online with our easy booking system",
+        "metaTitle": null,
+        "titleLength": 16,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 61
+      },
+      {
+        "slug": "contact",
+        "title": "Contact",
+        "isHomePage": false,
+        "blockCount": 5,
+        "blockTypes": [
+          "hero",
+          "chat-launcher",
+          "booking",
+          "contact",
+          "info-box"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Book an appointment or reach our care team",
+        "metaTitle": null,
+        "titleLength": 7,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 42
+      },
+      {
+        "slug": "faq",
+        "title": "Patient FAQ",
+        "isHomePage": false,
+        "blockCount": 6,
+        "blockTypes": [
+          "hero",
+          "accordion",
+          "accordion",
+          "accordion",
+          "accordion",
+          "cta"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Frequently asked questions about our healthcare services, appointments, and patient care",
+        "metaTitle": null,
+        "titleLength": 11,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 88
+      },
+      {
+        "slug": "privacy-policy",
+        "title": "Privacy Policy",
+        "isHomePage": false,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ],
+        "hasMeta": true,
+        "metaDescription": "How we collect, use and protect your personal and health data under GDPR and HIPAA",
+        "metaTitle": null,
+        "titleLength": 14,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 82
+      },
+      {
+        "slug": "terms-of-service",
+        "title": "Terms of Service",
+        "isHomePage": false,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Terms and conditions for using our healthcare services",
+        "metaTitle": null,
+        "titleLength": 16,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 54
+      },
+      {
+        "slug": "cookie-policy",
+        "title": "Cookie Policy",
+        "isHomePage": false,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Information about how we use cookies on our healthcare website",
+        "metaTitle": null,
+        "titleLength": 13,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 62
+      },
+      {
+        "slug": "accessibility",
+        "title": "Accessibility",
+        "isHomePage": false,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Our commitment to making healthcare accessible to everyone",
+        "metaTitle": null,
+        "titleLength": 13,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 58
+      }
+    ],
+    "blogPosts": [
+      {
+        "slug": "understanding-preventive-care-guide",
+        "title": "Understanding Preventive Care: Your Guide to Staying Healthy",
+        "titleLength": 60,
+        "hasExcerpt": true,
+        "excerptLength": 107,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      },
+      {
+        "slug": "health-data-privacy-protection",
+        "title": "Your Health Data, Your Privacy: How We Protect Your Information",
+        "titleLength": 63,
+        "hasExcerpt": true,
+        "excerptLength": 113,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      },
+      {
+        "slug": "mental-health-matters-breaking-stigma",
+        "title": "Mental Health Matters: Breaking the Stigma, Finding Support",
+        "titleLength": 59,
+        "hasExcerpt": true,
+        "excerptLength": 111,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      }
+    ],
+    "products": [],
+    "consultants": 0,
+    "bookingServices": 0,
+    "summary": {
+      "totalPages": 11,
+      "totalBlogPosts": 3,
+      "totalProducts": 0,
+      "pagesWithoutMetaDesc": 0,
+      "pagesWithShortTitles": 11,
+      "pagesWithLongTitles": 0,
+      "blogPostsWithoutMetaDesc": 0,
+      "blogPostsWithLongTitles": 1,
+      "blogPostsWithoutImages": 0,
+      "productsWithoutImages": 0
+    }
+  },
+  {
+    "id": "flowwink-platform",
+    "name": "FlowWink Platform",
+    "description": "The first autonomous agentic CMS. Your website runs itself.",
+    "category": "platform",
+    "tagline": "Set objectives. FlowPilot operates.",
+    "helpStyle": "none",
+    "requiredModules": [
+      "blog",
+      "knowledgeBase",
+      "chat",
+      "liveSupport",
+      "newsletter",
+      "leads",
+      "deals",
+      "companies",
+      "forms",
+      "ecommerce",
+      "bookings",
+      "analytics",
+      "developer",
+      "webinars",
+      "resume",
+      "tickets",
+      "federation",
+      "salesIntelligence",
+      "paidGrowth"
+    ],
+    "hasHeaderSettings": true,
+    "hasFooterSettings": true,
+    "hasSeoSettings": true,
+    "hasCookieBanner": true,
+    "branding": {
+      "primaryColor": "238 84% 67%",
+      "accentColor": "174 84% 45%",
+      "fontFamily": null
+    },
+    "pages": [
+      {
+        "slug": "home",
+        "title": "Home",
+        "isHomePage": true,
+        "blockCount": 22,
+        "blockTypes": [
+          "announcement-bar",
+          "hero",
+          "chat-launcher",
+          "section-divider",
+          "stats",
+          "two-column",
+          "timeline",
+          "quick-links",
+          "bento-grid",
+          "parallax-section",
+          "quick-links",
+          "testimonials",
+          "social-proof",
+          "badge",
+          "countdown",
+          "pricing",
+          "table",
+          "accordion",
+          "quick-links",
+          "form",
+          "cta",
+          "floating-cta"
+        ],
+        "hasMeta": true,
+        "metaDescription": "FlowWink is the first autonomous agentic CMS. FlowPilot writes your content, qualifies your leads, runs your campaigns, and learns from every interaction.",
+        "metaTitle": null,
+        "titleLength": 4,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 154
+      },
+      {
+        "slug": "flowpilot",
+        "title": "FlowPilot",
+        "isHomePage": false,
+        "blockCount": 11,
+        "blockTypes": [
+          "hero",
+          "two-column",
+          "features",
+          "bento-grid",
+          "section-divider",
+          "two-column",
+          "bento-grid",
+          "section-divider",
+          "two-column",
+          "team",
+          "cta"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Meet FlowPilot — the autonomous AI agent that operates your digital presence. Skills, memory, objectives, A2A protocol, and self-evolution.",
+        "metaTitle": null,
+        "titleLength": 9,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 139
+      },
+      {
+        "slug": "for-agencies",
+        "title": "For Agencies",
+        "isHomePage": false,
+        "blockCount": 8,
+        "blockTypes": [
+          "hero",
+          "chat-launcher",
+          "stats",
+          "two-column",
+          "bento-grid",
+          "timeline",
+          "testimonials",
+          "cta"
+        ],
+        "hasMeta": true,
+        "metaDescription": "FlowWink for digital agencies — white-label autonomous CMS, multi-site management, and AI-powered client delivery.",
+        "metaTitle": null,
+        "titleLength": 12,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 114
+      },
+      {
+        "slug": "for-consultancies",
+        "title": "For Consultancies",
+        "isHomePage": false,
+        "blockCount": 7,
+        "blockTypes": [
+          "hero",
+          "chat-launcher",
+          "resume-matcher",
+          "stats",
+          "testimonials",
+          "tabs",
+          "cta"
+        ],
+        "hasMeta": true,
+        "metaDescription": "FlowWink for consulting firms — AI-powered consultant matching, live availability, and autonomous lead qualification.",
+        "metaTitle": null,
+        "titleLength": 17,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 117
+      },
+      {
+        "slug": "for-ecommerce",
+        "title": "For E-Commerce",
+        "isHomePage": false,
+        "blockCount": 7,
+        "blockTypes": [
+          "hero",
+          "chat-launcher",
+          "products",
+          "bento-grid",
+          "social-proof",
+          "marquee",
+          "cta"
+        ],
+        "hasMeta": true,
+        "metaDescription": "FlowWink for e-commerce — AI shopping assistant, product catalog, Stripe checkout, and autonomous campaigns.",
+        "metaTitle": null,
+        "titleLength": 14,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 108
+      },
+      {
+        "slug": "for-services",
+        "title": "For Service Business",
+        "isHomePage": false,
+        "blockCount": 8,
+        "blockTypes": [
+          "hero",
+          "chat-launcher",
+          "two-column",
+          "featured-carousel",
+          "bento-grid",
+          "booking",
+          "progress",
+          "cta"
+        ],
+        "hasMeta": true,
+        "metaDescription": "FlowWink for service businesses — online booking, real-time availability, and autonomous client management.",
+        "metaTitle": null,
+        "titleLength": 20,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 107
+      },
+      {
+        "slug": "for-healthcare",
+        "title": "For Healthcare",
+        "isHomePage": false,
+        "blockCount": 7,
+        "blockTypes": [
+          "hero",
+          "chat-launcher",
+          "badge",
+          "booking",
+          "accordion",
+          "tabs",
+          "cta"
+        ],
+        "hasMeta": true,
+        "metaDescription": "FlowWink for healthcare — HIPAA-compliant private AI, patient booking, and compliance-first design.",
+        "metaTitle": null,
+        "titleLength": 14,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 99
+      }
+    ],
+    "blogPosts": [
+      {
+        "slug": "your-website-should-run-itself",
+        "title": "Your Website Should Run Itself: The Case for Autonomous CMS",
+        "titleLength": 59,
+        "hasExcerpt": true,
+        "excerptLength": 176,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      },
+      {
+        "slug": "flowpilot-autonomous-agent-manages-online-presence",
+        "title": "FlowPilot: How an Autonomous Agent Manages Your Entire Online Presence",
+        "titleLength": 70,
+        "hasExcerpt": true,
+        "excerptLength": 177,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      },
+      {
+        "slug": "self-hosted-ai-privacy-competitive-advantage",
+        "title": "Self-Hosted AI: Why Privacy Is the Ultimate Competitive Advantage",
+        "titleLength": 65,
+        "hasExcerpt": true,
+        "excerptLength": 149,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      },
+      {
+        "slug": "autonomous-loop-flowpilot-reflects-plans-improves",
+        "title": "The Autonomous Loop: How FlowPilot Reflects, Plans, and Self-Improves",
+        "titleLength": 69,
+        "hasExcerpt": true,
+        "excerptLength": 169,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      },
+      {
+        "slug": "replacing-cms-chatbot-crm-marketing-stack",
+        "title": "From 4 Products to 1 Agent: Replacing Your CMS, Chatbot, CRM, and Marketing Stack",
+        "titleLength": 81,
+        "hasExcerpt": true,
+        "excerptLength": 151,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      },
+      {
+        "slug": "skill-engine-deep-dive-flowpilot-capabilities",
+        "title": "Skill Engine Deep Dive: How FlowPilot Learns New Capabilities",
+        "titleLength": 61,
+        "hasExcerpt": true,
+        "excerptLength": 159,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      },
+      {
+        "slug": "objectives-vs-automations-two-modes",
+        "title": "Objectives vs Automations: Two Modes of Autonomous Operation",
+        "titleLength": 60,
+        "hasExcerpt": true,
+        "excerptLength": 197,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      },
+      {
+        "slug": "agent-to-agent-flowpilot-a2a-protocol",
+        "title": "Agent-to-Agent: How FlowPilot Talks to Other AI Agents",
+        "titleLength": 54,
+        "hasExcerpt": true,
+        "excerptLength": 172,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      },
+      {
+        "slug": "content-authority-flowpilot-thought-leadership",
+        "title": "Content Authority: How FlowPilot Builds Your Thought Leadership Automatically",
+        "titleLength": 77,
+        "hasExcerpt": true,
+        "excerptLength": 182,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      },
+      {
+        "slug": "flowagent-7-step-autonomous-loop",
+        "title": "The 7-Step FlowAgent Loop: Self-Heal, Propose, Plan, Advance, Automate, Reflect, Remember",
+        "titleLength": 89,
+        "hasExcerpt": true,
+        "excerptLength": 184,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      },
+      {
+        "slug": "module-registry-data-orchestration-layer",
+        "title": "Module Registry: The Data Orchestration Layer Behind FlowWink",
+        "titleLength": 61,
+        "hasExcerpt": true,
+        "excerptLength": 172,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      },
+      {
+        "slug": "google-a2a-protocol-agentic-web",
+        "title": "Google A2A Protocol and the Rise of the Agentic Web",
+        "titleLength": 51,
+        "hasExcerpt": true,
+        "excerptLength": 186,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      },
+      {
+        "slug": "running-ai-models-locally-privacy-performance",
+        "title": "Running AI Models Locally: Privacy, Performance, and Practical Guidance",
+        "titleLength": 71,
+        "hasExcerpt": true,
+        "excerptLength": 188,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      },
+      {
+        "slug": "agentic-web-what-it-means-for-business",
+        "title": "The Agentic Web Is Here: What It Means for Your Business",
+        "titleLength": 56,
+        "hasExcerpt": true,
+        "excerptLength": 196,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      },
+      {
+        "slug": "mcp-function-calling-tool-use-framework-agnostic",
+        "title": "MCP, Function Calling, and Tool Use: How FlowPilot Stays Framework-Agnostic",
+        "titleLength": 75,
+        "hasExcerpt": true,
+        "excerptLength": 173,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      }
+    ],
+    "products": [
+      {
+        "name": "FlowWink Managed Cloud – Monthly",
+        "hasImage": true,
+        "hasDescription": true,
+        "priceCents": 4900,
+        "currency": "EUR"
+      },
+      {
+        "name": "FlowWink Enterprise – Annual",
+        "hasImage": true,
+        "hasDescription": true,
+        "priceCents": 99000,
+        "currency": "EUR"
+      },
+      {
+        "name": "FlowPilot Custom Skill Pack",
+        "hasImage": true,
+        "hasDescription": true,
+        "priceCents": 149900,
+        "currency": "EUR"
+      },
+      {
+        "name": "FlowWink Migration Service",
+        "hasImage": true,
+        "hasDescription": true,
+        "priceCents": 49900,
+        "currency": "EUR"
+      }
+    ],
+    "consultants": 5,
+    "bookingServices": 3,
+    "summary": {
+      "totalPages": 7,
+      "totalBlogPosts": 15,
+      "totalProducts": 4,
+      "pagesWithoutMetaDesc": 0,
+      "pagesWithShortTitles": 6,
+      "pagesWithLongTitles": 0,
+      "blogPostsWithoutMetaDesc": 0,
+      "blogPostsWithLongTitles": 10,
+      "blogPostsWithoutImages": 0,
+      "productsWithoutImages": 0
+    }
+  },
+  {
+    "id": "helpcenter",
+    "name": "HelpCenter",
+    "description": "Flexible help center template with support for traditional KB, AI chat, or hybrid approach. Configure via helpStyle to match your support strategy.",
+    "category": "helpcenter",
+    "tagline": "KB + AI support made simple",
+    "helpStyle": "hybrid",
+    "requiredModules": [
+      "knowledgeBase",
+      "chat",
+      "forms",
+      "bookings"
+    ],
+    "hasHeaderSettings": true,
+    "hasFooterSettings": true,
+    "hasSeoSettings": true,
+    "hasCookieBanner": true,
+    "branding": {
+      "primaryColor": "220 70% 50%",
+      "accentColor": null,
+      "fontFamily": null
+    },
+    "pages": [
+      {
+        "slug": "home",
+        "title": "Home",
+        "isHomePage": true,
+        "blockCount": 6,
+        "blockTypes": [
+          "announcement-bar",
+          "tabs",
+          "section-divider",
+          "kb-search",
+          "chat-launcher",
+          "kb-hub"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Welcome to our Help Center - search our knowledge base or chat with AI for instant answers.",
+        "metaTitle": null,
+        "titleLength": 4,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 91
+      },
+      {
+        "slug": "help",
+        "title": "Help Center",
+        "isHomePage": false,
+        "blockCount": 2,
+        "blockTypes": [
+          "kb-search",
+          "kb-hub"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Complete knowledge base with guides, tutorials, and answers.",
+        "metaTitle": null,
+        "titleLength": 11,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 60
+      },
+      {
+        "slug": "contact",
+        "title": "Contact",
+        "isHomePage": false,
+        "blockCount": 4,
+        "blockTypes": [
+          "hero",
+          "chat-launcher",
+          "form",
+          "contact"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Get in touch with our support team.",
+        "metaTitle": null,
+        "titleLength": 7,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 35
+      }
+    ],
+    "blogPosts": [],
+    "products": [],
+    "consultants": 0,
+    "bookingServices": 0,
+    "summary": {
+      "totalPages": 3,
+      "totalBlogPosts": 0,
+      "totalProducts": 0,
+      "pagesWithoutMetaDesc": 0,
+      "pagesWithShortTitles": 3,
+      "pagesWithLongTitles": 0,
+      "blogPostsWithoutMetaDesc": 0,
+      "blogPostsWithLongTitles": 0,
+      "blogPostsWithoutImages": 0,
+      "productsWithoutImages": 0
+    }
+  },
+  {
+    "id": "service-pro",
+    "name": "ServicePro",
+    "description": "Modern template for service businesses. Features smart booking with real-time availability, service showcase, product catalog, and online scheduling.",
+    "category": "startup",
+    "tagline": "Perfect for service businesses",
+    "helpStyle": "none",
+    "requiredModules": [
+      "bookings",
+      "ecommerce",
+      "forms",
+      "chat",
+      "leads",
+      "blog"
+    ],
+    "hasHeaderSettings": true,
+    "hasFooterSettings": true,
+    "hasSeoSettings": true,
+    "hasCookieBanner": true,
+    "branding": {
+      "primaryColor": "220 70% 50%",
+      "accentColor": null,
+      "fontFamily": null
+    },
+    "pages": [
+      {
+        "slug": "home",
+        "title": "Home",
+        "isHomePage": true,
+        "blockCount": 20,
+        "blockTypes": [
+          "announcement-bar",
+          "hero",
+          "section-divider",
+          "featured-carousel",
+          "stats",
+          "features",
+          "bento-grid",
+          "social-proof",
+          "parallax-section",
+          "products",
+          "testimonials",
+          "marquee",
+          "progress",
+          "badge",
+          "social-proof",
+          "article-grid",
+          "chat-launcher",
+          "accordion",
+          "cta",
+          "floating-cta"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Professional services delivered with excellence",
+        "metaTitle": null,
+        "titleLength": 4,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 47
+      },
+      {
+        "slug": "services",
+        "title": "Services",
+        "isHomePage": false,
+        "blockCount": 5,
+        "blockTypes": [
+          "hero",
+          "products",
+          "separator",
+          "features",
+          "cta"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Explore our range of professional services",
+        "metaTitle": null,
+        "titleLength": 8,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 42
+      },
+      {
+        "slug": "book",
+        "title": "Book",
+        "isHomePage": false,
+        "blockCount": 3,
+        "blockTypes": [
+          "hero",
+          "booking",
+          "text"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Book your appointment online",
+        "metaTitle": null,
+        "titleLength": 4,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 28
+      },
+      {
+        "slug": "about",
+        "title": "About",
+        "isHomePage": false,
+        "blockCount": 3,
+        "blockTypes": [
+          "hero",
+          "two-column",
+          "team"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Learn about our team and mission",
+        "metaTitle": null,
+        "titleLength": 5,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 32
+      },
+      {
+        "slug": "contact",
+        "title": "Contact",
+        "isHomePage": false,
+        "blockCount": 4,
+        "blockTypes": [
+          "hero",
+          "two-column",
+          "form",
+          "contact"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Get in touch with our team",
+        "metaTitle": null,
+        "titleLength": 7,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 26
+      }
+    ],
+    "blogPosts": [
+      {
+        "slug": "5-ways-reduce-no-shows-fill-calendar",
+        "title": "5 Ways to Reduce No-Shows and Fill Your Calendar",
+        "titleLength": 48,
+        "hasExcerpt": true,
+        "excerptLength": 136,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      },
+      {
+        "slug": "how-to-price-services-profitability",
+        "title": "How to Price Your Services for Profitability",
+        "titleLength": 44,
+        "hasExcerpt": true,
+        "excerptLength": 140,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      },
+      {
+        "slug": "building-client-trust-before-first-appointment",
+        "title": "Building Client Trust Before the First Appointment",
+        "titleLength": 50,
+        "hasExcerpt": true,
+        "excerptLength": 148,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      }
+    ],
+    "products": [
+      {
+        "name": "Basic Consultation",
+        "hasImage": true,
+        "hasDescription": true,
+        "priceCents": 4900,
+        "currency": "USD"
+      },
+      {
+        "name": "Premium Service",
+        "hasImage": true,
+        "hasDescription": true,
+        "priceCents": 9900,
+        "currency": "USD"
+      },
+      {
+        "name": "VIP Package",
+        "hasImage": true,
+        "hasDescription": true,
+        "priceCents": 19900,
+        "currency": "USD"
+      },
+      {
+        "name": "Monthly Retainer",
+        "hasImage": true,
+        "hasDescription": true,
+        "priceCents": 29900,
+        "currency": "USD"
+      },
+      {
+        "name": "Team Workshop",
+        "hasImage": true,
+        "hasDescription": true,
+        "priceCents": 79900,
+        "currency": "USD"
+      }
+    ],
+    "consultants": 0,
+    "bookingServices": 0,
+    "summary": {
+      "totalPages": 5,
+      "totalBlogPosts": 3,
+      "totalProducts": 5,
+      "pagesWithoutMetaDesc": 0,
+      "pagesWithShortTitles": 5,
+      "pagesWithLongTitles": 0,
+      "blogPostsWithoutMetaDesc": 0,
+      "blogPostsWithLongTitles": 0,
+      "blogPostsWithoutImages": 0,
+      "productsWithoutImages": 0
+    }
+  },
+  {
+    "id": "digital-shop",
+    "name": "Digital Shop",
+    "description": "Premium e-commerce template with AI shopping assistant, editorial product showcases, bento grid categories, and Stripe checkout.",
+    "category": "platform",
+    "tagline": "Premium digital product store with AI concierge",
+    "helpStyle": "none",
+    "requiredModules": [
+      "ecommerce",
+      "chat",
+      "forms",
+      "blog",
+      "inventory"
+    ],
+    "hasHeaderSettings": true,
+    "hasFooterSettings": true,
+    "hasSeoSettings": true,
+    "hasCookieBanner": true,
+    "branding": {
+      "primaryColor": "220 50% 20%",
+      "accentColor": "40 90% 55%",
+      "fontFamily": null
+    },
+    "pages": [
+      {
+        "slug": "home",
+        "title": "Home",
+        "isHomePage": true,
+        "blockCount": 20,
+        "blockTypes": [
+          "marquee",
+          "hero",
+          "stats",
+          "ai-assistant",
+          "section-divider",
+          "two-column",
+          "products",
+          "parallax-section",
+          "bento-grid",
+          "testimonials",
+          "two-column",
+          "ai-assistant",
+          "social-proof",
+          "badge",
+          "form",
+          "article-grid",
+          "accordion",
+          "cta",
+          "notification-toast",
+          "floating-cta"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Curated digital products for modern creators. Templates, courses, and tools — instant delivery.",
+        "metaTitle": null,
+        "titleLength": 4,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 95
+      },
+      {
+        "slug": "cart",
+        "title": "Shopping Cart",
+        "isHomePage": false,
+        "blockCount": 1,
+        "blockTypes": [
+          "cart"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Review your cart and proceed to checkout",
+        "metaTitle": null,
+        "titleLength": 13,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 40
+      },
+      {
+        "slug": "about",
+        "title": "About",
+        "isHomePage": false,
+        "blockCount": 4,
+        "blockTypes": [
+          "hero",
+          "two-column",
+          "features",
+          "stats"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Our story, mission, and values — learn what drives us",
+        "metaTitle": null,
+        "titleLength": 5,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 53
+      },
+      {
+        "slug": "contact",
+        "title": "Contact",
+        "isHomePage": false,
+        "blockCount": 3,
+        "blockTypes": [
+          "ai-assistant",
+          "form",
+          "contact"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Get in touch with our team — we typically respond within 24 hours",
+        "metaTitle": null,
+        "titleLength": 7,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 65
+      }
+    ],
+    "blogPosts": [
+      {
+        "slug": "complete-guide-selling-digital-products-online",
+        "title": "The Complete Guide to Selling Digital Products Online",
+        "titleLength": 53,
+        "hasExcerpt": true,
+        "excerptLength": 141,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      },
+      {
+        "slug": "how-to-create-product-bundles-that-sell",
+        "title": "How to Create Product Bundles That Sell",
+        "titleLength": 39,
+        "hasExcerpt": true,
+        "excerptLength": 146,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      },
+      {
+        "slug": "7-mistakes-avoid-launching-online-store",
+        "title": "7 Mistakes to Avoid When Launching Your Online Store",
+        "titleLength": 52,
+        "hasExcerpt": true,
+        "excerptLength": 124,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      }
+    ],
+    "products": [
+      {
+        "name": "Creator Toolkit",
+        "hasImage": true,
+        "hasDescription": true,
+        "priceCents": 4900,
+        "currency": "USD"
+      },
+      {
+        "name": "Design System Pro",
+        "hasImage": true,
+        "hasDescription": true,
+        "priceCents": 7900,
+        "currency": "USD"
+      },
+      {
+        "name": "Growth Masterclass",
+        "hasImage": true,
+        "hasDescription": true,
+        "priceCents": 19900,
+        "currency": "USD"
+      },
+      {
+        "name": "Social Media Pack",
+        "hasImage": true,
+        "hasDescription": true,
+        "priceCents": 3900,
+        "currency": "USD"
+      },
+      {
+        "name": "Pro Membership",
+        "hasImage": true,
+        "hasDescription": true,
+        "priceCents": 2900,
+        "currency": "USD"
+      }
+    ],
+    "consultants": 0,
+    "bookingServices": 0,
+    "summary": {
+      "totalPages": 4,
+      "totalBlogPosts": 3,
+      "totalProducts": 5,
+      "pagesWithoutMetaDesc": 0,
+      "pagesWithShortTitles": 4,
+      "pagesWithLongTitles": 0,
+      "blogPostsWithoutMetaDesc": 0,
+      "blogPostsWithLongTitles": 0,
+      "blogPostsWithoutImages": 0,
+      "productsWithoutImages": 0
+    }
+  },
+  {
+    "id": "flowwink-agency",
+    "name": "FlowWink Agency",
+    "description": "Agency-focused template for web agencies and consultants. Features ROI calculator, competitor comparisons, and white-label positioning.",
+    "category": "platform",
+    "tagline": "One Platform. Unlimited Client Sites. Zero SaaS Fees.",
+    "helpStyle": "hybrid",
+    "requiredModules": [
+      "chat",
+      "blog",
+      "newsletter",
+      "forms",
+      "knowledgeBase"
+    ],
+    "hasHeaderSettings": true,
+    "hasFooterSettings": true,
+    "hasSeoSettings": true,
+    "hasCookieBanner": true,
+    "branding": {
+      "primaryColor": "262 80% 50%",
+      "accentColor": "280 70% 50%",
+      "fontFamily": null
+    },
+    "pages": [
+      {
+        "slug": "home",
+        "title": "Home",
+        "isHomePage": true,
+        "blockCount": 14,
+        "blockTypes": [
+          "announcement-bar",
+          "hero",
+          "section-divider",
+          "stats",
+          "bento-grid",
+          "two-column",
+          "two-column",
+          "tabs",
+          "comparison",
+          "testimonials",
+          "features",
+          "chat-launcher",
+          "accordion",
+          "cta"
+        ],
+        "hasMeta": true,
+        "metaDescription": "FlowWink for agencies - One platform, unlimited client sites, zero SaaS fees. Build faster, charge more, own everything.",
+        "metaTitle": null,
+        "titleLength": 4,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 120
+      },
+      {
+        "slug": "roi-calculator",
+        "title": "ROI Calculator",
+        "isHomePage": false,
+        "blockCount": 6,
+        "blockTypes": [
+          "hero",
+          "stats",
+          "table",
+          "two-column",
+          "accordion",
+          "cta"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Calculate how much your agency can save by switching to FlowWink. Compare costs vs Webflow, Squarespace, and other platforms.",
+        "metaTitle": null,
+        "titleLength": 14,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 125
+      },
+      {
+        "slug": "how-it-works",
+        "title": "How It Works",
+        "isHomePage": false,
+        "blockCount": 5,
+        "blockTypes": [
+          "hero",
+          "timeline",
+          "two-column",
+          "features",
+          "cta"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Learn how FlowWink works for agencies. From deployment to client handoff in 5 minutes.",
+        "metaTitle": null,
+        "titleLength": 12,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 86
+      },
+      {
+        "slug": "features",
+        "title": "Features",
+        "isHomePage": false,
+        "blockCount": 5,
+        "blockTypes": [
+          "hero",
+          "tabs",
+          "two-column",
+          "logos",
+          "cta"
+        ],
+        "hasMeta": true,
+        "metaDescription": "FlowWink features for agencies - Visual editor, Content API, autonomous AI agent, blog, forms, CRM, and more.",
+        "metaTitle": null,
+        "titleLength": 8,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 109
+      },
+      {
+        "slug": "pricing",
+        "title": "Pricing",
+        "isHomePage": false,
+        "blockCount": 4,
+        "blockTypes": [
+          "hero",
+          "pricing",
+          "accordion",
+          "cta"
+        ],
+        "hasMeta": true,
+        "metaDescription": "FlowWink pricing for agencies - Self-host free forever, or choose managed hosting with priority support.",
+        "metaTitle": null,
+        "titleLength": 7,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 104
+      },
+      {
+        "slug": "contact",
+        "title": "Contact",
+        "isHomePage": false,
+        "blockCount": 4,
+        "blockTypes": [
+          "hero",
+          "form",
+          "chat-launcher",
+          "contact"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Contact the FlowWink team - demos, partnerships, and support for agencies.",
+        "metaTitle": null,
+        "titleLength": 7,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 74
+      }
+    ],
+    "blogPosts": [
+      {
+        "slug": "hidden-cost-webflow-agencies-switching-self-hosted",
+        "title": "The Hidden Cost of Webflow: Why Agencies Are Switching to Self-Hosted",
+        "titleLength": 69,
+        "hasExcerpt": true,
+        "excerptLength": 114,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      },
+      {
+        "slug": "how-price-client-websites-recurring-revenue",
+        "title": "How to Price Client Websites for Recurring Revenue",
+        "titleLength": 50,
+        "hasExcerpt": true,
+        "excerptLength": 114,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      },
+      {
+        "slug": "white-label-best-practices-client-sites",
+        "title": "White-Label Best Practices: Delivering Client Sites That Look Like Yours",
+        "titleLength": 72,
+        "hasExcerpt": true,
+        "excerptLength": 122,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      }
+    ],
+    "products": [],
+    "consultants": 0,
+    "bookingServices": 0,
+    "summary": {
+      "totalPages": 6,
+      "totalBlogPosts": 3,
+      "totalProducts": 0,
+      "pagesWithoutMetaDesc": 0,
+      "pagesWithShortTitles": 6,
+      "pagesWithLongTitles": 0,
+      "blogPostsWithoutMetaDesc": 0,
+      "blogPostsWithLongTitles": 2,
+      "blogPostsWithoutImages": 0,
+      "productsWithoutImages": 0
+    }
+  },
+  {
+    "id": "consult-agency",
+    "name": "ConsultAgency",
+    "description": "Agentic consulting platform template. Your website becomes a 24/7 consultant — FlowPilot maintains live profiles, answers briefs instantly, and connects enterprise systems via A2A.",
+    "category": "enterprise",
+    "tagline": "Your website is a consultant. Always on. Always current.",
+    "helpStyle": "none",
+    "requiredModules": [
+      "blog",
+      "chat",
+      "leads",
+      "deals",
+      "companies",
+      "forms",
+      "bookings",
+      "newsletter",
+      "resume"
+    ],
+    "hasHeaderSettings": true,
+    "hasFooterSettings": true,
+    "hasSeoSettings": true,
+    "hasCookieBanner": true,
+    "branding": {
+      "primaryColor": "238 84% 67%",
+      "accentColor": "160 84% 39%",
+      "fontFamily": null
+    },
+    "pages": [
+      {
+        "slug": "home",
+        "title": "Home",
+        "isHomePage": true,
+        "blockCount": 20,
+        "blockTypes": [
+          "announcement-bar",
+          "hero",
+          "resume-matcher",
+          "quick-links",
+          "logos",
+          "stats",
+          "section-divider",
+          "bento-grid",
+          "parallax-section",
+          "separator",
+          "team",
+          "cta",
+          "section-divider",
+          "timeline",
+          "section-divider",
+          "testimonials",
+          "chat-launcher",
+          "two-column",
+          "cta",
+          "floating-cta"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Elite IT consulting firm. We match senior specialists to the assignments that need them most — in 48 hours.",
+        "metaTitle": null,
+        "titleLength": 4,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 107
+      },
+      {
+        "slug": "consultants",
+        "title": "Consultants",
+        "isHomePage": false,
+        "blockCount": 6,
+        "blockTypes": [
+          "hero",
+          "tabs",
+          "separator",
+          "team",
+          "chat-launcher",
+          "cta"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Browse our network of 300+ senior technology consultants. Filter by competency, stack, and availability.",
+        "metaTitle": null,
+        "titleLength": 11,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 104
+      },
+      {
+        "slug": "clients",
+        "title": "For Clients",
+        "isHomePage": false,
+        "blockCount": 8,
+        "blockTypes": [
+          "hero",
+          "social-proof",
+          "timeline",
+          "two-column",
+          "testimonials",
+          "accordion",
+          "separator",
+          "form"
+        ],
+        "hasMeta": true,
+        "metaDescription": "How we match your brief to the right consultant in 48 hours. Transparent process, fixed rates, continuity guarantee.",
+        "metaTitle": null,
+        "titleLength": 11,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 116
+      },
+      {
+        "slug": "join",
+        "title": "Join Us",
+        "isHomePage": false,
+        "blockCount": 6,
+        "blockTypes": [
+          "hero",
+          "stats",
+          "features",
+          "testimonials",
+          "separator",
+          "form"
+        ],
+        "hasMeta": true,
+        "metaDescription": "Join our network of 300+ senior technology consultants. Interesting assignments, competitive rates, zero downtime between engagements.",
+        "metaTitle": null,
+        "titleLength": 7,
+        "hasMetaDescription": true,
+        "metaDescriptionLength": 134
+      }
+    ],
+    "blogPosts": [
+      {
+        "slug": "consultant-shortage-myth-pipeline-problem",
+        "title": "The Consultant Shortage Is a Myth — Your Pipeline Is the Problem",
+        "titleLength": 64,
+        "hasExcerpt": true,
+        "excerptLength": 163,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      },
+      {
+        "slug": "consulting-website-answer-briefs-24-7",
+        "title": "Why Your Consulting Website Should Answer Client Briefs at 2 AM",
+        "titleLength": 63,
+        "hasExcerpt": true,
+        "excerptLength": 130,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      },
+      {
+        "slug": "building-consultant-brand-trusted-advisor",
+        "title": "Building a Consultant Brand: From Bench Resource to Trusted Advisor",
+        "titleLength": 67,
+        "hasExcerpt": true,
+        "excerptLength": 127,
+        "hasFeaturedImage": true,
+        "hasFeaturedImageAlt": true,
+        "hasMetaDescription": true,
+        "blockCount": 1,
+        "blockTypes": [
+          "text"
+        ]
+      }
+    ],
+    "products": [],
+    "consultants": 10,
+    "bookingServices": 0,
+    "summary": {
+      "totalPages": 4,
+      "totalBlogPosts": 3,
+      "totalProducts": 0,
+      "pagesWithoutMetaDesc": 0,
+      "pagesWithShortTitles": 4,
+      "pagesWithLongTitles": 0,
+      "blogPostsWithoutMetaDesc": 0,
+      "blogPostsWithLongTitles": 3,
+      "blogPostsWithoutImages": 0,
+      "productsWithoutImages": 0
+    }
+  }
+]

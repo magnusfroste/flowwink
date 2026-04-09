@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { McpServer, StreamableHttpTransport } from "mcp-lite";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import templateAuditData from "./template-audit.json" with { type: "json" };
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -188,8 +189,24 @@ async function fetchResource(resourceKey: string): Promise<unknown> {
       }
       return identity;
     }
-    default:
+    case "templates": {
+      return (templateAuditData as unknown[]).map((t: any) => ({
+        id: t.id, name: t.name, category: t.category,
+        description: t.description, tagline: t.tagline,
+        summary: t.summary, requiredModules: t.requiredModules,
+        hasHeaderSettings: t.hasHeaderSettings, hasFooterSettings: t.hasFooterSettings,
+        hasSeoSettings: t.hasSeoSettings,
+      }));
+    }
+    default: {
+      // Check for templates/:id pattern
+      if (resourceKey.startsWith("template:")) {
+        const templateId = resourceKey.replace("template:", "");
+        const template = (templateAuditData as any[]).find((t: any) => t.id === templateId);
+        return template || { error: `Template not found: ${templateId}` };
+      }
       return { error: `Unknown resource: ${resourceKey}` };
+    }
   }
 }
 
@@ -229,6 +246,7 @@ async function createMcpServer(): Promise<McpServer> {
     { key: "activity", uri: "flowwink://activity", name: "Recent Activity",   description: "Last 20 FlowPilot actions with skill name, status, duration, and timestamps" },
     { key: "peers",    uri: "flowwink://peers",    name: "Federation Peers",  description: "Connected A2A/MCP peers with status, capabilities, and last seen time" },
     { key: "identity", uri: "flowwink://identity", name: "FlowPilot Identity", description: "FlowPilot's soul, identity, and agent configuration" },
+    { key: "templates", uri: "flowwink://templates", name: "Site Templates",    description: "All available starter templates with SEO audit summaries — page counts, meta descriptions, title lengths, product images, blog post quality" },
   ];
 
   for (const r of resourceDefs) {
@@ -291,10 +309,17 @@ app.get("/rest/resources", (c) => {
     { key: "skills",   description: "Full skill registry with category, scope, trust level, enabled status" },
     { key: "modules",  description: "Module configuration (enabled/disabled)" },
     { key: "activity", description: "Last 20 FlowPilot actions" },
-    { key: "peers",    description: "Federation peers with status and capabilities" },
-    { key: "identity", description: "FlowPilot soul, identity, and agent configuration" },
+    { key: "peers",      description: "Federation peers with status and capabilities" },
+    { key: "identity",  description: "FlowPilot soul, identity, and agent configuration" },
+    { key: "templates", description: "All starter templates with SEO audit summaries (page counts, meta, titles, products)" },
   ];
   return c.json({ resources }, 200, corsHeaders);
+});
+
+app.get("/rest/resources/templates/:id", async (c) => {
+  const id = c.req.param("id");
+  const data = await fetchResource(`template:${id}`);
+  return c.json({ resource: `template:${id}`, data }, 200, corsHeaders);
 });
 
 app.get("/rest/resources/:key", async (c) => {
