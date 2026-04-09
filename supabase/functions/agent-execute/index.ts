@@ -1855,7 +1855,7 @@ async function executeProductsAction(
   if (skillName === 'browse_products') {
     const { search, type } = args as any;
     let query = supabase.from('products')
-      .select('id, name, slug, description, price_cents, currency, type, image_url, stock_quantity, track_inventory')
+      .select('id, name, description, price_cents, currency, type, image_url, stock_quantity, track_inventory')
       .eq('is_active', true)
       .order('created_at', { ascending: false }).limit(20);
     if (type) query = query.eq('type', type);
