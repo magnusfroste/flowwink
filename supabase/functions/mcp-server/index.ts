@@ -308,10 +308,17 @@ app.get("/rest/resources", (c) => {
     { key: "skills",   description: "Full skill registry with category, scope, trust level, enabled status" },
     { key: "modules",  description: "Module configuration (enabled/disabled)" },
     { key: "activity", description: "Last 20 FlowPilot actions" },
-    { key: "peers",    description: "Federation peers with status and capabilities" },
-    { key: "identity", description: "FlowPilot soul, identity, and agent configuration" },
+    { key: "peers",      description: "Federation peers with status and capabilities" },
+    { key: "identity",  description: "FlowPilot soul, identity, and agent configuration" },
+    { key: "templates", description: "All starter templates with SEO audit summaries (page counts, meta, titles, products)" },
   ];
   return c.json({ resources }, 200, corsHeaders);
+});
+
+app.get("/rest/resources/templates/:id", async (c) => {
+  const id = c.req.param("id");
+  const data = await fetchResource(`template:${id}`);
+  return c.json({ resource: `template:${id}`, data }, 200, corsHeaders);
 });
 
 app.get("/rest/resources/:key", async (c) => {
