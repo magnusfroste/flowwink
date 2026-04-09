@@ -215,13 +215,13 @@ Content-Type: application/json
 ${mission.focusResources.map(r => {
   const info = MCP_RESOURCES.find(mr => mr.uri === r);
   const key = r.replace('flowwink://', '');
-  return \`- \\\`/rest/resources/\${key}\\\` — \${info?.description || ''}\`;
+  return '- `/rest/resources/' + key + '` — ' + (info?.description || '');
 }).join('\n')}
 
 ## Key Tools
 
 These tools are most relevant for your mission:
-${mission.focusTools.map(t => \`- \\\`\${t}\\\`\`).join('\n')}
+${mission.focusTools.map(t => '- `' + t + '`').join('\n')}
 
 ## Your Mission: ${mission.name}
 
