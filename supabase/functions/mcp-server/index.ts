@@ -249,21 +249,16 @@ async function createMcpServer(): Promise<McpServer> {
 
 // ---------- Hono app ----------
 
-const app = new Hono();
-
-// Use basePath to handle Supabase's path prefix
-const base = new Hono().basePath("/mcp-server");
+const app = new Hono().basePath("/mcp-server");
 
 // CORS preflight
-base.options("/*", (c) => {
+app.options("/*", (c) => {
   return c.newResponse(null, 204, corsHeaders);
 });
 
 // Auth middleware
 app.use("/*", async (c, next) => {
   if (c.req.method === "OPTIONS") return next();
-  
-  console.log("Request path:", c.req.path, "method:", c.req.method);
 
   const auth = await authenticateApiKey(c.req.header("Authorization"));
   if (!auth.valid) {
@@ -277,9 +272,7 @@ app.use("/*", async (c, next) => {
 // REST compatibility layer — for agents without MCP clients
 // ══════════════════════════════════════════════════════════
 
-// GET /rest/tools — list all exposed tools
 app.get("/rest/tools", async (c) => {
-  console.log("REST /rest/tools hit");
   const skills = await loadExposedSkills();
   const tools = skills
     .filter((s) => s.tool_definition?.function?.name)
@@ -292,7 +285,6 @@ app.get("/rest/tools", async (c) => {
   return c.json({ tools, count: tools.length }, 200, corsHeaders);
 });
 
-// GET /rest/resources — list available resources
 app.get("/rest/resources", (c) => {
   const resources = [
     { key: "health",   description: "Site statistics: pages, posts, leads, bookings, orders, products, active objectives" },
@@ -305,14 +297,12 @@ app.get("/rest/resources", (c) => {
   return c.json({ resources }, 200, corsHeaders);
 });
 
-// GET /rest/resources/:key — fetch a specific resource
 app.get("/rest/resources/:key", async (c) => {
   const key = c.req.param("key");
   const data = await fetchResource(key);
   return c.json({ resource: key, data }, 200, corsHeaders);
 });
 
-// POST /rest/execute — execute a tool by name
 app.post("/rest/execute", async (c) => {
   const body = await c.req.json();
   const { tool, arguments: args } = body;
@@ -320,7 +310,6 @@ app.post("/rest/execute", async (c) => {
     return c.json({ error: "Missing 'tool' field in request body" }, 400, corsHeaders);
   }
 
-  // Map tool name back to skill name
   const skills = await loadExposedSkills();
   const match = skills.find((s) => s.tool_definition?.function?.name === tool);
   if (!match) {
@@ -351,7 +340,6 @@ async function getMcpHandler() {
 }
 
 app.all("/*", async (c) => {
-  console.log("MCP catch-all hit, path:", c.req.path, "url:", c.req.url);
   const handler = await getMcpHandler();
   const response = await handler(c.req.raw);
   const headers = new Headers(response.headers);
