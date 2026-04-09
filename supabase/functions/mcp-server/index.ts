@@ -151,12 +151,14 @@ async function createMcpServer(): Promise<McpServer> {
     });
   }
 
-  // Resource: list all modules
+  // ── Resources: read-only inspection for external agents ──
+
+  // Modules overview
   server.resource(
     "flowwink://modules",
     {
       name: "FlowWink Modules",
-      description: "List of all available FlowWink modules and their status",
+      description: "All available modules and their enabled/disabled status",
       mimeType: "application/json",
     },
     async (uri) => {
@@ -166,19 +168,133 @@ async function createMcpServer(): Promise<McpServer> {
         .select("value")
         .eq("key", "modules")
         .single();
-
       return {
-        contents: [
-          {
-            uri: uri.href,
-            mimeType: "application/json",
-            text: JSON.stringify(data?.value ?? {}, null, 2),
-          },
-        ],
+        contents: [{ uri: uri.href, mimeType: "application/json", text: JSON.stringify(data?.value ?? {}, null, 2) }],
       };
     },
   );
 
+  // Site health & stats
+  server.resource(
+    "flowwink://health",
+    {
+      name: "Site Health",
+      description: "Current site statistics: pages, posts, leads, bookings, orders, products, active objectives",
+      mimeType: "application/json",
+    },
+    async (uri) => {
+      const sb = serviceClient();
+      const [pages, posts, leads, bookings, orders, products, objectives] = await Promise.all([
+        sb.from("pages").select("id", { count: "exact", head: true }),
+        sb.from("blog_posts").select("id", { count: "exact", head: true }),
+        sb.from("leads").select("id", { count: "exact", head: true }),
+        sb.from("bookings").select("id", { count: "exact", head: true }).eq("status", "confirmed"),
+        sb.from("orders").select("id", { count: "exact", head: true }),
+        sb.from("products").select("id", { count: "exact", head: true }),
+        sb.from("agent_objectives").select("id, goal, status").eq("status", "active").limit(10),
+      ]);
+      const health = {
+        counts: {
+          pages: pages.count ?? 0,
+          blog_posts: posts.count ?? 0,
+          leads: leads.count ?? 0,
+          active_bookings: bookings.count ?? 0,
+          orders: orders.count ?? 0,
+          products: products.count ?? 0,
+        },
+        active_objectives: objectives.data ?? [],
+        timestamp: new Date().toISOString(),
+      };
+      return {
+        contents: [{ uri: uri.href, mimeType: "application/json", text: JSON.stringify(health, null, 2) }],
+      };
+    },
+  );
+
+  // Skill registry
+  server.resource(
+    "flowwink://skills",
+    {
+      name: "Skill Registry",
+      description: "All FlowPilot skills with category, scope, trust level, and enabled status",
+      mimeType: "application/json",
+    },
+    async (uri) => {
+      const sb = serviceClient();
+      const { data } = await sb
+        .from("agent_skills")
+        .select("name, description, category, scope, trust_level, enabled, mcp_exposed")
+        .order("category");
+      return {
+        contents: [{ uri: uri.href, mimeType: "application/json", text: JSON.stringify(data ?? [], null, 2) }],
+      };
+    },
+  );
+
+  // Recent activity log
+  server.resource(
+    "flowwink://activity",
+    {
+      name: "Recent Activity",
+      description: "Last 20 FlowPilot actions with skill name, status, duration, and timestamps",
+      mimeType: "application/json",
+    },
+    async (uri) => {
+      const sb = serviceClient();
+      const { data } = await sb
+        .from("agent_activity")
+        .select("id, skill_name, status, duration_ms, error_message, created_at")
+        .order("created_at", { ascending: false })
+        .limit(20);
+      return {
+        contents: [{ uri: uri.href, mimeType: "application/json", text: JSON.stringify(data ?? [], null, 2) }],
+      };
+    },
+  );
+
+  // Federation peers
+  server.resource(
+    "flowwink://peers",
+    {
+      name: "Federation Peers",
+      description: "Connected A2A/MCP peers with status, capabilities, and last seen time",
+      mimeType: "application/json",
+    },
+    async (uri) => {
+      const sb = serviceClient();
+      const { data } = await sb
+        .from("a2a_peers")
+        .select("id, name, status, capabilities, last_seen_at, request_count")
+        .order("name");
+      return {
+        contents: [{ uri: uri.href, mimeType: "application/json", text: JSON.stringify(data ?? [], null, 2) }],
+      };
+    },
+  );
+
+  // FlowPilot identity & soul
+  server.resource(
+    "flowwink://identity",
+    {
+      name: "FlowPilot Identity",
+      description: "FlowPilot's soul, identity, and agent configuration",
+      mimeType: "application/json",
+    },
+    async (uri) => {
+      const sb = serviceClient();
+      const { data } = await sb
+        .from("agent_memory")
+        .select("key, value, category")
+        .in("key", ["soul", "identity", "agents", "tools", "user"]);
+      const identity: Record<string, unknown> = {};
+      for (const row of data ?? []) {
+        identity[row.key] = row.value;
+      }
+      return {
+        contents: [{ uri: uri.href, mimeType: "application/json", text: JSON.stringify(identity, null, 2) }],
+      };
+    },
+  );
   return server;
 }
 
