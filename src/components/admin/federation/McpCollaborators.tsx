@@ -130,7 +130,6 @@ export function McpCollaborators() {
                             <Copy className="h-3 w-3" />
                           </Button>
                         </span>
-                        </span>
                         <span>
                           Created {formatDistanceToNow(new Date(key.created_at), { addSuffix: true })}
                         </span>
