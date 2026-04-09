@@ -919,8 +919,7 @@ async function executeOpenClawAction(
           .insert({
             goal: `${goalPrefix}: ${title}`,
             status: 'active',
-            created_by: 'peer_report',
-            constraints: { source: 'openclaw_report_finding', finding_id: data.id, severity, type },
+            constraints: { source: 'openclaw_report_finding', finding_id: data.id, severity, type, created_by: 'peer_report' },
             success_criteria: { description_met: description || title },
           })
           .select('id, goal')

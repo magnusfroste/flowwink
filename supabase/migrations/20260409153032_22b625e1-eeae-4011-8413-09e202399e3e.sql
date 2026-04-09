@@ -1,0 +1,1 @@
+ALTER TABLE public.beta_test_findings ALTER COLUMN session_id DROP NOT NULL;

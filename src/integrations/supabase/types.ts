@@ -838,7 +838,7 @@ export type Database = {
           id: string
           resolved_at: string | null
           screenshot_url: string | null
-          session_id: string
+          session_id: string | null
           severity: string
           title: string
           type: string
@@ -850,7 +850,7 @@ export type Database = {
           id?: string
           resolved_at?: string | null
           screenshot_url?: string | null
-          session_id: string
+          session_id?: string | null
           severity?: string
           title: string
           type: string
@@ -862,7 +862,7 @@ export type Database = {
           id?: string
           resolved_at?: string | null
           screenshot_url?: string | null
-          session_id?: string
+          session_id?: string | null
           severity?: string
           title?: string
           type?: string
