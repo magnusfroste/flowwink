@@ -34,7 +34,7 @@ serve(async (req) => {
 
   try {
     const body: ExecuteRequest = await req.json();
-    const { skill_id, skill_name, arguments: args, agent_type, conversation_id, objective_context, trace_id } = body;
+    const { skill_id, skill_name, arguments: args = {}, agent_type, conversation_id, objective_context, trace_id } = body;
 
     if (!skill_id && !skill_name) {
       return new Response(JSON.stringify({ error: 'skill_id or skill_name required' }), {
@@ -1855,7 +1855,7 @@ async function executeProductsAction(
   if (skillName === 'browse_products') {
     const { search, type } = args as any;
     let query = supabase.from('products')
-      .select('id, name, slug, description, price_cents, currency, type, image_url, stock_quantity, track_inventory')
+      .select('id, name, description, price_cents, currency, type, image_url, stock_quantity, track_inventory')
       .eq('is_active', true)
       .order('created_at', { ascending: false }).limit(20);
     if (type) query = query.eq('type', type);
