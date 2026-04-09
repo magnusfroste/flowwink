@@ -949,6 +949,12 @@ export default function FederationPage() {
             <McpCollaborators />
             <div>
               <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4">
+                Agent Findings
+              </h2>
+              <McpFindings />
+            </div>
+            <div>
+              <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4">
                 MCP Activity Log
               </h2>
               <McpActivityLog />
