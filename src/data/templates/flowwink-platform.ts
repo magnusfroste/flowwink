@@ -1,7 +1,7 @@
 /**
  * FlowWink Platform Template
  * 
- * The first autonomous agentic CMS. Your website runs itself.
+ * The first autonomous Business Operating System (BOS). Your business runs itself.
  * Powered by FlowPilot — an OpenClaw-inspired autonomous agent with
  * persistent memory, self-evolving skills, and goal-driven objectives.
  * 
@@ -23,7 +23,7 @@ import { flowwinkKbCategories } from '../template-kb-articles';
 export const flowwinkPlatformTemplate: StarterTemplate = {
   id: 'flowwink-platform',
   name: 'FlowWink Platform',
-  description: 'The first autonomous agentic CMS. Your website runs itself.',
+  description: 'The first autonomous Business Operating System. Your business runs itself.',
   category: 'platform',
   icon: 'Bot',
   tagline: 'Set objectives. FlowPilot operates.',
@@ -43,7 +43,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
       showInMenu: true,
       meta: {
         seoTitle: 'FlowWink Platform — AI-Powered Business Operating System',
-        description: 'FlowWink is the first autonomous agentic CMS. FlowPilot writes your content, qualifies your leads, runs your campaigns, and learns from every interaction.',
+        description: 'FlowWink is the first autonomous Business Operating System. FlowPilot runs your content, leads, sales, and operations — and learns from every interaction.',
         showTitle: false,
         titleAlignment: 'center',
       },
@@ -53,7 +53,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
           id: 'announcement-flowpilot',
           type: 'announcement-bar',
           data: {
-            message: '🤖 Introducing FlowPilot — The first CMS that operates itself',
+            message: '🤖 Introducing FlowPilot — The first Business OS that operates itself',
             linkText: 'Meet the agent',
             linkUrl: '/flowpilot',
             variant: 'gradient',
@@ -180,7 +180,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
           type: 'bento-grid',
           data: {
             title: 'The Autonomous Loop',
-            subtitle: 'FlowPilot isn\'t a chatbot bolted onto a CMS. It\'s an autonomous operator with memory, goals, and 40+ skills — replacing your CMS, chatbot, marketing automation, and CRM with a single intelligence that never stops working.',
+            subtitle: 'FlowPilot isn\'t a chatbot bolted onto a tool. It\'s an autonomous operator with memory, goals, and 40+ skills — replacing your CMS, CRM, ERP, and marketing stack with a single intelligence that never stops working.',
             eyebrow: 'AGENTIC WEB',
             columns: 3,
             variant: 'glass',
@@ -230,7 +230,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
           id: 'testimonials-main',
           type: 'testimonials',
           data: {
-            title: 'What Happens When Your CMS Thinks For Itself',
+            title: 'What Happens When Your Business OS Thinks For Itself',
             testimonials: [
               {
                 id: 'test-1',
@@ -335,7 +335,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
                 price: 'Free',
                 period: 'forever',
                 description: 'Full FlowPilot agent. Your servers. Your LLM. Complete data sovereignty.',
-                features: ['All CMS features + FlowPilot', 'Unlimited autonomous operations', 'Private LLM support (Ollama)', '30+ agent skills', 'Persistent memory & objectives', 'Community support'],
+                features: ['Full Business OS + FlowPilot', 'Unlimited autonomous operations', 'Private LLM support (Ollama)', '30+ agent skills', 'Persistent memory & objectives', 'Community support'],
                 buttonText: 'View on GitHub',
                 buttonUrl: 'https://github.com/magnusfroste/flowwink',
               },
@@ -724,7 +724,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
       showInMenu: true,
       meta: {
         seoTitle: 'For Agencies — White-Label Client Sites | FlowWink',
-        description: 'FlowWink for digital agencies — white-label autonomous CMS, multi-site management, and AI-powered client delivery.',
+        description: 'FlowWink for digital agencies — white-label Business OS, multi-site management, and AI-powered client delivery.',
         showTitle: false,
         titleAlignment: 'center',
       },
@@ -850,7 +850,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
               },
               {
                 id: 'at2',
-                content: 'The white-labeling is seamless. Our clients think we built a custom CMS for them. The ticketing module alone saved us from needing Zendesk.',
+                content: 'The white-labeling is seamless. Our clients think we built a custom platform for them. The ticketing module alone saved us from needing Zendesk.',
                 author: 'David Moreau',
                 role: 'CTO',
                 company: 'AgenceNord',
@@ -1517,7 +1517,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
           type: 'cta',
           data: {
             title: 'Private AI for Healthcare',
-            subtitle: 'HIPAA-compliant, self-hosted, with full audit trails. The only CMS built for healthcare compliance.',
+            subtitle: 'HIPAA-compliant, self-hosted, with full audit trails. The only Business OS built for healthcare compliance.',
             buttonText: 'See Pricing',
             buttonUrl: '/#pricing-detailed',
             secondaryButtonText: 'Self-Host Free',
@@ -1562,7 +1562,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
     },
     {
       name: 'FlowWink Migration Service',
-      description: 'White-glove migration from WordPress, Webflow, or any CMS to FlowWink.',
+      description: 'White-glove migration from WordPress, Webflow, or any platform to FlowWink.',
       price_cents: 49900,
       currency: 'EUR',
       type: 'one_time',
@@ -1720,7 +1720,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
   seoSettings: {
     siteTitle: 'FlowWink',
     titleTemplate: '%s | FlowWink',
-    defaultDescription: 'The first autonomous agentic CMS. FlowPilot writes your content, qualifies your leads, runs your campaigns, and learns from every interaction.',
+    defaultDescription: 'The first autonomous Business Operating System. FlowPilot runs your content, leads, sales, and operations — and learns from every interaction.',
     robotsIndex: true,
     robotsFollow: true,
     developmentMode: false,
@@ -1729,7 +1729,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
   aeoSettings: {
     enabled: true,
     organizationName: 'FlowWink',
-    shortDescription: 'Open-source autonomous agentic CMS powered by FlowPilot — an AI agent with persistent memory, 30+ skills, and self-evolution.',
+    shortDescription: 'Open-source Business Operating System powered by FlowPilot — an autonomous agent with persistent memory, 40+ skills, and self-evolution.',
     schemaOrgEnabled: true,
     schemaOrgType: 'Organization',
     faqSchemaEnabled: true,
