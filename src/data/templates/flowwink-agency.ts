@@ -793,7 +793,7 @@ export const flowwinkAgencyTemplate: StarterTemplate = {
     widgetEnabled: true,
     widgetPosition: 'bottom-right',
     welcomeMessage: 'Hi! I help web agencies understand how FlowWink can save money and time. Ask me anything!',
-    systemPrompt: `You are a helpful assistant for FlowWink CMS, specifically for web agencies and consultants.
+    systemPrompt: `You are a helpful assistant for FlowWink, the self-hosted Business Operating System, specifically for web agencies and consultants.
 
 Key points to emphasize:
 1. Zero per-client SaaS fees with self-hosting
