@@ -63,10 +63,10 @@ export default function BlogPostPage() {
   
   // Build canonical URL and breadcrumbs
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-  const canonicalUrl = `${baseUrl}/blogg/${slug}`;
+  const canonicalUrl = `${baseUrl}/blog/${slug}`;
   const breadcrumbs = [
     { name: 'Hem', url: baseUrl },
-    { name: 'Blogg', url: `${baseUrl}/blogg` },
+    { name: 'Blog', url: `${baseUrl}/blogg` },
     { name: post.title, url: canonicalUrl }
   ];
   
@@ -96,7 +96,7 @@ export default function BlogPostPage() {
           {/* Breadcrumb */}
           <nav className="mb-6">
             <Link
-              to="/blogg"
+              to="/blog"
               className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -108,7 +108,7 @@ export default function BlogPostPage() {
           {post.categories && post.categories.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-4">
               {post.categories.map((category) => (
-                <Link key={category.id} to={`/blogg/kategori/${category.slug}`}>
+                <Link key={category.id} to={`/blog/category/${category.slug}`}>
                   <Badge variant="secondary" className="hover:bg-secondary/80">
                     {category.name}
                   </Badge>
@@ -184,7 +184,7 @@ export default function BlogPostPage() {
             <div className="flex flex-wrap items-center gap-2 mb-8">
               <span className="text-sm text-muted-foreground">Taggar:</span>
               {post.tags.map((tag) => (
-                <Link key={tag.id} to={`/blogg/tagg/${tag.slug}`}>
+                <Link key={tag.id} to={`/blog/tag/${tag.slug}`}>
                   <Badge variant="outline" className="hover:bg-muted">
                     {tag.name}
                   </Badge>

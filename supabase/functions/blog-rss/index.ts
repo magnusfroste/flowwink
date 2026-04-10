@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
     // Build RSS XML
     const items = (posts || []).map((post) => {
       const pubDate = post.published_at || post.created_at;
-      const postUrl = `${siteUrl}/blogg/${post.slug}`;
+      const postUrl = `${siteUrl}/blog/${post.slug}`;
       const authorData = Array.isArray(post.author) ? post.author[0] : post.author;
       const authorName = authorData?.full_name || authorData?.email || 'Unknown';
       

@@ -261,7 +261,7 @@ serve(async (req) => {
         
         for (const post of filteredPosts) {
           output += `### ${post.title}\n\n`;
-          output += `URL: /blogg/${post.slug}\n`;
+          output += `URL: /blog/${post.slug}\n`;
           output += `Last updated: ${new Date(post.updated_at).toISOString().split('T')[0]}\n\n`;
           
           if (post.excerpt) {
@@ -301,7 +301,7 @@ serve(async (req) => {
         output += `## Recent Blog Posts\n\n`;
         const recentPosts = filteredPosts.slice(0, 10);
         for (const post of recentPosts) {
-          output += `- /blogg/${post.slug}: ${post.title}\n`;
+          output += `- /blog/${post.slug}: ${post.title}\n`;
         }
         output += `\n`;
       }

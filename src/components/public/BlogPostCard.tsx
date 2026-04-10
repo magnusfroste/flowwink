@@ -24,7 +24,7 @@ export function BlogPostCard({
 
   if (variant === "compact") {
     return (
-      <Link to={`/blogg/${post.slug}`} className="block group">
+      <Link to={`/blog/${post.slug}`} className="block group">
         <div className="flex gap-4 py-3">
           {post.featured_image && (
             <img
@@ -48,7 +48,7 @@ export function BlogPostCard({
 
   if (variant === "featured") {
     return (
-      <Link to={`/blogg/${post.slug}`} className="block group">
+      <Link to={`/blog/${post.slug}`} className="block group">
         <Card className="overflow-hidden h-full hover:shadow-lg transition-shadow">
           {post.featured_image && (
             <div className="aspect-[16/9] overflow-hidden">
@@ -106,7 +106,7 @@ export function BlogPostCard({
 
   // Default variant
   return (
-    <Link to={`/blogg/${post.slug}`} className="block group">
+    <Link to={`/blog/${post.slug}`} className="block group">
       <Card className="overflow-hidden h-full hover:shadow-md transition-shadow">
         <div className="flex flex-col sm:flex-row h-full">
           {post.featured_image && (

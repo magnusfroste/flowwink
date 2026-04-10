@@ -405,8 +405,8 @@ export function PublicNavigation() {
             {/* Blog link */}
             {blogModuleEnabled && blogSettings?.enabled && (
               <Link
-                to={`/${blogSettings.archiveSlug || 'blogg'}`}
-                className={getLinkClasses(location.pathname.startsWith(`/${blogSettings.archiveSlug || 'blogg'}`))}
+                to={`/${blogSettings.archiveSlug || 'blog'}`}
+                className={getLinkClasses(location.pathname.startsWith(`/${blogSettings.archiveSlug || 'blog'}`))}
               >
                 {blogSettings.archiveTitle || 'Blog'}
               </Link>
@@ -464,12 +464,12 @@ export function PublicNavigation() {
               ))}
               {blogModuleEnabled && blogSettings?.enabled && (
                 <Link
-                  to={`/${blogSettings.archiveSlug || 'blogg'}`}
+                  to={`/${blogSettings.archiveSlug || 'blog'}`}
                   onClick={() => setMobileMenuOpen(false)}
                   className={cn(
                     'px-4 py-3 rounded-md text-base font-medium transition-colors',
                     'hover:bg-muted',
-                    location.pathname.startsWith(`/${blogSettings.archiveSlug || 'blogg'}`)
+                    location.pathname.startsWith(`/${blogSettings.archiveSlug || 'blog'}`)
                       ? 'bg-primary/10 text-primary'
                       : 'text-muted-foreground'
                   )}
@@ -531,11 +531,11 @@ export function PublicNavigation() {
               ))}
               {blogModuleEnabled && blogSettings?.enabled && (
                 <Link
-                  to={`/${blogSettings.archiveSlug || 'blogg'}`}
+                  to={`/${blogSettings.archiveSlug || 'blog'}`}
                   onClick={() => setMobileMenuOpen(false)}
                   className={cn(
                     'text-2xl font-medium transition-colors',
-                    location.pathname.startsWith(`/${blogSettings.archiveSlug || 'blogg'}`)
+                    location.pathname.startsWith(`/${blogSettings.archiveSlug || 'blog'}`)
                       ? 'text-primary'
                       : 'text-muted-foreground hover:text-foreground'
                   )}
@@ -593,12 +593,12 @@ export function PublicNavigation() {
               ))}
               {blogModuleEnabled && blogSettings?.enabled && (
                 <Link
-                  to={`/${blogSettings.archiveSlug || 'blogg'}`}
+                  to={`/${blogSettings.archiveSlug || 'blog'}`}
                   onClick={() => setMobileMenuOpen(false)}
                   className={cn(
                     'px-4 py-3 rounded-md text-base font-medium transition-colors',
                     'hover:bg-muted',
-                    location.pathname.startsWith(`/${blogSettings.archiveSlug || 'blogg'}`)
+                    location.pathname.startsWith(`/${blogSettings.archiveSlug || 'blog'}`)
                       ? 'bg-primary/10 text-primary'
                       : 'text-muted-foreground'
                   )}
