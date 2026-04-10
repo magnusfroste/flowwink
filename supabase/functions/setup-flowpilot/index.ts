@@ -3389,7 +3389,72 @@ When a user asks for music or sound effects, use this skill with:
 },
   },
   {
-    name: 'cart_recovery_check',
+    name: 'dispatch_claw_mission',
+    description: 'Dispatch a one-shot mission to an external OpenClaw agent via /v1/responses. Fire-and-forget: the Claw works independently and reports results back via MCP callback. Use when: running template audits, site testing, content review, or any task delegated to an external Claw agent. NOT for: real-time chat with peers (use a2a_chat); quick synchronous questions (use a2a_request).',
+    handler: 'edge:openclaw-responses',
+    category: 'automation',
+    scope: 'internal',
+    requires_approval: false,
+    trust_level: 'auto',
+    instructions: `## dispatch_claw_mission — One-Shot Mission Dispatch
+
+### What
+Sends a self-contained mission to an external OpenClaw agent. The mission includes MCP credentials so the Claw can read FlowWink data and report findings back autonomously. Uses fire-and-forget to avoid edge function timeout.
+
+### How it works
+1. FlowPilot builds a mission prompt with clear instructions
+2. MCP credentials are automatically injected from the peer record
+3. POST is sent to the Claw's /v1/responses endpoint
+4. FlowPilot returns immediately (no waiting for completion)
+5. The Claw works independently, reports back via MCP
+
+### Parameters
+- \`peer_name\`: Name of the registered peer (e.g. "ClawOne")
+- \`prompt\`: The mission instructions — must be self-contained (no multi-turn)
+- \`inject_mcp_credentials\`: Set to true to include MCP callback credentials
+- \`fire_and_forget\`: Set to true (default for missions) to avoid timeout
+
+### Example missions
+- Template audit: "Audit all templates for SEO, content quality, and block structure. Report each finding via MCP."
+- Site test: "Browse the public site, test the chat widget, and report any UX issues via MCP."
+- Content review: "Review all blog posts for quality and SEO. Submit suggestions via MCP."
+
+### Important
+- Each mission is stateless — include ALL context in the prompt
+- The peer must have a valid mcp_api_key configured for callbacks
+- Results arrive asynchronously via MCP findings/activities
+- Check Federation activity log for mission status`,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'dispatch_claw_mission',
+        description: 'Dispatch a one-shot mission to an external OpenClaw agent. Fire-and-forget with MCP callback. Use when: running audits, site testing, or delegating tasks to a Claw. NOT for: real-time chat (a2a_chat).',
+        parameters: {
+          type: 'object',
+          required: ['peer_name', 'prompt'],
+          properties: {
+            peer_name: {
+              type: 'string',
+              description: 'Name of the peer agent to dispatch to (e.g. "ClawOne")',
+            },
+            prompt: {
+              type: 'string',
+              description: 'Self-contained mission instructions. Be specific about what to audit/test and how to report back.',
+            },
+            inject_mcp_credentials: {
+              type: 'boolean',
+              description: 'Include MCP callback credentials in the prompt (default: true)',
+            },
+            fire_and_forget: {
+              type: 'boolean',
+              description: 'Send without waiting for response (default: true)',
+            },
+          },
+        },
+      },
+    },
+  },
+  {
     description: 'Lists orders with abandoned or incomplete status. Use when: reviewing abandoned carts, recovery campaigns, checking incomplete orders. NOT for: checking specific order status (use check_order).',
     handler: 'module:orders',
     category: 'crm',
