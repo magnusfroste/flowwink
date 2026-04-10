@@ -15,6 +15,7 @@ import './skill-map';
 import './accounting';
 import './expenses';
 import './timesheets';
+import './purchasing';
 
 // Future modules with custom seedData can add their bootstrap here:
 // import './invoicing';
