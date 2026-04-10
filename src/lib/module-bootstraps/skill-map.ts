@@ -109,6 +109,14 @@ export const MODULE_SKILL_MAP: Partial<Record<keyof ModulesSettings, string[]>> 
     'low_stock_report',
   ],
 
+  purchasing: [
+    'manage_vendor',
+    'create_purchase_order',
+    'send_purchase_order',
+    'receive_goods',
+    'purchase_reorder_check',
+  ],
+
   // ═══ Communication ═══
   newsletter: [
     'send_newsletter',

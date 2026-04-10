@@ -69,6 +69,7 @@ export interface ModulesSettings {
   handbook: ModuleConfig;
   timesheets: ModuleConfig;
   inventory: ModuleConfig;
+  purchasing: ModuleConfig;
   sla: ModuleConfig;
 }
 
@@ -402,6 +403,16 @@ export const defaultModulesSettings: ModulesSettings = {
     autonomy: 'agent-capable',
     adminUI: true,
   },
+  purchasing: {
+    enabled: false,
+    name: 'Purchasing',
+    description: 'Vendor management, purchase orders, goods receipts — FlowPilot auto-creates POs when stock is low',
+    icon: 'Truck',
+    category: 'data',
+    autonomy: 'agent-capable',
+    adminUI: true,
+    optionalIntegrations: ['resend'],
+  },
   sla: {
     enabled: false,
     name: 'SLA Monitor',
@@ -453,6 +464,8 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/handbook': 'handbook',
   '/admin/timesheets': 'timesheets',
   '/admin/inventory': 'inventory',
+  '/admin/vendors': 'purchasing',
+  '/admin/purchase-orders': 'purchasing',
   '/admin/sla': 'sla',
 };
 

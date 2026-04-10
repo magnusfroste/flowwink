@@ -2284,6 +2284,80 @@ export type Database = {
         }
         Relationships: []
       }
+      goods_receipt_lines: {
+        Row: {
+          created_at: string
+          goods_receipt_id: string
+          id: string
+          po_line_id: string
+          quantity_received: number
+        }
+        Insert: {
+          created_at?: string
+          goods_receipt_id: string
+          id?: string
+          po_line_id: string
+          quantity_received?: number
+        }
+        Update: {
+          created_at?: string
+          goods_receipt_id?: string
+          id?: string
+          po_line_id?: string
+          quantity_received?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goods_receipt_lines_goods_receipt_id_fkey"
+            columns: ["goods_receipt_id"]
+            isOneToOne: false
+            referencedRelation: "goods_receipts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goods_receipt_lines_po_line_id_fkey"
+            columns: ["po_line_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_order_lines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      goods_receipts: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          purchase_order_id: string
+          received_date: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          purchase_order_id: string
+          received_date?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          purchase_order_id?: string
+          received_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goods_receipts_purchase_order_id_fkey"
+            columns: ["purchase_order_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       handbook_chapters: {
         Row: {
           content: string
@@ -3547,6 +3621,119 @@ export type Database = {
         }
         Relationships: []
       }
+      purchase_order_lines: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          product_id: string | null
+          purchase_order_id: string
+          quantity: number
+          received_quantity: number
+          tax_rate: number
+          total_cents: number
+          unit_price_cents: number
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          product_id?: string | null
+          purchase_order_id: string
+          quantity?: number
+          received_quantity?: number
+          tax_rate?: number
+          total_cents?: number
+          unit_price_cents?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          product_id?: string | null
+          purchase_order_id?: string
+          quantity?: number
+          received_quantity?: number
+          tax_rate?: number
+          total_cents?: number
+          unit_price_cents?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_order_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_order_lines_purchase_order_id_fkey"
+            columns: ["purchase_order_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_orders: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          currency: string
+          expected_delivery: string | null
+          id: string
+          notes: string | null
+          order_date: string
+          po_number: string
+          status: Database["public"]["Enums"]["purchase_order_status"]
+          subtotal_cents: number
+          tax_cents: number
+          total_cents: number
+          updated_at: string
+          vendor_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          expected_delivery?: string | null
+          id?: string
+          notes?: string | null
+          order_date?: string
+          po_number: string
+          status?: Database["public"]["Enums"]["purchase_order_status"]
+          subtotal_cents?: number
+          tax_cents?: number
+          total_cents?: number
+          updated_at?: string
+          vendor_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          expected_delivery?: string | null
+          id?: string
+          notes?: string | null
+          order_date?: string
+          po_number?: string
+          status?: Database["public"]["Enums"]["purchase_order_status"]
+          subtotal_cents?: number
+          tax_cents?: number
+          total_cents?: number
+          updated_at?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_orders_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quotes: {
         Row: {
           accepted_at: string | null
@@ -4137,6 +4324,54 @@ export type Database = {
         }
         Relationships: []
       }
+      vendors: {
+        Row: {
+          address: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          email: string | null
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+          payment_terms: string | null
+          phone: string | null
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          payment_terms?: string | null
+          phone?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          payment_terms?: string | null
+          phone?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
       webhook_logs: {
         Row: {
           created_at: string
@@ -4525,6 +4760,13 @@ export type Database = {
       lead_status: "lead" | "opportunity" | "customer" | "lost"
       page_status: "draft" | "reviewing" | "published" | "archived"
       product_type: "one_time" | "recurring"
+      purchase_order_status:
+        | "draft"
+        | "sent"
+        | "confirmed"
+        | "partially_received"
+        | "received"
+        | "cancelled"
       quote_status: "draft" | "sent" | "accepted" | "rejected" | "expired"
       skill_origin: "bundled" | "managed" | "agent" | "user" | "a2a"
       skill_trust_level: "auto" | "notify" | "approve"
@@ -4743,6 +4985,14 @@ export const Constants = {
       lead_status: ["lead", "opportunity", "customer", "lost"],
       page_status: ["draft", "reviewing", "published", "archived"],
       product_type: ["one_time", "recurring"],
+      purchase_order_status: [
+        "draft",
+        "sent",
+        "confirmed",
+        "partially_received",
+        "received",
+        "cancelled",
+      ],
       quote_status: ["draft", "sent", "accepted", "rejected", "expired"],
       skill_origin: ["bundled", "managed", "agent", "user", "a2a"],
       skill_trust_level: ["auto", "notify", "approve"],
