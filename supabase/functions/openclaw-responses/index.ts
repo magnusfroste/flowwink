@@ -94,7 +94,7 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, serviceKey);
     const body: ResponsesRequest = await req.json();
-    const { peer_name, peer_id, prompt, system, response_format, model, timeout_ms = 60000 } = body;
+    const { peer_name, peer_id, prompt, system, response_format, model, timeout_ms = 60000, fire_and_forget = false, inject_mcp_credentials = false } = body;
 
     if (!prompt) {
       return new Response(JSON.stringify({ error: 'prompt is required' }), {
@@ -127,36 +127,40 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Inject MCP credentials into the prompt if requested and available
+    let effectivePrompt = prompt;
+    if (inject_mcp_credentials && peer.mcp_api_key) {
+      const mcpBlock = `\n\n## MCP CALLBACK CREDENTIALS\nUse these to report results back to FlowWink:\n- Endpoint: ${supabaseUrl}/functions/v1/mcp-server/rest\n- Authorization: Bearer ${peer.mcp_api_key}\n- Resources: GET /resources/health, GET /resources/skills, GET /resources/templates, GET /resources/templates/{id}\n- Execute: POST /execute with body {"tool":"<tool_name>","arguments":{...}}\n- Report findings: tool "openclaw_report_finding" with type (bug|suggestion|positive|ux_issue|performance|missing_feature), severity, title, description, context`;
+      effectivePrompt = prompt + mcpBlock;
+    }
+
     // Log activity as pending
     const { data: activityRow } = await supabase
       .from('a2a_activity')
       .insert({
         peer_id: peer.id,
         direction: 'outbound',
-        skill_name: 'responses_api',
-        input: { prompt, system, response_format, model },
-        status: 'pending',
+        skill_name: fire_and_forget ? 'mission_dispatch' : 'responses_api',
+        input: { prompt: effectivePrompt, system, response_format, model, fire_and_forget },
+        status: fire_and_forget ? 'dispatched' : 'pending',
       })
       .select('id')
       .single();
 
     // Build OpenResponses request body
-    // See: https://docs.openclaw.ai/gateway/configuration-reference
     const peerUrl = peer.url.replace(/\/$/, '');
     const responsesUrl = `${peerUrl}/v1/responses`;
 
     const openResponsesBody: Record<string, unknown> = {
       model: model || 'openclaw',
-      input: prompt,
+      input: effectivePrompt,
     };
 
     if (system) {
-      // OpenResponses supports instructions field for system-level context
       openResponsesBody.instructions = system;
     }
 
     if (response_format === 'json') {
-      // OpenClaw doesn't support the `text` format key — inject JSON instruction into prompt instead
       const jsonSuffix = '\n\nIMPORTANT: Respond with valid JSON only, no markdown or extra text.';
       openResponsesBody.input = prompt + jsonSuffix;
     }
