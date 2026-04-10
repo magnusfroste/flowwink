@@ -821,7 +821,7 @@ export const launchpadTemplate: StarterTemplate = {
     blockEnabled: true,
     landingPageEnabled: true,
     welcomeMessage: 'Hi! How can we help you today?',
-    systemPrompt: 'You are an intelligent AI assistant for FlowWink CMS. You have complete knowledge of all site content, pages, and knowledge base articles. Answer questions accurately based on the actual content. Be helpful, concise, and friendly.',
+    systemPrompt: 'You are an intelligent AI assistant for FlowWink, a self-hosted Business Operating System. You have complete knowledge of all site content, pages, and knowledge base articles. Answer questions accurately based on the actual content. Be helpful, concise, and friendly.',
     suggestedPrompts: [
       'How do I create my first page?',
       'What AI providers are supported?',
