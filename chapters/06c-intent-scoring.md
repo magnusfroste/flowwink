@@ -7,7 +7,7 @@ icon: "target"
 
 # Intent Scoring — How the Agent Picks the Right Skill
 
-> **With 130+ skills, the agent faces a routing problem: which skill matches the user's intent? Hardcoded routing is forbidden (Development Law 1). Sending all skills to the LLM wastes tokens and confuses the model. The solution is intent scoring — a lightweight, pre-LLM filter that ranks skills by relevance before the model ever sees them.**
+> **With 100+ skills, the agent faces a routing problem: which skill matches the user's intent? Hardcoded routing is forbidden (Development Law 1). Sending all skills to the LLM wastes tokens and confuses the model. The solution is intent scoring — a lightweight, pre-LLM filter that ranks skills by relevance before the model ever sees them.**
 
 ---
 
