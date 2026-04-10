@@ -37,7 +37,7 @@ Chapter 13 (A2A) describes the symbiosis model as an architecture pattern. This 
 │                                                         │
 │  OpenClaw (QA Peer)            FlowPilot (Operator)      │
 │  VPS · Docker · stock          Flowwink edge function    │
-│  A2A plugin enabled            A2A ingest/outbound       │
+│  A2A plugin enabled            28 modules · 130+ skills  │
 │  ──────────────────            ──────────────────────    │
 │  Audits FlowPilot output ──►  Receives findings         │
 │  Runs conformance tests  ──►  Creates objectives         │
