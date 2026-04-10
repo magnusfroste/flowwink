@@ -1,7 +1,7 @@
 ---
 title: "Tool Hallucination Recovery"
 description: "What happens when the LLM generates malformed tool calls — and the production patterns that keep autonomous agents running despite imperfect reasoning."
-order: 16.95
+order: 29
 icon: "wrench"
 ---
 

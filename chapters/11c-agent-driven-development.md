@@ -1,7 +1,7 @@
 ---
 title: "Agent-Driven Development — The Autonomous QA Loop"
 description: "How FlowPilot dispatches QA assignments to OpenClaw via A2A, ClawOne inspects via MCP, reports back, and human triage turns findings into permanent source fixes."
-order: 16.2
+order: 24
 icon: "sparkles"
 ---
 

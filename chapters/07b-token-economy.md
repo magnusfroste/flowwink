@@ -1,7 +1,7 @@
 ---
 title: "The Token Economy"
 description: "Context budget management — how to run 100+ skills without hitting the context ceiling. Prompt compilation, lazy loading, and graceful degradation."
-order: 10.3
+order: 16
 icon: "calculator"
 ---
 

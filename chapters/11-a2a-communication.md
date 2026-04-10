@@ -1,7 +1,7 @@
 ---
 title: "Agent-to-Agent Communication"
 description: "How agents talk to each other — A2A protocol, authentication, discovery, and symbiosis."
-order: 16
+order: 23
 icon: "signal"
 ---
 

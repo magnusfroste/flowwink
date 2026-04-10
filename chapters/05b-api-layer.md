@@ -1,7 +1,7 @@
 ---
 title: "The API Layer"
 description: "The three diverging inference APIs, why agentic tools enforce strict formats, and how proxies like LiteLLM preserve your freedom to switch."
-order: 10.7
+order: 10
 icon: "arrows-right-left"
 ---
 

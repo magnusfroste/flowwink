@@ -1,7 +1,7 @@
 ---
 title: "Agent Governance"
 description: "Who is responsible when an agent makes a mistake? How do organizations structure accountability, manage personality development, and build the new way of working?"
-order: 14
+order: 20
 icon: "scale"
 ---
 

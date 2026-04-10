@@ -1,7 +1,7 @@
 ---
 title: "The Heartbeat Protocol"
 description: "The 7-step autonomous loop — self-heal, propose, plan, advance, automate, reflect, remember."
-order: 8
+order: 9
 icon: "heart"
 ---
 

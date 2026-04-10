@@ -1,7 +1,7 @@
 ---
 title: "Feedback Loops"
 description: "Growth loops, reflection, and self-healing — how agents compound their capabilities over time."
-order: 11
+order: 17
 icon: "arrow-path"
 ---
 

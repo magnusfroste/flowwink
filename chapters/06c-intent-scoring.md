@@ -1,7 +1,7 @@
 ---
 title: "Intent Scoring — Multilingual Skill Selection"
 description: "How an agent with 100+ skills picks the right one every time — synonym expansion, trigger matching, historical boosting, and why it works in Swedish."
-order: 9.7
+order: 14
 icon: "target"
 ---
 

@@ -1,7 +1,7 @@
 ---
 title: "Appendix A: Executive Briefing"
 description: "Two-page summary of the OpenClaw-inspired architecture and patterns for business leaders."
-order: 97
+order: 90
 icon: "briefcase"
 appendix: true
 ---

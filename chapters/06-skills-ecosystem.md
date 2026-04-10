@@ -1,7 +1,7 @@
 ---
 title: "The Skills Ecosystem"
 description: "Skills as knowledge containers — how agents learn, evolve, and share capabilities."
-order: 9
+order: 12
 icon: "puzzle-piece"
 ---
 

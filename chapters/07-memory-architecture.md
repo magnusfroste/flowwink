@@ -1,7 +1,7 @@
 ---
 title: "Memory Architecture"
 description: "The 4-tier memory system — session, working, long-term, and semantic memory powered by pgvector."
-order: 10
+order: 15
 icon: "cpu-chip"
 ---
 

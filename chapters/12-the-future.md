@@ -1,7 +1,7 @@
 ---
 title: "The Future of Agentic AI"
 description: "Where agentic AI is heading in April 2026 — the workforce disruption, the ethical questions, and three horizons for builders."
-order: 19.5
+order: 32
 icon: "rocket-launch"
 ---
 
