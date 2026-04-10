@@ -3940,6 +3940,295 @@ async function executeDbAction(
       throw new Error(`Unknown expenses action: ${action}`);
     }
 
+    // ─── Purchasing: Vendors ─────────────────────────────────────────────
+    case 'vendors': {
+      const { action = 'list' } = args as any;
+
+      if (action === 'list') {
+        const { search, is_active, limit = 50 } = args as any;
+        let query = supabase.from('vendors')
+          .select('id, name, email, phone, payment_terms, currency, is_active, created_at')
+          .order('name').limit(limit);
+        if (is_active !== undefined) query = query.eq('is_active', is_active);
+        if (search) query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%`);
+        const { data, error } = await query;
+        if (error) throw new Error(`List vendors failed: ${error.message}`);
+        return { vendors: data || [], count: (data || []).length };
+      }
+
+      if (action === 'create') {
+        const { name, email, phone, payment_terms, currency, address, notes } = args as any;
+        if (!name) throw new Error('name is required');
+        const { data, error } = await supabase.from('vendors')
+          .insert({ name, email, phone, payment_terms: payment_terms || 'net30', currency: currency || 'SEK', address, notes })
+          .select('id, name').single();
+        if (error) throw new Error(`Create vendor failed: ${error.message}`);
+        return { vendor_id: data.id, name: data.name, created: true };
+      }
+
+      if (action === 'update') {
+        const { vendor_id, ...updateData } = args as any;
+        if (!vendor_id) throw new Error('vendor_id is required');
+        delete updateData.action;
+        const { error } = await supabase.from('vendors')
+          .update({ ...updateData, updated_at: new Date().toISOString() })
+          .eq('id', vendor_id);
+        if (error) throw new Error(`Update vendor failed: ${error.message}`);
+        return { vendor_id, updated: true };
+      }
+
+      if (action === 'deactivate') {
+        const { vendor_id } = args as any;
+        if (!vendor_id) throw new Error('vendor_id is required');
+        const { error } = await supabase.from('vendors')
+          .update({ is_active: false, updated_at: new Date().toISOString() })
+          .eq('id', vendor_id);
+        if (error) throw new Error(`Deactivate vendor failed: ${error.message}`);
+        return { vendor_id, deactivated: true };
+      }
+
+      return { error: `Unknown vendors action: ${action}` };
+    }
+
+    // ─── Purchasing: Purchase Orders ─────────────────────────────────────
+    case 'purchase_orders': {
+      if (skillName === 'create_purchase_order') {
+        const { vendor_id, order_date, expected_delivery, notes, lines: poLines } = args as any;
+        if (!vendor_id || !poLines?.length) throw new Error('vendor_id and lines are required');
+
+        // Calculate totals
+        let subtotalCents = 0;
+        let taxCents = 0;
+        for (const line of poLines) {
+          const lineSubtotal = (line.quantity || 1) * (line.unit_price_cents || 0);
+          const lineTax = Math.round(lineSubtotal * ((line.tax_rate || 25) / 100));
+          subtotalCents += lineSubtotal;
+          taxCents += lineTax;
+        }
+
+        const { data: po, error: poError } = await supabase.from('purchase_orders')
+          .insert({
+            vendor_id,
+            order_date: order_date || new Date().toISOString().split('T')[0],
+            expected_delivery: expected_delivery || null,
+            notes: notes || null,
+            subtotal_cents: subtotalCents,
+            tax_cents: taxCents,
+            total_cents: subtotalCents + taxCents,
+            status: 'draft',
+          }).select('id, po_number, status, total_cents').single();
+        if (poError) throw new Error(`Create PO failed: ${poError.message}`);
+
+        // Insert lines
+        const lineInserts = poLines.map((l: any, i: number) => ({
+          purchase_order_id: po.id,
+          product_id: l.product_id || null,
+          description: l.description || `Line ${i + 1}`,
+          quantity: l.quantity || 1,
+          unit_price_cents: l.unit_price_cents || 0,
+          tax_rate: l.tax_rate ?? 25,
+          line_total_cents: (l.quantity || 1) * (l.unit_price_cents || 0),
+        }));
+        const { error: linesErr } = await supabase.from('purchase_order_lines').insert(lineInserts);
+        if (linesErr) throw new Error(`Insert PO lines failed: ${linesErr.message}`);
+
+        return { purchase_order_id: po.id, po_number: po.po_number, status: po.status, total_cents: po.total_cents, lines_count: poLines.length };
+      }
+
+      if (skillName === 'send_purchase_order') {
+        const { purchase_order_id } = args as any;
+        if (!purchase_order_id) throw new Error('purchase_order_id is required');
+
+        // Get PO with vendor info
+        const { data: po, error: poErr } = await supabase.from('purchase_orders')
+          .select('id, po_number, status, total_cents, currency, notes, order_date, expected_delivery, vendor_id, vendors(name, email)')
+          .eq('id', purchase_order_id).single();
+        if (poErr || !po) throw new Error(`PO not found: ${poErr?.message}`);
+        if (po.status !== 'draft') throw new Error(`PO ${po.po_number} is already ${po.status}`);
+
+        // Get lines for email body
+        const { data: lines } = await supabase.from('purchase_order_lines')
+          .select('description, quantity, unit_price_cents, line_total_cents')
+          .eq('purchase_order_id', purchase_order_id);
+
+        // Update status to sent
+        const { error: updateErr } = await supabase.from('purchase_orders')
+          .update({ status: 'sent', updated_at: new Date().toISOString() })
+          .eq('id', purchase_order_id);
+        if (updateErr) throw new Error(`Update PO status failed: ${updateErr.message}`);
+
+        // Try to send email via Composio Gmail if vendor has email
+        let emailSent = false;
+        const vendorEmail = (po as any).vendors?.email;
+        const vendorName = (po as any).vendors?.name;
+        if (vendorEmail) {
+          try {
+            // Check if Composio is configured
+            const composioKey = Deno.env.get('COMPOSIO_API_KEY');
+            if (composioKey) {
+              // Build email body
+              const lineItems = (lines || []).map((l: any) =>
+                `• ${l.description}: ${l.quantity}x @ ${(l.unit_price_cents / 100).toFixed(2)} ${po.currency} = ${(l.line_total_cents / 100).toFixed(2)} ${po.currency}`
+              ).join('\n');
+
+              const emailBody = [
+                `Purchase Order: ${po.po_number}`,
+                `Date: ${po.order_date}`,
+                po.expected_delivery ? `Expected Delivery: ${po.expected_delivery}` : '',
+                '',
+                'Items:',
+                lineItems,
+                '',
+                `Total: ${(po.total_cents / 100).toFixed(2)} ${po.currency}`,
+                po.notes ? `\nNotes: ${po.notes}` : '',
+              ].filter(Boolean).join('\n');
+
+              const emailRes = await fetch(`${supabaseUrl}/functions/v1/composio-proxy`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${serviceKey}`,
+                },
+                body: JSON.stringify({
+                  action: 'gmail_send',
+                  params: {
+                    to: vendorEmail,
+                    subject: `Purchase Order ${po.po_number}`,
+                    body: emailBody,
+                  },
+                }),
+              });
+              const emailData = await emailRes.json();
+              emailSent = emailRes.ok && !emailData.error;
+              if (!emailSent) {
+                console.warn(`[agent-execute] PO email send failed:`, JSON.stringify(emailData).slice(0, 300));
+              }
+            }
+          } catch (emailErr) {
+            console.warn('[agent-execute] PO email send error (non-fatal):', emailErr);
+          }
+        }
+
+        return {
+          purchase_order_id: po.id,
+          po_number: po.po_number,
+          status: 'sent',
+          vendor: vendorName,
+          email_sent: emailSent,
+          email_to: emailSent ? vendorEmail : null,
+          message: emailSent
+            ? `PO ${po.po_number} sent to ${vendorName} (${vendorEmail})`
+            : vendorEmail
+              ? `PO ${po.po_number} marked as sent. Email delivery failed — check Gmail connection.`
+              : `PO ${po.po_number} marked as sent. No vendor email on file.`,
+        };
+      }
+
+      // Generic PO list/get
+      const { action = 'list' } = args as any;
+      if (action === 'list') {
+        const { status: poStatus, vendor_id, limit = 50 } = args as any;
+        let query = supabase.from('purchase_orders')
+          .select('id, po_number, status, total_cents, currency, order_date, expected_delivery, created_at, vendors(name)')
+          .order('created_at', { ascending: false }).limit(limit);
+        if (poStatus) query = query.eq('status', poStatus);
+        if (vendor_id) query = query.eq('vendor_id', vendor_id);
+        const { data, error } = await query;
+        if (error) throw new Error(`List POs failed: ${error.message}`);
+        return { purchase_orders: data || [], count: (data || []).length };
+      }
+
+      return { error: `Unknown purchase_orders skill: ${skillName}` };
+    }
+
+    // ─── Purchasing: Goods Receipts ──────────────────────────────────────
+    case 'goods_receipts': {
+      const { purchase_order_id, receipt_date, notes, lines: receiptLines } = args as any;
+      if (!purchase_order_id || !receiptLines?.length) throw new Error('purchase_order_id and lines required');
+
+      // Create goods receipt
+      const { data: gr, error: grErr } = await supabase.from('goods_receipts')
+        .insert({
+          purchase_order_id,
+          receipt_date: receipt_date || new Date().toISOString().split('T')[0],
+          notes: notes || null,
+        }).select('id').single();
+      if (grErr) throw new Error(`Create goods receipt failed: ${grErr.message}`);
+
+      // Insert receipt lines and update PO line received quantities
+      for (const rl of receiptLines) {
+        await supabase.from('goods_receipt_lines').insert({
+          goods_receipt_id: gr.id,
+          purchase_order_line_id: rl.po_line_id,
+          quantity_received: rl.quantity_received,
+        });
+
+        // Update received_quantity on the PO line
+        const { data: poLine } = await supabase.from('purchase_order_lines')
+          .select('received_quantity').eq('id', rl.po_line_id).single();
+        const newReceived = (poLine?.received_quantity || 0) + rl.quantity_received;
+        await supabase.from('purchase_order_lines')
+          .update({ received_quantity: newReceived })
+          .eq('id', rl.po_line_id);
+      }
+
+      // Update PO status based on line fulfillment
+      const { data: allLines } = await supabase.from('purchase_order_lines')
+        .select('quantity, received_quantity')
+        .eq('purchase_order_id', purchase_order_id);
+
+      const allReceived = (allLines || []).every((l: any) => l.received_quantity >= l.quantity);
+      const someReceived = (allLines || []).some((l: any) => l.received_quantity > 0);
+      const newStatus = allReceived ? 'received' : someReceived ? 'partially_received' : undefined;
+      if (newStatus) {
+        await supabase.from('purchase_orders')
+          .update({ status: newStatus, updated_at: new Date().toISOString() })
+          .eq('id', purchase_order_id);
+      }
+
+      return {
+        goods_receipt_id: gr.id,
+        purchase_order_id,
+        po_status: newStatus || 'confirmed',
+        lines_received: receiptLines.length,
+        fully_received: allReceived,
+      };
+    }
+
+    // ─── Purchasing: Products (reorder check) ────────────────────────────
+    case 'products': {
+      if (skillName === 'purchase_reorder_check') {
+        const { threshold_override } = args as any;
+
+        const { data: products, error } = await supabase.from('product_stock')
+          .select('product_id, quantity_on_hand, low_stock_threshold, products(id, name, price_cents)')
+          .order('quantity_on_hand', { ascending: true });
+        if (error) throw new Error(`Stock check failed: ${error.message}`);
+
+        const lowStock = (products || []).filter((p: any) => {
+          const threshold = threshold_override ?? p.low_stock_threshold ?? 5;
+          return p.quantity_on_hand <= threshold;
+        }).map((p: any) => ({
+          product_id: p.product_id,
+          product_name: p.products?.name || 'Unknown',
+          current_stock: p.quantity_on_hand,
+          threshold: threshold_override ?? p.low_stock_threshold ?? 5,
+          suggested_quantity: Math.max((threshold_override ?? p.low_stock_threshold ?? 5) * 3, 10),
+        }));
+
+        return {
+          low_stock_items: lowStock,
+          count: lowStock.length,
+          message: lowStock.length > 0
+            ? `${lowStock.length} product(s) below reorder threshold. Consider creating purchase orders.`
+            : 'All stock levels are healthy.',
+        };
+      }
+
+      // Fallthrough: generic products table not handled here
+      return { error: `Unknown products skill in purchasing context: ${skillName}` };
+    }
+
     default:
       return { error: `Unknown db table: ${table}` };
   }
