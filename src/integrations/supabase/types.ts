@@ -70,6 +70,7 @@ export type Database = {
           id: string
           inbound_token_hash: string | null
           last_seen_at: string | null
+          mcp_api_key: string | null
           name: string
           outbound_token: string
           request_count: number
@@ -85,6 +86,7 @@ export type Database = {
           id?: string
           inbound_token_hash?: string | null
           last_seen_at?: string | null
+          mcp_api_key?: string | null
           name: string
           outbound_token?: string
           request_count?: number
@@ -100,6 +102,7 @@ export type Database = {
           id?: string
           inbound_token_hash?: string | null
           last_seen_at?: string | null
+          mcp_api_key?: string | null
           name?: string
           outbound_token?: string
           request_count?: number
