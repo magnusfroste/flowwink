@@ -218,7 +218,7 @@ if (newTier !== currentTier) {
 ```
 
 **Compact mode:** Truncates descriptions to 80 characters, strips parameter descriptions.  
-**Drop mode:** Keeps only the top 20 skills ranked by recent usage frequency (14-day window), in compact format.
+**Drop mode:** Keeps only the top ~20 skills ranked by recent usage frequency (14-day window), in compact format.
 
 ### Real Numbers
 

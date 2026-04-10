@@ -93,7 +93,7 @@ With 100+ skills, loading all instructions costs 50K+ tokens. That's nearly half
 ```
 Phase 1 — STARTUP (always):
   Load metadata only for all eligible skills
-  Cost: ~100 tokens × 80 skills = 8,000 tokens
+  Cost: ~100 tokens × N skills ≈ 8,000 tokens
 
 Phase 2 — ON-CALL (on demand):
   When the LLM selects a skill, fetch its full instructions
@@ -161,7 +161,7 @@ const relevantSkills = allSkills.filter(s =>
 // 100+ skills → typically 30-50 per request
 ```
 
-This means the agent never sees 100 skills simultaneously. It sees 30-50 relevant skills plus core utilities, keeping the metadata cost around 5-8K tokens.
+This means the agent never sees all skills simultaneously. It sees 30-50 relevant skills plus core utilities, keeping the metadata cost around 5-8K tokens.
 
 ---
 
@@ -293,7 +293,7 @@ The **200-skill threshold** is the most important planning milestone. Beyond it,
 | Anti-Pattern | Symptom | Fix |
 |---|---|---|
 | Loading all skill instructions | 50K+ tokens before first message | Lazy instruction loading |
-| No intent filtering | 100 skills in every prompt | Category-based filtering |
+| No intent filtering | All skills in every prompt | Category-based filtering |
 | Single model tier | $144/month for heartbeats | Fast/reasoning tiers |
 | No budget tracking | Runaway API costs | TokenBudget object |
 | Everything in context | Context overflow, truncation | Memory tiers + search |
