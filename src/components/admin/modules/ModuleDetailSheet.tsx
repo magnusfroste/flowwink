@@ -34,6 +34,7 @@ import {
   Mail,
 } from "lucide-react";
 import { moduleRegistry } from "@/lib/module-registry";
+import { getModuleWebhookEvents } from "@/lib/module-webhook-events";
 import type { ModuleCapability } from "@/types/module-contracts";
 import type { ModuleStats } from "@/hooks/useModuleStats";
 import type { ModuleAutonomy, ModuleConfig, ModulesSettings, BookingEmailProvider } from "@/hooks/useModules";
@@ -809,6 +810,53 @@ export function ModuleDetailSheet({
                 </div>
               </>
             )}
+
+            {/* Webhook Events */}
+            {(() => {
+              const webhookEvents = getModuleWebhookEvents(moduleId as keyof ModulesSettings);
+              if (webhookEvents.length === 0) return null;
+              return (
+                <>
+                  <Separator />
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <Webhook className="h-4 w-4 text-primary" />
+                      <h4 className="text-sm font-semibold">Webhook Events</h4>
+                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                        {webhookEvents.length}
+                      </Badge>
+                    </div>
+                    <div className="space-y-1.5">
+                      {webhookEvents.map((ev) => (
+                        <div
+                          key={ev.event}
+                          className="flex items-center justify-between p-2 rounded-lg bg-muted/30"
+                        >
+                          <div className="flex items-center gap-2">
+                            <code className="text-[11px] font-mono bg-muted px-1.5 py-0.5 rounded text-primary">
+                              {ev.event}
+                            </code>
+                          </div>
+                          <span className="text-[11px] text-muted-foreground">{ev.description}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-[11px] text-muted-foreground mt-2">
+                      Configure webhook endpoints in{' '}
+                      <button
+                        onClick={() => {
+                          onOpenChange(false);
+                          window.location.href = '/admin/developer/webhooks';
+                        }}
+                        className="text-primary hover:underline"
+                      >
+                        Developer → Webhooks
+                      </button>
+                    </p>
+                  </div>
+                </>
+              );
+            })()}
 
             {/* Integration Note */}
             {registryModule && (
