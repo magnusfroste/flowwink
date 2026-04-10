@@ -5,6 +5,9 @@ order: 28
 icon: "shield-exclamation"
 ---
 
+> **TL;DR:** Production agents need circuit breakers, retry budgets, graceful degradation, and fallback chains. Resilience isn't about preventing failures — it's about recovering from them faster than humans notice.
+
+
 # Resilience Patterns — Building Agents That Fail Gracefully
 
 > **An agent that never fails is not robust — it's untested. A robust agent fails predictably, recovers automatically, and escalates when it can't recover. The difference between a toy and a production system is the failure path.**

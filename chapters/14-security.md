@@ -5,6 +5,9 @@ order: 26
 icon: "shield-check"
 ---
 
+> **TL;DR:** Agentic systems expand the attack surface: prompt injection, skill impersonation, memory poisoning, token theft. Defense requires layered security — input validation, output filtering, skill signing, and continuous monitoring.
+
+
 # Security for Agentic Systems
 
 > **An autonomous agent has access to tools, memory, external APIs, and business data. If it is compromised — or simply misconfigured — the blast radius is larger than any traditional software bug. This chapter covers what you need to think about.**

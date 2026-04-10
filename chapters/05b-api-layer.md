@@ -5,6 +5,9 @@ order: 10
 icon: "arrows-right-left"
 ---
 
+> **TL;DR:** Three AI inference APIs dominate (OpenAI, Gemini, local). The API layer abstracts provider differences behind a unified interface, enabling hot-switching and automatic fallback without changing skill code.
+
+
 # The API Layer — Inference, Formats, and the Proxy Revolution
 
 > *This is a technical deep-dive. Read it when you're choosing your inference stack or debugging why your tool calls are unreliable. It's not required reading for the main narrative — but it's required knowledge for production deployments.*

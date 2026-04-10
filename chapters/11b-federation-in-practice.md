@@ -5,6 +5,9 @@ order: 25
 icon: "users"
 ---
 
+> **TL;DR:** Federation means bounded collaboration — agents testing each other via OpenResponses, sharing QA findings, and improving source code through structured triage. Not a free-for-all swarm, but disciplined peer review between trusted agents.
+
+
 # Federation in Practice — Bounded QA via OpenResponses
 
 > **MCP is now the primary inspection and reporting channel in Flowwink's Agent-Driven Development loop. This chapter covers the complementary pattern: bounded, schema-enforced QA tasks via OpenResponses when determinism, strict output shape, and auditable contracts are required.**

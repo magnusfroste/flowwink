@@ -5,6 +5,9 @@ order: 5
 icon: "cube"
 ---
 
+> **TL;DR:** OpenClaw's architecture maps to five layers: Soul (identity), Skills (capabilities), Memory (continuity), Heartbeat (autonomy), and Reflection (learning). FlowPilot implements all five with PostgreSQL-backed persistence instead of file-based state.
+
+
 # From OpenClaw to Flowwink — Reference Model and Adaptation
 
 > **This chapter separates fact from design. Every claim about OpenClaw is verified against its source code. Every Flowwink extension is clearly marked.**

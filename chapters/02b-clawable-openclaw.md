@@ -5,6 +5,9 @@ order: 3
 icon: "code-bracket"
 ---
 
+> **TL;DR:** OpenClaw is the reference architecture for autonomous agents — identity via SOUL.md, memory via episodic logs, autonomy via HEARTBEAT.md. 'Running a Claw' means deploying an agent that knows who it is, remembers what happened, and acts without prompting.
+
+
 # We Run a Claw — Skin in the Game
 
 > **This handbook isn't written from the outside. We run a stock OpenClaw instance as a peer to FlowPilot in production, and we study the OpenClaw source code as our architecture reference. This chapter describes what that actually looks like.**

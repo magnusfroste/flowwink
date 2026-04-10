@@ -5,6 +5,9 @@ order: 27
 icon: "beaker"
 ---
 
+> **TL;DR:** Testing autonomous agents requires new approaches: scenario-based evaluation, adversarial probing, regression suites for skill selection, and automated drift detection. You can't unit-test judgment — but you can measure it.
+
+
 # Testing Agentic Systems
 
 > **You wouldn't deploy a web app without tests. You shouldn't deploy an agent without them either. But testing an agent is fundamentally different from testing software — the output is non-deterministic, the state space is enormous, and "correct" is often a judgment call.**

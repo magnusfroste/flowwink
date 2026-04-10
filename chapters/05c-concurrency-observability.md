@@ -5,6 +5,9 @@ order: 11
 icon: "eye"
 ---
 
+> **TL;DR:** Autonomous agents must handle concurrent operations safely and make their behavior observable. Locking prevents duplicate heartbeats, structured logging enables debugging, and activity tracking provides the audit trail.
+
+
 # Concurrency & Observability — Running Agents in Production
 
 > **A demo agent runs alone. A production agent shares infrastructure with other agents, cron jobs, user sessions, and webhooks. Without concurrency control, they will collide. Without observability, you won't know why.**

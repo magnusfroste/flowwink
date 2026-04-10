@@ -5,6 +5,9 @@ order: 9
 icon: "heart"
 ---
 
+> **TL;DR:** The heartbeat is a 7-step autonomous cycle: self-heal → propose → plan → advance → automate → reflect → remember. It transforms a passive tool into an active employee that works 24/7 without human prompting.
+
+
 # The Heartbeat Protocol — How FlowPilot Operates Autonomously
 
 > **The heartbeat is the agent's autonomous operating cycle. It's what separates a tool from an employee. OpenClaw proved the concept with a simple HEARTBEAT.md checklist. Flowwink evolved it into a structured 7-step protocol.**

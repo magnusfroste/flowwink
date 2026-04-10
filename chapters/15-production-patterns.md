@@ -5,6 +5,9 @@ order: 22
 icon: "wrench"
 ---
 
+> **TL;DR:** Six patterns that emerged from months of production operation: opt-in agents, five-layer resilience, skill budget tiers, instance health hashing, module bootstrapping, and unified AI fallback. Not theory — battle-tested code.
+
+
 # Production Patterns — What We Learned Running 100+ Skills
 
 > **This chapter documents six patterns that don't exist in any framework documentation. They emerged from running FlowPilot in production — fixing real failures, managing real token budgets, and scaling from 10 skills to 100+. Each pattern includes the problem it solves, the implementation, and the failure mode it prevents.**

@@ -5,6 +5,9 @@ order: 2
 icon: "arrow-trending-up"
 ---
 
+> **TL;DR:** AI moved from prompt-response (2023) through tool-using agents (2024) to fully autonomous operators (2025–26). Each generation added a capability: tools, memory, then self-direction. Understanding the evolution prevents building yesterday's architecture.
+
+
 # The Evolution: From Prompt-Response to Autonomous Agents
 
 > **We didn't leap from chatbots to autonomous agents. We climbed through layers of increasing capability, each solving the limitations of the last.**

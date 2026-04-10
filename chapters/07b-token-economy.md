@@ -5,6 +5,9 @@ order: 16
 icon: "calculator"
 ---
 
+> **TL;DR:** Context windows sound limitless but aren't. Without active budget management, 40% of tokens go to skill metadata before the first user message. The token economy is the discipline of spending each token where it creates the most value.
+
+
 # The Token Economy — Managing the Scarcest Resource
 
 > **An agent with 100 skills and a 128K context window sounds limitless. It isn't. Without active budget management, you'll burn 40% of your context before the first user message. The token economy is the discipline of spending wisely.**

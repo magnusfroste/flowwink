@@ -5,6 +5,9 @@ order: 8
 icon: "scale"
 ---
 
+> **TL;DR:** Ten architectural laws govern agentic development: no hardcoded routing, self-describing skills, blocks as interfaces, fail-forward design. Break any one and the system becomes unmaintainable. These are invariants, not guidelines.
+
+
 # The 10 Laws of Agentic Architecture
 
 > **These laws aren't guidelines. They're constraints that emerged from building FlowPilot on top of the OpenClaw reference model. They are Flowwink-specific design decisions, validated in production.**

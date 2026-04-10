@@ -5,6 +5,9 @@ order: 29
 icon: "wrench"
 ---
 
+> **TL;DR:** LLMs hallucinate tool calls — inventing parameters, calling nonexistent functions, or misrouting intents. Recovery requires validation layers, graceful error handling, and re-prompting strategies that turn failures into learning.
+
+
 # Tool Hallucination Recovery — When the Model Gets Creative With Your Tools
 
 > **Nobody talks about this. Every production agent experiences it. The LLM generates a tool call that doesn't exist, passes invalid arguments, or invents a function name that sounds plausible but isn't real. If your agent crashes on the first hallucinated tool call, it's not production-ready.**

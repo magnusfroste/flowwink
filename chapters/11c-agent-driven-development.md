@@ -5,6 +5,9 @@ order: 24
 icon: "sparkles"
 ---
 
+> **TL;DR:** Agent-Driven Development (ADD) is the autonomous QA loop: the agent audits its own codebase, files structured findings, and proposes fixes. Human developers triage — the agent does the tedious analysis work at machine speed.
+
+
 # Agent-Driven Development — The Autonomous QA Loop
 
 > **Traditional QA is periodic and manual. Agent-Driven Development (ADD) is continuous and autonomous. But the real breakthrough is not just the automation — it's what happens after: human triage that separates signal from noise, and source fixes that raise the baseline permanently for every future installation.**

@@ -5,6 +5,9 @@ order: 12
 icon: "puzzle-piece"
 ---
 
+> **TL;DR:** Skills are the agent's capabilities — self-describing functions with metadata that the reasoning engine selects autonomously. With 100+ skills organized by business function, dynamic compression keeps the token budget manageable.
+
+
 # The Skills Ecosystem — How Agents Learn New Capabilities
 
 > **A skill is a knowledge container. It's not just a function definition — it's everything the agent needs to know to use that function well.**

@@ -5,6 +5,9 @@ order: 4
 icon: "share"
 ---
 
+> **TL;DR:** 'Clawable' describes software built for agent operation. The ecosystem includes 100+ forks, corporate deployments, and specialized adaptations — all sharing the same three-file core. Convergence is happening fast.
+
+
 # The Claw Ecosystem — One Month In
 
 > **OpenClaw went viral in February 2026. By March, major industry voices were framing it as an operating-system moment for personal AI. By April, multiple significant forks, an NVIDIA security distribution, and a fast-moving community were actively reshaping what autonomous agents should be.**

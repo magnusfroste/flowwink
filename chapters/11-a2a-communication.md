@@ -5,6 +5,9 @@ order: 23
 icon: "signal"
 ---
 
+> **TL;DR:** Agent-to-Agent (A2A) communication lets autonomous systems collaborate. Structured protocols, capability discovery, and trust tokens enable agents to delegate tasks, share findings, and coordinate work across organizational boundaries.
+
+
 # Agent-to-Agent Communication — The Network of Digital Workers
 
 > **One agent can run a business. Multiple agents can run an ecosystem. This chapter covers Flowwink's three-channel architecture: Skills for internal autonomy, A2A for peer-to-peer federation, and MCP for external AI client integration.**
