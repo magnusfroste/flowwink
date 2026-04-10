@@ -4989,7 +4989,7 @@ Deno.serve(async (req) => {
             salesIntelligence: ['prospect_research','prospect_fit_analysis','qualify_lead','enrich_company','contact_finder','sales_profile_setup'],
             paidGrowth: ['ad_campaign_create','ad_creative_generate','ad_performance_check','ad_optimize'],
             resume: ['manage_consultant_profile','match_consultant'],
-            federation: ['a2a_chat','a2a_request','openclaw_start_session','openclaw_end_session','openclaw_report_finding','openclaw_exchange','openclaw_get_status','queue_beta_test','resolve_finding','scan_beta_findings'],
+            federation: ['a2a_chat','a2a_request','dispatch_claw_mission','openclaw_start_session','openclaw_end_session','openclaw_report_finding','openclaw_exchange','openclaw_get_status','queue_beta_test','resolve_finding','scan_beta_findings'],
             siteMigration: ['migrate_url'],
             composio: ['composio_execute','composio_search_tools','composio_gmail_read','composio_gmail_send'],
             tickets: ['ticket_triage'],
