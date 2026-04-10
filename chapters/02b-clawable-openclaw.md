@@ -91,20 +91,21 @@ Here is what a single QA Claw → FlowPilot cycle looks like in practice. This i
        "Audit the booking flow on demo.flowwink.com.
         Return { findings: [{ severity, location, description }] }"
 
-14:04  QA Claw browses the booking page, tests 3 user journeys:
-       - New visitor books a consultation (happy path)
-       - Returning visitor with existing contact record
-       - Mobile viewport booking with timezone mismatch
+14:04  QA Claw audits the booking page source and configuration,
+       runs 3 static analysis checks:
+       - Booking flow markup and schema validation (happy path)
+       - Contact form field mapping against CRM schema
+       - Confirmation template brand-name consistency
 
 14:06  QA Claw returns structured findings:
        {
          "findings": [
            { "severity": "high",   "location": "/booking?service=consult",
-             "description": "Timezone selector defaults to UTC on mobile Safari — user sees wrong available slots" },
-           { "severity": "medium", "location": "/booking confirmation page",
-             "description": "Confirmation email references 'FlowWink' instead of the site's custom brand name" },
+             "description": "Timezone selector hardcoded to UTC in source — should use Intl.DateTimeFormat for visitor locale" },
+           { "severity": "medium", "location": "/booking confirmation template",
+             "description": "Confirmation email references 'FlowWink' instead of the site's custom brand name from site_settings" },
            { "severity": "low",    "location": "/booking?service=consult",
-             "description": "Calendar widget loads 1.2s slower than desktop — lazy-load the date picker" }
+             "description": "Date picker bundle is 48KB uncompressed — consider lazy-loading" }
          ],
          "passed": 14,
          "total_checks": 17
@@ -152,7 +153,7 @@ You don't need Flowwink to copy this pattern. Any team with an existing product 
 In practice, this means:
 
 **OpenClaw's role (Architect):**
-- When a new Flowwink edge function ships, OpenClaw reads the source, audits it against the 10 Laws, and logs findings to a shared `a2a_peers` record
+- When a new Flowwink edge function ships, OpenClaw reads the source, audits it against the FlowPilot Development Laws, and logs findings to a shared `a2a_peers` record
 - When FlowPilot's heartbeat logs show stagnation signals, OpenClaw proposes updated HEARTBEAT.md content and pushes it via A2A
 - OpenClaw runs periodic conformance checks: *"Does this skill definition match what the handler actually does?"*
 - OpenClaw generates SKILL.md drafts for skills that exist in the database but lack documentation
@@ -163,7 +164,7 @@ In practice, this means:
 - Flags skills that are failing for OpenClaw to investigate
 - Pushes performance data (skill usage, success rates) so OpenClaw can reason about the system
 
-**The A2A channel:** OpenClaw connects to Flowwink's `a2a-ingest` edge function using the `a2a:openclaw` handler prefix. FlowPilot calls OpenClaw via the `a2a-outbound` edge function. Both directions use Google A2A protocol over HTTP. Because the connection is peer-to-peer, either agent can initiate — FlowPilot can request an audit, and OpenClaw can push findings proactively based on its own heartbeat cycle.
+**The three-channel architecture:** OpenClaw connects to Flowwink via three distinct channels: (1) **A2A** for asynchronous peer-to-peer chat and discovery via `a2a-ingest` / `a2a-outbound`, (2) **OpenResponses** (`/v1/responses`) for synchronous, schema-validated boss-to-worker tasks, and (3) **MCP** (Model Context Protocol) for stateless HTTP access from external developer clients like Cursor or Claude Desktop — exposing 130+ skills across Content, CRM, Analytics, Commerce, and Growth categories. Because the A2A connection is peer-to-peer, either agent can initiate — FlowPilot can request an audit, and OpenClaw can push findings proactively based on its own heartbeat cycle.
 
 ---
 
@@ -204,17 +205,16 @@ When a new skill is being added to Flowwink, the dev agent:
 
 This is not "generate and hope" — it's a validation loop grounded in the actual production system.
 
-### It audits the 10 Laws
+### It audits the FlowPilot Development Laws
 
-One of the most useful capabilities: the dev agent runs periodic audits against the 10 Laws. For each new feature:
+One of the most useful capabilities: the dev agent runs periodic audits against FlowPilot's four inviolable Development Laws. For each new feature:
 
 | Law | What it checks |
 |-----|---------------|
-| Law 1 (Skills over code) | "Is this implemented as a skill or hardcoded logic?" |
-| Law 3 (Memory integrity) | "Does this write to memory? What's the trust level?" |
-| Law 7 (Human checkpoints) | "Should this require approval? Does it?" |
-| Law 9 (Data sovereignty) | "Does this expose data across instances?" |
-| Law 10 (Unified core) | "Does this duplicate reasoning logic?" |
+| Law 1 (No Hardcoded Intent Detection) | "Is routing done via the general reasoning engine, or are there regex/keyword hacks?" |
+| Law 2 (Skills Are Self-Describing) | "Does the skill metadata contain clear `Use when:` / `NOT for:` markers for the scoring algorithm?" |
+| Law 3 (Blocks Are Interfaces, Not Pipelines) | "Does this block bypass FlowPilot and build its own AI pipeline?" |
+| Law 4 (Fail Forward, Don't Gate) | "Are there unnecessary `enabled` flags on top of working credentials?" |
 
 Findings go into a GitHub issue. The developer decides what to act on. The agent doesn't merge — it flags and explains.
 
@@ -247,7 +247,7 @@ clawable/
 
 ### Open questions
 
-- **Scope:** Should the skill pack cover all 20+ chapters or just the actionable patterns (10 Laws, heartbeat, skill design)?
+- **Scope:** Should the skill pack cover all 20+ chapters or just the actionable patterns (Development Laws, heartbeat, skill design)?
 - **Format:** SKILL.md files that OpenClaw loads on demand? Or a structured knowledge base that FlowPilot queries via its memory system?
 - **Distribution:** ClawHub package? Git submodule? Supabase seed data for new Flowwink instances?
 - **Maintenance:** How do skill pack versions track handbook updates?
@@ -280,7 +280,7 @@ a self-hosted B2B business platform running on Supabase with an autonomous AI ag
 - I do not merge code or deploy without explicit instruction.
 - I do not modify production data directly.
 - I do not assume a fix works — I verify with logs.
-- I do not skip the 10 Laws audit for convenience.
+- I do not skip the Development Laws audit for convenience.
 
 ## Tone
 Technical and direct. No filler. Short sentences. Examples over abstractions.
@@ -305,7 +305,7 @@ On every session start:
 
 ## Every Session
 - Use memory search before writing new code — I may have solved this before
-- When adding a skill, validate against all 10 Laws before proposing
+- When adding a skill, validate against all 4 Development Laws before proposing
 - End result should be verifiable: deployable, testable, or auditable
 ```
 
