@@ -465,10 +465,13 @@ export function getTemplateThumbnail(template: StarterTemplate): { type: 'image'
           return { type: 'image', value: data.imageSrc };
         }
         
-        // Check for video — prefer poster image, fallback to gradient
+        // Check for video — prefer poster image, then backgroundImage fallback, then gradient
         if (data.backgroundType === 'video' && data.videoUrl) {
           if (data.videoPosterUrl) {
             return { type: 'image', value: data.videoPosterUrl };
+          }
+          if (data.backgroundImage) {
+            return { type: 'image', value: data.backgroundImage };
           }
           const primary = template.branding?.primaryColor || '#6366f1';
           const accent = template.branding?.accentColor || '#8b5cf6';
