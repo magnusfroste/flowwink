@@ -512,7 +512,7 @@ const defaultBlogSettings: BlogSettings = {
   showReadingTime: true,
   showReviewer: false,
   archiveTitle: 'Blogg',
-  archiveSlug: 'blogg',
+  archiveSlug: 'blog',
   rssEnabled: true,
   rssTitle: 'RSS Feed',
   rssDescription: 'Latest posts from our blog',

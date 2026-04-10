@@ -32,7 +32,7 @@ export default function BlogPostPage() {
   // Track page view
   usePageViewTracker({
     pageId: post?.id,
-    pageSlug: slug ? `blogg/${slug}` : 'blogg',
+    pageSlug: slug ? `blog/${slug}` : 'blog',
     pageTitle: post?.title,
   });
   
@@ -66,7 +66,7 @@ export default function BlogPostPage() {
   const canonicalUrl = `${baseUrl}/blog/${slug}`;
   const breadcrumbs = [
     { name: 'Hem', url: baseUrl },
-    { name: 'Blog', url: `${baseUrl}/blogg` },
+    { name: 'Blog', url: `${baseUrl}/blog` },
     { name: post.title, url: canonicalUrl }
   ];
   

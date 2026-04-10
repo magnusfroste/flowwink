@@ -148,7 +148,7 @@ Deno.serve(async (req) => {
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
     <title>${escapeXml(feedTitle)}</title>
-    <link>${siteUrl}/blogg</link>
+    <link>${siteUrl}/blog</link>
     <description>${escapeXml(feedDescription)}</description>
     <language>sv</language>
     <lastBuildDate>${formatRFC822Date(new Date())}</lastBuildDate>
