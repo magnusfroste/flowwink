@@ -1,14 +1,75 @@
 # Agent-Driven Development (ADD)
 
-> A development methodology where an external AI agent continuously inspects, audits, and reports on a platform — driving quality improvements autonomously.
+> A development methodology where autonomous agents inspect, audit, and report — while humans triage and decide. Every source-level fix permanently raises the quality baseline.
 
 ## The Problem
 
 Traditional development relies on human QA cycles: manual testing, code review, and periodic audits. These are slow, incomplete, and don't scale. Meanwhile, your platform keeps evolving.
 
-## The Solution: Let Agents Drive Quality
+## The Solution: Three-Layer Quality Loop
 
-FlowWink implements a three-channel architecture that enables an external agent (e.g., OpenClaw) to act as a **persistent development partner**:
+ADD combines autonomous detection with human judgment and compounding remediation:
+
+```
+┌──────────────────────────────────────────────────────────┐
+│                    THE ADD LOOP                          │
+│                                                          │
+│  1. DETECTION    Agent inspects via MCP/A2A              │
+│        ↓                                                 │
+│  2. TRIAGE       Human classifies each finding           │
+│        ↓                                                 │
+│  3. REMEDIATION  Fix at source → quality ratchets up     │
+│        ↓                                                 │
+│     (repeat)     Agent verifies → finds new issues       │
+└──────────────────────────────────────────────────────────┘
+```
+
+### Layer 1: Detection (Autonomous)
+
+An external agent (e.g., OpenClaw) connects via MCP and inspects the platform:
+
+- Reads `flowwink://health`, `flowwink://skills`, `flowwink://templates`
+- Inspects pages, products, leads, blog posts via MCP tools
+- Discovers issues: missing meta descriptions, SEO gaps, broken flows
+- Reports findings via `openclaw_report_finding`
+
+The agent operates continuously without human prompting. It finds what you haven't thought to look for.
+
+### Layer 2: Triage (Human)
+
+This is the critical filter. Not every finding deserves action. The human developer classifies each report into one of three categories:
+
+| Classification | Action | Example |
+|---|---|---|
+| **False Positive** | Dismiss — intentional design choice | Placeholder images in comparison tables |
+| **Runtime Fix** | Patch the specific instance | Fix a typo on one deployed page |
+| **Source Fix** | Fix in template/seed data | Add meta descriptions to template source |
+
+The human decides *what kind* of fix is appropriate. The agent provides the signal; the human provides the judgment.
+
+### Layer 3: Remediation (The Quality Ratchet)
+
+Source Fixes are where the real value compounds:
+
+```
+Template Source Code (src/data/templates/*.ts)
+     ↓ fix applied here
+Every Future Installation
+     ↓ inherits the fix
+Quality Baseline Permanently Raised
+```
+
+A Source Fix means:
+- The improvement survives site resets
+- Every new installation starts at a higher quality baseline
+- The fix is permanent — it can never regress
+- The agent will verify it's resolved in the next inspection cycle
+
+This is **The Quality Ratchet** — it only turns one way.
+
+## The Three Channels
+
+ADD uses a multi-channel architecture for agent-platform communication:
 
 ```
 ┌─────────────────────────────────────────────────┐
@@ -22,18 +83,17 @@ FlowWink implements a three-channel architecture that enables an external agent 
 
 ### Channel 1: MCP (Model Context Protocol)
 
-**Purpose:** Give the external agent direct read/write access to the platform.
+**Purpose:** Give the external agent direct read access to the platform.
 
-The MCP server (`mcp-server` edge function) exposes:
+The MCP server exposes ~40 tools and 7 inspection resources:
 
-- **37 tools** — manage pages, blog posts, leads, products, bookings, orders, settings, and more
-- **6 resources** — read-only inspection endpoints:
-  - `flowwink://health` — site statistics and active objectives
-  - `flowwink://skills` — full skill registry with metadata
-  - `flowwink://activity` — recent FlowPilot actions
-  - `flowwink://modules` — module configuration
-  - `flowwink://peers` — federation peer status
-  - `flowwink://identity` — FlowPilot's soul and configuration
+- `flowwink://health` — site statistics and active objectives
+- `flowwink://skills` — full skill registry with metadata
+- `flowwink://activity` — recent FlowPilot actions
+- `flowwink://modules` — module configuration
+- `flowwink://peers` — federation peer status
+- `flowwink://identity` — FlowPilot's soul and configuration
+- `flowwink://templates/{id}` — detailed template structure for auditing
 
 Authentication uses API keys (`fwk_` prefix) managed in the Developer hub.
 
@@ -54,22 +114,36 @@ The A2A channel preserves conversation history per peer, enabling multi-turn dia
 - `openclaw-responses` — sends prompts with optional JSON schema enforcement
 - Used for deterministic tasks that require validated output (QA reports, audits)
 
-## The Feedback Loop
+## Real-World Example: Template SEO Audit
 
-The magic happens when these channels combine:
+This is how ADD played out in practice:
 
 ```
 1. OpenClaw connects via MCP
-2. Reads flowwink://health, flowwink://skills, flowwink://activity
-3. Inspects pages, products, leads via MCP tools
-4. Discovers issues (missing meta descriptions, broken flows, etc.)
-5. Reports via openclaw_report_finding (MCP tool)
-6. High/critical findings auto-create FlowPilot objectives
-7. FlowPilot acts on objectives in next heartbeat
-8. OpenClaw verifies fixes in next inspection cycle
+2. Reads flowwink://templates for all 5 templates
+3. Discovers: 16 meta descriptions too short, 18 blog titles too long
+4. Reports findings via openclaw_report_finding (8 findings total)
+
+--- Human Triage ---
+
+5. Developer reviews findings:
+   - "Missing header/footer configs" → FALSE POSITIVE (intentional)
+   - "Product images missing" → FALSE POSITIVE (comparison table placeholders)
+   - "Meta descriptions <50 chars" → SOURCE FIX needed
+   - "Blog titles >60 chars" → SOURCE FIX needed
+
+--- Remediation ---
+
+6. Developer edits src/data/templates/*.ts:
+   - Extends 16 meta descriptions to 80-140 characters
+   - Shortens 18 blog titles to ≤60 characters
+7. Findings marked resolved in database
+8. Every future FlowWink installation inherits these improvements
 ```
 
-### Auto-Objective Creation
+**Result:** Quality baseline permanently raised. Zero regression possible.
+
+## Auto-Objective Creation
 
 When `openclaw_report_finding` is called with `severity: "high"` or `"critical"`, FlowPilot automatically creates an active objective:
 
@@ -96,16 +170,18 @@ FlowPilot picks this up in its next heartbeat cycle and executes the fix autonom
 | Human bottleneck | Scales with compute |
 | Reactive | Proactive |
 | Siloed knowledge | Shared context via MCP |
-| Reports → Jira → Sprint | Reports → Objectives → Auto-fix |
+| Reports → Jira → Sprint | Reports → Triage → Source Fix |
+| Fixes are instance-specific | Fixes compound across all installations |
 
 ## Strategic Implications
 
 By letting a more resource-rich agent (OpenClaw) inspect and audit FlowWink:
 
 1. **Leverage asymmetry** — OpenClaw's community invests in agent capabilities; FlowWink benefits automatically
-2. **Quality ratchet** — every finding becomes an objective, every fix is permanent
+2. **Quality ratchet** — every source fix is permanent, every inspection finds fewer issues
 3. **Development velocity** — the external agent discovers issues you haven't thought to look for
-4. **Architecture evolution** — structural recommendations become documented objectives for developers
+4. **Human judgment preserved** — triage ensures false positives don't waste effort
+5. **Architecture evolution** — structural recommendations become documented objectives
 
 ## Configuration
 
