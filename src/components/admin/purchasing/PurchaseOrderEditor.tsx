@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Plus, Trash2, Send, CheckCircle, PackageCheck } from 'lucide-react';
+import { GoodsReceiptDialog } from './GoodsReceiptDialog';
 
 interface POLine {
   id?: string;
@@ -52,6 +53,7 @@ export function PurchaseOrderEditor({ poId, onClose }: Props) {
   const [currency, setCurrency] = useState('SEK');
   const [lines, setLines] = useState<POLine[]>([emptyLine()]);
   const [status, setStatus] = useState('draft');
+  const [receiptDialogOpen, setReceiptDialogOpen] = useState(false);
 
   const { data: vendors = [] } = useQuery({
     queryKey: ['vendors-active'],
@@ -331,8 +333,8 @@ export function PurchaseOrderEditor({ poId, onClose }: Props) {
             </Button>
           )}
           {(isConfirmed || status === 'partially_received') && (
-            <Button onClick={() => saveMutation.mutate('received')} disabled={saveMutation.isPending}>
-              <PackageCheck className="h-4 w-4 mr-2" /> Mark Received
+            <Button onClick={() => setReceiptDialogOpen(true)} disabled={saveMutation.isPending}>
+              <PackageCheck className="h-4 w-4 mr-2" /> Receive Goods
             </Button>
           )}
           {!isDraft && status !== 'cancelled' && status !== 'received' && (
