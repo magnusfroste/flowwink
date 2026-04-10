@@ -172,7 +172,7 @@ Day 1, 14:00 — FlowPilot triggers scheduled QA objective
      ├── ClawOne creates beta_test_session
      │   Scenario: "Skill Description Quality Audit"
      │
-     ├── ClawOne examines 109 skills
+     ├── ClawOne examines 100+ skills
      │   Logs exchanges: observation, observation, question, observation
      │
      ├── ClawOne produces 6 findings:
@@ -219,7 +219,7 @@ This is the kind of observation that requires reading the soul file, remembering
 
 ### 2. Skill Description Decay
 
-> *"12 of 109 skills have descriptions under 40 characters. The intent scorer cannot reliably distinguish these from each other. Recommend expanding with Use when/NOT for markers."*
+> *"12 of 100+ skills have descriptions under 40 characters. The intent scorer cannot reliably distinguish these from each other. Recommend expanding with Use when/NOT for markers."*
 
 FlowPilot had been creating skills autonomously (Law 4), but some self-created skills had minimal descriptions. ClawOne identified the pattern and FlowPilot fixed it by running `skill_update` on each one.
 
@@ -263,7 +263,7 @@ This is stagnation detection (see [Chapter 8b](08b-stagnation-and-drift.md)) per
 
 2. **Scope creep in audits** — ClawOne occasionally tried to audit things outside its expertise (UI design, pricing strategy). The scenario field in `beta_test_sessions` keeps audits focused.
 
-3. **Token cost** — A thorough audit that reads 109 skill descriptions, the soul file, recent memories, and objectives is expensive. Budget accordingly.
+3. **Token cost** — A thorough audit that reads 100+ skill descriptions, the soul file, recent memories, and objectives is expensive. Budget accordingly.
 
 ---
 

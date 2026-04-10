@@ -1,13 +1,13 @@
 ---
 title: "Production Patterns — Battle-Tested at 130+ Skills"
-description: "Six architectural patterns that emerged from running an autonomous agent with 130+ skills, 28 modules, and real business traffic. Not theory — production code."
+description: "Six architectural patterns that emerged from running an autonomous agent with 100+ skills, 25+ modules, and real business traffic. Not theory — production code."
 order: 22
 icon: "wrench"
 ---
 
 # Production Patterns — What We Learned Running 130+ Skills
 
-> **This chapter documents six patterns that don't exist in any framework documentation. They emerged from running FlowPilot in production — fixing real failures, managing real token budgets, and scaling from 10 skills to 130+. Each pattern includes the problem it solves, the implementation, and the failure mode it prevents.**
+> **This chapter documents six patterns that don't exist in any framework documentation. They emerged from running FlowPilot in production — fixing real failures, managing real token budgets, and scaling from 10 skills to 100+. Each pattern includes the problem it solves, the implementation, and the failure mode it prevents.**
 
 ---
 
@@ -28,7 +28,7 @@ Make the agent a **module** — an opt-in capability layer on top of a fully fun
 │  FlowWink Shell (always active)         │
 │  ┌───────────────────────────────────┐  │
 │  │ CMS · CRM · Blog · Orders · ...  │  │
-│  │ 28 modules, all work manually     │  │
+│  │ 25+ modules, all work manually    │  │
 │  └───────────────────────────────────┘  │
 │                                         │
 │  ┌───────────────────────────────────┐  │
@@ -41,7 +41,7 @@ Make the agent a **module** — an opt-in capability layer on top of a fully fun
 ```
 
 When FlowPilot is disabled:
-- All 28 modules work as traditional admin tools
+- All 25+ modules work as traditional admin tools
 - Navigation hides agent-related UI (Engine Room, Activity Feed)
 - No heartbeat runs, no skills execute, no automations fire
 - The platform is a standard CMS/CRM
@@ -176,7 +176,7 @@ Without these layers, we observed:
 
 ### The Problem
 
-At 10 skills, you can send everything to the LLM. At 130+, you can't — you'll consume 60% of your context window before the agent starts reasoning. But static truncation is too blunt: it doesn't know which skills matter for the current task.
+At 10 skills, you can send everything to the LLM. At 100+, you can't — you'll consume 60% of your context window before the agent starts reasoning. But static truncation is too blunt: it doesn't know which skills matter for the current task.
 
 ### The Pattern
 
@@ -187,7 +187,7 @@ Token budget used:     <50%          50-75%          >75%
                         │              │               │
                    ┌────┴────┐   ┌────┴────┐    ┌────┴────┐
                    │  FULL   │   │ COMPACT  │    │  DROP   │
-                   │ All 130 │   │ All 130  │    │ Top 20  │
+                   │All 100+ │   │ All 100+ │    │ Top 20  │
                    │ skills  │   │ truncated│    │ compact │
                    │ w/full  │   │ desc (80 │    │ format  │
                    │ desc    │   │ chars)   │    │ only    │
@@ -224,11 +224,11 @@ if (newTier !== currentTier) {
 
 | Tier | Skills loaded | Tokens consumed | % of 128K budget |
 |------|--------------|-----------------|-------------------|
-| Full | 130 | ~12,600 | 9.8% |
-| Compact | 130 | ~5,200 | 4.1% |
+| Full | 100+ | ~10,000+ | ~8% |
+| Compact | 100+ | ~4,000+ | ~3% |
 | Drop | 20 | ~800 | 0.6% |
 
-The difference between Full and Drop is **11,800 tokens** — enough for ~15 additional conversation turns or a full plan decomposition.
+The difference between Full and Drop is significant — enough for ~15 additional conversation turns or a full plan decomposition.
 
 ---
 
@@ -345,7 +345,7 @@ export const MODULE_SKILL_MAP: Record<string, string[]> = {
   invoicing:   ['manage_invoices', 'generate_invoice_pdf'],
   booking:     ['manage_bookings', 'check_availability'],
   newsletter:  ['manage_newsletters', 'manage_subscribers'],
-  // ... 28 modules total
+  // ... 25+ modules total
 };
 ```
 
@@ -434,7 +434,7 @@ These six patterns aren't independent. They compound:
 
 1. **Opt-in agent** lets you start without risk → builds trust
 2. **Module bootstrap** means each new capability arrives fully wired → no drift
-3. **Skill budget** ensures 130+ skills don't overwhelm the model → consistent quality
+3. **Skill budget** ensures 100+ skills don't overwhelm the model → consistent quality
 4. **Five-layer resilience** catches failures before they cascade → uptime
 5. **Instance health** detects when something breaks → proactive fixes
 6. **AI fallback chain** ensures the agent always has a model to reason with → availability

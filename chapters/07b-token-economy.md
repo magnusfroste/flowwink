@@ -255,7 +255,7 @@ This pattern — **pointers in context, data in memory** — is how you scale be
 
 ## The Context Stack — Where Every Token Goes
 
-Understanding the total context cost requires seeing the full stack. Here is a real breakdown from a FlowPilot instance with 109 skills:
+Understanding the total context cost requires seeing the full stack. Here is a real breakdown from a FlowPilot instance with 100+ skills:
 
 ```
 Layer                                   Tokens     % of 128K
@@ -271,7 +271,7 @@ Conversation history                   ~5-15K     4-12%
 Total:                                 ~25-35K    ~20-27%
 ```
 
-The key insight: **with 109 skills, the system uses only ~25% of the context window.** This leaves 75% for the model's reasoning chain and tool call responses.
+The key insight: **with 100+ skills, the system uses only ~25% of the context window.** This leaves 75% for the model's reasoning chain and tool call responses.
 
 ### Scaling Thresholds
 

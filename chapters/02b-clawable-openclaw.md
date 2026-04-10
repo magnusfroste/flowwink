@@ -37,7 +37,7 @@ Chapter 13 (A2A) describes the symbiosis model as an architecture pattern. This 
 │                                                         │
 │  OpenClaw (QA Peer)            FlowPilot (Operator)      │
 │  VPS · Docker · stock          Flowwink edge function    │
-│  A2A plugin enabled            28 modules · 130+ skills  │
+│  A2A plugin enabled            25+ modules · 100+ skills │
 │  ──────────────────            ──────────────────────    │
 │  Audits FlowPilot output ──►  Receives findings         │
 │  Runs conformance tests  ──►  Creates objectives         │
@@ -164,7 +164,7 @@ In practice, this means:
 - Flags skills that are failing for OpenClaw to investigate
 - Pushes performance data (skill usage, success rates) so OpenClaw can reason about the system
 
-**The three-channel architecture:** OpenClaw connects to Flowwink via three distinct channels: (1) **A2A** for asynchronous peer-to-peer chat and discovery via `a2a-ingest` / `a2a-outbound`, (2) **OpenResponses** (`/v1/responses`) for synchronous, schema-validated boss-to-worker tasks, and (3) **MCP** (Model Context Protocol) for stateless HTTP access from external developer clients like Cursor or Claude Desktop — exposing 130+ skills across Content, CRM, Analytics, Commerce, and Growth categories. Because the A2A connection is peer-to-peer, either agent can initiate — FlowPilot can request an audit, and OpenClaw can push findings proactively based on its own heartbeat cycle.
+**The three-channel architecture:** OpenClaw connects to Flowwink via three distinct channels: (1) **A2A** for asynchronous peer-to-peer chat and discovery via `a2a-ingest` / `a2a-outbound`, (2) **OpenResponses** (`/v1/responses`) for synchronous, schema-validated boss-to-worker tasks, and (3) **MCP** (Model Context Protocol) for stateless HTTP access from external developer clients like Cursor or Claude Desktop — exposing 100+ skills across Content, CRM, Analytics, Commerce, and Growth categories. Because the A2A connection is peer-to-peer, either agent can initiate — FlowPilot can request an audit, and OpenClaw can push findings proactively based on its own heartbeat cycle.
 
 ---
 
