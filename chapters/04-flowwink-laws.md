@@ -66,7 +66,7 @@ AI Tiers:
 
 Never inject all skill instructions into the prompt. Load only the instructions for skills the agent actually calls.
 
-**Why:** Skill instructions are expensive (~500 tokens each). With 118 registered skills (plus 32 built-in tools), that's 59,000+ tokens just for instructions — nearly half the context window. Instead, load metadata only (~10 tokens per skill), then fetch full instructions on-demand.
+**Why:** Skill instructions are expensive (~500 tokens each). With 130+ registered skills (plus 32 built-in tools), that's 65,000+ tokens just for instructions — more than half the context window. Instead, load metadata only (~10 tokens per skill), then fetch full instructions on-demand.
 
 **Implementation:**
 ```
@@ -75,7 +75,7 @@ Phase 2 (on-call): Load full instructions when LLM calls the skill (~500 tokens/
 Phase 3 (budget): Compress or drop skills as context fills up
 ```
 
-**The anti-pattern:** Loading all 118 skill instructions into the system prompt. You'll hit context limits before the first tool call.
+**The anti-pattern:** Loading all 130+ skill instructions into the system prompt. You'll hit context limits before the first tool call.
 
 ---
 
@@ -223,7 +223,7 @@ These laws aren't theoretical. They emerged from building FlowPilot, which imple
 
 | Law | FlowPilot Implementation |
 |-----|-------------------------|
-| 1 | 118 registered skills (106 bundled + runtime-created) with rich `instructions` columns |
+| 1 | 130+ registered skills with rich `instructions` columns across 28 modules |
 | 2 | `resolveAiConfig()` with `fast` and `reasoning` tiers |
 | 3 | `loadSkillTools()` + `fetchSkillInstructions()` lazy loading |
 | 4 | 32 built-in self-modification tools |
@@ -234,6 +234,8 @@ These laws aren't theoretical. They emerged from building FlowPilot, which imple
 | 8 | `runSelfHealing()` in every heartbeat |
 | 9 | 7-step heartbeat protocol in `flowpilot-heartbeat` |
 | 10 | Single `agent-reason.ts` module shared by all surfaces |
+
+> **Note on terminology:** These 10 Laws are Flowwink's *architectural* laws — how the system is built. They are complemented by 4 *Development Laws* (documented in CLAUDE.md) that govern how FlowPilot is *developed*: no hardcoded intent detection, self-describing skills, blocks as interfaces, and fail forward. The architectural laws define the structure; the development laws protect the autonomy.
 
 ---
 

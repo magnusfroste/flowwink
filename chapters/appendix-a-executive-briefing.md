@@ -144,9 +144,9 @@ If the first experiment works, the rest of this handbook shows how to scale: mor
 
 - **Big picture** — 00 Foreword, 01 Introduction, 12 The Future
 - **OpenClaw reference** — 02 Evolution, 03 OpenClaw Architecture, 02c Claw Ecosystem
-- **FlowPilot / Flowwink adaptation** — 03 OpenClaw Architecture (Part 2), 04 Flowwink Laws, 05 Heartbeat Protocol, 07 Memory Architecture
+- **FlowPilot / Flowwink adaptation** — 03 OpenClaw Architecture (Part 2), 04 The 10 Architectural Laws, 05 Heartbeat Protocol, 07 Memory Architecture
 - **Business patterns** — 02b We Run a Claw, 11 A2A Communication, 17 ClawStack, 13b Agent Governance
-- **Security & control plane** — 03b Control Plane, 06 Skills Ecosystem, Appendix B: Kilo Code
+- **Security & control plane** — 03b Control Plane, 06 Skills Ecosystem, 06c Intent Scoring, Appendix B: Kilo Code
 
 You can read the handbook linearly or jump to the sections that map closest to your first experiment.
 

@@ -7,19 +7,19 @@ icon: "target"
 
 # Intent Scoring — How the Agent Picks the Right Skill
 
-> **With 109 skills, the agent faces a routing problem: which skill matches the user's intent? Hardcoded routing is forbidden (Law 1). Sending all skills to the LLM wastes tokens and confuses the model. The solution is intent scoring — a lightweight, pre-LLM filter that ranks skills by relevance before the model ever sees them.**
+> **With 130+ skills, the agent faces a routing problem: which skill matches the user's intent? Hardcoded routing is forbidden (Development Law 1). Sending all skills to the LLM wastes tokens and confuses the model. The solution is intent scoring — a lightweight, pre-LLM filter that ranks skills by relevance before the model ever sees them.**
 
 ---
 
 ## Why Not Just Let the LLM Choose?
 
-With 10 skills, you can. With 109, you can't — for three reasons:
+With 10 skills, you can. With 130+, you can't — for three reasons:
 
-1. **Token cost** — 109 skills × ~97 tokens metadata each = ~10K tokens. With intent filtering, it's 25 skills × ~97 = ~2.4K tokens. That's 7.6K saved per request.
+1. **Token cost** — 130 skills × ~97 tokens metadata each = ~12.6K tokens. With intent filtering, it's 25 skills × ~97 = ~2.4K tokens. That's 10K saved per request.
 
 2. **Selection accuracy** — LLMs struggle with large tool sets. OpenAI documents a 128-tool limit, but accuracy degrades well before that. With fewer, more relevant options, the model picks better.
 
-3. **Hallucination reduction** — More tools in the prompt means more names for the model to confuse. Reducing from 109 to 25 cuts the surface area for phantom tool calls by 75%.
+3. **Hallucination reduction** — More tools in the prompt means more names for the model to confuse. Reducing from 130 to 25 cuts the surface area for phantom tool calls by 80%.
 
 ---
 
@@ -203,7 +203,7 @@ The intent scorer embodies a specific philosophy about agent architecture:
 
 3. **Language-aware, not language-dependent** — Swedish synonyms work alongside English ones. Adding German, Spanish, or Japanese is a matter of extending the map — no architectural changes needed.
 
-4. **Observable** — The scorer logs its work: `[intent-scorer] 109 skills → 25 (18 intent-matched, expanded: 12 terms)`. You can always see what happened and why.
+4. **Observable** — The scorer logs its work: `[intent-scorer] 130 skills → 25 (18 intent-matched, expanded: 12 terms)`. You can always see what happened and why.
 
 ---
 
