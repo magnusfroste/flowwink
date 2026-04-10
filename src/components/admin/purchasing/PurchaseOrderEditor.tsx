@@ -121,6 +121,7 @@ export function PurchaseOrderEditor({ poId, onClose }: Props) {
 
   const saveMutation = useMutation({
     mutationFn: async (newStatus?: string) => {
+      const resolvedStatus = (newStatus || status) as 'draft' | 'sent' | 'confirmed' | 'partially_received' | 'received' | 'cancelled';
       const poPayload = {
         vendor_id: vendorId,
         order_date: orderDate,
@@ -130,7 +131,7 @@ export function PurchaseOrderEditor({ poId, onClose }: Props) {
         subtotal_cents: subtotal,
         tax_cents: tax,
         total_cents: total,
-        status: newStatus || status,
+        status: resolvedStatus,
         created_by: user?.id,
       };
 
@@ -139,7 +140,10 @@ export function PurchaseOrderEditor({ poId, onClose }: Props) {
         const { error } = await supabase.from('purchase_orders').update(poPayload).eq('id', poId);
         if (error) throw error;
       } else {
-        const { data, error } = await supabase.from('purchase_orders').insert({ ...poPayload, po_number: '' }).select('id').single();
+        const { data, error } = await supabase.from('purchase_orders').insert([{
+          ...poPayload,
+          po_number: `PO-TEMP-${Date.now()}`,
+        }]).select('id').single();
         if (error) throw error;
         id = data.id;
       }
