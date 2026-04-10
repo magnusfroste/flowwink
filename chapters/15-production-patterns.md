@@ -1,11 +1,11 @@
 ---
-title: "Production Patterns — Battle-Tested at 130+ Skills"
+title: "Production Patterns — Battle-Tested in Production"
 description: "Six architectural patterns that emerged from running an autonomous agent with 100+ skills, 25+ modules, and real business traffic. Not theory — production code."
 order: 22
 icon: "wrench"
 ---
 
-# Production Patterns — What We Learned Running 130+ Skills
+# Production Patterns — What We Learned Running 100+ Skills
 
 > **This chapter documents six patterns that don't exist in any framework documentation. They emerged from running FlowPilot in production — fixing real failures, managing real token budgets, and scaling from 10 skills to 100+. Each pattern includes the problem it solves, the implementation, and the failure mode it prevents.**
 
