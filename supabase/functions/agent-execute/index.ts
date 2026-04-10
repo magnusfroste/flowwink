@@ -4196,23 +4196,24 @@ async function executeDbAction(
       };
     }
 
-    // ─── Purchasing: Products (reorder check) ────────────────────────────
+    // ─── Purchasing: Reorder Check (via products table) ─────────────────
     case 'products': {
       if (skillName === 'purchase_reorder_check') {
         const { threshold_override } = args as any;
 
-        const { data: products, error } = await supabase.from('product_stock')
-          .select('product_id, quantity_on_hand, low_stock_threshold, products(id, name, price_cents)')
-          .order('quantity_on_hand', { ascending: true });
+        const { data: products, error } = await supabase.from('products')
+          .select('id, name, stock_quantity, low_stock_threshold, price_cents')
+          .eq('track_inventory', true)
+          .eq('is_active', true);
         if (error) throw new Error(`Stock check failed: ${error.message}`);
 
         const lowStock = (products || []).filter((p: any) => {
           const threshold = threshold_override ?? p.low_stock_threshold ?? 5;
-          return p.quantity_on_hand <= threshold;
+          return p.stock_quantity !== null && p.stock_quantity <= threshold;
         }).map((p: any) => ({
-          product_id: p.product_id,
-          product_name: p.products?.name || 'Unknown',
-          current_stock: p.quantity_on_hand,
+          product_id: p.id,
+          product_name: p.name,
+          current_stock: p.stock_quantity,
           threshold: threshold_override ?? p.low_stock_threshold ?? 5,
           suggested_quantity: Math.max((threshold_override ?? p.low_stock_threshold ?? 5) * 3, 10),
         }));
