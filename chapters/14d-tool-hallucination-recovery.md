@@ -240,3 +240,7 @@ Track the ratio over time. A healthy system has < 2% phantom tool calls. If the 
 *Tool hallucination is not a bug — it's a property of probabilistic reasoning. The measure of a production agent is not whether it hallucinates, but whether it recovers gracefully when it does. Build for the 1%, because in production, 1% happens every day.*
 
 *Next: running a swarm of autonomous agents on your own infrastructure. [ClawStack →](17-clawstack.md)*
+
+---
+
+> **Part V begins here.** The engineering is done. The final chapters look forward — swarm architectures, browser automation, and the trajectory of agentic AI. From here, it's vision.
