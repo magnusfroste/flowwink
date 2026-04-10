@@ -38,6 +38,12 @@ export const heroVideoLibrary: HeroVideo[] = [
     tags: ['business', 'office', 'team', 'corporate', 'meeting', 'collaboration', 'professional'],
     label: 'Modern Office',
   },
+  {
+    url: 'https://videos.pexels.com/video-files/6339834/6339834-uhd_2560_1440_30fps.mp4',
+    posterUrl: 'https://images.pexels.com/videos/6339834/free-video-6339834.jpg?auto=compress&w=1920',
+    tags: ['business', 'team', 'strategy', 'meeting', 'people', 'collaboration', 'diverse', 'leadership', 'agentic', 'operating system'],
+    label: 'Strategy Meeting',
+  },
   // Nature / Wellness
   {
     url: 'https://videos.pexels.com/video-files/1093662/1093662-uhd_2560_1440_30fps.mp4',
