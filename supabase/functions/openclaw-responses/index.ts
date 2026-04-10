@@ -162,12 +162,78 @@ Deno.serve(async (req) => {
 
     if (response_format === 'json') {
       const jsonSuffix = '\n\nIMPORTANT: Respond with valid JSON only, no markdown or extra text.';
-      openResponsesBody.input = prompt + jsonSuffix;
+      openResponsesBody.input = effectivePrompt + jsonSuffix;
     }
 
-    console.log(`[openclaw-responses] Calling peer '${peer.name}' at ${responsesUrl}`);
+    console.log(`[openclaw-responses] Calling peer '${peer.name}' at ${responsesUrl}${fire_and_forget ? ' (fire-and-forget)' : ''}`);
 
-    // Make the call
+    // =========================================================================
+    // FIRE-AND-FORGET MODE: Send POST, don't wait for response, return immediately
+    // Avoids 60s edge function timeout for long-running missions
+    // =========================================================================
+    if (fire_and_forget) {
+      // Start the fetch but don't await it — use waitUntil-style pattern
+      const fetchPromise = fetch(responsesUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${gatewayToken}`,
+        },
+        body: JSON.stringify(openResponsesBody),
+      }).then(async (response) => {
+        // Background: update activity with result when it arrives
+        const durationMs = Date.now() - startTime;
+        try {
+          const result = await response.json();
+          if (activityRow?.id) {
+            await supabase.from('a2a_activity').update({
+              output: result,
+              status: response.ok ? 'success' : 'error',
+              duration_ms: durationMs,
+              error_message: response.ok ? null : `HTTP ${response.status}`,
+            }).eq('id', activityRow.id);
+          }
+          if (response.ok) {
+            await supabase.from('a2a_peers').update({
+              last_seen_at: new Date().toISOString(),
+              request_count: (peer.request_count || 0) + 1,
+            }).eq('id', peer.id);
+          }
+        } catch (err: any) {
+          if (activityRow?.id) {
+            await supabase.from('a2a_activity').update({
+              status: 'error', duration_ms: durationMs,
+              error_message: `Background fetch error: ${err.message}`,
+            }).eq('id', activityRow.id);
+          }
+        }
+      }).catch(async (err: any) => {
+        if (activityRow?.id) {
+          await supabase.from('a2a_activity').update({
+            status: 'error', duration_ms: Date.now() - startTime,
+            error_message: `Network error: ${err.message}`,
+          }).eq('id', activityRow.id);
+        }
+      });
+
+      // Don't await — let it run in background
+      // Edge runtime will keep the isolate alive for pending promises briefly
+      void fetchPromise;
+
+      return new Response(JSON.stringify({
+        status: 'dispatched',
+        activity_id: activityRow?.id,
+        peer: peer.name,
+        message: `Mission dispatched to '${peer.name}'. Results will arrive via MCP callback.`,
+      }), {
+        status: 202,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // =========================================================================
+    // SYNCHRONOUS MODE: Wait for response (original behavior)
+    // =========================================================================
     let result: unknown;
     let status: 'success' | 'error' = 'success';
     let errorMessage: string | null = null;
@@ -180,7 +246,6 @@ Deno.serve(async (req) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          // OpenResponses uses gateway_token (separate from A2A outbound_token)
           'Authorization': `Bearer ${gatewayToken}`,
         },
         body: JSON.stringify(openResponsesBody),
@@ -202,10 +267,8 @@ Deno.serve(async (req) => {
         const r = result as any;
         errorMessage = r?.error?.message || r?.error || `HTTP ${response.status}`;
       } else {
-        // Extract the actual response text from OpenResponses format
         const r = result as any;
         if (r?.output) {
-          // OpenResponses wraps output in an array of response items
           const textParts = Array.isArray(r.output)
             ? r.output
                 .filter((item: any) => item.type === 'message' && item.role === 'assistant')
