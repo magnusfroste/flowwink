@@ -390,3 +390,7 @@ The community converging on these patterns is evidence that the architecture in 
 *One month after the most viral open-source launch in history, the pattern is clear: the autonomous agent core is proven. The remaining work is adaptation — security, multi-tenancy, specialization, scale. Different projects are solving different parts of that problem. They will converge.*
 
 *Next: how the reference model actually works — verified against source code. [From OpenClaw to Flowwink →](03-openclaw-architecture.md)*
+
+---
+
+> **Part II begins here.** You now understand *what* an autonomous agent is and the ecosystem building them. The next chapters shift from concepts to construction — the concrete architecture, protocols, and skills that make a Claw tick. If Part I was the *why*, Part II is the *how*.

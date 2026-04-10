@@ -1,7 +1,7 @@
 ---
 title: "Models — Selection, Dimensions, and Tradeoffs"
 description: "OpenRouter as aggregator, open-source vs closed-source, local LLMs vs cloud-based — the dimensions that matter when choosing models for your agentic system."
-order: 6.5
+order: 7
 icon: "cpu"
 ---
 

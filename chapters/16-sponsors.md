@@ -1,7 +1,7 @@
 ---
 title: "Partners"
 description: "The organizations that made Clawable possible — and why their work matters for the future of autonomous agents."
-order: 21
+order: 34
 icon: "heart"
 ---
 

@@ -1,7 +1,7 @@
 ---
 title: "Security for Agentic Systems"
 description: "Sandboxing, secret management, prompt injection, network policies, and what B2B deployments need to get right."
-order: 16.5
+order: 26
 icon: "shield-check"
 ---
 

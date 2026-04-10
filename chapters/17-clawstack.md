@@ -1,7 +1,7 @@
 ---
 title: "ClawStack — From Theory to Swarm"
 description: "How to spin up a swarm of autonomous agents on your own infrastructure in an afternoon, and connect Paperclip as the CEO that delegates to all of them."
-order: 17
+order: 30
 icon: "server"
 ---
 

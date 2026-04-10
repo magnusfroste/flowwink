@@ -1,7 +1,7 @@
 ---
 title: "Federation in Practice — Bounded QA via OpenResponses"
 description: "How OpenResponses complements MCP in Agent-Driven Development: deterministic, schema-bound audits for high-trust quality workflows."
-order: 16.25
+order: 25
 icon: "users"
 ---
 

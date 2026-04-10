@@ -1,7 +1,7 @@
 ---
 title: "Stagnation and Drift"
 description: "The two long-term failure modes of autonomous agents — why they stop improving and why they change in ways you didn't intend."
-order: 12
+order: 18
 icon: "exclamation-triangle"
 ---
 

@@ -1,7 +1,7 @@
 ---
 title: "Human-in-the-Loop"
 description: "The decision framework for when agents should act autonomously vs. when humans should approve."
-order: 13
+order: 19
 icon: "user-group"
 ---
 

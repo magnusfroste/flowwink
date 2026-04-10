@@ -1,7 +1,7 @@
 ---
 title: "Skill Self-Creation"
 description: "When agents evolve beyond their initial configuration — autonomous skill creation, template generation, and the path to compound learning."
-order: 9.5
+order: 13
 icon: "sparkles"
 ---
 

@@ -1,7 +1,7 @@
 ---
 title: "Resilience Patterns"
 description: "Circuit breakers, exponential backoff, and the five-layer safety stack that keeps autonomous agents from cascading into failure."
-order: 16.9
+order: 28
 icon: "shield-exclamation"
 ---
 

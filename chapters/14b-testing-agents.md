@@ -1,7 +1,7 @@
 ---
 title: "Testing Agentic Systems"
 description: "How to test agents — skills, memory, A2A, drift, and the QA practices that traditional software testing doesn't cover."
-order: 16.7
+order: 27
 icon: "beaker"
 ---
 

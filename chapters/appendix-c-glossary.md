@@ -1,7 +1,7 @@
 ---
 title: "Appendix C: Glossary"
 description: "Key terms and concepts used throughout the Clawable handbook."
-order: 99
+order: 92
 icon: "book-open"
 appendix: true
 ---

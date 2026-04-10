@@ -1,7 +1,7 @@
 ---
 title: "The Token Economy"
 description: "Context budget management — how to run 100+ skills without hitting the context ceiling. Prompt compilation, lazy loading, and graceful degradation."
-order: 10.3
+order: 16
 icon: "calculator"
 ---
 
@@ -411,3 +411,7 @@ The numbers are almost always surprisingly small. The agent is not expensive —
 *The token economy is not about limits — it's about allocation. Every token spent on skill metadata is a token not available for reasoning. Every reasoning token spent on the wrong model is money wasted. The discipline is spending each token where it creates the most value.*
 
 *Next: the three diverging inference APIs and how proxies preserve your freedom to switch. [The API Layer →](05b-api-layer.md)*
+
+---
+
+> **Part III begins here.** You've seen how the engine works: heartbeats, skills, memory, tokens. The next chapters shift to *operating* that engine — feedback loops, drift detection, governance, and the production patterns that keep an autonomous agent reliable at scale.

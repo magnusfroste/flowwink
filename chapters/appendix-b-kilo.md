@@ -1,7 +1,7 @@
 ---
 title: "Appendix B: Kilo Code"
 description: "The agentic coding tool used to write this handbook — how it works under the hood, hidden gems, and why it matters in the broader ecosystem."
-order: 98
+order: 91
 icon: "cpu-chip"
 appendix: true
 ---

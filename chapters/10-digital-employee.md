@@ -1,7 +1,7 @@
 ---
 title: "The Digital Employee"
 description: "How companies should think about AI agents — hiring, management, ROI, and organizational impact."
-order: 15
+order: 21
 icon: "building-office"
 ---
 

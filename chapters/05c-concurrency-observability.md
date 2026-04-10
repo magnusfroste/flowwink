@@ -1,7 +1,7 @@
 ---
 title: "Concurrency & Observability"
 description: "Lane-based locking, trace IDs, and production debugging — the infrastructure that keeps autonomous agents from colliding."
-order: 8.5
+order: 11
 icon: "eye"
 ---
 

@@ -1,7 +1,7 @@
 ---
 title: "The 10 Laws of Agentic Architecture"
 description: "The constraints that emerged from building production agentic systems. Skills, memory, safety, heartbeat, and self-evolution."
-order: 7
+order: 8
 icon: "scale"
 ---
 

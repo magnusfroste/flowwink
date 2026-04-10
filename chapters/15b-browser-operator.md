@@ -1,7 +1,7 @@
 ---
 title: "The Browser Operator"
 description: "How an autonomous agent navigates the real web — public scraping, login-walled relay via Chrome Extension, and the Signal Capture pattern for manual ingestion."
-order: 17.3
+order: 31
 icon: "globe"
 ---
 

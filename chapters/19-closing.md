@@ -1,7 +1,7 @@
 ---
 title: "Closing Words"
 description: "What we built, what we learned, and why the people who understand this technology will shape what comes next."
-order: 20
+order: 33
 icon: "star"
 ---
 

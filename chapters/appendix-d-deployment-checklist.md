@@ -1,7 +1,7 @@
 ---
 title: "Appendix D: Deployment Checklist"
 description: "The go-live checklist for autonomous agent deployments — everything you need to verify before handing the agent the keys."
-order: 103
+order: 93
 icon: "clipboard-document-list"
 appendix: true
 ---

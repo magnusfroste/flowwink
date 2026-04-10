@@ -1,11 +1,11 @@
 ---
-title: "Production Patterns — Battle-Tested at 130+ Skills"
+title: "Production Patterns — Battle-Tested in Production"
 description: "Six architectural patterns that emerged from running an autonomous agent with 100+ skills, 25+ modules, and real business traffic. Not theory — production code."
 order: 22
 icon: "wrench"
 ---
 
-# Production Patterns — What We Learned Running 130+ Skills
+# Production Patterns — What We Learned Running 100+ Skills
 
 > **This chapter documents six patterns that don't exist in any framework documentation. They emerged from running FlowPilot in production — fixing real failures, managing real token budgets, and scaling from 10 skills to 100+. Each pattern includes the problem it solves, the implementation, and the failure mode it prevents.**
 
@@ -446,3 +446,7 @@ Together, they solve the real problem with autonomous agents: **it's not hard to
 *These patterns emerged from 5 months of production operation. They weren't designed top-down — they were extracted bottom-up, from failures, from token budget overruns, from skills that broke at 3 AM and cascaded into 47 retries. If you're building an autonomous agent, you'll encounter every one of these problems. Now you have the solutions.*
 
 *Next: the browser operator — how an autonomous agent navigates the real web. [The Browser Operator →](15b-browser-operator.md)*
+
+---
+
+> **Part IV begins here.** A single agent is useful. A network of agents is transformative. The next chapters explore federation — how agents communicate, test each other, and scale into multi-agent architectures while maintaining security and resilience.
