@@ -5,6 +5,9 @@ order: 7
 icon: "cpu"
 ---
 
+> **TL;DR:** Model selection isn't one choice — it's a matrix of speed, cost, and capability across different task types. Production agents need a provider-agnostic fallback chain and the discipline to match model tier to task complexity.
+
+
 # Models — Selection, Dimensions, and Tradeoffs
 
 > **This chapter provides the framework for thinking about model selection. It is not a recommendation for specific models — that would be outdated by the time you read this. It is a set of questions you should ask about any model you consider.**

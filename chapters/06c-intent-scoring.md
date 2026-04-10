@@ -5,6 +5,9 @@ order: 14
 icon: "target"
 ---
 
+> **TL;DR:** Intent scoring is a pre-LLM filter that ranks 100+ skills by relevance before the model sees them. Using synonym expansion, trigger matching, and historical boosting, it cuts token cost by 75% while improving selection accuracy — even in Swedish.
+
+
 # Intent Scoring — How the Agent Picks the Right Skill
 
 > **With 100+ skills, the agent faces a routing problem: which skill matches the user's intent? Hardcoded routing is forbidden (Development Law 1). Sending all skills to the LLM wastes tokens and confuses the model. The solution is intent scoring — a lightweight, pre-LLM filter that ranks skills by relevance before the model ever sees them.**

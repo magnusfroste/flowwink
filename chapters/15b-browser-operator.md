@@ -5,6 +5,9 @@ order: 31
 icon: "globe"
 ---
 
+> **TL;DR:** The browser operator gives the agent eyes and hands on the web — navigating pages, extracting data, and performing actions that no API covers. Headless Chrome + structured selectors + retry logic = web automation at agent speed.
+
+
 # The Browser Operator — Giving Your Agent Eyes on the Web
 
 > **An agent that can only process text is blind to 90% of the internet. An agent that can browse the web — read competitor pages, check LinkedIn profiles, scan product listings — becomes a genuine digital employee. This chapter describes the hybrid architecture that makes it possible without violating terms of service.**

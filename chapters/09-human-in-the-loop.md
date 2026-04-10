@@ -5,6 +5,9 @@ order: 19
 icon: "user-group"
 ---
 
+> **TL;DR:** Full autonomy is the goal; human oversight is the safety net. Approval workflows, confidence thresholds, and escalation rules let the agent act freely on routine tasks while flagging novel or high-risk decisions for human review.
+
+
 # Human-in-the-Loop — The Autonomy Decision Framework
 
 > **The question isn't "should the agent be autonomous?" The question is "for which actions, and under what conditions?"**

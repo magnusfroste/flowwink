@@ -5,6 +5,9 @@ order: 21
 icon: "building-office"
 ---
 
+> **TL;DR:** The 'digital employee' is the end state: an agent that handles content, leads, orders, and growth like a junior colleague. It's not about replacing humans — it's about giving every small business a tireless operator that works while they sleep.
+
+
 # The Digital Employee — How Companies Should Think About AI Agents
 
 > **An AI agent is not software you buy. It's an employee you hire. The interview process is different, the management is different, and the ROI is different. But it's still a member of your team.**

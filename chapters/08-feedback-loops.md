@@ -5,6 +5,9 @@ order: 17
 icon: "arrow-path"
 ---
 
+> **TL;DR:** Feedback loops close the gap between action and learning. Outcome evaluation, user ratings, and automated quality checks feed back into skill selection, memory, and objective planning — creating compounding improvement over time.
+
+
 # Feedback Loops — How Agents Improve Over Time
 
 > **A funnel leaks. A loop compounds. The best agentic systems don't just execute — they learn from every execution and get better.**

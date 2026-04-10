@@ -5,6 +5,9 @@ order: 18
 icon: "exclamation-triangle"
 ---
 
+> **TL;DR:** Agents don't break dramatically — they stagnate (repeating the same three actions) or drift (gradually becoming someone else). Both are subtle, neither triggers errors, and both require active detection and correction mechanisms.
+
+
 # Stagnation and Drift — The Long-Term Failure Modes
 
 > **Agents don't break dramatically. They slow down, then veer off course. These are the two most common long-term failure modes — and neither is obvious until you've been running in production for weeks.**

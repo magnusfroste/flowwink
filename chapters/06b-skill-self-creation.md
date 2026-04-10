@@ -5,6 +5,9 @@ order: 13
 icon: "sparkles"
 ---
 
+> **TL;DR:** The agent can create its own skills when it encounters a repeated task with no existing skill. Self-created skills go through validation, testing, and human approval before production use — autonomy with guardrails.
+
+
 # Skill Self-Creation — When Agents Write Their Own Playbook
 
 > **A static agent is a depreciating asset. It knows exactly what it knew on day one. A self-evolving agent is a compounding asset — every interaction makes it better. The difference is whether the agent can create new skills at runtime.**

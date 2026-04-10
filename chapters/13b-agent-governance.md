@@ -5,6 +5,9 @@ order: 20
 icon: "scale"
 ---
 
+> **TL;DR:** Governance defines who the agent is, what it may do, and how it's held accountable. Soul documents, skill approval workflows, and audit logs create the organizational framework that makes autonomy trustworthy.
+
+
 # Agent Governance — Accountability, Organization, and the New Way of Working
 
 > **An agent that runs without governance isn't autonomous — it's unsupervised. The difference matters legally, organizationally, and ethically. This chapter is about the human structures that make autonomous agents trustworthy.**

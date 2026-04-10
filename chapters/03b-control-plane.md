@@ -5,6 +5,9 @@ order: 6
 icon: "command-line"
 ---
 
+> **TL;DR:** The control plane is the runtime that orchestrates heartbeats, manages skill loading, enforces token budgets, and routes between AI providers. It's the difference between 'an agent that works' and 'an agent that works reliably.'
+
+
 # The Agentic Control Plane — The Layer Between You and the Model
 
 > **Every tool in this category shares the same secret: the model isn't the product. The orchestration layer around it is. Understanding this distinction is the difference between building something defensible and building something that disappears when the next model drops.**

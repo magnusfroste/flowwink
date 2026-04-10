@@ -5,6 +5,9 @@ order: 30
 icon: "server"
 ---
 
+> **TL;DR:** ClawStack is the infrastructure layer for running multiple autonomous agents on your own hardware. Container orchestration, shared memory, inter-agent messaging, and centralized observability — from single agent to production swarm.
+
+
 # ClawStack — From Theory to Swarm
 
 > *"The internet was the first acceleration. Generative AI was the second. Agentic autonomy is the third."*

@@ -5,6 +5,9 @@ order: 15
 icon: "cpu-chip"
 ---
 
+> **TL;DR:** Agent memory spans three horizons: working (current conversation), episodic (recent experiences), and semantic (long-term knowledge). Each has different persistence, retrieval, and expiry rules. Memory is what makes an agent a colleague instead of a stranger.
+
+
 # Memory Architecture — How Agents Remember and Learn
 
 > **Memory is not recall. Memory is identity. Without persistent memory, an agent is just a very expensive function call. OpenClaw uses files on disk. Flowwink evolved this into a 4-tier PostgreSQL system with vector search.**

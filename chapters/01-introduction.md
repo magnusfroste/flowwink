@@ -5,6 +5,9 @@ order: 1
 icon: "brain"
 ---
 
+> **TL;DR:** Agentic AI is software that acts on its own — not when asked, but when it decides it should. It has agency, persistence, and adaptation. This chapter defines the spectrum from simple chatbots to fully autonomous agents.
+
+
 # What Is Agentic AI?
 
 > **Agentic AI is software that acts. Not when you ask it to — when it decides it should.**

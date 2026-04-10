@@ -5,6 +5,9 @@ order: 0
 icon: "book-open"
 ---
 
+> **TL;DR:** An Austrian developer's side project became the fastest-growing open-source repo in history. OpenClaw proved that autonomous agents need just three things: identity, memory, and purpose. This handbook documents what we learned building on that foundation.
+
+
 # Foreword — Why You Should Read This
 
 > *"My goal was to have fun and inspire people. And here we are, the lobster is taking over the world."*
