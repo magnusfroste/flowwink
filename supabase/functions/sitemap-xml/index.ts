@@ -81,7 +81,7 @@ serve(async (req) => {
 
     const blogSettings = blogSettingsRow?.value as Record<string, unknown> || {};
     const blogEnabled = blogSettings.enabled !== false;
-    const blogArchiveSlug = (blogSettings.archiveSlug as string) || 'blogg';
+    const blogArchiveSlug = (blogSettings.archiveSlug as string) || 'blog';
 
     // Fetch published blog posts
     let posts: { slug: string; updated_at: string }[] = [];

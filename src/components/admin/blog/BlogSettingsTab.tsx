@@ -60,7 +60,7 @@ export default function BlogSettingsTab() {
               <Switch checked={localSettings.enabled} onCheckedChange={(checked) => updateField('enabled', checked)} />
             </div>
             <div className="space-y-2"><Label htmlFor="archiveTitle">Archive Title</Label><Input id="archiveTitle" value={localSettings.archiveTitle} onChange={(e) => updateField('archiveTitle', e.target.value)} placeholder="Blogg" /></div>
-            <div className="space-y-2"><Label htmlFor="archiveSlug">Archive URL Slug</Label><Input id="archiveSlug" value={localSettings.archiveSlug} onChange={(e) => updateField('archiveSlug', e.target.value)} placeholder="blogg" /><p className="text-xs text-muted-foreground">Blog will be accessible at /{localSettings.archiveSlug}</p></div>
+            <div className="space-y-2"><Label htmlFor="archiveSlug">Archive URL Slug</Label><Input id="archiveSlug" value={localSettings.archiveSlug} onChange={(e) => updateField('archiveSlug', e.target.value)} placeholder="blog" /><p className="text-xs text-muted-foreground">Blog will be accessible at /{localSettings.archiveSlug}</p></div>
             <div className="space-y-2"><Label htmlFor="postsPerPage">Posts Per Page</Label><Input id="postsPerPage" type="number" min={1} max={50} value={localSettings.postsPerPage} onChange={(e) => updateField('postsPerPage', parseInt(e.target.value) || 10)} /></div>
           </CardContent>
         </Card>

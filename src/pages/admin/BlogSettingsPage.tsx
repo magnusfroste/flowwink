@@ -115,7 +115,7 @@ export default function BlogSettingsPage() {
                   id="archiveSlug"
                   value={localSettings.archiveSlug}
                   onChange={(e) => updateField('archiveSlug', e.target.value)}
-                  placeholder="blogg"
+                  placeholder="blog"
                 />
                 <p className="text-xs text-muted-foreground">
                   Blog will be accessible at /{localSettings.archiveSlug}
