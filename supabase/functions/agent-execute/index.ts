@@ -4624,14 +4624,19 @@ async function executeOpenResponsesRequest(
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-  const { prompt, message, system, response_format, model, timeout_ms, ...rest } = args as {
+  const { prompt, message, system, response_format, model, timeout_ms, fire_and_forget, inject_mcp_credentials, peer_name, ...rest } = args as {
     prompt?: string; message?: string; system?: string;
     response_format?: string; model?: string; timeout_ms?: number;
+    fire_and_forget?: boolean; inject_mcp_credentials?: boolean;
+    peer_name?: string;
     [key: string]: unknown;
   };
 
   // Build the prompt from either explicit prompt, message, or remaining args
   const effectivePrompt = prompt || message || (Object.keys(rest).length > 0 ? JSON.stringify(rest) : 'status');
+
+  // Use peer_name from args if provided (dispatch_claw_mission passes it), otherwise from handler
+  const effectivePeerName = peer_name || peerName;
 
   try {
     const response = await fetch(`${supabaseUrl}/functions/v1/openclaw-responses`, {
@@ -4641,12 +4646,14 @@ async function executeOpenResponsesRequest(
         'Authorization': `Bearer ${serviceKey}`,
       },
       body: JSON.stringify({
-        peer_name: peerName,
+        peer_name: effectivePeerName,
         prompt: effectivePrompt,
         system,
         response_format,
         model,
         timeout_ms,
+        fire_and_forget: fire_and_forget ?? false,
+        inject_mcp_credentials: inject_mcp_credentials ?? false,
       }),
     });
 
@@ -4654,8 +4661,8 @@ async function executeOpenResponsesRequest(
       const body = await response.json().catch(() => ({}));
       return {
         status: 'peer_unavailable',
-        peer: peerName,
-        message: `Peer '${peerName}' is currently unreachable via OpenResponses.`,
+        peer: effectivePeerName,
+        message: `Peer '${effectivePeerName}' is currently unreachable via OpenResponses.`,
         detail: (body as any)?.error || 'No response',
       };
     }
@@ -4664,8 +4671,8 @@ async function executeOpenResponsesRequest(
   } catch (err: any) {
     return {
       status: 'peer_unavailable',
-      peer: peerName,
-      message: `OpenResponses call to '${peerName}' failed: ${err.message}`,
+      peer: effectivePeerName,
+      message: `OpenResponses call to '${effectivePeerName}' failed: ${err.message}`,
     };
   }
 }

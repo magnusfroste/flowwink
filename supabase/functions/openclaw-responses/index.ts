@@ -41,6 +41,10 @@ interface ResponsesRequest {
   model?: string;
   /** Timeout in ms (default: 60000) */
   timeout_ms?: number;
+  /** Fire-and-forget: send POST but don't wait for response (avoids 60s edge fn timeout) */
+  fire_and_forget?: boolean;
+  /** Inject MCP credentials into the prompt so the peer can call back */
+  inject_mcp_credentials?: boolean;
 }
 
 Deno.serve(async (req) => {
@@ -90,7 +94,7 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, serviceKey);
     const body: ResponsesRequest = await req.json();
-    const { peer_name, peer_id, prompt, system, response_format, model, timeout_ms = 60000 } = body;
+    const { peer_name, peer_id, prompt, system, response_format, model, timeout_ms = 60000, fire_and_forget = false, inject_mcp_credentials = false } = body;
 
     if (!prompt) {
       return new Response(JSON.stringify({ error: 'prompt is required' }), {
@@ -123,43 +127,113 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Inject MCP credentials into the prompt if requested and available
+    let effectivePrompt = prompt;
+    if (inject_mcp_credentials && peer.mcp_api_key) {
+      const mcpBlock = `\n\n## MCP CALLBACK CREDENTIALS\nUse these to report results back to FlowWink:\n- Endpoint: ${supabaseUrl}/functions/v1/mcp-server/rest\n- Authorization: Bearer ${peer.mcp_api_key}\n- Resources: GET /resources/health, GET /resources/skills, GET /resources/templates, GET /resources/templates/{id}\n- Execute: POST /execute with body {"tool":"<tool_name>","arguments":{...}}\n- Report findings: tool "openclaw_report_finding" with type (bug|suggestion|positive|ux_issue|performance|missing_feature), severity, title, description, context`;
+      effectivePrompt = prompt + mcpBlock;
+    }
+
     // Log activity as pending
     const { data: activityRow } = await supabase
       .from('a2a_activity')
       .insert({
         peer_id: peer.id,
         direction: 'outbound',
-        skill_name: 'responses_api',
-        input: { prompt, system, response_format, model },
-        status: 'pending',
+        skill_name: fire_and_forget ? 'mission_dispatch' : 'responses_api',
+        input: { prompt: effectivePrompt, system, response_format, model, fire_and_forget },
+        status: fire_and_forget ? 'dispatched' : 'pending',
       })
       .select('id')
       .single();
 
     // Build OpenResponses request body
-    // See: https://docs.openclaw.ai/gateway/configuration-reference
     const peerUrl = peer.url.replace(/\/$/, '');
     const responsesUrl = `${peerUrl}/v1/responses`;
 
     const openResponsesBody: Record<string, unknown> = {
       model: model || 'openclaw',
-      input: prompt,
+      input: effectivePrompt,
     };
 
     if (system) {
-      // OpenResponses supports instructions field for system-level context
       openResponsesBody.instructions = system;
     }
 
     if (response_format === 'json') {
-      // OpenClaw doesn't support the `text` format key — inject JSON instruction into prompt instead
       const jsonSuffix = '\n\nIMPORTANT: Respond with valid JSON only, no markdown or extra text.';
-      openResponsesBody.input = prompt + jsonSuffix;
+      openResponsesBody.input = effectivePrompt + jsonSuffix;
     }
 
-    console.log(`[openclaw-responses] Calling peer '${peer.name}' at ${responsesUrl}`);
+    console.log(`[openclaw-responses] Calling peer '${peer.name}' at ${responsesUrl}${fire_and_forget ? ' (fire-and-forget)' : ''}`);
 
-    // Make the call
+    // =========================================================================
+    // FIRE-AND-FORGET MODE: Send POST, don't wait for response, return immediately
+    // Avoids 60s edge function timeout for long-running missions
+    // =========================================================================
+    if (fire_and_forget) {
+      // Start the fetch but don't await it — use waitUntil-style pattern
+      const fetchPromise = fetch(responsesUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${gatewayToken}`,
+        },
+        body: JSON.stringify(openResponsesBody),
+      }).then(async (response) => {
+        // Background: update activity with result when it arrives
+        const durationMs = Date.now() - startTime;
+        try {
+          const result = await response.json();
+          if (activityRow?.id) {
+            await supabase.from('a2a_activity').update({
+              output: result,
+              status: response.ok ? 'success' : 'error',
+              duration_ms: durationMs,
+              error_message: response.ok ? null : `HTTP ${response.status}`,
+            }).eq('id', activityRow.id);
+          }
+          if (response.ok) {
+            await supabase.from('a2a_peers').update({
+              last_seen_at: new Date().toISOString(),
+              request_count: (peer.request_count || 0) + 1,
+            }).eq('id', peer.id);
+          }
+        } catch (err: any) {
+          if (activityRow?.id) {
+            await supabase.from('a2a_activity').update({
+              status: 'error', duration_ms: durationMs,
+              error_message: `Background fetch error: ${err.message}`,
+            }).eq('id', activityRow.id);
+          }
+        }
+      }).catch(async (err: any) => {
+        if (activityRow?.id) {
+          await supabase.from('a2a_activity').update({
+            status: 'error', duration_ms: Date.now() - startTime,
+            error_message: `Network error: ${err.message}`,
+          }).eq('id', activityRow.id);
+        }
+      });
+
+      // Don't await — let it run in background
+      // Edge runtime will keep the isolate alive for pending promises briefly
+      void fetchPromise;
+
+      return new Response(JSON.stringify({
+        status: 'dispatched',
+        activity_id: activityRow?.id,
+        peer: peer.name,
+        message: `Mission dispatched to '${peer.name}'. Results will arrive via MCP callback.`,
+      }), {
+        status: 202,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // =========================================================================
+    // SYNCHRONOUS MODE: Wait for response (original behavior)
+    // =========================================================================
     let result: unknown;
     let status: 'success' | 'error' = 'success';
     let errorMessage: string | null = null;
@@ -172,7 +246,6 @@ Deno.serve(async (req) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          // OpenResponses uses gateway_token (separate from A2A outbound_token)
           'Authorization': `Bearer ${gatewayToken}`,
         },
         body: JSON.stringify(openResponsesBody),
@@ -194,10 +267,8 @@ Deno.serve(async (req) => {
         const r = result as any;
         errorMessage = r?.error?.message || r?.error || `HTTP ${response.status}`;
       } else {
-        // Extract the actual response text from OpenResponses format
         const r = result as any;
         if (r?.output) {
-          // OpenResponses wraps output in an array of response items
           const textParts = Array.isArray(r.output)
             ? r.output
                 .filter((item: any) => item.type === 'message' && item.role === 'assistant')
