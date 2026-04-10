@@ -17,8 +17,8 @@ export default function BlogArchivePage() {
   
   // Track page view
   usePageViewTracker({
-    pageSlug: 'blogg',
-    pageTitle: 'Blogg',
+    pageSlug: 'blog',
+    pageTitle: 'Blog',
   });
   
   const { data: blogSettings } = useBlogSettings();

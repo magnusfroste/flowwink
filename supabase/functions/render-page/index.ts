@@ -76,8 +76,8 @@ Deno.serve(async (req) => {
     
     // Handle blog post paths
     let isBlogPost = false;
-    if (slug.startsWith('blogg/')) {
-      slug = slug.replace('blogg/', '');
+    if (slug.startsWith('blog/')) {
+      slug = slug.replace('blog/', '');
       isBlogPost = true;
     }
     
@@ -156,7 +156,7 @@ Deno.serve(async (req) => {
         title = metaJson?.title || post.title || title;
         description = metaJson?.description || post.excerpt || description;
         ogImage = post.featured_image || ogImage;
-        canonicalUrl = `/blogg/${post.slug}`;
+        canonicalUrl = `/blog/${post.slug}`;
       }
     } else if (isKbArticle) {
       // Fetch KB article
