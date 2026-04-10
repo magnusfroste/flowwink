@@ -318,7 +318,7 @@ export const flowwinkKbCategories: TemplateKbCategory[] = [
         title: 'What is FlowWink?',
         slug: 'what-is-flowwink',
         question: 'What is FlowWink and what can I do with it?',
-        answer_text: 'FlowWink is the first autonomous agentic CMS. Instead of managing your website manually, you set objectives and FlowPilot — an AI agent — operates your entire online presence. It writes content, qualifies leads, sends campaigns, books meetings, and learns from every interaction. FlowWink replaces four separate products: your CMS, chatbot, CRM, and marketing automation — with a single self-hosted platform.',
+        answer_text: 'FlowWink is the first autonomous Business Operating System (BOS). Instead of managing your business manually across separate tools, you set objectives and FlowPilot — an autonomous agent — operates your entire online presence. It writes content, qualifies leads, sends campaigns, books meetings, and learns from every interaction. FlowWink replaces your CMS, CRM, ERP, and marketing stack — with a single self-hosted platform.',
         is_featured: true,
         include_in_chat: true,
       },

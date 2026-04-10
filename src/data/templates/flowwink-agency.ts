@@ -39,7 +39,7 @@ const flowwinkAgencyPages: TemplatePage[] = [
         type: 'hero',
         data: {
           title: 'One Platform. Unlimited Client Sites. Zero SaaS Fees.',
-          subtitle: 'Replace Webflow, Squarespace, and Contentful with a single self-hosted CMS. Build faster. Charge more. Own everything.',
+          subtitle: 'Replace Webflow, Squarespace, and Contentful with a single self-hosted Business OS. Build faster. Charge more. Own everything.',
           backgroundType: 'video',
           videoUrl: 'https://videos.pexels.com/video-files/3129671/3129671-uhd_2560_1440_30fps.mp4',
           videoType: 'direct',
@@ -793,7 +793,7 @@ export const flowwinkAgencyTemplate: StarterTemplate = {
     widgetEnabled: true,
     widgetPosition: 'bottom-right',
     welcomeMessage: 'Hi! I help web agencies understand how FlowWink can save money and time. Ask me anything!',
-    systemPrompt: `You are a helpful assistant for FlowWink CMS, specifically for web agencies and consultants.
+    systemPrompt: `You are a helpful assistant for FlowWink, the self-hosted Business Operating System, specifically for web agencies and consultants.
 
 Key points to emphasize:
 1. Zero per-client SaaS fees with self-hosting
