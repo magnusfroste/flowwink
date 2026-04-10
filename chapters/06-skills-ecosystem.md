@@ -109,7 +109,7 @@ Skills with 3+ consecutive failures are automatically quarantined. The agent can
 
 ## Skill Budget Management
 
-With 73 skills, the token budget gets tight. The system uses dynamic compression:
+With 100+ skills, the token budget gets tight. The system uses dynamic compression:
 
 ```
 Token Usage    Tier       Behavior
@@ -138,7 +138,7 @@ Skills can be bundled into packs for easy installation. Each pack groups related
 
 Packs are installed via `skill_pack_install` and create the skills in the database. The agent can discover available packs via `skill_pack_list`.
 
-The 73 skills in FlowPilot's current library are organized by business function. A new deployment typically starts with the Content Marketing + CRM Nurture packs, then adds E-Commerce and Analytics as the business grows.
+The 100+ skills in FlowPilot's current library are organized by business function. A new deployment typically starts with the Content Marketing + CRM Nurture packs, then adds E-Commerce and Analytics as the business grows.
 
 ---
 

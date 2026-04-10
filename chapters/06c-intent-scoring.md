@@ -13,7 +13,7 @@ icon: "target"
 
 ## Why Not Just Let the LLM Choose?
 
-With 10 skills, you can. With 130+, you can't — for three reasons:
+With 10 skills, you can. With 100+, you can't — for three reasons:
 
 1. **Token cost** — 100+ skills × ~97 tokens metadata each = ~10K+ tokens. With intent filtering, it's 25 skills × ~97 = ~2.4K tokens. Thousands of tokens saved per request.
 
