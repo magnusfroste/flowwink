@@ -335,7 +335,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
                 price: 'Free',
                 period: 'forever',
                 description: 'Full FlowPilot agent. Your servers. Your LLM. Complete data sovereignty.',
-                features: ['Full Business OS + FlowPilot', 'Unlimited autonomous operations', 'Private LLM support (Ollama)', '30+ agent skills', 'Persistent memory & objectives', 'Community support'],
+                features: ['Full Business OS + FlowPilot', 'Unlimited autonomous operations', 'Private LLM support (Ollama)', '130+ agent skills', 'Persistent memory & objectives', 'Community support'],
                 buttonText: 'View on GitHub',
                 buttonUrl: 'https://github.com/magnusfroste/flowwink',
               },
@@ -380,7 +380,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             rows: [
               ['Pages & Content', 'Unlimited', 'Unlimited', 'Unlimited'],
               ['FlowPilot Agent', '✅', '✅', '✅'],
-              ['Autonomous Skills', '30+', '30+', 'Custom'],
+              ['Autonomous Skills', '130+', '130+', 'Custom'],
               ['Persistent Memory', '✅', '✅', '✅'],
               ['Private LLM Support', '✅', '✅', '✅'],
               ['Automatic Updates', '❌', '✅', '✅'],
