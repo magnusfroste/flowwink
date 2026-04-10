@@ -32,7 +32,13 @@ export type WebhookEventType =
   | 'media.deleted'
   | 'global_block.updated'
   | 'kb_article.published'
-  | 'kb_article.updated';
+  | 'kb_article.updated'
+  | 'purchase_order.created'
+  | 'purchase_order.sent'
+  | 'purchase_order.received'
+  | 'goods_receipt.created'
+  | 'vendor.created'
+  | 'vendor.updated';
 
 interface TriggerWebhookOptions {
   event: WebhookEventType;
@@ -462,5 +468,76 @@ export const webhookEvents = {
         title: article.title,
         updated_at: new Date().toISOString(),
       } 
+    }),
+
+  // Purchasing events
+  purchaseOrderCreated: (po: { id: string; po_number: string; vendor_name: string; total_cents: number; currency: string }) =>
+    triggerWebhook({
+      event: 'purchase_order.created',
+      data: {
+        id: po.id,
+        po_number: po.po_number,
+        vendor_name: po.vendor_name,
+        total_cents: po.total_cents,
+        currency: po.currency,
+        created_at: new Date().toISOString(),
+      },
+    }),
+
+  purchaseOrderSent: (po: { id: string; po_number: string; vendor_name: string; vendor_email?: string; email_sent: boolean }) =>
+    triggerWebhook({
+      event: 'purchase_order.sent',
+      data: {
+        id: po.id,
+        po_number: po.po_number,
+        vendor_name: po.vendor_name,
+        vendor_email: po.vendor_email,
+        email_sent: po.email_sent,
+        sent_at: new Date().toISOString(),
+      },
+    }),
+
+  purchaseOrderReceived: (po: { id: string; po_number: string; fully_received: boolean }) =>
+    triggerWebhook({
+      event: 'purchase_order.received',
+      data: {
+        id: po.id,
+        po_number: po.po_number,
+        fully_received: po.fully_received,
+        received_at: new Date().toISOString(),
+      },
+    }),
+
+  goodsReceiptCreated: (gr: { id: string; purchase_order_id: string; lines_received: number; fully_received: boolean }) =>
+    triggerWebhook({
+      event: 'goods_receipt.created',
+      data: {
+        id: gr.id,
+        purchase_order_id: gr.purchase_order_id,
+        lines_received: gr.lines_received,
+        fully_received: gr.fully_received,
+        created_at: new Date().toISOString(),
+      },
+    }),
+
+  vendorCreated: (vendor: { id: string; name: string; email?: string }) =>
+    triggerWebhook({
+      event: 'vendor.created',
+      data: {
+        id: vendor.id,
+        name: vendor.name,
+        email: vendor.email,
+        created_at: new Date().toISOString(),
+      },
+    }),
+
+  vendorUpdated: (vendor: { id: string; name: string }) =>
+    triggerWebhook({
+      event: 'vendor.updated',
+      data: {
+        id: vendor.id,
+        name: vendor.name,
+        updated_at: new Date().toISOString(),
+      },
     }),
 };

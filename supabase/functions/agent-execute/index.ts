@@ -3964,6 +3964,8 @@ async function executeDbAction(
           .insert({ name, email, phone, payment_terms: payment_terms || 'net30', currency: currency || 'SEK', address, notes })
           .select('id, name').single();
         if (error) throw new Error(`Create vendor failed: ${error.message}`);
+        // Fire webhook
+        try { await fetch(`${supabaseUrl}/functions/v1/send-webhook`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceKey}` }, body: JSON.stringify({ event: 'vendor.created', data: { id: data.id, name: data.name, email } }) }); } catch {}
         return { vendor_id: data.id, name: data.name, created: true };
       }
 
@@ -4032,6 +4034,12 @@ async function executeDbAction(
         }));
         const { error: linesErr } = await supabase.from('purchase_order_lines').insert(lineInserts);
         if (linesErr) throw new Error(`Insert PO lines failed: ${linesErr.message}`);
+
+        // Fire webhook
+        try {
+          const { data: vendorInfo } = await supabase.from('vendors').select('name').eq('id', vendor_id).single();
+          await fetch(`${supabaseUrl}/functions/v1/send-webhook`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceKey}` }, body: JSON.stringify({ event: 'purchase_order.created', data: { id: po.id, po_number: po.po_number, vendor_name: vendorInfo?.name, total_cents: po.total_cents, currency: 'SEK' } }) });
+        } catch {}
 
         return { purchase_order_id: po.id, po_number: po.po_number, status: po.status, total_cents: po.total_cents, lines_count: poLines.length };
       }
@@ -4110,6 +4118,9 @@ async function executeDbAction(
           }
         }
 
+        // Fire webhook
+        try { await fetch(`${supabaseUrl}/functions/v1/send-webhook`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceKey}` }, body: JSON.stringify({ event: 'purchase_order.sent', data: { id: po.id, po_number: po.po_number, vendor_name: vendorName, vendor_email: vendorEmail, email_sent: emailSent } }) }); } catch {}
+
         return {
           purchase_order_id: po.id,
           po_number: po.po_number,
@@ -4186,6 +4197,15 @@ async function executeDbAction(
           .update({ status: newStatus, updated_at: new Date().toISOString() })
           .eq('id', purchase_order_id);
       }
+
+      // Fire webhook
+      try {
+        const { data: poInfo } = await supabase.from('purchase_orders').select('po_number').eq('id', purchase_order_id).single();
+        await fetch(`${supabaseUrl}/functions/v1/send-webhook`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceKey}` }, body: JSON.stringify({ event: 'goods_receipt.created', data: { id: gr.id, purchase_order_id, po_number: poInfo?.po_number, lines_received: receiptLines.length, fully_received: allReceived } }) });
+        if (allReceived) {
+          await fetch(`${supabaseUrl}/functions/v1/send-webhook`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceKey}` }, body: JSON.stringify({ event: 'purchase_order.received', data: { id: purchase_order_id, po_number: poInfo?.po_number, fully_received: true } }) });
+        }
+      } catch {}
 
       return {
         goods_receipt_id: gr.id,
