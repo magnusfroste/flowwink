@@ -344,6 +344,15 @@ export function PurchaseOrderEditor({ poId, onClose }: Props) {
           )}
         </div>
       </div>
+
+      {poId && (
+        <GoodsReceiptDialog
+          open={receiptDialogOpen}
+          onOpenChange={setReceiptDialogOpen}
+          purchaseOrderId={poId}
+          lines={lines.map((l, i) => ({ ...l, id: l.id || `temp-${i}`, purchase_order_id: poId }))}
+        />
+      )}
     </div>
   );
 }
