@@ -317,7 +317,7 @@ export function PurchaseOrderEditor({ poId, onClose }: Props) {
         <div className="flex gap-2">
           {isDraft && (
             <>
-              <Button variant="outline" onClick={() => saveMutation.mutate()} disabled={!vendorId || saveMutation.isPending}>
+              <Button variant="outline" onClick={() => saveMutation.mutate(undefined)} disabled={!vendorId || saveMutation.isPending}>
                 Save Draft
               </Button>
               <Button onClick={() => saveMutation.mutate('sent')} disabled={!vendorId || saveMutation.isPending}>
@@ -336,7 +336,7 @@ export function PurchaseOrderEditor({ poId, onClose }: Props) {
             </Button>
           )}
           {!isDraft && status !== 'cancelled' && status !== 'received' && (
-            <Button variant="outline" onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
+            <Button variant="outline" onClick={() => saveMutation.mutate(undefined)} disabled={saveMutation.isPending}>
               Save Changes
             </Button>
           )}
