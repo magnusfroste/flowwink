@@ -225,6 +225,37 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             layout: 'split',
           },
         },
+        // ─── 28 MODULES — The Full Stack ───
+        {
+          id: 'modules-overview',
+          type: 'features',
+          data: {
+            title: '28 Modules. One Platform.',
+            subtitle: 'Every module FlowPilot can operate autonomously — from content marketing to double-entry accounting. Enable what you need. Disable what you don\'t.',
+            features: [
+              { id: 'mod-pages', icon: 'FileText', title: 'Pages & CMS', description: 'Visual page builder with 63 block types. SEO metadata, scheduling, and revision history.' },
+              { id: 'mod-blog', icon: 'Rss', title: 'Blog & Content', description: 'AI-written posts in brand voice. Categories, tags, featured images, and auto-publishing.' },
+              { id: 'mod-crm', icon: 'Users', title: 'CRM & Leads', description: 'Lead capture, scoring, enrichment, and pipeline management — all autonomous.' },
+              { id: 'mod-deals', icon: 'Handshake', title: 'Deals & Pipeline', description: 'Stage progression, activity logging, and revenue forecasting from lead to close.' },
+              { id: 'mod-invoicing', icon: 'Receipt', title: 'Invoicing', description: 'Generate invoices from deals, timesheets, or manually. PDF export and email delivery.' },
+              { id: 'mod-accounting', icon: 'Calculator', title: 'Accounting', description: 'Double-entry bookkeeping, chart of accounts, journal entries, and financial reports.' },
+              { id: 'mod-expenses', icon: 'Camera', title: 'Expense Reports', description: 'AI receipt scanning, automatic VAT calculation, monthly reports, and autonomous booking.' },
+              { id: 'mod-timesheets', icon: 'Clock', title: 'Timesheets & Projects', description: 'Weekly time logging, project management, hourly rates, and automated reminders.' },
+              { id: 'mod-booking', icon: 'CalendarCheck', title: 'Booking & Scheduling', description: 'Online booking with availability, confirmations, reminders, and follow-ups.' },
+              { id: 'mod-products', icon: 'ShoppingBag', title: 'Products & Commerce', description: 'Product catalog, Stripe checkout, inventory, and back-in-stock notifications.' },
+              { id: 'mod-newsletter', icon: 'Mail', title: 'Newsletter & Email', description: 'Resend-powered campaigns, audience segmentation, and autonomous scheduling.' },
+              { id: 'mod-kb', icon: 'BookOpen', title: 'Knowledge Base', description: 'Structured help articles that FlowPilot uses as context for every conversation.' },
+              { id: 'mod-tickets', icon: 'Ticket', title: 'Support Tickets', description: 'Ticket creation, auto-triage, priority routing, and SLA tracking.' },
+              { id: 'mod-federation', icon: 'Network', title: 'Agent Federation', description: 'A2A, OpenResponses, and MCP — three channels for the agentic web.' },
+              { id: 'mod-composio', icon: 'Plug', title: 'App Integrations', description: '200+ apps via Composio — Gmail, Calendar, Slack, and more via managed OAuth.' },
+              { id: 'mod-growth', icon: 'TrendingUp', title: 'Paid Growth', description: 'Ad campaign management, budget optimization, and performance analytics.' },
+            ],
+            columns: 4,
+            layout: 'grid',
+            variant: 'minimal',
+            iconStyle: 'circle',
+          },
+        },
         // TESTIMONIALS
         {
           id: 'testimonials-main',
