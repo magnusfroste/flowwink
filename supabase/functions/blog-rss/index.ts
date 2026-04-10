@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
     // Build RSS XML
     const items = (posts || []).map((post) => {
       const pubDate = post.published_at || post.created_at;
-      const postUrl = `${siteUrl}/blogg/${post.slug}`;
+      const postUrl = `${siteUrl}/blog/${post.slug}`;
       const authorData = Array.isArray(post.author) ? post.author[0] : post.author;
       const authorName = authorData?.full_name || authorData?.email || 'Unknown';
       
@@ -148,7 +148,7 @@ Deno.serve(async (req) => {
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
     <title>${escapeXml(feedTitle)}</title>
-    <link>${siteUrl}/blogg</link>
+    <link>${siteUrl}/blog</link>
     <description>${escapeXml(feedDescription)}</description>
     <language>sv</language>
     <lastBuildDate>${formatRFC822Date(new Date())}</lastBuildDate>

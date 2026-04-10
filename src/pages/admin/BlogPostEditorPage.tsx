@@ -282,7 +282,7 @@ export default function BlogPostEditorPage() {
             <div className="flex items-center gap-2">
               {!isNew && post?.status === "published" && (
                 <Button variant="outline" asChild>
-                  <a href={`/blogg/${post.slug}`} target="_blank" rel="noopener noreferrer">
+                  <a href={`/blog/${post.slug}`} target="_blank" rel="noopener noreferrer">
                     <Eye className="mr-2 h-4 w-4" />
                     View
                   </a>
@@ -543,7 +543,7 @@ export default function BlogPostEditorPage() {
                 <div className="space-y-2">
                   <Label>URL Slug</Label>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">/blogg/</span>
+                    <span className="text-sm text-muted-foreground">/blog/</span>
                     <Input
                       value={slug}
                       onChange={(e) => setSlug(e.target.value)}

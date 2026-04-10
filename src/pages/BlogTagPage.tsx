@@ -59,7 +59,7 @@ export default function BlogTagPage() {
   return (
     <>
       <Helmet>
-        <title>{pageTitle} | {blogSettings?.archiveTitle || "Blogg"} | {seoSettings?.siteTitle || "CMS"}</title>
+        <title>{pageTitle} | {blogSettings?.archiveTitle || "Blog"} | {seoSettings?.siteTitle || "CMS"}</title>
       </Helmet>
       
       <PublicNavigation />
@@ -69,11 +69,11 @@ export default function BlogTagPage() {
           {/* Breadcrumb */}
           <nav className="mb-6">
             <Link
-              to="/blogg"
+              to="/blog"
               className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Tillbaka till bloggen
+              Back to blog
             </Link>
           </nav>
           

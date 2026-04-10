@@ -24,11 +24,11 @@ export function BlogSidebar() {
           <CardContent className="pt-0">
             <nav className="space-y-1">
               {categories.map((category) => {
-                const isActive = location.pathname === `/blogg/kategori/${category.slug}`;
+                const isActive = location.pathname === `/blog/category/${category.slug}`;
                 return (
                   <Link
                     key={category.id}
-                    to={`/blogg/kategori/${category.slug}`}
+                    to={`/blog/category/${category.slug}`}
                     className={`block px-3 py-2 rounded-md text-sm transition-colors ${
                       isActive
                         ? "bg-primary text-primary-foreground"
@@ -56,9 +56,9 @@ export function BlogSidebar() {
           <CardContent className="pt-0">
             <div className="flex flex-wrap gap-2">
               {tags.map((tag) => {
-                const isActive = location.pathname === `/blogg/tagg/${tag.slug}`;
+                const isActive = location.pathname === `/blog/tag/${tag.slug}`;
                 return (
-                  <Link key={tag.id} to={`/blogg/tagg/${tag.slug}`}>
+                  <Link key={tag.id} to={`/blog/tag/${tag.slug}`}>
                     <Badge
                       variant={isActive ? "default" : "outline"}
                       className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"

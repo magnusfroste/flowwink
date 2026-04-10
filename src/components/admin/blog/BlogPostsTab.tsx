@@ -138,7 +138,7 @@ export default function BlogPostsTab() {
                       </DropdownMenuItem>
                       {post.status === "published" && (
                         <DropdownMenuItem asChild>
-                          <Link to={`/blogg/${post.slug}`} target="_blank"><Eye className="mr-2 h-4 w-4" />View</Link>
+                          <Link to={`/blog/${post.slug}`} target="_blank"><Eye className="mr-2 h-4 w-4" />View</Link>
                         </DropdownMenuItem>
                       )}
                       <DropdownMenuSeparator />
