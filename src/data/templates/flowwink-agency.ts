@@ -39,7 +39,7 @@ const flowwinkAgencyPages: TemplatePage[] = [
         type: 'hero',
         data: {
           title: 'One Platform. Unlimited Client Sites. Zero SaaS Fees.',
-          subtitle: 'Replace Webflow, Squarespace, and Contentful with a single self-hosted CMS. Build faster. Charge more. Own everything.',
+          subtitle: 'Replace Webflow, Squarespace, and Contentful with a single self-hosted Business OS. Build faster. Charge more. Own everything.',
           backgroundType: 'video',
           videoUrl: 'https://videos.pexels.com/video-files/3129671/3129671-uhd_2560_1440_30fps.mp4',
           videoType: 'direct',
