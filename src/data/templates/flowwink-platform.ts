@@ -737,7 +737,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
             subtitle: 'FlowPilot handles content, lead nurturing, and client reporting for every site you manage. White-label, self-hosted, and autonomous — so you can take on more clients without more overhead.',
             backgroundType: 'image',
             backgroundImage: '/templates/hero/agency-team.jpg',
-            heightMode: '70vh',
+            heightMode: 'viewport',
             contentAlignment: 'center',
             overlayOpacity: 60,
             titleAnimation: 'slide-up',
