@@ -145,7 +145,7 @@ export const flowwinkPlatformTemplate: StarterTemplate = {
               {
                 id: 'hw-2',
                 title: 'FlowPilot Operates',
-                description: 'Writes content, scores leads, sends campaigns, books meetings, enriches companies, analyzes performance — autonomously, around the clock.',
+                description: 'Writes content, scores leads, sends campaigns, books meetings, creates invoices, scans receipts, reminds about timesheets, enriches companies — autonomously, around the clock.',
                 icon: 'Bot',
               },
               {
