@@ -53,7 +53,7 @@ export interface PurchaseOrderLine {
 export interface GoodsReceipt {
   id: string;
   purchase_order_id: string;
-  receipt_date: string;
+  received_date: string;
   received_by: string | null;
   notes: string | null;
   created_at: string;
@@ -96,7 +96,7 @@ export function usePurchaseOrders(statusFilter?: string) {
         .select('*, vendors(name)')
         .order('created_at', { ascending: false });
       if (statusFilter && statusFilter !== 'all') {
-        query = query.eq('status', statusFilter);
+        query = query.eq('status', statusFilter as any);
       }
       const { data, error } = await query;
       if (error) throw error;
@@ -143,7 +143,7 @@ export function useGoodsReceipts(poId: string) {
         .eq('purchase_order_id', poId)
         .order('receipt_date', { ascending: false });
       if (error) throw error;
-      return data as (GoodsReceipt & { goods_receipt_lines: GoodsReceiptLine[] })[];
+      return data as unknown as (GoodsReceipt & { goods_receipt_lines: GoodsReceiptLine[] })[];
     },
   });
 }
@@ -166,7 +166,7 @@ export function useCreateGoodsReceipt() {
         .from('goods_receipts')
         .insert({
           purchase_order_id: input.purchase_order_id,
-          receipt_date: input.receipt_date,
+          received_date: input.receipt_date,
           notes: input.notes || null,
           received_by: input.received_by || null,
         })
