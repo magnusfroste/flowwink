@@ -41,6 +41,10 @@ interface ResponsesRequest {
   model?: string;
   /** Timeout in ms (default: 60000) */
   timeout_ms?: number;
+  /** Fire-and-forget: send POST but don't wait for response (avoids 60s edge fn timeout) */
+  fire_and_forget?: boolean;
+  /** Inject MCP credentials into the prompt so the peer can call back */
+  inject_mcp_credentials?: boolean;
 }
 
 Deno.serve(async (req) => {
