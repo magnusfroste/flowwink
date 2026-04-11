@@ -2,7 +2,7 @@
 
 > **The Business Operating System — powered by an autonomous AI agent.**
 > 
-> Version: 5.2 | Updated: April 2026 | Modules: 29 | Skills: 124 + ∞ runtime
+> Version: 5.3 | Updated: April 2026 | Modules: 30 | Skills: 127 + ∞ runtime
 
 ---
 
@@ -178,6 +178,7 @@ Admin   → PageEditorPage.tsx → BlockEditor.tsx → [Name]BlockEditor.tsx
 | **Purchasing** | Procure-to-Pay: vendors, purchase orders, goods receipts with auto-stock updates | Disabled |
 | **Timesheets** | Project management with tasks (kanban), time tracking, budget monitoring, and profitability | Disabled |
 | **Contracts** | Contract lifecycle management with renewal tracking, document versioning, and deadline alerts | Disabled |
+| **HR & Employees** | Employee directory, leave management, onboarding checklists, and document handling | Disabled |
 
 ### Insights
 
