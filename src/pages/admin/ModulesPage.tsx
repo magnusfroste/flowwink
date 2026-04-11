@@ -63,6 +63,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   Network,
   Megaphone,
   Snowflake,
+  FileSignature,
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
