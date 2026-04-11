@@ -336,23 +336,48 @@ app.get("/rest/resources/:key", async (c) => {
 });
 
 app.post("/rest/execute", async (c) => {
-  const body = await c.req.json();
-  const { tool, arguments: args } = body;
+  // Resilient JSON parsing — 27B models often produce malformed JSON
+  let body: Record<string, unknown>;
+  try {
+    body = await c.req.json();
+  } catch {
+    // Try to salvage the raw text
+    const raw = await c.req.text().catch(() => "");
+    try {
+      // Common fixes: trailing commas, unescaped quotes in values
+      const cleaned = raw
+        .replace(/,\s*([}\]])/g, "$1")           // trailing commas
+        .replace(/([{,]\s*)(\w+)\s*:/g, '$1"$2":'); // unquoted keys
+      body = JSON.parse(cleaned);
+    } catch {
+      console.error("REST /execute: unparseable JSON body:", raw.substring(0, 500));
+      return c.json(
+        { ok: false, error: "Invalid JSON in request body. Send valid JSON with 'tool' and 'arguments' fields." },
+        400, corsHeaders,
+      );
+    }
+  }
+
+  const { tool, arguments: args } = body as { tool?: string; arguments?: Record<string, unknown> };
   if (!tool) {
-    return c.json({ error: "Missing 'tool' field in request body" }, 400, corsHeaders);
+    return c.json({ ok: false, error: "Missing 'tool' field in request body" }, 400, corsHeaders);
   }
 
   const skills = await loadExposedSkills();
   const match = skills.find((s) => s.tool_definition?.function?.name === tool);
   if (!match) {
-    return c.json({ error: `Unknown tool: ${tool}` }, 404, corsHeaders);
+    const available = skills.map((s) => s.tool_definition?.function?.name).filter(Boolean);
+    return c.json(
+      { ok: false, error: `Unknown tool: ${tool}`, available_tools: available },
+      404, corsHeaders,
+    );
   }
 
   const result = await executeSkill(match.name, args || {});
   try {
-    return c.json({ tool, result: JSON.parse(result) }, 200, corsHeaders);
+    return c.json({ ok: true, tool, result: JSON.parse(result) }, 200, corsHeaders);
   } catch {
-    return c.json({ tool, result }, 200, corsHeaders);
+    return c.json({ ok: true, tool, result }, 200, corsHeaders);
   }
 });
 
