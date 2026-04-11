@@ -3,7 +3,7 @@ import {
   Puzzle, UserCheck, Briefcase, Building2, Package, Library, ShoppingCart,
   CalendarDays, Plug, Bot, Zap, MessageSquare, Headphones, Megaphone, Code2, FileText as FileQuote,
   Video, Target, Inbox, UserCircle, FileUser, Receipt, Timer, Wallet, Shield,
-  Network, Snowflake, UserRound, BookMarked, Truck, FileSignature,
+  Network, Snowflake, UserRound, BookMarked, Truck, FileSignature, FolderOpen, FolderKanban,
 } from 'lucide-react';
 
 export type NavItem = {
@@ -102,8 +102,10 @@ export const navigationGroups: NavGroup[] = [
     label: "Operations",
     adminOnly: true,
     items: [
+      { name: "Projects", href: "/admin/projects", icon: FolderKanban, moduleId: "projects" },
       { name: "HR & Employees", href: "/admin/hr", icon: Users, moduleId: "hr" },
       { name: "Contracts", href: "/admin/contracts", icon: FileSignature, moduleId: "contracts" },
+      { name: "Documents", href: "/admin/documents", icon: FolderOpen, moduleId: "documents" },
       { name: "SLA Monitor", href: "/admin/sla", icon: Shield, moduleId: "sla" },
     ],
   },
