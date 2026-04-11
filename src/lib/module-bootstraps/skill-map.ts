@@ -206,7 +206,9 @@ export const MODULE_SKILL_MAP: Partial<Record<keyof ModulesSettings, string[]>> 
   ],
 
   invoicing: [
-    // Skills TBD when invoicing module is built
+    'manage_invoice',
+    'invoice_from_timesheets',
+    'invoice_overdue_check',
   ],
 
   accounting: [

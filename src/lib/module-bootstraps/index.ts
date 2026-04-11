@@ -16,8 +16,8 @@ import './accounting';
 import './expenses';
 import './timesheets';
 import './purchasing';
+import './invoicing';
 
 // Future modules with custom seedData can add their bootstrap here:
-// import './invoicing';
 // import './ecommerce';  // e.g. seed default shipping methods
 // import './bookings';   // e.g. seed default availability hours
