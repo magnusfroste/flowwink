@@ -444,6 +444,24 @@ export const defaultModulesSettings: ModulesSettings = {
     autonomy: 'agent-capable',
     adminUI: true,
   },
+  documents: {
+    enabled: false,
+    name: 'Documents',
+    description: 'Central document archive with categories, folders, and tagging — links to contracts, HR, finance, and projects',
+    icon: 'FolderOpen',
+    category: 'data',
+    autonomy: 'agent-capable',
+    adminUI: true,
+  },
+  projects: {
+    enabled: false,
+    name: 'Projects',
+    description: 'Project management with kanban task boards, budget tracking, and team assignment — integrates with timesheets and invoicing',
+    icon: 'FolderKanban',
+    category: 'data',
+    autonomy: 'agent-capable',
+    adminUI: true,
+  },
 };
 
 // Map sidebar items to module IDs
