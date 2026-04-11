@@ -167,6 +167,7 @@
         "npm:react-router-dom@^6.30.1",
         "npm:react@^18.3.1",
         "npm:recharts@^2.15.4",
+        "npm:remark-gfm@^4.0.1",
         "npm:sonner@^1.7.4",
         "npm:tailwind-merge@^2.6.0",
         "npm:tailwindcss-animate@^1.0.7",
