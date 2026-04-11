@@ -73,6 +73,8 @@ export interface ModulesSettings {
   sla: ModuleConfig;
   contracts: ModuleConfig;
   hr: ModuleConfig;
+  documents: ModuleConfig;
+  projects: ModuleConfig;
 }
 
 export const defaultModulesSettings: ModulesSettings = {
