@@ -1,0 +1,1 @@
+ALTER TYPE a2a_activity_status ADD VALUE IF NOT EXISTS 'dispatched';

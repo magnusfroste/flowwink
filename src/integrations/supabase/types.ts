@@ -4720,7 +4720,7 @@ export type Database = {
       unschedule_cron_job: { Args: { p_jobname: string }; Returns: boolean }
     }
     Enums: {
-      a2a_activity_status: "success" | "error" | "pending"
+      a2a_activity_status: "success" | "error" | "pending" | "dispatched"
       a2a_direction: "inbound" | "outbound"
       a2a_peer_status: "active" | "paused" | "revoked"
       activity_outcome_status:
@@ -4941,7 +4941,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      a2a_activity_status: ["success", "error", "pending"],
+      a2a_activity_status: ["success", "error", "pending", "dispatched"],
       a2a_direction: ["inbound", "outbound"],
       a2a_peer_status: ["active", "paused", "revoked"],
       activity_outcome_status: [
