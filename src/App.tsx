@@ -97,6 +97,7 @@ import AccountingPage from "./pages/admin/AccountingPage";
 import ExpensesPage from "./pages/admin/ExpensesPage";
 import HandbookPage from "./pages/admin/HandbookPage";
 import TimesheetsPage from "./pages/admin/TimesheetsPage";
+import ContractsPage from "./pages/admin/ContractsPage";
 
 
 const TemplateGalleryPage = lazy(() => import("./pages/admin/TemplateGalleryPage"));
