@@ -3384,6 +3384,7 @@ export type Database = {
       }
       product_stock: {
         Row: {
+          auto_reorder: boolean
           created_at: string
           id: string
           last_counted_at: string | null
@@ -3391,9 +3392,11 @@ export type Database = {
           quantity_on_hand: number
           quantity_reserved: number
           reorder_point: number
+          reorder_quantity: number | null
           updated_at: string
         }
         Insert: {
+          auto_reorder?: boolean
           created_at?: string
           id?: string
           last_counted_at?: string | null
@@ -3401,9 +3404,11 @@ export type Database = {
           quantity_on_hand?: number
           quantity_reserved?: number
           reorder_point?: number
+          reorder_quantity?: number | null
           updated_at?: string
         }
         Update: {
+          auto_reorder?: boolean
           created_at?: string
           id?: string
           last_counted_at?: string | null
@@ -3411,6 +3416,7 @@ export type Database = {
           quantity_on_hand?: number
           quantity_reserved?: number
           reorder_point?: number
+          reorder_quantity?: number | null
           updated_at?: string
         }
         Relationships: [
@@ -4326,6 +4332,66 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      vendor_products: {
+        Row: {
+          created_at: string
+          currency: string
+          id: string
+          is_preferred: boolean
+          lead_time_days: number | null
+          min_order_quantity: number | null
+          notes: string | null
+          product_id: string
+          unit_price_cents: number
+          updated_at: string
+          vendor_id: string
+          vendor_sku: string | null
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          id?: string
+          is_preferred?: boolean
+          lead_time_days?: number | null
+          min_order_quantity?: number | null
+          notes?: string | null
+          product_id: string
+          unit_price_cents?: number
+          updated_at?: string
+          vendor_id: string
+          vendor_sku?: string | null
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          id?: string
+          is_preferred?: boolean
+          lead_time_days?: number | null
+          min_order_quantity?: number | null
+          notes?: string | null
+          product_id?: string
+          unit_price_cents?: number
+          updated_at?: string
+          vendor_id?: string
+          vendor_sku?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_products_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       vendors: {
         Row: {
