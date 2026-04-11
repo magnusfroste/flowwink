@@ -172,7 +172,7 @@ Admin   → PageEditorPage.tsx → BlockEditor.tsx → [Name]BlockEditor.tsx
 | **Products** | Product catalog with Stripe Checkout integration | Enabled |
 | **Orders** | Order management with Stripe webhooks, confirmation emails, and **fulfillment tracking** (unfulfilled → picked → packed → shipped → delivered) | Enabled |
 | **Bookings** | Appointment scheduling with calendar, services, and email confirmations | Enabled |
-| **Invoices** | Quote-to-invoice lifecycle with PDF generation and email delivery | Enabled |
+| **Invoices** | Quote-to-invoice lifecycle, timesheet billing, overdue tracking, PDF generation, and autonomous payment follow-up | Enabled |
 | **Consultants** | Team expertise with AI-powered resume matching and cover letters | Disabled |
 | **Inventory** | Stock levels, movements, reorder points — auto-decrements on orders | Disabled |
 | **Purchasing** | Procure-to-Pay: vendors, purchase orders, goods receipts with auto-stock updates | Disabled |
@@ -420,7 +420,8 @@ The timesheets module (`src/lib/module-bootstraps/timesheets.ts`) provides full 
 - **Billable tracking**: Projects have hourly rates; `timesheet_summary` calculates revenue from billable hours
 - **Task-level time logging**: Time entries can optionally reference a specific task via `task_id`
 - **Auto-completion**: Database trigger automatically sets `completed_at` when task status changes to "done"
-- **Invoice integration** (planned): Mark billable entries as invoiced when creating client invoices
+- **Invoice integration**: "From Timesheets" dialog generates invoice drafts from billable hours — aggregates time entries by project and period
+- **FlowPilot chat**: Natural language — "skapa en uppgift för designa landningssidan" triggers `manage_tasks`, "jag jobbade 4 timmar på X" triggers `log_time`
 - **FlowPilot chat**: Natural language — "skapa en uppgift för designa landningssidan" triggers `manage_tasks`, "jag jobbade 4 timmar på X" triggers `log_time`
 - **RLS**: Authenticated users can CRUD tasks and time entries; invoiced entries cannot be deleted
 
