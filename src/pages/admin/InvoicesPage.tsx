@@ -4,13 +4,14 @@ import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus } from 'lucide-react';
+import { Plus, Clock } from 'lucide-react';
 import { useInvoices, getInvoiceCustomerName, getInvoiceCustomerEmail, getInvoiceCompanyName, type InvoiceStatus } from '@/hooks/useInvoices';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
 import { InvoiceDetailSheet } from '@/components/admin/invoices/InvoiceDetailSheet';
 import { CreateInvoiceDialog } from '@/components/admin/invoices/CreateInvoiceDialog';
+import { InvoiceFromTimesheetsDialog } from '@/components/admin/invoices/InvoiceFromTimesheetsDialog';
 
 const STATUS_COLORS: Record<InvoiceStatus, string> = {
   draft: 'bg-muted text-muted-foreground',
@@ -24,6 +25,7 @@ export default function InvoicesPage() {
   const [statusFilter, setStatusFilter] = useState<InvoiceStatus | 'all'>('all');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const [timesheetOpen, setTimesheetOpen] = useState(false);
 
   const { data: invoices = [], isLoading } = useInvoices(
     statusFilter === 'all' ? undefined : statusFilter
@@ -35,10 +37,15 @@ export default function InvoicesPage() {
 
   return (
     <AdminLayout>
-      <AdminPageHeader title="Invoices" description="Manage invoices and track payments">
-        <Button size="sm" onClick={() => setCreateOpen(true)}>
-          <Plus className="h-4 w-4 mr-1" /> New Invoice
-        </Button>
+      <AdminPageHeader title="Invoices" description="Manage invoices, track payments, and generate from timesheets">
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => setTimesheetOpen(true)}>
+            <Clock className="h-4 w-4 mr-1" /> From Timesheets
+          </Button>
+          <Button size="sm" onClick={() => setCreateOpen(true)}>
+            <Plus className="h-4 w-4 mr-1" /> New Invoice
+          </Button>
+        </div>
       </AdminPageHeader>
       <AdminPageContainer>
         <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
