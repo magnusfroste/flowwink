@@ -162,7 +162,46 @@ Deno.serve(async (req) => {
         console.log(`[openclaw-responses] Auto-generated MCP key ${keyPrefix}... for peer '${peer.name}'`);
       }
 
-      const mcpBlock = `\n\n## MCP CALLBACK CREDENTIALS\nUse these to report results back to FlowWink:\n- Endpoint: ${supabaseUrl}/functions/v1/mcp-server/rest\n- Authorization: Bearer ${mcpKey}\n- Resources: GET /resources/health, GET /resources/skills, GET /resources/templates, GET /resources/templates/{id}\n- Execute: POST /execute with body {"tool":"<tool_name>","arguments":{...}}\n- Report findings: tool "openclaw_report_finding" with type (bug|suggestion|positive|ux_issue|performance|missing_feature), severity, title, description, context`;
+      const mcpBlock = `
+
+---
+
+# HOW TO REPORT BACK
+
+You MUST report your findings using HTTP requests. Follow these steps exactly.
+
+## STEP 1: Check site health
+
+curl -X GET "${supabaseUrl}/functions/v1/mcp-server/rest/resources/health" \\
+  -H "Authorization: Bearer ${mcpKey}"
+
+## STEP 2: Report each finding one at a time
+
+For EACH finding, send one POST request:
+
+curl -X POST "${supabaseUrl}/functions/v1/mcp-server/rest/execute" \\
+  -H "Authorization: Bearer ${mcpKey}" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "tool": "openclaw_report_finding",
+    "arguments": {
+      "type": "bug",
+      "severity": "high",
+      "title": "Short title here",
+      "description": "What you found"
+    }
+  }'
+
+Valid types: bug, suggestion, positive, ux_issue, performance, missing_feature
+Valid severities: low, medium, high
+
+## RULES
+- Send ONE request per finding
+- Always include type, severity, title, description
+- Do NOT batch multiple findings in one request
+- Do NOT skip the reporting step
+
+---`;
       effectivePrompt = prompt + mcpBlock;
     }
 
