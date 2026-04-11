@@ -28,14 +28,14 @@ const PROJECT_STATUS_COLORS: Record<string, string> = {
 function NewProjectDialog() {
   const [open, setOpen] = useState(false);
   const create = useCreateProject();
-  const [form, setForm] = useState({ name: "", description: "", client_name: "", start_date: "" });
+  const [form, setForm] = useState({ name: "", description: "", client_name: "", deadline: "" });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim()) return;
     create.mutate(
-      { name: form.name, description: form.description || null, client_name: form.client_name || null, start_date: form.start_date || null },
-      { onSuccess: () => { setOpen(false); setForm({ name: "", description: "", client_name: "", start_date: "" }); } }
+      { name: form.name, description: form.description || null, client_name: form.client_name || null, deadline: form.deadline || null },
+      { onSuccess: () => { setOpen(false); setForm({ name: "", description: "", client_name: "", deadline: "" }); } }
     );
   };
 
@@ -47,7 +47,7 @@ function NewProjectDialog() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div><Label>Name *</Label><Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required /></div>
           <div><Label>Client</Label><Input value={form.client_name} onChange={e => setForm(f => ({ ...f, client_name: e.target.value }))} /></div>
-          <div><Label>Start Date</Label><Input type="date" value={form.start_date} onChange={e => setForm(f => ({ ...f, start_date: e.target.value }))} /></div>
+          <div><Label>Deadline</Label><Input type="date" value={form.deadline} onChange={e => setForm(f => ({ ...f, deadline: e.target.value }))} /></div>
           <div><Label>Description</Label><Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={2} /></div>
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
@@ -140,7 +140,7 @@ export default function ProjectsPage() {
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <h3 className="font-medium">{p.name}</h3>
-                      <Badge variant="outline" className={PROJECT_STATUS_COLORS[p.status] || ""}>{p.status}</Badge>
+                      <Badge variant="outline" className={p.is_active ? PROJECT_STATUS_COLORS.active : PROJECT_STATUS_COLORS.completed}>{p.is_active ? "Active" : "Completed"}</Badge>
                     </div>
                     {p.client_name && <p className="text-sm text-muted-foreground mt-1">{p.client_name}</p>}
                   </CardContent>
