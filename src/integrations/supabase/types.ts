@@ -1788,6 +1788,113 @@ export type Database = {
         }
         Relationships: []
       }
+      contract_documents: {
+        Row: {
+          contract_id: string
+          created_at: string
+          file_name: string
+          file_type: string | null
+          file_url: string
+          id: string
+          uploaded_by: string | null
+          version: number
+        }
+        Insert: {
+          contract_id: string
+          created_at?: string
+          file_name: string
+          file_type?: string | null
+          file_url: string
+          id?: string
+          uploaded_by?: string | null
+          version?: number
+        }
+        Update: {
+          contract_id?: string
+          created_at?: string
+          file_name?: string
+          file_type?: string | null
+          file_url?: string
+          id?: string
+          uploaded_by?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_documents_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contracts: {
+        Row: {
+          contract_type: Database["public"]["Enums"]["contract_type"]
+          counterparty_email: string | null
+          counterparty_name: string
+          created_at: string
+          created_by: string | null
+          currency: string
+          end_date: string | null
+          file_url: string | null
+          id: string
+          notes: string | null
+          renewal_notice_days: number | null
+          renewal_type: Database["public"]["Enums"]["renewal_type"]
+          signed_at: string | null
+          start_date: string | null
+          status: Database["public"]["Enums"]["contract_status"]
+          terminated_at: string | null
+          title: string
+          updated_at: string
+          value_cents: number | null
+        }
+        Insert: {
+          contract_type?: Database["public"]["Enums"]["contract_type"]
+          counterparty_email?: string | null
+          counterparty_name: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          end_date?: string | null
+          file_url?: string | null
+          id?: string
+          notes?: string | null
+          renewal_notice_days?: number | null
+          renewal_type?: Database["public"]["Enums"]["renewal_type"]
+          signed_at?: string | null
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["contract_status"]
+          terminated_at?: string | null
+          title: string
+          updated_at?: string
+          value_cents?: number | null
+        }
+        Update: {
+          contract_type?: Database["public"]["Enums"]["contract_type"]
+          counterparty_email?: string | null
+          counterparty_name?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          end_date?: string | null
+          file_url?: string | null
+          id?: string
+          notes?: string | null
+          renewal_notice_days?: number | null
+          renewal_type?: Database["public"]["Enums"]["renewal_type"]
+          signed_at?: string | null
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["contract_status"]
+          terminated_at?: string | null
+          title?: string
+          updated_at?: string
+          value_cents?: number | null
+        }
+        Relationships: []
+      }
       crm_tasks: {
         Row: {
           assigned_to: string | null
@@ -4946,6 +5053,13 @@ export type Database = {
       agent_type: "flowpilot" | "chat" | "mcp"
       app_role: "writer" | "approver" | "admin" | "customer"
       automation_trigger_type: "cron" | "event" | "signal"
+      contract_status:
+        | "draft"
+        | "pending_signature"
+        | "active"
+        | "expired"
+        | "terminated"
+      contract_type: "service" | "nda" | "employment" | "lease" | "other"
       deal_stage: "proposal" | "negotiation" | "closed_won" | "closed_lost"
       invoice_status: "draft" | "sent" | "paid" | "cancelled" | "overdue"
       lead_status: "lead" | "opportunity" | "customer" | "lost"
@@ -4961,6 +5075,7 @@ export type Database = {
         | "received"
         | "cancelled"
       quote_status: "draft" | "sent" | "accepted" | "rejected" | "expired"
+      renewal_type: "none" | "auto" | "manual"
       skill_origin: "bundled" | "managed" | "agent" | "user" | "a2a"
       skill_trust_level: "auto" | "notify" | "approve"
       ticket_category: "bug" | "feature" | "question" | "billing" | "other"
@@ -5173,6 +5288,14 @@ export const Constants = {
       agent_type: ["flowpilot", "chat", "mcp"],
       app_role: ["writer", "approver", "admin", "customer"],
       automation_trigger_type: ["cron", "event", "signal"],
+      contract_status: [
+        "draft",
+        "pending_signature",
+        "active",
+        "expired",
+        "terminated",
+      ],
+      contract_type: ["service", "nda", "employment", "lease", "other"],
       deal_stage: ["proposal", "negotiation", "closed_won", "closed_lost"],
       invoice_status: ["draft", "sent", "paid", "cancelled", "overdue"],
       lead_status: ["lead", "opportunity", "customer", "lost"],
@@ -5189,6 +5312,7 @@ export const Constants = {
         "cancelled",
       ],
       quote_status: ["draft", "sent", "accepted", "rejected", "expired"],
+      renewal_type: ["none", "auto", "manual"],
       skill_origin: ["bundled", "managed", "agent", "user", "a2a"],
       skill_trust_level: ["auto", "notify", "approve"],
       ticket_category: ["bug", "feature", "question", "billing", "other"],
