@@ -531,4 +531,21 @@ The contracts module (`src/lib/module-bootstraps/contracts.ts`) manages the full
 
 ---
 
+### HR & Employees Module
+
+The HR module (`src/lib/module-bootstraps/hr.ts`) manages the employee lifecycle:
+
+- **Tables**: `employees` (name, email, phone, title, department, employment_type, start_date, end_date, status, avatar_url, emergency_contact, notes), `leave_requests` (employee_id, leave_type, start/end_date, days, status, reason, reviewed_by/at), `onboarding_checklists` (employee_id, title, items JSON, completed_at), `employee_documents` (employee_id, file_name, file_url, file_type, category)
+- **Employee status flow**: `active` → `on_leave` → `active`, or `active` → `terminated`
+- **Leave types**: vacation, sick, parental, other
+- **Leave status flow**: `pending` → `approved` / `rejected` / `cancelled`
+- **Document categories**: contract, id, certificate, other
+- **UI** (`HRPage.tsx`): KPI cards (active, on leave, pending requests), tabbed view with employee directory + leave management, inline approve/reject
+- **FlowPilot skills**: `manage_employee` (CRUD + search), `manage_leave` (create/approve/reject/list), `onboarding_checklist` (create/update/status)
+- **Automation**: Daily leave review reminder (weekdays 09:00) — FlowPilot lists pending requests for admin
+- **Navigation**: Operations → HR & Employees
+- **Future**: Employee self-service portal, document upload, calendar integration, absence analytics
+
+---
+
 *The Business Operating System. FlowPilot runs the business so you can build it.*
