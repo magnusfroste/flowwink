@@ -515,4 +515,19 @@ The SLA Monitor (`src/pages/admin/SlaMonitorPage.tsx`) enables policy-based serv
 
 ---
 
+### Contracts Module
+
+The contracts module (`src/lib/module-bootstraps/contracts.ts`) manages the full contract lifecycle:
+
+- **Tables**: `contracts` (title, contract_type, status, counterparty_name/email, start/end_date, renewal_type, renewal_notice_days, value_cents, currency, file_url, notes, signed_at, terminated_at), `contract_documents` (contract_id, file_name, file_url, file_type, version, uploaded_by)
+- **Status flow**: `draft` → `pending_signature` → `active` → `expired` / `terminated`
+- **Contract types**: service, nda, employment, lease, other
+- **Renewal tracking**: `none`, `auto`, `manual` with configurable notice period in days
+- **UI** (`ContractsPage.tsx`): Filterable list by status, expiration alerts for contracts ending within 30 days, create/edit dialog with all fields
+- **FlowPilot skills**: `manage_contract` (CRUD + search), `contract_renewal_check` (finds expiring contracts grouped by urgency)
+- **Automation**: Daily renewal alert (weekdays 08:00) — FlowPilot checks for contracts expiring within 30 days
+- **Future**: Document versioning upload via `contract_documents` table, digital signature integration
+
+---
+
 *The Business Operating System. FlowPilot runs the business so you can build it.*
