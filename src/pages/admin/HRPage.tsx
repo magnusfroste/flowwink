@@ -1,6 +1,6 @@
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEmployees, useLeaveRequests } from "@/hooks/useEmployees";
@@ -23,8 +23,9 @@ export default function HRPage() {
         <AdminPageHeader
           title="HR & Employees"
           description="Manage team members, leave requests, and onboarding"
-          actions={<NewEmployeeDialog />}
-        />
+        >
+          <NewEmployeeDialog />
+        </AdminPageHeader>
 
         <div className="grid gap-4 sm:grid-cols-3">
           <Card>
