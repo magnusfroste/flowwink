@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { useProjectTasks, useCreateTask, useUpdateTask, useDeleteTask, TASK_STATUSES, type TaskStatus, type TaskPriority, type ProjectTask } from '@/hooks/useProjectTasks';
 import { useProjects } from '@/hooks/useTimesheets';
-import { Plus, GripVertical, Calendar, Clock, Trash2, User } from 'lucide-react';
+import { Plus, Calendar, Clock, Trash2, User } from 'lucide-react';
 import { format, parseISO, isPast } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
@@ -20,7 +19,7 @@ const PRIORITY_COLORS: Record<TaskPriority, string> = {
   urgent: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
 };
 
-function TaskCard({ task, onStatusChange, onDelete }: {
+function TaskCard({ task, onDelete }: {
   task: ProjectTask;
   onStatusChange: (id: string, status: TaskStatus) => void;
   onDelete: (id: string) => void;
