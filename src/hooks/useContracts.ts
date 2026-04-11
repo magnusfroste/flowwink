@@ -44,7 +44,7 @@ export function useContracts(statusFilter?: string) {
         .select('*')
         .order('updated_at', { ascending: false });
       if (statusFilter && statusFilter !== 'all') {
-        query = query.eq('status', statusFilter);
+        query = query.eq('status', statusFilter as 'draft' | 'pending_signature' | 'active' | 'expired' | 'terminated');
       }
       const { data, error } = await query;
       if (error) throw error;

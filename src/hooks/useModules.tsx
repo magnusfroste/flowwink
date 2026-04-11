@@ -71,6 +71,7 @@ export interface ModulesSettings {
   inventory: ModuleConfig;
   purchasing: ModuleConfig;
   sla: ModuleConfig;
+  contracts: ModuleConfig;
 }
 
 export const defaultModulesSettings: ModulesSettings = {
