@@ -2,7 +2,7 @@
 
 > **The Business Operating System — powered by an autonomous AI agent.**
 > 
-> Version: 5.0 | Updated: April 2026 | Modules: 27 | Skills: 118 + ∞ runtime
+> Version: 5.1 | Updated: April 2026 | Modules: 28 | Skills: 122 + ∞ runtime
 
 ---
 
@@ -135,7 +135,7 @@ Admin   → PageEditorPage.tsx → BlockEditor.tsx → [Name]BlockEditor.tsx
 
 ---
 
-## 3. Modules (24 total)
+## 3. Modules (28 total)
 
 ### Core (always enabled)
 
@@ -175,6 +175,8 @@ Admin   → PageEditorPage.tsx → BlockEditor.tsx → [Name]BlockEditor.tsx
 | **Invoices** | Quote-to-invoice lifecycle with PDF generation and email delivery | Enabled |
 | **Consultants** | Team expertise with AI-powered resume matching and cover letters | Disabled |
 | **Inventory** | Stock levels, movements, reorder points — auto-decrements on orders | Disabled |
+| **Purchasing** | Procure-to-Pay: vendors, purchase orders, goods receipts with auto-stock updates | Disabled |
+| **Timesheets** | Project management with tasks (kanban), time tracking, budget monitoring, and profitability | Disabled |
 
 ### Insights
 
@@ -205,6 +207,8 @@ Admin   → PageEditorPage.tsx → BlockEditor.tsx → [Name]BlockEditor.tsx
 - **Live Support** → AI Chat
 - **Sales Intelligence** → Leads, Companies
 - **Invoices** → Products (optional)
+- **Purchasing** → Inventory (optional, for auto-reorder)
+- **Timesheets** → Invoicing (optional, for billable hours → invoice)
 
 ### Module Autonomy Levels
 
@@ -403,18 +407,22 @@ The expenses module (`src/lib/module-bootstraps/expenses.ts`) is a standalone mo
 - **Autonomous workflow**: Draft → Submit → Approve → Book (FlowPilot generates journal entries: net cost to expense account, VAT to 2640, liability to 2820)
 - **Receipt scanning**: Uses multimodal AI vision (Gemini/OpenAI) via the `analyze-receipt` edge function to extract vendor, date, amount, VAT, and suggest account codes
 
-### Timesheets Module
+### Timesheets & Project Management Module
 
-The timesheets module (`src/lib/module-bootstraps/timesheets.ts`) tracks employee hours per project with billing integration:
+The timesheets module (`src/lib/module-bootstraps/timesheets.ts`) provides full project management with task tracking, time logging, and budget monitoring:
 
-- **Tables**: `projects` (name, client, color, hourly_rate, billable), `time_entries` (user, project, date, hours, description, billable, invoiced)
-- **3 skills**: `log_time` (create/list/delete time entries), `manage_projects` (CRUD for projects), `timesheet_summary` (period summaries with revenue calculation)
-- **1 automation**: `Weekly Timesheet Reminder` (Fridays 15:00 — checks if employees have logged ≥35h and reminds those who haven't)
-- **Weekly view**: Grid layout with projects as rows, weekdays as columns, quick-add for logging hours inline
-- **Billable tracking**: Projects have hourly rates; `timesheet_summary` can calculate revenue from billable hours
+- **Tables**: `projects` (name, client, color, hourly_rate, billable, budget_hours, deadline), `project_tasks` (title, description, status, priority, assigned_to, due_date, estimated_hours, completed_at), `project_members` (user, role, hourly_rate_override, tracks_time), `time_entries` (user, project, task_id, date, hours, description, billable, invoiced)
+- **4 skills**: `log_time` (create/list/delete time entries), `manage_projects` (CRUD for projects), `manage_tasks` (create/update/list/delete project tasks with kanban status), `timesheet_summary` (period summaries with revenue calculation)
+- **2 automations**: `Weekly Timesheet Reminder` (Fridays 15:00 — checks if employees have logged ≥35h), `Project Budget Alert` (Mondays 09:00 — checks projects exceeding 90% budget)
+- **Task kanban**: Four-column board (To Do → In Progress → Review → Done) with priority badges, due dates, assigned members, and estimated hours
+- **Budget tracking**: Per-project progress bars showing logged vs budgeted hours, revenue calculation for billable projects, over-budget alerts
+- **Weekly timesheet**: Grid layout with projects as rows, weekdays as columns, quick-add for inline hour logging
+- **Billable tracking**: Projects have hourly rates; `timesheet_summary` calculates revenue from billable hours
+- **Task-level time logging**: Time entries can optionally reference a specific task via `task_id`
+- **Auto-completion**: Database trigger automatically sets `completed_at` when task status changes to "done"
 - **Invoice integration** (planned): Mark billable entries as invoiced when creating client invoices
-- **FlowPilot chat**: Natural language time logging — "jag jobbade 4 timmar på Website Redesign idag" triggers `log_time`
-- **RLS**: Users see own entries, admins see all; invoiced entries cannot be deleted
+- **FlowPilot chat**: Natural language — "skapa en uppgift för designa landningssidan" triggers `manage_tasks`, "jag jobbade 4 timmar på X" triggers `log_time`
+- **RLS**: Authenticated users can CRUD tasks and time entries; invoiced entries cannot be deleted
 
 | Reference doc | Path |
 |---|---|
@@ -439,6 +447,22 @@ The inventory module tracks stock levels across all e-commerce products with aut
 |---|---|
 | [MODULE-API.md](./MODULE-API.md) | Technical module API |
 | [SKILLS-SOURCE.md](./SKILLS-SOURCE.md) | Skill registry source of truth |
+
+---
+
+### Purchasing Module (Procure-to-Pay)
+
+The purchasing module (`src/lib/module-bootstraps/purchasing.ts`) automates the full Procure-to-Pay lifecycle:
+
+- **Tables**: `vendors` (name, email, phone, payment_terms, currency, is_active), `vendor_products` (vendor_id, product_id, vendor_sku, lead_time_days, unit_price_cents, is_preferred), `purchase_orders` (vendor, status, PO number, order_date, expected_delivery, totals), `purchase_order_lines` (product, description, quantity, unit_price, tax_rate, received_quantity), `goods_receipts` (PO reference, receipt_date, received_by, notes)
+- **5 skills**: `manage_vendor` (CRUD for suppliers), `create_purchase_order` (draft POs with line items), `send_purchase_order` (transition draft → sent), `receive_goods` (record goods receipt + update inventory), `purchase_reorder_check` (analyze stock levels → suggest POs)
+- **1 automation**: `Auto Reorder Check` (daily 07:00 — checks products below reorder threshold, creates draft POs grouped by vendor)
+- **Auto-stock update**: Goods receipt automatically creates `stock_moves` and updates `product_stock.quantity_on_hand`
+- **PO numbering**: Database trigger auto-generates sequential PO numbers (PO-00001, PO-00002…)
+- **Status flow**: Draft → Sent → Partially Received → Received → Cancelled
+- **Vendor products**: Track lead times, preferred vendors, and vendor-specific pricing per product
+- **FlowPilot autonomy**: Heartbeat detects low stock → suggests POs → admin approves → PO sent → goods arrive → inventory updated
+- **Swedish defaults**: 25% tax rate, SEK currency
 
 ---
 

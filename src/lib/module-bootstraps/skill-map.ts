@@ -226,6 +226,7 @@ export const MODULE_SKILL_MAP: Partial<Record<keyof ModulesSettings, string[]>> 
   timesheets: [
     'log_time',
     'manage_projects',
+    'manage_tasks',
     'timesheet_summary',
   ],
 

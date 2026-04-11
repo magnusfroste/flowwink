@@ -3585,13 +3585,102 @@ export type Database = {
           },
         ]
       }
+      project_tasks: {
+        Row: {
+          assigned_to: string | null
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          due_date: string | null
+          estimated_hours: number | null
+          id: string
+          priority: Database["public"]["Enums"]["project_task_priority"]
+          project_id: string
+          sort_order: number
+          status: Database["public"]["Enums"]["project_task_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          estimated_hours?: number | null
+          id?: string
+          priority?: Database["public"]["Enums"]["project_task_priority"]
+          project_id: string
+          sort_order?: number
+          status?: Database["public"]["Enums"]["project_task_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          estimated_hours?: number | null
+          id?: string
+          priority?: Database["public"]["Enums"]["project_task_priority"]
+          project_id?: string
+          sort_order?: number
+          status?: Database["public"]["Enums"]["project_task_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_tasks_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_tasks_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_tasks_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_tasks_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       projects: {
         Row: {
+          budget_hours: number | null
           client_name: string | null
           color: string | null
           created_at: string
           created_by: string | null
           currency: string | null
+          deadline: string | null
           description: string | null
           hourly_rate_cents: number | null
           id: string
@@ -3601,11 +3690,13 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          budget_hours?: number | null
           client_name?: string | null
           color?: string | null
           created_at?: string
           created_by?: string | null
           currency?: string | null
+          deadline?: string | null
           description?: string | null
           hourly_rate_cents?: number | null
           id?: string
@@ -3615,11 +3706,13 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          budget_hours?: number | null
           client_name?: string | null
           color?: string | null
           created_at?: string
           created_by?: string | null
           currency?: string | null
+          deadline?: string | null
           description?: string | null
           hourly_rate_cents?: number | null
           id?: string
@@ -4273,6 +4366,7 @@ export type Database = {
           is_billable: boolean | null
           is_invoiced: boolean | null
           project_id: string
+          task_id: string | null
           updated_at: string
           user_id: string
         }
@@ -4286,6 +4380,7 @@ export type Database = {
           is_billable?: boolean | null
           is_invoiced?: boolean | null
           project_id: string
+          task_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -4299,6 +4394,7 @@ export type Database = {
           is_billable?: boolean | null
           is_invoiced?: boolean | null
           project_id?: string
+          task_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -4308,6 +4404,13 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_entries_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "project_tasks"
             referencedColumns: ["id"]
           },
         ]
@@ -4829,6 +4932,8 @@ export type Database = {
       lead_status: "lead" | "opportunity" | "customer" | "lost"
       page_status: "draft" | "reviewing" | "published" | "archived"
       product_type: "one_time" | "recurring"
+      project_task_priority: "low" | "medium" | "high" | "urgent"
+      project_task_status: "todo" | "in_progress" | "review" | "done"
       purchase_order_status:
         | "draft"
         | "sent"
@@ -5054,6 +5159,8 @@ export const Constants = {
       lead_status: ["lead", "opportunity", "customer", "lost"],
       page_status: ["draft", "reviewing", "published", "archived"],
       product_type: ["one_time", "recurring"],
+      project_task_priority: ["low", "medium", "high", "urgent"],
+      project_task_status: ["todo", "in_progress", "review", "done"],
       purchase_order_status: [
         "draft",
         "sent",
