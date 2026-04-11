@@ -1,0 +1,1 @@
+UPDATE public.agent_skills SET mcp_exposed = true WHERE name IN ('manage_document', 'manage_project', 'manage_project_task', 'manage_employee', 'manage_contract', 'manage_leave', 'manage_consultant_profile', 'manage_journal_entry', 'manage_vendor', 'manage_accounting_template', 'manage_opening_balances') AND enabled = true;
