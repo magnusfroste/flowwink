@@ -2,7 +2,7 @@
 
 > **The Business Operating System — powered by an autonomous AI agent.**
 > 
-> Version: 5.2 | Updated: April 2026 | Modules: 29 | Skills: 124 + ∞ runtime
+> Version: 5.3 | Updated: April 2026 | Modules: 30 | Skills: 127 + ∞ runtime
 
 ---
 
@@ -178,6 +178,7 @@ Admin   → PageEditorPage.tsx → BlockEditor.tsx → [Name]BlockEditor.tsx
 | **Purchasing** | Procure-to-Pay: vendors, purchase orders, goods receipts with auto-stock updates | Disabled |
 | **Timesheets** | Project management with tasks (kanban), time tracking, budget monitoring, and profitability | Disabled |
 | **Contracts** | Contract lifecycle management with renewal tracking, document versioning, and deadline alerts | Disabled |
+| **HR & Employees** | Employee directory, leave management, onboarding checklists, and document handling | Disabled |
 
 ### Insights
 
@@ -527,6 +528,23 @@ The contracts module (`src/lib/module-bootstraps/contracts.ts`) manages the full
 - **FlowPilot skills**: `manage_contract` (CRUD + search), `contract_renewal_check` (finds expiring contracts grouped by urgency)
 - **Automation**: Daily renewal alert (weekdays 08:00) — FlowPilot checks for contracts expiring within 30 days
 - **Future**: Document versioning upload via `contract_documents` table, digital signature integration
+
+---
+
+### HR & Employees Module
+
+The HR module (`src/lib/module-bootstraps/hr.ts`) manages the employee lifecycle:
+
+- **Tables**: `employees` (name, email, phone, title, department, employment_type, start_date, end_date, status, avatar_url, emergency_contact, notes), `leave_requests` (employee_id, leave_type, start/end_date, days, status, reason, reviewed_by/at), `onboarding_checklists` (employee_id, title, items JSON, completed_at), `employee_documents` (employee_id, file_name, file_url, file_type, category)
+- **Employee status flow**: `active` → `on_leave` → `active`, or `active` → `terminated`
+- **Leave types**: vacation, sick, parental, other
+- **Leave status flow**: `pending` → `approved` / `rejected` / `cancelled`
+- **Document categories**: contract, id, certificate, other
+- **UI** (`HRPage.tsx`): KPI cards (active, on leave, pending requests), tabbed view with employee directory + leave management, inline approve/reject
+- **FlowPilot skills**: `manage_employee` (CRUD + search), `manage_leave` (create/approve/reject/list), `onboarding_checklist` (create/update/status)
+- **Automation**: Daily leave review reminder (weekdays 09:00) — FlowPilot lists pending requests for admin
+- **Navigation**: Operations → HR & Employees
+- **Future**: Employee self-service portal, document upload, calendar integration, absence analytics
 
 ---
 

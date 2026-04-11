@@ -2113,6 +2113,104 @@ export type Database = {
           },
         ]
       }
+      employee_documents: {
+        Row: {
+          category: string
+          created_at: string
+          employee_id: string
+          file_name: string
+          file_type: string | null
+          file_url: string
+          id: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          employee_id: string
+          file_name: string
+          file_type?: string | null
+          file_url: string
+          id?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          employee_id?: string
+          file_name?: string
+          file_type?: string | null
+          file_url?: string
+          id?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_documents_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employees: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          created_by: string | null
+          department: string | null
+          email: string | null
+          emergency_contact: Json | null
+          employment_type: string
+          end_date: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          start_date: string | null
+          status: string
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          department?: string | null
+          email?: string | null
+          emergency_contact?: Json | null
+          employment_type?: string
+          end_date?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          start_date?: string | null
+          status?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          department?: string | null
+          email?: string | null
+          emergency_contact?: Json | null
+          employment_type?: string
+          end_date?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          start_date?: string | null
+          status?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       expense_attachments: {
         Row: {
           created_at: string
@@ -2981,6 +3079,62 @@ export type Database = {
           },
         ]
       }
+      leave_requests: {
+        Row: {
+          created_at: string
+          days: number
+          employee_id: string
+          end_date: string
+          id: string
+          leave_type: string
+          notes: string | null
+          reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          start_date: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          days?: number
+          employee_id: string
+          end_date: string
+          id?: string
+          leave_type?: string
+          notes?: string | null
+          reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          start_date: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          days?: number
+          employee_id?: string
+          end_date?: string
+          id?: string
+          leave_type?: string
+          notes?: string | null
+          reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          start_date?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_requests_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       newsletter_email_opens: {
         Row: {
           created_at: string
@@ -3167,6 +3321,47 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      onboarding_checklists: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          employee_id: string
+          id: string
+          items: Json
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          employee_id: string
+          id?: string
+          items?: Json
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          employee_id?: string
+          id?: string
+          items?: Json
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_checklists_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       opening_balances: {
         Row: {
