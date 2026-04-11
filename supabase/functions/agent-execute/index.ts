@@ -4253,7 +4253,7 @@ async function executeDbAction(
         }).select('id').single();
       if (grErr) throw new Error(`Create goods receipt failed: ${grErr.message}`);
 
-      // Insert receipt lines and update PO line received quantities
+      // Insert receipt lines, update PO line received quantities, and sync inventory
       for (const rl of receiptLines) {
         await supabase.from('goods_receipt_lines').insert({
           goods_receipt_id: gr.id,
@@ -4263,11 +4263,31 @@ async function executeDbAction(
 
         // Update received_quantity on the PO line
         const { data: poLine } = await supabase.from('purchase_order_lines')
-          .select('received_quantity').eq('id', rl.po_line_id).single();
+          .select('received_quantity, product_id').eq('id', rl.po_line_id).single();
         const newReceived = (poLine?.received_quantity || 0) + rl.quantity_received;
         await supabase.from('purchase_order_lines')
           .update({ received_quantity: newReceived })
           .eq('id', rl.po_line_id);
+
+        // Auto-sync inventory: create stock move + update product_stock
+        const productId = rl.product_id || poLine?.product_id;
+        if (productId && rl.quantity_received > 0) {
+          const { data: stockRow } = await supabase.from('product_stock')
+            .select('id, quantity_on_hand').eq('product_id', productId).maybeSingle();
+          if (stockRow) {
+            await supabase.from('stock_moves').insert({
+              product_id: productId,
+              quantity: rl.quantity_received,
+              move_type: 'in',
+              reference_type: 'goods_receipt',
+              reference_id: gr.id,
+              notes: `Goods receipt – ${rl.quantity_received} units received`,
+            });
+            await supabase.from('product_stock')
+              .update({ quantity_on_hand: stockRow.quantity_on_hand + rl.quantity_received })
+              .eq('product_id', productId);
+          }
+        }
       }
 
       // Update PO status based on line fulfillment
