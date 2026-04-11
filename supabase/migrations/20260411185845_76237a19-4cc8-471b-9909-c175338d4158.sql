@@ -1,0 +1,1 @@
+DROP TRIGGER IF EXISTS trg_order_stock_decrement ON public.orders;
