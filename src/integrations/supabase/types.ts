@@ -2444,10 +2444,14 @@ export type Database = {
           due_date: string | null
           id: string
           invoice_number: string
+          issue_date: string
           lead_id: string | null
           line_items: Json
           notes: string | null
           paid_at: string | null
+          payment_terms: string | null
+          project_id: string | null
+          sent_at: string | null
           status: Database["public"]["Enums"]["invoice_status"]
           subtotal_cents: number
           tax_cents: number
@@ -2465,10 +2469,14 @@ export type Database = {
           due_date?: string | null
           id?: string
           invoice_number: string
+          issue_date?: string
           lead_id?: string | null
           line_items?: Json
           notes?: string | null
           paid_at?: string | null
+          payment_terms?: string | null
+          project_id?: string | null
+          sent_at?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
           subtotal_cents?: number
           tax_cents?: number
@@ -2486,10 +2494,14 @@ export type Database = {
           due_date?: string | null
           id?: string
           invoice_number?: string
+          issue_date?: string
           lead_id?: string | null
           line_items?: Json
           notes?: string | null
           paid_at?: string | null
+          payment_terms?: string | null
+          project_id?: string | null
+          sent_at?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
           subtotal_cents?: number
           tax_cents?: number
@@ -2510,6 +2522,13 @@ export type Database = {
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
@@ -4928,7 +4947,7 @@ export type Database = {
       app_role: "writer" | "approver" | "admin" | "customer"
       automation_trigger_type: "cron" | "event" | "signal"
       deal_stage: "proposal" | "negotiation" | "closed_won" | "closed_lost"
-      invoice_status: "draft" | "sent" | "paid" | "cancelled"
+      invoice_status: "draft" | "sent" | "paid" | "cancelled" | "overdue"
       lead_status: "lead" | "opportunity" | "customer" | "lost"
       page_status: "draft" | "reviewing" | "published" | "archived"
       product_type: "one_time" | "recurring"
@@ -5155,7 +5174,7 @@ export const Constants = {
       app_role: ["writer", "approver", "admin", "customer"],
       automation_trigger_type: ["cron", "event", "signal"],
       deal_stage: ["proposal", "negotiation", "closed_won", "closed_lost"],
-      invoice_status: ["draft", "sent", "paid", "cancelled"],
+      invoice_status: ["draft", "sent", "paid", "cancelled", "overdue"],
       lead_status: ["lead", "opportunity", "customer", "lost"],
       page_status: ["draft", "reviewing", "published", "archived"],
       product_type: ["one_time", "recurring"],
