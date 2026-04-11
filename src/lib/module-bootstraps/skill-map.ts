@@ -250,6 +250,15 @@ export const MODULE_SKILL_MAP: Partial<Record<keyof ModulesSettings, string[]>> 
     'manage_leave',
     'onboarding_checklist',
   ],
+
+  documents: [
+    'manage_document',
+  ],
+
+  projects: [
+    'manage_project',
+    'manage_project_task',
+  ],
 };
 
 /**

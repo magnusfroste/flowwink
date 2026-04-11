@@ -26,6 +26,8 @@ import {
   Megaphone,
   Snowflake,
   FileSignature,
+  FolderOpen,
+  FolderKanban,
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
@@ -64,6 +66,8 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   Megaphone,
   Snowflake,
   FileSignature,
+  FolderOpen,
+  FolderKanban,
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
