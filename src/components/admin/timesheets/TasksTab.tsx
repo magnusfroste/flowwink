@@ -206,7 +206,7 @@ function CreateTaskDialog({ open, onClose, projects, defaultProject }: {
       priority,
       due_date: dueDate || undefined,
       estimated_hours: estimatedHours ? parseFloat(estimatedHours) : undefined,
-      assigned_to: assignedTo || undefined,
+      assigned_to: assignedTo && assignedTo !== '__unassigned__' ? assignedTo : undefined,
     });
     onClose();
     setTitle('');
