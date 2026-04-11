@@ -1126,8 +1126,9 @@ async function executeOpenClawAction(
         if (item.product_id) {
           const { data } = await supabase.from('products').select('id, name, price_cents').eq('id', item.product_id).single();
           product = data;
-        } else if (item.product_name) {
-          const { data } = await supabase.from('products').select('id, name, price_cents').ilike('name', `%${item.product_name}%`).limit(1).single();
+        } else if (item.product_name || item.name) {
+          const searchName = item.product_name || item.name;
+          const { data } = await supabase.from('products').select('id, name, price_cents').ilike('name', `%${searchName}%`).limit(1).single();
           product = data;
         }
 
