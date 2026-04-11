@@ -172,7 +172,7 @@ Admin   → PageEditorPage.tsx → BlockEditor.tsx → [Name]BlockEditor.tsx
 | **Products** | Product catalog with Stripe Checkout integration | Enabled |
 | **Orders** | Order management with Stripe webhooks, confirmation emails, and **fulfillment tracking** (unfulfilled → picked → packed → shipped → delivered) | Enabled |
 | **Bookings** | Appointment scheduling with calendar, services, and email confirmations | Enabled |
-| **Invoices** | Quote-to-invoice lifecycle with PDF generation and email delivery | Enabled |
+| **Invoices** | Quote-to-invoice lifecycle, timesheet billing, overdue tracking, PDF generation, and autonomous payment follow-up | Enabled |
 | **Consultants** | Team expertise with AI-powered resume matching and cover letters | Disabled |
 | **Inventory** | Stock levels, movements, reorder points — auto-decrements on orders | Disabled |
 | **Purchasing** | Procure-to-Pay: vendors, purchase orders, goods receipts with auto-stock updates | Disabled |
@@ -420,9 +420,24 @@ The timesheets module (`src/lib/module-bootstraps/timesheets.ts`) provides full 
 - **Billable tracking**: Projects have hourly rates; `timesheet_summary` calculates revenue from billable hours
 - **Task-level time logging**: Time entries can optionally reference a specific task via `task_id`
 - **Auto-completion**: Database trigger automatically sets `completed_at` when task status changes to "done"
-- **Invoice integration** (planned): Mark billable entries as invoiced when creating client invoices
+- **Invoice integration**: "From Timesheets" dialog generates invoice drafts from billable hours — aggregates time entries by project and period
+- **FlowPilot chat**: Natural language — "skapa en uppgift för designa landningssidan" triggers `manage_tasks`, "jag jobbade 4 timmar på X" triggers `log_time`
 - **FlowPilot chat**: Natural language — "skapa en uppgift för designa landningssidan" triggers `manage_tasks`, "jag jobbade 4 timmar på X" triggers `log_time`
 - **RLS**: Authenticated users can CRUD tasks and time entries; invoiced entries cannot be deleted
+
+### Invoicing Module (Quote-to-Cash)
+
+The invoicing module (`src/lib/module-bootstraps/invoicing.ts`) closes the Quote-to-Cash loop by connecting deals, timesheets, and accounting:
+
+- **Tables**: `invoices` (invoice_number, status enum [draft/sent/paid/overdue/cancelled], customer info, line_items JSONB, totals, tax_rate, due_date, issue_date, payment_terms, project_id, deal_id, lead_id), `quotes` (quote_number, valid_until, accept→invoice conversion)
+- **3 skills**: `manage_invoice` (full CRUD + status lifecycle), `invoice_from_timesheets` (aggregate billable hours → invoice draft), `invoice_overdue_check` (find/flag overdue invoices)
+- **1 automation**: `Invoice Overdue Check` (daily 08:00 — flags sent invoices past due_date as overdue)
+- **Timesheet billing**: "From Timesheets" dialog lets admin select billable project + period, previews hours and total, generates invoice draft with time entries as line items
+- **Quote→Invoice**: Accepted quotes auto-convert to invoice drafts with line items and customer data preserved
+- **PDF generation**: `generate-invoice-pdf` edge function renders invoice as downloadable PDF
+- **Status lifecycle**: draft → sent (sets sent_at) → paid (sets paid_at) | overdue (auto-flagged) | cancelled
+- **Accounting bridge**: When invoice is marked paid, FlowPilot can trigger `manage_journal_entry` to book revenue (via accounting reconciliation automation)
+- **FlowPilot chat**: "skapa faktura för projekt X" triggers `manage_invoice`, "fakturera timmarna från förra månaden" triggers `invoice_from_timesheets`
 
 | Reference doc | Path |
 |---|---|
