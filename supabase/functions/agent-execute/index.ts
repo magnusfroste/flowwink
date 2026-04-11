@@ -1109,6 +1109,110 @@ async function executeOpenClawAction(
       return { success: true, finding_id, resolved: true };
     }
 
+    case 'place_order': {
+      // MCP skill: external agent (ClawTwo) places an order as a customer
+      const { customer_email, customer_name, items, currency = 'SEK', notes } = args as any;
+      if (!customer_email || !items?.length) {
+        return { error: 'customer_email and items[] (each with product_id or product_name, quantity) are required' };
+      }
+
+      // Resolve products and calculate total
+      let totalCents = 0;
+      const resolvedItems: any[] = [];
+      for (const item of items) {
+        const qty = item.quantity || 1;
+        let product: any = null;
+
+        if (item.product_id) {
+          const { data } = await supabase.from('products').select('id, name, price_cents').eq('id', item.product_id).single();
+          product = data;
+        } else if (item.product_name) {
+          const { data } = await supabase.from('products').select('id, name, price_cents').ilike('name', `%${item.product_name}%`).limit(1).single();
+          product = data;
+        }
+
+        if (!product) return { error: `Product not found: ${item.product_id || item.product_name}` };
+        totalCents += product.price_cents * qty;
+        resolvedItems.push({ product_id: product.id, product_name: product.name, price_cents: product.price_cents, quantity: qty });
+      }
+
+      // Create order
+      const { data: order, error: orderErr } = await supabase.from('orders').insert({
+        customer_email,
+        customer_name: customer_name || customer_email,
+        total_cents: totalCents,
+        currency,
+        status: 'pending',
+        metadata: { source: 'mcp_place_order', notes },
+      }).select('id, status, total_cents, currency').single();
+      if (orderErr) throw new Error(`Order creation failed: ${orderErr.message}`);
+
+      // Create order items
+      for (const ri of resolvedItems) {
+        await supabase.from('order_items').insert({ order_id: order.id, ...ri });
+      }
+
+      return {
+        success: true,
+        order_id: order.id,
+        status: order.status,
+        total_cents: order.total_cents,
+        currency: order.currency,
+        items_count: resolvedItems.length,
+        message: `Order ${order.id} created with ${resolvedItems.length} item(s) totaling ${(totalCents / 100).toFixed(2)} ${currency}`,
+      };
+    }
+
+    case 'confirm_fulfillment': {
+      // MCP skill: external agent (ClawThree/supplier) confirms delivery of an order or PO
+      const { order_id, purchase_order_id, tracking_number, tracking_url, notes: fulfillNotes } = args as any;
+
+      if (order_id) {
+        const { data: existing } = await supabase.from('orders').select('id, status, fulfillment_status').eq('id', order_id).single();
+        if (!existing) return { error: `Order ${order_id} not found` };
+
+        const { error } = await supabase.from('orders').update({
+          fulfillment_status: 'delivered',
+          status: existing.status === 'pending' ? 'paid' : existing.status,
+          tracking_number: tracking_number || null,
+          tracking_url: tracking_url || null,
+          fulfillment_notes: fulfillNotes || null,
+          updated_at: new Date().toISOString(),
+        }).eq('id', order_id);
+        if (error) throw new Error(`Fulfillment update failed: ${error.message}`);
+
+        return {
+          success: true,
+          entity: 'order',
+          entity_id: order_id,
+          fulfillment_status: 'delivered',
+          message: `Order ${order_id} marked as delivered`,
+        };
+      }
+
+      if (purchase_order_id) {
+        const { data: po } = await supabase.from('purchase_orders').select('id, status, po_number').eq('id', purchase_order_id).single();
+        if (!po) return { error: `Purchase order ${purchase_order_id} not found` };
+
+        const { error } = await supabase.from('purchase_orders').update({
+          status: 'received',
+          updated_at: new Date().toISOString(),
+        }).eq('id', purchase_order_id);
+        if (error) throw new Error(`PO fulfillment update failed: ${error.message}`);
+
+        return {
+          success: true,
+          entity: 'purchase_order',
+          entity_id: purchase_order_id,
+          po_number: po.po_number,
+          status: 'received',
+          message: `PO ${po.po_number} marked as received`,
+        };
+      }
+
+      return { error: 'Either order_id or purchase_order_id is required' };
+    }
+
     default:
       return { error: `Unknown openclaw skill: ${skillName}` };
   }
