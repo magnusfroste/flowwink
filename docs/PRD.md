@@ -450,6 +450,22 @@ The inventory module tracks stock levels across all e-commerce products with aut
 
 ---
 
+### Purchasing Module (Procure-to-Pay)
+
+The purchasing module (`src/lib/module-bootstraps/purchasing.ts`) automates the full Procure-to-Pay lifecycle:
+
+- **Tables**: `vendors` (name, email, phone, payment_terms, currency, is_active), `vendor_products` (vendor_id, product_id, vendor_sku, lead_time_days, unit_price_cents, is_preferred), `purchase_orders` (vendor, status, PO number, order_date, expected_delivery, totals), `purchase_order_lines` (product, description, quantity, unit_price, tax_rate, received_quantity), `goods_receipts` (PO reference, receipt_date, received_by, notes)
+- **5 skills**: `manage_vendor` (CRUD for suppliers), `create_purchase_order` (draft POs with line items), `send_purchase_order` (transition draft → sent), `receive_goods` (record goods receipt + update inventory), `purchase_reorder_check` (analyze stock levels → suggest POs)
+- **1 automation**: `Auto Reorder Check` (daily 07:00 — checks products below reorder threshold, creates draft POs grouped by vendor)
+- **Auto-stock update**: Goods receipt automatically creates `stock_moves` and updates `product_stock.quantity_on_hand`
+- **PO numbering**: Database trigger auto-generates sequential PO numbers (PO-00001, PO-00002…)
+- **Status flow**: Draft → Sent → Partially Received → Received → Cancelled
+- **Vendor products**: Track lead times, preferred vendors, and vendor-specific pricing per product
+- **FlowPilot autonomy**: Heartbeat detects low stock → suggests POs → admin approves → PO sent → goods arrive → inventory updated
+- **Swedish defaults**: 25% tax rate, SEK currency
+
+---
+
 ### Order Fulfillment Flow
 
 The fulfillment flow extends the Orders module with warehouse-style tracking from payment to delivery:
