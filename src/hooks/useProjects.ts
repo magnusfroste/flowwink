@@ -6,13 +6,14 @@ export type Project = {
   id: string;
   name: string;
   description: string | null;
-  status: string;
+  is_active: boolean | null;
+  is_billable: boolean | null;
   client_name: string | null;
   budget_hours: number | null;
   hourly_rate_cents: number | null;
-  currency: string;
-  start_date: string | null;
-  end_date: string | null;
+  currency: string | null;
+  color: string | null;
+  deadline: string | null;
   created_at: string;
   updated_at: string;
 };

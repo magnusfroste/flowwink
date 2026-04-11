@@ -1,4 +1,4 @@
-import { registerBootstrap, type SkillSeed, type AutomationSeed } from '@/lib/module-bootstrap';
+import { registerBootstrap, type SkillSeed } from '@/lib/module-bootstrap';
 
 const DOCS_SKILLS: SkillSeed[] = [
   {
