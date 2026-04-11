@@ -2,7 +2,7 @@
 
 > **The Business Operating System — powered by an autonomous AI agent.**
 > 
-> Version: 5.1 | Updated: April 2026 | Modules: 28 | Skills: 122 + ∞ runtime
+> Version: 5.2 | Updated: April 2026 | Modules: 29 | Skills: 124 + ∞ runtime
 
 ---
 
@@ -177,6 +177,7 @@ Admin   → PageEditorPage.tsx → BlockEditor.tsx → [Name]BlockEditor.tsx
 | **Inventory** | Stock levels, movements, reorder points — auto-decrements on orders | Disabled |
 | **Purchasing** | Procure-to-Pay: vendors, purchase orders, goods receipts with auto-stock updates | Disabled |
 | **Timesheets** | Project management with tasks (kanban), time tracking, budget monitoring, and profitability | Disabled |
+| **Contracts** | Contract lifecycle management with renewal tracking, document versioning, and deadline alerts | Disabled |
 
 ### Insights
 
@@ -209,6 +210,7 @@ Admin   → PageEditorPage.tsx → BlockEditor.tsx → [Name]BlockEditor.tsx
 - **Invoices** → Products (optional)
 - **Purchasing** → Inventory (optional, for auto-reorder)
 - **Timesheets** → Invoicing (optional, for billable hours → invoice)
+- **Contracts** → Invoicing (optional, for contract value → invoice)
 
 ### Module Autonomy Levels
 
