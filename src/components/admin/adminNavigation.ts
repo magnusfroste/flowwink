@@ -102,6 +102,7 @@ export const navigationGroups: NavGroup[] = [
     label: "Operations",
     adminOnly: true,
     items: [
+      { name: "Contracts", href: "/admin/contracts", icon: FileSignature, moduleId: "contracts" },
       { name: "SLA Monitor", href: "/admin/sla", icon: Shield, moduleId: "sla" },
     ],
   },
