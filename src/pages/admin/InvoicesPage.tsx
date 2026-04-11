@@ -130,6 +130,7 @@ export default function InvoicesPage() {
         />
 
         <CreateInvoiceDialog open={createOpen} onOpenChange={setCreateOpen} />
+        <InvoiceFromTimesheetsDialog open={timesheetOpen} onOpenChange={setTimesheetOpen} />
       </AdminPageContainer>
     </AdminLayout>
   );
