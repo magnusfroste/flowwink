@@ -705,7 +705,7 @@ export default function FederationPage() {
                             className="text-xs"
                           />
                           <p className="text-[10px] text-muted-foreground">
-                            The token you received from the peer for calling their A2A API.
+                            The API key or token the peer gave you for calling their endpoint.
                           </p>
                         </div>
 
@@ -721,7 +721,7 @@ export default function FederationPage() {
                             className="text-xs"
                           />
                           <p className="text-[10px] text-muted-foreground">
-                            If the peer uses a different token for their /v1/responses endpoint.
+                            Only needed if the peer requires a separate key for /v1/responses calls.
                           </p>
                         </div>
                       </>
