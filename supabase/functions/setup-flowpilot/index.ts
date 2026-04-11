@@ -4299,6 +4299,95 @@ Marks a finding as resolved after fix.`,
 },
   },
   {
+    name: 'place_order',
+    description: 'Place a customer order for products. Use when: an external agent (Claw) wants to simulate or execute a purchase as a customer. NOT for: managing existing orders (use manage_orders); creating purchase orders for suppliers (use create_purchase_order).',
+    handler: 'module:openclaw',
+    category: 'system',
+    scope: 'external',
+    requires_approval: false,
+    trust_level: 'auto',
+    mcp_exposed: true,
+    instructions: `## place_order
+### What
+Creates a customer order with resolved product items and calculates the total.
+### Parameters
+- customer_email (required): email of the ordering customer
+- customer_name: display name
+- items (required): array of { product_id or product_name, quantity }
+- currency: defaults to SEK
+- notes: optional order notes
+### Returns
+order_id, status, total_cents, items_count`,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'place_order',
+        description: 'Place a customer order for products. Use when: an external agent (Claw) wants to simulate or execute a purchase as a customer. NOT for: managing existing orders (use manage_orders).',
+        parameters: {
+          type: 'object',
+          required: ['customer_email', 'items'],
+          properties: {
+            customer_email: { type: 'string', description: 'Customer email address' },
+            customer_name: { type: 'string', description: 'Customer display name' },
+            items: {
+              type: 'array',
+              description: 'Products to order',
+              items: {
+                type: 'object',
+                properties: {
+                  product_id: { type: 'string', description: 'Product UUID' },
+                  product_name: { type: 'string', description: 'Product name (fuzzy match)' },
+                  quantity: { type: 'number', description: 'Quantity to order (default 1)' },
+                },
+              },
+            },
+            currency: { type: 'string', description: 'Currency code (default SEK)' },
+            notes: { type: 'string', description: 'Optional order notes' },
+          },
+        },
+      },
+    },
+  },
+  {
+    name: 'confirm_fulfillment',
+    description: 'Confirm delivery/fulfillment of an order or purchase order. Use when: an external agent (Claw/supplier) confirms that goods have been delivered. NOT for: updating order status manually (use manage_orders); receiving goods against a PO (use receive_goods).',
+    handler: 'module:openclaw',
+    category: 'system',
+    scope: 'external',
+    requires_approval: false,
+    trust_level: 'auto',
+    mcp_exposed: true,
+    instructions: `## confirm_fulfillment
+### What
+Marks an order or purchase order as delivered/received. Used by supplier agents to close the fulfillment loop.
+### Parameters
+- order_id: UUID of the customer order to confirm (provide this OR purchase_order_id)
+- purchase_order_id: UUID of the PO to confirm
+- tracking_number: optional tracking reference
+- tracking_url: optional tracking URL
+- notes: optional fulfillment notes
+### Returns
+success, entity type, fulfillment status`,
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'confirm_fulfillment',
+        description: 'Confirm delivery/fulfillment of an order or purchase order. Use when: a supplier agent confirms goods have been delivered. NOT for: updating order status manually (use manage_orders).',
+        parameters: {
+          type: 'object',
+          required: [],
+          properties: {
+            order_id: { type: 'string', description: 'Customer order UUID' },
+            purchase_order_id: { type: 'string', description: 'Purchase order UUID' },
+            tracking_number: { type: 'string', description: 'Tracking reference' },
+            tracking_url: { type: 'string', description: 'Tracking URL' },
+            notes: { type: 'string', description: 'Fulfillment notes' },
+          },
+        },
+      },
+    },
+  },
+  {
     name: 'sales_profile_setup',
     description: 'Set up or update the Sales Intelligence company profile or user profile. Use when: configuring sales profile, updating company positioning for prospecting. NOT for: managing business identity (use manage_business_identity).',
     handler: 'edge:sales-profile-setup',
