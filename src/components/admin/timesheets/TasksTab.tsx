@@ -206,7 +206,7 @@ function CreateTaskDialog({ open, onClose, projects, defaultProject }: {
       priority,
       due_date: dueDate || undefined,
       estimated_hours: estimatedHours ? parseFloat(estimatedHours) : undefined,
-      assigned_to: assignedTo || undefined,
+      assigned_to: assignedTo && assignedTo !== '__unassigned__' ? assignedTo : undefined,
     });
     onClose();
     setTitle('');
@@ -275,7 +275,7 @@ function CreateTaskDialog({ open, onClose, projects, defaultProject }: {
               <Select value={assignedTo} onValueChange={setAssignedTo}>
                 <SelectTrigger><SelectValue placeholder="Unassigned" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Unassigned</SelectItem>
+                  <SelectItem value="__unassigned__">Unassigned</SelectItem>
                   {profiles.map(p => (
                     <SelectItem key={p.id} value={p.id}>
                       {p.full_name || p.email}
