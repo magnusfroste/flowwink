@@ -591,7 +591,7 @@ export default function FederationPage() {
               <DialogHeader>
                 <DialogTitle>Connect New Peer</DialogTitle>
                 <DialogDescription>
-                  Register an A2A-compatible agent. We'll auto-detect their capabilities.
+                  Register an external agent peer. We'll auto-detect their capabilities via A2A, MCP, or REST.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-5">
