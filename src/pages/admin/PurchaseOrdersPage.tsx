@@ -4,6 +4,8 @@ import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PurchaseOrdersList } from '@/components/admin/purchasing/PurchaseOrdersList';
 import { PurchaseOrderEditor } from '@/components/admin/purchasing/PurchaseOrderEditor';
+import { VendorProductsManager } from '@/components/admin/purchasing/VendorProductsManager';
+import { AutoReorderSettings } from '@/components/admin/purchasing/AutoReorderSettings';
 
 export default function PurchaseOrdersPage() {
   const [tab, setTab] = useState('list');
@@ -24,17 +26,25 @@ export default function PurchaseOrdersPage() {
       <div className="space-y-6">
         <AdminPageHeader
           title="Purchase Orders"
-          description="Create, track and receive purchase orders from vendors"
+          description="Automated procurement — FlowPilot monitors stock and creates POs from preferred vendors"
         />
 
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList>
-            <TabsTrigger value="list">All Orders</TabsTrigger>
+            <TabsTrigger value="list">Orders</TabsTrigger>
+            <TabsTrigger value="sourcing">Vendor Sourcing</TabsTrigger>
+            <TabsTrigger value="reorder">Auto-Reorder</TabsTrigger>
             {tab === 'editor' && <TabsTrigger value="editor">{editingId ? 'Edit PO' : 'New PO'}</TabsTrigger>}
           </TabsList>
 
           <TabsContent value="list">
             <PurchaseOrdersList onEdit={openEditor} onNew={() => openEditor(null)} />
+          </TabsContent>
+          <TabsContent value="sourcing">
+            <VendorProductsManager />
+          </TabsContent>
+          <TabsContent value="reorder">
+            <AutoReorderSettings />
           </TabsContent>
           <TabsContent value="editor">
             <PurchaseOrderEditor poId={editingId} onClose={closeEditor} />
