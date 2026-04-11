@@ -244,6 +244,12 @@ export const MODULE_SKILL_MAP: Partial<Record<keyof ModulesSettings, string[]>> 
     'manage_contract',
     'contract_renewal_check',
   ],
+
+  hr: [
+    'manage_employee',
+    'manage_leave',
+    'onboarding_checklist',
+  ],
 };
 
 /**
