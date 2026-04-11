@@ -2,7 +2,7 @@
 
 > **The Business Operating System — powered by an autonomous AI agent.**
 > 
-> Version: 5.1 | Updated: April 2026 | Modules: 28 | Skills: 122 + ∞ runtime
+> Version: 5.2 | Updated: April 2026 | Modules: 29 | Skills: 124 + ∞ runtime
 
 ---
 
@@ -177,6 +177,7 @@ Admin   → PageEditorPage.tsx → BlockEditor.tsx → [Name]BlockEditor.tsx
 | **Inventory** | Stock levels, movements, reorder points — auto-decrements on orders | Disabled |
 | **Purchasing** | Procure-to-Pay: vendors, purchase orders, goods receipts with auto-stock updates | Disabled |
 | **Timesheets** | Project management with tasks (kanban), time tracking, budget monitoring, and profitability | Disabled |
+| **Contracts** | Contract lifecycle management with renewal tracking, document versioning, and deadline alerts | Disabled |
 
 ### Insights
 
@@ -209,6 +210,7 @@ Admin   → PageEditorPage.tsx → BlockEditor.tsx → [Name]BlockEditor.tsx
 - **Invoices** → Products (optional)
 - **Purchasing** → Inventory (optional, for auto-reorder)
 - **Timesheets** → Invoicing (optional, for billable hours → invoice)
+- **Contracts** → Invoicing (optional, for contract value → invoice)
 
 ### Module Autonomy Levels
 
@@ -510,6 +512,21 @@ The SLA Monitor (`src/pages/admin/SlaMonitorPage.tsx`) enables policy-based serv
 |---|---|
 | [MODULE-API.md](./MODULE-API.md) | Technical module API |
 | [SKILLS-SOURCE.md](./SKILLS-SOURCE.md) | Skill registry source of truth |
+
+---
+
+### Contracts Module
+
+The contracts module (`src/lib/module-bootstraps/contracts.ts`) manages the full contract lifecycle:
+
+- **Tables**: `contracts` (title, contract_type, status, counterparty_name/email, start/end_date, renewal_type, renewal_notice_days, value_cents, currency, file_url, notes, signed_at, terminated_at), `contract_documents` (contract_id, file_name, file_url, file_type, version, uploaded_by)
+- **Status flow**: `draft` → `pending_signature` → `active` → `expired` / `terminated`
+- **Contract types**: service, nda, employment, lease, other
+- **Renewal tracking**: `none`, `auto`, `manual` with configurable notice period in days
+- **UI** (`ContractsPage.tsx`): Filterable list by status, expiration alerts for contracts ending within 30 days, create/edit dialog with all fields
+- **FlowPilot skills**: `manage_contract` (CRUD + search), `contract_renewal_check` (finds expiring contracts grouped by urgency)
+- **Automation**: Daily renewal alert (weekdays 08:00) — FlowPilot checks for contracts expiring within 30 days
+- **Future**: Document versioning upload via `contract_documents` table, digital signature integration
 
 ---
 

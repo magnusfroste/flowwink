@@ -239,6 +239,11 @@ export const MODULE_SKILL_MAP: Partial<Record<keyof ModulesSettings, string[]>> 
   companyInsights: [
     // Shares salesIntelligence skills
   ],
+
+  contracts: [
+    'manage_contract',
+    'contract_renewal_check',
+  ],
 };
 
 /**

@@ -71,6 +71,7 @@ export interface ModulesSettings {
   inventory: ModuleConfig;
   purchasing: ModuleConfig;
   sla: ModuleConfig;
+  contracts: ModuleConfig;
 }
 
 export const defaultModulesSettings: ModulesSettings = {
@@ -422,6 +423,15 @@ export const defaultModulesSettings: ModulesSettings = {
     autonomy: 'agent-capable',
     adminUI: true,
   },
+  contracts: {
+    enabled: false,
+    name: 'Contracts',
+    description: 'Contract lifecycle management with renewal tracking, document versioning, and deadline alerts — FlowPilot monitors expirations autonomously',
+    icon: 'FileSignature',
+    category: 'data',
+    autonomy: 'agent-capable',
+    adminUI: true,
+  },
 };
 
 // Map sidebar items to module IDs
@@ -467,6 +477,7 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/vendors': 'purchasing',
   '/admin/purchase-orders': 'purchasing',
   '/admin/sla': 'sla',
+  '/admin/contracts': 'contracts',
 };
 
 export function useModules() {
