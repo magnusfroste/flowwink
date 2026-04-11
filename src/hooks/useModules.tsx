@@ -72,6 +72,7 @@ export interface ModulesSettings {
   purchasing: ModuleConfig;
   sla: ModuleConfig;
   contracts: ModuleConfig;
+  hr: ModuleConfig;
 }
 
 export const defaultModulesSettings: ModulesSettings = {
@@ -432,6 +433,15 @@ export const defaultModulesSettings: ModulesSettings = {
     autonomy: 'agent-capable',
     adminUI: true,
   },
+  hr: {
+    enabled: false,
+    name: 'HR & Employees',
+    description: 'Employee directory, leave management, onboarding checklists, and document handling — FlowPilot automates routine HR tasks and escalates exceptions',
+    icon: 'Users',
+    category: 'data',
+    autonomy: 'agent-capable',
+    adminUI: true,
+  },
 };
 
 // Map sidebar items to module IDs
@@ -478,6 +488,7 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/purchase-orders': 'purchasing',
   '/admin/sla': 'sla',
   '/admin/contracts': 'contracts',
+  '/admin/hr': 'hr',
 };
 
 export function useModules() {
