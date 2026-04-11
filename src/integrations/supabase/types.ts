@@ -4734,6 +4734,7 @@ export type Database = {
         Row: {
           created_at: string
           description: string | null
+          employee_id: string | null
           entry_date: string
           hours: number
           id: string
@@ -4743,11 +4744,12 @@ export type Database = {
           project_id: string
           task_id: string | null
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
           description?: string | null
+          employee_id?: string | null
           entry_date?: string
           hours?: number
           id?: string
@@ -4757,11 +4759,12 @@ export type Database = {
           project_id: string
           task_id?: string | null
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
           description?: string | null
+          employee_id?: string | null
           entry_date?: string
           hours?: number
           id?: string
@@ -4771,9 +4774,16 @@ export type Database = {
           project_id?: string
           task_id?: string | null
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "time_entries_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "time_entries_project_id_fkey"
             columns: ["project_id"]
