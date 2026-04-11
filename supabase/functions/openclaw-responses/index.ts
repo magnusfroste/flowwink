@@ -127,10 +127,42 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Inject MCP credentials into the prompt if requested and available
+    // Inject MCP credentials into the prompt if requested
     let effectivePrompt = prompt;
-    if (inject_mcp_credentials && peer.mcp_api_key) {
-      const mcpBlock = `\n\n## MCP CALLBACK CREDENTIALS\nUse these to report results back to FlowWink:\n- Endpoint: ${supabaseUrl}/functions/v1/mcp-server/rest\n- Authorization: Bearer ${peer.mcp_api_key}\n- Resources: GET /resources/health, GET /resources/skills, GET /resources/templates, GET /resources/templates/{id}\n- Execute: POST /execute with body {"tool":"<tool_name>","arguments":{...}}\n- Report findings: tool "openclaw_report_finding" with type (bug|suggestion|positive|ux_issue|performance|missing_feature), severity, title, description, context`;
+    if (inject_mcp_credentials) {
+      let mcpKey = peer.mcp_api_key;
+
+      // Auto-generate MCP API key if the peer doesn't have one yet
+      if (!mcpKey) {
+        console.log(`[openclaw-responses] Peer '${peer.name}' has no mcp_api_key — auto-generating...`);
+        const rawKey = 'fwk_' + Array.from(crypto.getRandomValues(new Uint8Array(32)))
+          .map(b => b.toString(16).padStart(2, '0')).join('');
+        const keyPrefix = rawKey.slice(0, 8);
+
+        // Hash key for api_keys table
+        const encoder = new TextEncoder();
+        const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(rawKey));
+        const keyHash = Array.from(new Uint8Array(hashBuffer))
+          .map(b => b.toString(16).padStart(2, '0')).join('');
+
+        // Store in api_keys table
+        await supabase.from('api_keys').insert({
+          name: `MCP key for peer ${peer.name}`,
+          key_hash: keyHash,
+          key_prefix: keyPrefix,
+          scopes: ['mcp:*'],
+        });
+
+        // Store raw key on peer record for injection
+        await supabase.from('a2a_peers')
+          .update({ mcp_api_key: rawKey })
+          .eq('id', peer.id);
+
+        mcpKey = rawKey;
+        console.log(`[openclaw-responses] Auto-generated MCP key ${keyPrefix}... for peer '${peer.name}'`);
+      }
+
+      const mcpBlock = `\n\n## MCP CALLBACK CREDENTIALS\nUse these to report results back to FlowWink:\n- Endpoint: ${supabaseUrl}/functions/v1/mcp-server/rest\n- Authorization: Bearer ${mcpKey}\n- Resources: GET /resources/health, GET /resources/skills, GET /resources/templates, GET /resources/templates/{id}\n- Execute: POST /execute with body {"tool":"<tool_name>","arguments":{...}}\n- Report findings: tool "openclaw_report_finding" with type (bug|suggestion|positive|ux_issue|performance|missing_feature), severity, title, description, context`;
       effectivePrompt = prompt + mcpBlock;
     }
 
