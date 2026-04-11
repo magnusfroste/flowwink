@@ -2,7 +2,10 @@
  * Timesheets Module Bootstrap
  * 
  * Seeds:
- * - Skills: log_time, manage_projects, timesheet_summary
+ * - Skills: log_time, manage_projects, manage_tasks, timesheet_summary
+ * - Automation: Weekly Timesheet Reminder, Project Budget Alert
+ * 
+ * Depends on: invoicing (optional, for billable hours → invoice)
  * - Automation: Weekly Timesheet Reminder (Fridays)
  * 
  * Depends on: invoicing (optional, for billable hours → invoice)
@@ -100,6 +103,38 @@ const TIMESHEET_SKILLS: SkillSeed[] = [
     },
     instructions: 'Summarize time entries grouped by project and user. When include_revenue is true, multiply hours × hourly_rate for each project. Format output as a table showing project, hours, and optional revenue. Swedish: "tidssammanställning", "fakturerbar tid", "rapportera timmar".',
   },
+  {
+    name: 'manage_tasks',
+    description: 'Create, list, update, or complete project tasks. Use when: user wants to create a task, see open tasks, change status, or assign someone. NOT for: logging time (use log_time), project setup (use manage_projects).',
+    category: 'commerce',
+    handler: 'db:timesheets',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_tasks',
+        description: 'CRUD for project tasks with kanban status management',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: { type: 'string', enum: ['create', 'list', 'update', 'delete'] },
+            task_id: { type: 'string', description: 'Task UUID (for update/delete)' },
+            project_id: { type: 'string', description: 'Project UUID' },
+            project_name: { type: 'string', description: 'Project name (lookup if no project_id)' },
+            title: { type: 'string' },
+            description: { type: 'string' },
+            status: { type: 'string', enum: ['todo', 'in_progress', 'review', 'done'] },
+            priority: { type: 'string', enum: ['low', 'medium', 'high', 'urgent'] },
+            assigned_to: { type: 'string', description: 'User UUID to assign' },
+            due_date: { type: 'string', description: 'YYYY-MM-DD' },
+            estimated_hours: { type: 'number' },
+          },
+          required: ['action'],
+        },
+      },
+    },
+    instructions: 'Tasks live within projects. Status flow: todo → in_progress → review → done. completed_at is set automatically when done. Swedish: "uppgift", "task", "skapa uppgift", "vad ska göras".',
+  },
 ];
 
 const TIMESHEET_AUTOMATIONS: AutomationSeed[] = [
@@ -110,6 +145,14 @@ const TIMESHEET_AUTOMATIONS: AutomationSeed[] = [
     trigger_config: { cron: '0 15 * * 5', expression: '0 15 * * 5' },
     skill_name: 'timesheet_summary',
     skill_arguments: { period: 'this_week' },
+  },
+  {
+    name: 'Project Budget Alert',
+    description: 'Every Monday at 09:00, FlowPilot checks all active projects with budget_hours and alerts if any project has exceeded 90% of its budget.',
+    trigger_type: 'cron',
+    trigger_config: { cron: '0 9 * * 1', expression: '0 9 * * 1' },
+    skill_name: 'timesheet_summary',
+    skill_arguments: { period: 'this_month', include_revenue: true },
   },
 ];
 
