@@ -4098,13 +4098,15 @@ async function executeDbAction(
       return { error: `Unknown vendors action: ${action}` };
     }
 
-    // ─── Purchasing: Purchase Orders ─────────────────────────────────────
+    // ─── Purchasing: Purchase Orders (general CRUD) ─────────────────────
     case 'purchase_orders': {
-      if (skillName === 'create_purchase_order') {
+      const { action = 'list' } = args as any;
+
+      // ── CREATE ──
+      if (action === 'create' || skillName === 'create_purchase_order') {
         const { vendor_id, order_date, expected_delivery, notes, lines: poLines } = args as any;
         if (!vendor_id || !poLines?.length) throw new Error('vendor_id and lines are required');
 
-        // Calculate totals
         let subtotalCents = 0;
         let taxCents = 0;
         for (const line of poLines) {
@@ -4127,7 +4129,6 @@ async function executeDbAction(
           }).select('id, po_number, status, total_cents').single();
         if (poError) throw new Error(`Create PO failed: ${poError.message}`);
 
-        // Insert lines
         const lineInserts = poLines.map((l: any, i: number) => ({
           purchase_order_id: po.id,
           product_id: l.product_id || null,
@@ -4140,7 +4141,6 @@ async function executeDbAction(
         const { error: linesErr } = await supabase.from('purchase_order_lines').insert(lineInserts);
         if (linesErr) throw new Error(`Insert PO lines failed: ${linesErr.message}`);
 
-        // Fire webhook
         try {
           const { data: vendorInfo } = await supabase.from('vendors').select('name').eq('id', vendor_id).single();
           await fetch(`${supabaseUrl}/functions/v1/send-webhook`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceKey}` }, body: JSON.stringify({ event: 'purchase_order.created', data: { id: po.id, po_number: po.po_number, vendor_name: vendorInfo?.name, total_cents: po.total_cents, currency: 'SEK' } }) });
@@ -4149,113 +4149,94 @@ async function executeDbAction(
         return { purchase_order_id: po.id, po_number: po.po_number, status: po.status, total_cents: po.total_cents, lines_count: poLines.length };
       }
 
-      if (skillName === 'send_purchase_order') {
-        const { purchase_order_id } = args as any;
+      // ── UPDATE (status, expected_delivery, notes — general purpose) ──
+      if (action === 'update') {
+        const { purchase_order_id, status, expected_delivery, notes: poNotes } = args as any;
         if (!purchase_order_id) throw new Error('purchase_order_id is required');
 
-        // Get PO with vendor info
-        const { data: po, error: poErr } = await supabase.from('purchase_orders')
-          .select('id, po_number, status, total_cents, currency, notes, order_date, expected_delivery, vendor_id, vendors(name, email)')
-          .eq('id', purchase_order_id).single();
-        if (poErr || !po) throw new Error(`PO not found: ${poErr?.message}`);
-        if (po.status !== 'draft') throw new Error(`PO ${po.po_number} is already ${po.status}`);
+        const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
+        if (status) updates.status = status;
+        if (expected_delivery !== undefined) updates.expected_delivery = expected_delivery || null;
+        if (poNotes !== undefined) updates.notes = poNotes;
 
-        // Get lines for email body
-        const { data: lines } = await supabase.from('purchase_order_lines')
-          .select('description, quantity, unit_price_cents, line_total_cents')
-          .eq('purchase_order_id', purchase_order_id);
+        const { error: updErr } = await supabase.from('purchase_orders')
+          .update(updates).eq('id', purchase_order_id);
+        if (updErr) throw new Error(`Update PO failed: ${updErr.message}`);
 
-        // Update status to sent
-        const { error: updateErr } = await supabase.from('purchase_orders')
-          .update({ status: 'sent', updated_at: new Date().toISOString() })
-          .eq('id', purchase_order_id);
-        if (updateErr) throw new Error(`Update PO status failed: ${updateErr.message}`);
-
-        // Try to send email via Composio Gmail if vendor has email
+        // If transitioning to 'sent', attempt email via Composio
         let emailSent = false;
-        const vendorEmail = (po as any).vendors?.email;
-        const vendorName = (po as any).vendors?.name;
-        if (vendorEmail) {
-          try {
-            // Check if Composio is configured
-            const composioKey = Deno.env.get('COMPOSIO_API_KEY');
-            if (composioKey) {
-              // Build email body
-              const lineItems = (lines || []).map((l: any) =>
-                `• ${l.description}: ${l.quantity}x @ ${(l.unit_price_cents / 100).toFixed(2)} ${po.currency} = ${(l.line_total_cents / 100).toFixed(2)} ${po.currency}`
-              ).join('\n');
+        if (status === 'sent') {
+          const { data: po } = await supabase.from('purchase_orders')
+            .select('id, po_number, total_cents, currency, notes, order_date, expected_delivery, vendor_id, vendors(name, email)')
+            .eq('id', purchase_order_id).single();
 
-              const emailBody = [
-                `Purchase Order: ${po.po_number}`,
-                `Date: ${po.order_date}`,
-                po.expected_delivery ? `Expected Delivery: ${po.expected_delivery}` : '',
-                '',
-                'Items:',
-                lineItems,
-                '',
-                `Total: ${(po.total_cents / 100).toFixed(2)} ${po.currency}`,
-                po.notes ? `\nNotes: ${po.notes}` : '',
-              ].filter(Boolean).join('\n');
+          const vendorEmail = (po as any)?.vendors?.email;
+          const vendorName = (po as any)?.vendors?.name;
 
-              const emailRes = await fetch(`${supabaseUrl}/functions/v1/composio-proxy`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${serviceKey}`,
-                },
-                body: JSON.stringify({
-                  action: 'gmail_send',
-                  params: {
-                    to: vendorEmail,
-                    subject: `Purchase Order ${po.po_number}`,
-                    body: emailBody,
-                  },
-                }),
-              });
-              const emailData = await emailRes.json();
-              emailSent = emailRes.ok && !emailData.error;
-              if (!emailSent) {
-                console.warn(`[agent-execute] PO email send failed:`, JSON.stringify(emailData).slice(0, 300));
+          if (vendorEmail) {
+            try {
+              const composioKey = Deno.env.get('COMPOSIO_API_KEY');
+              if (composioKey) {
+                const { data: lines } = await supabase.from('purchase_order_lines')
+                  .select('description, quantity, unit_price_cents, line_total_cents')
+                  .eq('purchase_order_id', purchase_order_id);
+
+                const lineItems = (lines || []).map((l: any) =>
+                  `• ${l.description}: ${l.quantity}x @ ${(l.unit_price_cents / 100).toFixed(2)} ${po.currency} = ${(l.line_total_cents / 100).toFixed(2)} ${po.currency}`
+                ).join('\n');
+
+                const emailBody = [
+                  `Purchase Order: ${po.po_number}`, `Date: ${po.order_date}`,
+                  po.expected_delivery ? `Expected Delivery: ${po.expected_delivery}` : '',
+                  '', 'Items:', lineItems, '',
+                  `Total: ${(po.total_cents / 100).toFixed(2)} ${po.currency}`,
+                  po.notes ? `\nNotes: ${po.notes}` : '',
+                ].filter(Boolean).join('\n');
+
+                const emailRes = await fetch(`${supabaseUrl}/functions/v1/composio-proxy`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceKey}` },
+                  body: JSON.stringify({ action: 'gmail_send', params: { to: vendorEmail, subject: `Purchase Order ${po.po_number}`, body: emailBody } }),
+                });
+                const emailData = await emailRes.json();
+                emailSent = emailRes.ok && !emailData.error;
               }
+            } catch (emailErr) {
+              console.warn('[agent-execute] PO email send error (non-fatal):', emailErr);
             }
-          } catch (emailErr) {
-            console.warn('[agent-execute] PO email send error (non-fatal):', emailErr);
           }
+
+          try {
+            await fetch(`${supabaseUrl}/functions/v1/send-webhook`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceKey}` }, body: JSON.stringify({ event: 'purchase_order.sent', data: { id: purchase_order_id, po_number: po?.po_number, vendor_name: vendorName, email_sent: emailSent } }) });
+          } catch {}
         }
 
-        // Fire webhook
-        try { await fetch(`${supabaseUrl}/functions/v1/send-webhook`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceKey}` }, body: JSON.stringify({ event: 'purchase_order.sent', data: { id: po.id, po_number: po.po_number, vendor_name: vendorName, vendor_email: vendorEmail, email_sent: emailSent } }) }); } catch {}
+        const { data: updated } = await supabase.from('purchase_orders')
+          .select('id, po_number, status, total_cents, expected_delivery, notes').eq('id', purchase_order_id).single();
 
-        return {
-          purchase_order_id: po.id,
-          po_number: po.po_number,
-          status: 'sent',
-          vendor: vendorName,
-          email_sent: emailSent,
-          email_to: emailSent ? vendorEmail : null,
-          message: emailSent
-            ? `PO ${po.po_number} sent to ${vendorName} (${vendorEmail})`
-            : vendorEmail
-              ? `PO ${po.po_number} marked as sent. Email delivery failed — check Gmail connection.`
-              : `PO ${po.po_number} marked as sent. No vendor email on file.`,
-        };
+        return { ...updated, email_sent: emailSent, message: `PO ${updated?.po_number} updated successfully.` };
       }
 
-      // Generic PO list/get
-      const { action = 'list' } = args as any;
-      if (action === 'list') {
-        const { status: poStatus, vendor_id, limit = 50 } = args as any;
-        let query = supabase.from('purchase_orders')
-          .select('id, po_number, status, total_cents, currency, order_date, expected_delivery, created_at, vendors(name)')
-          .order('created_at', { ascending: false }).limit(limit);
-        if (poStatus) query = query.eq('status', poStatus);
-        if (vendor_id) query = query.eq('vendor_id', vendor_id);
-        const { data, error } = await query;
-        if (error) throw new Error(`List POs failed: ${error.message}`);
-        return { purchase_orders: data || [], count: (data || []).length };
+      // ── LIST / GET ──
+      if (action === 'get') {
+        const { purchase_order_id } = args as any;
+        if (!purchase_order_id) throw new Error('purchase_order_id required');
+        const { data: po, error } = await supabase.from('purchase_orders')
+          .select('*, vendors(name, email), purchase_order_lines(*)').eq('id', purchase_order_id).single();
+        if (error) throw new Error(`Get PO failed: ${error.message}`);
+        return po;
       }
 
-      return { error: `Unknown purchase_orders skill: ${skillName}` };
+      // Default: list
+      const { status: poStatus, vendor_id, limit = 50 } = args as any;
+      let query = supabase.from('purchase_orders')
+        .select('id, po_number, status, total_cents, currency, order_date, expected_delivery, created_at, vendors(name)')
+        .order('created_at', { ascending: false }).limit(limit);
+      if (poStatus) query = query.eq('status', poStatus);
+      if (vendor_id) query = query.eq('vendor_id', vendor_id);
+      const { data, error } = await query;
+      if (error) throw new Error(`List POs failed: ${error.message}`);
+      return { purchase_orders: data || [], count: (data || []).length };
     }
 
     // ─── Purchasing: Goods Receipts ──────────────────────────────────────
