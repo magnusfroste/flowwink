@@ -25,6 +25,7 @@ import {
   Network,
   Megaphone,
   Snowflake,
+  FileSignature,
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
@@ -62,6 +63,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   Network,
   Megaphone,
   Snowflake,
+  FileSignature,
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
