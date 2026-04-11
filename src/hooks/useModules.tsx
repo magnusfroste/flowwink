@@ -509,6 +509,8 @@ export const SIDEBAR_TO_MODULE: Record<string, keyof ModulesSettings> = {
   '/admin/sla': 'sla',
   '/admin/contracts': 'contracts',
   '/admin/hr': 'hr',
+  '/admin/documents': 'documents',
+  '/admin/projects': 'projects',
 };
 
 export function useModules() {
