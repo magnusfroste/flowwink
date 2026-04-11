@@ -3399,31 +3399,33 @@ When a user asks for music or sound effects, use this skill with:
     instructions: `## dispatch_claw_mission — One-Shot Mission Dispatch
 
 ### What
-Sends a self-contained mission to an external OpenClaw agent. The mission includes MCP credentials so the Claw can read FlowWink data and report findings back autonomously. Uses fire-and-forget to avoid edge function timeout.
+Sends a self-contained mission to an external OpenClaw agent. MCP credentials are auto-injected so the Claw can report findings back.
 
-### How it works
-1. FlowPilot builds a mission prompt with clear instructions
-2. MCP credentials are automatically injected from the peer record
-3. POST is sent to the Claw's /v1/responses endpoint
-4. FlowPilot returns immediately (no waiting for completion)
-5. The Claw works independently, reports back via MCP
+### CRITICAL: Writing good mission prompts
+External agents may run on smaller models (27B). Your mission prompt MUST be:
+- **Short**: Max 200 words. No walls of text.
+- **Step-by-step**: Numbered list of 3-5 concrete steps.
+- **Specific**: Tell them exactly what to check, not "audit everything".
+- **Role-based**: Start with "You are a [role]. Your job is to [task]."
+
+### GOOD mission prompt example:
+"You are a customer testing FlowWink's booking system.
+
+Steps:
+1. Call GET /resources/health to check the site is online.
+2. Check if bookings are available (look at the health data).
+3. Report what you find. Send ONE finding per request.
+
+Focus on: Is booking functional? Are there services listed? Any errors?"
+
+### BAD mission prompt (too vague, too long):
+"Please perform a comprehensive analysis of the entire website including SEO, performance, accessibility, content quality, user experience, and technical architecture..."
 
 ### Parameters
 - \`peer_name\`: Name of the registered peer (e.g. "ClawOne")
-- \`prompt\`: The mission instructions — must be self-contained (no multi-turn)
-- \`inject_mcp_credentials\`: Set to true to include MCP callback credentials
-- \`fire_and_forget\`: Set to true (default for missions) to avoid timeout
-
-### Example missions
-- Template audit: "Audit all templates for SEO, content quality, and block structure. Report each finding via MCP."
-- Site test: "Browse the public site, test the chat widget, and report any UX issues via MCP."
-- Content review: "Review all blog posts for quality and SEO. Submit suggestions via MCP."
-
-### Important
-- Each mission is stateless — include ALL context in the prompt
-- The peer must have a valid mcp_api_key configured for callbacks
-- Results arrive asynchronously via MCP findings/activities
-- Check Federation activity log for mission status`,
+- \`prompt\`: The mission instructions — short, specific, step-by-step
+- \`inject_mcp_credentials\`: Set to true (default) to include callback credentials
+- \`fire_and_forget\`: Set to true (default) to avoid timeout`,
     tool_definition: {
       type: 'function',
       function: {
