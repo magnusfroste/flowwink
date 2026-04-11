@@ -185,11 +185,11 @@ export function useCreateGoodsReceipt() {
         );
       if (linesError) throw linesError;
 
-      // Update received quantities on PO lines
+      // Update received quantities on PO lines + sync inventory
       for (const line of input.lines) {
         const { data: poLine } = await supabase
           .from('purchase_order_lines')
-          .select('received_quantity')
+          .select('received_quantity, product_id')
           .eq('id', line.po_line_id)
           .single();
         if (poLine) {
@@ -197,6 +197,33 @@ export function useCreateGoodsReceipt() {
             .from('purchase_order_lines')
             .update({ received_quantity: poLine.received_quantity + line.quantity_received })
             .eq('id', line.po_line_id);
+
+          // Auto-update inventory if product is tracked
+          if (poLine.product_id) {
+            const { data: stockRow } = await supabase
+              .from('product_stock')
+              .select('id, quantity_on_hand')
+              .eq('product_id', poLine.product_id)
+              .maybeSingle();
+
+            if (stockRow) {
+              // Create stock move (in)
+              await supabase.from('stock_moves').insert({
+                product_id: poLine.product_id,
+                quantity: line.quantity_received,
+                move_type: 'in',
+                reference_type: 'goods_receipt',
+                reference_id: receipt.id,
+                notes: `PO goods receipt – ${line.quantity_received} units received`,
+              });
+
+              // Update on-hand quantity
+              await supabase
+                .from('product_stock')
+                .update({ quantity_on_hand: stockRow.quantity_on_hand + line.quantity_received })
+                .eq('product_id', poLine.product_id);
+            }
+          }
         }
       }
 
