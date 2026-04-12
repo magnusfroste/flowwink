@@ -4464,7 +4464,12 @@ async function executeDbAction(
     }
 
     default:
-      return { error: `Unknown db table: ${table}` };
+      // ─── Generic CRUD engine for any db:tablename handler ─────────────
+      // Handles list, get, create, update, delete for tables that don't
+      // have a dedicated handler above. This enables all modules (HR,
+      // Projects, Contracts, etc.) to work via MCP/Chat/Automations
+      // without writing per-table code.
+      return await executeGenericCrud(supabase, table, skillName, args);
   }
 }
 
