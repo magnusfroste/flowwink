@@ -2,15 +2,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 import type { Json } from '@/integrations/supabase/types';
 import { renderToHtml } from '@/lib/tiptap-utils';
+import { defineModule } from '@/lib/module-def';
 import {
-  ModuleDefinition,
   NewsletterModuleInput,
   NewsletterModuleOutput,
   newsletterModuleInputSchema,
   newsletterModuleOutputSchema,
 } from '@/types/module-contracts';
 
-export const newsletterModule: ModuleDefinition<NewsletterModuleInput, NewsletterModuleOutput> = {
+export const newsletterModule = defineModule<NewsletterModuleInput, NewsletterModuleOutput>({
   id: 'newsletter',
   name: 'Newsletter',
   version: '1.0.0',
@@ -18,6 +18,19 @@ export const newsletterModule: ModuleDefinition<NewsletterModuleInput, Newslette
   capabilities: ['content:receive', 'data:write'],
   inputSchema: newsletterModuleInputSchema,
   outputSchema: newsletterModuleOutputSchema,
+
+  skills: [
+    'send_newsletter',
+    'manage_newsletters',
+    'execute_newsletter_send',
+    'manage_newsletter_subscribers',
+    'newsletter_subscribe',
+  ],
+
+  webhookEvents: [
+    { event: 'newsletter.subscribed', description: 'A new subscriber joined' },
+    { event: 'newsletter.unsubscribed', description: 'A subscriber left' },
+  ],
 
   async publish(input: NewsletterModuleInput): Promise<NewsletterModuleOutput> {
     try {
@@ -59,4 +72,4 @@ export const newsletterModule: ModuleDefinition<NewsletterModuleInput, Newslette
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   },
-};
+});

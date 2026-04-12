@@ -1,6 +1,6 @@
-import { ModuleDefinition } from '@/types/module-contracts';
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
+import { defineModule } from '@/lib/module-def';
 import { z } from 'zod';
 
 // ---------------------------------------------------------------------------
@@ -10,9 +10,7 @@ import { z } from 'zod';
 export const siteMigrationInputSchema = z.object({
   action: z.enum(['discover', 'migrate_page', 'analyze_brand']),
   url: z.string().url(),
-  /** Only for 'discover' — optional search filter for map results */
   search: z.string().optional(),
-  /** Only for 'migrate_page' */
   pageType: z.enum(['page', 'blog', 'kb']).optional(),
   slug: z.string().optional(),
   title: z.string().optional(),
@@ -20,12 +18,9 @@ export const siteMigrationInputSchema = z.object({
 
 export const siteMigrationOutputSchema = z.object({
   success: z.boolean(),
-  /** discover → list of URLs, migrate_page → created page id */
   data: z.any().optional(),
-  /** Extracted branding when available */
   branding: z.record(z.any()).optional(),
   error: z.string().optional(),
-  /** Which integrations were used */
   providers: z.object({
     scraper: z.enum(['firecrawl', 'jina', 'none']).optional(),
     ai: z.enum(['openai', 'gemini', 'local']).optional(),
@@ -39,7 +34,7 @@ export type SiteMigrationOutput = z.infer<typeof siteMigrationOutputSchema>;
 // Module Definition
 // ---------------------------------------------------------------------------
 
-export const siteMigrationModule: ModuleDefinition<SiteMigrationInput, SiteMigrationOutput> = {
+export const siteMigrationModule = defineModule<SiteMigrationInput, SiteMigrationOutput>({
   id: 'siteMigration',
   name: 'Site Migration',
   version: '1.0.0',
@@ -48,14 +43,15 @@ export const siteMigrationModule: ModuleDefinition<SiteMigrationInput, SiteMigra
   inputSchema: siteMigrationInputSchema,
   outputSchema: siteMigrationOutputSchema,
 
+  skills: [
+    'migrate_url',
+  ],
+
   async publish(input: SiteMigrationInput): Promise<SiteMigrationOutput> {
     const validated = siteMigrationInputSchema.parse(input);
 
     try {
       switch (validated.action) {
-        // ------------------------------------------------------------------
-        // DISCOVER — find all pages on a site (sitemap + firecrawl map)
-        // ------------------------------------------------------------------
         case 'discover': {
           const { data, error } = await supabase.functions.invoke('firecrawl-map', {
             body: { url: validated.url, options: { search: validated.search, limit: 500 } },
@@ -68,9 +64,6 @@ export const siteMigrationModule: ModuleDefinition<SiteMigrationInput, SiteMigra
           };
         }
 
-        // ------------------------------------------------------------------
-        // MIGRATE PAGE — scrape + AI block mapping with branding
-        // ------------------------------------------------------------------
         case 'migrate_page': {
           const { data, error } = await supabase.functions.invoke('migrate-page', {
             body: {
@@ -92,9 +85,6 @@ export const siteMigrationModule: ModuleDefinition<SiteMigrationInput, SiteMigra
           };
         }
 
-        // ------------------------------------------------------------------
-        // ANALYZE BRAND — extract branding only (used by Brand Guide)
-        // ------------------------------------------------------------------
         case 'analyze_brand': {
           const { data, error } = await supabase.functions.invoke('analyze-brand', {
             body: { url: validated.url },
@@ -115,7 +105,7 @@ export const siteMigrationModule: ModuleDefinition<SiteMigrationInput, SiteMigra
       return { success: false, error: err.message || 'Migration failed' };
     }
   },
-};
+});
 
 // ---------------------------------------------------------------------------
 // Module Metadata (for registry & UI)
@@ -132,7 +122,7 @@ export const siteMigrationMeta = {
   dependencies: [],
   requiredIntegrations: ['firecrawl'],
   optionalIntegrations: ['jina'],
-  aiProvider: 'auto' as const, // resolved by Layer 1 (resolveAiConfig)
+  aiProvider: 'auto' as const,
   skills: ['page_migration', 'generate_site_from_identity'],
   features: [
     'Sitemap discovery & URL mapping',

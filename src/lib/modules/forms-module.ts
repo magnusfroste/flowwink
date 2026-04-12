@@ -2,15 +2,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 import type { Json } from '@/integrations/supabase/types';
 import { triggerWebhook } from '@/lib/webhook-utils';
+import { defineModule } from '@/lib/module-def';
 import {
-  ModuleDefinition,
   FormSubmissionModuleInput,
   FormSubmissionModuleOutput,
   formSubmissionModuleInputSchema,
   formSubmissionModuleOutputSchema,
 } from '@/types/module-contracts';
 
-export const formsModule: ModuleDefinition<FormSubmissionModuleInput, FormSubmissionModuleOutput> = {
+export const formsModule = defineModule<FormSubmissionModuleInput, FormSubmissionModuleOutput>({
   id: 'forms',
   name: 'Forms',
   version: '1.0.0',
@@ -18,6 +18,14 @@ export const formsModule: ModuleDefinition<FormSubmissionModuleInput, FormSubmis
   capabilities: ['content:receive', 'data:write', 'webhook:trigger'],
   inputSchema: formSubmissionModuleInputSchema,
   outputSchema: formSubmissionModuleOutputSchema,
+
+  skills: [
+    'manage_form_submissions',
+  ],
+
+  webhookEvents: [
+    { event: 'form.submitted', description: 'A form was submitted' },
+  ],
 
   async publish(input: FormSubmissionModuleInput): Promise<FormSubmissionModuleOutput> {
     try {
@@ -54,4 +62,4 @@ export const formsModule: ModuleDefinition<FormSubmissionModuleInput, FormSubmis
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   },
-};
+});

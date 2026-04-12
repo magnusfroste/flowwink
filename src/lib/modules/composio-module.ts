@@ -1,8 +1,6 @@
 import { logger } from '@/lib/logger';
 import { supabase } from '@/integrations/supabase/client';
-import type {
-  ModuleDefinition,
-} from '@/types/module-contracts';
+import { defineModule } from '@/lib/module-def';
 import {
   composioActionInputSchema,
   composioActionOutputSchema,
@@ -10,7 +8,7 @@ import {
   type ComposioActionOutput,
 } from '@/types/module-contracts';
 
-export const composioModule: ModuleDefinition<ComposioActionInput, ComposioActionOutput> = {
+export const composioModule = defineModule<ComposioActionInput, ComposioActionOutput>({
   id: 'composio',
   name: 'Composio',
   version: '1.0.0',
@@ -18,6 +16,13 @@ export const composioModule: ModuleDefinition<ComposioActionInput, ComposioActio
   capabilities: ['data:read', 'data:write', 'webhook:trigger'],
   inputSchema: composioActionInputSchema,
   outputSchema: composioActionOutputSchema,
+
+  skills: [
+    'composio_execute',
+    'composio_search_tools',
+    'composio_gmail_read',
+    'composio_gmail_send',
+  ],
 
   async publish(input: ComposioActionInput): Promise<ComposioActionOutput> {
     try {
@@ -46,4 +51,4 @@ export const composioModule: ModuleDefinition<ComposioActionInput, ComposioActio
       };
     }
   },
-};
+});

@@ -1,7 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
+import { defineModule } from '@/lib/module-def';
 import { z } from 'zod';
-import type { ModuleDefinition } from '@/types/module-contracts';
 
 const inventoryInputSchema = z.object({
   action: z.enum(['check_stock', 'list_low_stock', 'get_movements']),
@@ -17,7 +17,7 @@ const inventoryOutputSchema = z.object({
 type InventoryInput = z.infer<typeof inventoryInputSchema>;
 type InventoryOutput = z.infer<typeof inventoryOutputSchema>;
 
-export const inventoryModule: ModuleDefinition<InventoryInput, InventoryOutput> = {
+export const inventoryModule = defineModule<InventoryInput, InventoryOutput>({
   id: 'inventory',
   name: 'Inventory',
   version: '1.0.0',
@@ -25,6 +25,17 @@ export const inventoryModule: ModuleDefinition<InventoryInput, InventoryOutput> 
   capabilities: ['data:read'],
   inputSchema: inventoryInputSchema,
   outputSchema: inventoryOutputSchema,
+
+  skills: [
+    'check_stock',
+    'adjust_stock',
+    'low_stock_report',
+  ],
+
+  webhookEvents: [
+    { event: 'stock.adjusted', description: 'Stock was adjusted' },
+    { event: 'stock.low', description: 'Stock fell below threshold' },
+  ],
 
   async publish(input: InventoryInput): Promise<InventoryOutput> {
     const validated = inventoryInputSchema.parse(input);
@@ -64,4 +75,4 @@ export const inventoryModule: ModuleDefinition<InventoryInput, InventoryOutput> 
 
     return { success: false, message: 'Unsupported action' };
   },
-};
+});

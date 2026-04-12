@@ -1,15 +1,15 @@
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 import type { Json } from '@/integrations/supabase/types';
+import { defineModule } from '@/lib/module-def';
 import {
-  ModuleDefinition,
   FederationPeerInput,
   FederationPeerOutput,
   federationPeerInputSchema,
   federationPeerOutputSchema,
 } from '@/types/module-contracts';
 
-export const federationModule: ModuleDefinition<FederationPeerInput, FederationPeerOutput> = {
+export const federationModule = defineModule<FederationPeerInput, FederationPeerOutput>({
   id: 'federation',
   name: 'Federation',
   version: '1.0.0',
@@ -17,6 +17,19 @@ export const federationModule: ModuleDefinition<FederationPeerInput, FederationP
   capabilities: ['data:read', 'data:write'],
   inputSchema: federationPeerInputSchema,
   outputSchema: federationPeerOutputSchema,
+
+  skills: [
+    'a2a_chat',
+    'a2a_request',
+    'openclaw_start_session',
+    'openclaw_end_session',
+    'openclaw_report_finding',
+    'openclaw_exchange',
+    'openclaw_get_status',
+    'queue_beta_test',
+    'resolve_finding',
+    'scan_beta_findings',
+  ],
 
   async publish(input: FederationPeerInput): Promise<FederationPeerOutput> {
     try {
@@ -55,4 +68,4 @@ export const federationModule: ModuleDefinition<FederationPeerInput, FederationP
       };
     }
   },
-};
+});

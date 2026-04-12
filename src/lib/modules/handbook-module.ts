@@ -1,6 +1,6 @@
 import { logger } from '@/lib/logger';
+import { defineModule } from '@/lib/module-def';
 import { z } from 'zod';
-import type { ModuleDefinition } from '@/types/module-contracts';
 
 const handbookInputSchema = z.object({
   action: z.enum(['list', 'search']),
@@ -15,7 +15,7 @@ const handbookOutputSchema = z.object({
 type HandbookInput = z.infer<typeof handbookInputSchema>;
 type HandbookOutput = z.infer<typeof handbookOutputSchema>;
 
-export const handbookModule: ModuleDefinition<HandbookInput, HandbookOutput> = {
+export const handbookModule = defineModule<HandbookInput, HandbookOutput>({
   id: 'handbook',
   name: 'Agentic Handbook',
   version: '1.0.0',
@@ -24,9 +24,13 @@ export const handbookModule: ModuleDefinition<HandbookInput, HandbookOutput> = {
   inputSchema: handbookInputSchema,
   outputSchema: handbookOutputSchema,
 
+  skills: [
+    'handbook_search',
+  ],
+
   async publish(input: HandbookInput): Promise<HandbookOutput> {
     const validated = handbookInputSchema.parse(input);
     logger.log('[handbook] action:', validated.action);
     return { success: true, message: `Handbook ${validated.action} completed` };
   },
-};
+});

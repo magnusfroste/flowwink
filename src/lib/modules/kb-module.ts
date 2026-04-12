@@ -1,23 +1,32 @@
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 import type { Json } from '@/integrations/supabase/types';
+import { defineModule } from '@/lib/module-def';
 import { generateSlug, isTiptapDocument } from './helpers';
 import {
-  ModuleDefinition,
   KBArticleModuleInput,
   KBArticleModuleOutput,
   kbArticleModuleInputSchema,
   kbArticleModuleOutputSchema,
 } from '@/types/module-contracts';
 
-export const kbModule: ModuleDefinition<KBArticleModuleInput, KBArticleModuleOutput> = {
-  id: 'kb',
+export const kbModule = defineModule<KBArticleModuleInput, KBArticleModuleOutput>({
+  id: 'knowledgeBase',
   name: 'Knowledge Base',
   version: '1.0.0',
   description: 'Create knowledge base articles',
   capabilities: ['content:receive', 'data:write'],
   inputSchema: kbArticleModuleInputSchema,
   outputSchema: kbArticleModuleOutputSchema,
+
+  skills: [
+    'manage_kb_article',
+  ],
+
+  webhookEvents: [
+    { event: 'kb_article.published', description: 'An article was published' },
+    { event: 'kb_article.updated', description: 'An article was updated' },
+  ],
 
   async publish(input: KBArticleModuleInput): Promise<KBArticleModuleOutput> {
     try {
@@ -72,4 +81,4 @@ export const kbModule: ModuleDefinition<KBArticleModuleInput, KBArticleModuleOut
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   },
-};
+});

@@ -4,15 +4,15 @@ import type { Json } from '@/integrations/supabase/types';
 import { createDocumentFromMarkdown } from '@/lib/tiptap-utils';
 import { triggerWebhook } from '@/lib/webhook-utils';
 import { generateSlug, isTiptapDocument } from './helpers';
+import { defineModule } from '@/lib/module-def';
 import {
-  ModuleDefinition,
   BlogModuleInput,
   BlogModuleOutput,
   blogModuleInputSchema,
   blogModuleOutputSchema,
 } from '@/types/module-contracts';
 
-export const blogModule: ModuleDefinition<BlogModuleInput, BlogModuleOutput> = {
+export const blogModule = defineModule<BlogModuleInput, BlogModuleOutput>({
   id: 'blog',
   name: 'Blog',
   version: '1.0.0',
@@ -20,6 +20,26 @@ export const blogModule: ModuleDefinition<BlogModuleInput, BlogModuleOutput> = {
   capabilities: ['content:receive', 'data:write', 'webhook:trigger'],
   inputSchema: blogModuleInputSchema,
   outputSchema: blogModuleOutputSchema,
+
+  skills: [
+    'write_blog_post',
+    'manage_blog_posts',
+    'manage_blog_categories',
+    'browse_blog',
+    'content_calendar_view',
+    'product_promoter',
+    'seo_content_brief',
+    'social_post_batch',
+    'generate_social_post',
+    'research_content',
+    'generate_content_proposal',
+  ],
+
+  webhookEvents: [
+    { event: 'blog_post.published', description: 'A blog post was published' },
+    { event: 'blog_post.updated', description: 'A blog post was updated' },
+    { event: 'blog_post.deleted', description: 'A blog post was deleted' },
+  ],
 
   async publish(input: BlogModuleInput): Promise<BlogModuleOutput> {
     try {
@@ -92,4 +112,4 @@ export const blogModule: ModuleDefinition<BlogModuleInput, BlogModuleOutput> = {
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   },
-};
+});
