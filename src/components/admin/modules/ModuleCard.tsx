@@ -109,16 +109,12 @@ export function ModuleCard({
   return (
     <>
       <Card
-        className={`relative transition-all duration-200 ${
+        className={`relative transition-all duration-200 cursor-pointer hover:shadow-sm ${
           isEnabled
             ? "border-primary/30 bg-primary/5 shadow-sm"
             : "border-border/50 bg-muted/20"
-        } ${(hasApi || stats || moduleId === 'browserControl' || moduleId === 'flowpilot') ? "cursor-pointer hover:shadow-sm" : ""}`}
-        onClick={() => {
-          if (hasApi || stats || moduleId === 'browserControl' || moduleId === 'flowpilot') {
-            setDetailOpen(true);
-          }
-        }}
+        }`}
+        onClick={() => setDetailOpen(true)}
       >
         {/* Top badges */}
         <div className="absolute -top-2 right-3 flex gap-1">
