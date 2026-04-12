@@ -9,8 +9,8 @@ const contractsInputSchema = z.object({
   title: z.string().optional(),
   counterparty_name: z.string().optional(),
   counterparty_email: z.string().email().optional(),
-  contract_type: z.enum(['client', 'vendor', 'partnership', 'nda', 'employment', 'other']).optional(),
-  status: z.enum(['draft', 'active', 'expired', 'terminated']).optional(),
+  contract_type: z.enum(['service', 'nda', 'employment', 'lease', 'other']).optional(),
+  status: z.enum(['draft', 'pending_signature', 'active', 'expired', 'terminated']).optional(),
   start_date: z.string().optional(),
   end_date: z.string().optional(),
   value_cents: z.number().int().optional(),
@@ -39,13 +39,14 @@ export const contractsModule: ModuleDefinition<ContractsInput, ContractsOutput> 
     const validated = contractsInputSchema.parse(input);
 
     if (validated.action === 'create') {
-      if (!validated.title || !validated.counterparty_name) {
-        return { success: false, message: 'title and counterparty_name are required' };
+      if (!validated.counterparty_name) {
+        return { success: false, message: 'counterparty_name is required' };
       }
 
       const { data, error } = await supabase
         .from('contracts')
         .insert({
+          title: validated.title || `Contract — ${validated.counterparty_name}`,
           counterparty_name: validated.counterparty_name!,
           counterparty_email: validated.counterparty_email,
           contract_type: validated.contract_type || 'other',
@@ -53,7 +54,7 @@ export const contractsModule: ModuleDefinition<ContractsInput, ContractsOutput> 
           start_date: validated.start_date,
           end_date: validated.end_date,
           value_cents: validated.value_cents,
-          notes: validated.notes ? `${validated.title ? validated.title + ' — ' : ''}${validated.notes}` : validated.title,
+          notes: validated.notes,
         })
         .select('id')
         .single();
