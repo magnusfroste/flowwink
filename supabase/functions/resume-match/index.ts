@@ -1,15 +1,19 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
+/**
+ * Resume Match — Keyword-Based Matching (No AI)
+ * 
+ * Matches consultants to a job description using skill overlap scoring.
+ * AI-powered reasoning is now FlowPilot's job via the match_consultant skill.
+ * 
+ * OpenClaw alignment: "hand" (data query + deterministic scoring).
+ */
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
-
-interface MatchRequest {
-  job_description: string;
-  max_results?: number;
-}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -17,7 +21,7 @@ serve(async (req) => {
   }
 
   try {
-    const { job_description, max_results = 3 }: MatchRequest = await req.json();
+    const { job_description, max_results = 5 } = await req.json();
 
     if (!job_description || job_description.length < 10) {
       return new Response(
@@ -26,242 +30,78 @@ serve(async (req) => {
       );
     }
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, serviceKey);
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    );
 
-    // 1. Fetch all active consultant profiles
-    const { data: profiles, error: profileError } = await supabase
+    // Fetch active consultants
+    const { data: consultants, error } = await supabase
       .from('consultant_profiles')
-      .select('*')
+      .select('id, name, title, skills, experience_years, summary, languages, certifications, availability')
       .eq('is_active', true);
 
-    if (profileError) throw new Error(`Failed to fetch profiles: ${profileError.message}`);
-    if (!profiles?.length) {
+    if (error) throw error;
+    if (!consultants?.length) {
       return new Response(
-        JSON.stringify({ success: true, matches: [], message: 'No consultant profiles available' }),
+        JSON.stringify({ success: true, matches: [], message: 'No active consultants found' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // 2. Resolve AI config from site settings (same pattern as generate-text)
-    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
-    const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
+    // Tokenize job description
+    const jobTokens = tokenize(job_description);
 
-    const { data: systemAiRow } = await supabase
-      .from('site_settings')
-      .select('value')
-      .eq('key', 'system_ai')
-      .maybeSingle();
+    // Score each consultant by skill overlap
+    const scored = consultants.map(c => {
+      const skillTokens = (c.skills || []).flatMap((s: string) => tokenize(s));
+      const titleTokens = tokenize(c.title || '');
+      const summaryTokens = tokenize(c.summary || '');
+      const allTokens = new Set([...skillTokens, ...titleTokens, ...summaryTokens]);
 
-    const systemAi = systemAiRow?.value as any || {};
-    const configuredProvider = systemAi.provider;
+      let overlap = 0;
+      for (const token of jobTokens) {
+        if (allTokens.has(token)) overlap++;
+      }
 
-    let useGemini = false;
-    if (configuredProvider === 'gemini' && GEMINI_API_KEY) {
-      useGemini = true;
-    } else if (configuredProvider === 'openai' && OPENAI_API_KEY) {
-      useGemini = false;
-    } else {
-      useGemini = !OPENAI_API_KEY && !!GEMINI_API_KEY;
-    }
+      const score = jobTokens.length > 0 ? Math.round((overlap / jobTokens.length) * 100) : 0;
 
-    const openaiModel = systemAi.openaiModel || 'gpt-4.1-mini';
-    const geminiModel = systemAi.geminiModel || 'gemini-2.0-flash-exp';
-
-    if (!OPENAI_API_KEY && !GEMINI_API_KEY) {
-      // No AI available — use keyword fallback
-      return new Response(
-        JSON.stringify(keywordMatch(profiles, job_description, max_results)),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // 3. Build profile summaries for AI matching
-    const profileSummaries = profiles.map(p => ({
-      id: p.id,
-      name: p.name,
-      title: p.title || '',
-      skills: (p.skills || []).join(', '),
-      experience_years: p.experience_years || 0,
-      certifications: (p.certifications || []).join(', '),
-      languages: (p.languages || []).join(', '),
-      summary: p.summary || p.bio || '',
-      experience: JSON.stringify(p.experience_json || []),
-      education: JSON.stringify(p.education || []),
-    }));
-
-    const systemPrompt = `You are an expert recruitment consultant. Analyze a job description against consultant profiles and produce a ranked match result.
-
-For each matching consultant, provide:
-1. A match score (0-100)
-2. A reasoning explaining why they match
-3. A tailored summary highlighting relevant experience
-4. A professional cover letter (2-3 paragraphs) explaining why this consultant is the best fit
-5. List of matching skills and missing skills
-
-Return ONLY valid JSON using this exact structure:
-{
-  "matches": [
-    {
-      "consultant_id": "uuid",
-      "score": 85,
-      "reasoning": "...",
-      "tailored_summary": "...",
-      "cover_letter": "...",
-      "matching_skills": ["skill1", "skill2"],
-      "missing_skills": ["skill3"]
-    }
-  ]
-}
-
-Rank by score descending. Return at most ${max_results} matches. Only include consultants scoring 30+.`;
-
-    const userPrompt = `## Job Description
-${job_description}
-
-## Available Consultants
-${profileSummaries.map((p, i) => `### Consultant ${i + 1} (ID: ${p.id})
-- Name: ${p.name}
-- Title: ${p.title}
-- Skills: ${p.skills}
-- Experience: ${p.experience_years} years
-- Certifications: ${p.certifications}
-- Languages: ${p.languages}
-- Summary: ${p.summary}
-- Work History: ${p.experience}
-- Education: ${p.education}`).join('\n\n')}`;
-
-    // 4. Call AI
-    let aiResponse: Response;
-
-    if (useGemini) {
-      aiResponse = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${GEMINI_API_KEY}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ role: 'user', parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }],
-            generationConfig: { temperature: 0.3, maxOutputTokens: 4096 },
-          }),
-        }
-      );
-    } else {
-      aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${OPENAI_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: openaiModel,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userPrompt },
-          ],
-          temperature: 0.3,
-        }),
-      });
-    }
-
-    if (!aiResponse.ok) {
-      const errText = await aiResponse.text();
-      console.error('AI error:', aiResponse.status, errText);
-      return new Response(
-        JSON.stringify(keywordMatch(profiles, job_description, max_results)),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const aiData = await aiResponse.json();
-    let content: string;
-
-    if (useGemini) {
-      content = aiData.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    } else {
-      content = aiData.choices?.[0]?.message?.content || '';
-    }
-
-    // Parse JSON from response (handle markdown code blocks)
-    let parsed: any;
-    try {
-      const jsonStr = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-      parsed = JSON.parse(jsonStr);
-    } catch {
-      console.error('Failed to parse AI response:', content);
-      return new Response(
-        JSON.stringify(keywordMatch(profiles, job_description, max_results)),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Enrich with profile names
-    const matches = (parsed.matches || []).map((m: any) => {
-      const profile = profiles.find(p => p.id === m.consultant_id);
       return {
-        ...m,
-        name: profile?.name || 'Unknown',
-        title: profile?.title || '',
-        avatar_url: profile?.avatar_url || null,
+        id: c.id,
+        name: c.name,
+        title: c.title,
+        skills: c.skills,
+        experience_years: c.experience_years,
+        availability: c.availability,
+        match_score: score,
+        matched_keywords: [...new Set(jobTokens.filter(t => allTokens.has(t)))],
       };
     });
 
+    // Sort by score, return top N
+    scored.sort((a, b) => b.match_score - a.match_score);
+    const matches = scored.slice(0, max_results).filter(m => m.match_score > 0);
+
     return new Response(
-      JSON.stringify({ success: true, matches }),
+      JSON.stringify({ success: true, matches, total_consultants: consultants.length }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
-  } catch (err) {
-    console.error('resume-match error:', err);
+  } catch (error) {
+    console.error('Resume match error:', error);
     return new Response(
-      JSON.stringify({ success: false, error: (err as Error).message || 'Internal error' }),
+      JSON.stringify({ success: false, error: error instanceof Error ? error.message : 'Unknown error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
 
-// Keyword-based fallback matching — searches title, summary, bio and skills
-function keywordMatch(profiles: any[], jobDescription: string, maxResults: number) {
-  const jobWords = new Set(
-    jobDescription.toLowerCase().split(/[\s,;.!?]+/).filter(w => w.length >= 2)
-  );
-
-  const scored = profiles.map(p => {
-    const skills = (p.skills || []) as string[];
-    const titleWords = (p.title || '').toLowerCase().split(/\s+/);
-    const summaryWords = (p.summary || p.bio || '').toLowerCase().split(/\s+/);
-
-    const allProfileWords = new Set([
-      ...skills.map(s => s.toLowerCase()),
-      ...titleWords,
-      ...summaryWords,
-    ]);
-
-    const matchingSkills = skills.filter(s =>
-      s.toLowerCase().split(/\s+/).some(w => jobWords.has(w)) ||
-      jobWords.has(s.toLowerCase())
-    );
-
-    // Count how many job words appear in any profile field
-    const wordHits = [...jobWords].filter(w => allProfileWords.has(w) ||
-      [...allProfileWords].some(pw => pw.includes(w) || w.includes(pw))
-    ).length;
-
-    const score = Math.min(100, Math.round((wordHits / Math.max(jobWords.size, 1)) * 100));
-
-    return {
-      consultant_id: p.id,
-      name: p.name,
-      title: p.title || '',
-      score,
-      reasoning: `Matched ${wordHits} keyword${wordHits !== 1 ? 's' : ''} from the job description`,
-      tailored_summary: p.summary || p.bio || '',
-      cover_letter: '',
-      matching_skills: matchingSkills,
-      missing_skills: skills.filter(s => !matchingSkills.includes(s)),
-    };
-  }).filter(m => m.score > 0).sort((a, b) => b.score - a.score).slice(0, maxResults);
-
-  return { success: true, matches: scored };
+/** Tokenize text into lowercase keywords, filtering common stop words */
+function tokenize(text: string): string[] {
+  const stops = new Set(['and', 'or', 'the', 'a', 'an', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'is', 'are', 'was', 'be', 'we', 'you', 'our', 'their', 'that', 'this', 'from', 'by', 'as', 'it', 'will', 'can', 'has', 'have', 'not', 'but', 'all', 'been', 'more', 'than', 'other', 'into', 'its', 'also', 'very', 'just', 'about', 'over', 'such', 'only', 'some', 'any', 'each', 'which', 'do', 'does', 'did', 'may', 'would', 'could', 'should', 'shall', 'must', 'need', 'och', 'i', 'att', 'en', 'ett', 'av', 'med', 'som', 'det', 'den', 'de', 'vi', 'du', 'eller', 'vara', 'har', 'till', 'om', 'kan', 'ska']);
+  return text
+    .toLowerCase()
+    .replace(/[^a-zåäö0-9#+.]/g, ' ')
+    .split(/\s+/)
+    .filter(w => w.length > 1 && !stops.has(w));
 }
