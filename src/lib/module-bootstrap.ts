@@ -16,6 +16,7 @@ import type { Json } from '@/integrations/supabase/types';
 import { logger } from '@/lib/logger';
 import type { ModulesSettings } from '@/hooks/useModules';
 import { getModuleSkillNames } from '@/lib/module-bootstraps/skill-map';
+import { getUnifiedModule, getUnifiedSkillNames, isUnifiedModule } from '@/lib/module-def';
 
 export interface SkillSeed {
   name: string;
@@ -62,10 +63,12 @@ export async function bootstrapModule(
   allModules: ModulesSettings
 ): Promise<{ seededSkills: number; seededAutomations: number; errors: string[] }> {
   const bootstrap = bootstrapRegistry[moduleId];
+  const unified = getUnifiedModule(moduleId);
   const result = { seededSkills: 0, seededAutomations: 0, errors: [] as string[] };
 
-  // 1. Always seed reference data (if bootstrap registered)
-  if (bootstrap?.seedData) {
+  // 1. Always seed reference data (from unified def or legacy bootstrap)
+  const seedFn = unified?.seedData ?? bootstrap?.seedData;
+  if (seedFn) {
     try {
       await bootstrap.seedData();
       logger.log(`[module-bootstrap] Seeded reference data for ${moduleId}`);
@@ -83,8 +86,10 @@ export async function bootstrapModule(
     return result;
   }
 
-  // 3. Enable existing skills by name (from skill-map)
-  const skillNames = getModuleSkillNames(moduleId);
+  // 3. Enable existing skills by name (unified registry first, then legacy skill-map)
+  const skillNames = isUnifiedModule(moduleId)
+    ? getUnifiedSkillNames(moduleId)
+    : getModuleSkillNames(moduleId);
   if (skillNames.length > 0) {
     try {
       const { error } = await supabase
@@ -101,9 +106,10 @@ export async function bootstrapModule(
     }
   }
 
-  // 4. Seed full skill definitions (INSERT if not exists) — for modules with SkillSeed[]
-  if (bootstrap?.skills?.length) {
-    for (const skill of bootstrap.skills) {
+  // 4. Seed full skill definitions (INSERT if not exists) — unified skillSeeds or legacy bootstrap.skills
+  const skillSeeds = unified?.skillSeeds ?? bootstrap?.skills ?? [];
+  if (skillSeeds.length) {
+    for (const skill of skillSeeds) {
       try {
         const { data: existing } = await supabase
           .from('agent_skills')
@@ -144,9 +150,10 @@ export async function bootstrapModule(
     }
   }
 
-  // 5. Seed automations (upsert by name)
-  if (bootstrap?.automations?.length) {
-    for (const auto of bootstrap.automations) {
+  // 5. Seed automations (upsert by name) — unified or legacy
+  const automations = unified?.automations ?? bootstrap?.automations ?? [];
+  if (automations.length) {
+    for (const auto of automations) {
       try {
         const { data: existing } = await supabase
           .from('agent_automations')
