@@ -251,9 +251,8 @@ export const MODULE_SKILL_MAP: Partial<Record<keyof ModulesSettings, string[]>> 
     'onboarding_checklist',
   ],
 
-  documents: [
-    'manage_document',
-  ],
+  // documents — MIGRATED to unified defineModule() in documents-module.ts
+  // documents: ['manage_document'],
 
   projects: [
     'manage_project',

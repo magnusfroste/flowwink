@@ -19,7 +19,7 @@ import './purchasing';
 import './invoicing';
 import './contracts';
 import './hr';
-import './documents';
+// import './documents'; — MIGRATED to unified defineModule() in documents-module.ts
 import './projects';
 
 // Future modules with custom seedData can add their bootstrap here:

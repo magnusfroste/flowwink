@@ -208,12 +208,15 @@ export async function teardownModule(
   moduleId: keyof ModulesSettings
 ): Promise<void> {
   const bootstrap = bootstrapRegistry[moduleId];
+  const unified = getUnifiedModule(moduleId);
 
-  // Disable skills by name from skill-map
-  const skillNames = getModuleSkillNames(moduleId);
+  // Collect all skill names from unified registry OR legacy sources
+  const skillNames = isUnifiedModule(moduleId)
+    ? [...getUnifiedSkillNames(moduleId)]
+    : [...getModuleSkillNames(moduleId)];
   
-  // Also include any SkillSeed names from bootstrap
-  if (bootstrap?.skills?.length) {
+  // Also include any legacy SkillSeed names from bootstrap
+  if (!isUnifiedModule(moduleId) && bootstrap?.skills?.length) {
     for (const s of bootstrap.skills) {
       if (!skillNames.includes(s.name)) {
         skillNames.push(s.name);
@@ -229,9 +232,10 @@ export async function teardownModule(
     if (error) logger.error(`[module-bootstrap] Failed to disable skills for ${moduleId}:`, error);
   }
 
-  // Disable automations by name
-  if (bootstrap?.automations?.length) {
-    const autoNames = bootstrap.automations.map(a => a.name);
+  // Disable automations by name — unified or legacy
+  const automations = unified?.automations ?? bootstrap?.automations ?? [];
+  if (automations.length) {
+    const autoNames = automations.map(a => a.name);
     const { error } = await supabase
       .from('agent_automations')
       .update({ enabled: false })
