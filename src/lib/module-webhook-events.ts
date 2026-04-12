@@ -1,139 +1,37 @@
 /**
- * Module → Webhook Events Mapping
+ * Module → Webhook Events Mapping (Legacy)
  * 
- * Maps each module to the webhook events it can emit.
- * Displayed in the ModuleDetailSheet so admins can see
- * what events they can subscribe to for each module.
+ * Most modules have been migrated to defineModule() where webhook events
+ * are declared inline. This file handles lookup from both sources.
  */
 
 import type { ModulesSettings } from '@/hooks/useModules';
 import type { WebhookEventType } from '@/lib/webhook-utils';
+import { getUnifiedModule, isUnifiedModule } from '@/lib/module-def';
 
 export interface WebhookEventInfo {
   event: WebhookEventType;
   description: string;
 }
 
-export const MODULE_WEBHOOK_EVENTS: Partial<Record<keyof ModulesSettings, WebhookEventInfo[]>> = {
-  pages: [
-    { event: 'page.published', description: 'A page was published' },
-    { event: 'page.updated', description: 'A page was updated' },
-    { event: 'page.deleted', description: 'A page was deleted' },
-  ],
-
-  blog: [
-    { event: 'blog_post.published', description: 'A blog post was published' },
-    { event: 'blog_post.updated', description: 'A blog post was updated' },
-    { event: 'blog_post.deleted', description: 'A blog post was deleted' },
-  ],
-
-  forms: [
-    { event: 'form.submitted', description: 'A form was submitted' },
-  ],
-
-  bookings: [
-    { event: 'booking.submitted', description: 'A booking was submitted' },
-    { event: 'booking.confirmed', description: 'A booking was confirmed' },
-    { event: 'booking.cancelled', description: 'A booking was cancelled' },
-  ],
-
-  newsletter: [
-    { event: 'newsletter.subscribed', description: 'A new subscriber joined' },
-    { event: 'newsletter.unsubscribed', description: 'A subscriber left' },
-  ],
-
-  ecommerce: [
-    { event: 'order.created', description: 'An order was placed' },
-    { event: 'order.paid', description: 'An order was paid' },
-    { event: 'order.cancelled', description: 'An order was cancelled' },
-    { event: 'order.refunded', description: 'An order was refunded' },
-    { event: 'product.created', description: 'A product was created' },
-    { event: 'product.updated', description: 'A product was updated' },
-    { event: 'product.deleted', description: 'A product was deleted' },
-  ],
-
-  deals: [
-    { event: 'deal.created', description: 'A deal was created' },
-    { event: 'deal.updated', description: 'A deal was updated' },
-    { event: 'deal.stage_changed', description: 'A deal changed stage' },
-    { event: 'deal.won', description: 'A deal was won' },
-    { event: 'deal.lost', description: 'A deal was lost' },
-  ],
-
-  companies: [
-    { event: 'company.created', description: 'A company was created' },
-    { event: 'company.updated', description: 'A company was updated' },
-  ],
-
-  mediaLibrary: [
-    { event: 'media.uploaded', description: 'A file was uploaded' },
-    { event: 'media.deleted', description: 'A file was deleted' },
-  ],
-
-  knowledgeBase: [
-    { event: 'kb_article.published', description: 'An article was published' },
-    { event: 'kb_article.updated', description: 'An article was updated' },
-  ],
-
-  purchasing: [
-    { event: 'purchase_order.created', description: 'A PO was created' },
-    { event: 'purchase_order.sent', description: 'A PO was sent to vendor' },
-    { event: 'purchase_order.received', description: 'All goods received for PO' },
-    { event: 'goods_receipt.created', description: 'Goods were received' },
-    { event: 'vendor.created', description: 'A vendor was added' },
-    { event: 'vendor.updated', description: 'A vendor was updated' },
-  ],
-
-  invoicing: [
-    { event: 'invoice.created', description: 'An invoice was created' },
-    { event: 'invoice.sent', description: 'An invoice was sent' },
-    { event: 'invoice.paid', description: 'An invoice was paid' },
-    { event: 'invoice.overdue', description: 'An invoice became overdue' },
-  ],
-
-  expenses: [
-    { event: 'expense.submitted', description: 'An expense was submitted' },
-    { event: 'expense.approved', description: 'An expense was approved' },
-    { event: 'expense.rejected', description: 'An expense was rejected' },
-  ],
-
-  contracts: [
-    { event: 'contract.created', description: 'A contract was created' },
-    { event: 'contract.signed', description: 'A contract was signed' },
-    { event: 'contract.expired', description: 'A contract expired' },
-    { event: 'contract.renewed', description: 'A contract was renewed' },
-  ],
-
-  hr: [
-    { event: 'employee.created', description: 'An employee was added' },
-    { event: 'leave.requested', description: 'Leave was requested' },
-    { event: 'leave.approved', description: 'Leave was approved' },
-    { event: 'leave.denied', description: 'Leave was denied' },
-  ],
-
-  projects: [
-    { event: 'project.created', description: 'A project was created' },
-    { event: 'task.completed', description: 'A task was completed' },
-  ],
-
-  documents: [
-    { event: 'document.uploaded', description: 'A document was uploaded' },
-    { event: 'document.updated', description: 'A document was updated' },
-  ],
-
-  timesheets: [
-    { event: 'time_entry.created', description: 'A time entry was logged' },
-  ],
-
-  inventory: [
-    { event: 'stock.adjusted', description: 'Stock was adjusted' },
-    { event: 'stock.low', description: 'Stock fell below threshold' },
-  ],
+/**
+ * Legacy webhook events — only for modules NOT migrated to defineModule().
+ */
+const LEGACY_WEBHOOK_EVENTS: Partial<Record<keyof ModulesSettings, WebhookEventInfo[]>> = {
+  // All modules migrated — this map is kept as safety net
 };
 
 /**
  * Get webhook events for a specific module.
+ * Checks unified registry first, then legacy map.
  */
 export function getModuleWebhookEvents(moduleId: keyof ModulesSettings): WebhookEventInfo[] {
-  return MODULE_WEBHOOK_EVENTS[moduleId] ?? [];
+  // Check unified registry first
+  if (isUnifiedModule(moduleId)) {
+    const mod = getUnifiedModule(moduleId);
+    if (mod?.webhookEvents) {
+      return mod.webhookEvents;
+    }
+  }
+  return LEGACY_WEBHOOK_EVENTS[moduleId] ?? [];
 }
