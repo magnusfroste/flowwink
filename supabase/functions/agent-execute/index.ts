@@ -4492,6 +4492,8 @@ const GENERIC_CRUD_TABLES = new Set([
   'accounting_templates', 'opening_balances',
   'tickets', 'webinars', 'webinar_registrations',
   'booking_services', 'booking_availability', 'bookings',
+  'content_proposals', 'content_research',
+  'agent_memory', 'agent_activity',
 ]);
 
 /**
