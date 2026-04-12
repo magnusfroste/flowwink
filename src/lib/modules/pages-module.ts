@@ -3,15 +3,15 @@ import { logger } from '@/lib/logger';
 import type { Json } from '@/integrations/supabase/types';
 import { triggerWebhook } from '@/lib/webhook-utils';
 import { generateSlug, isTiptapDocument } from './helpers';
+import { defineModule } from '@/lib/module-def';
 import {
-  ModuleDefinition,
   PageModuleInput,
   PageModuleOutput,
   pageModuleInputSchema,
   pageModuleOutputSchema,
 } from '@/types/module-contracts';
 
-export const pagesModule: ModuleDefinition<PageModuleInput, PageModuleOutput> = {
+export const pagesModule = defineModule<PageModuleInput, PageModuleOutput>({
   id: 'pages',
   name: 'Pages',
   version: '1.0.0',
@@ -19,6 +19,21 @@ export const pagesModule: ModuleDefinition<PageModuleInput, PageModuleOutput> = 
   capabilities: ['content:receive', 'data:write', 'webhook:trigger'],
   inputSchema: pageModuleInputSchema,
   outputSchema: pageModuleOutputSchema,
+
+  skills: [
+    'manage_page',
+    'manage_page_blocks',
+    'create_page_block',
+    'manage_global_blocks',
+    'generate_site_from_identity',
+    'landing_page_compose',
+  ],
+
+  webhookEvents: [
+    { event: 'page.published', description: 'A page was published' },
+    { event: 'page.updated', description: 'A page was updated' },
+    { event: 'page.deleted', description: 'A page was deleted' },
+  ],
 
   async publish(input: PageModuleInput): Promise<PageModuleOutput> {
     try {
@@ -83,4 +98,4 @@ export const pagesModule: ModuleDefinition<PageModuleInput, PageModuleOutput> = 
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   },
-};
+});

@@ -1,14 +1,14 @@
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
+import { defineModule } from '@/lib/module-def';
 import {
-  ModuleDefinition,
   WebinarModuleInput,
   WebinarModuleOutput,
   webinarModuleInputSchema,
   webinarModuleOutputSchema,
 } from '@/types/module-contracts';
 
-export const webinarsModule: ModuleDefinition<WebinarModuleInput, WebinarModuleOutput> = {
+export const webinarsModule = defineModule<WebinarModuleInput, WebinarModuleOutput>({
   id: 'webinars',
   name: 'Webinars',
   version: '1.0.0',
@@ -16,6 +16,11 @@ export const webinarsModule: ModuleDefinition<WebinarModuleInput, WebinarModuleO
   capabilities: ['content:receive', 'data:write'],
   inputSchema: webinarModuleInputSchema,
   outputSchema: webinarModuleOutputSchema,
+
+  skills: [
+    'manage_webinar',
+    'register_webinar',
+  ],
 
   async publish(input: WebinarModuleInput): Promise<WebinarModuleOutput> {
     try {
@@ -49,4 +54,4 @@ export const webinarsModule: ModuleDefinition<WebinarModuleInput, WebinarModuleO
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   },
-};
+});

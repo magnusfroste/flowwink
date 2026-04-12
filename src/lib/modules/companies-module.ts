@@ -1,14 +1,14 @@
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
+import { defineModule } from '@/lib/module-def';
 import {
-  ModuleDefinition,
   CompanyModuleInput,
   CompanyModuleOutput,
   companyModuleInputSchema,
   companyModuleOutputSchema,
 } from '@/types/module-contracts';
 
-export const companiesModule: ModuleDefinition<CompanyModuleInput, CompanyModuleOutput> = {
+export const companiesModule = defineModule<CompanyModuleInput, CompanyModuleOutput>({
   id: 'companies',
   name: 'Companies',
   version: '1.0.0',
@@ -16,6 +16,15 @@ export const companiesModule: ModuleDefinition<CompanyModuleInput, CompanyModule
   capabilities: ['content:receive', 'data:write'],
   inputSchema: companyModuleInputSchema,
   outputSchema: companyModuleOutputSchema,
+
+  skills: [
+    'manage_company',
+  ],
+
+  webhookEvents: [
+    { event: 'company.created', description: 'A company was created' },
+    { event: 'company.updated', description: 'A company was updated' },
+  ],
 
   async publish(input: CompanyModuleInput): Promise<CompanyModuleOutput> {
     try {
@@ -65,4 +74,4 @@ export const companiesModule: ModuleDefinition<CompanyModuleInput, CompanyModule
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   },
-};
+});

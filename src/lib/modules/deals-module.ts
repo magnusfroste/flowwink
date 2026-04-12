@@ -1,15 +1,15 @@
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 import { updateLeadStatus } from '@/lib/lead-utils';
+import { defineModule } from '@/lib/module-def';
 import {
-  ModuleDefinition,
   DealModuleInput,
   DealModuleOutput,
   dealModuleInputSchema,
   dealModuleOutputSchema,
 } from '@/types/module-contracts';
 
-export const dealsModule: ModuleDefinition<DealModuleInput, DealModuleOutput> = {
+export const dealsModule = defineModule<DealModuleInput, DealModuleOutput>({
   id: 'deals',
   name: 'Deals',
   version: '1.0.0',
@@ -17,6 +17,19 @@ export const dealsModule: ModuleDefinition<DealModuleInput, DealModuleOutput> = 
   capabilities: ['content:receive', 'data:write', 'webhook:trigger'],
   inputSchema: dealModuleInputSchema,
   outputSchema: dealModuleOutputSchema,
+
+  skills: [
+    'manage_deal',
+    'deal_stale_check',
+  ],
+
+  webhookEvents: [
+    { event: 'deal.created', description: 'A deal was created' },
+    { event: 'deal.updated', description: 'A deal was updated' },
+    { event: 'deal.stage_changed', description: 'A deal changed stage' },
+    { event: 'deal.won', description: 'A deal was won' },
+    { event: 'deal.lost', description: 'A deal was lost' },
+  ],
 
   async publish(input: DealModuleInput): Promise<DealModuleOutput> {
     try {
@@ -59,4 +72,4 @@ export const dealsModule: ModuleDefinition<DealModuleInput, DealModuleOutput> = 
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   },
-};
+});

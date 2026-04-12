@@ -1,8 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
-import {
-  ModuleDefinition,
-} from '@/types/module-contracts';
+import { defineModule } from '@/lib/module-def';
 import { z } from 'zod';
 
 // --- Sales Intelligence Schemas ---
@@ -46,7 +44,7 @@ const ACTION_MAP: Record<string, string> = {
   'contact-finder': 'contact-finder',
 };
 
-export const salesIntelligenceModule: ModuleDefinition<SalesIntelligenceInput, SalesIntelligenceOutput> = {
+export const salesIntelligenceModule = defineModule<SalesIntelligenceInput, SalesIntelligenceOutput>({
   id: 'salesIntelligence',
   name: 'Sales Intelligence',
   version: '2.0.0',
@@ -54,6 +52,15 @@ export const salesIntelligenceModule: ModuleDefinition<SalesIntelligenceInput, S
   capabilities: ['data:read', 'data:write'],
   inputSchema: salesIntelligenceInputSchema,
   outputSchema: salesIntelligenceOutputSchema,
+
+  skills: [
+    'prospect_research',
+    'prospect_fit_analysis',
+    'qualify_lead',
+    'enrich_company',
+    'contact_finder',
+    'sales_profile_setup',
+  ],
 
   async publish(input: SalesIntelligenceInput): Promise<SalesIntelligenceOutput> {
     try {
@@ -65,7 +72,6 @@ export const salesIntelligenceModule: ModuleDefinition<SalesIntelligenceInput, S
         return { success: false, error: `Unknown action: ${action}` };
       }
 
-      // Build body based on action
       let body: Record<string, unknown>;
       if (action === 'profile-setup') {
         body = { type: validated.profile_type, data: validated.profile_data };
@@ -96,4 +102,4 @@ export const salesIntelligenceModule: ModuleDefinition<SalesIntelligenceInput, S
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   },
-};
+});

@@ -1,6 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
-import { ModuleDefinition } from '@/types/module-contracts';
+import { defineModule } from '@/lib/module-def';
 import { z } from 'zod';
 
 // --- Resume Module Schemas ---
@@ -29,7 +29,7 @@ export const resumeMatchOutputSchema = z.object({
 export type ResumeMatchInput = z.infer<typeof resumeMatchInputSchema>;
 export type ResumeMatchOutput = z.infer<typeof resumeMatchOutputSchema>;
 
-export const resumeModule: ModuleDefinition<ResumeMatchInput, ResumeMatchOutput> = {
+export const resumeModule = defineModule<ResumeMatchInput, ResumeMatchOutput>({
   id: 'resume',
   name: 'Consultants',
   version: '1.0.0',
@@ -37,6 +37,11 @@ export const resumeModule: ModuleDefinition<ResumeMatchInput, ResumeMatchOutput>
   capabilities: ['data:read', 'content:produce'],
   inputSchema: resumeMatchInputSchema,
   outputSchema: resumeMatchOutputSchema,
+
+  skills: [
+    'manage_consultant_profile',
+    'match_consultant',
+  ],
 
   async publish(input: ResumeMatchInput): Promise<ResumeMatchOutput> {
     try {
@@ -57,4 +62,4 @@ export const resumeModule: ModuleDefinition<ResumeMatchInput, ResumeMatchOutput>
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   },
-};
+});

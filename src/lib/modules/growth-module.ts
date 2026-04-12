@@ -1,15 +1,15 @@
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 import type { Json } from '@/integrations/supabase/types';
+import { defineModule } from '@/lib/module-def';
 import {
-  ModuleDefinition,
   GrowthCampaignInput,
   GrowthCampaignOutput,
   growthCampaignInputSchema,
   growthCampaignOutputSchema,
 } from '@/types/module-contracts';
 
-export const growthModule: ModuleDefinition<GrowthCampaignInput, GrowthCampaignOutput> = {
+export const growthModule = defineModule<GrowthCampaignInput, GrowthCampaignOutput>({
   id: 'paidGrowth',
   name: 'Paid Growth',
   version: '1.0.0',
@@ -17,6 +17,13 @@ export const growthModule: ModuleDefinition<GrowthCampaignInput, GrowthCampaignO
   capabilities: ['data:read', 'data:write'],
   inputSchema: growthCampaignInputSchema,
   outputSchema: growthCampaignOutputSchema,
+
+  skills: [
+    'ad_campaign_create',
+    'ad_creative_generate',
+    'ad_performance_check',
+    'ad_optimize',
+  ],
 
   async publish(input: GrowthCampaignInput): Promise<GrowthCampaignOutput> {
     try {
@@ -59,4 +66,4 @@ export const growthModule: ModuleDefinition<GrowthCampaignInput, GrowthCampaignO
       };
     }
   },
-};
+});
