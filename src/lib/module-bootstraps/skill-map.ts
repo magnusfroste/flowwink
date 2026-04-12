@@ -12,6 +12,7 @@
  */
 
 import type { ModulesSettings, ModuleConfig } from '@/hooks/useModules';
+import { getUnifiedSkillNames, isUnifiedModule } from '@/lib/module-def';
 
 /**
  * Maps each module to the skill names it owns.
@@ -285,6 +286,10 @@ export const CORE_SKILLS = [
  * Get all skill names owned by a module.
  */
 export function getModuleSkillNames(moduleId: keyof ModulesSettings): string[] {
+  // Unified modules handle their own skills — don't double-count
+  if (isUnifiedModule(moduleId)) {
+    return getUnifiedSkillNames(moduleId);
+  }
   return MODULE_SKILL_MAP[moduleId] ?? [];
 }
 
