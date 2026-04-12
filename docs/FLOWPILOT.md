@@ -899,7 +899,54 @@ Bundled capability sets in `agent_skill_packs` table (3 seed packs, not yet inst
 
 ---
 
-## 17. Known Gaps & Future Work
+## 17. MCP Server — Universal Tool Access
+
+FlowPilot's skill registry is exposed externally via an MCP (Model Context Protocol) server at `mcp-server` edge function. Any MCP-compatible AI client (Cursor, Claude Desktop, OpenClaw, custom agents) can connect and operate FlowWink as a headless business API.
+
+### How It Works
+
+```
+External AI Client
+    │
+    ▼  POST /functions/v1/mcp-server (Streamable HTTP)
+┌────────────────────────────────┐
+│  API Key auth (fwk_ prefix)    │
+│  ↓                             │
+│  tools/list → agent_skills     │
+│  WHERE mcp_exposed = true      │
+│  ↓                             │
+│  tools/call → agent-execute    │
+│  (generic CRUD engine)         │
+└────────────────────────────────┘
+```
+
+### Generic CRUD Engine
+
+Skills with `handler: "db:tablename"` are routed through a universal CRUD engine in `agent-execute`. The engine:
+
+- Validates against a **security whitelist** of allowed tables
+- Maps `action` (`list`, `get`, `create`, `update`, `delete`) to SQL operations
+- Auto-handles filters, pagination, and `updated_at` timestamps
+- Returns structured JSON — same format across all modules
+
+This means adding a new module with a `db:` skill makes it **instantly operable** via MCP, FlowPilot chat, and automations — no per-module backend code required.
+
+### Whitelisted Tables
+
+`employees`, `projects`, `project_tasks`, `time_entries`, `leave_requests`, `contracts`, `leads`, `deals`, `companies`, `crm_tasks`, `products`, `orders`, `order_items`, `invoices`, `invoice_items`, `blog_posts`, `pages`, `kb_articles`, `bookings`, `booking_services`, `newsletter_subscribers`, `consultant_profiles`, `ad_campaigns`, `content_proposals`
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `supabase/functions/mcp-server/index.ts` | Hono + mcp-lite MCP server |
+| `supabase/functions/agent-execute/index.ts` | Skill execution + generic CRUD engine |
+| `src/pages/admin/ApiKeysPage.tsx` | API key management UI |
+| `src/hooks/useApiKeys.ts` | CRUD hooks for `api_keys` table |
+
+---
+
+## 18. Known Gaps & Future Work
 
 | Area | Gap | Priority |
 |------|-----|----------|
