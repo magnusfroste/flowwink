@@ -1,4 +1,3 @@
-import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 import { z } from 'zod';
 import type { ModuleDefinition } from '@/types/module-contracts';
@@ -27,7 +26,7 @@ export const handbookModule: ModuleDefinition<HandbookInput, HandbookOutput> = {
 
   async publish(input: HandbookInput): Promise<HandbookOutput> {
     const validated = handbookInputSchema.parse(input);
-    logger.info('[handbook] action:', validated.action);
+    logger.log('[handbook] action:', validated.action);
     return { success: true, message: `Handbook ${validated.action} completed` };
   },
 };

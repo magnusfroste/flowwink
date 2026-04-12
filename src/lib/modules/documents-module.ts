@@ -43,12 +43,12 @@ export const documentsModule: ModuleDefinition<DocumentsInput, DocumentsOutput> 
       const { data, error } = await supabase
         .from('documents')
         .insert({
-          title: validated.title,
+          file_name: validated.title!,
+          file_url: validated.file_url || '',
           category: validated.category,
-          file_url: validated.file_url,
+          description: validated.notes,
           related_entity_type: validated.related_entity_type,
           related_entity_id: validated.related_entity_id,
-          notes: validated.notes,
         })
         .select('id')
         .single();

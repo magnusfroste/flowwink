@@ -1,4 +1,3 @@
-import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 import { z } from 'zod';
 import type { ModuleDefinition } from '@/types/module-contracts';
@@ -27,7 +26,7 @@ export const slaModule: ModuleDefinition<SlaInput, SlaOutput> = {
 
   async publish(input: SlaInput): Promise<SlaOutput> {
     const validated = slaInputSchema.parse(input);
-    logger.info('[sla] action:', validated.action);
+    logger.log('[sla] action:', validated.action);
     return { success: true, message: `SLA ${validated.action} completed` };
   },
 };

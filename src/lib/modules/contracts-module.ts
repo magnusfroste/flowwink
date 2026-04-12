@@ -46,15 +46,14 @@ export const contractsModule: ModuleDefinition<ContractsInput, ContractsOutput> 
       const { data, error } = await supabase
         .from('contracts')
         .insert({
-          title: validated.title,
-          counterparty_name: validated.counterparty_name,
+          counterparty_name: validated.counterparty_name!,
           counterparty_email: validated.counterparty_email,
           contract_type: validated.contract_type || 'other',
           status: validated.status || 'draft',
           start_date: validated.start_date,
           end_date: validated.end_date,
           value_cents: validated.value_cents,
-          notes: validated.notes,
+          notes: validated.notes ? `${validated.title ? validated.title + ' — ' : ''}${validated.notes}` : validated.title,
         })
         .select('id')
         .single();
