@@ -4493,12 +4493,34 @@ const GENERIC_CRUD_TABLES = new Set([
   'booking_services', 'booking_availability', 'bookings',
 ]);
 
+/**
+ * Tables with business logic that MUST go through dedicated skills.
+ * Generic CRUD is blocked for these — callers get a redirect message.
+ * Principle: One API, one flow. No backdoors.
+ */
+const DEDICATED_SKILL_TABLES: Record<string, string> = {
+  orders: 'Use skill "place_order" to create orders (handles order_items + stock). Use "manage_orders" to list/get/fulfill.',
+  order_items: 'Order items are created automatically by "place_order". Do not insert directly.',
+  products: 'Use "manage_product" for product operations.',
+  product_stock: 'Stock is managed automatically via order and purchase flows. Use "manage_inventory" to check levels.',
+  stock_moves: 'Stock moves are created automatically by order and purchase triggers. Read-only via "manage_inventory".',
+  leads: 'Use "manage_leads" for lead operations.',
+};
+
 async function executeGenericCrud(
   supabase: any,
   table: string,
   skillName: string,
   args: Record<string, unknown>,
 ): Promise<unknown> {
+  // Block tables that have dedicated business-logic skills
+  if (DEDICATED_SKILL_TABLES[table]) {
+    return { 
+      error: `Table '${table}' has dedicated business logic and cannot be accessed via generic CRUD.`,
+      hint: DEDICATED_SKILL_TABLES[table],
+    };
+  }
+
   // Security gate: only whitelisted tables
   if (!GENERIC_CRUD_TABLES.has(table)) {
     return { error: `Unknown db table: ${table}. Generic CRUD is not enabled for this table.` };
