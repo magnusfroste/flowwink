@@ -110,13 +110,8 @@ export const MODULE_SKILL_MAP: Partial<Record<keyof ModulesSettings, string[]>> 
     'low_stock_report',
   ],
 
-  purchasing: [
-    'manage_vendor',
-    'create_purchase_order',
-    'send_purchase_order',
-    'receive_goods',
-    'purchase_reorder_check',
-  ],
+  // purchasing — MIGRATED to unified defineModule()
+  // purchasing: ['manage_vendor', 'create_purchase_order', ...],
 
   // ═══ Communication ═══
   newsletter: [
@@ -206,11 +201,7 @@ export const MODULE_SKILL_MAP: Partial<Record<keyof ModulesSettings, string[]>> 
     'ticket_triage',
   ],
 
-  invoicing: [
-    'manage_invoice',
-    'invoice_from_timesheets',
-    'invoice_overdue_check',
-  ],
+  // invoicing — MIGRATED to unified defineModule()
 
   accounting: [
     'manage_journal_entry',
@@ -221,17 +212,8 @@ export const MODULE_SKILL_MAP: Partial<Record<keyof ModulesSettings, string[]>> 
     'suggest_accounting_template',
   ],
 
-  expenses: [
-    'manage_expenses',
-    'analyze_receipt',
-  ],
-
-  timesheets: [
-    'log_time',
-    'manage_projects',
-    'manage_tasks',
-    'timesheet_summary',
-  ],
+  // expenses — MIGRATED to unified defineModule()
+  // timesheets — MIGRATED to unified defineModule()
 
   developer: [
     // Developer module is UI-only (API Explorer, Webhooks)
@@ -241,24 +223,10 @@ export const MODULE_SKILL_MAP: Partial<Record<keyof ModulesSettings, string[]>> 
     // Shares salesIntelligence skills
   ],
 
-  contracts: [
-    'manage_contract',
-    'contract_renewal_check',
-  ],
-
-  hr: [
-    'manage_employee',
-    'manage_leave',
-    'onboarding_checklist',
-  ],
-
-  // documents — MIGRATED to unified defineModule() in documents-module.ts
-  // documents: ['manage_document'],
-
-  projects: [
-    'manage_project',
-    'manage_project_task',
-  ],
+  // contracts — MIGRATED to unified defineModule()
+  // hr — MIGRATED to unified defineModule()
+  // documents — MIGRATED to unified defineModule()
+  // projects — MIGRATED to unified defineModule()
 };
 
 /**
