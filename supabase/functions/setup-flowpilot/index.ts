@@ -2624,7 +2624,7 @@ Analyzes campaign performance and recommends optimizations. Requires approval fo
   {
     name: 'landing_page_compose',
     description: 'Autonomously compose a landing page from the block library based on campaign goal, target audience, and optional ad campaign reference. Use when: building a campaign landing page; creating a targeted page for an ad; composing a page from AI-generated content. NOT for: migrating existing pages (migrate_url); managing individual blocks (manage_page_blocks).',
-    handler: 'edge:landing-page-compose',
+    handler: 'db:pages',
     instructions: `You compose high-converting landing pages by selecting from the platform's block library.
 
 ## Available block types (use only these):
