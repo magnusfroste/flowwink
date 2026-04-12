@@ -501,4 +501,19 @@ The only CMS-specific code is in `domains/` and `agent-reason.ts` (the facade). 
 
 ---
 
-*See also: [Architecture Deep Dive](./architecture.md) · [Handler Reference](./handlers-reference.md) · [OpenClaw Law](../OPENCLAW-LAW.md)*
+## Concept Deep Dives
+
+| Document | What it covers |
+|----------|---------------|
+| [Memory Architecture](./memory.md) | 4-tier memory model, embeddings, hybrid search, workspace files |
+| [Context Engine](./context-engine.md) | 6-layer prompt compiler, token budgets, skill budget tiering |
+| [Model Failover](./model-failover.md) | Provider resolution chain, auto-fallback, model migration maps |
+| [Context Compaction](./compaction.md) | Conversation summarization, pre-compaction fact extraction |
+| [Dreaming](./dreaming.md) | Reflection, outcome evaluation, self-evolution |
+| [Presence](./presence.md) | Heartbeat protocol, priority scoring, safety guards |
+| [Architecture Deep Dive](./architecture.md) | Data flow, tool execution router, workflow DAG runner |
+| [Handler Reference](./handlers-reference.md) | All 40+ built-in tool handlers |
+
+---
+
+*See also: [OpenClaw Law](../concepts/openclaw-law.md)*
