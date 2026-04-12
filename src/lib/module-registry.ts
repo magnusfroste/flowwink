@@ -4,7 +4,8 @@
  * Central coordinator for all FlowWink modules. Handles registration,
  * validation, and execution of module operations.
  * 
- * Individual module implementations live in src/lib/modules/*.ts
+ * Modules self-register via defineModule() on import.
+ * Legacy modules (globalBlocks, orders) are registered explicitly.
  * 
  * @see docs/reference/module-api.md for full documentation
  */
@@ -13,44 +14,20 @@ import { logger } from '@/lib/logger';
 import type { ModuleDefinition, ModuleCapability } from '@/types/module-contracts';
 import { getAllUnifiedModules } from '@/lib/module-def';
 
-// Import all module implementations
+// Import all modules to trigger defineModule() self-registration
 import {
-  blogModule,
-  newsletterModule,
-  crmModule,
-  pagesModule,
-  kbModule,
-  productsModule,
-  bookingModule,
-  globalBlocksModule,
-  mediaModule,
-  dealsModule,
-  companiesModule,
-  formsModule,
-  ordersModule,
-  webinarsModule,
-  salesIntelligenceModule,
-  resumeModule,
-  browserControlModule,
-  growthModule,
-  federationModule,
-  composioModule,
-  ticketsModule,
-  siteMigrationModule,
-  templatesModule,
-  developerModule,
-  invoicingModule,
-  accountingModule,
-  expensesModule,
-  handbookModule,
-  timesheetsModule,
-  inventoryModule,
-  purchasingModule,
-  slaModule,
-  contractsModule,
-  hrModule,
-  documentsModule,
-  projectsModule,
+  // Unified modules (auto-register via defineModule)
+  blogModule, pagesModule, kbModule, mediaModule, newsletterModule,
+  handbookModule, templatesModule, crmModule, dealsModule, companiesModule,
+  formsModule, bookingModule, productsModule, inventoryModule, chatModule,
+  liveSupportModule, webinarsModule, analyticsModule, companyInsightsModule,
+  invoicingModule, accountingModule, expensesModule, timesheetsModule,
+  purchasingModule, contractsModule, hrModule, documentsModule, projectsModule,
+  slaModule, salesIntelligenceModule, growthModule, resumeModule,
+  browserControlModule, federationModule, composioModule, ticketsModule,
+  siteMigrationModule, developerModule,
+  // Legacy modules (manual registration)
+  globalBlocksModule, ordersModule,
 } from '@/lib/modules';
 
 // =============================================================================
@@ -61,62 +38,22 @@ class ModuleRegistry {
   private modules: Map<string, ModuleDefinition<unknown, unknown>> = new Map();
 
   constructor() {
-    // Register all built-in modules
-    const builtIn = [
-      blogModule,
-      newsletterModule,
-      crmModule,
-      pagesModule,
-      kbModule,
-      productsModule,
-      bookingModule,
-      globalBlocksModule,
-      mediaModule,
-      dealsModule,
-      companiesModule,
-      formsModule,
-      ordersModule,
-      webinarsModule,
-      salesIntelligenceModule,
-      resumeModule,
-      browserControlModule,
-      growthModule,
-      federationModule,
-      composioModule,
-      ticketsModule,
-      siteMigrationModule,
-      templatesModule,
-      developerModule,
-      invoicingModule,
-      accountingModule,
-      expensesModule,
-      handbookModule,
-      timesheetsModule,
-      inventoryModule,
-      purchasingModule,
-      slaModule,
-      contractsModule,
-      hrModule,
-      // Legacy: explicit module imports (will shrink as modules migrate to defineModule)
-      documentsModule,
-      projectsModule,
-    ];
-
-    for (const mod of builtIn) {
-      this.register(mod as ModuleDefinition<unknown, unknown>);
-    }
-
-    // Unified modules auto-register from defineModule() registry
+    // All unified modules auto-registered via defineModule() on import above
     for (const unified of getAllUnifiedModules()) {
       if (!this.modules.has(unified.id)) {
         this.register(unified as unknown as ModuleDefinition<unknown, unknown>);
       }
     }
+
+    // Legacy modules without ModulesSettings keys — register explicitly
+    const legacy = [globalBlocksModule, ordersModule];
+    for (const mod of legacy) {
+      if (!this.modules.has(mod.id)) {
+        this.register(mod as ModuleDefinition<unknown, unknown>);
+      }
+    }
   }
 
-  /**
-   * Register a new module
-   */
   register<TInput, TOutput>(module: ModuleDefinition<TInput, TOutput>): void {
     if (this.modules.has(module.id)) {
       logger.warn(`[ModuleRegistry] Module '${module.id}' already registered, overwriting`);
@@ -125,16 +62,10 @@ class ModuleRegistry {
     logger.log(`[ModuleRegistry] Registered module: ${module.id} v${module.version}`);
   }
 
-  /**
-   * Get a registered module
-   */
   get<TInput, TOutput>(moduleId: string): ModuleDefinition<TInput, TOutput> | undefined {
     return this.modules.get(moduleId) as ModuleDefinition<TInput, TOutput> | undefined;
   }
 
-  /**
-   * List all registered modules
-   */
   list(): Array<{
     id: string;
     name: string;
@@ -151,13 +82,6 @@ class ModuleRegistry {
     }));
   }
 
-  /**
-   * Pre-flight check: verify that a module's required integrations are active.
-   * Returns { ok: true } or { ok: false, missing: string[] }.
-   * 
-   * @param moduleId - The module to check
-   * @param readiness - Integration readiness data (from useModuleReadiness)
-   */
   preflight(
     moduleId: string,
     readiness: { ready: boolean; missingRequired: string[] }
@@ -177,12 +101,6 @@ class ModuleRegistry {
     return { ok: true };
   }
 
-  /**
-   * Publish content through a module
-   * 
-   * @param readiness - Optional integration readiness. When provided, publish
-   *   will fail fast if required integrations are missing.
-   */
   async publish<TInput, TOutput>(
     moduleId: string,
     input: TInput,
@@ -194,7 +112,6 @@ class ModuleRegistry {
       throw new Error(`Module '${moduleId}' not found`);
     }
 
-    // Pre-flight integration check (when readiness data is provided)
     if (readiness) {
       const check = this.preflight(moduleId, readiness);
       if (check.ok === false) {
@@ -207,7 +124,6 @@ class ModuleRegistry {
       }
     }
 
-    // Validate input against schema
     const validationResult = module.inputSchema.safeParse(input);
     if (!validationResult.success) {
       logger.error(`[ModuleRegistry] Validation failed for ${moduleId}:`, validationResult.error);
@@ -221,11 +137,9 @@ class ModuleRegistry {
       } as TOutput;
     }
 
-    // Execute module
     logger.log(`[ModuleRegistry] Publishing to ${moduleId}...`);
     const result = await module.publish(validationResult.data);
     
-    // Validate output
     const outputValidation = module.outputSchema.safeParse(result);
     if (!outputValidation.success) {
       logger.warn(`[ModuleRegistry] Output validation failed for ${moduleId}:`, outputValidation.error);
@@ -234,17 +148,11 @@ class ModuleRegistry {
     return result as TOutput;
   }
 
-  /**
-   * Check if a module has a specific capability
-   */
   hasCapability(moduleId: string, capability: ModuleCapability): boolean {
     const module = this.modules.get(moduleId);
     return module?.capabilities.includes(capability) ?? false;
   }
 
-  /**
-   * Get all modules with a specific capability
-   */
   getByCapability(capability: ModuleCapability): string[] {
     return Array.from(this.modules.entries())
       .filter(([_, m]) => m.capabilities.includes(capability))
@@ -252,8 +160,6 @@ class ModuleRegistry {
   }
 }
 
-// Export singleton instance
 export const moduleRegistry = new ModuleRegistry();
 
-// Export types for external use
 export type { ModuleDefinition };

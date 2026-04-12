@@ -1,50 +1,12 @@
 /**
- * Module → Skill Name Mapping (Legacy)
+ * Module → Skill Name Mapping
  * 
- * All modules have been migrated to defineModule() in src/lib/modules/*.ts.
- * Skills are now declared directly in each module's definition.
- * 
- * This file remains as the fallback lookup + core skills list.
- * getModuleSkillNames() delegates to the unified registry first.
+ * All modules now declare their skills via defineModule() in their module files.
+ * This file provides core skills and the lookup functions used by the bootstrap system.
  */
 
 import type { ModulesSettings, ModuleConfig } from '@/hooks/useModules';
-import { getUnifiedSkillNames, isUnifiedModule } from '@/lib/module-def';
-
-/**
- * Legacy skill map — only for modules NOT yet migrated to defineModule().
- * As of Phase 3 completion, all modules are migrated. This map is kept
- * empty as a safety net for any future module that hasn't migrated yet.
- */
-export const MODULE_SKILL_MAP: Partial<Record<keyof ModulesSettings, string[]>> = {
-  // ── All modules migrated to defineModule() ──
-  // Skills are now declared in each module's definition file.
-  // See src/lib/modules/*-module.ts
-
-  // Modules that share skills with other modules (no own defineModule):
-  chat: [
-    // Chat uses chat-completion directly, no DB skills
-  ],
-
-  liveSupport: [
-    'support_list_conversations',
-    'support_assign_conversation',
-  ],
-
-  analytics: [
-    'analyze_analytics',
-    'seo_audit_page',
-    'kb_gap_analysis',
-    'analyze_chat_feedback',
-    'weekly_business_digest',
-    'support_get_feedback',
-    'competitor_monitor',
-  ],
-
-  companyInsights: [
-    // Shares salesIntelligence skills
-  ],
-};
+import { getUnifiedSkillNames, isUnifiedModule, getAllUnifiedModules } from '@/lib/module-def';
 
 /**
  * Core FlowPilot skills — always available when FlowPilot is enabled.
@@ -69,13 +31,13 @@ export const CORE_SKILLS = [
 
 /**
  * Get all skill names owned by a module.
+ * Delegates to the unified registry — all modules are now migrated.
  */
 export function getModuleSkillNames(moduleId: keyof ModulesSettings): string[] {
-  // Unified modules handle their own skills — don't double-count
   if (isUnifiedModule(moduleId)) {
     return getUnifiedSkillNames(moduleId);
   }
-  return MODULE_SKILL_MAP[moduleId] ?? [];
+  return [];
 }
 
 /**
@@ -86,13 +48,7 @@ export function getEnabledModuleSkillNames(modules: ModulesSettings): string[] {
   for (const [id, config] of Object.entries(modules)) {
     if ((config as ModuleConfig).enabled) {
       const moduleId = id as keyof ModulesSettings;
-      // Prefer unified registry
-      if (isUnifiedModule(moduleId)) {
-        names.push(...getUnifiedSkillNames(moduleId));
-      } else {
-        const skills = MODULE_SKILL_MAP[moduleId];
-        if (skills) names.push(...skills);
-      }
+      names.push(...getModuleSkillNames(moduleId));
     }
   }
   return names;
