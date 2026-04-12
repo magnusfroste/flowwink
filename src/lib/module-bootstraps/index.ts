@@ -6,21 +6,20 @@
  * 
  * The skill-map (skill-map.ts) handles name-based enable/disable
  * for ALL modules, even those without a dedicated bootstrap file.
+ * 
+ * Modules migrated to defineModule() no longer need entries here — 
+ * they self-register via the unified registry on import.
  */
 
 // Skill name mapping (imported by module-bootstrap.ts)
 import './skill-map';
 
-// Modules with dedicated bootstraps (seedData, full SkillSeed definitions, automations):
+// Legacy modules with dedicated bootstraps (not yet migrated to defineModule):
 import './accounting';
-import './expenses';
-import './timesheets';
-import './purchasing';
-import './invoicing';
-import './contracts';
-import './hr';
-// import './documents'; — MIGRATED to unified defineModule() in documents-module.ts
-import './projects';
+
+// ── Migrated to defineModule() ──
+// documents, projects, contracts, hr, expenses, timesheets, invoicing, purchasing
+// These are now self-contained in src/lib/modules/*-module.ts
 
 // Future modules with custom seedData can add their bootstrap here:
 // import './ecommerce';  // e.g. seed default shipping methods
