@@ -6,7 +6,7 @@ description: How to create a new module or add cross-module functionality in Flo
 
 ## Architecture Rules
 
-Before writing any code, read `docs/MODULE-API.md` — especially the **Data Layer Contracts** section.
+Before writing any code, read `docs/reference/module-api.md` — especially the **Data Layer Contracts** section.
 
 ### Core Principle: Table Ownership
 
