@@ -33,6 +33,17 @@ This document defines the formal API contracts for all FlowWink modules. Each mo
 2. **Validation First** - All data is validated at module boundaries using Zod
 3. **Loose Coupling** - Modules communicate through the Registry, not directly
 4. **Traceability** - All cross-module data includes source metadata
+5. **MCP-Ready by Default** - Modules with `db:` skills are automatically operable via MCP, FlowPilot chat, and automations through the generic CRUD engine
+
+### MCP Exposure
+
+Any module that registers skills with `handler: "db:tablename"` and a standard `action` enum (`list`, `get`, `create`, `update`, `delete`) is **automatically accessible** through:
+
+- **MCP** — External AI clients (Cursor, Claude Desktop, OpenClaw) via `mcp-server`
+- **FlowPilot Chat** — Admin and visitor conversations via `chat-completion`
+- **Automations** — Cron and event-triggered via `agent-execute`
+
+To expose a module's skills via MCP, set `mcp_exposed = true` on the skill in `agent_skills`. The generic CRUD engine in `agent-execute` handles execution — no per-module edge function required. The table must be added to the `GENERIC_CRUD_TABLES` whitelist in `agent-execute/index.ts`.
 
 ---
 

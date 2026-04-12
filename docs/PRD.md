@@ -98,9 +98,34 @@ FlowWink exposes its capabilities through three complementary channels:
 | **A2A** (federation) | Peer-to-peer agent collaboration (e.g. OpenClaw) | Bearer token (hashed) | JSON-RPC via `a2a-ingest` |
 | **MCP** (universal) | External AI clients (Cursor, Claude Desktop) | API Key (SHA-256 hashed) | Streamable HTTP via `mcp-server` |
 
-The MCP server dynamically exposes skills where `mcp_exposed = true` in the `agent_skills` table. Admin controls which skills are public via the Engine Room UI (shield toggle). API keys are managed under **Setup → API Keys**.
+The MCP server dynamically exposes skills where `mcp_exposed = true` in the `agent_skills` table. Admin controls which skills are public via the Engine Room UI (shield toggle). API keys are managed under **Developer → MCP Keys**.
 
-**MCP Client Configuration (Cursor / Claude Desktop):**
+#### Universal CRUD via MCP
+
+Every module that registers `db:*` skills (e.g. `db:employees`, `db:projects`, `db:leads`) automatically gets full CRUD through MCP — no per-module code required. The `agent-execute` edge function contains a **generic CRUD engine** that:
+
+1. Validates the table against a security whitelist (`GENERIC_CRUD_TABLES`)
+2. Maps the `action` parameter (`list`, `get`, `create`, `update`, `delete`) to SQL
+3. Auto-applies filters, pagination, and `updated_at` timestamps
+4. Returns structured JSON results
+
+This means any new module that registers a `db:tablename` skill with a standard `action` enum is **instantly operable** via MCP, FlowPilot chat, and automations — zero additional backend code.
+
+#### MCP Resources
+
+The server exposes inspection resources for agent discovery:
+
+| Resource URI | Description |
+|---|---|
+| `flowwink://health` | Site statistics, active objectives |
+| `flowwink://skills` | Full skill registry with metadata |
+| `flowwink://activity` | Recent FlowPilot actions |
+| `flowwink://modules` | Module configuration and status |
+| `flowwink://peers` | Federation peer status |
+| `flowwink://identity` | FlowPilot's soul and configuration |
+| `flowwink://templates/{id}` | Template structure for auditing |
+
+#### MCP Client Configuration (Cursor / Claude Desktop)
 
 ```json
 {
@@ -115,7 +140,15 @@ The MCP server dynamically exposes skills where `mcp_exposed = true` in the `age
   }
 }
 ```
-```
+
+#### Security Model
+
+- API keys are SHA-256 hashed — raw key shown only at creation (`fwk_` prefix)
+- Keys have optional scopes limiting to specific skill categories
+- Keys have optional expiry dates
+- `mcp_exposed` acts as a second gate — even with a valid key, only explicitly exposed skills are callable
+- Module-level gating: disabled modules hide their skills from MCP
+- Generic CRUD whitelist prevents access to tables not explicitly registered
 
 ### Request Flow
 
