@@ -1,7 +1,7 @@
 // ============================================
-// Gmail Inbox Scan Edge Function
-// Reads Gmail, extracts signals with AI, dispatches to signal-dispatcher
-// Logs activity to agent_activity
+// Gmail Inbox Scan — Pure Data Sensor
+// Reads Gmail, returns raw email signals for FlowPilot to analyze.
+// No AI reasoning — FlowPilot is the brain.
 // ============================================
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -20,10 +20,6 @@ function getSupabase() {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
   );
 }
-
-// ============================================
-// Types
-// ============================================
 
 interface GmailConfig {
   connected: boolean;
@@ -95,7 +91,7 @@ async function getValidToken(supabase: ReturnType<typeof getSupabase>): Promise<
 }
 
 // ============================================
-// Gmail API
+// Gmail API — Raw Data Fetch
 // ============================================
 
 async function fetchRecentEmails(token: string, config: GmailConfig): Promise<EmailSignal[]> {
@@ -151,118 +147,7 @@ async function fetchRecentEmails(token: string, config: GmailConfig): Promise<Em
 }
 
 // ============================================
-// AI Signal Analysis
-// ============================================
-
-async function analyzeSignals(signals: EmailSignal[], email: string): Promise<{ analysis: string; suggestedTopics: string[] }> {
-  if (signals.length === 0) {
-    return { analysis: 'No new signals found in the inbox.', suggestedTopics: [] };
-  }
-
-  const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
-  const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
-
-  const signalText = signals.map(s =>
-    `From: ${s.from}\nSubject: ${s.subject}\nSnippet: ${s.snippet}\nDate: ${s.date}`
-  ).join('\n\n---\n\n');
-
-  const systemPrompt = `You are analyzing email signals for ${email}'s inbox. Extract:
-
-1. **Content Trends** - Topics trending in newsletters and notifications
-2. **Opportunities** - Collaboration, speaking, or business opportunities
-3. **Key Topics** - Recurring themes that could inspire blog posts or content
-4. **Contacts** - Important people/companies reaching out
-5. **Suggested Actions** - What to respond to, what to write about
-
-Be concise and actionable. Focus on professional signals, ignore promotional/marketing emails.`;
-
-  const userContent = `Analyze these ${signals.length} email signals:\n\n${signalText}`;
-
-  let analysis = '';
-
-  if (OPENAI_API_KEY) {
-    const res = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4.1-mini',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userContent },
-        ],
-        temperature: 0.5,
-      }),
-    });
-    const data = await res.json();
-    analysis = data.choices?.[0]?.message?.content || 'Analysis failed';
-  } else if (GEMINI_API_KEY) {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: `${systemPrompt}\n\n${userContent}` }] }],
-        }),
-      }
-    );
-    const data = await res.json();
-    analysis = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Analysis failed';
-  } else {
-    analysis = `Found ${signals.length} emails. AI analysis unavailable — configure OpenAI or Gemini.`;
-  }
-
-  // Extract topics
-  let suggestedTopics: string[] = [];
-  if (OPENAI_API_KEY || GEMINI_API_KEY) {
-    try {
-      const topicPrompt = 'Extract 2-3 blog post topics from this analysis. Return as JSON array of strings only.';
-      let topicsText = '';
-
-      if (OPENAI_API_KEY) {
-        const res = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${OPENAI_API_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: 'gpt-4.1-mini',
-            messages: [
-              { role: 'system', content: topicPrompt },
-              { role: 'user', content: analysis },
-            ],
-          }),
-        });
-        const data = await res.json();
-        topicsText = data.choices?.[0]?.message?.content || '[]';
-      } else if (GEMINI_API_KEY) {
-        const res = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: `${topicPrompt}\n\n${analysis}` }] }],
-            }),
-          }
-        );
-        const data = await res.json();
-        topicsText = data.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
-      }
-
-      suggestedTopics = JSON.parse(topicsText.replace(/```json?\n?/g, '').replace(/```/g, '').trim());
-    } catch { /* ignore parse errors */ }
-  }
-
-  return { analysis, suggestedTopics };
-}
-
-// ============================================
-// Main Handler
+// Main Handler — Returns raw signals, no AI
 // ============================================
 
 Deno.serve(async (req) => {
@@ -278,15 +163,18 @@ Deno.serve(async (req) => {
   try {
     const { token, config } = await getValidToken(supabase);
     const signals = await fetchRecentEmails(token, config);
-    const { analysis, suggestedTopics } = await analyzeSignals(signals, config.email);
 
     const output = {
-      analysis,
       signal_count: signals.length,
-      suggested_topics: suggestedTopics,
       email: config.email,
       scan_period_days: config.scan_days,
-      signals: signals.map(s => ({ from: s.from, subject: s.subject, date: s.date })),
+      signals: signals.map(s => ({
+        from: s.from,
+        subject: s.subject,
+        snippet: s.snippet,
+        date: s.date,
+        labels: s.labels,
+      })),
     };
 
     // Log to agent_activity
@@ -312,7 +200,6 @@ Deno.serve(async (req) => {
             signal: 'gmail_inbox_scanned',
             data: {
               signal_count: signals.length,
-              suggested_topics: suggestedTopics,
               email: config.email,
             },
             context: {
@@ -334,7 +221,6 @@ Deno.serve(async (req) => {
     const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     console.error('[InboxScan] Error:', error);
 
-    // Log failure
     await supabase.from('agent_activity').insert({
       agent: 'flowpilot',
       skill_name: 'gmail_inbox_scan',

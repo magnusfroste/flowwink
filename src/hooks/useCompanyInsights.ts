@@ -209,12 +209,38 @@ export function useCompanyInsights() {
         body: { identifier: identifier.trim() },
       });
       if (error) throw error;
-      if (!data?.profile) {
+
+      const rawResults = data?.raw_results as Array<{ url?: string; title?: string; content?: string }> | undefined;
+      if (!rawResults || rawResults.length === 0) {
         toast.info("No public data found for this identifier");
         return null;
       }
 
-      const extracted = data.profile as Record<string, unknown>;
+      // Deterministic extraction from raw search results (no AI — just pattern matching)
+      const combinedText = rawResults.map(r => `${r.title || ''} ${r.content || ''}`).join('\n');
+      const extracted: Record<string, unknown> = {};
+
+      // Extract org number patterns (Swedish: XXXXXX-XXXX, generic: digits with dashes)
+      const orgMatch = combinedText.match(/(\d{6}-\d{4})/);
+      if (orgMatch) extracted.org_number = orgMatch[1];
+
+      // Extract employee count
+      const empMatch = combinedText.match(/(\d[\d\s]*)\s*(?:employees|anställda|medarbetare)/i);
+      if (empMatch) extracted.employees = empMatch[1].replace(/\s/g, '');
+
+      // Extract founded year
+      const foundedMatch = combinedText.match(/(?:founded|grundat|grundades|established)\s*(?:in\s*)?(\d{4})/i);
+      if (foundedMatch) extracted.founded_year = foundedMatch[1];
+
+      // Extract industry from title/context
+      const industryMatch = combinedText.match(/(?:industry|bransch)[:\s]+([^\n,.]+)/i);
+      if (industryMatch) extracted.industry = industryMatch[1].trim();
+
+      if (Object.keys(extracted).length === 0) {
+        toast.info("Found search results but couldn't extract structured data. Try enriching from website instead.");
+        return null;
+      }
+
       const { merged, fieldsUpdated } = mergeEnrichment(currentProfile, extracted);
 
       merged.enrichment_log = [
