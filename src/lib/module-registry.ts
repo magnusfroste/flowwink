@@ -41,6 +41,15 @@ import {
   invoicingModule,
   accountingModule,
   expensesModule,
+  handbookModule,
+  timesheetsModule,
+  inventoryModule,
+  purchasingModule,
+  slaModule,
+  contractsModule,
+  hrModule,
+  documentsModule,
+  projectsModule,
 } from '@/lib/modules';
 
 // =============================================================================
@@ -80,6 +89,15 @@ class ModuleRegistry {
       invoicingModule,
       accountingModule,
       expensesModule,
+      handbookModule,
+      timesheetsModule,
+      inventoryModule,
+      purchasingModule,
+      slaModule,
+      contractsModule,
+      hrModule,
+      documentsModule,
+      projectsModule,
     ];
 
     for (const mod of builtIn) {

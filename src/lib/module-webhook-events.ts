@@ -83,6 +83,52 @@ export const MODULE_WEBHOOK_EVENTS: Partial<Record<keyof ModulesSettings, Webhoo
     { event: 'vendor.created', description: 'A vendor was added' },
     { event: 'vendor.updated', description: 'A vendor was updated' },
   ],
+
+  invoicing: [
+    { event: 'invoice.created', description: 'An invoice was created' },
+    { event: 'invoice.sent', description: 'An invoice was sent' },
+    { event: 'invoice.paid', description: 'An invoice was paid' },
+    { event: 'invoice.overdue', description: 'An invoice became overdue' },
+  ],
+
+  expenses: [
+    { event: 'expense.submitted', description: 'An expense was submitted' },
+    { event: 'expense.approved', description: 'An expense was approved' },
+    { event: 'expense.rejected', description: 'An expense was rejected' },
+  ],
+
+  contracts: [
+    { event: 'contract.created', description: 'A contract was created' },
+    { event: 'contract.signed', description: 'A contract was signed' },
+    { event: 'contract.expired', description: 'A contract expired' },
+    { event: 'contract.renewed', description: 'A contract was renewed' },
+  ],
+
+  hr: [
+    { event: 'employee.created', description: 'An employee was added' },
+    { event: 'leave.requested', description: 'Leave was requested' },
+    { event: 'leave.approved', description: 'Leave was approved' },
+    { event: 'leave.denied', description: 'Leave was denied' },
+  ],
+
+  projects: [
+    { event: 'project.created', description: 'A project was created' },
+    { event: 'task.completed', description: 'A task was completed' },
+  ],
+
+  documents: [
+    { event: 'document.uploaded', description: 'A document was uploaded' },
+    { event: 'document.updated', description: 'A document was updated' },
+  ],
+
+  timesheets: [
+    { event: 'time_entry.created', description: 'A time entry was logged' },
+  ],
+
+  inventory: [
+    { event: 'stock.adjusted', description: 'Stock was adjusted' },
+    { event: 'stock.low', description: 'Stock fell below threshold' },
+  ],
 };
 
 /**
