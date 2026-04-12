@@ -38,7 +38,37 @@ export type WebhookEventType =
   | 'purchase_order.received'
   | 'goods_receipt.created'
   | 'vendor.created'
-  | 'vendor.updated';
+  | 'vendor.updated'
+  // Invoicing
+  | 'invoice.created'
+  | 'invoice.sent'
+  | 'invoice.paid'
+  | 'invoice.overdue'
+  // Expenses
+  | 'expense.submitted'
+  | 'expense.approved'
+  | 'expense.rejected'
+  // Contracts
+  | 'contract.created'
+  | 'contract.signed'
+  | 'contract.expired'
+  | 'contract.renewed'
+  // HR
+  | 'employee.created'
+  | 'leave.requested'
+  | 'leave.approved'
+  | 'leave.denied'
+  // Projects
+  | 'project.created'
+  | 'task.completed'
+  // Documents
+  | 'document.uploaded'
+  | 'document.updated'
+  // Timesheets
+  | 'time_entry.created'
+  // Inventory
+  | 'stock.adjusted'
+  | 'stock.low';
 
 interface TriggerWebhookOptions {
   event: WebhookEventType;
