@@ -1,4 +1,4 @@
-import { ModuleDefinition } from '@/types/module-contracts';
+import { defineModule } from '@/lib/module-def';
 import { z } from 'zod';
 
 export const browserControlInputSchema = z.object({
@@ -16,7 +16,7 @@ export const browserControlOutputSchema = z.object({
 export type BrowserControlInput = z.infer<typeof browserControlInputSchema>;
 export type BrowserControlOutput = z.infer<typeof browserControlOutputSchema>;
 
-export const browserControlModule: ModuleDefinition<BrowserControlInput, BrowserControlOutput> = {
+export const browserControlModule = defineModule<BrowserControlInput, BrowserControlOutput>({
   id: 'browserControl',
   name: 'Browser Control',
   version: '1.0.0',
@@ -25,8 +25,11 @@ export const browserControlModule: ModuleDefinition<BrowserControlInput, Browser
   inputSchema: browserControlInputSchema,
   outputSchema: browserControlOutputSchema,
 
+  skills: [
+    // browser_fetch is cross-cutting, kept as core
+  ],
+
   async publish(input: BrowserControlInput): Promise<BrowserControlOutput> {
-    // This module is config-only — actual relay is handled by useExtensionRelay hook
     return { success: true, installed: false };
   },
-};
+});

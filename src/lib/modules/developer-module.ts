@@ -1,5 +1,5 @@
+import { defineModule } from '@/lib/module-def';
 import { z } from 'zod';
-import type { ModuleDefinition } from '@/types/module-contracts';
 
 const inputSchema = z.object({
   action: z.enum(['test_api', 'test_webhook', 'generate_mock']),
@@ -15,7 +15,7 @@ const outputSchema = z.object({
 type Input = z.infer<typeof inputSchema>;
 type Output = z.infer<typeof outputSchema>;
 
-export const developerModule: ModuleDefinition<Input, Output> = {
+export const developerModule = defineModule<Input, Output>({
   id: 'developer',
   name: 'Developer',
   version: '1.0.0',
@@ -24,7 +24,9 @@ export const developerModule: ModuleDefinition<Input, Output> = {
   inputSchema,
   outputSchema,
 
+  skills: [],
+
   async publish(input: Input): Promise<Output> {
     return { success: true, data: { action: input.action } };
   },
-};
+});

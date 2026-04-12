@@ -1,6 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
-import type { ModuleDefinition } from '@/types/module-contracts';
+import { defineModule } from '@/lib/module-def';
 import { z } from 'zod';
 
 const ticketModuleInputSchema = z.object({
@@ -24,7 +24,7 @@ const ticketModuleOutputSchema = z.object({
 type TicketModuleInput = z.infer<typeof ticketModuleInputSchema>;
 type TicketModuleOutput = z.infer<typeof ticketModuleOutputSchema>;
 
-export const ticketsModule: ModuleDefinition<TicketModuleInput, TicketModuleOutput> = {
+export const ticketsModule = defineModule<TicketModuleInput, TicketModuleOutput>({
   id: 'tickets',
   name: 'Tickets',
   version: '1.0.0',
@@ -32,6 +32,10 @@ export const ticketsModule: ModuleDefinition<TicketModuleInput, TicketModuleOutp
   capabilities: ['content:receive', 'data:write', 'webhook:trigger'],
   inputSchema: ticketModuleInputSchema,
   outputSchema: ticketModuleOutputSchema,
+
+  skills: [
+    'ticket_triage',
+  ],
 
   async publish(input: TicketModuleInput): Promise<TicketModuleOutput> {
     try {
@@ -64,4 +68,4 @@ export const ticketsModule: ModuleDefinition<TicketModuleInput, TicketModuleOutp
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   },
-};
+});
