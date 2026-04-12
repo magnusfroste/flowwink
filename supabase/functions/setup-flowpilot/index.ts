@@ -694,29 +694,30 @@ Looks up order status by order ID or customer email.
   },
   {
     name: 'qualify_lead',
-    description: 'AI-powered lead qualification and scoring. Analyzes lead activities, company data, and engagement to produce a score and summary. Use when: evaluating a lead quality; automating lead scoring; prioritizing sales pipeline. NOT for: adding new leads (add_lead); managing lead records (manage_leads).',
+    description: 'Score and qualify a lead based on activities and engagement data. Use when: evaluating lead quality; automating lead scoring; prioritizing sales pipeline. NOT for: adding new leads (add_lead); managing lead records (manage_leads).',
     handler: 'edge:qualify-lead',
     category: 'crm',
     scope: 'internal',
     requires_approval: false,
     instructions: `## qualify_lead
 ### What
-AI-powered lead qualification that analyzes activities, company data, and engagement to produce a score and summary.
+Deterministic lead scoring based on activity points with recency bonus. No AI — just data.
+FlowPilot can read the score result and add its own analysis via memory or lead notes.
 ### When to use
-- New lead enters the CRM (can be triggered by automation on lead.created signal)
+- New lead enters the CRM (automation on lead.created signal)
 - Admin asks to evaluate/score a lead
 - Before creating a deal from a lead
 ### Parameters
 - **leadId**: Required. The lead UUID to qualify.
-### Edge cases
-- Requires AI provider to be configured. Falls back gracefully if unavailable.
-- Score is 0-100. Save the result for future reference.
-- Chain with enrich_company if the lead has a company domain.`,
+### What it returns
+- score (number), engagement_level (hot/warm/cold), activity_count, recent_activity_count
+### Chain suggestion
+- After scoring, FlowPilot can reason about the result and update lead status via manage_leads.`,
     tool_definition: {
       type: 'function',
       function: {
         name: 'qualify_lead',
-        description: 'AI-powered lead qualification and scoring. Analyzes lead activities, company data, and engagement to produce a score and summary. Use when: evaluating a lead quality; automating lead scoring; prioritizing sales pipeline. NOT for: adding new leads (add_lead); managing lead records (manage_leads).',
+        description: 'Score and qualify a lead based on activities and engagement data. Use when: evaluating lead quality; automating lead scoring; prioritizing sales pipeline. NOT for: adding new leads (add_lead); managing lead records (manage_leads).',
         parameters: {
           type: 'object',
           properties: {
@@ -729,7 +730,7 @@ AI-powered lead qualification that analyzes activities, company data, and engage
   },
   {
     name: 'enrich_company',
-    description: 'Enrich a company record with industry, size, website info via domain scraping and AI analysis. Use when: needing more details about a prospect; automatically populating company data; improving lead scoring. NOT for: researching individual prospects (prospect_research); basic company CRUD (manage_company).',
+    description: 'Scrape a company website to enrich its record with website, phone, and description. Use when: needing more details about a prospect; automatically populating company data. NOT for: researching individual prospects (prospect_research); basic company CRUD (manage_company).',
     handler: 'edge:enrich-company',
     category: 'crm',
     scope: 'internal',
@@ -848,7 +849,7 @@ Generates multi-channel content (blog, newsletter, LinkedIn, X) from a topic wit
   },
   {
     name: 'prospect_research',
-    description: 'Research a company — scrape website, find contacts via Hunter.io, analyze with AI. Use when: preparing for outreach; gathering intelligence on a prospect; building a company profile from scratch. NOT for: enriching existing company records (enrich_company); managing companies (manage_company).',
+    description: 'Research a company — search web, scrape website, find contacts via Hunter.io. Returns raw data for FlowPilot to analyze. Use when: preparing for outreach; gathering intelligence on a prospect; building a company profile from scratch. NOT for: enriching existing company records (enrich_company); managing companies (manage_company).',
     handler: 'edge:prospect-research',
     category: 'crm',
     scope: 'internal',
@@ -884,7 +885,7 @@ Researches a company — scrapes website, finds contacts via Hunter.io, analyzes
   },
   {
     name: 'prospect_fit_analysis',
-    description: 'Analyze how well a prospect company fits your ideal customer profile. Use when: evaluating a new prospect; scoring company fit before outreach; comparing prospects against ICP criteria. NOT for: researching a company (prospect_research); enriching company data (enrich_company).',
+    description: 'Collect company data, related leads, and deals to evaluate prospect fit. Returns raw data for FlowPilot to analyze. Use when: evaluating a new prospect; scoring company fit before outreach; comparing prospects against ICP criteria. NOT for: researching a company (prospect_research); enriching company data (enrich_company).',
     handler: 'edge:prospect-fit-analysis',
     category: 'crm',
     scope: 'internal',

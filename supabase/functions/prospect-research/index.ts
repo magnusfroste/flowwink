@@ -1,12 +1,14 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.87.1";
-import { loadSalesContext } from "../_shared/sales-context.ts";
 
 /**
- * Prospect Research — Orchestrator
+ * Prospect Research — Data Collector (No AI)
  * 
- * Chains modular skills: web-search → web-scrape → contact-finder → AI analysis
- * Each integration is a separate edge function that FlowPilot can also call directly.
+ * Chains: web-search → web-scrape → contact-finder
+ * Returns raw data for FlowPilot (or UI) to interpret.
+ * 
+ * OpenClaw alignment: This is a "hand" — it gathers data.
+ * FlowPilot is the "brain" that analyzes the results.
  */
 
 const corsHeaders = {
@@ -14,31 +16,20 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-interface ProspectResearchInput {
-  company_name: string;
-  company_url?: string;
-}
-
-// Internal call to another edge function
 async function callSkill(functionName: string, body: Record<string, unknown>): Promise<any> {
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-
   const res = await fetch(`${supabaseUrl}/functions/v1/${functionName}`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${serviceKey}`,
-    },
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceKey}` },
     body: JSON.stringify(body),
   });
-
   if (!res.ok) {
-    console.warn(`[prospect-research] Skill ${functionName} returned ${res.status}`);
-    return { success: false, error: `${functionName} failed: ${res.status}` };
+    const text = await res.text();
+    console.error(`${functionName} failed:`, text);
+    return null;
   }
-
-  return await res.json();
+  return res.json();
 }
 
 serve(async (req) => {
@@ -47,248 +38,70 @@ serve(async (req) => {
   }
 
   try {
-    const { company_name, company_url } = await req.json() as ProspectResearchInput;
+    const { company_name, company_url } = await req.json();
+
     if (!company_name) {
-      return new Response(JSON.stringify({ error: 'company_name is required' }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    const openaiKey = Deno.env.get('OPENAI_API_KEY');
-    const geminiKey = Deno.env.get('GEMINI_API_KEY');
-
-    if (!openaiKey && !geminiKey) {
-      return new Response(JSON.stringify({ error: 'No AI provider configured. Add OPENAI_API_KEY or GEMINI_API_KEY.' }), {
-        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Load rich sales context
-    const salesContext = await loadSalesContext({ includePages: true, maxPageTokens: 4000 });
-    console.log('[prospect-research] Sales context loaded:', salesContext.formatted.length, 'chars');
-
-    // --- Step 1: Web Search ---
-    console.log('[prospect-research] → web-search');
-    const searchResult = await callSkill('web-search', { query: company_name, limit: 5 });
-    const searchResults = searchResult.results || [];
-
-    const searchContext = searchResults.map((r: any) =>
-      `## ${r.title}\n${r.description || ''}\nURL: ${r.url}`
-    ).join('\n\n');
-
-    // --- Step 2: Resolve URL + Web Scrape ---
-    let resolvedUrl = company_url;
-    if (!resolvedUrl && searchResults.length > 0) {
-      resolvedUrl = searchResults[0]?.url;
-    }
-
-    let scrapedContent = '';
-    if (resolvedUrl) {
-      console.log('[prospect-research] → web-scrape:', resolvedUrl);
-      const scrapeResult = await callSkill('web-scrape', { url: resolvedUrl, max_length: 10000 });
-      scrapedContent = scrapeResult.content || '';
-    }
-
-    // --- Step 3: Contact Finder ---
-    let prospectDomain = '';
-    if (resolvedUrl) {
-      try {
-        prospectDomain = new URL(resolvedUrl).hostname.replace('www.', '');
-      } catch { /* skip */ }
-    }
-
-    let hunterContacts: any[] = [];
-    if (prospectDomain) {
-      console.log('[prospect-research] → contact-finder:', prospectDomain);
-      const contactResult = await callSkill('contact-finder', { domain: prospectDomain, limit: 10 });
-      hunterContacts = contactResult.contacts || [];
-    }
-
-    // --- Step 4: AI Analysis ---
-    const useGemini = !openaiKey && !!geminiKey;
-
-    const systemPrompt = `You are a B2B sales research analyst. Given information about a prospect company and your client's full business context, perform two tasks:
-
-1. Generate 5 qualifying questions that evaluate whether this prospect is a good fit for your client's services
-2. Answer each question using the research data provided
-
-Your client's business context:
-${salesContext.formatted || '(No company profile configured yet)'}
-
-Return a JSON object with:
-{
-  "company_summary": {
-    "name": "string",
-    "industry": "string",
-    "size_estimate": "string",
-    "main_offerings": ["string"],
-    "potential_pain_points": ["string"]
-  },
-  "qualifying_questions": [
-    { "question": "string", "answer": "string", "relevance_score": 1-10 }
-  ]
-}
-
-Only return the JSON object, no other text.`;
-
-    const userPrompt = `Research data for: ${company_name}
-${resolvedUrl ? `Website: ${resolvedUrl}` : ''}
-
---- Scraped Website Content ---
-${scrapedContent || '(No website content available)'}
-
---- Search Results ---
-${searchContext || '(No search results)'}
-
---- Contacts Found ---
-${hunterContacts.length > 0 ? JSON.stringify(hunterContacts.slice(0, 5), null, 2) : '(No contacts found)'}`;
-
-    let aiResult: any = {};
-
-    if (useGemini) {
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ role: 'user', parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }],
-            generationConfig: { temperature: 0.3, maxOutputTokens: 4096 },
-          }),
-        }
+      return new Response(
+        JSON.stringify({ error: 'company_name is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
-      if (!res.ok) throw new Error(`Gemini API error: ${res.status}`);
-      const data = await res.json();
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (jsonMatch) aiResult = JSON.parse(jsonMatch[0]);
-    } else {
-      const res = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${openaiKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'gpt-4.1-mini',
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userPrompt },
-          ],
-          response_format: { type: 'json_object' },
-        }),
+    }
+
+    console.log(`Researching: ${company_name} (${company_url || 'no URL'})`);
+
+    // Step 1: Web search for company info
+    const searchResult = await callSkill('web-search', {
+      query: `${company_name} company about`,
+      limit: 3,
+    });
+
+    // Step 2: Scrape company website if URL provided
+    let scrapeResult = null;
+    const scrapeUrl = company_url || searchResult?.results?.[0]?.url;
+    if (scrapeUrl) {
+      scrapeResult = await callSkill('web-scrape', {
+        url: scrapeUrl,
+        max_length: 5000,
       });
-      if (!res.ok) throw new Error(`OpenAI API error: ${res.status}`);
-      const data = await res.json();
-      aiResult = JSON.parse(data.choices?.[0]?.message?.content || '{}');
     }
 
-    console.log('[prospect-research] AI analysis complete');
-
-    // --- Step 5: Insert or find company ---
-    const summary = aiResult.company_summary || {};
-
-    let companyRecord: any = null;
-    if (prospectDomain) {
-      const { data: existing } = await supabase
-        .from('companies').select('id, name, domain')
-        .eq('domain', prospectDomain).maybeSingle();
-
-      if (existing) {
-        await supabase.from('companies').update({
-          industry: summary.industry || null,
-          size: summary.size_estimate || null,
-          website: resolvedUrl || null,
-          notes: summary.potential_pain_points?.join('; ') || null,
-          enriched_at: new Date().toISOString(),
-        }).eq('id', existing.id);
-        companyRecord = existing;
-      }
+    // Step 3: Find contacts via Hunter.io
+    let contacts = null;
+    const domain = scrapeUrl ? new URL(scrapeUrl).hostname.replace('www.', '') : null;
+    if (domain) {
+      contacts = await callSkill('contact-finder', {
+        action: 'domain_search',
+        domain,
+        limit: 5,
+      });
     }
 
-    if (!companyRecord) {
-      const { data: inserted } = await supabase
-        .from('companies').insert({
-          name: company_name,
-          domain: prospectDomain || null,
-          website: resolvedUrl || null,
-          industry: summary.industry || null,
-          size: summary.size_estimate || null,
-          notes: summary.potential_pain_points?.join('; ') || null,
-          enriched_at: new Date().toISOString(),
-        }).select('id, name, domain').single();
-      companyRecord = inserted;
-    }
-
-    const companyId = companyRecord?.id;
-
-    // --- Step 6: Create leads from contacts ---
-    const createdLeads: any[] = [];
-    if (companyId && hunterContacts.length > 0) {
-      for (const contact of hunterContacts.slice(0, 10)) {
-        const leadName = [contact.first_name, contact.last_name].filter(Boolean).join(' ') || null;
-
-        const { data: existing } = await supabase
-          .from('leads').select('id, email, name')
-          .eq('email', contact.email).maybeSingle();
-
-        if (existing) { createdLeads.push(existing); continue; }
-
-        const { data: lead, error: leadError } = await supabase
-          .from('leads').insert({
-            email: contact.email,
-            name: leadName,
-            phone: contact.phone_number || null,
-            source: 'prospect_research',
-            company_id: companyId,
-            ai_summary: contact.position ? `${contact.position}${contact.department ? ` (${contact.department})` : ''}` : null,
-          }).select('id, email, name').maybeSingle();
-
-        if (lead) createdLeads.push(lead);
-        if (leadError) console.warn('[prospect-research] Lead insert error:', leadError.message);
-      }
-    }
-
-    // --- Step 7: Save research to agent_memory ---
-    if (companyId) {
-      await supabase.from('agent_memory').upsert({
-        key: `prospect_research_${companyId}`,
-        value: {
-          company_name,
-          company_url: resolvedUrl,
-          company_summary: aiResult.company_summary,
-          qualifying_questions: aiResult.qualifying_questions,
-          contacts_found: hunterContacts.length,
-          search_provider: searchResult.provider,
-          researched_at: new Date().toISOString(),
-        },
-        category: 'context',
-        created_by: 'flowpilot',
-      }, { onConflict: 'key' });
-    }
-
+    // Return raw collected data — no AI interpretation
     const result = {
       success: true,
-      company: companyRecord || { name: company_name },
-      contacts: createdLeads,
-      hunter_contacts_found: hunterContacts.length,
-      questions_and_answers: aiResult.qualifying_questions || [],
-      company_summary: aiResult.company_summary || {},
+      company_name,
+      company_url: scrapeUrl || null,
+      domain,
+      search_results: searchResult?.results || [],
+      website_content: scrapeResult?.content?.substring(0, 3000) || null,
+      website_metadata: scrapeResult?.metadata || null,
+      contacts: contacts?.contacts || [],
+      data_sources: {
+        search: !!searchResult?.results?.length,
+        scrape: !!scrapeResult?.content,
+        contacts: !!contacts?.contacts?.length,
+      },
     };
 
-    console.log('[prospect-research] Complete:', {
-      company: company_name,
-      contacts: createdLeads.length,
-      questions: (aiResult.qualifying_questions || []).length,
-    });
+    console.log(`Research complete for ${company_name}: search=${result.data_sources.search}, scrape=${result.data_sources.scrape}, contacts=${result.data_sources.contacts}`);
 
-    return new Response(JSON.stringify(result), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify(result),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
 
   } catch (error) {
-    console.error('[prospect-research] Error:', error);
+    console.error('Prospect research error:', error);
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

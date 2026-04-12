@@ -1,27 +1,36 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+/**
+ * Qualify Lead — Deterministic Scoring (No AI)
+ * 
+ * Calculates lead score from activities using a point-based system.
+ * AI reasoning (summary, status suggestion) is now FlowPilot's job
+ * via the qualify_lead skill (db: handler).
+ * 
+ * OpenClaw alignment: This function is a "hand" (data operation),
+ * not a "brain" (no AI calls).
+ */
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-interface LeadActivity {
-  type: string;
-  metadata: Record<string, unknown>;
-  points: number;
-  created_at: string;
-}
+// Deterministic scoring weights
+const SCORE_WEIGHTS: Record<string, number> = {
+  form_submit: 10,
+  email_open: 3,
+  link_click: 5,
+  page_visit: 2,
+  booking_made: 15,
+  reply_received: 12,
+  meeting_scheduled: 20,
+  status_change: 0,
+};
 
-interface Lead {
-  id: string;
-  email: string;
-  name: string | null;
-  company: string | null;
-  status: string;
-  score: number;
-  source: string;
-}
+// Recency bonus: activities in last 7 days get 1.5x
+const RECENCY_DAYS = 7;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -30,7 +39,7 @@ serve(async (req) => {
 
   try {
     const { leadId } = await req.json();
-    
+
     if (!leadId) {
       return new Response(
         JSON.stringify({ error: 'Lead ID is required' }),
@@ -40,13 +49,9 @@ serve(async (req) => {
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const openaiKey = Deno.env.get('OPENAI_API_KEY');
-    const geminiKey = Deno.env.get('GEMINI_API_KEY');
-    const useGemini = !openaiKey && geminiKey;
-
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Fetch lead with activities
+    // Fetch lead
     const { data: lead, error: leadError } = await supabase
       .from('leads')
       .select('*')
@@ -54,181 +59,44 @@ serve(async (req) => {
       .single();
 
     if (leadError || !lead) {
-      console.error('Lead not found:', leadError);
       return new Response(
         JSON.stringify({ error: 'Lead not found' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const { data: activities, error: activitiesError } = await supabase
+    // Fetch activities
+    const { data: activities } = await supabase
       .from('lead_activities')
       .select('*')
       .eq('lead_id', leadId)
       .order('created_at', { ascending: false })
-      .limit(50);
+      .limit(100);
 
-    if (activitiesError) {
-      console.error('Failed to fetch activities:', activitiesError);
+    const activityList = activities || [];
+    const now = Date.now();
+    const recencyCutoff = now - RECENCY_DAYS * 86400000;
+
+    // Calculate deterministic score
+    let totalScore = 0;
+    for (const a of activityList) {
+      const basePoints = a.points || SCORE_WEIGHTS[a.type] || 1;
+      const isRecent = new Date(a.created_at).getTime() > recencyCutoff;
+      totalScore += isRecent ? Math.round(basePoints * 1.5) : basePoints;
     }
 
-    // Calculate score from activities
-    const activityList = (activities || []) as LeadActivity[];
-    const totalScore = activityList.reduce((sum, a) => sum + (a.points || 0), 0);
+    // Determine engagement level (deterministic)
+    const activityCount = activityList.length;
+    const recentCount = activityList.filter(a => new Date(a.created_at).getTime() > recencyCutoff).length;
+    const engagementLevel = totalScore >= 50 ? 'hot' : totalScore >= 20 ? 'warm' : 'cold';
 
-    // Prepare activity summary for AI
-    const activitySummary = activityList.map(a => ({
-      type: a.type,
-      date: a.created_at,
-      details: a.metadata
-    }));
-
-    // Use AI to qualify lead
-    let aiSummary = '';
-    let suggestedStatus = lead.status;
-    let needsReview = false;
-    let confidence = 0;
-
-    if (openaiKey || geminiKey) {
-      try {
-        const prompt = `Du är en säljassistent som analyserar leads. Analysera denna lead och ge en kort sammanfattning samt rekommendation.
-
-Lead-information:
-- Email: ${lead.email}
-- Namn: ${lead.name || 'Okänt'}
-- Företag: ${lead.company || 'Okänt'}
-- Källa: ${lead.source}
-- Nuvarande status: ${lead.status}
-- Total poäng: ${totalScore}
-
-Aktiviteter (senaste ${activityList.length} st):
-${JSON.stringify(activitySummary, null, 2)}
-
-Poängsystem referens:
-- form_submit: 10p
-- email_open: 3p
-- link_click: 5p
-- page_visit: 2p
-
-Svara ENDAST med JSON i detta format:
-{
-  "summary": "En mening som sammanfattar lead:en och dess engagemang",
-  "status": "lead" | "opportunity" | "customer",
-  "confidence": 0-100,
-  "reasoning": "Kort förklaring av varför"
-}`;
-
-        let response: Response;
-
-        if (useGemini) {
-          // Use Google Gemini API
-          const model = 'gemini-2.0-flash-exp';
-          response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              contents: [
-                {
-                  role: 'user',
-                  parts: [{ text: prompt }]
-                }
-              ],
-              generationConfig: {
-                temperature: 0.3,
-                maxOutputTokens: 1024,
-              }
-            }),
-          });
-        } else {
-          // Use OpenAI API
-          const model = 'gpt-4.1-mini';
-          response = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${openaiKey}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              model,
-              messages: [
-                { role: 'user', content: prompt }
-              ],
-              response_format: { type: 'json_object' }
-            }),
-          });
-        }
-
-        if (response.ok) {
-          const data = await response.json();
-          
-          // Parse response based on provider
-          let content = '';
-          if (useGemini) {
-            content = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-          } else {
-            content = data.choices?.[0]?.message?.content || '';
-          }
-          
-          // Parse JSON from response
-          const jsonMatch = content.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            try {
-              const parsed = JSON.parse(jsonMatch[0]);
-              aiSummary = parsed.summary || '';
-              confidence = parsed.confidence || 0;
-              
-              // Only auto-update status if confidence is high
-              if (confidence >= 75 && parsed.status !== lead.status) {
-                suggestedStatus = parsed.status;
-              } else if (confidence < 50) {
-                needsReview = true;
-              }
-            } catch (parseError) {
-              console.error('Failed to parse AI response:', parseError);
-              aiSummary = content;
-            }
-          } else {
-            aiSummary = content;
-          }
-        } else {
-          console.error('AI API error:', response.status, await response.text());
-        }
-      } catch (aiError) {
-        console.error('AI qualification error:', aiError);
-      }
-    }
-
-    // Update lead with AI results
-    const updates: Record<string, unknown> = {
-      score: totalScore,
-      ai_summary: aiSummary || null,
-      ai_qualified_at: new Date().toISOString(),
-      needs_review: needsReview,
-    };
-
-    // Only update status if AI is confident
-    if (suggestedStatus !== lead.status && confidence >= 75) {
-      updates.status = suggestedStatus;
-      
-      // Log status change as activity
-      await supabase.from('lead_activities').insert({
-        lead_id: leadId,
-        type: 'status_change',
-        metadata: {
-          from: lead.status,
-          to: suggestedStatus,
-          automated: true,
-          confidence,
-        },
-        points: 0,
-      });
-    }
-
+    // Update lead score
     const { error: updateError } = await supabase
       .from('leads')
-      .update(updates)
+      .update({
+        score: totalScore,
+        ai_qualified_at: new Date().toISOString(),
+      })
       .eq('id', leadId);
 
     if (updateError) {
@@ -239,11 +107,8 @@ Svara ENDAST med JSON i detta format:
       );
     }
 
-    console.log(`Lead ${leadId} qualified: score=${totalScore}, status=${suggestedStatus}, needs_review=${needsReview}`);
-
-    // ── Emit signals for automation triggers ──────────────────────────
+    // Emit score signal for automations
     try {
-      // Signal: score_threshold — fire when score crosses thresholds
       await fetch(`${supabaseUrl}/functions/v1/signal-dispatcher`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseServiceKey}` },
@@ -252,49 +117,31 @@ Svara ENDAST med JSON i detta format:
           data: {
             score: totalScore,
             previous_score: lead.score || 0,
-            status: suggestedStatus,
-            old_status: lead.status,
-            new_status: suggestedStatus,
+            status: lead.status,
             email: lead.email,
             name: lead.name,
-            confidence,
-            needs_review: needsReview,
+            engagement_level: engagementLevel,
+            activity_count: activityCount,
+            recent_activity_count: recentCount,
           },
           context: { entity_type: 'lead', entity_id: leadId },
         }),
       });
-
-      // Signal: status_change — fire when lead status changes
-      if (suggestedStatus !== lead.status && confidence >= 75) {
-        await fetch(`${supabaseUrl}/functions/v1/signal-dispatcher`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseServiceKey}` },
-          body: JSON.stringify({
-            signal: 'lead_status_changed',
-            data: {
-              old_status: lead.status,
-              new_status: suggestedStatus,
-              score: totalScore,
-              email: lead.email,
-              name: lead.name,
-            },
-            context: { entity_type: 'lead', entity_id: leadId },
-          }),
-        });
-      }
     } catch (signalErr) {
       console.error('Signal dispatch error (non-blocking):', signalErr);
     }
+
+    console.log(`Lead ${leadId} scored: ${totalScore} (${engagementLevel})`);
 
     return new Response(
       JSON.stringify({
         success: true,
         lead_id: leadId,
         score: totalScore,
-        status: suggestedStatus,
-        ai_summary: aiSummary,
-        needs_review: needsReview,
-        confidence,
+        engagement_level: engagementLevel,
+        activity_count: activityCount,
+        recent_activity_count: recentCount,
+        status: lead.status,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
