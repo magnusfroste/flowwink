@@ -1,0 +1,12 @@
+UPDATE public.agent_skills SET handler = 'db:content_research', updated_at = now() WHERE name = 'research_content' AND handler = 'edge:research-content';
+UPDATE public.agent_skills SET handler = 'db:content_proposals', updated_at = now() WHERE name = 'generate_content_proposal' AND handler = 'edge:generate-content-proposal';
+UPDATE public.agent_skills SET handler = 'db:content_proposals', updated_at = now() WHERE name = 'generate_social_post' AND handler = 'edge:generate-social-post';
+UPDATE public.agent_skills SET handler = 'db:content_proposals', updated_at = now() WHERE name = 'social_post_batch' AND handler = 'edge:generate-social-post';
+UPDATE public.agent_skills SET handler = 'db:agent_activity', updated_at = now() WHERE name = 'weekly_business_digest' AND handler = 'edge:business-digest';
+UPDATE public.agent_skills SET handler = 'db:ad_campaigns', updated_at = now() WHERE name = 'ad_campaign_create' AND handler = 'edge:ad-campaign-create';
+UPDATE public.agent_skills SET handler = 'db:ad_creatives', updated_at = now() WHERE name = 'ad_creative_generate' AND handler = 'edge:ad-creative-generate';
+UPDATE public.agent_skills SET handler = 'db:ad_campaigns', updated_at = now() WHERE name = 'ad_performance_check' AND handler = 'edge:ad-performance-check';
+UPDATE public.agent_skills SET handler = 'db:ad_campaigns', updated_at = now() WHERE name = 'ad_optimize' AND handler = 'edge:ad-optimize';
+UPDATE public.agent_skills SET handler = 'db:agent_memory', updated_at = now() WHERE name = 'competitor_monitor' AND handler = 'edge:competitor-monitor';
+UPDATE public.agent_skills SET handler = 'db:pages', updated_at = now() WHERE name = 'generate_site_from_identity' AND handler = 'edge:generate-site-from-identity';
+UPDATE public.agent_skills SET handler = 'db:content_research', updated_at = now() WHERE name = 'seo_content_brief' AND handler = 'edge:research-content';

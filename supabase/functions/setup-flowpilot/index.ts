@@ -766,7 +766,7 @@ Enriches a company record with industry, size, website info via domain scraping 
   {
     name: 'research_content',
     description: 'Deep AI research on a topic — audience insights, content angles, hooks, competitive landscape, and recommended structure. Use when: planning content strategy; understanding a topic before writing; needing competitive analysis. NOT for: writing a blog post (write_blog_post); generating multi-channel content (generate_content_proposal).',
-    handler: 'edge:research-content',
+    handler: 'db:content_research',
     category: 'content',
     scope: 'internal',
     requires_approval: false,
@@ -806,7 +806,7 @@ Deep AI research on a topic — audience insights, content angles, hooks, compet
   {
     name: 'generate_content_proposal',
     description: 'Generate multi-channel content (blog, newsletter, LinkedIn, X) from a topic with brand voice and tone control. Use when: a user requests new content for multiple platforms; needing a content strategy for a given topic; planning a campaign that spans several channels. NOT for: writing a single blog post draft (write_blog_post); performing deep research on a topic (research_content).',
-    handler: 'edge:generate-content-proposal',
+    handler: 'db:content_proposals',
     category: 'content',
     scope: 'internal',
     requires_approval: true,
@@ -920,7 +920,7 @@ Analyzes how well a prospect company fits your ideal customer profile using AI.
   {
     name: 'weekly_business_digest',
     description: 'Generate a cross-module business summary covering views, leads, bookings, orders, posts, newsletters. Use when: weekly business review; executive summary needed; monitoring overall business health. NOT for: analyzing specific analytics (analyze_analytics); learning from data (learn_from_data).',
-    handler: 'edge:business-digest',
+    handler: 'db:agent_activity',
     category: 'analytics',
     scope: 'internal',
     requires_approval: false,
@@ -2465,7 +2465,7 @@ Creates and manages agent automations (cron jobs, event triggers, signal handler
   {
     name: 'ad_campaign_create',
     description: 'Create a new ad campaign with objective, budget, target audience, and platform. Requires approval due to budget commitment. Use when: launching a marketing initiative; defining advertising parameters; allocating ad budget. NOT for: generating ad creatives (ad_creative_generate); optimizing existing campaigns (ad_optimize).',
-    handler: 'edge:ad-campaign-create',
+    handler: 'db:ad_campaigns',
     category: 'growth',
     scope: 'internal',
     requires_approval: true,
@@ -2509,7 +2509,7 @@ Creates a new ad campaign with objective, budget, target audience, and platform.
   {
     name: 'ad_creative_generate',
     description: 'Generate ad creative (headline, body, CTA) using AI based on campaign objective and target audience. Use when: creating ad copy for a campaign; generating variations for A/B testing; needing creative inspiration. NOT for: creating campaigns (ad_campaign_create); checking ad performance (ad_performance_check).',
-    handler: 'edge:ad-creative-generate',
+    handler: 'db:ad_creatives',
     category: 'growth',
     scope: 'internal',
     requires_approval: false,
@@ -2549,7 +2549,7 @@ Generates ad creative (headline, body, CTA) using AI based on campaign objective
   {
     name: 'ad_performance_check',
     description: 'Check ad campaign performance metrics: spend, impressions, clicks, CTR, CPC, conversions. Use when: monitoring campaign metrics; building performance reports; evaluating ROI. NOT for: optimizing campaigns (ad_optimize); creating campaigns (ad_campaign_create).',
-    handler: 'edge:ad-performance-check',
+    handler: 'db:ad_campaigns',
     category: 'growth',
     scope: 'internal',
     requires_approval: false,
@@ -2584,7 +2584,7 @@ Checks ad campaign performance metrics: spend, impressions, clicks, CTR, CPC, co
   {
     name: 'ad_optimize',
     description: 'Analyze campaign performance and recommend optimizations: pause underperformers, scale winners, adjust budgets. Requires approval. Use when: reviewing campaign results; optimizing ad spend; identifying underperforming ads. NOT for: creating campaigns (ad_campaign_create); generating creatives (ad_creative_generate).',
-    handler: 'edge:ad-optimize',
+    handler: 'db:ad_campaigns',
     category: 'growth',
     scope: 'internal',
     requires_approval: true,
@@ -3486,7 +3486,7 @@ Focus on: Is booking functional? Are there services listed? Any errors?"
   {
     name: 'competitor_monitor',
     description: 'Scan a competitor website and analyze their content strategy and positioning. Use when: user wants competitive analysis, studying competitor content. NOT for: migrating competitor sites (use migrate_url), general web search (use search_web).',
-    handler: 'edge:competitor-monitor',
+    handler: 'db:agent_memory',
     category: 'analytics',
     scope: 'internal',
     requires_approval: false,
@@ -3879,7 +3879,7 @@ Use this to find email addresses and contact information for people at a company
   {
     name: 'generate_site_from_identity',
     description: 'Generate a complete website from the Business Identity profile. Use when: setting up a brand new site, user says "build my website", generating initial site structure. NOT for: editing existing pages (use manage_page), migrating external sites (use migrate_url).',
-    handler: 'edge:generate-site-from-identity',
+    handler: 'db:pages',
     category: 'content',
     scope: 'both',
     requires_approval: true,
@@ -3918,7 +3918,7 @@ Use this to find email addresses and contact information for people at a company
   {
     name: 'generate_social_post',
     description: 'Generate social media posts from existing blog content or content proposals. Use when: user wants LinkedIn/X posts from an article, repurposing blog content for social. NOT for: writing blog posts (use write_blog_post), batch social posts (use social_post_batch).',
-    handler: 'edge:generate-social-post',
+    handler: 'db:content_proposals',
     category: 'content',
     scope: 'internal',
     requires_approval: false,
@@ -4460,7 +4460,7 @@ success, entity type, fulfillment status`,
   {
     name: 'seo_content_brief',
     description: 'Generates SEO content brief with keywords and outline. Use when: planning SEO-optimized content, keyword research, creating content outlines. NOT for: writing full articles (use write_blog_post), technical SEO audits (use seo_audit).',
-    handler: 'edge:research-content',
+    handler: 'db:content_research',
     category: 'content',
     scope: 'internal',
     requires_approval: false,
@@ -4499,7 +4499,7 @@ success, entity type, fulfillment status`,
   {
     name: 'social_post_batch',
     description: 'Creates social media posts for multiple platforms in batch. Use when: user wants posts for several platforms at once, bulk social content creation. NOT for: single platform post (use generate_social_post), blog writing (use write_blog_post).',
-    handler: 'edge:generate-social-post',
+    handler: 'db:content_proposals',
     category: 'content',
     scope: 'internal',
     requires_approval: true,
