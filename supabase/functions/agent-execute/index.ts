@@ -4474,6 +4474,106 @@ async function executeDbAction(
 }
 
 // =============================================================================
+// Generic CRUD engine — universal handler for any db:tablename skill
+// =============================================================================
+
+/**
+ * Allowed tables for generic CRUD. Any table NOT in this set will be rejected
+ * to prevent arbitrary table access. Add new module tables here as needed.
+ */
+const GENERIC_CRUD_TABLES = new Set([
+  'employees', 'leave_requests', 'projects', 'project_tasks',
+  'time_entries', 'contracts', 'contract_documents',
+  'expenses', 'documents', 'invoices', 'invoice_lines',
+  'vendors', 'purchase_orders', 'purchase_order_lines',
+  'consultant_profiles', 'ad_campaigns', 'ad_creatives',
+  'chart_of_accounts', 'journal_entries', 'journal_entry_lines',
+  'accounting_templates', 'opening_balances',
+  'tickets', 'webinars', 'webinar_registrations',
+  'booking_services', 'booking_availability', 'bookings',
+]);
+
+async function executeGenericCrud(
+  supabase: any,
+  table: string,
+  skillName: string,
+  args: Record<string, unknown>,
+): Promise<unknown> {
+  // Security gate: only whitelisted tables
+  if (!GENERIC_CRUD_TABLES.has(table)) {
+    return { error: `Unknown db table: ${table}. Generic CRUD is not enabled for this table.` };
+  }
+
+  const { action = 'list', id, ...fields } = args as any;
+
+  try {
+    switch (action) {
+      case 'list': {
+        const { limit = 50, offset = 0, order_by = 'created_at', ascending = false, filters, ...rest } = fields;
+        let query = supabase.from(table).select('*')
+          .order(order_by, { ascending })
+          .range(offset, offset + limit - 1);
+
+        // Apply simple equality filters: { status: 'active', department: 'IT' }
+        if (filters && typeof filters === 'object') {
+          for (const [col, val] of Object.entries(filters)) {
+            query = query.eq(col, val);
+          }
+        }
+
+        const { data, error } = await query;
+        if (error) throw new Error(`List ${table} failed: ${error.message}`);
+        return { items: data || [], count: (data || []).length, table };
+      }
+
+      case 'get': {
+        if (!id) return { error: 'id is required for get action' };
+        const { data, error } = await supabase.from(table).select('*').eq('id', id).single();
+        if (error) throw new Error(`Get ${table} failed: ${error.message}`);
+        return { item: data, table };
+      }
+
+      case 'create': {
+        const { limit: _l, offset: _o, order_by: _ob, ascending: _a, filters: _f, ...insertData } = fields;
+        const { data, error } = await supabase.from(table).insert(insertData).select().single();
+        if (error) throw new Error(`Create ${table} failed: ${error.message}`);
+        return { created: true, item: data, table };
+      }
+
+      case 'update': {
+        if (!id) return { error: 'id is required for update action' };
+        const { limit: _l, offset: _o, order_by: _ob, ascending: _a, filters: _f, ...updateData } = fields;
+        updateData.updated_at = new Date().toISOString();
+        const { data, error } = await supabase.from(table).update(updateData).eq('id', id).select().single();
+        if (error) {
+          // If updated_at doesn't exist on the table, retry without it
+          if (error.message?.includes('updated_at')) {
+            delete updateData.updated_at;
+            const { data: d2, error: e2 } = await supabase.from(table).update(updateData).eq('id', id).select().single();
+            if (e2) throw new Error(`Update ${table} failed: ${e2.message}`);
+            return { updated: true, item: d2, table };
+          }
+          throw new Error(`Update ${table} failed: ${error.message}`);
+        }
+        return { updated: true, item: data, table };
+      }
+
+      case 'delete': {
+        if (!id) return { error: 'id is required for delete action' };
+        const { error } = await supabase.from(table).delete().eq('id', id);
+        if (error) throw new Error(`Delete ${table} failed: ${error.message}`);
+        return { deleted: true, id, table };
+      }
+
+      default:
+        return { error: `Unknown action '${action}' for table ${table}. Supported: list, get, create, update, delete.` };
+    }
+  } catch (err: any) {
+    return { error: `Generic CRUD error on ${table}: ${err.message}` };
+  }
+}
+
+// =============================================================================
 // Analytics skill handlers (SEO audit, KB gap analysis)
 // =============================================================================
 
