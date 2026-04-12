@@ -1,6 +1,6 @@
 import { logger } from '@/lib/logger';
+import { defineModule } from '@/lib/module-def';
 import { z } from 'zod';
-import type { ModuleDefinition } from '@/types/module-contracts';
 
 const slaInputSchema = z.object({
   action: z.enum(['check', 'report']),
@@ -15,8 +15,8 @@ const slaOutputSchema = z.object({
 type SlaInput = z.infer<typeof slaInputSchema>;
 type SlaOutput = z.infer<typeof slaOutputSchema>;
 
-export const slaModule: ModuleDefinition<SlaInput, SlaOutput> = {
-  id: 'sla',
+export const slaModule = defineModule<SlaInput, SlaOutput>({
+  id: 'sla' as any, // SLA is not yet in ModulesSettings — will be added when module is formalized
   name: 'SLA Monitor',
   version: '1.0.0',
   description: 'Service level agreement monitoring for order fulfillment, response times, and operational metrics',
@@ -24,9 +24,11 @@ export const slaModule: ModuleDefinition<SlaInput, SlaOutput> = {
   inputSchema: slaInputSchema,
   outputSchema: slaOutputSchema,
 
+  skills: [],
+
   async publish(input: SlaInput): Promise<SlaOutput> {
     const validated = slaInputSchema.parse(input);
     logger.log('[sla] action:', validated.action);
     return { success: true, message: `SLA ${validated.action} completed` };
   },
-};
+});

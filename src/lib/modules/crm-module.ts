@@ -1,22 +1,32 @@
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 import { triggerWebhook } from '@/lib/webhook-utils';
+import { defineModule } from '@/lib/module-def';
 import {
-  ModuleDefinition,
   CRMLeadInput,
   CRMLeadOutput,
   crmLeadInputSchema,
   crmLeadOutputSchema,
 } from '@/types/module-contracts';
 
-export const crmModule: ModuleDefinition<CRMLeadInput, CRMLeadOutput> = {
-  id: 'crm',
+export const crmModule = defineModule<CRMLeadInput, CRMLeadOutput>({
+  id: 'leads',
   name: 'CRM',
   version: '1.0.0',
   description: 'Create and manage leads',
   capabilities: ['content:receive', 'data:write', 'webhook:trigger'],
   inputSchema: crmLeadInputSchema,
   outputSchema: crmLeadOutputSchema,
+
+  skills: [
+    'add_lead',
+    'manage_leads',
+    'lead_pipeline_review',
+    'lead_nurture_sequence',
+    'crm_task_list',
+    'crm_task_create',
+    'crm_task_update',
+  ],
 
   async publish(input: CRMLeadInput): Promise<CRMLeadOutput> {
     try {
@@ -77,4 +87,4 @@ export const crmModule: ModuleDefinition<CRMLeadInput, CRMLeadOutput> = {
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   },
-};
+});

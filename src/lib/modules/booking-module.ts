@@ -1,22 +1,36 @@
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 import { triggerWebhook } from '@/lib/webhook-utils';
+import { defineModule } from '@/lib/module-def';
 import {
-  ModuleDefinition,
   BookingModuleInput,
   BookingModuleOutput,
   bookingModuleInputSchema,
   bookingModuleOutputSchema,
 } from '@/types/module-contracts';
 
-export const bookingModule: ModuleDefinition<BookingModuleInput, BookingModuleOutput> = {
-  id: 'booking',
+export const bookingModule = defineModule<BookingModuleInput, BookingModuleOutput>({
+  id: 'bookings',
   name: 'Booking',
   version: '1.0.0',
   description: 'Create and manage bookings/appointments',
   capabilities: ['content:receive', 'data:write', 'webhook:trigger'],
   inputSchema: bookingModuleInputSchema,
   outputSchema: bookingModuleOutputSchema,
+
+  skills: [
+    'book_appointment',
+    'check_availability',
+    'browse_services',
+    'manage_booking_availability',
+    'manage_bookings',
+  ],
+
+  webhookEvents: [
+    { event: 'booking.submitted', description: 'A booking was submitted' },
+    { event: 'booking.confirmed', description: 'A booking was confirmed' },
+    { event: 'booking.cancelled', description: 'A booking was cancelled' },
+  ],
 
   async publish(input: BookingModuleInput): Promise<BookingModuleOutput> {
     try {
@@ -65,4 +79,4 @@ export const bookingModule: ModuleDefinition<BookingModuleInput, BookingModuleOu
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   },
-};
+});

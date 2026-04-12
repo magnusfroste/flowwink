@@ -1,21 +1,30 @@
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
+import { defineModule } from '@/lib/module-def';
 import {
-  ModuleDefinition,
   MediaModuleInput,
   MediaModuleOutput,
   mediaModuleInputSchema,
   mediaModuleOutputSchema,
 } from '@/types/module-contracts';
 
-export const mediaModule: ModuleDefinition<MediaModuleInput, MediaModuleOutput> = {
-  id: 'media',
+export const mediaModule = defineModule<MediaModuleInput, MediaModuleOutput>({
+  id: 'mediaLibrary',
   name: 'Media Library',
   version: '1.0.0',
   description: 'Manage media assets and files',
   capabilities: ['data:read', 'data:write'],
   inputSchema: mediaModuleInputSchema,
   outputSchema: mediaModuleOutputSchema,
+
+  skills: [
+    'media_browse',
+  ],
+
+  webhookEvents: [
+    { event: 'media.uploaded', description: 'A file was uploaded' },
+    { event: 'media.deleted', description: 'A file was deleted' },
+  ],
 
   async publish(input: MediaModuleInput): Promise<MediaModuleOutput> {
     try {
@@ -28,4 +37,4 @@ export const mediaModule: ModuleDefinition<MediaModuleInput, MediaModuleOutput> 
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   },
-};
+});
