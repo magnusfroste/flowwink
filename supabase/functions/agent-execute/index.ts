@@ -2430,7 +2430,7 @@ async function executeBlogAction(
   }
 
   const insertData: Record<string, unknown> = {
-    title, slug, status: 'draft', excerpt, content_json: tiptapDoc,
+    title: resolvedTitle, slug, status: 'draft', excerpt, content_json: tiptapDoc,
     meta_json: { tone, language, generated_by: 'flowpilot', topic },
   };
   if (featuredImage) {
