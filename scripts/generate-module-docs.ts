@@ -485,11 +485,12 @@ function main() {
     const migrations = findMigrations(mod.id);
 
     const markdown = generateMarkdown(mod, settings, webhookEvents, hooks, adminPage, blocks, migrations);
-    const outFile = path.join(OUTPUT_DIR, `${mod.id}.md`);
+    const kebabId = mod.id.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
+    const outFile = path.join(OUTPUT_DIR, `${kebabId}.md`);
     fs.writeFileSync(outFile, markdown, 'utf-8');
 
     generated++;
-    summary.push({ id: mod.id, file: `docs/modules/${mod.id}.md` });
+    summary.push({ id: mod.id, file: `docs/modules/${kebabId}.md` });
   }
 
   console.log(`\n✅ Generated ${generated} module docs:\n`);
