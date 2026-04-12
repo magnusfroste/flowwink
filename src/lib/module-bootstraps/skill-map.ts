@@ -201,11 +201,7 @@ export const MODULE_SKILL_MAP: Partial<Record<keyof ModulesSettings, string[]>> 
     'ticket_triage',
   ],
 
-  invoicing: [
-    'manage_invoice',
-    'invoice_from_timesheets',
-    'invoice_overdue_check',
-  ],
+  // invoicing — MIGRATED to unified defineModule()
 
   accounting: [
     'manage_journal_entry',
