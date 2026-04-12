@@ -865,7 +865,7 @@ Bundled capability sets in `agent_skill_packs` table (3 seed packs, not yet inst
 
 ## 16. OpenClaw Architecture Compliance
 
-> **⚠️ Full architecture law documented in [`docs/OPENCLAW-LAW.md`](./OPENCLAW-LAW.md).**
+> **⚠️ Full architecture law documented in [`docs/OPENCLAW-LAW.md`](./openclaw-law.md).**
 
 | OpenClaw Concept | FlowAgent Implementation | Status |
 |------------------|--------------------------|--------|

@@ -58,7 +58,7 @@ FlowPilot enabled later: retroactive scan bootstraps all active modules.
 1. **Agents, not automation** — FlowPilot reasons about context and adapts, not follows scripts.
 2. **Self-evolution over configuration** — The agent creates skills, learns templates, enriches memory.
 3. **Privacy by architecture** — Your agent, your data, your AI. Self-hosted with private LLM support.
-4. **OpenClaw compliance** — 10 mandatory laws for agent architecture. See [OPENCLAW-LAW.md](./OPENCLAW-LAW.md).
+4. **OpenClaw compliance** — 10 mandatory laws for agent architecture. See [OPENCLAW-LAW.md](./openclaw-law.md).
 5. **The 80/20 rule, enforced** — Build core deeply. For the rest, integrate via webhooks and Workflow DAGs.
 
 ---
@@ -384,11 +384,11 @@ HMAC-SHA256 signatures · Retry with exponential backoff · Auto-disable after 5
 
 | Document | Purpose |
 |----------|---------|
-| [FLOWPILOT.md](./FLOWPILOT.md) | FlowPilot agent architecture — the brain of the system |
-| [OPENCLAW-LAW.md](./OPENCLAW-LAW.md) | The 10 laws of agent development |
+| [FLOWPILOT.md](./flowpilot.md) | FlowPilot agent architecture — the brain of the system |
+| [OPENCLAW-LAW.md](./openclaw-law.md) | The 10 laws of agent development |
 | [SKILLS-SOURCE.md](./SKILLS-SOURCE.md) | Skill registry source of truth |
 | [MODULE-API.md](./MODULE-API.md) | Technical module API |
-| [INTEGRATIONS-STRATEGY.md](./INTEGRATIONS-STRATEGY.md) | Integration architecture |
+| [INTEGRATIONS-STRATEGY.md](./integrations-strategy.md) | Integration architecture |
 | [CONTRIBUTING.md](./CONTRIBUTING.md) | Development guidelines |
 | [DEPLOYMENT.md](./DEPLOYMENT.md) | Deployment instructions |
 | [SECURITY.md](./SECURITY.md) | Security model |

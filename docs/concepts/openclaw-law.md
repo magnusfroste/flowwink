@@ -2,7 +2,7 @@
 
 > **This document is LAW.** All development of the FlowAgent/FlowPilot system MUST follow these principles. Founded on the [OpenClaw](https://github.com/openclaw/openclaw) reference architecture for autonomous AI agents.
 >
-> For implementation details, see [`docs/pilot/`](pilot/README.md).
+> For implementation details, see [`docs/pilot/`](../pilot/README.md).
 
 ---
 
@@ -89,4 +89,4 @@ FlowWink is a **CMS-native** agentic system. These are intentional adaptations, 
 ---
 
 *This document supersedes all previous architectural descriptions. Revised: 2026-03-29.*
-*Implementation details: [`docs/pilot/`](pilot/README.md)*
+*Implementation details: [`docs/pilot/`](../pilot/README.md)*
