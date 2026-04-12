@@ -1,7 +1,20 @@
+/**
+ * Documents Module — Unified Definition
+ * 
+ * Single source of truth for the Documents module.
+ * Replaces entries in: module-contracts.ts, skill-map.ts, 
+ * module-bootstraps/documents.ts, and module-registry.ts import list.
+ */
+
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 import { z } from 'zod';
-import type { ModuleDefinition } from '@/types/module-contracts';
+import { defineModule } from '@/lib/module-def';
+import type { SkillSeed } from '@/lib/module-bootstrap';
+
+// =============================================================================
+// Schemas
+// =============================================================================
 
 const documentsInputSchema = z.object({
   action: z.enum(['create', 'list', 'get', 'update']),
@@ -23,7 +36,46 @@ const documentsOutputSchema = z.object({
 type DocumentsInput = z.infer<typeof documentsInputSchema>;
 type DocumentsOutput = z.infer<typeof documentsOutputSchema>;
 
-export const documentsModule: ModuleDefinition<DocumentsInput, DocumentsOutput> = {
+// =============================================================================
+// Skill Seeds
+// =============================================================================
+
+const DOCS_SKILLS: SkillSeed[] = [
+  {
+    name: 'manage_document',
+    description: 'Upload, search, categorize, and delete documents in the central archive. Use when: storing contracts, HR docs, financial records, or project files. NOT for: media library images (use manage_media), blog content.',
+    category: 'content',
+    handler: 'db:documents',
+    scope: 'internal',
+    tool_definition: {
+      type: 'function',
+      function: {
+        name: 'manage_document',
+        description: 'CRUD for the document archive',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: { type: 'string', enum: ['create', 'search', 'list', 'delete', 'categorize'] },
+            document_id: { type: 'string' },
+            title: { type: 'string' },
+            category: { type: 'string', enum: ['general', 'contract', 'hr', 'finance', 'project'] },
+            folder: { type: 'string' },
+            tags: { type: 'array', items: { type: 'string' } },
+            search_query: { type: 'string' },
+          },
+          required: ['action'],
+        },
+      },
+    },
+    instructions: 'Central document store. Categories map to modules: contract→Contracts, hr→HR, finance→Expenses/Invoicing, project→Projects. Auto-categorize based on related_entity_type when possible. Swedish: "dokument", "fil", "arkiv", "mapp".',
+  },
+];
+
+// =============================================================================
+// Module Definition
+// =============================================================================
+
+export const documentsModule = defineModule<DocumentsInput, DocumentsOutput>({
   id: 'documents',
   name: 'Documents',
   version: '1.0.0',
@@ -32,6 +84,17 @@ export const documentsModule: ModuleDefinition<DocumentsInput, DocumentsOutput> 
   inputSchema: documentsInputSchema,
   outputSchema: documentsOutputSchema,
 
+  // ── FlowPilot Integration ──
+  skills: ['manage_document'],
+  skillSeeds: DOCS_SKILLS,
+  automations: [],
+
+  // ── Webhook Events ──
+  webhookEvents: [
+    { event: 'document.created' as any, description: 'A document was uploaded or created' },
+  ],
+
+  // ── API ──
   async publish(input: DocumentsInput): Promise<DocumentsOutput> {
     const validated = documentsInputSchema.parse(input);
 
@@ -81,4 +144,4 @@ export const documentsModule: ModuleDefinition<DocumentsInput, DocumentsOutput> 
 
     return { success: false, message: 'Unsupported action' };
   },
-};
+});

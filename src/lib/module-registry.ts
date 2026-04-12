@@ -11,6 +11,7 @@
 
 import { logger } from '@/lib/logger';
 import type { ModuleDefinition, ModuleCapability } from '@/types/module-contracts';
+import { getAllUnifiedModules } from '@/lib/module-def';
 
 // Import all module implementations
 import {
@@ -96,12 +97,20 @@ class ModuleRegistry {
       slaModule,
       contractsModule,
       hrModule,
+      // Legacy: explicit module imports (will shrink as modules migrate to defineModule)
       documentsModule,
       projectsModule,
     ];
 
     for (const mod of builtIn) {
       this.register(mod as ModuleDefinition<unknown, unknown>);
+    }
+
+    // Unified modules auto-register from defineModule() registry
+    for (const unified of getAllUnifiedModules()) {
+      if (!this.modules.has(unified.id)) {
+        this.register(unified as unknown as ModuleDefinition<unknown, unknown>);
+      }
     }
   }
 
