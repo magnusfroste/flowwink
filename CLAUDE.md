@@ -121,7 +121,7 @@ To add a new template:
 
 ## Database Migrations
 
-All migrations MUST be idempotent (safe to run multiple times). Use `IF NOT EXISTS`, `CREATE OR REPLACE`, and `DROP ... IF EXISTS` patterns. See `docs/CONTRIBUTING.md` for detailed SQL patterns.
+All migrations MUST be idempotent (safe to run multiple times). Use `IF NOT EXISTS`, `CREATE OR REPLACE`, and `DROP ... IF EXISTS` patterns. See `docs/contributing/contributing.md` for detailed SQL patterns.
 
 ```bash
 # Push migrations to a Supabase project

@@ -6,7 +6,7 @@
  * 
  * Individual module implementations live in src/lib/modules/*.ts
  * 
- * @see docs/MODULE-API.md for full documentation
+ * @see docs/reference/module-api.md for full documentation
  */
 
 import { logger } from '@/lib/logger';
