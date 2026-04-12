@@ -2300,10 +2300,11 @@ async function executeBlogAction(
   }
 
   // write_blog_post — original handler
-  const { title, topic, tone = 'professional', language = 'en', content } = args as any;
-  const slug = (title as string).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  const { title: rawTitle, topic, tone = 'professional', language = 'en', content } = args as any;
+  const resolvedTitle = rawTitle || topic || 'Untitled Post';
+  const slug = String(resolvedTitle).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
   let tiptapDoc: any = { type: 'doc', content: [{ type: 'paragraph' }] };
-  let excerpt = `Blog post about: ${topic}`;
+  let excerpt = `Blog post about: ${topic || resolvedTitle}`;
   let markdownContent = content as string | undefined;
 
   if (!markdownContent) {
@@ -2312,7 +2313,7 @@ async function executeBlogAction(
     if (geminiKey) {
       try {
         const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`;
-        const genPrompt = `Write a comprehensive blog post about: "${topic}"\nTitle: "${title}"\nTone: ${tone}\nLanguage: ${language}\n\nWrite 600-1200 words. Use markdown with ## headings, paragraphs, and bullet points where appropriate. Do NOT include the title as an H1 — start with the first section. Output ONLY the markdown content, no preamble.`;
+        const genPrompt = `Write a comprehensive blog post about: "${topic}"\nTitle: "${resolvedTitle}"\nTone: ${tone}\nLanguage: ${language}\n\nWrite 600-1200 words. Use markdown with ## headings, paragraphs, and bullet points where appropriate. Do NOT include the title as an H1 — start with the first section. Output ONLY the markdown content, no preamble.`;
         const genResp = await fetch(geminiUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -2335,7 +2336,7 @@ async function executeBlogAction(
             model: 'gpt-4o-mini', max_tokens: 4096,
             messages: [
               { role: 'system', content: `You are a blog writer. Tone: ${tone}. Language: ${language}.` },
-              { role: 'user', content: `Write a blog post about "${topic}" titled "${title}". 600-1200 words. Use markdown with ## headings. Do NOT include the title. Output ONLY markdown.` }
+              { role: 'user', content: `Write a blog post about "${topic}" titled "${resolvedTitle}". 600-1200 words. Use markdown with ## headings. Do NOT include the title. Output ONLY markdown.` }
             ],
           }),
         });
@@ -2387,7 +2388,7 @@ async function executeBlogAction(
   const geminiKeyImg = Deno.env.get('GEMINI_API_KEY');
   if (!featuredImage && geminiKeyImg) {
     try {
-      const imgPrompt = `Generate a professional, modern blog header image for an article titled "${title}" about "${topic}". The image should be visually striking, landscape oriented, suitable as a blog featured image. No text in the image.`;
+      const imgPrompt = `Generate a professional, modern blog header image for an article titled "${resolvedTitle}" about "${topic}". The image should be visually striking, landscape oriented, suitable as a blog featured image. No text in the image.`;
       const imgResp = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${geminiKeyImg}`,
         {
@@ -2429,7 +2430,7 @@ async function executeBlogAction(
   }
 
   const insertData: Record<string, unknown> = {
-    title, slug, status: 'draft', excerpt, content_json: tiptapDoc,
+    title: resolvedTitle, slug, status: 'draft', excerpt, content_json: tiptapDoc,
     meta_json: { tone, language, generated_by: 'flowpilot', topic },
   };
   if (featuredImage) {
