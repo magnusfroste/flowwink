@@ -511,6 +511,7 @@ The only CMS-specific code is in `domains/` and `agent-reason.ts` (the facade). 
 | [Context Compaction](./compaction.md) | Conversation summarization, pre-compaction fact extraction |
 | [Dreaming](./dreaming.md) | Reflection, outcome evaluation, self-evolution |
 | [Presence](./presence.md) | Heartbeat protocol, priority scoring, safety guards |
+| [**Autonomy Model**](./autonomy-model.md) | **Objectives vs Automations vs Workflows — when to use what** |
 | [Architecture Deep Dive](./architecture.md) | Data flow, tool execution router, workflow DAG runner |
 | [Handler Reference](./handlers-reference.md) | All 40+ built-in tool handlers |
 
