@@ -2300,10 +2300,11 @@ async function executeBlogAction(
   }
 
   // write_blog_post — original handler
-  const { title, topic, tone = 'professional', language = 'en', content } = args as any;
-  const slug = (title as string).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  const { title: rawTitle, topic, tone = 'professional', language = 'en', content } = args as any;
+  const resolvedTitle = rawTitle || topic || 'Untitled Post';
+  const slug = String(resolvedTitle).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
   let tiptapDoc: any = { type: 'doc', content: [{ type: 'paragraph' }] };
-  let excerpt = `Blog post about: ${topic}`;
+  let excerpt = `Blog post about: ${topic || resolvedTitle}`;
   let markdownContent = content as string | undefined;
 
   if (!markdownContent) {
