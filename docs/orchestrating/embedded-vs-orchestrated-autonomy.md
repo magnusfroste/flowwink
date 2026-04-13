@@ -119,6 +119,106 @@ The external agent discovered issues the embedded agent *couldn't see* — not b
 | Update a page in real-time | ✅ Direct DB write via RLS | ⚠️ Needs MCP tool call |
 | Coordinate FlowWink + Fortnox | ❌ No visibility | ✅ Multi-system orchestration |
 
+## Build or Buy — The Full Capability Matrix
+
+The FlowWink experiment crystallizes a question every platform team will face: **Should we build a native agent (FlowPilot) or rely on an external orchestrator (OpenClaw)?**
+
+This isn't hypothetical. Every SaaS vendor shipping an embedded AI agent is making the "build" bet. Every enterprise deploying an external orchestrator across their stack is making the "buy" bet. Here's what each choice actually gives you.
+
+### What FlowPilot Has (That OpenClaw Doesn't)
+
+| Capability | FlowPilot Detail | Why OpenClaw Can't |
+|---|---|---|
+| **RLS-governed DB access** | Reads/writes every table through the same Row-Level Security policies as human users | External agents only see what MCP tools explicitly expose |
+| **Proactive heartbeat loop** | 7-step autonomous cycle every 12h: Evaluate → Plan → Advance → Propose → Automate → Reflect → Remember | No runtime inside the platform — can only act when called |
+| **Persistent memory** | 4-tier memory model (working, episodic, semantic, procedural) with pgvector hybrid search | Stateless per-session; must reconstruct context from MCP reads |
+| **Soul & personality** | Persona, constraints, tone — consistent across all interactions | Each session starts fresh; personality is prompt-injected |
+| **Objective-driven autonomy** | Active objectives table drives all decisions; agent proposes and pursues goals | No goal persistence; follows instructions, doesn't set its own |
+| **Self-healing** | Auto-quarantines failing skills after 3 errors; exponential backoff on heartbeat failures | Can report failures but can't fix them without human intervention |
+| **Concurrency control** | Lane-based locking prevents race conditions between heartbeat, operate, and chat | No awareness of concurrent operations inside the platform |
+| **Trust levels** | `auto` / `notify` / `approve` — granular control over what the agent can do silently | All operations require explicit invocation |
+| **Skill self-evolution** | Can create, update, and disable its own skills at runtime | Can suggest changes but can't modify the platform's agent |
+| **Transactional safety** | Operations execute within the same auth boundary as users | Operations cross a network boundary with serialization overhead |
+| **Context window** | Full CMS schema awareness — knows every module, integration, block type | Only knows what tool descriptions tell it |
+| **Latency** | Sub-millisecond DB access, no network hops | Every operation is an HTTP round-trip |
+
+### What OpenClaw Has (That FlowPilot Doesn't)
+
+| Capability | OpenClaw Detail | Why FlowPilot Can't |
+|---|---|---|
+| **Cross-system visibility** | Connects to FlowWink + Fortnox + HubSpot + N systems simultaneously | Locked to FlowWink's database and API surface |
+| **Comparative analysis** | Benchmarks one platform against industry standards or other connected systems | No external reference frame — optimizes within its own assumptions |
+| **Vendor independence** | Not tied to any platform's roadmap or release cycle | Evolves only as fast as FlowWink evolves |
+| **End-to-end process orchestration** | Can follow a lead from HubSpot → qualify in FlowWink → invoice in Fortnox → deliver in logistics | Each step requires a different native agent; no single agent sees the full chain |
+| **External perspective** | Questions platform assumptions; discovers blind spots | Inside the system, optimizing *within* its own model of reality |
+| **Multi-tenant coordination** | Can manage multiple FlowWink instances (or any MCP-enabled platform) from one brain | One brain per tenant, no cross-tenant intelligence |
+| **Standard protocol interop** | MCP + A2A = works with any compliant platform today and tomorrow | Protocol support must be built and maintained per-platform |
+| **Audit trail independence** | Maintains its own audit log across all connected systems | Audit log lives inside the platform it operates on |
+
+### The Decision Matrix
+
+| Factor | Build (FlowPilot) | Buy (OpenClaw) |
+|---|---|---|
+| **Development cost** | High — soul, skills, memory, heartbeat, reflection, concurrency, self-healing | Low — connect via MCP, write tool descriptions |
+| **Operational depth** | Deep — proactive, self-healing, objective-driven | Shallow — reactive, instruction-following |
+| **Time to value** | Weeks/months of agent development | Hours to connect and start orchestrating |
+| **Maintenance burden** | Ongoing — every platform change may require agent updates | Minimal — MCP abstraction layer absorbs platform changes |
+| **Single-system optimization** | Excellent — knows everything, can do everything | Good — limited by MCP tool surface area |
+| **Multi-system coordination** | Impossible alone | Core strength |
+| **Data sovereignty** | Full — agent runs inside your infrastructure | Depends — external agent needs API access |
+| **Proactivity** | Native — heartbeat loops, objective pursuit | None — must be triggered externally (cron, webhook) |
+| **Lock-in risk** | High — agent is coupled to platform internals | Low — MCP is a standard protocol |
+| **Scaling to N platforms** | Cost multiplies: N platforms × N custom agents | Cost is additive: 1 orchestrator + N MCP connections |
+
+### The Real Cost Equation
+
+Building FlowPilot required implementing:
+1. A 6-layer prompt compiler
+2. A ReAct reasoning loop with skill scoring
+3. 130+ skills with self-describing metadata
+4. A 4-tier memory system with vector search
+5. A 7-step heartbeat protocol
+6. Concurrency guards and lane-based locking
+7. Trust levels and approval gating
+8. Self-healing with circuit breakers
+9. An A2A protocol implementation
+10. An MCP server exposing 40+ tools
+
+**Estimated effort: 6-12 months of dedicated development.**
+
+Connecting OpenClaw to the same platform via MCP required:
+1. Deploying an MCP server (the same one FlowPilot already exposes)
+2. Registering as an A2A peer
+3. Writing tool descriptions
+
+**Estimated effort: 1-2 weeks.**
+
+The question isn't which is "better" — it's **which capabilities does your business actually need?**
+
+### When to Build (FlowPilot)
+
+- Your platform IS the business (not just one tool in a stack)
+- You need 24/7 proactive operations (lead qualification, content optimization, self-healing)
+- Data sovereignty is non-negotiable
+- You're willing to invest in agent infrastructure as a core competency
+- The agent's depth of understanding creates competitive advantage
+
+### When to Buy (OpenClaw)
+
+- You operate across 3+ platforms and need cross-system intelligence
+- You want agent capabilities without months of development
+- You need comparative analysis and external auditing
+- Your platforms already expose MCP servers
+- Speed to market matters more than depth of integration
+
+### When to Do Both (The FlowWink Answer)
+
+- Build the native agent for **depth** — proactive, self-healing, deeply contextual
+- Enable the external agent for **breadth** — cross-system, comparative, strategic
+- Connect them via **MCP + A2A** — the native agent becomes a tool the orchestrator can delegate to
+
+This is the federated model. And it's the only architecture that doesn't force a false choice.
+
 ## The Hybrid Architecture
 
 The real answer is neither model alone — it's **federated specialization**:
