@@ -583,4 +583,32 @@ The HR module (`src/lib/module-bootstraps/hr.ts`) manages the employee lifecycle
 
 ---
 
+---
+
+## Roadmap — Architecture Evolution
+
+### Phase 1: Lazy-load heavy modules (Short-term)
+Use dynamic `import()` for modules with large bootstrap data (accounting BAS charts, templates, site-migration). Keeps static registry metadata but defers heavy logic until the module is actually activated. Reduces initial bundle size without architectural changes.
+
+### Phase 2: Manifest / Implementation split (Medium-term)
+Separate each module into two layers:
+- **Manifest** (static) — metadata, skills list, Zod schemas, dependencies. Always loaded.
+- **Implementation** (lazy) — `publish()`, bootstrap seeders, heavy business logic. Loaded on demand via `import()`.
+
+This enables the registry to know *what* every module can do without loading *how* it does it.
+
+### Phase 3: Runtime module loader (Long-term)
+Introduce a runtime module-loader that reads module manifests from the database, enabling:
+- **Hot-install** — add modules without rebuild (Odoo app-store model)
+- **Per-tenant configuration** — different module sets per deployment
+- **Community marketplace** — third-party modules loaded at runtime
+- **FlowPilot skill discovery** — agent discovers new capabilities without code changes
+
+Trade-offs: requires runtime dependency resolution, loses some TypeScript compile-time safety, adds startup latency for async loading. Mitigated by keeping manifests statically typed and validating at registration time.
+
+### Current state (April 2026)
+All 37 modules use `defineModule()` with static imports. Registration happens at build-time in `ModuleRegistry` constructor. Enabled/disabled is a runtime flag that controls UI visibility and pre-flight checks — not code loading.
+
+---
+
 *The Business Operating System. FlowPilot runs the business so you can build it.*
