@@ -549,6 +549,64 @@ Plugin future:       Context + Execution = plugin (in SaaS)
                      Reasoning = orchestrator (external)
 ```
 
+### The Data Locality Law
+
+There is a deeper principle at work here — one that transcends agent architecture and touches computer science fundamentals:
+
+> **The closer computation sits to data, the cheaper each decision becomes.**
+
+This is the same principle that drives CPU caches, CDN edge nodes, and database read replicas. It applies to agents with equal force:
+
+```
+L1 cache:     CPU register          →  <1ns     (instant)
+L2 cache:     Local agent in SaaS   →  ~5ms     (direct DB query, compiled prompt)
+L3 cache:     MCP resource call     →  ~10ms    (serialized, schema-bound)
+Main memory:  Full MCP polling      →  ~60ms    (12 calls, 6,000 tokens)
+Disk:         Screen-scraping GUI   →  seconds  (fragile, lossy)
+```
+
+#### Where Depth Always Wins: Inside the System
+
+A local agent can execute `SELECT ... JOIN ... JOIN ... WHERE ...` across 10 tables in 5ms and extract exactly the 12 data points it needs. No MCP resource will ever match this — serialization always loses dimensions. The local agent sees the **full relational graph**; the external agent sees **pre-selected projections**.
+
+This is why embedded agents will always have a depth advantage for **intra-system reasoning**: lead scoring that combines CRM history + website behavior + email engagement + booking patterns + payment history in a single query.
+
+#### Where Breadth Wins: Above the Systems
+
+But the Data Locality Law has a critical exception:
+
+> **Breadth wins when the insight requires cross-system correlation.**
+
+An orchestrator sitting *above* 15 SaaS systems sees patterns that no individual local agent can detect:
+
+- "Your leads are dropping" (CRM) + "employee turnover spiked" (HR/Workday) → correlation: understaffed sales team
+- "Support tickets rising" (Helpdesk) + "deployment frequency doubled" (DevOps) → correlation: quality regression
+- "Content engagement down" (CMS) + "competitor launched campaign" (Market Intel) → correlation: market shift
+
+No single SaaS agent — no matter how deeply embedded — can see these cross-boundary patterns. This is the orchestrator's **irreducible advantage**.
+
+#### The Architectural Implication
+
+This creates a natural division of labor that neither side can fully subsume:
+
+```
+┌─────────────────────────────────────────────┐
+│  ORCHESTRATOR (Cross-System Breadth)        │
+│  Sees: correlations across 15 systems       │
+│  Strength: strategic planning, reallocation │
+│  Weakness: shallow per-system understanding │
+├─────────────────────────────────────────────┤
+│  LOCAL AGENT (Intra-System Depth)           │
+│  Sees: full relational graph of one system  │
+│  Strength: domain expertise, proactivity    │
+│  Weakness: blind to external context        │
+└─────────────────────────────────────────────┘
+```
+
+Neither the "driver" (orchestrator) nor the "domain expert" (local agent) is complete alone. The orchestrator needs the local agent's depth to make good decisions *within* each system. The local agent needs the orchestrator's breadth to understand *why* its local metrics are changing.
+
+This isn't a temporary architectural limitation — it's a **fundamental property of distributed information systems**. It will persist regardless of protocol improvements, plugin architectures, or model capabilities.
+
 ### The Strategic Question for SaaS Builders
 
 > Will your platform be the one where orchestrators **want** to install their plugin?
