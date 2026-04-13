@@ -446,4 +446,90 @@ An orchestrator can replace the *execution layer*. It cannot replace the *initia
 
 ---
 
-*This chapter documents FlowWink's actual implementation of MCP skill exposure and agent governance analysis (April 2026), serving as both a guide and a reference architecture for agentic SaaS platforms.*
+## The Plugin Thesis — From Polling to Residency (2027–2030)
+
+The convenience gradient described above isn't a permanent moat — it's a **challenge that the industry will solve**. Here's how.
+
+### The Problem with MCP Polling
+
+Today (2026), an external orchestrator builds context through sequential MCP calls:
+
+```
+Orchestrator → resource://health         → 200ms
+             → resource://objectives      → 150ms
+             → resource://identity        → 100ms
+             → tool://list_leads          → 300ms
+             → tool://analytics_summary   → 250ms
+             ─────────────────────────────
+             Total: ~1000ms + token cost for 5 round-trips
+```
+
+Compare this to a native embedded agent:
+
+```
+FlowPilot → prompt-compiler → direct DB queries → 50ms total
+          → heartbeat cron triggers automatically
+          → full context in a single assembled prompt
+```
+
+The difference: **12–20× latency**, plus token overhead for serialization/deserialization at every hop. More importantly, the native agent has a **heartbeat** — it doesn't wait to be asked. The external orchestrator must either poll continuously (expensive) or react only when triggered (loses proactivity).
+
+### The Inevitable Evolution: Orchestrator Plugins
+
+The solution is predictable: orchestrators will deploy **local plugins** (call them "Residents", "Envoys", or "Nerves") inside each SaaS system they manage.
+
+```
+2026 (Today):    Orchestrator ──MCP──→ SaaS (12 calls per session)
+2028 (Near):     Orchestrator ──owns──→ Plugin-in-SaaS (1 briefing per session)
+2030 (Mature):   Orchestrator ──owns──→ Resident (continuous local awareness)
+```
+
+A plugin is essentially the orchestrator's **local eyes and ears**:
+
+| Capability | MCP Polling (Today) | Resident Plugin (Tomorrow) |
+|------------|--------------------|-----------------------------|
+| Context assembly | Multiple round-trips | Single local query (~50ms) |
+| Proactive triggers | External scheduler/polling | Native heartbeat inside SaaS |
+| Domain awareness | Rebuilt every session | Persistent, always warm |
+| Token cost | High (serialize/deserialize per call) | Minimal (local briefing) |
+| Latency | ~1000ms per context build | ~50ms (same as native agent) |
+
+### What This Means for SaaS Platforms
+
+The plugin becomes the orchestrator's **prompt compiler** — the exact same component that gives embedded agents their advantage today. The key insight:
+
+> **The convenience gradient collapses when the orchestrator can install a local resident.**
+
+This means the *real* moat for a SaaS platform isn't the embedded agent's speed advantage. It's:
+
+1. **Domain logic depth** — the scoring models, business rules, and compliance logic that the plugin still needs to call
+2. **Data gravity** — years of operational data that can't be replicated
+3. **Module ecosystem** — the breadth of integrated capabilities (CRM + CMS + Commerce + Booking + Accounting in one system)
+
+### FlowWink's Position
+
+FlowWink is already architecturally prepared for this future:
+
+- The **prompt compiler** exists and could be exposed as a plugin API
+- **Heartbeat protocol** is stored as editable config in `agent_memory` — a plugin could run the same loop
+- **MCP resources** (`resource://health`, `resource://objectives`) provide the observation layer
+- **Module manifests** describe every capability in machine-readable format
+
+A future "Orchestrator Plugin SDK" is essentially: *package what FlowPilot already does, but let the orchestrator own the reasoning loop*.
+
+```
+FlowPilot today:     Reasoning + Context + Execution = one agent
+Plugin future:       Context + Execution = plugin (in SaaS)
+                     Reasoning = orchestrator (external)
+```
+
+### The Strategic Question for SaaS Builders
+
+> Will your platform be the one where orchestrators **want** to install their plugin?
+> Or will it be the one they route around?
+
+The answer depends on the same factors as any API economy: **richness of capabilities**, **quality of domain logic**, and **ease of integration**. Platforms that expose their full skill surface via MCP today are building the foundation for plugin residency tomorrow.
+
+---
+
+*This chapter documents FlowWink's actual implementation of MCP skill exposure, agent governance analysis, and forward-looking plugin architecture (April 2026), serving as both a guide and a reference architecture for agentic SaaS platforms.*
