@@ -178,4 +178,94 @@ FlowWink har redan byggt API:t (skills). Nu handlar det om att öppna dörren (`
 
 ---
 
+## The Moat Paradox — Öppenhet som konkurrensfördel
+
+### Frågan alla SaaS-leverantörer ställer sig
+
+> "Om vi exponerar alla våra operationer via MCP — förlorar vi vår moat?"
+
+### Vad marknaden visar (Q1 2026)
+
+De stora gör det redan:
+
+| Leverantör | MCP-strategi | Intern agent |
+|-----------|-------------|-------------|
+| **Salesforce** | Agentforce MCP Beta (jan 2026) — alla CRM-operationer exponerade | Agentforce/Einstein behåller djupet |
+| **Microsoft** | Foundry + Dynamics via MCP | Copilot som intern orkestrator |
+| **SAP** | ERP-operationer via MCP | Joule som intern agent |
+| **FlowWink** | 126 skills, 42% exponerade (mål: ~90%) | FlowPilot som intern operatör |
+
+MCP SDK har **97 miljoner** månatliga nedladdningar (feb 2026). Det är inte en trend — det är infrastruktur.
+
+### Vad som commoditiseras vs vad som förblir moat
+
+```
+┌─────────────────────────────────────────────────────┐
+│  COMMODITISERAS (MCP öppnar detta)                  │
+│  ──────────────────────────────────                 │
+│  • CRUD-operationer (skapa lead, uppdatera order)   │
+│  • Data-läsning (rapporter, dashboards)             │
+│  • Enkel automation (mail vid event)                │
+│  • Standardintegrationer mellan system              │
+├─────────────────────────────────────────────────────┤
+│  FÖRBLIR MOAT (MCP exponerar inte detta)            │
+│  ──────────────────────────────────                 │
+│  • Djup domänlogik (CPQ-prissättning, lead-scoring, │
+│    produktionsplanering, compliance-regler)          │
+│  • Data gravity (10 år av CRM-historik)             │
+│  • Proaktivitet (heartbeats, autonoma loopar)       │
+│  • Kontextuellt minne (soul, objectives, learnings) │
+│  • Branschspecifik compliance & audit               │
+└─────────────────────────────────────────────────────┘
+```
+
+### Paradoxen: Ju mer du öppnar, desto mer lock-in skapar du
+
+**Stripe-effekten:** Stripe blev det mest inlåsande betalningssystemet genom att vara det *enklaste* API:t att integrera mot — inte genom att vara stängt.
+
+Samma mönster gäller MCP:
+
+1. ClawOne integrerar mot FlowWinks `qualify_lead` + `place_order` + `manage_invoice`
+2. ClawOnes workflows blir **beroende av FlowWinks domänlogik**
+3. Att byta ut FlowWink kräver att alla workflows skrivs om
+4. **Lock-in genom adoption, inte genom stängsel**
+
+```
+Stängt SaaS:   "Du kan inte gå för vi håller ditt data"     → Frustration
+Öppet SaaS:    "Du vill inte gå för allt fungerar så bra"   → Lojalitet
+```
+
+### Tre moat-lager i Agent-eran
+
+| Lager | Vad det skyddar | Exempel |
+|-------|----------------|---------|
+| **1. Plattforms-API (MCP)** | Adoption + integration gravity | FlowWink skills exponerade = fler konsumenter = mer lock-in |
+| **2. Domänlogik** | Affärsregler som inte syns i API:t | `qualify_lead` returnerar en score — men scoringmodellen är intern |
+| **3. Intern agent** | Proaktivitet + kontext + minne | FlowPilot agerar utan trigger, med 4 nivåer av minne och soul |
+
+### Varför FlowWinks position är unik
+
+```
+Salesforce → Öppen via MCP → Agentforce behåller djupet → Proprietärt + dyrt
+SAP        → Öppen via MCP → Joule behåller djupet     → Proprietärt + dyrt
+FlowWink   → Öppen via MCP → FlowPilot behåller djupet → Open source + self-hosted
+```
+
+FlowWinks moat är *inte* vendor lock-in (det är open source). Moaten är:
+
+1. **Community + modulekosystem** — fler moduler = mer värde = svårare att lämna
+2. **Operatörens kontext** — FlowPilots soul, memory och objectives är unika per installation
+3. **Federationsstandard** — A2A + MCP gör FlowWink till en nod i ett agentnätverk
+4. **Self-hosted suveränitet** — ditt data, din agent, dina regler
+
+### Vad det betyder strategiskt
+
+> **Stäng inte dörren. Bygg en bättre tröskel.**
+
+Varje skill som exponeras via MCP är en integrationspunkt som gör FlowWink svårare att ersätta. Varje extern agent som lär sig operera via FlowWinks API är en konsument som förstärker plattformens position.
+
+Att *inte* exponera skills via MCP är att välja Oracles strategi från 2005: stäng in allt och hoppas att ingen hittar ett alternativ. Att exponera allt är att välja Stripes strategi: gör det så enkelt att ingen *vill* hitta ett alternativ.
+
+---
+
 *Se även: [Access Gap Analysis](./flowpilot-vs-clawone-access-gap.md) · [Embedded vs Orchestrated](./embedded-vs-orchestrated-autonomy.md)*
