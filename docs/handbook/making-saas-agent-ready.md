@@ -257,15 +257,33 @@ The platform that's easiest to orchestrate becomes the hardest to replace. Every
 
 ## Checklist
 
-- [ ] Audit all skills → categorize as Business vs Agent-Internal
-- [ ] Set `mcp_exposed = true` on all business skills
-- [ ] Enrich descriptions with `Use when:` / `NOT for:` markers
-- [ ] Implement advisory locks with TTL expiry
-- [ ] Expose lock/release as MCP tools
-- [ ] Add observability resources (health, activity, objectives)
-- [ ] Define trust tiers and API key scoping
-- [ ] Keep agent-internal skills (soul, memory, reflection) private
-- [ ] Document which skills are exposed and which are restricted
+- [x] Audit all skills → categorize as Business vs Agent-Internal
+- [x] Set `mcp_exposed = true` on all business skills (110/126 = 87%)
+- [x] Enrich descriptions with `Use when:` / `NOT for:` markers
+- [x] Implement advisory locks with TTL expiry (`agent_locks` table)
+- [x] Expose lock/release as MCP tools + REST endpoints
+- [x] Add observability resources (health, activity, objectives, automations, heartbeat)
+- [x] Define trust tiers and API key scoping
+- [x] Keep agent-internal skills (soul, memory, reflection) private (16 skills)
+- [ ] Document which skills are exposed and which are restricted (auto-generated registry)
+
+---
+
+## FlowWink Implementation Status (April 2026)
+
+| Component | Status | Details |
+|-----------|--------|---------|
+| **Skill Exposure** | ✅ Done | 110/126 skills (87%) exposed via MCP |
+| **Three Pillars** | ⚠️ Partial | Definition + Description complete. Instructions kept as FlowPilot advantage. |
+| **Concurrency Locks** | ✅ Done | `acquire_lock` + `release_lock` as MCP tools + REST endpoints |
+| **Observability** | ✅ Done | 10 MCP resources: health, skills, modules, activity, peers, identity, templates, objectives, automations, heartbeat |
+| **Trust Boundaries** | ✅ Done | API key auth with scopes, 16 internal-only skills |
+
+### MCP Surface Summary
+
+**Tools:** ~110 business skills + `acquire_lock` + `release_lock`
+**Resources:** 10 read-only snapshots
+**REST compatibility:** Full mirror at `/rest/tools`, `/rest/resources/:key`, `/rest/execute`, `/rest/lock/acquire`, `/rest/lock/release`
 
 ---
 
