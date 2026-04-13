@@ -374,4 +374,76 @@ Testing whether OpenClaw can effectively operate FlowWink via MCP tools alone, w
 
 ---
 
-*This chapter documents FlowWink's actual implementation of MCP skill exposure (April 2026), serving as both a guide and a reference architecture for agentic SaaS platforms.*
+## Agent Governance: Who Drives?
+
+The most consequential architectural decision in any agentic SaaS isn't which tools to expose — it's **where objectives live**. This determines who sets the agenda, who measures progress, and who course-corrects when things go wrong.
+
+### The Two Models
+
+#### Model 1: Objectives in the Orchestrator
+
+The external agent (e.g., OpenClaw) owns all goals. The SaaS platform is pure "claws" — hands that execute, with no will of their own.
+
+```
+┌─────────────┐         ┌─────────────┐
+│ Orchestrator │ ──────→ │  SaaS       │
+│ (brain)      │  goals  │  (claws)    │
+│ "Drive here" │         │  "Yes sir"  │
+└─────────────┘         └─────────────┘
+```
+
+| Pros | Cons |
+|------|------|
+| One agent, one plan — no conflicts | Orchestrator lacks deep domain context |
+| Orchestrator sees the full picture across systems | Every goal needs explicit instruction — no proactivity |
+| SaaS stays simple — just skills, no "will" | If orchestrator goes down → nothing drives goals forward |
+| Natural fit for Scenario B | "Dumb terminal" risk: the SaaS becomes replaceable |
+
+#### Model 2: Objectives in the SaaS
+
+The platform has its own agenda. The orchestrator acts as strategic advisor, not driver.
+
+```
+┌─────────────┐         ┌─────────────┐
+│ Orchestrator │ ←read── │  SaaS       │
+│ (advisor)    │         │  (operator) │
+│ "I see gaps" │         │  "On it"    │
+└─────────────┘         └─────────────┘
+```
+
+| Pros | Cons |
+|------|------|
+| Proactivity preserved — heartbeat drives goals autonomously | Two "wills" in Scenario C — requires governance protocol |
+| Deep domain context informs goal selection | Orchestrator can't freely redefine priorities |
+| Resilience — system works without orchestrator | More complex architecture |
+| Orchestrator can read objectives and coordinate without owning them | |
+
+### The Taxi Driver Insight
+
+A pure orchestrator without domain context is a **taxi driver who doesn't know the city**. It can drive where you point, but it never suggests better routes.
+
+That's *exactly* what an embedded agent does that an external orchestrator cannot: **proactively propose goals based on what it sees in the data.**
+
+- The embedded agent notices "we have zero blog posts" and proposes a content objective
+- The orchestrator only acts when explicitly told "write a blog post"
+
+### Governance Per Scenario
+
+| Scenario | Who owns objectives? | Why |
+|----------|---------------------|-----|
+| **A — Embedded only** | The SaaS (FlowPilot) | It's the only operator. Proactivity is the product. |
+| **B — External only** | The Orchestrator | Clean separation. SaaS = claws. No competing wills. |
+| **C — Hybrid** | Both — with protocol | Embedded agent proposes, orchestrator can override. Requires conflict resolution. |
+
+### The Strategic Implication
+
+> **Scenario B tests whether external control works operationally.**
+> **But it also reveals what is lost without embedded intelligence — and that is proactivity.**
+
+This is the real "moat" of an agentic SaaS platform: not the API surface (which is open), but the **embedded operator that knows the domain deeply enough to act without being asked.**
+
+An orchestrator can replace the *execution layer*. It cannot replace the *initiative layer* — unless it builds the same depth of domain context, at which point it's no longer external. It has become embedded.
+
+---
+
+*This chapter documents FlowWink's actual implementation of MCP skill exposure and agent governance analysis (April 2026), serving as both a guide and a reference architecture for agentic SaaS platforms.*
