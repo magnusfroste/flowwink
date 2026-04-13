@@ -126,6 +126,32 @@ async function executeSkill(
   return body;
 }
 
+// ---------- lock helpers ----------
+
+async function acquireLock(lane: string, lockedBy: string, ttlSeconds: number): Promise<{ acquired: boolean; lane: string }> {
+  const sb = serviceClient();
+  const { data, error } = await sb.rpc('try_acquire_agent_lock', {
+    p_lane: lane,
+    p_locked_by: lockedBy,
+    p_ttl_seconds: ttlSeconds,
+  });
+  if (error) {
+    console.error(`Lock acquire failed for '${lane}':`, error.message);
+    return { acquired: false, lane };
+  }
+  return { acquired: data === true, lane };
+}
+
+async function releaseLock(lane: string): Promise<{ released: boolean; lane: string }> {
+  const sb = serviceClient();
+  const { error } = await sb.rpc('release_agent_lock', { p_lane: lane });
+  if (error) {
+    console.error(`Lock release failed for '${lane}':`, error.message);
+    return { released: false, lane };
+  }
+  return { released: true, lane };
+}
+
 // ---------- resource fetchers ----------
 
 async function fetchResource(resourceKey: string): Promise<unknown> {
@@ -205,8 +231,60 @@ async function fetchResource(resourceKey: string): Promise<unknown> {
         hasSeoSettings: t.hasSeoSettings,
       }));
     }
+
+    // ── New resources for external orchestration ──
+
+    case "objectives": {
+      const { data } = await sb
+        .from("agent_objectives")
+        .select("id, goal, status, progress, success_criteria, constraints, created_at, updated_at, locked_by, locked_at")
+        .in("status", ["active", "pending", "paused"])
+        .order("created_at", { ascending: false })
+        .limit(20);
+      return {
+        objectives: data ?? [],
+        count: data?.length ?? 0,
+        timestamp: new Date().toISOString(),
+      };
+    }
+
+    case "automations": {
+      const { data } = await sb
+        .from("agent_automations")
+        .select("id, name, description, trigger_type, trigger_config, skill_name, enabled, last_triggered_at, next_run_at, run_count, last_error")
+        .order("name");
+      return {
+        automations: data ?? [],
+        active_count: (data ?? []).filter((a: any) => a.enabled).length,
+        total_count: data?.length ?? 0,
+        timestamp: new Date().toISOString(),
+      };
+    }
+
+    case "heartbeat": {
+      // Latest heartbeat activity
+      const [lastHeartbeat, heartbeatMemory] = await Promise.all([
+        sb.from("agent_activity")
+          .select("id, status, duration_ms, created_at, token_usage, output")
+          .eq("skill_name", "heartbeat")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .single(),
+        sb.from("agent_memory")
+          .select("value, updated_at")
+          .eq("key", "heartbeat_state")
+          .single(),
+      ]);
+
+      return {
+        last_run: lastHeartbeat.data ?? null,
+        state: heartbeatMemory.data?.value ?? null,
+        state_updated_at: heartbeatMemory.data?.updated_at ?? null,
+        timestamp: new Date().toISOString(),
+      };
+    }
+
     default: {
-      // Check for templates/:id pattern
       if (resourceKey.startsWith("template:")) {
         const templateId = resourceKey.replace("template:", "");
         const template = (templateAuditData as any[]).find((t: any) => t.id === templateId);
@@ -246,14 +324,54 @@ async function createMcpServer(): Promise<McpServer> {
     });
   }
 
+  // ── Lock tools for concurrency ──
+
+  server.tool("acquire_lock", {
+    description: "Acquire an advisory lock on a resource lane to prevent concurrent operations. Use when: you are about to modify a specific entity (lead, order, page) and need exclusive access. NOT for: read-only operations.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        lane: { type: "string", description: "Lock lane identifier, e.g. 'lead_abc123' or 'blog_post_xyz'" },
+        locked_by: { type: "string", description: "Identifier for the agent acquiring the lock (default: 'mcp')" },
+        ttl_seconds: { type: "number", description: "Time-to-live in seconds before auto-expiry (default: 60, max: 300)" },
+      },
+      required: ["lane"],
+    },
+    handler: async (args: Record<string, unknown>) => {
+      const lane = args.lane as string;
+      const lockedBy = (args.locked_by as string) || "mcp";
+      const ttl = Math.min(Number(args.ttl_seconds) || 60, 300);
+      const result = await acquireLock(lane, lockedBy, ttl);
+      return { content: [{ type: "text" as const, text: JSON.stringify(result) }] };
+    },
+  });
+
+  server.tool("release_lock", {
+    description: "Release an advisory lock on a resource lane. Use when: you have finished modifying an entity and want to allow other agents to operate on it. Always release locks after completing your operation.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        lane: { type: "string", description: "Lock lane identifier to release" },
+      },
+      required: ["lane"],
+    },
+    handler: async (args: Record<string, unknown>) => {
+      const result = await releaseLock(args.lane as string);
+      return { content: [{ type: "text" as const, text: JSON.stringify(result) }] };
+    },
+  });
+
   const resourceDefs: Array<{ key: string; uri: string; name: string; description: string }> = [
-    { key: "modules",  uri: "flowwink://modules",  name: "FlowWink Modules",  description: "All available modules and their enabled/disabled status" },
-    { key: "health",   uri: "flowwink://health",   name: "Site Health",       description: "Current site statistics: pages, posts, leads, bookings, orders, products, active objectives" },
-    { key: "skills",   uri: "flowwink://skills",   name: "Skill Registry",    description: "All FlowPilot skills with category, scope, trust level, and enabled status" },
-    { key: "activity", uri: "flowwink://activity", name: "Recent Activity",   description: "Last 20 FlowPilot actions with skill name, status, duration, and timestamps" },
-    { key: "peers",    uri: "flowwink://peers",    name: "Federation Peers",  description: "Connected A2A/MCP peers with status, capabilities, and last seen time" },
-    { key: "identity", uri: "flowwink://identity", name: "FlowPilot Identity", description: "FlowPilot's soul, identity, and agent configuration" },
-    { key: "templates", uri: "flowwink://templates", name: "Site Templates",    description: "All available starter templates with SEO audit summaries — page counts, meta descriptions, title lengths, product images, blog post quality" },
+    { key: "modules",     uri: "flowwink://modules",     name: "FlowWink Modules",    description: "All available modules and their enabled/disabled status" },
+    { key: "health",      uri: "flowwink://health",      name: "Site Health",          description: "Current site statistics: pages, posts, leads, bookings, orders, products, active objectives" },
+    { key: "skills",      uri: "flowwink://skills",      name: "Skill Registry",       description: "All FlowPilot skills with category, scope, trust level, and enabled status" },
+    { key: "activity",    uri: "flowwink://activity",    name: "Recent Activity",      description: "Last 20 FlowPilot actions with skill name, status, duration, and timestamps" },
+    { key: "peers",       uri: "flowwink://peers",       name: "Federation Peers",     description: "Connected A2A/MCP peers with status, capabilities, and last seen time" },
+    { key: "identity",    uri: "flowwink://identity",    name: "FlowPilot Identity",   description: "FlowPilot's soul, identity, and agent configuration" },
+    { key: "templates",   uri: "flowwink://templates",   name: "Site Templates",       description: "All available starter templates with SEO audit summaries" },
+    { key: "objectives",  uri: "flowwink://objectives",  name: "Active Objectives",    description: "FlowPilot's active, pending and paused objectives with progress, success criteria, and lock status. Use to understand what the embedded agent is working towards and coordinate." },
+    { key: "automations", uri: "flowwink://automations", name: "Automations",          description: "All configured automations with trigger type, schedule, last run, and error status. Use to avoid duplicating scheduled work." },
+    { key: "heartbeat",   uri: "flowwink://heartbeat",   name: "Heartbeat Status",     description: "FlowPilot's last heartbeat run: timing, token usage, and current state. Use to understand when FlowPilot last operated and what it prioritized." },
   ];
 
   for (const r of resourceDefs) {
@@ -312,15 +430,37 @@ app.get("/rest/tools", async (c) => {
 
 app.get("/rest/resources", (c) => {
   const resources = [
-    { key: "health",   description: "Site statistics: pages, posts, leads, bookings, orders, products, active objectives" },
-    { key: "skills",   description: "Full skill registry with category, scope, trust level, enabled status" },
-    { key: "modules",  description: "Module configuration (enabled/disabled)" },
-    { key: "activity", description: "Last 20 FlowPilot actions" },
-    { key: "peers",      description: "Federation peers with status and capabilities" },
-    { key: "identity",  description: "FlowPilot soul, identity, and agent configuration" },
-    { key: "templates", description: "All starter templates with SEO audit summaries (page counts, meta, titles, products)" },
+    { key: "health",       description: "Site statistics: pages, posts, leads, bookings, orders, products, active objectives" },
+    { key: "skills",       description: "Full skill registry with category, scope, trust level, enabled status" },
+    { key: "modules",      description: "Module configuration (enabled/disabled)" },
+    { key: "activity",     description: "Last 20 FlowPilot actions" },
+    { key: "peers",        description: "Federation peers with status and capabilities" },
+    { key: "identity",     description: "FlowPilot soul, identity, and agent configuration" },
+    { key: "templates",    description: "All starter templates with SEO audit summaries" },
+    { key: "objectives",   description: "Active objectives with progress, criteria, and lock status" },
+    { key: "automations",  description: "All automations with triggers, schedules, and run history" },
+    { key: "heartbeat",    description: "Last heartbeat run timing, state, and token usage" },
   ];
   return c.json({ resources }, 200, corsHeaders);
+});
+
+// ── Lock REST endpoints ──
+
+app.post("/rest/lock/acquire", async (c) => {
+  const body = await c.req.json().catch(() => ({}));
+  const { lane, locked_by, ttl_seconds } = body as { lane?: string; locked_by?: string; ttl_seconds?: number };
+  if (!lane) return c.json({ error: "Missing 'lane' field" }, 400, corsHeaders);
+  const ttl = Math.min(Number(ttl_seconds) || 60, 300);
+  const result = await acquireLock(lane, locked_by || "mcp", ttl);
+  return c.json(result, result.acquired ? 200 : 409, corsHeaders);
+});
+
+app.post("/rest/lock/release", async (c) => {
+  const body = await c.req.json().catch(() => ({}));
+  const { lane } = body as { lane?: string };
+  if (!lane) return c.json({ error: "Missing 'lane' field" }, 400, corsHeaders);
+  const result = await releaseLock(lane);
+  return c.json(result, 200, corsHeaders);
 });
 
 app.get("/rest/resources/templates/:id", async (c) => {
