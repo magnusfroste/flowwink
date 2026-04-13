@@ -450,29 +450,55 @@ An orchestrator can replace the *execution layer*. It cannot replace the *initia
 
 The convenience gradient described above isn't a permanent moat — it's a **challenge that the industry will solve**. Here's how.
 
-### The Problem with MCP Polling
+### The Real Cost of MCP Polling (It's Not Latency)
 
-Today (2026), an external orchestrator builds context through sequential MCP calls:
+A common first instinct is that the embedded agent's advantage is **network latency** — fewer hops, faster response. But this argument collapses under scrutiny:
 
-```
-Orchestrator → resource://health         → 200ms
-             → resource://objectives      → 150ms
-             → resource://identity        → 100ms
-             → tool://list_leads          → 300ms
-             → tool://analytics_summary   → 250ms
-             ─────────────────────────────
-             Total: ~1000ms + token cost for 5 round-trips
-```
+> **If the orchestrator and the SaaS run in the same cloud region (or even the same datacenter), each MCP hop is <5ms. Twelve calls = 60ms. That's noise compared to AI inference time (2–8 seconds).**
 
-Compare this to a native embedded agent:
+Critics are right to dismiss latency. Cloud AI models like Anthropic, OpenAI, and Gemini all run in remote datacenters — nobody worries about the round-trip to the model. Why would the round-trip to an MCP resource be different?
+
+**It wouldn't.** The real costs are elsewhere:
+
+#### 1. Token Economics (The Actual Moat)
+
+Every MCP resource call returns serialized data that the orchestrator must include in its prompt. A native agent uses a **prompt compiler** that selects and compresses only what's relevant:
 
 ```
-FlowPilot → prompt-compiler → direct DB queries → 50ms total
-          → heartbeat cron triggers automatically
-          → full context in a single assembled prompt
+Native agent:       DB query → compiler picks 800 relevant tokens → prompt
+External agent:     12 MCP calls → 12 full JSON payloads → ~6,000 tokens of raw context
 ```
 
-The difference: **12–20× latency**, plus token overhead for serialization/deserialization at every hop. More importantly, the native agent has a **heartbeat** — it doesn't wait to be asked. The external orchestrator must either poll continuously (expensive) or react only when triggered (loses proactivity).
+At scale (heartbeat every 30 minutes, 48 cycles/day), the token difference compounds:
+
+| | Native (Compiled) | External (MCP) |
+|---|---|---|
+| Context tokens per cycle | ~800 | ~6,000 |
+| Daily token cost (48 cycles) | ~38,400 | ~288,000 |
+| Monthly overhead | ~1.15M tokens | ~8.64M tokens |
+| **Cost multiplier** | **1×** | **~7.5×** |
+
+This isn't about speed — it's about **cost per decision**. The native agent makes cheaper decisions because it never serializes data it doesn't need.
+
+#### 2. Orchestration Complexity
+
+The native agent runs **one function** that reads the database and builds a prompt. The external orchestrator must:
+
+- Manage 12+ MCP tool/resource calls per context assembly
+- Handle partial failures (what if `resource://objectives` times out but `resource://health` succeeds?)
+- Maintain session state across calls
+- Deduplicate overlapping context from different resources
+- Handle schema evolution when the SaaS updates its MCP interface
+
+This is solvable engineering — but it's engineering that the native agent simply doesn't need.
+
+#### 3. Proactivity Gap (The Heartbeat Problem)
+
+The most significant difference isn't speed or cost — it's **who initiates**. The native agent has a heartbeat cron that triggers automatically. The external orchestrator must either:
+
+- **Poll continuously** — expensive in tokens and API calls
+- **React to webhooks** — loses the "check the pulse" proactivity that catches problems before they're visible
+- **Run its own scheduler** — adding infrastructure that replicates what the SaaS already has
 
 ### The Inevitable Evolution: Orchestrator Plugins
 
@@ -484,15 +510,15 @@ The solution is predictable: orchestrators will deploy **local plugins** (call t
 2030 (Mature):   Orchestrator ──owns──→ Resident (continuous local awareness)
 ```
 
-A plugin is essentially the orchestrator's **local eyes and ears**:
+A plugin is essentially the orchestrator's **local prompt compiler**:
 
 | Capability | MCP Polling (Today) | Resident Plugin (Tomorrow) |
 |------------|--------------------|-----------------------------|
-| Context assembly | Multiple round-trips | Single local query (~50ms) |
+| Context assembly | 12 calls, ~6,000 tokens | Single compiled briefing, ~800 tokens |
 | Proactive triggers | External scheduler/polling | Native heartbeat inside SaaS |
-| Domain awareness | Rebuilt every session | Persistent, always warm |
-| Token cost | High (serialize/deserialize per call) | Minimal (local briefing) |
-| Latency | ~1000ms per context build | ~50ms (same as native agent) |
+| Domain awareness | Cold-start every session | Persistent, always warm |
+| Token cost per cycle | ~6,000 | ~800 (same as native agent) |
+| Network latency | ~60ms (negligible) | ~5ms (also negligible) |
 
 ### What This Means for SaaS Platforms
 
