@@ -10,6 +10,42 @@ read_when: Planning to give external agents full parity with FlowPilot
 
 ---
 
+## Grundläggande distinktion: Två lager, två datakällor
+
+```
+┌──────────────────────────────────────────────────────┐
+│  FLOWWINK (SaaS-plattformen)                         │
+│  ─────────────────────────────                       │
+│  pages, products, orders, leads, blog_posts,         │
+│  bookings, invoices, employees, projects, KB...      │
+│  → Affärsdata. Exponeras redan delvis via MCP.       │
+├──────────────────────────────────────────────────────┤
+│  FLOWPILOT (Agent-lagret)                            │
+│  ─────────────────────────                           │
+│  agent_memory (soul, identity, learnings),           │
+│  agent_objectives, agent_skills, agent_automations,  │
+│  agent_workflows, agent_activity                     │
+│  → Agentens interna tillstånd. Privat hjärna.        │
+└──────────────────────────────────────────────────────┘
+```
+
+**"Semantiskt minne"** (`agent_memory` med pgvector) tillhör **FlowPilot** — inte FlowWink. Det är agentens dagbok, inte plattformens affärsdata.
+
+### Vad ClawOne faktiskt behöver
+
+| Datakategori | Ägare | ClawOne behöver? | Motivering |
+|--------------|-------|-----------------|------------|
+| Sidor, produkter, ordrar, leads | **FlowWink** (SaaS) | ✅ Ja | Affärsoperationer — samma som en anställd |
+| Moduler, integrationer, site health | **FlowWink** (SaaS) | ✅ Ja | Situationsmedvetenhet |
+| Soul, identity, agents | **FlowPilot** (Agent) | 👁️ Read-only | Förstå vem den samarbetar med |
+| Learnings, preferences (`agent_memory`) | **FlowPilot** (Agent) | ❌ Nej | En agents privata minne — kognitiv integritet |
+| Objectives, plans | **FlowPilot** (Agent) | ⚠️ Läsa ja, skriva med approval | Koordinering, inte övertagande |
+| Skills, automations, workflows | **FlowPilot** (Agent) | ⚠️ Begränsat | Observera ja, skapa med sandbox |
+
+> **Principen:** ClawOne ska ha full access till **FlowWink** (plattformen den opererar på) men begränsad access till **FlowPilot** (den andra agenten som redan bor där).
+
+---
+
 ## Nuläge: Vad MCP Server exponerar idag
 
 | Kanal | Exponerat | Antal |
@@ -18,115 +54,125 @@ read_when: Planning to give external agents full parity with FlowPilot
 | **MCP Resources** | modules, health, skills, activity, peers, identity, templates | 7 |
 | **REST /rest/tools** | Samma som MCP tools | ~15–25 |
 
-## FlowPilots fulla verktygslåda (37+ built-in tools)
+## Gap 1: FlowWink-data (Affärsdata) — Kritiskt
 
-### ❌ Helt otillgängliga via MCP idag
+### Problem
+Inte alla FlowWink-modulers skills är exponerade via MCP. ClawOne kan t.ex. hantera leads men kanske inte bookings eller HR.
 
-| Kategori | Tools | Vad de gör |
-|----------|-------|------------|
-| **Memory** | `memory_write`, `memory_read`, `memory_delete` | Läs/skriv/sök i semantiskt minne (pgvector hybrid search) |
-| **Objectives** | `objective_update_progress`, `objective_complete`, `objective_delete`, `propose_objective`, `decompose_objective`, `advance_plan` | Skapa, planera och avancera strategiska mål |
-| **Self-modification** | `skill_create`, `skill_update`, `skill_delete`, `skill_disable`, `skill_enable`, `skill_instruct`, `skill_read`, `skill_list` | Skapa/ändra egna färdigheter (evolving agent) |
-| **Soul evolution** | `soul_update`, `agents_update`, `heartbeat_protocol_update` | Ändra sin egen personlighet, regler och heartbeat-beteende |
-| **Reflection** | `reflect` | Självutvärdering + auto-persist av insikter |
-| **Automations** | `automation_create`, `automation_list`, `automation_update`, `automation_delete`, `execute_automation` | Skapa/hantera schemalagda automation-regler |
-| **Workflows** | `workflow_create`, `workflow_execute`, `workflow_list`, `workflow_update`, `workflow_delete` | DAG-baserade multi-step arbetsflöden |
-| **Delegation** | `delegate_task` | A2A-delegation till specialist-agenter (SEO, content, sales) |
-| **Skill Packs** | `skill_pack_list`, `skill_pack_install` | Installera förpaketerade färdighetskollektioner |
-| **Chaining** | `chain_skills` | Kedja flera skills i sekvens |
-| **Outcomes** | `evaluate_outcomes`, `record_outcome` | Utvärdera och registrera resultat av åtgärder |
+### Lösning
+Systematiskt granska alla `agent_skills` och sätta `mcp_exposed = true` på alla skills som opererar på FlowWink-affärsdata:
 
-### ❌ Infrastruktur utan MCP-motsvarighet
+| Modul | Exempel-skills | MCP-exponerad? |
+|-------|---------------|----------------|
+| CRM | `manage_lead`, `qualify_lead`, `manage_deal` | ✅ Redan |
+| E-commerce | `place_order`, `manage_product` | ✅ Redan |
+| Content | `manage_page`, `manage_blog` | ✅ Redan |
+| Booking | `manage_booking`, `manage_service` | ❓ Kontrollera |
+| HR | `manage_employee`, `manage_leave` | ❓ Kontrollera |
+| Projects | `manage_project`, `manage_task` | ❓ Kontrollera |
+| Accounting | `manage_invoice`, `manage_expense` | ❓ Kontrollera |
+| Documents | `manage_document` | ❓ Kontrollera |
+| Contracts | `manage_contract` | ❓ Kontrollera |
 
-| Kapabilitet | FlowPilot | ClawOne via MCP |
-|-------------|-----------|-----------------|
-| **6-lagers system prompt** | Kompileras från soul + identity + agents + CMS-schema + memories + objectives | ❌ Ingen — ClawOne har sin egen prompt |
-| **Heartbeat (proaktivitet)** | 7-stegs autonom loop var 12:e timma | ❌ Kan inte triggas utifrån |
-| **Self-healing** | Auto-karantän efter 3 fel, linked automations disabled | ❌ Ingen tillgång |
-| **Context pruning** | Automatisk kompaktering vid 60k tokens + fact extraction | ❌ Hanteras internt |
-| **Skill budget tiering** | Progressiv tool-komprimering (full → compact → drop) | ❌ Intern optimering |
-| **Concurrency locks** | Lane-baserade lås (`try_acquire_agent_lock`) | ❌ Risk för race conditions |
-| **Token tracking** | Budgetgränser, pre-budget flush, anti-runaway guards | ❌ ClawOne har egen budget |
-| **Integrity checks** | SHA-256 skill hash drift detection, 5-point validation | ❌ Ingen extern access |
-| **Trace IDs** | `fp_xxx` genom hela kedjan | ❌ ClawOnes trace-id bryts vid MCP-gränsen |
-| **Activity audit** | Alla tool-anrop loggas i `agent_activity` | ⚠️ Bara MCP-anrop loggas, inte ClawOnes interna resonemang |
+**Åtgärd:** Audit alla skills → exponera FlowWink-skills → behåll FlowPilot-skills som interna.
+
+### Risk
+Låg — detta är affärsdata med befintlig RLS. Samma säkerhetsmodell som för en inloggad admin.
 
 ---
 
-## Gap-kategorier — Vad krävs för paritet?
+## Gap 2: FlowPilot-state (Agent-tillstånd) — Selektivt
 
-### Gap 1: Memory (Kritiskt)
-**Problem:** ClawOne kan inte läsa eller skriva till FlowWinks semantiska minne.
-**Lösning:** Exponera `memory_read`, `memory_write`, `memory_delete` som MCP-tools.
-**Risk:** En extern agent som skriver till minnet kan förorena FlowPilots kontext.
-**Mitigation:** Separata namespaces (`clawone:*` prefix) eller read-only access med write-approval.
+### Vad FlowPilot har som ClawOne INTE bör få
 
-### Gap 2: Objectives & Planning (Kritiskt)
-**Problem:** ClawOne kan inte föreslå, planera eller avancera strategiska mål.
-**Lösning:** Exponera `propose_objective`, `decompose_objective`, `advance_plan` som MCP-tools.
-**Risk:** Extern agent kan skapa motstridiga objectives.
-**Mitigation:** `requires_approval: true` på alla objective-mutations från externa agenter.
+| Built-in Tool | Syfte | Exponera? | Motivering |
+|---------------|-------|-----------|------------|
+| `memory_write` | Skriv till agentens minne | ❌ | Förorenar FlowPilots kontext |
+| `memory_read` | Sök i agentens minne | ❌ | Privat kognitiv data |
+| `memory_delete` | Radera minnen | ❌ | Destruktivt mot annan agent |
+| `soul_update` | Ändra personlighet | ❌ | Identitetssuveränitet |
+| `agents_update` | Ändra operativa regler | ❌ | Intern styrning |
+| `heartbeat_protocol_update` | Ändra autonom loop | ❌ | Infrastruktur |
+| `reflect` | Självutvärdering | ❌ | Intern process |
 
-### Gap 3: Self-Modification (Farligt)
-**Problem:** ClawOne kan inte skapa eller ändra skills.
-**Lösning:** Exponera `skill_create`, `skill_update` via MCP.
-**Risk:** Extern agent som skapar arbiträra skills = potentiell säkerhetslucka.
-**Mitigation:** Alla externt skapade skills startar med `enabled: false` + `trust_level: untrusted` + `requires_approval: true`.
+### Vad som KAN exponeras (med gating)
 
-### Gap 4: Soul/Identity Evolution (Känsligt)
-**Problem:** ClawOne kan inte ändra FlowPilots personlighet eller operativa regler.
-**Fråga:** *Bör* en extern agent kunna ändra systemets identitet?
-**Rekommendation:** ❌ Exponera INTE. Soul-evolution bör vara exklusivt intern. Exponera istället som read-only MCP-resource.
-
-### Gap 5: Heartbeat & Proaktivitet (Arkitektoniskt)
-**Problem:** ClawOne kan inte trigga eller styra FlowPilots heartbeat.
-**Lösning A:** Exponera `trigger_heartbeat` som MCP-tool (startar en heartbeat-cykel on-demand).
-**Lösning B:** Exponera heartbeat-status som MCP-resource (`flowwink://heartbeat/status`).
-**Rekommendation:** B (observera) + begränsad A (trigga med approval).
-
-### Gap 6: Automations & Workflows (Viktigt)
-**Problem:** ClawOne kan inte skapa eller köra automations/workflows.
-**Lösning:** Exponera CRUD + execute som MCP-tools.
-**Risk:** Extern agent skapar en automation som kör varje minut.
-**Mitigation:** Rate limits + `enabled: false` default + max frequency cap.
-
-### Gap 7: Concurrency & Safety (Infrastruktur)
-**Problem:** Utan lås kan ClawOne och FlowPilot kollidera.
-**Lösning:** MCP-tool `acquire_operation_lock` som wrapper kring `try_acquire_agent_lock`.
-**Kritiskt:** Utan detta = data races vid parallell operation.
+| Built-in Tool | Syfte | Exponera som | Gating |
+|---------------|-------|-------------|--------|
+| `propose_objective` | Föreslå nytt mål | MCP tool | `requires_approval: true` |
+| `decompose_objective` | Bryta ner mål i steg | MCP tool (read-only variant) | Bara på egna förslag |
+| `skill_create` | Skapa ny färdighet | MCP tool | `enabled: false` + `trust_level: untrusted` |
+| `automation_create` | Skapa automation | MCP tool | `enabled: false` + rate limit |
+| `workflow_execute` | Köra arbetsflöde | MCP tool | Bara befintliga, godkända workflows |
+| `delegate_task` | Delegera till specialist | MCP tool | Samma begränsningar som FlowPilot |
 
 ---
 
-## Sammanfattning: Implementeringsordning
+## Gap 3: Concurrency & Safety — Kritiskt
 
-| Prioritet | Gap | Åtgärd | Komplexitet |
-|-----------|-----|--------|-------------|
-| 🔴 P0 | Memory read/write | MCP-tools med namespace isolation | Medel |
-| 🔴 P0 | Concurrency locks | MCP-tool wrapper | Låg |
-| 🟡 P1 | Objectives & Planning | MCP-tools med approval gating | Medel |
-| 🟡 P1 | Automations CRUD | MCP-tools med rate limits | Medel |
-| 🟡 P1 | Workflows execute | MCP-tool | Låg |
-| 🟠 P2 | Skill CRUD | MCP-tools med trust sandbox | Hög |
-| 🟠 P2 | Heartbeat trigger | MCP-tool med approval | Låg |
-| ⚪ P3 | Delegation (A2A) | MCP-tool → delegate_task | Medel |
-| 🔒 Never | Soul/Identity write | Förblir intern — read-only resource | N/A |
+### Problem
+Utan concurrency-lås kan ClawOne och FlowPilot kollidera (t.ex. båda uppdaterar samma lead samtidigt).
+
+### Lösning
+Exponera `acquire_operation_lock` som MCP-tool — wrapper kring `try_acquire_agent_lock`:
+
+```
+ClawOne → MCP: acquire_lock(lane: "lead_123", ttl: 60)
+  → FlowPilot blockeras automatiskt från samma lane
+  → ClawOne utför operation
+  → MCP: release_lock(lane: "lead_123")
+```
+
+**Utan detta = data races. P0-prioritet.**
 
 ---
 
-## Den filosofiska frågan
+## Gap 4: Observabilitet — Viktigt
 
-> **Ska ClawOne ha samma access = samma autonomi?**
+### Problem
+ClawOne kan inte se vad FlowPilot gör eller planerar.
 
-Nej. Samma **access** ≠ samma **autonomi**. FlowPilots autonomi kommer från:
+### Lösning (MCP Resources — redan delvis på plats)
 
-1. **Kontext** — 6-lagers prompt med full CMS-medvetenhet
-2. **Proaktivitet** — Heartbeat som agerar utan trigger
-3. **Kontinuitet** — Persistent minne som byggs över tid
-4. **Identitet** — Soul som definierar beteende och värderingar
+| Resource | Status | Innehåll |
+|----------|--------|----------|
+| `flowwink://activity` | ✅ Finns | Senaste 20 FlowPilot-åtgärder |
+| `flowwink://identity` | ✅ Finns | Soul + identity (read-only) |
+| `flowwink://health` | ✅ Finns | Site-statistik |
+| `flowwink://objectives` | ❌ Saknas | Aktiva mål + progress |
+| `flowwink://heartbeat/status` | ❌ Saknas | Senaste heartbeat, nästa körning |
+| `flowwink://automations` | ❌ Saknas | Aktiva automations + senaste triggers |
 
-ClawOne kan få samma **verktygsaccess** via MCP utan att få samma autonomi. Den använder verktygen med sin *egen* kontext, sitt *eget* resonemang, sin *egen* soul. 
+---
 
-**Analogin:** Att ge någon nycklarna till ditt hus ger dem inte din kunskap om var sakerna ligger.
+## Reviderad prioriteringsordning
+
+| Prioritet | Gap | Lager | Åtgärd |
+|-----------|-----|-------|--------|
+| 🔴 P0 | FlowWink-skills audit | FlowWink | `mcp_exposed = true` på alla affärsdata-skills |
+| 🔴 P0 | Concurrency locks | Infrastruktur | MCP-tool wrapper kring `try_acquire_agent_lock` |
+| 🟡 P1 | Objectives (läsa + föreslå) | FlowPilot | MCP resource + tool med approval |
+| 🟡 P1 | Observabilitet (resources) | FlowPilot | 3 nya MCP resources |
+| 🟠 P2 | Skill CRUD (sandboxed) | FlowPilot | MCP-tools med trust sandbox |
+| 🟠 P2 | Automations/Workflows | FlowPilot | MCP-tools med rate limits |
+| 🔒 Aldrig | Memory write/delete | FlowPilot | Privat — kognitiv integritet |
+| 🔒 Aldrig | Soul/Identity write | FlowPilot | Privat — identitetssuveränitet |
+
+---
+
+## Den korrigerade filosofin
+
+> **Tidigare (fel):** "Ge ClawOne samma access som FlowPilot har"
+> **Nu (rätt):** "Ge ClawOne full access till FlowWink-plattformen + observatörsroll gentemot FlowPilot"
+
+ClawOne och FlowPilot är **två separata agenter** med **delad arbetsplats** (FlowWink). De behöver:
+
+1. **Samma verktyg** för att operera på affärsdata (FlowWink-skills) ✅
+2. **Koordineringsmekanismer** för att inte kollidera (locks, objectives) ⚠️
+3. **Ömsesidig observabilitet** för att förstå varandras tillstånd (resources) ⚠️
+4. **Separata hjärnor** med respekterad kognitiv integritet (memory, soul) 🔒
+
+**Analogin uppdaterad:** Två konsulter på samma företag. Båda har tillgång till alla system (FlowWink). Men de läser inte varandras anteckningar (memory) och de ändrar inte varandras personlighet (soul). De koordinerar via delade mål (objectives) och respekterar varandras arbetsuppgifter (locks).
 
 ---
 
