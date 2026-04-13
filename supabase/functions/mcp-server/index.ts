@@ -430,15 +430,37 @@ app.get("/rest/tools", async (c) => {
 
 app.get("/rest/resources", (c) => {
   const resources = [
-    { key: "health",   description: "Site statistics: pages, posts, leads, bookings, orders, products, active objectives" },
-    { key: "skills",   description: "Full skill registry with category, scope, trust level, enabled status" },
-    { key: "modules",  description: "Module configuration (enabled/disabled)" },
-    { key: "activity", description: "Last 20 FlowPilot actions" },
-    { key: "peers",      description: "Federation peers with status and capabilities" },
-    { key: "identity",  description: "FlowPilot soul, identity, and agent configuration" },
-    { key: "templates", description: "All starter templates with SEO audit summaries (page counts, meta, titles, products)" },
+    { key: "health",       description: "Site statistics: pages, posts, leads, bookings, orders, products, active objectives" },
+    { key: "skills",       description: "Full skill registry with category, scope, trust level, enabled status" },
+    { key: "modules",      description: "Module configuration (enabled/disabled)" },
+    { key: "activity",     description: "Last 20 FlowPilot actions" },
+    { key: "peers",        description: "Federation peers with status and capabilities" },
+    { key: "identity",     description: "FlowPilot soul, identity, and agent configuration" },
+    { key: "templates",    description: "All starter templates with SEO audit summaries" },
+    { key: "objectives",   description: "Active objectives with progress, criteria, and lock status" },
+    { key: "automations",  description: "All automations with triggers, schedules, and run history" },
+    { key: "heartbeat",    description: "Last heartbeat run timing, state, and token usage" },
   ];
   return c.json({ resources }, 200, corsHeaders);
+});
+
+// ── Lock REST endpoints ──
+
+app.post("/rest/lock/acquire", async (c) => {
+  const body = await c.req.json().catch(() => ({}));
+  const { lane, locked_by, ttl_seconds } = body as { lane?: string; locked_by?: string; ttl_seconds?: number };
+  if (!lane) return c.json({ error: "Missing 'lane' field" }, 400, corsHeaders);
+  const ttl = Math.min(Number(ttl_seconds) || 60, 300);
+  const result = await acquireLock(lane, locked_by || "mcp", ttl);
+  return c.json(result, result.acquired ? 200 : 409, corsHeaders);
+});
+
+app.post("/rest/lock/release", async (c) => {
+  const body = await c.req.json().catch(() => ({}));
+  const { lane } = body as { lane?: string };
+  if (!lane) return c.json({ error: "Missing 'lane' field" }, 400, corsHeaders);
+  const result = await releaseLock(lane);
+  return c.json(result, 200, corsHeaders);
 });
 
 app.get("/rest/resources/templates/:id", async (c) => {
