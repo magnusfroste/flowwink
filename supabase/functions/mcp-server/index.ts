@@ -324,14 +324,54 @@ async function createMcpServer(): Promise<McpServer> {
     });
   }
 
+  // ── Lock tools for concurrency ──
+
+  server.tool("acquire_lock", {
+    description: "Acquire an advisory lock on a resource lane to prevent concurrent operations. Use when: you are about to modify a specific entity (lead, order, page) and need exclusive access. NOT for: read-only operations.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        lane: { type: "string", description: "Lock lane identifier, e.g. 'lead_abc123' or 'blog_post_xyz'" },
+        locked_by: { type: "string", description: "Identifier for the agent acquiring the lock (default: 'mcp')" },
+        ttl_seconds: { type: "number", description: "Time-to-live in seconds before auto-expiry (default: 60, max: 300)" },
+      },
+      required: ["lane"],
+    },
+    handler: async (args: Record<string, unknown>) => {
+      const lane = args.lane as string;
+      const lockedBy = (args.locked_by as string) || "mcp";
+      const ttl = Math.min(Number(args.ttl_seconds) || 60, 300);
+      const result = await acquireLock(lane, lockedBy, ttl);
+      return { content: [{ type: "text" as const, text: JSON.stringify(result) }] };
+    },
+  });
+
+  server.tool("release_lock", {
+    description: "Release an advisory lock on a resource lane. Use when: you have finished modifying an entity and want to allow other agents to operate on it. Always release locks after completing your operation.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        lane: { type: "string", description: "Lock lane identifier to release" },
+      },
+      required: ["lane"],
+    },
+    handler: async (args: Record<string, unknown>) => {
+      const result = await releaseLock(args.lane as string);
+      return { content: [{ type: "text" as const, text: JSON.stringify(result) }] };
+    },
+  });
+
   const resourceDefs: Array<{ key: string; uri: string; name: string; description: string }> = [
-    { key: "modules",  uri: "flowwink://modules",  name: "FlowWink Modules",  description: "All available modules and their enabled/disabled status" },
-    { key: "health",   uri: "flowwink://health",   name: "Site Health",       description: "Current site statistics: pages, posts, leads, bookings, orders, products, active objectives" },
-    { key: "skills",   uri: "flowwink://skills",   name: "Skill Registry",    description: "All FlowPilot skills with category, scope, trust level, and enabled status" },
-    { key: "activity", uri: "flowwink://activity", name: "Recent Activity",   description: "Last 20 FlowPilot actions with skill name, status, duration, and timestamps" },
-    { key: "peers",    uri: "flowwink://peers",    name: "Federation Peers",  description: "Connected A2A/MCP peers with status, capabilities, and last seen time" },
-    { key: "identity", uri: "flowwink://identity", name: "FlowPilot Identity", description: "FlowPilot's soul, identity, and agent configuration" },
-    { key: "templates", uri: "flowwink://templates", name: "Site Templates",    description: "All available starter templates with SEO audit summaries — page counts, meta descriptions, title lengths, product images, blog post quality" },
+    { key: "modules",     uri: "flowwink://modules",     name: "FlowWink Modules",    description: "All available modules and their enabled/disabled status" },
+    { key: "health",      uri: "flowwink://health",      name: "Site Health",          description: "Current site statistics: pages, posts, leads, bookings, orders, products, active objectives" },
+    { key: "skills",      uri: "flowwink://skills",      name: "Skill Registry",       description: "All FlowPilot skills with category, scope, trust level, and enabled status" },
+    { key: "activity",    uri: "flowwink://activity",    name: "Recent Activity",      description: "Last 20 FlowPilot actions with skill name, status, duration, and timestamps" },
+    { key: "peers",       uri: "flowwink://peers",       name: "Federation Peers",     description: "Connected A2A/MCP peers with status, capabilities, and last seen time" },
+    { key: "identity",    uri: "flowwink://identity",    name: "FlowPilot Identity",   description: "FlowPilot's soul, identity, and agent configuration" },
+    { key: "templates",   uri: "flowwink://templates",   name: "Site Templates",       description: "All available starter templates with SEO audit summaries" },
+    { key: "objectives",  uri: "flowwink://objectives",  name: "Active Objectives",    description: "FlowPilot's active, pending and paused objectives with progress, success criteria, and lock status. Use to understand what the embedded agent is working towards and coordinate." },
+    { key: "automations", uri: "flowwink://automations", name: "Automations",          description: "All configured automations with trigger type, schedule, last run, and error status. Use to avoid duplicating scheduled work." },
+    { key: "heartbeat",   uri: "flowwink://heartbeat",   name: "Heartbeat Status",     description: "FlowPilot's last heartbeat run: timing, token usage, and current state. Use to understand when FlowPilot last operated and what it prioritized." },
   ];
 
   for (const r of resourceDefs) {
