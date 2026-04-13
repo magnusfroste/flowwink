@@ -255,34 +255,121 @@ The platform that's easiest to orchestrate becomes the hardest to replace. Every
 
 ---
 
+## The Three Scenarios: A → B → C
+
+Making a SaaS agent-ready isn't one thing — it's three distinct scenarios with increasing complexity:
+
+### Scenario A: Embedded Agent (Vertical Integration)
+
+```
+┌─────────────────────────┐
+│  SaaS Platform          │
+│  ┌───────────────────┐  │
+│  │ Embedded Agent    │  │
+│  │ (FlowPilot)       │  │
+│  │ Skills + Memory   │  │
+│  │ + Objectives      │  │
+│  └───────────────────┘  │
+└─────────────────────────┘
+```
+
+The agent lives inside the platform. It has direct database access, deep context, institutional memory, and a proactive heartbeat. **No MCP surface needed** — the agent *is* the platform.
+
+**What you need:** Steps 1-2 (Skill audit + Three Pillars) for internal quality. Steps 3-5 are irrelevant — there's no external agent to coordinate with.
+
+### Scenario B: External Orchestrator (Horizontal)
+
+```
+┌─────────────────────────┐
+│  SaaS Platform          │
+│  ┌───────────────────┐  │
+│  │ MCP Surface       │  │
+│  │ ~90% skills       │  │
+│  │ + health/identity │  │
+│  └────────┬──────────┘  │
+└───────────┼─────────────┘
+            │
+       ┌────┴────┐
+       │External │
+       │Agent    │
+       └─────────┘
+```
+
+No embedded agent. An external orchestrator (like OpenClaw) operates the platform via MCP tools. **The platform is a "dumb shell"** that the external agent brings to life.
+
+**What you need:** Steps 1-2 (Skill audit + Three Pillars) + Step 5 (Trust boundaries). Locks and agent-state resources (heartbeat, objectives) are unnecessary — there's only one operator.
+
+### Scenario C: Hybrid Multi-Agent (The Hard One)
+
+```
+┌─────────────────────────────────────────┐
+│  SaaS Platform                          │
+│  ┌──────────┐  ┌──────────┐  ┌───────┐ │
+│  │Embedded  │  │MCP       │  │Observ.│ │
+│  │Agent     │  │Surface   │  │Resourc│ │
+│  │(deep)    │  │+ locks   │  │es     │ │
+│  └──────────┘  └────┬─────┘  └───────┘ │
+└─────────────────────┼──────────────────┘
+                      │
+                 ┌────┴────┐
+                 │External │
+                 │Agent    │
+                 └─────────┘
+```
+
+Both an embedded agent AND an external orchestrator operate simultaneously. **This is where concurrency locks, objective visibility, and heartbeat status become critical.** Two agents sharing one workspace must coordinate to avoid collisions.
+
+**What you need:** All five steps. This is the full architecture.
+
+### Implementation Roadmap
+
+| Phase | Scenario | Focus | Complexity |
+|-------|----------|-------|------------|
+| **Phase 1** | A — Embedded only | Prove the vertical model works | ★★☆ |
+| **Phase 2** | B — External only | Prove MCP surface is sufficient | ★★★ |
+| **Phase 3** | C — Hybrid | Multi-agent coordination | ★★★★★ |
+
+**Rule: Don't build C until you've proven A and B independently.** The hardest problem in multi-agent systems isn't giving agents tools — it's making them collaborate without stepping on each other.
+
+---
+
 ## Checklist
 
+### Always Required (A, B, C)
 - [x] Audit all skills → categorize as Business vs Agent-Internal
 - [x] Set `mcp_exposed = true` on all business skills (110/126 = 87%)
 - [x] Enrich descriptions with `Use when:` / `NOT for:` markers
+- [x] Keep agent-internal skills (soul, memory, reflection) private (16 skills)
+
+### Required for B and C (External Access)
+- [x] Define trust tiers and API key scoping
+- [x] Expose business skills via MCP + REST compatibility layer
+
+### Required for C Only (Multi-Agent Coordination)
 - [x] Implement advisory locks with TTL expiry (`agent_locks` table)
 - [x] Expose lock/release as MCP tools + REST endpoints
-- [x] Add observability resources (health, activity, objectives, automations, heartbeat)
-- [x] Define trust tiers and API key scoping
-- [x] Keep agent-internal skills (soul, memory, reflection) private (16 skills)
-- [ ] Document which skills are exposed and which are restricted (auto-generated registry)
+- [x] Add observability resources (objectives, automations, heartbeat)
 
 ---
 
 ## FlowWink Implementation Status (April 2026)
 
-| Component | Status | Details |
-|-----------|--------|---------|
-| **Skill Exposure** | ✅ Done | 110/126 skills (87%) exposed via MCP |
-| **Three Pillars** | ⚠️ Partial | Definition + Description complete. Instructions kept as FlowPilot advantage. |
-| **Concurrency Locks** | ✅ Done | `acquire_lock` + `release_lock` as MCP tools + REST endpoints |
-| **Observability** | ✅ Done | 10 MCP resources: health, skills, modules, activity, peers, identity, templates, objectives, automations, heartbeat |
-| **Trust Boundaries** | ✅ Done | API key auth with scopes, 16 internal-only skills |
+| Component | Status | Scenario | Details |
+|-----------|--------|----------|---------|
+| **Skill Exposure** | ✅ Done | A, B, C | 110/126 skills (87%) exposed via MCP |
+| **Three Pillars** | ⚠️ Partial | A, B, C | Definition + Description complete. Instructions kept as embedded agent advantage. |
+| **Trust Boundaries** | ✅ Done | B, C | API key auth with scopes, 16 internal-only skills |
+| **Concurrency Locks** | ✅ Built | C | `acquire_lock` + `release_lock` — ready but relevant for hybrid only |
+| **Observability** | ✅ Built | C | objectives, automations, heartbeat resources — ready but relevant for hybrid only |
+
+### Current Phase: B (External Orchestrator Validation)
+
+Testing whether OpenClaw can effectively operate FlowWink via MCP tools alone, without FlowPilot's deep context and instruction layer.
 
 ### MCP Surface Summary
 
 **Tools:** ~110 business skills + `acquire_lock` + `release_lock`
-**Resources:** 10 read-only snapshots
+**Resources:** 10 read-only snapshots (health, skills, modules, activity, peers, identity, templates, objectives, automations, heartbeat)
 **REST compatibility:** Full mirror at `/rest/tools`, `/rest/resources/:key`, `/rest/execute`, `/rest/lock/acquire`, `/rest/lock/release`
 
 ---
