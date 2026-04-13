@@ -58,6 +58,7 @@ export { composioModule } from './composio-module';
 export { ticketsModule } from './tickets-module';
 export { siteMigrationModule, siteMigrationMeta } from './site-migration-module';
 export { developerModule } from './developer-module';
+export { flowpilotModule } from './flowpilot-module';
 
 // ── Legacy (not in ModulesSettings — kept for registry compatibility) ──
 export { globalBlocksModule } from './global-blocks-module';

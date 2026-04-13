@@ -25,7 +25,7 @@ import {
   purchasingModule, contractsModule, hrModule, documentsModule, projectsModule,
   slaModule, salesIntelligenceModule, growthModule, resumeModule,
   browserControlModule, federationModule, composioModule, ticketsModule,
-  siteMigrationModule, developerModule,
+  siteMigrationModule, developerModule, flowpilotModule,
   // Legacy modules (manual registration)
   globalBlocksModule, ordersModule,
 } from '@/lib/modules';
