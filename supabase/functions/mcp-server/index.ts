@@ -126,6 +126,32 @@ async function executeSkill(
   return body;
 }
 
+// ---------- lock helpers ----------
+
+async function acquireLock(lane: string, lockedBy: string, ttlSeconds: number): Promise<{ acquired: boolean; lane: string }> {
+  const sb = serviceClient();
+  const { data, error } = await sb.rpc('try_acquire_agent_lock', {
+    p_lane: lane,
+    p_locked_by: lockedBy,
+    p_ttl_seconds: ttlSeconds,
+  });
+  if (error) {
+    console.error(`Lock acquire failed for '${lane}':`, error.message);
+    return { acquired: false, lane };
+  }
+  return { acquired: data === true, lane };
+}
+
+async function releaseLock(lane: string): Promise<{ released: boolean; lane: string }> {
+  const sb = serviceClient();
+  const { error } = await sb.rpc('release_agent_lock', { p_lane: lane });
+  if (error) {
+    console.error(`Lock release failed for '${lane}':`, error.message);
+    return { released: false, lane };
+  }
+  return { released: true, lane };
+}
+
 // ---------- resource fetchers ----------
 
 async function fetchResource(resourceKey: string): Promise<unknown> {
@@ -205,8 +231,60 @@ async function fetchResource(resourceKey: string): Promise<unknown> {
         hasSeoSettings: t.hasSeoSettings,
       }));
     }
+
+    // ── New resources for external orchestration ──
+
+    case "objectives": {
+      const { data } = await sb
+        .from("agent_objectives")
+        .select("id, goal, status, progress, success_criteria, constraints, created_at, updated_at, locked_by, locked_at")
+        .in("status", ["active", "pending", "paused"])
+        .order("created_at", { ascending: false })
+        .limit(20);
+      return {
+        objectives: data ?? [],
+        count: data?.length ?? 0,
+        timestamp: new Date().toISOString(),
+      };
+    }
+
+    case "automations": {
+      const { data } = await sb
+        .from("agent_automations")
+        .select("id, name, description, trigger_type, trigger_config, skill_name, enabled, last_triggered_at, next_run_at, run_count, last_error")
+        .order("name");
+      return {
+        automations: data ?? [],
+        active_count: (data ?? []).filter((a: any) => a.enabled).length,
+        total_count: data?.length ?? 0,
+        timestamp: new Date().toISOString(),
+      };
+    }
+
+    case "heartbeat": {
+      // Latest heartbeat activity
+      const [lastHeartbeat, heartbeatMemory] = await Promise.all([
+        sb.from("agent_activity")
+          .select("id, status, duration_ms, created_at, token_usage, output")
+          .eq("skill_name", "heartbeat")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .single(),
+        sb.from("agent_memory")
+          .select("value, updated_at")
+          .eq("key", "heartbeat_state")
+          .single(),
+      ]);
+
+      return {
+        last_run: lastHeartbeat.data ?? null,
+        state: heartbeatMemory.data?.value ?? null,
+        state_updated_at: heartbeatMemory.data?.updated_at ?? null,
+        timestamp: new Date().toISOString(),
+      };
+    }
+
     default: {
-      // Check for templates/:id pattern
       if (resourceKey.startsWith("template:")) {
         const templateId = resourceKey.replace("template:", "");
         const template = (templateAuditData as any[]).find((t: any) => t.id === templateId);
