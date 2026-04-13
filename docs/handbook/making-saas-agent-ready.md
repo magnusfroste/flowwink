@@ -522,9 +522,9 @@ A plugin is essentially the orchestrator's **local prompt compiler**:
 
 ### What This Means for SaaS Platforms
 
-The plugin becomes the orchestrator's **prompt compiler** — the exact same component that gives embedded agents their advantage today. The key insight:
+The plugin becomes the orchestrator's **prompt compiler** — the exact same component that gives embedded agents their token efficiency today. The key insight:
 
-> **The convenience gradient collapses when the orchestrator can install a local resident.**
+> **The moat isn't network latency (that's a red herring). It's token economics and proactivity. The convenience gradient collapses when the orchestrator can install a local resident that compiles context instead of fetching it.**
 
 This means the *real* moat for a SaaS platform isn't the embedded agent's speed advantage. It's:
 
