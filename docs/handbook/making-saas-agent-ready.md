@@ -185,8 +185,17 @@ External agents need to understand the platform's current state without polling 
 | `platform://health` | Module status, error rates, uptime | Situational awareness |
 | `platform://activity` | Recent operations (last 20) | Coordination |
 | `platform://identity` | Platform personality, brand voice | Consistency |
-| `platform://objectives` | Active goals and progress | Alignment |
-| `platform://automations` | Scheduled tasks, triggers | Avoid duplication |
+| `platform://objectives` | Active goals, progress, lock status | **Strategic alignment** — prevents duplicate work |
+| `platform://automations` | Scheduled tasks, triggers, run history | **Avoids duplication** — external agent sees what's automated |
+| `platform://heartbeat` | Last run timing, state, token usage | **Operational timing** — know when the embedded agent last acted |
+
+### Why Each Resource Matters for External Orchestrators
+
+**Objectives:** Without visibility into active goals, an external agent operates blind. It might invest effort advancing a goal that FlowPilot already completed, or miss that a critical objective is blocked. The objectives resource provides the strategic context that a vertically integrated agent gets for free from its database access.
+
+**Automations:** FlowPilot schedules recurring work — weekly newsletters, daily lead scoring, hourly content checks. An external orchestrator without this visibility will duplicate work that's already handled. The automations resource is essentially a "don't touch this, it's already running" signal.
+
+**Heartbeat:** The embedded agent's proactive loop runs on a schedule. An external agent needs to know: Did it just run? Is it mid-execution? When will it next run? Without this, the orchestrator can't time its own operations to complement rather than collide with the embedded agent.
 
 **Rule: Resources are read-only. They inform, they don't mutate.**
 
