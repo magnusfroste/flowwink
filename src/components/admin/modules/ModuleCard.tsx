@@ -242,6 +242,15 @@ export function ModuleCard({
               </div>
             </div>
           )}
+
+          {isEnabled && !readiness.missingFlowPilot && readiness.flowPilotEnhancedButMissing && (
+            <div className="flex items-center gap-1.5 pt-1 border-t border-border/50">
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Bot className="h-3.5 w-3.5 shrink-0 text-amber-500" />
+                <span>Enhanced by FlowPilot (inactive)</span>
+              </div>
+            </div>
+          )}
           
           {isEnabled && readiness.missingAI && (
             <div className="flex items-center gap-1.5 pt-1 border-t border-border/50">
