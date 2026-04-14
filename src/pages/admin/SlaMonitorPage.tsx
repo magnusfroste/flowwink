@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useIsModuleEnabled } from '@/hooks/useModules';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminPageContainer } from '@/components/admin/AdminPageContainer';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -105,6 +106,7 @@ function StatsCards() {
 // ── Policies Tab ─────────────────────────────────────────────────────
 
 function PoliciesTab() {
+  const fpEnabled = useIsModuleEnabled('flowpilot');
   const { data: policies = [], isLoading } = useSlaPolicies();
   const updatePolicy = useUpdateSlaPolicy();
   const deletePolicy = useDeleteSlaPolicy();
@@ -388,6 +390,7 @@ function ViolationsTab() {
 // ── Page ─────────────────────────────────────────────────────────────
 
 export default function SlaMonitorPage() {
+  const fpEnabled = useIsModuleEnabled('flowpilot');
   return (
     <AdminLayout>
       <AdminPageContainer>

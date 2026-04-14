@@ -21,6 +21,7 @@ interface StockRow {
 }
 
 export function AutoReorderSettings() {
+  const fpEnabled = useIsModuleEnabled('flowpilot');
   const { toast } = useToast();
   const qc = useQueryClient();
 

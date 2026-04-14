@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 
 export default function TemplateGalleryPage() {
+  const fpEnabled = useIsModuleEnabled('flowpilot');
   const [searchQuery, setSearchQuery] = useState("");
   const [previewTemplate, setPreviewTemplate] = useState<StarterTemplate | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);

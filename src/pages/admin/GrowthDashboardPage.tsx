@@ -28,6 +28,7 @@ const statusVariant: Record<string, 'default' | 'secondary' | 'outline' | 'destr
 };
 
 export default function GrowthDashboardPage() {
+  const fpEnabled = useIsModuleEnabled('flowpilot');
   const { data, isLoading } = useGrowthDashboard();
   const m = data?.metrics;
   const campaigns = data?.campaigns ?? [];

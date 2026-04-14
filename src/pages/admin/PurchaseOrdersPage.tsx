@@ -11,6 +11,7 @@ import { useIsModuleEnabled } from '@/hooks/useModules';
 export default function PurchaseOrdersPage() {
   const [tab, setTab] = useState('list');
   const [editingId, setEditingId] = useState<string | null>(null);
+  const fpEnabled = useIsModuleEnabled('flowpilot');
 
   const openEditor = (id: string | null) => {
     setEditingId(id);
