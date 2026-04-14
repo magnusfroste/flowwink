@@ -258,13 +258,13 @@ export const defaultModulesSettings: ModulesSettings = {
   salesIntelligence: {
     enabled: false,
     name: 'Sales Intelligence',
-    description: 'Prospect research, fit analysis, and AI-powered introduction letters — requires AI and FlowPilot for autonomous prospecting',
+    description: 'Prospect research, fit analysis, and AI-powered introduction letters — enhanced by FlowPilot for autonomous prospecting chains',
     icon: 'Target',
     category: 'data',
     autonomy: 'agent-capable',
     adminUI: true,
     requiresAI: true,
-    requiresFlowPilot: true,
+    enhancedByFlowPilot: true,
     optionalIntegrations: ['hunter', 'jina', 'firecrawl', 'openai', 'gemini'],
   },
   resume: {
@@ -330,11 +330,12 @@ export const defaultModulesSettings: ModulesSettings = {
   tickets: {
     enabled: false,
     name: 'Tickets',
-    description: 'Helpdesk ticket management — Kanban pipeline with auto-categorization, KB matching, and SLA tracking',
+    description: 'Helpdesk ticket management — Kanban pipeline with auto-categorization, KB matching, and SLA tracking. Enhanced by FlowPilot for auto-triage.',
     icon: 'Headphones',
     category: 'communication',
     autonomy: 'agent-capable',
     adminUI: true,
+    enhancedByFlowPilot: true,
   },
   siteMigration: {
     enabled: true,
