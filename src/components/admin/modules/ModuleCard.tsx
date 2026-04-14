@@ -94,7 +94,7 @@ export function ModuleCard({
   
   // Integration readiness
   const readiness = useModuleReadiness(moduleId);
-  const hasIntegrationDeps = readiness.totalRequired > 0 || readiness.totalOptional > 0;
+  const hasIntegrationDeps = readiness.totalRequired > 0 || readiness.totalOptional > 0 || readiness.missingAI || readiness.missingFlowPilot;
   
   // Simplified capability indicators
   const canReceiveContent = capabilities.includes('content:receive');
@@ -233,8 +233,31 @@ export function ModuleCard({
             </div>
           )}
           
+          {/* Dependency warnings */}
+          {isEnabled && readiness.missingFlowPilot && (
+            <div className="flex items-center gap-1.5 pt-1 border-t border-border/50">
+              <div className="flex items-center gap-1.5 text-xs text-destructive">
+                <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                <span>Requires FlowPilot (disabled)</span>
+              </div>
+            </div>
+          )}
+          
+          {isEnabled && readiness.missingAI && (
+            <div className="flex items-center gap-1.5 pt-1 border-t border-border/50">
+              <button
+                onClick={() => navigate('/admin/integrations')}
+                className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 hover:opacity-70 transition-opacity cursor-pointer"
+              >
+                <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                <span>No AI provider configured</span>
+                <ArrowRight className="h-3 w-3 shrink-0" />
+              </button>
+            </div>
+          )}
+
           {/* Integration readiness indicator */}
-          {isEnabled && hasIntegrationDeps && (
+          {isEnabled && hasIntegrationDeps && !readiness.missingFlowPilot && !readiness.missingAI && (
             <div className="flex items-center gap-1.5 pt-1 border-t border-border/50">
               {!readiness.ready ? (
                 <button
