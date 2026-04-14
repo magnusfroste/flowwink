@@ -301,7 +301,7 @@ const MCP_RESOURCES = [
 ];
 
 export function AgentInvites() {
-  const [selectedMission, setSelectedMission] = useState<string>('full-audit');
+  const [selectedMission, setSelectedMission] = useState<string>('full-operator');
   const [customInstructions, setCustomInstructions] = useState('');
   const [agentName, setAgentName] = useState('');
   const [generatedPrompt, setGeneratedPrompt] = useState<string | null>(null);
