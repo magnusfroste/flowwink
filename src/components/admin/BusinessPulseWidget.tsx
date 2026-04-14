@@ -3,7 +3,6 @@ import { TrendingUp, TrendingDown, Minus, Activity, Users, Eye, FileText, Bot, S
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useLatestBriefing } from '@/hooks/useFlowPilotBriefings';
-import { useIsModuleEnabled } from '@/hooks/useModules';
 import { cn } from '@/lib/utils';
 
 function TrendIndicator({ value, unit = '%' }: { value: number | null | undefined; unit?: string }) {
