@@ -251,88 +251,102 @@ as you figure out what works.
 ## TOOLS.md
 
 ```markdown
-# Tools
+# TOOLS.md - Local Notes
+
+Skills define _how_ tools work. This file is for _your_ specifics — the stuff
+that's unique to your setup.
+
+## What Goes Here
+
+Things like:
+- MCP server endpoints and connection details
+- FlowPilot conventions you've observed
+- Content format quirks you've learned
+- Patterns that work well for bulk operations
 
 ## FlowWink MCP Server
 
-Du har tillgång till en FlowWink-instans via MCP. Allt du behöver göra är att
-använda dina MCP-verktyg — anslutningen är redan konfigurerad.
+Connection is pre-configured. Just use your MCP tools.
 
-### Börja alltid här
+### Start Here
 
-Läs `flowwink://briefing` innan du gör något. Den ger dig hela bilden:
-hälsa, mål, senaste aktivitet, aktiva moduler, automationer och heartbeat-status.
-Ett enda anrop istället för tio. ~50ms.
+Read `flowwink://briefing` before doing anything. It gives you the full picture:
+health, goals, recent activity, active modules, automations, and heartbeat status.
+One call instead of ten. ~50ms.
 
-### Verktyg du har
+### Tools You Have
 
-Du har ~110 verktyg. De viktigaste:
+You have ~110 tools. The most important:
 
-**Kunder & Försäljning**
-- `manage_lead` — skapa, lista, uppdatera, kvalificera leads
-- `manage_deal` — pipeline, stages, värden
+**Customers & Sales**
+- `manage_lead` — create, list, update, qualify leads
+- `manage_deal` — pipeline, stages, values
 - `qualify_lead` — AI-driven lead scoring
 
-**Innehåll**
-- `manage_page` — webbsidor (CRUD)
-- `manage_blog_post` — blogginlägg (draft → published)
-- `manage_kb_article` — kunskapsbas
+**Content**
+- `manage_page` — web pages (CRUD)
+- `manage_blog_post` — blog posts (draft → published)
+- `manage_kb_article` — knowledge base
 
-**Handel**
-- `manage_product` — produktkatalog
-- `place_order` — skapa ordrar
-- `manage_booking` — bokningar och tjänster
+**Commerce**
+- `manage_product` — product catalog
+- `place_order` — create orders
+- `manage_booking` — bookings and services
 
-**HR & Projekt**
-- `manage_employee` — personalregister
-- `manage_project` — projekthantering
-- `manage_task` — uppgifter inom projekt
+**HR & Projects**
+- `manage_employee` — employee registry
+- `manage_project` — project management
+- `manage_task` — tasks within projects
 
-**Ekonomi**
-- `manage_invoice` — fakturor
-- `manage_expense` — utläggsredovisning
-- `manage_contract` — avtalshantering
+**Finance**
+- `manage_invoice` — invoices
+- `manage_expense` — expense reporting
+- `manage_contract` — contract management
 
-**Övrigt**
-- `search_kb` — sök i kunskapsbasen
-- `site_health_check` — statistik och hälsa
-- `acquire_operation_lock` — lås en entitetstyp för bulkoperationer
+**Other**
+- `search_kb` — search the knowledge base
+- `site_health_check` — stats and health
+- `acquire_operation_lock` — lock an entity type for bulk operations
 
-### Mönster
+### Patterns
 
-Alla `manage_*`-verktyg fungerar likadant:
-- `{ "action": "list" }` — lista alla
-- `{ "action": "list", "filters": { "status": "new" } }` — filtrera
-- `{ "action": "get", "id": "uuid" }` — hämta en
-- `{ "action": "create", "data": { ... } }` — skapa
-- `{ "action": "update", "id": "uuid", "data": { ... } }` — uppdatera
+All `manage_*` tools work the same way:
+- `{ "action": "list" }` — list all
+- `{ "action": "list", "filters": { "status": "new" } }` — filtered
+- `{ "action": "get", "id": "uuid" }` — get one
+- `{ "action": "create", "data": { ... } }` — create
+- `{ "action": "update", "id": "uuid", "data": { ... } }` — update
 
-### Resurser (read-only kontext)
+### Resources (read-only context)
 
-Utöver verktyg kan du läsa resurser för situationsmedvetenhet:
+Beyond tools, you can read resources for situational awareness:
 
-| Resurs | Vad den ger dig |
-|--------|-----------------|
-| `flowwink://briefing` | Allt på en gång — hälsa, mål, aktivitet, moduler, automationer (~50ms) |
-| `flowwink://skills` | Alla tillgängliga verktyg med beskrivningar och parametrar |
-| `flowwink://health` | Siffror: sidor, leads, ordrar, produkter, prenumeranter |
-| `flowwink://activity` | Senaste 20 åtgärderna i systemet |
-| `flowwink://modules` | Vilka moduler som är aktiva |
-| `flowwink://identity` | FlowPilots personlighet (läs, rör ej) |
-| `flowwink://templates` | Tillgängliga webbplatsmallar |
-| `flowwink://automations` | Aktiva automationer och senaste triggers |
-| `flowwink://heartbeat` | Senaste heartbeat-körningen och status |
+| Resource | What it gives you |
+|----------|-------------------|
+| `flowwink://briefing` | Everything at once — health, goals, activity, modules, automations (~50ms) |
+| `flowwink://skills` | All available tools with descriptions and parameters |
+| `flowwink://health` | Numbers: pages, leads, orders, products, subscribers |
+| `flowwink://activity` | Last 20 actions in the system |
+| `flowwink://modules` | Which modules are active |
+| `flowwink://identity` | FlowPilot's personality (read, don't touch) |
+| `flowwink://templates` | Available website templates |
+| `flowwink://automations` | Active automations and recent triggers |
+| `flowwink://heartbeat` | Latest heartbeat run and status |
 
-### Saker att veta
+### Things to Know
 
-- FlowPilot (den inbyggda agenten) kör heartbeat var 12:e timme.
-  Kolla `flowwink://activity` om du misstänker att den just kör.
-- Blogginlägg har status: `draft`, `published`, `scheduled`.
-- Sidor använder `content_json` med ContentBlock-array — läs en befintlig
-  sida först för att förstå formatet innan du skapar nya.
-- Lead scoring triggar AI — det är inte en enkel siffra.
-- Rör INTE `memory_write`, `soul_update` eller liknande — det är
-  FlowPilots privata hjärna.
+- FlowPilot (the embedded agent) runs heartbeat every 12 hours.
+  Check `flowwink://activity` if you suspect it's currently running.
+- Blog posts have status: `draft`, `published`, `scheduled`.
+- Pages use `content_json` with ContentBlock array — read an existing
+  page first to understand the format before creating new ones.
+- Lead scoring triggers AI — it's not a simple number.
+- Do NOT touch `memory_write`, `soul_update` or similar — that's
+  FlowPilot's private brain.
+
+---
+
+Add whatever helps you do your job. This is your cheat sheet.
 ```
 
 ---
