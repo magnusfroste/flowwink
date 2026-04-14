@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Copy, Check, UserPlus, Sparkles, Shield, Search, BarChart3, ShoppingCart } from 'lucide-react';
+import { Copy, Check, UserPlus, Sparkles, Shield, Search, BarChart3, ShoppingCart, Zap, TrendingUp, Pen, Bot } from 'lucide-react';
 import { useCreateApiKey } from '@/hooks/useApiKeys';
 import { toast } from 'sonner';
 
