@@ -14,6 +14,10 @@ export interface ModuleReadiness {
   missingAI: boolean;
   /** True when the module needs FlowPilot but it's disabled */
   missingFlowPilot: boolean;
+  /** True when the module works without FlowPilot but gains proactive capabilities with it */
+  flowPilotEnhanced: boolean;
+  /** True when enhanced by FlowPilot AND FlowPilot is currently disabled */
+  flowPilotEnhancedButMissing: boolean;
 }
 
 const AI_PROVIDER_KEYS = ['openai', 'gemini', 'local_llm'] as const;
@@ -55,6 +59,10 @@ export function useModuleReadiness(moduleId: keyof ModulesSettings): ModuleReadi
   const missingFlowPilot = module?.requiresFlowPilot === true &&
     flowpilotConfig.enabled === false;
 
+  // Check enhancedByFlowPilot — works without but better with
+  const flowPilotEnhanced = module?.enhancedByFlowPilot === true;
+  const flowPilotEnhancedButMissing = flowPilotEnhanced && flowpilotConfig.enabled === false;
+
   return {
     ready: missingRequired.length === 0 && !missingAI && !missingFlowPilot,
     missingRequired,
@@ -65,6 +73,8 @@ export function useModuleReadiness(moduleId: keyof ModulesSettings): ModuleReadi
     totalOptional: optional.length,
     missingAI,
     missingFlowPilot,
+    flowPilotEnhanced,
+    flowPilotEnhancedButMissing,
   };
 }
 
