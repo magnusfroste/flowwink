@@ -328,7 +328,12 @@ export function AgentInvites() {
       const mcpUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/mcp-server`;
       const instructions = selectedMission === 'custom' ? customInstructions : mission.instructions;
 
-      const prompt = `You have been invited to inspect and audit a FlowWink site.
+      const isOperator = mission.category === 'operator';
+      const introLine = isOperator
+        ? `You are being onboarded as the **primary operator** of a FlowWink business platform. There is no built-in agent — you have full operational control.`
+        : `You have been invited to inspect and audit a FlowWink site.`;
+
+      const prompt = `${introLine}
 
 ## Connection
 
@@ -348,8 +353,8 @@ Authorization: Bearer ${rawKey}
 GET ${mcpUrl}/rest/resources
 Authorization: Bearer ${rawKey}
 
-# Read a specific resource (health, skills, modules, activity, peers, identity)
-GET ${mcpUrl}/rest/resources/health
+# Read a specific resource
+GET ${mcpUrl}/rest/resources/briefing
 Authorization: Bearer ${rawKey}
 
 # Execute a tool
@@ -367,31 +372,31 @@ Content-Type: application/json
 
 ## Quick Start
 
-1. Verify your connection: \`GET ${mcpUrl}/rest/resources/health\`
+1. ${isOperator ? 'Get full context' : 'Verify your connection'}: \`GET ${mcpUrl}/rest/resources/briefing\`
 2. Discover tools: \`GET ${mcpUrl}/rest/tools\`
-3. Read site context: \`GET ${mcpUrl}/rest/resources/skills\`
+3. ${isOperator ? 'Understand capabilities' : 'Read site context'}: \`GET ${mcpUrl}/rest/resources/skills\`
 
 ## Key Resources
 
 ${mission.focusResources.map(r => {
   const info = MCP_RESOURCES.find(mr => mr.uri === r);
   const key = r.replace('flowwink://', '');
-  return '- `/rest/resources/' + key + '` — ' + (info?.description || '');
+  return '- \`/rest/resources/' + key + '\` — ' + (info?.description || '');
 }).join('\n')}
 
 ## Key Tools
 
 These tools are most relevant for your mission:
-${mission.focusTools.map(t => '- `' + t + '`').join('\n')}
+${mission.focusTools.map(t => '- \`' + t + '\`').join('\n')}
 
 ## Your Mission: ${mission.name}
 
 ${instructions}
-
+${isOperator ? '' : `
 ## Reporting Protocol
 
-Use the \`openclaw_report_finding\` tool to report issues:
-\`\`\`
+Use the \\\`openclaw_report_finding\\\` tool to report issues:
+\\\`\\\`\\\`
 POST ${mcpUrl}/rest/execute
 Authorization: Bearer ${rawKey}
 Content-Type: application/json
@@ -405,17 +410,17 @@ Content-Type: application/json
     "type": "bug | ux_issue | suggestion | missing_feature | performance | positive"
   }
 }
-\`\`\`
+\\\`\\\`\\\`
 
-**Important**: Findings with severity "high" or "critical" automatically create objectives for FlowPilot, which will attempt to fix them autonomously.
-
+**Important**: Findings with severity "high" or "critical" automatically create objectives that can be acted on.
+`}
 ## Verify Connection
 
-\`GET ${mcpUrl}/rest/resources/health\` — should return site statistics and active objectives.`;
+\`GET ${mcpUrl}/rest/resources/briefing\` — should return identity, health metrics, active objectives, and module status.`;
 
       setGeneratedPrompt(prompt);
       toast.success('Invite prompt generated with API key');
-    } catch (err) {
+    } catch {
       toast.error('Failed to generate invite');
     } finally {
       setIsGenerating(false);
