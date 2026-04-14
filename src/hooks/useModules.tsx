@@ -272,6 +272,7 @@ export const defaultModulesSettings: ModulesSettings = {
     autonomy: 'agent-capable',
     adminUI: true,
     requiresAI: true,
+    enhancedByFlowPilot: true,
     optionalIntegrations: ['openai', 'gemini'],
   },
   browserControl: {
