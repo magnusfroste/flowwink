@@ -57,6 +57,21 @@ serve(async (req) => {
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, serviceKey);
 
+    // Module gate — FlowPilot must be enabled (Scenario B guard)
+    const { data: moduleSettings } = await supabase
+      .from('agent_memory')
+      .select('value')
+      .eq('key', 'modules_settings')
+      .maybeSingle();
+    
+    const flowpilotEnabled = moduleSettings?.value?.flowpilot?.enabled ?? true;
+    if (!flowpilotEnabled) {
+      return new Response(
+        JSON.stringify({ error: 'FlowPilot module is disabled' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Concurrency guard — one agent run per conversation
     const lane = conversation_id ? `operate:${conversation_id}` : null;
     if (lane) {

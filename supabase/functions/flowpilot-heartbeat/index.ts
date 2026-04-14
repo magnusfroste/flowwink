@@ -168,6 +168,21 @@ serve(async (req) => {
   const traceId = generateTraceId('hb');
 
   try {
+    // Module gate — skip heartbeat if FlowPilot module is disabled (Scenario B)
+    const { data: moduleSettings } = await supabase
+      .from('agent_memory')
+      .select('value')
+      .eq('key', 'modules_settings')
+      .maybeSingle();
+    
+    const flowpilotEnabled = moduleSettings?.value?.flowpilot?.enabled ?? true;
+    if (!flowpilotEnabled) {
+      console.log(`[heartbeat] trace=${traceId} FlowPilot module disabled — skipping`);
+      return new Response(
+        JSON.stringify({ skipped: true, reason: 'flowpilot_disabled', trace_id: traceId }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
     // Exponential backoff — check consecutive heartbeat failures
     const { data: recentHeartbeats } = await supabase
       .from('agent_activity')
