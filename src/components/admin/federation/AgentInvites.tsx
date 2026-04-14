@@ -288,12 +288,16 @@ Focus on issues that could prevent or discourage purchases.`,
 ];
 
 const MCP_RESOURCES = [
+  { uri: 'flowwink://briefing', description: 'Aggregated context: identity, health, objectives, activity, modules (~50ms)' },
   { uri: 'flowwink://health', description: 'Site statistics, active objectives, module status' },
   { uri: 'flowwink://skills', description: 'Full skill registry with metadata' },
-  { uri: 'flowwink://activity', description: 'Recent FlowPilot actions and logs' },
+  { uri: 'flowwink://activity', description: 'Recent agent actions and logs' },
   { uri: 'flowwink://modules', description: 'Module configuration and status' },
+  { uri: 'flowwink://objectives', description: 'Active business objectives' },
+  { uri: 'flowwink://automations', description: 'Configured automations with schedules' },
+  { uri: 'flowwink://heartbeat', description: 'Last heartbeat run status' },
   { uri: 'flowwink://peers', description: 'Federation peer connections' },
-  { uri: 'flowwink://identity', description: 'FlowPilot soul and configuration' },
+  { uri: 'flowwink://identity', description: 'Soul and configuration' },
 ];
 
 export function AgentInvites() {
