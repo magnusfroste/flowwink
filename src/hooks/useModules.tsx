@@ -25,6 +25,10 @@ export interface ModuleConfig {
   adminUI: boolean; // Whether admin interface is shown (default: true for view/config-required)
   requiredIntegrations?: string[]; // Module won't function without these
   optionalIntegrations?: string[]; // Enhanced functionality with these
+  /** Module requires at least one AI provider (openai, gemini, or local_llm) to function */
+  requiresAI?: boolean;
+  /** Module requires FlowPilot to be enabled — non-functional without the autonomous engine */
+  requiresFlowPilot?: boolean;
   // E-commerce sandbox settings (sandboxMode is derived: auto-on when Stripe is inactive)
   sandboxAutoPayDays?: number; // 0 = instant, >0 = mark as paid after N days (for testing flows)
   // Booking-specific settings
