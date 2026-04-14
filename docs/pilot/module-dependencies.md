@@ -58,6 +58,8 @@ The module's core functionality is **entirely agent-driven**. There is no manual
 
 ## 🟡 Enhanced by FlowPilot (12 modules)
 
+---
+
 ### Sales Intelligence
 
 **What works without FlowPilot:**
@@ -84,6 +86,16 @@ The module's core functionality is **entirely agent-driven**. There is no manual
 | `sales_profile_setup` | `edge:sales-profile-setup` | Company/user profile management |
 
 **⚠️ Known issue:** `prospect-fit-analysis` currently contains a reasoning-level AI prompt (introduction letters, strategic advice) that should flow through FlowPilot. See [Sensors vs. Reasoning](./sensors-vs-reasoning.md) for details.
+
+**Proactive flow:**
+```
+Heartbeat → scan CRM companies without enrichment
+  ├── enrich_company (domain scrape + Firecrawl)
+  ├── prospect_research (web + Hunter)
+  ├── prospect_fit_analysis (raw data collection)
+  ├── qualify_lead (deterministic scoring)
+  └── FlowPilot reasons: fit, timing, and drafts intro letter
+```
 
 ---
 
@@ -126,34 +138,83 @@ New Ticket → ticket_triage
 
 **What works without FlowPilot:**
 - Full lead management with list and detail views
-- Manual lead creation, editing, and status changes
+- Manual lead creation, editing, and status changes (`lead` → `contacted` → `qualified` → `opportunity` → `customer`)
 - Lead source tracking and tagging
 - Contact information management
 - Notes and activity logging
-- Lead-to-deal conversion
+- Lead-to-deal conversion (auto-updates lead status to `opportunity`)
+- CRM task management (create, assign, prioritize, complete)
+- Webhook triggers on `form.submitted` / `lead_created`
 
 **What FlowPilot adds:**
-- **Proactive scoring:** During heartbeats, FlowPilot evaluates unscored leads using the `qualify_lead` skill (deterministic point-based system with recency bonus)
-- **Auto-qualification:** Leads meeting threshold criteria are automatically moved to "qualified" status
-- **Source analysis:** FlowPilot identifies which lead sources produce the highest conversion rates and adjusts objectives accordingly
-- **CRM linking:** FlowPilot connects lead activity with company research and deal pipeline for a unified view
+- **Proactive scoring:** During heartbeats, FlowPilot evaluates unscored leads using `qualify_lead` (deterministic point-based system with 1.5× recency bonus for 7-day activity)
+- **Pipeline review:** `lead_pipeline_review` audits leads by status/score, identifies neglected contacts, and suggests follow-up actions
+- **Nurture sequences:** `lead_nurture_sequence` creates automated drip campaigns (welcome: 3 emails/7 days, re-engage: 2 emails, upsell: 2 emails) personalized with lead data
+- **CRM task automation:** FlowPilot creates follow-up tasks linked to leads/deals based on pipeline state
+- **Cross-module linking:** FlowPilot connects leads with company enrichment data, deal pipeline, and ticket history
+
+**Skills involved:**
+
+| Skill | Handler | Role |
+|-------|---------|------|
+| `add_lead` | `module:crm` | Create a new lead from any source |
+| `manage_leads` | `module:crm` | List, get, update status/score, delete existing leads |
+| `lead_pipeline_review` | `module:crm` | Audit pipeline by status, score, and days since contact |
+| `lead_nurture_sequence` | `module:newsletter` | Create email drip campaigns for leads |
+| `qualify_lead` | `edge:qualify-lead` | Deterministic point-based lead scoring |
+| `crm_task_list` | `db:crm_tasks` | List CRM tasks with lead/deal/priority filters |
+| `crm_task_create` | `db:crm_tasks` | Create follow-up tasks linked to leads or deals |
+| `crm_task_update` | `db:crm_tasks` | Update or complete CRM tasks |
+
+**Proactive flow:**
+```
+Heartbeat → lead_pipeline_review
+  ├── Scan leads by status (new, contacted, qualified)
+  ├── Identify leads with no activity for X days
+  ├── For hot leads → qualify_lead (scoring)
+  ├── For stale leads → crm_task_create (follow-up reminder)
+  └── For new qualified leads → lead_nurture_sequence (drip campaign)
+```
 
 ---
 
 ### Deals
 
 **What works without FlowPilot:**
-- Full pipeline view with drag-and-drop stage management
-- Manual deal creation with value, probability, and close date
-- Deal-to-company and deal-to-lead associations
+- Full pipeline view with drag-and-drop stage management (`proposal` → `negotiation` → `closed_won` / `closed_lost`)
+- Manual deal creation with value, currency, expected close date
+- Deal-to-lead and deal-to-product associations
+- Auto-update of lead status to `opportunity` on deal creation
 - Activity logging and notes
 - Revenue forecasting based on stage probability
+- CRM tasks linked to deals
+- Webhook triggers: `deal.created`, `deal.updated`, `deal.stage_changed`, `deal.won`, `deal.lost`
 
 **What FlowPilot adds:**
-- **Pipeline health analysis:** During heartbeats, FlowPilot identifies stale deals (no activity for X days) and flags them
-- **Stage progression alerts:** FlowPilot notices deals stuck in a stage and suggests next actions
+- **Stale deal detection:** `deal_stale_check` identifies deals stuck in a stage for X days and suggests re-engagement strategies
+- **Pipeline health analysis:** During heartbeats, FlowPilot reviews deal distribution across stages and flags bottlenecks
 - **Win/loss pattern recognition:** Over time, FlowPilot identifies patterns in won vs. lost deals and adjusts fit scoring
 - **Forecast refinement:** FlowPilot adjusts probability estimates based on activity patterns, not just static stage defaults
+- **Cross-module coordination:** FlowPilot connects deal progress with lead nurture sequences, content proposals, and ticket history
+
+**Skills involved:**
+
+| Skill | Handler | Role |
+|-------|---------|------|
+| `manage_deal` | `module:deals` | List, create, update, move deals between stages |
+| `deal_stale_check` | `module:deals` | Find stalled deals and suggest actions |
+| `crm_task_create` | `db:crm_tasks` | Create follow-up tasks linked to deals |
+| `crm_task_list` | `db:crm_tasks` | Review pending tasks for a deal |
+
+**Proactive flow:**
+```
+Heartbeat → deal_stale_check
+  ├── Find deals with no activity for N days (default 14)
+  ├── Group by stage (proposal, negotiation)
+  ├── For stale proposals → crm_task_create (follow-up call)
+  ├── For stale negotiations → escalation alert to admin
+  └── Update deal notes with FlowPilot analysis
+```
 
 ---
 
@@ -164,14 +225,53 @@ New Ticket → ticket_triage
 - Post creation, editing, scheduling, and publishing
 - Category and tag management
 - Featured images and SEO metadata
-- Draft/review/publish workflow
-- Author management
+- Draft/review/publish workflow with `scheduled_at` support
+- Author management and attribution
+- RSS feed generation (`blog-rss` edge function)
+- Webhook triggers: `blog_post.published`, `blog_post.updated`, `blog_post.deleted`
+- Markdown and TipTap JSON content support
 
 **What FlowPilot adds:**
-- **Content suggestions:** During heartbeats, FlowPilot proposes blog topics based on trending keywords, customer questions (from tickets/chat), and content gaps
-- **SEO optimization:** FlowPilot reviews drafts and suggests meta descriptions, title improvements, and internal linking opportunities
+- **Content research:** `research_content` scans trends, competitor analysis, and customer questions to identify topics
+- **Proposal generation:** `generate_content_proposal` creates structured content briefs from research data
+- **Autonomous writing:** `write_blog_post` composes full articles from proposals with SEO optimization
+- **Social amplification:** `generate_social_post` and `social_post_batch` repurpose blog content into LinkedIn/X/newsletter formats
+- **Product promotion:** `product_promoter` creates product-focused articles from the product catalog
+- **SEO briefs:** `seo_content_brief` generates keyword-targeted outlines with search intent analysis
+- **Content calendar:** `content_calendar_view` audits the editorial pipeline for gaps in frequency, topics, and SEO coverage
 - **Publishing cadence:** FlowPilot monitors publishing frequency against objectives and nudges when the schedule slips
-- **Content-to-pipeline connection:** FlowPilot links blog performance (traffic, engagement) with lead generation data
+
+**Skills involved:**
+
+| Skill | Handler | Role |
+|-------|---------|------|
+| `write_blog_post` | `module:blog` | Compose and publish blog posts |
+| `manage_blog_posts` | `module:blog` | List, update, delete, change post status |
+| `manage_blog_categories` | `module:blog` | CRUD for categories and tags |
+| `browse_blog` | `module:blog` | Read published posts for reference |
+| `content_calendar_view` | `module:blog` | Audit editorial pipeline and find gaps |
+| `research_content` | `edge:content-research` | Trend and competitor research |
+| `generate_content_proposal` | `db:content_proposals` | Structured content brief from research |
+| `product_promoter` | `db:blog_posts` | Product-focused article generation |
+| `seo_content_brief` | `db:content_proposals` | SEO keyword + intent outline |
+| `generate_social_post` | `db:content_proposals` | Single social post from blog content |
+| `social_post_batch` | `db:content_proposals` | Batch social post generation |
+
+**Proactive flow:**
+```
+Heartbeat → content_calendar_view
+  ├── Check publishing frequency vs. objective targets
+  ├── Identify topic gaps and trending subjects
+  ├── research_content (trend + competitor scan)
+  ├── generate_content_proposal (structured brief)
+  ├── write_blog_post (draft, queued for approval)
+  └── social_post_batch (repurpose across channels)
+```
+
+**Workflow (3-step content pipeline):**
+```
+research_content → generate_content_proposal → write_blog_post
+```
 
 ---
 
@@ -183,12 +283,24 @@ New Ticket → ticket_triage
 - Conversation history and session management
 - Customer information capture
 - Feedback collection (thumbs up/down)
+- Multi-provider support (OpenAI, Gemini, local, n8n)
+- Conversation escalation to support agents
+- Visitor profile tracking
 
 **What FlowPilot adds:**
 - **Personality and soul:** FlowPilot injects its soul (tone, values, communication style) into chat responses, creating a consistent brand voice
 - **Objective-driven conversations:** FlowPilot steers conversations toward active objectives (e.g., promoting a new service, collecting feedback on a feature)
 - **Escalation intelligence:** FlowPilot decides when to escalate to a human agent based on sentiment, complexity, and conversation history
 - **Cross-session memory:** FlowPilot remembers returning visitors and adapts responses based on previous interactions
+- **Lead capture:** FlowPilot identifies purchase intent and autonomously creates leads via `add_lead`
+
+**Skills involved:**
+
+| Skill | Handler | Role |
+|-------|---------|------|
+| *(no module-specific skills)* | `edge:chat-completion` | Chat uses the edge function directly |
+
+**Architecture note:** AI Chat is unique — it does not have dedicated FlowPilot skills because the chat-completion edge function itself is the primary interface. FlowPilot's enhancement operates at the **prompt engineering** level: when FlowPilot is active, its soul, objectives, and memory are injected into the system prompt. Without FlowPilot, the chat uses generic RAG responses with no strategic alignment.
 
 **Note:** AI Chat requires an AI provider (`requiresAI: true`) but does NOT require FlowPilot. Without FlowPilot, the chat uses generic RAG responses. With FlowPilot, responses are strategically aligned with business goals.
 
@@ -197,102 +309,275 @@ New Ticket → ticket_triage
 ### Consultants
 
 **What works without FlowPilot:**
-- Full consultant profile management (skills, experience, certifications, rates)
+- Full consultant profile management (name, title, skills, experience, certifications, hourly rate)
+- Rich data fields: education, languages, portfolio URL, LinkedIn, availability
 - Manual search and filtering by skills, availability, and rate
-- Profile editing with rich data (education, languages, portfolio)
-- AI-powered matching and summaries (requires AI provider, not FlowPilot)
+- Profile editing with detailed experience JSON
+- AI-powered matching via `resume-match` edge function (requires AI provider, not FlowPilot)
+- Resume parsing pipeline: `extract-pdf-text` → `parse-resume` → profile creation
 
 **What FlowPilot adds:**
-- **Proactive matching:** During heartbeats, FlowPilot cross-references new leads/deals with consultant availability and suggests optimal team compositions
+- **Proactive matching:** During heartbeats, FlowPilot cross-references new leads/deals with consultant availability using `match_consultant` and suggests optimal team compositions
+- **Profile management at scale:** `manage_consultant_profile` with deduplication detection keeps the directory clean
 - **Capacity monitoring:** FlowPilot tracks consultant utilization and alerts when capacity is running low
 - **Skill gap analysis:** FlowPilot identifies skills requested by prospects that aren't covered by current consultants
-- **Auto-response to inquiries:** When a new lead matches a consultant's profile, FlowPilot can draft a personalized response referencing relevant experience
+- **Auto-response to inquiries:** When a new lead matches a consultant's profile, FlowPilot drafts a personalized response referencing relevant experience
+
+**Skills involved:**
+
+| Skill | Handler | Role |
+|-------|---------|------|
+| `manage_consultant_profile` | `module:resume` | CRUD + deduplication for consultant profiles |
+| `match_consultant` | `module:resume` | AI-powered matching against job descriptions |
+| `parse_resume` | `edge:parse-resume` | OCR/structured extraction from uploaded CVs |
+| `extract_pdf_text` | `edge:extract-pdf-text` | Raw PDF text extraction (sensor) |
+
+**Proactive flow:**
+```
+Heartbeat → scan new leads/deals
+  ├── Extract job requirements from deal notes
+  ├── match_consultant (AI scoring + reasoning)
+  ├── Identify top 3 candidates with match scores
+  ├── Check availability status
+  └── Draft personalized response for admin review
+```
+
+**Resume ingestion chain:**
+```
+PDF Upload → extract_pdf_text → parse_resume → manage_consultant_profile(create)
+  └── FlowPilot deduplicates against existing profiles
+```
 
 ---
 
 ### Expenses
 
 **What works without FlowPilot:**
-- Full expense tracking with manual entry
-- Category management and tagging
+- Full expense tracking with manual entry (date, description, amount, VAT, vendor, category)
+- Category management: `travel`, `meals`, `office`, `software`, `representation`, `other`
 - Receipt upload and storage
-- Approval workflows
-- Reporting and export
-- Accounting integration (journal entries)
+- Representation expense support with mandatory attendee tracking (name + company)
+- Monthly report submission and approval workflow (`draft` → `submitted` → `approved` → `booked`)
+- Accounting integration (journal entry creation from approved reports)
+- Account code mapping (6071 travel, 6110 office, 7690 representation)
 
 **What FlowPilot adds:**
-- **Anomaly detection:** During heartbeats, FlowPilot flags unusual spending patterns (e.g., sudden spikes in a category, duplicate amounts)
+- **Receipt analysis:** `analyze_receipt` uses AI vision to extract amount, VAT, vendor, date, and suggest matching account codes from `chart_of_accounts`
 - **Auto-categorization:** FlowPilot suggests categories for new expenses based on merchant name and description patterns
+- **Monthly automation:** On the 1st of each month, FlowPilot reviews draft expenses, submits reports per employee, and prompts admin for approval
+- **Journal entry booking:** After approval, FlowPilot autonomously calls `book_report` to create accounting entries
+- **Anomaly detection:** During heartbeats, FlowPilot flags unusual spending patterns (sudden category spikes, duplicate amounts)
 - **Budget monitoring:** FlowPilot tracks spending against budgets and alerts before thresholds are exceeded
-- **Receipt analysis:** Combined with the `analyze_receipt` sensor (vision AI), FlowPilot interprets receipt data and validates against entered amounts
+
+**Skills involved:**
+
+| Skill | Handler | Role |
+|-------|---------|------|
+| `manage_expenses` | `db:expenses` | Full CRUD: create, list, update, delete, submit/approve/book reports |
+| `analyze_receipt` | `edge:analyze-receipt` | AI vision extraction from receipt images (sensor) |
+
+**Automation:**
+
+| Automation | Trigger | Action |
+|------------|---------|--------|
+| Monthly Expense Processing | Cron: `0 9 1 * *` (1st of month, 09:00) | List draft expenses, submit per-employee reports |
+
+**Monthly lifecycle:**
+```
+Employee creates expenses → draft status
+  ├── analyze_receipt (optional: AI extracts data from photo)
+  └── FlowPilot suggests category + account_code
+
+Month-end → FlowPilot automation:
+  ├── manage_expenses(submit_report) → bundles into monthly report
+  ├── Admin approves via approve_report
+  └── manage_expenses(book_report) → creates journal entry in accounting
+```
 
 ---
 
 ### Contracts
 
 **What works without FlowPilot:**
-- Full contract lifecycle management (draft → active → expired)
-- Counterparty tracking with contact details
-- Document upload and versioning
-- Start/end date and value tracking
-- Renewal type configuration (auto, manual, none)
-- Manual renewal notice tracking
+- Full contract lifecycle management (`draft` → `pending_signature` → `active` → `expired` / `terminated`)
+- Contract types: `service`, `nda`, `employment`, `lease`, `other`
+- Counterparty tracking with name, email, and contact details
+- Document upload and versioning via `contract_documents` table
+- Start/end date and value tracking (in cents with currency)
+- Renewal type configuration: `none`, `auto`, `manual`
+- Renewal notice period (`renewal_notice_days`)
+- Free-text search across title and counterparty name
 
 **What FlowPilot adds:**
-- **Renewal alerts:** During heartbeats, FlowPilot scans upcoming contract expirations and creates proactive reminders based on `renewal_notice_days`
-- **Expiry monitoring:** FlowPilot flags contracts approaching their end date without renewal decisions
+- **Renewal alerts:** `contract_renewal_check` scans upcoming expirations and groups by urgency: critical (<7 days), warning (<30 days), notice (<90 days)
+- **Auto-renew awareness:** For auto-renewing contracts, FlowPilot checks if the `renewal_notice_days` window has passed and alerts before automatic renewal
+- **Proactive monitoring:** Daily heartbeat reviews contracts approaching end dates and creates CRM tasks for renegotiation
 - **Value analysis:** FlowPilot connects contract values with revenue data and identifies contracts with poor ROI
-- **Auto-renewal tracking:** For auto-renewing contracts, FlowPilot logs renewals and updates status automatically
+- **Status automation:** FlowPilot detects contracts past their `end_date` and transitions them to `expired`
+
+**Skills involved:**
+
+| Skill | Handler | Role |
+|-------|---------|------|
+| `manage_contract` | `db:contracts` | CRUD: create, list, update, search contracts |
+| `contract_renewal_check` | `db:contracts` | Find contracts expiring within N days, grouped by urgency |
+
+**Automation:**
+
+| Automation | Trigger | Action |
+|------------|---------|--------|
+| Contract Renewal Alert | Cron: `0 8 * * 1-5` (weekdays 08:00) | Check for contracts expiring within 30 days |
+
+**Proactive flow:**
+```
+Heartbeat → contract_renewal_check(days_ahead: 30)
+  ├── Critical (<7 days) → urgent notification + CRM task
+  ├── Warning (<30 days) → renewal reminder
+  ├── Notice (<90 days) → planning alert
+  ├── Auto-renew contracts → check if notice period passed
+  └── Expired contracts with no renewal → status → expired
+```
 
 ---
 
 ### HR
 
 **What works without FlowPilot:**
-- Employee directory and profile management
-- Leave request submission and approval
-- Leave balance tracking
+- Full employee directory with rich profiles (name, email, title, department, employment type, start date)
+- Employment types: `full_time`, `part_time`, `contractor`
+- Status lifecycle: `active` → `on_leave` → `active`, or `active` → `terminated`
+- Leave request management: `vacation`, `sick`, `parental`, `other`
+- Leave approval workflow: `pending` → `approved` / `rejected`
+- Leave balance tracking by employee
+- Onboarding checklists with default items (IT setup, access cards, welcome meeting, policy review, buddy assignment)
 - Department and role management
-- Basic reporting
 
 **What FlowPilot adds:**
-- **Leave pattern analysis:** During heartbeats, FlowPilot identifies leave patterns (e.g., frequent Monday absences) and flags potential issues
-- **Onboarding automation:** FlowPilot creates onboarding task checklists for new employees and tracks completion
+- **Leave review automation:** Every weekday at 09:00, FlowPilot checks for pending leave requests and reminds admin to review them
+- **Onboarding orchestration:** When a new employee is created, FlowPilot auto-generates an onboarding checklist and tracks completion
+- **Leave pattern analysis:** During heartbeats, FlowPilot identifies leave patterns (frequent Monday absences, burn-rate on vacation days) and flags potential issues
 - **Capacity planning:** FlowPilot cross-references leave schedules with project timelines and alerts on coverage gaps
 - **Policy compliance:** FlowPilot monitors leave balances and flags employees approaching limits
+
+**Skills involved:**
+
+| Skill | Handler | Role |
+|-------|---------|------|
+| `manage_employee` | `db:employees` | CRUD: create, update, search, deactivate employees |
+| `manage_leave` | `db:leave_requests` | Create, approve, reject, list leave requests |
+| `onboarding_checklist` | `db:onboarding_checklists` | Create and manage onboarding task lists |
+
+**Automation:**
+
+| Automation | Trigger | Action |
+|------------|---------|--------|
+| HR Leave Review Reminder | Cron: `0 9 * * 1-5` (weekdays 09:00) | List pending leave requests, notify admin |
+
+**Proactive flow:**
+```
+Heartbeat → manage_leave(list_pending)
+  ├── Pending requests > 2 days old → escalation alert
+  ├── Approved leaves this week → capacity check
+  ├── New employees without checklists → onboarding_checklist(create)
+  └── Vacation balance warnings → notification to employee/admin
+```
+
+**Onboarding chain:**
+```
+manage_employee(create) → detect new employee
+  ├── onboarding_checklist(create) with default items
+  ├── Track item completion over time
+  └── Mark completed_at when all items done
+```
 
 ---
 
 ### Purchasing
 
 **What works without FlowPilot:**
-- Purchase order creation and management
-- Supplier directory
-- Order tracking (draft → sent → received)
-- Budget tracking per order
-- Inventory integration
+- Full procure-to-pay lifecycle: purchase orders, vendors, goods receipt
+- Vendor/supplier directory with payment terms (`immediate`, `net15`, `net30`, `net45`, `net60`)
+- Purchase order creation with line items (product, quantity, unit cost, tax rate)
+- PO status lifecycle: `draft` → `sent` → `partially_received` → `received`
+- Goods receipt recording with line-level quantity tracking
+- Inventory integration (stock levels updated on receipt)
+- Default 25% tax rate for Swedish vendors
 
 **What FlowPilot adds:**
-- **Reorder point monitoring:** During heartbeats, FlowPilot checks inventory levels against reorder points and suggests purchase orders
-- **Supplier analysis:** FlowPilot tracks delivery times and quality across suppliers and recommends preferred vendors
-- **Spend consolidation:** FlowPilot identifies opportunities to combine orders to the same supplier
-- **Price trend tracking:** FlowPilot monitors price changes across orders and flags significant increases
+- **Reorder point monitoring:** `purchase_reorder_check` compares stock levels against `low_stock_threshold` per product and groups suggestions by preferred vendor
+- **Auto-PO drafting:** FlowPilot creates draft purchase orders from reorder suggestions for admin review
+- **Supplier analysis:** FlowPilot tracks delivery times and quality across vendors and recommends preferred suppliers
+- **Spend consolidation:** FlowPilot identifies opportunities to combine orders to the same vendor
+- **Price trend tracking:** FlowPilot monitors unit price changes across orders and flags significant increases
+
+**Skills involved:**
+
+| Skill | Handler | Role |
+|-------|---------|------|
+| `manage_vendor` | `db:vendors` | CRUD for vendor/supplier records |
+| `create_purchase_order` | `db:purchase_orders` | Create draft POs with line items |
+| `send_purchase_order` | `db:purchase_orders` | Transition PO from draft to sent |
+| `receive_goods` | `db:goods_receipts` | Record goods receipt, update inventory |
+| `purchase_reorder_check` | `db:products` | Analyze stock vs. reorder points, suggest POs |
+
+**Automation:**
+
+| Automation | Trigger | Action |
+|------------|---------|--------|
+| Auto Reorder Check | Cron: `0 7 * * *` (daily 07:00) | Check stock levels, suggest reorders |
+
+**Proactive flow:**
+```
+Heartbeat → purchase_reorder_check
+  ├── Compare stock_quantity vs. low_stock_threshold per product
+  ├── Group low-stock items by preferred vendor
+  ├── Calculate suggested quantity: max(threshold × 3, 10)
+  ├── create_purchase_order (draft, pending approval)
+  └── Alert admin with PO summary for review
+```
+
+**Full procurement chain:**
+```
+purchase_reorder_check → create_purchase_order → admin approves
+  → send_purchase_order → vendor delivers
+  → receive_goods → inventory updated → PO status: received
+```
 
 ---
 
 ### SLA
 
 **What works without FlowPilot:**
-- SLA policy definition (response time, resolution time per priority)
+- SLA policy definition (response time, resolution time per priority level)
 - SLA status tracking on tickets
 - Breach logging and reporting
 - Manual escalation triggers
+- Compliance reporting (met/breached/pending)
 
 **What FlowPilot adds:**
-- **Proactive breach prediction:** During heartbeats, FlowPilot calculates time remaining on active SLAs and escalates tickets approaching breach
+- **Proactive breach prediction:** During heartbeats, FlowPilot calculates time remaining on active SLAs and escalates tickets approaching breach *before* it occurs
 - **Response optimization:** FlowPilot prioritizes the ticket queue based on SLA urgency, not just creation order
 - **Performance trending:** FlowPilot tracks SLA compliance over time and identifies systemic issues (e.g., "Tuesday tickets always breach")
-- **Auto-escalation chains:** FlowPilot triggers escalation workflows when breach is imminent, before it actually occurs
+- **Auto-escalation chains:** FlowPilot triggers escalation workflows when breach is imminent
+- **Cross-module alerts:** SLA warnings propagate to CRM tasks and admin notifications
+
+**Skills involved:**
+
+| Skill | Handler | Role |
+|-------|---------|------|
+| *(shares ticket skills)* | `ticket_triage` | SLA context influences triage priority |
+
+**Architecture note:** SLA is currently a lightweight module (`skills: []` in module definition) that piggybacks on the Tickets module's infrastructure. SLA policies are applied as metadata on tickets, and FlowPilot's enhancement operates by weaving SLA urgency into the `ticket_triage` reasoning. Future iterations may introduce dedicated SLA skills for standalone monitoring.
+
+**Proactive flow:**
+```
+Heartbeat → scan open tickets with SLA policies
+  ├── Calculate remaining time per SLA metric
+  ├── Response SLA < 30 min remaining → urgent alert
+  ├── Resolution SLA < 2 hours remaining → escalation
+  ├── Breached SLAs → log breach + notify admin
+  └── Weekly: SLA compliance report with trend analysis
+```
 
 ---
 
@@ -311,6 +596,15 @@ This is why Enhanced modules work without FlowPilot — the "hands" still functi
 
 Most FlowPilot enhancements activate during the [heartbeat loop](./presence.md). The 7-step protocol (Evaluate → Plan → Advance → Propose → Automate → Reflect → Remember) is what drives proactive behavior across all Enhanced modules. Without FlowPilot, there are no heartbeats — and therefore no proactive monitoring, suggestions, or autonomous actions.
 
+### Skill Categories Across Modules
+
+| Category | Skills | Modules |
+|----------|--------|---------|
+| **CRM** | `add_lead`, `manage_leads`, `manage_deal`, `qualify_lead`, `lead_pipeline_review`, `lead_nurture_sequence`, `deal_stale_check`, `crm_task_*` | Leads, Deals, SI |
+| **Content** | `write_blog_post`, `manage_blog_*`, `content_calendar_view`, `research_content`, `generate_content_proposal`, `seo_content_brief`, `social_post_*`, `product_promoter` | Blog |
+| **Commerce** | `manage_expenses`, `analyze_receipt`, `manage_contract`, `contract_renewal_check`, `manage_vendor`, `create_purchase_order`, `send_purchase_order`, `receive_goods`, `purchase_reorder_check` | Expenses, Contracts, Purchasing |
+| **People** | `manage_employee`, `manage_leave`, `onboarding_checklist`, `manage_consultant_profile`, `match_consultant` | HR, Consultants |
+
 ### Graceful Degradation in Practice
 
 When FlowPilot is disabled:
@@ -318,6 +612,7 @@ When FlowPilot is disabled:
 2. **No data is lost** — everything FlowPilot would have monitored is still in the database
 3. **No UI changes** — Enhanced modules show a subtle 🟡 indicator but all controls remain active
 4. **Re-enabling is instant** — FlowPilot picks up where it left off, scanning for unprocessed items during its first heartbeat
+5. **Automations pause** — cron-triggered automations (reorder checks, renewal alerts, leave reminders) stop firing but resume immediately when FlowPilot is re-enabled
 
 ---
 
