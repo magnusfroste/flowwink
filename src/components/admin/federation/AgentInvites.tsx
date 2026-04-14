@@ -521,6 +521,9 @@ Content-Type: application/json
             <CardTitle className="text-sm flex items-center gap-2">
               {mission.icon}
               {mission.name}
+              <Badge variant={mission.category === 'operator' ? 'default' : 'secondary'} className="text-[10px] ml-auto">
+                {mission.category === 'operator' ? 'Operator' : 'Audit'}
+              </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
