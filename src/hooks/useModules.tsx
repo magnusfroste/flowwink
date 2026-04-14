@@ -25,6 +25,10 @@ export interface ModuleConfig {
   adminUI: boolean; // Whether admin interface is shown (default: true for view/config-required)
   requiredIntegrations?: string[]; // Module won't function without these
   optionalIntegrations?: string[]; // Enhanced functionality with these
+  /** Module requires at least one AI provider (openai, gemini, or local_llm) to function */
+  requiresAI?: boolean;
+  /** Module requires FlowPilot to be enabled — non-functional without the autonomous engine */
+  requiresFlowPilot?: boolean;
   // E-commerce sandbox settings (sandboxMode is derived: auto-on when Stripe is inactive)
   sandboxAutoPayDays?: number; // 0 = instant, >0 = mark as paid after N days (for testing flows)
   // Booking-specific settings
@@ -113,7 +117,7 @@ export const defaultModulesSettings: ModulesSettings = {
   blog: {
     enabled: false,
     name: 'Blog',
-    description: 'Blog posts with categories, tags and RSS feed',
+    description: 'Blog posts with categories, tags and RSS feed — AI-assisted writing optional',
     icon: 'BookOpen',
     category: 'content',
     autonomy: 'config-required',
@@ -132,11 +136,12 @@ export const defaultModulesSettings: ModulesSettings = {
   chat: {
     enabled: false,
     name: 'AI Chat',
-    description: 'Intelligent chatbot with Context-Augmented Generation',
+    description: 'Intelligent chatbot with Context-Augmented Generation — requires at least one AI provider',
     icon: 'MessageSquare',
     category: 'communication',
     autonomy: 'view-required',
     adminUI: true,
+    requiresAI: true,
     optionalIntegrations: ['openai', 'gemini', 'local_llm', 'n8n'],
   },
   liveSupport: {
@@ -247,21 +252,24 @@ export const defaultModulesSettings: ModulesSettings = {
   salesIntelligence: {
     enabled: false,
     name: 'Sales Intelligence',
-    description: 'Prospect research, fit analysis, and AI-powered introduction letters',
+    description: 'Prospect research, fit analysis, and AI-powered introduction letters — requires AI and FlowPilot for autonomous prospecting',
     icon: 'Target',
     category: 'data',
     autonomy: 'agent-capable',
     adminUI: true,
+    requiresAI: true,
+    requiresFlowPilot: true,
     optionalIntegrations: ['hunter', 'jina', 'firecrawl', 'openai', 'gemini'],
   },
   resume: {
     enabled: false,
     name: 'Consultants',
-    description: 'AI-powered consultant matching with tailored CVs and cover letters',
+    description: 'AI-powered consultant matching with tailored CVs and cover letters — requires at least one AI provider',
     icon: 'FileUser',
     category: 'data',
     autonomy: 'agent-capable',
     adminUI: true,
+    requiresAI: true,
     optionalIntegrations: ['openai', 'gemini'],
   },
   browserControl: {
@@ -324,11 +332,13 @@ export const defaultModulesSettings: ModulesSettings = {
   siteMigration: {
     enabled: true,
     name: 'Site Migration',
-    description: 'Clone external websites — discover pages, extract branding, and migrate content with visual fidelity',
+    description: 'Clone external websites — discover pages, extract branding, and migrate content. Requires FlowPilot for AI-driven migration.',
     icon: 'Snowflake',
     category: 'content',
     autonomy: 'agent-capable',
     adminUI: false,
+    requiresFlowPilot: true,
+    requiresAI: true,
     requiredIntegrations: ['firecrawl'],
     optionalIntegrations: ['jina'],
   },
