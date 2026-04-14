@@ -9,6 +9,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { AdminThemeToggle } from './AdminThemeToggle';
 import { FlowPilotBriefingBell } from './FlowPilotBriefingBell';
+import { useIsModuleEnabled } from '@/hooks/useModules';
 import { usePinnedPages } from '@/hooks/usePinnedPages';
 import { useVersionCheck } from '@/hooks/useVersionCheck';
 
@@ -36,6 +37,7 @@ export function AdminContentHeader() {
   const { user, profile, signOut } = useAuth();
   const { pins, removePin } = usePinnedPages(user?.id);
   const { currentVersion, latestVersion, latestReleaseUrl, hasUpdate } = useVersionCheck();
+  const fpEnabled = useIsModuleEnabled('flowpilot');
   const GITHUB_RELEASES_URL = 'https://github.com/magnusfroste/flowwink/releases';
 
   const isCopilotMode = location.pathname === '/admin/flowpilot';
@@ -62,18 +64,20 @@ export function AdminContentHeader() {
           <LayoutDashboard className="h-3.5 w-3.5" />
           Dashboard
         </button>
-        <button
-          onClick={() => navigate('/admin/flowpilot')}
-          className={cn(
-            'flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors',
-            isCopilotMode
-              ? 'bg-background text-foreground shadow-sm'
-              : 'text-muted-foreground hover:text-foreground',
-          )}
-        >
-          <Zap className="h-3.5 w-3.5" />
-          FlowPilot
-        </button>
+        {fpEnabled && (
+          <button
+            onClick={() => navigate('/admin/flowpilot')}
+            className={cn(
+              'flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors',
+              isCopilotMode
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground',
+            )}
+          >
+            <Zap className="h-3.5 w-3.5" />
+            FlowPilot
+          </button>
+        )}
       </div>
 
       {/* Pinned favorites — only in dashboard mode */}

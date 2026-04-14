@@ -2,8 +2,11 @@ import { Link } from 'react-router-dom';
 import { Sparkles, LayoutTemplate, FileText, ArrowRight } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { useIsModuleEnabled } from '@/hooks/useModules';
 
 export function EmptyDashboard() {
+  const fpEnabled = useIsModuleEnabled('flowpilot');
+
   return (
     <div className="py-8">
       <div className="text-center mb-10">
@@ -19,34 +22,36 @@ export function EmptyDashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-        {/* FlowPilot - Primary/Recommended */}
-        <Card className="border-primary/50 bg-primary/5 relative overflow-hidden">
-          <div className="absolute top-3 right-3">
-            <span className="text-xs font-medium bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
-              Recommended
-            </span>
-          </div>
-          <CardHeader className="pb-3">
-            <div className="p-3 rounded-lg bg-primary/10 w-fit mb-2">
-              <Sparkles className="h-6 w-6 text-primary" />
+        {/* FlowPilot - Primary/Recommended — only shown when enabled */}
+        {fpEnabled && (
+          <Card className="border-primary/50 bg-primary/5 relative overflow-hidden">
+            <div className="absolute top-3 right-3">
+              <span className="text-xs font-medium bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
+                Recommended
+              </span>
             </div>
-            <CardTitle className="font-serif text-lg">FlowPilot (AI Agent)</CardTitle>
-            <CardDescription>
-              Create a new site or migrate an existing one
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <p className="text-sm text-muted-foreground">
-              Describe your vision — or paste a URL to clone your current website.
-            </p>
-            <Button asChild className="w-full gap-2">
-              <Link to="/admin/flowpilot">
-                Start with FlowPilot
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
+            <CardHeader className="pb-3">
+              <div className="p-3 rounded-lg bg-primary/10 w-fit mb-2">
+                <Sparkles className="h-6 w-6 text-primary" />
+              </div>
+              <CardTitle className="font-serif text-lg">FlowPilot (AI Agent)</CardTitle>
+              <CardDescription>
+                Create a new site or migrate an existing one
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Describe your vision — or paste a URL to clone your current website.
+              </p>
+              <Button asChild className="w-full gap-2">
+                <Link to="/admin/flowpilot">
+                  Start with FlowPilot
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Templates */}
         <Card>

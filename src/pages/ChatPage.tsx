@@ -101,7 +101,7 @@ export default function ChatPage() {
       <PublicNavigation />
       {checkinId && (
         <div className="bg-primary/5 border-b px-4 py-2 text-sm text-center text-muted-foreground">
-          ✦ Check-in mode — FlowPilot will update your profile
+          ✦ Check-in mode — your profile will be updated
         </div>
       )}
 

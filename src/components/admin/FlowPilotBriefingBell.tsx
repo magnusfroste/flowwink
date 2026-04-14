@@ -3,17 +3,22 @@ import { Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUnreadProactiveCount } from '@/hooks/useProactiveMessages';
 import { useUnreadBriefings } from '@/hooks/useFlowPilotBriefings';
+import { useIsModuleEnabled } from '@/hooks/useModules';
 
 /**
  * FlowPilotBriefingBell
  * 
  * Simplified to an unread-count badge that deep-links to the cockpit chat.
  * FlowPilot's voice lives in the chat — the bell just signals new messages.
+ * Hidden entirely when FlowPilot module is disabled.
  */
 export function FlowPilotBriefingBell() {
   const navigate = useNavigate();
+  const fpEnabled = useIsModuleEnabled('flowpilot');
   const proactiveCount = useUnreadProactiveCount();
   const { data: unreadBriefings = [] } = useUnreadBriefings();
+
+  if (!fpEnabled) return null;
 
   const count = Math.max(proactiveCount, unreadBriefings.length);
 

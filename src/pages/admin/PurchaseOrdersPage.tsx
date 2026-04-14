@@ -6,10 +6,12 @@ import { PurchaseOrdersList } from '@/components/admin/purchasing/PurchaseOrders
 import { PurchaseOrderEditor } from '@/components/admin/purchasing/PurchaseOrderEditor';
 import { VendorProductsManager } from '@/components/admin/purchasing/VendorProductsManager';
 import { AutoReorderSettings } from '@/components/admin/purchasing/AutoReorderSettings';
+import { useIsModuleEnabled } from '@/hooks/useModules';
 
 export default function PurchaseOrdersPage() {
   const [tab, setTab] = useState('list');
   const [editingId, setEditingId] = useState<string | null>(null);
+  const fpEnabled = useIsModuleEnabled('flowpilot');
 
   const openEditor = (id: string | null) => {
     setEditingId(id);
@@ -26,7 +28,9 @@ export default function PurchaseOrdersPage() {
       <div className="space-y-6">
         <AdminPageHeader
           title="Purchase Orders"
-          description="Automated procurement — FlowPilot monitors stock and creates POs from preferred vendors"
+          description={fpEnabled
+            ? "Automated procurement — FlowPilot monitors stock and creates POs from preferred vendors"
+            : "Manage procurement — enable FlowPilot to auto-monitor stock and create POs automatically"}
         />
 
         <Tabs value={tab} onValueChange={setTab}>

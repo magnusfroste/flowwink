@@ -3,6 +3,7 @@ import { StatCard } from '@/components/admin/StatCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useGrowthDashboard } from '@/hooks/useGrowthDashboard';
+import { useIsModuleEnabled } from '@/hooks/useModules';
 import { DollarSign, Eye, MousePointerClick, TrendingUp, Target, BarChart3 } from 'lucide-react';
 
 function formatCurrency(cents: number, currency: string) {
@@ -27,6 +28,7 @@ const statusVariant: Record<string, 'default' | 'secondary' | 'outline' | 'destr
 };
 
 export default function GrowthDashboardPage() {
+  const fpEnabled = useIsModuleEnabled('flowpilot');
   const { data, isLoading } = useGrowthDashboard();
   const m = data?.metrics;
   const campaigns = data?.campaigns ?? [];
@@ -100,7 +102,7 @@ export default function GrowthDashboardPage() {
                 <TrendingUp className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
                 <p className="text-sm text-muted-foreground">No campaigns yet.</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Use FlowPilot to create your first ad campaign.
+                  {fpEnabled ? 'Use FlowPilot to create your first ad campaign.' : 'Create campaigns manually, or enable FlowPilot for AI-driven ad management.'}
                 </p>
               </div>
             ) : (
