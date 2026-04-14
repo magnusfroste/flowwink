@@ -124,6 +124,7 @@ export const defaultModulesSettings: ModulesSettings = {
     category: 'content',
     autonomy: 'config-required',
     adminUI: true,
+    enhancedByFlowPilot: true,
     optionalIntegrations: ['openai', 'gemini', 'unsplash'],
   },
   knowledgeBase: {
@@ -144,6 +145,7 @@ export const defaultModulesSettings: ModulesSettings = {
     autonomy: 'view-required',
     adminUI: true,
     requiresAI: true,
+    enhancedByFlowPilot: true,
     optionalIntegrations: ['openai', 'gemini', 'local_llm', 'n8n'],
   },
   liveSupport: {
@@ -182,6 +184,7 @@ export const defaultModulesSettings: ModulesSettings = {
     category: 'data',
     autonomy: 'view-required',
     adminUI: true,
+    enhancedByFlowPilot: true,
   },
   deals: {
     enabled: false,
@@ -191,6 +194,7 @@ export const defaultModulesSettings: ModulesSettings = {
     category: 'data',
     autonomy: 'view-required',
     adminUI: true,
+    enhancedByFlowPilot: true,
   },
   companies: {
     enabled: false,
@@ -391,6 +395,7 @@ export const defaultModulesSettings: ModulesSettings = {
     category: 'data',
     autonomy: 'agent-capable',
     adminUI: true,
+    enhancedByFlowPilot: true,
     requiredIntegrations: [],
   },
   handbook: {
@@ -428,6 +433,7 @@ export const defaultModulesSettings: ModulesSettings = {
     category: 'data',
     autonomy: 'agent-capable',
     adminUI: true,
+    enhancedByFlowPilot: true,
     optionalIntegrations: ['resend'],
   },
   sla: {
@@ -438,6 +444,7 @@ export const defaultModulesSettings: ModulesSettings = {
     category: 'insights',
     autonomy: 'agent-capable',
     adminUI: true,
+    enhancedByFlowPilot: true,
   },
   contracts: {
     enabled: false,
@@ -447,6 +454,7 @@ export const defaultModulesSettings: ModulesSettings = {
     category: 'data',
     autonomy: 'agent-capable',
     adminUI: true,
+    enhancedByFlowPilot: true,
   },
   hr: {
     enabled: false,
@@ -456,6 +464,7 @@ export const defaultModulesSettings: ModulesSettings = {
     category: 'data',
     autonomy: 'agent-capable',
     adminUI: true,
+    enhancedByFlowPilot: true,
   },
   documents: {
     enabled: false,
