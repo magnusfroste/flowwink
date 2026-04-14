@@ -446,8 +446,8 @@ Content-Type: application/json
             Invite Agent via MCP
           </CardTitle>
           <CardDescription>
-            Generate a structured prompt to onboard an external agent (e.g. OpenClaw) as a MCP-connected collaborator.
-            The agent gets read/write access to inspect your site and report findings that FlowPilot acts on.
+            Generate a structured prompt to onboard an external agent (e.g. OpenClaw) via MCP.
+            Choose an <strong>Operator</strong> mission to hand over operational control, or an <strong>Audit</strong> mission for read-only inspection.
           </CardDescription>
         </CardHeader>
       </Card>
