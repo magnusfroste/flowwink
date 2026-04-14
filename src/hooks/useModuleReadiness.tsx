@@ -10,7 +10,13 @@ export interface ModuleReadiness {
   activeOptional: string[];
   totalRequired: number;
   totalOptional: number;
+  /** True when the module needs AI but no provider is active */
+  missingAI: boolean;
+  /** True when the module needs FlowPilot but it's disabled */
+  missingFlowPilot: boolean;
 }
+
+const AI_PROVIDER_KEYS = ['openai', 'gemini', 'local_llm'] as const;
 
 /**
  * Check if a module's integration dependencies are satisfied.
@@ -21,7 +27,8 @@ export function useModuleReadiness(moduleId: keyof ModulesSettings): ModuleReadi
   const { data: integrations } = useIntegrations();
   const { data: secretsStatus } = useIntegrationStatus();
 
-  const module = modules?.[moduleId] ?? defaultModulesSettings[moduleId];
+  const allModules = modules ?? defaultModulesSettings;
+  const module = allModules[moduleId] ?? defaultModulesSettings[moduleId];
   const required = module?.requiredIntegrations ?? [];
   const optional = module?.optionalIntegrations ?? [];
 
@@ -39,14 +46,25 @@ export function useModuleReadiness(moduleId: keyof ModulesSettings): ModuleReadi
   const activeRequired = required.filter(k => isIntegrationActive(k));
   const activeOptional = optional.filter(k => isIntegrationActive(k));
 
+  // Check requiresAI — at least one AI provider must be active
+  const missingAI = module?.requiresAI === true &&
+    !AI_PROVIDER_KEYS.some(k => isIntegrationActive(k));
+
+  // Check requiresFlowPilot — FlowPilot module must be enabled
+  const flowpilotConfig = allModules.flowpilot ?? defaultModulesSettings.flowpilot;
+  const missingFlowPilot = module?.requiresFlowPilot === true &&
+    flowpilotConfig.enabled === false;
+
   return {
-    ready: missingRequired.length === 0,
+    ready: missingRequired.length === 0 && !missingAI && !missingFlowPilot,
     missingRequired,
     missingOptional,
     activeRequired,
     activeOptional,
     totalRequired: required.length,
     totalOptional: optional.length,
+    missingAI,
+    missingFlowPilot,
   };
 }
 
