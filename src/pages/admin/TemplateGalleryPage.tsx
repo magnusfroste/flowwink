@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { STARTER_TEMPLATES, StarterTemplate } from "@/data/templates";
 import { TemplatePreview } from "@/components/admin/templates/TemplatePreview";
 import { TemplateVisualCard } from "@/components/admin/templates/TemplateVisualCard";
+import { useIsModuleEnabled } from "@/hooks/useModules";
 import { InstallTemplateDialog } from "@/components/admin/templates/InstallTemplateDialog";
 import { TemplateExportTab } from "@/components/admin/templates/TemplateExportTab";
 import { TemplateImportTab } from "@/components/admin/templates/TemplateImportTab";
@@ -116,19 +117,21 @@ export default function TemplateGalleryPage() {
               </div>
             )}
 
-            {/* Copilot upsell */}
-            <div className="mt-16 text-center pb-8">
-              <p className="text-muted-foreground mb-3">
-                Can't find what you're looking for?
-              </p>
-              <Button variant="outline" asChild>
-                <Link to="/admin/flowpilot">
-                  <Bot className="h-4 w-4 mr-2" />
-                  Let FlowPilot build it for you
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </Link>
-              </Button>
-            </div>
+            {/* Copilot upsell — only when FlowPilot is enabled */}
+            {fpEnabled && (
+              <div className="mt-16 text-center pb-8">
+                <p className="text-muted-foreground mb-3">
+                  Can't find what you're looking for?
+                </p>
+                <Button variant="outline" asChild>
+                  <Link to="/admin/flowpilot">
+                    <Bot className="h-4 w-4 mr-2" />
+                    Let FlowPilot build it for you
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Link>
+                </Button>
+              </div>
+            )}
           </TabsContent>
 
           {/* Export Tab */}

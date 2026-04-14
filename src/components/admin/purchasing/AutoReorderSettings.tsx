@@ -8,6 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Bot, AlertTriangle } from 'lucide-react';
 import { useState } from 'react';
+import { useIsModuleEnabled } from '@/hooks/useModules';
 
 interface StockRow {
   id: string;
@@ -57,7 +58,7 @@ export function AutoReorderSettings() {
           Auto-Reorder Rules
         </CardTitle>
         <CardDescription>
-          Configure reorder points and quantities. FlowPilot auto-creates purchase orders for items with auto-reorder enabled.
+          Configure reorder points and quantities. {fpEnabled ? 'FlowPilot auto-creates purchase orders for items with auto-reorder enabled.' : 'Enable FlowPilot to auto-create purchase orders when stock hits reorder points.'}
         </CardDescription>
         <div className="flex gap-3 pt-2">
           <Badge variant="outline">{stockItems.length} tracked items</Badge>

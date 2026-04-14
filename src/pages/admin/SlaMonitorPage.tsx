@@ -114,7 +114,7 @@ function PoliciesTab() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          Define target times for each entity type. FlowPilot monitors and flags breaches.
+          Define target times for each entity type. {fpEnabled ? 'FlowPilot monitors and flags breaches.' : 'Enable FlowPilot to auto-monitor and flag breaches.'}
         </p>
         <Button size="sm" onClick={() => setDialogOpen(true)} className="gap-1.5">
           <Plus className="h-3.5 w-3.5" /> Add Policy
@@ -397,7 +397,7 @@ export default function SlaMonitorPage() {
             <div>
               <h1 className="text-2xl font-semibold tracking-tight">SLA Monitor</h1>
               <p className="text-sm text-muted-foreground">
-                Service level targets — FlowPilot monitors compliance automatically
+                Service level targets — {fpEnabled ? 'FlowPilot monitors compliance automatically' : 'enable FlowPilot to auto-monitor compliance'}
               </p>
             </div>
           </div>
