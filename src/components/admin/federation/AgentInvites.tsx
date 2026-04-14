@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -325,6 +326,22 @@ export function AgentInvites() {
       });
 
       setGeneratedKey(rawKey);
+
+      // Auto-create a2a_peers entry so the agent appears in Federation
+      const peerName = agentName || 'Unnamed';
+      const { error: peerError } = await supabase
+        .from('a2a_peers')
+        .upsert({
+          name: peerName,
+          url: `https://${peerName.toLowerCase().replace(/\s+/g, '-')}.local`,
+          status: 'active' as const,
+          mcp_api_key: rawKey.substring(0, 12),
+          capabilities: {},
+        }, { onConflict: 'name' });
+      
+      if (peerError) {
+        console.warn('Failed to auto-create peer:', peerError.message);
+      }
 
       const mcpUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/mcp-server`;
       const instructions = selectedMission === 'custom' ? customInstructions : mission.instructions;
