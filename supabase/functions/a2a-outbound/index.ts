@@ -148,7 +148,7 @@ Deno.serve(async (req) => {
 
     let endpoint: string;
     let requestBody: Record<string, unknown>;
-    let authHeader = `Bearer ${peer.outbound_token}`;
+    let outboundAuth = `Bearer ${peer.outbound_token}`;
 
     if (protocol === 'responses') {
       // OpenAI-compatible /v1/responses — used for orchestrator agents (e.g. OpenClaw)
