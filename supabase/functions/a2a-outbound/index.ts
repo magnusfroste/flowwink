@@ -153,7 +153,7 @@ Deno.serve(async (req) => {
     if (protocol === 'responses') {
       // OpenAI-compatible /v1/responses — used for orchestrator agents (e.g. OpenClaw)
       endpoint = (caps.endpoint as string) || '/v1/responses';
-      authHeader = `Bearer ${peer.gateway_token}`;
+      outboundAuth = `Bearer ${peer.gateway_token}`;
       const textPayload = rawMessage || `skill:${effectiveSkill} ${JSON.stringify(args)}`;
       requestBody = {
         model: (caps.model as string) || 'gpt-4o-mini',
@@ -224,7 +224,7 @@ Deno.serve(async (req) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': authHeader,
+          'Authorization': outboundAuth,
         },
         body: JSON.stringify(requestBody),
         signal: controller.signal,
