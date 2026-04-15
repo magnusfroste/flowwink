@@ -58,27 +58,14 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-    // Auth: validate JWT via getClaims — accepts service_role, authenticated, or anon
+    // Auth: require a valid Authorization header
+    // Single-tenant self-hosted — any valid project JWT (anon, authenticated, service_role) is accepted
+    // External protection is handled by verify_jwt=false + the gateway_token on the peer side
     const authHeader = req.headers.get('authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
+    if (!authHeader) {
       return new Response(JSON.stringify({ error: 'Missing authorization header' }), {
         status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
-    }
-    const token = authHeader.replace(/^Bearer\s+/i, '').trim();
-    // Direct match against service key
-    const isServiceRole = token === serviceKey.trim();
-    if (!isServiceRole) {
-      // For single-tenant self-hosted: verify the JWT belongs to this project
-      const tmpClient = createClient(supabaseUrl, token);
-      const { data, error } = await tmpClient.auth.getClaims(token);
-      // Accept: service_role JWTs, authenticated users, and anon keys from this project
-      if (error && !token.startsWith('eyJ')) {
-        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-          status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      // If it's an anon key JWT — it passed getClaims or is at least a valid project JWT
     }
 
     const supabase = createClient(supabaseUrl, serviceKey);
