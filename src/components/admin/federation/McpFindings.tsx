@@ -78,12 +78,10 @@ export function McpFindings() {
 
   const clearAllMutation = useMutation({
     mutationFn: async () => {
-      const allIds = findings?.map(f => f.id) || [];
-      if (allIds.length === 0) return;
       const { error } = await supabase
         .from('beta_test_findings')
         .delete()
-        .in('id', allIds);
+        .not('id', 'is', null);
       if (error) throw error;
     },
     onSuccess: () => {
