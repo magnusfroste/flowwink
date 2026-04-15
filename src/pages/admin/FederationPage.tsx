@@ -842,9 +842,12 @@ export default function FederationPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-[10px]">
+                        {getPeerTransport(peer) === 'responses' ? '/v1/responses' : 'A2A'}
+                      </Badge>
                       {(peer.capabilities as any)?.protocol_version && (
                         <Badge variant="outline" className="text-[10px]">
-                          A2A v{(peer.capabilities as any).protocol_version}
+                          v{(peer.capabilities as any).protocol_version}
                         </Badge>
                       )}
                       <Badge variant={statusColor(peer.status)}>{peer.status}</Badge>
