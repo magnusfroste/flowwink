@@ -6,6 +6,7 @@ export interface ApiKey {
   id: string;
   name: string;
   key_prefix: string;
+  key_raw: string | null;
   scopes: string[];
   created_by: string | null;
   last_used_at: string | null;
@@ -19,7 +20,7 @@ export function useApiKeys() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('api_keys')
-        .select('id, name, key_prefix, scopes, created_by, last_used_at, expires_at, created_at')
+        .select('id, name, key_prefix, key_raw, scopes, created_by, last_used_at, expires_at, created_at')
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data as unknown as ApiKey[];
@@ -54,6 +55,7 @@ export function useCreateApiKey() {
         name: input.name,
         key_hash: hash,
         key_prefix: prefix,
+        key_raw: raw,
         scopes: input.scopes ?? [],
         expires_at: input.expires_at ?? null,
         created_by: user?.id ?? null,

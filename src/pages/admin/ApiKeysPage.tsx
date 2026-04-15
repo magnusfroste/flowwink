@@ -91,7 +91,7 @@ export function ApiKeysContent() {
                 <DialogHeader>
                   <DialogTitle>API Key Created</DialogTitle>
                   <DialogDescription>
-                    Copy this key now — it won't be shown again.
+                    Key created successfully. You can always view it from the keys list.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-3 py-3">
@@ -164,7 +164,24 @@ export function ApiKeysContent() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-sm">{key.name}</span>
-                      <code className="text-xs text-muted-foreground font-mono">{key.key_prefix}…</code>
+                    </div>
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <code className="text-xs text-muted-foreground font-mono bg-muted px-2 py-1 rounded break-all select-all">
+                        {key.key_raw || `${key.key_prefix}…`}
+                      </code>
+                      {key.key_raw && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          onClick={() => {
+                            navigator.clipboard.writeText(key.key_raw!);
+                            toast.success('API key copied');
+                          }}
+                        >
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                      )}
                     </div>
                     <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                       <span>Created {formatDistanceToNow(new Date(key.created_at), { addSuffix: true })}</span>
@@ -176,6 +193,9 @@ export function ApiKeysContent() {
                           Expires {formatDistanceToNow(new Date(key.expires_at), { addSuffix: true })}
                         </Badge>
                       )}
+                      {key.scopes && key.scopes.length > 0 && key.scopes.map(scope => (
+                        <Badge key={scope} variant="secondary" className="text-[10px] font-mono">{scope}</Badge>
+                      ))}
                     </div>
                   </div>
                   <AlertDialog>
