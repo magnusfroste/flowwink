@@ -466,6 +466,61 @@ async function createMcpServer(): Promise<McpServer> {
     },
   });
 
+  // ── Report finding tool — autonomous objective reporting ──
+
+  server.tool("openclaw_report_finding", {
+    description: "Submit an operational finding from an autonomous objective check. Use when: you have completed an objective audit (OBJ-001 through OBJ-006) and want to report a gap, SLA violation, missing data, compliance issue, stale entity, quality gap, or utilization alert. NOT for: general chat or queries — this is a structured reporting tool.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        title: { type: "string", description: "Short finding title, e.g. 'OBJ-002: Order #xyz pending >48h'" },
+        type: {
+          type: "string",
+          enum: ["broken_chain", "sla_violation", "missing_data", "compliance_issue", "stale_entity", "quality_gap", "utilization_alert"],
+          description: "Finding type category",
+        },
+        severity: {
+          type: "string",
+          enum: ["critical", "high", "medium", "low"],
+          description: "Impact level: critical=revenue/compliance risk, high=fix within 24h, medium=fix this week, low=nice to have",
+        },
+        description: { type: "string", description: "Detailed description of the finding with context and evidence" },
+        context: {
+          type: "object",
+          description: "Structured metadata: objective ID, entity_type, entity_id, metric, value, threshold",
+          properties: {
+            objective: { type: "string", description: "Objective ID, e.g. OBJ-001" },
+            entity_type: { type: "string" },
+            entity_id: { type: "string" },
+            metric: { type: "string" },
+            value: {},
+            threshold: {},
+          },
+        },
+      },
+      required: ["title", "type", "severity"],
+    },
+    handler: async (args: Record<string, unknown>) => {
+      const sb = serviceClient();
+      const { data, error } = await sb
+        .from("beta_test_findings")
+        .insert({
+          title: args.title as string,
+          type: args.type as string,
+          severity: args.severity as string,
+          description: (args.description as string) || null,
+          context: (args.context as Record<string, unknown>) || null,
+        })
+        .select("id, title, severity, created_at")
+        .single();
+
+      if (error) {
+        return { content: [{ type: "text" as const, text: JSON.stringify({ error: error.message }) }] };
+      }
+      return { content: [{ type: "text" as const, text: JSON.stringify({ success: true, finding: data }) }] };
+    },
+  });
+
   const resourceDefs: Array<{ key: string; uri: string; name: string; description: string }> = [
     { key: "modules",     uri: "flowwink://modules",     name: "FlowWink Modules",    description: "All available modules and their enabled/disabled status" },
     { key: "health",      uri: "flowwink://health",      name: "Site Health",          description: "Current site statistics: pages, posts, leads, bookings, orders, products, active objectives" },
