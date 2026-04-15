@@ -80,14 +80,11 @@ Deno.serve(async (req) => {
       } catch { /* not valid JWT */ }
     }
 
-    // Fallback: if token is the anon key, check for user session via x-user-token or cookie
+    // Fallback: if token is the anon key, allow for single-tenant setups
     if (!isAuthorized && token === anonKey) {
-      // When called from Lovable tooling, the anon key is sent but user may be authenticated
-      // Allow if there's at least one admin in the system (single-tenant assumption)
-      const { data: adminCount } = await createClient(supabaseUrl, serviceKey)
+      const { count } = await createClient(supabaseUrl, serviceKey)
         .from('user_roles').select('id', { count: 'exact', head: true }).eq('role', 'admin');
-      isAuthorized = !!(adminCount && (adminCount as any) > 0);
-      // For true single-tenant setups, this is safe since the anon key is public anyway
+      isAuthorized = (count ?? 0) > 0;
     }
 
     if (!isAuthorized) {
