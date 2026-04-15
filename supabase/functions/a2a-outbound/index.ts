@@ -159,14 +159,14 @@ Deno.serve(async (req) => {
         model: (caps.model as string) || 'gpt-4o-mini',
         input: textPayload,
       };
-      // Include MCP tools if peer has mcp_api_key
-      if (peer.mcp_api_key) {
-        const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      // Include MCP tools only if peer capabilities explicitly opt in
+      if (peer.mcp_api_key && caps.inject_mcp_tools) {
+        const mcpUrl = Deno.env.get('SUPABASE_URL')!;
         (requestBody as any).tools = [
           {
             type: 'mcp',
             server_label: 'flowwink',
-            server_url: `${supabaseUrl}/functions/v1/mcp-server`,
+            server_url: `${mcpUrl}/functions/v1/mcp-server`,
             headers: { 'x-api-key': peer.mcp_api_key },
           },
         ];
