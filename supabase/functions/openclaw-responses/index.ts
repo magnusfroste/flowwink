@@ -70,21 +70,20 @@ Deno.serve(async (req) => {
         if (parts.length === 3) {
           const payload = JSON.parse(atob(parts[1]));
           if (payload.role === 'service_role') isAuthorized = true;
-          // If it's a user JWT (not anon key), check admin role
+          // Authenticated user JWT — check admin role
           if (!isAuthorized && payload.sub && payload.role === 'authenticated') {
             const { data: roles } = await createClient(supabaseUrl, serviceKey)
               .from('user_roles').select('role').eq('user_id', payload.sub).eq('role', 'admin');
             isAuthorized = !!(roles && roles.length > 0);
           }
+          // Anon key JWT — allow for single-tenant setups if admins exist
+          if (!isAuthorized && payload.role === 'anon') {
+            const { count } = await createClient(supabaseUrl, serviceKey)
+              .from('user_roles').select('id', { count: 'exact', head: true }).eq('role', 'admin');
+            isAuthorized = (count ?? 0) > 0;
+          }
         }
       } catch { /* not valid JWT */ }
-    }
-
-    // Fallback: if token is the anon key, allow for single-tenant setups
-    if (!isAuthorized && token === anonKey) {
-      const { count } = await createClient(supabaseUrl, serviceKey)
-        .from('user_roles').select('id', { count: 'exact', head: true }).eq('role', 'admin');
-      isAuthorized = (count ?? 0) > 0;
     }
 
     if (!isAuthorized) {
