@@ -141,17 +141,40 @@ Deno.serve(async (req) => {
 
     // Determine protocol from peer capabilities
     const caps = (peer.capabilities as Record<string, unknown>) || {};
-    const protocol = (caps.protocol as string) || 'jsonrpc';
+    // Auto-detect: if peer has gateway_token, use /v1/responses (OpenAI-compatible)
+    const hasGatewayToken = !!(peer.gateway_token);
+    const protocol = hasGatewayToken ? 'responses' : ((caps.protocol as string) || 'jsonrpc');
     const peerUrl = peer.url.replace(/\/$/, '');
 
     let endpoint: string;
     let requestBody: Record<string, unknown>;
+    let outboundAuth = `Bearer ${peer.outbound_token}`;
 
-    if (protocol === 'jsonrpc' || protocol === 'a2a') {
+    if (protocol === 'responses') {
+      // OpenAI-compatible /v1/responses — used for orchestrator agents (e.g. OpenClaw)
+      endpoint = (caps.endpoint as string) || '/v1/responses';
+      outboundAuth = `Bearer ${peer.gateway_token}`;
+      const textPayload = rawMessage || `skill:${effectiveSkill} ${JSON.stringify(args)}`;
+      requestBody = {
+        model: (caps.model as string) || 'openclaw',
+        input: textPayload,
+      };
+      // Include MCP tools only if peer capabilities explicitly opt in
+      if (peer.mcp_api_key && caps.inject_mcp_tools) {
+        const mcpUrl = Deno.env.get('SUPABASE_URL')!;
+        (requestBody as any).tools = [
+          {
+            type: 'mcp',
+            server_label: 'flowwink',
+            server_url: `${mcpUrl}/functions/v1/mcp-server`,
+            headers: { 'x-api-key': peer.mcp_api_key },
+          },
+        ];
+      }
+    } else if (protocol === 'jsonrpc' || protocol === 'a2a') {
       // A2A v0.3.0 JSON-RPC — preferred
       endpoint = (caps.endpoint as string) || '/a2a/ingest';
       const messageId = activityRow?.id || crypto.randomUUID();
-      // For 'message' skill: send raw text, not serialized skill:message {}
       const textPayload = rawMessage
         ? rawMessage
         : (effectiveSkill === 'message' && Object.keys(args).length === 0)
@@ -201,7 +224,7 @@ Deno.serve(async (req) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${peer.outbound_token}`,
+          'Authorization': outboundAuth,
         },
         body: JSON.stringify(requestBody),
         signal: controller.signal,

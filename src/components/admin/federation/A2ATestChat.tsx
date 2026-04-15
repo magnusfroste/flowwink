@@ -86,9 +86,16 @@ export function A2ATestChat({ peer }: A2ATestChatProps) {
       const durationMs = Date.now() - start;
       const data = await res.json();
 
-      // Extract response text from various A2A response formats
+      // Extract response text from various response formats
       let responseText = '';
-      if (data?.result?.status?.message?.parts) {
+      if (data?.output) {
+        // /v1/responses format (OpenAI-compatible)
+        responseText = data.output
+          .flatMap((o: any) => o.content || [])
+          .map((c: any) => c.text)
+          .filter(Boolean)
+          .join('\n');
+      } else if (data?.result?.status?.message?.parts) {
         responseText = data.result.status.message.parts
           .map((p: any) => p.text)
           .filter(Boolean)
