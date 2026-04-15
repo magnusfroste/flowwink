@@ -30,7 +30,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Globe, Plus, RefreshCw, Copy, Check, ArrowDownLeft, ArrowUpRight, AlertCircle, Pencil, Zap, Loader2, Search, Shield, Cpu, Trash2 } from 'lucide-react';
+import { Globe, Plus, RefreshCw, Copy, Check, ArrowDownLeft, ArrowUpRight, AlertCircle, Pencil, Zap, Loader2, Search, Shield, Cpu, Trash2, Send } from 'lucide-react';
 import { A2ATestChat } from '@/components/admin/federation/A2ATestChat';
 import { A2AActivityLog } from '@/components/admin/federation/A2AActivityLog';
 import { AgentInvites } from '@/components/admin/federation/AgentInvites';
@@ -374,6 +374,59 @@ export default function FederationPage() {
     toast({ title: 'Peer updated', description: `${editName} has been updated.` });
   };
 
+  // --- Protocol detection ---
+  const getPeerTransport = (peer: { gateway_token?: string | null; capabilities?: unknown }): 'responses' | 'a2a' => {
+    if (peer.gateway_token) return 'responses';
+    const caps = (peer.capabilities && typeof peer.capabilities === 'object') ? peer.capabilities as Record<string, unknown> : {};
+    if (caps.protocol === 'responses' || caps.protocol === 'openai') return 'responses';
+    return 'a2a';
+  };
+
+  const [dispatchingPeerId, setDispatchingPeerId] = useState<string | null>(null);
+  const [dispatchPrompt, setDispatchPrompt] = useState('');
+  const [dispatchDialogPeer, setDispatchDialogPeer] = useState<any>(null);
+
+  const handleDispatchMission = async (peer: any, prompt: string) => {
+    if (!prompt.trim()) return;
+    setDispatchingPeerId(peer.id);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/a2a-outbound`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({
+            peer_name: peer.name,
+            skill: 'mission_dispatch',
+            arguments: { prompt },
+          }),
+        }
+      );
+      const data = await res.json();
+      if (res.ok && !data.error) {
+        toast({ title: 'Mission dispatched', description: `Sent to ${peer.name}` });
+        setDispatchDialogPeer(null);
+        setDispatchPrompt('');
+        queryClient.invalidateQueries({ queryKey: ['a2a-activity'] });
+      } else {
+        const errMsg = data.error?.message || JSON.stringify(data.error) || `HTTP ${res.status}`;
+        toast({ title: 'Dispatch failed', description: errMsg, variant: 'destructive' });
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      toast({ title: 'Dispatch error', description: msg, variant: 'destructive' });
+    } finally {
+      setDispatchingPeerId(null);
+    }
+  };
+
   const activePeers = peers?.filter(p => p.status !== 'revoked') || [];
   const totalRequests = peers?.reduce((sum, p) => sum + (p.request_count || 0), 0) || 0;
 
@@ -391,7 +444,7 @@ export default function FederationPage() {
       <div className="space-y-8">
         <AdminPageHeader
           title="Federation"
-          description="Connect with external agents via A2A protocol or invite MCP collaborators"
+          description="Connect with external agents — A2A peers (JSON-RPC) or Orchestrator Agents (/v1/responses + MCP)"
         />
 
         <Tabs defaultValue="a2a-peers" className="space-y-6">
@@ -789,9 +842,12 @@ export default function FederationPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-[10px]">
+                        {getPeerTransport(peer) === 'responses' ? '/v1/responses' : 'A2A'}
+                      </Badge>
                       {(peer.capabilities as any)?.protocol_version && (
                         <Badge variant="outline" className="text-[10px]">
-                          A2A v{(peer.capabilities as any).protocol_version}
+                          v{(peer.capabilities as any).protocol_version}
                         </Badge>
                       )}
                       <Badge variant={statusColor(peer.status)}>{peer.status}</Badge>
@@ -828,7 +884,7 @@ export default function FederationPage() {
                     <div className="flex items-center gap-2">
                       {peer.status !== 'revoked' ? (
                          <>
-                          {peer.url && (
+                          {peer.url && getPeerTransport(peer) === 'a2a' && (
                             <>
                               <Button
                                 variant="outline"
@@ -874,6 +930,19 @@ export default function FederationPage() {
                                 Test
                               </Button>
                             </>
+                          )}
+                          {peer.url && getPeerTransport(peer) === 'responses' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setDispatchDialogPeer(peer);
+                                setDispatchPrompt('');
+                              }}
+                            >
+                              <Send className="h-3 w-3 mr-1" />
+                              Dispatch Mission
+                            </Button>
                           )}
                           <Button
                             variant="outline"
@@ -1005,6 +1074,40 @@ export default function FederationPage() {
           </h2>
           <A2AActivityLog />
         </div>
+
+        {/* Dispatch Mission Dialog */}
+        <Dialog open={!!dispatchDialogPeer} onOpenChange={(open) => { if (!open) setDispatchDialogPeer(null); }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Dispatch Mission to {dispatchDialogPeer?.name}</DialogTitle>
+              <DialogDescription>
+                Send a prompt via /v1/responses. The agent will execute autonomously and report back via MCP.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              <Label>Mission Prompt</Label>
+              <textarea
+                className="w-full min-h-[120px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                placeholder="e.g. Audit the content marketing pipeline and report findings..."
+                value={dispatchPrompt}
+                onChange={e => setDispatchPrompt(e.target.value)}
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDispatchDialogPeer(null)}>Cancel</Button>
+              <Button
+                onClick={() => handleDispatchMission(dispatchDialogPeer, dispatchPrompt)}
+                disabled={!dispatchPrompt.trim() || dispatchingPeerId === dispatchDialogPeer?.id}
+              >
+                {dispatchingPeerId === dispatchDialogPeer?.id ? (
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Dispatching...</>
+                ) : (
+                  <><Send className="h-4 w-4 mr-2" />Dispatch</>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
           </TabsContent>
 
           <TabsContent value="mcp-collaborators" className="space-y-8">
