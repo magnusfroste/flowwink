@@ -3,10 +3,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowDownLeft, ArrowUpRight, AlertCircle, ChevronDown, ChevronRight, RefreshCw } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, AlertCircle, ChevronDown, ChevronRight, RefreshCw, Trash2 } from 'lucide-react';
 import { useA2AActivity, useA2APeers } from '@/hooks/useA2A';
 import { formatDistanceToNow } from 'date-fns';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useMutation } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 function extractMessageText(data: unknown): string {
   if (!data || typeof data !== 'object') return '';
@@ -53,6 +55,25 @@ export function A2AActivityLog() {
 
   const filtered = activity?.filter(a => filter === 'all' || a.direction === filter) ?? [];
 
+  const clearAllMutation = useMutation({
+    mutationFn: async () => {
+      const ids = activity?.map(a => a.id) || [];
+      if (ids.length === 0) return;
+      const { error } = await supabase
+        .from('a2a_activity')
+        .delete()
+        .in('id', ids);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['a2a-activity'] });
+      toast.success('Activity log cleared');
+    },
+    onError: () => {
+      toast.error('Failed to clear activity log');
+    },
+  });
+
   if (isLoading) return <Skeleton className="h-48" />;
 
   return (
@@ -71,15 +92,29 @@ export function A2AActivityLog() {
             </Button>
           ))}
         </div>
-        <Button
-          size="sm"
-          variant="ghost"
-          className="h-7 text-xs gap-1"
-          onClick={() => queryClient.invalidateQueries({ queryKey: ['a2a-activity'] })}
-        >
-          <RefreshCw className="h-3 w-3" />
-          Refresh
-        </Button>
+        <div className="flex gap-1">
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-7 text-xs gap-1"
+            onClick={() => queryClient.invalidateQueries({ queryKey: ['a2a-activity'] })}
+          >
+            <RefreshCw className="h-3 w-3" />
+            Refresh
+          </Button>
+          {(activity?.length ?? 0) > 0 && (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 text-xs gap-1 text-destructive/70 hover:text-destructive"
+              onClick={() => clearAllMutation.mutate()}
+              disabled={clearAllMutation.isPending}
+            >
+              <Trash2 className="h-3 w-3" />
+              Clear
+            </Button>
+          )}
+        </div>
       </div>
 
       {!filtered.length ? (

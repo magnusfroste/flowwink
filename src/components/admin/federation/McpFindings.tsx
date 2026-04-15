@@ -76,6 +76,25 @@ export function McpFindings() {
     },
   });
 
+  const clearAllMutation = useMutation({
+    mutationFn: async () => {
+      const allIds = findings?.map(f => f.id) || [];
+      if (allIds.length === 0) return;
+      const { error } = await supabase
+        .from('beta_test_findings')
+        .delete()
+        .in('id', allIds);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['mcp-findings'] });
+      toast.success('All findings cleared');
+    },
+    onError: () => {
+      toast.error('Failed to clear findings');
+    },
+  });
+
   if (isLoading) {
     return <div className="space-y-2">
       <Skeleton className="h-14 w-full" />
@@ -121,6 +140,17 @@ export function McpFindings() {
             </Button>
           </>
         )}
+        <span>·</span>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-5 text-[11px] px-2 text-destructive/70 hover:text-destructive"
+          onClick={() => clearAllMutation.mutate()}
+          disabled={clearAllMutation.isPending}
+        >
+          <X className="h-3 w-3 mr-1" />
+          Clear all
+        </Button>
       </div>
 
       <div className="space-y-1.5">
