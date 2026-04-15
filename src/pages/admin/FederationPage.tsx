@@ -881,7 +881,7 @@ export default function FederationPage() {
                     <div className="flex items-center gap-2">
                       {peer.status !== 'revoked' ? (
                          <>
-                          {peer.url && (
+                          {peer.url && getPeerTransport(peer) === 'a2a' && (
                             <>
                               <Button
                                 variant="outline"
@@ -927,6 +927,19 @@ export default function FederationPage() {
                                 Test
                               </Button>
                             </>
+                          )}
+                          {peer.url && getPeerTransport(peer) === 'responses' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setDispatchDialogPeer(peer);
+                                setDispatchPrompt('');
+                              }}
+                            >
+                              <Send className="h-3 w-3 mr-1" />
+                              Dispatch Mission
+                            </Button>
                           )}
                           <Button
                             variant="outline"
