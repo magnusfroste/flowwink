@@ -224,7 +224,7 @@ Deno.serve(async (req) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${peer.outbound_token}`,
+          'Authorization': authHeader,
         },
         body: JSON.stringify(requestBody),
         signal: controller.signal,
