@@ -374,6 +374,59 @@ export default function FederationPage() {
     toast({ title: 'Peer updated', description: `${editName} has been updated.` });
   };
 
+  // --- Protocol detection ---
+  const getPeerTransport = (peer: { gateway_token?: string | null; capabilities?: unknown }): 'responses' | 'a2a' => {
+    if (peer.gateway_token) return 'responses';
+    const caps = (peer.capabilities && typeof peer.capabilities === 'object') ? peer.capabilities as Record<string, unknown> : {};
+    if (caps.protocol === 'responses' || caps.protocol === 'openai') return 'responses';
+    return 'a2a';
+  };
+
+  const [dispatchingPeerId, setDispatchingPeerId] = useState<string | null>(null);
+  const [dispatchPrompt, setDispatchPrompt] = useState('');
+  const [dispatchDialogPeer, setDispatchDialogPeer] = useState<any>(null);
+
+  const handleDispatchMission = async (peer: any, prompt: string) => {
+    if (!prompt.trim()) return;
+    setDispatchingPeerId(peer.id);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/a2a-outbound`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({
+            peer_name: peer.name,
+            skill: 'mission_dispatch',
+            arguments: { prompt },
+          }),
+        }
+      );
+      const data = await res.json();
+      if (res.ok && !data.error) {
+        toast({ title: 'Mission dispatched', description: `Sent to ${peer.name}` });
+        setDispatchDialogPeer(null);
+        setDispatchPrompt('');
+        queryClient.invalidateQueries({ queryKey: ['a2a-activity'] });
+      } else {
+        const errMsg = data.error?.message || JSON.stringify(data.error) || `HTTP ${res.status}`;
+        toast({ title: 'Dispatch failed', description: errMsg, variant: 'destructive' });
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      toast({ title: 'Dispatch error', description: msg, variant: 'destructive' });
+    } finally {
+      setDispatchingPeerId(null);
+    }
+  };
+
   const activePeers = peers?.filter(p => p.status !== 'revoked') || [];
   const totalRequests = peers?.reduce((sum, p) => sum + (p.request_count || 0), 0) || 0;
 
