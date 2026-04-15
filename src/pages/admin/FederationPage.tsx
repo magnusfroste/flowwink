@@ -444,7 +444,7 @@ export default function FederationPage() {
       <div className="space-y-8">
         <AdminPageHeader
           title="Federation"
-          description="Connect with external agents via A2A protocol or invite MCP collaborators"
+          description="Connect with external agents — A2A peers (JSON-RPC) or Orchestrator Agents (/v1/responses + MCP)"
         />
 
         <Tabs defaultValue="a2a-peers" className="space-y-6">
