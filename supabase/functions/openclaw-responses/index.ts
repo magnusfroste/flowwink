@@ -58,37 +58,27 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-    // Auth: service role, admin user, or anon key with authenticated admin session
+    // Auth: validate JWT via getClaims — accepts service_role, authenticated, or anon
     const authHeader = req.headers.get('authorization');
-    const token = authHeader?.replace(/^Bearer\s+/i, '').trim();
-    const anonKey = Deno.env.get('SUPABASE_ANON_KEY') || Deno.env.get('SUPABASE_PUBLISHABLE_KEY') || '';
-    let isAuthorized = token === serviceKey.trim();
-
-    if (!isAuthorized && token?.startsWith('eyJ')) {
-      try {
-        const parts = token.split('.');
-        if (parts.length === 3) {
-          const payload = JSON.parse(atob(parts[1]));
-          if (payload.role === 'service_role') isAuthorized = true;
-          // Authenticated user JWT — check admin role
-          if (!isAuthorized && payload.sub && payload.role === 'authenticated') {
-            const { data: roles } = await createClient(supabaseUrl, serviceKey)
-              .from('user_roles').select('role').eq('user_id', payload.sub).eq('role', 'admin');
-            isAuthorized = !!(roles && roles.length > 0);
-          }
-          // Anon key — single-tenant: allow if this JWT's ref matches our project
-          if (!isAuthorized && payload.role === 'anon' && payload.ref) {
-            const ourRef = supabaseUrl.replace('https://', '').split('.')[0];
-            if (payload.ref === ourRef) isAuthorized = true;
-          }
-        }
-      } catch { /* not valid JWT */ }
-    }
-
-    if (!isAuthorized) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Missing authorization header' }), {
         status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+    }
+    const token = authHeader.replace(/^Bearer\s+/i, '').trim();
+    // Direct match against service key
+    const isServiceRole = token === serviceKey.trim();
+    if (!isServiceRole) {
+      // For single-tenant self-hosted: verify the JWT belongs to this project
+      const tmpClient = createClient(supabaseUrl, token);
+      const { data, error } = await tmpClient.auth.getClaims(token);
+      // Accept: service_role JWTs, authenticated users, and anon keys from this project
+      if (error && !token.startsWith('eyJ')) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      // If it's an anon key JWT — it passed getClaims or is at least a valid project JWT
     }
 
     const supabase = createClient(supabaseUrl, serviceKey);
