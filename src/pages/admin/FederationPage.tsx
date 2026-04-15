@@ -1074,6 +1074,40 @@ export default function FederationPage() {
           </h2>
           <A2AActivityLog />
         </div>
+
+        {/* Dispatch Mission Dialog */}
+        <Dialog open={!!dispatchDialogPeer} onOpenChange={(open) => { if (!open) setDispatchDialogPeer(null); }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Dispatch Mission to {dispatchDialogPeer?.name}</DialogTitle>
+              <DialogDescription>
+                Send a prompt via /v1/responses. The agent will execute autonomously and report back via MCP.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              <Label>Mission Prompt</Label>
+              <textarea
+                className="w-full min-h-[120px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                placeholder="e.g. Audit the content marketing pipeline and report findings..."
+                value={dispatchPrompt}
+                onChange={e => setDispatchPrompt(e.target.value)}
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDispatchDialogPeer(null)}>Cancel</Button>
+              <Button
+                onClick={() => handleDispatchMission(dispatchDialogPeer, dispatchPrompt)}
+                disabled={!dispatchPrompt.trim() || dispatchingPeerId === dispatchDialogPeer?.id}
+              >
+                {dispatchingPeerId === dispatchDialogPeer?.id ? (
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Dispatching...</>
+                ) : (
+                  <><Send className="h-4 w-4 mr-2" />Dispatch</>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
           </TabsContent>
 
           <TabsContent value="mcp-collaborators" className="space-y-8">
